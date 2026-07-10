@@ -394,7 +394,7 @@ int main() {
     require(atmosphere_config_for_preset(AtmospherePreset::MoonlitNight).moon.moonlight_intensity >
                 atmosphere_config_for_preset(AtmospherePreset::Night).moon.moonlight_intensity,
             "moonlit night preset should increase moonlight");
-    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 72U,
+    require(sizeof(AtmosphereFrameUniforms) == sizeof(float) * 68U,
             "atmosphere frame uniforms should keep the shader vec4 layout size");
     {
         AtmosphereConfig config = atmosphere_config_for_preset(AtmospherePreset::Noon);
@@ -434,8 +434,6 @@ int main() {
                 "frame uniforms should render the inline sun disk by default");
         require(uniforms.celestial_render_options.y == 1.0F,
                 "frame uniforms should render inline night sky by default");
-        require(uniforms.celestial_render_options.z == 1.0F,
-                "frame uniforms should render the inline moon disk by default");
         require(uniforms.celestial_options.z ==
                     std::sin(atmosphere_degrees_to_radians(config.time_of_day.latitude_degrees)),
                 "frame uniforms should pack the observer latitude sine");
@@ -467,8 +465,6 @@ int main() {
                 "frame uniforms should expose sun disk suppression");
         require(uniforms.celestial_render_options.y == 1.0F,
                 "frame uniforms should expose night sky rendering");
-        require(uniforms.celestial_render_options.z == 0.0F,
-                "frame uniforms should expose moon disk suppression");
     }
     {
         AtmosphereConfig moonlit = atmosphere_config_for_preset(AtmospherePreset::MoonlitNight);
@@ -1311,7 +1307,7 @@ int main() {
     require_contains(shared_environment_header,
                      "static_assert(sizeof(AtmosphereEnvironmentFrameUniforms)",
                      "shared atmosphere environment should lock frame uniform size");
-    require_contains(shared_environment_header, "sizeof(float) * 72U",
+    require_contains(shared_environment_header, "sizeof(float) * 68U",
                      "shared atmosphere environment should include celestial frame uniforms");
     require_contains(shared_environment_source, "atmosphere_environment_frame_uniforms",
                      "shared atmosphere environment should own frame uniform packing");

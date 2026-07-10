@@ -151,9 +151,6 @@ cubey::render::AtmosphereEnvironmentFrameUniforms planet_unified_atmosphere_fram
         inputs.moon_angular_radius_rad,
     };
     uniforms.moon_options.w = moon_illumination(inputs.moon_phase_fraction);
-    uniforms.moon_phase_options.x = inputs.moon_phase_fraction;
-    uniforms.moon_phase_options.y =
-        std::sin(inputs.moon_phase_fraction * 2.0F * std::numbers::pi_v<float>);
     return uniforms;
 }
 

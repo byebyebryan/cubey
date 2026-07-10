@@ -861,7 +861,7 @@ class AtmosphereApp {
         moon.type = cubey::render::CelestialBodyType::Moon;
         moon.visible = moon_body_render_enabled();
         moon.direction = framed_moon_debug ? camera_forward : lunar.direction;
-        moon.color = {0.58F, 0.62F, 0.74F};
+        moon.color = cubey::render::kCelestialMoonSurfaceColor;
         moon.intensity = atmosphere_config_.moon.disk_intensity;
         moon.angular_radius_rad = surface_debug ? 0.34F : lunar.angular_radius;
         moon.distance_m = 384400000.0F;
@@ -884,7 +884,7 @@ class AtmosphereApp {
             .primary_light_intensity = atmosphere_config_.moon.disk_intensity,
             .primary_light_angular_radius_rad = atmosphere_config_.sun_angular_radius,
             .moon_light_direction = lunar.direction,
-            .moon_light_color = {0.58F, 0.62F, 0.74F},
+            .moon_light_color = cubey::render::kCelestialMoonSurfaceColor,
             .moon_light_intensity = atmosphere_config_.moon.moonlight_intensity,
         };
         cubey::Camera3D camera({.fovy_radians = kDefaultFovyRadians, .near_z = 0.1F,

@@ -127,13 +127,12 @@ struct AtmosphereEnvironmentFrameUniforms {
     math::Vec4 celestial_options;
     math::Vec4 moon_direction_radius;
     math::Vec4 moon_options;
-    math::Vec4 moon_phase_options;
     math::Vec4 milky_way_options;
     math::Vec4 render_options;
     math::Vec4 celestial_render_options;
 };
 
-static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 72U);
+static_assert(sizeof(AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 68U);
 
 struct AtmosphereEnvironmentFrameUniformInputs {
     ViewRayBasis3D view_rays{};
@@ -147,7 +146,7 @@ struct AtmosphereEnvironmentLighting {
     math::Vec3 sun_color{1.0F, 0.94F, 0.82F};
     float sun_intensity = 1.0F;
     math::Vec3 moon_direction{0.0F, 1.0F, 0.0F};
-    math::Vec3 moon_color{0.58F, 0.62F, 0.74F};
+    math::Vec3 moon_color{kCelestialMoonSurfaceColor};
     float moon_intensity = 0.0F;
     math::Vec3 primary_light_direction{0.0F, 1.0F, 0.0F};
     math::Vec3 primary_light_color{1.0F, 0.94F, 0.82F};

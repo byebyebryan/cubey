@@ -700,16 +700,12 @@ void test_planet_unified_atmosphere_frame_splits_sky_and_moon_ownership() {
                  "unified atmosphere adapter should render the unified sky sun disk");
     require_near(uniforms.celestial_render_options.y, 1.0F, 0.000001F,
                  "unified atmosphere adapter should render unified night sky");
-    require_near(uniforms.celestial_render_options.z, 0.0F, 0.000001F,
-                 "unified atmosphere adapter should suppress inline moon disk rendering");
     require_near(uniforms.atmosphere_options.y, 0.0F, 0.000001F,
                  "unified atmosphere adapter should disable reference geometry");
     require_near(uniforms.moon_options.x, 1.0F, 0.000001F,
                  "unified atmosphere adapter should keep moon data for sky washout");
     require_near(uniforms.moon_options.w, 1.0F, 0.000001F,
                  "unified atmosphere adapter should derive moon illumination from planet phase");
-    require_near(uniforms.moon_phase_options.y, 0.0F, 0.000001F,
-                 "unified atmosphere adapter should pack moon phase sine");
     require_near(uniforms.camera_forward_debug_view.w, 2.0F, 0.000001F,
                  "unified atmosphere adapter should preserve debug render view");
 }
@@ -827,10 +823,8 @@ void test_celestial_body_frame_uniforms_pack_render_placement() {
                      "body frame uniforms should pack normalized light direction");
     require_near(uniforms.light_direction_intensity.w, lighting.primary_light_intensity, 0.000001F,
                  "body frame uniforms should pack light intensity");
-    require_near(uniforms.color_phase.x, moon.color.x, 0.000001F,
+    require_near(uniforms.color.x, moon.color.x, 0.000001F,
                  "body frame uniforms should pack body color");
-    require_near(uniforms.color_phase.w, moon.phase_fraction, 0.000001F,
-                 "body frame uniforms should pack body phase");
     require_near(uniforms.visibility_atmosphere.x, 0.0F, 0.000001F,
                  "body frame uniforms should default to no atmospheric sky visibility");
     require_near(uniforms.visibility_atmosphere.w, 0.0F, 0.000001F,
