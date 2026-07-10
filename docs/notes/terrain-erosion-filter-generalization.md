@@ -62,3 +62,42 @@ signature on unrelated sources, keep it as a narrow reference effect.
 
 True hydraulic erosion, drainage continuity, sediment transport, and
 production terrain integration remain out of scope.
+
+## Review Outcome
+
+The operator generalizes mechanically but not as a universal visual pass.
+Arbitrary biome sources can supply height and numerical gradient samples, the
+filtered surfaces preserve their broad silhouettes, and default captures are
+unchanged unless `post-erosion` is explicit. CPU tests cover deterministic
+arbitrary-source filtering and zero-activity identity; the renderer smoke
+covers the opt-in alpine path.
+
+The fixed-scale visual matrix supports selective use:
+
+- Alpine gains visible slope-following detail, but the baseline treats nearly
+  every steep flank as active and produces a dense shared signature.
+- Badlands also responds strongly. Its existing dissected source and the added
+  filter compete at similar scales, so a future use needs a process scale and
+  resistance policy rather than another unconditional pass.
+- Coast/island keeps the flat shelf mostly quiet while affecting inland relief.
+  A production policy would still need land, beach, cliff, and rainfall masks.
+- Plains remains effectively unchanged. This validates the lower slope gate as
+  a useful first rejection condition.
+- Dunes activates on steeper dune faces and adds runoff-like cuts to a
+  wind-shaped source. It is a clear negative case and should disable this
+  process rather than merely reduce its strength.
+
+The useful result is therefore the shared operator boundary, not shared biome
+settings. Future terrain should select it through explicit process policy using
+at least climate/moisture, material resistance, slope, and feature scale. Keep
+the current baseline disabled by default and do not bake it into biome source
+functions.
+
+Review artifacts live under `outputs/terrain_ref/erosion-generalization/`:
+
+- `cross-biome-contact-sheet.png` compares source material, filtered material,
+  and fixed-scale erosion diagnostics;
+- `cross-biome-height-contact-sheet.png` repeats the matrix with neutral height
+  material;
+- `capture-summary.txt` records the 1280x720, 513-grid, seed-9012 pack, which
+  completed in 16 seconds on the review machine.
