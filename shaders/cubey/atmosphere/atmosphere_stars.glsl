@@ -195,7 +195,7 @@ vec3 faint_star_radiance(vec3 sky_direction, float limiting_magnitude) {
                               0.0, 0.34);
     return star_spherical_population_radiance(
                sky_direction, ivec2(768, 256), probability, 4.8, 8.0, 1.30,
-               0.004, 0.010, 0.0, limiting_magnitude, 0.08, vec2(1193.0, 631.0)) *
+               0.004, 0.010, 0.0, limiting_magnitude, 0.18, vec2(1193.0, 631.0)) *
            mix(0.82, 1.15, clamp(galactic_density_value * 0.5, 0.0, 1.0));
 }
 

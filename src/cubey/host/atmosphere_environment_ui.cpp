@@ -109,6 +109,10 @@ bool draw_atmosphere_environment_controls(cubey::AtmosphereEnvironmentRunState& 
                  .help = "Night-sky visibility used by the atmosphere background."}};
             night_group) {
             const ScopedImGuiId night_id("Night sky");
+            mark_changed(imgui_checkbox(
+                             "Camera response", &environment.night_sky.camera_visual_mode,
+                             "Expose the faint star population and photographic Milky Way response."),
+                         changed);
             mark_changed(imgui_slider_float("Stars", &environment.night_sky.star_intensity, 0.0F,
                                             4.0F, "%.2f", "Brightness of procedural stars."),
                          changed);

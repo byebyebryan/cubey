@@ -1636,6 +1636,12 @@ int main() {
                      "atmosphere shader should fade stars by limiting magnitude");
     require_contains(shader_source, "star_magnitude_weight",
                      "atmosphere shader should weight stars by sampled magnitude");
+    require_contains(shader_source, "faint_star_radiance(sky_direction, limiting_magnitude) *",
+                     "camera response should control the faint foreground star population");
+    require_contains(shader_source, "night_sky_camera_mode()",
+                     "star limiting magnitude should consume the night-sky response mode");
+    require_not_contains(shader_source, "limiting_magnitude -= pollution * 3.0",
+                         "space limiting magnitude should not inherit surface light pollution");
     require_contains(shader_source, "night_object_visibility",
                      "atmosphere shader should share night object visibility");
     require_contains(shader_entry_source, "segment.camera_inside_atmosphere",

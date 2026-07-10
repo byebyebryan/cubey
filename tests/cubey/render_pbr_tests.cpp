@@ -882,6 +882,8 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
 
     require_contains(atmosphere_ui, "draw_atmosphere_environment_controls",
                      "shared atmosphere UI should expose reusable environment controls");
+    require_contains(atmosphere_ui, "&environment.night_sky.camera_visual_mode",
+                     "shared atmosphere UI should expose human and camera night response");
     require_contains(atmosphere_ui, "atmosphere_environment_resolve_run_state",
                      "shared atmosphere UI should resolve edited run state through engine helpers");
     require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",

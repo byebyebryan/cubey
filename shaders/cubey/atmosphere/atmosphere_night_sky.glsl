@@ -109,6 +109,10 @@ float night_haze_visibility() {
     return 1.0 - smoothstep(0.006, 0.018, atmosphere.mie.x);
 }
 
+float night_sky_camera_mode() {
+    return step(0.5, atmosphere.milky_way_options.w);
+}
+
 float moon_washout(vec3 ray_direction, float base_strength, float lobe_strength,
                    float min_visibility) {
     vec3 moon_direction = normalize(atmosphere.moon_direction_radius.xyz);
@@ -144,12 +148,13 @@ float star_limiting_magnitude(vec3 ray_direction, vec3 sun_direction) {
     float moon_clear = moon_washout(ray_direction, 0.55, 0.92, 0.22);
     float horizon_clear = smoothstep(-0.02, 0.42, ray_direction.y);
     float pollution = clamp(atmosphere.milky_way_options.z, 0.0, 1.0);
-    float limiting_magnitude = mix(-0.8, 6.35, night);
+    float dark_sky_limit = mix(6.25, 7.65, night_sky_camera_mode());
+    float limiting_magnitude = mix(-0.8, dark_sky_limit, night);
     limiting_magnitude -= (1.0 - moon_clear) * 2.9;
     limiting_magnitude -= (1.0 - horizon_clear) * 1.35;
     limiting_magnitude -= (1.0 - night_haze_visibility()) * 2.2;
     limiting_magnitude -= pollution * 3.2;
-    return clamp(limiting_magnitude, -1.2, 6.45);
+    return clamp(limiting_magnitude, -1.2, 7.75);
 }
 
 float space_sun_clear_visibility(vec3 ray_direction, vec3 sun_direction) {
@@ -158,21 +163,20 @@ float space_sun_clear_visibility(vec3 ray_direction, vec3 sun_direction) {
 }
 
 float space_night_object_visibility(vec3 ray_direction, vec3 sun_direction,
-                                    float moon_base, float moon_lobe, float moon_min,
-                                    float pollution_min) {
-    float pollution = mix(1.0, pollution_min, clamp(atmosphere.milky_way_options.z, 0.0, 1.0));
-    return space_sun_clear_visibility(ray_direction, sun_direction) * pollution *
-           moon_washout(ray_direction, moon_base, moon_lobe, moon_min);
+                                    float moon_lobe, float moon_min) {
+    return space_sun_clear_visibility(ray_direction, sun_direction) *
+           moon_washout(ray_direction, 0.0, moon_lobe, moon_min);
 }
 
 float space_star_limiting_magnitude(vec3 ray_direction, vec3 sun_direction) {
+    float camera_mode = night_sky_camera_mode();
     float sun_clear = space_sun_clear_visibility(ray_direction, sun_direction);
-    float moon_clear = moon_washout(ray_direction, 0.55, 0.92, 0.22);
-    float pollution = clamp(atmosphere.milky_way_options.z, 0.0, 1.0);
-    float limiting_magnitude = mix(-1.0, 6.25, sun_clear);
-    limiting_magnitude -= (1.0 - moon_clear) * 2.5;
-    limiting_magnitude -= pollution * 3.0;
-    return clamp(limiting_magnitude, -1.2, 6.35);
+    float moon_clear = moon_washout(ray_direction, 0.0, mix(0.90, 0.68, camera_mode),
+                                    mix(0.24, 0.42, camera_mode));
+    float dark_sky_limit = mix(6.25, 7.85, camera_mode);
+    float limiting_magnitude = mix(-1.0, dark_sky_limit, sun_clear);
+    limiting_magnitude -= (1.0 - moon_clear) * mix(2.5, 1.6, camera_mode);
+    return clamp(limiting_magnitude, -1.2, 7.95);
 }
 
 #include "atmosphere_stars.glsl"
@@ -188,14 +192,13 @@ vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
     float limiting_magnitude = star_limiting_magnitude(ray_direction, sun_direction);
     vec3 sky_direction = star_sample_direction(ray_direction);
     return (bright_star_radiance(sky_direction, limiting_magnitude) +
-            faint_star_radiance(sky_direction, limiting_magnitude)) *
+            faint_star_radiance(sky_direction, limiting_magnitude) * night_sky_camera_mode()) *
            visibility;
 }
 
 vec3 space_procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
-    float visibility =
-        space_night_object_visibility(ray_direction, sun_direction, 0.10, 0.24, 0.18, 0.20) *
-        atmosphere.night_options.z;
+    float visibility = space_night_object_visibility(ray_direction, sun_direction, 0.76, 0.30) *
+                       atmosphere.night_options.z;
     if (visibility <= 0.0 || atmosphere.night_options.w <= 0.0) {
         return vec3(0.0);
     }
@@ -203,7 +206,7 @@ vec3 space_procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
     float limiting_magnitude = space_star_limiting_magnitude(ray_direction, sun_direction);
     vec3 sky_direction = star_sample_direction(ray_direction);
     return (bright_star_radiance(sky_direction, limiting_magnitude) +
-            faint_star_radiance(sky_direction, limiting_magnitude)) *
+            faint_star_radiance(sky_direction, limiting_magnitude) * night_sky_camera_mode()) *
            visibility * 1.35;
 }
 
@@ -219,7 +222,7 @@ vec3 milky_way_radiance_with_visibility(vec3 ray_direction, float visibility) {
         return vec3(0.0);
     }
 
-    float camera_mode = step(0.5, atmosphere.milky_way_options.w);
+    float camera_mode = night_sky_camera_mode();
     float saturation = mix(0.16, 0.72, camera_mode);
     vec3 color = mix(vec3(luma), atlas, saturation);
     float contrast = clamp(atmosphere.milky_way_options.y, 0.0, 4.0);
@@ -235,8 +238,7 @@ vec3 milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
 }
 
 vec3 space_milky_way_radiance(vec3 ray_direction, vec3 sun_direction) {
-    float visibility =
-        space_night_object_visibility(ray_direction, sun_direction, 0.34, 0.46, 0.06, 0.04);
+    float visibility = space_night_object_visibility(ray_direction, sun_direction, 0.46, 0.10);
     return milky_way_radiance_with_visibility(ray_direction, visibility);
 }
 
