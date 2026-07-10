@@ -12,7 +12,7 @@
 namespace cubey::projects::terrain {
 
 inline constexpr std::string_view kTerrainRecipeUplandCatchmentV1 = "upland-catchment-v1";
-inline constexpr std::uint32_t kTerrainGeneratorRevisionV1 = 1U;
+inline constexpr std::uint32_t kTerrainUplandCatchmentRevision = 2U;
 inline constexpr std::uint32_t kTerrainDefaultGridSize = 257U;
 inline constexpr std::uint32_t kTerrainProcessHaloSamples = 32U;
 inline constexpr float kTerrainDefaultCellSizeM = 32.0F;
@@ -37,7 +37,7 @@ inline constexpr std::string_view kTerrainFieldFlowBoundaryMask = "flow_boundary
 struct TerrainPatchRequest {
     cubey::procedural::PatchDomain2D domain{};
     std::string recipe_id{std::string(kTerrainRecipeUplandCatchmentV1)};
-    std::uint32_t generator_revision = kTerrainGeneratorRevisionV1;
+    std::uint32_t generator_revision = kTerrainUplandCatchmentRevision;
 };
 
 struct TerrainFieldSummary {

@@ -239,6 +239,12 @@ void test_patch_determinism_and_seed_variation() {
         cubey::projects::terrain::generate_terrain_patch(request);
     require(first.summary.content_hash != changed.summary.content_hash,
             "terrain seed should change the product hash");
+
+    request.domain.seed = first.request.domain.seed + (1ULL << 32U);
+    const cubey::projects::terrain::TerrainPatchProduct upper_bits_changed =
+        cubey::projects::terrain::generate_terrain_patch(request);
+    require(first.summary.content_hash != upper_bits_changed.summary.content_hash,
+            "terrain seed upper bits should change the product hash");
 }
 
 void test_adjacent_patch_source_seam() {

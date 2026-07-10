@@ -3,6 +3,7 @@
 #include "terrain_patch.h"
 
 #include <cubey/procedural/field_2d.h>
+#include <cubey/procedural/seed.h>
 
 #include <algorithm>
 #include <cmath>
@@ -46,14 +47,18 @@ struct NoiseSample {
 }
 
 [[nodiscard]] float seed_component(std::uint64_t seed, int shift, float scale) {
-    const std::uint64_t bits = (seed >> shift) & 0xffffULL;
-    return (static_cast<float>(bits) / 65535.0F) * scale;
+    constexpr std::uint64_t kMask24 = 0x00ff'ffffULL;
+    constexpr float kMask24F = 16'777'215.0F;
+    const std::uint64_t bits = (seed >> shift) & kMask24;
+    return (static_cast<float>(bits) / kMask24F) * scale;
 }
 
 [[nodiscard]] Vec2 source_seed(std::uint64_t seed) {
+    const std::uint64_t mixed =
+        cubey::procedural::derive_seed(seed, "terrain.upland-catchment-v1.source");
     return {
-        .x = seed_component(seed, 0, 17.0F),
-        .y = seed_component(seed, 16, 31.0F),
+        .x = seed_component(mixed, 0, 17.0F),
+        .y = seed_component(mixed, 32, 31.0F),
     };
 }
 

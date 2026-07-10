@@ -55,7 +55,7 @@ TerrainPatchRequest default_terrain_patch_request() {
                 .space = cubey::procedural::ProceduralDomainSpace::World,
             },
         .recipe_id = std::string(kTerrainRecipeUplandCatchmentV1),
-        .generator_revision = kTerrainGeneratorRevisionV1,
+        .generator_revision = kTerrainUplandCatchmentRevision,
     };
 }
 
@@ -81,8 +81,8 @@ void validate_terrain_patch_request(const TerrainPatchRequest& request) {
     if (request.recipe_id != kTerrainRecipeUplandCatchmentV1) {
         throw std::runtime_error("terrain v1 recipe must be upland-catchment-v1");
     }
-    if (request.generator_revision != kTerrainGeneratorRevisionV1) {
-        throw std::runtime_error("terrain v1 generator revision must be 1");
+    if (request.generator_revision != kTerrainUplandCatchmentRevision) {
+        throw std::runtime_error("upland-catchment-v1 generator revision must be 2");
     }
 }
 
