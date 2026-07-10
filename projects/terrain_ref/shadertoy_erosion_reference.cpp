@@ -224,14 +224,15 @@ Vec2& operator+=(Vec2& lhs, Vec2 rhs) {
     return {.value = value, .gradient = gradient};
 }
 
-[[nodiscard]] HeightSlope filtered_mountain(Vec2 world, Vec2 seed, HeightSlope base) {
+[[nodiscard]] HeightSlope filtered_source(Vec2 world, Vec2 seed, HeightSlope base,
+                                          float activity) {
     HeightSlope filtered = base;
     float scale_m = kErosionScaleM;
     float strength_m = kErosionStrengthM;
+    const float bounded_activity = std::clamp(activity, 0.0F, 1.0F);
     for (int octave = 0; octave < kErosionOctaves; ++octave) {
         const float slope_gate = smoothstep(0.025F, 0.32F, length(filtered.gradient));
-        const float mountain_gate = smoothstep(420.0F, 1180.0F, base.height);
-        const float gate = slope_gate * mountain_gate;
+        const float gate = slope_gate * bounded_activity;
         const Vec2 octave_seed = seed + Vec2{.x = 101.0F + static_cast<float>(octave) * 37.0F,
                                              .y = -131.0F - static_cast<float>(octave) * 29.0F};
         const DirectionalSample gully =
@@ -247,12 +248,16 @@ Vec2& operator+=(Vec2& lhs, Vec2 rhs) {
 
 } // namespace
 
-ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(float world_x, float world_z,
-                                                                   std::uint64_t seed) {
+ShadertoyErosionReferenceSample shadertoy_erosion_filter_sample(
+    float world_x, float world_z, std::uint64_t seed, ShadertoyErosionSourceSample source,
+    float activity) {
     const Vec2 world{.x = world_x, .y = world_z};
     const Vec2 seed_components = seed_value(seed);
-    const HeightSlope base = base_mountain(world, seed_components);
-    const HeightSlope filtered = filtered_mountain(world, seed_components, base);
+    const HeightSlope base{
+        .height = source.height_m,
+        .gradient = {.x = source.gradient_x, .y = source.gradient_z},
+    };
+    const HeightSlope filtered = filtered_source(world, seed_components, base, activity);
     return {
         .base_height_m = base.height,
         .filtered_height_m = filtered.height,
@@ -262,6 +267,20 @@ ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(float world_x
         .gradient_x = filtered.gradient.x,
         .gradient_z = filtered.gradient.y,
     };
+}
+
+ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(float world_x, float world_z,
+                                                                   std::uint64_t seed) {
+    const Vec2 world{.x = world_x, .y = world_z};
+    const Vec2 seed_components = seed_value(seed);
+    const HeightSlope base = base_mountain(world, seed_components);
+    const float mountain_activity = smoothstep(420.0F, 1180.0F, base.height);
+    return shadertoy_erosion_filter_sample(
+        world_x, world_z, seed,
+        {.height_m = base.height,
+         .gradient_x = base.gradient.x,
+         .gradient_z = base.gradient.y},
+        mountain_activity);
 }
 
 float shadertoy_erosion_reference_height(float world_x, float world_z, std::uint64_t seed,

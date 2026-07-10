@@ -350,6 +350,7 @@ void test_shadertoy_biome_reference_sampling_is_deterministic() {
 }
 
 void test_shadertoy_erosion_reference_sampling() {
+    using cubey::projects::terrain_ref::ShadertoyErosionSourceSample;
     using cubey::projects::terrain_ref::ShadertoyErosionReferenceSurface;
     constexpr std::uint64_t seed = 24680U;
     const auto sample =
@@ -402,6 +403,39 @@ void test_shadertoy_erosion_reference_sampling() {
                                                                                seed);
     require(normal_cos_v > 0.0F && normal_cos_v <= 1.0F,
             "erosion reference normal cosine should be normalized");
+
+    const ShadertoyErosionSourceSample generic_source{
+        .height_m = 825.0F,
+        .gradient_x = 0.24F,
+        .gradient_z = -0.13F,
+    };
+    const auto generic = cubey::projects::terrain_ref::shadertoy_erosion_filter_sample(
+        2317.0F, -1489.0F, seed, generic_source);
+    const auto generic_repeated =
+        cubey::projects::terrain_ref::shadertoy_erosion_filter_sample(
+            2317.0F, -1489.0F, seed, generic_source);
+    const auto generic_changed_seed =
+        cubey::projects::terrain_ref::shadertoy_erosion_filter_sample(
+            2317.0F, -1489.0F, seed + 1U, generic_source);
+    const auto inactive = cubey::projects::terrain_ref::shadertoy_erosion_filter_sample(
+        2317.0F, -1489.0F, seed, generic_source, 0.0F);
+    require_near(generic.filtered_height_m, generic_repeated.filtered_height_m, 0.0001F,
+                 "generic erosion filtering should be deterministic");
+    require_near(generic.base_height_m, generic_source.height_m, 0.0001F,
+                 "generic erosion filtering should preserve its source height");
+    require_near(generic.base_gradient_x, generic_source.gradient_x, 0.0001F,
+                 "generic erosion filtering should preserve its source x gradient");
+    require_near(generic.base_gradient_z, generic_source.gradient_z, 0.0001F,
+                 "generic erosion filtering should preserve its source z gradient");
+    require(std::abs(generic.filtered_height_m - generic_changed_seed.filtered_height_m) >
+                0.0001F,
+            "generic erosion filtering should respond to seed changes");
+    require_near(inactive.filtered_height_m, generic_source.height_m, 0.0001F,
+                 "zero activity should preserve source height");
+    require_near(inactive.gradient_x, generic_source.gradient_x, 0.0001F,
+                 "zero activity should preserve source x gradient");
+    require_near(inactive.gradient_z, generic_source.gradient_z, 0.0001F,
+                 "zero activity should preserve source z gradient");
 }
 
 } // namespace

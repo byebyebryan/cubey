@@ -163,15 +163,15 @@ ShadertoyErosionDirectionalSample shadertoy_erosion_directional_cells(
     return ShadertoyErosionDirectionalSample(value, gradient);
 }
 
-ShadertoyErosionHeightSlope shadertoy_erosion_filtered_mountain(
-    vec2 world, vec2 seed, ShadertoyErosionHeightSlope base) {
+ShadertoyErosionHeightSlope shadertoy_erosion_filtered_source(
+    vec2 world, vec2 seed, ShadertoyErosionHeightSlope base, float activity) {
     ShadertoyErosionHeightSlope filtered = base;
     float scale_m = SHADERTOY_EROSION_SCALE_M;
     float strength_m = SHADERTOY_EROSION_STRENGTH_M;
+    float bounded_activity = clamp(activity, 0.0, 1.0);
     for (int octave = 0; octave < SHADERTOY_EROSION_OCTAVES; ++octave) {
         float slope_gate = smoothstep(0.025, 0.32, length(filtered.gradient));
-        float mountain_gate = smoothstep(420.0, 1180.0, base.height);
-        float gate = slope_gate * mountain_gate;
+        float gate = slope_gate * bounded_activity;
         vec2 octave_seed = seed + vec2(101.0 + float(octave) * 37.0,
             -131.0 - float(octave) * 29.0);
         ShadertoyErosionDirectionalSample gully = shadertoy_erosion_directional_cells(
@@ -185,11 +185,18 @@ ShadertoyErosionHeightSlope shadertoy_erosion_filtered_mountain(
     return filtered;
 }
 
-ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(vec2 world, vec2 seed) {
-    ShadertoyErosionHeightSlope base = shadertoy_erosion_base_mountain(world, seed);
-    ShadertoyErosionHeightSlope filtered = shadertoy_erosion_filtered_mountain(world, seed, base);
+ShadertoyErosionReferenceSample shadertoy_erosion_filter_sample(
+    vec2 world, vec2 seed, ShadertoyErosionHeightSlope base, float activity) {
+    ShadertoyErosionHeightSlope filtered =
+        shadertoy_erosion_filtered_source(world, seed, base, activity);
     return ShadertoyErosionReferenceSample(base.height, filtered.height,
         base.height - filtered.height, base.gradient, filtered.gradient);
+}
+
+ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(vec2 world, vec2 seed) {
+    ShadertoyErosionHeightSlope base = shadertoy_erosion_base_mountain(world, seed);
+    float mountain_activity = smoothstep(420.0, 1180.0, base.height);
+    return shadertoy_erosion_filter_sample(world, seed, base, mountain_activity);
 }
 
 float shadertoy_erosion_reference_height(vec2 world, vec2 seed, bool filtered_surface) {

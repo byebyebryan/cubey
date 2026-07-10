@@ -24,6 +24,15 @@ struct ShadertoyErosionReferenceSample {
     float gradient_z = 0.0F;
 };
 
+struct ShadertoyErosionSourceSample {
+    float height_m = 0.0F;
+    float gradient_x = 0.0F;
+    float gradient_z = 0.0F;
+};
+
+[[nodiscard]] ShadertoyErosionReferenceSample shadertoy_erosion_filter_sample(
+    float world_x, float world_z, std::uint64_t seed, ShadertoyErosionSourceSample source,
+    float activity = 1.0F);
 [[nodiscard]] ShadertoyErosionReferenceSample
 shadertoy_erosion_reference_sample(float world_x, float world_z, std::uint64_t seed);
 [[nodiscard]] float shadertoy_erosion_reference_height(
