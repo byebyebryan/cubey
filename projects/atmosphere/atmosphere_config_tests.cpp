@@ -1562,6 +1562,8 @@ int main() {
                      "star helpers should map directions through an equal-area spherical field");
     require_contains(atmosphere_stars_source, "star_wrap_spherical_cell",
                      "star helpers should wrap longitude and reflect pole neighbors");
+    require_contains(atmosphere_stars_source, "CUBEY_STAR_DISPLAY_GAIN = 2.4",
+                     "star helpers should preserve capture-readable subpixel radiance");
     require_not_contains(atmosphere_stars_source, "star_cube_uv",
                          "star helpers should not retain independently seeded cube faces");
     require_contains(atmosphere_sun_source, "sun_disk_luminance",

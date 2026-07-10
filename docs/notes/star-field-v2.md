@@ -67,18 +67,21 @@ The shader resolves stars in angular space against a shared per-pixel footprint
 and samples at most the current spherical cell plus one neighbor per axis. The
 longitude seam wraps periodically and pole crossings reflect into the opposite
 longitude hemisphere. Galactic density is evaluated once per pixel and remains
-a population bias rather than a second visible Milky Way layer.
+a population bias rather than a second visible Milky Way layer. A `2.4` display
+gain keeps that subpixel energy readable in SDR captures while the existing star
+intensity control remains the user-facing scale.
 
 Celestial content now retains the physical camera ray when the atmosphere
 background path repairs horizon rays for scattering. This prevents the horizon
 repair from stretching stars radially in orbital views while leaving the
 atmosphere classifier and transmittance path unchanged.
 
-The final full-resolution review is under `outputs/star-field-v2-final/`. It
-contains the surface response matrix, yaw sweep, planet surface/orbit checks,
-and a 240-frame sidereal-motion capture. Review found no directional seam or
-lattice, the human/camera distinction remains controlled, pollution and moon
-washout suppress the surface field, and orbital stars remain round.
+The final full-resolution review is under
+`outputs/star-field-v2-final-readable/`. It contains the surface response
+matrix, yaw sweep, planet surface/orbit checks, and a 240-frame sidereal-motion
+capture. Review found no directional seam or lattice, the human/camera
+distinction remains controlled, pollution and moon washout suppress the surface
+field, and orbital stars remain round.
 
 `projects/atmosphere/profile_star_field.sh` owns the repeatable isolated timing
 review. The accepted 1920x1080, 600-frame, three-repeat run is under

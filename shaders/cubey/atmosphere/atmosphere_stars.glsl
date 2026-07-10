@@ -3,6 +3,7 @@
 
 const float CUBEY_STAR_PI = 3.14159265359;
 const float CUBEY_STAR_TAU = 6.28318530718;
+const float CUBEY_STAR_DISPLAY_GAIN = 2.4;
 
 struct StarSampleContext {
     vec3 direction;
@@ -227,7 +228,7 @@ vec3 star_field_radiance(vec3 sky_direction, float limiting_magnitude, float cam
         radiance +=
             faint_star_radiance(sample_context, limiting_magnitude, galactic_density_value);
     }
-    return radiance;
+    return radiance * CUBEY_STAR_DISPLAY_GAIN;
 }
 
 #endif // CUBEY_ATMOSPHERE_STARS_GLSL

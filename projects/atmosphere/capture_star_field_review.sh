@@ -95,7 +95,7 @@ if command -v magick >/dev/null 2>&1; then
     for index in "${!CAPTURE_FILES[@]}"; do
         montage_inputs+=("-label" "${CAPTURE_LABELS[${index}]}" "${CAPTURE_FILES[${index}]}")
     done
-    magick montage "${montage_inputs[@]}" -geometry 384x216+8+26 -tile 4x \
+    magick montage "${montage_inputs[@]}" -geometry 512x288+8+26 -tile 3x \
         "${OUT_DIR}/contact-sheet.png"
 fi
 
