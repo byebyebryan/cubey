@@ -16,8 +16,12 @@ inline constexpr std::uint32_t kTerrainUplandCatchmentRevision = 2U;
 inline constexpr std::string_view kTerrainRecipeUplandBroadNoiseControlV1 =
     "upland-broad-noise-control-v1";
 inline constexpr std::uint32_t kTerrainUplandBroadNoiseControlRevision = 1U;
+inline constexpr std::string_view kTerrainRecipeUplandLandscapeEvolutionV1 =
+    "upland-landscape-evolution-v1";
+inline constexpr std::uint32_t kTerrainUplandLandscapeEvolutionRevision = 1U;
 inline constexpr std::uint32_t kTerrainDefaultGridSize = 257U;
 inline constexpr std::uint32_t kTerrainProcessHaloSamples = 32U;
+inline constexpr std::uint32_t kTerrainLandscapeProcessHaloSamples = 64U;
 inline constexpr float kTerrainDefaultCellSizeM = 32.0F;
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
 
@@ -26,6 +30,20 @@ inline constexpr std::string_view kTerrainFieldMountainSupport = "mountain_suppo
 inline constexpr std::string_view kTerrainFieldUpliftPotential = "uplift_potential";
 inline constexpr std::string_view kTerrainFieldMacroMass = "macro_mass";
 inline constexpr std::string_view kTerrainFieldBaseReliefM = "base_relief_m";
+inline constexpr std::string_view kTerrainFieldUpliftRateMPerYear = "uplift_rate_m_per_year";
+inline constexpr std::string_view kTerrainFieldProcessDrainageAreaM2 = "process_drainage_area_m2";
+inline constexpr std::string_view kTerrainFieldProcessFlowDirectionX = "process_flow_direction_x";
+inline constexpr std::string_view kTerrainFieldProcessFlowDirectionZ = "process_flow_direction_z";
+inline constexpr std::string_view kTerrainFieldProcessBreachMask = "process_breach_mask";
+inline constexpr std::string_view kTerrainFieldFluvialAdvectionRateMPerYear =
+    "fluvial_advection_rate_m_per_year";
+inline constexpr std::string_view kTerrainFieldHillslopeAdvectionRateMPerYear =
+    "hillslope_advection_rate_m_per_year";
+inline constexpr std::string_view kTerrainFieldThermalActiveMask = "thermal_active_mask";
+inline constexpr std::string_view kTerrainFieldAnalyticalHeightM = "analytical_height_m";
+inline constexpr std::string_view kTerrainFieldAltitudeCorrectionDeltaM =
+    "altitude_correction_delta_m";
+inline constexpr std::string_view kTerrainFieldProcessDeltaM = "process_delta_m";
 inline constexpr std::string_view kTerrainFieldHeightM = "height_m";
 inline constexpr std::string_view kTerrainFieldSlope = "slope";
 inline constexpr std::string_view kTerrainFieldCurvature = "curvature";

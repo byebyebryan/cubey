@@ -22,7 +22,8 @@ namespace {
 TerrainFieldDisplaySpec terrain_field_display_spec(std::string_view field_name,
                                                    const cubey::procedural::ScalarField2D& field) {
     if (field_name == kTerrainFieldSourceHeightM || field_name == kTerrainFieldHeightM ||
-        field_name == kTerrainFieldRoutingSurfaceM) {
+        field_name == kTerrainFieldRoutingSurfaceM ||
+        field_name == kTerrainFieldAnalyticalHeightM) {
         return {.low = 0.0F, .high = 2500.0F};
     }
     if (field_name == kTerrainFieldSlope) {
@@ -48,14 +49,17 @@ TerrainFieldDisplaySpec terrain_field_display_spec(std::string_view field_name,
     if (field_name == kTerrainFieldRoutingFillDeltaM) {
         return {.low = 0.0F, .high = 400.0F};
     }
-    if (field_name == kTerrainFieldFlowDirectionX || field_name == kTerrainFieldFlowDirectionZ) {
+    if (field_name == kTerrainFieldFlowDirectionX || field_name == kTerrainFieldFlowDirectionZ ||
+        field_name == kTerrainFieldProcessFlowDirectionX ||
+        field_name == kTerrainFieldProcessFlowDirectionZ) {
         return {
             .low = -1.0F,
             .high = 1.0F,
             .palette = TerrainFieldDisplayPalette::Diverging,
         };
     }
-    if (field_name == kTerrainFieldContributingAreaM2) {
+    if (field_name == kTerrainFieldContributingAreaM2 ||
+        field_name == kTerrainFieldProcessDrainageAreaM2) {
         const float cell_area = field.desc().cell_size * field.desc().cell_size;
         return {
             .low = std::max(cell_area, 1.0F),
@@ -65,6 +69,31 @@ TerrainFieldDisplaySpec terrain_field_display_spec(std::string_view field_name,
     }
     if (field_name == kTerrainFieldStreamOrder) {
         return {.low = 1.0F, .high = 10.0F};
+    }
+    if (field_name == kTerrainFieldUpliftRateMPerYear) {
+        return {.low = 0.0F, .high = 1.0e-3F};
+    }
+    if (field_name == kTerrainFieldFluvialAdvectionRateMPerYear ||
+        field_name == kTerrainFieldHillslopeAdvectionRateMPerYear) {
+        return {
+            .low = 1.0e-10F,
+            .high = 1.0e-2F,
+            .scale = TerrainFieldDisplayScale::Logarithmic,
+        };
+    }
+    if (field_name == kTerrainFieldAltitudeCorrectionDeltaM) {
+        return {
+            .low = -400.0F,
+            .high = 400.0F,
+            .palette = TerrainFieldDisplayPalette::Diverging,
+        };
+    }
+    if (field_name == kTerrainFieldProcessDeltaM) {
+        return {
+            .low = -2000.0F,
+            .high = 2000.0F,
+            .palette = TerrainFieldDisplayPalette::Diverging,
+        };
     }
     if (unit_field(field_name)) {
         return {.low = 0.0F, .high = 1.0F};

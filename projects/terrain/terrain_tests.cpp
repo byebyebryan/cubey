@@ -1,5 +1,6 @@
 #include "terrain_export.h"
 #include "terrain_hydrology.h"
+#include "terrain_landscape_evolution.h"
 #include "terrain_landscape_graph.h"
 #include "terrain_mesh.h"
 #include "terrain_patch.h"
@@ -298,6 +299,108 @@ void test_landscape_upsampling_jitter_is_deterministic() {
             "landscape upsampling jitter should be deterministic");
     require(!std::equal(first.values().begin(), first.values().end(), changed.values().begin()),
             "landscape upsampling jitter should consume the world seed");
+}
+
+void test_landscape_evolution_age_zero_preserves_initial_height() {
+    cubey::procedural::ScalarField2D height = synthetic_field(17U, 100.0F);
+    cubey::procedural::ScalarField2D uplift = synthetic_field(17U, 100.0F);
+    uplift.fill(1.0e-3F);
+    for (std::uint32_t y = 0U; y < 17U; ++y) {
+        for (std::uint32_t x = 0U; x < 17U; ++x) {
+            height.at(x, y) = 1000.0F - (static_cast<float>(x + y) * 5.0F);
+        }
+    }
+    cubey::projects::terrain::TerrainLandscapeEvolutionConfig config{};
+    config.seed = 9012U;
+    config.age_years = 0.0;
+    config.multigrid_levels = 1U;
+    config.iterations_per_level = 1U;
+    config.relaxation = 1.0F;
+    config.altitude_correction_iterations = 0U;
+    const auto result = cubey::projects::terrain::evolve_terrain_landscape(height, uplift, config);
+    for (std::size_t index = 0U; index < height.sample_count(); ++index) {
+        require_near(result.height_m.values()[index], height.values()[index], 0.001F,
+                     "zero-age landscape evolution should preserve initial elevation");
+    }
+}
+
+void test_landscape_evolution_exposes_physical_processes() {
+    cubey::procedural::ScalarField2D height = synthetic_field(17U, 100.0F);
+    cubey::procedural::ScalarField2D uplift = synthetic_field(17U, 100.0F);
+    uplift.fill(1.0e-3F);
+    for (std::uint32_t y = 0U; y < 17U; ++y) {
+        for (std::uint32_t x = 0U; x < 17U; ++x) {
+            height.at(x, y) =
+                5000.0F - (static_cast<float>(x) * 600.0F) - (static_cast<float>(y) * 10.0F);
+        }
+    }
+    cubey::projects::terrain::TerrainLandscapeEvolutionConfig config{};
+    config.seed = 9012U;
+    config.multigrid_levels = 1U;
+    config.iterations_per_level = 2U;
+    config.relaxation = 1.0F;
+    config.altitude_correction_iterations = 0U;
+    const auto result = cubey::projects::terrain::evolve_terrain_landscape(height, uplift, config);
+    require(result.unresolved_sink_count == 0U,
+            "landscape evolution should retain open-boundary drainage");
+    require(result.process_drainage_area_m2.summarize().max > 10'000.0F,
+            "landscape evolution should accumulate physical drainage area");
+    require(result.fluvial_advection_rate_m_per_year.summarize().max > 0.0F,
+            "landscape evolution should expose fluvial advection speed");
+    require(result.hillslope_advection_rate_m_per_year.summarize().max > 0.0F,
+            "landscape evolution should expose hillslope advection speed");
+    require(result.thermal_active_mask.summarize().max == 1.0F,
+            "steep terrain should activate thermal erosion");
+    require(!std::equal(result.height_m.values().begin(), result.height_m.values().end(),
+                        height.values().begin()),
+            "positive-age landscape evolution should change elevation");
+}
+
+void test_landscape_evolution_recipe_contract() {
+    cubey::projects::terrain::TerrainPatchRequest request =
+        cubey::projects::terrain::default_terrain_patch_request();
+    request.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeUplandLandscapeEvolutionV1);
+    request.generator_revision = cubey::projects::terrain::kTerrainUplandLandscapeEvolutionRevision;
+    request.domain.interior_grid.width = 17U;
+    request.domain.interior_grid.height = 17U;
+    request.domain.interior_grid.cell_size = 100.0F;
+    request.domain.seed = 9012U;
+    const auto first = cubey::projects::terrain::generate_terrain_patch(request);
+    const auto repeat = cubey::projects::terrain::generate_terrain_patch(request);
+    require(first.fields.field_count() == 29U,
+            "landscape recipe should publish source, process, and diagnostic fields");
+    for (const std::string_view name : {
+             cubey::projects::terrain::kTerrainFieldUpliftRateMPerYear,
+             cubey::projects::terrain::kTerrainFieldProcessDrainageAreaM2,
+             cubey::projects::terrain::kTerrainFieldProcessFlowDirectionX,
+             cubey::projects::terrain::kTerrainFieldProcessFlowDirectionZ,
+             cubey::projects::terrain::kTerrainFieldProcessBreachMask,
+             cubey::projects::terrain::kTerrainFieldFluvialAdvectionRateMPerYear,
+             cubey::projects::terrain::kTerrainFieldHillslopeAdvectionRateMPerYear,
+             cubey::projects::terrain::kTerrainFieldThermalActiveMask,
+             cubey::projects::terrain::kTerrainFieldAnalyticalHeightM,
+             cubey::projects::terrain::kTerrainFieldAltitudeCorrectionDeltaM,
+             cubey::projects::terrain::kTerrainFieldProcessDeltaM,
+         }) {
+        require(first.fields.has_field(name),
+                "landscape recipe is missing a required process field");
+    }
+    require(first.summary.content_hash == repeat.summary.content_hash,
+            "landscape recipe should be deterministic");
+    require(
+        !std::equal(
+            first.fields.field(cubey::projects::terrain::kTerrainFieldSourceHeightM)
+                .values()
+                .begin(),
+            first.fields.field(cubey::projects::terrain::kTerrainFieldSourceHeightM).values().end(),
+            first.fields.field(cubey::projects::terrain::kTerrainFieldHeightM).values().begin()),
+        "landscape recipe should evolve rather than republish its source");
+
+    request.domain.seed += 1ULL << 32U;
+    const auto changed = cubey::projects::terrain::generate_terrain_patch(request);
+    require(first.summary.content_hash != changed.summary.content_hash,
+            "landscape recipe should consume the upper seed bits");
 }
 
 void test_patch_determinism_and_seed_variation() {
@@ -611,6 +714,9 @@ int main() {
         test_landscape_graph_is_deterministic_and_seed_sensitive();
         test_landscape_multigrid_resampling_preserves_constant_fields();
         test_landscape_upsampling_jitter_is_deterministic();
+        test_landscape_evolution_age_zero_preserves_initial_height();
+        test_landscape_evolution_exposes_physical_processes();
+        test_landscape_evolution_recipe_contract();
         test_scalar_export_and_manifest();
         test_raw_scalar_export_is_little_endian_row_major();
         test_fixed_field_display_ranges();

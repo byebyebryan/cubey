@@ -2,6 +2,7 @@
 
 #include "terrain_hydrology.h"
 #include "upland_broad_noise_source.h"
+#include "upland_landscape_evolution_source.h"
 #include "upland_mountain_source.h"
 
 #include <cubey/procedural/field_metadata.h>
@@ -67,6 +68,9 @@ std::uint32_t terrain_generator_revision_for_recipe(std::string_view recipe_id) 
     if (recipe_id == kTerrainRecipeUplandBroadNoiseControlV1) {
         return kTerrainUplandBroadNoiseControlRevision;
     }
+    if (recipe_id == kTerrainRecipeUplandLandscapeEvolutionV1) {
+        return kTerrainUplandLandscapeEvolutionRevision;
+    }
     throw std::runtime_error("unknown terrain recipe: " + std::string(recipe_id));
 }
 
@@ -98,26 +102,37 @@ void validate_terrain_patch_request(const TerrainPatchRequest& request) {
 
 TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request) {
     validate_terrain_patch_request(request);
+    cubey::procedural::PatchDomain2D generation_domain = request.domain;
+    if (request.recipe_id == kTerrainRecipeUplandLandscapeEvolutionV1) {
+        generation_domain.border_samples = kTerrainLandscapeProcessHaloSamples;
+    }
     const cubey::procedural::Grid2DDesc expanded_grid =
-        cubey::procedural::patch_sample_grid(request.domain);
-    cubey::procedural::FieldSet2D source =
-        request.recipe_id == kTerrainRecipeUplandCatchmentV1
-            ? sample_upland_mountain_fields_v1(expanded_grid, request.domain.seed)
-            : sample_upland_broad_noise_fields_v1(expanded_grid, request.domain.seed);
+        cubey::procedural::patch_sample_grid(generation_domain);
+    cubey::procedural::FieldSet2D source(expanded_grid);
+    if (request.recipe_id == kTerrainRecipeUplandCatchmentV1) {
+        source = sample_upland_mountain_fields_v1(expanded_grid, request.domain.seed);
+    } else if (request.recipe_id == kTerrainRecipeUplandBroadNoiseControlV1) {
+        source = sample_upland_broad_noise_fields_v1(expanded_grid, request.domain.seed);
+    } else {
+        source = sample_upland_landscape_evolution_fields_v1(expanded_grid, request.domain.seed);
+    }
     const cubey::procedural::ScalarField2D& source_height =
         source.field(kTerrainFieldSourceHeightM);
+    const cubey::procedural::ScalarField2D& final_height =
+        source.has_field(kTerrainFieldHeightM) ? source.field(kTerrainFieldHeightM) : source_height;
     const cubey::procedural::SlopeCurvature2D derivatives =
-        cubey::procedural::compute_slope_curvature(source_height);
+        cubey::procedural::compute_slope_curvature(final_height);
     const cubey::procedural::LocalRelief2D relief =
-        cubey::procedural::compute_local_relief(source_height, 4U);
+        cubey::procedural::compute_local_relief(final_height, 4U);
     TerrainHydrologyResult hydrology =
-        compute_regional_hydrology(source_height, request.domain.border_samples);
+        compute_regional_hydrology(final_height, generation_domain.border_samples);
 
     cubey::procedural::FieldSet2D fields(request.domain.interior_grid);
     fields.add_field(std::string(kTerrainFieldSourceHeightM),
-                     crop_to_interior(source_height, request.domain));
-    fields.add_field(std::string(kTerrainFieldMountainSupport),
-                     crop_to_interior(source.field(kTerrainFieldMountainSupport), request.domain));
+                     crop_to_interior(source_height, generation_domain));
+    fields.add_field(
+        std::string(kTerrainFieldMountainSupport),
+        crop_to_interior(source.field(kTerrainFieldMountainSupport), generation_domain));
     for (const std::string_view name : {
              kTerrainFieldUpliftPotential,
              kTerrainFieldMacroMass,
@@ -125,35 +140,53 @@ TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request) {
          }) {
         if (source.has_field(name)) {
             fields.add_field(std::string(name),
-                             crop_to_interior(source.field(name), request.domain));
+                             crop_to_interior(source.field(name), generation_domain));
+        }
+    }
+    for (const std::string_view name : {
+             kTerrainFieldUpliftRateMPerYear,
+             kTerrainFieldProcessDrainageAreaM2,
+             kTerrainFieldProcessFlowDirectionX,
+             kTerrainFieldProcessFlowDirectionZ,
+             kTerrainFieldProcessBreachMask,
+             kTerrainFieldFluvialAdvectionRateMPerYear,
+             kTerrainFieldHillslopeAdvectionRateMPerYear,
+             kTerrainFieldThermalActiveMask,
+             kTerrainFieldAnalyticalHeightM,
+             kTerrainFieldAltitudeCorrectionDeltaM,
+             kTerrainFieldProcessDeltaM,
+         }) {
+        if (source.has_field(name)) {
+            fields.add_field(std::string(name),
+                             crop_to_interior(source.field(name), generation_domain));
         }
     }
     fields.add_field(std::string(kTerrainFieldHeightM),
-                     crop_to_interior(source_height, request.domain));
+                     crop_to_interior(final_height, generation_domain));
     fields.add_field(std::string(kTerrainFieldSlope),
-                     crop_to_interior(derivatives.slope, request.domain));
+                     crop_to_interior(derivatives.slope, generation_domain));
     fields.add_field(std::string(kTerrainFieldCurvature),
-                     crop_to_interior(derivatives.curvature, request.domain));
+                     crop_to_interior(derivatives.curvature, generation_domain));
     fields.add_field(std::string(kTerrainFieldLocalReliefM),
-                     crop_to_interior(relief.local_span, request.domain));
+                     crop_to_interior(relief.local_span, generation_domain));
     fields.add_field(std::string(kTerrainFieldRoutingSurfaceM),
-                     crop_to_interior(hydrology.routing_surface_m, request.domain));
+                     crop_to_interior(hydrology.routing_surface_m, generation_domain));
     fields.add_field(std::string(kTerrainFieldRoutingFillDeltaM),
-                     crop_to_interior(hydrology.routing_fill_delta_m, request.domain));
+                     crop_to_interior(hydrology.routing_fill_delta_m, generation_domain));
     fields.add_field(std::string(kTerrainFieldFlowDirectionX),
-                     crop_to_interior(hydrology.flow_direction_x, request.domain));
+                     crop_to_interior(hydrology.flow_direction_x, generation_domain));
     fields.add_field(std::string(kTerrainFieldFlowDirectionZ),
-                     crop_to_interior(hydrology.flow_direction_z, request.domain));
+                     crop_to_interior(hydrology.flow_direction_z, generation_domain));
     fields.add_field(std::string(kTerrainFieldContributingAreaM2),
-                     crop_to_interior(hydrology.contributing_area_m2, request.domain));
+                     crop_to_interior(hydrology.contributing_area_m2, generation_domain));
     fields.add_field(std::string(kTerrainFieldStreamOrder),
-                     crop_to_interior(hydrology.stream_order, request.domain));
+                     crop_to_interior(hydrology.stream_order, generation_domain));
     fields.add_field(std::string(kTerrainFieldDischargeProxy),
-                     crop_to_interior(hydrology.discharge_proxy, request.domain));
+                     crop_to_interior(hydrology.discharge_proxy, generation_domain));
     fields.add_field(std::string(kTerrainFieldSinkMask),
-                     crop_to_interior(hydrology.sink_mask, request.domain));
+                     crop_to_interior(hydrology.sink_mask, generation_domain));
     fields.add_field(std::string(kTerrainFieldFlowBoundaryMask),
-                     crop_to_interior(hydrology.flow_boundary_mask, request.domain));
+                     crop_to_interior(hydrology.flow_boundary_mask, generation_domain));
 
     TerrainPatchProduct result{
         .request = request,

@@ -32,6 +32,11 @@ struct Rgb {
     float b = 0.0F;
 };
 
+struct GradientOrientationMetrics {
+    std::array<double, 16U> bins{};
+    double anisotropy = 0.0;
+};
+
 [[nodiscard]] std::uint8_t byte(float value) {
     return static_cast<std::uint8_t>(std::round(cubey::procedural::saturate(value) * 255.0F));
 }
@@ -99,28 +104,19 @@ distribution_json(const cubey::procedural::ScalarFieldDistribution& distribution
                : 0.0;
 }
 
-[[nodiscard]] nlohmann::json review_metrics_json(const TerrainPatchProduct& product) {
-    const cubey::procedural::ScalarField2D& fill =
-        product.fields.field(kTerrainFieldRoutingFillDeltaM);
-    const cubey::procedural::ScalarField2D& source =
-        product.fields.field(kTerrainFieldSourceHeightM);
-    const double cell_area = static_cast<double>(fill.desc().cell_size) * fill.desc().cell_size;
-    double fill_volume = 0.0;
-    for (const float value : fill.values()) {
-        fill_volume += static_cast<double>(std::max(value, 0.0F)) * cell_area;
-    }
-
+[[nodiscard]] GradientOrientationMetrics
+gradient_orientation_metrics(const cubey::procedural::ScalarField2D& field) {
     constexpr std::size_t kOrientationBinCount = 16U;
     constexpr float kPi = 3.14159265358979323846F;
-    std::array<double, kOrientationBinCount> orientation_bins{};
+    GradientOrientationMetrics result;
     double orientation_weight = 0.0;
-    for (std::uint32_t y = 1U; y + 1U < source.desc().height; ++y) {
-        for (std::uint32_t x = 1U; x + 1U < source.desc().width; ++x) {
+    for (std::uint32_t y = 1U; y + 1U < field.desc().height; ++y) {
+        for (std::uint32_t x = 1U; x + 1U < field.desc().width; ++x) {
             const float dx =
-                (source.at(x + 1U, y) - source.at(x - 1U, y)) / (2.0F * source.desc().cell_size);
+                (field.at(x + 1U, y) - field.at(x - 1U, y)) / (2.0F * field.desc().cell_size);
             const float dy =
-                (source.at(x, y + 1U) - source.at(x, y - 1U)) / (2.0F * source.desc().cell_size);
-            const float magnitude = std::sqrt((dx * dx) + (dy * dy));
+                (field.at(x, y + 1U) - field.at(x, y - 1U)) / (2.0F * field.desc().cell_size);
+            const float magnitude = std::hypot(dx, dy);
             if (magnitude < 0.01F) {
                 continue;
             }
@@ -135,26 +131,111 @@ distribution_json(const cubey::procedural::ScalarFieldDistribution& distribution
                 std::min(static_cast<std::size_t>((angle / kPi) * kOrientationBinCount),
                          kOrientationBinCount - 1U);
             const double weight = std::min(static_cast<double>(magnitude), 2.0);
-            orientation_bins[bin] += weight;
+            result.bins[bin] += weight;
             orientation_weight += weight;
         }
     }
     if (orientation_weight > 0.0) {
-        for (double& value : orientation_bins) {
+        for (double& value : result.bins) {
             value /= orientation_weight;
         }
     }
-    const double max_orientation =
-        *std::max_element(orientation_bins.begin(), orientation_bins.end());
+    result.anisotropy =
+        *std::max_element(result.bins.begin(), result.bins.end()) * kOrientationBinCount;
+    return result;
+}
 
-    return {
+[[nodiscard]] nlohmann::json process_graph_metrics_json(const TerrainPatchProduct& product) {
+    if (!product.fields.has_field(kTerrainFieldProcessFlowDirectionX) ||
+        !product.fields.has_field(kTerrainFieldProcessFlowDirectionZ)) {
+        return nlohmann::json::object();
+    }
+    const cubey::procedural::ScalarField2D& height = product.fields.field(kTerrainFieldHeightM);
+    const cubey::procedural::ScalarField2D& flow_x =
+        product.fields.field(kTerrainFieldProcessFlowDirectionX);
+    const cubey::procedural::ScalarField2D& flow_z =
+        product.fields.field(kTerrainFieldProcessFlowDirectionZ);
+    std::size_t unresolved = 0U;
+    std::size_t severe_discontinuities = 0U;
+    std::size_t interior_count = 0U;
+    for (std::uint32_t y = 1U; y + 1U < height.desc().height; ++y) {
+        for (std::uint32_t x = 1U; x + 1U < height.desc().width; ++x) {
+            ++interior_count;
+            const int dx = static_cast<int>(std::lround(flow_x.at(x, y)));
+            const int dz = static_cast<int>(std::lround(flow_z.at(x, y)));
+            if (dx == 0 && dz == 0) {
+                ++unresolved;
+                continue;
+            }
+            const auto receiver_x = static_cast<std::uint32_t>(static_cast<int>(x) + dx);
+            const auto receiver_y = static_cast<std::uint32_t>(static_cast<int>(y) + dz);
+            const float receiver_drop =
+                std::max(height.at(x, y) - height.at(receiver_x, receiver_y), 0.0F);
+            bool severe = false;
+            constexpr std::array<int, 4U> offsets_x{1, 0, -1, 0};
+            constexpr std::array<int, 4U> offsets_y{0, 1, 0, -1};
+            for (std::size_t direction = 0U; direction < offsets_x.size(); ++direction) {
+                const int neighbor_dx = offsets_x[direction];
+                const int neighbor_dz = offsets_y[direction];
+                if (neighbor_dx == dx && neighbor_dz == dz) {
+                    continue;
+                }
+                const auto nx = static_cast<std::uint32_t>(static_cast<int>(x) + neighbor_dx);
+                const auto ny = static_cast<std::uint32_t>(static_cast<int>(y) + neighbor_dz);
+                const int neighbor_flow_x = static_cast<int>(std::lround(flow_x.at(nx, ny)));
+                const int neighbor_flow_z = static_cast<int>(std::lround(flow_z.at(nx, ny)));
+                if (static_cast<int>(nx) + neighbor_flow_x == static_cast<int>(x) &&
+                    static_cast<int>(ny) + neighbor_flow_z == static_cast<int>(y)) {
+                    continue;
+                }
+                if (height.at(x, y) - height.at(nx, ny) - receiver_drop > 100.0F) {
+                    severe = true;
+                    break;
+                }
+            }
+            severe_discontinuities += static_cast<std::size_t>(severe);
+        }
+    }
+    const double denominator = static_cast<double>(std::max(interior_count, std::size_t{1U}));
+    nlohmann::json result{
+        {"process_unresolved_sink_count", unresolved},
+        {"process_unresolved_sink_coverage", static_cast<double>(unresolved) / denominator},
+        {"process_basin_discontinuity_coverage_gt_100m",
+         static_cast<double>(severe_discontinuities) / denominator},
+    };
+    if (product.fields.has_field(kTerrainFieldThermalActiveMask)) {
+        result["thermal_active_coverage"] =
+            coverage_above(product.fields.field(kTerrainFieldThermalActiveMask), 0.5F);
+    }
+    return result;
+}
+
+[[nodiscard]] nlohmann::json review_metrics_json(const TerrainPatchProduct& product) {
+    const cubey::procedural::ScalarField2D& fill =
+        product.fields.field(kTerrainFieldRoutingFillDeltaM);
+    const cubey::procedural::ScalarField2D& source =
+        product.fields.field(kTerrainFieldSourceHeightM);
+    const double cell_area = static_cast<double>(fill.desc().cell_size) * fill.desc().cell_size;
+    double fill_volume = 0.0;
+    for (const float value : fill.values()) {
+        fill_volume += static_cast<double>(std::max(value, 0.0F)) * cell_area;
+    }
+
+    const GradientOrientationMetrics source_orientation = gradient_orientation_metrics(source);
+    const GradientOrientationMetrics final_orientation =
+        gradient_orientation_metrics(product.fields.field(kTerrainFieldHeightM));
+    nlohmann::json result{
         {"routing_fill_coverage_gt_1m", coverage_above(fill, 1.0F)},
         {"routing_fill_coverage_gt_10m", coverage_above(fill, 10.0F)},
         {"routing_fill_coverage_gt_50m", coverage_above(fill, 50.0F)},
         {"routing_fill_volume_m3", fill_volume},
-        {"source_gradient_orientation_bins", orientation_bins},
-        {"source_gradient_anisotropy", max_orientation * kOrientationBinCount},
+        {"source_gradient_orientation_bins", source_orientation.bins},
+        {"source_gradient_anisotropy", source_orientation.anisotropy},
+        {"final_gradient_orientation_bins", final_orientation.bins},
+        {"final_gradient_anisotropy", final_orientation.anisotropy},
     };
+    result.update(process_graph_metrics_json(product));
+    return result;
 }
 
 [[nodiscard]] nlohmann::json manifest_json(const TerrainPatchProduct& product,
@@ -177,7 +258,8 @@ distribution_json(const cubey::procedural::ScalarFieldDistribution& distribution
         }
         fields[field.name] = std::move(entry);
     }
-    return {
+    const bool landscape = product.request.recipe_id == kTerrainRecipeUplandLandscapeEvolutionV1;
+    nlohmann::json result{
         {"schema", "cubey.terrain.patch.v3"},
         {"recipe_id", product.request.recipe_id},
         {"generator_revision", product.request.generator_revision},
@@ -197,7 +279,9 @@ distribution_json(const cubey::procedural::ScalarFieldDistribution& distribution
              {"origin_x_m", domain.interior_grid.origin_x},
              {"origin_z_m", domain.interior_grid.origin_y},
          }},
-        {"process_halo_samples", domain.border_samples},
+        {"process_halo_samples",
+         landscape ? kTerrainLandscapeProcessHaloSamples : domain.border_samples},
+        {"generation_scope", landscape ? "regional-not-seam-safe" : "bounded-patch"},
         {"hydrology_boundary_policy", "open-boundary-with-halo"},
         {"field_count", product.fields.field_count()},
         {"content_hash", product.summary.content_hash},
@@ -205,6 +289,27 @@ distribution_json(const cubey::procedural::ScalarFieldDistribution& distribution
         {"review_metrics", review_metrics_json(product)},
         {"fields", std::move(fields)},
     };
+    if (landscape) {
+        result["process_model"] = {
+            {"name", "transient-analytical-landscape-evolution"},
+            {"age_years", 1.6e6},
+            {"stream_power_coefficient", 2.0e-5},
+            {"stream_power_area_exponent", 0.4},
+            {"stream_power_slope_exponent", 1.0},
+            {"maximum_uplift_m_per_year", 1.0e-3},
+            {"hillslope_coefficient", 0.1},
+            {"hack_constant", 1.5},
+            {"hack_exponent", 0.6},
+            {"thermal_coefficient", 1.0e-3},
+            {"critical_slope_degrees", 30.0},
+            {"multigrid_levels", 4},
+            {"iterations_per_level", 6},
+            {"relaxation", 0.25},
+            {"altitude_correction_iterations", 50},
+            {"boundary_policy", "open-outer-guard"},
+        };
+    }
+    return result;
 }
 
 void write_binary_file(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) {

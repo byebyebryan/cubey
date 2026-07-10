@@ -6,8 +6,11 @@ the scalar exporter and Vulkan renderer consume that same product.
 
 The default recipe is the corrected `upland-catchment-v1` revision 2 baseline.
 `upland-broad-noise-control-v1` is an OpenSimplex comparison source, not a
-promoted replacement. The default patch is `257x257` at `32 m` per sample with
-a 32-sample process halo. The published product contains only the requested
+promoted replacement. `upland-landscape-evolution-v1` is the finite regional
+candidate: it evolves the broad source through deterministic river trees and a
+transient analytical erosion model. The default patch is `257x257` at `32 m`
+per sample with a 32-sample process halo. The landscape candidate internally
+uses a 64-sample guard. Every published product contains only the requested
 interior.
 
 ## Product Fields
@@ -19,6 +22,16 @@ Source and geometry:
 
 The broad-noise control additionally publishes `uplift_potential`,
 `macro_mass`, and `base_relief_m`.
+
+The landscape candidate additionally publishes physical model inputs and
+process truth:
+
+- `uplift_rate_m_per_year`, `process_drainage_area_m2`;
+- `process_flow_direction_x`, `process_flow_direction_z`,
+  `process_breach_mask`;
+- `fluvial_advection_rate_m_per_year`,
+  `hillslope_advection_rate_m_per_year`, `thermal_active_mask`;
+- `analytical_height_m`, `altitude_correction_delta_m`, `process_delta_m`.
 
 Regional hydrology diagnostics:
 
@@ -36,6 +49,12 @@ water, material product, vegetation, LOD, streaming, or planet adapter yet.
 cmake --build --preset dev --target \
   cubey_project_terrain cubey_project_terrain_generate cubey_project_terrain_tests
 ctest --preset dev -L terrain --output-on-failure
+
+./build/dev/projects/terrain/terrain_generate \
+  --grid-size 513 --terrain-cell-size 100 \
+  --terrain-seed 9012 \
+  --terrain-recipe upland-landscape-evolution-v1 \
+  --terrain-output-dir outputs/terrain/landscape-evolution-v1/seed-9012
 
 ./build/dev/projects/terrain/terrain_generate \
   --terrain-seed 9012 \
@@ -70,7 +89,9 @@ The current ignored review output lives under
 for measurements, visual findings, and the next model boundary. The older
 single-recipe layout remains available through `capture_v1_baseline.sh`.
 
-The next candidate is the finite regional analytical model specified in
+The finite regional analytical candidate is specified in
 [`docs/notes/terrain-landscape-evolution-v1.md`](../../docs/notes/terrain-landscape-evolution-v1.md).
-It will keep the broad source as its initial condition and add uplift-driven
-landscape evolution before any fine-detail amplification work.
+It keeps the broad source as its initial condition and adds uplift-driven
+landscape evolution before any fine-detail amplification work. It is regional
+truth, not an independently seam-safe tile recipe; later streaming should
+extract patches from a shared regional solve.
