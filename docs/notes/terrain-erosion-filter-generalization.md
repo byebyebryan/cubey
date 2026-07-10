@@ -34,7 +34,9 @@ strength, wavelength, elevation, climate, or material tuning in this pass.
 
 Each row captures base material, filtered material, and signed erosion delta
 from the same seed and camera. Water is disabled so submerged or flattened
-geometry cannot hide process activity.
+geometry cannot hide process activity. A second sheet repeats the comparison
+with neutral height material. All biome erosion diagnostics use the same fixed
+`-360` to `+360` meter scale; they are not normalized independently.
 
 ## Acceptance
 

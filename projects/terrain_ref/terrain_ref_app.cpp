@@ -66,6 +66,7 @@ struct TerrainRefSceneMetrics {
 
 constexpr float kTerrainRefErosionProcessSourceOffset = 0.25F;
 constexpr float kTerrainRefSourceGradientStepM = 8.0F;
+constexpr float kTerrainRefErosionComparisonExtentM = 360.0F;
 
 [[nodiscard]] float terrain_ref_material_mode_id(TerrainRefMaterialMode mode) {
     switch (mode) {
@@ -297,7 +298,10 @@ terrain_ref_erosion_sample(const TerrainRefConfig& config, float world_x, float 
             }
         }
     }
-    if (!terrain_ref_uses_erosion_filter(config)) {
+    if (config.erosion_filter_enabled) {
+        min_erosion_delta = -kTerrainRefErosionComparisonExtentM;
+        max_erosion_delta = kTerrainRefErosionComparisonExtentM;
+    } else if (!terrain_ref_uses_erosion_filter(config)) {
         min_erosion_delta = -1.0F;
         max_erosion_delta = 1.0F;
     }

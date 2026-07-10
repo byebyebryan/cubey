@@ -86,6 +86,7 @@ mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mounta
 
 projects/terrain_ref/capture_shadertoy_biome_refs.sh
 projects/terrain_ref/capture_shadertoy_erosion_ref.sh
+projects/terrain_ref/capture_erosion_generalization.sh
 ```
 
 Next rendering work should handle the parts deliberately deferred here: a
