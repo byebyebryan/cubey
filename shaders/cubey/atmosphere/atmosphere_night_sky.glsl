@@ -191,8 +191,7 @@ vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
 
     float limiting_magnitude = star_limiting_magnitude(ray_direction, sun_direction);
     vec3 sky_direction = star_sample_direction(ray_direction);
-    return (bright_star_radiance(sky_direction, limiting_magnitude) +
-            faint_star_radiance(sky_direction, limiting_magnitude) * night_sky_camera_mode()) *
+    return star_field_radiance(sky_direction, limiting_magnitude, night_sky_camera_mode()) *
            visibility;
 }
 
@@ -205,8 +204,7 @@ vec3 space_procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
 
     float limiting_magnitude = space_star_limiting_magnitude(ray_direction, sun_direction);
     vec3 sky_direction = star_sample_direction(ray_direction);
-    return (bright_star_radiance(sky_direction, limiting_magnitude) +
-            faint_star_radiance(sky_direction, limiting_magnitude) * night_sky_camera_mode()) *
+    return star_field_radiance(sky_direction, limiting_magnitude, night_sky_camera_mode()) *
            visibility * 1.35;
 }
 

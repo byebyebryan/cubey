@@ -192,9 +192,9 @@ through shared primitives where the formulas already matched:
 - `projects/fluid/water_2d` and `projects/fluid/water_3d` consume shared GLSL
   uint hash-to-unit helpers for particle spawn jitter, emission randomness, and
   deterministic transfer tie-breaks.
-- Shared atmosphere/sky shaders consume shared GLSL PCG hash and 2D value-noise
-  helpers for procedural stars and moon terminator breakup while keeping the
-  star population, moon lighting, and visibility recipes domain-owned.
+- Shared atmosphere/sky shaders consume shared GLSL PCG hashes for procedural
+  star populations and shared 2D value noise for moon terminator breakup while
+  keeping star placement, moon lighting, and visibility recipes domain-owned.
 - The shared cloud shaders used by `projects/atmosphere` consume the shared GLSL
   remap primitive while leaving source-aligned Perlin/Worley recipes intact.
 

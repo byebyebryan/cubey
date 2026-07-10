@@ -97,8 +97,13 @@ catalog data. The night-sky cubemap is deterministic and layered, with
 procedural Milky Way structure, dust, star clouds, HII emission, and speckles.
 The accepted V2 recipe is the only runtime formula; the superseded V1 selector
 and implementation are retained only in Git history.
-The shader also adds foreground procedural stars and fades sky content through
-twilight, horizon, light-pollution, and moon-washout controls.
+The shader also adds a deterministic equal-area spherical foreground star field
+with separate bright-anchor, naked-eye, and camera-only faint populations.
+Angular pixel-footprint reconstruction keeps the points stable and subpixel,
+while human/camera response, twilight, horizon, light pollution, and moon
+washout control visibility. Celestial sampling retains the physical camera ray
+instead of the atmosphere background's repaired horizon ray, so stars remain
+round and correctly placed in both surface and orbital views.
 
 The atmosphere is a v1 direct-scattering model with optical-depth sampling,
 Rayleigh/Mie/ozone terms, transmittance, debug views, and surface aerial
