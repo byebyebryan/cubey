@@ -2,6 +2,10 @@
 
 Date: 2026-06-21
 
+Status: directional context. The reference lane is now frozen and the concrete
+first implementation contract is defined in
+[`terrain-v1.md`](terrain-v1.md).
+
 This document captures the terrain reboot direction. It promotes the useful
 lessons from `terrain_lab_legacy`, `procedural_terrain_legacy`, the terrain
 workbench, `planet`, the shared procedural foundation, and local reference
@@ -44,12 +48,10 @@ The current terrain workbench should be preserved as
 `projects/terrain_workbench_legacy`. It is useful evidence, but no longer the
 active reboot lane.
 
-The next active project should live as `projects/terrain_ref`. It should be a
-clean visual reference lane over known-good terrain models and rendering
-techniques, starting with the TerrainEngine-inspired runtime reference. The
-canonical `projects/terrain` name should stay reserved for a later production
-terrain project after the reference lane proves the source/render/runtime
-shape.
+`projects/terrain_ref` is now a frozen visual benchmark over known-good terrain
+models and rendering techniques. The canonical `projects/terrain` name is the
+active reboot lane and owns the CPU terrain product described in
+[`terrain-v1.md`](terrain-v1.md).
 
 ## Previous Attempt Lessons
 
