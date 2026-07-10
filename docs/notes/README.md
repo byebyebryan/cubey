@@ -89,6 +89,10 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain ShaderToy erosion filter reference](terrain-shadertoy-erosion-filter-plan.md):
   final `terrain_ref` experiment for a clean-room, slope-aware procedural
   erosion filter with explicit non-hydraulic boundaries and review criteria.
+- [Terrain erosion filter generalization](terrain-erosion-filter-generalization.md):
+  cross-biome positive/negative control matrix for deciding whether the
+  slope-aware filter is a reusable selective process or a narrow mountain
+  effect.
 - [Terrain ShaderToy biome reference map](terrain-shadertoy-biome-reference-map.md):
   classification of local ShaderToy terrain files for clean-room visual/source
   recipes in `terrain_ref`, starting with alpine, dunes, and lake-basin refs.
