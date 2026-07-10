@@ -79,6 +79,7 @@ mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mounta
 ./build/dev/projects/terrain_ref/terrain_ref --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-surface-low-height.png
 
 projects/terrain_ref/capture_shadertoy_biome_refs.sh
+projects/terrain_ref/capture_shadertoy_erosion_ref.sh
 ```
 
 Next rendering work should handle the parts deliberately deferred here: a
