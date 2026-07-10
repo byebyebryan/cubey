@@ -1619,6 +1619,9 @@ int main() {
                      "atmosphere shader should classify the remapped sky-background ray");
     require_contains(shader_entry_source, "celestial_horizon_visibility",
                      "atmosphere shader should keep no-ground celestial content above the real horizon");
+    require_contains(shader_entry_source, "vec3 celestial_ray_direction = ray_direction",
+                     "celestial content should retain the physical camera ray when atmosphere "
+                     "background repair is active");
     require_contains(shader_entry_source,
                      "ignore_ground_occlusion && segment.camera_inside_atmosphere",
                      "no-ground horizon masking should not suppress orbit-space stars");
@@ -1636,8 +1639,11 @@ int main() {
                      "atmosphere shader should fade stars by limiting magnitude");
     require_contains(shader_source, "star_magnitude_weight",
                      "atmosphere shader should weight stars by sampled magnitude");
-    require_contains(shader_source, "faint_star_radiance(sky_direction, limiting_magnitude) *",
-                     "camera response should control the faint foreground star population");
+    require_contains(shader_source, "if (camera_mode > 0.5)",
+                     "camera response should branch around the faint foreground star population");
+    require_contains(shader_source,
+                     "StarSampleContext sample_context = star_sample_context(sky_direction)",
+                     "star populations should share spherical and pixel-footprint calculations");
     require_contains(shader_source, "night_sky_camera_mode()",
                      "star limiting magnitude should consume the night-sky response mode");
     require_not_contains(shader_source, "limiting_magnitude -= pollution * 3.0",
@@ -1647,9 +1653,12 @@ int main() {
     require_contains(shader_entry_source, "segment.camera_inside_atmosphere",
                      "night-sky composition should distinguish surface and space visibility");
     require_contains(shader_entry_source,
-                     "space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
+                     "space_night_sky_radiance(celestial_ray_direction, sun_direction)",
                      "orbit sky rays through the atmosphere shell should use space night-sky "
                      "visibility");
+    require_not_contains(shader_entry_source,
+                         "space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
+                         "orbit celestial sampling should not inherit horizon-repair distortion");
     require_contains(shader_source, "star_sample_direction",
                      "atmosphere shader should rotate star sampling through celestial space");
     require_contains(shader_source, "celestial_options",
@@ -1689,7 +1698,7 @@ int main() {
                      "shared atmosphere shader include should define moon surface view value");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE",
                      "atmosphere shader should include moon surface debug output");
-    require_contains(shader_source, "(hit_ground || !render_sun_disk) ? vec3(0.0)",
+    require_contains(shader_source, "vec3 sun_disk = (hit_ground || !render_sun_disk)",
                      "atmosphere shader should mask sun disk behind ground or disabled content");
     require_contains(shader_source, "sun_halo_weight",
                      "atmosphere shader should include bounded sun halo weighting");

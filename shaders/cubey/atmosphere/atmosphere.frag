@@ -73,6 +73,7 @@ void main() {
         ignore_ground_occlusion
             ? sky_background_sample_direction(ray_direction, ray_origin, planet_center)
             : ray_direction;
+    vec3 celestial_ray_direction = ray_direction;
     CubeyAtmosphereRaySegment segment =
         ignore_ground_occlusion
             ? cubey_atmosphere_classify_sky_background_ray(
@@ -86,11 +87,11 @@ void main() {
     if (!segment.hit_atmosphere) {
         vec3 space_night =
             render_star_debug
-                ? space_procedural_star_radiance(atmosphere_ray_direction, sun_direction)
-                : space_night_sky_radiance(atmosphere_ray_direction, sun_direction);
+                ? space_procedural_star_radiance(celestial_ray_direction, sun_direction)
+                : space_night_sky_radiance(celestial_ray_direction, sun_direction);
         vec3 space_color =
             (render_sun_disk && !render_star_debug
-                 ? sun_disk_luminance(ray_origin, atmosphere_ray_direction, planet_center) *
+                 ? sun_disk_luminance(ray_origin, celestial_ray_direction, planet_center) *
                        celestial_horizon_visibility
                  : vec3(0.0)) +
             (render_night_sky ? space_night * celestial_horizon_visibility : vec3(0.0));
@@ -106,18 +107,19 @@ void main() {
         ray_origin, atmosphere_ray_direction, segment.start, segment.end, planet_center);
     vec3 night_sky_radiance_value = render_star_debug
         ? (segment.camera_inside_atmosphere
-               ? procedural_star_radiance(atmosphere_ray_direction, sun_direction)
-               : space_procedural_star_radiance(atmosphere_ray_direction, sun_direction))
+               ? procedural_star_radiance(celestial_ray_direction, sun_direction)
+               : space_procedural_star_radiance(celestial_ray_direction, sun_direction))
         : (segment.camera_inside_atmosphere
-               ? night_sky_radiance(atmosphere_ray_direction, sun_direction)
-               : space_night_sky_radiance(atmosphere_ray_direction, sun_direction));
+               ? night_sky_radiance(celestial_ray_direction, sun_direction)
+               : space_night_sky_radiance(celestial_ray_direction, sun_direction));
     vec3 night_sky = (hit_ground || !render_night_sky)
         ? vec3(0.0)
         : night_sky_radiance_value * atmosphere_sample.transmittance *
               celestial_horizon_visibility;
-    vec3 sun_disk = (hit_ground || !render_sun_disk) ? vec3(0.0) :
-        sun_disk_luminance(ray_origin, atmosphere_ray_direction, planet_center) *
-            celestial_horizon_visibility;
+    vec3 sun_disk = (hit_ground || !render_sun_disk)
+        ? vec3(0.0)
+        : sun_disk_luminance(ray_origin, celestial_ray_direction, planet_center) *
+              celestial_horizon_visibility;
     vec3 color = atmosphere_sample.color + sun_disk + night_sky;
     if (shade_ground) {
         color += ground_radiance(ray_origin, atmosphere_ray_direction, planet_center,
