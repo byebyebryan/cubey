@@ -1,6 +1,7 @@
 set(required_files
     manifest.json
     source_height_m.png
+    source_height_m.f32
     mountain_support.png
     height_m.png
     slope.png

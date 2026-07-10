@@ -41,6 +41,7 @@ ctest --preset dev -L terrain --output-on-failure
   --terrain-seed 9012 \
   --terrain-recipe upland-broad-noise-control-v1 \
   --terrain-origin-x 0 --terrain-origin-z 0 \
+  --terrain-export-raw \
   --terrain-output-dir outputs/terrain/source-control/seed-9012
 
 ./build/dev/projects/terrain/terrain \
@@ -49,7 +50,14 @@ ctest --preset dev -L terrain --output-on-failure
   --debug-view surface
 
 projects/terrain/capture_review.sh
+
+projects/terrain/run_analytical_oracle.py \
+  --analytical-ref ~/code/ref/analytical-terrains
 ```
+
+Raw `.f32` output is opt-in and exists for lossless research interchange. The
+analytical runner uses the separately cloned, research-only reference as an
+external oracle; it is not a build or runtime dependency.
 
 The renderer accepts `surface`, `flow-direction`, `height`, `source`, or any
 published field name through `--debug-view`. Camera presets use the shared

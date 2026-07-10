@@ -9,9 +9,12 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <iomanip>
+#include <span>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -66,8 +69,8 @@ struct Rgb {
     };
 }
 
-[[nodiscard]] nlohmann::json distribution_json(
-    const cubey::procedural::ScalarFieldDistribution& distribution) {
+[[nodiscard]] nlohmann::json
+distribution_json(const cubey::procedural::ScalarFieldDistribution& distribution) {
     nlohmann::json result = stats_json(distribution.stats);
     result["p01"] = distribution.p01;
     result["p05"] = distribution.p05;
@@ -88,9 +91,9 @@ struct Rgb {
 
 [[nodiscard]] double coverage_above(const cubey::procedural::ScalarField2D& field,
                                     float threshold) {
-    const std::size_t count = static_cast<std::size_t>(std::count_if(
-        field.values().begin(), field.values().end(),
-        [threshold](float value) { return value > threshold; }));
+    const std::size_t count = static_cast<std::size_t>(
+        std::count_if(field.values().begin(), field.values().end(),
+                      [threshold](float value) { return value > threshold; }));
     return field.sample_count() > 0U
                ? static_cast<double>(count) / static_cast<double>(field.sample_count())
                : 0.0;
@@ -113,10 +116,10 @@ struct Rgb {
     double orientation_weight = 0.0;
     for (std::uint32_t y = 1U; y + 1U < source.desc().height; ++y) {
         for (std::uint32_t x = 1U; x + 1U < source.desc().width; ++x) {
-            const float dx = (source.at(x + 1U, y) - source.at(x - 1U, y)) /
-                             (2.0F * source.desc().cell_size);
-            const float dy = (source.at(x, y + 1U) - source.at(x, y - 1U)) /
-                             (2.0F * source.desc().cell_size);
+            const float dx =
+                (source.at(x + 1U, y) - source.at(x - 1U, y)) / (2.0F * source.desc().cell_size);
+            const float dy =
+                (source.at(x, y + 1U) - source.at(x, y - 1U)) / (2.0F * source.desc().cell_size);
             const float magnitude = std::sqrt((dx * dx) + (dy * dy));
             if (magnitude < 0.01F) {
                 continue;
@@ -128,9 +131,9 @@ struct Rgb {
             if (angle >= kPi) {
                 angle -= kPi;
             }
-            const std::size_t bin = std::min(
-                static_cast<std::size_t>((angle / kPi) * kOrientationBinCount),
-                kOrientationBinCount - 1U);
+            const std::size_t bin =
+                std::min(static_cast<std::size_t>((angle / kPi) * kOrientationBinCount),
+                         kOrientationBinCount - 1U);
             const double weight = std::min(static_cast<double>(magnitude), 2.0);
             orientation_bins[bin] += weight;
             orientation_weight += weight;
@@ -154,7 +157,8 @@ struct Rgb {
     };
 }
 
-[[nodiscard]] nlohmann::json manifest_json(const TerrainPatchProduct& product) {
+[[nodiscard]] nlohmann::json manifest_json(const TerrainPatchProduct& product,
+                                           TerrainExportOptions options) {
     const cubey::procedural::PatchDomain2D& domain = product.request.domain;
     nlohmann::json fields = nlohmann::json::object();
     for (const TerrainFieldSummary& field : product.summary.fields) {
@@ -163,13 +167,18 @@ struct Rgb {
             distribution_json(cubey::procedural::summarize_scalar_field_distribution(values));
         entry["file"] = field.name + ".png";
         entry["display"] = display_json(terrain_field_display_spec(field.name, values));
+        if (options.write_raw_float32) {
+            entry["raw_file"] = field.name + ".f32";
+            entry["raw_encoding"] = "float32-le-row-major";
+            entry["raw_byte_count"] = values.sample_count() * sizeof(float);
+        }
         if (field.name == kTerrainFieldDischargeProxy) {
             entry["semantic_scope"] = "patch-relative-legacy";
         }
         fields[field.name] = std::move(entry);
     }
     return {
-        {"schema", "cubey.terrain.patch.v2"},
+        {"schema", "cubey.terrain.patch.v3"},
         {"recipe_id", product.request.recipe_id},
         {"generator_revision", product.request.generator_revision},
         {"seed", domain.seed},
@@ -198,6 +207,18 @@ struct Rgb {
     };
 }
 
+void write_binary_file(const std::filesystem::path& path, std::span<const std::uint8_t> bytes) {
+    std::ofstream output(path, std::ios::binary);
+    if (!output) {
+        throw std::runtime_error("failed to open terrain raw field: " + path.string());
+    }
+    output.write(reinterpret_cast<const char*>(bytes.data()),
+                 static_cast<std::streamsize>(bytes.size()));
+    if (!output) {
+        throw std::runtime_error("failed to write terrain raw field: " + path.string());
+    }
+}
+
 } // namespace
 
 std::vector<std::uint8_t>
@@ -222,6 +243,20 @@ render_terrain_scalar_field_rgba8(const cubey::procedural::ScalarField2D& field,
     return pixels;
 }
 
+std::vector<std::uint8_t>
+encode_terrain_scalar_field_f32_le(const cubey::procedural::ScalarField2D& field) {
+    std::vector<std::uint8_t> bytes(field.sample_count() * sizeof(float));
+    for (std::size_t index = 0U; index < field.sample_count(); ++index) {
+        const std::uint32_t bits = std::bit_cast<std::uint32_t>(field.values()[index]);
+        const std::size_t offset = index * sizeof(float);
+        bytes[offset + 0U] = static_cast<std::uint8_t>(bits & 0xffU);
+        bytes[offset + 1U] = static_cast<std::uint8_t>((bits >> 8U) & 0xffU);
+        bytes[offset + 2U] = static_cast<std::uint8_t>((bits >> 16U) & 0xffU);
+        bytes[offset + 3U] = static_cast<std::uint8_t>((bits >> 24U) & 0xffU);
+    }
+    return bytes;
+}
+
 cubey::CaptureTicket enqueue_terrain_scalar_field_png(cubey::CaptureQueue& captures,
                                                       const cubey::procedural::ScalarField2D& field,
                                                       std::string_view field_name,
@@ -238,7 +273,7 @@ cubey::CaptureTicket enqueue_terrain_scalar_field_png(cubey::CaptureQueue& captu
 }
 
 void write_terrain_manifest(const TerrainPatchProduct& product,
-                            const std::filesystem::path& output_dir) {
+                            const std::filesystem::path& output_dir, TerrainExportOptions options) {
     if (output_dir.empty()) {
         throw std::runtime_error("terrain manifest output directory must be non-empty");
     }
@@ -248,11 +283,12 @@ void write_terrain_manifest(const TerrainPatchProduct& product,
     if (!output) {
         throw std::runtime_error("failed to open terrain manifest: " + path.string());
     }
-    output << manifest_json(product).dump(2) << '\n';
+    output << manifest_json(product, options).dump(2) << '\n';
 }
 
 void write_terrain_field_exports(const TerrainPatchProduct& product,
-                                 const std::filesystem::path& output_dir) {
+                                 const std::filesystem::path& output_dir,
+                                 TerrainExportOptions options) {
     if (output_dir.empty()) {
         throw std::runtime_error("terrain field output directory must be non-empty");
     }
@@ -263,9 +299,13 @@ void write_terrain_field_exports(const TerrainPatchProduct& product,
     for (const std::string& name : product.fields.field_names()) {
         backlog.enqueue(enqueue_terrain_scalar_field_png(captures, product.fields.field(name), name,
                                                          output_dir / (name + ".png")));
+        if (options.write_raw_float32) {
+            write_binary_file(output_dir / (name + ".f32"),
+                              encode_terrain_scalar_field_f32_le(product.fields.field(name)));
+        }
     }
     backlog.finish_all();
-    write_terrain_manifest(product, output_dir);
+    write_terrain_manifest(product, output_dir, options);
 }
 
 } // namespace cubey::projects::terrain

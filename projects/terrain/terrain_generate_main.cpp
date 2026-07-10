@@ -16,6 +16,7 @@ struct TerrainGenerateConfig {
     cubey::projects::terrain::TerrainPatchRequest request =
         cubey::projects::terrain::default_terrain_patch_request();
     std::filesystem::path output_dir{};
+    cubey::projects::terrain::TerrainExportOptions export_options{};
 };
 
 [[nodiscard]] std::string_view require_value(int& index, int argc, char** argv,
@@ -96,6 +97,8 @@ struct TerrainGenerateConfig {
         } else if (arg == "--terrain-output-dir") {
             config.output_dir =
                 std::filesystem::path(std::string(require_value(index, argc, argv, arg)));
+        } else if (arg == "--terrain-export-raw") {
+            config.export_options.write_raw_float32 = true;
         } else if (arg == "--headless") {
             continue;
         } else {
@@ -117,7 +120,8 @@ int main(int argc, char** argv) {
         const TerrainGenerateConfig config = parse_config(argc, argv);
         const cubey::projects::terrain::TerrainPatchProduct product =
             cubey::projects::terrain::generate_terrain_patch(config.request);
-        cubey::projects::terrain::write_terrain_field_exports(product, config.output_dir);
+        cubey::projects::terrain::write_terrain_field_exports(product, config.output_dir,
+                                                              config.export_options);
         std::cout << "terrain_generate: recipe=" << product.request.recipe_id
                   << " grid=" << product.fields.desc().width << 'x' << product.fields.desc().height
                   << " fields=" << product.fields.field_count()

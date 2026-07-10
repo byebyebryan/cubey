@@ -73,9 +73,11 @@ state, channel selection, and incision are later contracts.
 ## Consumers And Review
 
 `terrain_generate` exports every product field through `CaptureQueue` and
-writes a v2 manifest with request identity, halo/boundary policy, field
+writes a v3 manifest with request identity, halo/boundary policy, field
 distributions, fixed display metadata, morphology review metrics, content hash,
-and filenames. The `terrain` app builds a finite review mesh from
+and filenames. Optional `--terrain-export-raw` output adds lossless little-endian
+row-major float32 fields and records their encoding in the same manifest. The
+`terrain` app builds a finite review mesh from
 the CPU product and exposes surface, source/height, derivative, routing, area,
 order, discharge, sink, and boundary views. Presentation color is a consumer
 only; it does not add material fields to the product.

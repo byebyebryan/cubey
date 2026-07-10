@@ -396,19 +396,26 @@ void test_scalar_export_and_manifest() {
     const std::filesystem::path output_dir =
         std::filesystem::temp_directory_path() / "cubey-terrain-export-test";
     std::filesystem::remove_all(output_dir);
-    cubey::projects::terrain::write_terrain_field_exports(product, output_dir);
+    cubey::projects::terrain::write_terrain_field_exports(
+        product, output_dir,
+        cubey::projects::terrain::TerrainExportOptions{.write_raw_float32 = true});
 
     for (const std::string& name : product.fields.field_names()) {
         const std::filesystem::path path = output_dir / (name + ".png");
         require(std::filesystem::exists(path) && std::filesystem::file_size(path) > 8U,
                 "terrain scalar export should write a non-empty PNG");
+        const std::filesystem::path raw_path = output_dir / (name + ".f32");
+        require(std::filesystem::exists(raw_path) &&
+                    std::filesystem::file_size(raw_path) ==
+                        product.fields.field(name).sample_count() * sizeof(float),
+                "terrain scalar export should write a complete raw field");
     }
     std::ifstream manifest_input(output_dir / "manifest.json");
     require(static_cast<bool>(manifest_input), "terrain export should write a manifest");
     nlohmann::json manifest;
     manifest_input >> manifest;
-    require(manifest.at("schema") == "cubey.terrain.patch.v2",
-            "terrain manifest should use the v2 schema");
+    require(manifest.at("schema") == "cubey.terrain.patch.v3",
+            "terrain manifest should use the v3 schema");
     require(manifest.at("field_count") == product.fields.field_count(),
             "terrain manifest should report every product field");
     require(manifest.at("content_hash") == product.summary.content_hash,
@@ -428,10 +435,31 @@ void test_scalar_export_and_manifest() {
                 source_entry.at("display").at("high") == 2500.0F &&
                 source_entry.at("display").at("range_scope") == "fixed",
             "terrain height exports should use a fixed physical display range");
+    require(source_entry.at("raw_encoding") == "float32-le-row-major" &&
+                source_entry.at("raw_byte_count") ==
+                    product.fields.field(cubey::projects::terrain::kTerrainFieldSourceHeightM)
+                            .sample_count() *
+                        sizeof(float),
+            "terrain manifest should describe the lossless raw field");
     require(manifest.at("review_metrics").contains("source_gradient_anisotropy") &&
                 manifest.at("review_metrics").contains("routing_fill_coverage_gt_50m"),
             "terrain manifest should report morphology review metrics");
     std::filesystem::remove_all(output_dir);
+}
+
+void test_raw_scalar_export_is_little_endian_row_major() {
+    cubey::procedural::ScalarField2D field({.width = 2U, .height = 2U, .cell_size = 1.0F}, 0.0F);
+    field.at(0U, 0U) = 1.0F;
+    field.at(1U, 0U) = -2.0F;
+    field.at(0U, 1U) = 0.5F;
+    field.at(1U, 1U) = 4.0F;
+    const std::vector<std::uint8_t> bytes =
+        cubey::projects::terrain::encode_terrain_scalar_field_f32_le(field);
+    const std::vector<std::uint8_t> expected{
+        0x00U, 0x00U, 0x80U, 0x3fU, 0x00U, 0x00U, 0x00U, 0xc0U,
+        0x00U, 0x00U, 0x00U, 0x3fU, 0x00U, 0x00U, 0x80U, 0x40U,
+    };
+    require(bytes == expected, "raw scalar export should preserve row-major IEEE-754 values");
 }
 
 void test_fixed_field_display_ranges() {
@@ -503,6 +531,7 @@ int main() {
         test_branching_surface_increases_strahler_order();
         test_flow_area_is_conserved();
         test_scalar_export_and_manifest();
+        test_raw_scalar_export_is_little_endian_row_major();
         test_fixed_field_display_ranges();
         test_terrain_mesh_consumes_product_fields();
         std::cout << "terrain_tests: ok\n";

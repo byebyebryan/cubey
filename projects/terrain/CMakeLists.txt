@@ -108,6 +108,7 @@ if (BUILD_TESTING)
             --terrain-seed 42
             --terrain-origin-x -512
             --terrain-origin-z 256
+            --terrain-export-raw
             --terrain-output-dir "${CUBEY_TERRAIN_GENERATE_TEST_OUTPUT}"
     )
     set_tests_properties(
