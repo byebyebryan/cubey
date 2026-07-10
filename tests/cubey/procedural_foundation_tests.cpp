@@ -326,7 +326,7 @@ void test_procedural_artifact_metadata_validates_identity_and_layout() {
     const cubey::procedural::ProceduralArtifactMetadata metadata{
         .name = "night sky atlas",
         .generator = "cubey::render::generate_night_sky_atlas",
-        .formula_version = "atmosphere-night-sky-atlas-v1",
+        .formula_version = "test-texture-cube-v1",
         .domain = "atmosphere.night_sky_atlas",
         .seed = 12345U,
         .space = cubey::procedural::ProceduralDomainSpace::Spherical,

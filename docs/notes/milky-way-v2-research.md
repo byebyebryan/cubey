@@ -1,9 +1,10 @@
 # Procedural Milky Way V2 Research
 
-Status: implementation checkpoint. The runtime default is now
-`atmosphere-night-sky-atlas-v2`; `v1` remains available through
-`--milky-way-formula v1` for comparison. This note captures the motivation,
-baseline, and acceptance criteria behind the replacement.
+Status: active shared implementation. The runtime uses
+`atmosphere-night-sky-atlas-v2`; the superseded V1 recipe and its runtime
+selector were removed after V2 tuning and remain available through Git history.
+This note captures the motivation, baseline, and acceptance criteria behind the
+replacement.
 
 ## Current Cubey Baseline
 
@@ -18,9 +19,9 @@ shader. It already has useful diagnostic layers:
 - `hii-emission`
 - `speckles`
 
-The current generator has the right broad decomposition: stellar emission,
+The original V1 generator had the right broad decomposition: stellar emission,
 dust extinction, star-cloud brightness, small H II color accents, and compact
-speckles. The weak part is how some of that structure is authored. It uses
+speckles. The weak part was how some of that structure was authored. It used
 local value-noise helpers plus hard-coded `SkyStamp` arrays for bright knots,
 dust lanes, and H II regions. That is acceptable as a v1 art approximation, but
 it conflicts with the procedural-foundation direction: the Milky Way should
@@ -123,15 +124,16 @@ Recommended operators:
 
 Completed:
 
-1. V1 and V2 formulas are selectable with `--milky-way-formula v1|v2`.
-2. V2 uses shared procedural seeds and shared FBM/ridged noise helpers instead
+1. V2 uses shared procedural seeds and shared FBM/ridged noise helpers instead
    of hand-authored landmark stamps.
-3. The atlas product, shader sampling path, and diagnostic layer names are
+2. The atlas product, shader sampling path, and diagnostic layer names are
    unchanged.
-4. `projects/atmosphere/capture_milky_way_layers.sh` defaults to V2 and accepts
-   `FORMULA=v1` for direct comparison.
-5. Focused tests cover formula parsing, metadata formula versions,
-   deterministic output, layer distinctness, and non-empty V2 dust/H II layers.
+3. `projects/atmosphere/capture_milky_way_layers.sh` captures the active V2
+   diagnostic layers and procedural variations.
+4. Focused tests cover V2 metadata, deterministic output, variation, layer
+   distinctness, and non-empty dust/H II layers.
+5. The V1 implementation, formula selector, and legacy private noise helpers
+   were removed once the V2 checkpoint was accepted.
 
 ## Acceptance Criteria
 

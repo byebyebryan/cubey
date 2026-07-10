@@ -228,16 +228,6 @@ int main() {
             "empty night sky layer should default to final");
     require_throws([] { static_cast<void>(night_sky_layer_view_from_name("hydrogen")); },
                    "night sky layer parser should reject unknown layers");
-    for (const NightSkyAtlasFormula formula : kNightSkyAtlasFormulas) {
-        require(night_sky_atlas_formula_from_name(night_sky_atlas_formula_name(formula)) ==
-                    formula,
-                "night sky atlas formula names should round trip");
-    }
-    require(night_sky_atlas_formula_from_name("") == cubey::render::kDefaultNightSkyAtlasFormula,
-            "empty night sky atlas formula should default");
-    require_throws([] { static_cast<void>(night_sky_atlas_formula_from_name("painted")); },
-                   "night sky atlas formula parser should reject unknown formulas");
-
     for (const cubey::render::AtmosphereEnvironmentGroundMode mode : kAtmosphereGroundModes) {
         require(atmosphere_ground_mode_from_name(atmosphere_ground_mode_name(mode)) == mode,
                 "atmosphere ground mode names should round trip");
@@ -883,63 +873,35 @@ int main() {
     {
         const NightSkyAtlasConfig procedural_config{
             .procedural_variation = 0.0F,
-            .formula = NightSkyAtlasFormula::V1,
         };
         const NightSkyAtlas default_atlas = generate_night_sky_atlas(procedural_config);
         require(default_atlas.extent == kNightSkyAtlasExtent && default_atlas.mip_levels == 10U,
                 "default night sky atlas should use a 512-face cubemap with mips");
 
-        const NightSkyAtlas default_formula_atlas = generate_night_sky_atlas({}, 64U);
         const NightSkyAtlas atlas = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas atlas_again = generate_night_sky_atlas(procedural_config, 64U);
         const NightSkyAtlas varied = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .procedural_variation = 3.0F,
-                .formula = NightSkyAtlasFormula::V1,
-            },
-            64U);
-        const NightSkyAtlas formula_v2 = generate_night_sky_atlas(
-            NightSkyAtlasConfig{
-                .formula = NightSkyAtlasFormula::V2,
-            },
-            64U);
-        const NightSkyAtlas formula_v2_dust_layer = generate_night_sky_atlas(
-            NightSkyAtlasConfig{
-                .layer = NightSkyLayerView::DustTau,
-                .formula = NightSkyAtlasFormula::V2,
-            },
-            64U);
-        const NightSkyAtlas formula_v2_hii_layer = generate_night_sky_atlas(
-            NightSkyAtlasConfig{
-                .layer = NightSkyLayerView::HiiEmission,
-                .formula = NightSkyAtlasFormula::V2,
             },
             64U);
         const NightSkyAtlas dust_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::DustTau,
-                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas hii_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::HiiEmission,
-                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         const NightSkyAtlas speckle_layer = generate_night_sky_atlas(
             NightSkyAtlasConfig{
                 .layer = NightSkyLayerView::Speckles,
-                .formula = NightSkyAtlasFormula::V1,
             },
             64U);
         require(atlas.extent == 64U && atlas.mip_levels == 7U,
                 "night sky atlas should use the requested power-of-two extent");
-        require(default_formula_atlas.formula == cubey::render::kDefaultNightSkyAtlasFormula,
-                "night sky atlas default formula should track the shared default");
-        require(atlas.formula == NightSkyAtlasFormula::V1 &&
-                    formula_v2.formula == NightSkyAtlasFormula::V2,
-                "night sky atlas should preserve selected formula");
         require(dust_layer.layer == NightSkyLayerView::DustTau &&
                     hii_layer.layer == NightSkyLayerView::HiiEmission &&
                     speckle_layer.layer == NightSkyLayerView::Speckles,
@@ -952,19 +914,11 @@ int main() {
                 "procedural night sky atlas variation should alter generated structure");
         require(night_sky_atlas_hash(atlas.rgba32f) != night_sky_atlas_hash(dust_layer.rgba32f),
                 "procedural diagnostic layers should differ from final output");
-        require(night_sky_atlas_hash(atlas.rgba32f) !=
-                    night_sky_atlas_hash(formula_v2.rgba32f),
-                "night sky atlas v2 formula should alter generated structure");
-        require(night_sky_atlas_hash(formula_v2.rgba32f) !=
-                    night_sky_atlas_hash(formula_v2_dust_layer.rgba32f),
-                "night sky atlas v2 diagnostic layers should differ from final output");
         cubey::procedural::validate_procedural_artifact_metadata(atlas.metadata);
         require(atlas.metadata.generator == "cubey::render::generate_night_sky_atlas",
                 "night sky atlas metadata should identify its generator");
-        require(atlas.metadata.formula_version == "atmosphere-night-sky-atlas-v1",
+        require(atlas.metadata.formula_version == "atmosphere-night-sky-atlas-v2",
                 "night sky atlas metadata should identify its formula version");
-        require(formula_v2.metadata.formula_version == "atmosphere-night-sky-atlas-v2",
-                "night sky atlas v2 metadata should identify its formula version");
         require(atlas.metadata.domain == "atmosphere.night_sky_atlas",
                 "night sky atlas metadata should identify its domain");
         require(atlas.metadata.seed == atlas_again.metadata.seed,
@@ -1027,10 +981,6 @@ int main() {
         const AtlasLuminanceStats dust_stats = night_sky_luminance_stats(dust_layer, 0.006F);
         const AtlasLuminanceStats hii_stats = night_sky_luminance_stats(hii_layer, 0.0004F);
         const AtlasLuminanceStats speckle_stats = night_sky_luminance_stats(speckle_layer, 0.0008F);
-        const AtlasLuminanceStats formula_v2_dust_stats =
-            night_sky_luminance_stats(formula_v2_dust_layer, 0.006F);
-        const AtlasLuminanceStats formula_v2_hii_stats =
-            night_sky_luminance_stats(formula_v2_hii_layer, 0.0004F);
         require(dust_stats.max - dust_stats.min > 0.006F,
                 "procedural dust optical depth layer should expose visible contrast");
         require(hii_stats.above_threshold > 0U &&
@@ -1038,12 +988,6 @@ int main() {
                 "procedural H II layer should be sparse and nonzero");
         require(speckle_stats.above_threshold > 0U,
                 "procedural speckle layer should contain faint dense stars");
-        require(formula_v2_dust_stats.max - formula_v2_dust_stats.min > 0.006F,
-                "procedural night sky v2 dust layer should expose visible contrast");
-        require(formula_v2_hii_stats.above_threshold > 0U &&
-                    formula_v2_hii_stats.above_threshold <
-                        formula_v2.extent * formula_v2.extent * 6U / 3U,
-                "procedural night sky v2 H II layer should be sparse and nonzero");
         const float seam_latitude = 0.035F;
         const float seam_epsilon = 0.025F;
         const float seam_a = night_sky_luminance_at(
@@ -1214,7 +1158,6 @@ int main() {
         run_config.debug_view = "moon";
         run_config.atmosphere.night_sky_mode = "camera";
         run_config.atmosphere.milky_way_layer = "dust-tau";
-        run_config.atmosphere.milky_way_formula = "v2";
         run_config.atmosphere.sun_elevation_degrees = 6.0F;
         run_config.atmosphere.sun_azimuth_degrees = 33.0F;
         run_config.atmosphere.camera_altitude_km = 2.0F;
@@ -1242,9 +1185,8 @@ int main() {
         require(config.render_view == AtmosphereRenderView::Moon,
                 "run config should select atmosphere debug view");
         require(config.night_sky.visual_mode == NightSkyVisualMode::Camera &&
-                    config.night_sky.layer == NightSkyLayerView::DustTau &&
-                    config.night_sky.formula == NightSkyAtlasFormula::V2,
-                "run config should select night sky visual mode, layer, and formula");
+                    config.night_sky.layer == NightSkyLayerView::DustTau,
+                "run config should select night sky visual mode and layer");
         require(config.sun_elevation_degrees == 6.0F && config.sun_azimuth_degrees == 33.0F &&
                     config.camera_altitude_km == 2.0F && config.mie_density_scale == 2.25F,
                 "run config atmosphere overrides should win over preset defaults");
