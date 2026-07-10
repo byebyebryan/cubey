@@ -25,21 +25,21 @@ the detailed foundation notes under `docs/architecture/`.
   sample/tile vocabulary for later ocean, biome, cache, and streaming work.
 - [Planet atmosphere v1](planet-atmosphere-v1.md): immediate planet-local
   scattering, transmittance, and aerial-perspective direction.
-- [Sky and celestial current state](sky-celestial-current-state.md): current
-  ownership, render paths, and cleanup checklist for the `sky-rendering`
-  worktree.
-- [Procedural star field v2](star-field-v2.md): isolated diagnostics, mechanical
-  failure modes, and acceptance criteria for the shared analytic star field.
-- [Sky validation baseline](sky-validation-baseline.md): focused sky label,
-  build, unit-test, and PNG-smoke baseline for the `sky-rendering` worktree.
-- [Sky visual baseline review](sky-visual-baseline-review.md): capture review
+- [Sky and celestial current state](sky-celestial-current-state.md): accepted
+  Moon, Milky Way, and Star Field V2 ownership, render paths, and deferred
+  feature boundaries.
+- [Procedural star field v2](star-field-v2.md): accepted shared analytic star
+  field, isolated diagnostics, failure modes, and review workflow.
+- [Sky validation baseline](sky-validation-baseline.md): historical focused sky
+  build, unit-test, and PNG-smoke baseline from the unified-sky migration.
+- [Sky visual baseline review](sky-visual-baseline-review.md): historical capture
   findings behind removing the legacy planet `SkyFrame` backend.
-- [Sky visual iteration plan](sky-visual-iteration-plan.md): first post-cleanup
-  visual tuning scope and commit sequence for unified atmosphere sun work.
-- [Sky visual pass 001 review](sky-visual-pass-001-review.md): clean
+- [Sky visual iteration plan](sky-visual-iteration-plan.md): historical first
+  post-cleanup tuning plan for unified atmosphere sun work.
+- [Sky visual pass 001 review](sky-visual-pass-001-review.md): historical clean
   pre-tuning capture review for the first unified atmosphere sun pass.
 - [Sky visual pass 001 post-sun review](sky-visual-pass-001-post-sun-review.md):
-  post-halo capture review for the first unified atmosphere sun pass.
+  historical post-halo capture review for the first unified atmosphere sun pass.
 - [Geometry moon migration](sky-geometry-moon-migration.md): migration plan for
   making explicit geometry the canonical app-visible moon path.
 - [Geometry moon migration captures](sky-moon-geo-migration-captures.md):
@@ -50,9 +50,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Moon surface detail captures](sky-moon-surface-detail-captures.md):
   reproducible capture commands and observations for the lunar surface-map
   routing pass.
-- [Procedural Milky Way v2 research](milky-way-v2-research.md): current
-  atlas-layer baseline, source/reference takeaways, and the field-based plan for
-  replacing hand-stamped Milky Way landmarks with procedural structure.
+- [Procedural Milky Way v2 research](milky-way-v2-research.md): accepted
+  atlas-layer research, source/reference takeaways, and field-based direction
+  for replacing hand-stamped Milky Way landmarks with procedural structure.
 - [Planet visual capture recipes](planet-visual-captures.md): repeatable
   orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
