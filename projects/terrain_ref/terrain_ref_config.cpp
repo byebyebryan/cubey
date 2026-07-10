@@ -166,6 +166,8 @@ TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& conf
                                              : std::string_view(config.terrain.camera_preset));
     result.material_mode = terrain_ref_material_mode_from_name(config.terrain.preview_color);
     result.surface_mode = terrain_ref_surface_mode_from_name(config.terrain.preview_surface);
+    result.erosion_filter_enabled = config.terrain.preview_surface == "post-erosion" &&
+                                    result.recipe != TerrainRefRecipe::ShadertoyErosionFilter;
     result.water_surface =
         config.terrain.water_surface >= 0 ? config.terrain.water_surface != 0 : true;
 

@@ -73,6 +73,7 @@ struct TerrainRefConfig {
     TerrainRefCameraPreset camera_preset = TerrainRefCameraPreset::Oblique;
     TerrainRefMaterialMode material_mode = TerrainRefMaterialMode::Recipe;
     TerrainRefSurfaceMode surface_mode = TerrainRefSurfaceMode::Filtered;
+    bool erosion_filter_enabled = false;
     bool water_surface = true;
 };
 

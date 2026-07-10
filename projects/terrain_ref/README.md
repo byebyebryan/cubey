@@ -49,6 +49,12 @@ review the base source and `height` or `post-erosion` to review the filtered
 surface. `--terrain-preview-color erosion` shows signed height removal. This is
 a stateless procedural filter, not hydraulic erosion.
 
+Other recipes remain unfiltered by default. Passing
+`--terrain-preview-surface post-erosion` explicitly applies the same filter to
+their source height and numerically estimated gradient; `pre-process` keeps the
+source untouched. This is a cross-biome evaluation mode, not a universal biome
+process policy.
+
 Known limitations are intentional for this slice: the review mesh is finite,
 water is still a tint/clamp rather than reflection/refraction, material detail
 is shader-generated rather than authored texture data, the ShaderToy-inspired

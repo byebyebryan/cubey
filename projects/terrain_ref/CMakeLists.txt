@@ -100,6 +100,37 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    set(CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-erosion-generalization-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_ref_erosion_generalization_headless_writes_png
+        cubey_project_terrain_ref
+        "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --grid-size
+        129
+        --terrain-recipe
+        shadertoy-alpine
+        --terrain-camera-preset
+        oblique
+        --terrain-preview-surface
+        post-erosion
+        --terrain-preview-color
+        erosion
+        --no-terrain-water-surface
+    )
+    cubey_add_png_stats_test(
+        terrain_ref_erosion_generalization_headless_writes_png
+        "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
     cubey_label_tests(
         reference
         terrain_ref_reaches_glfw
@@ -108,5 +139,7 @@ if (BUILD_TESTING)
         terrain_ref_headless_writes_png_stats
         terrain_ref_erosion_headless_writes_png
         terrain_ref_erosion_headless_writes_png_stats
+        terrain_ref_erosion_generalization_headless_writes_png
+        terrain_ref_erosion_generalization_headless_writes_png_stats
     )
 endif()

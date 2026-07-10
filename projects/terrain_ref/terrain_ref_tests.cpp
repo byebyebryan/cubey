@@ -51,6 +51,8 @@ void test_terrain_ref_config_from_run_config() {
             "terrain_ref should default to recipe material");
     require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
             "terrain_ref should default to filtered surface");
+    require(!config.erosion_filter_enabled,
+            "terrain_ref should not filter ordinary recipes by default");
 
     run_config.grid.width = 129U;
     run_config.grid.height = 257U;
@@ -169,6 +171,18 @@ void test_terrain_ref_config_from_run_config() {
     config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
     require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
             "terrain_ref should parse post-erosion surface");
+    require(!config.erosion_filter_enabled,
+            "dedicated erosion reference should own its filtering internally");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyAlpine);
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.erosion_filter_enabled,
+            "post-erosion should enable filtering for ordinary biome recipes");
+    run_config.terrain.preview_surface = "pre-process";
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(!config.erosion_filter_enabled,
+            "pre-process should preserve the ordinary biome source");
 
     run_config.terrain.recipe = "temperate-mountain-river";
     require_throws(

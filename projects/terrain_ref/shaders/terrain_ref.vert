@@ -34,6 +34,10 @@ bool terrain_ref_uses_shadertoy_erosion() {
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_EROSION_FILTERED) < 0.5;
 }
 
+bool terrain_ref_uses_erosion_process() {
+    return abs(fract(pc.terrain_params.w) - TERRAIN_REF_EROSION_PROCESS_OFFSET) < 0.05;
+}
+
 float terrain_ref_height(vec2 world_xz, vec2 seed, bool surface_detail) {
     if (terrain_ref_uses_shadertoy_mountain()) {
         return shadertoy_mountain_reference_height(world_xz, seed, surface_detail);
@@ -91,6 +95,17 @@ float terrain_ref_material_uv_scale() {
         : 0.006;
 }
 
+ShadertoyErosionHeightSlope terrain_ref_source_height_slope(vec2 world_xz, vec2 seed) {
+    const float step_m = 8.0;
+    float center = terrain_ref_height(world_xz, seed, false);
+    float x0 = terrain_ref_height(world_xz - vec2(step_m, 0.0), seed, false);
+    float x1 = terrain_ref_height(world_xz + vec2(step_m, 0.0), seed, false);
+    float z0 = terrain_ref_height(world_xz - vec2(0.0, step_m), seed, false);
+    float z1 = terrain_ref_height(world_xz + vec2(0.0, step_m), seed, false);
+    return ShadertoyErosionHeightSlope(center,
+        vec2((x1 - x0) / (2.0 * step_m), (z1 - z0) / (2.0 * step_m)));
+}
+
 void main() {
     vec2 seed = pc.terrain_params.xy;
     float vertical_scale = pc.terrain_params.z;
@@ -108,6 +123,15 @@ void main() {
         vec2 gradient = filtered_surface ? erosion.filtered_gradient : erosion.base_gradient;
         normal = normalize(vec3(-gradient.x * vertical_scale, 1.0,
             -gradient.y * vertical_scale));
+        erosion_delta_m = erosion.erosion_delta_m;
+    } else if (terrain_ref_uses_erosion_process()) {
+        ShadertoyErosionHeightSlope source =
+            terrain_ref_source_height_slope(world_xz, seed);
+        ShadertoyErosionReferenceSample erosion =
+            shadertoy_erosion_filter_sample(world_xz, seed, source, 1.0);
+        terrain_height = erosion.filtered_height_m;
+        normal = normalize(vec3(-erosion.filtered_gradient.x * vertical_scale, 1.0,
+            -erosion.filtered_gradient.y * vertical_scale));
         erosion_delta_m = erosion.erosion_delta_m;
     } else {
         terrain_height = terrain_ref_height(world_xz, seed, false);
