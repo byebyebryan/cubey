@@ -1696,7 +1696,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_runtime_flag = "--terrain-preview-runtime";
     std::string preview_runtime_value = "terrain-engine-ref";
     std::string preview_color_flag = "--terrain-preview-color";
-    std::string preview_color_value = "height";
+    std::string preview_color_value = "erosion";
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
@@ -1731,7 +1731,7 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain vertical scale");
     require(config.terrain.preview_runtime == "terrain-engine-ref",
             "run config should parse terrain preview runtime");
-    require(config.terrain.preview_color == "height",
+    require(config.terrain.preview_color == "erosion",
             "run config should parse terrain preview color");
     require(config.terrain.preview_surface == "post-erosion",
             "run config should parse terrain preview surface");

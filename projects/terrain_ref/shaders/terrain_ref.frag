@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "terrain_engine_reference.glsl"
+#include "shadertoy_biome_reference.glsl"
 
 layout(push_constant) uniform TerrainRefPushConstants {
     mat4 view_projection;
@@ -16,6 +17,7 @@ layout(location = 1) in vec3 frag_normal;
 layout(location = 2) in vec2 frag_material_uv;
 layout(location = 3) in float frag_height_m;
 layout(location = 4) in float frag_water_mask;
+layout(location = 5) in float frag_erosion_delta_m;
 
 layout(location = 0) out vec4 out_color;
 
@@ -49,9 +51,79 @@ vec3 terrain_ref_color_variation(vec3 base, vec2 world_xz, float scale, float am
     return base * (1.0 + (noise - 0.5) * amount);
 }
 
+struct TerrainRefGorgeMaterialMasks {
+    float corridor;
+    float floor_mask;
+    float wall;
+    float tributary;
+};
+
+TerrainRefGorgeMaterialMasks terrain_ref_gorge_material_masks(vec2 world_xz) {
+    vec2 seed = pc.terrain_params.xy;
+    vec2 p = (world_xz * 0.00020) + (seed * vec2(0.091, 0.083)) + vec2(-0.16, 0.08);
+    ShadertoyGorgeSourceField field = shadertoy_gorge_source_field(p, seed);
+    TerrainRefGorgeMaterialMasks masks;
+    masks.corridor = field.main_corridor;
+    masks.floor_mask = field.floor;
+    masks.wall = field.wall;
+    masks.tributary = field.tributaries;
+    return masks;
+}
+
+struct TerrainRefGlacialMaterialMasks {
+    float uplift;
+    float floor_mask;
+    float wall;
+    float side_valley;
+    float cirque;
+    float rock_rib;
+    float ice;
+    float talus;
+};
+
+TerrainRefGlacialMaterialMasks terrain_ref_glacial_material_masks(vec2 world_xz) {
+    vec2 seed = pc.terrain_params.xy;
+    vec2 p = (world_xz * 0.00017) + (seed * vec2(0.113, 0.097)) + vec2(-1.0, 3.0);
+    ShadertoyGlacialSourceField field = shadertoy_glacial_source_field(p, seed);
+    TerrainRefGlacialMaterialMasks masks;
+    masks.uplift = field.uplift;
+    masks.floor_mask = field.trunk_floor;
+    masks.wall = field.trunk_wall;
+    masks.side_valley = field.side_valleys;
+    masks.cirque = field.cirques;
+    masks.rock_rib = field.rock_ribs;
+    masks.ice = field.ice_field;
+    masks.talus = field.talus;
+    return masks;
+}
+
 vec3 terrain_ref_material_color(inout vec3 normal) {
-    bool shadertoy_mountain = mod(pc.water_params.w, 2.0) > 0.5;
-    bool height_material = pc.water_params.w >= 2.0;
+    bool shadertoy_erosion =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_EROSION_BASE) < 0.5 ||
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_EROSION_FILTERED) < 0.5;
+    bool shadertoy_mountain =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5 ||
+        shadertoy_erosion;
+    bool shadertoy_alpine =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_ALPINE) < 0.5;
+    bool shadertoy_dunes =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_DUNES) < 0.5;
+    bool shadertoy_lake_basin =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_LAKE_BASIN) < 0.5;
+    bool shadertoy_badlands =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_BADLANDS) < 0.5;
+    bool shadertoy_coast_island =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_COAST_ISLAND) < 0.5;
+    bool shadertoy_plains =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_PLAINS) < 0.5;
+    bool shadertoy_gorge =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GORGE) < 0.5;
+    bool shadertoy_glacial_highland =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GLACIAL_HIGHLAND) < 0.5;
+    bool shadertoy_crater_field =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_CRATER_FIELD) < 0.5;
+    bool height_material = abs(pc.water_params.w - TERRAIN_REF_MATERIAL_HEIGHT) < 0.5;
+    bool erosion_material = abs(pc.water_params.w - TERRAIN_REF_MATERIAL_EROSION) < 0.5;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
     float water_height_m = pc.water_params.x;
@@ -71,6 +143,20 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         0.006, 0.24);
     vec3 snow = terrain_ref_color_variation(vec3(0.82, 0.84, 0.80), frag_world_position.xz,
         0.014, 0.10);
+
+    if (erosion_material) {
+        float negative_extent = max(abs(min_height_m), 1.0);
+        float positive_extent = max(abs(max_height_m), 1.0);
+        vec3 neutral = vec3(0.10, 0.11, 0.12);
+        vec3 raised = vec3(0.18, 0.48, 0.78);
+        vec3 removed = vec3(0.92, 0.33, 0.12);
+        if (frag_erosion_delta_m >= 0.0) {
+            return mix(neutral, removed,
+                smoothstep(0.0, positive_extent, frag_erosion_delta_m));
+        }
+        return mix(neutral, raised,
+            smoothstep(0.0, negative_extent, -frag_erosion_delta_m));
+    }
 
     if (height_material) {
         float normalized_height = clamp((frag_height_m - min_height_m) /
@@ -113,6 +199,254 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         return color;
     }
 
+    if (shadertoy_alpine) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 meadow = terrain_ref_color_variation(vec3(0.18, 0.28, 0.12),
+            frag_world_position.xz, 0.004, 0.26);
+        vec3 talus = terrain_ref_color_variation(vec3(0.40, 0.38, 0.34),
+            frag_world_position.xz, 0.009, 0.22);
+        vec3 cliff_rock = terrain_ref_color_variation(vec3(0.48, 0.48, 0.45),
+            frag_world_position.xz, 0.014, 0.20);
+        vec3 color = mix(talus, cliff_rock, smoothstep(0.34, 0.92, normalized_height));
+        float meadow_mask = (1.0 - smoothstep(0.34, 0.66, normalized_height)) *
+            smoothstep(0.52, 0.88, cos_v);
+        color = mix(color, meadow, meadow_mask * 0.78);
+        float snow_mask = smoothstep(0.58, 0.88, normalized_height) *
+            smoothstep(0.24, 0.70, cos_v);
+        color = mix(color, snow, snow_mask * 0.92);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.13, 0.25, smoothstep(0.18, 0.72, slope)));
+        return color;
+    }
+
+    if (shadertoy_glacial_highland) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        TerrainRefGlacialMaterialMasks glacial =
+            terrain_ref_glacial_material_masks(frag_world_position.xz);
+        vec3 blue_ice = terrain_ref_color_variation(vec3(0.56, 0.68, 0.70),
+            frag_world_position.xz, 0.010, 0.10);
+        vec3 firn = terrain_ref_color_variation(vec3(0.76, 0.79, 0.77),
+            frag_world_position.xz + vec2(41.0, -67.0), 0.012, 0.10);
+        vec3 exposed_rock = terrain_ref_color_variation(vec3(0.26, 0.27, 0.27),
+            frag_world_position.xz + vec2(-97.0, 53.0), 0.011, 0.22);
+        vec3 talus = terrain_ref_color_variation(vec3(0.38, 0.36, 0.33),
+            frag_world_position.xz, 0.018, 0.18);
+        vec3 color = mix(talus, firn, smoothstep(0.20, 0.92, glacial.uplift));
+        float ice_mask = clamp(glacial.floor_mask * 0.78 + glacial.ice * 0.44 +
+            glacial.side_valley * 0.18, 0.0, 1.0);
+        color = mix(color, blue_ice, ice_mask * 0.64);
+        float rock_rib = clamp(glacial.rock_rib * 1.15 + glacial.wall * 0.75 +
+            glacial.wall * slope * 0.58 + glacial.cirque * slope * 0.28, 0.0, 1.0);
+        color = mix(color, exposed_rock, rock_rib * 0.92);
+        float talus_mask = clamp(glacial.talus *
+            (1.0 - smoothstep(0.76, 0.98, glacial.uplift)) * 0.82 +
+            glacial.side_valley * smoothstep(0.18, 0.65, slope) * 0.45, 0.0, 1.0);
+        color = mix(color, talus, talus_mask * 0.78);
+        float snow_cap = smoothstep(0.58, 0.94, glacial.uplift) *
+            smoothstep(0.34, 0.84, cos_v) * (1.0 - rock_rib * 0.65) *
+            (1.0 - talus_mask * 0.30);
+        color = mix(color, snow, snow_cap * 0.64);
+        color = mix(color, firn, smoothstep(0.78, 0.98, normalized_height) *
+            smoothstep(0.52, 0.92, cos_v) * 0.12);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.09, 0.26, max(max(rock_rib, talus_mask), glacial.side_valley)));
+        return color;
+    }
+
+    if (shadertoy_dunes) {
+        vec3 low_sand = terrain_ref_color_variation(vec3(0.63, 0.52, 0.31),
+            frag_world_position.xz, 0.005, 0.18);
+        vec3 sun_sand = terrain_ref_color_variation(vec3(0.82, 0.69, 0.42),
+            frag_world_position.xz, 0.014, 0.12);
+        float slope = 1.0 - cos_v;
+        vec3 color = mix(low_sand, sun_sand, smoothstep(0.42, 0.86, cos_v));
+        color = mix(color, vec3(0.46, 0.36, 0.22), smoothstep(0.18, 0.58, slope) * 0.45);
+        color = mix(color, vec3(0.91, 0.80, 0.52), smoothstep(0.82, 0.98, cos_v) * 0.22);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz, detail * 0.12);
+        return color;
+    }
+
+    if (shadertoy_plains) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        vec3 low_grass = terrain_ref_color_variation(vec3(0.16, 0.27, 0.12),
+            frag_world_position.xz, 0.004, 0.26);
+        vec3 sun_grass = terrain_ref_color_variation(vec3(0.36, 0.43, 0.20),
+            frag_world_position.xz + vec2(31.0, -47.0), 0.006, 0.22);
+        vec3 dry_grass = terrain_ref_color_variation(vec3(0.45, 0.40, 0.22),
+            frag_world_position.xz + vec2(-83.0, 29.0), 0.010, 0.18);
+        vec3 swale = terrain_ref_color_variation(vec3(0.11, 0.20, 0.11),
+            frag_world_position.xz + vec2(71.0, 113.0), 0.009, 0.24);
+        float wind_streak = shadertoy_biome_triangle_wave(dot(frag_world_position.xz,
+            vec2(0.00055, 0.00021)) + terrain_ref_fbm(frag_world_position.xz * 0.0018,
+            pc.terrain_params.xy) * 1.35);
+        vec3 color = mix(low_grass, sun_grass, smoothstep(0.18, 0.72, normalized_height));
+        color = mix(color, dry_grass, smoothstep(0.46, 0.88, normalized_height) * 0.48);
+        float swale_mask = (1.0 - smoothstep(0.16, 0.44, normalized_height)) *
+            smoothstep(0.58, 0.96, cos_v);
+        color = mix(color, swale, swale_mask * 0.58);
+        color *= 0.92 + wind_streak * 0.13;
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz, detail * 0.08);
+        return color;
+    }
+
+    if (shadertoy_gorge) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        TerrainRefGorgeMaterialMasks gorge =
+            terrain_ref_gorge_material_masks(frag_world_position.xz);
+        vec3 floor_sand = terrain_ref_color_variation(vec3(0.55, 0.39, 0.22),
+            frag_world_position.xz, 0.010, 0.20);
+        vec3 ochre = terrain_ref_color_variation(vec3(0.68, 0.44, 0.22),
+            frag_world_position.xz + vec2(53.0, -89.0), 0.007, 0.20);
+        vec3 red_wall = terrain_ref_color_variation(vec3(0.48, 0.22, 0.13),
+            frag_world_position.xz + vec2(-103.0, 67.0), 0.012, 0.22);
+        vec3 dark_wall = terrain_ref_color_variation(vec3(0.25, 0.16, 0.12),
+            frag_world_position.xz, 0.018, 0.18);
+        vec3 color = mix(floor_sand, ochre, smoothstep(0.18, 0.56, normalized_height));
+        color = mix(color, red_wall, smoothstep(0.42, 0.90, normalized_height) * 0.68);
+        float cliff = smoothstep(0.18, 0.68, slope);
+        float wall_mask = clamp(gorge.wall + cliff * gorge.corridor * 0.42, 0.0, 1.0);
+        color = mix(color, dark_wall, wall_mask * 0.72);
+        float tributary_floor = gorge.tributary * (1.0 - gorge.floor_mask * 0.55);
+        float floor_mask = clamp(gorge.floor_mask * smoothstep(0.36, 0.94, cos_v) +
+            tributary_floor * 0.46, 0.0, 1.0);
+        color = mix(color, floor_sand, floor_mask * 0.80);
+        color = mix(color, ochre, gorge.tributary * 0.22);
+        float strata = shadertoy_biome_triangle_wave((frag_height_m * 0.020) +
+            terrain_ref_fbm(frag_world_position.xz * 0.0028, pc.terrain_params.xy) * 1.6);
+        color *= 0.90 + strata * mix(0.08, 0.24, wall_mask);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.09, 0.27, max(wall_mask, gorge.tributary)));
+        return color;
+    }
+
+    if (shadertoy_crater_field) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 dust = terrain_ref_color_variation(vec3(0.43, 0.39, 0.33),
+            frag_world_position.xz, 0.010, 0.16);
+        vec3 pale_regolith = terrain_ref_color_variation(vec3(0.62, 0.59, 0.52),
+            frag_world_position.xz + vec2(37.0, -101.0), 0.007, 0.14);
+        vec3 rim_rock = terrain_ref_color_variation(vec3(0.50, 0.47, 0.40),
+            frag_world_position.xz + vec2(-71.0, 43.0), 0.014, 0.18);
+        vec3 dark_floor = terrain_ref_color_variation(vec3(0.25, 0.24, 0.22),
+            frag_world_position.xz, 0.018, 0.14);
+        vec3 color = mix(dust, pale_regolith, smoothstep(0.24, 0.82, normalized_height));
+        float crater_floor = (1.0 - smoothstep(0.12, 0.34, normalized_height)) *
+            smoothstep(0.46, 0.94, cos_v);
+        color = mix(color, dark_floor, crater_floor * 0.54);
+        float rim_exposure = smoothstep(0.16, 0.56, slope) *
+            smoothstep(0.28, 0.88, normalized_height);
+        color = mix(color, rim_rock, rim_exposure * 0.62);
+        float ejecta = terrain_ref_fbm(frag_world_position.xz * 0.0032, pc.terrain_params.xy);
+        color *= 0.88 + ejecta * 0.18;
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.12, 0.25, rim_exposure));
+        return color;
+    }
+
+    if (shadertoy_badlands) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 wash_sand = terrain_ref_color_variation(vec3(0.58, 0.43, 0.25),
+            frag_world_position.xz, 0.010, 0.22);
+        vec3 ochre = terrain_ref_color_variation(vec3(0.70, 0.48, 0.26),
+            frag_world_position.xz + vec2(43.0, -71.0), 0.006, 0.20);
+        vec3 red_rock = terrain_ref_color_variation(vec3(0.50, 0.25, 0.16),
+            frag_world_position.xz + vec2(-83.0, 29.0), 0.012, 0.22);
+        vec3 dark_cliff = terrain_ref_color_variation(vec3(0.29, 0.20, 0.16),
+            frag_world_position.xz, 0.018, 0.18);
+        vec3 color = mix(wash_sand, ochre, smoothstep(0.14, 0.58, normalized_height));
+        color = mix(color, red_rock, smoothstep(0.48, 0.94, normalized_height) * 0.62);
+        float strata = shadertoy_biome_triangle_wave((frag_height_m * 0.017) +
+            terrain_ref_fbm(frag_world_position.xz * 0.0035, pc.terrain_params.xy) * 1.4);
+        color *= 0.92 + strata * 0.16;
+        float cliff = smoothstep(0.18, 0.62, slope);
+        color = mix(color, dark_cliff, cliff * 0.62);
+        float wash_floor = (1.0 - smoothstep(0.18, 0.44, normalized_height)) *
+            smoothstep(0.48, 0.90, cos_v);
+        color = mix(color, wash_sand, wash_floor * 0.38);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.10, 0.26, cliff));
+        return color;
+    }
+
+    if (shadertoy_lake_basin) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        vec3 wet_soil = terrain_ref_color_variation(vec3(0.23, 0.26, 0.16),
+            frag_world_position.xz, 0.008, 0.24);
+        vec3 upland_grass = terrain_ref_color_variation(vec3(0.21, 0.33, 0.15),
+            frag_world_position.xz, 0.004, 0.26);
+        vec3 hill_rock = terrain_ref_color_variation(vec3(0.42, 0.39, 0.33),
+            frag_world_position.xz, 0.009, 0.20);
+        vec3 color = mix(upland_grass, hill_rock,
+            smoothstep(0.45, 0.86, normalized_height) * (1.0 - smoothstep(0.70, 0.92, cos_v)));
+        float shore = 1.0 - smoothstep(water_height_m + 8.0, water_height_m + 92.0,
+            frag_height_m);
+        vec3 dry_shelf = terrain_ref_color_variation(vec3(0.36, 0.35, 0.23),
+            frag_world_position.xz + vec2(-61.0, 71.0), 0.010, 0.18);
+        color = mix(color, dry_shelf, shore * 0.34);
+        color = mix(color, wet_soil, shore * 0.78);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.06, 0.15, 1.0 - cos_v));
+        return color;
+    }
+
+    if (shadertoy_coast_island) {
+        float normalized_height = clamp((frag_height_m - min_height_m) /
+            (max_height_m - min_height_m), 0.0, 1.0);
+        float slope = 1.0 - cos_v;
+        vec3 wet_sand = terrain_ref_color_variation(vec3(0.45, 0.39, 0.27),
+            frag_world_position.xz, 0.012, 0.18);
+        vec3 beach_sand = terrain_ref_color_variation(vec3(0.68, 0.59, 0.39),
+            frag_world_position.xz + vec2(37.0, -19.0), 0.010, 0.16);
+        vec3 coastal_grass = terrain_ref_color_variation(vec3(0.20, 0.34, 0.16),
+            frag_world_position.xz, 0.004, 0.28);
+        vec3 upland_grass = terrain_ref_color_variation(vec3(0.15, 0.27, 0.13),
+            frag_world_position.xz + vec2(113.0, -41.0), 0.006, 0.24);
+        vec3 scrub = terrain_ref_color_variation(vec3(0.31, 0.35, 0.20),
+            frag_world_position.xz + vec2(-23.0, 101.0), 0.008, 0.20);
+        vec3 coastal_rock = terrain_ref_color_variation(vec3(0.38, 0.36, 0.32),
+            frag_world_position.xz + vec2(-91.0, 53.0), 0.011, 0.22);
+        vec3 high_rock = terrain_ref_color_variation(vec3(0.30, 0.31, 0.27),
+            frag_world_position.xz + vec2(61.0, -139.0), 0.013, 0.18);
+        float inland = smoothstep(water_height_m + 120.0, water_height_m + 620.0,
+            frag_height_m);
+        float scrub_mask = smoothstep(0.36, 0.78,
+            terrain_ref_fbm(frag_world_position.xz * 0.0025, pc.terrain_params.xy));
+        vec3 color = mix(coastal_grass, upland_grass, inland);
+        color = mix(color, scrub, scrub_mask * smoothstep(water_height_m + 60.0,
+            water_height_m + 520.0, frag_height_m) * 0.42);
+        float beach = 1.0 - smoothstep(water_height_m + 34.0, water_height_m + 150.0,
+            frag_height_m);
+        color = mix(color, beach_sand, beach * smoothstep(0.50, 0.96, cos_v));
+        float cliff = smoothstep(0.20, 0.66, slope) *
+            smoothstep(water_height_m + 8.0, water_height_m + 520.0, frag_height_m);
+        color = mix(color, coastal_rock, cliff * 0.78);
+        float high_exposure = smoothstep(0.52, 0.92, normalized_height) *
+            smoothstep(0.16, 0.54, slope);
+        color = mix(color, high_rock, high_exposure * 0.46);
+        float shore = 1.0 - smoothstep(water_height_m + 6.0, water_height_m + 76.0,
+            frag_height_m);
+        color = mix(color, wet_sand, shore * 0.62);
+        float sunlit_grass = smoothstep(0.64, 0.96, cos_v) *
+            smoothstep(water_height_m + 180.0, water_height_m + 720.0, frag_height_m);
+        color = mix(color, terrain_ref_color_variation(vec3(0.25, 0.41, 0.19),
+            frag_world_position.xz + vec2(121.0, -77.0), 0.006, 0.20), sunlit_grass * 0.24);
+        normal = terrain_ref_detail_normal(normal, frag_world_position.xz,
+            detail * mix(0.09, 0.24, max(cliff, high_exposure)));
+        return color;
+    }
+
     vec3 color = rock;
     float ten_percent_grass = grass_coverage - grass_coverage * 0.1;
     if (frag_height_m <= water_height_m + transition_m) {
@@ -149,6 +483,10 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
 void main() {
     vec3 normal = normalize(frag_normal);
     vec3 base_color = terrain_ref_material_color(normal);
+    if (abs(pc.water_params.w - TERRAIN_REF_MATERIAL_EROSION) < 0.5) {
+        out_color = vec4(base_color, 1.0);
+        return;
+    }
     float water_mask = clamp(frag_water_mask, 0.0, 1.0);
 
     vec3 light_direction = normalize(pc.light_direction_extent.xyz);

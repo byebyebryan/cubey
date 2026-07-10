@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shadertoy_erosion_reference.h"
 #include "terrain_engine_reference.h"
 
 #include <cubey/core/run_config.h>
@@ -15,19 +16,48 @@ enum class TerrainRefCameraPreset : std::uint8_t {
     Top,
     Surface,
     SurfaceLow,
+    CoastalOblique,
 };
 
 enum class TerrainRefRecipe : std::uint8_t {
     TerrainEngine,
     ShadertoyMountain,
+    ShadertoyAlpine,
+    ShadertoyDunes,
+    ShadertoyLakeBasin,
+    ShadertoyBadlands,
+    ShadertoyCoastIsland,
+    ShadertoyPlains,
+    ShadertoyGorge,
+    ShadertoyGlacialHighland,
+    ShadertoyCraterField,
+    ShadertoyErosionFilter,
 };
 
 enum class TerrainRefMaterialMode : std::uint8_t {
     Recipe,
     Height,
+    Erosion,
+};
+
+enum class TerrainRefSurfaceMode : std::uint8_t {
+    Filtered,
+    Base,
 };
 
 inline constexpr std::string_view kTerrainRefRecipeShadertoyMountain = "shadertoy-mountain";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyAlpine = "shadertoy-alpine";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyDunes = "shadertoy-dunes";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyLakeBasin = "shadertoy-lake-basin";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyBadlands = "shadertoy-badlands";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyCoastIsland =
+    "shadertoy-coast-island";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyPlains = "shadertoy-plains";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyGorge = "shadertoy-gorge";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyGlacialHighland =
+    "shadertoy-glacial-highland";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyCraterField =
+    "shadertoy-crater-field";
 inline constexpr std::string_view kTerrainRefDefaultCameraPreset = "oblique";
 inline constexpr float kTerrainRefDefaultCellSizeM = 32.0F;
 inline constexpr std::uint32_t kTerrainRefDefaultGridSize = 513U;
@@ -42,12 +72,15 @@ struct TerrainRefConfig {
     float vertical_scale = kTerrainRefDefaultVerticalScale;
     TerrainRefCameraPreset camera_preset = TerrainRefCameraPreset::Oblique;
     TerrainRefMaterialMode material_mode = TerrainRefMaterialMode::Recipe;
+    TerrainRefSurfaceMode surface_mode = TerrainRefSurfaceMode::Filtered;
+    bool erosion_filter_enabled = false;
     bool water_surface = true;
 };
 
 [[nodiscard]] std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe);
 [[nodiscard]] TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name);
 [[nodiscard]] TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name);
+[[nodiscard]] TerrainRefSurfaceMode terrain_ref_surface_mode_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset);
 [[nodiscard]] TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name);
 [[nodiscard]] TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config);

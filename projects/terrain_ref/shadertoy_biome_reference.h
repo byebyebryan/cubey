@@ -1,0 +1,36 @@
+#pragma once
+
+#include <cstdint>
+
+namespace cubey::projects::terrain_ref {
+
+inline constexpr float kShadertoyAlpineReferenceWaterHeightM = 260.0F;
+inline constexpr float kShadertoyDunesReferenceWaterHeightM = -1000.0F;
+inline constexpr float kShadertoyLakeBasinReferenceWaterHeightM = 165.0F;
+inline constexpr float kShadertoyBadlandsReferenceWaterHeightM = -1000.0F;
+inline constexpr float kShadertoyCoastIslandReferenceWaterHeightM = 100.0F;
+inline constexpr float kShadertoyPlainsReferenceWaterHeightM = -1000.0F;
+inline constexpr float kShadertoyGorgeReferenceWaterHeightM = -1000.0F;
+inline constexpr float kShadertoyGlacialHighlandReferenceWaterHeightM = -1000.0F;
+inline constexpr float kShadertoyCraterFieldReferenceWaterHeightM = -1000.0F;
+
+[[nodiscard]] float shadertoy_alpine_reference_height(float world_x, float world_z,
+                                                      std::uint64_t seed);
+[[nodiscard]] float shadertoy_dunes_reference_height(float world_x, float world_z,
+                                                     std::uint64_t seed);
+[[nodiscard]] float shadertoy_lake_basin_reference_height(float world_x, float world_z,
+                                                          std::uint64_t seed);
+[[nodiscard]] float shadertoy_badlands_reference_height(float world_x, float world_z,
+                                                        std::uint64_t seed);
+[[nodiscard]] float shadertoy_coast_island_reference_height(float world_x, float world_z,
+                                                            std::uint64_t seed);
+[[nodiscard]] float shadertoy_plains_reference_height(float world_x, float world_z,
+                                                      std::uint64_t seed);
+[[nodiscard]] float shadertoy_gorge_reference_height(float world_x, float world_z,
+                                                     std::uint64_t seed);
+[[nodiscard]] float shadertoy_glacial_highland_reference_height(float world_x, float world_z,
+                                                                std::uint64_t seed);
+[[nodiscard]] float shadertoy_crater_field_reference_height(float world_x, float world_z,
+                                                            std::uint64_t seed);
+
+} // namespace cubey::projects::terrain_ref

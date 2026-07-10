@@ -2,6 +2,8 @@
 
 Date: 2026-06-30
 
+Updated: 2026-07-09
+
 This note maps the rebooted terrain project after the river, mountain, reference,
 and ShaderToy operator passes. It is a design map for `projects/terrain`, not a
 commit plan for one batch.
@@ -21,6 +23,42 @@ source drivers -> process operators -> product fields -> review consumers -> ada
 Biomes come after that spine. A biome should be a recipe over source drivers,
 process operators, material rules, and vegetation hints. It should not be the
 first owner of mountain, river, lake, dune, coast, or foliage logic.
+
+## Erosion And Hydrology Boundary
+
+The `terrain_ref` cross-biome erosion study establishes two separate process
+classes that the reboot should not collapse into one implementation:
+
+```text
+macro terrain source
+    -> regional hydrology and major incision
+    -> selective stateless mesoscale erosion detail
+    -> recomputed product fields
+    -> materials, foliage, water, and rendering consumers
+```
+
+Regional hydrology owns catchments, drainage continuity, river hierarchy,
+water routing, and major incision. It may require finite regional/tile products,
+halos, retained process state, or offline/baked work. The stateless
+slope-following filter owns deterministic random-access detail and remains
+unable to explain where water starts, ends, accumulates, or connects.
+
+The filter must be disabled by default and selected by a coherent policy:
+
+```text
+erosion_activity = runoff * erodibility * slope_window * land_mask * scale_mask
+```
+
+Climate/moisture, material resistance, slope range, terrain class, and feature
+scale are inputs to this policy. They are generated source/product fields, not
+hand-authored masks. Alpine and badlands are plausible consumers; coast needs
+land/beach/cliff separation; plains should remain mostly inactive; dunes should
+opt out because wind is the dominant shaping process.
+
+This decision supersedes any older wording below that treats a local gully
+filter as a possible replacement for hydrology. The experiment and visual
+evidence are recorded in
+[Terrain erosion filter generalization](terrain-erosion-filter-generalization.md).
 
 ## Work Lanes
 
@@ -74,15 +112,25 @@ Current operators:
 - clean-room gully / erosion diagnostic for mountain stress:
   `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
   `post_erosion_height_m`.
+- reference-local stateless slope-following erosion filter over arbitrary
+  source height/gradient samples, disabled by default and validated across
+  alpine, badlands, coast, plains, and dunes.
 
-Next operator:
+Next process work:
 
-- review-driven mountain cleanup or a new bounded process diagnostic such as
-  talus/scree or shallow-water/lake relaxation.
+- establish regional hydrology products for catchment, drainage, routing, and
+  major incision rather than asking the stateless filter to provide them;
+- when the terrain reboot has climate/material fields, prove one generated
+  erosion-activity policy over positive and negative sentinel recipes;
+- add bounded process diagnostics such as talus/scree or shallow-water/lake
+  relaxation only through the same explicit source/process/product boundary.
 
 Guardrails:
 
 - It is not hydraulic erosion.
+- It must not generate or imply river topology.
+- It remains disabled unless coherent runoff, erodibility, slope, land, and
+  scale fields select it.
 - It should not copy ShaderToy formulas.
 - It should consume meter-aware fields such as height, slope/derivatives, local
   relief, and optional mountain support.
@@ -113,6 +161,8 @@ Field groups:
   graph plan, graph discharge, mask, trunk, tributaries, channel width, valley
   width, channel incision, valley incision;
 - process: wetness, deposition, future erosion/talus/snow/sand/water fields;
+- erosion policy: runoff, erodibility, slope window, land/terrain class, scale
+  eligibility, activity, and signed displacement;
 - material and vegetation: rock/soil/grass masks, vegetation potential, later
   foliage eligibility fields;
 - metadata: recipe id, generator revision, grid, seed, summaries, content hash,
@@ -161,8 +211,9 @@ products into other systems.
 Use references by role:
 
 - **ShaderToy terrain/hydro**: compact process and visual vocabulary. Borrow
-  clean-room gully diagnostics, shallow-water diagnostic shape, and shoreline
-  visual cues. Do not borrow river topology or renderer architecture.
+  clean-room gully diagnostics, selective stateless detail, shallow-water
+  diagnostic shape, and shoreline visual cues. Do not borrow river topology or
+  renderer architecture, and do not label local slope detail as hydrology.
 - **terrain-erosion-3-ways**: river topology and basin graph refinement. Use it
   for upstream/downstream graph mechanics, directional inertia, upstream volume,
   and capped downcut ideas.

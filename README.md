@@ -87,8 +87,8 @@ Reference and legacy projects:
   density, sampling, and lighting before promotion into the shared cloud layer.
 - `cloud_ref_2`: Godot-v2-style cached-sky architecture reference used to
   inspect octahedral cache behavior, not a visual target.
-- `terrain_ref`: terrain reference renderer used to compare TerrainEngine and
-  ShaderToy-derived terrain cues without making it the active terrain product.
+- `terrain_ref`: frozen terrain reference renderer used to compare
+  TerrainEngine and ShaderToy-derived terrain cues.
 - `clouds_legacy`: frozen first-pass planet-aware cloud/weather prototype kept
   as evidence for scale, horizon, UI, and integration failure modes.
 - `terrain_workbench_legacy`: frozen terrain reboot workbench and preview kept

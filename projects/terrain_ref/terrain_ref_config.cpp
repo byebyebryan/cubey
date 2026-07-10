@@ -13,6 +13,26 @@ std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe) {
         return kTerrainRefRecipeTerrainEngine;
     case TerrainRefRecipe::ShadertoyMountain:
         return kTerrainRefRecipeShadertoyMountain;
+    case TerrainRefRecipe::ShadertoyAlpine:
+        return kTerrainRefRecipeShadertoyAlpine;
+    case TerrainRefRecipe::ShadertoyDunes:
+        return kTerrainRefRecipeShadertoyDunes;
+    case TerrainRefRecipe::ShadertoyLakeBasin:
+        return kTerrainRefRecipeShadertoyLakeBasin;
+    case TerrainRefRecipe::ShadertoyBadlands:
+        return kTerrainRefRecipeShadertoyBadlands;
+    case TerrainRefRecipe::ShadertoyCoastIsland:
+        return kTerrainRefRecipeShadertoyCoastIsland;
+    case TerrainRefRecipe::ShadertoyPlains:
+        return kTerrainRefRecipeShadertoyPlains;
+    case TerrainRefRecipe::ShadertoyGorge:
+        return kTerrainRefRecipeShadertoyGorge;
+    case TerrainRefRecipe::ShadertoyGlacialHighland:
+        return kTerrainRefRecipeShadertoyGlacialHighland;
+    case TerrainRefRecipe::ShadertoyCraterField:
+        return kTerrainRefRecipeShadertoyCraterField;
+    case TerrainRefRecipe::ShadertoyErosionFilter:
+        return kTerrainRefRecipeShadertoyErosionFilter;
     }
     return kTerrainRefRecipeTerrainEngine;
 }
@@ -24,8 +44,43 @@ TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name) {
     if (name == kTerrainRefRecipeShadertoyMountain) {
         return TerrainRefRecipe::ShadertoyMountain;
     }
-    throw std::runtime_error(
-        "terrain_ref recipe must be terrain-engine-ref or shadertoy-mountain");
+    if (name == kTerrainRefRecipeShadertoyAlpine) {
+        return TerrainRefRecipe::ShadertoyAlpine;
+    }
+    if (name == kTerrainRefRecipeShadertoyDunes) {
+        return TerrainRefRecipe::ShadertoyDunes;
+    }
+    if (name == kTerrainRefRecipeShadertoyLakeBasin) {
+        return TerrainRefRecipe::ShadertoyLakeBasin;
+    }
+    if (name == kTerrainRefRecipeShadertoyBadlands) {
+        return TerrainRefRecipe::ShadertoyBadlands;
+    }
+    if (name == kTerrainRefRecipeShadertoyCoastIsland) {
+        return TerrainRefRecipe::ShadertoyCoastIsland;
+    }
+    if (name == kTerrainRefRecipeShadertoyPlains) {
+        return TerrainRefRecipe::ShadertoyPlains;
+    }
+    if (name == kTerrainRefRecipeShadertoyGorge) {
+        return TerrainRefRecipe::ShadertoyGorge;
+    }
+    if (name == kTerrainRefRecipeShadertoyGlacialHighland) {
+        return TerrainRefRecipe::ShadertoyGlacialHighland;
+    }
+    if (name == kTerrainRefRecipeShadertoyCraterField) {
+        return TerrainRefRecipe::ShadertoyCraterField;
+    }
+    if (name == kTerrainRefRecipeShadertoyErosionFilter) {
+        return TerrainRefRecipe::ShadertoyErosionFilter;
+    }
+    throw std::runtime_error("terrain_ref recipe must be terrain-engine-ref, "
+                             "shadertoy-mountain, shadertoy-alpine, "
+                             "shadertoy-dunes, shadertoy-lake-basin, "
+                             "shadertoy-badlands, shadertoy-coast-island, "
+                             "shadertoy-plains, shadertoy-gorge, "
+                             "shadertoy-glacial-highland, shadertoy-crater-field, or "
+                             "shadertoy-erosion-filter");
 }
 
 TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name) {
@@ -35,7 +90,21 @@ TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name
     if (name == "height") {
         return TerrainRefMaterialMode::Height;
     }
-    throw std::runtime_error("terrain_ref preview color must be material or height");
+    if (name == "erosion") {
+        return TerrainRefMaterialMode::Erosion;
+    }
+    throw std::runtime_error("terrain_ref preview color must be material, height, or erosion");
+}
+
+TerrainRefSurfaceMode terrain_ref_surface_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "height" || name == "post-erosion") {
+        return TerrainRefSurfaceMode::Filtered;
+    }
+    if (name == "pre-process") {
+        return TerrainRefSurfaceMode::Base;
+    }
+    throw std::runtime_error(
+        "terrain_ref preview surface must be height, post-erosion, or pre-process");
 }
 
 std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset) {
@@ -50,6 +119,8 @@ std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset) {
         return "surface";
     case TerrainRefCameraPreset::SurfaceLow:
         return "surface-low";
+    case TerrainRefCameraPreset::CoastalOblique:
+        return "coastal-oblique";
     }
     return "oblique";
 }
@@ -70,8 +141,12 @@ TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name
     if (name == "surface-low" || name == "surface_low") {
         return TerrainRefCameraPreset::SurfaceLow;
     }
+    if (name == "coastal-oblique" || name == "coastal_oblique") {
+        return TerrainRefCameraPreset::CoastalOblique;
+    }
     throw std::runtime_error(
-        "terrain_ref camera preset must be oblique, profile, top, surface, or surface-low");
+        "terrain_ref camera preset must be oblique, profile, top, surface, surface-low, "
+        "or coastal-oblique");
 }
 
 TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config) {
@@ -90,6 +165,9 @@ TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& conf
         config.terrain.camera_preset.empty() ? kTerrainRefDefaultCameraPreset
                                              : std::string_view(config.terrain.camera_preset));
     result.material_mode = terrain_ref_material_mode_from_name(config.terrain.preview_color);
+    result.surface_mode = terrain_ref_surface_mode_from_name(config.terrain.preview_surface);
+    result.erosion_filter_enabled = config.terrain.preview_surface == "post-erosion" &&
+                                    result.recipe != TerrainRefRecipe::ShadertoyErosionFilter;
     result.water_surface =
         config.terrain.water_surface >= 0 ? config.terrain.water_surface != 0 : true;
 

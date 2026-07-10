@@ -6,6 +6,8 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "terrain_ref: .*rendering terrain reference"
     SOURCES
         main.cpp
+        shadertoy_biome_reference.cpp
+        shadertoy_erosion_reference.cpp
         shadertoy_mountain_reference.cpp
         terrain_engine_reference.cpp
         terrain_ref_app.cpp
@@ -18,12 +20,16 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_engine_reference.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_biome_reference.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_erosion_reference.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_mountain_reference.glsl"
 )
 
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_ref_tests
         terrain_engine_reference.cpp
+        shadertoy_biome_reference.cpp
+        shadertoy_erosion_reference.cpp
         shadertoy_mountain_reference.cpp
         terrain_ref_config.cpp
         terrain_ref_mesh.cpp
@@ -65,11 +71,75 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    set(CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-erosion-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_ref_erosion_headless_writes_png
+        cubey_project_terrain_ref
+        "${CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --terrain-recipe
+        shadertoy-erosion-filter
+        --terrain-camera-preset
+        oblique
+        --terrain-preview-surface
+        post-erosion
+        --terrain-preview-color
+        erosion
+        --no-terrain-water-surface
+    )
+    cubey_add_png_stats_test(
+        terrain_ref_erosion_headless_writes_png
+        "${CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
+    set(CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-erosion-generalization-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_ref_erosion_generalization_headless_writes_png
+        cubey_project_terrain_ref
+        "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --grid-size
+        129
+        --terrain-recipe
+        shadertoy-alpine
+        --terrain-camera-preset
+        oblique
+        --terrain-preview-surface
+        post-erosion
+        --terrain-preview-color
+        erosion
+        --no-terrain-water-surface
+    )
+    cubey_add_png_stats_test(
+        terrain_ref_erosion_generalization_headless_writes_png
+        "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
     cubey_label_tests(
         reference
         terrain_ref_reaches_glfw
         terrain_ref_tests
         terrain_ref_headless_writes_png
         terrain_ref_headless_writes_png_stats
+        terrain_ref_erosion_headless_writes_png
+        terrain_ref_erosion_headless_writes_png_stats
+        terrain_ref_erosion_generalization_headless_writes_png
+        terrain_ref_erosion_generalization_headless_writes_png_stats
     )
 endif()
