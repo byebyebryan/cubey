@@ -37,8 +37,8 @@ write_header() {
         printf -- '- Frames: %s\n' "${FRAMES}"
         printf -- '- Clouds: disabled\n\n'
         printf 'This pack checks final-scene integration of the shared geometry moon path '
-        printf 'inside planet. It complements the atmosphere moon debug pack, which is the '
-        printf 'closer material/detail review surface.\n\n'
+        printf 'inside planet using the protected day-moon and occlusion presets. The additional '
+        printf 'environment rows complement the atmosphere phase and material diagnostics.\n\n'
         printf '| Capture | Group | Args |\n'
         printf '|---|---|---|\n'
     } >"${INDEX}"
@@ -78,48 +78,44 @@ write_contact_sheet() {
 
 surface_base=(
     --planet-camera-mode surface
-    --planet-camera-altitude-m 1200
-    --planet-day-of-year 80
 )
 
 orbit_base=(
     --planet-camera-mode orbit
-    --planet-day-of-year 80
 )
 
 write_header
 
-capture_named surface-antisun-night "Surface antisun night" surface \
+capture_named surface-day-moon "Surface day moon" surface \
     "${surface_base[@]}" \
+    --planet-day-of-year 87.4 \
+    --planet-time-hours 12.0
+
+capture_named orbit-moon-occlusion "Orbit moon occlusion" orbit \
+    "${orbit_base[@]}" \
+    --planet-day-of-year 88 \
+    --planet-time-hours 18.13
+
+capture_named surface-antisun-night "Surface antisun night" environment \
+    "${surface_base[@]}" \
+    --planet-camera-altitude-m 1200 \
+    --planet-day-of-year 80 \
     --planet-time-hours 12.0 \
     --planet-camera-surface-look antisun \
     --planet-camera-surface-pitch-deg 12
 
-capture_named surface-twilight "Surface twilight" surface \
+capture_named surface-twilight "Surface twilight" environment \
     "${surface_base[@]}" \
+    --planet-camera-altitude-m 1200 \
+    --planet-day-of-year 80 \
     --planet-time-hours 17.8 \
     --planet-camera-surface-look antisun \
     --planet-camera-surface-pitch-deg 8
 
-capture_named surface-day-washout "Surface day washout" surface \
-    "${surface_base[@]}" \
-    --planet-time-hours 18.0 \
-    --planet-camera-surface-look sun \
-    --planet-camera-surface-pitch-deg 10
-
-capture_named orbit-night-limb "Orbit night limb" orbit \
-    "${orbit_base[@]}" \
-    --planet-camera-altitude-m 2400000 \
-    --planet-time-hours 12.0
-
-capture_named orbit-terminator "Orbit terminator" orbit \
-    "${orbit_base[@]}" \
-    --planet-camera-altitude-m 2400000 \
-    --planet-time-hours 15.0
-
-capture_named orbit-starfield "Orbit starfield" orbit \
+capture_named orbit-starfield "Orbit starfield" environment \
     "${orbit_base[@]}" \
     --planet-camera-altitude-m 14000000 \
+    --planet-day-of-year 80 \
     --planet-time-hours 12.0
 
 write_contact_sheet

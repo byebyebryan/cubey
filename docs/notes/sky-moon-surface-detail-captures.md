@@ -31,10 +31,11 @@ projects/planet/capture_moon_review.sh outputs/planet-moon-review-latest
 ```
 
 These packs supersede the older one-off v15 commands for routine review. The
-atmosphere pack is the material/detail baseline because it includes `moon` and
-`moon-surface` debug views across several phase offsets. The planet pack is a
-final-scene integration check for daytime washout, twilight, night, orbit, and
-starfield contexts.
+atmosphere pack includes readable new/quarter/full/waning geometry checks plus
+one neutral `moon-surface` material diagnostic. Its final rows are environment
+lighting checks and do not promise moon framing. The planet pack reuses the
+protected day-moon and moon-occlusion presets for final-scene integration, with
+additional night/twilight/starfield context.
 
 ## Previous Routing Captures
 
@@ -84,8 +85,8 @@ mkdir -p outputs/sky-moon-surface-detail-001
   frame the moon well for texture review. The enlarged crescent capture shows
   final-view binding and phase behavior; the sphere debug capture remains the
   controlled full-disk texture check.
-- The `moon` debug view now frames and front-lights the geometry moon for a
-  small-disk material check. Use low moon intensity for this capture so the
-  texture does not clip white.
+- The `moon` debug view uses a fixed readable disk and a synthetic phase light:
+  new is backlit, full faces the camera, and quarter/waning light opposite sides.
+  Phase review is therefore independent of final-scene camera framing.
 - Remaining visual tuning is mostly final-scene moon-size contrast and
   capture-driven material balance.

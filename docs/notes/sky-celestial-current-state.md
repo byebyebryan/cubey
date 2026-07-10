@@ -95,6 +95,8 @@ explicit follow-up work unless they gain their own geometry insertion point.
 Stars and the Milky Way are generated assets and shader procedures, not real sky
 catalog data. The night-sky cubemap is deterministic and layered, with
 procedural Milky Way structure, dust, star clouds, HII emission, and speckles.
+The accepted V2 recipe is the only runtime formula; the superseded V1 selector
+and implementation are retained only in Git history.
 The shader also adds foreground procedural stars and fades sky content through
 twilight, horizon, light-pollution, and moon-washout controls.
 

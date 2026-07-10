@@ -1479,12 +1479,14 @@ int main() {
                      "atmosphere moon debug view should use the geometry moon");
     require_contains(app_source, "const bool framed_moon_debug = moon_debug || surface_debug",
                      "atmosphere moon debug views should frame the moon toward camera");
-    require_contains(app_source, "moon_debug ? camera_forward",
-                     "atmosphere moon debug view should light the framed moon for material review");
+    require_contains(app_source,
+                     "-camera_forward * std::cos(phase_angle) + camera_right * std::sin(phase_angle)",
+                     "atmosphere moon debug view should derive readable lighting from phase");
     require_contains(app_source, "CelestialBodyShadingMode::SurfaceDebug",
                      "atmosphere moon surface debug view should use sphere surface diagnostics");
-    require_contains(app_source, "moon.angular_radius_rad = surface_debug ? 0.34F",
-                     "atmosphere moon surface debug view should render a centered close-up sphere");
+    require_contains(app_source,
+                     "surface_debug ? 0.34F : (moon_debug ? 0.12F : lunar.angular_radius)",
+                     "atmosphere moon debug views should use readable fixed review sizes");
     require_contains(
         celestial_shader_source, "textureLod(lunar_surface_map, uv, 0.0)",
         "moon surface debug should inspect base texture detail instead of averaged mips");
