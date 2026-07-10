@@ -51,6 +51,9 @@ Current active projects:
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
+- `terrain`: active CPU terrain patch product with a coherent mountain source,
+  named geometry fields, bounded regional hydrology diagnostics, scalar
+  exports, and a product-backed 3D review renderer.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
   spectrum/FFT/unpack core, with configurable cascade slots, atmosphere
   lighting, terrain-field hooks, shared cloud sky/background composition,
@@ -142,6 +145,7 @@ Project-local docs:
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Planet](projects/planet/README.md)
+- [Terrain](projects/terrain/README.md)
 - [Terrain Ref](projects/terrain_ref/README.md)
 - [Terrain Workbench Legacy](projects/terrain_workbench_legacy/README.md)
 - [Terrain Lab Legacy](projects/terrain_lab_legacy/README.md)

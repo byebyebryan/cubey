@@ -85,6 +85,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
+- [Terrain v1 baseline review](terrain-v1-baseline.md): first active terrain
+  patch product, multi-seed captures, measured generation cost, and the basin
+  and routing artifacts exposed before river selection or carving.
 - [Terrain process roadmap](terrain-process-roadmap.md): current reset point
   after river/mountain experiments, reusable process-field gaps, and the
   near-term order before adding more biome slices.

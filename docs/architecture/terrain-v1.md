@@ -2,6 +2,9 @@
 
 Date: 2026-07-10
 
+Status: implemented baseline. Review findings and measured limits are recorded
+in [`../notes/terrain-v1-baseline.md`](../notes/terrain-v1-baseline.md).
+
 ## Goal
 
 `projects/terrain` starts as a deterministic local terrain patch product, not a
