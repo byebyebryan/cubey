@@ -263,9 +263,19 @@ void test_procedural_patch_domains_expand_bordered_sample_grids() {
     require_near(sample_grid.cell_size, 4.0F, 0.0F,
                  "patch sample grids should preserve cell size");
     require_near(sample_grid.origin_x, 100.0F, 0.0F,
-                 "patch sample grids should preserve origin x");
+                 "patch sample grids should preserve center origin x");
     require_near(sample_grid.origin_y, -40.0F, 0.0F,
-                 "patch sample grids should preserve origin y");
+                 "patch sample grids should preserve center origin y");
+    for (std::uint32_t x : {0U, domain.interior_grid.width - 1U}) {
+        require_near(cubey::procedural::grid_sample_x(sample_grid, x + domain.border_samples),
+                     cubey::procedural::grid_sample_x(domain.interior_grid, x), 0.0F,
+                     "cropped patch samples should preserve interior x coordinates");
+    }
+    for (std::uint32_t y : {0U, domain.interior_grid.height - 1U}) {
+        require_near(cubey::procedural::grid_sample_y(sample_grid, y + domain.border_samples),
+                     cubey::procedural::grid_sample_y(domain.interior_grid, y), 0.0F,
+                     "cropped patch samples should preserve interior y coordinates");
+    }
 
     const cubey::procedural::SampleDomain2D sample_domain =
         cubey::procedural::patch_sample_domain(domain);
@@ -297,6 +307,33 @@ void test_procedural_patch_domains_expand_bordered_sample_grids() {
             });
         },
         "patch domains should reject bordered grid overflow");
+    require_throws(
+        [] {
+            (void)cubey::procedural::patch_sample_grid(cubey::procedural::PatchDomain2D{
+                .interior_grid =
+                    {
+                        .width = 3U,
+                        .height = 3U,
+                        .cell_size = std::numeric_limits<float>::infinity(),
+                    },
+                .border_samples = 1U,
+            });
+        },
+        "patch domains should reject non-finite spacing");
+    require_throws(
+        [] {
+            (void)cubey::procedural::patch_sample_grid(cubey::procedural::PatchDomain2D{
+                .interior_grid =
+                    {
+                        .width = 3U,
+                        .height = 3U,
+                        .cell_size = std::numeric_limits<float>::max(),
+                        .origin_x = std::numeric_limits<float>::max(),
+                    },
+                .border_samples = 1U,
+            });
+        },
+        "patch domains should reject bordered coordinate overflow");
 }
 
 void test_procedural_artifact_metadata_counts_mipped_samples() {
