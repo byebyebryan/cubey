@@ -82,6 +82,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain project map](terrain-project-map.md): lane map for source drivers,
   process operators, product fields, review consumers, integration adapters, and
   staged terrain work after the reference and ShaderToy passes.
+- [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
+  matrix, recipe status, freeze policy, and explicit carry/reject decisions for
+  the production terrain reboot.
 - [Terrain process roadmap](terrain-process-roadmap.md): current reset point
   after river/mountain experiments, reusable process-field gaps, and the
   near-term order before adding more biome slices.

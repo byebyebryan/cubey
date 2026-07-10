@@ -1,9 +1,10 @@
 # Terrain Ref
 
-`projects/terrain_ref` is the active visual reference lane for terrain. It is
-not the production terrain system and it does not inherit the old river/mountain
-workbench pipeline. It currently carries these reference recipes over a Cubey
-clipmap review mesh:
+`projects/terrain_ref` is the frozen, maintenance-only visual benchmark for
+terrain. It is not the production terrain system and it does not inherit the
+old river/mountain workbench pipeline. Do not add recipes or evolve its product
+contract; new terrain work belongs in `projects/terrain`. The benchmark carries
+these reference recipes over a Cubey clipmap review mesh:
 
 - `terrain-engine-ref`: a TerrainEngine-inspired shader-side height sampler and
   procedural material presentation.
@@ -87,9 +88,11 @@ mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mounta
 projects/terrain_ref/capture_shadertoy_biome_refs.sh
 projects/terrain_ref/capture_shadertoy_erosion_ref.sh
 projects/terrain_ref/capture_erosion_generalization.sh
+projects/terrain_ref/capture_closure_review.sh
 ```
 
-Next rendering work should handle the parts deliberately deferred here: a
-ShaderToy-style rendering reference pass, a real water pass with scene
-color/depth inputs, stronger shared atmosphere/lighting, tessellation/LOD
-parity, and a less finite-looking view-centered mesh.
+The closure status, multi-seed matrix, carry-forward decisions, and known weak
+recipes are recorded in
+[`docs/notes/terrain-ref-closure.md`](../../docs/notes/terrain-ref-closure.md).
+Further feature and rendering work is intentionally deferred to the terrain
+reboot and its consumers.
