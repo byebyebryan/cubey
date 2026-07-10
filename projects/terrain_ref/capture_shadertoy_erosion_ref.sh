@@ -78,4 +78,3 @@ magick montage "${seed_inputs[@]}" -geometry 360x203+8+24 -tile 4x \
 
 printf 'recipe=shadertoy-erosion-filter\nwidth=%s\nheight=%s\nseeds=%s\nelapsed_seconds=%s\n' \
     "${WIDTH}" "${HEIGHT}" "${seeds[*]}" "${SECONDS}" > "${OUT_DIR}/capture-summary.txt"
-
