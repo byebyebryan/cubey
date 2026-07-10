@@ -2,8 +2,8 @@
 
 Date: 2026-07-10
 
-Status: implemented baseline. Review findings and measured limits are recorded
-in [`../notes/terrain-v1-baseline.md`](../notes/terrain-v1-baseline.md).
+Status: implemented source bakeoff. Current findings are recorded in
+[`../notes/terrain-source-bakeoff-v1.md`](../notes/terrain-source-bakeoff-v1.md).
 
 ## Goal
 
@@ -22,8 +22,9 @@ The project-local request contains:
 
 - a `cubey::procedural::PatchDomain2D` describing the requested interior grid,
   world origin, cell size, world seed, semantic space, and patch address;
-- recipe id `upland-catchment-v1`;
-- generator revision `1`.
+- recipe id plus its required generator revision;
+- default `upland-catchment-v1` revision `2`;
+- comparison `upland-broad-noise-control-v1` revision `1`.
 
 The default interior is `257x257` samples at `32 m` spacing, approximately
 `8.2 km` per side. Generation uses a fixed 32-sample process halo. Interior
@@ -46,10 +47,11 @@ The first product fields are:
 | Regional routing | `routing_surface_m`, `routing_fill_delta_m`, `flow_direction_x`, `flow_direction_z` |
 | Drainage diagnostics | `contributing_area_m2`, `stream_order`, `discharge_proxy`, `sink_mask`, `flow_boundary_mask` |
 
-`height_m` equals `source_height_m` in revision 1. Hydrology cannot modify it.
-The first source is a terrain-owned clean-room mountain implementation informed
-by the frozen ShaderToy mountain reference. It has no runtime or build
-dependency on `terrain_ref` and has no independent GLSL implementation.
+The broad-noise control also publishes `uplift_potential`, `macro_mass`, and
+`base_relief_m`. `height_m` equals `source_height_m` for both recipes, and
+hydrology cannot modify it. The corrected contour source and shared-foundation
+OpenSimplex control have no runtime dependency on `terrain_ref` and no
+independent GLSL implementation.
 
 ## Hydrology Boundary
 
@@ -68,13 +70,15 @@ state, channel selection, and incision are later contracts.
 ## Consumers And Review
 
 `terrain_generate` exports every product field through `CaptureQueue` and
-writes `manifest.json` with request identity, halo/boundary policy, field stats,
-content hash, and filenames. The `terrain` app builds a finite review mesh from
+writes a v2 manifest with request identity, halo/boundary policy, field
+distributions, fixed display metadata, morphology review metrics, content hash,
+and filenames. The `terrain` app builds a finite review mesh from
 the CPU product and exposes surface, source/height, derivative, routing, area,
 order, discharge, sink, and boundary views. Presentation color is a consumer
 only; it does not add material fields to the product.
 
-Acceptance requires deterministic and seed-sensitive products, adjacent-patch
-source seams, halo-stable core fields, synthetic routing tests, flow mass
-conservation, scalar export validation, headless/windowed renderer smoke tests,
-and a three-seed review pack including a near-surface camera.
+Acceptance requires deterministic and full-64-bit seed-sensitive products,
+adjacent-patch source seams, halo-stable core fields, synthetic routing tests,
+flow mass conservation, fixed-range scalar export validation,
+headless/windowed renderer smoke tests, a three-seed recipe comparison, and a
+regional source/process frame.

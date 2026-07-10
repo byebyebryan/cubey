@@ -88,6 +88,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain v1 baseline review](terrain-v1-baseline.md): first active terrain
   patch product, multi-seed captures, measured generation cost, and the basin
   and routing artifacts exposed before river selection or carving.
+- [Terrain source bakeoff v1](terrain-source-bakeoff-v1.md): corrected contour
+  baseline versus broad OpenSimplex control, fixed-scale measurements, regional
+  captures, and the decision to move next toward uplift plus erosion.
 - [Terrain process roadmap](terrain-process-roadmap.md): current reset point
   after river/mountain experiments, reusable process-field gaps, and the
   near-term order before adding more biome slices.

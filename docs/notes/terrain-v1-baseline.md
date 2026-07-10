@@ -2,6 +2,10 @@
 
 Date: 2026-07-10
 
+This note preserves the original generator revision 1 checkpoint. Revision 2
+corrects upper-32-bit seed aliasing and is compared against the broad-noise
+control in [`terrain-source-bakeoff-v1.md`](terrain-source-bakeoff-v1.md).
+
 ## Implemented Slice
 
 The active `projects/terrain` reboot now reaches the planned first boundary:
