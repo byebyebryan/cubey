@@ -1,10 +1,14 @@
 #include "terrain_export.h"
+#include "terrain_hydrology.h"
 #include "terrain_patch.h"
+#include "upland_mountain_source.h"
 
 #include <cubey/procedural/field_2d.h>
+#include <cubey/procedural/operators.h>
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -45,8 +49,8 @@ void test_default_patch_contract() {
 
     require(product.fields.desc().width == 257U && product.fields.desc().height == 257U,
             "terrain product should publish the requested interior only");
-    require(product.fields.field_count() == 6U,
-            "terrain source slice should publish six named fields");
+    require(product.fields.field_count() == 15U,
+            "terrain v1 should publish source and hydrology fields");
     for (const std::string_view name : {
              cubey::projects::terrain::kTerrainFieldSourceHeightM,
              cubey::projects::terrain::kTerrainFieldMountainSupport,
@@ -54,6 +58,15 @@ void test_default_patch_contract() {
              cubey::projects::terrain::kTerrainFieldSlope,
              cubey::projects::terrain::kTerrainFieldCurvature,
              cubey::projects::terrain::kTerrainFieldLocalReliefM,
+             cubey::projects::terrain::kTerrainFieldRoutingSurfaceM,
+             cubey::projects::terrain::kTerrainFieldRoutingFillDeltaM,
+             cubey::projects::terrain::kTerrainFieldFlowDirectionX,
+             cubey::projects::terrain::kTerrainFieldFlowDirectionZ,
+             cubey::projects::terrain::kTerrainFieldContributingAreaM2,
+             cubey::projects::terrain::kTerrainFieldStreamOrder,
+             cubey::projects::terrain::kTerrainFieldDischargeProxy,
+             cubey::projects::terrain::kTerrainFieldSinkMask,
+             cubey::projects::terrain::kTerrainFieldFlowBoundaryMask,
          }) {
         require(product.fields.has_field(name), "terrain product is missing a required field");
         const cubey::procedural::ScalarFieldStats stats = product.fields.summarize_field(name);
@@ -65,7 +78,147 @@ void test_default_patch_contract() {
         product.fields.summarize_field(cubey::projects::terrain::kTerrainFieldSourceHeightM).span >
             100.0F,
         "default terrain source should carry meaningful elevation relief");
+    const cubey::procedural::ScalarField2D& source_height =
+        product.fields.field(cubey::projects::terrain::kTerrainFieldSourceHeightM);
+    const cubey::procedural::ScalarField2D& final_height =
+        product.fields.field(cubey::projects::terrain::kTerrainFieldHeightM);
+    require(std::equal(source_height.values().begin(), source_height.values().end(),
+                       final_height.values().begin(), final_height.values().end()),
+            "hydrology diagnostics must not modify terrain height");
+    require(product.fields.summarize_field(cubey::projects::terrain::kTerrainFieldRoutingFillDeltaM)
+                    .min >= 0.0F,
+            "routing fill delta should be non-negative");
+    require(
+        product.fields.summarize_field(cubey::projects::terrain::kTerrainFieldStreamOrder).max >=
+            2.0F,
+        "default terrain should expose a drainage hierarchy");
+    const cubey::procedural::ScalarFieldStats discharge =
+        product.fields.summarize_field(cubey::projects::terrain::kTerrainFieldDischargeProxy);
+    require(discharge.min >= 0.0F && discharge.max <= 1.0F,
+            "discharge proxy should remain normalized");
     require(product.summary.content_hash != 0U, "terrain product should carry a content hash");
+}
+
+void test_source_and_derivatives_are_halo_invariant() {
+    constexpr std::uint32_t interior_size = 33U;
+    constexpr std::uint32_t small_halo = 8U;
+    constexpr std::uint32_t large_halo = 16U;
+    const cubey::procedural::Grid2DDesc small_grid{
+        .width = interior_size + (small_halo * 2U),
+        .height = interior_size + (small_halo * 2U),
+        .cell_size = 32.0F,
+        .origin_x = 1000.0F,
+        .origin_y = -2000.0F,
+    };
+    const cubey::procedural::Grid2DDesc large_grid{
+        .width = interior_size + (large_halo * 2U),
+        .height = interior_size + (large_halo * 2U),
+        .cell_size = 32.0F,
+        .origin_x = 1000.0F,
+        .origin_y = -2000.0F,
+    };
+    const cubey::procedural::FieldSet2D small_source =
+        cubey::projects::terrain::sample_upland_mountain_fields_v1(small_grid, 9012U);
+    const cubey::procedural::FieldSet2D large_source =
+        cubey::projects::terrain::sample_upland_mountain_fields_v1(large_grid, 9012U);
+    const cubey::procedural::SlopeCurvature2D small_derivatives =
+        cubey::procedural::compute_slope_curvature(
+            small_source.field(cubey::projects::terrain::kTerrainFieldSourceHeightM));
+    const cubey::procedural::SlopeCurvature2D large_derivatives =
+        cubey::procedural::compute_slope_curvature(
+            large_source.field(cubey::projects::terrain::kTerrainFieldSourceHeightM));
+
+    for (std::uint32_t z = 0; z < interior_size; ++z) {
+        for (std::uint32_t x = 0; x < interior_size; ++x) {
+            const std::uint32_t small_x = x + small_halo;
+            const std::uint32_t small_z = z + small_halo;
+            const std::uint32_t large_x = x + large_halo;
+            const std::uint32_t large_z = z + large_halo;
+            require_near(small_source.field(cubey::projects::terrain::kTerrainFieldSourceHeightM)
+                             .at(small_x, small_z),
+                         large_source.field(cubey::projects::terrain::kTerrainFieldSourceHeightM)
+                             .at(large_x, large_z),
+                         0.0001F, "terrain source should not depend on halo size");
+            require_near(small_derivatives.slope.at(small_x, small_z),
+                         large_derivatives.slope.at(large_x, large_z), 0.0001F,
+                         "terrain slope should not depend on halo size");
+            require_near(small_derivatives.curvature.at(small_x, small_z),
+                         large_derivatives.curvature.at(large_x, large_z), 0.0001F,
+                         "terrain curvature should not depend on halo size");
+        }
+    }
+}
+
+cubey::procedural::ScalarField2D synthetic_field(std::uint32_t size, float cell_size) {
+    return cubey::procedural::ScalarField2D({.width = size, .height = size, .cell_size = cell_size},
+                                            0.0F);
+}
+
+void test_priority_flood_repairs_a_pit() {
+    cubey::procedural::ScalarField2D height = synthetic_field(17U, 10.0F);
+    for (std::uint32_t z = 0; z < 17U; ++z) {
+        for (std::uint32_t x = 0; x < 17U; ++x) {
+            height.at(x, z) = 100.0F - static_cast<float>(z);
+        }
+    }
+    height.at(8U, 8U) = -100.0F;
+    const cubey::projects::terrain::TerrainHydrologyResult result =
+        cubey::projects::terrain::compute_regional_hydrology(height, 0U);
+    require(result.routing_fill_delta_m.at(8U, 8U) > 100.0F,
+            "priority flood should raise an enclosed pit");
+    require(result.routing_surface_m.at(8U, 8U) >= height.at(8U, 8U),
+            "priority flood must not lower terrain");
+    require(result.sink_mask.at(8U, 8U) == 0.0F,
+            "priority flood should leave no sink at the repaired pit");
+}
+
+void test_monotonic_plane_routes_downhill() {
+    cubey::procedural::ScalarField2D height = synthetic_field(17U, 10.0F);
+    for (std::uint32_t z = 0; z < 17U; ++z) {
+        for (std::uint32_t x = 0; x < 17U; ++x) {
+            height.at(x, z) = 1000.0F - (static_cast<float>(x) * 10.0F);
+        }
+    }
+    const cubey::projects::terrain::TerrainHydrologyResult result =
+        cubey::projects::terrain::compute_regional_hydrology(height, 0U);
+    require(result.flow_direction_x.at(8U, 8U) > 0.99F,
+            "a monotonic x plane should route in positive x");
+    require(std::abs(result.flow_direction_z.at(8U, 8U)) < 0.01F,
+            "a monotonic x plane should not route in z");
+    require(result.contributing_area_m2.at(15U, 8U) > result.contributing_area_m2.at(8U, 8U),
+            "contributing area should grow downstream");
+}
+
+void test_branching_surface_increases_strahler_order() {
+    cubey::procedural::ScalarField2D height = synthetic_field(33U, 10.0F);
+    constexpr float outlet_x = 16.0F;
+    constexpr float outlet_z = 32.0F;
+    for (std::uint32_t z = 0; z < 33U; ++z) {
+        for (std::uint32_t x = 0; x < 33U; ++x) {
+            const float dx = static_cast<float>(x) - outlet_x;
+            const float dz = static_cast<float>(z) - outlet_z;
+            height.at(x, z) = std::sqrt((dx * dx) + (dz * dz)) * 10.0F;
+        }
+    }
+    const cubey::projects::terrain::TerrainHydrologyResult result =
+        cubey::projects::terrain::compute_regional_hydrology(height, 0U);
+    require(result.stream_order.summarize().max >= 2.0F,
+            "a converging synthetic valley should produce higher stream order");
+}
+
+void test_flow_area_is_conserved() {
+    cubey::procedural::ScalarField2D height = synthetic_field(33U, 20.0F);
+    for (std::uint32_t z = 0; z < 33U; ++z) {
+        for (std::uint32_t x = 0; x < 33U; ++x) {
+            height.at(x, z) =
+                static_cast<float>(33U - z) * 8.0F + std::sin(static_cast<float>(x) * 0.37F) * 3.0F;
+        }
+    }
+    const cubey::projects::terrain::TerrainHydrologyResult result =
+        cubey::projects::terrain::compute_regional_hydrology(height, 0U);
+    const double error = std::abs(result.terminal_outflow_area_m2 - result.total_input_area_m2);
+    require(error <= result.total_input_area_m2 * 0.00001,
+            "fractional routing should conserve contributed area");
 }
 
 void test_patch_determinism_and_seed_variation() {
@@ -183,9 +336,14 @@ void test_scalar_export_and_manifest() {
 int main() {
     try {
         test_default_patch_contract();
+        test_source_and_derivatives_are_halo_invariant();
         test_patch_determinism_and_seed_variation();
         test_adjacent_patch_source_seam();
         test_request_validation();
+        test_priority_flood_repairs_a_pit();
+        test_monotonic_plane_routes_downhill();
+        test_branching_surface_increases_strahler_order();
+        test_flow_area_is_conserved();
         test_scalar_export_and_manifest();
         std::cout << "terrain_tests: ok\n";
         return EXIT_SUCCESS;

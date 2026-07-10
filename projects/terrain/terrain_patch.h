@@ -24,6 +24,15 @@ inline constexpr std::string_view kTerrainFieldHeightM = "height_m";
 inline constexpr std::string_view kTerrainFieldSlope = "slope";
 inline constexpr std::string_view kTerrainFieldCurvature = "curvature";
 inline constexpr std::string_view kTerrainFieldLocalReliefM = "local_relief_m";
+inline constexpr std::string_view kTerrainFieldRoutingSurfaceM = "routing_surface_m";
+inline constexpr std::string_view kTerrainFieldRoutingFillDeltaM = "routing_fill_delta_m";
+inline constexpr std::string_view kTerrainFieldFlowDirectionX = "flow_direction_x";
+inline constexpr std::string_view kTerrainFieldFlowDirectionZ = "flow_direction_z";
+inline constexpr std::string_view kTerrainFieldContributingAreaM2 = "contributing_area_m2";
+inline constexpr std::string_view kTerrainFieldStreamOrder = "stream_order";
+inline constexpr std::string_view kTerrainFieldDischargeProxy = "discharge_proxy";
+inline constexpr std::string_view kTerrainFieldSinkMask = "sink_mask";
+inline constexpr std::string_view kTerrainFieldFlowBoundaryMask = "flow_boundary_mask";
 
 struct TerrainPatchRequest {
     cubey::procedural::PatchDomain2D domain{};

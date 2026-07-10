@@ -1,4 +1,5 @@
 add_library(cubey_project_terrain_core STATIC
+    terrain_hydrology.cpp
     terrain_patch.cpp
     upland_mountain_source.cpp
 )

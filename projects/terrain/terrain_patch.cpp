@@ -1,5 +1,6 @@
 #include "terrain_patch.h"
 
+#include "terrain_hydrology.h"
 #include "upland_mountain_source.h"
 
 #include <cubey/procedural/field_metadata.h>
@@ -97,6 +98,8 @@ TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request) {
         cubey::procedural::compute_slope_curvature(source_height);
     const cubey::procedural::LocalRelief2D relief =
         cubey::procedural::compute_local_relief(source_height, 4U);
+    TerrainHydrologyResult hydrology =
+        compute_regional_hydrology(source_height, request.domain.border_samples);
 
     cubey::procedural::FieldSet2D fields(request.domain.interior_grid);
     fields.add_field(std::string(kTerrainFieldSourceHeightM),
@@ -111,6 +114,24 @@ TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request) {
                      crop_to_interior(derivatives.curvature, request.domain));
     fields.add_field(std::string(kTerrainFieldLocalReliefM),
                      crop_to_interior(relief.local_span, request.domain));
+    fields.add_field(std::string(kTerrainFieldRoutingSurfaceM),
+                     crop_to_interior(hydrology.routing_surface_m, request.domain));
+    fields.add_field(std::string(kTerrainFieldRoutingFillDeltaM),
+                     crop_to_interior(hydrology.routing_fill_delta_m, request.domain));
+    fields.add_field(std::string(kTerrainFieldFlowDirectionX),
+                     crop_to_interior(hydrology.flow_direction_x, request.domain));
+    fields.add_field(std::string(kTerrainFieldFlowDirectionZ),
+                     crop_to_interior(hydrology.flow_direction_z, request.domain));
+    fields.add_field(std::string(kTerrainFieldContributingAreaM2),
+                     crop_to_interior(hydrology.contributing_area_m2, request.domain));
+    fields.add_field(std::string(kTerrainFieldStreamOrder),
+                     crop_to_interior(hydrology.stream_order, request.domain));
+    fields.add_field(std::string(kTerrainFieldDischargeProxy),
+                     crop_to_interior(hydrology.discharge_proxy, request.domain));
+    fields.add_field(std::string(kTerrainFieldSinkMask),
+                     crop_to_interior(hydrology.sink_mask, request.domain));
+    fields.add_field(std::string(kTerrainFieldFlowBoundaryMask),
+                     crop_to_interior(hydrology.flow_boundary_mask, request.domain));
 
     TerrainPatchProduct result{
         .request = request,
