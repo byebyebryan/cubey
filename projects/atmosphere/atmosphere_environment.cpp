@@ -29,6 +29,8 @@ atmosphere_environment_render_view(AtmosphereRenderView view) {
         return cubey::render::AtmosphereEnvironmentRenderView::Moon;
     case AtmosphereRenderView::MoonSurface:
         return cubey::render::AtmosphereEnvironmentRenderView::MoonSurface;
+    case AtmosphereRenderView::Stars:
+        return cubey::render::AtmosphereEnvironmentRenderView::Stars;
     }
     throw std::runtime_error("unknown atmosphere render view");
 }

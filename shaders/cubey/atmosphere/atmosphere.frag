@@ -3,7 +3,7 @@
 
 #include "cubey/atmosphere.glsl"
 #include "cubey/color_space.glsl"
-#include "cubey/procedural/noise.glsl"
+#include "cubey/procedural/random.glsl"
 
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
 const float ATMOSPHERE_MIN_TWILIGHT_SOFTNESS = 0.022;
@@ -53,6 +53,7 @@ void main() {
     bool render_sun_disk = render_celestial_content && atmosphere.celestial_render_options.x >= 0.5;
     bool render_night_sky =
         render_celestial_content && atmosphere.celestial_render_options.y >= 0.5;
+    bool render_star_debug = debug_view == CUBEY_ATMOSPHERE_VIEW_STARS;
 
     if ((debug_view == CUBEY_ATMOSPHERE_VIEW_MOON ||
          debug_view == CUBEY_ATMOSPHERE_VIEW_MOON_SURFACE)) {
@@ -83,14 +84,16 @@ void main() {
                          dot(ray_direction, atmosphere_camera_up(ray_origin, planet_center)))
             : 1.0;
     if (!segment.hit_atmosphere) {
-        vec3 space_color = (render_sun_disk ? sun_disk_luminance(ray_origin, atmosphere_ray_direction,
-                                                                 planet_center) *
-                                                  celestial_horizon_visibility
-                                            : vec3(0.0)) +
-                           (render_night_sky ? space_night_sky_radiance(atmosphere_ray_direction,
-                                                                         sun_direction) *
-                                                    celestial_horizon_visibility
-                                             : vec3(0.0));
+        vec3 space_night =
+            render_star_debug
+                ? space_procedural_star_radiance(atmosphere_ray_direction, sun_direction)
+                : space_night_sky_radiance(atmosphere_ray_direction, sun_direction);
+        vec3 space_color =
+            (render_sun_disk && !render_star_debug
+                 ? sun_disk_luminance(ray_origin, atmosphere_ray_direction, planet_center) *
+                       celestial_horizon_visibility
+                 : vec3(0.0)) +
+            (render_night_sky ? space_night * celestial_horizon_visibility : vec3(0.0));
         out_color = vec4(space_color, 1.0);
         return;
     }
@@ -101,10 +104,13 @@ void main() {
 
     CubeyAtmosphereSample atmosphere_sample = integrate_atmosphere(
         ray_origin, atmosphere_ray_direction, segment.start, segment.end, planet_center);
-    vec3 night_sky_radiance_value =
-        segment.camera_inside_atmosphere
-            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)
-            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction);
+    vec3 night_sky_radiance_value = render_star_debug
+        ? (segment.camera_inside_atmosphere
+               ? procedural_star_radiance(atmosphere_ray_direction, sun_direction)
+               : space_procedural_star_radiance(atmosphere_ray_direction, sun_direction))
+        : (segment.camera_inside_atmosphere
+               ? night_sky_radiance(atmosphere_ray_direction, sun_direction)
+               : space_night_sky_radiance(atmosphere_ray_direction, sun_direction));
     vec3 night_sky = (hit_ground || !render_night_sky)
         ? vec3(0.0)
         : night_sky_radiance_value * atmosphere_sample.transmittance *
@@ -133,6 +139,8 @@ void main() {
         color = render_aerial_perspective_debug(ray_origin, atmosphere_ray_direction,
                                                 planet_center);
     } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY) {
+        color = night_sky;
+    } else if (debug_view == CUBEY_ATMOSPHERE_VIEW_STARS) {
         color = night_sky;
     }
 

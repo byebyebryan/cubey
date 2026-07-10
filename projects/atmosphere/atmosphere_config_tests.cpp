@@ -197,6 +197,9 @@ int main() {
                 AtmosphereRenderView::MoonSurface,
             "atmosphere render view cycle should include moon surface after moon");
     require(next_atmosphere_render_view(AtmosphereRenderView::MoonSurface) ==
+                AtmosphereRenderView::Stars,
+            "atmosphere render view cycle should include stars after moon surface");
+    require(next_atmosphere_render_view(AtmosphereRenderView::Stars) ==
                 AtmosphereRenderView::Final,
             "atmosphere render view cycle should wrap");
     require_throws([] { static_cast<void>(atmosphere_render_view_from_name("density")); },
@@ -1270,6 +1273,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_common.glsl");
     const std::string atmosphere_night_sky_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_night_sky.glsl");
+    const std::string atmosphere_stars_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_stars.glsl");
     const std::string atmosphere_sun_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_sun.glsl");
     const std::string atmosphere_ground_source =
@@ -1278,7 +1283,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_debug.glsl");
     const std::string shader_source =
         shader_entry_source + atmosphere_common_source + atmosphere_night_sky_source +
-        atmosphere_sun_source + atmosphere_ground_source + atmosphere_debug_source;
+        atmosphere_stars_source + atmosphere_sun_source + atmosphere_ground_source +
+        atmosphere_debug_source;
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
     const std::string cloud_march_source =
@@ -1534,8 +1540,8 @@ int main() {
                      "atmosphere shader should read frame data from a uniform buffer");
     require_contains(shader_entry_source, "#include \"cubey/atmosphere.glsl\"",
                      "atmosphere shader should use the shared atmosphere helper include");
-    require_contains(shader_entry_source, "#include \"cubey/procedural/noise.glsl\"",
-                     "atmosphere shader should use shared procedural noise helpers");
+    require_contains(shader_entry_source, "#include \"cubey/procedural/random.glsl\"",
+                     "atmosphere shader should use shared procedural random helpers");
     require_contains(shader_entry_source, "#include \"atmosphere_common.glsl\"",
                      "atmosphere shader entry should include common helpers");
     require_contains(shader_entry_source, "#include \"atmosphere_night_sky.glsl\"",
@@ -1550,6 +1556,14 @@ int main() {
                      "common atmosphere helpers should own medium accessors");
     require_contains(atmosphere_night_sky_source, "night_sky_radiance",
                      "night-sky atmosphere helpers should own stellar background radiance");
+    require_contains(atmosphere_night_sky_source, "#include \"atmosphere_stars.glsl\"",
+                     "night-sky composition should include isolated star population helpers");
+    require_contains(atmosphere_stars_source, "star_equal_area_uv",
+                     "star helpers should map directions through an equal-area spherical field");
+    require_contains(atmosphere_stars_source, "star_wrap_spherical_cell",
+                     "star helpers should wrap longitude and reflect pole neighbors");
+    require_not_contains(atmosphere_stars_source, "star_cube_uv",
+                         "star helpers should not retain independently seeded cube faces");
     require_contains(atmosphere_sun_source, "sun_disk_luminance",
                      "sun atmosphere helpers should own disk and halo luminance");
     require_contains(atmosphere_ground_source, "ground_radiance",
@@ -1558,16 +1572,14 @@ int main() {
                      "debug atmosphere helpers should own debug radiance paths");
     require_contains(shader_source, "cubey_proc_hash_pcg_2d",
                      "atmosphere shader should use shared 2D PCG hashes for stars");
-    require_contains(shader_source, "cubey_proc_value_noise_pcg_2d",
-                     "atmosphere shader should use shared 2D value noise for night sky detail");
     require_not_contains(shader_source, "float hash12",
                          "atmosphere shader should not keep local 2D hash helpers");
-    require_not_contains(shader_source, "float value_noise",
-                         "atmosphere shader should not keep local value-noise helpers");
     require_contains(shader_cmake_source, "shaders/cubey/procedural/noise.glsl",
                      "shared shader package should track procedural noise dependency");
     require_contains(shader_cmake_source, "shaders/cubey/procedural/random.glsl",
                      "shared shader package should track procedural random dependency");
+    require_contains(shader_cmake_source, "atmosphere/atmosphere_stars.glsl",
+                     "atmosphere shader package should track star helper changes");
     require_contains(shared_helper_source, "cubey_atmosphere_rayleigh_phase",
                      "shared atmosphere include should define Rayleigh phase");
     require_contains(shared_helper_source, "cubey_atmosphere_mie_phase",
@@ -1624,12 +1636,18 @@ int main() {
                      "atmosphere shader should fade stars by limiting magnitude");
     require_contains(shader_source, "star_magnitude_weight",
                      "atmosphere shader should weight stars by sampled magnitude");
+    require_contains(shader_source, "faint_star_radiance(sky_direction, limiting_magnitude) *",
+                     "camera response should control the faint foreground star population");
+    require_contains(shader_source, "night_sky_camera_mode()",
+                     "star limiting magnitude should consume the night-sky response mode");
+    require_not_contains(shader_source, "limiting_magnitude -= pollution * 3.0",
+                         "space limiting magnitude should not inherit surface light pollution");
     require_contains(shader_source, "night_object_visibility",
                      "atmosphere shader should share night object visibility");
+    require_contains(shader_entry_source, "segment.camera_inside_atmosphere",
+                     "night-sky composition should distinguish surface and space visibility");
     require_contains(shader_entry_source,
-                     "segment.camera_inside_atmosphere\n"
-                     "            ? night_sky_radiance(atmosphere_ray_direction, sun_direction)\n"
-                     "            : space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
+                     "space_night_sky_radiance(atmosphere_ray_direction, sun_direction)",
                      "orbit sky rays through the atmosphere shell should use space night-sky "
                      "visibility");
     require_contains(shader_source, "star_sample_direction",
@@ -1640,6 +1658,10 @@ int main() {
                      "shared atmosphere shader include should define night sky debug view value");
     require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_NIGHT_SKY",
                      "atmosphere shader should include night sky debug output");
+    require_contains(shared_helper_source, "CUBEY_ATMOSPHERE_VIEW_STARS = 11",
+                     "shared atmosphere shader include should append the star debug view value");
+    require_contains(shader_source, "debug_view == CUBEY_ATMOSPHERE_VIEW_STARS",
+                     "atmosphere shader should include isolated star debug output");
     require_contains(shader_source,
                      "layout(set = 0, binding = 1) uniform samplerCube night_sky_atlas",
                      "atmosphere shader should sample a night sky atlas");

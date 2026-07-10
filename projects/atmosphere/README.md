@@ -57,12 +57,14 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view transmittance --output /tmp/cubey-atmosphere-transmittance.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view moon-surface --output /tmp/cubey-atmosphere-moon-surface.png
+./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset night --debug-view stars --output /tmp/cubey-atmosphere-stars.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --output /tmp/cubey-atmosphere-milky-way.png
 ./build/dev/projects/atmosphere/atmosphere --headless --debug-view milky-way --milky-way-layer dust-tau --output /tmp/cubey-atmosphere-milky-way-dust.png
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
 projects/atmosphere/capture_milky_way_layers.sh outputs/atmosphere-milky-way-layers
+projects/atmosphere/capture_star_field_review.sh outputs/atmosphere-star-field-review
 projects/atmosphere/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
 projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
 projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
@@ -122,7 +124,7 @@ Controls:
 - Space: play/pause solar time.
 - `R`: reset to the active preset.
 - `D`: cycle final, rayleigh, mie, transmittance, optical-depth, sun-disk,
-  aerial-perspective, night-sky, milky-way, moon, and moon-surface debug views.
+  aerial-perspective, night-sky, milky-way, moon, moon-surface, and stars debug views.
 - The Time panel switches between manual sun direction and local solar time.
 - The Reference panel controls the ground grid, local red/cyan axes, and origin
   marker used for orientation.
