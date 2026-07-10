@@ -134,12 +134,12 @@ CelestialBodyFrameUniforms celestial_body_frame_uniforms(
                 light_direction.z,
                 lighting.primary_light_intensity,
             },
-        .color_phase =
+        .color =
             {
                 body.color.r,
                 body.color.g,
                 body.color.b,
-                body.phase_fraction,
+                0.0F,
             },
         .visibility_atmosphere =
             {

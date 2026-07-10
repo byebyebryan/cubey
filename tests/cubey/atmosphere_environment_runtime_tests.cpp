@@ -291,8 +291,8 @@ void test_atmosphere_environment_runtime_builds_celestial_frame_payload() {
                  "celestial runtime frame should override legacy sun angular radius");
     require_near(frame.background.moon_direction_radius.x, 1.0F, 0.0001F,
                  "celestial runtime frame should override legacy moon direction");
-    require_near(frame.background.moon_phase_options.x, 0.5F, 0.0001F,
-                 "celestial runtime frame should preserve shared moon phase");
+    require_near(frame.background.moon_options.w, 1.0F, 0.0001F,
+                 "celestial runtime frame should preserve shared moon illumination");
     require_near(frame.lighting.sun_direction.y, 1.0F, 0.0001F,
                  "celestial runtime frame lighting should use shared sun direction");
     require(frame.scene_environment.diffuse_irradiance_sh[0] == frame.lighting.diffuse_irradiance_sh[0],

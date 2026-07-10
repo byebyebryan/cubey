@@ -103,7 +103,7 @@ struct PlanetSurfaceFrameUniforms {
     cubey::math::Vec4 atmosphere_ozone{0.000650F, 0.001881F, 0.000085F, 25.0F};
     cubey::math::Vec4 atmosphere_shared_options{15.0F, 22.0F, 0.022F, 0.0F};
     cubey::math::Vec4 sun_color_intensity{1.0F, 0.94F, 0.82F, 0.88F};
-    cubey::math::Vec4 moon_color_intensity{0.56F, 0.64F, 0.86F, 0.0F};
+    cubey::math::Vec4 moon_color_intensity{cubey::render::kCelestialMoonLightColor, 0.0F};
     cubey::math::Vec4 local_origin_options{0.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 local_right_outer{1.0F, 0.0F, 0.0F,
                                         kPlanetDefaultLocalDetailOuterHalfExtentM};
@@ -412,7 +412,9 @@ class PlanetApp {
                     .radius = 1.0F,
                     .latitude_segments = 32,
                     .longitude_segments = 64,
-                    .color = {0.58F, 0.62F, 0.74F},
+                    .color = {cubey::render::kCelestialMoonSurfaceColor.r,
+                              cubey::render::kCelestialMoonSurfaceColor.g,
+                              cubey::render::kCelestialMoonSurfaceColor.b},
                 });
             moon_mesh_.emplace(gpu, moon_mesh.mesh_config());
         }

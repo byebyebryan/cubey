@@ -22,23 +22,8 @@ enum class NightSkyLayerView : std::uint32_t {
 };
 
 inline constexpr std::array<NightSkyLayerView, 6> kNightSkyLayerViews{
-    NightSkyLayerView::Final,
-    NightSkyLayerView::StellarEmission,
-    NightSkyLayerView::DustTau,
-    NightSkyLayerView::StarClouds,
-    NightSkyLayerView::HiiEmission,
-    NightSkyLayerView::Speckles,
-};
-
-enum class NightSkyAtlasFormula : std::uint32_t {
-    V1 = 0,
-    V2 = 1,
-};
-
-inline constexpr NightSkyAtlasFormula kDefaultNightSkyAtlasFormula = NightSkyAtlasFormula::V2;
-inline constexpr std::array<NightSkyAtlasFormula, 2> kNightSkyAtlasFormulas{
-    NightSkyAtlasFormula::V1,
-    NightSkyAtlasFormula::V2,
+    NightSkyLayerView::Final,      NightSkyLayerView::StellarEmission, NightSkyLayerView::DustTau,
+    NightSkyLayerView::StarClouds, NightSkyLayerView::HiiEmission,     NightSkyLayerView::Speckles,
 };
 
 struct NightSkyAtlasMip {
@@ -50,7 +35,6 @@ struct NightSkyAtlasMip {
 struct NightSkyAtlasConfig {
     float procedural_variation = 0.0F;
     NightSkyLayerView layer = NightSkyLayerView::Final;
-    NightSkyAtlasFormula formula = kDefaultNightSkyAtlasFormula;
 };
 
 struct NightSkyAtlas {
@@ -59,13 +43,12 @@ struct NightSkyAtlas {
     std::vector<float> rgba32f{};
     std::vector<NightSkyAtlasMip> mips{};
     NightSkyLayerView layer = NightSkyLayerView::Final;
-    NightSkyAtlasFormula formula = kDefaultNightSkyAtlasFormula;
     cubey::procedural::ProceduralArtifactMetadata metadata{};
 };
 
 [[nodiscard]] std::uint32_t night_sky_atlas_mip_count(std::uint32_t extent);
-[[nodiscard]] NightSkyAtlas generate_night_sky_atlas(
-    const NightSkyAtlasConfig& config, std::uint32_t extent = kNightSkyAtlasExtent);
+[[nodiscard]] NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config,
+                                                     std::uint32_t extent = kNightSkyAtlasExtent);
 [[nodiscard]] std::uint64_t night_sky_atlas_hash(std::span<const float> values);
 
 } // namespace cubey::render

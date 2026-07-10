@@ -24,7 +24,7 @@ struct CelestialBodyFrameUniforms {
     cubey::math::Vec4 center_radius{0.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 camera_position_options{0.0F, 0.0F, 0.0F, 0.35F};
     cubey::math::Vec4 light_direction_intensity{0.0F, 1.0F, 0.0F, 1.0F};
-    cubey::math::Vec4 color_phase{0.58F, 0.62F, 0.74F, 0.5F};
+    cubey::math::Vec4 color{kCelestialMoonSurfaceColor, 0.0F};
     cubey::math::Vec4 visibility_atmosphere{1.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 surface_basis_right{1.0F, 0.0F, 0.0F, 0.0F};
     cubey::math::Vec4 surface_basis_up{0.0F, 1.0F, 0.0F, 0.0F};

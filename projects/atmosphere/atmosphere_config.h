@@ -18,8 +18,6 @@
 namespace cubey::projects::atmosphere {
 
 using cubey::render::kNightSkyLayerViews;
-using cubey::render::kNightSkyAtlasFormulas;
-using cubey::render::NightSkyAtlasFormula;
 using cubey::render::NightSkyLayerView;
 
 enum class AtmospherePreset : std::uint32_t {
@@ -110,7 +108,6 @@ struct TimeOfDayConfig {
 struct NightSkyConfig {
     NightSkyVisualMode visual_mode = NightSkyVisualMode::HumanEye;
     NightSkyLayerView layer = NightSkyLayerView::Final;
-    NightSkyAtlasFormula formula = cubey::render::kDefaultNightSkyAtlasFormula;
     float twilight_strength = 1.0F;
     float twilight_horizon_warmth = 1.0F;
     float star_intensity = 1.0F;
@@ -412,29 +409,6 @@ using LunarState = cubey::render::AtmosphereEnvironmentLunarState;
         }
     }
     throw std::runtime_error("unknown Milky Way layer: " + std::string(name));
-}
-
-[[nodiscard]] inline const char* night_sky_atlas_formula_name(NightSkyAtlasFormula formula) {
-    switch (formula) {
-    case NightSkyAtlasFormula::V1:
-        return "v1";
-    case NightSkyAtlasFormula::V2:
-        return "v2";
-    }
-    return "v1";
-}
-
-[[nodiscard]] inline NightSkyAtlasFormula night_sky_atlas_formula_from_name(
-    std::string_view name) {
-    if (name.empty()) {
-        return cubey::render::kDefaultNightSkyAtlasFormula;
-    }
-    for (const NightSkyAtlasFormula formula : kNightSkyAtlasFormulas) {
-        if (name == night_sky_atlas_formula_name(formula)) {
-            return formula;
-        }
-    }
-    throw std::runtime_error("unknown Milky Way formula: " + std::string(name));
 }
 
 [[nodiscard]] inline const char*
@@ -807,10 +781,6 @@ inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
     }
     if (!run.atmosphere.milky_way_layer.empty()) {
         config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
-    }
-    if (!run.atmosphere.milky_way_formula.empty()) {
-        config.night_sky.formula =
-            night_sky_atlas_formula_from_name(run.atmosphere.milky_way_formula);
     }
     if (!run.atmosphere.ground_mode.empty()) {
         config.ground_mode = atmosphere_ground_mode_from_name(run.atmosphere.ground_mode);

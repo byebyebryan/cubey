@@ -29,8 +29,9 @@ write_header() {
         printf -- '- Size: %sx%s\n' "${WIDTH}" "${HEIGHT}"
         printf -- '- Frames: %s\n\n' "${FRAMES}"
         printf 'This pack reviews the shared geometry moon path from the standalone atmosphere '
-        printf 'project. The moon debug views are material/detail checks; final views are '
-        printf 'lighting and daylight-washout checks with clouds disabled.\n\n'
+        printf 'project. The moon debug views are readable phase checks, moon-surface is a '
+        printf 'single material/detail check, and final views only review environment lighting '
+        printf 'with clouds disabled.\n\n'
         printf '| Capture | Group | Case | Args |\n'
         printf '|---|---|---|---|\n'
     } >"${INDEX}"
@@ -103,6 +104,7 @@ common_final_args=(
     --day-of-year 80
     --latitude-degrees 30
     --camera-altitude-km 0.15
+    --pause-time
     --no-reference-geometry
     --no-clouds
 )
@@ -131,39 +133,40 @@ for phase_name in new quarter full waning; do
     capture_atmosphere "debug/moon-${phase_name}.png" "Moon ${phase_name}" debug \
         "moon ${phase_name}" \
         --debug-view moon \
+        --time-of-day-mode solar \
+        --day-of-year 80 \
+        --time-hours 0 \
+        --pause-time \
         --moon-phase-offset-days "${phase_offset}" \
-        --moon-size-scale 2.0 \
-        --camera-pitch-offset-deg 0 \
-        --no-clouds
-
-    capture_atmosphere "debug/moon-surface-${phase_name}.png" "Moon surface ${phase_name}" \
-        debug "moon-surface ${phase_name}" \
-        --debug-view moon-surface \
-        --moon-phase-offset-days "${phase_offset}" \
-        --moon-size-scale 2.0 \
         --camera-pitch-offset-deg 0 \
         --no-clouds
 done
 
-capture_atmosphere "final/day-washout.png" "Day washout" final day \
+capture_atmosphere "debug/moon-surface.png" "Moon surface" debug "moon surface" \
+    --debug-view moon-surface \
+    --pause-time \
+    --camera-pitch-offset-deg 0 \
+    --no-clouds
+
+capture_atmosphere "final/day-lighting.png" "Day environment" final day \
     "${common_final_args[@]}" \
     --time-hours 14.0 \
     --camera-pitch-offset-deg 15 \
     --moon-phase-offset-days 14.765294
 
-capture_atmosphere "final/twilight-moon.png" "Twilight moon" final twilight \
+capture_atmosphere "final/twilight-lighting.png" "Twilight environment" final twilight \
     "${common_final_args[@]}" \
     --time-hours 17.8 \
     --camera-pitch-offset-deg 10 \
     --moon-phase-offset-days 14.765294
 
-capture_atmosphere "final/moonlit-night.png" "Moonlit night" final night \
+capture_atmosphere "final/night-lighting.png" "Night environment" final night \
     "${common_final_args[@]}" \
     --time-hours 1.0 \
     --camera-pitch-offset-deg 8 \
     --moon-phase-offset-days 14.765294
 
-write_labeled_sheet "${OUT_DIR}/debug-contact-sheet.png" 4x 320x180+8+24 DEBUG_FILES DEBUG_LABELS
+write_labeled_sheet "${OUT_DIR}/debug-contact-sheet.png" 3x 360x203+8+24 DEBUG_FILES DEBUG_LABELS
 write_labeled_sheet "${OUT_DIR}/final-contact-sheet.png" 3x 360x203+8+24 FINAL_FILES FINAL_LABELS
 
 printf 'atmosphere moon review captures written to %s\n' "${OUT_DIR}"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/render/celestial_system.h>
 
 #include <vulkan/vulkan.h>
 
@@ -266,7 +267,7 @@ struct CloudLayerFrameInfo {
     math::Vec3 sun_color{1.0F, 0.94F, 0.82F};
     float sun_intensity = 1.0F;
     math::Vec3 moon_direction{0.0F, 1.0F, 0.0F};
-    math::Vec3 moon_color{0.58F, 0.62F, 0.74F};
+    math::Vec3 moon_color{kCelestialMoonSurfaceColor};
     float moon_intensity = 0.0F;
     math::Vec3 ambient_color{0.045F, 0.045F, 0.045F};
     float ambient_intensity = 1.0F;

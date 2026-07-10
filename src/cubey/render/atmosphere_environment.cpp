@@ -106,7 +106,7 @@ namespace {
 }
 
 [[nodiscard]] math::Vec3 atmosphere_moon_color() {
-    return {0.58F, 0.62F, 0.74F};
+    return kCelestialMoonSurfaceColor;
 }
 
 [[nodiscard]] float atmosphere_moon_intensity(const AtmosphereEnvironmentConfig& config,
@@ -452,13 +452,6 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
                 config.moon.moonlight_intensity,
                 lunar_state.illumination,
             },
-        .moon_phase_options =
-            {
-                lunar_state.phase_fraction,
-                std::sin(lunar_state.phase_fraction * 2.0F * std::numbers::pi_v<float>),
-                0.0F,
-                0.0F,
-            },
         .milky_way_options =
             {
                 config.night_sky.milky_way_intensity,
@@ -477,7 +470,7 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms(
             {
                 config.render_sun_disk ? 1.0F : 0.0F,
                 config.render_night_sky ? 1.0F : 0.0F,
-                config.render_moon_disk ? 1.0F : 0.0F,
+                0.0F,
                 0.0F,
             },
     };
@@ -504,12 +497,6 @@ AtmosphereEnvironmentFrameUniforms atmosphere_environment_frame_uniforms_from_ce
         moon.angular_radius,
     };
     uniforms.moon_options.w = moon.illumination;
-    uniforms.moon_phase_options = {
-        moon.phase_fraction,
-        std::sin(moon.phase_fraction * 2.0F * std::numbers::pi_v<float>),
-        0.0F,
-        0.0F,
-    };
     uniforms.celestial_options.x = std::cos(celestial.planet_rotation_angle_rad);
     uniforms.celestial_options.y = std::sin(celestial.planet_rotation_angle_rad);
     return uniforms;

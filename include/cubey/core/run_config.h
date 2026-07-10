@@ -207,7 +207,6 @@ struct RunConfig {
         std::string night_sky_mode{};
         std::string ground_mode{};
         std::string milky_way_layer{};
-        std::string milky_way_formula{};
         float sun_elevation_degrees = kRunConfigUnsetFloat;
         float sun_azimuth_degrees = kRunConfigUnsetFloat;
         float camera_altitude_km = kRunConfigUnsetFloat;

@@ -153,11 +153,6 @@ RunConfig parse_run_config(int argc, char** argv) {
             "atmosphere Milky Way layer must be final, stellar-emission, dust-tau, "
             "star-clouds, hii-emission, or speckles");
     }
-    if (!config.atmosphere.milky_way_formula.empty() &&
-        config.atmosphere.milky_way_formula != "v1" &&
-        config.atmosphere.milky_way_formula != "v2") {
-        throw std::runtime_error("atmosphere Milky Way formula must be v1 or v2");
-    }
     if (config.atmosphere.time_of_day_mode == "solar" &&
         (run_config_float_is_set(config.atmosphere.sun_elevation_degrees) ||
          run_config_float_is_set(config.atmosphere.sun_azimuth_degrees))) {

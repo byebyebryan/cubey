@@ -21,6 +21,8 @@ inline constexpr float kCelestialDefaultTwilightExposure = -1.55F;
 inline constexpr float kCelestialDefaultNightExposure = 2.80F;
 inline constexpr float kCelestialDefaultPlanetRadiusM = 6371000.0F;
 inline constexpr float kCelestialDefaultAtmosphereHeightM = 100000.0F;
+inline const math::Vec3 kCelestialMoonSurfaceColor{0.58F, 0.62F, 0.74F};
+inline const math::Vec3 kCelestialMoonLightColor{0.56F, 0.64F, 0.86F};
 
 struct CelestialExposureConfig {
     bool auto_exposure_enabled = true;
@@ -53,7 +55,7 @@ struct CelestialSun {
 struct CelestialMoon {
     bool visible = true;
     cubey::math::Vec3 direction{0.0F, 0.0F, 1.0F};
-    cubey::math::Vec3 color{0.58F, 0.62F, 0.74F};
+    cubey::math::Vec3 color{kCelestialMoonSurfaceColor};
     float intensity = 0.0F;
     float angular_radius_rad = 0.00452F;
     float distance_m = 384400000.0F;
@@ -142,7 +144,7 @@ struct CelestialLighting {
     float primary_light_intensity = 0.9F;
     float primary_light_angular_radius_rad = 0.004675F;
     cubey::math::Vec3 moon_light_direction{0.0F, 0.0F, 1.0F};
-    cubey::math::Vec3 moon_light_color{0.56F, 0.64F, 0.86F};
+    cubey::math::Vec3 moon_light_color{kCelestialMoonLightColor};
     float moon_light_intensity = 0.0F;
     cubey::math::Vec3 ambient_color{0.040F, 0.050F, 0.070F};
     float ambient_intensity = 0.12F;

@@ -10,7 +10,7 @@ layout(set = 0, binding = 0) uniform PlanetCelestialBodyFrame {
     vec4 center_radius;
     vec4 camera_position_options;
     vec4 light_direction_intensity;
-    vec4 color_phase;
+    vec4 color;
     vec4 visibility_atmosphere;
     vec4 surface_basis_right;
     vec4 surface_basis_up;
@@ -25,7 +25,7 @@ void main() {
     const float radius = max(body.center_radius.w, 0.0);
     const vec3 render_position = body.center_radius.xyz + in_position * radius;
     out_normal = normalize(in_normal);
-    out_color = body.color_phase.rgb;
+    out_color = body.color.rgb;
     out_render_position = render_position;
     gl_Position = body.view_projection * vec4(render_position, 1.0);
 }

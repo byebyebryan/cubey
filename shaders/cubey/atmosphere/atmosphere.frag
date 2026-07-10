@@ -23,7 +23,6 @@ layout(set = 0, binding = 0) uniform AtmosphereFrame {
     vec4 celestial_options;
     vec4 moon_direction_radius;
     vec4 moon_options;
-    vec4 moon_phase_options;
     vec4 milky_way_options;
     vec4 render_options;
     vec4 celestial_render_options;

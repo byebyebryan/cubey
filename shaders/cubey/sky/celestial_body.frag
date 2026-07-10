@@ -12,7 +12,7 @@ layout(set = 0, binding = 0) uniform PlanetCelestialBodyFrame {
     vec4 center_radius;
     vec4 camera_position_options;
     vec4 light_direction_intensity;
-    vec4 color_phase;
+    vec4 color;
     vec4 visibility_atmosphere;
     vec4 surface_basis_right;
     vec4 surface_basis_up;

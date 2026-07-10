@@ -29,7 +29,7 @@ void require_near(float actual, float expected, float tolerance, const char* mes
 } // namespace
 
 void test_atmosphere_environment_packs_frame_uniforms() {
-    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 72U,
+    require(sizeof(cubey::render::AtmosphereEnvironmentFrameUniforms) == sizeof(float) * 68U,
             "atmosphere environment frame uniforms should keep the shader vec4 layout size");
 
     cubey::render::AtmosphereEnvironmentConfig config;
@@ -85,8 +85,6 @@ void test_atmosphere_environment_packs_frame_uniforms() {
             "atmosphere environment should pack the sun disk draw flag");
     require(uniforms.celestial_render_options.y == 1.0F,
             "atmosphere environment should pack the night sky draw flag");
-    require(uniforms.celestial_render_options.z == 0.0F,
-            "atmosphere environment should pack the moon disk draw flag");
     require(uniforms.milky_way_options.w == 1.0F,
             "atmosphere environment should pack camera visual mode for Milky Way rendering");
     require(uniforms.celestial_options.z ==
