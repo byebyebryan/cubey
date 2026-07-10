@@ -78,6 +78,7 @@ static_assert(sizeof(TerrainPushConstants) <= 128U);
     }
     if (!config.terrain.recipe.empty()) {
         request.recipe_id = config.terrain.recipe;
+        request.generator_revision = terrain_generator_revision_for_recipe(request.recipe_id);
     }
     return request;
 }

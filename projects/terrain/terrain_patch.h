@@ -13,6 +13,9 @@ namespace cubey::projects::terrain {
 
 inline constexpr std::string_view kTerrainRecipeUplandCatchmentV1 = "upland-catchment-v1";
 inline constexpr std::uint32_t kTerrainUplandCatchmentRevision = 2U;
+inline constexpr std::string_view kTerrainRecipeUplandBroadNoiseControlV1 =
+    "upland-broad-noise-control-v1";
+inline constexpr std::uint32_t kTerrainUplandBroadNoiseControlRevision = 1U;
 inline constexpr std::uint32_t kTerrainDefaultGridSize = 257U;
 inline constexpr std::uint32_t kTerrainProcessHaloSamples = 32U;
 inline constexpr float kTerrainDefaultCellSizeM = 32.0F;
@@ -20,6 +23,9 @@ inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
 
 inline constexpr std::string_view kTerrainFieldSourceHeightM = "source_height_m";
 inline constexpr std::string_view kTerrainFieldMountainSupport = "mountain_support";
+inline constexpr std::string_view kTerrainFieldUpliftPotential = "uplift_potential";
+inline constexpr std::string_view kTerrainFieldMacroMass = "macro_mass";
+inline constexpr std::string_view kTerrainFieldBaseReliefM = "base_relief_m";
 inline constexpr std::string_view kTerrainFieldHeightM = "height_m";
 inline constexpr std::string_view kTerrainFieldSlope = "slope";
 inline constexpr std::string_view kTerrainFieldCurvature = "curvature";
@@ -57,6 +63,7 @@ struct TerrainPatchProduct {
 };
 
 [[nodiscard]] TerrainPatchRequest default_terrain_patch_request();
+[[nodiscard]] std::uint32_t terrain_generator_revision_for_recipe(std::string_view recipe_id);
 void validate_terrain_patch_request(const TerrainPatchRequest& request);
 [[nodiscard]] TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request);
 

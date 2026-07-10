@@ -248,6 +248,77 @@ void test_patch_determinism_and_seed_variation() {
             "terrain seed upper bits should change the product hash");
 }
 
+void test_broad_noise_control_contract() {
+    std::uint64_t previous_hash = 0U;
+    for (const std::uint64_t seed : {0ULL, 9012ULL, 12345ULL}) {
+        cubey::projects::terrain::TerrainPatchRequest request =
+            cubey::projects::terrain::default_terrain_patch_request();
+        request.recipe_id =
+            std::string(cubey::projects::terrain::kTerrainRecipeUplandBroadNoiseControlV1);
+        request.generator_revision =
+            cubey::projects::terrain::kTerrainUplandBroadNoiseControlRevision;
+        request.domain.seed = seed;
+        const cubey::projects::terrain::TerrainPatchProduct product =
+            cubey::projects::terrain::generate_terrain_patch(request);
+        require(product.fields.field_count() == 18U,
+                "broad-noise control should publish decomposed source fields");
+        for (const std::string_view name : {
+                 cubey::projects::terrain::kTerrainFieldUpliftPotential,
+                 cubey::projects::terrain::kTerrainFieldMacroMass,
+                 cubey::projects::terrain::kTerrainFieldBaseReliefM,
+             }) {
+            require(product.fields.has_field(name),
+                    "broad-noise control is missing a source component field");
+        }
+        const cubey::procedural::ScalarFieldStats source =
+            product.fields.summarize_field(cubey::projects::terrain::kTerrainFieldSourceHeightM);
+        const cubey::procedural::ScalarFieldStats support =
+            product.fields.summarize_field(cubey::projects::terrain::kTerrainFieldMountainSupport);
+        require(source.span >= 800.0F,
+                "broad-noise control should retain mountain-scale elevation relief");
+        require(support.min >= 0.0F && support.max <= 1.0F,
+                "broad-noise mountain support should remain in unit range");
+        require(previous_hash == 0U || previous_hash != product.summary.content_hash,
+                "broad-noise audit seeds should produce distinct products");
+        previous_hash = product.summary.content_hash;
+    }
+
+    cubey::projects::terrain::TerrainPatchRequest base =
+        cubey::projects::terrain::default_terrain_patch_request();
+    base.recipe_id = std::string(cubey::projects::terrain::kTerrainRecipeUplandBroadNoiseControlV1);
+    base.generator_revision = cubey::projects::terrain::kTerrainUplandBroadNoiseControlRevision;
+    base.domain.interior_grid.width = 33U;
+    base.domain.interior_grid.height = 33U;
+    base.domain.seed = 9012U;
+    cubey::projects::terrain::TerrainPatchRequest upper_seed = base;
+    upper_seed.domain.seed += 1ULL << 32U;
+    require(cubey::projects::terrain::generate_terrain_patch(base).summary.content_hash !=
+                cubey::projects::terrain::generate_terrain_patch(upper_seed).summary.content_hash,
+            "broad-noise control should consume terrain seed upper bits");
+
+    cubey::projects::terrain::TerrainPatchRequest right = base;
+    right.domain.interior_grid.origin_x +=
+        static_cast<float>(base.domain.interior_grid.width - 1U) *
+        base.domain.interior_grid.cell_size;
+    const cubey::projects::terrain::TerrainPatchProduct left_product =
+        cubey::projects::terrain::generate_terrain_patch(base);
+    const cubey::projects::terrain::TerrainPatchProduct right_product =
+        cubey::projects::terrain::generate_terrain_patch(right);
+    for (const std::string_view name : {
+             cubey::projects::terrain::kTerrainFieldUpliftPotential,
+             cubey::projects::terrain::kTerrainFieldMacroMass,
+             cubey::projects::terrain::kTerrainFieldBaseReliefM,
+             cubey::projects::terrain::kTerrainFieldSourceHeightM,
+         }) {
+        const cubey::procedural::ScalarField2D& left_field = left_product.fields.field(name);
+        const cubey::procedural::ScalarField2D& right_field = right_product.fields.field(name);
+        for (std::uint32_t y = 0U; y < left_field.desc().height; ++y) {
+            require_near(left_field.at(left_field.desc().width - 1U, y), right_field.at(0U, y),
+                         0.0001F, "broad-noise source fields should seam in world space");
+        }
+    }
+}
+
 void test_adjacent_patch_source_seam() {
     cubey::projects::terrain::TerrainPatchRequest left =
         cubey::projects::terrain::default_terrain_patch_request();
@@ -304,6 +375,13 @@ void test_request_validation() {
     require_throws(
         [&request] { cubey::projects::terrain::validate_terrain_patch_request(request); },
         "terrain request should reject unknown recipes");
+
+    request = cubey::projects::terrain::default_terrain_patch_request();
+    request.recipe_id =
+        std::string(cubey::projects::terrain::kTerrainRecipeUplandBroadNoiseControlV1);
+    require_throws(
+        [&request] { cubey::projects::terrain::validate_terrain_patch_request(request); },
+        "terrain request should reject a recipe revision mismatch");
 }
 
 void test_scalar_export_and_manifest() {
@@ -357,10 +435,8 @@ void test_scalar_export_and_manifest() {
 }
 
 void test_fixed_field_display_ranges() {
-    cubey::procedural::ScalarField2D first({.width = 3U, .height = 1U, .cell_size = 32.0F},
-                                           0.0F);
-    cubey::procedural::ScalarField2D second({.width = 3U, .height = 1U, .cell_size = 32.0F},
-                                            0.0F);
+    cubey::procedural::ScalarField2D first({.width = 3U, .height = 1U, .cell_size = 32.0F}, 0.0F);
+    cubey::procedural::ScalarField2D second({.width = 3U, .height = 1U, .cell_size = 32.0F}, 0.0F);
     first.at(0U, 0U) = 0.0F;
     first.at(1U, 0U) = 1.0F;
     first.at(2U, 0U) = 2.0F;
@@ -377,8 +453,8 @@ void test_fixed_field_display_ranges() {
                 !first_display.patch_relative && !second_display.patch_relative,
             "known terrain fields should not derive display ranges from patch extrema");
     require_near(cubey::projects::terrain::terrain_field_display_value(1.0F, first_display),
-                 cubey::projects::terrain::terrain_field_display_value(1.0F, second_display),
-                 0.0F, "equal physical values should map to equal display values");
+                 cubey::projects::terrain::terrain_field_display_value(1.0F, second_display), 0.0F,
+                 "equal physical values should map to equal display values");
 }
 
 void test_terrain_mesh_consumes_product_fields() {
@@ -419,6 +495,7 @@ int main() {
         test_default_patch_contract();
         test_source_and_derivatives_are_halo_invariant();
         test_patch_determinism_and_seed_variation();
+        test_broad_noise_control_contract();
         test_adjacent_patch_source_seam();
         test_request_validation();
         test_priority_flood_repairs_a_pit();

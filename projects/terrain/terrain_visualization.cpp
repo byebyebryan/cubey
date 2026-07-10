@@ -13,13 +13,14 @@ namespace {
 
 [[nodiscard]] bool unit_field(std::string_view name) {
     return name == kTerrainFieldMountainSupport || name.ends_with("_mask") ||
-           name == kTerrainFieldDischargeProxy;
+           name == kTerrainFieldDischargeProxy || name == kTerrainFieldUpliftPotential ||
+           name == kTerrainFieldMacroMass;
 }
 
 } // namespace
 
-TerrainFieldDisplaySpec terrain_field_display_spec(
-    std::string_view field_name, const cubey::procedural::ScalarField2D& field) {
+TerrainFieldDisplaySpec terrain_field_display_spec(std::string_view field_name,
+                                                   const cubey::procedural::ScalarField2D& field) {
     if (field_name == kTerrainFieldSourceHeightM || field_name == kTerrainFieldHeightM ||
         field_name == kTerrainFieldRoutingSurfaceM) {
         return {.low = 0.0F, .high = 2500.0F};
@@ -36,6 +37,13 @@ TerrainFieldDisplaySpec terrain_field_display_spec(
     }
     if (field_name == kTerrainFieldLocalReliefM) {
         return {.low = 0.0F, .high = 600.0F};
+    }
+    if (field_name == kTerrainFieldBaseReliefM) {
+        return {
+            .low = -750.0F,
+            .high = 750.0F,
+            .palette = TerrainFieldDisplayPalette::Diverging,
+        };
     }
     if (field_name == kTerrainFieldRoutingFillDeltaM) {
         return {.low = 0.0F, .high = 400.0F};
@@ -77,8 +85,7 @@ float terrain_field_display_value(float value, const TerrainFieldDisplaySpec& sp
     if (spec.scale == TerrainFieldDisplayScale::Logarithmic) {
         const float low = std::max(spec.low, 0.000001F);
         const float clamped = std::clamp(value, low, spec.high);
-        return cubey::procedural::saturate(std::log(clamped / low) /
-                                           std::log(spec.high / low));
+        return cubey::procedural::saturate(std::log(clamped / low) / std::log(spec.high / low));
     }
     return cubey::procedural::saturate((value - spec.low) / (spec.high - spec.low));
 }

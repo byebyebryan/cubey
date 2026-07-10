@@ -105,6 +105,8 @@ struct TerrainGenerateConfig {
     if (config.output_dir.empty()) {
         throw std::runtime_error("terrain_generate requires --terrain-output-dir");
     }
+    config.request.generator_revision =
+        cubey::projects::terrain::terrain_generator_revision_for_recipe(config.request.recipe_id);
     return config;
 }
 

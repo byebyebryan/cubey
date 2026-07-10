@@ -1,6 +1,7 @@
 #include "terrain_patch.h"
 
 #include "terrain_hydrology.h"
+#include "upland_broad_noise_source.h"
 #include "upland_mountain_source.h"
 
 #include <cubey/procedural/field_metadata.h>
@@ -59,6 +60,16 @@ TerrainPatchRequest default_terrain_patch_request() {
     };
 }
 
+std::uint32_t terrain_generator_revision_for_recipe(std::string_view recipe_id) {
+    if (recipe_id == kTerrainRecipeUplandCatchmentV1) {
+        return kTerrainUplandCatchmentRevision;
+    }
+    if (recipe_id == kTerrainRecipeUplandBroadNoiseControlV1) {
+        return kTerrainUplandBroadNoiseControlRevision;
+    }
+    throw std::runtime_error("unknown terrain recipe: " + std::string(recipe_id));
+}
+
 void validate_terrain_patch_request(const TerrainPatchRequest& request) {
     cubey::procedural::validate_patch_domain(request.domain);
     const cubey::procedural::Grid2DDesc& grid = request.domain.interior_grid;
@@ -78,11 +89,10 @@ void validate_terrain_patch_request(const TerrainPatchRequest& request) {
     if (request.domain.space != cubey::procedural::ProceduralDomainSpace::World) {
         throw std::runtime_error("terrain v1 requires a world-space patch domain");
     }
-    if (request.recipe_id != kTerrainRecipeUplandCatchmentV1) {
-        throw std::runtime_error("terrain v1 recipe must be upland-catchment-v1");
-    }
-    if (request.generator_revision != kTerrainUplandCatchmentRevision) {
-        throw std::runtime_error("upland-catchment-v1 generator revision must be 2");
+    const std::uint32_t expected_revision =
+        terrain_generator_revision_for_recipe(request.recipe_id);
+    if (request.generator_revision != expected_revision) {
+        throw std::runtime_error("terrain recipe generator revision mismatch");
     }
 }
 
@@ -91,7 +101,9 @@ TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request) {
     const cubey::procedural::Grid2DDesc expanded_grid =
         cubey::procedural::patch_sample_grid(request.domain);
     cubey::procedural::FieldSet2D source =
-        sample_upland_mountain_fields_v1(expanded_grid, request.domain.seed);
+        request.recipe_id == kTerrainRecipeUplandCatchmentV1
+            ? sample_upland_mountain_fields_v1(expanded_grid, request.domain.seed)
+            : sample_upland_broad_noise_fields_v1(expanded_grid, request.domain.seed);
     const cubey::procedural::ScalarField2D& source_height =
         source.field(kTerrainFieldSourceHeightM);
     const cubey::procedural::SlopeCurvature2D derivatives =
@@ -106,6 +118,16 @@ TerrainPatchProduct generate_terrain_patch(const TerrainPatchRequest& request) {
                      crop_to_interior(source_height, request.domain));
     fields.add_field(std::string(kTerrainFieldMountainSupport),
                      crop_to_interior(source.field(kTerrainFieldMountainSupport), request.domain));
+    for (const std::string_view name : {
+             kTerrainFieldUpliftPotential,
+             kTerrainFieldMacroMass,
+             kTerrainFieldBaseReliefM,
+         }) {
+        if (source.has_field(name)) {
+            fields.add_field(std::string(name),
+                             crop_to_interior(source.field(name), request.domain));
+        }
+    }
     fields.add_field(std::string(kTerrainFieldHeightM),
                      crop_to_interior(source_height, request.domain));
     fields.add_field(std::string(kTerrainFieldSlope),
