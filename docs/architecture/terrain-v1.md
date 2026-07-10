@@ -2,8 +2,11 @@
 
 Date: 2026-07-10
 
-Status: implemented source bakeoff. Current findings are recorded in
-[`../notes/terrain-source-bakeoff-v1.md`](../notes/terrain-source-bakeoff-v1.md).
+Status: implemented source bakeoff; regional landscape evolution is the active
+next candidate. Current contracts are recorded in
+[`../notes/terrain-source-bakeoff-v1.md`](../notes/terrain-source-bakeoff-v1.md)
+and
+[`../notes/terrain-landscape-evolution-v1.md`](../notes/terrain-landscape-evolution-v1.md).
 
 ## Goal
 
@@ -82,3 +85,17 @@ adjacent-patch source seams, halo-stable core fields, synthetic routing tests,
 flow mass conservation, fixed-range scalar export validation,
 headless/windowed renderer smoke tests, a three-seed recipe comparison, and a
 regional source/process frame.
+
+## Regional Landscape Evolution Boundary
+
+`upland-landscape-evolution-v1` is the first height-affecting process candidate.
+It consumes the broad source and uplift field over a guarded regional domain,
+then solves a deterministic analytical stream-power model with hillslope and
+thermal terms. Unlike source sampling, its result is not independently
+patch-seam-safe. A future streaming system must extract local products from a
+shared regional solution.
+
+This candidate does not replace the current fractional hydrology diagnostics.
+It publishes its single-receiver process graph separately, then runs the common
+diagnostic hydrology over final height so source and process recipes remain
+comparable.

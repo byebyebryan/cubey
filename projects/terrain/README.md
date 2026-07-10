@@ -61,3 +61,8 @@ The current ignored review output lives under
 [`docs/notes/terrain-source-bakeoff-v1.md`](../../docs/notes/terrain-source-bakeoff-v1.md)
 for measurements, visual findings, and the next model boundary. The older
 single-recipe layout remains available through `capture_v1_baseline.sh`.
+
+The next candidate is the finite regional analytical model specified in
+[`docs/notes/terrain-landscape-evolution-v1.md`](../../docs/notes/terrain-landscape-evolution-v1.md).
+It will keep the broad source as its initial condition and add uplift-driven
+landscape evolution before any fine-detail amplification work.

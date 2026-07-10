@@ -91,6 +91,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain source bakeoff v1](terrain-source-bakeoff-v1.md): corrected contour
   baseline versus broad OpenSimplex control, fixed-scale measurements, regional
   captures, and the decision to move next toward uplift plus erosion.
+- [Terrain landscape evolution v1](terrain-landscape-evolution-v1.md): regional
+  analytical stream-power candidate, fixed model parameters, oracle/license
+  boundary, product fields, and macro-terrain acceptance contract.
 - [Terrain process roadmap](terrain-process-roadmap.md): current reset point
   after river/mountain experiments, reusable process-field gaps, and the
   near-term order before adding more biome slices.
