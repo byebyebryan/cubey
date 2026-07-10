@@ -75,3 +75,35 @@ than a new renderer.
 - Tile-border policy, regional process storage, and production terrain
   promotion.
 
+## Review Outcome
+
+The isolated reference is complete and useful enough to retain. Compared with
+the deliberately smooth base field, the filtered surface adds branching,
+slope-following gullies while preserving the broad mountain silhouette. The
+change remains visible in the surface-low material and height captures, so it
+is a geometric result rather than a shading-only treatment. The four-seed
+stress pack changes both the macro field and gully arrangement without exposing
+a fixed centered corridor or obvious cell lattice.
+
+The diagnostic uses orange/red for positive removal, blue for local negative
+removal, and a dark neutral near zero. Both signs are expected: the procedural
+filter is displacement with a lowering bias, not a mass-conserving erosion
+solver. Dense fine striations can still make steep flanks read as busy or hairy,
+and the approximate process gradients do not represent physical water flow.
+Those limitations must stay explicit if this operator is reused.
+
+Review artifacts are generated under
+`outputs/terrain_ref/shadertoy-erosion-filter/`:
+
+- `comparison-contact-sheet.png` compares base, filtered, and erosion views
+  from the oblique and surface-low cameras;
+- `seed-stress-contact-sheet.png` compares filtered geometry and erosion
+  diagnostics for seeds 0, 42, 9012, and 12345;
+- `capture-summary.txt` records a full 1280x720 pack time of 11 seconds on the
+  review machine.
+
+The result validates a stateless procedural erosion operator as a candidate
+process for a future production terrain source/process pipeline. It does not
+validate hydraulic erosion, drainage continuity, sediment behavior, tile
+boundaries, or production-scale performance. Keep it reference-local and do
+not transfer it to the alpine recipe until that work is chosen explicitly.
