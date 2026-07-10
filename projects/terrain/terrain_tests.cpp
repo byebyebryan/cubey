@@ -1,9 +1,14 @@
+#include "terrain_export.h"
 #include "terrain_patch.h"
 
 #include <cubey/procedural/field_2d.h>
 
+#include <nlohmann/json.hpp>
+
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -140,6 +145,39 @@ void test_request_validation() {
         "terrain request should reject unknown recipes");
 }
 
+void test_scalar_export_and_manifest() {
+    cubey::projects::terrain::TerrainPatchRequest request =
+        cubey::projects::terrain::default_terrain_patch_request();
+    request.domain.interior_grid.width = 17U;
+    request.domain.interior_grid.height = 17U;
+    const cubey::projects::terrain::TerrainPatchProduct product =
+        cubey::projects::terrain::generate_terrain_patch(request);
+    const std::filesystem::path output_dir =
+        std::filesystem::temp_directory_path() / "cubey-terrain-export-test";
+    std::filesystem::remove_all(output_dir);
+    cubey::projects::terrain::write_terrain_field_exports(product, output_dir);
+
+    for (const std::string& name : product.fields.field_names()) {
+        const std::filesystem::path path = output_dir / (name + ".png");
+        require(std::filesystem::exists(path) && std::filesystem::file_size(path) > 8U,
+                "terrain scalar export should write a non-empty PNG");
+    }
+    std::ifstream manifest_input(output_dir / "manifest.json");
+    require(static_cast<bool>(manifest_input), "terrain export should write a manifest");
+    nlohmann::json manifest;
+    manifest_input >> manifest;
+    require(manifest.at("schema") == "cubey.terrain.patch.v1",
+            "terrain manifest should use the v1 schema");
+    require(manifest.at("field_count") == product.fields.field_count(),
+            "terrain manifest should report every product field");
+    require(manifest.at("content_hash") == product.summary.content_hash,
+            "terrain manifest should report the product hash");
+    require(manifest.at("process_halo_samples") ==
+                cubey::projects::terrain::kTerrainProcessHaloSamples,
+            "terrain manifest should report the process halo");
+    std::filesystem::remove_all(output_dir);
+}
+
 } // namespace
 
 int main() {
@@ -148,6 +186,7 @@ int main() {
         test_patch_determinism_and_seed_variation();
         test_adjacent_patch_source_seam();
         test_request_validation();
+        test_scalar_export_and_manifest();
         std::cout << "terrain_tests: ok\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {
