@@ -87,6 +87,7 @@ function(cubey_atmosphere_shader_depends out_var)
         atmosphere_shader_depends
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_night_sky.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_stars.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_sun.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_ground.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_debug.glsl"

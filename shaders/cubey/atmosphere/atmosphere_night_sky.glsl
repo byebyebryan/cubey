@@ -93,18 +93,6 @@ vec3 twilight_radiance(vec3 ray_direction, vec3 sun_direction) {
     return (twilight_color * legacy_visibility + surface_twilight) * atmosphere.night_options.x;
 }
 
-float fbm2(vec2 uv) {
-    float value = 0.0;
-    float amplitude = 0.5;
-    mat2 rotation = mat2(1.62, 1.11, -1.11, 1.62);
-    for (int i = 0; i < 4; ++i) {
-        value += amplitude * (cubey_proc_value_noise_pcg_2d(uv) - 0.5);
-        uv = rotation * uv + vec2(19.17, 31.47);
-        amplitude *= 0.5;
-    }
-    return value;
-}
-
 vec3 rotate_around_axis(vec3 value, vec3 axis, float cos_angle, float sin_angle) {
     return value * cos_angle + cross(axis, value) * sin_angle +
            axis * dot(axis, value) * (1.0 - cos_angle);
@@ -115,20 +103,6 @@ vec3 star_sample_direction(vec3 ray_direction) {
         normalize(vec3(0.0, atmosphere.celestial_options.z, atmosphere.celestial_options.w));
     return rotate_around_axis(ray_direction, celestial_pole, atmosphere.celestial_options.x,
                               -atmosphere.celestial_options.y);
-}
-
-void star_cube_uv(vec3 direction, out vec2 uv, out float face) {
-    vec3 axis = abs(direction);
-    if (axis.x >= axis.y && axis.x >= axis.z) {
-        face = direction.x > 0.0 ? 0.0 : 1.0;
-        uv = vec2(direction.z, direction.y) / axis.x;
-    } else if (axis.y >= axis.z) {
-        face = direction.y > 0.0 ? 2.0 : 3.0;
-        uv = vec2(direction.x, direction.z) / axis.y;
-    } else {
-        face = direction.z > 0.0 ? 4.0 : 5.0;
-        uv = vec2(direction.x, direction.y) / axis.z;
-    }
 }
 
 float night_haze_visibility() {
@@ -163,42 +137,6 @@ float night_object_visibility(vec3 ray_direction, vec3 sun_direction, float hori
     float pollution = mix(1.0, pollution_min, clamp(atmosphere.milky_way_options.z, 0.0, 1.0));
     return max(night * horizon, surface_dark) * night_haze_visibility() * pollution *
            moon_washout(ray_direction, moon_base, moon_lobe, moon_min);
-}
-
-float galactic_star_density(vec3 sky_direction) {
-    vec3 pole = normalize(vec3(0.31, 0.84, 0.44));
-    vec3 center_hint = normalize(vec3(-0.45, -0.12, -0.89));
-    vec3 center = normalize(center_hint - pole * dot(center_hint, pole));
-    vec3 tangent = normalize(cross(pole, center));
-    float latitude = asin(clamp(dot(sky_direction, pole), -1.0, 1.0));
-    float longitude = atan(dot(sky_direction, tangent), dot(sky_direction, center));
-    float band = exp(-abs(latitude) * 10.5);
-    float core = exp(-(longitude * longitude) / 0.36 - (latitude * latitude) / 0.040);
-    return clamp(0.32 + band * 1.05 + core * 1.25, 0.25, 2.45);
-}
-
-vec3 star_temperature_color(float seed) {
-    vec3 warm = cubey_srgb_to_linear(vec3(1.0, 0.86, 0.68));
-    vec3 neutral = cubey_srgb_to_linear(vec3(0.95, 0.96, 1.0));
-    vec3 cool = cubey_srgb_to_linear(vec3(0.78, 0.84, 1.0));
-    float warm_weight = (1.0 - smoothstep(0.08, 0.42, seed)) * 0.45;
-    float cool_weight = smoothstep(0.76, 0.98, seed) * 0.42;
-    return mix(mix(neutral, warm, warm_weight), cool, cool_weight);
-}
-
-float star_sample_magnitude(float seed, float bright_magnitude, float faint_magnitude,
-                            float faint_bias) {
-    float t = 1.0 - pow(1.0 - clamp(seed, 0.0, 0.999), faint_bias);
-    return mix(bright_magnitude, faint_magnitude, t);
-}
-
-float star_magnitude_to_radiance(float magnitude) {
-    return pow(10.0, -0.4 * (magnitude - 1.0));
-}
-
-float star_magnitude_weight(float magnitude, float limiting_magnitude, float fade_width) {
-    return 1.0 - smoothstep(limiting_magnitude - fade_width,
-                            limiting_magnitude + fade_width, magnitude);
 }
 
 float star_limiting_magnitude(vec3 ray_direction, vec3 sun_direction) {
@@ -237,103 +175,7 @@ float space_star_limiting_magnitude(vec3 ray_direction, vec3 sun_direction) {
     return clamp(limiting_magnitude, -1.2, 6.35);
 }
 
-float star_point_spread(vec2 local, vec2 center, float radius, float halo_strength) {
-    float distance_to_star = length(local - center);
-    float antialias = min(max(length(fwidth(distance_to_star)), 0.0035), 0.010);
-    float core = 1.0 - smoothstep(radius, radius + antialias, distance_to_star);
-    float halo_radius = max(radius * 5.5, radius + antialias * 2.0);
-    float halo = (1.0 - smoothstep(radius + antialias, halo_radius, distance_to_star)) *
-                 halo_strength;
-    return core + halo;
-}
-
-vec3 star_cell_radiance(vec3 sky_direction, float cell_count, float probability,
-                        float bright_magnitude, float faint_magnitude, float magnitude_bias,
-                        float min_radius, float max_radius, float halo_strength,
-                        float limiting_magnitude, vec2 layer_seed) {
-    vec2 uv;
-    float face;
-    star_cube_uv(sky_direction, uv, face);
-    vec2 star_uv = (uv * 0.5 + 0.5) * cell_count;
-    vec2 cell = floor(star_uv);
-    vec2 local = fract(star_uv);
-    vec2 seed = cell + vec2(face * 97.0, face * 53.0) + layer_seed;
-    float candidate = cubey_proc_hash_pcg_2d(seed);
-    if (candidate >= clamp(probability, 0.0, 0.35)) {
-        return vec3(0.0);
-    }
-
-    float magnitude = star_sample_magnitude(cubey_proc_hash_pcg_2d(seed + 113.7),
-                                            bright_magnitude, faint_magnitude, magnitude_bias);
-    float magnitude_weight = star_magnitude_weight(magnitude, limiting_magnitude, 0.38);
-    if (magnitude_weight <= 0.0) {
-        return vec3(0.0);
-    }
-
-    vec2 center = vec2(cubey_proc_hash_pcg_2d(seed + 19.17),
-                       cubey_proc_hash_pcg_2d(seed + 71.31)) *
-                      0.78 +
-                  0.11;
-    float brightness_norm = clamp((faint_magnitude - magnitude) /
-                                      max(faint_magnitude - bright_magnitude, 0.001),
-                                  0.0, 1.0);
-    float radius = mix(min_radius, max_radius, pow(brightness_norm, 1.7));
-    float halo = halo_strength * pow(brightness_norm, 1.4);
-    float star = star_point_spread(local, center, radius, halo);
-    float radiance = star_magnitude_to_radiance(magnitude) * magnitude_weight;
-    return star_temperature_color(cubey_proc_hash_pcg_2d(seed + 211.9)) * star * radiance;
-}
-
-vec3 anchor_star_radiance(vec3 sky_direction, float limiting_magnitude) {
-    float density = clamp(atmosphere.night_options.w, 0.0, 1.0);
-    float galactic_bias = mix(0.85, 1.15, clamp((galactic_star_density(sky_direction) - 0.25) /
-                                                   2.20,
-                                               0.0, 1.0));
-    float probability = clamp(mix(0.0008, 0.0068, density) * galactic_bias, 0.0, 0.012);
-    vec3 stars = star_cell_radiance(sky_direction, 72.0, probability, -1.1, 2.1, 1.4,
-                                    0.024, 0.060, 0.20, limiting_magnitude,
-                                    vec2(0.0, 0.0));
-    stars += star_cell_radiance(sky_direction, 109.0, probability * 0.55, -0.5, 2.4, 1.7,
-                                0.020, 0.050, 0.12, limiting_magnitude,
-                                vec2(421.0, 97.0));
-    return stars * 0.040;
-}
-
-vec3 naked_eye_star_radiance(vec3 sky_direction, float limiting_magnitude) {
-    float density = clamp(atmosphere.night_options.w, 0.0, 1.0);
-    float galactic_bias = mix(0.72, 1.55, clamp((galactic_star_density(sky_direction) - 0.25) /
-                                                   2.20,
-                                               0.0, 1.0));
-    float probability = clamp(mix(0.004, 0.030, density) * galactic_bias, 0.0, 0.060);
-    vec3 stars = star_cell_radiance(sky_direction, 156.0, probability, 1.3, 5.5, 1.65,
-                                    0.010, 0.030, 0.035, limiting_magnitude,
-                                    vec2(173.0, 311.0));
-    stars += star_cell_radiance(sky_direction, 225.0, probability * 0.55, 2.0, 6.1, 1.45,
-                                0.007, 0.022, 0.015, limiting_magnitude,
-                                vec2(719.0, 47.0));
-    return stars * 0.040;
-}
-
-vec3 bright_star_radiance(vec3 sky_direction, float limiting_magnitude) {
-    return anchor_star_radiance(sky_direction, limiting_magnitude) +
-           naked_eye_star_radiance(sky_direction, limiting_magnitude);
-}
-
-vec3 faint_star_radiance(vec3 sky_direction, float limiting_magnitude) {
-    float density = clamp(atmosphere.night_options.w, 0.0, 1.0);
-    float galactic_density_value = galactic_star_density(sky_direction);
-    float probability = clamp(mix(0.006, 0.065, density) *
-                                  mix(0.30, 2.10,
-                                      clamp((galactic_density_value - 0.25) / 2.20, 0.0, 1.0)),
-                              0.0, 0.14);
-    vec3 stars = star_cell_radiance(sky_direction, 360.0, probability, 4.2, 7.0, 1.25,
-                                    0.0045, 0.013, 0.0, limiting_magnitude,
-                                    vec2(1193.0, 631.0));
-    stars += star_cell_radiance(sky_direction, 515.0, probability * 0.65, 4.8, 7.4, 1.15,
-                                0.0035, 0.010, 0.0, limiting_magnitude,
-                                vec2(211.0, 1543.0));
-    return stars * mix(0.026, 0.038, clamp(galactic_density_value * 0.5, 0.0, 1.0));
-}
+#include "atmosphere_stars.glsl"
 
 vec3 procedural_star_radiance(vec3 ray_direction, vec3 sun_direction) {
     float visibility = night_object_visibility(ray_direction, sun_direction, 0.18, 0.10, 0.24,

@@ -3,7 +3,7 @@
 
 #include "cubey/atmosphere.glsl"
 #include "cubey/color_space.glsl"
-#include "cubey/procedural/noise.glsl"
+#include "cubey/procedural/random.glsl"
 
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
 const float ATMOSPHERE_MIN_TWILIGHT_SOFTNESS = 0.022;
