@@ -137,6 +137,13 @@ solve_fixed_graph(const cubey::procedural::ScalarField2D& initial_height_m,
     const std::vector<std::vector<int>> jump = build_jump_table(graph);
 
     for (const std::size_t index : graph.downstream_to_upstream) {
+        const int receiver = graph.receiver[index];
+        if (receiver >= 0) {
+            initial[index] = std::max(initial[index], initial[static_cast<std::size_t>(receiver)]);
+        }
+    }
+
+    for (const std::size_t index : graph.downstream_to_upstream) {
         const int receiver_index = graph.receiver[index];
         if (receiver_index < 0) {
             result.height_m.values()[index] = initial_height_m.values()[index];
@@ -155,36 +162,37 @@ solve_fixed_graph(const cubey::procedural::ScalarField2D& initial_height_m,
                    static_cast<double>(config.hack_constant)) *
                       std::pow(drainage_area, -static_cast<double>(config.hack_exponent))
                 : 0.0;
-        double speed = std::max(fluvial + hillslope, 1.0e-12);
-        double effective_uplift = uplift_rate_m_per_year.values()[index];
-
-        const double receiver_slope =
-            std::max(static_cast<double>(initial_height_m.values()[index] -
-                                         initial_height_m.values()[receiver]) /
-                         static_cast<double>(desc.cell_size),
-                     0.0);
-        if (receiver_slope > static_cast<double>(config.critical_slope) &&
-            config.thermal_coefficient > 0.0F) {
-            speed += static_cast<double>(config.thermal_coefficient);
-            effective_uplift += static_cast<double>(config.thermal_coefficient) *
-                                static_cast<double>(config.critical_slope);
-            result.thermal_active_mask.values()[index] = 1.0F;
-        }
-
         result.fluvial_rate_m_per_year.values()[index] = static_cast<float>(fluvial);
         result.hillslope_rate_m_per_year.values()[index] = static_cast<float>(hillslope);
-        const double travel_time = static_cast<double>(desc.cell_size) / speed;
-        response_time[index] = response_time[receiver] + travel_time;
-        uplift_integral[index] = uplift_integral[receiver] + travel_time * effective_uplift;
+        const auto solve_node = [&](double speed, double effective_uplift) {
+            const double travel_time =
+                static_cast<double>(desc.cell_size) / std::max(speed, 1.0e-12);
+            response_time[index] = response_time[receiver] + travel_time;
+            uplift_integral[index] = uplift_integral[receiver] + travel_time * effective_uplift;
 
-        const double target_response = response_time[index] - config.age_years;
-        const double source_height =
-            interpolate_tree_value(index, target_response, response_time, initial, graph, jump);
-        const double source_uplift = interpolate_tree_value(index, target_response, response_time,
-                                                            uplift_integral, graph, jump);
-        const double solved = source_height + uplift_integral[index] - source_uplift;
-        result.height_m.values()[index] = static_cast<float>(
-            std::max(solved, static_cast<double>(result.height_m.values()[receiver])));
+            const double target_response = response_time[index] - config.age_years;
+            const double source_height =
+                interpolate_tree_value(index, target_response, response_time, initial, graph, jump);
+            const double source_uplift = interpolate_tree_value(
+                index, target_response, response_time, uplift_integral, graph, jump);
+            const double solved = source_height + uplift_integral[index] - source_uplift;
+            result.height_m.values()[index] = static_cast<float>(
+                std::max(solved, static_cast<double>(result.height_m.values()[receiver])));
+        };
+
+        const double base_speed = fluvial + hillslope;
+        const double uplift = uplift_rate_m_per_year.values()[index];
+        solve_node(base_speed, uplift);
+        const double solved_slope = static_cast<double>(result.height_m.values()[index] -
+                                                        result.height_m.values()[receiver]) /
+                                    static_cast<double>(desc.cell_size);
+        if (solved_slope >= static_cast<double>(config.critical_slope) &&
+            config.thermal_coefficient > 0.0F) {
+            result.thermal_active_mask.values()[index] = 1.0F;
+            solve_node(base_speed + static_cast<double>(config.thermal_coefficient),
+                       uplift + static_cast<double>(config.thermal_coefficient) *
+                                    static_cast<double>(config.critical_slope));
+        }
     }
     return result;
 }

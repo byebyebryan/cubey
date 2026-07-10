@@ -26,12 +26,21 @@ from PIL import Image, ImageDraw
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--generator", type=Path,
-                        default=Path("build/dev/projects/terrain/terrain_generate"))
-    parser.add_argument("--analytical-ref", type=Path,
-                        default=Path.home() / "code/ref/analytical-terrains")
-    parser.add_argument("--output-dir", type=Path,
-                        default=Path("outputs/terrain/landscape-evolution-v1/oracle"))
+    parser.add_argument(
+        "--generator",
+        type=Path,
+        default=Path("build/dev/projects/terrain/terrain_generate"),
+    )
+    parser.add_argument(
+        "--analytical-ref",
+        type=Path,
+        default=Path.home() / "code/ref/analytical-terrains",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("outputs/terrain/landscape-evolution-v1/oracle"),
+    )
     parser.add_argument("--seed", type=int, default=9012)
     parser.add_argument("--grid-size", type=int, default=513)
     parser.add_argument("--cell-size", type=float, default=100.0)
@@ -70,8 +79,11 @@ def orientation_metrics(height: np.ndarray, cell_size: float) -> dict[str, objec
     angle = np.mod(np.arctan2(dz, dx), math.pi)
     active = magnitude >= 0.01
     bins, _ = np.histogram(
-        angle[active], bins=16, range=(0.0, math.pi),
-        weights=np.minimum(magnitude[active], 2.0))
+        angle[active],
+        bins=16,
+        range=(0.0, math.pi),
+        weights=np.minimum(magnitude[active], 2.0),
+    )
     total = float(bins.sum())
     normalized = bins / total if total > 0.0 else bins
     return {
@@ -110,12 +122,14 @@ def graph_metrics(height: np.ndarray, receivers: np.ndarray) -> dict[str, float]
             severe_discontinuities += int(max_excess > 100.0)
             if max_excess > 0.0:
                 discontinuity_excess.append(max_excess)
-    excess_p95 = float(np.quantile(discontinuity_excess, 0.95)) if discontinuity_excess else 0.0
+    excess_p95 = (
+        float(np.quantile(discontinuity_excess, 0.95)) if discontinuity_excess else 0.0
+    )
     return {
         "unresolved_sink_coverage": unresolved_sinks / interior_count,
         "basin_discontinuity_coverage": discontinuities / interior_count,
-        "severe_basin_discontinuity_coverage_gt_100m":
-            severe_discontinuities / interior_count,
+        "severe_basin_discontinuity_coverage_gt_100m": severe_discontinuities
+        / interior_count,
         "basin_discontinuity_excess_p95_m": excess_p95,
     }
 
@@ -142,7 +156,9 @@ def hillshade(height: np.ndarray, cell_size: float) -> Image.Image:
 def labeled_sheet(images: list[tuple[str, Image.Image]], output: Path) -> None:
     width = max(image.width for _, image in images)
     label_height = 28
-    sheet = Image.new("RGB", (width * len(images), images[0][1].height + label_height), "white")
+    sheet = Image.new(
+        "RGB", (width * len(images), images[0][1].height + label_height), "white"
+    )
     draw = ImageDraw.Draw(sheet)
     for index, (label, image) in enumerate(images):
         x = index * width
@@ -163,15 +179,25 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     input_dir = args.output_dir / "input"
     input_dir.mkdir(parents=True, exist_ok=True)
-    subprocess.run([
-        str(args.generator),
-        "--grid-size", str(args.grid_size),
-        "--terrain-cell-size", str(args.cell_size),
-        "--terrain-seed", str(args.seed),
-        "--terrain-recipe", "upland-broad-noise-control-v1",
-        "--terrain-export-raw",
-        "--terrain-output-dir", str(input_dir),
-    ], check=True)
+    guard_samples = 64
+    source_grid_size = args.grid_size + (guard_samples * 2)
+    subprocess.run(
+        [
+            str(args.generator),
+            "--grid-size",
+            str(source_grid_size),
+            "--terrain-cell-size",
+            str(args.cell_size),
+            "--terrain-seed",
+            str(args.seed),
+            "--terrain-recipe",
+            "upland-broad-noise-control-v1",
+            "--terrain-export-raw",
+            "--terrain-output-dir",
+            str(input_dir),
+        ],
+        check=True,
+    )
 
     manifest = json.loads((input_dir / "manifest.json").read_text())
     initial = read_field(input_dir, manifest, "source_height_m")
@@ -182,7 +208,10 @@ def main() -> int:
     cropped_height = initial.shape[0] - (initial.shape[0] % required_multiple)
     cropped_width = initial.shape[1] - (initial.shape[1] % required_multiple)
     if cropped_height != initial.shape[0] or cropped_width != initial.shape[1]:
-        edge_crop = [initial.shape[1] - cropped_width, initial.shape[0] - cropped_height]
+        edge_crop = [
+            initial.shape[1] - cropped_width,
+            initial.shape[0] - cropped_height,
+        ]
         initial = initial[:cropped_height, :cropped_width]
         uplift_potential = uplift_potential[:cropped_height, :cropped_width]
 
@@ -213,9 +242,17 @@ def main() -> int:
     start = time.perf_counter()
     analytical_multigrid.run(data)
     elapsed = time.perf_counter() - start
-    height = np.asarray(data["height"], dtype=np.float64)
-    drainage = np.asarray(data["drain"], dtype=np.float64)
+    full_height = np.asarray(data["height"], dtype=np.float64)
+    full_drainage = np.asarray(data["drain"], dtype=np.float64)
     receivers = np.asarray(data["receivers"], dtype=np.int64).reshape(shape)
+    review_height = args.grid_size - edge_crop[1]
+    review_width = args.grid_size - edge_crop[0]
+    review_slice = (
+        slice(guard_samples, guard_samples + review_height),
+        slice(guard_samples, guard_samples + review_width),
+    )
+    height = full_height[review_slice]
+    drainage = full_drainage[review_slice]
     dz, dx = np.gradient(height, args.cell_size)
     slope = np.hypot(dx, dz)
 
@@ -229,16 +266,22 @@ def main() -> int:
     slope_image.save(args.output_dir / "slope.png")
     drainage_image.save(args.output_dir / "drainage.png")
     shade_image.save(args.output_dir / "hillshade.png")
-    labeled_sheet([
-        ("height 0..4000 m", height_image),
-        ("hillshade", shade_image),
-        ("slope 0..2.5", slope_image),
-        ("drainage log", drainage_image),
-    ], args.output_dir / "oracle-contact-sheet.png")
+    labeled_sheet(
+        [
+            ("height 0..4000 m", height_image),
+            ("hillshade", shade_image),
+            ("slope 0..2.5", slope_image),
+            ("drainage log", drainage_image),
+        ],
+        args.output_dir / "oracle-contact-sheet.png",
+    )
 
     commit = subprocess.run(
         ["git", "-C", str(args.analytical_ref), "rev-parse", "HEAD"],
-        check=True, capture_output=True, text=True).stdout.strip()
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     summary = {
         "schema": "cubey.terrain.analytical-oracle.v1",
         "reference": {
@@ -251,9 +294,12 @@ def main() -> int:
             "manifest": str((input_dir / "manifest.json").resolve()),
             "content_hash": manifest["content_hash"],
             "seed": args.seed,
-            "source_grid": [args.grid_size, args.grid_size],
-            "oracle_grid": [int(shape[1]), int(shape[0])],
+            "requested_review_grid": [args.grid_size, args.grid_size],
+            "source_grid": [source_grid_size, source_grid_size],
+            "solver_grid": [int(shape[1]), int(shape[0])],
+            "published_review_grid": [int(height.shape[1]), int(height.shape[0])],
             "cell_size_m": args.cell_size,
+            "guard_samples": guard_samples,
             "positive_edge_crop_samples": edge_crop,
         },
         "parameters": {
@@ -274,10 +320,14 @@ def main() -> int:
             "drainage_area_m2": distribution(drainage),
         },
         "review_metrics": orientation_metrics(height, args.cell_size)
-        | graph_metrics(height, receivers),
+        | graph_metrics(full_height, receivers),
     }
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-    print(f"analytical oracle: {shape[1]}x{shape[0]} in {elapsed:.3f}s -> {args.output_dir}")
+    print(
+        f"analytical oracle: solver={shape[1]}x{shape[0]} "
+        f"review={height.shape[1]}x{height.shape[0]} "
+        f"in {elapsed:.3f}s -> {args.output_dir}"
+    )
     return 0
 
 

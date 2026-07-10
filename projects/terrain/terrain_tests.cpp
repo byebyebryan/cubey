@@ -263,6 +263,25 @@ void test_landscape_graph_is_deterministic_and_seed_sensitive() {
             "landscape receiver choices should consume the world seed");
 }
 
+void test_landscape_graph_uses_all_lower_neighbors_for_gradient_correction() {
+    cubey::procedural::ScalarField2D plane = synthetic_field(17U, 100.0F);
+    cubey::procedural::ScalarField2D diagonal = synthetic_field(17U, 100.0F);
+    for (std::uint32_t y = 0U; y < 17U; ++y) {
+        for (std::uint32_t x = 0U; x < 17U; ++x) {
+            plane.at(x, y) = 1000.0F - static_cast<float>(x) * 10.0F;
+            diagonal.at(x, y) = 1000.0F - static_cast<float>(x + y) * 10.0F;
+        }
+    }
+    const auto plane_graph =
+        cubey::projects::terrain::build_terrain_landscape_graph(plane, 9012U, 0U);
+    const auto diagonal_graph =
+        cubey::projects::terrain::build_terrain_landscape_graph(diagonal, 9012U, 0U);
+    require_near(plane_graph.slope_correction.at(8U, 8U), 1.0F, 0.0001F,
+                 "single-axis landscape gradient correction should remain one");
+    require_near(diagonal_graph.slope_correction.at(8U, 8U), std::sqrt(2.0F), 0.0001F,
+                 "landscape gradient correction should include every lower axis");
+}
+
 void test_landscape_multigrid_resampling_preserves_constant_fields() {
     cubey::procedural::ScalarField2D field = synthetic_field(33U, 50.0F);
     field.fill(123.0F);
@@ -396,6 +415,22 @@ void test_landscape_evolution_recipe_contract() {
             first.fields.field(cubey::projects::terrain::kTerrainFieldSourceHeightM).values().end(),
             first.fields.field(cubey::projects::terrain::kTerrainFieldHeightM).values().begin()),
         "landscape recipe should evolve rather than republish its source");
+
+    const std::filesystem::path output_dir =
+        std::filesystem::temp_directory_path() / "cubey-terrain-landscape-manifest-test";
+    std::filesystem::remove_all(output_dir);
+    cubey::projects::terrain::write_terrain_manifest(first, output_dir);
+    std::ifstream manifest_input(output_dir / "manifest.json");
+    nlohmann::json manifest;
+    manifest_input >> manifest;
+    require(manifest.at("generation_scope") == "regional-not-seam-safe" &&
+                manifest.at("process_halo_samples") ==
+                    cubey::projects::terrain::kTerrainLandscapeProcessHaloSamples,
+            "landscape manifest should disclose its regional solve boundary");
+    require(manifest.at("process_model").at("name") == "transient-analytical-landscape-evolution" &&
+                manifest.at("review_metrics").at("process_unresolved_sink_count") == 0U,
+            "landscape manifest should identify its model and process health");
+    std::filesystem::remove_all(output_dir);
 
     request.domain.seed += 1ULL << 32U;
     const auto changed = cubey::projects::terrain::generate_terrain_patch(request);
@@ -712,6 +747,7 @@ int main() {
         test_flow_area_is_conserved();
         test_landscape_graph_breaches_depressions_and_conserves_area();
         test_landscape_graph_is_deterministic_and_seed_sensitive();
+        test_landscape_graph_uses_all_lower_neighbors_for_gradient_correction();
         test_landscape_multigrid_resampling_preserves_constant_fields();
         test_landscape_upsampling_jitter_is_deterministic();
         test_landscape_evolution_age_zero_preserves_initial_height();

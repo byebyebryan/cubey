@@ -70,6 +70,8 @@ ctest --preset dev -L terrain --output-on-failure
 
 projects/terrain/capture_review.sh
 
+projects/terrain/capture_landscape_evolution_v1.sh
+
 projects/terrain/run_analytical_oracle.py \
   --analytical-ref ~/code/ref/analytical-terrains
 ```
@@ -95,3 +97,6 @@ It keeps the broad source as its initial condition and adds uplift-driven
 landscape evolution before any fine-detail amplification work. It is regional
 truth, not an independently seam-safe tile recipe; later streaming should
 extract patches from a shared regional solve.
+Its three-seed evidence and remaining four-neighbor routing artifacts are
+captured in
+[`docs/notes/terrain-landscape-evolution-v1-review.md`](../../docs/notes/terrain-landscape-evolution-v1-review.md).

@@ -278,23 +278,38 @@ build_terrain_landscape_graph(const cubey::procedural::ScalarField2D& height_m, 
             result.flow_direction_z.values()[index] =
                 static_cast<float>(target_y - static_cast<int>(y));
 
-            const std::uint32_t x0 = x == 0U ? x : x - 1U;
-            const std::uint32_t x1 = std::min(x + 1U, desc.width - 1U);
-            const std::uint32_t y0 = y == 0U ? y : y - 1U;
-            const std::uint32_t y1 = std::min(y + 1U, desc.height - 1U);
-            const float dx = std::max(static_cast<float>(x1 - x0) * desc.cell_size, 1.0F);
-            const float dy = std::max(static_cast<float>(y1 - y0) * desc.cell_size, 1.0F);
-            const float gradient_x =
-                (result.routing_surface_m.at(x1, y) - result.routing_surface_m.at(x0, y)) / dx;
-            const float gradient_y =
-                (result.routing_surface_m.at(x, y1) - result.routing_surface_m.at(x, y0)) / dy;
-            const float full_slope = std::hypot(gradient_x, gradient_y);
-            const float receiver_slope = (result.routing_surface_m.values()[index] -
-                                          result.routing_surface_m.values()[target]) /
-                                         desc.cell_size;
-            if (receiver_slope > 0.000001F) {
+            float gradient_x = 0.0F;
+            float gradient_y = 0.0F;
+            float lower_x_count = 0.0F;
+            float lower_y_count = 0.0F;
+            const float center = result.routing_surface_m.values()[index];
+            for (std::size_t direction = 0U; direction < kOffsetX.size(); ++direction) {
+                const int neighbor_x = static_cast<int>(x) + kOffsetX[direction];
+                const int neighbor_y = static_cast<int>(y) + kOffsetY[direction];
+                if (!in_bounds(desc, neighbor_x, neighbor_y)) {
+                    continue;
+                }
+                const float drop =
+                    center - result.routing_surface_m.at(static_cast<std::uint32_t>(neighbor_x),
+                                                         static_cast<std::uint32_t>(neighbor_y));
+                if (drop <= 0.0F) {
+                    continue;
+                }
+                if (kOffsetX[direction] != 0) {
+                    gradient_x += drop;
+                    lower_x_count += 1.0F;
+                } else {
+                    gradient_y += drop;
+                    lower_y_count += 1.0F;
+                }
+            }
+            gradient_x /= std::max(lower_x_count, 1.0F);
+            gradient_y /= std::max(lower_y_count, 1.0F);
+            const float full_drop = std::hypot(gradient_x, gradient_y);
+            const float receiver_drop = center - result.routing_surface_m.values()[target];
+            if (receiver_drop > 0.000001F) {
                 result.slope_correction.values()[index] =
-                    std::clamp(full_slope / receiver_slope, 0.25F, 4.0F);
+                    std::clamp(full_drop / receiver_drop, 0.25F, 4.0F);
             }
         }
     }

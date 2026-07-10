@@ -209,6 +209,36 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    set(CUBEY_TERRAIN_LANDSCAPE_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-landscape-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_landscape_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_LANDSCAPE_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --grid-size
+        65
+        --terrain-cell-size
+        100
+        --terrain-recipe
+        upland-landscape-evolution-v1
+        --debug-view
+        surface
+        --terrain-camera-preset
+        oblique
+    )
+    cubey_add_png_stats_test(
+        terrain_landscape_headless_writes_png
+        "${CUBEY_TERRAIN_LANDSCAPE_HEADLESS_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
     cubey_label_tests(
         terrain
         terrain_reaches_glfw
@@ -221,5 +251,7 @@ if (BUILD_TESTING)
         terrain_surface_low_headless_writes_png_stats
         terrain_control_headless_writes_png
         terrain_control_headless_writes_png_stats
+        terrain_landscape_headless_writes_png
+        terrain_landscape_headless_writes_png_stats
     )
 endif()

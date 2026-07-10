@@ -94,6 +94,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain landscape evolution v1](terrain-landscape-evolution-v1.md): regional
   analytical stream-power candidate, fixed model parameters, oracle/license
   boundary, product fields, and macro-terrain acceptance contract.
+- [Terrain landscape evolution v1 review](terrain-landscape-evolution-v1-review.md):
+  clean-room implementation evidence, three-seed metrics, guarded oracle
+  comparison, visual findings, and remaining four-neighbor routing artifacts.
 - [Terrain process roadmap](terrain-process-roadmap.md): current reset point
   after river/mountain experiments, reusable process-field gaps, and the
   near-term order before adding more biome slices.

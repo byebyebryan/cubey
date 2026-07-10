@@ -136,3 +136,11 @@ square-domain watershed patterns are rejection conditions.
 - imported DEM/runtime field loading;
 - visible water, materials, vegetation, and planet integration.
 
+## Implementation Status
+
+The candidate, process fields, guarded oracle, and three-seed review pack are
+implemented. See
+[`terrain-landscape-evolution-v1-review.md`](terrain-landscape-evolution-v1-review.md)
+for measured results and remaining routing artifacts. The review deliberately
+retains one near-threshold oracle miss instead of changing the acceptance gate
+after seeing the output.
