@@ -49,6 +49,8 @@ void test_terrain_ref_config_from_run_config() {
             "terrain_ref should default to TerrainEngine recipe");
     require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Recipe,
             "terrain_ref should default to recipe material");
+    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
+            "terrain_ref should default to filtered surface");
 
     run_config.grid.width = 129U;
     run_config.grid.height = 257U;
@@ -74,6 +76,8 @@ void test_terrain_ref_config_from_run_config() {
             "terrain_ref should parse surface-low camera alias");
     require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Height,
             "terrain_ref should parse height material preview");
+    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
+            "terrain_ref should keep the default filtered surface");
     require(!config.water_surface, "terrain_ref should allow disabling water");
 
     run_config.terrain.camera_preset = "coastal_oblique";
@@ -146,6 +150,25 @@ void test_terrain_ref_config_from_run_config() {
     config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
     require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyCraterField,
             "terrain_ref should parse ShaderToy crater-field recipe");
+
+    run_config.terrain.recipe =
+        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyErosionFilter);
+    run_config.terrain.preview_color = "erosion";
+    run_config.terrain.preview_surface = "pre-process";
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.recipe ==
+                cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyErosionFilter,
+            "terrain_ref should parse ShaderToy erosion-filter recipe");
+    require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Erosion,
+            "terrain_ref should parse erosion diagnostic color");
+    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Base,
+            "terrain_ref should parse pre-process surface");
+
+    run_config.terrain.preview_color = "height";
+    run_config.terrain.preview_surface = "post-erosion";
+    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
+    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
+            "terrain_ref should parse post-erosion surface");
 
     run_config.terrain.recipe = "temperate-mountain-river";
     require_throws(
@@ -343,7 +366,9 @@ void test_shadertoy_erosion_reference_sampling() {
     require_near(sample.erosion_delta_m, sample.base_height_m - sample.filtered_height_m, 0.001F,
                  "erosion reference delta should describe removed height");
     require(std::isfinite(sample.base_height_m) && std::isfinite(sample.filtered_height_m) &&
-                std::isfinite(sample.erosion_delta_m) && std::isfinite(sample.gradient_x) &&
+                std::isfinite(sample.erosion_delta_m) &&
+                std::isfinite(sample.base_gradient_x) &&
+                std::isfinite(sample.base_gradient_z) && std::isfinite(sample.gradient_x) &&
                 std::isfinite(sample.gradient_z),
             "erosion reference sample should be finite");
     require(std::abs(sample.erosion_delta_m) < 800.0F,

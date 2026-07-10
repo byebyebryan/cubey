@@ -17,6 +17,7 @@ layout(location = 1) in vec3 frag_normal;
 layout(location = 2) in vec2 frag_material_uv;
 layout(location = 3) in float frag_height_m;
 layout(location = 4) in float frag_water_mask;
+layout(location = 5) in float frag_erosion_delta_m;
 
 layout(location = 0) out vec4 out_color;
 
@@ -97,8 +98,12 @@ TerrainRefGlacialMaterialMasks terrain_ref_glacial_material_masks(vec2 world_xz)
 }
 
 vec3 terrain_ref_material_color(inout vec3 normal) {
+    bool shadertoy_erosion =
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_EROSION_BASE) < 0.5 ||
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_EROSION_FILTERED) < 0.5;
     bool shadertoy_mountain =
-        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5;
+        abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_MOUNTAIN) < 0.5 ||
+        shadertoy_erosion;
     bool shadertoy_alpine =
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_ALPINE) < 0.5;
     bool shadertoy_dunes =
@@ -117,7 +122,8 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_GLACIAL_HIGHLAND) < 0.5;
     bool shadertoy_crater_field =
         abs(pc.terrain_params.w - TERRAIN_REF_RECIPE_SHADERTOY_CRATER_FIELD) < 0.5;
-    bool height_material = pc.water_params.w > 0.5;
+    bool height_material = abs(pc.water_params.w - TERRAIN_REF_MATERIAL_HEIGHT) < 0.5;
+    bool erosion_material = abs(pc.water_params.w - TERRAIN_REF_MATERIAL_EROSION) < 0.5;
     float grass_coverage = 0.65;
     float transition_m = 20.0;
     float water_height_m = pc.water_params.x;
@@ -137,6 +143,20 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
         0.006, 0.24);
     vec3 snow = terrain_ref_color_variation(vec3(0.82, 0.84, 0.80), frag_world_position.xz,
         0.014, 0.10);
+
+    if (erosion_material) {
+        float negative_extent = max(abs(min_height_m), 1.0);
+        float positive_extent = max(abs(max_height_m), 1.0);
+        vec3 neutral = vec3(0.10, 0.11, 0.12);
+        vec3 raised = vec3(0.18, 0.48, 0.78);
+        vec3 removed = vec3(0.92, 0.33, 0.12);
+        if (frag_erosion_delta_m >= 0.0) {
+            return mix(neutral, removed,
+                smoothstep(0.0, positive_extent, frag_erosion_delta_m));
+        }
+        return mix(neutral, raised,
+            smoothstep(0.0, negative_extent, -frag_erosion_delta_m));
+    }
 
     if (height_material) {
         float normalized_height = clamp((frag_height_m - min_height_m) /
@@ -463,6 +483,10 @@ vec3 terrain_ref_material_color(inout vec3 normal) {
 void main() {
     vec3 normal = normalize(frag_normal);
     vec3 base_color = terrain_ref_material_color(normal);
+    if (abs(pc.water_params.w - TERRAIN_REF_MATERIAL_EROSION) < 0.5) {
+        out_color = vec4(base_color, 1.0);
+        return;
+    }
     float water_mask = clamp(frag_water_mask, 0.0, 1.0);
 
     vec3 light_direction = normalize(pc.light_direction_extent.xyz);

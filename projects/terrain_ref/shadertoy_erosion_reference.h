@@ -18,6 +18,8 @@ struct ShadertoyErosionReferenceSample {
     float base_height_m = 0.0F;
     float filtered_height_m = 0.0F;
     float erosion_delta_m = 0.0F;
+    float base_gradient_x = 0.0F;
+    float base_gradient_z = 0.0F;
     float gradient_x = 0.0F;
     float gradient_z = 0.0F;
 };

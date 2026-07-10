@@ -31,6 +31,8 @@ std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe) {
         return kTerrainRefRecipeShadertoyGlacialHighland;
     case TerrainRefRecipe::ShadertoyCraterField:
         return kTerrainRefRecipeShadertoyCraterField;
+    case TerrainRefRecipe::ShadertoyErosionFilter:
+        return kTerrainRefRecipeShadertoyErosionFilter;
     }
     return kTerrainRefRecipeTerrainEngine;
 }
@@ -69,12 +71,16 @@ TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name) {
     if (name == kTerrainRefRecipeShadertoyCraterField) {
         return TerrainRefRecipe::ShadertoyCraterField;
     }
+    if (name == kTerrainRefRecipeShadertoyErosionFilter) {
+        return TerrainRefRecipe::ShadertoyErosionFilter;
+    }
     throw std::runtime_error("terrain_ref recipe must be terrain-engine-ref, "
                              "shadertoy-mountain, shadertoy-alpine, "
                              "shadertoy-dunes, shadertoy-lake-basin, "
                              "shadertoy-badlands, shadertoy-coast-island, "
                              "shadertoy-plains, shadertoy-gorge, "
-                             "shadertoy-glacial-highland, or shadertoy-crater-field");
+                             "shadertoy-glacial-highland, shadertoy-crater-field, or "
+                             "shadertoy-erosion-filter");
 }
 
 TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name) {
@@ -84,7 +90,21 @@ TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name
     if (name == "height") {
         return TerrainRefMaterialMode::Height;
     }
-    throw std::runtime_error("terrain_ref preview color must be material or height");
+    if (name == "erosion") {
+        return TerrainRefMaterialMode::Erosion;
+    }
+    throw std::runtime_error("terrain_ref preview color must be material, height, or erosion");
+}
+
+TerrainRefSurfaceMode terrain_ref_surface_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "height" || name == "post-erosion") {
+        return TerrainRefSurfaceMode::Filtered;
+    }
+    if (name == "pre-process") {
+        return TerrainRefSurfaceMode::Base;
+    }
+    throw std::runtime_error(
+        "terrain_ref preview surface must be height, post-erosion, or pre-process");
 }
 
 std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset) {
@@ -145,6 +165,7 @@ TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& conf
         config.terrain.camera_preset.empty() ? kTerrainRefDefaultCameraPreset
                                              : std::string_view(config.terrain.camera_preset));
     result.material_mode = terrain_ref_material_mode_from_name(config.terrain.preview_color);
+    result.surface_mode = terrain_ref_surface_mode_from_name(config.terrain.preview_surface);
     result.water_surface =
         config.terrain.water_surface >= 0 ? config.terrain.water_surface != 0 : true;
 

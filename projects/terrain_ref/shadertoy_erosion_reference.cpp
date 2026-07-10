@@ -257,6 +257,8 @@ ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(float world_x
         .base_height_m = base.height,
         .filtered_height_m = filtered.height,
         .erosion_delta_m = base.height - filtered.height,
+        .base_gradient_x = base.gradient.x,
+        .base_gradient_z = base.gradient.y,
         .gradient_x = filtered.gradient.x,
         .gradient_z = filtered.gradient.y,
     };

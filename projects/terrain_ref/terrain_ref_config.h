@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shadertoy_erosion_reference.h"
 #include "terrain_engine_reference.h"
 
 #include <cubey/core/run_config.h>
@@ -30,11 +31,18 @@ enum class TerrainRefRecipe : std::uint8_t {
     ShadertoyGorge,
     ShadertoyGlacialHighland,
     ShadertoyCraterField,
+    ShadertoyErosionFilter,
 };
 
 enum class TerrainRefMaterialMode : std::uint8_t {
     Recipe,
     Height,
+    Erosion,
+};
+
+enum class TerrainRefSurfaceMode : std::uint8_t {
+    Filtered,
+    Base,
 };
 
 inline constexpr std::string_view kTerrainRefRecipeShadertoyMountain = "shadertoy-mountain";
@@ -64,12 +72,14 @@ struct TerrainRefConfig {
     float vertical_scale = kTerrainRefDefaultVerticalScale;
     TerrainRefCameraPreset camera_preset = TerrainRefCameraPreset::Oblique;
     TerrainRefMaterialMode material_mode = TerrainRefMaterialMode::Recipe;
+    TerrainRefSurfaceMode surface_mode = TerrainRefSurfaceMode::Filtered;
     bool water_surface = true;
 };
 
 [[nodiscard]] std::string_view terrain_ref_recipe_name(TerrainRefRecipe recipe);
 [[nodiscard]] TerrainRefRecipe terrain_ref_recipe_from_name(std::string_view name);
 [[nodiscard]] TerrainRefMaterialMode terrain_ref_material_mode_from_name(std::string_view name);
+[[nodiscard]] TerrainRefSurfaceMode terrain_ref_surface_mode_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset);
 [[nodiscard]] TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name);
 [[nodiscard]] TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config);

@@ -9,6 +9,9 @@ clipmap review mesh:
   procedural material presentation.
 - `shadertoy-mountain`: a clean-room ShaderToy-style mountain heightfield
   sampler with a matching procedural material response.
+- `shadertoy-erosion-filter`: a clean-room slope-aware procedural erosion
+  filter over a derivative-aware broad mountain source, with selectable base
+  and filtered surfaces plus a signed erosion diagnostic.
 - `shadertoy-alpine`: a clean-room alpine range reference with broad mountain
   mass, ridged crests, valley suppression, snow, rock, and meadow bands.
 - `shadertoy-dunes`: a clean-room desert dune reference with wind-aligned
@@ -40,6 +43,11 @@ The current target is useful for renderer and source-model evaluation:
 - optional flat waterline intersection;
 - oblique and surface review cameras;
 - fast headless captures for comparison.
+
+For `shadertoy-erosion-filter`, use `--terrain-preview-surface pre-process` to
+review the base source and `height` or `post-erosion` to review the filtered
+surface. `--terrain-preview-color erosion` shows signed height removal. This is
+a stateless procedural filter, not hydraulic erosion.
 
 Known limitations are intentional for this slice: the review mesh is finite,
 water is still a tint/clamp rather than reflection/refraction, material detail

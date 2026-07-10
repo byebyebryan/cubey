@@ -1,6 +1,7 @@
 #include "terrain_ref_app.h"
 
 #include "shadertoy_biome_reference.h"
+#include "shadertoy_erosion_reference.h"
 #include "shadertoy_mountain_reference.h"
 #include "terrain_engine_reference.h"
 #include "terrain_ref_config.h"
@@ -58,15 +59,25 @@ static_assert(sizeof(TerrainRefPushConstants) <= 128U);
 struct TerrainRefSceneMetrics {
     float min_height_m = 0.0F;
     float max_height_m = 1.0F;
+    float min_erosion_delta_m = -1.0F;
+    float max_erosion_delta_m = 1.0F;
     float scene_extent_m = 1.0F;
 };
 
 [[nodiscard]] float terrain_ref_material_mode_id(TerrainRefMaterialMode mode) {
-    return mode == TerrainRefMaterialMode::Height ? 1.0F : 0.0F;
+    switch (mode) {
+    case TerrainRefMaterialMode::Recipe:
+        return 0.0F;
+    case TerrainRefMaterialMode::Height:
+        return 1.0F;
+    case TerrainRefMaterialMode::Erosion:
+        return 2.0F;
+    }
+    return 0.0F;
 }
 
-[[nodiscard]] float terrain_ref_source_id(TerrainRefRecipe recipe) {
-    switch (recipe) {
+[[nodiscard]] float terrain_ref_source_id(const TerrainRefConfig& config) {
+    switch (config.recipe) {
     case TerrainRefRecipe::TerrainEngine:
         return 0.0F;
     case TerrainRefRecipe::ShadertoyMountain:
@@ -89,6 +100,8 @@ struct TerrainRefSceneMetrics {
         return 9.0F;
     case TerrainRefRecipe::ShadertoyCraterField:
         return 10.0F;
+    case TerrainRefRecipe::ShadertoyErosionFilter:
+        return config.surface_mode == TerrainRefSurfaceMode::Base ? 11.0F : 12.0F;
     }
     return 0.0F;
 }
@@ -117,6 +130,8 @@ struct TerrainRefSceneMetrics {
         return kShadertoyGlacialHighlandReferenceWaterHeightM;
     case TerrainRefRecipe::ShadertoyCraterField:
         return kShadertoyCraterFieldReferenceWaterHeightM;
+    case TerrainRefRecipe::ShadertoyErosionFilter:
+        return kShadertoyErosionReferenceWaterHeightM;
     }
     return kTerrainEngineReferenceWaterHeightM;
 }
@@ -146,6 +161,12 @@ struct TerrainRefSceneMetrics {
         return shadertoy_glacial_highland_reference_height(world_x, world_z, config.seed);
     case TerrainRefRecipe::ShadertoyCraterField:
         return shadertoy_crater_field_reference_height(world_x, world_z, config.seed);
+    case TerrainRefRecipe::ShadertoyErosionFilter:
+        return shadertoy_erosion_reference_height(
+            world_x, world_z, config.seed,
+            config.surface_mode == TerrainRefSurfaceMode::Base
+                ? ShadertoyErosionReferenceSurface::Base
+                : ShadertoyErosionReferenceSurface::Filtered);
     }
     return terrain_engine_reference_height(world_x, world_z, config.seed);
 }
@@ -202,6 +223,8 @@ struct TerrainRefSceneMetrics {
     constexpr std::uint32_t kSamplesPerAxis = 65U;
     float min_height = std::numeric_limits<float>::max();
     float max_height = std::numeric_limits<float>::lowest();
+    float min_erosion_delta = std::numeric_limits<float>::max();
+    float max_erosion_delta = std::numeric_limits<float>::lowest();
     for (std::uint32_t z = 0; z < kSamplesPerAxis; ++z) {
         const float z_t = static_cast<float>(z) / static_cast<float>(kSamplesPerAxis - 1U);
         const float world_z =
@@ -213,13 +236,25 @@ struct TerrainRefSceneMetrics {
             const float height = terrain_ref_height_m(config, world_x, world_z);
             min_height = std::min(min_height, height);
             max_height = std::max(max_height, height);
+            if (config.recipe == TerrainRefRecipe::ShadertoyErosionFilter) {
+                const ShadertoyErosionReferenceSample sample =
+                    shadertoy_erosion_reference_sample(world_x, world_z, config.seed);
+                min_erosion_delta = std::min(min_erosion_delta, sample.erosion_delta_m);
+                max_erosion_delta = std::max(max_erosion_delta, sample.erosion_delta_m);
+            }
         }
+    }
+    if (config.recipe != TerrainRefRecipe::ShadertoyErosionFilter) {
+        min_erosion_delta = -1.0F;
+        max_erosion_delta = 1.0F;
     }
     const float height_extent =
         std::max((max_height - min_height) * config.vertical_scale, 1.0F) * 2.25F;
     return {
         .min_height_m = min_height,
         .max_height_m = max_height,
+        .min_erosion_delta_m = min_erosion_delta,
+        .max_erosion_delta_m = max_erosion_delta,
         .scene_extent_m = std::max(clipmap_config.outer_half_extent * 2.0F, height_extent),
     };
 }
@@ -438,6 +473,8 @@ class TerrainRefApp {
         }
         const TerrainEngineReferenceSeedComponents seed_components =
             terrain_engine_reference_seed_components(terrain_config_.seed);
+        const bool erosion_material =
+            terrain_config_.material_mode == TerrainRefMaterialMode::Erosion;
         return {
             .view_projection = camera_.view_projection_matrix(camera_transform, aspect),
             .light_direction_extent =
@@ -452,14 +489,16 @@ class TerrainRefApp {
                     seed_components.x,
                     seed_components.y,
                     terrain_config_.vertical_scale,
-                    terrain_ref_source_id(terrain_config_.recipe),
+                    terrain_ref_source_id(terrain_config_),
                 },
             .water_params =
                 {
                     terrain_config_.water_surface ? terrain_ref_water_height_m(terrain_config_.recipe)
                                                   : -100000.0F,
-                    scene_metrics_.min_height_m,
-                    scene_metrics_.max_height_m,
+                    erosion_material ? scene_metrics_.min_erosion_delta_m
+                                     : scene_metrics_.min_height_m,
+                    erosion_material ? scene_metrics_.max_erosion_delta_m
+                                     : scene_metrics_.max_height_m,
                     terrain_ref_material_mode_id(terrain_config_.material_mode),
                 },
             .camera_position_fog =

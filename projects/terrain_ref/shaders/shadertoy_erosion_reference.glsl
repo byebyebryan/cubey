@@ -23,6 +23,7 @@ struct ShadertoyErosionReferenceSample {
     float base_height_m;
     float filtered_height_m;
     float erosion_delta_m;
+    vec2 base_gradient;
     vec2 filtered_gradient;
 };
 
@@ -188,17 +189,18 @@ ShadertoyErosionReferenceSample shadertoy_erosion_reference_sample(vec2 world, v
     ShadertoyErosionHeightSlope base = shadertoy_erosion_base_mountain(world, seed);
     ShadertoyErosionHeightSlope filtered = shadertoy_erosion_filtered_mountain(world, seed, base);
     return ShadertoyErosionReferenceSample(base.height, filtered.height,
-        base.height - filtered.height, filtered.gradient);
+        base.height - filtered.height, base.gradient, filtered.gradient);
 }
 
 float shadertoy_erosion_reference_height(vec2 world, vec2 seed, bool filtered_surface) {
-    ShadertoyErosionReferenceSample sample = shadertoy_erosion_reference_sample(world, seed);
-    return filtered_surface ? sample.filtered_height_m : sample.base_height_m;
+    ShadertoyErosionReferenceSample erosion_sample =
+        shadertoy_erosion_reference_sample(world, seed);
+    return filtered_surface ? erosion_sample.filtered_height_m : erosion_sample.base_height_m;
 }
 
 vec3 shadertoy_erosion_reference_normal(vec2 world, vec2 seed, float vertical_scale) {
-    ShadertoyErosionReferenceSample sample = shadertoy_erosion_reference_sample(world, seed);
-    return normalize(vec3(-sample.filtered_gradient.x * vertical_scale, 1.0,
-        -sample.filtered_gradient.y * vertical_scale));
+    ShadertoyErosionReferenceSample erosion_sample =
+        shadertoy_erosion_reference_sample(world, seed);
+    return normalize(vec3(-erosion_sample.filtered_gradient.x * vertical_scale, 1.0,
+        -erosion_sample.filtered_gradient.y * vertical_scale));
 }
-
