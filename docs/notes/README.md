@@ -86,6 +86,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md):
   deeper ShaderToy terrain/hydro review, what to borrow as clean-room process
   operators or visual cues, and what to keep out of river topology.
+- [Terrain ShaderToy erosion filter reference](terrain-shadertoy-erosion-filter-plan.md):
+  final `terrain_ref` experiment for a clean-room, slope-aware procedural
+  erosion filter with explicit non-hydraulic boundaries and review criteria.
 - [Terrain ShaderToy biome reference map](terrain-shadertoy-biome-reference-map.md):
   classification of local ShaderToy terrain files for clean-room visual/source
   recipes in `terrain_ref`, starting with alpine, dunes, and lake-basin refs.
