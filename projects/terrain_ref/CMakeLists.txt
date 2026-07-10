@@ -7,6 +7,7 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         shadertoy_biome_reference.cpp
+        shadertoy_erosion_reference.cpp
         shadertoy_mountain_reference.cpp
         terrain_engine_reference.cpp
         terrain_ref_app.cpp
@@ -20,6 +21,7 @@ cubey_add_app_target(
     SHADER_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_engine_reference.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_biome_reference.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_erosion_reference.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_mountain_reference.glsl"
 )
 
@@ -27,6 +29,7 @@ if (BUILD_TESTING)
     add_executable(cubey_project_terrain_ref_tests
         terrain_engine_reference.cpp
         shadertoy_biome_reference.cpp
+        shadertoy_erosion_reference.cpp
         shadertoy_mountain_reference.cpp
         terrain_ref_config.cpp
         terrain_ref_mesh.cpp

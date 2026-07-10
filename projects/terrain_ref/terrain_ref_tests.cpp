@@ -1,5 +1,6 @@
 #include "terrain_engine_reference.h"
 #include "shadertoy_biome_reference.h"
+#include "shadertoy_erosion_reference.h"
 #include "shadertoy_mountain_reference.h"
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
@@ -325,6 +326,59 @@ void test_shadertoy_biome_reference_sampling_is_deterministic() {
                  "ShaderToy crater-field seed should affect height");
 }
 
+void test_shadertoy_erosion_reference_sampling() {
+    using cubey::projects::terrain_ref::ShadertoyErosionReferenceSurface;
+    constexpr std::uint64_t seed = 24680U;
+    const auto sample =
+        cubey::projects::terrain_ref::shadertoy_erosion_reference_sample(2317.0F, -1489.0F, seed);
+    const auto repeated =
+        cubey::projects::terrain_ref::shadertoy_erosion_reference_sample(2317.0F, -1489.0F, seed);
+    const auto changed_seed = cubey::projects::terrain_ref::shadertoy_erosion_reference_sample(
+        2317.0F, -1489.0F, seed + 1U);
+
+    require_near(sample.base_height_m, repeated.base_height_m, 0.0001F,
+                 "erosion reference base height should be deterministic");
+    require_near(sample.filtered_height_m, repeated.filtered_height_m, 0.0001F,
+                 "erosion reference filtered height should be deterministic");
+    require_near(sample.erosion_delta_m, sample.base_height_m - sample.filtered_height_m, 0.001F,
+                 "erosion reference delta should describe removed height");
+    require(std::isfinite(sample.base_height_m) && std::isfinite(sample.filtered_height_m) &&
+                std::isfinite(sample.erosion_delta_m) && std::isfinite(sample.gradient_x) &&
+                std::isfinite(sample.gradient_z),
+            "erosion reference sample should be finite");
+    require(std::abs(sample.erosion_delta_m) < 800.0F,
+            "erosion reference delta should remain bounded");
+    require(std::abs(sample.filtered_height_m - changed_seed.filtered_height_m) > 0.0001F,
+            "erosion reference seed should affect filtered height");
+    require_near(cubey::projects::terrain_ref::shadertoy_erosion_reference_height(
+                     2317.0F, -1489.0F, seed, ShadertoyErosionReferenceSurface::Base),
+                 sample.base_height_m, 0.0001F,
+                 "erosion reference base surface should select base height");
+    require_near(cubey::projects::terrain_ref::shadertoy_erosion_reference_height(
+                     2317.0F, -1489.0F, seed, ShadertoyErosionReferenceSurface::Filtered),
+                 sample.filtered_height_m, 0.0001F,
+                 "erosion reference filtered surface should select filtered height");
+
+    constexpr float step_m = 8.0F;
+    const float dx = (cubey::projects::terrain_ref::shadertoy_erosion_reference_height(
+                          2317.0F + step_m, -1489.0F, seed) -
+                      cubey::projects::terrain_ref::shadertoy_erosion_reference_height(
+                          2317.0F - step_m, -1489.0F, seed)) /
+                     (2.0F * step_m);
+    const float dz = (cubey::projects::terrain_ref::shadertoy_erosion_reference_height(
+                          2317.0F, -1489.0F + step_m, seed) -
+                      cubey::projects::terrain_ref::shadertoy_erosion_reference_height(
+                          2317.0F, -1489.0F - step_m, seed)) /
+                     (2.0F * step_m);
+    require(std::abs(sample.gradient_x - dx) < 0.85F && std::abs(sample.gradient_z - dz) < 0.85F,
+            "erosion reference process gradient should track filtered finite differences");
+    const float normal_cos_v =
+        cubey::projects::terrain_ref::shadertoy_erosion_reference_normal_cos_v(2317.0F, -1489.0F,
+                                                                               seed);
+    require(normal_cos_v > 0.0F && normal_cos_v <= 1.0F,
+            "erosion reference normal cosine should be normalized");
+}
+
 } // namespace
 
 int main() {
@@ -332,6 +386,7 @@ int main() {
     test_terrain_engine_reference_sampling_is_deterministic();
     test_shadertoy_mountain_reference_sampling_is_deterministic();
     test_shadertoy_biome_reference_sampling_is_deterministic();
+    test_shadertoy_erosion_reference_sampling();
     test_terrain_ref_mesh_uses_clipmap_grid();
     return 0;
 }
