@@ -1,0 +1,66 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "cubey/cloud/cloud_common.glsl"
+#include "cubey/cloud/cloud_weather_common.glsl"
+#include "cubey/procedural/noise.glsl"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout(r16f, set = 0, binding = 1) uniform writeonly image2D cloud_shadow_transmittance;
+layout(set = 0, binding = 2) uniform sampler3D base_noise_texture;
+layout(set = 0, binding = 3) uniform sampler3D detail_noise_texture;
+layout(set = 0, binding = 4) uniform sampler2D weather_texture;
+
+#include "cubey/cloud/cloud_surface_density.glsl"
+
+layout(push_constant) uniform CloudShadowPushConstants {
+    vec4 receiver_center_half_extent;
+    vec4 receiver_axis_u_texel_size;
+    vec4 receiver_axis_v_steps;
+    vec4 light_direction_intensity;
+} shadow;
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(cloud_shadow_transmittance);
+    if (any(greaterThanEqual(pixel, size))) {
+        return;
+    }
+
+    if (shadow.light_direction_intensity.w <= 0.000001) {
+        imageStore(cloud_shadow_transmittance, pixel, vec4(1.0));
+        return;
+    }
+
+    vec2 uv = (vec2(pixel) + vec2(0.5)) / vec2(size);
+    vec2 plane_offset = (uv * 2.0 - 1.0) * shadow.receiver_center_half_extent.w;
+    vec3 receiver = shadow.receiver_center_half_extent.xyz +
+                    shadow.receiver_axis_u_texel_size.xyz * plane_offset.x +
+                    shadow.receiver_axis_v_steps.xyz * plane_offset.y;
+    vec3 light_direction = normalize(shadow.light_direction_intensity.xyz);
+
+    float start_t = 0.0;
+    float end_t = 0.0;
+    if (!cloud_shell_segment(receiver, light_direction, start_t, end_t)) {
+        imageStore(cloud_shadow_transmittance, pixel, vec4(1.0));
+        return;
+    }
+
+    int step_count = clamp(int(shadow.receiver_axis_v_steps.w + 0.5), 1, 16);
+    float step_size = max((end_t - start_t) / float(step_count), 0.001);
+    float optical_depth = 0.0;
+    for (int step = 0; step < 16; ++step) {
+        if (step >= step_count) {
+            break;
+        }
+        float distance_m = start_t + (float(step) + 0.5) * step_size;
+        DensitySample density =
+            cloud_sample_density_terrain_ref(receiver + light_direction * distance_m, false, 0.0);
+        optical_depth += density.density * step_size * max(params.weather.y, 0.0);
+        if (optical_depth >= 12.0) {
+            break;
+        }
+    }
+
+    imageStore(cloud_shadow_transmittance, pixel, vec4(exp(-optical_depth)));
+}

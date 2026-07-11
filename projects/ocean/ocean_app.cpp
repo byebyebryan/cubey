@@ -608,16 +608,12 @@ ocean_terrain_field_uniforms(const cubey::render::TerrainOceanPackedFields& fiel
     };
 }
 
-[[nodiscard]] cubey::render::CloudLayerShadowProduct
-ocean_cloud_shadow_diagnostic(const OceanConfig& config) {
+[[nodiscard]] cubey::math::Vec4 ocean_cloud_shadow_diagnostic(const OceanConfig& config) {
     return {
-        .options =
-            {
-                config.cloud_shadow_strength,
-                config.cloud_shadow_scale_m,
-                config.cloud_shadow_speed_mps,
-                0.0F,
-            },
+        config.cloud_shadow_strength,
+        config.cloud_shadow_scale_m,
+        config.cloud_shadow_speed_mps,
+        0.0F,
     };
 }
 
@@ -1400,8 +1396,7 @@ class OceanApp {
 
     [[nodiscard]] OceanSurfaceFeatureUniforms surface_feature_uniforms(
         const OceanSurfaceFrame& surface_frame) const {
-        const cubey::render::CloudLayerShadowProduct cloud_shadow =
-            ocean_cloud_shadow_diagnostic(ocean_config_);
+        const cubey::math::Vec4 cloud_shadow = ocean_cloud_shadow_diagnostic(ocean_config_);
         return {
             .feature_options =
                 {
@@ -1464,14 +1459,14 @@ class OceanApp {
                     ocean_config_.far_field_enabled ? 1.0F : 0.0F,
                     ocean_config_.far_field_start_m,
                     ocean_config_.far_field_end_m,
-                    cloud_shadow.options.x,
+                    cloud_shadow.x,
                 },
             .far_field_options2 =
                 {
                     ocean_config_.far_roughness_strength,
                     ocean_config_.far_glint_strength,
-                    cloud_shadow.options.y,
-                    cloud_shadow.options.z,
+                    cloud_shadow.y,
+                    cloud_shadow.z,
                 },
             .far_detail_options =
                 {

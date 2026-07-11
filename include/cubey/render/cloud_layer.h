@@ -32,7 +32,10 @@ inline constexpr std::uint32_t kCloudLayerBaseNoiseSize = 128U;
 inline constexpr std::uint32_t kCloudLayerDetailNoiseSize = 32U;
 inline constexpr std::uint32_t kCloudLayerWeatherTextureSize = 1024U;
 inline constexpr std::uint32_t kCloudLayerBlueNoiseTextureSize = 128U;
+inline constexpr std::uint32_t kCloudLayerShadowTextureSize = 256U;
+inline constexpr std::uint32_t kCloudLayerShadowStepCount = 8U;
 inline constexpr VkFormat kCloudLayerColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+inline constexpr VkFormat kCloudLayerShadowFormat = VK_FORMAT_R16_SFLOAT;
 inline constexpr VkFormat kCloudLayerNoiseFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
 inline constexpr std::uint32_t kCloudLayerUniformBinding = 0U;
@@ -53,6 +56,11 @@ inline constexpr std::uint32_t kCloudLayerTemporalHistoryMetadataBinding = 3U;
 inline constexpr std::uint32_t kCloudLayerTemporalUniformBinding = 4U;
 inline constexpr std::uint32_t kCloudLayerTemporalOutputBinding = 5U;
 inline constexpr std::uint32_t kCloudLayerTemporalOutputMetadataBinding = 6U;
+inline constexpr std::uint32_t kCloudLayerShadowUniformBinding = 0U;
+inline constexpr std::uint32_t kCloudLayerShadowOutputBinding = 1U;
+inline constexpr std::uint32_t kCloudLayerShadowBaseNoiseBinding = 2U;
+inline constexpr std::uint32_t kCloudLayerShadowDetailNoiseBinding = 3U;
+inline constexpr std::uint32_t kCloudLayerShadowWeatherBinding = 4U;
 
 struct CloudLayerProduct {
     RenderGraphTextureHandle cloud{};
@@ -62,16 +70,36 @@ struct CloudLayerProduct {
     VkExtent2D extent{};
 };
 
+struct CloudLayerShadowRequest {
+    math::Vec3 receiver_center{0.0F, 0.0F, 0.0F};
+    math::Vec3 receiver_axis_u{1.0F, 0.0F, 0.0F};
+    math::Vec3 receiver_axis_v{0.0F, 0.0F, 1.0F};
+    float half_extent_m = 16000.0F;
+    math::Vec3 direct_light_direction{0.0F, 1.0F, 0.0F};
+    float direct_light_intensity = 1.0F;
+};
+
+struct CloudLayerShadowProjection {
+    math::Vec3 receiver_center{0.0F, 0.0F, 0.0F};
+    math::Vec3 receiver_axis_u{1.0F, 0.0F, 0.0F};
+    math::Vec3 receiver_axis_v{0.0F, 0.0F, 1.0F};
+    math::Vec4 world_to_uv_x{};
+    math::Vec4 world_to_uv_y{};
+    VkExtent2D extent{};
+    float texel_world_size_m = 0.0F;
+};
+
 struct CloudLayerShadowProduct {
-    RenderGraphTextureHandle shadow{};
-    math::Vec4 world_to_shadow_x{};
-    math::Vec4 world_to_shadow_y{};
-    math::Vec4 options{};
+    RenderGraphTextureHandle transmittance{};
+    math::Vec4 world_to_uv_x{};
+    math::Vec4 world_to_uv_y{};
+    VkExtent2D extent{};
+    float texel_world_size_m = 0.0F;
 };
 
 struct CloudLayerReflectionContribution {
-    bool available = false;
-    float intensity = 0.0F;
+    RenderGraphTextureHandle radiance_transmittance{};
+    VkExtent2D extent{};
 };
 
 struct CloudLayerGeneratedShaderFiles {
@@ -85,6 +113,7 @@ struct CloudLayerRuntimeShaderFiles {
     CloudLayerGeneratedShaderFiles generated{};
     ShaderStageFile general_march{};
     ShaderStageFile surface_march{};
+    ShaderStageFile shadow{};
     ShaderStageFile temporal{};
     ShaderStageFile composite_vertex{};
     ShaderStageFile composite_fragment{};
@@ -155,6 +184,9 @@ class CloudLayerRuntime {
                                                          const CloudLayerConfig& config,
                                                          FrameSlot frame_slot,
                                                          CloudLayerFrameUniforms uniforms) const;
+    [[nodiscard]] CloudLayerShadowProduct
+    declare_shadow_product(RenderGraphBuilder& graph, FrameSlot frame_slot,
+                           const CloudLayerShadowRequest& request) const;
     void
     declare_composite(RenderGraphBuilder& graph, RenderGraphTextureHandle target,
                       const CloudLayerRuntimeFrame& frame, FrameSlot frame_slot,
@@ -166,6 +198,12 @@ class CloudLayerRuntime {
                        const CloudLayerRuntimeFrame& frame,
                        std::optional<RenderGraphTextureHandle> background = std::nullopt,
                        std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
+    void update_shadow_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
+                                   const CompiledRenderGraph& graph,
+                                   const RenderGraphResourceSet& resources,
+                                   const CloudLayerShadowProduct& product) const;
+    [[nodiscard]] const cubey::vulkan::Sampler& product_sampler() const;
+    [[nodiscard]] const cubey::vulkan::Sampler& shadow_sampler() const;
     void invalidate_history();
     void complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame);
 
@@ -173,10 +211,12 @@ class CloudLayerRuntime {
     [[nodiscard]] const FrameUniformBuffer<CloudLayerFrameUniforms>& frame_uniforms() const;
     [[nodiscard]] const FrameUniformBuffer<CloudLayerTemporalUniforms>& temporal_uniforms() const;
     [[nodiscard]] const MaterialInstance& march_material() const;
+    [[nodiscard]] const MaterialInstance& shadow_material() const;
     [[nodiscard]] const MaterialInstance& temporal_material() const;
     [[nodiscard]] const MaterialInstance& composite_material() const;
     [[nodiscard]] const ComputePipelineResource& general_march_pipeline() const;
     [[nodiscard]] const ComputePipelineResource& surface_march_pipeline() const;
+    [[nodiscard]] const ComputePipelineResource& shadow_pipeline() const;
     [[nodiscard]] const ComputePipelineResource& temporal_pipeline() const;
     [[nodiscard]] const GraphicsPipelineResource& composite_pipeline() const;
     [[nodiscard]] const cubey::vulkan::Sampler& composite_sampler() const;
@@ -195,6 +235,10 @@ class CloudLayerRuntime {
     void record_march_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                                VkDescriptorSet descriptor_set, VkExtent2D extent,
                                bool surface_march_enabled) const;
+    void record_shadow_dispatch(const cubey::vulkan::CommandRecorder& recorder,
+                                VkDescriptorSet descriptor_set,
+                                const CloudLayerShadowRequest& request,
+                                const CloudLayerShadowProjection& projection) const;
     void record_temporal_dispatch(const cubey::vulkan::CommandRecorder& recorder,
                                   VkDescriptorSet descriptor_set, VkExtent2D extent) const;
     void record_composite_draw(const cubey::vulkan::CommandRecorder& recorder,
@@ -204,13 +248,16 @@ class CloudLayerRuntime {
     std::optional<FrameUniformBuffer<CloudLayerFrameUniforms>> frame_uniforms_{};
     std::optional<FrameUniformBuffer<CloudLayerTemporalUniforms>> temporal_uniforms_{};
     std::optional<MaterialInstance> march_material_{};
+    std::optional<MaterialInstance> shadow_material_{};
     std::optional<MaterialInstance> temporal_material_{};
     std::optional<MaterialInstance> composite_material_{};
     std::optional<ComputePipelineResource> general_march_pipeline_{};
     std::optional<ComputePipelineResource> surface_march_pipeline_{};
+    std::optional<ComputePipelineResource> shadow_pipeline_{};
     std::optional<ComputePipelineResource> temporal_pipeline_{};
     std::optional<GraphicsPipelineResource> composite_pipeline_{};
     std::optional<cubey::vulkan::Sampler> composite_sampler_{};
+    std::optional<cubey::vulkan::Sampler> shadow_sampler_{};
     std::vector<std::array<std::optional<Texture2D>, 2>> history_cloud_textures_{};
     std::vector<std::array<std::optional<Texture2D>, 2>> history_metadata_textures_{};
     std::vector<std::uint32_t> history_read_indices_{};
@@ -227,12 +274,16 @@ class CloudLayerRuntime {
 [[nodiscard]] ComputeGeneratedTexture2DConfig
 cloud_layer_blue_noise_texture_config(ShaderStageFile shader);
 [[nodiscard]] MaterialPassInfo cloud_layer_march_pass_info();
+[[nodiscard]] MaterialPassInfo cloud_layer_shadow_pass_info();
 [[nodiscard]] MaterialPassInfo cloud_layer_composite_pass_info(bool external_background = false,
                                                                bool scene_depth = false);
 [[nodiscard]] MaterialPassInfo cloud_layer_temporal_pass_info();
 [[nodiscard]] RenderGraphTextureState cloud_layer_sampled_texture_state();
 [[nodiscard]] RenderGraphTextureDesc cloud_layer_color_texture_desc(std::string label,
                                                                     VkExtent2D extent);
+[[nodiscard]] RenderGraphTextureDesc cloud_layer_shadow_texture_desc();
+[[nodiscard]] CloudLayerShadowProjection
+cloud_layer_shadow_projection(const CloudLayerShadowRequest& request);
 [[nodiscard]] CloudLayerGeneratedResources create_cloud_layer_generated_resources(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const CloudLayerGeneratedShaderFiles& shaders, const CloudLayerConfig& config);

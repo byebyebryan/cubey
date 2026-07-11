@@ -155,6 +155,7 @@ function(cubey_cloud_layer_shader_sources out_var)
         "${cloud_composite_fragment}"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_blue_noise.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_march.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_shadow.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/surface_cloud_march.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_perlin_worley.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_temporal.comp"
@@ -172,6 +173,7 @@ function(cubey_cloud_layer_shader_depends out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_resolve_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_surface_density.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_weather_common.glsl"
         ${cloud_layer_shared_shader_depends}
     )
