@@ -19,6 +19,11 @@ void TerrainSurfaceController::reset() {
     speed_mps_ = 220.0F;
 }
 
+void TerrainSurfaceController::advance_forward(double delta_seconds) {
+    const cubey::math::Vec2 forward{std::sin(yaw_radians_), -std::cos(yaw_radians_)};
+    position_xz_ += forward * speed_mps_ * static_cast<float>(delta_seconds);
+}
+
 void TerrainSurfaceController::update(const cubey::input::FilteredInputFrame& input,
                                       double delta_seconds) {
     if (input.key_pressed(cubey::input::Key::R)) {

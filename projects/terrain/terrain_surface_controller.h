@@ -12,6 +12,7 @@ class TerrainSurfaceController {
     TerrainSurfaceController();
 
     void reset();
+    void advance_forward(double delta_seconds);
     void update(const cubey::input::FilteredInputFrame& input, double delta_seconds);
     [[nodiscard]] cubey::Transform3D camera_transform(const TerrainSourceParameters& source,
                                                       float vertical_scale,

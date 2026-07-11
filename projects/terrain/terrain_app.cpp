@@ -262,10 +262,16 @@ class TerrainApp {
                                        context.render_target().format, frame_slot_count);
         };
         if (run_config_.capture_mode == CaptureMode::Video) {
-            orbit_controller_.set_auto_rotation_speed(kTerrainHeadlessOrbitSpeed);
+            if (!terrain_surface_camera(runtime_config_.camera)) {
+                orbit_controller_.set_auto_rotation_speed(kTerrainHeadlessOrbitSpeed);
+            }
             callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
-                orbit_controller_.update(frame.timing.delta_seconds);
+                if (terrain_surface_camera(runtime_config_.camera)) {
+                    surface_controller_.advance_forward(frame.timing.delta_seconds);
+                } else {
+                    orbit_controller_.update(frame.timing.delta_seconds);
+                }
                 (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                                  frame.timing.delta_seconds);
             };

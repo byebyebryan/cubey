@@ -1,5 +1,6 @@
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
+#include "terrain_surface_controller.h"
 
 #include <cubey/core/run_config.h>
 
@@ -86,12 +87,48 @@ void test_clipmap_has_expected_extent_and_transition_data() {
     require(has_skirts, "terrain clipmap should add boundary skirts below transitioning levels");
 }
 
+void test_surface_controller_traversal_preserves_clearance() {
+    const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+        .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
+    });
+
+    cubey::projects::terrain::TerrainSurfaceController controller;
+    constexpr float vertical_scale = 1.0F;
+    constexpr float clearance_m = 70.0F;
+    constexpr double fixed_step_seconds = 1.0 / 60.0;
+    const cubey::Transform3D start =
+        controller.camera_transform(source, vertical_scale, clearance_m);
+
+    for (std::uint32_t frame = 0U; frame < 600U; ++frame) {
+        controller.advance_forward(fixed_step_seconds);
+        const cubey::Transform3D camera =
+            controller.camera_transform(source, vertical_scale, clearance_m);
+        const auto sample = cubey::projects::terrain::sample_terrain(
+            source, {.world_xz = {camera.translation.x, camera.translation.z}});
+        require(std::isfinite(camera.translation.x) && std::isfinite(camera.translation.y) &&
+                    std::isfinite(camera.translation.z),
+                "terrain traversal camera transform should stay finite");
+        require_near(camera.translation.y, sample.height_m * vertical_scale + clearance_m,
+                     0.001F, "terrain traversal should preserve requested surface clearance");
+    }
+
+    const cubey::Transform3D finish =
+        controller.camera_transform(source, vertical_scale, clearance_m);
+    const float dx = finish.translation.x - start.translation.x;
+    const float dz = finish.translation.z - start.translation.z;
+    require_near(std::sqrt(dx * dx + dz * dz), 2'200.0F, 0.1F,
+                 "terrain traversal should cover speed times fixed duration");
+}
+
 } // namespace
 
 int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
         test_clipmap_has_expected_extent_and_transition_data();
+        test_surface_controller_traversal_preserves_clearance();
         std::cout << "terrain_render_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

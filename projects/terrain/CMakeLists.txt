@@ -45,6 +45,7 @@ target_link_libraries(
     cubey_project_terrain_render_support
     PUBLIC
         cubey_project_terrain_runtime
+        cubey::input
         cubey::render
     PRIVATE
         cubey_project_warnings
@@ -233,6 +234,28 @@ if (BUILD_TESTING)
         0.001
         0.001
     )
+
+    if (CUBEY_HAS_LIBAV)
+        set(CUBEY_TERRAIN_SURFACE_HEADLESS_VIDEO_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/terrain-surface-headless.mp4"
+        )
+        cubey_add_video_smoke_test(
+            terrain_surface_headless_writes_video
+            cubey_project_terrain
+            "${CUBEY_TERRAIN_SURFACE_HEADLESS_VIDEO_OUTPUT}"
+            --terrain-seed
+            9012
+            --terrain-preset
+            mountain
+            --terrain-weathering
+            local
+            --terrain-camera-preset
+            surface
+            --debug-view
+            lod
+        )
+        cubey_label_tests(terrain terrain_surface_headless_writes_video)
+    endif()
 
     cubey_label_tests(
         terrain
