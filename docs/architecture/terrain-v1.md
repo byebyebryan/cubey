@@ -1,103 +1,123 @@
-# Terrain V1 Patch Product
+# Terrain V1 Runtime
 
 Date: 2026-07-10
 
-Status: implemented source bakeoff; regional landscape evolution is the active
-next candidate. Current contracts are recorded in
-[`../notes/terrain-source-bakeoff-v1.md`](../notes/terrain-source-bakeoff-v1.md)
-and
-[`../notes/terrain-landscape-evolution-v1.md`](../notes/terrain-landscape-evolution-v1.md).
+Status: reboot design. The previous CPU patch and analytical landscape work is
+preserved in `projects/terrain_hydrology_lab`; it is not the terrain v1 product.
 
 ## Goal
 
-`projects/terrain` starts as a deterministic local terrain patch product, not a
-biome gallery and not a renderer-owned height formula. The first slice proves a
-world-space upland source, named derived fields, bounded regional hydrology,
-scalar exports, and a mesh consumer over the same CPU product.
+Terrain v1 is a deterministic, directly sampleable planar heightfield runtime.
+It should provide a credible procedural landscape for rendering-engine stress,
+surface traversal, and future scene backdrops without requiring an offline
+generation pass.
 
-This slice stops before visible rivers, channel carving, water, material
-products, vegetation, streaming, LOD, or planet integration. Those systems need
-stable field truth before they can become consumers.
+The first product is deliberately narrower than a terrain simulator:
 
-## Patch Request
+- one coherent source model with `mountain`, `upland`, and `plains` presets;
+- matching GPU rendering and CPU point queries;
+- optional bounded local weathering;
+- a camera-centered LOD renderer and a traversable standalone scene;
+- neutral diagnostics and multi-seed visual review.
 
-The project-local request contains:
+Hydrology, rivers, lakes, coastlines, biomes, vegetation, planet mapping, and
+bulk field baking are separate later products or experiments.
 
-- a `cubey::procedural::PatchDomain2D` describing the requested interior grid,
-  world origin, cell size, world seed, semantic space, and patch address;
-- recipe id plus its required generator revision;
-- default `upland-catchment-v1` revision `2`;
-- comparison `upland-broad-noise-control-v1` revision `1`.
+## Source Contract
 
-The default interior is `257x257` samples at `32 m` spacing, approximately
-`8.2 km` per side. Generation uses a fixed 32-sample process halo. Interior
-dimensions must be odd and at least 17 samples; cell size must be finite and
-positive. The patch address identifies a patch but does not perturb source
-sampling. World position and world seed are the source of terrain truth.
+The source is evaluated in world coordinates. A preset is a parameter set for
+one macro/structure/detail composition, not a separate formula or authored
+map. The initial shape vocabulary follows the simple TerrainEngine reference:
+coherent octave buildup followed by nonlinear elevation shaping. Cubey's shared
+coherent-noise implementation replaces the reference hash/noise code.
 
-## Product Contract
+The source stages are:
 
-`TerrainPatchProduct` returns the validated request, an interior-only
-`FieldSet2D`, field summaries, and a deterministic content hash. Source and
-process calculations run over the bordered sample grid and are cropped before
-publication.
+```text
+world position + seed
+    -> broad macro elevation
+    -> structural relief and nonlinear elevation shaping
+    -> footprint-filtered local detail
+    -> optional local weathering
+    -> height and gradient
+```
 
-The first product fields are:
+All presets use the same evaluator. Their host-authored parameter tables select
+frequency, amplitude, persistence, elevation power, detail balance, and physical
+height scale. There are no centered masks, contours, hand-authored ridgelines,
+or patch-local composition templates.
 
-| Group | Fields |
-| --- | --- |
-| Source and geometry | `source_height_m`, `mountain_support`, `height_m`, `slope`, `curvature`, `local_relief_m` |
-| Regional routing | `routing_surface_m`, `routing_fill_delta_m`, `flow_direction_x`, `flow_direction_z` |
-| Drainage diagnostics | `contributing_area_m2`, `stream_order`, `discharge_proxy`, `sink_mask`, `flow_boundary_mask` |
+`TerrainQuery` carries world `xz` and a sample footprint in meters. A zero
+footprint requests full detail; render LODs pass their geometric cell size so
+unresolved octaves fade smoothly. `TerrainSample` publishes base height, final
+height, gradient, and weathering delta. Normals are derived from the gradient.
 
-The broad-noise control also publishes `uplift_potential`, `macro_mass`, and
-`base_relief_m`. `height_m` equals `source_height_m` for both recipes, and
-hydrology cannot modify it. The corrected contour source and shared-foundation
-OpenSimplex control have no runtime dependency on `terrain_ref` and no
-independent GLSL implementation.
+The 64-bit world seed is resolved on the CPU into stable per-layer GPU seeds.
+The resolved parameter block is the single preset truth consumed by generic CPU
+and GLSL evaluators. CPU/GPU parity is required for all public sample outputs.
 
-## Hydrology Boundary
+## Weathering Boundary
 
-The regional process uses open-boundary priority-flood epsilon filling followed
-by D-infinity-style fractional routing to at most two lower receivers. Every
-cell contributes one cell area of uniform runoff. Accumulation is reported as
-physical `contributing_area_m2`; Strahler order uses the primary-receiver tree;
-`discharge_proxy` is a normalized log view of contributing area.
+Local weathering is an optional finite-neighborhood transform over the source
+height. It may add slope- and curvature-aware surface definition, but it must:
 
-Hydrology is bounded regional evidence, not independently tile-seam-safe truth.
-The halo reduces interior boundary damage, and `flow_boundary_mask` marks core
-flow that continues into the halo. Source height and local derivatives must
-seam across adjacent patch requests. Whole-watershed planning, cross-patch flow
-state, channel selection, and incision are later contracts.
+- remain deterministic and random-access;
+- use rotationally balanced sampling rather than D8 routing;
+- keep displacement bounded and preserve the macro silhouette;
+- make no claim about runoff, catchments, drainage, rivers, or sediment state.
 
-## Consumers And Review
+The clean source remains available in every query and debug view. Proper
+hydrology stays in the paused hydrology lab until it is rebooted as its own
+regional experiment.
 
-`terrain_generate` exports every product field through `CaptureQueue` and
-writes a v3 manifest with request identity, halo/boundary policy, field
-distributions, fixed display metadata, morphology review metrics, content hash,
-and filenames. Optional `--terrain-export-raw` output adds lossless little-endian
-row-major float32 fields and records their encoding in the same manifest. The
-`terrain` app builds a finite review mesh from
-the CPU product and exposes surface, source/height, derivative, routing, area,
-order, discharge, sink, and boundary views. Presentation color is a consumer
-only; it does not add material fields to the product.
+## Runtime And Rendering
 
-Acceptance requires deterministic and full-64-bit seed-sensitive products,
-adjacent-patch source seams, halo-stable core fields, synthetic routing tests,
-flow mass conservation, fixed-range scalar export validation,
-headless/windowed renderer smoke tests, a three-seed recipe comparison, and a
-regional source/process frame.
+The implementation remains project-local during v1. A CPU source library and a
+render library expose clean headers and shader includes, but terrain-specific
+types are not promoted into the engine foundation until a second real consumer
+tests the boundary.
 
-## Regional Landscape Evolution Boundary
+The standalone renderer samples height in the vertex shader over a
+camera-centered clipmap. The v1 default is eight LOD levels, 128 cells per axis,
+a 2 m near cell, and about 16 km of outer radius. Each level snaps to its own
+grid. Transition morphing and footprint-aware source filtering must prevent
+cracks, popping, and high-frequency aliasing during motion.
 
-`upland-landscape-evolution-v1` is the first height-affecting process candidate.
-It consumes the broad source and uplift field over a guarded regional domain,
-then solves a deterministic analytical stream-power model with hillslope and
-thermal terms. Unlike source sampling, its result is not independently
-patch-seam-safe. A future streaming system must extract local products from a
-shared regional solution.
+The scene uses the shared atmosphere for sky and lighting, a project-local
+surface camera whose clearance is maintained through CPU queries, and a
+procedural material based on height, slope, and coherent color/normal detail.
+Materials are presentation only; they do not become terrain truth. Cast terrain
+shadows are outside this first slice.
 
-This candidate does not replace the current fractional hydrology diagnostics.
-It publishes its single-receiver process graph separately, then runs the common
-diagnostic hydrology over final height so source and process recipes remain
-comparable.
+## Configuration And Diagnostics
+
+The public run controls are:
+
+- `terrain.seed`;
+- `terrain.preset`: `mountain`, `upland`, or `plains`;
+- `terrain.weathering`: `off` or `local`;
+- `terrain.weathering_strength`;
+- existing terrain camera, cell-size, and vertical-scale controls.
+
+The terrain app supports final surface, base/final height, slope, weathering
+delta, and LOD views with top, oblique, and surface cameras. Small bounded CPU
+sample grids are allowed for tests, statistics, and review metadata. The old
+raw-field exporter remains with the hydrology lab; terrain v1 does not emit a
+baked terrain product.
+
+## Acceptance
+
+Across seeds `0`, `9012`, and `12345`:
+
+- mountain terrain builds from broad mass into substantial ridges and peaks,
+  then local detail, without thin fins, flat shoulders, or spike fields;
+- upland and plains preserve the same vocabulary at progressively lower relief;
+- no strong axis-aligned or diagonal orientation survives into final height;
+- weathering adds local definition without changing the large silhouette;
+- CPU and GPU heights agree within `0.1 m` at tested coordinates and footprints;
+- surface traversal keeps the camera above terrain and exposes no LOD cracks or
+  discontinuities;
+- rendering requires no per-frame CPU field generation or bulk artifacts.
+
+The fixed review pack compares the reboot against `terrain-engine-ref`, but the
+new runtime has no code or link dependency on `terrain_ref`.

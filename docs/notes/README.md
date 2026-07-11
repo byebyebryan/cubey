@@ -82,13 +82,14 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain reboot current captures](terrain-reboot-current-captures.md):
   archived `projects/terrain_workbench_legacy` PNG review set, what to
   inspect, and river driver limitations.
-- [Terrain project map](terrain-project-map.md): lane map for source drivers,
-  process operators, product fields, review consumers, integration adapters, and
-  staged terrain work after the reference and ShaderToy passes.
+- [Terrain project map](terrain-project-map.md): current active, frozen, paused,
+  and legacy lanes plus the directly sampled terrain v1 spine.
+- [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
+  hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
-- [Terrain v1 baseline review](terrain-v1-baseline.md): first active terrain
+- [Terrain v1 baseline review](terrain-v1-baseline.md): archived CPU terrain
   patch product, multi-seed captures, measured generation cost, and the basin
   and routing artifacts exposed before river selection or carving.
 - [Terrain source bakeoff v1](terrain-source-bakeoff-v1.md): corrected contour

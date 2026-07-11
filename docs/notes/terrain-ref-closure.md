@@ -9,8 +9,10 @@ longer the active terrain implementation lane. Accept maintenance fixes that
 preserve its captures and command line, but do not add recipes, generalize its
 shader model, or promote its recipe switch into the new terrain product.
 
-The next active lane is `projects/terrain`: a CPU-authored terrain patch product
-with explicit fields, regional process diagnostics, and render/export consumers.
+The next active lane is `projects/terrain`: a directly sampled noise-field
+runtime with matching CPU/GPU queries and a camera-centered renderer. The
+intervening CPU patch and analytical landscape work is preserved in
+`projects/terrain_hydrology_lab`; it no longer defines terrain v1.
 
 ## Closure Review
 
@@ -54,14 +56,15 @@ other recipes show their unfiltered source surface.
 Carry forward:
 
 - deterministic world-coordinate sampling with explicit seed domains;
-- the clean-room mountain source as the first source-model donor;
+- the compact TerrainEngine source as the first visual control;
+- the clean-room mountain source as secondary source-model evidence;
 - neutral field views, multi-seed capture matrices, and near-surface review;
 - selective process application rather than assuming one filter fits all terrain;
 - procedural presentation as a consumer, not as terrain truth.
 
 Do not carry forward:
 
-- the monolithic biome recipe switch or duplicated CPU/GLSL source formulas;
+- the monolithic biome recipe switch or preset-specific CPU/GLSL formulas;
 - finite review-mesh coordinates as terrain identity;
 - centered bowls, corridors, coastlines, or other patch-composition templates;
 - material shading as the only evidence that a heightfield works;

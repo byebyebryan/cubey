@@ -1,344 +1,86 @@
 # Terrain Project Map
 
-Date: 2026-06-30
+Date: 2026-07-10
 
-Updated: 2026-07-09
+This map records the terrain reboot boundaries. Older river, mountain-driver,
+and landscape-evolution notes remain historical evidence rather than an active
+queue.
 
-This note maps the rebooted terrain project after the river, mountain, reference,
-and ShaderToy operator passes. It is a design map for `projects/terrain`, not a
-commit plan for one batch.
+## Active Projects
 
-## Project Shape
-
-`projects/terrain` should remain a local terrain product workbench. Its job is
-to make terrain state credible and inspectable before that state is handed to
-planet, ocean, foliage, water, or final rendering work.
-
-The project should be organized around this spine:
-
-```text
-source drivers -> process operators -> product fields -> review consumers -> adapters
-```
-
-Biomes come after that spine. A biome should be a recipe over source drivers,
-process operators, material rules, and vegetation hints. It should not be the
-first owner of mountain, river, lake, dune, coast, or foliage logic.
-
-## Erosion And Hydrology Boundary
-
-The `terrain_ref` cross-biome erosion study establishes two separate process
-classes that the reboot should not collapse into one implementation:
-
-```text
-macro terrain source
-    -> regional hydrology and major incision
-    -> selective stateless mesoscale erosion detail
-    -> recomputed product fields
-    -> materials, foliage, water, and rendering consumers
-```
-
-Regional hydrology owns catchments, drainage continuity, river hierarchy,
-water routing, and major incision. It may require finite regional/tile products,
-halos, retained process state, or offline/baked work. The stateless
-slope-following filter owns deterministic random-access detail and remains
-unable to explain where water starts, ends, accumulates, or connects.
-
-The filter must be disabled by default and selected by a coherent policy:
-
-```text
-erosion_activity = runoff * erodibility * slope_window * land_mask * scale_mask
-```
-
-Climate/moisture, material resistance, slope range, terrain class, and feature
-scale are inputs to this policy. They are generated source/product fields, not
-hand-authored masks. Alpine and badlands are plausible consumers; coast needs
-land/beach/cliff separation; plains should remain mostly inactive; dunes should
-opt out because wind is the dominant shaping process.
-
-This decision supersedes any older wording below that treats a local gully
-filter as a possible replacement for hydrology. The experiment and visual
-evidence are recorded in
-[Terrain erosion filter generalization](terrain-erosion-filter-generalization.md).
-
-## Work Lanes
-
-| Lane | Owns | Current state | Direction |
-| --- | --- | --- | --- |
-| Source drivers | Coherent macro structure before process effects. | River graph source, coherent mountain profile source, mountain envelope/peak/ridge diagnostics, broad relief, drainage potential. | Build reusable mountain, basin/river, lake-basin, dune, coast, plains, and glacial source drivers. |
-| Process operators | Terrain morphology and derived process fields. | River incision, spread/lowering helpers, diagnostic gully fields, wetness/deposition proxies. | Review the gully diagnostics, then add talus, snow, sand, shallow water, and process-memory experiments. |
-| Product fields | The public terrain truth. | Named `TerrainRegionProduct` fields, summaries, hashes, manifests, scalar PNG views. | Keep every meaningful output inspectable before feeding renderers or adapters. |
-| Review consumers | Ways to see field quality. | Scalar exports, manifests, `terrain_preview`, stress recipes. | Add focused debug renders and scenic review only after field truth exists. |
-| Integration adapters | Translation into other Cubey systems. | Deferred, with legacy terrain/ocean and planet contracts as targets. | Feed ocean, planet, foliage, and fluid/water only after local fields are stable. |
-
-## Source Driver Lane
-
-Source drivers answer where a feature exists before process detail is applied.
-They should use coherent fields, graph sources, or deterministic world/tile
-sources, not authored local marks.
-
-Near-term source drivers:
-
-- **Mountain range / peaks / ridges**: coherent mountain profile height, broad
-  mass, foothill/shoulder buildup, peak anchors, prominence, summit core, ridge
-  influence, and attribution fields. This is the active shape-quality priority
-  after river incision.
-- **River / basin graph**: connected trunk, major tributaries, minor tributaries,
-  discharge, stream order, channel width, and valley width. The graph/hydrology
-  refs remain the topology donors.
-- **Standing-water basin**: later lake/wetland source fields such as basin mask,
-  overflow, outlet, and water level. Do not implement this before mountain and
-  erosion diagnostics stabilize.
-
-Later source drivers:
-
-- dunes and sand supply;
-- coast, shoreline, beach slope, bathymetry, and estuary hints;
-- plains, badlands, glacial valleys, snow/ice, and talus support;
-- climate/material source fields such as moisture, temperature, exposure, and
-  vegetation zones.
-
-## Process Operator Lane
-
-Process operators should be deterministic scalar-field transforms with explicit
-inputs, outputs, stats, and limits. They should live in `projects/terrain` until
-their names and contracts are useful outside terrain.
-
-Current operators:
-
-- spread/decay fields;
-- relief-clamped split lowering;
-- subtract lowering from height;
-- river channel and valley incision over active river fields.
-- clean-room gully / erosion diagnostic for mountain stress:
-  `erosion_delta_m`, `gully_mask`, `crease_proxy`, and
-  `post_erosion_height_m`.
-- reference-local stateless slope-following erosion filter over arbitrary
-  source height/gradient samples, disabled by default and validated across
-  alpine, badlands, coast, plains, and dunes.
-
-Next process work:
-
-- establish regional hydrology products for catchment, drainage, routing, and
-  major incision rather than asking the stateless filter to provide them;
-- when the terrain reboot has climate/material fields, prove one generated
-  erosion-activity policy over positive and negative sentinel recipes;
-- add bounded process diagnostics such as talus/scree or shallow-water/lake
-  relaxation only through the same explicit source/process/product boundary.
-
-Guardrails:
-
-- It is not hydraulic erosion.
-- It must not generate or imply river topology.
-- It remains disabled unless coherent runoff, erodibility, slope, land, and
-  scale fields select it.
-- It should not copy ShaderToy formulas.
-- It should consume meter-aware fields such as height, slope/derivatives, local
-  relief, and optional mountain support.
-- It should not affect final `height_m` until the diagnostic views prove useful.
-- Downstream slope, local relief, material, wetness, and vegetation views must be
-  recomputed if the pass becomes height-affecting.
-
-Later process operators:
-
-- river topology refinement from graph/hydrology refs;
-- discharge/momentum/channel-memory diagnostics from SimpleHydrology-style
-  process state;
-- shallow-water/lake relaxation over `height_m + water_depth_m`;
-- talus/scree, snow/ice, sand transport, wetness/deposition, and material
-  eligibility.
-
-## Product Field Lane
-
-Product fields are the contract. Every high-value terrain feature should have a
-named field before it becomes a material or renderer effect.
-
-Field groups:
-
-- geometry: `height_m`, `pre_process_height_m`, slope, curvature, local relief;
-- mountain: profile height, envelope, mass, shoulder, summit core, support,
-  ridge hierarchy, peak anchors, prominence, skeleton, influence, uplift;
-- river: drainage potential, flow direction, accumulation, stream order,
-  graph plan, graph discharge, mask, trunk, tributaries, channel width, valley
-  width, channel incision, valley incision;
-- process: wetness, deposition, future erosion/talus/snow/sand/water fields;
-- erosion policy: runoff, erodibility, slope window, land/terrain class, scale
-  eligibility, activity, and signed displacement;
-- material and vegetation: rock/soil/grass masks, vegetation potential, later
-  foliage eligibility fields;
-- metadata: recipe id, generator revision, grid, seed, summaries, content hash,
-  field stats, and capture filenames.
-
-The renderer, ocean, planet, and foliage paths should consume these fields rather
-than recreating their own terrain truth.
-
-## Review Consumer Lane
-
-Review consumers exist to reveal field quality, not to hide field problems.
-
-Keep using:
-
-- per-field scalar PNGs;
-- `manifest.json` stats and hashes;
-- stress recipes for river and mountain drivers;
-- `terrain_preview` material, height, channel, profile, perspective, and
-  alternate-surface captures.
-
-Add later:
-
-- a scenic terrain debug render with slope/height/material bands and simple fog;
-- shoreline/water-contact review once water-depth or shoreline fields exist;
-- capture matrices for alpine, lake, dune, coast, plain, canyon, and glacial
-  sentinel recipes.
-
-Do not make final shading the source of terrain credibility. If a feature only
-works in `final.png`, it is not stable enough.
-
-## Integration Adapter Lane
-
-Adapters should be thin translations from `TerrainRegionProduct` or future tile
-products into other systems.
-
-| Consumer | Terrain should provide | Terrain should not own |
+| Project | Role | Change policy |
 | --- | --- | --- |
-| Ocean | Bathymetry, shoreline SDF, water depth, wet sand, beach/sediment masks, river-mouth hints. | FFT waves, Fresnel, refraction, animated foam, ocean rendering. |
-| Planet | Deterministic tile fields, world/sample domains, halo/border policy, material and water hints. | Cube-sphere LOD policy inside the terrain workbench. |
-| Foliage | Grass/shrub/tree/canopy eligibility, slope/moisture/elevation masks. | Tree rendering, wind, impostors, foliage LOD. |
-| Fluid/water | Terrain height, water depth, basin/outlet hints, roughness/friction masks. | Full fluid solver policy. |
-| Atmosphere/cloud | Capture conditions, lighting/material review targets, optional weather/moisture hints. | Sky, cloud, or weather rendering. |
+| `projects/terrain` | Terrain v1 source runtime, clipmap renderer, traversal, and review. | Active. Keep one parameterized source model and a small public contract. |
+| `projects/terrain_ref` | TerrainEngine and curated ShaderToy visual controls. | Frozen. Maintenance and reproducibility fixes only. |
+| `projects/terrain_hydrology_lab` | Previous CPU patch, drainage diagnostics, graph routing, and analytical landscape evolution. | Paused. Preserve build/tests; do not feed terrain v1. |
+| `projects/terrain_workbench_legacy` | First river/mountain driver workbench. | Legacy. |
+| `projects/procedural_terrain_legacy` | Earlier coast/island terrain project. | Legacy. |
+| `projects/terrain_lab_legacy` | Earlier biome/noise lab. | Legacy. |
 
-## Reference Routing
+## V1 Spine
 
-Use references by role:
+```text
+shared coherent noise
+    -> project-local parameterized source
+    -> CPU point query + matching GLSL sample
+    -> optional local weathering
+    -> camera-centered clipmap
+    -> procedural material + shared atmosphere
+    -> diagnostic and scenic review
+```
 
-- **ShaderToy terrain/hydro**: compact process and visual vocabulary. Borrow
-  clean-room gully diagnostics, selective stateless detail, shallow-water
-  diagnostic shape, and shoreline visual cues. Do not borrow river topology or
-  renderer architecture, and do not label local slope detail as hydrology.
-- **terrain-erosion-3-ways**: river topology and basin graph refinement. Use it
-  for upstream/downstream graph mechanics, directional inertia, upstream volume,
-  and capped downcut ideas.
-- **SimpleHydrology**: process-state diagnostics. Use it for discharge,
-  momentum, channel memory, sediment proxy, and erosion/deposition deltas, not a
-  full runtime particle sim.
-- **Planet-Generator / TerraForge3D**: source-driver and recipe structure. Use
-  layer stacks, first-layer masks, base-shape/detail/process staging, and
-  inspectable parameter vocabulary.
-- **terrain-diffusion**: later macro conditioning, climate/elevation field
-  vocabulary, quantile/stat shaping, and offline comparison. Do not add ML
-  runtime dependency.
-- **3DWorld / Proland / scene LOD refs**: later systems and rendering lessons.
-  Use them for diagnostics, tiling, materials, water/terrain integration, and
-  LOD vocabulary, not direct code ports.
+This is intentionally not the old source/process/product field spine. Terrain
+v1 is a random-access heightfield runtime. Regional simulation products can be
+added later through explicit adapters; they do not define this source contract.
 
-## Sequencing
+## Source And Presets
 
-### Phase 0: Preserve Current Evidence
+`mountain`, `upland`, and `plains` are parameter sets over the same
+macro/structure/detail evaluator. The TerrainEngine reference is the visual
+anchor because it reached readable mountain shapes with a compact octave stack
+and elevation power. Cubey keeps that hierarchy while using the shared noise
+foundation and explicit physical scales.
 
-Keep the current river and mountain stress recipes, scalar exports, manifests,
-and `terrain_preview` captures as review evidence. Do not remove fields just
-because a better model is planned.
+The model must remain coherent at every stage. Do not add local ridgeline,
+valley, coast, lake, or river masks to force a target composition. Additional
+terrain categories come later only if they can be expressed as parameters or a
+well-defined new source/operator class.
 
-Done when:
+## Process Boundary
 
-- current capture commands stay documented;
-- field manifests make old/new comparisons possible;
-- default and stress recipes remain deterministic.
+V1 local weathering is a bounded stateless modifier. It can sharpen or soften
+resolved surface detail and publish its signed delta, but it cannot provide
+drainage topology. D8, D-infinity, graph rivers, priority filling, stream-power
+evolution, and particle hydrology belong in `terrain_hydrology_lab` or a future
+hydrology reboot.
 
-### Phase 1: Mountain Process Diagnostic
+## Consumer Boundary
 
-Add the clean-room gully/erosion diagnostic over the mountain stress recipe.
+The standalone app is the only v1 integration target. Its project-local runtime
+is structured for reuse, but glTF, fluid, ocean, and planet adapters are deferred
+until the terrain contract and traversal evidence are stable. A second consumer
+is the gate for considering promotion into `include/cubey` and `src/cubey`.
 
-Status: implemented in revision 24 as diagnostic-only fields.
+## Review Contract
 
-Done when:
+Review always includes:
 
-- `erosion_delta_m`, `gully_mask`, and `crease_proxy` can be reviewed as scalar
-  fields;
-- tests cover deterministic finite output and bounded deltas;
-- perspective captures show whether the operator improves or harms ridge/peak
-  readability;
-- the pass remains diagnostic until proven.
+- neutral top views across three seeds;
+- clean versus weathered height comparisons;
+- oblique and near-surface presentation views;
+- LOD diagnostics and moving-camera inspection;
+- a side-by-side TerrainEngine reference control;
+- bounded source statistics and capture metadata.
 
-### Phase 2: Mountain Source Cleanup
+Material shading cannot be the only evidence. The height and slope views must
+show the same macro hierarchy, and outputs must be grouped by checkpoint rather
+than accumulated as an undifferentiated image dump.
 
-Status: revised in revision 26 so `mountain_profile_height_m` is the coherent
-mountain stress source, with mass, shoulder, summit, ridge, and uplift fields
-used as source diagnostics and attribution rather than pasted height layers.
-The next revision should keep that rule while replacing straight ridge bands and
-round summit blobs with anisotropic crests, elongated summit support, and saddle
-suppression.
+## Deferred Work
 
-Use the diagnostic evidence to improve the mountain source hierarchy.
-
-Done when:
-
-- broad mass, ridges, shoulders, and peaks read separately;
-- local detail no longer dominates macro form;
-- mountain support builds plausibly above lowlands;
-- review does not depend on `final.png` material tint.
-
-### Phase 3: River Topology Refinement
-
-Return to river graph quality with the hydrology refs.
-
-Done when:
-
-- trunk, major tributaries, and minor tributaries form a broader connected basin
-  without D8-looking straight or diagonal strokes;
-- discharge and stream order drive width and hierarchy;
-- channel/valley incision remains visible in height-only and channel previews;
-- the topology can explain continuation beyond the local patch.
-
-### Phase 4: Standing-Water Diagnostic
-
-Add lake/wetland source and shallow-water relaxation diagnostics.
-
-Done when:
-
-- water depth, water surface, outlet/overflow, basin, and lake/wetland masks are
-  visible fields;
-- boundaries and mass changes are explicit;
-- shoreline review is field-driven, not just a water shader.
-
-### Phase 5: Sentinel Recipe Composition
-
-Create representative recipes from the source/process pieces.
-
-Candidate sentinels:
-
-- alpine range;
-- mountain river catchment;
-- lake basin / wetland;
-- dune field;
-- coast / island / estuary;
-- plains / low-relief basin;
-- canyon / dry high-incision river expression;
-- glacial valley.
-
-Done when:
-
-- each sentinel mostly reuses existing drivers and operators;
-- each has an explicit reason to exist as a stress case;
-- failures are attributed to a source, process, product, or consumer lane.
-
-### Phase 6: Scale And Adapters
-
-Move from local patches toward tile/world integration.
-
-Done when:
-
-- source drivers sample from deterministic world or patch domains;
-- halo/border policy is explicit;
-- terrain products can feed planet and ocean adapter experiments;
-- local recipe quality survives at larger extents and higher resolutions.
-
-## Non-Goals For The Next Few Batches
-
-- No biome gallery before source/process operators are credible.
-- No direct ShaderToy code import.
-- No full hydraulic erosion claim.
-- No foliage renderer.
-- No ocean/coast renderer inside `projects/terrain`.
-- No ML terrain runtime.
-- No shared `cubey::procedural` promotion until a terrain-local operator proves a
-  stable, renderer-independent contract.
+- hydrology, rivers, lakes, wetlands, and coastlines;
+- biome/climate/material products and foliage placement;
+- terrain deformation, persistence, colliders, and offline baking;
+- cross-project adapters;
+- spherical planet mapping, floating origin, and planet-scale streaming;
+- terrain cast shadows and final production material systems.
