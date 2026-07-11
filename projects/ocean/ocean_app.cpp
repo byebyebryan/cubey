@@ -76,6 +76,7 @@ constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseVie
 constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kCameraNearPlane = 0.25F;
 constexpr float kCameraFarPlane = 14000.0F;
+constexpr float kCameraMinimumSurfaceClearanceMeters = 8.0F;
 constexpr VkFormat kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr VkFormat kOceanDepthFormat = VK_FORMAT_D32_SFLOAT;
 constexpr float kGravity = 9.81F;
@@ -1294,11 +1295,15 @@ class OceanApp {
     }
 
     [[nodiscard]] cubey::Transform3D camera_transform() const {
+        const float distance = orbit_controller_.distance();
+        const float pitch = ocean_above_surface_orbit_pitch(
+            distance, camera_base_pitch_ + orbit_controller_.pitch(),
+            kCameraMinimumSurfaceClearanceMeters);
         return cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = {0.0F, 0.0F, 0.0F},
-            .distance = orbit_controller_.distance(),
+            .distance = distance,
             .yaw = camera_base_yaw_ + orbit_controller_.yaw(),
-            .pitch = camera_base_pitch_ + orbit_controller_.pitch(),
+            .pitch = pitch,
         });
     }
 

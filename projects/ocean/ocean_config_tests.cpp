@@ -314,6 +314,14 @@ int main() {
                      "ocean surface frame should resolve active curvature strength");
         require_near(ocean::ocean_spherical_surface_drop_m(0.0F, earth_radius_m), 0.0F, 0.001F,
                      "spherical ocean surface should meet the local tangent datum at origin");
+        const float clear_camera_pitch =
+            ocean::ocean_above_surface_orbit_pitch(100.0F, 0.35F, 8.0F);
+        require(clear_camera_pitch < 0.0F,
+                "ocean orbit camera should remain above the unsupported water volume");
+        require_near(std::sin(-clear_camera_pitch) * 100.0F, 8.0F, 0.01F,
+                     "ocean orbit camera clamp should preserve requested surface clearance");
+        require_near(ocean::ocean_above_surface_orbit_pitch(100.0F, -0.45F, 8.0F), -0.45F,
+                     0.001F, "ocean orbit camera should preserve already-clear views");
         require_near(ocean::ocean_spherical_surface_drop_m(twenty_meter_horizon, earth_radius_m),
                      -20.0F, 0.01F,
                      "spherical ocean surface should drop by camera altitude near the horizon");

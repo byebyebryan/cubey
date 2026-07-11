@@ -28,6 +28,18 @@ struct OceanSurfaceFrame {
     return t * t * (3.0F - 2.0F * t);
 }
 
+[[nodiscard]] inline float ocean_above_surface_orbit_pitch(float distance_m,
+                                                           float requested_pitch_radians,
+                                                           float clearance_m) {
+    if (!std::isfinite(distance_m) || !std::isfinite(requested_pitch_radians) ||
+        !std::isfinite(clearance_m) || distance_m <= 0.0F || clearance_m < 0.0F) {
+        throw std::runtime_error("ocean camera clearance inputs must be valid");
+    }
+    const float clearance_ratio = std::clamp(clearance_m / distance_m, 0.0F, 0.99F);
+    const float highest_allowed_pitch = -std::asin(clearance_ratio);
+    return std::min(requested_pitch_radians, highest_allowed_pitch);
+}
+
 [[nodiscard]] inline float ocean_spherical_surface_drop_m(float local_distance_m,
                                                           float planet_radius_m) {
     if (!std::isfinite(local_distance_m) || !std::isfinite(planet_radius_m) ||
