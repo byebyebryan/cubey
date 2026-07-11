@@ -22,52 +22,69 @@ layout(location = 2) in float frag_height_m;
 layout(location = 3) in float frag_weathering_delta_m;
 layout(location = 4) flat in float frag_lod;
 layout(location = 5) in vec3 frag_source_normal;
-layout(location = 6) flat in float frag_cell_size_m;
-layout(location = 7) flat in float frag_child_half_extent_m;
+layout(location = 6) flat in float frag_child_half_extent_m;
+layout(location = 7) flat in float frag_origin_snap_m;
+layout(location = 8) flat in float frag_cell_size_m;
+layout(location = 9) in float frag_lod_morph;
+layout(location = 10) in float frag_footprint_m;
 
 layout(location = 0) out vec4 out_color;
 
-vec3 terrain_geometric_normal() {
-    vec3 normal = normalize(cross(dFdy(frag_world_position), dFdx(frag_world_position)));
-    return normal.y < 0.0 ? -normal : normal;
+vec2 terrain_child_origin() {
+    return floor(pc.camera_position_vertical_scale.xz / frag_origin_snap_m) *
+        frag_origin_snap_m;
 }
 
 bool terrain_covered_by_finer_lod(vec2 world_xz) {
     if (frag_child_half_extent_m <= 0.0) {
         return false;
     }
-    float child_cell_size_m = frag_cell_size_m * 0.5;
-    vec2 child_origin = floor(pc.camera_position_vertical_scale.xz / child_cell_size_m) *
-        child_cell_size_m;
-    vec2 child_position = abs(world_xz - child_origin);
-    float owned_half_extent_m = max(frag_child_half_extent_m - child_cell_size_m, 0.0);
-    return max(child_position.x, child_position.y) < owned_half_extent_m;
+    vec2 child_origin = terrain_child_origin();
+    float raster_guard_m = frag_cell_size_m;
+    vec2 child_min = child_origin - vec2(frag_child_half_extent_m - raster_guard_m);
+    vec2 child_max = child_origin + vec2(frag_child_half_extent_m - raster_guard_m);
+    return all(greaterThan(world_xz, child_min)) && all(lessThan(world_xz, child_max));
+}
+
+float terrain_child_boundary_detail_visibility(vec2 world_xz) {
+    if (frag_child_half_extent_m <= 0.0) {
+        return 1.0;
+    }
+    vec2 child_position = abs(world_xz - terrain_child_origin());
+    float boundary_distance_m = abs(max(child_position.x, child_position.y) -
+        frag_child_half_extent_m);
+    return smoothstep(frag_cell_size_m * 0.125, frag_cell_size_m * 2.0,
+        boundary_distance_m);
 }
 
 float terrain_color_noise(vec2 world_xz) {
     float broad = cubey_proc_value_noise_pcg_2d(world_xz * 0.0022);
-    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.013 + vec2(19.0, -31.0));
-    return mix(broad, fine, 0.32);
+    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.045 + vec2(19.0, -31.0));
+    return mix(broad, fine, 0.42);
 }
 
 float terrain_material_relief(vec2 world_xz, float pixel_footprint_m) {
     float broad_visibility = 1.0 - smoothstep(7.0, 26.0, pixel_footprint_m);
     float fine_visibility = 1.0 - smoothstep(1.5, 7.0, pixel_footprint_m);
-    float broad = cubey_proc_value_noise_pcg_2d(world_xz * 0.045 + vec2(-7.0, 13.0)) - 0.5;
-    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.18 + vec2(41.0, 5.0)) - 0.5;
-    return broad * broad_visibility * 2.0 + fine * fine_visibility * 0.4;
+    float broad = cubey_proc_value_noise_pcg_2d(world_xz * 0.055 + vec2(-7.0, 13.0)) - 0.5;
+    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.22 + vec2(41.0, 5.0)) - 0.5;
+    return broad * broad_visibility * 2.6 + fine * fine_visibility * 0.55;
 }
 
-vec3 terrain_material_normal(vec3 source_normal, vec2 world_xz) {
-    float pixel_footprint_m = max(length(dFdx(world_xz)), length(dFdy(world_xz)));
+vec3 terrain_material_normal(vec3 source_normal, vec2 world_xz, float footprint_m) {
     const float step_m = 0.75;
-    float center = terrain_material_relief(world_xz, pixel_footprint_m);
+    float center = terrain_material_relief(world_xz, footprint_m);
     vec2 gradient = vec2(
-        terrain_material_relief(world_xz + vec2(step_m, 0.0), pixel_footprint_m) - center,
-        terrain_material_relief(world_xz + vec2(0.0, step_m), pixel_footprint_m) - center) /
+        terrain_material_relief(world_xz + vec2(step_m, 0.0), footprint_m) - center,
+        terrain_material_relief(world_xz + vec2(0.0, step_m), footprint_m) - center) /
         step_m;
-    return normalize(vec3(source_normal.x - gradient.x * 0.9, source_normal.y,
-        source_normal.z - gradient.y * 0.9));
+    if (any(isnan(gradient)) || any(isinf(gradient))) {
+        return source_normal;
+    }
+    vec3 normal = vec3(source_normal.x - gradient.x, source_normal.y,
+        source_normal.z - gradient.y);
+    float length_squared = dot(normal, normal);
+    return length_squared > 1e-10 ? normal * inversesqrt(length_squared) : source_normal;
 }
 
 vec3 terrain_lod_color(float value) {
@@ -81,7 +98,7 @@ vec3 terrain_lod_color(float value) {
 }
 
 void main() {
-    vec3 source_normal = normalize(mix(frag_source_normal, terrain_geometric_normal(), 0.12));
+    vec3 source_normal = normalize(frag_source_normal);
     if (terrain_covered_by_finer_lod(frag_world_position.xz)) {
         discard;
     }
@@ -130,17 +147,21 @@ void main() {
     }
 
     float variation = terrain_color_noise(frag_world_position.xz);
-    vec3 grass = vec3(0.19, 0.30, 0.13) * mix(0.78, 1.18, variation);
-    vec3 soil = vec3(0.34, 0.27, 0.18) * mix(0.84, 1.12, variation);
-    vec3 rock = vec3(0.43, 0.42, 0.39) * mix(0.82, 1.16, variation);
+    vec3 grass = vec3(0.19, 0.30, 0.13) * mix(0.72, 1.20, variation);
+    vec3 soil = vec3(0.34, 0.27, 0.18) * mix(0.78, 1.15, variation);
+    vec3 rock = vec3(0.43, 0.42, 0.39) * mix(0.75, 1.18, variation);
     vec3 snow = vec3(0.86, 0.88, 0.86) * mix(0.94, 1.04, variation);
     vec3 base_color = mix(grass, soil, smoothstep(0.18, 0.48, slope));
     base_color = mix(base_color, rock, smoothstep(0.34, 0.72, slope));
-    float snow_mask = smoothstep(0.55, 0.84, normalized_height) *
+    float snow_mask = smoothstep(1400.0, 2100.0, frag_height_m) *
         (1.0 - smoothstep(0.38, 0.78, slope));
     base_color = mix(base_color, snow, snow_mask);
 
-    vec3 normal = terrain_material_normal(source_normal, frag_world_position.xz);
+    vec3 detail_normal = terrain_material_normal(source_normal, frag_world_position.xz,
+        frag_footprint_m);
+    float detail_visibility = (1.0 - smoothstep(0.82, 0.98, frag_lod_morph)) *
+        terrain_child_boundary_detail_visibility(frag_world_position.xz);
+    vec3 normal = normalize(mix(source_normal, detail_normal, detail_visibility));
     vec3 light_direction = normalize(pc.light_direction_intensity.xyz);
     float diffuse = max(dot(normal, light_direction), 0.0);
     vec3 sun = pc.light_color_debug_view.xyz *

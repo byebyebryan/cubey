@@ -471,12 +471,12 @@ class TerrainApp {
             .light_direction_intensity = {lighting.primary_light_direction.x,
                                           lighting.primary_light_direction.y,
                                           lighting.primary_light_direction.z,
-                                          std::max(lighting.primary_light_intensity * 0.55F, 0.1F)},
+                                          std::max(lighting.primary_light_intensity * 0.68F, 0.1F)},
             .light_color_debug_view = {lighting.primary_light_color.x,
                                        lighting.primary_light_color.y,
                                        lighting.primary_light_color.z,
                                        terrain_debug_view_id(runtime_config_.debug_view)},
-            .ambient_color_outer_extent = {ambient.x * 0.65F, ambient.y * 0.65F, ambient.z * 0.65F,
+            .ambient_color_outer_extent = {ambient.x * 0.52F, ambient.y * 0.52F, ambient.z * 0.52F,
                                            clipmap_config_.outer_half_extent},
         };
     }

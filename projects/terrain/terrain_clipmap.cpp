@@ -24,6 +24,10 @@ namespace {
     const float transition = cubey::render::clipmap_grid_2d_transition_width(
         coarse_cell, outer, config.transition_cells, config.max_transition_ratio);
     const float distance_to_outer = outer - std::max(std::abs(x), std::abs(z));
+    const float cell_size = cubey::render::clipmap_grid_2d_level_cell_size(config, level);
+    if (distance_to_outer <= cell_size) {
+        return 1.0F;
+    }
     return 1.0F - smoothstep(0.0F, transition, distance_to_outer);
 }
 
@@ -58,10 +62,13 @@ TerrainClipmapMeshData make_terrain_clipmap_mesh(const TerrainRuntimeConfig& con
 
     TerrainClipmapMeshData mesh;
     mesh.diagnostics = diagnostics;
-    mesh.vertices.reserve(diagnostics.total_vertices);
-    mesh.indices.reserve(diagnostics.total_vertices);
+    const std::uint32_t skirt_vertex_count =
+        (clipmap_config.lod_levels - 1U) * clipmap_config.cells_per_axis * 4U * 6U;
+    mesh.vertices.reserve(diagnostics.total_vertices + skirt_vertex_count);
+    mesh.indices.reserve(diagnostics.total_vertices + skirt_vertex_count);
 
-    auto append_vertex = [&mesh, &clipmap_config](float x, float z, std::uint32_t level) {
+    auto append_vertex = [&mesh, &clipmap_config](float x, float z, std::uint32_t level,
+                                                  float skirt_depth_m) {
         const float level_t =
             clipmap_config.lod_levels <= 1U
                 ? 0.0F
@@ -76,7 +83,8 @@ TerrainClipmapMeshData make_terrain_clipmap_mesh(const TerrainRuntimeConfig& con
         mesh.vertices.push_back({
             .position = {x, 0.0F, z},
             .color = {cell_size, morph, level_t},
-            .normal = {child_half_extent, 1.0F, 0.0F},
+            .normal = {child_half_extent, skirt_depth_m,
+                       cubey::render::clipmap_grid_2d_near_cell_size(clipmap_config)},
         });
         const std::size_t index = mesh.vertices.size() - 1U;
         if (index > static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())) {
@@ -99,15 +107,49 @@ TerrainClipmapMeshData make_terrain_clipmap_mesh(const TerrainRuntimeConfig& con
                                  span_x * static_cast<float>(x) / static_cast<float>(patch.cells_x);
                 const float x1 = patch.bounds.min_x + span_x * static_cast<float>(x + 1U) /
                                                           static_cast<float>(patch.cells_x);
-                append_vertex(x0, z0, patch.level);
-                append_vertex(x1, z0, patch.level);
-                append_vertex(x0, z1, patch.level);
-                append_vertex(x1, z0, patch.level);
-                append_vertex(x1, z1, patch.level);
-                append_vertex(x0, z1, patch.level);
+                append_vertex(x0, z0, patch.level, 0.0F);
+                append_vertex(x1, z0, patch.level, 0.0F);
+                append_vertex(x0, z1, patch.level, 0.0F);
+                append_vertex(x1, z0, patch.level, 0.0F);
+                append_vertex(x1, z1, patch.level, 0.0F);
+                append_vertex(x0, z1, patch.level, 0.0F);
             }
         }
     }
+
+    const auto append_skirt_segment = [&append_vertex](cubey::math::Vec2 start,
+                                                       cubey::math::Vec2 end, std::uint32_t level,
+                                                       float depth_m) {
+        append_vertex(start.x, start.y, level, 0.0F);
+        append_vertex(start.x, start.y, level, depth_m);
+        append_vertex(end.x, end.y, level, 0.0F);
+        append_vertex(end.x, end.y, level, 0.0F);
+        append_vertex(start.x, start.y, level, depth_m);
+        append_vertex(end.x, end.y, level, depth_m);
+    };
+    for (std::uint32_t level = 0; level + 1U < clipmap_config.lod_levels; ++level) {
+        const float outer = cubey::render::clipmap_grid_2d_level_half_extent(clipmap_config, level);
+        const float skirt_depth_m =
+            cubey::render::clipmap_grid_2d_level_cell_size(clipmap_config, level + 1U);
+        for (std::uint32_t cell = 0; cell < clipmap_config.cells_per_axis; ++cell) {
+            const float t0 =
+                static_cast<float>(cell) / static_cast<float>(clipmap_config.cells_per_axis);
+            const float t1 =
+                static_cast<float>(cell + 1U) / static_cast<float>(clipmap_config.cells_per_axis);
+            const float a = std::lerp(-outer, outer, t0);
+            const float b = std::lerp(-outer, outer, t1);
+            append_skirt_segment({a, -outer}, {b, -outer}, level, skirt_depth_m);
+            append_skirt_segment({a, outer}, {b, outer}, level, skirt_depth_m);
+            append_skirt_segment({-outer, a}, {-outer, b}, level, skirt_depth_m);
+            append_skirt_segment({outer, a}, {outer, b}, level, skirt_depth_m);
+        }
+    }
+    if (mesh.vertices.size() >
+        static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())) {
+        throw std::runtime_error("terrain clipmap diagnostics exceed uint32 range");
+    }
+    mesh.diagnostics.total_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
+    mesh.diagnostics.total_triangles = terrain_clipmap_triangle_count(mesh);
     return mesh;
 }
 
