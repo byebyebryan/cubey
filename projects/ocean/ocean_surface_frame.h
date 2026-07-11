@@ -40,6 +40,13 @@ struct OceanSurfaceFrame {
     return std::min(requested_pitch_radians, highest_allowed_pitch);
 }
 
+[[nodiscard]] inline float ocean_cloud_shadow_half_extent_m(float camera_distance_m) {
+    if (!std::isfinite(camera_distance_m) || camera_distance_m <= 0.0F) {
+        throw std::runtime_error("ocean cloud shadow camera distance must be valid");
+    }
+    return std::clamp(camera_distance_m * 40.0F, 16000.0F, 80000.0F);
+}
+
 [[nodiscard]] inline float ocean_spherical_surface_drop_m(float local_distance_m,
                                                           float planet_radius_m) {
     if (!std::isfinite(local_distance_m) || !std::isfinite(planet_radius_m) ||

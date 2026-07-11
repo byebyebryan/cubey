@@ -46,9 +46,13 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 cloud_shadow_world_to_uv_x;
     cubey::math::Vec4 cloud_shadow_world_to_uv_y;
     cubey::math::Vec4 cloud_lighting_options;
+    cubey::math::Vec4 sun_light_direction_intensity;
+    cubey::math::Vec4 sun_light_color;
+    cubey::math::Vec4 moon_light_direction_intensity;
+    cubey::math::Vec4 moon_light_color;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 56U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 72U);
 
 class OceanGpuResources {
   public:

@@ -322,6 +322,12 @@ int main() {
                      "ocean orbit camera clamp should preserve requested surface clearance");
         require_near(ocean::ocean_above_surface_orbit_pitch(100.0F, -0.45F, 8.0F), -0.45F,
                      0.001F, "ocean orbit camera should preserve already-clear views");
+        require_near(ocean::ocean_cloud_shadow_half_extent_m(100.0F), 16000.0F, 0.001F,
+                     "ocean cloud shadows should retain a useful near-camera footprint");
+        require_near(ocean::ocean_cloud_shadow_half_extent_m(1000.0F), 40000.0F, 0.001F,
+                     "ocean cloud shadows should scale with camera distance");
+        require_near(ocean::ocean_cloud_shadow_half_extent_m(4000.0F), 80000.0F, 0.001F,
+                     "ocean cloud shadows should stay within the V1 texture budget");
         require_near(ocean::ocean_spherical_surface_drop_m(twenty_meter_horizon, earth_radius_m),
                      -20.0F, 0.01F,
                      "spherical ocean surface should drop by camera altitude near the horizon");
@@ -651,6 +657,11 @@ int main() {
         require(ocean::ocean_render_view_from_name("cloud-reflection") ==
                     ocean::OceanRenderView::CloudReflection,
                 "cloud reflection debug view should parse");
+        require(ocean::ocean_render_view_from_name("water-body") ==
+                    ocean::OceanRenderView::WaterBody,
+                "water body debug view should parse");
+        require(ocean::ocean_render_view_from_name("fresnel") == ocean::OceanRenderView::Fresnel,
+                "Fresnel debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -700,8 +711,14 @@ int main() {
                     ocean::OceanRenderView::CloudReflection,
                 "ocean debug view cycle should include cloud reflection after cloud shadow");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudReflection) ==
+                    ocean::OceanRenderView::WaterBody,
+                "ocean debug view cycle should include the water body after cloud reflection");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::WaterBody) ==
+                    ocean::OceanRenderView::Fresnel,
+                "ocean debug view cycle should include Fresnel after the water body");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Fresnel) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after cloud reflection diagnostics");
+                "ocean debug view cycle should wrap after material diagnostics");
 
         bool rejected = false;
         try {
@@ -1384,8 +1401,10 @@ int main() {
                          "fragment shader should sample the atmosphere sky radiance cube");
         require_contains(fragment_shader, "vec3 ocean_sky_radiance",
                          "fragment shader should centralize atmosphere sky radiance sampling");
-        require_contains(fragment_shader, "float ocean_direct_light_scale",
-                         "fragment shader should derive direct light from atmosphere intensity");
+        require_contains(fragment_shader, "float ocean_sun_light_scale",
+                         "fragment shader should derive sun light from atmosphere intensity");
+        require_contains(fragment_shader, "float ocean_moon_light_scale",
+                         "fragment shader should derive moon light independently through twilight");
         require_contains(fragment_shader, "uniform sampler2D displacement_cascade0_texture",
                          "fragment shader should sample displacement for self-shadowing");
         require_contains(fragment_shader, "float ocean_self_shadow_strength",
@@ -1394,6 +1413,11 @@ int main() {
                          "fragment shader should reconstruct the FFT heightfield");
         require_contains(fragment_shader, "float ocean_wave_self_shadow",
                          "fragment shader should ray-march wave self-shadowing");
+        require_contains(fragment_shader, "float elevation_gate = smoothstep(0.025, 0.14",
+                         "wave self-shadowing should stay stable as the sun crosses the horizon");
+        require_contains(
+            fragment_shader, "stable_occlusion",
+            "wave self-shadowing should accumulate blockers instead of popping on max hits");
         require_contains(fragment_shader, "sample_ocean_displacement_height",
                          "fragment shader should sample cascade displacement heights");
         require_contains(fragment_shader, "min(reference_shadow, wave_shadow)",
@@ -1469,12 +1493,17 @@ int main() {
                          "fragment shader should keep persistent foam as the coverage carrier");
         require_contains(fragment_shader, "vec3 ocean_shaded_foam(",
                          "fragment shader should shade foam as a material");
+        require_contains(fragment_shader, "ocean_sun_light_intensity()",
+                         "fragment shader should consume atmosphere sun energy directly");
+        require_contains(fragment_shader, "ocean_moon_light_intensity()",
+                         "fragment shader should keep moon lighting continuous through twilight");
+        require_contains(fragment_shader, "ocean_dielectric_fresnel(ndotv)",
+                         "fragment shader should use dielectric Fresnel for the surface mix");
+        require_contains(fragment_shader, "ocean_ggx_reflected_radiance",
+                         "fragment shader should isolate directional specular from the water body");
         require_contains(
-            fragment_shader, "ocean_primary_light_intensity()",
-            "fragment shader should scale material lighting by atmosphere light energy");
-        require_contains(fragment_shader,
-                         "specular *= shadowed_direct_light * mix(1.0, 0.35, material_distance)",
-                         "fragment shader should reduce far and foam-covered specular");
+            fragment_shader, "mix(water_body, reflection, fresnel) + specular",
+            "fragment shader should compose body, reflection, and specular explicitly");
         require_contains(fragment_shader, "struct OceanAerialPerspective",
                          "fragment shader should name horizon aerial perspective data");
         require_contains(fragment_shader,
@@ -1560,8 +1589,12 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 56U",
-                         "GPU resource header should size active feature-isolation uniforms");
+        require_contains(gpu_header_source, "sun_light_direction_intensity",
+                         "GPU resource header should carry independent sun lighting");
+        require_contains(gpu_header_source, "moon_light_direction_intensity",
+                         "GPU resource header should carry independent moon lighting");
+        require_contains(gpu_header_source, "sizeof(float) * 72U",
+                         "GPU resource header should size active feature and lighting uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
         require_contains(gpu_header_source, "surface_frame_options",
@@ -1631,16 +1664,24 @@ int main() {
         require_contains(app_source, "atmosphere_environment_lighting",
                          "ocean app should derive sun direction from the shared lighting helper");
         require_contains(
-            vertex_shader, "vec4 sun_direction",
-            "ocean vertex push constants should reserve the shared light direction slot");
+            app_source, "AtmosphereReflectionProbeUpdateMode::CoherentFull",
+            "ocean should update its reflective atmosphere without mixed-time cube faces");
+        require_not_contains(
+            vertex_shader, "vec4 sun_direction;",
+            "ocean surface push constants should not duplicate feature lighting uniforms");
         require_contains(
-            fragment_shader, "ocean.sun_direction.w",
-            "ocean surface shader should read shared light intensity from push constants");
+            fragment_shader, "ocean_features.sun_light_direction_intensity.w",
+            "ocean surface shader should read continuous sun intensity from feature uniforms");
+        require_contains(
+            fragment_shader, "ocean_features.moon_light_direction_intensity.w",
+            "ocean surface shader should read continuous moon intensity from feature uniforms");
         require_contains(
             fragment_shader, "samplerCube atmosphere_reflection_texture",
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
+        require_contains(fragment_shader, "ocean_above_horizon_reflection_direction",
+                         "ocean surface shader should keep reflected sky rays above the horizon");
         require_contains(fragment_shader, "sampler2D cloud_shadow_transmittance_texture",
                          "ocean surface shader should sample shared cloud transmittance");
         require_contains(fragment_shader, "ocean_cloud_shadow_transmittance",
@@ -1651,10 +1692,12 @@ int main() {
                          "ocean surface shader should expose cloud reflection diagnostics");
         require_contains(fragment_shader, "ocean_filtered_cloud_reflection_product",
                          "ocean cloud reflections should use a bounded spatial filter");
-        require_contains(fragment_shader, "mix(1.0, 6.0",
+        require_contains(fragment_shader, "mix(1.0, 3.0",
                          "ocean cloud reflection filtering should scale with roughness");
-        require_contains(fragment_shader, "smoothstep(0.0, 0.04, edge_distance)",
-                         "ocean cloud reflections should fade at current-view boundaries");
+        require_contains(fragment_shader, "sky_facet_visibility",
+                         "ocean cloud reflections should reject below-horizon wave facets");
+        require_contains(fragment_shader, "smoothstep(0.0, 0.10, edge_distance)",
+                         "ocean cloud reflections should fade across the finite product edge");
         require_not_contains(fragment_shader, "cloud_shadow_scale_m",
                              "ocean surface shader should remove procedural cloud scale");
         require_not_contains(fragment_shader, "cloud_shadow_speed_mps",
@@ -1665,8 +1708,8 @@ int main() {
                          "ocean should skip the cloud shadow pass when coupling is disabled");
         require_contains(app_source, "render_view_ == OceanRenderView::CloudShadow",
                          "ocean should preserve raw cloud shadow diagnostics at zero strength");
-        require_contains(app_source, "std::clamp(surface_frame.mesh_config.mesh_extent",
-                         "ocean cloud shadows should track visible extent within the V1 budget");
+        require_contains(app_source, "ocean_cloud_shadow_half_extent_m",
+                         "ocean cloud shadows should use a camera-scale local projection");
         require_before(app_source, "cloud_runtime_.declare_shadow_product",
                        "graph.add_pass(\"ocean scene\"",
                        "ocean should generate cloud transmittance before drawing water");

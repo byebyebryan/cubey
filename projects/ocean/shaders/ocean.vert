@@ -20,6 +20,10 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cloud_shadow_world_to_uv_x;
     vec4 cloud_shadow_world_to_uv_y;
     vec4 cloud_lighting_options;
+    vec4 sun_light_direction_intensity;
+    vec4 sun_light_color;
+    vec4 moon_light_direction_intensity;
+    vec4 moon_light_color;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -27,7 +31,6 @@ layout(push_constant) uniform OceanParams {
     vec4 camera_time;
     vec4 mesh_options;
     vec4 patch_bounds;
-    vec4 sun_direction;
     vec4 debug_options;
     vec4 inspection_options;
     vec4 tile_lengths;

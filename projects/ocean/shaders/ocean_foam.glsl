@@ -264,28 +264,32 @@ float ocean_foam_coverage(OceanFoamData foam_data, float dist, float ndotv) {
                  0.0, 0.72);
 }
 
-vec3 ocean_lit_foam_color(vec3 foam_color, vec3 normal, float ndotl, float direct_shadow,
-                          float dist) {
+vec3 ocean_lit_foam_color(vec3 foam_color, vec3 normal, float direct_shadow, float dist) {
     float far_factor = ocean_material_distance_factor(dist);
     float ambient_light = ocean_ambient_light_scale();
-    float direct_light = ocean_direct_light_scale() * direct_shadow;
     vec3 sky_light = ocean_sky_radiance(normal) * 0.10;
-    float diffuse_light = ambient_light * (0.08 + 0.24 * clamp(normal.y, 0.0, 1.0)) +
-                          direct_light * ndotl * 0.62;
+    float sun_ndotl = max(dot(normal, ocean_sun_light_direction()), 0.0);
+    float moon_ndotl = max(dot(normal, ocean_moon_light_direction()), 0.0);
+    vec3 directional_light =
+        ocean_sun_light_color() * ocean_sun_light_scale() * sun_ndotl * direct_shadow +
+        ocean_moon_light_color() * ocean_moon_light_scale() * moon_ndotl;
+    vec3 diffuse_light =
+        vec3(ambient_light * (0.08 + 0.24 * clamp(normal.y, 0.0, 1.0))) +
+        directional_light * 0.62;
     vec3 lit_foam = foam_color * diffuse_light + sky_light;
-    vec3 far_foam = foam_color * (ambient_light * 0.18 + direct_light * 0.34) +
+    vec3 far_foam = foam_color * (vec3(ambient_light * 0.18) + directional_light * 0.34) +
                     ocean_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.08;
     vec3 dynamic_foam = mix(lit_foam, far_foam, far_factor * 0.55);
     vec3 static_foam = foam_color * 0.62 + ocean_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.05;
     return mix(static_foam, dynamic_foam, ocean_foam_lighting_strength());
 }
 
-vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float ndotl, float direct_shadow,
+vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float direct_shadow,
                        float coverage, float dist) {
     float far_factor = ocean_material_distance_factor(dist);
     float edge = smoothstep(0.04, 0.28, coverage) *
                  (1.0 - smoothstep(0.58, 0.92, coverage));
-    vec3 foam_lighting = ocean_lit_foam_color(foam_color, normal, ndotl, direct_shadow, dist);
+    vec3 foam_lighting = ocean_lit_foam_color(foam_color, normal, direct_shadow, dist);
     vec3 wet_water = mix(water, water * 1.14 + foam_color * 0.08,
                          edge * mix(0.36, 0.18, far_factor));
     return mix(wet_water, foam_lighting, coverage);

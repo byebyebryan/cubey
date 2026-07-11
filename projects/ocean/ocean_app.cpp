@@ -101,7 +101,6 @@ struct OceanPushConstants {
     cubey::math::Vec4 camera_time;
     cubey::math::Vec4 mesh_options;
     cubey::math::Vec4 patch_bounds;
-    cubey::math::Vec4 sun_direction;
     cubey::math::Vec4 debug_options;
     cubey::math::Vec4 inspection_options;
     cubey::math::Vec4 tile_lengths;
@@ -148,7 +147,7 @@ struct OceanReferencePillarPushConstants {
     cubey::math::Vec4 light_direction;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanTerrainFieldUniforms) == sizeof(float) * 8U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -892,7 +891,9 @@ class OceanApp {
         atmosphere_lighting_ =
             cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
         if (atmosphere_runtime_.resources_created()) {
-            atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+            atmosphere_runtime_.set_environment(
+                atmosphere_state_.environment,
+                cubey::AtmosphereReflectionProbeUpdateMode::CoherentFull);
         }
     }
 
@@ -1381,7 +1382,6 @@ class OceanApp {
         const cubey::Transform3D transform = camera_transform();
         const cubey::math::Mat4 view_projection =
             ocean_view_projection_matrix(extent, transform, surface_frame);
-        const cubey::math::Vec4 sun_direction = atmosphere_primary_light_uniform();
         const float debug_z = render_view_ == OceanRenderView::Exposure
                                   ? display_exposure()
                                   : static_cast<float>(surface_frame.mesh_config.mesh_lod_levels -
@@ -1410,7 +1410,6 @@ class OceanApp {
                     patch.bounds.min_z,
                     patch.bounds.max_z,
                 },
-            .sun_direction = sun_direction,
             .debug_options =
                 {
                     static_cast<float>(static_cast<std::uint32_t>(render_view_)),
@@ -1569,6 +1568,34 @@ class OceanApp {
                     cloud_shadow_valid ? cloud_shadow->texel_world_size_m : 0.0F,
                     cloud_reflection_valid ? ocean_config_.cloud_reflection_strength : 0.0F,
                 },
+            .sun_light_direction_intensity =
+                {
+                    atmosphere_lighting_.sun_direction.x,
+                    atmosphere_lighting_.sun_direction.y,
+                    atmosphere_lighting_.sun_direction.z,
+                    atmosphere_lighting_.sun_intensity,
+                },
+            .sun_light_color =
+                {
+                    atmosphere_lighting_.sun_color.x,
+                    atmosphere_lighting_.sun_color.y,
+                    atmosphere_lighting_.sun_color.z,
+                    0.0F,
+                },
+            .moon_light_direction_intensity =
+                {
+                    atmosphere_lighting_.moon_direction.x,
+                    atmosphere_lighting_.moon_direction.y,
+                    atmosphere_lighting_.moon_direction.z,
+                    atmosphere_lighting_.moon_intensity,
+                },
+            .moon_light_color =
+                {
+                    atmosphere_lighting_.moon_color.x,
+                    atmosphere_lighting_.moon_color.y,
+                    atmosphere_lighting_.moon_color.z,
+                    0.0F,
+                },
         };
     }
 
@@ -1578,7 +1605,7 @@ class OceanApp {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
         return {
             .view_projection = camera_.view_projection_matrix(transform, aspect),
-            .light_direction = atmosphere_primary_light_uniform(),
+            .light_direction = atmosphere_sun_light_uniform(),
         };
     }
 
@@ -1656,10 +1683,9 @@ class OceanApp {
                 },
             .receiver_axis_u = {1.0F, 0.0F, 0.0F},
             .receiver_axis_v = {0.0F, 0.0F, 1.0F},
-            .half_extent_m =
-                std::clamp(surface_frame.mesh_config.mesh_extent, 16000.0F, 160000.0F),
-            .direct_light_direction = atmosphere_lighting_.primary_light_direction,
-            .direct_light_intensity = atmosphere_lighting_.primary_light_intensity,
+            .half_extent_m = ocean_cloud_shadow_half_extent_m(orbit_controller_.distance()),
+            .direct_light_direction = atmosphere_lighting_.sun_direction,
+            .direct_light_intensity = atmosphere_lighting_.sun_intensity,
         };
     }
 
@@ -1702,9 +1728,9 @@ class OceanApp {
         };
     }
 
-    [[nodiscard]] cubey::math::Vec4 atmosphere_primary_light_uniform() const {
-        const cubey::math::Vec3& light = atmosphere_lighting_.primary_light_direction;
-        return {light.x, light.y, light.z, atmosphere_lighting_.primary_light_intensity};
+    [[nodiscard]] cubey::math::Vec4 atmosphere_sun_light_uniform() const {
+        const cubey::math::Vec3& light = atmosphere_lighting_.sun_direction;
+        return {light.x, light.y, light.z, atmosphere_lighting_.sun_intensity};
     }
 
     [[nodiscard]] OceanModulatePushConstants

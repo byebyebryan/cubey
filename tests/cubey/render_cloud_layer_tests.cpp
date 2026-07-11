@@ -279,6 +279,12 @@ void test_cloud_layer_cmake_package_tracks_composite_modes() {
     require(shadow_march.find("#include \"cubey/cloud/cloud_surface_density.glsl\"") !=
                 std::string::npos,
             "cloud shadow pass should consume the shared density field");
+    require(shadow_march.find("cloud_sample_density_terrain_ref(") != std::string::npos &&
+                shadow_march.find("true, 0.0") != std::string::npos,
+            "cloud shadow pass should evaluate the detailed visible-cloud density field");
+    require(shadow_march.find("optical_depth +=") != std::string::npos &&
+                shadow_march.find("exp(-optical_depth)") != std::string::npos,
+            "cloud shadow pass should integrate Beer optical depth along the light ray");
     require(!std::filesystem::exists(source_root / "shaders/cubey/cloud/cloud_composite.frag"),
             "shared cloud package should not keep an unused standalone composite shader");
     require(atmosphere_cmake.find("COMPOSITE background") != std::string::npos,
