@@ -128,14 +128,12 @@ constexpr double kPlanetMaxLiveLodLevel = 12.0;
 constexpr double kPlanetMaxLocalDetailLodLevels = 8.0;
 constexpr double kPlanetMaxLocalDetailCellsPerAxis = 512.0;
 
-constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view path,
-                                        std::string_view cli_name, std::string_view label,
-                                        std::string_view group_path, std::string_view help,
-                                        ConfigOptionType type, ConfigOptionRange range = no_range(),
-                                        ConfigEnumChoices choices = {},
-                                        std::string_view negative_cli_name = {},
-                                        ConfigOptionStability stability =
-                                            ConfigOptionStability::Stable) {
+constexpr ConfigOptionDescriptor
+option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
+       std::string_view label, std::string_view group_path, std::string_view help,
+       ConfigOptionType type, ConfigOptionRange range = no_range(), ConfigEnumChoices choices = {},
+       std::string_view negative_cli_name = {},
+       ConfigOptionStability stability = ConfigOptionStability::Stable) {
     return {
         .id = id,
         .path = path,
@@ -151,7 +149,7 @@ constexpr ConfigOptionDescriptor option(RunConfigOptionId id, std::string_view p
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 259> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -273,6 +271,14 @@ constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
            "Wire Overlay", "Ocean", "Draw ocean mesh wire overlay.", ConfigOptionType::Bool),
     option(RunConfigOptionId::OceanWireOpacity, "ocean.wire_opacity", "--ocean-wire-opacity",
            "Wire Opacity", "Ocean", "Opacity used by the ocean wire overlay.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::OceanCloudReflectionStrength, "ocean.cloud_reflection_strength",
+           "--ocean-cloud-reflection-strength", "Cloud Reflection", "Ocean",
+           "Strength of current-view cloud radiance in ocean reflections.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::OceanCloudShadowStrength, "ocean.cloud_shadow_strength",
+           "--ocean-cloud-shadow-strength", "Cloud Shadow", "Ocean",
+           "Strength of shared projected cloud transmittance on ocean direct lighting.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::PlanetScalePreset, "planet.scale_preset", "--planet-scale-preset",
            "Scale Preset", "Planet", "Planet scale defaults: earthlike or mini.",
@@ -670,8 +676,8 @@ constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
            ConfigOptionStability::Deferred),
     option(RunConfigOptionId::CloudOrbitRepresentation, "clouds.orbit_representation",
            "--cloud-orbit-representation", "Orbit Representation", kCloudAerialOrbitGroup,
-           "Deferred orbit cloud representation: volume or surface-shell.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kCloudOrbitRepresentations), {},
+           "Deferred orbit cloud representation: volume or surface-shell.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kCloudOrbitRepresentations), {},
            ConfigOptionStability::Deferred),
     option(RunConfigOptionId::CloudPlanetRadius, "clouds.planet_radius_m",
            "--cloud-planet-radius-m", "Planet Radius", kCloudLayerGroup,
@@ -680,8 +686,7 @@ constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
     option(RunConfigOptionId::CloudCameraAltitude, "clouds.camera_altitude_m",
            "--cloud-camera-altitude-m", "Camera Altitude", kCloudReferenceGroup,
            "Reference/capture app camera altitude above the planet surface in meters.",
-           ConfigOptionType::Float, min_range(0.0), {}, {},
-           ConfigOptionStability::Reference),
+           ConfigOptionType::Float, min_range(0.0), {}, {}, ConfigOptionStability::Reference),
     option(RunConfigOptionId::CloudBottomAltitude, "clouds.bottom_altitude_m",
            "--cloud-bottom-altitude-m", "Cloud Bottom", kCloudLayerGroup,
            "Cloud layer bottom altitude above the planet surface in meters.",
@@ -789,8 +794,8 @@ constexpr std::array<ConfigOptionDescriptor, 257> kRunConfigOptions{
            bounded_range(0.0, 2.0)),
     option(RunConfigOptionId::CloudPowderStrength, "clouds.powder_strength",
            "--cloud-powder-strength", "Powder Strength", kCloudLightingGroup,
-           "Powder-style brightening strength for thin cloud edges.",
-           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+           "Powder-style brightening strength for thin cloud edges.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::CloudFinalContrast, "clouds.final_contrast", "--cloud-final-contrast",
            "Final Contrast", kCloudLightingGroup, "Final cloud composite contrast multiplier.",
            ConfigOptionType::Float, bounded_range(0.0, 3.0)),
@@ -1311,6 +1316,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.ocean.wire_overlay;
     case RunConfigOptionId::OceanWireOpacity:
         return optional_float(config.ocean.wire_opacity);
+    case RunConfigOptionId::OceanCloudReflectionStrength:
+        return optional_float(config.ocean.cloud_reflection_strength);
+    case RunConfigOptionId::OceanCloudShadowStrength:
+        return optional_float(config.ocean.cloud_shadow_strength);
     case RunConfigOptionId::PlanetScalePreset:
         return config.planet.scale_preset.empty() ? nlohmann::json(nullptr)
                                                   : nlohmann::json(config.planet.scale_preset);
@@ -1808,6 +1817,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
     adapter.writeField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.writeField<float>("curvature_strength", options.curvature_strength);
     adapter.writeField<float>("wire_opacity", options.wire_opacity);
+    adapter.writeField<float>("cloud_reflection_strength", options.cloud_reflection_strength);
+    adapter.writeField<float>("cloud_shadow_strength", options.cloud_shadow_strength);
     adapter.writeField<bool>("wire_overlay", options.wire_overlay);
 }
 
@@ -1825,6 +1836,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) 
     adapter.readField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.readField<float>("curvature_strength", options.curvature_strength);
     adapter.readField<float>("wire_opacity", options.wire_opacity);
+    adapter.readField<float>("cloud_reflection_strength", options.cloud_reflection_strength);
+    adapter.readField<float>("cloud_shadow_strength", options.cloud_shadow_strength);
     adapter.readField<bool>("wire_overlay", options.wire_overlay);
     if (const ConfigOptionDescriptor* option = cubey::find_run_config_option("ocean.cascade")) {
         options.cascade = parse_ocean_cascade(cascade, *option);
@@ -2480,6 +2493,14 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::OceanWireOpacity:
         config.ocean.wire_opacity = parse_config_float(value, option);
         validate_range(config.ocean.wire_opacity, option);
+        break;
+    case RunConfigOptionId::OceanCloudReflectionStrength:
+        config.ocean.cloud_reflection_strength = parse_config_float(value, option);
+        validate_range(config.ocean.cloud_reflection_strength, option);
+        break;
+    case RunConfigOptionId::OceanCloudShadowStrength:
+        config.ocean.cloud_shadow_strength = parse_config_float(value, option);
+        validate_range(config.ocean.cloud_shadow_strength, option);
         break;
     case RunConfigOptionId::PlanetScalePreset:
         config.planet.scale_preset = std::string(value);

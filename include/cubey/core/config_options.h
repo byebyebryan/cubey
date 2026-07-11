@@ -68,6 +68,8 @@ enum class RunConfigOptionId {
     OceanTerrainFields,
     OceanWireOverlay,
     OceanWireOpacity,
+    OceanCloudReflectionStrength,
+    OceanCloudShadowStrength,
     PlanetScalePreset,
     PlanetRadius,
     PlanetAtmosphereHeight,

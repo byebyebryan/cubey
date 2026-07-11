@@ -70,8 +70,7 @@ const cubey::ConfigOptionDescriptor& require_option(std::string_view path) {
     throw std::runtime_error("missing config descriptor for " + std::string(path));
 }
 
-void require_option_stability(std::string_view path,
-                              cubey::ConfigOptionStability expected,
+void require_option_stability(std::string_view path, cubey::ConfigOptionStability expected,
                               const char* message) {
     require(require_option(path).stability == expected, message);
 }
@@ -381,6 +380,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "ocean.cascade",
         "ocean.spectral_domains",
         "ocean.terrain_fields",
+        "ocean.cloud_reflection_strength",
+        "ocean.cloud_shadow_strength",
         "planet.scale_preset",
         "planet.radius_m",
         "planet.atmosphere_height_m",
@@ -577,7 +578,9 @@ void test_run_config_loads_json_config_file() {
     "map_size": 512,
     "cascade": "4",
     "spectral_domains": false,
-    "terrain_fields": true
+    "terrain_fields": true,
+    "cloud_reflection_strength": 0.8,
+    "cloud_shadow_strength": 0.4
   },
   "planet": {
     "atmosphere_mode": "physical"
@@ -672,6 +675,9 @@ void test_run_config_loads_json_config_file() {
             "config file should set ocean controls");
     require(config.ocean.spectral_domains == 0 && config.ocean.terrain_fields == 1,
             "config file should set ocean tri-state booleans");
+    require(config.ocean.cloud_reflection_strength == 0.8F &&
+                config.ocean.cloud_shadow_strength == 0.4F,
+            "config file should set ocean cloud-lighting strengths");
     require(config.planet.atmosphere_mode == "physical",
             "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
@@ -1633,12 +1639,18 @@ void test_run_config_parses_ocean_controls() {
     std::string wire_flag = "--ocean-wire-overlay";
     std::string opacity_flag = "--ocean-wire-opacity";
     std::string opacity_value = "0.75";
-    std::array<char*, 11> argv{program.data(),         map_flag.data(),
-                               map_value.data(),       precision_flag.data(),
-                               precision_value.data(), cascade_flag.data(),
-                               cascade_value.data(),   terrain_fields_flag.data(),
-                               wire_flag.data(),       opacity_flag.data(),
-                               opacity_value.data()};
+    std::string reflection_flag = "--ocean-cloud-reflection-strength";
+    std::string reflection_value = "0.8";
+    std::string shadow_flag = "--ocean-cloud-shadow-strength";
+    std::string shadow_value = "0.4";
+    std::array<char*, 15> argv{program.data(),          map_flag.data(),
+                               map_value.data(),        precision_flag.data(),
+                               precision_value.data(),  cascade_flag.data(),
+                               cascade_value.data(),    terrain_fields_flag.data(),
+                               wire_flag.data(),        opacity_flag.data(),
+                               opacity_value.data(),    reflection_flag.data(),
+                               reflection_value.data(), shadow_flag.data(),
+                               shadow_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1649,6 +1661,10 @@ void test_run_config_parses_ocean_controls() {
     require(config.ocean.terrain_fields == 1, "run config should parse ocean terrain field toggle");
     require(config.ocean.wire_overlay, "run config should parse ocean wire overlay");
     require(config.ocean.wire_opacity == 0.75F, "run config should parse ocean wire opacity");
+    require(config.ocean.cloud_reflection_strength == 0.8F,
+            "run config should parse ocean cloud reflection strength");
+    require(config.ocean.cloud_shadow_strength == 0.4F,
+            "run config should parse ocean cloud shadow strength");
 
     std::string all_value = "all";
     std::array<char*, 3> all_argv{program.data(), cascade_flag.data(), all_value.data()};
@@ -1700,17 +1716,36 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 30> argv{
-        program.data(),          seed_flag.data(),         seed_value.data(),
-        cell_size_flag.data(),   cell_size_value.data(),   sea_level_flag.data(),
-        sea_level_value.data(),  land_extent_flag.data(),  land_extent_value.data(),
-        coast_noise_flag.data(), coast_noise_value.data(), relief_flag.data(),
-        relief_value.data(),     ridges_flag.data(),       ridges_value.data(),
-        valleys_flag.data(),     valleys_value.data(),     recipe_flag.data(),
-        recipe_value.data(),     camera_flag.data(),       camera_value.data(),
-        vertical_scale_flag.data(), vertical_scale_value.data(), preview_runtime_flag.data(),
-        preview_runtime_value.data(), preview_color_flag.data(), preview_color_value.data(),
-        preview_surface_flag.data(), preview_surface_value.data(), water_surface_flag.data()};
+    std::array<char*, 30> argv{program.data(),
+                               seed_flag.data(),
+                               seed_value.data(),
+                               cell_size_flag.data(),
+                               cell_size_value.data(),
+                               sea_level_flag.data(),
+                               sea_level_value.data(),
+                               land_extent_flag.data(),
+                               land_extent_value.data(),
+                               coast_noise_flag.data(),
+                               coast_noise_value.data(),
+                               relief_flag.data(),
+                               relief_value.data(),
+                               ridges_flag.data(),
+                               ridges_value.data(),
+                               valleys_flag.data(),
+                               valleys_value.data(),
+                               recipe_flag.data(),
+                               recipe_value.data(),
+                               camera_flag.data(),
+                               camera_value.data(),
+                               vertical_scale_flag.data(),
+                               vertical_scale_value.data(),
+                               preview_runtime_flag.data(),
+                               preview_runtime_value.data(),
+                               preview_color_flag.data(),
+                               preview_color_value.data(),
+                               preview_surface_flag.data(),
+                               preview_surface_value.data(),
+                               water_surface_flag.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
