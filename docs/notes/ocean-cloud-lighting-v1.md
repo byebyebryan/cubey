@@ -49,6 +49,11 @@ camera behavior, sunset/night lighting, and cloud density/depth diagnostics.
 Shadow-specific captures use denser weather so the broad product is inspectable;
 runtime defaults remain unchanged.
 
+The primary review framing uses the mid camera and the normal 512 ocean map.
+One near frame remains as an explicit stress case; it is not the visual target
+for cloud-lighting acceptance. `MAP_SIZE` can still override the map size for
+fast mechanical smoke runs.
+
 ## Measured Cost
 
 The implementation was measured in otherwise equivalent 300-frame windowed
