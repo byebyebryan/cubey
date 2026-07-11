@@ -2,8 +2,9 @@
 
 Date: 2026-07-10
 
-Status: reboot design. The previous CPU patch and analytical landscape work is
-preserved in `projects/terrain_hydrology_lab`; it is not the terrain v1 product.
+Status: implemented v1 checkpoint. The previous CPU patch and analytical
+landscape work is preserved in `projects/terrain_hydrology_lab`; it is not the
+terrain v1 product.
 
 ## Goal
 

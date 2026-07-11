@@ -14,6 +14,8 @@ namespace {
 
 constexpr float kRotationCos = 0.8F;
 constexpr float kRotationSin = 0.6F;
+// Neutral filtered ridge value approximates the mean of 1 - abs(OpenSimplex2S).
+constexpr float kRidgeNeutral = 0.65F;
 
 [[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
     const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
@@ -52,6 +54,8 @@ constexpr float kRotationSin = 0.6F;
     float weight = 0.0F;
     for (std::uint32_t octave = 0; octave < band.octaves; ++octave) {
         const float footprint_weight = octave_footprint_weight(frequency, footprint_m);
+        const float neutral = std::lerp(0.5F, kRidgeNeutral, band.ridge_mix);
+        float shaped = neutral;
         if (footprint_weight > 0.0F) {
             noise.seed = band.seed + static_cast<std::int32_t>(octave * 1013U);
             const float octave_f = static_cast<float>(octave);
@@ -60,11 +64,10 @@ constexpr float kRotationSin = 0.6F;
                 noise);
             const float unit = sample * 0.5F + 0.5F;
             const float ridge = 1.0F - std::abs(sample);
-            const float shaped = std::lerp(unit, ridge, band.ridge_mix);
-            const float octave_weight = amplitude * footprint_weight;
-            value += shaped * octave_weight;
-            weight += octave_weight;
+            shaped = std::lerp(unit, ridge, band.ridge_mix);
         }
+        value += std::lerp(neutral, shaped, footprint_weight) * amplitude;
+        weight += amplitude;
         frequency *= band.lacunarity;
         amplitude *= band.gain;
     }
@@ -219,15 +222,15 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
     result.weathering_strength = config.weathering_strength;
     switch (config.preset) {
     case TerrainPreset::Mountain:
-        result.macro = band(macro_seed, 4U, 12'000.0F, 2.01F, 0.52F, 0.04F);
-        result.structure = band(structure_seed, 6U, 3'400.0F, 1.98F, 0.50F, 0.24F);
-        result.detail = band(detail_seed, 5U, 680.0F, 2.03F, 0.47F, 0.38F);
-        result.macro_weight = 0.52F;
-        result.structure_weight = 0.48F;
-        result.detail_weight = 0.18F;
-        result.elevation_bias = -0.06F;
-        result.height_scale_m = 4'200.0F;
-        result.elevation_power = 2.35F;
+        result.macro = band(macro_seed, 4U, 14'000.0F, 2.01F, 0.50F, 0.02F);
+        result.structure = band(structure_seed, 5U, 4'200.0F, 1.98F, 0.48F, 0.28F);
+        result.detail = band(detail_seed, 4U, 900.0F, 2.03F, 0.43F, 0.20F);
+        result.macro_weight = 0.50F;
+        result.structure_weight = 0.52F;
+        result.detail_weight = 0.10F;
+        result.elevation_bias = -0.08F;
+        result.height_scale_m = 5'500.0F;
+        result.elevation_power = 2.55F;
         result.gradient_step_m = 2.0F;
         result.weathering_radius_m = 18.0F;
         result.weathering_max_delta_m = 60.0F;

@@ -36,6 +36,26 @@ float terrain_color_noise(vec2 world_xz) {
     return mix(broad, fine, 0.32);
 }
 
+float terrain_material_relief(vec2 world_xz, float pixel_footprint_m) {
+    float broad_visibility = 1.0 - smoothstep(7.0, 26.0, pixel_footprint_m);
+    float fine_visibility = 1.0 - smoothstep(1.5, 7.0, pixel_footprint_m);
+    float broad = cubey_proc_value_noise_pcg_2d(world_xz * 0.045 + vec2(-7.0, 13.0)) - 0.5;
+    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.18 + vec2(41.0, 5.0)) - 0.5;
+    return broad * broad_visibility * 2.0 + fine * fine_visibility * 0.4;
+}
+
+vec3 terrain_material_normal(vec3 source_normal, vec2 world_xz) {
+    float pixel_footprint_m = max(length(dFdx(world_xz)), length(dFdy(world_xz)));
+    const float step_m = 0.75;
+    float center = terrain_material_relief(world_xz, pixel_footprint_m);
+    vec2 gradient = vec2(
+        terrain_material_relief(world_xz + vec2(step_m, 0.0), pixel_footprint_m) - center,
+        terrain_material_relief(world_xz + vec2(0.0, step_m), pixel_footprint_m) - center) /
+        step_m;
+    return normalize(vec3(source_normal.x - gradient.x * 0.9, source_normal.y,
+        source_normal.z - gradient.y * 0.9));
+}
+
 vec3 terrain_lod_color(float value) {
     const vec3 colors[8] = vec3[8](
         vec3(0.12, 0.72, 0.34), vec3(0.22, 0.66, 0.82),
@@ -47,12 +67,12 @@ vec3 terrain_lod_color(float value) {
 }
 
 void main() {
-    vec3 normal = normalize(mix(frag_source_normal, terrain_geometric_normal(), 0.12));
+    vec3 source_normal = normalize(mix(frag_source_normal, terrain_geometric_normal(), 0.12));
     float normalized_height = clamp(
         (frag_height_m - terrain_uniforms.source.elevation.x) /
             max(terrain_uniforms.source.elevation.y, 1.0),
         0.0, 1.0);
-    float slope = 1.0 - clamp(normal.y, 0.0, 1.0);
+    float slope = 1.0 - clamp(source_normal.y, 0.0, 1.0);
     int debug_view = int(round(pc.light_color_debug_view.w));
 
     if (debug_view == 1) {
@@ -78,7 +98,7 @@ void main() {
         return;
     }
     if (debug_view == 4) {
-        float extent = max(terrain_uniforms.source.weathering.y, 0.001);
+        float extent = max(terrain_uniforms.source.weathering.y * 0.03, 0.001);
         float signed_delta = clamp(frag_weathering_delta_m / extent, -1.0, 1.0);
         vec3 neutral = vec3(0.13, 0.14, 0.15);
         vec3 color = signed_delta < 0.0
@@ -103,6 +123,7 @@ void main() {
         (1.0 - smoothstep(0.38, 0.78, slope));
     base_color = mix(base_color, snow, snow_mask);
 
+    vec3 normal = terrain_material_normal(source_normal, frag_world_position.xz);
     vec3 light_direction = normalize(pc.light_direction_intensity.xyz);
     float diffuse = max(dot(normal, light_direction), 0.0);
     vec3 sun = pc.light_color_debug_view.xyz *

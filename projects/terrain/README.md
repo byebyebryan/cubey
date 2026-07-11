@@ -29,6 +29,9 @@ ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
   --terrain-preset mountain \
   --terrain-weathering local \
   --terrain-camera-preset surface
+
+./build/dev/projects/terrain/terrain_source_report
+projects/terrain/capture_v1_review.sh
 ```
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
@@ -37,4 +40,6 @@ Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `weathering`, and `lod`.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
-for the complete runtime boundary.
+for the complete runtime boundary and
+[`docs/notes/terrain-v1-runtime-checkpoint.md`](../../docs/notes/terrain-v1-runtime-checkpoint.md)
+for the fixed review pack and current measured baseline.

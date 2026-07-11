@@ -16,6 +16,22 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+add_executable(cubey_project_terrain_source_report
+    terrain_source_report.cpp
+)
+set_target_properties(
+    cubey_project_terrain_source_report
+    PROPERTIES
+        OUTPUT_NAME terrain_source_report
+)
+target_link_libraries(
+    cubey_project_terrain_source_report
+    PRIVATE
+        cubey_project_terrain_runtime
+        cubey_project_warnings
+        nlohmann_json::nlohmann_json
+)
+
 add_library(cubey_project_terrain_render_support STATIC
     terrain_clipmap.cpp
     terrain_surface_controller.cpp
@@ -93,6 +109,11 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME terrain_render_tests COMMAND cubey_project_terrain_render_tests)
+
+    add_test(
+        NAME terrain_source_report_runs
+        COMMAND cubey_project_terrain_source_report
+    )
 
     add_executable(cubey_project_terrain_source_gpu_parity_tests
         terrain_source_gpu_parity.cpp
@@ -188,6 +209,7 @@ if (BUILD_TESTING)
         terrain_reaches_glfw
         terrain_source_tests
         terrain_render_tests
+        terrain_source_report_runs
         terrain_source_gpu_parity_tests
         terrain_headless_writes_png
         terrain_headless_writes_png_stats

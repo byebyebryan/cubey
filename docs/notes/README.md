@@ -86,6 +86,9 @@ the detailed foundation notes under `docs/architecture/`.
   and legacy lanes plus the directly sampled terrain v1 spine.
 - [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
   hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
+- [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): completed
+  CPU/GPU source, traversable clipmap renderer, fixed review pack, measured
+  preset baseline, and the boundary before external-consumer integration.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.

@@ -93,24 +93,29 @@ void test_footprint_filters_unresolved_detail() {
         .seed = 12345U,
         .preset = TerrainPreset::Mountain,
     });
-    double full_variation = 0.0;
-    double coarse_variation = 0.0;
+    double full_high_frequency = 0.0;
+    double coarse_high_frequency = 0.0;
     float previous_full = 0.0F;
     float previous_coarse = 0.0F;
+    float previous_previous_full = 0.0F;
+    float previous_previous_coarse = 0.0F;
     for (int index = 0; index < 64; ++index) {
         const cubey::math::Vec2 point{static_cast<float>(index) * 16.0F, 211.0F};
         const float full = cubey::projects::terrain::sample_terrain_base_height(
             parameters, {.world_xz = point, .footprint_m = 0.0F});
         const float coarse = cubey::projects::terrain::sample_terrain_base_height(
             parameters, {.world_xz = point, .footprint_m = 256.0F});
-        if (index > 0) {
-            full_variation += std::abs(full - previous_full);
-            coarse_variation += std::abs(coarse - previous_coarse);
+        if (index > 1) {
+            full_high_frequency += std::abs(full - 2.0F * previous_full + previous_previous_full);
+            coarse_high_frequency +=
+                std::abs(coarse - 2.0F * previous_coarse + previous_previous_coarse);
         }
+        previous_previous_full = previous_full;
+        previous_previous_coarse = previous_coarse;
         previous_full = full;
         previous_coarse = coarse;
     }
-    require(full_variation > coarse_variation,
+    require(full_high_frequency > coarse_high_frequency,
             "terrain footprint should suppress unresolved local variation");
 }
 

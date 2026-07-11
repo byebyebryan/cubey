@@ -24,6 +24,9 @@ struct TerrainSourceSample {
     float weathering_delta_m;
 };
 
+// CPU parity constant: approximate mean of 1 - abs(OpenSimplex2S).
+const float terrain_source_ridge_neutral = 0.65;
+
 float terrain_source_octave_footprint_weight(float frequency, float footprint_m) {
     if (footprint_m <= 0.0) {
         return 1.0;
@@ -51,6 +54,8 @@ float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
         }
         float footprint_weight =
             terrain_source_octave_footprint_weight(frequency, footprint_m);
+        float neutral = mix(0.5, terrain_source_ridge_neutral, band.shape.w);
+        float shaped = neutral;
         if (footprint_weight > 0.0) {
             noise.seed = band.control.x + octave * 1013;
             float octave_f = float(octave);
@@ -59,11 +64,10 @@ float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
                 rotated.y * frequency - octave_f * 9.17);
             float unit_value = sample_value * 0.5 + 0.5;
             float ridge = 1.0 - abs(sample_value);
-            float shaped = mix(unit_value, ridge, band.shape.w);
-            float octave_weight = amplitude * footprint_weight;
-            value += shaped * octave_weight;
-            weight += octave_weight;
+            shaped = mix(unit_value, ridge, band.shape.w);
         }
+        value += mix(neutral, shaped, footprint_weight) * amplitude;
+        weight += amplitude;
         frequency *= band.shape.y;
         amplitude *= band.shape.z;
     }
