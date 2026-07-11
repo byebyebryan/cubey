@@ -1,6 +1,6 @@
 # Terrain V1 Runtime
 
-Date: 2026-07-10
+Date: 2026-07-11
 
 Status: implemented v1 checkpoint. The previous CPU patch and analytical
 landscape work is preserved in `projects/terrain_hydrology_lab`; it is not the
@@ -80,15 +80,18 @@ tests the boundary.
 
 The standalone renderer samples height in the vertex shader over a
 camera-centered clipmap. The v1 default is eight LOD levels, 128 cells per axis,
-a 2 m near cell, and about 16 km of outer radius. Each level snaps to its own
-grid. Transition morphing and footprint-aware source filtering must prevent
-cracks, popping, and high-frequency aliasing during motion.
+a 2 m near cell, and about 16 km of outer radius. All levels use one origin
+snapped to that finest grid. Geometry stays fixed while source coordinates and
+query footprints transition toward the parent grid. Every fragment has one LOD
+owner; a one-parent-cell raster guard and downward boundary skirts cover
+T-junction rasterization without restoring broad overlapping rings.
 
 The scene uses the shared atmosphere for sky and lighting, a project-local
 surface camera whose clearance is maintained through CPU queries, and a
 procedural material based on height, slope, and coherent color/normal detail.
-Materials are presentation only; they do not become terrain truth. Cast terrain
-shadows are outside this first slice.
+Snow selection uses physical elevation rather than normalized per-preset
+height. Materials are presentation only; they do not become terrain truth. Cast
+terrain shadows are outside this first slice.
 
 ## Configuration And Diagnostics
 
@@ -105,6 +108,11 @@ delta, and LOD views with top, oblique, and surface cameras. Small bounded CPU
 sample grids are allowed for tests, statistics, and review metadata. The old
 raw-field exporter remains with the hydrology lab; terrain v1 does not emit a
 baked terrain product.
+
+Headless surface video advances the camera at a deterministic fixed forward
+speed while re-querying terrain clearance every frame. Orbit-camera video keeps
+the existing automatic rotation. PNG and interactive camera behavior are
+unchanged.
 
 ## Acceptance
 

@@ -1,6 +1,6 @@
 # Terrain V1 Runtime Checkpoint
 
-Date: 2026-07-10
+Date: 2026-07-11
 
 Status: first complete directly sampled terrain product checkpoint.
 
@@ -18,6 +18,12 @@ shared atmosphere and HDR composition, procedural height/slope material
 selection, footprint-filtered material normals, surface traversal with CPU
 clearance queries, and neutral source/debug views. No baked heightfield is
 needed for normal rendering.
+
+The closure pass gives every visible fragment one LOD owner. Clipmap levels use
+one finest-grid-snapped origin, transition source samples and footprints toward
+the parent grid, and cover boundary raster gaps with narrow downward skirts.
+The result removes the broad terrain-shaped LOD interleaving from the checkpoint
+baseline without exposing sky cracks during movement.
 
 Optional `local` weathering is a bounded finite-neighborhood detail transform.
 It deliberately has no drainage, flow, sediment, or regional state. The old
@@ -46,6 +52,10 @@ The script replaces its prior generated PNGs under
   camera;
 - `terrain-v1-control-sheet.png`: TerrainEngine reference control followed by
   terrain v1 mountain presentation;
+- `terrain-v1-lod-sheet.png`: top, oblique, and surface ownership views for the
+  mountain control;
+- `terrain-v1-lod-traversal.mp4`: deterministic six-second, 1.32 km forward
+  traversal in the LOD ownership view;
 - `source-summary.json`: bounded clean-source measurements over a 32.768 km
   domain at `65 x 65` samples.
 
@@ -79,6 +89,8 @@ screen footprint; it does not alter CPU height, collision, or silhouette.
   the low-slope upland and plains controls.
 - CPU/GPU parity remains an explicit test across presets, coordinates,
   footprints, and clean/weathered modes.
+- The surface controller is tested over a ten-second, 2.2 km fixed-step path;
+  every sampled frame retains the requested terrain clearance.
 
 This is a credible rendering and engine-consumer terrain baseline, not a claim
 of geomorphological simulation. Materials are still generic, terrain casts no

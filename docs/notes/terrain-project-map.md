@@ -1,6 +1,6 @@
 # Terrain Project Map
 
-Date: 2026-07-10
+Date: 2026-07-11
 
 This map records the terrain reboot boundaries. Older river, mountain-driver,
 and landscape-evolution notes remain historical evidence rather than an active
@@ -24,9 +24,9 @@ shared coherent noise
     -> project-local parameterized source
     -> CPU point query + matching GLSL sample
     -> optional local weathering
-    -> camera-centered clipmap
+    -> single-owner camera-centered clipmap
     -> procedural material + shared atmosphere
-    -> diagnostic and scenic review
+    -> fixed still and traversal review
 ```
 
 This is intentionally not the old source/process/product field spine. Terrain

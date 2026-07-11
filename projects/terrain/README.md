@@ -9,8 +9,8 @@ is bounded, footprint-filtered, and explicitly non-hydraulic.
 
 The `terrain` app displaces a camera-centered eight-level clipmap directly from
 that GLSL evaluator. It uses the shared atmosphere and HDR post path, procedural
-surface materials, diagnostic views, and a surface controller whose clearance
-comes from the CPU query contract.
+surface materials, explicit single-owner LOD transitions, diagnostic views, and
+a surface controller whose clearance comes from the CPU query contract.
 
 This project does not own regional hydrology or a baked terrain product. The
 previous patch, exporter, routing, and analytical landscape code lives in
@@ -33,6 +33,9 @@ ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
 ./build/dev/projects/terrain/terrain_source_report
 projects/terrain/capture_v1_review.sh
 ```
+
+The fixed review pack includes multi-seed shape and presentation sheets, LOD
+ownership stills, and a deterministic surface traversal video.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Camera presets are `oblique`, `profile`, `top`, `surface`, and
