@@ -198,6 +198,16 @@ class CloudLayerRuntime {
                        const CloudLayerRuntimeFrame& frame,
                        std::optional<RenderGraphTextureHandle> background = std::nullopt,
                        std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
+    void update_product_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
+                                    const CompiledRenderGraph& graph,
+                                    const RenderGraphResourceSet& resources,
+                                    const CloudLayerRuntimeFrame& frame) const;
+    void update_composite_descriptors(
+        const cubey::vulkan::Device& device, FrameSlot frame_slot,
+        const CompiledRenderGraph& graph, const RenderGraphResourceSet& resources,
+        const CloudLayerRuntimeFrame& frame,
+        std::optional<RenderGraphTextureHandle> background = std::nullopt,
+        std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
     void update_shadow_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,
                                    const CompiledRenderGraph& graph,
                                    const RenderGraphResourceSet& resources,

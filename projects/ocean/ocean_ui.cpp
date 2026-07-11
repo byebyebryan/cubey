@@ -680,6 +680,9 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Broad low-frequency variation applied to distant reflected sky and atmosphere.");
         ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
+            "Cloud reflection", &ui.config.cloud_reflection_strength, 0.0F, 1.0F, "%.2f",
+            "Strength of current-view cloud radiance in ocean reflections.");
+        cubey::host::imgui_slider_float(
             "Cloud shadow", &ui.config.cloud_shadow_strength, 0.0F, 1.0F, "%.2f",
             "Strength of shared cloud transmittance on direct ocean lighting.");
         cubey::host::imgui_slider_float(

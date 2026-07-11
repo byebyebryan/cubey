@@ -227,6 +227,25 @@ void test_cloud_layer_shadow_projection_is_snapped_and_centered() {
                  1.0F, 0.0001F, "cloud shadow positive V edge should map to one");
 }
 
+void test_cloud_layer_runtime_separates_product_and_composite_descriptors() {
+    const std::filesystem::path source_root = source_root_path();
+    const std::string header =
+        read_text_file(source_root / "include/cubey/render/cloud_layer.h");
+    const std::string source =
+        read_text_file(source_root / "src/cubey/render/cloud_layer.cpp");
+
+    require(header.find("update_product_descriptors") != std::string::npos,
+            "cloud runtime should expose product-only descriptor updates");
+    require(header.find("update_composite_descriptors") != std::string::npos,
+            "cloud runtime should expose visible-composite descriptor updates");
+    require(source.find("update_product_descriptors(device, frame_slot, graph, resources, frame)") !=
+                std::string::npos,
+            "combined cloud descriptor updates should preserve product setup");
+    require(source.find("update_composite_descriptors(device, frame_slot, graph, resources, frame") !=
+                std::string::npos,
+            "combined cloud descriptor updates should preserve composite setup");
+}
+
 void test_cloud_layer_cmake_package_tracks_composite_modes() {
     const std::filesystem::path source_root = source_root_path();
     const std::string shader_cmake = read_text_file(source_root / "cmake/CubeyShaders.cmake");

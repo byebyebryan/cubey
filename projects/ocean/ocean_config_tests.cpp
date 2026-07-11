@@ -1057,7 +1057,9 @@ int main() {
                          "app should pass shape anti-repeat as diagnostics push data");
         require_contains(app_source, "diagnostics_.detail_anti_repeat_strength",
                          "app should pass detail anti-repeat as feature uniform data");
-        require_contains(app_source, "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow)",
+        require_contains(
+            app_source,
+            "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow, cloud_reflection)",
                          "app should isolate shader feature controls in a frame uniform");
         require_contains(app_source, "OceanMeshDrawPlan ocean_mesh_draw_plan",
                          "ocean app should centralize visible mesh patch planning");
@@ -1277,6 +1279,8 @@ int main() {
                          "UI should expose sun glitter corridor width");
         require_contains(ui_source, "&ui.config.cloud_shadow_strength",
                          "UI should expose shared cloud shadow strength");
+        require_contains(ui_source, "&ui.config.cloud_reflection_strength",
+                         "UI should expose current-view cloud reflection strength");
         require_not_contains(ui_source, "cloud_shadow_scale_m",
                              "UI should not expose removed procedural cloud scale");
         require_not_contains(ui_source, "cloud_shadow_speed_mps",
@@ -1562,6 +1566,10 @@ int main() {
                          "surface descriptors should expose shared cloud transmittance");
         require_contains(gpu_resources_source, "update_cloud_shadow_descriptor",
                          "surface descriptors should support transient cloud shadow products");
+        require_contains(gpu_resources_source, "kOceanSurfaceCloudReflectionBinding",
+                         "surface descriptors should expose current-view cloud radiance");
+        require_contains(gpu_resources_source, "update_cloud_reflection_descriptor",
+                         "surface descriptors should support transient cloud reflection products");
         require_contains(gpu_resources_source,
                          "VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT",
                          "surface displacement descriptors should be visible to self-shadowing");
@@ -1629,6 +1637,16 @@ int main() {
                          "ocean surface shader should sample shared cloud transmittance");
         require_contains(fragment_shader, "ocean_cloud_shadow_transmittance",
                          "ocean surface shader should isolate cloud transmittance lookup");
+        require_contains(fragment_shader, "sampler2D cloud_reflection_product_texture",
+                         "ocean surface shader should sample current-view cloud radiance");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u",
+                         "ocean surface shader should expose cloud reflection diagnostics");
+        require_contains(fragment_shader, "ocean_filtered_cloud_reflection_product",
+                         "ocean cloud reflections should use a bounded spatial filter");
+        require_contains(fragment_shader, "mix(1.0, 6.0",
+                         "ocean cloud reflection filtering should scale with roughness");
+        require_contains(fragment_shader, "smoothstep(0.0, 0.04, edge_distance)",
+                         "ocean cloud reflections should fade at current-view boundaries");
         require_not_contains(fragment_shader, "cloud_shadow_scale_m",
                              "ocean surface shader should remove procedural cloud scale");
         require_not_contains(fragment_shader, "cloud_shadow_speed_mps",
@@ -1640,6 +1658,10 @@ int main() {
         require_before(app_source, "cloud_runtime_.declare_shadow_product",
                        "graph.add_pass(\"ocean scene\"",
                        "ocean should generate cloud transmittance before drawing water");
+        require_contains(app_source, ".radiance_transmittance = cloud_frame.product.resolved_cloud",
+                         "ocean should reuse the current cloud product for reflections");
+        require_contains(app_source, "scene_pass.read_texture(cloud_reflection.radiance_transmittance",
+                         "ocean scene should declare its cloud reflection dependency");
         require_contains(app_source, "diagnostics_.size_reference_enabled ? 1.0F : 0.0F",
                          "ocean app should pass reference shadow enable through feature uniforms");
         require_contains(fragment_shader, "ocean_reference_shadow_enabled",

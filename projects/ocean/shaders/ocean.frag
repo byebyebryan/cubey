@@ -58,6 +58,7 @@ layout(set = 0, binding = 32) uniform sampler2D foam_filtered_cascade4_level0_te
 layout(set = 0, binding = 33) uniform sampler2D foam_filtered_cascade4_level1_texture;
 layout(set = 0, binding = 34) uniform sampler2D foam_filtered_cascade4_level2_texture;
 layout(set = 0, binding = 35) uniform sampler2D cloud_shadow_transmittance_texture;
+layout(set = 0, binding = 36) uniform sampler2D cloud_reflection_product_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -114,6 +115,7 @@ const uint OCEAN_VIEW_ENERGY_LOD = 23u;
 const uint OCEAN_VIEW_FOAM_FILTERED = 24u;
 const uint OCEAN_VIEW_FAR_FIELD = 25u;
 const uint OCEAN_VIEW_CLOUD_SHADOW = 26u;
+const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -403,7 +405,18 @@ void main() {
         mix(pow(1.0 - ndotv, 5.0 * exp(-2.69 * roughness)) /
                 (1.0 + 22.7 * pow(roughness, 1.5)),
             1.0, OCEAN_REFLECTANCE);
-    vec3 reflection = ocean_environment_reflection(reflection_dir, roughness);
+    vec3 clear_reflection = ocean_environment_reflection(reflection_dir, roughness);
+    OceanCloudReflectionSample cloud_reflection_sample =
+        ocean_cloud_reflection(reflection_dir, roughness);
+    float cloud_reflection_weight =
+        cloud_reflection_sample.visibility * ocean_cloud_reflection_strength();
+    vec3 cloud_reflection =
+        max(ocean_sky_radiance(reflection_dir) +
+                cloud_reflection_sample.delta * cloud_reflection_weight,
+            vec3(0.0));
+    vec3 reflection =
+        max(clear_reflection + cloud_reflection_sample.delta * cloud_reflection_weight,
+            vec3(0.0));
     reflection *= ocean_far_reflection_variation(frag_sample_position, far_material_energy);
     vec3 ambient = water_color * (0.08 + 0.34 * ambient_light * clamp(normal.y, 0.0, 1.0)) +
                    ocean_sky_radiance(normal) * 0.08;
@@ -488,6 +501,8 @@ void main() {
         color = vec3(far_field_energy, far_material_energy, far_detail_filter);
     } else if (view == OCEAN_VIEW_CLOUD_SHADOW) {
         color = vec3(cloud_transmittance);
+    } else if (view == OCEAN_VIEW_CLOUD_REFLECTION) {
+        color = cloud_reflection;
     }
 
     if (ocean.debug_options.w > 0.0) {

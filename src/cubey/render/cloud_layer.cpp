@@ -1526,27 +1526,13 @@ void CloudLayerRuntime::declare_composite(
         });
 }
 
-void CloudLayerRuntime::update_descriptors(
+void CloudLayerRuntime::update_product_descriptors(
     const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
-    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
-    std::optional<RenderGraphTextureHandle> background,
-    std::optional<RenderGraphTextureHandle> scene_depth) const {
-    const bool expects_background = cloud_layer_composite_mode_has_background(composite_mode_);
-    const bool expects_scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode_);
-    if (expects_background != background.has_value()) {
-        throw std::runtime_error("cloud layer descriptor background mode mismatch");
-    }
-    if (expects_scene_depth != scene_depth.has_value()) {
-        throw std::runtime_error("cloud layer descriptor scene depth mode mismatch");
-    }
+    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame) const {
     const RenderGraphSampledTextureView cloud_product =
         resolved_sampled_texture_view(graph, resources, frame.product.cloud);
     const RenderGraphSampledTextureView cloud_metadata =
         resolved_sampled_texture_view(graph, resources, frame.product.metadata);
-    const RenderGraphSampledTextureView resolved_cloud_product =
-        resolved_sampled_texture_view(graph, resources, frame.product.resolved_cloud);
-    const RenderGraphSampledTextureView resolved_cloud_metadata =
-        resolved_sampled_texture_view(graph, resources, frame.product.resolved_metadata);
     const CloudLayerGeneratedResources& generated = generated_resources();
 
     MaterialDescriptorWriter(march_material().set(frame_slot))
@@ -1597,7 +1583,25 @@ void CloudLayerRuntime::update_descriptors(
                            VK_IMAGE_LAYOUT_GENERAL)
             .update(device);
     }
+}
 
+void CloudLayerRuntime::update_composite_descriptors(
+    const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
+    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
+    std::optional<RenderGraphTextureHandle> background,
+    std::optional<RenderGraphTextureHandle> scene_depth) const {
+    const bool expects_background = cloud_layer_composite_mode_has_background(composite_mode_);
+    const bool expects_scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode_);
+    if (expects_background != background.has_value()) {
+        throw std::runtime_error("cloud layer descriptor background mode mismatch");
+    }
+    if (expects_scene_depth != scene_depth.has_value()) {
+        throw std::runtime_error("cloud layer descriptor scene depth mode mismatch");
+    }
+    const RenderGraphSampledTextureView resolved_cloud_product =
+        resolved_sampled_texture_view(graph, resources, frame.product.resolved_cloud);
+    const RenderGraphSampledTextureView resolved_cloud_metadata =
+        resolved_sampled_texture_view(graph, resources, frame.product.resolved_metadata);
     MaterialDescriptorWriter writer(composite_material().set(frame_slot));
     writer.uniform_buffer(kCloudLayerUniformBinding, frame_uniforms().buffer(frame_slot).handle(),
                           frame_uniforms().range())
@@ -1620,6 +1624,16 @@ void CloudLayerRuntime::update_descriptors(
                                       scene_depth_view.layout);
     }
     writer.update(device);
+}
+
+void CloudLayerRuntime::update_descriptors(
+    const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
+    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
+    std::optional<RenderGraphTextureHandle> background,
+    std::optional<RenderGraphTextureHandle> scene_depth) const {
+    update_product_descriptors(device, frame_slot, graph, resources, frame);
+    update_composite_descriptors(device, frame_slot, graph, resources, frame, background,
+                                 scene_depth);
 }
 
 void CloudLayerRuntime::update_shadow_descriptors(

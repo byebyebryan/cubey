@@ -117,6 +117,10 @@ float ocean_cloud_shadow_strength() {
     return clamp(ocean_features.cloud_lighting_options.x, 0.0, 1.0);
 }
 
+float ocean_cloud_reflection_strength() {
+    return clamp(ocean_features.cloud_lighting_options.w, 0.0, 1.0);
+}
+
 float ocean_far_roughness_strength() {
     return max(ocean_features.far_field_options2.x, 0.0);
 }
@@ -328,6 +332,55 @@ vec3 ocean_environment_reflection(vec3 direction, float roughness) {
                    clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD)
             .rgb;
     return mix(ocean_sky_radiance(dir), reflection, ocean_atmosphere_reflection_strength());
+}
+
+struct OceanCloudReflectionSample {
+    vec3 delta;
+    float visibility;
+};
+
+vec4 ocean_filtered_cloud_reflection_product(vec2 uv, float roughness) {
+    ivec2 product_size = max(textureSize(cloud_reflection_product_texture, 0), ivec2(1));
+    vec2 texel = 1.0 / vec2(product_size);
+    float radius_pixels = mix(1.0, 6.0, sqrt(clamp(roughness, 0.0, 1.0)));
+    vec2 offset_x = vec2(texel.x * radius_pixels, 0.0);
+    vec2 offset_y = vec2(0.0, texel.y * radius_pixels);
+    vec4 filtered = texture(cloud_reflection_product_texture, uv) * 4.0;
+    filtered += texture(cloud_reflection_product_texture, uv + offset_x);
+    filtered += texture(cloud_reflection_product_texture, uv - offset_x);
+    filtered += texture(cloud_reflection_product_texture, uv + offset_y);
+    filtered += texture(cloud_reflection_product_texture, uv - offset_y);
+    filtered *= 0.125;
+    filtered.rgb = max(filtered.rgb, vec3(0.0));
+    filtered.a = clamp(filtered.a, 0.0, 1.0);
+    return filtered;
+}
+
+OceanCloudReflectionSample ocean_cloud_reflection(vec3 direction, float roughness) {
+    vec3 dir = normalize(direction);
+    vec3 clear_sky = ocean_sky_radiance(dir);
+    if (ocean_cloud_reflection_strength() <= 0.0) {
+        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+    }
+
+    vec3 projection_point = ocean.camera_time.xyz + dir * 1000.0;
+    vec4 clip = ocean.view_projection * vec4(projection_point, 1.0);
+    if (clip.w <= 0.0001) {
+        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+    }
+    vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
+    if (any(lessThanEqual(uv, vec2(0.0))) || any(greaterThanEqual(uv, vec2(1.0)))) {
+        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+    }
+
+    float edge_distance = min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y));
+    float visibility = smoothstep(0.0, 0.04, edge_distance);
+    vec4 cloud = ocean_filtered_cloud_reflection_product(uv, roughness);
+    vec3 clouded_sky = cloud.rgb + cloud.a * clear_sky;
+    vec3 delta = clouded_sky - clear_sky;
+    delta = max(delta, -clear_sky * 0.28);
+    delta = min(delta, max(clear_sky * 0.85, vec3(0.10)));
+    return OceanCloudReflectionSample(delta, visibility);
 }
 
 

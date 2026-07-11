@@ -25,8 +25,10 @@ constexpr std::uint32_t kOceanSurfaceFoamFilterBinding =
     kOceanSurfaceFeatureUniformBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudShadowBinding =
     kOceanSurfaceFoamFilterBinding + kOceanFoamFilterTextureCount;
-constexpr std::uint32_t kOceanSurfaceBindingCount =
+constexpr std::uint32_t kOceanSurfaceCloudReflectionBinding =
     kOceanSurfaceCloudShadowBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceBindingCount =
+    kOceanSurfaceCloudReflectionBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -429,6 +431,12 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
+    surface_bindings[kOceanSurfaceCloudReflectionBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceCloudReflectionBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -566,6 +574,16 @@ void OceanGpuResources::update_cloud_shadow_descriptor(
     writes
         .combined_image_sampler(surface_set(frame_slot), kOceanSurfaceCloudShadowBinding, sampler,
                                 image_view, image_layout)
+        .update(device);
+}
+
+void OceanGpuResources::update_cloud_reflection_descriptor(
+    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot, VkSampler sampler,
+    VkImageView image_view, VkImageLayout image_layout) {
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes
+        .combined_image_sampler(surface_set(frame_slot), kOceanSurfaceCloudReflectionBinding,
+                                sampler, image_view, image_layout)
         .update(device);
 }
 

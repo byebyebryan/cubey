@@ -71,6 +71,9 @@ class OceanGpuResources {
     void update_cloud_shadow_descriptor(const cubey::vulkan::Device& device,
                                         cubey::render::FrameSlot frame_slot, VkSampler sampler,
                                         VkImageView image_view, VkImageLayout image_layout);
+    void update_cloud_reflection_descriptor(const cubey::vulkan::Device& device,
+                                            cubey::render::FrameSlot frame_slot, VkSampler sampler,
+                                            VkImageView image_view, VkImageLayout image_layout);
     void upload_surface_feature_uniforms(cubey::render::FrameSlot frame_slot,
                                          const OceanSurfaceFeatureUniforms& uniforms) const;
 
