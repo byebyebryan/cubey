@@ -3,8 +3,10 @@
 `projects/terrain` is the active directly sampled terrain v1 runtime. The CPU
 source library currently provides deterministic world-space height and gradient
 queries for the shared `mountain`, `upland`, and `plains` parameterized source.
-The matching GLSL evaluator and traversable renderer are the next layers of this
-same project.
+The matching GLSL evaluator consumes the packed resolved parameters and is
+checked against CPU samples through Vulkan readback. Optional local weathering
+is bounded, footprint-filtered, and explicitly non-hydraulic. The traversable
+renderer is the next layer of this same project.
 
 This project does not own regional hydrology or a baked terrain product. The
 previous patch, exporter, routing, and analytical landscape code lives in
@@ -13,8 +15,10 @@ previous patch, exporter, routing, and analytical landscape code lives in
 Build and test the source contract with:
 
 ```sh
-cmake --build --preset dev --target cubey_project_terrain_source_tests
-ctest --preset dev -R '^terrain_source_tests$' --output-on-failure
+cmake --build --preset dev --target \
+  cubey_project_terrain_source_tests \
+  cubey_project_terrain_source_gpu_parity_tests
+ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
 ```
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)

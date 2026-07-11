@@ -1,0 +1,30 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "terrain_source.glsl"
+
+const uint TERRAIN_SOURCE_PARITY_SAMPLE_COUNT = 6U;
+
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer TerrainSourceParityInput {
+    TerrainSourceGpuParameters parameters;
+    vec4 queries[TERRAIN_SOURCE_PARITY_SAMPLE_COUNT];
+} parity_input;
+
+layout(set = 0, binding = 1, std430) buffer TerrainSourceParityOutput {
+    vec4 values[];
+} parity_output;
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= TERRAIN_SOURCE_PARITY_SAMPLE_COUNT) {
+        return;
+    }
+    vec4 query = parity_input.queries[index];
+    TerrainSourceSample sample_value =
+        terrain_source_sample(parity_input.parameters, query.xy, query.z);
+    parity_output.values[index * 2U] = vec4(sample_value.base_height_m, sample_value.height_m,
+        sample_value.gradient_xz);
+    parity_output.values[index * 2U + 1U] = vec4(sample_value.weathering_delta_m, 0.0, 0.0, 0.0);
+}

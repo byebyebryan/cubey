@@ -128,6 +128,30 @@ void test_clean_source_publishes_no_weathering_delta() {
                  "clean terrain should publish zero weathering delta");
 }
 
+void test_local_weathering_is_bounded_and_preserves_coarse_samples() {
+    const auto parameters = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = TerrainPreset::Mountain,
+        .weathering = TerrainWeatheringMode::Local,
+        .weathering_strength = 0.8F,
+    });
+    bool changed = false;
+    for (int index = 0; index < 32; ++index) {
+        const auto sample = cubey::projects::terrain::sample_terrain(
+            parameters,
+            {.world_xz = {static_cast<float>(index) * 97.0F, static_cast<float>(index) * -53.0F}});
+        require(std::abs(sample.weathering_delta_m) <= parameters.weathering_max_delta_m + 0.001F,
+                "local weathering should remain bounded");
+        changed = changed || std::abs(sample.weathering_delta_m) > 0.001F;
+    }
+    require(changed, "local weathering should affect resolved mountain detail");
+
+    const auto coarse = cubey::projects::terrain::sample_terrain(
+        parameters, {.world_xz = {521.0F, -283.0F}, .footprint_m = 256.0F});
+    require_near(coarse.base_height_m, coarse.height_m, 0.0F,
+                 "local weathering should disappear beyond its resolved footprint");
+}
+
 } // namespace
 
 int main() {
@@ -137,6 +161,7 @@ int main() {
         test_presets_have_ordered_relief();
         test_footprint_filters_unresolved_detail();
         test_clean_source_publishes_no_weathering_delta();
+        test_local_weathering_is_bounded_and_preserves_coarse_samples();
         std::cout << "terrain_source_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

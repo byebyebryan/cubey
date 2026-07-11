@@ -4,6 +4,7 @@
 #include <cubey/procedural/seed.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -83,6 +84,50 @@ constexpr float kRotationSin = 0.6F;
     };
 }
 
+[[nodiscard]] float sample_terrain_weathering_delta(const TerrainSourceParameters& parameters,
+                                                    const TerrainQuery& query,
+                                                    float center_height_m) {
+    if (parameters.weathering != TerrainWeatheringMode::Local ||
+        parameters.weathering_strength <= 0.0F) {
+        return 0.0F;
+    }
+
+    constexpr float kDiagonal = 0.70710678118F;
+    constexpr std::array<cubey::math::Vec2, 8> directions{
+        cubey::math::Vec2{1.0F, 0.0F},  cubey::math::Vec2{kDiagonal, kDiagonal},
+        cubey::math::Vec2{0.0F, 1.0F},  cubey::math::Vec2{-kDiagonal, kDiagonal},
+        cubey::math::Vec2{-1.0F, 0.0F}, cubey::math::Vec2{-kDiagonal, -kDiagonal},
+        cubey::math::Vec2{0.0F, -1.0F}, cubey::math::Vec2{kDiagonal, -kDiagonal},
+    };
+
+    float neighbor_sum = 0.0F;
+    cubey::math::Vec2 gradient_sum{0.0F, 0.0F};
+    for (const cubey::math::Vec2 direction : directions) {
+        TerrainQuery neighbor_query = query;
+        neighbor_query.world_xz += direction * parameters.weathering_radius_m;
+        const float neighbor_height = sample_terrain_base_height(parameters, neighbor_query);
+        neighbor_sum += neighbor_height;
+        gradient_sum += direction * neighbor_height;
+    }
+    const float neighbor_mean = neighbor_sum / static_cast<float>(directions.size());
+    const cubey::math::Vec2 gradient = gradient_sum / (4.0F * parameters.weathering_radius_m);
+    const float slope = std::sqrt(gradient.x * gradient.x + gradient.y * gradient.y);
+    const float slope_activity = smoothstep(0.04F, 0.55F, slope);
+    const float footprint_visibility =
+        1.0F - smoothstep(parameters.weathering_radius_m * 0.25F,
+                          parameters.weathering_radius_m * 0.75F, query.footprint_m);
+    const float curvature_detail = center_height_m - neighbor_mean;
+    return std::clamp(curvature_detail * 0.45F * slope_activity * footprint_visibility *
+                          parameters.weathering_strength,
+                      -parameters.weathering_max_delta_m, parameters.weathering_max_delta_m);
+}
+
+[[nodiscard]] float sample_terrain_height(const TerrainSourceParameters& parameters,
+                                          const TerrainQuery& query) {
+    const float base_height = sample_terrain_base_height(parameters, query);
+    return base_height + sample_terrain_weathering_delta(parameters, query, base_height);
+}
+
 } // namespace
 
 std::string_view terrain_preset_name(TerrainPreset preset) {
@@ -153,6 +198,9 @@ void validate_terrain_source_parameters(const TerrainSourceParameters& parameter
     if (!std::isfinite(parameters.height_scale_m) || parameters.height_scale_m <= 0.0F ||
         !std::isfinite(parameters.elevation_power) || parameters.elevation_power <= 0.0F ||
         !std::isfinite(parameters.gradient_step_m) || parameters.gradient_step_m <= 0.0F ||
+        !std::isfinite(parameters.weathering_radius_m) || parameters.weathering_radius_m <= 0.0F ||
+        !std::isfinite(parameters.weathering_max_delta_m) ||
+        parameters.weathering_max_delta_m < 0.0F ||
         !std::isfinite(parameters.weathering_strength) || parameters.weathering_strength < 0.0F ||
         parameters.weathering_strength > 1.0F) {
         throw std::runtime_error("invalid terrain source composition parameters");
@@ -238,23 +286,24 @@ float sample_terrain_base_height(const TerrainSourceParameters& parameters,
 }
 
 TerrainSample sample_terrain(const TerrainSourceParameters& parameters, const TerrainQuery& query) {
-    const float center = sample_terrain_base_height(parameters, query);
+    const float base_height = sample_terrain_base_height(parameters, query);
+    const float center = sample_terrain_height(parameters, query);
     const float step_m = std::max(parameters.gradient_step_m, query.footprint_m * 0.5F);
     TerrainQuery offset = query;
     offset.world_xz.x -= step_m;
-    const float x0 = sample_terrain_base_height(parameters, offset);
+    const float x0 = sample_terrain_height(parameters, offset);
     offset.world_xz.x += 2.0F * step_m;
-    const float x1 = sample_terrain_base_height(parameters, offset);
+    const float x1 = sample_terrain_height(parameters, offset);
     offset = query;
     offset.world_xz.y -= step_m;
-    const float z0 = sample_terrain_base_height(parameters, offset);
+    const float z0 = sample_terrain_height(parameters, offset);
     offset.world_xz.y += 2.0F * step_m;
-    const float z1 = sample_terrain_base_height(parameters, offset);
+    const float z1 = sample_terrain_height(parameters, offset);
     return {
-        .base_height_m = center,
+        .base_height_m = base_height,
         .height_m = center,
         .gradient_xz = {(x1 - x0) / (2.0F * step_m), (z1 - z0) / (2.0F * step_m)},
-        .weathering_delta_m = 0.0F,
+        .weathering_delta_m = center - base_height,
     };
 }
 
