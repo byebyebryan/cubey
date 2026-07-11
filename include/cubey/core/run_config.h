@@ -180,6 +180,9 @@ struct RunConfig {
 
     struct TerrainOptions {
         std::uint64_t seed = 0;
+        std::string preset{};
+        std::string weathering{};
+        float weathering_strength = kRunConfigUnsetFloat;
         float cell_size = kRunConfigUnsetFloat;
         float sea_level = kRunConfigUnsetFloat;
         float land_extent = kRunConfigUnsetFloat;

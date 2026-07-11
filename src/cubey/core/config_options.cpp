@@ -104,6 +104,8 @@ constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-fac
                                                            "tiled-faces"};
 constexpr std::array<std::string_view, 6> kTerrainCameraPresets{
     "oblique", "profile", "top", "surface", "surface-low", "coastal-oblique"};
+constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
+constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
                                                                       "terrain-engine-ref"};
 constexpr std::array<std::string_view, 5> kTerrainPreviewColors{"material", "height", "river",
@@ -149,7 +151,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 259> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 262> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -435,6 +437,16 @@ constexpr std::array<ConfigOptionDescriptor, 259> kRunConfigOptions{
            ConfigOptionType::Enum, no_range(), enum_choices(kPlanetAtmosphereModes)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
+    option(RunConfigOptionId::TerrainPreset, "terrain.preset", "--terrain-preset", "Preset",
+           "Terrain", "Terrain v1 source parameter preset.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainPresets)),
+    option(RunConfigOptionId::TerrainWeathering, "terrain.weathering", "--terrain-weathering",
+           "Weathering", "Terrain", "Terrain v1 local weathering mode.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kTerrainWeatheringModes)),
+    option(RunConfigOptionId::TerrainWeatheringStrength, "terrain.weathering_strength",
+           "--terrain-weathering-strength", "Weathering Strength", "Terrain",
+           "Strength of the bounded local terrain weathering modifier.", ConfigOptionType::Float,
+           bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::TerrainCellSize, "terrain.cell_size", "--terrain-cell-size",
            "Cell Size", "Terrain", "World-space terrain heightfield cell size.",
            ConfigOptionType::Float, min_range(0.0)),
@@ -1415,6 +1427,14 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
+    case RunConfigOptionId::TerrainPreset:
+        return config.terrain.preset.empty() ? nlohmann::json(nullptr)
+                                             : nlohmann::json(config.terrain.preset);
+    case RunConfigOptionId::TerrainWeathering:
+        return config.terrain.weathering.empty() ? nlohmann::json(nullptr)
+                                                 : nlohmann::json(config.terrain.weathering);
+    case RunConfigOptionId::TerrainWeatheringStrength:
+        return optional_float(config.terrain.weathering_strength);
     case RunConfigOptionId::TerrainCellSize:
         return optional_float(config.terrain.cell_size);
     case RunConfigOptionId::TerrainSeaLevel:
@@ -1978,6 +1998,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::GltfOptions& options) {
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& options) {
     adapter.writeField<std::uint64_t>("seed", options.seed);
+    adapter.writeField<std::string>("preset", options.preset);
+    adapter.writeField<std::string>("weathering", options.weathering);
+    adapter.writeField<float>("weathering_strength", options.weathering_strength);
     adapter.writeField<float>("cell_size", options.cell_size);
     adapter.writeField<float>("sea_level", options.sea_level);
     adapter.writeField<float>("land_extent", options.land_extent);
@@ -1996,6 +2019,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options) {
     adapter.readField<std::uint64_t>("seed", options.seed);
+    adapter.readField<std::string>("preset", options.preset);
+    adapter.readField<std::string>("weathering", options.weathering);
+    adapter.readField<float>("weathering_strength", options.weathering_strength);
     adapter.readField<float>("cell_size", options.cell_size);
     adapter.readField<float>("sea_level", options.sea_level);
     adapter.readField<float>("land_extent", options.land_extent);
@@ -2670,6 +2696,16 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");
         config.terrain.seed_set = true;
+        break;
+    case RunConfigOptionId::TerrainPreset:
+        config.terrain.preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainWeathering:
+        config.terrain.weathering = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainWeatheringStrength:
+        config.terrain.weathering_strength = parse_config_float(value, option);
+        validate_range(config.terrain.weathering_strength, option);
         break;
     case RunConfigOptionId::TerrainCellSize:
         config.terrain.cell_size = parse_config_float(value, option);

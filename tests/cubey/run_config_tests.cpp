@@ -424,6 +424,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "planet.time_paused",
         "planet.camera_mode",
         "planet.atmosphere_mode",
+        "terrain.preset",
+        "terrain.weathering",
+        "terrain.weathering_strength",
         "terrain.cell_size",
         "terrain.recipe",
         "terrain.camera_preset",
@@ -587,6 +590,9 @@ void test_run_config_loads_json_config_file() {
   },
   "terrain": {
     "seed": 12345,
+    "preset": "mountain",
+    "weathering": "local",
+    "weathering_strength": 0.65,
     "recipe": "temperate-mountain-range-stress",
     "camera_preset": "profile",
     "preview_runtime": "terrain-engine-ref",
@@ -682,6 +688,9 @@ void test_run_config_loads_json_config_file() {
             "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,
             "config file should mark terrain seed as explicit");
+    require(config.terrain.preset == "mountain" && config.terrain.weathering == "local" &&
+                config.terrain.weathering_strength == 0.65F,
+            "config file should set terrain v1 source controls");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
             "config file should set terrain recipe");
     require(config.terrain.camera_preset == "profile",
@@ -1689,6 +1698,12 @@ void test_run_config_parses_terrain_controls() {
     std::string program = "cubey";
     std::string seed_flag = "--terrain-seed";
     std::string seed_value = "12345";
+    std::string preset_flag = "--terrain-preset";
+    std::string preset_value = "upland";
+    std::string weathering_flag = "--terrain-weathering";
+    std::string weathering_value = "local";
+    std::string weathering_strength_flag = "--terrain-weathering-strength";
+    std::string weathering_strength_value = "0.7";
     std::string cell_size_flag = "--terrain-cell-size";
     std::string cell_size_value = "5.5";
     std::string sea_level_flag = "--terrain-sea-level";
@@ -1716,9 +1731,15 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 30> argv{program.data(),
+    std::array<char*, 36> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
+                               preset_flag.data(),
+                               preset_value.data(),
+                               weathering_flag.data(),
+                               weathering_value.data(),
+                               weathering_strength_flag.data(),
+                               weathering_strength_value.data(),
                                cell_size_flag.data(),
                                cell_size_value.data(),
                                sea_level_flag.data(),
@@ -1751,6 +1772,9 @@ void test_run_config_parses_terrain_controls() {
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
     require(config.terrain.seed_set, "run config should mark terrain seed as set");
     require(config.terrain.seed == 12345U, "run config should parse terrain seed");
+    require(config.terrain.preset == "upland" && config.terrain.weathering == "local" &&
+                config.terrain.weathering_strength == 0.7F,
+            "run config should parse terrain v1 source controls");
     require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");
     require(config.terrain.sea_level == -3.25F, "run config should parse terrain sea level");
     require(config.terrain.land_extent == 0.64F, "run config should parse terrain land extent");
