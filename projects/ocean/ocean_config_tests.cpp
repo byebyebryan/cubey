@@ -540,8 +540,8 @@ int main() {
                      "ocean should default reflected-sun glitter corridor width");
         require_near(defaults.cloud_reflection_strength, 0.75F, 0.001F,
                      "ocean should default current-view cloud reflection contribution on");
-        require_near(defaults.cloud_shadow_strength, 0.0F, 0.001F,
-                     "ocean should keep legacy procedural cloud shadow disabled");
+        require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
+                     "ocean should default shared cloud transmittance on conservatively");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
                      defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeStartWaves,
@@ -1057,7 +1057,7 @@ int main() {
                          "app should pass shape anti-repeat as diagnostics push data");
         require_contains(app_source, "diagnostics_.detail_anti_repeat_strength",
                          "app should pass detail anti-repeat as feature uniform data");
-        require_contains(app_source, "surface_feature_uniforms(draw_plan.surface_frame)",
+        require_contains(app_source, "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow)",
                          "app should isolate shader feature controls in a frame uniform");
         require_contains(app_source, "OceanMeshDrawPlan ocean_mesh_draw_plan",
                          "ocean app should centralize visible mesh patch planning");
@@ -1275,6 +1275,12 @@ int main() {
                          "UI should expose far reflection variation controls");
         require_contains(ui_source, "&ui.config.sun_glitter_width",
                          "UI should expose sun glitter corridor width");
+        require_contains(ui_source, "&ui.config.cloud_shadow_strength",
+                         "UI should expose shared cloud shadow strength");
+        require_not_contains(ui_source, "cloud_shadow_scale_m",
+                             "UI should not expose removed procedural cloud scale");
+        require_not_contains(ui_source, "cloud_shadow_speed_mps",
+                             "UI should not expose removed procedural cloud drift");
         require_contains(ui_source, "&ui.config.self_shadow_distance",
                          "UI should expose wave self-shadow reach");
         require_contains(ui_source, "&ui.config.self_shadow_bias",
@@ -1542,7 +1548,7 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 44U",
+        require_contains(gpu_header_source, "sizeof(float) * 56U",
                          "GPU resource header should size active feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
@@ -1550,6 +1556,12 @@ int main() {
                          "GPU resource header should pack ocean surface frame metadata");
         require_contains(gpu_header_source, "surface_curve_options",
                          "GPU resource header should pack curved surface metadata");
+        require_contains(gpu_header_source, "cloud_shadow_world_to_uv_x",
+                         "GPU resource header should pack cloud shadow projection rows");
+        require_contains(gpu_resources_source, "kOceanSurfaceCloudShadowBinding",
+                         "surface descriptors should expose shared cloud transmittance");
+        require_contains(gpu_resources_source, "update_cloud_shadow_descriptor",
+                         "surface descriptors should support transient cloud shadow products");
         require_contains(gpu_resources_source,
                          "VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT",
                          "surface displacement descriptors should be visible to self-shadowing");
@@ -1613,6 +1625,21 @@ int main() {
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
+        require_contains(fragment_shader, "sampler2D cloud_shadow_transmittance_texture",
+                         "ocean surface shader should sample shared cloud transmittance");
+        require_contains(fragment_shader, "ocean_cloud_shadow_transmittance",
+                         "ocean surface shader should isolate cloud transmittance lookup");
+        require_not_contains(fragment_shader, "cloud_shadow_scale_m",
+                             "ocean surface shader should remove procedural cloud scale");
+        require_not_contains(fragment_shader, "cloud_shadow_speed_mps",
+                             "ocean surface shader should remove procedural cloud drift");
+        require_contains(app_source, "cloud_runtime_.declare_shadow_product",
+                         "ocean should request the shared projected cloud shadow product");
+        require_contains(app_source, "std::clamp(surface_frame.mesh_config.mesh_extent",
+                         "ocean cloud shadows should track visible extent within the V1 budget");
+        require_before(app_source, "cloud_runtime_.declare_shadow_product",
+                       "graph.add_pass(\"ocean scene\"",
+                       "ocean should generate cloud transmittance before drawing water");
         require_contains(app_source, "diagnostics_.size_reference_enabled ? 1.0F : 0.0F",
                          "ocean app should pass reference shadow enable through feature uniforms");
         require_contains(fragment_shader, "ocean_reference_shadow_enabled",

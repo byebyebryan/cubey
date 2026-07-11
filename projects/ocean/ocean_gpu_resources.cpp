@@ -23,8 +23,10 @@ constexpr std::uint32_t kOceanSurfaceFeatureUniformBinding =
     kOceanSurfaceTerrainFieldUniformBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceFoamFilterBinding =
     kOceanSurfaceFeatureUniformBinding + 1U;
-constexpr std::uint32_t kOceanSurfaceBindingCount =
+constexpr std::uint32_t kOceanSurfaceCloudShadowBinding =
     kOceanSurfaceFoamFilterBinding + kOceanFoamFilterTextureCount;
+constexpr std::uint32_t kOceanSurfaceBindingCount =
+    kOceanSurfaceCloudShadowBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -421,6 +423,12 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
             };
     }
+    surface_bindings[kOceanSurfaceCloudShadowBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceCloudShadowBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -548,6 +556,16 @@ void OceanGpuResources::update_terrain_ocean_field_uniform_descriptor(
     writes
         .uniform_buffer(surface_set(frame_slot), kOceanSurfaceTerrainFieldUniformBinding, buffer,
                         range)
+        .update(device);
+}
+
+void OceanGpuResources::update_cloud_shadow_descriptor(
+    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot, VkSampler sampler,
+    VkImageView image_view, VkImageLayout image_layout) {
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes
+        .combined_image_sampler(surface_set(frame_slot), kOceanSurfaceCloudShadowBinding, sampler,
+                                image_view, image_layout)
         .update(device);
 }
 

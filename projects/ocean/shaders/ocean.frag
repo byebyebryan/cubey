@@ -38,6 +38,9 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 far_field_options;
     vec4 far_field_options2;
     vec4 far_detail_options;
+    vec4 cloud_shadow_world_to_uv_x;
+    vec4 cloud_shadow_world_to_uv_y;
+    vec4 cloud_lighting_options;
 } ocean_features;
 layout(set = 0, binding = 20) uniform sampler2D foam_filtered_cascade0_level0_texture;
 layout(set = 0, binding = 21) uniform sampler2D foam_filtered_cascade0_level1_texture;
@@ -54,6 +57,7 @@ layout(set = 0, binding = 31) uniform sampler2D foam_filtered_cascade3_level2_te
 layout(set = 0, binding = 32) uniform sampler2D foam_filtered_cascade4_level0_texture;
 layout(set = 0, binding = 33) uniform sampler2D foam_filtered_cascade4_level1_texture;
 layout(set = 0, binding = 34) uniform sampler2D foam_filtered_cascade4_level2_texture;
+layout(set = 0, binding = 35) uniform sampler2D cloud_shadow_transmittance_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -386,7 +390,8 @@ void main() {
     float wave_shadow = ocean_wave_self_shadow(frag_sample_position,
                                                ocean_surface_water_datum_y() + frag_displacement.y,
                                                sun_dir, frag_mesh_cell_size);
-    float cloud_shadow = ocean_cloud_shadow_factor(frag_sample_position, sun_dir);
+    float cloud_transmittance = ocean_cloud_shadow_transmittance(frag_world_position);
+    float cloud_shadow = ocean_cloud_shadow_factor(cloud_transmittance);
     float direct_shadow = min(min(reference_shadow, wave_shadow), cloud_shadow);
     float shadowed_direct_light = direct_light * direct_shadow;
     float roughness = clamp(ocean.water_color.w, 0.02, 1.0);
@@ -482,7 +487,7 @@ void main() {
     } else if (view == OCEAN_VIEW_FAR_FIELD) {
         color = vec3(far_field_energy, far_material_energy, far_detail_filter);
     } else if (view == OCEAN_VIEW_CLOUD_SHADOW) {
-        color = vec3(cloud_shadow);
+        color = vec3(cloud_transmittance);
     }
 
     if (ocean.debug_options.w > 0.0) {

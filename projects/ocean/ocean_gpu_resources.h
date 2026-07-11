@@ -43,9 +43,12 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 far_field_options;
     cubey::math::Vec4 far_field_options2;
     cubey::math::Vec4 far_detail_options;
+    cubey::math::Vec4 cloud_shadow_world_to_uv_x;
+    cubey::math::Vec4 cloud_shadow_world_to_uv_y;
+    cubey::math::Vec4 cloud_lighting_options;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 44U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 56U);
 
 class OceanGpuResources {
   public:
@@ -65,6 +68,9 @@ class OceanGpuResources {
     void update_terrain_ocean_field_uniform_descriptor(const cubey::vulkan::Device& device,
                                                        cubey::render::FrameSlot frame_slot,
                                                        VkBuffer buffer, VkDeviceSize range);
+    void update_cloud_shadow_descriptor(const cubey::vulkan::Device& device,
+                                        cubey::render::FrameSlot frame_slot, VkSampler sampler,
+                                        VkImageView image_view, VkImageLayout image_layout);
     void upload_surface_feature_uniforms(cubey::render::FrameSlot frame_slot,
                                          const OceanSurfaceFeatureUniforms& uniforms) const;
 

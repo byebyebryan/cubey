@@ -167,9 +167,7 @@ struct OceanConfig {
     float far_reflection_variation_strength = 0.08F;
     float sun_glitter_width = 0.10F;
     float cloud_reflection_strength = 0.75F;
-    float cloud_shadow_strength = 0.0F;
-    float cloud_shadow_scale_m = 2600.0F;
-    float cloud_shadow_speed_mps = 12.0F;
+    float cloud_shadow_strength = 0.45F;
     bool spectral_domains_enabled = true;
     bool terrain_fields_enabled = false;
     OceanFieldPrecision field_precision = OceanFieldPrecision::Half;
@@ -634,8 +632,7 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.far_detail_footprint_end_m <= config.far_detail_footprint_start_m ||
         config.far_reflection_variation_strength < 0.0F || config.sun_glitter_width <= 0.0F ||
         config.cloud_reflection_strength < 0.0F || config.cloud_reflection_strength > 1.0F ||
-        config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F ||
-        config.cloud_shadow_scale_m <= 0.0F || !std::isfinite(config.cloud_shadow_speed_mps)) {
+        config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
     for (const OceanCascadeConfig& cascade : config.cascades) {

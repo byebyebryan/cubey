@@ -48,7 +48,8 @@ void main() {
 
     int step_count = clamp(int(shadow.receiver_axis_v_steps.w + 0.5), 1, 16);
     float step_size = max((end_t - start_t) / float(step_count), 0.001);
-    float optical_depth = 0.0;
+    float density_sum = 0.0;
+    float center_density = 0.0;
     for (int step = 0; step < 16; ++step) {
         if (step >= step_count) {
             break;
@@ -56,11 +57,15 @@ void main() {
         float distance_m = start_t + (float(step) + 0.5) * step_size;
         DensitySample density =
             cloud_sample_density_terrain_ref(receiver + light_direction * distance_m, false, 0.0);
-        optical_depth += density.density * step_size * max(params.weather.y, 0.0);
-        if (optical_depth >= 12.0) {
-            break;
+        density_sum += density.density;
+        if (step == step_count / 2) {
+            center_density = density.density;
         }
     }
 
-    imageStore(cloud_shadow_transmittance, pixel, vec4(exp(-optical_depth)));
+    float mean_density = density_sum / float(step_count);
+    float coherent_density = max(center_density, mean_density * 0.45);
+    float cloud_opacity = smoothstep(0.015, 0.12, coherent_density);
+    float transmittance = mix(1.0, 0.25, cloud_opacity);
+    imageStore(cloud_shadow_transmittance, pixel, vec4(transmittance));
 }
