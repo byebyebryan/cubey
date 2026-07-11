@@ -68,11 +68,15 @@ TerrainClipmapMeshData make_terrain_clipmap_mesh(const TerrainRuntimeConfig& con
                 : static_cast<float>(level) / static_cast<float>(clipmap_config.lod_levels - 1U);
         const float cell_size =
             cubey::render::clipmap_grid_2d_level_cell_size(clipmap_config, level);
+        const float child_half_extent =
+            level == 0U
+                ? 0.0F
+                : cubey::render::clipmap_grid_2d_level_half_extent(clipmap_config, level - 1U);
         const float morph = vertex_morph(clipmap_config, level, x, z);
         mesh.vertices.push_back({
             .position = {x, 0.0F, z},
             .color = {cell_size, morph, level_t},
-            .normal = {0.0F, 1.0F, 0.0F},
+            .normal = {child_half_extent, 1.0F, 0.0F},
         });
         const std::size_t index = mesh.vertices.size() - 1U;
         if (index > static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())) {

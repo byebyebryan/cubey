@@ -57,13 +57,23 @@ void test_clipmap_has_expected_extent_and_transition_data() {
             "terrain clipmap should draw the finest level first");
 
     bool has_transition = false;
+    bool has_child_coverage = false;
     for (const auto& vertex : mesh.vertices) {
         require(vertex.color[0] >= 2.0F && vertex.color[1] >= 0.0F && vertex.color[1] <= 1.0F &&
                     vertex.color[2] >= 0.0F && vertex.color[2] <= 1.0F,
                 "terrain clipmap vertex metadata should stay in range");
         has_transition = has_transition || vertex.color[1] > 0.0F;
+        if (vertex.color[2] == 0.0F) {
+            require_near(vertex.normal[0], 0.0F, 0.0F,
+                         "terrain finest level should not mask child coverage");
+        } else {
+            require_near(vertex.normal[0], vertex.color[0] * 32.0F, 0.001F,
+                         "terrain coarse levels should publish their child half extent");
+            has_child_coverage = true;
+        }
     }
     require(has_transition, "terrain clipmap should publish transition morph weights");
+    require(has_child_coverage, "terrain clipmap should publish finer-level coverage metadata");
 }
 
 } // namespace

@@ -23,8 +23,10 @@ layout(location = 0) out vec3 frag_world_position;
 layout(location = 1) out float frag_base_height_m;
 layout(location = 2) out float frag_height_m;
 layout(location = 3) out float frag_weathering_delta_m;
-layout(location = 4) out float frag_lod;
+layout(location = 4) flat out float frag_lod;
 layout(location = 5) out vec3 frag_source_normal;
+layout(location = 6) flat out float frag_cell_size_m;
+layout(location = 7) flat out float frag_child_half_extent_m;
 
 void main() {
     float cell_size_m = in_color.x;
@@ -60,4 +62,6 @@ void main() {
     frag_lod = in_color.z;
     frag_source_normal = normalize(vec3(-gradient.x * pc.camera_position_vertical_scale.w,
         1.0, -gradient.y * pc.camera_position_vertical_scale.w));
+    frag_cell_size_m = cell_size_m;
+    frag_child_half_extent_m = in_normal.x;
 }

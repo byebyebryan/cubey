@@ -204,6 +204,36 @@ if (BUILD_TESTING)
         0.001
     )
 
+    set(CUBEY_TERRAIN_LOD_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-lod-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_lod_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_LOD_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        256
+        --height
+        256
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-weathering
+        off
+        --terrain-camera-preset
+        top
+        --debug-view
+        lod
+    )
+    cubey_add_png_stats_test(
+        terrain_lod_headless_writes_png
+        "${CUBEY_TERRAIN_LOD_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
     cubey_label_tests(
         terrain
         terrain_reaches_glfw
@@ -215,5 +245,7 @@ if (BUILD_TESTING)
         terrain_headless_writes_png_stats
         terrain_surface_headless_writes_png
         terrain_surface_headless_writes_png_stats
+        terrain_lod_headless_writes_png
+        terrain_lod_headless_writes_png_stats
     )
 endif()

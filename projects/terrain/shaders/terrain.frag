@@ -20,14 +20,28 @@ layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in float frag_base_height_m;
 layout(location = 2) in float frag_height_m;
 layout(location = 3) in float frag_weathering_delta_m;
-layout(location = 4) in float frag_lod;
+layout(location = 4) flat in float frag_lod;
 layout(location = 5) in vec3 frag_source_normal;
+layout(location = 6) flat in float frag_cell_size_m;
+layout(location = 7) flat in float frag_child_half_extent_m;
 
 layout(location = 0) out vec4 out_color;
 
 vec3 terrain_geometric_normal() {
     vec3 normal = normalize(cross(dFdy(frag_world_position), dFdx(frag_world_position)));
     return normal.y < 0.0 ? -normal : normal;
+}
+
+bool terrain_covered_by_finer_lod(vec2 world_xz) {
+    if (frag_child_half_extent_m <= 0.0) {
+        return false;
+    }
+    float child_cell_size_m = frag_cell_size_m * 0.5;
+    vec2 child_origin = floor(pc.camera_position_vertical_scale.xz / child_cell_size_m) *
+        child_cell_size_m;
+    vec2 child_position = abs(world_xz - child_origin);
+    float owned_half_extent_m = max(frag_child_half_extent_m - child_cell_size_m, 0.0);
+    return max(child_position.x, child_position.y) < owned_half_extent_m;
 }
 
 float terrain_color_noise(vec2 world_xz) {
@@ -68,6 +82,9 @@ vec3 terrain_lod_color(float value) {
 
 void main() {
     vec3 source_normal = normalize(mix(frag_source_normal, terrain_geometric_normal(), 0.12));
+    if (terrain_covered_by_finer_lod(frag_world_position.xz)) {
+        discard;
+    }
     float normalized_height = clamp(
         (frag_height_m - terrain_uniforms.source.elevation.x) /
             max(terrain_uniforms.source.elevation.y, 1.0),
