@@ -91,6 +91,10 @@ cubey::render::CloudLayerViewRegimeInput regime_input(float altitude_m, cubey::m
     };
 }
 
+float transform_point(const cubey::math::Vec4& row, const cubey::math::Vec3& point) {
+    return row.x * point.x + row.y * point.y + row.z * point.z + row.w;
+}
+
 } // namespace
 
 void test_cloud_layer_view_regime_resolves_surface_camera() {
@@ -184,6 +188,62 @@ void test_cloud_layer_runtime_shader_files_select_composite_variants() {
     require(background_depth.composite_fragment.path.filename() ==
                 std::filesystem::path("cloud_composite_background_depth.frag.spv"),
             "scene-depth clouds should use the background-depth composite shader");
+    require(background.shadow.stage == VK_SHADER_STAGE_COMPUTE_BIT,
+            "cloud shadows should use a compute shader");
+    require(background.shadow.path.filename() == std::filesystem::path("cloud_shadow.comp.spv"),
+            "cloud runtime should publish the projected shadow shader");
+}
+
+void test_cloud_layer_shadow_projection_is_snapped_and_centered() {
+    const cubey::render::CloudLayerShadowRequest request{
+        .receiver_center = {123.1F, 4.0F, -56.9F},
+        .receiver_axis_u = {2.0F, 0.0F, 0.0F},
+        .receiver_axis_v = {0.2F, 0.0F, 3.0F},
+        .half_extent_m = 1024.0F,
+    };
+    const cubey::render::CloudLayerShadowProjection projection =
+        cubey::render::cloud_layer_shadow_projection(request);
+
+    require(projection.extent.width == cubey::render::kCloudLayerShadowTextureSize &&
+                projection.extent.height == cubey::render::kCloudLayerShadowTextureSize,
+            "cloud shadow projection should use the fixed product extent");
+    require_near(projection.texel_world_size_m, 8.0F, 0.001F,
+                 "cloud shadow projection should report world texel size");
+    require_near(projection.receiver_center.x, 120.0F, 0.001F,
+                 "cloud shadow center should snap along receiver U");
+    require_near(projection.receiver_center.z, -56.0F, 0.001F,
+                 "cloud shadow center should snap along receiver V");
+    require_near(transform_point(projection.world_to_uv_x, projection.receiver_center), 0.5F,
+                 0.0001F, "snapped cloud shadow center should map to U center");
+    require_near(transform_point(projection.world_to_uv_y, projection.receiver_center), 0.5F,
+                 0.0001F, "snapped cloud shadow center should map to V center");
+    require_near(transform_point(projection.world_to_uv_x,
+                                 projection.receiver_center +
+                                     projection.receiver_axis_u * request.half_extent_m),
+                 1.0F, 0.0001F, "cloud shadow positive U edge should map to one");
+    require_near(transform_point(projection.world_to_uv_y,
+                                 projection.receiver_center +
+                                     projection.receiver_axis_v * request.half_extent_m),
+                 1.0F, 0.0001F, "cloud shadow positive V edge should map to one");
+}
+
+void test_cloud_layer_runtime_separates_product_and_composite_descriptors() {
+    const std::filesystem::path source_root = source_root_path();
+    const std::string header =
+        read_text_file(source_root / "include/cubey/render/cloud_layer.h");
+    const std::string source =
+        read_text_file(source_root / "src/cubey/render/cloud_layer.cpp");
+
+    require(header.find("update_product_descriptors") != std::string::npos,
+            "cloud runtime should expose product-only descriptor updates");
+    require(header.find("update_composite_descriptors") != std::string::npos,
+            "cloud runtime should expose visible-composite descriptor updates");
+    require(source.find("update_product_descriptors(device, frame_slot, graph, resources, frame)") !=
+                std::string::npos,
+            "combined cloud descriptor updates should preserve product setup");
+    require(source.find("update_composite_descriptors(device, frame_slot, graph, resources, frame") !=
+                std::string::npos,
+            "combined cloud descriptor updates should preserve composite setup");
 }
 
 void test_cloud_layer_cmake_package_tracks_composite_modes() {
@@ -205,6 +265,20 @@ void test_cloud_layer_cmake_package_tracks_composite_modes() {
             "shared cloud shader package should consume common shader dependencies");
     require(shader_cmake.find("cloud_layer_shared_shader_depends") != std::string::npos,
             "cloud dependency package should thread shared shader dependencies");
+    require(shader_cmake.find("cloud_shadow.comp") != std::string::npos,
+            "shared cloud package should compile the projected shadow shader");
+    require(shader_cmake.find("cloud_surface_density.glsl") != std::string::npos,
+            "shared cloud package should track the surface density include");
+    const std::string surface_march =
+        read_text_file(source_root / "shaders/cubey/cloud/surface_cloud_march.comp");
+    const std::string shadow_march =
+        read_text_file(source_root / "shaders/cubey/cloud/cloud_shadow.comp");
+    require(surface_march.find("#include \"cubey/cloud/cloud_surface_density.glsl\"") !=
+                std::string::npos,
+            "surface cloud march should consume the shared density field");
+    require(shadow_march.find("#include \"cubey/cloud/cloud_surface_density.glsl\"") !=
+                std::string::npos,
+            "cloud shadow pass should consume the shared density field");
     require(!std::filesystem::exists(source_root / "shaders/cubey/cloud/cloud_composite.frag"),
             "shared cloud package should not keep an unused standalone composite shader");
     require(atmosphere_cmake.find("COMPOSITE background") != std::string::npos,

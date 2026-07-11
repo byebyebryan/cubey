@@ -37,6 +37,7 @@ cloud_layer_runtime_shader_files(const std::filesystem::path& shader_dir,
             },
         .general_march = compute_shader_file(shader_path("cloud_march.comp.spv")),
         .surface_march = compute_shader_file(shader_path("surface_cloud_march.comp.spv")),
+        .shadow = compute_shader_file(shader_path("cloud_shadow.comp.spv")),
         .temporal = compute_shader_file(shader_path("cloud_temporal.comp.spv")),
         .composite_vertex = vertex_shader_file(shader_path("cloud.vert.spv")),
         .composite_fragment = fragment_shader_file(shader_path(composite_fragment)),
@@ -84,6 +85,50 @@ namespace {
                     .binding = kCloudLayerBlueNoiseBinding,
                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT,
+                },
+            },
+    };
+}
+
+struct CloudLayerShadowPushConstants {
+    math::Vec4 receiver_center_half_extent;
+    math::Vec4 receiver_axis_u_texel_size;
+    math::Vec4 receiver_axis_v_steps;
+    math::Vec4 light_direction_intensity;
+};
+
+static_assert(sizeof(CloudLayerShadowPushConstants) == sizeof(float) * 16U);
+
+[[nodiscard]] MaterialDescriptorSetLayout cloud_layer_shadow_set_layout() {
+    constexpr VkShaderStageFlags compute_stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    return {
+        .set = 0,
+        .bindings =
+            {
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudLayerShadowUniformBinding,
+                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .stage_flags = compute_stage,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudLayerShadowOutputBinding,
+                    .type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                    .stage_flags = compute_stage,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudLayerShadowBaseNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = compute_stage,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudLayerShadowDetailNoiseBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = compute_stage,
+                },
+                cubey::vulkan::DescriptorSetBindingConfig{
+                    .binding = kCloudLayerShadowWeatherBinding,
+                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    .stage_flags = compute_stage,
                 },
             },
     };
@@ -477,6 +522,18 @@ MaterialPassInfo cloud_layer_march_pass_info() {
     };
 }
 
+MaterialPassInfo cloud_layer_shadow_pass_info() {
+    return {
+        .label = "cloud_shadow",
+        .descriptor_sets = {cloud_layer_shadow_set_layout()},
+        .push_constants = {{
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+            .offset = 0,
+            .size = sizeof(CloudLayerShadowPushConstants),
+        }},
+    };
+}
+
 MaterialPassInfo cloud_layer_composite_pass_info(bool external_background, bool scene_depth) {
     return {
         .label = external_background ? (scene_depth ? "cloud_composite_background_depth"
@@ -510,6 +567,65 @@ RenderGraphTextureDesc cloud_layer_color_texture_desc(std::string label, VkExten
         .extent = {extent.width, extent.height, 1U},
         .format = kCloudLayerColorFormat,
         .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
+RenderGraphTextureDesc cloud_layer_shadow_texture_desc() {
+    return {
+        .label = "cloud shadow transmittance",
+        .extent = {kCloudLayerShadowTextureSize, kCloudLayerShadowTextureSize, 1U},
+        .format = kCloudLayerShadowFormat,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
+CloudLayerShadowProjection cloud_layer_shadow_projection(const CloudLayerShadowRequest& request) {
+    if (!std::isfinite(request.half_extent_m) || request.half_extent_m <= 0.0F) {
+        throw std::runtime_error("cloud shadow half extent must be finite and positive");
+    }
+    const float axis_u_length = glm::length(request.receiver_axis_u);
+    if (!std::isfinite(axis_u_length) || axis_u_length <= 0.0001F) {
+        throw std::runtime_error("cloud shadow receiver U axis must be finite and non-zero");
+    }
+    const math::Vec3 axis_u = request.receiver_axis_u / axis_u_length;
+    const math::Vec3 axis_v_unprojected =
+        request.receiver_axis_v - axis_u * glm::dot(request.receiver_axis_v, axis_u);
+    const float axis_v_length = glm::length(axis_v_unprojected);
+    if (!std::isfinite(axis_v_length) || axis_v_length <= 0.0001F) {
+        throw std::runtime_error("cloud shadow receiver axes must not be collinear");
+    }
+    const math::Vec3 axis_v = axis_v_unprojected / axis_v_length;
+    const VkExtent2D extent{kCloudLayerShadowTextureSize, kCloudLayerShadowTextureSize};
+    const float texel_world_size =
+        (2.0F * request.half_extent_m) / static_cast<float>(extent.width);
+    const float center_u = glm::dot(request.receiver_center, axis_u);
+    const float center_v = glm::dot(request.receiver_center, axis_v);
+    const float snapped_u = std::round(center_u / texel_world_size) * texel_world_size;
+    const float snapped_v = std::round(center_v / texel_world_size) * texel_world_size;
+    const math::Vec3 snapped_center = request.receiver_center + axis_u * (snapped_u - center_u) +
+                                      axis_v * (snapped_v - center_v);
+    const float world_to_uv_scale = 1.0F / (2.0F * request.half_extent_m);
+
+    return {
+        .receiver_center = snapped_center,
+        .receiver_axis_u = axis_u,
+        .receiver_axis_v = axis_v,
+        .world_to_uv_x =
+            {
+                axis_u.x * world_to_uv_scale,
+                axis_u.y * world_to_uv_scale,
+                axis_u.z * world_to_uv_scale,
+                0.5F - glm::dot(snapped_center, axis_u) * world_to_uv_scale,
+            },
+        .world_to_uv_y =
+            {
+                axis_v.x * world_to_uv_scale,
+                axis_v.y * world_to_uv_scale,
+                axis_v.z * world_to_uv_scale,
+                0.5F - glm::dot(snapped_center, axis_v) * world_to_uv_scale,
+            },
+        .extent = extent,
+        .texel_world_size_m = texel_world_size,
     };
 }
 
@@ -1126,13 +1242,16 @@ void CloudLayerRuntime::update_weather_texture(const cubey::vulkan::Device& devi
 }
 
 void CloudLayerRuntime::destroy_swapchain_resources() {
+    shadow_sampler_.reset();
     composite_sampler_.reset();
     temporal_material_.reset();
+    shadow_material_.reset();
     march_material_.reset();
     composite_material_.reset();
     temporal_pipeline_.reset();
     general_march_pipeline_.reset();
     surface_march_pipeline_.reset();
+    shadow_pipeline_.reset();
     composite_pipeline_.reset();
     history_cloud_textures_.clear();
     history_metadata_textures_.clear();
@@ -1167,6 +1286,32 @@ void CloudLayerRuntime::create_swapchain_resources(
                                                 .shader_stage = shaders.surface_march,
                                                 .descriptor_set_layouts = march_layouts,
                                             });
+
+    const MaterialPassInfo shadow_pass = cloud_layer_shadow_pass_info();
+    shadow_material_.emplace(device, MaterialInstanceConfig{
+                                         .material_pass = shadow_pass,
+                                         .descriptor_set = 0,
+                                         .set_count = frame_slot_count,
+                                     });
+    const std::array<VkDescriptorSetLayout, 1> shadow_layouts{shadow_material_->layout()};
+    const std::array<VkPushConstantRange, 1> shadow_push_constants{
+        VkPushConstantRange{
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+            .offset = 0,
+            .size = sizeof(CloudLayerShadowPushConstants),
+        },
+    };
+    shadow_pipeline_.emplace(device, ComputePipelineResourceConfig{
+                                         .shader_stage = shaders.shadow,
+                                         .descriptor_set_layouts = shadow_layouts,
+                                         .push_constants = shadow_push_constants,
+                                     });
+    shadow_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                        .min_filter = VK_FILTER_LINEAR,
+                                        .mag_filter = VK_FILTER_LINEAR,
+                                        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                                        .border_color = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+                                    });
 
     const MaterialPassInfo temporal_pass = cloud_layer_temporal_pass_info();
     temporal_material_.emplace(device, MaterialInstanceConfig{
@@ -1322,6 +1467,35 @@ CloudLayerRuntimeFrame CloudLayerRuntime::declare_product(
     return frame;
 }
 
+CloudLayerShadowProduct CloudLayerRuntime::declare_shadow_product(
+    RenderGraphBuilder& graph, FrameSlot frame_slot, const CloudLayerShadowRequest& request) const {
+    if (!std::isfinite(request.direct_light_intensity) || request.direct_light_intensity < 0.0F) {
+        throw std::runtime_error("cloud shadow direct light intensity must be finite and non-negative");
+    }
+    const float light_direction_length = glm::length(request.direct_light_direction);
+    if (request.direct_light_intensity > 0.0F &&
+        (!std::isfinite(light_direction_length) || light_direction_length <= 0.0001F)) {
+        throw std::runtime_error("lit cloud shadows require a finite direct light direction");
+    }
+
+    const CloudLayerShadowProjection projection = cloud_layer_shadow_projection(request);
+    CloudLayerShadowProduct product{
+        .transmittance = graph.create_texture(cloud_layer_shadow_texture_desc()),
+        .world_to_uv_x = projection.world_to_uv_x,
+        .world_to_uv_y = projection.world_to_uv_y,
+        .extent = projection.extent,
+        .texel_world_size_m = projection.texel_world_size_m,
+    };
+    graph.add_pass("cloud shadow", RenderGraphQueueDomain::Compute)
+        .write_storage_texture(product.transmittance, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+        .execute([this, frame_slot, request, projection](
+                     const RenderGraphExecutionContext& context) {
+            record_shadow_dispatch(context.recorder(), shadow_material().set(frame_slot), request,
+                                   projection);
+        });
+    return product;
+}
+
 void CloudLayerRuntime::declare_composite(
     RenderGraphBuilder& graph, RenderGraphTextureHandle target, const CloudLayerRuntimeFrame& frame,
     FrameSlot frame_slot, std::optional<RenderGraphTextureHandle> background,
@@ -1352,27 +1526,13 @@ void CloudLayerRuntime::declare_composite(
         });
 }
 
-void CloudLayerRuntime::update_descriptors(
+void CloudLayerRuntime::update_product_descriptors(
     const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
-    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
-    std::optional<RenderGraphTextureHandle> background,
-    std::optional<RenderGraphTextureHandle> scene_depth) const {
-    const bool expects_background = cloud_layer_composite_mode_has_background(composite_mode_);
-    const bool expects_scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode_);
-    if (expects_background != background.has_value()) {
-        throw std::runtime_error("cloud layer descriptor background mode mismatch");
-    }
-    if (expects_scene_depth != scene_depth.has_value()) {
-        throw std::runtime_error("cloud layer descriptor scene depth mode mismatch");
-    }
+    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame) const {
     const RenderGraphSampledTextureView cloud_product =
         resolved_sampled_texture_view(graph, resources, frame.product.cloud);
     const RenderGraphSampledTextureView cloud_metadata =
         resolved_sampled_texture_view(graph, resources, frame.product.metadata);
-    const RenderGraphSampledTextureView resolved_cloud_product =
-        resolved_sampled_texture_view(graph, resources, frame.product.resolved_cloud);
-    const RenderGraphSampledTextureView resolved_cloud_metadata =
-        resolved_sampled_texture_view(graph, resources, frame.product.resolved_metadata);
     const CloudLayerGeneratedResources& generated = generated_resources();
 
     MaterialDescriptorWriter(march_material().set(frame_slot))
@@ -1423,7 +1583,25 @@ void CloudLayerRuntime::update_descriptors(
                            VK_IMAGE_LAYOUT_GENERAL)
             .update(device);
     }
+}
 
+void CloudLayerRuntime::update_composite_descriptors(
+    const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
+    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
+    std::optional<RenderGraphTextureHandle> background,
+    std::optional<RenderGraphTextureHandle> scene_depth) const {
+    const bool expects_background = cloud_layer_composite_mode_has_background(composite_mode_);
+    const bool expects_scene_depth = cloud_layer_composite_mode_has_scene_depth(composite_mode_);
+    if (expects_background != background.has_value()) {
+        throw std::runtime_error("cloud layer descriptor background mode mismatch");
+    }
+    if (expects_scene_depth != scene_depth.has_value()) {
+        throw std::runtime_error("cloud layer descriptor scene depth mode mismatch");
+    }
+    const RenderGraphSampledTextureView resolved_cloud_product =
+        resolved_sampled_texture_view(graph, resources, frame.product.resolved_cloud);
+    const RenderGraphSampledTextureView resolved_cloud_metadata =
+        resolved_sampled_texture_view(graph, resources, frame.product.resolved_metadata);
     MaterialDescriptorWriter writer(composite_material().set(frame_slot));
     writer.uniform_buffer(kCloudLayerUniformBinding, frame_uniforms().buffer(frame_slot).handle(),
                           frame_uniforms().range())
@@ -1446,6 +1624,48 @@ void CloudLayerRuntime::update_descriptors(
                                       scene_depth_view.layout);
     }
     writer.update(device);
+}
+
+void CloudLayerRuntime::update_descriptors(
+    const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
+    const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
+    std::optional<RenderGraphTextureHandle> background,
+    std::optional<RenderGraphTextureHandle> scene_depth) const {
+    update_product_descriptors(device, frame_slot, graph, resources, frame);
+    update_composite_descriptors(device, frame_slot, graph, resources, frame, background,
+                                 scene_depth);
+}
+
+void CloudLayerRuntime::update_shadow_descriptors(
+    const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
+    const RenderGraphResourceSet& resources, const CloudLayerShadowProduct& product) const {
+    const RenderGraphSampledTextureView transmittance =
+        resolved_sampled_texture_view(graph, resources, product.transmittance);
+    const CloudLayerGeneratedResources& generated = generated_resources();
+    MaterialDescriptorWriter(shadow_material().set(frame_slot))
+        .uniform_buffer(kCloudLayerShadowUniformBinding, frame_uniforms().buffer(frame_slot).handle(),
+                        frame_uniforms().range())
+        .storage_image(kCloudLayerShadowOutputBinding, transmittance.view, VK_IMAGE_LAYOUT_GENERAL)
+        .combined_image_sampler(kCloudLayerShadowBaseNoiseBinding,
+                                generated.base_noise.sampler().handle(),
+                                generated.base_noise.view())
+        .combined_image_sampler(kCloudLayerShadowDetailNoiseBinding,
+                                generated.detail_noise.sampler().handle(),
+                                generated.detail_noise.view())
+        .combined_image_sampler(kCloudLayerShadowWeatherBinding,
+                                generated.weather.sampler().handle(), generated.weather.view())
+        .update(device);
+}
+
+const cubey::vulkan::Sampler& CloudLayerRuntime::product_sampler() const {
+    return composite_sampler();
+}
+
+const cubey::vulkan::Sampler& CloudLayerRuntime::shadow_sampler() const {
+    if (!shadow_sampler_.has_value()) {
+        throw std::runtime_error("cloud layer shadow sampler is not initialized");
+    }
+    return shadow_sampler_.value();
 }
 
 void CloudLayerRuntime::complete_frame(FrameSlot frame_slot, const CloudLayerRuntimeFrame& frame) {
@@ -1486,6 +1706,13 @@ const MaterialInstance& CloudLayerRuntime::march_material() const {
     return march_material_.value();
 }
 
+const MaterialInstance& CloudLayerRuntime::shadow_material() const {
+    if (!shadow_material_.has_value()) {
+        throw std::runtime_error("cloud layer shadow material is not initialized");
+    }
+    return shadow_material_.value();
+}
+
 const MaterialInstance& CloudLayerRuntime::temporal_material() const {
     if (!temporal_material_.has_value()) {
         throw std::runtime_error("cloud layer temporal material is not initialized");
@@ -1512,6 +1739,13 @@ const ComputePipelineResource& CloudLayerRuntime::surface_march_pipeline() const
         throw std::runtime_error("cloud layer surface march pipeline is not initialized");
     }
     return surface_march_pipeline_.value();
+}
+
+const ComputePipelineResource& CloudLayerRuntime::shadow_pipeline() const {
+    if (!shadow_pipeline_.has_value()) {
+        throw std::runtime_error("cloud layer shadow pipeline is not initialized");
+    }
+    return shadow_pipeline_.value();
 }
 
 const ComputePipelineResource& CloudLayerRuntime::temporal_pipeline() const {
@@ -1642,6 +1876,48 @@ void CloudLayerRuntime::record_march_dispatch(const cubey::vulkan::CommandRecord
         compute_pipeline_dispatch_info(
             pipeline, descriptor_set,
             ceil_dispatch_groups(extent.width, extent.height, kCloudLayerComputeGroupSize)));
+}
+
+void CloudLayerRuntime::record_shadow_dispatch(
+    const cubey::vulkan::CommandRecorder& recorder, VkDescriptorSet descriptor_set,
+    const CloudLayerShadowRequest& request, const CloudLayerShadowProjection& projection) const {
+    const CloudLayerShadowPushConstants push_constants{
+        .receiver_center_half_extent =
+            {
+                projection.receiver_center.x,
+                projection.receiver_center.y,
+                projection.receiver_center.z,
+                request.half_extent_m,
+            },
+        .receiver_axis_u_texel_size =
+            {
+                projection.receiver_axis_u.x,
+                projection.receiver_axis_u.y,
+                projection.receiver_axis_u.z,
+                projection.texel_world_size_m,
+            },
+        .receiver_axis_v_steps =
+            {
+                projection.receiver_axis_v.x,
+                projection.receiver_axis_v.y,
+                projection.receiver_axis_v.z,
+                static_cast<float>(kCloudLayerShadowStepCount),
+            },
+        .light_direction_intensity =
+            {
+                request.direct_light_direction.x,
+                request.direct_light_direction.y,
+                request.direct_light_direction.z,
+                request.direct_light_intensity,
+            },
+    };
+    record_compute_pipeline_dispatch(
+        recorder,
+        compute_pipeline_dispatch_info(
+            shadow_pipeline(), descriptor_set,
+            ceil_dispatch_groups(projection.extent.width, projection.extent.height,
+                                 kCloudLayerComputeGroupSize)),
+        VK_SHADER_STAGE_COMPUTE_BIT, push_constants);
 }
 
 void CloudLayerRuntime::record_temporal_dispatch(const cubey::vulkan::CommandRecorder& recorder,

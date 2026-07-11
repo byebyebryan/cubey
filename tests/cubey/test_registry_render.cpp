@@ -55,6 +55,8 @@ void test_cloud_layer_edge_mask_debug_view_round_trips();
 void test_cloud_layer_debug_views_round_trip_all_names();
 void test_cloud_layer_debug_views_match_glsl_constants();
 void test_cloud_layer_runtime_shader_files_select_composite_variants();
+void test_cloud_layer_shadow_projection_is_snapped_and_centered();
+void test_cloud_layer_runtime_separates_product_and_composite_descriptors();
 void test_cloud_layer_cmake_package_tracks_composite_modes();
 void test_cloud_layer_frame_uniforms_pack_environment_lighting();
 void test_adaptive_patch_lod_selects_quadtree_children();
@@ -277,6 +279,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_cloud_layer_debug_views_round_trip_all_names),
         CUBEY_TEST(test_cloud_layer_debug_views_match_glsl_constants),
         CUBEY_TEST(test_cloud_layer_runtime_shader_files_select_composite_variants),
+        CUBEY_TEST(test_cloud_layer_shadow_projection_is_snapped_and_centered),
+        CUBEY_TEST(test_cloud_layer_runtime_separates_product_and_composite_descriptors),
         CUBEY_TEST(test_cloud_layer_cmake_package_tracks_composite_modes),
         CUBEY_TEST(test_cloud_layer_frame_uniforms_pack_environment_lighting),
         CUBEY_TEST(test_adaptive_patch_lod_selects_quadtree_children),

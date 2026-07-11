@@ -17,6 +17,9 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 far_field_options;
     vec4 far_field_options2;
     vec4 far_detail_options;
+    vec4 cloud_shadow_world_to_uv_x;
+    vec4 cloud_shadow_world_to_uv_y;
+    vec4 cloud_lighting_options;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {

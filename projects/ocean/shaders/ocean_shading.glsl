@@ -114,7 +114,11 @@ float ocean_far_field_end_m() {
 }
 
 float ocean_cloud_shadow_strength() {
-    return clamp(ocean_features.far_field_options.w, 0.0, 1.0);
+    return clamp(ocean_features.cloud_lighting_options.x, 0.0, 1.0);
+}
+
+float ocean_cloud_reflection_strength() {
+    return clamp(ocean_features.cloud_lighting_options.w, 0.0, 1.0);
 }
 
 float ocean_far_roughness_strength() {
@@ -123,14 +127,6 @@ float ocean_far_roughness_strength() {
 
 float ocean_far_glint_strength() {
     return max(ocean_features.far_field_options2.y, 0.0);
-}
-
-float ocean_cloud_shadow_scale_m() {
-    return max(ocean_features.far_field_options2.z, 1.0);
-}
-
-float ocean_cloud_shadow_speed_mps() {
-    return ocean_features.far_field_options2.w;
 }
 
 float ocean_far_field_factor(float dist) {
@@ -163,24 +159,19 @@ float ocean_sun_glitter_width() {
     return clamp(ocean_features.far_detail_options.w, 0.001, 0.5);
 }
 
-float ocean_cloud_shadow_factor(vec2 position, vec3 light_dir) {
-    float strength = ocean_cloud_shadow_strength();
-    if (strength <= 0.0 || light_dir.y <= 0.0) {
+float ocean_cloud_shadow_transmittance(vec3 world_position) {
+    if (ocean_features.cloud_lighting_options.y < 0.5) {
         return 1.0;
     }
+    vec2 uv = vec2(dot(ocean_features.cloud_shadow_world_to_uv_x,
+                       vec4(world_position, 1.0)),
+                   dot(ocean_features.cloud_shadow_world_to_uv_y,
+                       vec4(world_position, 1.0)));
+    return clamp(texture(cloud_shadow_transmittance_texture, uv).r, 0.0, 1.0);
+}
 
-    float scale = ocean_cloud_shadow_scale_m();
-    float time = ocean.camera_time.w;
-    vec2 wind = normalize(vec2(0.94, 0.34));
-    vec2 uv = (position + wind * time * ocean_cloud_shadow_speed_mps()) / scale;
-    float broad = cubey_proc_value_noise_pcg_2d(uv + vec2(17.0, -9.0));
-    vec2 rotated = vec2(position.x * 0.9171208 - position.y * 0.3986093,
-                        position.x * 0.3986093 + position.y * 0.9171208);
-    float mid = cubey_proc_value_noise_pcg_2d(rotated / (scale * 0.42) + vec2(-3.0, 11.0) -
-                                              wind.yx * time * 0.009);
-    float cover = smoothstep(0.40, 0.74, broad * 0.72 + mid * 0.28);
-    float sun_visibility = smoothstep(0.02, 0.36, light_dir.y);
-    return clamp(1.0 - cover * strength * sun_visibility, 0.18, 1.0);
+float ocean_cloud_shadow_factor(float transmittance) {
+    return mix(1.0, clamp(transmittance, 0.0, 1.0), ocean_cloud_shadow_strength());
 }
 
 bool ocean_terrain_fields_enabled() {
@@ -341,6 +332,55 @@ vec3 ocean_environment_reflection(vec3 direction, float roughness) {
                    clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD)
             .rgb;
     return mix(ocean_sky_radiance(dir), reflection, ocean_atmosphere_reflection_strength());
+}
+
+struct OceanCloudReflectionSample {
+    vec3 delta;
+    float visibility;
+};
+
+vec4 ocean_filtered_cloud_reflection_product(vec2 uv, float roughness) {
+    ivec2 product_size = max(textureSize(cloud_reflection_product_texture, 0), ivec2(1));
+    vec2 texel = 1.0 / vec2(product_size);
+    float radius_pixels = mix(1.0, 6.0, sqrt(clamp(roughness, 0.0, 1.0)));
+    vec2 offset_x = vec2(texel.x * radius_pixels, 0.0);
+    vec2 offset_y = vec2(0.0, texel.y * radius_pixels);
+    vec4 filtered = texture(cloud_reflection_product_texture, uv) * 4.0;
+    filtered += texture(cloud_reflection_product_texture, uv + offset_x);
+    filtered += texture(cloud_reflection_product_texture, uv - offset_x);
+    filtered += texture(cloud_reflection_product_texture, uv + offset_y);
+    filtered += texture(cloud_reflection_product_texture, uv - offset_y);
+    filtered *= 0.125;
+    filtered.rgb = max(filtered.rgb, vec3(0.0));
+    filtered.a = clamp(filtered.a, 0.0, 1.0);
+    return filtered;
+}
+
+OceanCloudReflectionSample ocean_cloud_reflection(vec3 direction, float roughness) {
+    vec3 dir = normalize(direction);
+    vec3 clear_sky = ocean_sky_radiance(dir);
+    if (ocean_cloud_reflection_strength() <= 0.0) {
+        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+    }
+
+    vec3 projection_point = ocean.camera_time.xyz + dir * 1000.0;
+    vec4 clip = ocean.view_projection * vec4(projection_point, 1.0);
+    if (clip.w <= 0.0001) {
+        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+    }
+    vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
+    if (any(lessThanEqual(uv, vec2(0.0))) || any(greaterThanEqual(uv, vec2(1.0)))) {
+        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+    }
+
+    float edge_distance = min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y));
+    float visibility = smoothstep(0.0, 0.04, edge_distance);
+    vec4 cloud = ocean_filtered_cloud_reflection_product(uv, roughness);
+    vec3 clouded_sky = cloud.rgb + cloud.a * clear_sky;
+    vec3 delta = clouded_sky - clear_sky;
+    delta = max(delta, -clear_sky * 0.28);
+    delta = min(delta, max(clear_sky * 0.85, vec3(0.10)));
+    return OceanCloudReflectionSample(delta, visibility);
 }
 
 

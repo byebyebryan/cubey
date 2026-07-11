@@ -42,9 +42,7 @@ void require_not_contains(const std::string& text, const std::string& needle, co
     require(text.find(needle) == std::string::npos, message);
 }
 
-void require_before(const std::string& text,
-                    const std::string& first,
-                    const std::string& second,
+void require_before(const std::string& text, const std::string& first, const std::string& second,
                     const char* message) {
     const std::size_t first_pos = text.find(first);
     const std::size_t second_pos = text.find(second);
@@ -62,8 +60,7 @@ int main() {
         const ocean::OceanConfig defaults{};
         require(defaults.map_size == ocean::kOceanDefaultMapSize,
                 "ocean should default to the current reference map size");
-        require(defaults.map_size == 512U,
-                "ocean should default to the practical 512 map size");
+        require(defaults.map_size == 512U, "ocean should default to the practical 512 map size");
         require(defaults.field_precision == ocean::OceanFieldPrecision::Half,
                 "ocean should default to half precision fields");
         require(ocean::ocean_field_precision_from_name("") == ocean::OceanFieldPrecision::Half,
@@ -112,7 +109,8 @@ int main() {
                     cubey::render::CloudLayerDensityModel::SurfaceVolume,
                 "ocean clouds should use the shared surface-volume density model");
         require(default_clouds.layer.quality == cubey::render::CloudLayerQuality::Full &&
-                    default_clouds.layer.sampling_mode == cubey::render::CloudLayerSamplingMode::Bayer &&
+                    default_clouds.layer.sampling_mode ==
+                        cubey::render::CloudLayerSamplingMode::Bayer &&
                     default_clouds.layer.resolve_mode ==
                         cubey::render::CloudLayerResolveMode::TerrainPost &&
                     !default_clouds.layer.temporal_enabled &&
@@ -124,7 +122,7 @@ int main() {
         const cubey::CloudEnvironmentConfig local_only_clouds =
             ocean::ocean_cloud_config_from_run_config(local_only_clouds_config);
         require(local_only_clouds.layer.distance_mode ==
-                    cubey::render::CloudLayerDistanceMode::Local &&
+                        cubey::render::CloudLayerDistanceMode::Local &&
                     !local_only_clouds.layer.horizon_layer_enabled,
                 "ocean should preserve the local-only cloud fallback");
         cubey::RunConfig no_clouds_config;
@@ -152,8 +150,7 @@ int main() {
                 "ocean cloud policy should preserve surface sampling budget overrides");
         require_near(clamped_clouds.layer.coverage, 0.24F, 0.001F,
                      "ocean cloud policy should preserve surface coverage overrides");
-        require(clamped_clouds.layer.distance_mode ==
-                    cubey::render::CloudLayerDistanceMode::Auto,
+        require(clamped_clouds.layer.distance_mode == cubey::render::CloudLayerDistanceMode::Auto,
                 "ocean cloud policy should clamp deferred distance overrides to surface handoff");
         require(clamped_clouds.layer.density_model ==
                     cubey::render::CloudLayerDensityModel::SurfaceVolume,
@@ -176,15 +173,14 @@ int main() {
                 "ocean should name the curved far-surface mode");
         require(ocean::ocean_surface_mode_from_name("") == ocean::OceanSurfaceMode::CurvedFar,
                 "empty ocean surface mode should resolve to the default curved mode");
-        require(ocean::ocean_surface_mode_from_name("curved") ==
-                    ocean::OceanSurfaceMode::CurvedFar,
+        require(ocean::ocean_surface_mode_from_name("curved") == ocean::OceanSurfaceMode::CurvedFar,
                 "ocean should accept curved as a shorthand surface mode");
         require(ocean::ocean_surface_mode_from_name("flat") == ocean::OceanSurfaceMode::Flat,
                 "ocean should parse the flat surface mode");
         require(ocean::kOceanCascadeCount == 5U,
                 "ocean should expose five configurable cascade slots");
-        const std::array<bool, ocean::kOceanCascadeCount> expected_enabled{true, true, false,
-                                                                           false, false};
+        const std::array<bool, ocean::kOceanCascadeCount> expected_enabled{true, true, false, false,
+                                                                           false};
         for (std::uint32_t cascade = 0; cascade < ocean::kOceanCascadeCount; ++cascade) {
             require(ocean::ocean_cascade_enabled(defaults, cascade) == expected_enabled[cascade],
                     "ocean should default to the C0/C1 core cascade slots");
@@ -241,27 +237,22 @@ int main() {
         const float earth_radius_m = ocean::ocean_planet_radius_m(6371.0F);
         require_near(earth_radius_m, 6371000.0F, 1.0F,
                      "ocean should convert atmosphere planet radius to meters");
-        const float twenty_meter_horizon =
-            ocean::ocean_horizon_distance_m(earth_radius_m, 20.0F);
+        const float twenty_meter_horizon = ocean::ocean_horizon_distance_m(earth_radius_m, 20.0F);
         require_near(twenty_meter_horizon, 15963.0F, 2.0F,
                      "ocean horizon distance should follow Earth-scale geometry");
-        const ocean::OceanHorizonDiagnostics horizon = ocean::ocean_horizon_diagnostics(
-            defaults, 20.0F, 0.0F, earth_radius_m, 1.25F);
+        const ocean::OceanHorizonDiagnostics horizon =
+            ocean::ocean_horizon_diagnostics(defaults, 20.0F, 0.0F, earth_radius_m, 1.25F);
         require_near(horizon.camera_altitude_m, 20.0F, 0.001F,
                      "ocean horizon diagnostics should preserve camera altitude");
         require_near(horizon.required_half_extent_m, twenty_meter_horizon * 1.25F, 3.0F,
                      "ocean horizon diagnostics should apply the safety margin");
-        require_near(horizon.coverage_ratio,
-                     defaults.mesh_extent / horizon.required_half_extent_m, 0.001F,
-                     "ocean horizon diagnostics should report mesh coverage");
-        require_near(horizon.near_cell_size_m, ocean::ocean_mesh_near_cell_size(defaults),
-                     0.001F,
+        require_near(horizon.coverage_ratio, defaults.mesh_extent / horizon.required_half_extent_m,
+                     0.001F, "ocean horizon diagnostics should report mesh coverage");
+        require_near(horizon.near_cell_size_m, ocean::ocean_mesh_near_cell_size(defaults), 0.001F,
                      "ocean horizon diagnostics should include near mesh cell size");
         require_near(horizon.far_cell_size_m,
-                     ocean::ocean_mesh_level_cell_size(defaults,
-                                                       defaults.mesh_lod_levels - 1U),
-                     0.001F,
-                     "ocean horizon diagnostics should include far mesh cell size");
+                     ocean::ocean_mesh_level_cell_size(defaults, defaults.mesh_lod_levels - 1U),
+                     0.001F, "ocean horizon diagnostics should include far mesh cell size");
         const ocean::OceanConfig effective_horizon_mesh =
             ocean::ocean_horizon_effective_mesh_config(defaults, 20.0F, 0.0F, earth_radius_m);
         require(effective_horizon_mesh.mesh_extent > defaults.mesh_extent,
@@ -269,20 +260,18 @@ int main() {
         require(effective_horizon_mesh.mesh_lod_levels >= defaults.mesh_lod_levels,
                 "auto horizon mesh should preserve or increase LOD levels");
         require(ocean::ocean_mesh_near_cell_size(effective_horizon_mesh) <=
-                    defaults.horizon_target_near_cell_m ||
-                effective_horizon_mesh.mesh_lod_levels == ocean::kOceanMaxMeshLodLevels,
+                        defaults.horizon_target_near_cell_m ||
+                    effective_horizon_mesh.mesh_lod_levels == ocean::kOceanMaxMeshLodLevels,
                 "auto horizon mesh should target near cell size until max LOD");
         require(effective_horizon_mesh.mesh_cells == defaults.mesh_cells,
                 "low camera auto horizon mesh should preserve the configured near resolution");
         const float high_camera_altitude_m = 900.0F;
         const float high_camera_target_cell =
-            ocean::ocean_horizon_effective_near_cell_target_m(defaults,
-                                                              high_camera_altitude_m);
+            ocean::ocean_horizon_effective_near_cell_target_m(defaults, high_camera_altitude_m);
         require(high_camera_target_cell > defaults.horizon_target_near_cell_m,
                 "high camera horizon target should grow from altitude");
-        const ocean::OceanConfig high_camera_mesh =
-            ocean::ocean_horizon_effective_mesh_config(defaults, high_camera_altitude_m, 0.0F,
-                                                       earth_radius_m);
+        const ocean::OceanConfig high_camera_mesh = ocean::ocean_horizon_effective_mesh_config(
+            defaults, high_camera_altitude_m, 0.0F, earth_radius_m);
         require(high_camera_mesh.mesh_cells < defaults.mesh_cells,
                 "high camera auto horizon mesh should lower the effective patch resolution");
         require(ocean::ocean_mesh_near_cell_size(high_camera_mesh) <= high_camera_target_cell ||
@@ -295,15 +284,13 @@ int main() {
                 "high camera auto horizon mesh should reduce LOD0 triangle cost");
         ocean::OceanConfig manual_horizon_mesh = defaults;
         manual_horizon_mesh.horizon_auto_extent = false;
-        const ocean::OceanConfig disabled_horizon_mesh =
-            ocean::ocean_horizon_effective_mesh_config(manual_horizon_mesh, 20.0F, 0.0F,
-                                                       earth_radius_m);
+        const ocean::OceanConfig disabled_horizon_mesh = ocean::ocean_horizon_effective_mesh_config(
+            manual_horizon_mesh, 20.0F, 0.0F, earth_radius_m);
         require(disabled_horizon_mesh.mesh_extent == defaults.mesh_extent &&
                     disabled_horizon_mesh.mesh_lod_levels == defaults.mesh_lod_levels,
                 "disabled auto horizon mesh should keep manual mesh settings");
         const ocean::OceanSurfaceFrame surface_frame =
-            ocean::ocean_surface_frame_from_camera(defaults, {0.0F, 20.0F, 0.0F},
-                                                   earth_radius_m);
+            ocean::ocean_surface_frame_from_camera(defaults, {0.0F, 20.0F, 0.0F}, earth_radius_m);
         require(surface_frame.surface_mode == ocean::OceanSurfaceMode::CurvedFar,
                 "ocean surface frame should resolve the default curved far-surface mode");
         require(!surface_frame.flat_surface,
@@ -334,21 +321,18 @@ int main() {
                          surface_frame.curvature_start_m, earth_radius_m,
                          surface_frame.curvature_start_m, surface_frame.curvature_end_m,
                          surface_frame.curvature_strength),
-                     0.0F, 0.001F,
-                     "curved far-surface blend should keep the near boundary flat");
-        require_near(ocean::ocean_surface_curvature_drop_m(
-                         surface_frame.curvature_end_m, earth_radius_m,
-                         surface_frame.curvature_start_m, surface_frame.curvature_end_m,
-                         surface_frame.curvature_strength),
-                     ocean::ocean_spherical_surface_drop_m(surface_frame.curvature_end_m,
-                                                           earth_radius_m),
-                     0.001F,
-                     "curved far-surface blend should reach full spherical drop at the far boundary");
+                     0.0F, 0.001F, "curved far-surface blend should keep the near boundary flat");
+        require_near(
+            ocean::ocean_surface_curvature_drop_m(
+                surface_frame.curvature_end_m, earth_radius_m, surface_frame.curvature_start_m,
+                surface_frame.curvature_end_m, surface_frame.curvature_strength),
+            ocean::ocean_spherical_surface_drop_m(surface_frame.curvature_end_m, earth_radius_m),
+            0.001F,
+            "curved far-surface blend should reach full spherical drop at the far boundary");
         ocean::OceanConfig flat_surface = defaults;
         flat_surface.surface_mode = ocean::OceanSurfaceMode::Flat;
-        const ocean::OceanSurfaceFrame flat_surface_frame =
-            ocean::ocean_surface_frame_from_camera(flat_surface, {0.0F, 20.0F, 0.0F},
-                                                   earth_radius_m);
+        const ocean::OceanSurfaceFrame flat_surface_frame = ocean::ocean_surface_frame_from_camera(
+            flat_surface, {0.0F, 20.0F, 0.0F}, earth_radius_m);
         require(flat_surface_frame.flat_surface &&
                     flat_surface_frame.surface_mode == ocean::OceanSurfaceMode::Flat,
                 "flat ocean surface frame should disable curvature");
@@ -393,22 +377,19 @@ int main() {
         require(!domain1.active && domain1.low_k == 0.0F && domain1.high_k == 0.0F,
                 "cascade 1 should disable spectral filtering for coherent whitecaps");
         require_near(domain2.high_wavelength, cascade2.tile_length / cascade2.domain_min_waves,
-                     0.01F,
-                     "cascade 2 largest wavelength should follow its min waves per domain");
+                     0.01F, "cascade 2 largest wavelength should follow its min waves per domain");
         require_near(domain2.low_wavelength,
                      cascade2.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
                      0.01F, "cascade 2 smallest wavelength should follow map sampling");
         require_near(domain3.high_wavelength, cascade3.tile_length / cascade3.domain_min_waves,
-                     0.01F,
-                     "cascade 3 largest wavelength should follow its min waves per domain");
+                     0.01F, "cascade 3 largest wavelength should follow its min waves per domain");
         require_near(domain3.low_wavelength,
                      cascade3.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
                      0.01F, "cascade 3 smallest wavelength should follow map sampling");
         require_near(domain4.high_wavelength, cascade4.tile_length / cascade4.domain_min_waves,
-                     0.01F,
-                     "cascade 4 largest wavelength should follow its min waves per domain");
+                     0.01F, "cascade 4 largest wavelength should follow its min waves per domain");
         require_near(domain4.low_wavelength,
                      cascade4.tile_length * ocean::kOceanCascadeSmallestWaveMultiplier /
                          static_cast<float>(defaults.map_size),
@@ -557,10 +538,13 @@ int main() {
                      "ocean should default broad far reflection variation conservatively");
         require_near(defaults.sun_glitter_width, 0.10F, 0.001F,
                      "ocean should default reflected-sun glitter corridor width");
+        require_near(defaults.cloud_reflection_strength, 0.75F, 0.001F,
+                     "ocean should default current-view cloud reflection contribution on");
+        require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
+                     "ocean should default shared cloud transmittance on conservatively");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
-                     defaults.cascades[0].tile_length *
-                         ocean::kOceanCascadeDistanceFadeStartWaves,
+                     defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeStartWaves,
                      0.001F, "ocean should derive cascade displacement fade starts from tile size");
         require_near(cascade0_lod.displacement_fade_end,
                      defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeEndWaves,
@@ -569,8 +553,7 @@ int main() {
                      defaults.cascades[0].tile_length * ocean::kOceanCascadeSurfaceFadeStartWaves,
                      0.001F, "ocean should derive cascade surface fade starts from tile size");
         require_near(cascade0_lod.mesh_cell_full,
-                     defaults.cascades[0].tile_length /
-                         ocean::kOceanCascadeMeshFullTileCellDivisor,
+                     defaults.cascades[0].tile_length / ocean::kOceanCascadeMeshFullTileCellDivisor,
                      0.001F, "ocean should derive cascade mesh full-support cell size");
         require(cascade0_lod.mesh_cell_full < cascade0_lod.mesh_cell_zero,
                 "ocean cascade LOD should fade as mesh cells become coarser");
@@ -581,9 +564,9 @@ int main() {
                          defaults, 0, cascade0_lod.displacement_fade_end + 1.0F,
                          cascade0_lod.mesh_cell_full * 0.5F),
                      0.0F, 0.001F, "ocean should fade displacement after the distance band");
-        require_near(ocean::ocean_cascade_mesh_lod_weight(defaults, 0,
-                                                          cascade0_lod.mesh_cell_zero + 1.0F),
-                     0.0F, 0.001F, "ocean should reject displacement on coarse mesh cells");
+        require_near(
+            ocean::ocean_cascade_mesh_lod_weight(defaults, 0, cascade0_lod.mesh_cell_zero + 1.0F),
+            0.0F, 0.001F, "ocean should reject displacement on coarse mesh cells");
         ocean::validate_ocean_config(defaults);
 
         require(ocean::ocean_render_view_from_name("") == ocean::OceanRenderView::Final,
@@ -603,8 +586,7 @@ int main() {
         require(ocean::ocean_render_view_from_name("foam-history") ==
                     ocean::OceanRenderView::FoamHistory,
                 "foam history debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-core") ==
-                    ocean::OceanRenderView::FoamCore,
+        require(ocean::ocean_render_view_from_name("foam-core") == ocean::OceanRenderView::FoamCore,
                 "foam core debug view should parse");
         require(ocean::ocean_render_view_from_name("foam-candidate") ==
                     ocean::OceanRenderView::FoamCandidate,
@@ -653,12 +635,14 @@ int main() {
         require(ocean::ocean_render_view_from_name("foam-filtered") ==
                     ocean::OceanRenderView::FoamFiltered,
                 "filtered foam debug view should parse");
-        require(ocean::ocean_render_view_from_name("far-field") ==
-                    ocean::OceanRenderView::FarField,
+        require(ocean::ocean_render_view_from_name("far-field") == ocean::OceanRenderView::FarField,
                 "far-field debug view should parse");
         require(ocean::ocean_render_view_from_name("cloud-shadow") ==
                     ocean::OceanRenderView::CloudShadow,
                 "cloud shadow debug view should parse");
+        require(ocean::ocean_render_view_from_name("cloud-reflection") ==
+                    ocean::OceanRenderView::CloudReflection,
+                "cloud reflection debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -705,8 +689,11 @@ int main() {
                     ocean::OceanRenderView::CloudShadow,
                 "ocean debug view cycle should include cloud shadow after far-field");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudShadow) ==
+                    ocean::OceanRenderView::CloudReflection,
+                "ocean debug view cycle should include cloud reflection after cloud shadow");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudReflection) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after cloud shadow diagnostics");
+                "ocean debug view cycle should wrap after cloud reflection diagnostics");
 
         bool rejected = false;
         try {
@@ -724,6 +711,8 @@ int main() {
         run_config.ocean.curvature_start_ratio = 0.20F;
         run_config.ocean.curvature_end_ratio = 0.80F;
         run_config.ocean.curvature_strength = 0.35F;
+        run_config.ocean.cloud_reflection_strength = 0.82F;
+        run_config.ocean.cloud_shadow_strength = 0.41F;
         run_config.ocean.spectral_domains = 0;
         run_config.ocean.terrain_fields = 1;
         run_config.pbr.exposure = 0.5F;
@@ -743,6 +732,10 @@ int main() {
                      "run config should initialize ocean curvature end ratio");
         require_near(from_run_config.curvature_strength, 0.35F, 0.001F,
                      "run config should initialize ocean curvature strength");
+        require_near(from_run_config.cloud_reflection_strength, 0.82F, 0.001F,
+                     "run config should initialize cloud reflection strength");
+        require_near(from_run_config.cloud_shadow_strength, 0.41F, 0.001F,
+                     "run config should initialize cloud shadow strength");
         require(!from_run_config.spectral_domains_enabled,
                 "run config should initialize ocean spectral domain override");
         require(from_run_config.terrain_fields_enabled,
@@ -933,8 +926,7 @@ int main() {
         const std::string spectrum_half_entry =
             read_text_file(source_root / "shaders/ocean_spectrum_half.comp");
         const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
-        const std::string ocean_fragment_entry =
-            read_text_file(source_root / "shaders/ocean.frag");
+        const std::string ocean_fragment_entry = read_text_file(source_root / "shaders/ocean.frag");
         const std::string fragment_shader =
             ocean_fragment_entry + read_text_file(source_root / "shaders/ocean_shading.glsl") +
             read_text_file(source_root / "shaders/ocean_far_field.glsl") +
@@ -978,8 +970,7 @@ int main() {
         require_contains(modulate_shader,
                          "hx.x - hy.y, hx.y + hy.x, hz.x - dhy_dx.y, hz.y + dhy_dx.x",
                          "modulate shader should preserve packed layer 0/1 values");
-        require_contains(modulate_shader,
-                         "dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x",
+        require_contains(modulate_shader, "dhz_dz.x - dhz_dx.y, dhz_dz.y + dhz_dx.x",
                          "modulate shader should preserve packed layer 2/3 values");
         require_contains(unpack_shader,
                          "float sign_shift = -2.0 * float((id.x & 1) ^ (id.y & 1)) + 1.0;",
@@ -1066,7 +1057,9 @@ int main() {
                          "app should pass shape anti-repeat as diagnostics push data");
         require_contains(app_source, "diagnostics_.detail_anti_repeat_strength",
                          "app should pass detail anti-repeat as feature uniform data");
-        require_contains(app_source, "surface_feature_uniforms(draw_plan.surface_frame)",
+        require_contains(
+            app_source,
+            "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow, cloud_reflection)",
                          "app should isolate shader feature controls in a frame uniform");
         require_contains(app_source, "OceanMeshDrawPlan ocean_mesh_draw_plan",
                          "ocean app should centralize visible mesh patch planning");
@@ -1284,6 +1277,14 @@ int main() {
                          "UI should expose far reflection variation controls");
         require_contains(ui_source, "&ui.config.sun_glitter_width",
                          "UI should expose sun glitter corridor width");
+        require_contains(ui_source, "&ui.config.cloud_shadow_strength",
+                         "UI should expose shared cloud shadow strength");
+        require_contains(ui_source, "&ui.config.cloud_reflection_strength",
+                         "UI should expose current-view cloud reflection strength");
+        require_not_contains(ui_source, "cloud_shadow_scale_m",
+                             "UI should not expose removed procedural cloud scale");
+        require_not_contains(ui_source, "cloud_shadow_speed_mps",
+                             "UI should not expose removed procedural cloud drift");
         require_contains(ui_source, "&ui.config.self_shadow_distance",
                          "UI should expose wave self-shadow reach");
         require_contains(ui_source, "&ui.config.self_shadow_bias",
@@ -1348,10 +1349,12 @@ int main() {
                          "fragment shader should derive far-field handoff from unresolved LOD");
         require_not_contains(fragment_shader, "ocean_apply_far_field_normal",
                              "fragment shader should not use removed far-field normal carrier");
-        require_not_contains(fragment_shader, "float ocean_far_whitecap_coverage",
-                             "fragment shader should not use removed filtered far-whitecap carrier");
-        require_not_contains(fragment_shader, "sample_filtered_foam_anti_repeat",
-                             "fragment shader should not keep rejected far-whitecap anti-repeat path");
+        require_not_contains(
+            fragment_shader, "float ocean_far_whitecap_coverage",
+            "fragment shader should not use removed filtered far-whitecap carrier");
+        require_not_contains(
+            fragment_shader, "sample_filtered_foam_anti_repeat",
+            "fragment shader should not keep rejected far-whitecap anti-repeat path");
         require_contains(fragment_shader, "float ocean_far_detail_filter",
                          "fragment shader should filter far normal detail by footprint");
         require_contains(fragment_shader, "float ocean_far_reflection_variation",
@@ -1474,11 +1477,9 @@ int main() {
         require_contains(fragment_shader,
                          "max(ocean_surface_horizon_distance_m(), ocean.mesh_options.z)",
                          "fragment shader should derive horizon extinction from frame metadata");
-        require_contains(fragment_shader,
-                         "OceanAerialPerspective ocean_horizon_aerial_perspective",
+        require_contains(fragment_shader, "OceanAerialPerspective ocean_horizon_aerial_perspective",
                          "fragment shader should isolate horizon aerial perspective lookup");
-        require_contains(fragment_shader,
-                         "water * perspective.transmittance",
+        require_contains(fragment_shader, "water * perspective.transmittance",
                          "fragment shader should compose water through horizon transmittance");
         require_contains(fragment_shader, "color = vec3(foam_coverage);",
                          "fragment shader should keep debug foam view as presentation coverage");
@@ -1551,7 +1552,7 @@ int main() {
                          "surface descriptors should expose feature-isolation uniforms");
         require_contains(gpu_header_source, "OceanSurfaceFeatureUniforms",
                          "GPU resource header should define packed feature-isolation uniforms");
-        require_contains(gpu_header_source, "sizeof(float) * 44U",
+        require_contains(gpu_header_source, "sizeof(float) * 56U",
                          "GPU resource header should size active feature-isolation uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
@@ -1559,6 +1560,16 @@ int main() {
                          "GPU resource header should pack ocean surface frame metadata");
         require_contains(gpu_header_source, "surface_curve_options",
                          "GPU resource header should pack curved surface metadata");
+        require_contains(gpu_header_source, "cloud_shadow_world_to_uv_x",
+                         "GPU resource header should pack cloud shadow projection rows");
+        require_contains(gpu_resources_source, "kOceanSurfaceCloudShadowBinding",
+                         "surface descriptors should expose shared cloud transmittance");
+        require_contains(gpu_resources_source, "update_cloud_shadow_descriptor",
+                         "surface descriptors should support transient cloud shadow products");
+        require_contains(gpu_resources_source, "kOceanSurfaceCloudReflectionBinding",
+                         "surface descriptors should expose current-view cloud radiance");
+        require_contains(gpu_resources_source, "update_cloud_reflection_descriptor",
+                         "surface descriptors should support transient cloud reflection products");
         require_contains(gpu_resources_source,
                          "VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT",
                          "surface displacement descriptors should be visible to self-shadowing");
@@ -1575,9 +1586,10 @@ int main() {
                          "ocean app should own the shared atmosphere runtime");
         require_contains(app_source, "make_ocean_diagnostic_terrain_fields",
                          "ocean app should create a diagnostic terrain-ocean field");
-        require_contains(app_source,
-                         "make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datum_m)",
-                         "ocean diagnostic terrain fields should accept the active surface datum");
+        require_contains(
+            app_source,
+            "make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datum_m)",
+            "ocean diagnostic terrain fields should accept the active surface datum");
         require_contains(app_source, ".sea_level_m = water_datum_m",
                          "ocean diagnostic terrain fields should publish the active surface datum");
         require_contains(app_source, "create_uploaded_terrain_ocean_field_texture",
@@ -1594,8 +1606,9 @@ int main() {
                          "ocean app should resolve background atmosphere from the surface frame");
         require_contains(app_source, "environment.camera_altitude_km",
                          "ocean app should publish surface-frame camera altitude to atmosphere");
-        require_contains(app_source, "atmosphere_environment_frame_uniforms",
-                         "ocean app should build per-frame atmosphere uniforms without mutating UI config");
+        require_contains(
+            app_source, "atmosphere_environment_frame_uniforms",
+            "ocean app should build per-frame atmosphere uniforms without mutating UI config");
         require_contains(app_source, "record_atmosphere_environment_if_needed",
                          "ocean app should update the atmosphere probe before drawing water");
         require_contains(
@@ -1620,12 +1633,48 @@ int main() {
             "ocean surface shader should sample the shared atmosphere reflection probe");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
+        require_contains(fragment_shader, "sampler2D cloud_shadow_transmittance_texture",
+                         "ocean surface shader should sample shared cloud transmittance");
+        require_contains(fragment_shader, "ocean_cloud_shadow_transmittance",
+                         "ocean surface shader should isolate cloud transmittance lookup");
+        require_contains(fragment_shader, "sampler2D cloud_reflection_product_texture",
+                         "ocean surface shader should sample current-view cloud radiance");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u",
+                         "ocean surface shader should expose cloud reflection diagnostics");
+        require_contains(fragment_shader, "ocean_filtered_cloud_reflection_product",
+                         "ocean cloud reflections should use a bounded spatial filter");
+        require_contains(fragment_shader, "mix(1.0, 6.0",
+                         "ocean cloud reflection filtering should scale with roughness");
+        require_contains(fragment_shader, "smoothstep(0.0, 0.04, edge_distance)",
+                         "ocean cloud reflections should fade at current-view boundaries");
+        require_not_contains(fragment_shader, "cloud_shadow_scale_m",
+                             "ocean surface shader should remove procedural cloud scale");
+        require_not_contains(fragment_shader, "cloud_shadow_speed_mps",
+                             "ocean surface shader should remove procedural cloud drift");
+        require_contains(app_source, "cloud_runtime_.declare_shadow_product",
+                         "ocean should request the shared projected cloud shadow product");
+        require_contains(app_source, "ocean_config_.cloud_shadow_strength > 0.0F",
+                         "ocean should skip the cloud shadow pass when coupling is disabled");
+        require_contains(app_source, "render_view_ == OceanRenderView::CloudShadow",
+                         "ocean should preserve raw cloud shadow diagnostics at zero strength");
+        require_contains(app_source, "std::clamp(surface_frame.mesh_config.mesh_extent",
+                         "ocean cloud shadows should track visible extent within the V1 budget");
+        require_before(app_source, "cloud_runtime_.declare_shadow_product",
+                       "graph.add_pass(\"ocean scene\"",
+                       "ocean should generate cloud transmittance before drawing water");
+        require_contains(app_source, ".radiance_transmittance = cloud_frame.product.resolved_cloud",
+                         "ocean should reuse the current cloud product for reflections");
+        require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",
+                         "ocean should skip cloud reflection work when coupling is disabled");
+        require_contains(app_source, "scene_pass.read_texture(cloud_reflection.radiance_transmittance",
+                         "ocean scene should declare its cloud reflection dependency");
         require_contains(app_source, "diagnostics_.size_reference_enabled ? 1.0F : 0.0F",
                          "ocean app should pass reference shadow enable through feature uniforms");
         require_contains(fragment_shader, "ocean_reference_shadow_enabled",
                          "ocean surface shader should read reference shadow enable from features");
-        require_contains(fragment_shader, "ocean_reference_shadow_strength",
-                         "ocean surface shader should read reference shadow strength from features");
+        require_contains(
+            fragment_shader, "ocean_reference_shadow_strength",
+            "ocean surface shader should read reference shadow strength from features");
         require_contains(app_source, "make_ocean_reference_pillar_mesh",
                          "ocean app should build a meter-banded scale reference mesh");
         require_contains(app_source, "kReferencePillarMinYMeters = -25.0F",
@@ -1638,8 +1687,9 @@ int main() {
                          "ocean scale reference should keep 5 m and 10 m markers readable");
         require_contains(app_source, "kReferencePillarMarkerHalfWidthMeters",
                          "ocean scale reference markers should protrude from the white body");
-        require_contains(app_source, "pillar_position",
-                         "ocean scale reference should rotate the pillar for readable shaded faces");
+        require_contains(
+            app_source, "pillar_position",
+            "ocean scale reference should rotate the pillar for readable shaded faces");
         require_contains(app_source, "pillar_u_normal",
                          "ocean scale reference should use flat face normals for basic shading");
         require_contains(app_source, "kReferencePillarHalfWidthMeters = 0.50F",
@@ -1666,8 +1716,9 @@ int main() {
                          "reference pillar vertex shader should use the ocean camera matrix");
         require_contains(pillar_fragment_shader, "pillar.light_direction",
                          "reference pillar fragment shader should use atmosphere light direction");
-        require_contains(pillar_fragment_shader, "ambient + diffuse",
-                         "reference pillar fragment shader should use basic ambient plus diffuse shading");
+        require_contains(
+            pillar_fragment_shader, "ambient + diffuse",
+            "reference pillar fragment shader should use basic ambient plus diffuse shading");
 
         require_not_contains(vertex_shader, "ocean_macro_waves",
                              "ocean vertex shader should not use Cubey macro waves");

@@ -36,7 +36,7 @@ capture() {
 write_index_header() {
     printf 'file\ttitle\tgroup\targs\n' >"${MANIFEST}"
     {
-        printf '# Ocean Cloud Review\n\n'
+        printf '# Ocean Cloud Lighting Review\n\n'
         printf -- '- Size: %sx%s\n' "${WIDTH}" "${HEIGHT}"
         printf -- '- Frames: %s\n' "${FRAMES}"
         printf -- '- Ocean map size: %s\n' "${MAP_SIZE}"
@@ -78,11 +78,26 @@ write_contact_sheet() {
         "${OUT_DIR}/contact-sheet.png"
 }
 
-default_view=(
+noon_default_view=(
+    --time-of-day-mode solar
+    --time-hours 12.0
+    --day-of-year 172
+    --latitude-degrees 30
     --ocean-camera-preset default
 )
-wide_view=(
-    --ocean-camera-preset wide
+noon_mid_view=(
+    --time-of-day-mode solar
+    --time-hours 12.0
+    --day-of-year 172
+    --latitude-degrees 30
+    --ocean-camera-preset mid
+)
+noon_high_view=(
+    --time-of-day-mode solar
+    --time-hours 12.0
+    --day-of-year 172
+    --latitude-degrees 30
+    --ocean-camera-preset high
 )
 sunset_view=(
     --time-of-day-mode solar
@@ -101,24 +116,49 @@ night_view=(
 
 write_index_header
 
-capture_named default-clouds "Default clouds" final \
-    "${default_view[@]}"
-capture_named default-no-clouds "Default no clouds" comparison \
-    "${default_view[@]}" --no-clouds
-capture_named wide-clouds "Wide clouds" final \
-    "${wide_view[@]}"
-capture_named wide-no-clouds "Wide no clouds" comparison \
-    "${wide_view[@]}" --no-clouds
+capture_named noon-clouds "Noon clouds" final \
+    "${noon_default_view[@]}"
+capture_named noon-no-clouds "Noon no clouds" comparison \
+    "${noon_default_view[@]}" --no-clouds
+capture_named noon-reflection-off "Noon reflection coupling off" reflection \
+    "${noon_default_view[@]}" --debug-view reflection \
+    --ocean-cloud-reflection-strength 0.0
+capture_named noon-reflection-on "Noon reflection coupling on" reflection \
+    "${noon_default_view[@]}" --debug-view reflection \
+    --ocean-cloud-reflection-strength 0.75
+capture_named noon-cloud-reflection "Noon cloud reflection" reflection \
+    "${noon_default_view[@]}" --debug-view cloud-reflection \
+    --ocean-cloud-reflection-strength 0.75
+capture_named noon-shadow-map "Noon cloud transmittance" shadow \
+    "${noon_default_view[@]}" --debug-view cloud-shadow --cloud-coverage 0.75
+capture_named noon-direct-shadow-off "Noon direct light without cloud shadow" shadow \
+    "${noon_default_view[@]}" --debug-view direct-light \
+    --cloud-coverage 0.75 --ocean-cloud-shadow-strength 0.0
+capture_named noon-direct-shadow-on "Noon direct light with cloud shadow" shadow \
+    "${noon_default_view[@]}" --debug-view direct-light \
+    --cloud-coverage 0.75 --ocean-cloud-shadow-strength 0.45
+capture_named mid-reflection "Mid cloud reflection" scale \
+    "${noon_mid_view[@]}" --debug-view reflection \
+    --ocean-cloud-reflection-strength 0.75
+capture_named high-reflection "High cloud reflection" scale \
+    "${noon_high_view[@]}" --debug-view reflection \
+    --ocean-cloud-reflection-strength 0.75
 capture_named sunset-clouds "Sunset clouds" lighting \
     "${sunset_view[@]}"
+capture_named sunset-reflection "Sunset cloud reflection" lighting \
+    "${sunset_view[@]}" --debug-view reflection \
+    --ocean-cloud-reflection-strength 0.75
 capture_named night-clouds "Night clouds" lighting \
     "${night_view[@]}"
-capture_named default-cloud-alpha "Default cloud alpha" diagnostics \
-    "${default_view[@]}" --cloud-debug-view cloud-alpha
-capture_named default-cloud-density "Default cloud density" diagnostics \
-    "${default_view[@]}" --cloud-debug-view density
-capture_named default-scene-depth "Default scene depth occlusion" diagnostics \
-    "${default_view[@]}" --cloud-debug-view scene-depth-occlusion
+capture_named night-reflection "Night cloud reflection" lighting \
+    "${night_view[@]}" --debug-view reflection \
+    --ocean-cloud-reflection-strength 0.75
+capture_named noon-cloud-alpha "Noon cloud alpha" diagnostics \
+    "${noon_default_view[@]}" --cloud-debug-view cloud-alpha
+capture_named noon-cloud-density "Noon cloud density" diagnostics \
+    "${noon_default_view[@]}" --cloud-debug-view density
+capture_named noon-scene-depth "Noon scene depth occlusion" diagnostics \
+    "${noon_default_view[@]}" --cloud-debug-view scene-depth-occlusion
 
 write_contact_sheet
 

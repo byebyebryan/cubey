@@ -680,16 +680,11 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Broad low-frequency variation applied to distant reflected sky and atmosphere.");
         ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
+            "Cloud reflection", &ui.config.cloud_reflection_strength, 0.0F, 1.0F, "%.2f",
+            "Strength of current-view cloud radiance in ocean reflections.");
+        cubey::host::imgui_slider_float(
             "Cloud shadow", &ui.config.cloud_shadow_strength, 0.0F, 1.0F, "%.2f",
-            "Procedural cloud-shadow diagnostic attenuation for direct ocean lighting.");
-        ImGui::BeginDisabled(ui.config.cloud_shadow_strength <= 0.0F);
-        cubey::host::imgui_slider_float(
-            "Cloud scale", &ui.config.cloud_shadow_scale_m, 200.0F, 12000.0F, "%.0f m",
-            "Approximate scale of diagnostic cloud-shadow patches over the water.");
-        cubey::host::imgui_slider_float(
-            "Cloud drift", &ui.config.cloud_shadow_speed_mps, -80.0F, 80.0F, "%.0f m/s",
-            "Diagnostic cloud-shadow advection speed along the wind direction.");
-        ImGui::EndDisabled();
+            "Strength of shared cloud transmittance on direct ocean lighting.");
         cubey::host::imgui_slider_float(
             "Wave shadow", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",
             "Strength of experimental heightfield ray-marched wave self-shadowing.");

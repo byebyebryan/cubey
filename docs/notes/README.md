@@ -61,6 +61,9 @@ the detailed foundation notes under `docs/architecture/`.
   profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [Ocean performance notes](ocean-performance.md): current spectral ocean FFT
   cost model, observed map-size tradeoffs, and optimization guardrails.
+- [Ocean cloud lighting v1](ocean-cloud-lighting-v1.md): projected cloud shadow
+  and current-view reflection contracts, review matrix, measured cost, and
+  explicit surface-only limits.
 - [Ocean visual capture recipes](ocean-visual-captures.md): repeatable ocean
   debug, cascade isolation, far-field, and reference comparison matrix.
 - [Cloud and weather rendering research](cloud-weather-rendering-research.md):
