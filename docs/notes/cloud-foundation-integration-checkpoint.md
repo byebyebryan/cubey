@@ -6,6 +6,12 @@ tuning happens through `projects/atmosphere`; ocean consumes the accepted
 surface-view path in final sky, and planet consumes the shared runtime as an
 opt-in integration target.
 
+The original checkpoint below predates direct cloud-lighting consumption.
+Ocean now consumes a real projected shadow product and the resolved current-view
+cloud product for surface reflections. The current contract, performance data,
+and remaining limits are recorded in
+[`ocean-cloud-lighting-v1.md`](ocean-cloud-lighting-v1.md).
+
 ## Batch Scope
 
 - Promote reusable cloud contracts for cloud radiance/transmittance, metadata,
@@ -53,10 +59,9 @@ opt-in integration target.
   `CloudLayerRuntime`, and composites surface-volume clouds over the atmosphere
   sky in final view by default. The cloud product uses ocean scene depth for sky
   composition and the shared atmosphere sun/moon/ambient lighting state.
-  `--no-clouds` keeps the clear-sky A/B path. Ocean still has the older
-  cloud-shadow diagnostic view and controls that consume the shared
-  `CloudLayerShadowProduct` shape; that shadow remains procedural and local to
-  ocean.
+  `--no-clouds` keeps the clear-sky A/B path. Ocean also requests the shared
+  projected `CloudLayerShadowProduct` for direct-light modulation and reuses
+  resolved cloud radiance/transmittance for current-view reflections.
 - `projects/planet` now has an opt-in `--clouds` path that composites the shared
   cloud product over the planet HDR scene using scene depth. It is an integration
   checkpoint, not a finished cloud shadow/reflection/environment-lighting path.
@@ -64,14 +69,13 @@ opt-in integration target.
 ## Remaining Gaps
 
 - The shared runtime is still a render-layer helper, not a full environment
-  system. It does not yet output production cloud shadows, reflection probes, or
-  clouded environment lighting.
+  system. It now outputs a bounded projected shadow product, but it does not yet
+  produce a clouded environment probe or planet-scale lighting product.
 - Atmosphere has runtime-backed cloud controls and can enable temporal resolve,
   but cloud debug-view surfacing, lighting feedback into the atmosphere, and
   cloud-driven environment/reflection outputs remain deferred.
-- Ocean clouds are sky/background composition only. Ocean does not sample a real
-  cloud shadow texture, cloud reflection product, or clouded sky-probe
-  contribution in the water material yet.
+- Ocean consumes the projected shadow and current-view reflection products, but
+  offscreen cloud reflection directions still fall back to the clear-sky probe.
 - Planet cloud shadows, reflections, and final high-oblique/orbit transition
   polish remain deferred until the active planet sky/horizon issues are
   stabilized.
@@ -83,9 +87,9 @@ look during promotion. `projects/atmosphere` now owns cloud-specific review
 captures and visual tuning, and planet proves that a consumer can reuse the same
 cloud renderer without copying descriptor or temporal-history code.
 
-Still out of scope: production cloud shadow textures for ocean/terrain/planet,
-cloud reflection or sky-probe contribution, clouded lighting feedback, and
-visual retuning beyond integration fixes.
+At the original checkpoint, production shadow/reflection products were out of
+scope. Ocean now proves the bounded surface contract; terrain/planet shadows,
+clouded environment probes, and aerial/orbit products remain out of scope.
 
 ## High-Oblique Baseline 2026-06-28
 

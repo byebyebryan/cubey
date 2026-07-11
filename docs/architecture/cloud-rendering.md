@@ -55,16 +55,18 @@ cloud app. The current stable path is:
 - `projects/atmosphere`: primary tuning and inspection surface for shared
   clouds;
 - `projects/ocean`: surface-view consumer that composites shared clouds over
-  the atmosphere background;
+  the atmosphere background, samples projected cloud transmittance for direct
+  light, and reuses current-view cloud radiance/transmittance for reflections;
 - `projects/planet`: deferred aerial/orbit pressure surface; not a Cloud V1
   consumer and not the source of surface-cloud defaults yet.
 
 The remaining ownership gap is a `CloudEnvironmentRuntime`-level wrapper above
 `CloudLayerRuntime`. Today each consumer still decides when to create generated
-cloud resources, when config changes require weather/noise refresh, and how to
-package frame inputs from atmosphere/celestial lighting. That is acceptable for
-Cloud V1 integration, but it should be the next foundation cleanup before
-adding more cloud consumers or reviving aerial/orbit work.
+cloud resources, when config changes require weather/noise refresh, how to
+package frame inputs from atmosphere/celestial lighting, and which optional
+shadow/reflection products it needs. That is acceptable for Cloud V1
+integration, but it should be addressed before adding more cloud consumers or
+reviving aerial/orbit work.
 
 Treat the accepted production mode as `surface-volume`: full-resolution, auto
 distance with the lower-sky horizon handoff, TerrainEngine-style density/noise,
@@ -359,7 +361,6 @@ scaffolding for a later-version aerial bridge.
 
 Deferred beyond Cloud V1:
 
-- ocean reflection integration;
 - aerial, high-altitude, orbit, and surface-to-orbit transitions;
 - cloud-top shell rendering and full-disk/satellite-style weather;
 - finished planet-scale orbit weather art direction;
@@ -370,8 +371,9 @@ Deferred beyond Cloud V1:
 - orbit motion/shimmer review against the satellite capture pack;
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors, dry slots, and procedural breakup;
-- production cloud shadow consumption by ocean/terrain from a real projected
-  cloud shadow product;
+- terrain and planet consumption of projected cloud shadows;
+- a clouded environment probe or cubemap for offscreen, rough, and PBR
+  reflections beyond ocean's current-view surface integration;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
 - blue-noise/spatiotemporal sampling until a useful temporal path exists;
@@ -414,14 +416,19 @@ shared sky/celestial/atmosphere state and emits:
   cloud opacity;
 - metadata/debug outputs carry mean distance, cloud opacity, confidence, and
   density for reconstruction and future depth-aware composition;
+- an optional texel-snapped, receiver-plane cloud transmittance product for
+  low-frequency direct-light modulation;
+- a current-view radiance/transmittance contribution that consumers may reuse
+  without another cloud march, subject to explicit screen-footprint fallback;
 - debug views for weather, base/detail density, lighting, shadow, distance,
   steps, and composition, plus deferred cache/local/orbit regime diagnostics.
 
-Deferred outputs include low-frequency terrain/ocean shadow factors and
-sky/reflection or environment contributions for water/PBR consumers. Ocean,
-planet, and glTF/PBR viewers should not own cloud raymarch code when those
-outputs arrive; they should sample cloud outputs or composed sky/environment
-products.
+Deferred outputs include planet-scale shadow products and clouded
+sky/reflection probes for offscreen or general PBR consumers. Ocean proves the
+first direct-product contract without owning cloud raymarch code: it samples
+the shared shadow product and reuses the resolved current-view cloud product.
+Planet, terrain, and glTF/PBR consumers should follow the same ownership rule
+when their scale and environment-product contracts are ready.
 
 V1 should use `RenderGraphBuilder` to make the cloud product and composite
 passes explicit. Descriptor sets, textures, material instances, and synchronization
@@ -455,8 +462,8 @@ The active Cloud V1 milestone is:
 4. Keep sampling and resolve controls isolated so capture bundles can compare
    blue-noise/temporal, Bayer, interleaved, no-jitter, raw-final, and edge-mask
    output.
-5. Expose cloud outputs only when a second consumer has a concrete contract for
-   radiance/transmittance, metadata, shadow, or reflection data.
+5. Keep the accepted ocean shadow/current-view reflection products bounded and
+   measurable while preserving the standalone atmosphere tuning surface.
 
 Acceptance for this milestone:
 
@@ -473,4 +480,4 @@ Acceptance for this milestone:
 
 Only after that should the production layer resume aerial/orbit work, add the
 cached hemisphere path from `cloud_ref_2`, or promote direct cloud-product
-consumption beyond the current atmosphere/ocean background composition.
+consumption beyond the bounded ocean surface contract.

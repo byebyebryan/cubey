@@ -42,6 +42,7 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view foam-filtered
 ./build/dev/projects/ocean/ocean --debug-view far-field
 ./build/dev/projects/ocean/ocean --debug-view cloud-shadow
+./build/dev/projects/ocean/ocean --debug-view cloud-reflection
 ./build/dev/projects/ocean/ocean --debug-view sky-radiance
 ./build/dev/projects/ocean/ocean --debug-view reflection
 ./build/dev/projects/ocean/ocean --debug-view direct-light
@@ -88,15 +89,22 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 `--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
-Final view now composites the shared Cloud V1 surface-volume layer over the
-atmosphere sky before ocean post. This is deliberately a surface-view
-sky/background integration only: clouds use ocean's camera, scene depth, and
-shared atmosphere sun/moon/ambient lighting, but the water material does not yet
-sample real cloud shadow, reflection, or clouded environment-lighting products.
-`--no-clouds` keeps the clear-sky ocean path for A/B checks. `cloud-shadow`
-remains the older procedural direct-light attenuation diagnostic packed through
-the shared `cubey::render::CloudLayerShadowProduct` shape, with strength, scale,
-and drift still exposed in the Shading panel.
+Final view composites the shared Cloud V1 surface-volume layer over the
+atmosphere sky before ocean post. The water material also consumes two bounded
+shared products: a projected low-frequency cloud-transmittance map for direct
+light and the current view's cloud radiance/transmittance product for reflected
+clouds. `cloud-shadow` shows the real projected transmittance map,
+`direct-light` supports shadow A/B checks, and `cloud-reflection` isolates the
+view-space reflection contribution. The Shading panel exposes independent
+coupling strengths and skips disabled work; `--no-clouds` keeps the clear-sky
+fallback valid.
+
+This remains a surface-view integration. Reflection reuse is limited to cloud
+directions visible in the current camera product and fades to the clear-sky
+probe outside that footprint. It is not a dynamic clouded cubemap, and the
+projected shadow is not an aerial/orbit or planet-scale weather solution. Those
+limits are recorded in
+[Ocean Cloud Lighting V1](../../docs/notes/ocean-cloud-lighting-v1.md).
 
 Cascades are now treated as regular slots. The default `Core` preset enables
 only C0 and C1, which are the reference-derived wave pair carrying the current
