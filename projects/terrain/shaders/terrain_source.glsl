@@ -87,7 +87,8 @@ float terrain_source_base_height(TerrainSourceGpuParameters parameters, vec2 wor
 
 float terrain_source_weathering_delta(TerrainSourceGpuParameters parameters, vec2 world_xz,
         float footprint_m, float center_height_m) {
-    if (parameters.weathering.w <= 0.5 || parameters.weathering.z <= 0.0) {
+    if (parameters.weathering.w <= 0.5 || parameters.weathering.z <= 0.0 ||
+            footprint_m >= parameters.weathering.x * 0.75) {
         return 0.0;
     }
 

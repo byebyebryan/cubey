@@ -88,7 +88,8 @@ constexpr float kRotationSin = 0.6F;
                                                     const TerrainQuery& query,
                                                     float center_height_m) {
     if (parameters.weathering != TerrainWeatheringMode::Local ||
-        parameters.weathering_strength <= 0.0F) {
+        parameters.weathering_strength <= 0.0F ||
+        query.footprint_m >= parameters.weathering_radius_m * 0.75F) {
         return 0.0F;
     }
 
