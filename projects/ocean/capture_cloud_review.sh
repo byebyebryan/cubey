@@ -106,6 +106,14 @@ sunset_view=(
     --latitude-degrees 30
     --ocean-camera-preset mid
 )
+twilight_sun_corridor_view=(
+    --time-of-day-mode solar
+    --time-hours 18.2
+    --day-of-year 80
+    --latitude-degrees 30
+    --sun-azimuth-offset 90
+    --ocean-camera-preset mid
+)
 night_view=(
     --time-of-day-mode solar
     --time-hours 0.0
@@ -147,6 +155,10 @@ capture_named sunset-clouds "Sunset clouds" lighting \
 capture_named sunset-reflection "Sunset cloud reflection" lighting \
     "${sunset_view[@]}" --debug-view reflection \
     --ocean-cloud-reflection-strength 0.75
+capture_named twilight-sun-corridor "Twilight sun corridor" lighting \
+    "${twilight_sun_corridor_view[@]}"
+capture_named twilight-water-body "Twilight water body" lighting \
+    "${twilight_sun_corridor_view[@]}" --debug-view water-body
 capture_named night-clouds "Night clouds" lighting \
     "${night_view[@]}"
 capture_named night-reflection "Night cloud reflection" lighting \

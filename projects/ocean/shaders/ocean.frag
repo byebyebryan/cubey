@@ -431,18 +431,20 @@ void main() {
     vec3 body_ambient =
         water_color * (0.12 + 0.28 * ambient_light * clamp(normal.y, 0.0, 1.0)) +
         ocean_sky_radiance(normal) * 0.04;
-    vec3 sun_scatter_tint =
+    float daylight_scatter = smoothstep(0.08, 0.32, sun_dir.y);
+    vec3 daylight_scatter_tint =
         mix(water_color, cubey_srgb_to_linear(vec3(0.08, 0.28, 0.32)), 0.65);
+    vec3 sun_scatter_tint = mix(vec3(0.055), daylight_scatter_tint, daylight_scatter);
     vec3 body_directional =
         sun_scatter_tint * ocean_sun_light_color() * sun_ndotl * shadowed_sun_light * 0.26 +
         water_color * ocean_moon_light_color() * moon_ndotl * moon_light * 0.18;
-    float sss_height = max(0.0, frag_wave.x + 2.5) *
+    float sss_height = smoothstep(0.15, 1.80, frag_wave.x) *
                        pow(max(dot(sun_dir, -view_dir), 0.0), 4.0) *
                        pow(0.5 - 0.5 * dot(sun_dir, normal), 3.0);
     float sss_near = 0.18 * pow(ndotv, 2.0);
-    vec3 subsurface_tint = cubey_srgb_to_linear(vec3(0.18, 0.46, 0.40));
-    vec3 subsurface = subsurface_tint * (sss_height * 0.58 + sss_near) *
-                      shadowed_sun_light * (1.0 - fresnel);
+    vec3 subsurface = sun_scatter_tint * ocean_sun_light_color() *
+                      (sss_height * 0.58 + sss_near) * shadowed_sun_light *
+                      (1.0 - fresnel);
     vec3 water_body = body_ambient + body_directional + subsurface;
 
     vec3 sun_specular = ocean_sun_light_color() * shadowed_sun_light *

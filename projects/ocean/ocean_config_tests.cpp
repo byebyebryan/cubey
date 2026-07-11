@@ -1501,6 +1501,11 @@ int main() {
                          "fragment shader should use dielectric Fresnel for the surface mix");
         require_contains(fragment_shader, "ocean_ggx_reflected_radiance",
                          "fragment shader should isolate directional specular from the water body");
+        require_contains(fragment_shader, "smoothstep(0.15, 1.80, frag_wave.x)",
+                         "fragment shader should limit crest transmission to positive crests");
+        require_contains(
+            fragment_shader, "sun_scatter_tint * ocean_sun_light_color()",
+            "fragment shader should tint water transmission with the resolved sun color");
         require_contains(
             fragment_shader, "mix(water_body, reflection, fresnel) + specular",
             "fragment shader should compose body, reflection, and specular explicitly");

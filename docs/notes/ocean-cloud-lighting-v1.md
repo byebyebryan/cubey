@@ -39,6 +39,9 @@ conflating it with reflection.
 
 The water material now composes a dark volume-scatter body, Schlick Fresnel
 environment reflection, GGX sun/moon highlights, and foam as separate terms.
+Low-sun transmission is restricted to positive wave crests and follows the
+resolved sun color. This prevents the daylight cyan scatter tint from appearing
+as a negative-color film across broad wave faces at dawn and dusk.
 Wave self-shadowing averages weighted blockers and fades at unstable near-zero
 sun elevations instead of turning one binary ray hit into large popping dark
 patches.
@@ -59,7 +62,8 @@ projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-lighting-v1
 
 The pack covers noon cloud/no-cloud composition, reflection off/on and raw
 contribution, projected transmittance and direct-light shadow A/B, mid/high
-camera behavior, sunset/night lighting, and cloud density/depth diagnostics.
+camera behavior, sunset/night lighting, an aligned twilight sun corridor and
+water-body diagnostic, and cloud density/depth diagnostics.
 Shadow-specific captures use the runtime default scattered weather. High
 coverage now correctly approaches an opaque deck and is not useful as the A/B
 review fixture.
