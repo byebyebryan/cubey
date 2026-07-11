@@ -126,15 +126,17 @@ capture_named noon-reflection-off "Noon reflection coupling off" reflection \
 capture_named noon-reflection-on "Noon reflection coupling on" reflection \
     "${noon_default_view[@]}" --debug-view reflection \
     --ocean-cloud-reflection-strength 0.75
-capture_named noon-shadow-off "Noon cloud shadow off" shadow \
-    "${noon_default_view[@]}" --debug-view cloud-shadow \
-    --ocean-cloud-shadow-strength 0.0
-capture_named noon-shadow-on "Noon cloud shadow on" shadow \
-    "${noon_default_view[@]}" --debug-view cloud-shadow \
-    --ocean-cloud-shadow-strength 0.45
-capture_named noon-direct-shadow "Noon shadowed direct light" shadow \
+capture_named noon-cloud-reflection "Noon cloud reflection" reflection \
+    "${noon_default_view[@]}" --debug-view cloud-reflection \
+    --ocean-cloud-reflection-strength 0.75
+capture_named noon-shadow-map "Noon cloud transmittance" shadow \
+    "${noon_default_view[@]}" --debug-view cloud-shadow --cloud-coverage 0.75
+capture_named noon-direct-shadow-off "Noon direct light without cloud shadow" shadow \
     "${noon_default_view[@]}" --debug-view direct-light \
-    --ocean-cloud-shadow-strength 0.45
+    --cloud-coverage 0.75 --ocean-cloud-shadow-strength 0.0
+capture_named noon-direct-shadow-on "Noon direct light with cloud shadow" shadow \
+    "${noon_default_view[@]}" --debug-view direct-light \
+    --cloud-coverage 0.75 --ocean-cloud-shadow-strength 0.45
 capture_named mid-reflection "Mid cloud reflection" scale \
     "${noon_mid_view[@]}" --debug-view reflection \
     --ocean-cloud-reflection-strength 0.75

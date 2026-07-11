@@ -1653,6 +1653,10 @@ int main() {
                              "ocean surface shader should remove procedural cloud drift");
         require_contains(app_source, "cloud_runtime_.declare_shadow_product",
                          "ocean should request the shared projected cloud shadow product");
+        require_contains(app_source, "ocean_config_.cloud_shadow_strength > 0.0F",
+                         "ocean should skip the cloud shadow pass when coupling is disabled");
+        require_contains(app_source, "render_view_ == OceanRenderView::CloudShadow",
+                         "ocean should preserve raw cloud shadow diagnostics at zero strength");
         require_contains(app_source, "std::clamp(surface_frame.mesh_config.mesh_extent",
                          "ocean cloud shadows should track visible extent within the V1 budget");
         require_before(app_source, "cloud_runtime_.declare_shadow_product",
@@ -1660,6 +1664,8 @@ int main() {
                        "ocean should generate cloud transmittance before drawing water");
         require_contains(app_source, ".radiance_transmittance = cloud_frame.product.resolved_cloud",
                          "ocean should reuse the current cloud product for reflections");
+        require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",
+                         "ocean should skip cloud reflection work when coupling is disabled");
         require_contains(app_source, "scene_pass.read_texture(cloud_reflection.radiance_transmittance",
                          "ocean scene should declare its cloud reflection dependency");
         require_contains(app_source, "diagnostics_.size_reference_enabled ? 1.0F : 0.0F",

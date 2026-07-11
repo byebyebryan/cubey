@@ -1884,10 +1884,13 @@ class OceanApp {
             graph.create_texture(ocean_depth_texture_desc("ocean surface depth",
                                                           color_target.extent, kOceanDepthFormat));
         const bool cloud_product_enabled = cloud_products_enabled() && cloud_uniforms.has_value();
-        const bool cloud_shadow_enabled = cloud_product_enabled;
+        const bool cloud_shadow_enabled =
+            cloud_product_enabled &&
+            (ocean_config_.cloud_shadow_strength > 0.0F ||
+             render_view_ == OceanRenderView::CloudShadow);
         const bool visible_clouds_enabled = cloud_composite_enabled() && cloud_uniforms.has_value();
         const bool cloud_reflection_enabled =
-            cloud_product_enabled &&
+            cloud_product_enabled && ocean_config_.cloud_reflection_strength > 0.0F &&
             (visible_clouds_enabled || render_view_ == OceanRenderView::Reflection ||
              render_view_ == OceanRenderView::CloudReflection);
         const bool cloud_march_enabled = visible_clouds_enabled || cloud_reflection_enabled;
