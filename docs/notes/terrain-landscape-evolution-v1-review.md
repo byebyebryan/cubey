@@ -23,11 +23,11 @@ The canonical region is `513x513` at `100 m` with a hidden 64-sample guard.
 The review command is:
 
 ```sh
-projects/terrain/capture_landscape_evolution_v1.sh
+projects/terrain_hydrology_lab/capture_landscape_evolution_v1.sh
 ```
 
 Ignored evidence is written to
-`outputs/terrain/landscape-evolution-v1/review/`. The main artifacts are:
+`outputs/terrain_hydrology_lab/landscape-evolution-v1/review/`. The main artifacts are:
 
 - `landscape-evolution-macro-sheet.png`: source, evolved height, slope, and
   process drainage for seeds `0`, `9012`, and `12345`;

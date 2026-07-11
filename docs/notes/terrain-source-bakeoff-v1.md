@@ -75,17 +75,17 @@ basin pressure and grid bias slightly, but it does not solve routing.
 Run:
 
 ```sh
-projects/terrain/capture_review.sh
+projects/terrain_hydrology_lab/capture_review.sh
 ```
 
-Current ignored outputs are under `outputs/terrain/source-bakeoff-v1/`:
+Current ignored outputs are under `outputs/terrain_hydrology_lab/source-bakeoff-v1/`:
 
 - `terrain-source-bakeoff-contact-sheet.png`;
 - `terrain-source-bakeoff-surface-sheet.png`;
 - `terrain-source-bakeoff-regional-sheet.png`;
 - `comparison-summary.json` and per-patch v2 manifests.
 
-Use `projects/terrain/capture_v1_baseline.sh` only to reproduce the earlier
+Use `projects/terrain_hydrology_lab/capture_v1_baseline.sh` only to reproduce the earlier
 single-recipe review layout.
 
 ## Next Boundary

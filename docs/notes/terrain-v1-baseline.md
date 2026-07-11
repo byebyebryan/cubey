@@ -29,10 +29,10 @@ colors.
 Run:
 
 ```sh
-projects/terrain/capture_review.sh
+projects/terrain_hydrology_lab/capture_review.sh
 ```
 
-The ignored output under `outputs/terrain/v1-upland-catchment/` contains three
+The ignored output under `outputs/terrain_hydrology_lab/v1-upland-catchment/` contains three
 seeds (`0`, `9012`, `12345`), each with an oblique surface render, top height
 view, top discharge view, all 15 scalar fields, and a manifest. Seed `9012` also
 includes near-surface and flow-direction views.
