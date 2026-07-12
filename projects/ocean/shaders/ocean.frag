@@ -426,18 +426,23 @@ void main() {
     roughness = mix(roughness, slope_filtered_roughness, ocean_spectral_lod_handoff());
 
     float fresnel = ocean_dielectric_fresnel(ndotv);
+    vec3 reflection_sky_dir = ocean_above_horizon_reflection_direction(reflection_dir);
     vec3 clear_reflection = ocean_environment_reflection(reflection_dir, roughness);
     OceanCloudReflectionSample cloud_reflection_sample =
         ocean_cloud_reflection(reflection_dir, roughness);
     float cloud_reflection_weight =
         cloud_reflection_sample.visibility * ocean_cloud_reflection_strength();
+    vec3 clear_sky_reflection = ocean_sky_radiance(reflection_sky_dir);
+    vec3 clouded_sky_reflection =
+        cloud_reflection_sample.radiance +
+        cloud_reflection_sample.transmittance * clear_sky_reflection;
     vec3 cloud_reflection =
-        max(ocean_sky_radiance(reflection_dir) +
-                cloud_reflection_sample.delta * cloud_reflection_weight,
-            vec3(0.0));
+        mix(clear_sky_reflection, clouded_sky_reflection, cloud_reflection_weight);
+    vec3 clouded_environment_reflection =
+        cloud_reflection_sample.radiance +
+        cloud_reflection_sample.transmittance * clear_reflection;
     vec3 reflection =
-        max(clear_reflection + cloud_reflection_sample.delta * cloud_reflection_weight,
-            vec3(0.0));
+        mix(clear_reflection, clouded_environment_reflection, cloud_reflection_weight);
     reflection *= ocean_far_reflection_variation(frag_sample_position, far_material_energy);
     vec3 body_ambient =
         water_color * (0.12 + 0.28 * ambient_light * clamp(normal.y, 0.0, 1.0)) +

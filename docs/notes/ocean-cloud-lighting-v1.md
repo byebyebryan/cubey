@@ -25,7 +25,11 @@ keeps `--no-clouds` and disabled coupling valid.
 Ocean also reuses the resolved current-view cloud product for reflection. The
 surface shader projects a reflected world direction into the current camera,
 uses a bounded roughness-scaled five-tap filter, reconstructs cloud radiance over the
-clear atmosphere, and adds a bounded delta to the existing atmosphere probe.
+matching clear atmosphere background, and blends that clouded result with the
+existing atmosphere probe. The product remains explicit radiance plus
+transmittance; it is never converted to a signed delta against one background
+and applied to another differently filtered background. This keeps twilight
+occlusion from clipping individual reflection channels into false colors.
 Directions outside the current view, along product edges, or on wave facets
 that reflect below the sky horizon fade back to the clear-sky probe. A 1x1
 clear fallback keeps non-cloud paths valid, and `cloud-reflection` isolates the

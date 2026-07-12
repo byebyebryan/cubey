@@ -1871,6 +1871,17 @@ int main() {
                          "ocean cloud reflections should reject below-horizon wave facets");
         require_contains(fragment_shader, "smoothstep(0.0, 0.10, edge_distance)",
                          "ocean cloud reflections should fade across the finite product edge");
+        require_contains(
+            fragment_shader,
+            "cloud_reflection_sample.transmittance * clear_reflection",
+            "ocean clouds should composite over the matching filtered environment reflection");
+        require_contains(
+            fragment_shader,
+            "cloud_reflection_sample.transmittance * clear_sky_reflection",
+            "ocean cloud diagnostics should composite over the matching analytic sky");
+        require_not_contains(
+            fragment_shader, "cloud_reflection_sample.delta",
+            "ocean cloud reflections should not apply signed deltas across different backgrounds");
         require_not_contains(fragment_shader, "cloud_shadow_scale_m",
                              "ocean surface shader should remove procedural cloud scale");
         require_not_contains(fragment_shader, "cloud_shadow_speed_mps",

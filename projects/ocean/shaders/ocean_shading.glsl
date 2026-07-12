@@ -406,7 +406,8 @@ vec3 ocean_environment_reflection(vec3 direction, float roughness) {
 }
 
 struct OceanCloudReflectionSample {
-    vec3 delta;
+    vec3 radiance;
+    float transmittance;
     float visibility;
 };
 
@@ -430,19 +431,18 @@ vec4 ocean_filtered_cloud_reflection_product(vec2 uv, float roughness) {
 OceanCloudReflectionSample ocean_cloud_reflection(vec3 direction, float roughness) {
     vec3 raw_dir = normalize(direction);
     vec3 dir = ocean_above_horizon_reflection_direction(raw_dir);
-    vec3 clear_sky = ocean_sky_radiance(dir);
     if (ocean_cloud_reflection_strength() <= 0.0) {
-        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+        return OceanCloudReflectionSample(vec3(0.0), 1.0, 0.0);
     }
 
     vec3 projection_point = ocean.camera_time.xyz + dir * 1000.0;
     vec4 clip = ocean.view_projection * vec4(projection_point, 1.0);
     if (clip.w <= 0.0001) {
-        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+        return OceanCloudReflectionSample(vec3(0.0), 1.0, 0.0);
     }
     vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
     if (any(lessThanEqual(uv, vec2(0.0))) || any(greaterThanEqual(uv, vec2(1.0)))) {
-        return OceanCloudReflectionSample(vec3(0.0), 0.0);
+        return OceanCloudReflectionSample(vec3(0.0), 1.0, 0.0);
     }
 
     float edge_distance = min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y));
@@ -450,11 +450,7 @@ OceanCloudReflectionSample ocean_cloud_reflection(vec3 direction, float roughnes
     float sky_facet_visibility = smoothstep(-0.02, 0.005, raw_dir.y);
     float visibility = product_visibility * sky_facet_visibility;
     vec4 cloud = ocean_filtered_cloud_reflection_product(uv, roughness);
-    vec3 clouded_sky = cloud.rgb + cloud.a * clear_sky;
-    vec3 delta = clouded_sky - clear_sky;
-    delta = max(delta, -clear_sky * 0.12);
-    delta = min(delta, max(clear_sky * 0.85, vec3(0.10)));
-    return OceanCloudReflectionSample(delta, visibility);
+    return OceanCloudReflectionSample(cloud.rgb, cloud.a, visibility);
 }
 
 
