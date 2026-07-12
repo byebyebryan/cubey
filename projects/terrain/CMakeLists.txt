@@ -416,6 +416,37 @@ if (BUILD_TESTING)
         0.001
     )
 
+    foreach(diagnostic IN ITEMS normal material-weights ambient-visibility)
+        string(REPLACE "-" "_" diagnostic_target "${diagnostic}")
+        set(diagnostic_output
+            "${CMAKE_CURRENT_BINARY_DIR}/terrain-${diagnostic}-headless.png"
+        )
+        cubey_add_png_smoke_test(
+            terrain_${diagnostic_target}_headless_writes_png
+            cubey_project_terrain
+            "${diagnostic_output}"
+            --headless
+            --width
+            320
+            --height
+            180
+            --terrain-seed
+            9012
+            --terrain-preset
+            mountain
+            --terrain-camera-preset
+            oblique
+            --debug-view
+            ${diagnostic}
+        )
+        cubey_add_png_stats_test(
+            terrain_${diagnostic_target}_headless_writes_png
+            "${diagnostic_output}"
+            0.001
+            0.0001
+        )
+    endforeach()
+
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_TERRAIN_SURFACE_HEADLESS_VIDEO_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/terrain-surface-headless.mp4"
