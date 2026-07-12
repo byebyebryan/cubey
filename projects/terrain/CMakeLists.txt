@@ -76,6 +76,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         shaders/terrain_environment.glsl
+        shaders/terrain_shadow.glsl
         shaders/terrain_source.glsl
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"

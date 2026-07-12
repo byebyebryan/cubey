@@ -1,7 +1,9 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
+#include "terrain_environment.glsl"
 #include "terrain_source.glsl"
+#include "terrain_shadow.glsl"
 
 layout(set = 0, binding = 0, std140) uniform TerrainSourceUniforms {
     TerrainSourceGpuParameters source;
@@ -28,6 +30,7 @@ layout(location = 7) flat out float frag_origin_snap_m;
 layout(location = 8) flat out float frag_cell_size_m;
 layout(location = 9) out float frag_lod_morph;
 layout(location = 10) out float frag_footprint_m;
+layout(location = 11) out float frag_direct_visibility;
 
 void main() {
     float cell_size_m = in_color.x;
@@ -68,4 +71,7 @@ void main() {
     frag_cell_size_m = cell_size_m;
     frag_lod_morph = morph;
     frag_footprint_m = footprint_m;
+    frag_direct_visibility = terrain_heightfield_shadow(
+        terrain_uniforms.source, sample_xz, base_height_m,
+        pc.camera_position_vertical_scale.w, footprint_m);
 }

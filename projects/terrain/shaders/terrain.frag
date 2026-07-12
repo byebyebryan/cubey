@@ -26,6 +26,7 @@ layout(location = 7) flat in float frag_origin_snap_m;
 layout(location = 8) flat in float frag_cell_size_m;
 layout(location = 9) in float frag_lod_morph;
 layout(location = 10) in float frag_footprint_m;
+layout(location = 11) in float frag_direct_visibility;
 
 layout(location = 0) out vec4 out_color;
 
@@ -146,7 +147,7 @@ void main() {
     }
 
     if (debug_view == 7) {
-        out_color = vec4(1.0);
+        out_color = vec4(vec3(clamp(frag_direct_visibility, 0.0, 1.0)), 1.0);
         return;
     }
 
@@ -175,7 +176,8 @@ void main() {
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     float diffuse = max(dot(normal, light_direction), 0.0);
     vec3 sun = atmosphere.primary_light_color_angular_radius.xyz *
-        (atmosphere.primary_light_direction_intensity.w * diffuse);
+        (atmosphere.primary_light_direction_intensity.w * diffuse *
+         clamp(frag_direct_visibility, 0.0, 1.0));
     vec3 ambient = terrain_diffuse_irradiance(normal);
     vec3 color = base_color * (ambient + sun);
 
