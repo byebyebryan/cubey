@@ -52,7 +52,9 @@ Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `base-height`, `slope`, `weathering`, `lod`, `clay`, `shadow`, `aerial-transmittance`, and
 `vegetation-coverage`. The `backdrop` camera is a deterministic source-aware
 frame intended for terrain beginning about 300 m from the visible
-foreground. Presentation modes are `standard` (default) and `backdrop`.
+foreground. It uses at least 150 m AGL and raises candidates when final terrain
+would violate that foreground boundary. Presentation modes are `standard`
+(default) and `backdrop`.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and

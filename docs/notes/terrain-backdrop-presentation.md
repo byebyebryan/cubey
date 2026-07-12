@@ -99,8 +99,10 @@ Terrain now has a deterministic `backdrop` camera. It evaluates a fixed `5 x 5`
 anchor grid and 24 headings against clean source samples at 400, 800, 1600,
 3200, and 6400 m. The score favors distant prominence, lateral silhouette
 variation, useful target distance, and a clear near field in that order. The
-winning pose uses 120 m final-source clearance and a 40-degree vertical field
-of view. All nine preset/seed review cases select useful frames; target
+original winning pose used 120 m final-source clearance and a 40-degree vertical
+field of view. The later foreground-clearance checkpoint replaced that fixed
+value with a 150 m floor plus final-terrain frustum validation. All nine
+preset/seed review cases select useful frames; target
 distances are 1600 or 3200 m. Headless backdrop captures remain static, while
 the same pose seeds the interactive surface controller.
 

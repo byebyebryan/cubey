@@ -110,8 +110,10 @@ Close-range foliage remains a separate future rendering product.
 
 The deterministic backdrop camera searches a fixed world-space anchor/heading
 set against the random-access source and seeds the traversable surface camera
-with the selected pose. It is a general framing tool across presets and seeds,
-not a table of authored landmarks. Headless stills keep that frame fixed.
+with the selected pose. Its 150 m minimum AGL can rise when final terrain would
+enter the lower frustum within 300 m; center and corner rays retain a 10 m
+safety margin. It is a general framing tool across presets and seeds, not a
+table of authored landmarks. Headless stills keep that frame fixed.
 
 ## Configuration And Diagnostics
 
@@ -128,8 +130,9 @@ The terrain app supports final surface, base/final height, slope, weathering
 delta, LOD, neutral clay, direct visibility, aerial-transmittance, and
 vegetation-coverage views.
 Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
-shape review from eye-level rendering and LOD review. The 120 m `backdrop`
-camera adds deterministic source-aware framing with a 40-degree lens. Small
+shape review from eye-level rendering and LOD review. The `backdrop` camera
+adds deterministic source-aware framing with a 40-degree lens, a 150 m AGL
+floor, and candidate-specific foreground clearance. Small
 bounded CPU sample grids are allowed for tests, statistics, and review metadata.
 The old raw-field exporter remains with the hydrology lab; terrain v1 does not
 emit a baked terrain product.
@@ -137,7 +140,8 @@ emit a baked terrain product.
 Headless surface video advances the camera at a deterministic fixed forward
 speed while re-querying terrain clearance every frame. Orbit-camera video keeps
 the existing automatic rotation. Headless backdrop captures remain static;
-interactive backdrop use retains surface traversal. PNG behavior is unchanged.
+interactive backdrop use retains surface traversal at the selected planned AGL.
+PNG behavior is unchanged.
 
 ## Acceptance
 

@@ -2,8 +2,9 @@
 
 Date: 2026-07-12
 
-Status: implementation plan. This corrects the completed backdrop presentation
-checkpoint without changing terrain source or material generation.
+Status: completed foreground-clearance checkpoint. This corrects the completed
+backdrop presentation checkpoint without changing terrain source or material
+generation.
 
 ## Problem
 
@@ -67,3 +68,40 @@ or non-backdrop cameras. The source-summary SHA-256 must remain
 - Interactive backdrop traversal preserves the selected planned clearance.
 - Review captures stay useful rather than becoming unnecessarily aerial.
 - The terrain source hash and standard rendering controls remain unchanged.
+
+## Outcome
+
+The planner now ranks all 600 anchor/heading combinations with the existing
+composition fields, then evaluates strict final-terrain clearance for the top
+16 candidates. This keeps the camera search deterministic while avoiding a
+full terrain-query fan for every candidate. The previous approximate
+near-obstruction term is replaced by a bounded clearance-efficiency term, so
+naturally open foregrounds win when their composition scores are comparable.
+
+`TerrainBackdropCameraPlan` now publishes selected AGL, additional raise,
+guaranteed clear distance, minimum sampled margin, and planning aspect ratio.
+The terrain app passes its initial aspect ratio into the planner and uses the
+selected AGL for reset and traversal. It no longer discards the planned camera
+height by rebuilding the pose at a fixed preset clearance.
+
+Across the canonical three-preset, three-seed matrix, selected clearance ranges
+from 150.0 to 200.54 m. Additional raise ranges from 0.0 to 50.54 m, and the
+minimum reported lower-frustum margin ranges from 10.0 to 112.24 m. Mountain
+targets remain at 1600 or 3200 m. Upland and plains retain useful low-horizon
+frames rather than becoming aerial views.
+
+The independent stress test covers six seeds per preset, including the maximum
+64-bit seed, and 4:3, 16:9, and 21:9 aspect ratios. It reconstructs the lower
+frustum separately from the planner and verifies the 10 m margin through 300 m.
+Traversal testing verifies that the selected AGL remains authoritative after
+movement.
+
+The regenerated v2 review pack remains under
+`outputs/terrain/backdrop-presentation/`. Its matrix, distance controls,
+comparison sheet, showcase, and traversal video show no framing regression,
+new LOD band, or coverage instability. Video-frame submission averages about
+0.58 ms in the pack profile; the terrain material and per-frame render path are
+unchanged.
+
+The source-summary SHA-256 remains
+`5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb`.
