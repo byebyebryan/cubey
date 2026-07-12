@@ -95,6 +95,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain backdrop presentation](terrain-backdrop-presentation.md): opt-in
   distant vegetation-coverage and deterministic framing study, with an explicit
   close-range negative-control boundary.
+- [Terrain backdrop foreground clearance](terrain-backdrop-foreground-clearance.md):
+  strict 150 m AGL and 300 m lower-frustum contract for keeping backdrop framing
+  out of unsupported surface-detail range.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
