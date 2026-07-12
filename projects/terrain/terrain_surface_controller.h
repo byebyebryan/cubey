@@ -12,6 +12,7 @@ class TerrainSurfaceController {
     explicit TerrainSurfaceController(float home_speed_mps = 220.0F);
 
     void reset();
+    void set_home_pose(cubey::math::Vec2 position_xz, float yaw_radians, float pitch_radians);
     void set_home_speed_mps(float speed_mps);
     void advance_forward(double delta_seconds);
     void update(const cubey::input::FilteredInputFrame& input, double delta_seconds);
@@ -20,9 +21,12 @@ class TerrainSurfaceController {
                                                       float clearance_m) const;
 
   private:
-    cubey::math::Vec2 position_xz_{0.0F, 0.0F};
-    float yaw_radians_ = 0.62F;
-    float pitch_radians_ = -0.12F;
+    cubey::math::Vec2 home_position_xz_{0.0F, 0.0F};
+    float home_yaw_radians_ = 0.62F;
+    float home_pitch_radians_ = -0.12F;
+    cubey::math::Vec2 position_xz_{home_position_xz_};
+    float yaw_radians_ = home_yaw_radians_;
+    float pitch_radians_ = home_pitch_radians_;
     float home_speed_mps_ = 220.0F;
     float speed_mps_ = 220.0F;
 };

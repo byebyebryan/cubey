@@ -1,3 +1,4 @@
+#include "terrain_backdrop_camera.h"
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
@@ -7,6 +8,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -63,6 +65,65 @@ void test_ground_camera_and_shape_diagnostics_parse() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("aerial") ==
                 cubey::projects::terrain::TerrainDebugView::AerialTransmittance,
             "terrain runtime should parse the aerial diagnostic alias");
+}
+
+void test_backdrop_camera_configuration() {
+    cubey::RunConfig run_config;
+    run_config.terrain.camera_preset = "backdrop";
+    const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Backdrop,
+            "terrain runtime should parse the backdrop camera");
+    require(cubey::projects::terrain::terrain_camera_is_surface(config.camera),
+            "terrain backdrop camera should remain interactively traversable");
+    require(!cubey::projects::terrain::terrain_camera_advances_headless(config.camera),
+            "terrain backdrop camera should remain static in headless captures");
+    require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 120.0F,
+                 0.0F, "terrain backdrop camera should clear the local surface");
+    require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
+                 40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
+                 "terrain backdrop camera should use a restrained field of view");
+}
+
+void test_backdrop_planner_is_deterministic_and_clear() {
+    constexpr std::array presets{
+        cubey::projects::terrain::TerrainPreset::Mountain,
+        cubey::projects::terrain::TerrainPreset::Upland,
+        cubey::projects::terrain::TerrainPreset::Plains,
+    };
+    constexpr std::array<std::uint64_t, 3> seeds{0U, 9012U, 12345U};
+    for (const auto preset : presets) {
+        for (const std::uint64_t seed : seeds) {
+            const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+                .seed = seed,
+                .preset = preset,
+                .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
+            });
+            const auto first = cubey::projects::terrain::plan_terrain_backdrop_camera(source);
+            const auto second = cubey::projects::terrain::plan_terrain_backdrop_camera(source);
+            require_near(first.anchor_xz.x, second.anchor_xz.x, 0.0F,
+                         "terrain backdrop anchor x should be deterministic");
+            require_near(first.anchor_xz.y, second.anchor_xz.y, 0.0F,
+                         "terrain backdrop anchor z should be deterministic");
+            require_near(first.yaw_radians, second.yaw_radians, 0.0F,
+                         "terrain backdrop heading should be deterministic");
+            require_near(first.score, second.score, 0.0F,
+                         "terrain backdrop score should be deterministic");
+            require(std::isfinite(first.transform.translation.x) &&
+                        std::isfinite(first.transform.translation.y) &&
+                        std::isfinite(first.transform.translation.z) &&
+                        std::isfinite(first.score) && first.score >= 0.0F,
+                    "terrain backdrop plan should remain finite");
+            require(first.target_distance_m >= 400.0F && first.target_distance_m <= 6400.0F,
+                    "terrain backdrop target should use a supported sample distance");
+            const auto anchor_sample = cubey::projects::terrain::sample_terrain(
+                source, {.world_xz = first.anchor_xz});
+            require_near(first.transform.translation.y, anchor_sample.height_m + 120.0F, 0.001F,
+                         "terrain backdrop camera should preserve final-source clearance");
+            require(first.pitch_radians >= -2.0F * std::numbers::pi_v<float> / 180.0F &&
+                        first.pitch_radians <= 12.0F * std::numbers::pi_v<float> / 180.0F,
+                    "terrain backdrop pitch should remain in the presentation range");
+        }
+    }
 }
 
 void test_environment_gpu_parameters_preserve_atmosphere_lighting() {
@@ -211,6 +272,8 @@ int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
         test_ground_camera_and_shape_diagnostics_parse();
+        test_backdrop_camera_configuration();
+        test_backdrop_planner_is_deterministic_and_clear();
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();
         test_clipmap_patch_spans_preserve_level_cell_spacing();

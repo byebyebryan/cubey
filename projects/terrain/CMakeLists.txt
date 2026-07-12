@@ -33,6 +33,7 @@ target_link_libraries(
 )
 
 add_library(cubey_project_terrain_render_support STATIC
+    terrain_backdrop_camera.cpp
     terrain_clipmap.cpp
     terrain_environment_gpu.cpp
     terrain_surface_controller.cpp

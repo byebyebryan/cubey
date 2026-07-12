@@ -1,5 +1,6 @@
 #include "terrain_app.h"
 
+#include "terrain_backdrop_camera.h"
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
@@ -136,6 +137,7 @@ struct CompiledTerrainGraph {
     case TerrainCameraPreset::Surface:
     case TerrainCameraPreset::SurfaceLow:
     case TerrainCameraPreset::Ground:
+    case TerrainCameraPreset::Backdrop:
         return {};
     }
     return {};
@@ -192,10 +194,13 @@ class TerrainApp {
           }),
           surface_controller_(terrain_camera_traversal_speed_mps(runtime_config_.camera)),
           camera_(cubey::Camera3DConfig{
+              .fovy_radians = terrain_camera_fovy_radians(runtime_config_.camera),
               .near_z = 0.1F,
               .far_z = clipmap_config_.outer_half_extent * 5.0F,
           }),
-          atmosphere_state_(terrain_atmosphere_state(run_config_)) {}
+          atmosphere_state_(terrain_atmosphere_state(run_config_)) {
+        apply_camera_preset();
+    }
 
     TerrainApp(const TerrainApp&) = delete;
     TerrainApp& operator=(const TerrainApp&) = delete;
@@ -276,9 +281,9 @@ class TerrainApp {
             }
             callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
-                if (terrain_camera_is_surface(runtime_config_.camera)) {
+                if (terrain_camera_advances_headless(runtime_config_.camera)) {
                     surface_controller_.advance_forward(frame.timing.delta_seconds);
-                } else {
+                } else if (!terrain_camera_is_surface(runtime_config_.camera)) {
                     orbit_controller_.update(frame.timing.delta_seconds);
                 }
                 (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
@@ -333,12 +338,9 @@ class TerrainApp {
         }
         int camera = static_cast<int>(runtime_config_.camera);
         if (ImGui::Combo("Camera", &camera,
-                         "Oblique\0Profile\0Top\0Surface\0Surface low\0Ground\0")) {
+                         "Oblique\0Profile\0Top\0Surface\0Surface low\0Ground\0Backdrop\0")) {
             runtime_config_.camera = static_cast<TerrainCameraPreset>(camera);
-            if (terrain_camera_is_surface(runtime_config_.camera)) {
-                surface_controller_.set_home_speed_mps(
-                    terrain_camera_traversal_speed_mps(runtime_config_.camera));
-            }
+            apply_camera_preset();
         }
         int debug_view = static_cast<int>(runtime_config_.debug_view);
         if (ImGui::Combo("View", &debug_view,
@@ -358,6 +360,31 @@ class TerrainApp {
     void refresh_source() {
         source_parameters_ = resolve_terrain_source_parameters(runtime_config_.source);
         scene_summary_ = terrain_scene_summary(source_parameters_, clipmap_config_);
+        backdrop_plan_.reset();
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+            apply_camera_preset();
+        }
+    }
+
+    void apply_camera_preset() {
+        camera_.set_projection(terrain_camera_fovy_radians(runtime_config_.camera), 0.1F,
+                               clipmap_config_.outer_half_extent * 5.0F);
+        if (!terrain_camera_is_surface(runtime_config_.camera)) {
+            return;
+        }
+        surface_controller_.set_home_speed_mps(
+            terrain_camera_traversal_speed_mps(runtime_config_.camera));
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+            if (!backdrop_plan_.has_value()) {
+                backdrop_plan_ =
+                    plan_terrain_backdrop_camera(source_parameters_, runtime_config_.vertical_scale);
+            }
+            surface_controller_.set_home_pose(backdrop_plan_->anchor_xz,
+                                              backdrop_plan_->yaw_radians,
+                                              backdrop_plan_->pitch_radians);
+        } else {
+            surface_controller_.set_home_pose({0.0F, 0.0F}, 0.62F, -0.12F);
+        }
     }
 
     void create_global_resources_if_needed(const cubey::vulkan::Device& device,
@@ -670,6 +697,7 @@ class TerrainApp {
     TerrainClipmapMeshData clipmap_data_{};
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};
     TerrainSourceSummary scene_summary_{};
+    std::optional<TerrainBackdropCameraPlan> backdrop_plan_{};
     cubey::OrbitController orbit_controller_;
     TerrainSurfaceController surface_controller_{};
     cubey::Camera3D camera_;

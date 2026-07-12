@@ -15,10 +15,22 @@ TerrainSurfaceController::TerrainSurfaceController(float home_speed_mps) {
 }
 
 void TerrainSurfaceController::reset() {
-    position_xz_ = {0.0F, 0.0F};
-    yaw_radians_ = 0.62F;
-    pitch_radians_ = -0.12F;
+    position_xz_ = home_position_xz_;
+    yaw_radians_ = home_yaw_radians_;
+    pitch_radians_ = home_pitch_radians_;
     speed_mps_ = home_speed_mps_;
+}
+
+void TerrainSurfaceController::set_home_pose(cubey::math::Vec2 position_xz, float yaw_radians,
+                                             float pitch_radians) {
+    if (!std::isfinite(position_xz.x) || !std::isfinite(position_xz.y) ||
+        !std::isfinite(yaw_radians) || !std::isfinite(pitch_radians)) {
+        return;
+    }
+    home_position_xz_ = position_xz;
+    home_yaw_radians_ = yaw_radians;
+    home_pitch_radians_ = pitch_radians;
+    reset();
 }
 
 void TerrainSurfaceController::set_home_speed_mps(float speed_mps) {

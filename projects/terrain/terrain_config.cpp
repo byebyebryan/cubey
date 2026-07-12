@@ -1,6 +1,7 @@
 #include "terrain_config.h"
 
 #include <cmath>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 
@@ -20,6 +21,8 @@ std::string_view terrain_camera_preset_name(TerrainCameraPreset preset) {
         return "surface-low";
     case TerrainCameraPreset::Ground:
         return "ground";
+    case TerrainCameraPreset::Backdrop:
+        return "backdrop";
     }
     throw std::runtime_error("unknown terrain camera preset");
 }
@@ -43,10 +46,18 @@ TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
     if (name == "ground") {
         return TerrainCameraPreset::Ground;
     }
+    if (name == "backdrop") {
+        return TerrainCameraPreset::Backdrop;
+    }
     throw std::runtime_error("unknown terrain camera preset: " + std::string(name));
 }
 
 bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept {
+    return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
+           preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Backdrop;
+}
+
+bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept {
     return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
            preset == TerrainCameraPreset::Ground;
 }
@@ -59,6 +70,8 @@ float terrain_camera_clearance_m(TerrainCameraPreset preset) {
         return 18.0F;
     case TerrainCameraPreset::Ground:
         return 2.0F;
+    case TerrainCameraPreset::Backdrop:
+        return 120.0F;
     case TerrainCameraPreset::Oblique:
     case TerrainCameraPreset::Profile:
     case TerrainCameraPreset::Top:
@@ -68,7 +81,15 @@ float terrain_camera_clearance_m(TerrainCameraPreset preset) {
 }
 
 float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept {
-    return preset == TerrainCameraPreset::Ground ? 12.0F : 220.0F;
+    if (preset == TerrainCameraPreset::Ground) {
+        return 12.0F;
+    }
+    return preset == TerrainCameraPreset::Backdrop ? 80.0F : 220.0F;
+}
+
+float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept {
+    constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
+    return (preset == TerrainCameraPreset::Backdrop ? 40.0F : 60.0F) * degrees_to_radians;
 }
 
 std::string_view terrain_debug_view_name(TerrainDebugView view) {

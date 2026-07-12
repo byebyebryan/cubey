@@ -16,6 +16,7 @@ enum class TerrainCameraPreset : std::uint8_t {
     Surface,
     SurfaceLow,
     Ground,
+    Backdrop,
 };
 
 enum class TerrainDebugView : std::uint8_t {
@@ -43,8 +44,10 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] std::string_view terrain_camera_preset_name(TerrainCameraPreset preset);
 [[nodiscard]] TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name);
 [[nodiscard]] bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept;
+[[nodiscard]] bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] float terrain_camera_clearance_m(TerrainCameraPreset preset);
 [[nodiscard]] float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept;
+[[nodiscard]] float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] std::string_view terrain_debug_view_name(TerrainDebugView view);
 [[nodiscard]] TerrainDebugView terrain_debug_view_from_name(std::string_view name);
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config);
