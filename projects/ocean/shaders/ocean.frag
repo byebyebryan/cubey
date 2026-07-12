@@ -46,23 +46,18 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 moon_light_direction_intensity;
     vec4 moon_light_color;
 } ocean_features;
-layout(set = 0, binding = 20) uniform sampler2D foam_filtered_cascade0_level0_texture;
-layout(set = 0, binding = 21) uniform sampler2D foam_filtered_cascade0_level1_texture;
-layout(set = 0, binding = 22) uniform sampler2D foam_filtered_cascade0_level2_texture;
-layout(set = 0, binding = 23) uniform sampler2D foam_filtered_cascade1_level0_texture;
-layout(set = 0, binding = 24) uniform sampler2D foam_filtered_cascade1_level1_texture;
-layout(set = 0, binding = 25) uniform sampler2D foam_filtered_cascade1_level2_texture;
-layout(set = 0, binding = 26) uniform sampler2D foam_filtered_cascade2_level0_texture;
-layout(set = 0, binding = 27) uniform sampler2D foam_filtered_cascade2_level1_texture;
-layout(set = 0, binding = 28) uniform sampler2D foam_filtered_cascade2_level2_texture;
-layout(set = 0, binding = 29) uniform sampler2D foam_filtered_cascade3_level0_texture;
-layout(set = 0, binding = 30) uniform sampler2D foam_filtered_cascade3_level1_texture;
-layout(set = 0, binding = 31) uniform sampler2D foam_filtered_cascade3_level2_texture;
-layout(set = 0, binding = 32) uniform sampler2D foam_filtered_cascade4_level0_texture;
-layout(set = 0, binding = 33) uniform sampler2D foam_filtered_cascade4_level1_texture;
-layout(set = 0, binding = 34) uniform sampler2D foam_filtered_cascade4_level2_texture;
-layout(set = 0, binding = 35) uniform sampler2D cloud_shadow_transmittance_texture;
-layout(set = 0, binding = 36) uniform sampler2D cloud_reflection_product_texture;
+layout(set = 0, binding = 20) uniform sampler2D normal_moments_cascade0_texture;
+layout(set = 0, binding = 21) uniform sampler2D normal_moments_cascade1_texture;
+layout(set = 0, binding = 22) uniform sampler2D normal_moments_cascade2_texture;
+layout(set = 0, binding = 23) uniform sampler2D normal_moments_cascade3_texture;
+layout(set = 0, binding = 24) uniform sampler2D normal_moments_cascade4_texture;
+layout(set = 0, binding = 25) uniform sampler2D foam_moments_cascade0_texture;
+layout(set = 0, binding = 26) uniform sampler2D foam_moments_cascade1_texture;
+layout(set = 0, binding = 27) uniform sampler2D foam_moments_cascade2_texture;
+layout(set = 0, binding = 28) uniform sampler2D foam_moments_cascade3_texture;
+layout(set = 0, binding = 29) uniform sampler2D foam_moments_cascade4_texture;
+layout(set = 0, binding = 30) uniform sampler2D cloud_shadow_transmittance_texture;
+layout(set = 0, binding = 31) uniform sampler2D cloud_reflection_product_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;

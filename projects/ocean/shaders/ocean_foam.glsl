@@ -69,61 +69,45 @@ vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
                min(1.0, pixels_per_meter * 0.1));
 }
 
-vec4 sample_filtered_foam_level(uint cascade, uint level, vec2 uv) {
+vec4 sample_normal_moments(uint cascade, vec2 uv, float lod) {
     if (cascade == 0u) {
-        if (level == 0u) {
-            return texture(foam_filtered_cascade0_level0_texture, uv);
-        }
-        if (level == 1u) {
-            return texture(foam_filtered_cascade0_level1_texture, uv);
-        }
-        return texture(foam_filtered_cascade0_level2_texture, uv);
+        return textureLod(normal_moments_cascade0_texture, uv, lod);
     }
     if (cascade == 1u) {
-        if (level == 0u) {
-            return texture(foam_filtered_cascade1_level0_texture, uv);
-        }
-        if (level == 1u) {
-            return texture(foam_filtered_cascade1_level1_texture, uv);
-        }
-        return texture(foam_filtered_cascade1_level2_texture, uv);
+        return textureLod(normal_moments_cascade1_texture, uv, lod);
     }
     if (cascade == 2u) {
-        if (level == 0u) {
-            return texture(foam_filtered_cascade2_level0_texture, uv);
-        }
-        if (level == 1u) {
-            return texture(foam_filtered_cascade2_level1_texture, uv);
-        }
-        return texture(foam_filtered_cascade2_level2_texture, uv);
+        return textureLod(normal_moments_cascade2_texture, uv, lod);
     }
     if (cascade == 3u) {
-        if (level == 0u) {
-            return texture(foam_filtered_cascade3_level0_texture, uv);
-        }
-        if (level == 1u) {
-            return texture(foam_filtered_cascade3_level1_texture, uv);
-        }
-        return texture(foam_filtered_cascade3_level2_texture, uv);
+        return textureLod(normal_moments_cascade3_texture, uv, lod);
     }
-    if (level == 0u) {
-        return texture(foam_filtered_cascade4_level0_texture, uv);
+    return textureLod(normal_moments_cascade4_texture, uv, lod);
+}
+
+vec4 sample_foam_moments(uint cascade, vec2 uv, float lod) {
+    if (cascade == 0u) {
+        return textureLod(foam_moments_cascade0_texture, uv, lod);
     }
-    if (level == 1u) {
-        return texture(foam_filtered_cascade4_level1_texture, uv);
+    if (cascade == 1u) {
+        return textureLod(foam_moments_cascade1_texture, uv, lod);
     }
-    return texture(foam_filtered_cascade4_level2_texture, uv);
+    if (cascade == 2u) {
+        return textureLod(foam_moments_cascade2_texture, uv, lod);
+    }
+    if (cascade == 3u) {
+        return textureLod(foam_moments_cascade3_texture, uv, lod);
+    }
+    return textureLod(foam_moments_cascade4_texture, uv, lod);
 }
 
 vec4 sample_filtered_foam(uint cascade, vec2 position, float tile_length, float footprint_m) {
     float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
     float source_texel_footprint = max(2.0, footprint_m * pixels_per_meter);
-    float filter_level = clamp(log2(source_texel_footprint) - 1.0, 0.0, 2.0);
-    uint level0 = uint(floor(filter_level));
-    uint level1 = min(level0 + 1u, 2u);
+    float max_lod = max(log2(cascade_map_size(cascade)) - 1.0, 0.0);
+    float filter_level = clamp(log2(source_texel_footprint) - 1.0, 0.0, max_lod);
     vec2 uv = position / tile_length;
-    return mix(sample_filtered_foam_level(cascade, level0, uv),
-               sample_filtered_foam_level(cascade, level1, uv), fract(filter_level));
+    return sample_foam_moments(cascade, uv, filter_level);
 }
 
 bool ocean_detail_anti_repeat_enabled(float factor) {

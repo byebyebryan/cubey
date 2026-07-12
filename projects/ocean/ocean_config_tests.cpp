@@ -173,6 +173,12 @@ int main() {
         require(ocean::ocean_is_supported_map_size(1024), "ocean should support 1024 maps");
         require(!ocean::ocean_is_supported_map_size(192),
                 "ocean should reject non-reference map sizes");
+        require(ocean::ocean_surface_moment_level_count(128U) == 7U &&
+                    ocean::ocean_surface_moment_level_count(1024U) == 10U,
+                "surface moment pyramids should cover every supported map down to one texel");
+        require(ocean::ocean_surface_moment_level_size(512U, 0U) == 256U &&
+                    ocean::ocean_surface_moment_level_size(512U, 8U) == 1U,
+                "surface moment levels should halve from the source map to one texel");
         require(defaults.mesh_cells >= ocean::kOceanMinMeshCells &&
                     defaults.mesh_cells <= ocean::kOceanMaxMeshCells,
                 "default mesh resolution should be in supported range");
@@ -1053,6 +1059,8 @@ int main() {
             read_text_file(source_root / "shaders/ocean_modulate_body.glsl");
         const std::string unpack_shader =
             read_text_file(source_root / "shaders/ocean_unpack_body.glsl");
+        const std::string surface_moment_shader =
+            read_text_file(source_root / "shaders/ocean_surface_moment_filter_body.glsl");
         const std::string spectrum_entry =
             read_text_file(source_root / "shaders/ocean_spectrum.comp");
         const std::string spectrum_half_entry =
@@ -1131,6 +1139,16 @@ int main() {
         require_contains(unpack_shader,
                          "imageStore(foam_image, id, vec4(persistent, current_source",
                          "unpack shader should write persistent and current foam separately");
+        require_contains(surface_moment_shader, "dot(value.xy, value.xy)",
+                         "surface moment filter should preserve unresolved normal variance");
+        require_contains(surface_moment_shader, "value.x * value.x, value.y * value.y",
+                         "surface moment filter should preserve foam first and second moments");
+        require_contains(gpu_resources_source, "kOceanSurfaceNormalMomentBinding",
+                         "surface descriptors should expose normal moment pyramids");
+        require_contains(gpu_resources_source, "kOceanSurfaceFoamMomentBinding",
+                         "surface descriptors should expose foam moment pyramids");
+        require_contains(app_source, "record_surface_moments",
+                         "ocean compute should rebuild surface moment pyramids after unpacking");
         require_contains(vertex_shader, "float cascade_displacement_lod_weight",
                          "vertex shader should apply per-cascade displacement LOD weights");
         require_contains(vertex_shader, "float cascade_distance_lod_weight",

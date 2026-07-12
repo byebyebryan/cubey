@@ -82,7 +82,8 @@ inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U
 inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
 inline constexpr std::uint32_t kOceanCascadeCount = 5U;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 2U;
-inline constexpr std::uint32_t kOceanFoamFilterLevelCount = 3U;
+inline constexpr std::uint32_t kOceanSurfaceMomentKindCount = 2U;
+inline constexpr std::uint32_t kOceanSurfaceMomentMaxLevelCount = 10U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
@@ -470,21 +471,35 @@ struct OceanCascadeLodBand {
     return std::max(1U, config.cascade_update_intervals[cascade]);
 }
 
-[[nodiscard]] inline std::uint32_t ocean_foam_filter_level_size(std::uint32_t map_size,
-                                                                std::uint32_t level) {
-    if (level >= kOceanFoamFilterLevelCount) {
-        throw std::runtime_error("ocean foam filter level index out of range");
+[[nodiscard]] inline std::uint32_t ocean_surface_moment_level_count(std::uint32_t map_size) {
+    if (!ocean_is_power_of_two(map_size) || map_size < 2U) {
+        throw std::runtime_error("ocean surface moment map size must be a power of two");
     }
-    return std::max(16U, map_size >> (level + 1U));
+    std::uint32_t level_count = 0U;
+    for (std::uint32_t size = map_size; size > 1U; size >>= 1U) {
+        ++level_count;
+    }
+    if (level_count > kOceanSurfaceMomentMaxLevelCount) {
+        throw std::runtime_error("ocean surface moment level count exceeds storage capacity");
+    }
+    return level_count;
 }
 
-[[nodiscard]] inline std::uint32_t ocean_foam_filter_level_size(const OceanConfig& config,
-                                                                std::uint32_t cascade,
-                                                                std::uint32_t level) {
+[[nodiscard]] inline std::uint32_t ocean_surface_moment_level_size(std::uint32_t map_size,
+                                                                   std::uint32_t level) {
+    if (level >= ocean_surface_moment_level_count(map_size)) {
+        throw std::runtime_error("ocean surface moment level index out of range");
+    }
+    return std::max(1U, map_size >> (level + 1U));
+}
+
+[[nodiscard]] inline std::uint32_t ocean_surface_moment_level_size(const OceanConfig& config,
+                                                                   std::uint32_t cascade,
+                                                                   std::uint32_t level) {
     if (cascade >= kOceanCascadeCount) {
         throw std::runtime_error("ocean cascade index out of range");
     }
-    return ocean_foam_filter_level_size(ocean_cascade_map_size(config, cascade), level);
+    return ocean_surface_moment_level_size(ocean_cascade_map_size(config, cascade), level);
 }
 
 [[nodiscard]] inline OceanCascadeLodBand ocean_cascade_lod_band(const OceanConfig& config,
