@@ -2,9 +2,9 @@
 
 Date: 2026-07-11
 
-Status: implemented v1 checkpoint. The previous CPU patch and analytical
-landscape work is preserved in `projects/terrain_hydrology_lab`; it is not the
-terrain v1 product.
+Status: implemented v1 source and rendering checkpoint. The previous CPU patch
+and analytical landscape work is preserved in
+`projects/terrain_hydrology_lab`; it is not the terrain v1 product.
 
 ## Goal
 
@@ -81,17 +81,25 @@ tests the boundary.
 The standalone renderer samples height in the vertex shader over a
 camera-centered clipmap. The v1 default is eight LOD levels, 128 cells per axis,
 a 2 m near cell, and about 16 km of outer radius. All levels use one origin
-snapped to that finest grid. Geometry stays fixed while source coordinates and
-query footprints transition toward the parent grid. Every fragment has one LOD
-owner; a one-parent-cell raster guard and downward boundary skirts cover
-T-junction rasterization without restoring broad overlapping rings.
+snapped to that finest grid. Ring overlap is an exact eleven parent cells so
+patch spans retain their advertised power-of-two cell spacing. Transition
+vertices collapse in `xz` while their source footprint moves toward the parent
+grid; height-only snapping is not sufficient to close T-junctions. Every
+fragment has one LOD owner, while a one-parent-cell raster guard and downward
+boundary skirts cover residual rasterization gaps.
 
-The scene uses the shared atmosphere for sky and lighting, a project-local
-surface camera whose clearance is maintained through CPU queries, and a
-procedural material based on height, slope, and coherent color/normal detail.
-Snow selection uses physical elevation rather than normalized per-preset
-height. Materials are presentation only; they do not become terrain truth. Cast
-terrain shadows are outside this first slice.
+The scene uses the shared atmosphere integrator for sky and camera-to-surface
+aerial perspective. Diffuse-irradiance spherical harmonics and the atmosphere
+primary light feed a project-local dielectric GGX response. Broad direct-light
+visibility comes from logarithmic samples of the clean terrain source toward
+the light; it is heightfield self-shadowing, not a general scene shadow map.
+
+The procedural material uses physical elevation, source slope, multi-scale
+coherent variation, and per-layer roughness. Snow selection uses physical
+elevation rather than normalized per-preset height. Material relief is filtered
+from projected pixel footprint and contributes only a restrained normal
+perturbation, so it cannot alter geometry or advertise LOD boundaries. Materials
+remain presentation only; they do not become terrain truth.
 
 ## Configuration And Diagnostics
 
@@ -104,10 +112,12 @@ The public run controls are:
 - existing terrain camera, cell-size, and vertical-scale controls.
 
 The terrain app supports final surface, base/final height, slope, weathering
-delta, and LOD views with top, oblique, and surface cameras. Small bounded CPU
-sample grids are allowed for tests, statistics, and review metadata. The old
-raw-field exporter remains with the hydrology lab; terrain v1 does not emit a
-baked terrain product.
+delta, LOD, neutral clay, direct visibility, and aerial-transmittance views.
+Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
+shape review from eye-level rendering and LOD review. Small bounded CPU sample
+grids are allowed for tests, statistics, and review metadata. The old raw-field
+exporter remains with the hydrology lab; terrain v1 does not emit a baked
+terrain product.
 
 Headless surface video advances the camera at a deterministic fixed forward
 speed while re-querying terrain clearance every frame. Orbit-camera video keeps

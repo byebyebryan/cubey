@@ -2,8 +2,8 @@
 
 Date: 2026-07-11
 
-Status: approved rendering-first study. The terrain source is frozen until this
-study produces a new visual review pack.
+Status: completed rendering-first checkpoint. The terrain source remained
+frozen and byte-identical throughout the study.
 
 ## Problem
 
@@ -87,3 +87,50 @@ performance contract.
   high-frequency noise field.
 - The source summary remains byte-identical to the v1 checkpoint.
 
+## Outcome
+
+The study landed a true two-meter ground camera, source-only clay diagnostics,
+shared atmosphere segment transport, directional sky irradiance, broad
+heightfield self-shadowing, and a linear-space procedural dielectric material.
+The final material uses projected pixel footprint rather than discrete clipmap
+level to filter relief and blends that relief normal at `20%`; broad terrain
+shape remains authoritative.
+
+Ground review exposed two renderer defects that the earlier high camera hid.
+Ring overlap was not an integer number of cells, and transition vertices moved
+only in height while retaining their fine-grid `xz`. Terrain now uses an exact
+eleven-parent-cell overlap, verifies every patch span against its advertised
+cell size, and collapses transition vertices onto the parent grid in both
+position and height. The regenerated eight-second traversal no longer shows the
+long dark LOD bands from the first review attempt.
+
+Generate the accepted pack with:
+
+```sh
+projects/terrain/capture_rendering_review.sh
+```
+
+It replaces `outputs/terrain/rendering-refinement/` with:
+
+- `terrain-rendering-clay-sun-sheet.png`: three seeds by three low-sun azimuths;
+- `terrain-rendering-final-sheet.png`: all three presets by three seeds;
+- `terrain-rendering-diagnostics-sheet.png`: final, clay, shadow, and aerial
+  views from oblique and ground cameras;
+- `terrain-rendering-ground-sheet.png`: all presets at two- and one-meter near
+  cells;
+- `terrain-rendering-control-sheet.png`: TerrainEngine control and terrain v1;
+- `terrain-rendering-ground-traversal.mp4`: eight seconds and 96 m at ground
+  speed;
+- profile records, review metadata, and the frozen source summary.
+
+The source-summary SHA-256 remains
+`5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb`.
+A 60-frame `960 x 540` run took `8.270 s` including startup, while a 600-frame
+run took `12.088 s`. Their incremental difference is about `7.07 ms/frame`,
+including capture submission, readback, and encoding, below the `33.3 ms/frame`
+study budget. Startup remains a separate roughly 7.5-second cost.
+
+The result is a clearer evaluation renderer, not a final terrain art direction.
+Oblique views correctly retain strong atmospheric haze over the roughly 12 km
+camera span, generic ground material remains intentionally sparse without
+foliage, and heightfield visibility does not replace future scene shadowing.

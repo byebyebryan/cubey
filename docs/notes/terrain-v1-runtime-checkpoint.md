@@ -13,17 +13,18 @@ combines macro, structure, and detail bands for the `mountain`, `upland`, and
 queries and the GLSL evaluator.
 
 The renderer samples that source directly over an eight-level camera-centered
-clipmap. It includes footprint filtering, snapped levels with transition morph,
-shared atmosphere and HDR composition, procedural height/slope material
-selection, footprint-filtered material normals, surface traversal with CPU
-clearance queries, and neutral source/debug views. No baked heightfield is
+clipmap. It includes footprint filtering, topology-aligned transition morph,
+shared atmosphere and HDR composition, heightfield self-shadowing, procedural
+linear-space materials, surface and ground traversal with CPU clearance
+queries, and neutral source/component diagnostics. No baked heightfield is
 needed for normal rendering.
 
 The closure pass gives every visible fragment one LOD owner. Clipmap levels use
-one finest-grid-snapped origin, transition source samples and footprints toward
-the parent grid, and cover boundary raster gaps with narrow downward skirts.
-The result removes the broad terrain-shaped LOD interleaving from the checkpoint
-baseline without exposing sky cracks during movement.
+one finest-grid-snapped origin, an exact eleven-parent-cell overlap, transition
+positions and source footprints toward the parent grid, and cover residual
+boundary raster gaps with narrow downward skirts. The rendering refinement
+pack verifies the handoff from a two-meter eye-level camera as well as the
+original high surface camera.
 
 Optional `local` weathering is a bounded finite-neighborhood detail transform.
 It deliberately has no drainage, flow, sediment, or regional state. The old
@@ -93,9 +94,12 @@ screen footprint; it does not alter CPU height, collision, or silhouette.
   every sampled frame retains the requested terrain clearance.
 
 This is a credible rendering and engine-consumer terrain baseline, not a claim
-of geomorphological simulation. Materials are still generic, terrain casts no
-shadows, and vegetation, water bodies, persistence, planet projection, and
-regional hydrology remain outside v1.
+of geomorphological simulation. Materials remain generic, self-shadowing sees
+only the terrain heightfield, and vegetation, water bodies, persistence, planet
+projection, general scene shadows, and regional hydrology remain outside v1.
+
+The separate rendering checkpoint and its deterministic review pack are
+documented in [`terrain-rendering-refinement.md`](terrain-rendering-refinement.md).
 
 ## Next Decision
 
@@ -118,8 +122,8 @@ cmake --build --preset dev -j 8
 ctest --preset dev --output-on-failure
 ```
 
-The full build completed, and all `200/200` tests passed in `998.27 s`. That run
-includes the nine active terrain tests, the twelve archived hydrology-lab tests,
-CPU/shared procedural parity, Vulkan terrain source parity, windowed smoke,
-oblique and surface PNG captures, and the unrelated atmosphere, cloud, ocean,
-planet, reference, and legacy project gates.
+The full build completed, and all `212/212` tests passed in `1058.79 s`. That
+run includes the 21 terrain-labeled tests, the twelve archived hydrology-lab
+tests, CPU/shared procedural parity, Vulkan terrain source parity, windowed
+smoke, oblique/surface/ground component captures, both terrain videos, and the
+unrelated atmosphere, cloud, ocean, planet, fluid, reference, and legacy gates.
