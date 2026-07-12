@@ -34,6 +34,7 @@ target_link_libraries(
 
 add_library(cubey_project_terrain_render_support STATIC
     terrain_clipmap.cpp
+    terrain_environment_gpu.cpp
     terrain_surface_controller.cpp
 )
 target_include_directories(
@@ -74,7 +75,10 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        shaders/terrain_environment.glsl
         shaders/terrain_source.glsl
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/fastnoise_lite.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"

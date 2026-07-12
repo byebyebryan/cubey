@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/procedural/noise.glsl"
+#include "terrain_environment.glsl"
 #include "terrain_source.glsl"
 
 layout(set = 0, binding = 0, std140) uniform TerrainSourceUniforms {
@@ -11,9 +12,7 @@ layout(set = 0, binding = 0, std140) uniform TerrainSourceUniforms {
 layout(push_constant) uniform TerrainPushConstants {
     mat4 view_projection;
     vec4 camera_position_vertical_scale;
-    vec4 light_direction_intensity;
-    vec4 light_color_debug_view;
-    vec4 ambient_color_outer_extent;
+    vec4 render_options;
 } pc;
 
 layout(location = 0) in vec3 frag_world_position;
@@ -107,7 +106,7 @@ void main() {
             max(terrain_uniforms.source.elevation.y, 1.0),
         0.0, 1.0);
     float slope = 1.0 - clamp(source_normal.y, 0.0, 1.0);
-    int debug_view = int(round(pc.light_color_debug_view.w));
+    int debug_view = int(round(pc.render_options.x));
 
     if (debug_view == 1) {
         vec3 low = vec3(0.08, 0.18, 0.26);
@@ -146,7 +145,7 @@ void main() {
         return;
     }
 
-    if (debug_view == 7 || debug_view == 8) {
+    if (debug_view == 7) {
         out_color = vec4(1.0);
         return;
     }
@@ -173,17 +172,19 @@ void main() {
     if (clay_view) {
         base_color = vec3(0.42);
     }
-    vec3 light_direction = normalize(pc.light_direction_intensity.xyz);
+    vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     float diffuse = max(dot(normal, light_direction), 0.0);
-    vec3 sun = pc.light_color_debug_view.xyz *
-        (pc.light_direction_intensity.w * diffuse);
-    vec3 ambient = pc.ambient_color_outer_extent.xyz *
-        (0.72 + 0.28 * clamp(normal.y, 0.0, 1.0));
+    vec3 sun = atmosphere.primary_light_color_angular_radius.xyz *
+        (atmosphere.primary_light_direction_intensity.w * diffuse);
+    vec3 ambient = terrain_diffuse_irradiance(normal);
     vec3 color = base_color * (ambient + sun);
 
-    float camera_distance = distance(pc.camera_position_vertical_scale.xyz, frag_world_position);
-    float fog = smoothstep(pc.ambient_color_outer_extent.w * 0.52,
-        pc.ambient_color_outer_extent.w * 1.15, camera_distance);
-    color = mix(color, vec3(0.46, 0.58, 0.68), fog * 0.52);
+    CubeyAtmosphereSample aerial = terrain_aerial_perspective(
+        pc.camera_position_vertical_scale.xyz, frag_world_position);
+    if (debug_view == 8) {
+        out_color = vec4(aerial.transmittance, 1.0);
+        return;
+    }
+    color = color * aerial.transmittance + aerial.color;
     out_color = vec4(color, 1.0);
 }

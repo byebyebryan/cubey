@@ -10,9 +10,7 @@ layout(set = 0, binding = 0, std140) uniform TerrainSourceUniforms {
 layout(push_constant) uniform TerrainPushConstants {
     mat4 view_projection;
     vec4 camera_position_vertical_scale;
-    vec4 light_direction_intensity;
-    vec4 light_color_debug_view;
-    vec4 ambient_color_outer_extent;
+    vec4 render_options;
 } pc;
 
 layout(location = 0) in vec3 in_position;

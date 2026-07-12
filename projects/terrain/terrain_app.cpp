@@ -2,6 +2,7 @@
 
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
+#include "terrain_environment_gpu.h"
 #include "terrain_source_gpu.h"
 #include "terrain_surface_controller.h"
 
@@ -56,13 +57,11 @@ struct TerrainCameraFrame {
 struct TerrainPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 camera_position_vertical_scale{0.0F, 0.0F, 0.0F, 1.0F};
-    cubey::math::Vec4 light_direction_intensity{0.38F, 0.82F, 0.42F, 1.0F};
-    cubey::math::Vec4 light_color_debug_view{1.0F, 0.94F, 0.82F, 0.0F};
-    cubey::math::Vec4 ambient_color_outer_extent{0.16F, 0.19F, 0.23F, 16'384.0F};
+    cubey::math::Vec4 render_options{0.0F, 16'384.0F, 0.0F, 0.0F};
 };
 
 static_assert(sizeof(TerrainPushConstants) ==
-              sizeof(cubey::math::Mat4) + 4U * sizeof(cubey::math::Vec4));
+              sizeof(cubey::math::Mat4) + 2U * sizeof(cubey::math::Vec4));
 static_assert(sizeof(TerrainPushConstants) <= 128U);
 
 struct CompiledTerrainGraph {
@@ -86,6 +85,18 @@ struct CompiledTerrainGraph {
             {
                 cubey::render::MaterialDescriptorSetLayout{
                     .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 0,
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 1,
                     .bindings =
                         {
                             cubey::vulkan::DescriptorSetBindingConfig{
@@ -362,6 +373,13 @@ class TerrainApp {
                                              .frame_slot_count = frame_slot_count,
                                              .uniform_binding = 0,
                                          });
+        environment_material_.emplace(
+            device, cubey::render::FrameUniformMaterialInstanceConfig{
+                        .material_pass = terrain_pass_info(),
+                        .descriptor_set = 1,
+                        .frame_slot_count = frame_slot_count,
+                        .uniform_binding = 0,
+                    });
         atmosphere_atlases_.emplace(cubey::render::create_atmosphere_background_generated_textures(
             device, gpu, {.night_sky_extent = 64U}));
         atmosphere_background_.create_materials(
@@ -379,8 +397,9 @@ class TerrainApp {
         };
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_input_layout();
-        const std::array<VkDescriptorSetLayout, 1> terrain_descriptor_set_layouts{
+        const std::array<VkDescriptorSetLayout, 2> terrain_descriptor_set_layouts{
             source_material().layout(),
+            environment_material().layout(),
         };
         terrain_pass_.emplace(
             device,
@@ -436,6 +455,7 @@ class TerrainApp {
         atmosphere_background_.destroy();
         atmosphere_atlases_.reset();
         source_material_.reset();
+        environment_material_.reset();
         mesh_.reset();
         global_resources_created_ = false;
     }
@@ -466,10 +486,6 @@ class TerrainApp {
     }
 
     [[nodiscard]] TerrainPushConstants push_constants(VkExtent2D extent) const {
-        const cubey::render::AtmosphereEnvironmentLighting lighting =
-            cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
-        const cubey::math::Vec3 ambient =
-            lighting.ambient_color * std::max(lighting.ambient_intensity, 0.1F);
         return {
             .view_projection =
                 camera_.view_projection_matrix(frame_camera_transform_, aspect(extent)),
@@ -477,16 +493,8 @@ class TerrainApp {
                                                frame_camera_transform_.translation.y,
                                                frame_camera_transform_.translation.z,
                                                runtime_config_.vertical_scale},
-            .light_direction_intensity = {lighting.primary_light_direction.x,
-                                          lighting.primary_light_direction.y,
-                                          lighting.primary_light_direction.z,
-                                          std::max(lighting.primary_light_intensity * 0.68F, 0.1F)},
-            .light_color_debug_view = {lighting.primary_light_color.x,
-                                       lighting.primary_light_color.y,
-                                       lighting.primary_light_color.z,
-                                       terrain_debug_view_id(runtime_config_.debug_view)},
-            .ambient_color_outer_extent = {ambient.x * 0.52F, ambient.y * 0.52F, ambient.z * 0.52F,
-                                           clipmap_config_.outer_half_extent},
+            .render_options = {terrain_debug_view_id(runtime_config_.debug_view),
+                               clipmap_config_.outer_half_extent, 0.0F, 0.0F},
         };
     }
 
@@ -530,6 +538,8 @@ class TerrainApp {
                                terrain_forward_pass().pipeline().pipeline());
         cubey::render::bind_material_instance(recorder, terrain_forward_pass().pipeline(),
                                               source_material().material(), frame_slot);
+        cubey::render::bind_material_instance(recorder, terrain_forward_pass().pipeline(),
+                                              environment_material().material(), frame_slot);
         recorder.push_constants(terrain_forward_pass().pipeline().layout(),
                                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                 push_constants(color.extent));
@@ -590,7 +600,13 @@ class TerrainApp {
                        cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
         frame_camera_transform_ = current_camera_transform();
         source_material().upload(frame_slot, terrain_source_gpu_parameters(source_parameters_));
-        atmosphere_background_.upload(frame_slot, atmosphere_uniforms(target.extent));
+        const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere_frame =
+            atmosphere_uniforms(target.extent);
+        const cubey::render::AtmosphereEnvironmentLighting lighting =
+            cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+        environment_material().upload(
+            frame_slot, terrain_environment_gpu_parameters(atmosphere_frame, lighting));
+        atmosphere_background_.upload(frame_slot, atmosphere_frame);
         hdr_post_frame_.upload(frame_slot,
                                cubey::render::hdr_post_uniforms(target.format, display_exposure()));
 
@@ -634,6 +650,15 @@ class TerrainApp {
         return source_material_.value();
     }
 
+    [[nodiscard]]
+    const cubey::render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>&
+    environment_material() const {
+        if (!environment_material_.has_value()) {
+            throw std::runtime_error("terrain environment material is not initialized");
+        }
+        return environment_material_.value();
+    }
+
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainSourceParameters source_parameters_{};
@@ -649,6 +674,8 @@ class TerrainApp {
     std::optional<cubey::render::Mesh> mesh_{};
     std::optional<cubey::render::FrameUniformMaterialInstance<TerrainSourceGpuParameters>>
         source_material_{};
+    std::optional<cubey::render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>>
+        environment_material_{};
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_atlases_{};
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};

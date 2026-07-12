@@ -1,5 +1,6 @@
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
+#include "terrain_environment_gpu.h"
 #include "terrain_surface_controller.h"
 
 #include <cubey/core/run_config.h>
@@ -62,6 +63,24 @@ void test_ground_camera_and_shape_diagnostics_parse() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("aerial") ==
                 cubey::projects::terrain::TerrainDebugView::AerialTransmittance,
             "terrain runtime should parse the aerial diagnostic alias");
+}
+
+void test_environment_gpu_parameters_preserve_atmosphere_lighting() {
+    cubey::render::AtmosphereEnvironmentConfig environment{};
+    environment.sun_elevation_degrees = 12.0F;
+    environment.sun_azimuth_degrees = -35.0F;
+    const auto frame = cubey::render::atmosphere_environment_frame_uniforms(environment, {});
+    const auto lighting = cubey::render::atmosphere_environment_lighting(environment);
+    const auto gpu = cubey::projects::terrain::terrain_environment_gpu_parameters(frame, lighting);
+    require_near(gpu.primary_light_direction_intensity.x,
+                 lighting.primary_light_direction.x, 0.0001F,
+                 "terrain environment should preserve primary light direction");
+    require_near(gpu.primary_light_direction_intensity.w, lighting.primary_light_intensity,
+                 0.0001F, "terrain environment should preserve primary light intensity");
+    require_near(gpu.primary_light_color_angular_radius.w, frame.sun_direction_radius.w,
+                 0.0001F, "terrain daylight should preserve the sun angular radius");
+    require_near(gpu.diffuse_irradiance_sh[0].x, lighting.diffuse_irradiance_sh[0].x,
+                 0.0001F, "terrain environment should preserve diffuse irradiance SH");
 }
 
 void test_clipmap_has_expected_extent_and_transition_data() {
@@ -174,6 +193,7 @@ int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
         test_ground_camera_and_shape_diagnostics_parse();
+        test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();
         test_surface_controller_traversal_preserves_clearance();
         test_ground_controller_uses_walking_scale_speed();
