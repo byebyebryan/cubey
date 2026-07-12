@@ -56,7 +56,8 @@ cube refreshed at 4 Hz with 32 cloud-march steps.
 are available through config, CLI, and the ocean Shading panel; Diagnostics
 reports readiness, generation, crossfade, and capture age. Until the first
 coherent capture completes, both cached descriptors point to the clear
-atmosphere reflection probe. Cached sampling uses a one-mip stability bias;
+atmosphere reflection probe. Cached sampling uses squared roughness with a small
+fractional-mip stability bias so the 64-pixel cache does not over-blur moderate seas;
 hybrid restores the bounded current-view product inside its valid projection.
 
 Ocean consumes sun and moon lighting independently. Its dynamic atmosphere
@@ -128,12 +129,12 @@ hybrid run kept cloud march and ocean-scene costs within normal run variance.
 
 | Cached environment work | Average GPU time |
 |---|---:|
-| Scheduler/pass across all frames | 0.148 ms/frame |
-| Active coherent six-face capture | 1.266 ms/capture |
+| Scheduler/pass across all frames | 0.135 ms/frame |
+| Active coherent six-face capture | 1.151 ms/capture |
 | Active captures observed | 9 / 77 timed frames |
 
 The hybrid capture's mean absolute frame-to-frame luma delta was 0.044 with a
-0.478 maximum in an H.264 signal-stat pass, versus 0.060 / 0.599 for the
+0.467 maximum in an H.264 signal-stat pass, versus 0.060 / 0.599 for the
 current-view run. This is a coarse discontinuity guard, not a perceptual motion
 metric, but it found no whole-environment flash at capture boundaries.
 

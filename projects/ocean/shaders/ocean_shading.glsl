@@ -472,7 +472,8 @@ OceanCloudReflectionSample ocean_current_view_cloud_reflection(vec3 direction, f
 vec3 ocean_cached_cloud_reflection(vec3 direction, float roughness) {
     vec3 dir = ocean_above_horizon_reflection_direction(direction);
     float max_lod = ocean_cloud_environment_max_lod();
-    float lod = min(max_lod, clamp(roughness, 0.0, 1.0) * max_lod + 1.0);
+    float filtered_roughness = clamp(roughness, 0.0, 1.0);
+    float lod = min(max_lod, filtered_roughness * filtered_roughness * max_lod + 0.25);
     vec3 previous = textureLod(cloud_environment_previous_texture, dir, lod).rgb;
     vec3 current = textureLod(cloud_environment_current_texture, dir, lod).rgb;
     return mix(previous, current, ocean_cloud_environment_blend());

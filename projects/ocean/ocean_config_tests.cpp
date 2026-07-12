@@ -1890,7 +1890,7 @@ int main() {
                          "ocean surface shader should sample the current cached environment");
         require_contains(fragment_shader, "ocean_cached_cloud_reflection",
                          "ocean surface shader should select a roughness-filtered cached environment");
-        require_contains(fragment_shader, "* max_lod + 1.0",
+        require_contains(fragment_shader, "filtered_roughness * filtered_roughness * max_lod + 0.25",
                          "cached cloud reflections should bias toward stable broad response");
         require_contains(fragment_shader, "current_view_detail = cloud_reflection_sample.visibility",
                          "hybrid reflections should preserve current-view detail where available");
