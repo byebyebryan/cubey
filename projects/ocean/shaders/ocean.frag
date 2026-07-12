@@ -456,8 +456,7 @@ void main() {
         selected_cloud_reflection = cached_reflection;
         selected_cloud_sky_reflection = cached_reflection;
     } else if (cloud_reflection_source == 2) {
-        float current_view_detail =
-            cloud_reflection_sample.visibility * (1.0 - smoothstep(0.20, 0.45, roughness));
+        float current_view_detail = cloud_reflection_sample.visibility;
         selected_cloud_reflection =
             mix(cached_reflection, current_clouded_environment_reflection, current_view_detail);
         selected_cloud_sky_reflection =

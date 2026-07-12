@@ -1890,8 +1890,10 @@ int main() {
                          "ocean surface shader should sample the current cached environment");
         require_contains(fragment_shader, "ocean_cached_cloud_reflection",
                          "ocean surface shader should select a roughness-filtered cached environment");
-        require_contains(fragment_shader, "smoothstep(0.20, 0.45, roughness)",
-                         "hybrid reflections should reserve current-view detail for sharp facets");
+        require_contains(fragment_shader, "* max_lod + 1.0",
+                         "cached cloud reflections should bias toward stable broad response");
+        require_contains(fragment_shader, "current_view_detail = cloud_reflection_sample.visibility",
+                         "hybrid reflections should preserve current-view detail where available");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u",
                          "ocean surface shader should expose cloud reflection diagnostics");
         require_contains(fragment_shader, "ocean_filtered_cloud_reflection_product",

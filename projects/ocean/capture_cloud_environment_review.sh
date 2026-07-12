@@ -9,6 +9,7 @@ HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-18}"
 MAP_SIZE="${MAP_SIZE:-512}"
 PROBE_EXTENT="${PROBE_EXTENT:-64}"
+DEBUG_VIEW="${DEBUG_VIEW:-final}"
 
 mkdir -p "${OUT_DIR}"
 printf 'file\ttitle\tsource\ttime\n' >"${OUT_DIR}/manifest.tsv"
@@ -32,7 +33,7 @@ capture() {
         --ocean-cloud-reflection-source "${source}" \
         --ocean-cloud-environment-extent "${PROBE_EXTENT}" \
         --ocean-cloud-environment-update-hz 4 \
-        --debug-view reflection \
+        --debug-view "${DEBUG_VIEW}" \
         --output "${OUT_DIR}/${name}.png"
     printf '%s\t%s\t%s\t%s\n' "${name}.png" "${title}" "${source}" "${time}" \
         >>"${OUT_DIR}/manifest.tsv"

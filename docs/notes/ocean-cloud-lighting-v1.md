@@ -49,14 +49,15 @@ cube refreshed at 4 Hz with 32 cloud-march steps.
   the default, so the cached probe adds no recurring work unless requested.
 - `cached` samples only the roughness-filtered cloud environment and therefore
   covers offscreen directions without screen-edge falloff.
-- `hybrid` uses the cache as the broad base and overlays current-view detail on
-  sharp facets below roughly 0.45 roughness.
+- `hybrid` uses the cache as the broad/offscreen base and overlays the existing
+  filtered current-view product wherever that projection is valid.
 
 `cloud-reflection` displays the selected source. Probe extent and update rate
 are available through config, CLI, and the ocean Shading panel; Diagnostics
 reports readiness, generation, crossfade, and capture age. Until the first
 coherent capture completes, both cached descriptors point to the clear
-atmosphere reflection probe.
+atmosphere reflection probe. Cached sampling uses a one-mip stability bias;
+hybrid restores the bounded current-view product inside its valid projection.
 
 Ocean consumes sun and moon lighting independently. Its dynamic atmosphere
 probe uses coherent full-cube updates so a reflective surface never samples six
@@ -120,6 +121,22 @@ not a portable frame-rate benchmark.
 | Ocean scene | 1.025 ms |
 | Coherent atmosphere probe update | 0.774 ms |
 
+The cached cloud environment was separately measured over 80 post-warmup
+frames in a 960x540, 30 fps headless-video run with a 128 ocean map, 64-pixel
+probe, 32 probe march steps, and 4 Hz refresh. The current-view baseline and
+hybrid run kept cloud march and ocean-scene costs within normal run variance.
+
+| Cached environment work | Average GPU time |
+|---|---:|
+| Scheduler/pass across all frames | 0.148 ms/frame |
+| Active coherent six-face capture | 1.266 ms/capture |
+| Active captures observed | 9 / 77 timed frames |
+
+The hybrid capture's mean absolute frame-to-frame luma delta was 0.044 with a
+0.478 maximum in an H.264 signal-stat pass, versus 0.060 / 0.599 for the
+current-view run. This is a coarse discontinuity guard, not a perceptual motion
+metric, but it found no whole-environment flash at capture boundaries.
+
 An incremental one-face atmosphere update measured 0.149 ms in the same test,
 but caused a six-frame luminance sawtooth at dawn. Coherent updates deliberately
 spend about 0.62 ms more to remove that discontinuity. The detailed shadow pass
@@ -134,6 +151,10 @@ remains negligible at this resolution.
 - The reflection input is the cloud march product, before the visible
   compositor's metadata-aware edge resolve and final look pass. This limits
   exact visual agreement between reflected and directly visible clouds.
+- The 64-pixel cache is intentionally a broad environment product. Its isolated
+  `cached` mode can reveal low-resolution horizon blocks on sharp facets;
+  `hybrid` is the practical combined path because it replaces those in-view
+  samples while retaining cached offscreen coverage.
 - The shadow projection follows a bounded local receiver plane. It is not a
   cascaded planet-scale weather shadow system.
 - One local shadow projection cannot preserve both near detail and the entire
