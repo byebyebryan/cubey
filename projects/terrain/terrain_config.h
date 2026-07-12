@@ -30,6 +30,7 @@ enum class TerrainDebugView : std::uint8_t {
     Shadow,
     AerialTransmittance,
     VegetationCoverage,
+    Normal,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {

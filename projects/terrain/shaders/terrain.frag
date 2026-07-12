@@ -21,7 +21,7 @@ layout(location = 1) in float frag_base_height_m;
 layout(location = 2) in float frag_height_m;
 layout(location = 3) in float frag_weathering_delta_m;
 layout(location = 4) flat in float frag_lod;
-layout(location = 5) in vec3 frag_source_normal;
+layout(location = 5) in vec2 frag_base_gradient_xz;
 layout(location = 6) flat in float frag_child_half_extent_m;
 layout(location = 7) flat in float frag_origin_snap_m;
 layout(location = 8) flat in float frag_cell_size_m;
@@ -58,8 +58,25 @@ vec3 terrain_lod_color(float value) {
     return colors[index];
 }
 
+vec2 terrain_weathering_gradient_xz() {
+    vec2 position_dx = dFdx(frag_world_position.xz);
+    vec2 position_dy = dFdy(frag_world_position.xz);
+    float determinant = position_dx.x * position_dy.y - position_dx.y * position_dy.x;
+    if (abs(determinant) <= 0.000001) {
+        return vec2(0.0);
+    }
+    float delta_dx = dFdx(frag_weathering_delta_m);
+    float delta_dy = dFdy(frag_weathering_delta_m);
+    return vec2(
+        position_dy.y * delta_dx - position_dx.y * delta_dy,
+        position_dx.x * delta_dy - position_dy.x * delta_dx) / determinant;
+}
+
 void main() {
-    vec3 source_normal = normalize(frag_source_normal);
+    vec2 final_gradient_xz = frag_base_gradient_xz + terrain_weathering_gradient_xz();
+    vec3 source_normal = normalize(vec3(
+        -final_gradient_xz.x * pc.camera_position_vertical_scale.w, 1.0,
+        -final_gradient_xz.y * pc.camera_position_vertical_scale.w));
     if (terrain_covered_by_finer_lod(frag_world_position.xz)) {
         discard;
     }
@@ -125,6 +142,10 @@ void main() {
                                   material_footprint_m, backdrop_presentation);
     if (debug_view == 9) {
         out_color = vec4(material.vegetation.ground, material.vegetation.woody, 0.0, 1.0);
+        return;
+    }
+    if (debug_view == 10) {
+        out_color = vec4(source_normal * 0.5 + 0.5, 1.0);
         return;
     }
     // Relief stays subordinate to the resolved terrain shape at scene scale.

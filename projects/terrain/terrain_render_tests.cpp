@@ -100,6 +100,9 @@ void test_ground_camera_and_shape_diagnostics_parse() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("aerial") ==
                 cubey::projects::terrain::TerrainDebugView::AerialTransmittance,
             "terrain runtime should parse the aerial diagnostic alias");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("normals") ==
+                cubey::projects::terrain::TerrainDebugView::Normal,
+            "terrain runtime should parse the final-normal diagnostic alias");
 }
 
 void test_backdrop_camera_configuration() {
