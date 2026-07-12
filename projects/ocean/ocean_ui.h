@@ -48,6 +48,10 @@ struct OceanUiContext {
     cubey::AtmosphereEnvironmentRunState& atmosphere;
     cubey::CloudEnvironmentConfig& clouds;
     cubey::host::PerformanceUiContext performance;
+    std::uint64_t cloud_environment_generation = 0;
+    float cloud_environment_blend = 1.0F;
+    float cloud_environment_age_seconds = 0.0F;
+    bool cloud_environment_valid = false;
     OceanRenderView& render_view;
     OceanCameraPreset& camera_preset;
     bool& paused;

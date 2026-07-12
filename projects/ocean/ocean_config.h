@@ -60,6 +60,12 @@ enum class OceanSurfaceMode : std::uint32_t {
     CurvedFar = 1,
 };
 
+enum class OceanCloudReflectionSource : std::uint32_t {
+    CurrentView = 0,
+    CachedEnvironment = 1,
+    Hybrid = 2,
+};
+
 inline constexpr std::array<OceanRenderView, 32> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
@@ -80,6 +86,11 @@ inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
 inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
     OceanSurfaceMode::Flat,
     OceanSurfaceMode::CurvedFar,
+};
+inline constexpr std::array<OceanCloudReflectionSource, 3> kOceanCloudReflectionSources{
+    OceanCloudReflectionSource::CurrentView,
+    OceanCloudReflectionSource::CachedEnvironment,
+    OceanCloudReflectionSource::Hybrid,
 };
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
@@ -174,6 +185,10 @@ struct OceanConfig {
     float far_detail_footprint_end_m = 5.0F;
     float far_reflection_variation_strength = 0.06F;
     float sun_glitter_width = 0.09F;
+    OceanCloudReflectionSource cloud_reflection_source =
+        OceanCloudReflectionSource::CurrentView;
+    std::uint32_t cloud_environment_extent = 64U;
+    float cloud_environment_update_hz = 4.0F;
     float cloud_reflection_strength = 0.75F;
     float cloud_shadow_strength = 0.45F;
     bool spectral_domains_enabled = true;
@@ -386,6 +401,19 @@ struct OceanCascadeLodBand {
     return "curved-far";
 }
 
+[[nodiscard]] inline const char*
+ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
+    switch (source) {
+    case OceanCloudReflectionSource::CurrentView:
+        return "current-view";
+    case OceanCloudReflectionSource::CachedEnvironment:
+        return "cached";
+    case OceanCloudReflectionSource::Hybrid:
+        return "hybrid";
+    }
+    return "current-view";
+}
+
 [[nodiscard]] inline OceanFieldPrecision ocean_field_precision_from_name(std::string_view name) {
     if (name.empty() || name == "half") {
         return OceanFieldPrecision::Half;
@@ -404,6 +432,20 @@ struct OceanCascadeLodBand {
         return OceanSurfaceMode::Flat;
     }
     throw std::runtime_error("unknown ocean surface mode: " + std::string(name));
+}
+
+[[nodiscard]] inline OceanCloudReflectionSource
+ocean_cloud_reflection_source_from_name(std::string_view name) {
+    if (name.empty() || name == "current-view") {
+        return OceanCloudReflectionSource::CurrentView;
+    }
+    if (name == "cached") {
+        return OceanCloudReflectionSource::CachedEnvironment;
+    }
+    if (name == "hybrid") {
+        return OceanCloudReflectionSource::Hybrid;
+    }
+    throw std::runtime_error("unknown ocean cloud reflection source: " + std::string(name));
 }
 
 [[nodiscard]] inline OceanRenderView ocean_render_view_from_name(std::string_view name) {
@@ -663,6 +705,10 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.far_detail_footprint_end_m <= config.far_detail_footprint_start_m ||
         config.far_reflection_variation_strength < 0.0F || config.sun_glitter_width <= 0.0F ||
         config.cloud_reflection_strength < 0.0F || config.cloud_reflection_strength > 1.0F ||
+        (config.cloud_environment_extent != 32U && config.cloud_environment_extent != 64U &&
+         config.cloud_environment_extent != 128U) ||
+        !std::isfinite(config.cloud_environment_update_hz) ||
+        config.cloud_environment_update_hz < 0.5F || config.cloud_environment_update_hz > 30.0F ||
         config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F ||
         config.spectral_lod_handoff < 0.0F || config.spectral_lod_handoff > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
@@ -714,6 +760,14 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (run_config_float_is_set(config.ocean.cloud_reflection_strength)) {
         ocean.cloud_reflection_strength = config.ocean.cloud_reflection_strength;
+    }
+    ocean.cloud_reflection_source =
+        ocean_cloud_reflection_source_from_name(config.ocean.cloud_reflection_source);
+    if (config.ocean.cloud_environment_extent != 0U) {
+        ocean.cloud_environment_extent = config.ocean.cloud_environment_extent;
+    }
+    if (run_config_float_is_set(config.ocean.cloud_environment_update_hz)) {
+        ocean.cloud_environment_update_hz = config.ocean.cloud_environment_update_hz;
     }
     if (run_config_float_is_set(config.ocean.cloud_shadow_strength)) {
         ocean.cloud_shadow_strength = config.ocean.cloud_shadow_strength;

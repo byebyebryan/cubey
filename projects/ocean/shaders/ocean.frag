@@ -41,6 +41,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cloud_shadow_world_to_uv_x;
     vec4 cloud_shadow_world_to_uv_y;
     vec4 cloud_lighting_options;
+    vec4 cloud_environment_options;
     vec4 sun_light_direction_intensity;
     vec4 sun_light_color;
     vec4 moon_light_direction_intensity;
@@ -58,6 +59,8 @@ layout(set = 0, binding = 28) uniform sampler2D foam_moments_cascade3_texture;
 layout(set = 0, binding = 29) uniform sampler2D foam_moments_cascade4_texture;
 layout(set = 0, binding = 30) uniform sampler2D cloud_shadow_transmittance_texture;
 layout(set = 0, binding = 31) uniform sampler2D cloud_reflection_product_texture;
+layout(set = 0, binding = 32) uniform samplerCube cloud_environment_previous_texture;
+layout(set = 0, binding = 33) uniform samplerCube cloud_environment_current_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -429,20 +432,42 @@ void main() {
     vec3 reflection_sky_dir = ocean_above_horizon_reflection_direction(reflection_dir);
     vec3 clear_reflection = ocean_environment_reflection(reflection_dir, roughness);
     OceanCloudReflectionSample cloud_reflection_sample =
-        ocean_cloud_reflection(reflection_dir, roughness);
-    float cloud_reflection_weight =
-        cloud_reflection_sample.visibility * ocean_cloud_reflection_strength();
+        ocean_current_view_cloud_reflection(reflection_dir, roughness);
     vec3 clear_sky_reflection = ocean_sky_radiance(reflection_sky_dir);
-    vec3 clouded_sky_reflection =
+    vec3 current_clouded_sky_reflection =
         cloud_reflection_sample.radiance +
         cloud_reflection_sample.transmittance * clear_sky_reflection;
-    vec3 cloud_reflection =
-        mix(clear_sky_reflection, clouded_sky_reflection, cloud_reflection_weight);
-    vec3 clouded_environment_reflection =
+    vec3 current_clouded_environment_reflection =
         cloud_reflection_sample.radiance +
         cloud_reflection_sample.transmittance * clear_reflection;
+    vec3 current_view_reflection =
+        mix(clear_reflection, current_clouded_environment_reflection,
+            cloud_reflection_sample.visibility);
+    vec3 current_view_sky_reflection =
+        mix(clear_sky_reflection, current_clouded_sky_reflection,
+            cloud_reflection_sample.visibility);
+    vec3 cached_reflection = ocean_cloud_environment_valid()
+                                 ? ocean_cached_cloud_reflection(reflection_dir, roughness)
+                                 : clear_reflection;
+    int cloud_reflection_source = ocean_cloud_reflection_source();
+    vec3 selected_cloud_reflection = current_view_reflection;
+    vec3 selected_cloud_sky_reflection = current_view_sky_reflection;
+    if (cloud_reflection_source == 1) {
+        selected_cloud_reflection = cached_reflection;
+        selected_cloud_sky_reflection = cached_reflection;
+    } else if (cloud_reflection_source == 2) {
+        float current_view_detail =
+            cloud_reflection_sample.visibility * (1.0 - smoothstep(0.20, 0.45, roughness));
+        selected_cloud_reflection =
+            mix(cached_reflection, current_clouded_environment_reflection, current_view_detail);
+        selected_cloud_sky_reflection =
+            mix(cached_reflection, current_clouded_sky_reflection, current_view_detail);
+    }
+    float cloud_reflection_strength = ocean_cloud_reflection_strength();
+    vec3 cloud_reflection =
+        mix(clear_sky_reflection, selected_cloud_sky_reflection, cloud_reflection_strength);
     vec3 reflection =
-        mix(clear_reflection, clouded_environment_reflection, cloud_reflection_weight);
+        mix(clear_reflection, selected_cloud_reflection, cloud_reflection_strength);
     reflection *= ocean_far_reflection_variation(frag_sample_position, far_material_energy);
     vec3 body_ambient =
         water_color * (0.12 + 0.28 * ambient_light * clamp(normal.y, 0.0, 1.0)) +

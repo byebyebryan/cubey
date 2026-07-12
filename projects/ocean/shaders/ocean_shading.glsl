@@ -139,6 +139,22 @@ float ocean_cloud_reflection_strength() {
     return clamp(ocean_features.cloud_lighting_options.w, 0.0, 1.0);
 }
 
+int ocean_cloud_reflection_source() {
+    return int(clamp(floor(ocean_features.cloud_environment_options.x + 0.5), 0.0, 2.0));
+}
+
+float ocean_cloud_environment_blend() {
+    return clamp(ocean_features.cloud_environment_options.y, 0.0, 1.0);
+}
+
+bool ocean_cloud_environment_valid() {
+    return ocean_features.cloud_environment_options.z > 0.5;
+}
+
+float ocean_cloud_environment_max_lod() {
+    return max(ocean_features.cloud_environment_options.w, 0.0);
+}
+
 float ocean_far_roughness_strength() {
     return max(ocean_features.far_field_options2.x, 0.0);
 }
@@ -428,7 +444,7 @@ vec4 ocean_filtered_cloud_reflection_product(vec2 uv, float roughness) {
     return filtered;
 }
 
-OceanCloudReflectionSample ocean_cloud_reflection(vec3 direction, float roughness) {
+OceanCloudReflectionSample ocean_current_view_cloud_reflection(vec3 direction, float roughness) {
     vec3 raw_dir = normalize(direction);
     vec3 dir = ocean_above_horizon_reflection_direction(raw_dir);
     if (ocean_cloud_reflection_strength() <= 0.0) {
@@ -451,6 +467,14 @@ OceanCloudReflectionSample ocean_cloud_reflection(vec3 direction, float roughnes
     float visibility = product_visibility * sky_facet_visibility;
     vec4 cloud = ocean_filtered_cloud_reflection_product(uv, roughness);
     return OceanCloudReflectionSample(cloud.rgb, cloud.a, visibility);
+}
+
+vec3 ocean_cached_cloud_reflection(vec3 direction, float roughness) {
+    vec3 dir = ocean_above_horizon_reflection_direction(direction);
+    float lod = clamp(roughness, 0.0, 1.0) * ocean_cloud_environment_max_lod();
+    vec3 previous = textureLod(cloud_environment_previous_texture, dir, lod).rgb;
+    vec3 current = textureLod(cloud_environment_current_texture, dir, lod).rgb;
+    return mix(previous, current, ocean_cloud_environment_blend());
 }
 
 

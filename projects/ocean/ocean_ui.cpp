@@ -691,7 +691,21 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
             "Cloud reflection", &ui.config.cloud_reflection_strength, 0.0F, 1.0F, "%.2f",
-            "Strength of current-view cloud radiance in ocean reflections.");
+            "Strength of the selected cloud environment in ocean reflections.");
+        cubey::host::imgui_enum_combo(
+            "Reflection source", ui.config.cloud_reflection_source,
+            kOceanCloudReflectionSources, ocean_cloud_reflection_source_name,
+            "Current-view is the existing low-cost projection; cached captures all directions; hybrid overlays sharp current-view detail.");
+        ImGui::BeginDisabled(ui.config.cloud_reflection_source ==
+                             OceanCloudReflectionSource::CurrentView);
+        constexpr std::array<std::uint32_t, 3> cloud_environment_extents{32U, 64U, 128U};
+        cubey::host::imgui_uint32_combo(
+            "Probe extent", &ui.config.cloud_environment_extent, cloud_environment_extents,
+            "Resolution per face of the cached six-direction cloud environment.");
+        cubey::host::imgui_slider_float(
+            "Probe rate", &ui.config.cloud_environment_update_hz, 0.5F, 30.0F, "%.1f Hz",
+            "Coherent six-face refresh rate; captures crossfade over one refresh interval.");
+        ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
             "Cloud shadow", &ui.config.cloud_shadow_strength, 0.0F, 1.0F, "%.2f",
             "Strength of shared cloud transmittance on direct ocean lighting.");
@@ -775,6 +789,10 @@ void draw_ocean_ui(OceanUiContext ui) {
                     ui.spectrum_diagnostics.max_overlap_octaves);
         ImGui::Text("Terrain fields: %s",
                     ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
+        ImGui::Text("Cloud env: %s / gen %llu / blend %.2f / age %.2f s",
+                    ui.cloud_environment_valid ? "ready" : "clear fallback",
+                    static_cast<unsigned long long>(ui.cloud_environment_generation),
+                    ui.cloud_environment_blend, ui.cloud_environment_age_seconds);
         ImGui::Text("Surface: %s", ocean_surface_mode_name(ui.surface_frame.surface_mode));
         ImGui::Text("Curvature: %.1f-%.1f km / strength %.2f",
                     ui.surface_frame.curvature_start_m / kOceanMetersPerKilometer,

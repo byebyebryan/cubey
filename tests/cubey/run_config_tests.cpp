@@ -382,6 +382,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "ocean.spectral_domains",
         "ocean.spectral_lod_handoff",
         "ocean.terrain_fields",
+        "ocean.cloud_reflection_source",
+        "ocean.cloud_environment_extent",
+        "ocean.cloud_environment_update_hz",
         "ocean.cloud_reflection_strength",
         "ocean.cloud_shadow_strength",
         "planet.scale_preset",
@@ -586,6 +589,9 @@ void test_run_config_loads_json_config_file() {
     "spectral_domains": false,
     "spectral_lod_handoff": 0.65,
     "terrain_fields": true,
+    "cloud_reflection_source": "hybrid",
+    "cloud_environment_extent": 128,
+    "cloud_environment_update_hz": 8.0,
     "cloud_reflection_strength": 0.8,
     "cloud_shadow_strength": 0.4
   },
@@ -691,6 +697,10 @@ void test_run_config_loads_json_config_file() {
     require(config.ocean.cloud_reflection_strength == 0.8F &&
                 config.ocean.cloud_shadow_strength == 0.4F,
             "config file should set ocean cloud-lighting strengths");
+    require(config.ocean.cloud_reflection_source == "hybrid" &&
+                config.ocean.cloud_environment_extent == 128U &&
+                config.ocean.cloud_environment_update_hz == 8.0F,
+            "config file should set cached ocean cloud environment controls");
     require(config.planet.atmosphere_mode == "physical",
             "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,

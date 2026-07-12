@@ -49,6 +49,8 @@ constexpr std::array<std::string_view, 3> kOceanSeaStates{"calm", "windy", "stor
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
+constexpr std::array<std::string_view, 3> kOceanCloudReflectionSources{
+    "current-view", "cached", "hybrid"};
 constexpr std::array<std::string_view, 7> kOceanCameraPresets{
     "default", "low", "mid", "high", "close", "overhead", "wide",
 };
@@ -152,7 +154,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 264> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 267> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -282,6 +284,18 @@ constexpr std::array<ConfigOptionDescriptor, 264> kRunConfigOptions{
     option(RunConfigOptionId::OceanWireOpacity, "ocean.wire_opacity", "--ocean-wire-opacity",
            "Wire Opacity", "Ocean", "Opacity used by the ocean wire overlay.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::OceanCloudReflectionSource, "ocean.cloud_reflection_source",
+           "--ocean-cloud-reflection-source", "Cloud Reflection Source", "Ocean",
+           "Cloud reflection source: current-view, cached, or hybrid.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kOceanCloudReflectionSources)),
+    option(RunConfigOptionId::OceanCloudEnvironmentExtent, "ocean.cloud_environment_extent",
+           "--ocean-cloud-environment-extent", "Cloud Probe Extent", "Ocean",
+           "Resolution per face of the cached cloud reflection environment.",
+           ConfigOptionType::UInt32, bounded_range(32.0, 128.0)),
+    option(RunConfigOptionId::OceanCloudEnvironmentUpdateHz, "ocean.cloud_environment_update_hz",
+           "--ocean-cloud-environment-update-hz", "Cloud Probe Rate", "Ocean",
+           "Refresh rate of the coherent cached cloud reflection environment.",
+           ConfigOptionType::Float, bounded_range(0.5, 30.0)),
     option(RunConfigOptionId::OceanCloudReflectionStrength, "ocean.cloud_reflection_strength",
            "--ocean-cloud-reflection-strength", "Cloud Reflection", "Ocean",
            "Strength of current-view cloud radiance in ocean reflections.", ConfigOptionType::Float,
@@ -1341,6 +1355,16 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.ocean.wire_overlay;
     case RunConfigOptionId::OceanWireOpacity:
         return optional_float(config.ocean.wire_opacity);
+    case RunConfigOptionId::OceanCloudReflectionSource:
+        return config.ocean.cloud_reflection_source.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.cloud_reflection_source);
+    case RunConfigOptionId::OceanCloudEnvironmentExtent:
+        return config.ocean.cloud_environment_extent == 0U
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.cloud_environment_extent);
+    case RunConfigOptionId::OceanCloudEnvironmentUpdateHz:
+        return optional_float(config.ocean.cloud_environment_update_hz);
     case RunConfigOptionId::OceanCloudReflectionStrength:
         return optional_float(config.ocean.cloud_reflection_strength);
     case RunConfigOptionId::OceanCloudShadowStrength:
@@ -1852,6 +1876,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
     adapter.writeField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.writeField<float>("curvature_strength", options.curvature_strength);
     adapter.writeField<float>("wire_opacity", options.wire_opacity);
+    adapter.writeField<std::string>("cloud_reflection_source", options.cloud_reflection_source);
+    adapter.writeField<std::uint32_t>("cloud_environment_extent", options.cloud_environment_extent);
+    adapter.writeField<float>("cloud_environment_update_hz", options.cloud_environment_update_hz);
     adapter.writeField<float>("cloud_reflection_strength", options.cloud_reflection_strength);
     adapter.writeField<float>("cloud_shadow_strength", options.cloud_shadow_strength);
     adapter.writeField<bool>("wire_overlay", options.wire_overlay);
@@ -1873,6 +1900,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) 
     adapter.readField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.readField<float>("curvature_strength", options.curvature_strength);
     adapter.readField<float>("wire_opacity", options.wire_opacity);
+    adapter.readField<std::string>("cloud_reflection_source", options.cloud_reflection_source);
+    adapter.readField<std::uint32_t>("cloud_environment_extent", options.cloud_environment_extent);
+    adapter.readField<float>("cloud_environment_update_hz", options.cloud_environment_update_hz);
     adapter.readField<float>("cloud_reflection_strength", options.cloud_reflection_strength);
     adapter.readField<float>("cloud_shadow_strength", options.cloud_shadow_strength);
     adapter.readField<bool>("wire_overlay", options.wire_overlay);
@@ -2543,6 +2573,18 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::OceanWireOpacity:
         config.ocean.wire_opacity = parse_config_float(value, option);
         validate_range(config.ocean.wire_opacity, option);
+        break;
+    case RunConfigOptionId::OceanCloudReflectionSource:
+        config.ocean.cloud_reflection_source = std::string(value);
+        break;
+    case RunConfigOptionId::OceanCloudEnvironmentExtent:
+        config.ocean.cloud_environment_extent =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.ocean.cloud_environment_extent, option);
+        break;
+    case RunConfigOptionId::OceanCloudEnvironmentUpdateHz:
+        config.ocean.cloud_environment_update_hz = parse_config_float(value, option);
+        validate_range(config.ocean.cloud_environment_update_hz, option);
         break;
     case RunConfigOptionId::OceanCloudReflectionStrength:
         config.ocean.cloud_reflection_strength = parse_config_float(value, option);

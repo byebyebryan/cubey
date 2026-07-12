@@ -35,6 +35,29 @@ that reflect below the sky horizon fade back to the clear-sky probe. A 1x1
 clear fallback keeps non-cloud paths valid, and `cloud-reflection` isolates the
 contribution.
 
+Ocean now also owns an opt-in cached cloud environment probe. It captures the
+same surface cloud density and lighting model in all six cube directions,
+composes cloud radiance and transmittance over the matching clear-sky cube,
+and GGX-prefilters the result before exposing it to water shading. A capture is
+coherent: all six faces and mip levels are completed together, then two whole
+environments crossfade over one refresh interval. The default is a 64-pixel
+cube refreshed at 4 Hz with 32 cloud-march steps.
+
+`ocean.cloud_reflection_source` selects the comparison path:
+
+- `current-view` preserves the previous screen-projected product and remains
+  the default, so the cached probe adds no recurring work unless requested.
+- `cached` samples only the roughness-filtered cloud environment and therefore
+  covers offscreen directions without screen-edge falloff.
+- `hybrid` uses the cache as the broad base and overlays current-view detail on
+  sharp facets below roughly 0.45 roughness.
+
+`cloud-reflection` displays the selected source. Probe extent and update rate
+are available through config, CLI, and the ocean Shading panel; Diagnostics
+reports readiness, generation, crossfade, and capture age. Until the first
+coherent capture completes, both cached descriptors point to the clear
+atmosphere reflection probe.
+
 Ocean consumes sun and moon lighting independently. Its dynamic atmosphere
 probe uses coherent full-cube updates so a reflective surface never samples six
 faces captured at different twilight times. `water-body` and `fresnel` expose
@@ -62,6 +85,13 @@ Generate the full-resolution deterministic pack with:
 
 ```sh
 projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-lighting-v1
+```
+
+Generate the focused current/cached/hybrid comparison with:
+
+```sh
+projects/ocean/capture_cloud_environment_review.sh \
+  outputs/ocean-cloud-environment-v1
 ```
 
 The pack covers noon cloud/no-cloud composition, reflection off/on and raw
@@ -98,8 +128,9 @@ remains negligible at this resolution.
 ## Boundaries
 
 - This is a surface and horizon-scale contract, not an aerial/orbit solution.
-- Current-view reflection cannot show offscreen clouds and is not a clouded
-  cubemap, cached hemisphere, or general PBR environment product.
+- Current-view reflection still cannot show offscreen clouds. Cached and
+  hybrid modes close that ocean-specific gap, but the probe is not yet owned by
+  the general atmosphere environment or exposed to PBR consumers.
 - The reflection input is the cloud march product, before the visible
   compositor's metadata-aware edge resolve and final look pass. This limits
   exact visual agreement between reflected and directly visible clouds.
@@ -110,8 +141,6 @@ remains negligible at this resolution.
 - Terrain, planet, and general PBR consumers remain future integrations; they
   should consume shared outputs rather than copy cloud density or march code.
 
-The current-view surface result is accepted in motion as part of
-[Surface Ocean V1](ocean-surface-v1.md). The next meaningful extension is a
-cached clouded environment product for offscreen and rough reflections.
-Planet-scale shadows and aerial/orbit clouds remain separate later-version
-work.
+The surface result and ocean-owned cached environment are accepted as part of
+[Surface Ocean V1](ocean-surface-v1.md). General PBR ownership, planet-scale
+shadows, and aerial/orbit clouds remain separate later-version work.

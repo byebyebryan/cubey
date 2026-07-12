@@ -659,6 +659,13 @@ int main() {
                      "windy ocean should use a moderate reflected-sun corridor width");
         require_near(defaults.cloud_reflection_strength, 0.75F, 0.001F,
                      "ocean should default current-view cloud reflection contribution on");
+        require(defaults.cloud_reflection_source ==
+                    ocean::OceanCloudReflectionSource::CurrentView,
+                "ocean should keep cached cloud reflections opt-in");
+        require(defaults.cloud_environment_extent == 64U,
+                "ocean should default the cached cloud environment to 64 pixels per face");
+        require_near(defaults.cloud_environment_update_hz, 4.0F, 0.001F,
+                     "ocean should default the cached cloud environment to four hertz");
         require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
                      "ocean should default shared cloud transmittance on conservatively");
         require_near(defaults.spectral_lod_handoff, 0.0F, 0.001F,
@@ -854,6 +861,9 @@ int main() {
         run_config.ocean.curvature_start_ratio = 0.20F;
         run_config.ocean.curvature_end_ratio = 0.80F;
         run_config.ocean.curvature_strength = 0.35F;
+        run_config.ocean.cloud_reflection_source = "hybrid";
+        run_config.ocean.cloud_environment_extent = 128U;
+        run_config.ocean.cloud_environment_update_hz = 8.0F;
         run_config.ocean.cloud_reflection_strength = 0.82F;
         run_config.ocean.cloud_shadow_strength = 0.41F;
         run_config.ocean.spectral_domains = 0;
@@ -882,6 +892,13 @@ int main() {
                      "run config should initialize ocean curvature strength");
         require_near(from_run_config.cloud_reflection_strength, 0.82F, 0.001F,
                      "run config should initialize cloud reflection strength");
+        require(from_run_config.cloud_reflection_source ==
+                    ocean::OceanCloudReflectionSource::Hybrid,
+                "run config should initialize cloud reflection source");
+        require(from_run_config.cloud_environment_extent == 128U,
+                "run config should initialize cloud environment extent");
+        require_near(from_run_config.cloud_environment_update_hz, 8.0F, 0.001F,
+                     "run config should initialize cloud environment update rate");
         require_near(from_run_config.cloud_shadow_strength, 0.41F, 0.001F,
                      "run config should initialize cloud shadow strength");
         require(!from_run_config.spectral_domains_enabled,
@@ -1457,7 +1474,13 @@ int main() {
         require_contains(ui_source, "&ui.config.cloud_shadow_strength",
                          "UI should expose shared cloud shadow strength");
         require_contains(ui_source, "&ui.config.cloud_reflection_strength",
-                         "UI should expose current-view cloud reflection strength");
+                         "UI should expose cloud reflection strength");
+        require_contains(ui_source, "ui.config.cloud_reflection_source",
+                         "UI should expose cloud reflection source selection");
+        require_contains(ui_source, "&ui.config.cloud_environment_extent",
+                         "UI should expose cached cloud environment resolution");
+        require_contains(ui_source, "&ui.config.cloud_environment_update_hz",
+                         "UI should expose cached cloud environment refresh rate");
         require_contains(ui_source, "&ui.config.spectral_lod_handoff",
                          "UI should expose the spectral LOD handoff control");
         require_not_contains(ui_source, "cloud_shadow_scale_m",
@@ -1766,7 +1789,7 @@ int main() {
                          "GPU resource header should carry independent sun lighting");
         require_contains(gpu_header_source, "moon_light_direction_intensity",
                          "GPU resource header should carry independent moon lighting");
-        require_contains(gpu_header_source, "sizeof(float) * 72U",
+        require_contains(gpu_header_source, "sizeof(float) * 76U",
                          "GPU resource header should size active feature and lighting uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
@@ -1861,6 +1884,14 @@ int main() {
                          "ocean surface shader should isolate cloud transmittance lookup");
         require_contains(fragment_shader, "sampler2D cloud_reflection_product_texture",
                          "ocean surface shader should sample current-view cloud radiance");
+        require_contains(fragment_shader, "samplerCube cloud_environment_previous_texture",
+                         "ocean surface shader should sample the previous cached environment");
+        require_contains(fragment_shader, "samplerCube cloud_environment_current_texture",
+                         "ocean surface shader should sample the current cached environment");
+        require_contains(fragment_shader, "ocean_cached_cloud_reflection",
+                         "ocean surface shader should select a roughness-filtered cached environment");
+        require_contains(fragment_shader, "smoothstep(0.20, 0.45, roughness)",
+                         "hybrid reflections should reserve current-view detail for sharp facets");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u",
                          "ocean surface shader should expose cloud reflection diagnostics");
         require_contains(fragment_shader, "ocean_filtered_cloud_reflection_product",

@@ -112,6 +112,9 @@ struct RunConfig {
         float curvature_end_ratio = kRunConfigUnsetFloat;
         float curvature_strength = kRunConfigUnsetFloat;
         float wire_opacity = kRunConfigUnsetFloat;
+        std::string cloud_reflection_source{};
+        std::uint32_t cloud_environment_extent = 0;
+        float cloud_environment_update_hz = kRunConfigUnsetFloat;
         float cloud_reflection_strength = kRunConfigUnsetFloat;
         float cloud_shadow_strength = kRunConfigUnsetFloat;
         bool wire_overlay = false;

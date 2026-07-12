@@ -30,8 +30,12 @@ constexpr std::uint32_t kOceanSurfaceCloudShadowBinding =
     kOceanSurfaceNormalMomentBinding + kOceanSurfaceMomentTextureCount;
 constexpr std::uint32_t kOceanSurfaceCloudReflectionBinding =
     kOceanSurfaceCloudShadowBinding + 1U;
-constexpr std::uint32_t kOceanSurfaceBindingCount =
+constexpr std::uint32_t kOceanSurfaceCloudEnvironmentPreviousBinding =
     kOceanSurfaceCloudReflectionBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceCloudEnvironmentCurrentBinding =
+    kOceanSurfaceCloudEnvironmentPreviousBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceBindingCount =
+    kOceanSurfaceCloudEnvironmentCurrentBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -489,6 +493,18 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
+    surface_bindings[kOceanSurfaceCloudEnvironmentPreviousBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceCloudEnvironmentPreviousBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
+    surface_bindings[kOceanSurfaceCloudEnvironmentCurrentBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceCloudEnvironmentCurrentBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -604,6 +620,14 @@ void OceanGpuResources::update_atmosphere_probe_descriptors(
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .combined_image_sampler(surface_set, kOceanSurfaceSkyRadianceBinding,
                                     sky_radiance.sampler().handle(), sky_radiance.view(),
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .combined_image_sampler(surface_set,
+                                    kOceanSurfaceCloudEnvironmentPreviousBinding,
+                                    reflection_probe.sampler().handle(), reflection_probe.view(),
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            .combined_image_sampler(surface_set,
+                                    kOceanSurfaceCloudEnvironmentCurrentBinding,
+                                    reflection_probe.sampler().handle(), reflection_probe.view(),
                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
     writes.update(device);
@@ -650,6 +674,22 @@ void OceanGpuResources::update_cloud_reflection_descriptor(
     writes
         .combined_image_sampler(surface_set(frame_slot), kOceanSurfaceCloudReflectionBinding,
                                 sampler, image_view, image_layout)
+        .update(device);
+}
+
+void OceanGpuResources::update_cloud_environment_descriptors(
+    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+    const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current) {
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes
+        .combined_image_sampler(surface_set(frame_slot),
+                                kOceanSurfaceCloudEnvironmentPreviousBinding,
+                                previous.sampler().handle(), previous.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(surface_set(frame_slot),
+                                kOceanSurfaceCloudEnvironmentCurrentBinding,
+                                current.sampler().handle(), current.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         .update(device);
 }
 

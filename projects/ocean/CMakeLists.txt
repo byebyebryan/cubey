@@ -87,6 +87,23 @@ if (BUILD_TESTING)
         --ocean-map-size
         128
     )
+    set(CUBEY_OCEAN_CACHED_CLOUD_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/ocean-cached-cloud-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        ocean_cached_cloud_environment_writes_png
+        cubey_project_ocean
+        "${CUBEY_OCEAN_CACHED_CLOUD_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        4
+        --ocean-map-size
+        128
+        --ocean-cloud-reflection-source
+        cached
+        --ocean-cloud-environment-extent
+        32
+    )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_OCEAN_HEADLESS_VIDEO_SMOKE_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/ocean-headless.mp4"
