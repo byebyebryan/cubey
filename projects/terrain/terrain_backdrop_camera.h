@@ -14,10 +14,16 @@ struct TerrainBackdropCameraPlan {
     float pitch_radians = 0.0F;
     float target_distance_m = 0.0F;
     float target_elevation_radians = 0.0F;
+    float camera_clearance_m = 0.0F;
+    float clearance_raise_m = 0.0F;
+    float foreground_clear_distance_m = 0.0F;
+    float foreground_min_margin_m = 0.0F;
+    float aspect_ratio = 16.0F / 9.0F;
     float score = 0.0F;
 };
 
 [[nodiscard]] TerrainBackdropCameraPlan
-plan_terrain_backdrop_camera(const TerrainSourceParameters& source, float vertical_scale = 1.0F);
+plan_terrain_backdrop_camera(const TerrainSourceParameters& source, float vertical_scale = 1.0F,
+                             float aspect_ratio = 16.0F / 9.0F);
 
 } // namespace cubey::projects::terrain

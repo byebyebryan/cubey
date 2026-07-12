@@ -6,6 +6,7 @@
 #include <limits>
 #include <numbers>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::projects::terrain {
 namespace {
@@ -14,8 +15,14 @@ constexpr std::array<float, 5> kAnchorCoordinates{-4096.0F, -2048.0F, 0.0F, 2048
                                                    4096.0F};
 constexpr std::array<float, 5> kSampleDistances{400.0F, 800.0F, 1600.0F, 3200.0F, 6400.0F};
 constexpr std::array<float, 3> kLateralFactors{-0.18F, 0.0F, 0.18F};
+constexpr std::array<float, 3> kLowerFrustumNdcX{-1.0F, 0.0F, 1.0F};
 constexpr std::uint32_t kHeadingCount = 24U;
-constexpr float kCameraClearanceM = 120.0F;
+constexpr std::size_t kFramingShortlistCount = 16U;
+constexpr float kMinimumCameraClearanceM = 150.0F;
+constexpr float kForegroundClearDistanceM = 300.0F;
+constexpr float kForegroundSampleStepM = 25.0F;
+constexpr float kForegroundSafetyMarginM = 10.0F;
+constexpr float kBackdropVerticalFovRadians = 40.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kPeakAboveFrameCenterRadians = 5.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kMinimumPitchRadians = -2.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kMaximumPitchRadians = 12.0F * std::numbers::pi_v<float> / 180.0F;
@@ -35,6 +42,71 @@ struct HeadingEvaluation {
     cubey::math::Vec2 target_xz{0.0F, 0.0F};
 };
 
+struct BackdropCandidate {
+    cubey::math::Vec2 anchor{0.0F, 0.0F};
+    float yaw_radians = 0.0F;
+    HeadingEvaluation heading{};
+};
+
+struct ForegroundClearance {
+    float camera_height_m = 0.0F;
+    float camera_clearance_m = 0.0F;
+    float minimum_margin_m = 0.0F;
+};
+
+[[nodiscard]] ForegroundClearance
+foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 anchor,
+                     float anchor_height_m, float yaw_radians, float vertical_scale,
+                     float aspect_ratio) {
+    const cubey::math::Quat conservative_rotation =
+        cubey::math::angle_axis_quat(yaw_radians, {0.0F, 1.0F, 0.0F}) *
+        cubey::math::angle_axis_quat(kMinimumPitchRadians, {1.0F, 0.0F, 0.0F});
+    const float tan_half_fov = std::tan(kBackdropVerticalFovRadians * 0.5F);
+    float required_camera_height_m = anchor_height_m + kMinimumCameraClearanceM;
+
+    for (const float ndc_x : kLowerFrustumNdcX) {
+        const cubey::math::Vec3 ray = conservative_rotation * cubey::math::Vec3{
+            ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
+        const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
+        const cubey::math::Vec2 horizontal_direction{ray.x / horizontal_length,
+                                                     ray.z / horizontal_length};
+        const float vertical_slope = ray.y / horizontal_length;
+        for (float distance_m = kForegroundSampleStepM;
+             distance_m <= kForegroundClearDistanceM; distance_m += kForegroundSampleStepM) {
+            const cubey::math::Vec2 position = anchor + horizontal_direction * distance_m;
+            const float terrain_height_m =
+                sample_terrain(source, {.world_xz = position}).height_m * vertical_scale;
+            required_camera_height_m =
+                std::max(required_camera_height_m,
+                         terrain_height_m + kForegroundSafetyMarginM -
+                             distance_m * vertical_slope);
+        }
+    }
+
+    float minimum_margin_m = std::numeric_limits<float>::infinity();
+    for (const float ndc_x : kLowerFrustumNdcX) {
+        const cubey::math::Vec3 ray = conservative_rotation * cubey::math::Vec3{
+            ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
+        const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
+        const cubey::math::Vec2 horizontal_direction{ray.x / horizontal_length,
+                                                     ray.z / horizontal_length};
+        const float vertical_slope = ray.y / horizontal_length;
+        for (float distance_m = kForegroundSampleStepM;
+             distance_m <= kForegroundClearDistanceM; distance_m += kForegroundSampleStepM) {
+            const cubey::math::Vec2 position = anchor + horizontal_direction * distance_m;
+            const float terrain_height_m =
+                sample_terrain(source, {.world_xz = position}).height_m * vertical_scale;
+            const float ray_height_m = required_camera_height_m + distance_m * vertical_slope;
+            minimum_margin_m = std::min(minimum_margin_m, ray_height_m - terrain_height_m);
+        }
+    }
+    return {
+        .camera_height_m = required_camera_height_m,
+        .camera_clearance_m = required_camera_height_m - anchor_height_m,
+        .minimum_margin_m = minimum_margin_m,
+    };
+}
+
 [[nodiscard]] HeadingEvaluation evaluate_heading(const TerrainSourceParameters& clean_source,
                                                  cubey::math::Vec2 anchor, float yaw_radians,
                                                  float vertical_scale) {
@@ -48,7 +120,6 @@ struct HeadingEvaluation {
     float best_distance = kSampleDistances.front();
     cubey::math::Vec2 best_target = anchor + forward * best_distance;
     float silhouette_sum = 0.0F;
-    float near_obstruction = 0.0F;
 
     for (std::size_t distance_index = 0; distance_index < kSampleDistances.size();
          ++distance_index) {
@@ -80,20 +151,13 @@ struct HeadingEvaluation {
                       std::abs(heights[2] - heights[1]) + 0.5F * std::abs(heights[2] - heights[0])) /
                      (relief_scale * 0.30F));
 
-        if (distance_index < 2U) {
-            const float sightline_height = anchor_height + kCameraClearanceM * 0.35F;
-            near_obstruction += saturate((peak_height - sightline_height) /
-                                        std::max(kCameraClearanceM, relief_scale * 0.08F));
-        }
     }
 
     const float peak_score = saturate(best_peak_score);
     const float silhouette_score = saturate(silhouette_sum / kSampleDistances.size());
     const float distance_score = useful_distance_score(best_distance);
-    const float clear_near_field = 1.0F - saturate(near_obstruction * 0.5F);
     return {
-        .score = 0.50F * peak_score + 0.25F * silhouette_score + 0.15F * distance_score +
-                 0.10F * clear_near_field,
+        .score = 0.50F * peak_score + 0.25F * silhouette_score + 0.15F * distance_score,
         .target_distance_m = best_distance,
         .target_xz = best_target,
     };
@@ -102,17 +166,21 @@ struct HeadingEvaluation {
 } // namespace
 
 TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParameters& source,
-                                                       float vertical_scale) {
+                                                       float vertical_scale,
+                                                       float aspect_ratio) {
     if (!std::isfinite(vertical_scale) || vertical_scale <= 0.0F) {
         throw std::runtime_error("terrain backdrop camera vertical scale must be positive");
+    }
+    if (!std::isfinite(aspect_ratio) || aspect_ratio <= 0.0F) {
+        throw std::runtime_error("terrain backdrop camera aspect ratio must be positive");
     }
 
     TerrainSourceParameters clean_source = source;
     clean_source.weathering = TerrainWeatheringMode::Off;
     clean_source.weathering_strength = 0.0F;
 
-    TerrainBackdropCameraPlan best{};
-    best.score = -std::numeric_limits<float>::infinity();
+    std::vector<BackdropCandidate> candidates;
+    candidates.reserve(kAnchorCoordinates.size() * kAnchorCoordinates.size() * kHeadingCount);
     for (const float anchor_z : kAnchorCoordinates) {
         for (const float anchor_x : kAnchorCoordinates) {
             const cubey::math::Vec2 anchor{anchor_x, anchor_z};
@@ -122,39 +190,65 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
                                   static_cast<float>(kHeadingCount);
                 const HeadingEvaluation evaluation =
                     evaluate_heading(clean_source, anchor, yaw, vertical_scale);
-                if (evaluation.score <= best.score) {
-                    continue;
-                }
-
-                const float camera_height =
-                    sample_terrain(source, {.world_xz = anchor}).height_m * vertical_scale +
-                    kCameraClearanceM;
-                const TerrainSample target_sample =
-                    sample_terrain(source, {.world_xz = evaluation.target_xz});
-                const float target_height = target_sample.height_m * vertical_scale;
-                const float elevation =
-                    std::atan2(target_height - camera_height, evaluation.target_distance_m);
-                const float pitch = std::clamp(elevation - kPeakAboveFrameCenterRadians,
-                                               kMinimumPitchRadians, kMaximumPitchRadians);
-                best = {
-                    .transform =
-                        {
-                            .translation = {anchor.x, camera_height, anchor.y},
-                            .rotation =
-                                cubey::math::angle_axis_quat(yaw, {0.0F, 1.0F, 0.0F}) *
-                                cubey::math::angle_axis_quat(pitch, {1.0F, 0.0F, 0.0F}),
-                        },
-                    .anchor_xz = anchor,
-                    .target_position = {evaluation.target_xz.x, target_height,
-                                        evaluation.target_xz.y},
-                    .yaw_radians = yaw,
-                    .pitch_radians = pitch,
-                    .target_distance_m = evaluation.target_distance_m,
-                    .target_elevation_radians = elevation,
-                    .score = evaluation.score,
-                };
+                candidates.push_back({.anchor = anchor, .yaw_radians = yaw, .heading = evaluation});
             }
         }
+    }
+
+    std::stable_sort(candidates.begin(), candidates.end(),
+                     [](const BackdropCandidate& left, const BackdropCandidate& right) {
+                         return left.heading.score > right.heading.score;
+                     });
+    candidates.resize(std::min(candidates.size(), kFramingShortlistCount));
+
+    TerrainBackdropCameraPlan best{};
+    best.score = -std::numeric_limits<float>::infinity();
+    for (const BackdropCandidate& candidate : candidates) {
+        const float anchor_height =
+            sample_terrain(source, {.world_xz = candidate.anchor}).height_m * vertical_scale;
+        const ForegroundClearance clearance =
+            foreground_clearance(source, candidate.anchor, anchor_height,
+                                 candidate.yaw_radians, vertical_scale, aspect_ratio);
+        const float clearance_raise =
+            std::max(clearance.camera_clearance_m - kMinimumCameraClearanceM, 0.0F);
+        const float clearance_efficiency = 1.0F - saturate(clearance_raise / 300.0F);
+        const float score = candidate.heading.score + 0.10F * clearance_efficiency;
+        if (score <= best.score) {
+            continue;
+        }
+
+        const TerrainSample target_sample =
+            sample_terrain(source, {.world_xz = candidate.heading.target_xz});
+        const float target_height = target_sample.height_m * vertical_scale;
+        const float elevation =
+            std::atan2(target_height - clearance.camera_height_m,
+                       candidate.heading.target_distance_m);
+        const float pitch = std::clamp(elevation - kPeakAboveFrameCenterRadians,
+                                       kMinimumPitchRadians, kMaximumPitchRadians);
+        best = {
+            .transform =
+                {
+                    .translation = {candidate.anchor.x, clearance.camera_height_m,
+                                    candidate.anchor.y},
+                    .rotation =
+                        cubey::math::angle_axis_quat(candidate.yaw_radians,
+                                                     {0.0F, 1.0F, 0.0F}) *
+                        cubey::math::angle_axis_quat(pitch, {1.0F, 0.0F, 0.0F}),
+                },
+            .anchor_xz = candidate.anchor,
+            .target_position = {candidate.heading.target_xz.x, target_height,
+                                candidate.heading.target_xz.y},
+            .yaw_radians = candidate.yaw_radians,
+            .pitch_radians = pitch,
+            .target_distance_m = candidate.heading.target_distance_m,
+            .target_elevation_radians = elevation,
+            .camera_clearance_m = clearance.camera_clearance_m,
+            .clearance_raise_m = clearance_raise,
+            .foreground_clear_distance_m = kForegroundClearDistanceM,
+            .foreground_min_margin_m = clearance.minimum_margin_m,
+            .aspect_ratio = aspect_ratio,
+            .score = score,
+        };
     }
     return best;
 }

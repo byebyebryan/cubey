@@ -385,7 +385,8 @@ class TerrainApp {
         if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
             if (!backdrop_plan_.has_value()) {
                 backdrop_plan_ =
-                    plan_terrain_backdrop_camera(source_parameters_, runtime_config_.vertical_scale);
+                    plan_terrain_backdrop_camera(source_parameters_, runtime_config_.vertical_scale,
+                                                 initial_aspect_ratio());
             }
             surface_controller_.set_home_pose(backdrop_plan_->anchor_xz,
                                               backdrop_plan_->yaw_radians,
@@ -497,7 +498,11 @@ class TerrainApp {
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
         if (terrain_camera_is_surface(runtime_config_.camera)) {
-            const float clearance = terrain_camera_clearance_m(runtime_config_.camera);
+            const float clearance =
+                runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+                        backdrop_plan_.has_value()
+                    ? backdrop_plan_->camera_clearance_m
+                    : terrain_camera_clearance_m(runtime_config_.camera);
             return surface_controller_.camera_transform(source_parameters_,
                                                         runtime_config_.vertical_scale, clearance);
         }
@@ -518,6 +523,13 @@ class TerrainApp {
         return extent.height == 0U
                    ? 1.0F
                    : static_cast<float>(extent.width) / static_cast<float>(extent.height);
+    }
+
+    [[nodiscard]] float initial_aspect_ratio() const {
+        return run_config_.height == 0U
+                   ? 1.0F
+                   : static_cast<float>(run_config_.width) /
+                         static_cast<float>(run_config_.height);
     }
 
     [[nodiscard]] TerrainPushConstants push_constants(VkExtent2D extent) const {

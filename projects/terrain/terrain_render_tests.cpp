@@ -79,7 +79,7 @@ void test_backdrop_camera_configuration() {
             "terrain backdrop camera should remain interactively traversable");
     require(!cubey::projects::terrain::terrain_camera_advances_headless(config.camera),
             "terrain backdrop camera should remain static in headless captures");
-    require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 120.0F,
+    require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 150.0F,
                  0.0F, "terrain backdrop camera should clear the local surface");
     require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
                  40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
@@ -133,8 +133,14 @@ void test_backdrop_planner_is_deterministic_and_clear() {
                     "terrain backdrop target should use a supported sample distance");
             const auto anchor_sample = cubey::projects::terrain::sample_terrain(
                 source, {.world_xz = first.anchor_xz});
-            require_near(first.transform.translation.y, anchor_sample.height_m + 120.0F, 0.001F,
+            require(first.camera_clearance_m >= 150.0F,
+                    "terrain backdrop camera should preserve its minimum clearance");
+            require_near(first.transform.translation.y,
+                         anchor_sample.height_m + first.camera_clearance_m, 0.001F,
                          "terrain backdrop camera should preserve final-source clearance");
+            require(first.foreground_clear_distance_m == 300.0F &&
+                        first.foreground_min_margin_m >= 9.999F,
+                    "terrain backdrop camera should preserve the foreground contract");
             require(first.pitch_radians >= -2.0F * std::numbers::pi_v<float> / 180.0F &&
                         first.pitch_radians <= 12.0F * std::numbers::pi_v<float> / 180.0F,
                     "terrain backdrop pitch should remain in the presentation range");

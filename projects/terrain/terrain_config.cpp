@@ -71,7 +71,7 @@ float terrain_camera_clearance_m(TerrainCameraPreset preset) {
     case TerrainCameraPreset::Ground:
         return 2.0F;
     case TerrainCameraPreset::Backdrop:
-        return 120.0F;
+        return 150.0F;
     case TerrainCameraPreset::Oblique:
     case TerrainCameraPreset::Profile:
     case TerrainCameraPreset::Top:
