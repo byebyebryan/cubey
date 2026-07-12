@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ocean_sea_state.h"
+
 #include <cubey/core/run_config.h>
 #include <cubey/engine/cloud_environment_config.h>
 
@@ -76,7 +78,6 @@ inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
     OceanSurfaceMode::Flat,
     OceanSurfaceMode::CurvedFar,
 };
-
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
 inline constexpr std::uint32_t kOceanCascadeCount = 5U;
@@ -130,10 +131,11 @@ struct OceanConfig {
     float curvature_end_ratio = 0.75F;
     float curvature_strength = 1.0F;
 
+    OceanSeaState sea_state = OceanSeaState::Windy;
     std::uint32_t map_size = kOceanDefaultMapSize;
     float depth = 20.0F;
-    float roughness = 0.4F;
-    float normal_strength = 1.0F;
+    float roughness = 0.32F;
+    float normal_strength = 0.90F;
     float exposure = 0.0F;
     float water_color_r = 0.1F;
     float water_color_g = 0.15F;
@@ -141,17 +143,17 @@ struct OceanConfig {
     float foam_color_r = 0.73F;
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
-    float foam_density = 3.15F;
-    float foam_sharpness = 0.62F;
+    float foam_density = 2.30F;
+    float foam_sharpness = 0.60F;
     float surface_shape_strength = 1.0F;
-    float surface_foam_strength = 1.0F;
-    float foam_history_strength = 1.0F;
+    float surface_foam_strength = 0.75F;
+    float foam_history_strength = 0.75F;
     float atmosphere_material_strength = 1.0F;
     float atmosphere_sky_strength = 1.0F;
     float atmosphere_reflection_strength = 1.0F;
     float atmosphere_light_strength = 1.0F;
     float foam_lighting_strength = 1.0F;
-    float self_shadow_strength = 0.45F;
+    float self_shadow_strength = 0.30F;
     float self_shadow_distance = 44.0F;
     float self_shadow_bias = 0.18F;
     std::uint32_t self_shadow_steps = 8U;
@@ -162,12 +164,12 @@ struct OceanConfig {
     bool far_field_enabled = true;
     float far_field_start_m = 450.0F;
     float far_field_end_m = 2200.0F;
-    float far_roughness_strength = 0.12F;
-    float far_glint_strength = 0.28F;
+    float far_roughness_strength = 0.09F;
+    float far_glint_strength = 0.30F;
     float far_detail_footprint_start_m = 0.9F;
     float far_detail_footprint_end_m = 5.0F;
-    float far_reflection_variation_strength = 0.08F;
-    float sun_glitter_width = 0.10F;
+    float far_reflection_variation_strength = 0.06F;
+    float sun_glitter_width = 0.09F;
     float cloud_reflection_strength = 0.75F;
     float cloud_shadow_strength = 0.45F;
     bool spectral_domains_enabled = true;
@@ -180,16 +182,16 @@ struct OceanConfig {
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
         OceanCascadeConfig{
             .tile_length = 88.0F,
-            .displacement_scale = 1.35F,
-            .normal_scale = 1.35F,
-            .wind_speed = 18.0F,
+            .displacement_scale = 1.0F,
+            .normal_scale = 1.05F,
+            .wind_speed = 11.0F,
             .wind_direction_degrees = 20.0F,
-            .fetch_length_km = 350.0F,
-            .swell = 1.0F,
-            .spread = 0.14F,
+            .fetch_length_km = 150.0F,
+            .swell = 0.80F,
+            .spread = 0.24F,
             .detail = 1.0F,
-            .whitecap = 0.50F,
-            .foam_amount = 5.80F,
+            .whitecap = 0.38F,
+            .foam_amount = 3.20F,
             .domain_min_waves = 0.0F,
             .seed_x = 1337,
             .seed_y = 4919,
@@ -197,16 +199,16 @@ struct OceanConfig {
         },
         OceanCascadeConfig{
             .tile_length = 57.0F,
-            .displacement_scale = 1.08F,
-            .normal_scale = 1.35F,
-            .wind_speed = 16.0F,
+            .displacement_scale = 0.78F,
+            .normal_scale = 0.95F,
+            .wind_speed = 9.0F,
             .wind_direction_degrees = 17.0F,
-            .fetch_length_km = 330.0F,
-            .swell = 0.95F,
-            .spread = 0.25F,
+            .fetch_length_km = 110.0F,
+            .swell = 0.72F,
+            .spread = 0.35F,
             .detail = 1.0F,
-            .whitecap = 0.48F,
-            .foam_amount = 4.80F,
+            .whitecap = 0.34F,
+            .foam_amount = 2.40F,
             .domain_min_waves = 0.0F,
             .seed_x = -2713,
             .seed_y = 8128,
@@ -657,6 +659,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
 
 [[nodiscard]] inline OceanConfig ocean_config_from_run_config(const RunConfig& config) {
     OceanConfig ocean;
+    if (!config.ocean.sea_state.empty()) {
+        apply_ocean_sea_state(ocean, ocean_sea_state_from_name(config.ocean.sea_state));
+    }
     if (config.ocean.map_size != 0U) {
         ocean.map_size = config.ocean.map_size;
     }

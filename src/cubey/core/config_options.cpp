@@ -45,6 +45,7 @@ constexpr ConfigEnumChoices enum_choices(const std::array<std::string_view, Coun
 
 constexpr std::array<std::string_view, 2> kCaptureModes{"png", "video"};
 constexpr std::array<std::string_view, 2> kPbrEnvironmentSources{"static", "atmosphere"};
+constexpr std::array<std::string_view, 3> kOceanSeaStates{"calm", "windy", "stormy"};
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
@@ -151,7 +152,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 262> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 263> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -230,6 +231,9 @@ constexpr std::array<ConfigOptionDescriptor, 262> kRunConfigOptions{
            "Yaw rotation applied to the environment in degrees.", ConfigOptionType::Float),
     option(RunConfigOptionId::PbrExposure, "pbr.exposure", "--exposure", "Exposure", "PBR",
            "Manual exposure bias in stops.", ConfigOptionType::Float, bounded_range(-4.0, 4.0)),
+    option(RunConfigOptionId::OceanSeaState, "ocean.sea_state", "--ocean-sea-state", "Sea State",
+           "Ocean", "Tuned ocean surface state: calm, windy, or stormy.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kOceanSeaStates)),
     option(RunConfigOptionId::OceanMapSize, "ocean.map_size", "--ocean-map-size", "Map Size",
            "Ocean", "FFT map size for the active ocean project.", ConfigOptionType::UInt32,
            min_range(1.0)),
@@ -1297,6 +1301,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.pbr.environment_rotation_degrees;
     case RunConfigOptionId::PbrExposure:
         return config.pbr.exposure;
+    case RunConfigOptionId::OceanSeaState:
+        return config.ocean.sea_state.empty() ? nlohmann::json(nullptr)
+                                              : nlohmann::json(config.ocean.sea_state);
     case RunConfigOptionId::OceanMapSize:
         return config.ocean.map_size == 0U ? nlohmann::json(nullptr)
                                            : nlohmann::json(config.ocean.map_size);
@@ -1825,6 +1832,7 @@ namespace lazy::serializable {
 using JsonAdapter = NlohmannJsonAdapter;
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& options) {
+    adapter.writeField<std::string>("sea_state", options.sea_state);
     adapter.writeField<std::uint32_t>("map_size", options.map_size);
     adapter.writeField<std::string>("field_precision", options.field_precision);
     adapter.writeField<std::string>("surface_mode", options.surface_mode);
@@ -1844,6 +1852,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) {
     std::string cascade = options.cascade < 0 ? "all" : std::to_string(options.cascade);
+    adapter.readField<std::string>("sea_state", options.sea_state);
     adapter.readField<std::uint32_t>("map_size", options.map_size);
     adapter.readField<std::string>("field_precision", options.field_precision);
     adapter.readField<std::string>("surface_mode", options.surface_mode);
@@ -2475,6 +2484,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.pbr.exposure = parse_config_float(value, option);
         validate_range(config.pbr.exposure, option);
         config.pbr.exposure_explicit = true;
+        break;
+    case RunConfigOptionId::OceanSeaState:
+        config.ocean.sea_state = std::string(value);
         break;
     case RunConfigOptionId::OceanMapSize:
         config.ocean.map_size = parse_number<std::uint32_t>(value, option, "unsigned integer");

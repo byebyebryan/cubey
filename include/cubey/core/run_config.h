@@ -98,6 +98,7 @@ struct RunConfig {
     };
 
     struct OceanOptions {
+        std::string sea_state{};
         std::uint32_t map_size = 0;
         std::string field_precision{};
         std::string surface_mode{};

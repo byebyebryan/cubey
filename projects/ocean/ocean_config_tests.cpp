@@ -58,6 +58,63 @@ int main() {
         namespace ocean = cubey::projects::ocean;
 
         const ocean::OceanConfig defaults{};
+        require(defaults.sea_state == ocean::OceanSeaState::Windy,
+                "ocean should default to the broadly useful windy sea state");
+        require(ocean::ocean_infer_sea_state(defaults) == ocean::OceanSeaState::Windy,
+                "default ocean values should exactly match the windy preset");
+        require(std::string_view{ocean::ocean_sea_state_name(ocean::OceanSeaState::Calm)} ==
+                        "calm" &&
+                    std::string_view{ocean::ocean_sea_state_name(ocean::OceanSeaState::Windy)} ==
+                        "windy" &&
+                    std::string_view{ocean::ocean_sea_state_name(ocean::OceanSeaState::Stormy)} ==
+                        "stormy" &&
+                    std::string_view{ocean::ocean_sea_state_name(ocean::OceanSeaState::Custom)} ==
+                        "custom",
+                "ocean sea states should expose stable UI names");
+        require(ocean::ocean_sea_state_from_name("") == ocean::OceanSeaState::Windy &&
+                    ocean::ocean_sea_state_from_name("calm") == ocean::OceanSeaState::Calm &&
+                    ocean::ocean_sea_state_from_name("stormy") == ocean::OceanSeaState::Stormy,
+                "ocean sea-state config should parse all serializable presets");
+        bool rejected_custom_name = false;
+        try {
+            static_cast<void>(ocean::ocean_sea_state_from_name("custom"));
+        } catch (const std::runtime_error&) {
+            rejected_custom_name = true;
+        }
+        require(rejected_custom_name,
+                "custom sea state should remain an inferred UI state rather than config input");
+        ocean::OceanConfig calm = defaults;
+        ocean::apply_ocean_sea_state(calm, ocean::OceanSeaState::Calm);
+        ocean::OceanConfig stormy = defaults;
+        ocean::apply_ocean_sea_state(stormy, ocean::OceanSeaState::Stormy);
+        require(ocean::ocean_infer_sea_state(calm) == ocean::OceanSeaState::Calm &&
+                    ocean::ocean_infer_sea_state(stormy) == ocean::OceanSeaState::Stormy,
+                "applied sea states should round-trip through owned-value inference");
+        require(calm.cascade_enabled == defaults.cascade_enabled &&
+                    stormy.cascade_enabled == defaults.cascade_enabled,
+                "all sea states should keep the fixed-cost C0/C1 cascade pair");
+        require(calm.cascades[0].tile_length == defaults.cascades[0].tile_length &&
+                    stormy.cascades[0].wind_direction_degrees ==
+                        defaults.cascades[0].wind_direction_degrees &&
+                    calm.cascades[1].seed_x == defaults.cascades[1].seed_x,
+                "sea states should preserve domains, directions, and deterministic seeds");
+        require(calm.cascades[0].wind_speed < defaults.cascades[0].wind_speed &&
+                    defaults.cascades[0].wind_speed < stormy.cascades[0].wind_speed &&
+                    calm.surface_foam_strength < defaults.surface_foam_strength &&
+                    defaults.surface_foam_strength < stormy.surface_foam_strength,
+                "sea states should order wave and foam energy from calm through stormy");
+        ocean::OceanConfig custom = defaults;
+        custom.cascades[0].wind_speed += 0.25F;
+        require(ocean::ocean_infer_sea_state(custom) == ocean::OceanSeaState::Custom,
+                "manual edits to preset-owned controls should infer a custom sea state");
+        bool rejected_custom_preset = false;
+        try {
+            ocean::apply_ocean_sea_state(custom, ocean::OceanSeaState::Custom);
+        } catch (const std::runtime_error&) {
+            rejected_custom_preset = true;
+        }
+        require(rejected_custom_preset,
+                "custom sea state should not be accepted as a serializable preset");
         require(defaults.map_size == ocean::kOceanDefaultMapSize,
                 "ocean should default to the current reference map size");
         require(defaults.map_size == 512U, "ocean should default to the practical 512 map size");
@@ -353,11 +410,11 @@ int main() {
         require_near(flat_surface_frame.curvature_strength, 0.0F, 0.001F,
                      "flat ocean surface frame should resolve zero curvature strength");
 
-        const ocean::OceanCascadeConfig& cascade0 = defaults.cascades[0];
-        const ocean::OceanCascadeConfig& cascade1 = defaults.cascades[1];
-        const ocean::OceanCascadeConfig& cascade2 = defaults.cascades[2];
-        const ocean::OceanCascadeConfig& cascade3 = defaults.cascades[3];
-        const ocean::OceanCascadeConfig& cascade4 = defaults.cascades[4];
+        const ocean::OceanCascadeConfig& cascade0 = stormy.cascades[0];
+        const ocean::OceanCascadeConfig& cascade1 = stormy.cascades[1];
+        const ocean::OceanCascadeConfig& cascade2 = stormy.cascades[2];
+        const ocean::OceanCascadeConfig& cascade3 = stormy.cascades[3];
+        const ocean::OceanCascadeConfig& cascade4 = stormy.cascades[4];
         const ocean::OceanCascadeDomain domain0 = ocean::ocean_cascade_domain(defaults, 0);
         const ocean::OceanCascadeDomain domain1 = ocean::ocean_cascade_domain(defaults, 1);
         const ocean::OceanCascadeDomain domain2 = ocean::ocean_cascade_domain(defaults, 2);
@@ -491,10 +548,10 @@ int main() {
                      "cascade 4 storm detail foam should stay secondary");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
-        require_near(defaults.foam_density, 3.15F, 0.001F,
-                     "foam density should default to visible persistent coverage");
-        require_near(defaults.foam_sharpness, 0.62F, 0.001F,
-                     "foam sharpness should default to a whitecap-biased response");
+        require_near(defaults.foam_density, 2.30F, 0.001F,
+                     "windy foam density should keep intermittent visible coverage");
+        require_near(defaults.foam_sharpness, 0.60F, 0.001F,
+                     "windy foam sharpness should keep a whitecap-biased response");
         const ocean::OceanDiagnosticsConfig diagnostics{};
         require(diagnostics.size_reference_enabled,
                 "ocean diagnostics should default the size reference pillar on");
@@ -504,10 +561,10 @@ int main() {
                      "ocean diagnostics should default to detail anti-repeat sampling");
         require_near(defaults.surface_shape_strength, 1.0F, 0.001F,
                      "ocean should default surface shape contribution on");
-        require_near(defaults.surface_foam_strength, 1.0F, 0.001F,
-                     "ocean should default surface foam contribution on");
-        require_near(defaults.foam_history_strength, 1.0F, 0.001F,
-                     "ocean should default foam history contribution on");
+        require_near(defaults.surface_foam_strength, 0.75F, 0.001F,
+                     "windy ocean should default to restrained surface foam");
+        require_near(defaults.foam_history_strength, 0.75F, 0.001F,
+                     "windy ocean should retain but not saturate foam history");
         require_near(defaults.atmosphere_material_strength, 1.0F, 0.001F,
                      "ocean should default atmosphere material contribution on");
         require_near(defaults.atmosphere_sky_strength, 1.0F, 0.001F,
@@ -518,8 +575,8 @@ int main() {
                      "ocean should default atmosphere light contribution on");
         require_near(defaults.foam_lighting_strength, 1.0F, 0.001F,
                      "ocean should default dynamic foam lighting contribution on");
-        require_near(defaults.self_shadow_strength, 0.45F, 0.001F,
-                     "ocean should default experimental wave self-shadowing on");
+        require_near(defaults.self_shadow_strength, 0.30F, 0.001F,
+                     "windy ocean should keep restrained wave self-shadowing on");
         require_near(defaults.self_shadow_distance, 44.0F, 0.001F,
                      "ocean should default wave self-shadow march reach");
         require_near(defaults.self_shadow_bias, 0.18F, 0.001F,
@@ -540,18 +597,18 @@ int main() {
                      "ocean should default far-field start distance");
         require_near(defaults.far_field_end_m, 2200.0F, 0.001F,
                      "ocean should default far-field end distance");
-        require_near(defaults.far_roughness_strength, 0.12F, 0.001F,
-                     "ocean should default far-field roughness contribution conservatively");
-        require_near(defaults.far_glint_strength, 0.28F, 0.001F,
-                     "ocean should default far-field sun glitter contribution on");
+        require_near(defaults.far_roughness_strength, 0.09F, 0.001F,
+                     "windy ocean should use moderate far-field roughness");
+        require_near(defaults.far_glint_strength, 0.30F, 0.001F,
+                     "windy ocean should retain far-field sun glitter");
         require_near(defaults.far_detail_footprint_start_m, 0.9F, 0.001F,
                      "ocean should default far-detail footprint fade start");
         require_near(defaults.far_detail_footprint_end_m, 5.0F, 0.001F,
                      "ocean should default far-detail footprint fade end");
-        require_near(defaults.far_reflection_variation_strength, 0.08F, 0.001F,
-                     "ocean should default broad far reflection variation conservatively");
-        require_near(defaults.sun_glitter_width, 0.10F, 0.001F,
-                     "ocean should default reflected-sun glitter corridor width");
+        require_near(defaults.far_reflection_variation_strength, 0.06F, 0.001F,
+                     "windy ocean should keep broad far reflection variation restrained");
+        require_near(defaults.sun_glitter_width, 0.09F, 0.001F,
+                     "windy ocean should use a moderate reflected-sun corridor width");
         require_near(defaults.cloud_reflection_strength, 0.75F, 0.001F,
                      "ocean should default current-view cloud reflection contribution on");
         require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
@@ -730,6 +787,7 @@ int main() {
 
         cubey::RunConfig run_config;
         run_config.debug_view = "foam";
+        run_config.ocean.sea_state = "stormy";
         run_config.ocean.map_size = 128;
         run_config.ocean.surface_mode = "flat";
         run_config.ocean.planet_radius_scale = 0.25F;
@@ -744,6 +802,10 @@ int main() {
         const ocean::OceanConfig from_run_config = ocean::ocean_config_from_run_config(run_config);
         require(from_run_config.render_view == ocean::OceanRenderView::Foam,
                 "run config should initialize ocean debug view");
+        require(from_run_config.sea_state == ocean::OceanSeaState::Stormy &&
+                    ocean::ocean_config_matches_sea_state(from_run_config,
+                                                          ocean::OceanSeaState::Stormy),
+                "run config should apply the selected sea state before independent overrides");
         require(from_run_config.map_size == 128U, "run config should initialize ocean map size");
         require(from_run_config.field_precision == ocean::OceanFieldPrecision::Half,
                 "run config should inherit the default ocean field precision");
@@ -802,6 +864,8 @@ int main() {
                 "manual atmosphere run state should keep the default auto exposure");
 
         const char* argv[] = {"ocean",
+                              "--ocean-sea-state",
+                              "calm",
                               "--ocean-map-size",
                               "256",
                               "--no-ocean-spectral-domains",
@@ -825,7 +889,8 @@ int main() {
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        cubey::RunConfig parsed = cubey::parse_run_config(24, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(26, const_cast<char**>(argv));
+        require(parsed.ocean.sea_state == "calm", "CLI parser should accept --ocean-sea-state");
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
                 "CLI parser should accept --ocean-surface-mode");
@@ -1235,6 +1300,12 @@ int main() {
                          "UI should expose a preset that enables every cascade slot");
         require_contains(ui_source, "Core",
                          "UI should expose a preset for the default core cascade slots");
+        require_contains(ui_source, "\"Sea state\"",
+                         "UI should expose first-class calm, windy, and stormy presets");
+        require_contains(ui_source, "ocean_infer_sea_state",
+                         "UI should report manual preset-owned edits as custom");
+        require_contains(ui_source, "apply_ocean_sea_state",
+                         "UI should apply coherent sea-state settings through the config helper");
         require_contains(ui_source, "steady_compute_dispatch_count",
                          "UI should expose a cascade-cost dispatch estimate");
         require_contains(ui_source, "&ui.config.cascade_enabled[index]",

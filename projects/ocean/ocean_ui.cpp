@@ -386,6 +386,7 @@ void draw_lod_diagnostics(const OceanSurfaceFrame& surface_frame) {
 } // namespace
 
 void draw_ocean_ui(OceanUiContext ui) {
+    ui.config.sea_state = ocean_infer_sea_state(ui.config);
     if (!cubey::host::begin_control_panel("Ocean", {.width = 430.0F})) {
         ImGui::End();
         return;
@@ -420,6 +421,12 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Wave Core", {.help = "Global controls for the FFT wave field and terrain coupling."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Wave Core");
+        OceanSeaState sea_state = ui.config.sea_state;
+        if (cubey::host::imgui_enum_combo(
+                "Sea state", sea_state, kOceanSeaStatePresets, ocean_sea_state_name,
+                "Apply a coherent wave and foam preset. Manual edits are reported as custom.")) {
+            apply_ocean_sea_state(ui.config, sea_state);
+        }
         draw_map_size_combo(ui.config);
         cubey::host::imgui_enum_combo(
             "Field precision", ui.config.field_precision, kOceanFieldPrecisions,
@@ -821,6 +828,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         draw_lod_diagnostics(ui.surface_frame);
     }
 
+    ui.config.sea_state = ocean_infer_sea_state(ui.config);
     ImGui::End();
 }
 

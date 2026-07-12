@@ -376,6 +376,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "pbr.environment_source",
         "pbr.ibl_intensity",
         "pbr.exposure",
+        "ocean.sea_state",
         "ocean.map_size",
         "ocean.cascade",
         "ocean.spectral_domains",
@@ -578,6 +579,7 @@ void test_run_config_loads_json_config_file() {
     "exposure": -0.75
   },
   "ocean": {
+    "sea_state": "stormy",
     "map_size": 512,
     "cascade": "4",
     "spectral_domains": false,
@@ -677,7 +679,8 @@ void test_run_config_loads_json_config_file() {
             "config file should set nested PBR options");
     require(config.pbr.exposure == -0.75F && config.pbr.exposure_explicit,
             "config file should set explicit exposure");
-    require(config.ocean.map_size == 512 && config.ocean.cascade == 4,
+    require(config.ocean.sea_state == "stormy" && config.ocean.map_size == 512 &&
+                config.ocean.cascade == 4,
             "config file should set ocean controls");
     require(config.ocean.spectral_domains == 0 && config.ocean.terrain_fields == 1,
             "config file should set ocean tri-state booleans");
@@ -1638,6 +1641,8 @@ void test_run_config_parses_water_controls() {
 
 void test_run_config_parses_ocean_controls() {
     std::string program = "cubey";
+    std::string sea_state_flag = "--ocean-sea-state";
+    std::string sea_state_value = "calm";
     std::string map_flag = "--ocean-map-size";
     std::string map_value = "256";
     std::string precision_flag = "--ocean-field-precision";
@@ -1652,7 +1657,8 @@ void test_run_config_parses_ocean_controls() {
     std::string reflection_value = "0.8";
     std::string shadow_flag = "--ocean-cloud-shadow-strength";
     std::string shadow_value = "0.4";
-    std::array<char*, 15> argv{program.data(),          map_flag.data(),
+    std::array<char*, 17> argv{program.data(),          sea_state_flag.data(),
+                               sea_state_value.data(),  map_flag.data(),
                                map_value.data(),        precision_flag.data(),
                                precision_value.data(),  cascade_flag.data(),
                                cascade_value.data(),    terrain_fields_flag.data(),
@@ -1663,6 +1669,7 @@ void test_run_config_parses_ocean_controls() {
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.ocean.sea_state == "calm", "run config should parse ocean sea state");
     require(config.ocean.map_size == 256, "run config should parse ocean map size");
     require(config.ocean.field_precision == "half",
             "run config should parse ocean field precision");
@@ -1682,6 +1689,8 @@ void test_run_config_parses_ocean_controls() {
     require(all_config.ocean.cascade == -1, "run config should parse all ocean cascades");
 
     const cubey::RunConfig defaults = cubey::parse_run_config(1, all_argv.data());
+    require(defaults.ocean.sea_state.empty(),
+            "run config should leave ocean sea state to the project default");
     require(defaults.ocean.cascade == -1, "run config should default to all ocean cascades");
     require(defaults.ocean.terrain_fields == -1,
             "run config should default ocean terrain fields to project defaults");
@@ -1692,6 +1701,16 @@ void test_run_config_parses_ocean_controls() {
         static_cast<int>(no_terrain_fields_argv.size()), no_terrain_fields_argv.data());
     require(no_terrain_fields_config.ocean.terrain_fields == 0,
             "run config should parse disabled ocean terrain fields");
+
+    std::string custom_sea_state = "custom";
+    std::array<char*, 3> custom_state_argv{program.data(), sea_state_flag.data(),
+                                           custom_sea_state.data()};
+    require_throws(
+        [&] {
+            static_cast<void>(cubey::parse_run_config(static_cast<int>(custom_state_argv.size()),
+                                                      custom_state_argv.data()));
+        },
+        "run config should reject custom as a serialized ocean sea state");
 }
 
 void test_run_config_parses_terrain_controls() {

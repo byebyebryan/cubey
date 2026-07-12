@@ -14,6 +14,7 @@ cubey_add_app_target(
     SOURCES
         ocean_app.cpp
         ocean_gpu_resources.cpp
+        ocean_sea_state.cpp
         ocean_ui.cpp
         main.cpp
     SHADERS
@@ -57,6 +58,7 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(cubey_project_ocean_tests
         ocean_config_tests.cpp
+        ocean_sea_state.cpp
     )
     target_compile_definitions(cubey_project_ocean_tests
         PRIVATE
