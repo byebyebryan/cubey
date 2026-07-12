@@ -29,12 +29,19 @@ enum class TerrainDebugView : std::uint8_t {
     Clay,
     Shadow,
     AerialTransmittance,
+    VegetationCoverage,
+};
+
+enum class TerrainPresentationMode : std::uint8_t {
+    Standard,
+    Backdrop,
 };
 
 struct TerrainRuntimeConfig {
     TerrainSourceConfig source{};
     TerrainCameraPreset camera = TerrainCameraPreset::Oblique;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
+    TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
     float near_cell_size_m = 2.0F;
     float vertical_scale = 1.0F;
     std::uint32_t lod_levels = 8U;
@@ -50,6 +57,8 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] std::string_view terrain_debug_view_name(TerrainDebugView view);
 [[nodiscard]] TerrainDebugView terrain_debug_view_from_name(std::string_view name);
+[[nodiscard]] std::string_view terrain_presentation_mode_name(TerrainPresentationMode mode);
+[[nodiscard]] TerrainPresentationMode terrain_presentation_mode_from_name(std::string_view name);
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config);
 [[nodiscard]] TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& config);
 

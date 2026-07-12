@@ -107,6 +107,7 @@ constexpr std::array<std::string_view, 8> kTerrainCameraPresets{
     "coastal-oblique"};
 constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
+constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
                                                                       "terrain-engine-ref"};
 constexpr std::array<std::string_view, 5> kTerrainPreviewColors{"material", "height", "river",
@@ -152,7 +153,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 262> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 263> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -477,6 +478,10 @@ constexpr std::array<ConfigOptionDescriptor, 262> kRunConfigOptions{
            "--terrain-camera-preset", "Camera Preset", "Terrain",
            "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainCameraPresets)),
+    option(RunConfigOptionId::TerrainPresentation, "terrain.presentation",
+           "--terrain-presentation", "Presentation", "Terrain",
+           "Terrain material presentation: standard or distant backdrop coverage.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainPresentationModes)),
     option(RunConfigOptionId::TerrainVerticalScale, "terrain.vertical_scale",
            "--terrain-vertical-scale", "Vertical Scale", "Terrain",
            "Display scale applied to terrain height in renderer-backed preview consumers.",
@@ -1458,6 +1463,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainCameraPreset:
         return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.camera_preset);
+    case RunConfigOptionId::TerrainPresentation:
+        return config.terrain.presentation.empty() ? nlohmann::json(nullptr)
+                                                   : nlohmann::json(config.terrain.presentation);
     case RunConfigOptionId::TerrainVerticalScale:
         return optional_float(config.terrain.vertical_scale);
     case RunConfigOptionId::TerrainPreviewRuntime:
@@ -2011,6 +2019,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<float>("valleys", options.valleys);
     adapter.writeField<std::string>("recipe", options.recipe);
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
+    adapter.writeField<std::string>("presentation", options.presentation);
     adapter.writeField<std::string>("preview_runtime", options.preview_runtime);
     adapter.writeField<std::string>("preview_color", options.preview_color);
     adapter.writeField<std::string>("preview_surface", options.preview_surface);
@@ -2032,6 +2041,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<float>("valleys", options.valleys);
     adapter.readField<std::string>("recipe", options.recipe);
     adapter.readField<std::string>("camera_preset", options.camera_preset);
+    adapter.readField<std::string>("presentation", options.presentation);
     adapter.readField<std::string>("preview_runtime", options.preview_runtime);
     adapter.readField<std::string>("preview_color", options.preview_color);
     adapter.readField<std::string>("preview_surface", options.preview_surface);
@@ -2742,6 +2752,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainCameraPreset:
         config.terrain.camera_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainPresentation:
+        config.terrain.presentation = std::string(value);
         break;
     case RunConfigOptionId::TerrainVerticalScale:
         config.terrain.vertical_scale = parse_config_float(value, option);

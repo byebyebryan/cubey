@@ -112,6 +112,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "shadow";
     case TerrainDebugView::AerialTransmittance:
         return "aerial-transmittance";
+    case TerrainDebugView::VegetationCoverage:
+        return "vegetation-coverage";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -144,7 +146,30 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     if (name == "aerial-transmittance" || name == "aerial") {
         return TerrainDebugView::AerialTransmittance;
     }
+    if (name == "vegetation-coverage" || name == "vegetation" || name == "coverage") {
+        return TerrainDebugView::VegetationCoverage;
+    }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
+}
+
+std::string_view terrain_presentation_mode_name(TerrainPresentationMode mode) {
+    switch (mode) {
+    case TerrainPresentationMode::Standard:
+        return "standard";
+    case TerrainPresentationMode::Backdrop:
+        return "backdrop";
+    }
+    throw std::runtime_error("unknown terrain presentation mode");
+}
+
+TerrainPresentationMode terrain_presentation_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "standard") {
+        return TerrainPresentationMode::Standard;
+    }
+    if (name == "backdrop") {
+        return TerrainPresentationMode::Backdrop;
+    }
+    throw std::runtime_error("unknown terrain presentation mode: " + std::string(name));
 }
 
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
@@ -169,6 +194,7 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
             : 1.0F;
     result.camera = terrain_camera_preset_from_name(config.terrain.camera_preset);
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
+    result.presentation = terrain_presentation_mode_from_name(config.terrain.presentation);
     result.near_cell_size_m =
         cubey::run_config_float_is_set(config.terrain.cell_size) ? config.terrain.cell_size : 2.0F;
     result.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)

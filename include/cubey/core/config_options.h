@@ -126,6 +126,7 @@ enum class RunConfigOptionId {
     TerrainWaterSurface,
     TerrainRecipe,
     TerrainCameraPreset,
+    TerrainPresentation,
     TerrainVerticalScale,
     TerrainPreviewRuntime,
     TerrainPreviewColor,

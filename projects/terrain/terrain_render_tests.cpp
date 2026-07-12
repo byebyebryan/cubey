@@ -37,6 +37,8 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should default to oblique camera");
     require(config.debug_view == cubey::projects::terrain::TerrainDebugView::Surface,
             "terrain runtime should default to surface view");
+    require(config.presentation == cubey::projects::terrain::TerrainPresentationMode::Standard,
+            "terrain runtime should default to standard presentation");
     require_near(config.near_cell_size_m, 2.0F, 0.0F,
                  "terrain runtime should default to two-meter near cells");
     require(config.lod_levels == 8U && config.cells_per_axis == 128U,
@@ -82,6 +84,20 @@ void test_backdrop_camera_configuration() {
     require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
                  40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
                  "terrain backdrop camera should use a restrained field of view");
+}
+
+void test_backdrop_presentation_and_coverage_debug_parse() {
+    cubey::RunConfig run_config;
+    run_config.terrain.presentation = "backdrop";
+    run_config.debug_view = "vegetation-coverage";
+    const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.presentation == cubey::projects::terrain::TerrainPresentationMode::Backdrop,
+            "terrain runtime should parse backdrop presentation");
+    require(config.debug_view == cubey::projects::terrain::TerrainDebugView::VegetationCoverage,
+            "terrain runtime should parse vegetation coverage diagnostics");
+    require(cubey::projects::terrain::terrain_presentation_mode_name(config.presentation) ==
+                "backdrop",
+            "terrain presentation should retain its canonical name");
 }
 
 void test_backdrop_planner_is_deterministic_and_clear() {
@@ -273,6 +289,7 @@ int main() {
         test_runtime_config_defaults_to_the_v1_scene();
         test_ground_camera_and_shape_diagnostics_parse();
         test_backdrop_camera_configuration();
+        test_backdrop_presentation_and_coverage_debug_parse();
         test_backdrop_planner_is_deterministic_and_clear();
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();

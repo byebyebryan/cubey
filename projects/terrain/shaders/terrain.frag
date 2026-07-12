@@ -28,6 +28,7 @@ layout(location = 8) flat in float frag_cell_size_m;
 layout(location = 9) in float frag_lod_morph;
 layout(location = 10) in float frag_footprint_m;
 layout(location = 11) in float frag_direct_visibility;
+layout(location = 12) in float frag_landform_concavity_m;
 
 layout(location = 0) out vec4 out_color;
 
@@ -116,10 +117,16 @@ void main() {
     float material_footprint_m = max(
         0.35, length(pc.camera_position_vertical_scale.xyz - frag_world_position) *
                   pc.render_options.z);
+    bool backdrop_presentation = int(round(pc.render_options.w)) == 1;
     TerrainMaterialSample material = clay_view
         ? terrain_clay_material(source_normal)
         : terrain_material_sample(source_normal, frag_world_position.xz,
-                                  frag_height_m, material_footprint_m);
+                                  frag_height_m, frag_landform_concavity_m,
+                                  material_footprint_m, backdrop_presentation);
+    if (debug_view == 9) {
+        out_color = vec4(material.vegetation.ground, material.vegetation.woody, 0.0, 1.0);
+        return;
+    }
     // Relief stays subordinate to the resolved terrain shape at scene scale.
     vec3 normal = clay_view
         ? source_normal

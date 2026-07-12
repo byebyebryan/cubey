@@ -177,6 +177,10 @@ terrain_atmosphere_state(const RunConfig& config) {
     return static_cast<float>(static_cast<std::uint8_t>(view));
 }
 
+[[nodiscard]] float terrain_presentation_id(TerrainPresentationMode mode) {
+    return static_cast<float>(static_cast<std::uint8_t>(mode));
+}
+
 class TerrainApp {
   public:
     explicit TerrainApp(RunConfig config)
@@ -342,10 +346,14 @@ class TerrainApp {
             runtime_config_.camera = static_cast<TerrainCameraPreset>(camera);
             apply_camera_preset();
         }
+        int presentation = static_cast<int>(runtime_config_.presentation);
+        if (ImGui::Combo("Presentation", &presentation, "Standard\0Backdrop\0")) {
+            runtime_config_.presentation = static_cast<TerrainPresentationMode>(presentation);
+        }
         int debug_view = static_cast<int>(runtime_config_.debug_view);
         if (ImGui::Combo("View", &debug_view,
                          "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
-                         "Aerial transmittance\0")) {
+                         "Aerial transmittance\0Vegetation coverage\0")) {
             runtime_config_.debug_view = static_cast<TerrainDebugView>(debug_view);
         }
         if (source_changed) {
@@ -526,7 +534,8 @@ class TerrainApp {
                                                frame_camera_transform_.translation.z,
                                                runtime_config_.vertical_scale},
             .render_options = {terrain_debug_view_id(runtime_config_.debug_view),
-                               clipmap_config_.outer_half_extent, pixel_angular_span, 0.0F},
+                               clipmap_config_.outer_half_extent, pixel_angular_span,
+                               terrain_presentation_id(runtime_config_.presentation)},
         };
     }
 

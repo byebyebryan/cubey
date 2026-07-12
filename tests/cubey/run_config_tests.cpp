@@ -327,6 +327,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--planet-camera-mode",
         "--terrain-recipe",
         "--terrain-camera-preset",
+        "--terrain-presentation",
         "--terrain-vertical-scale",
         "--terrain-preview-runtime",
         "--terrain-preview-color",
@@ -430,6 +431,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.cell_size",
         "terrain.recipe",
         "terrain.camera_preset",
+        "terrain.presentation",
         "terrain.vertical_scale",
         "terrain.preview_runtime",
         "terrain.preview_color",
@@ -595,6 +597,7 @@ void test_run_config_loads_json_config_file() {
     "weathering_strength": 0.65,
     "recipe": "temperate-mountain-range-stress",
     "camera_preset": "profile",
+    "presentation": "backdrop",
     "preview_runtime": "terrain-engine-ref",
     "preview_color": "height",
     "preview_surface": "post-erosion",
@@ -695,6 +698,8 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain recipe");
     require(config.terrain.camera_preset == "profile",
             "config file should set terrain camera preset");
+    require(config.terrain.presentation == "backdrop",
+            "config file should set terrain presentation");
     require(config.terrain.preview_runtime == "terrain-engine-ref",
             "config file should set terrain preview runtime");
     require(config.terrain.preview_color == "height",
@@ -1722,6 +1727,8 @@ void test_run_config_parses_terrain_controls() {
     std::string recipe_value = "temperate-mountain-range-stress";
     std::string camera_flag = "--terrain-camera-preset";
     std::string camera_value = "surface";
+    std::string presentation_flag = "--terrain-presentation";
+    std::string presentation_value = "backdrop";
     std::string vertical_scale_flag = "--terrain-vertical-scale";
     std::string vertical_scale_value = "0.75";
     std::string preview_runtime_flag = "--terrain-preview-runtime";
@@ -1731,7 +1738,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 36> argv{program.data(),
+    std::array<char*, 38> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1758,6 +1765,8 @@ void test_run_config_parses_terrain_controls() {
                                recipe_value.data(),
                                camera_flag.data(),
                                camera_value.data(),
+                               presentation_flag.data(),
+                               presentation_value.data(),
                                vertical_scale_flag.data(),
                                vertical_scale_value.data(),
                                preview_runtime_flag.data(),
@@ -1786,6 +1795,8 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain recipe");
     require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
+    require(config.terrain.presentation == "backdrop",
+            "run config should parse terrain presentation");
     require(config.terrain.vertical_scale == 0.75F,
             "run config should parse terrain vertical scale");
     require(config.terrain.preview_runtime == "terrain-engine-ref",

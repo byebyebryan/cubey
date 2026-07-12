@@ -31,6 +31,7 @@ layout(location = 8) flat out float frag_cell_size_m;
 layout(location = 9) out float frag_lod_morph;
 layout(location = 10) out float frag_footprint_m;
 layout(location = 11) out float frag_direct_visibility;
+layout(location = 12) out float frag_landform_concavity_m;
 
 void main() {
     float cell_size_m = in_color.x;
@@ -75,4 +76,18 @@ void main() {
     frag_direct_visibility = terrain_heightfield_shadow(
         terrain_uniforms.source, sample_xz, base_height_m,
         pc.camera_position_vertical_scale.w, footprint_m);
+    const float landform_radius_m = 96.0;
+    float landform_footprint_m = max(footprint_m, landform_radius_m);
+    float landform_neighbor_height = 0.25 * (
+        terrain_source_base_height(terrain_uniforms.source,
+            sample_xz + vec2(landform_radius_m, 0.0), landform_footprint_m) +
+        terrain_source_base_height(terrain_uniforms.source,
+            sample_xz - vec2(landform_radius_m, 0.0), landform_footprint_m) +
+        terrain_source_base_height(terrain_uniforms.source,
+            sample_xz + vec2(0.0, landform_radius_m), landform_footprint_m) +
+        terrain_source_base_height(terrain_uniforms.source,
+            sample_xz - vec2(0.0, landform_radius_m), landform_footprint_m));
+    float landform_center_height = terrain_source_base_height(
+        terrain_uniforms.source, sample_xz, landform_footprint_m);
+    frag_landform_concavity_m = landform_neighbor_height - landform_center_height;
 }
