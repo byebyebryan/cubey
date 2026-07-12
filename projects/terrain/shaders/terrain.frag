@@ -146,6 +146,12 @@ void main() {
         return;
     }
 
+    if (debug_view == 7 || debug_view == 8) {
+        out_color = vec4(1.0);
+        return;
+    }
+
+    bool clay_view = debug_view == 6;
     float variation = terrain_color_noise(frag_world_position.xz);
     vec3 grass = vec3(0.19, 0.30, 0.13) * mix(0.72, 1.20, variation);
     vec3 soil = vec3(0.34, 0.27, 0.18) * mix(0.78, 1.15, variation);
@@ -161,7 +167,12 @@ void main() {
         frag_footprint_m);
     float detail_visibility = (1.0 - smoothstep(0.82, 0.98, frag_lod_morph)) *
         terrain_child_boundary_detail_visibility(frag_world_position.xz);
-    vec3 normal = normalize(mix(source_normal, detail_normal, detail_visibility));
+    vec3 normal = clay_view
+        ? source_normal
+        : normalize(mix(source_normal, detail_normal, detail_visibility));
+    if (clay_view) {
+        base_color = vec3(0.42);
+    }
     vec3 light_direction = normalize(pc.light_direction_intensity.xyz);
     float diffuse = max(dot(normal, light_direction), 0.0);
     vec3 sun = pc.light_color_debug_view.xyz *

@@ -40,6 +40,30 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should use the v1 clipmap dimensions");
 }
 
+void test_ground_camera_and_shape_diagnostics_parse() {
+    cubey::RunConfig run_config{};
+    run_config.terrain.camera_preset = "ground";
+    run_config.debug_view = "clay";
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Ground,
+            "terrain runtime should parse the ground camera");
+    require(config.debug_view == cubey::projects::terrain::TerrainDebugView::Clay,
+            "terrain runtime should parse the clay diagnostic");
+    require(cubey::projects::terrain::terrain_camera_is_surface(config.camera),
+            "terrain ground camera should use surface traversal");
+    require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 2.0F, 0.0F,
+                 "terrain ground camera should use eye-level clearance");
+    require_near(cubey::projects::terrain::terrain_camera_traversal_speed_mps(config.camera),
+                 12.0F, 0.0F, "terrain ground camera should use walking-scale traversal");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("shadow") ==
+                cubey::projects::terrain::TerrainDebugView::Shadow,
+            "terrain runtime should parse the shadow diagnostic");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("aerial") ==
+                cubey::projects::terrain::TerrainDebugView::AerialTransmittance,
+            "terrain runtime should parse the aerial diagnostic alias");
+}
+
 void test_clipmap_has_expected_extent_and_transition_data() {
     const cubey::projects::terrain::TerrainRuntimeConfig config{};
     const auto clipmap = cubey::projects::terrain::terrain_clipmap_config(config);
@@ -122,13 +146,37 @@ void test_surface_controller_traversal_preserves_clearance() {
                  "terrain traversal should cover speed times fixed duration");
 }
 
+void test_ground_controller_uses_walking_scale_speed() {
+    const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+        .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
+    });
+    cubey::projects::terrain::TerrainSurfaceController controller(12.0F);
+    constexpr double fixed_step_seconds = 1.0 / 60.0;
+    for (std::uint32_t frame = 0U; frame < 600U; ++frame) {
+        controller.advance_forward(fixed_step_seconds);
+    }
+    const cubey::Transform3D camera = controller.camera_transform(source, 1.0F, 2.0F);
+    const auto sample = cubey::projects::terrain::sample_terrain(
+        source, {.world_xz = {camera.translation.x, camera.translation.z}});
+    require_near(camera.translation.y, sample.height_m + 2.0F, 0.001F,
+                 "terrain ground traversal should preserve eye-level clearance");
+    require_near(std::sqrt(camera.translation.x * camera.translation.x +
+                           camera.translation.z * camera.translation.z),
+                 120.0F, 0.02F,
+                 "terrain ground traversal should cover walking-scale fixed-step distance");
+}
+
 } // namespace
 
 int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
+        test_ground_camera_and_shape_diagnostics_parse();
         test_clipmap_has_expected_extent_and_transition_data();
         test_surface_controller_traversal_preserves_clearance();
+        test_ground_controller_uses_walking_scale_speed();
         std::cout << "terrain_render_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

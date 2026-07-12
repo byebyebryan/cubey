@@ -124,13 +124,10 @@ struct CompiledTerrainGraph {
         };
     case TerrainCameraPreset::Surface:
     case TerrainCameraPreset::SurfaceLow:
+    case TerrainCameraPreset::Ground:
         return {};
     }
     return {};
-}
-
-[[nodiscard]] bool terrain_surface_camera(TerrainCameraPreset preset) {
-    return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow;
 }
 
 [[nodiscard]] TerrainSourceSummary
@@ -182,8 +179,9 @@ class TerrainApp {
               .min_distance = 120.0F,
               .max_distance = clipmap_config_.outer_half_extent * 3.0F,
           }),
+          surface_controller_(terrain_camera_traversal_speed_mps(runtime_config_.camera)),
           camera_(cubey::Camera3DConfig{
-              .near_z = 0.5F,
+              .near_z = 0.1F,
               .far_z = clipmap_config_.outer_half_extent * 5.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)) {}
@@ -262,12 +260,12 @@ class TerrainApp {
                                        context.render_target().format, frame_slot_count);
         };
         if (run_config_.capture_mode == CaptureMode::Video) {
-            if (!terrain_surface_camera(runtime_config_.camera)) {
+            if (!terrain_camera_is_surface(runtime_config_.camera)) {
                 orbit_controller_.set_auto_rotation_speed(kTerrainHeadlessOrbitSpeed);
             }
             callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
-                if (terrain_surface_camera(runtime_config_.camera)) {
+                if (terrain_camera_is_surface(runtime_config_.camera)) {
                     surface_controller_.advance_forward(frame.timing.delta_seconds);
                 } else {
                     orbit_controller_.update(frame.timing.delta_seconds);
@@ -292,7 +290,7 @@ class TerrainApp {
     }
 
     void update(const cubey::input::FilteredInputFrame& input, double delta_seconds) {
-        if (terrain_surface_camera(runtime_config_.camera)) {
+        if (terrain_camera_is_surface(runtime_config_.camera)) {
             surface_controller_.update(input, delta_seconds);
         } else {
             orbit_controller_.update_from_input(input, delta_seconds);
@@ -323,12 +321,18 @@ class TerrainApp {
             source_changed = true;
         }
         int camera = static_cast<int>(runtime_config_.camera);
-        if (ImGui::Combo("Camera", &camera, "Oblique\0Profile\0Top\0Surface\0Surface low\0")) {
+        if (ImGui::Combo("Camera", &camera,
+                         "Oblique\0Profile\0Top\0Surface\0Surface low\0Ground\0")) {
             runtime_config_.camera = static_cast<TerrainCameraPreset>(camera);
+            if (terrain_camera_is_surface(runtime_config_.camera)) {
+                surface_controller_.set_home_speed_mps(
+                    terrain_camera_traversal_speed_mps(runtime_config_.camera));
+            }
         }
         int debug_view = static_cast<int>(runtime_config_.debug_view);
         if (ImGui::Combo("View", &debug_view,
-                         "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0")) {
+                         "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
+                         "Aerial transmittance\0")) {
             runtime_config_.debug_view = static_cast<TerrainDebugView>(debug_view);
         }
         if (source_changed) {
@@ -437,9 +441,8 @@ class TerrainApp {
     }
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
-        if (terrain_surface_camera(runtime_config_.camera)) {
-            const float clearance =
-                runtime_config_.camera == TerrainCameraPreset::SurfaceLow ? 18.0F : 70.0F;
+        if (terrain_camera_is_surface(runtime_config_.camera)) {
+            const float clearance = terrain_camera_clearance_m(runtime_config_.camera);
             return surface_controller_.camera_transform(source_parameters_,
                                                         runtime_config_.vertical_scale, clearance);
         }

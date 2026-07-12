@@ -9,9 +9,10 @@ namespace cubey::projects::terrain {
 
 class TerrainSurfaceController {
   public:
-    TerrainSurfaceController();
+    explicit TerrainSurfaceController(float home_speed_mps = 220.0F);
 
     void reset();
+    void set_home_speed_mps(float speed_mps);
     void advance_forward(double delta_seconds);
     void update(const cubey::input::FilteredInputFrame& input, double delta_seconds);
     [[nodiscard]] cubey::Transform3D camera_transform(const TerrainSourceParameters& source,
@@ -22,6 +23,7 @@ class TerrainSurfaceController {
     cubey::math::Vec2 position_xz_{0.0F, 0.0F};
     float yaw_radians_ = 0.62F;
     float pitch_radians_ = -0.12F;
+    float home_speed_mps_ = 220.0F;
     float speed_mps_ = 220.0F;
 };
 

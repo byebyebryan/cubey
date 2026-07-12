@@ -10,13 +10,23 @@ constexpr float kLookRadiansPerPixel = 0.0045F;
 
 } // namespace
 
-TerrainSurfaceController::TerrainSurfaceController() = default;
+TerrainSurfaceController::TerrainSurfaceController(float home_speed_mps) {
+    set_home_speed_mps(home_speed_mps);
+}
 
 void TerrainSurfaceController::reset() {
     position_xz_ = {0.0F, 0.0F};
     yaw_radians_ = 0.62F;
     pitch_radians_ = -0.12F;
-    speed_mps_ = 220.0F;
+    speed_mps_ = home_speed_mps_;
+}
+
+void TerrainSurfaceController::set_home_speed_mps(float speed_mps) {
+    if (!std::isfinite(speed_mps) || speed_mps <= 0.0F) {
+        return;
+    }
+    home_speed_mps_ = speed_mps;
+    speed_mps_ = speed_mps;
 }
 
 void TerrainSurfaceController::advance_forward(double delta_seconds) {
@@ -38,7 +48,7 @@ void TerrainSurfaceController::update(const cubey::input::FilteredInputFrame& in
     }
     if (input.scroll_delta().y != 0.0) {
         speed_mps_ *= std::pow(1.18F, static_cast<float>(input.scroll_delta().y));
-        speed_mps_ = std::clamp(speed_mps_, 20.0F, 1'200.0F);
+        speed_mps_ = std::clamp(speed_mps_, 2.0F, 1'200.0F);
     }
 
     cubey::math::Vec2 movement{0.0F, 0.0F};

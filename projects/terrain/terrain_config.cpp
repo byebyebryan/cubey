@@ -18,6 +18,8 @@ std::string_view terrain_camera_preset_name(TerrainCameraPreset preset) {
         return "surface";
     case TerrainCameraPreset::SurfaceLow:
         return "surface-low";
+    case TerrainCameraPreset::Ground:
+        return "ground";
     }
     throw std::runtime_error("unknown terrain camera preset");
 }
@@ -38,7 +40,35 @@ TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
     if (name == "surface-low") {
         return TerrainCameraPreset::SurfaceLow;
     }
+    if (name == "ground") {
+        return TerrainCameraPreset::Ground;
+    }
     throw std::runtime_error("unknown terrain camera preset: " + std::string(name));
+}
+
+bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept {
+    return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
+           preset == TerrainCameraPreset::Ground;
+}
+
+float terrain_camera_clearance_m(TerrainCameraPreset preset) {
+    switch (preset) {
+    case TerrainCameraPreset::Surface:
+        return 70.0F;
+    case TerrainCameraPreset::SurfaceLow:
+        return 18.0F;
+    case TerrainCameraPreset::Ground:
+        return 2.0F;
+    case TerrainCameraPreset::Oblique:
+    case TerrainCameraPreset::Profile:
+    case TerrainCameraPreset::Top:
+        break;
+    }
+    throw std::runtime_error("terrain orbit camera does not have a surface clearance");
+}
+
+float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept {
+    return preset == TerrainCameraPreset::Ground ? 12.0F : 220.0F;
 }
 
 std::string_view terrain_debug_view_name(TerrainDebugView view) {
@@ -55,6 +85,12 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "weathering";
     case TerrainDebugView::Lod:
         return "lod";
+    case TerrainDebugView::Clay:
+        return "clay";
+    case TerrainDebugView::Shadow:
+        return "shadow";
+    case TerrainDebugView::AerialTransmittance:
+        return "aerial-transmittance";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -77,6 +113,15 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "lod") {
         return TerrainDebugView::Lod;
+    }
+    if (name == "clay") {
+        return TerrainDebugView::Clay;
+    }
+    if (name == "shadow") {
+        return TerrainDebugView::Shadow;
+    }
+    if (name == "aerial-transmittance" || name == "aerial") {
+        return TerrainDebugView::AerialTransmittance;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }

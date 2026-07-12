@@ -38,9 +38,9 @@ The fixed review pack includes multi-seed shape and presentation sheets, LOD
 ownership stills, and a deterministic surface traversal video.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
-`local`. Camera presets are `oblique`, `profile`, `top`, `surface`, and
-`surface-low`; debug views are `surface`, `height`, `base-height`, `slope`,
-`weathering`, and `lod`.
+`local`. Camera presets are `oblique`, `profile`, `top`, `surface`,
+`surface-low`, and `ground`; debug views are `surface`, `height`, `base-height`,
+`slope`, `weathering`, `lod`, `clay`, `shadow`, and `aerial-transmittance`.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and
