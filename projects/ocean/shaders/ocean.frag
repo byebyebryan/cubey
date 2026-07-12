@@ -117,6 +117,7 @@ const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u;
 const uint OCEAN_VIEW_WATER_BODY = 28u;
 const uint OCEAN_VIEW_FRESNEL = 29u;
 const uint OCEAN_VIEW_SLOPE_LOD = 30u;
+const uint OCEAN_VIEW_FOAM_LOD = 31u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -394,7 +395,14 @@ void main() {
                   ocean_terrain_foam_strength()
             : 0.0;
     float near_foam_coverage = ocean_foam_coverage(foam_data, dist, ndotv);
-    float foam_coverage = max(near_foam_coverage, terrain_shore_foam);
+    vec4 foam_lod_data = vec4(0.0);
+    if (ocean_spectral_lod_handoff() > 0.0) {
+        foam_lod_data = ocean_foam_lod_data(dist, pixel_footprint_m);
+    }
+    float spectral_foam_coverage = foam_lod_data.z * ocean_spectral_lod_handoff();
+    float resolved_foam_coverage = max(near_foam_coverage, terrain_shore_foam);
+    float foam_coverage = 1.0 - (1.0 - resolved_foam_coverage) *
+                                    (1.0 - spectral_foam_coverage);
     float ambient_light = ocean_ambient_light_scale();
     float reference_shadow = ocean_reference_pillar_shadow(frag_world_position, sun_dir);
     float wave_shadow = ocean_wave_self_shadow(frag_sample_position,
@@ -531,6 +539,9 @@ void main() {
     } else if (view == OCEAN_VIEW_SLOPE_LOD) {
         color = vec3(clamp(spectral_slope_rms * 16.0, 0.0, 1.0),
                      clamp(slope_roughness_delta * 32.0, 0.0, 1.0), foam_data.slope_lod.y);
+    } else if (view == OCEAN_VIEW_FOAM_LOD) {
+        color = vec3(clamp(foam_lod_data.x * 4.0, 0.0, 1.0),
+                     clamp(foam_lod_data.y * 4.0, 0.0, 1.0), foam_lod_data.w);
     }
 
     if (ocean.debug_options.w > 0.0) {

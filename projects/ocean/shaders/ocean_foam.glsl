@@ -176,20 +176,82 @@ vec4 sample_normal_foam_gradient(uint cascade, vec2 position, float tile_length,
     return vec4(gradient, foam);
 }
 
-vec3 cascade_slope_lod_statistics(uint cascade, vec2 position, float tile_length, float dist,
-                                  float footprint_m) {
+float ocean_surface_moment_lod(uint cascade, float tile_length, float footprint_m) {
     float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
     float source_texel_footprint = max(1.0, footprint_m * pixels_per_meter);
     float max_lod = max(log2(cascade_map_size(cascade)) - 1.0, 0.0);
-    float moment_lod = clamp(log2(max(source_texel_footprint, 2.0)) - 1.0, 0.0, max_lod);
-    vec4 moments = sample_normal_moments(cascade, position / tile_length, moment_lod);
-    float slope_variance = max(moments.z - dot(moments.xy, moments.xy), 0.0);
+    return clamp(log2(max(source_texel_footprint, 2.0)) - 1.0, 0.0, max_lod);
+}
+
+float ocean_surface_handoff_moment_lod(uint cascade, float tile_length, float footprint_m,
+                                       float transfer) {
+    float footprint_lod = ocean_surface_moment_lod(cascade, tile_length, footprint_m);
+    float max_lod = max(log2(cascade_map_size(cascade)) - 1.0, 0.0);
+    return mix(footprint_lod, max_lod, transfer * transfer);
+}
+
+float ocean_surface_lod_transfer(uint cascade, float tile_length, float dist, float footprint_m) {
+    float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
+    float source_texel_footprint = max(1.0, footprint_m * pixels_per_meter);
     float footprint_transfer = smoothstep(1.0, 4.0, source_texel_footprint);
     float resolved_detail =
         cascade_surface_lod_weight(cascade, dist) *
         mix(1.0, 0.08, ocean_far_detail_filter(dist, footprint_m));
-    float transfer = max(footprint_transfer, 1.0 - resolved_detail);
+    return max(footprint_transfer, 1.0 - resolved_detail);
+}
+
+vec3 cascade_slope_lod_statistics(uint cascade, vec2 position, float tile_length, float dist,
+                                  float footprint_m) {
+    float transfer = ocean_surface_lod_transfer(cascade, tile_length, dist, footprint_m);
+    float moment_lod =
+        ocean_surface_handoff_moment_lod(cascade, tile_length, footprint_m, transfer);
+    vec4 moments = sample_normal_moments(cascade, position / tile_length, moment_lod);
+    float slope_variance = max(moments.z - dot(moments.xy, moments.xy), 0.0);
     return vec3(slope_variance, clamp(transfer, 0.0, 1.0), moment_lod);
+}
+
+vec2 foam_moment_sparse_coverage(vec4 moments) {
+    vec2 mean = clamp(moments.xy, vec2(0.0), vec2(1.0));
+    vec2 second = clamp(max(moments.zw, mean * mean), vec2(0.0), vec2(1.0));
+    vec2 occupancy = mean * mean / max(second, vec2(0.00001));
+    vec2 amplitude = second / max(mean, vec2(0.00001));
+    vec2 variance = max(second - mean * mean, vec2(0.0));
+    vec2 intermittency = variance / max(second, vec2(0.00001));
+    vec2 amplitude_gate =
+        vec2(smoothstep(0.06, 0.40, amplitude.x), smoothstep(0.12, 0.52, amplitude.y));
+    vec2 sparse_gate = smoothstep(vec2(0.04), vec2(0.50), intermittency);
+    return clamp(occupancy * amplitude_gate * sparse_gate, vec2(0.0), vec2(1.0));
+}
+
+vec3 cascade_foam_lod_statistics(uint cascade, vec2 position, float tile_length, float dist,
+                                 float footprint_m) {
+    float transfer = ocean_surface_lod_transfer(cascade, tile_length, dist, footprint_m);
+    float moment_lod =
+        ocean_surface_handoff_moment_lod(cascade, tile_length, footprint_m, transfer);
+    vec4 moments = sample_foam_moments(cascade, position / tile_length, moment_lod);
+    vec2 coverage = foam_moment_sparse_coverage(moments);
+    return vec3(coverage, clamp(transfer, 0.0, 1.0));
+}
+
+vec4 ocean_foam_lod_data(float dist, float footprint_m) {
+    vec2 total = vec2(0.0);
+    float transfer = 0.0;
+    float density_scale = clamp(ocean.inspection_options.z * 0.45, 0.0, 2.0);
+    for (uint cascade = 0u; cascade < 5u; ++cascade) {
+        if (!ocean_cascade_enabled(cascade)) {
+            continue;
+        }
+        float tile_length = max(cascade_tile_length(cascade), 0.001);
+        vec3 statistics = cascade_foam_lod_statistics(
+            cascade, frag_sample_position, tile_length, dist, footprint_m);
+        vec2 cascade_coverage = clamp(statistics.xy * statistics.z *
+                                          ocean_surface_foam_strength() * density_scale,
+                                      vec2(0.0), vec2(0.50));
+        total = vec2(1.0) - (vec2(1.0) - total) * (vec2(1.0) - cascade_coverage);
+        transfer = max(transfer, statistics.z);
+    }
+    float coverage = clamp(max(total.x * 0.55, total.y * 0.28), 0.0, 0.20);
+    return vec4(total, coverage, transfer);
 }
 
 OceanFoamData ocean_foam_data(float dist, float footprint_m) {

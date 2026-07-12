@@ -771,6 +771,8 @@ int main() {
                 "Fresnel debug view should parse");
         require(ocean::ocean_render_view_from_name("slope-lod") == ocean::OceanRenderView::SlopeLod,
                 "slope LOD debug view should parse");
+        require(ocean::ocean_render_view_from_name("foam-lod") == ocean::OceanRenderView::FoamLod,
+                "foam LOD debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -829,8 +831,11 @@ int main() {
                     ocean::OceanRenderView::SlopeLod,
                 "ocean debug view cycle should include slope LOD after material diagnostics");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::SlopeLod) ==
+                    ocean::OceanRenderView::FoamLod,
+                "ocean debug view cycle should include foam LOD after slope LOD");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamLod) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after slope LOD diagnostics");
+                "ocean debug view cycle should wrap after LOD handoff diagnostics");
 
         bool rejected = false;
         try {
@@ -1535,6 +1540,14 @@ int main() {
                          "fragment shader should measure unresolved slope variance per cascade");
         require_contains(fragment_shader, "slope_filtered_roughness",
                          "fragment shader should transfer unresolved slope into BRDF roughness");
+        require_contains(fragment_shader, "foam_moment_sparse_coverage",
+                         "fragment shader should derive sparse coverage from foam moments");
+        require_contains(fragment_shader, "ocean_surface_handoff_moment_lod",
+                         "surface handoff should converge periodic fields toward global moments");
+        require_contains(fragment_shader, "ocean_foam_lod_data",
+                         "fragment shader should aggregate filtered foam across active cascades");
+        require_contains(fragment_shader, "spectral_foam_coverage",
+                         "fragment shader should hand unresolved foam into final coverage");
         require_contains(fragment_shader, "float ocean_far_reflection_variation",
                          "fragment shader should add broad far reflection variation");
         require_contains(fragment_shader, "float far_material_energy",
