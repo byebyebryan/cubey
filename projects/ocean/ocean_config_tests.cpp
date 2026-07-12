@@ -93,6 +93,14 @@ int main() {
         require(calm.cascade_enabled == defaults.cascade_enabled &&
                     stormy.cascade_enabled == defaults.cascade_enabled,
                 "all sea states should keep the fixed-cost C0/C1 cascade pair");
+        require(calm.map_size == defaults.map_size && stormy.map_size == defaults.map_size &&
+                    calm.field_precision == defaults.field_precision &&
+                    stormy.field_precision == defaults.field_precision &&
+                    calm.cascade_map_sizes == defaults.cascade_map_sizes &&
+                    stormy.cascade_map_sizes == defaults.cascade_map_sizes,
+                "sea states should not change ocean quality or resource layout");
+        require(calm.cascades != defaults.cascades && stormy.cascades != defaults.cascades,
+                "sea states should change the wave source without reallocating resources");
         require(calm.cascades[0].tile_length == defaults.cascades[0].tile_length &&
                     stormy.cascades[0].wind_direction_degrees ==
                         defaults.cascades[0].wind_direction_degrees &&
@@ -377,8 +385,8 @@ int main() {
                 "ocean orbit camera should remain above the unsupported water volume");
         require_near(std::sin(-clear_camera_pitch) * 100.0F, 8.0F, 0.01F,
                      "ocean orbit camera clamp should preserve requested surface clearance");
-        require_near(ocean::ocean_above_surface_orbit_pitch(100.0F, -0.45F, 8.0F), -0.45F,
-                     0.001F, "ocean orbit camera should preserve already-clear views");
+        require_near(ocean::ocean_above_surface_orbit_pitch(100.0F, -0.45F, 8.0F), -0.45F, 0.001F,
+                     "ocean orbit camera should preserve already-clear views");
         require_near(ocean::ocean_cloud_shadow_half_extent_m(100.0F), 16000.0F, 0.001F,
                      "ocean cloud shadows should retain a useful near-camera footprint");
         require_near(ocean::ocean_cloud_shadow_half_extent_m(1000.0F), 40000.0F, 0.001F,
@@ -548,7 +556,7 @@ int main() {
                      "cascade 4 storm detail foam should stay secondary");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
-        require_near(defaults.foam_density, 2.30F, 0.001F,
+        require_near(defaults.foam_density, 2.80F, 0.001F,
                      "windy foam density should keep intermittent visible coverage");
         require_near(defaults.foam_sharpness, 0.60F, 0.001F,
                      "windy foam sharpness should keep a whitecap-biased response");
@@ -561,7 +569,7 @@ int main() {
                      "ocean diagnostics should default to detail anti-repeat sampling");
         require_near(defaults.surface_shape_strength, 1.0F, 0.001F,
                      "ocean should default surface shape contribution on");
-        require_near(defaults.surface_foam_strength, 0.75F, 0.001F,
+        require_near(defaults.surface_foam_strength, 0.85F, 0.001F,
                      "windy ocean should default to restrained surface foam");
         require_near(defaults.foam_history_strength, 0.75F, 0.001F,
                      "windy ocean should retain but not saturate foam history");
@@ -1150,7 +1158,7 @@ int main() {
         require_contains(
             app_source,
             "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow, cloud_reflection)",
-                         "app should isolate shader feature controls in a frame uniform");
+            "app should isolate shader feature controls in a frame uniform");
         require_contains(app_source, "OceanMeshDrawPlan ocean_mesh_draw_plan",
                          "ocean app should centralize visible mesh patch planning");
         require_contains(app_source, "cubey::scene::intersects(frustum, bounds)",
@@ -1793,7 +1801,8 @@ int main() {
                          "ocean should reuse the current cloud product for reflections");
         require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",
                          "ocean should skip cloud reflection work when coupling is disabled");
-        require_contains(app_source, "scene_pass.read_texture(cloud_reflection.radiance_transmittance",
+        require_contains(app_source,
+                         "scene_pass.read_texture(cloud_reflection.radiance_transmittance",
                          "ocean scene should declare its cloud reflection dependency");
         require_contains(app_source, "diagnostics_.size_reference_enabled ? 1.0F : 0.0F",
                          "ocean app should pass reference shadow enable through feature uniforms");

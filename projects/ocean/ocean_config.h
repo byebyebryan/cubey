@@ -143,10 +143,10 @@ struct OceanConfig {
     float foam_color_r = 0.73F;
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
-    float foam_density = 2.30F;
+    float foam_density = 2.80F;
     float foam_sharpness = 0.60F;
     float surface_shape_strength = 1.0F;
-    float surface_foam_strength = 0.75F;
+    float surface_foam_strength = 0.85F;
     float foam_history_strength = 0.75F;
     float atmosphere_material_strength = 1.0F;
     float atmosphere_sky_strength = 1.0F;
@@ -190,8 +190,8 @@ struct OceanConfig {
             .swell = 0.80F,
             .spread = 0.24F,
             .detail = 1.0F,
-            .whitecap = 0.38F,
-            .foam_amount = 3.20F,
+            .whitecap = 0.72F,
+            .foam_amount = 3.50F,
             .domain_min_waves = 0.0F,
             .seed_x = 1337,
             .seed_y = 4919,
@@ -207,8 +207,8 @@ struct OceanConfig {
             .swell = 0.72F,
             .spread = 0.35F,
             .detail = 1.0F,
-            .whitecap = 0.34F,
-            .foam_amount = 2.40F,
+            .whitecap = 0.68F,
+            .foam_amount = 2.80F,
             .domain_min_waves = 0.0F,
             .seed_x = -2713,
             .seed_y = 8128,
