@@ -47,17 +47,6 @@ bool terrain_covered_by_finer_lod(vec2 world_xz) {
     return all(greaterThan(world_xz, child_min)) && all(lessThan(world_xz, child_max));
 }
 
-float terrain_child_boundary_detail_visibility(vec2 world_xz) {
-    if (frag_child_half_extent_m <= 0.0) {
-        return 1.0;
-    }
-    vec2 child_position = abs(world_xz - terrain_child_origin());
-    float boundary_distance_m = abs(max(child_position.x, child_position.y) -
-        frag_child_half_extent_m);
-    return smoothstep(frag_cell_size_m * 0.125, frag_cell_size_m * 2.0,
-        boundary_distance_m);
-}
-
 vec3 terrain_lod_color(float value) {
     const vec3 colors[8] = vec3[8](
         vec3(0.12, 0.72, 0.34), vec3(0.22, 0.66, 0.82),
@@ -123,15 +112,18 @@ void main() {
     }
 
     bool clay_view = debug_view == 6;
+    // Keep procedural relief filtering continuous across clipmap ownership changes.
+    float material_footprint_m = max(
+        0.35, length(pc.camera_position_vertical_scale.xyz - frag_world_position) *
+                  pc.render_options.z);
     TerrainMaterialSample material = clay_view
         ? terrain_clay_material(source_normal)
         : terrain_material_sample(source_normal, frag_world_position.xz,
-                                  frag_height_m, frag_footprint_m);
-    float detail_visibility = (1.0 - smoothstep(0.82, 0.98, frag_lod_morph)) *
-        terrain_child_boundary_detail_visibility(frag_world_position.xz);
+                                  frag_height_m, material_footprint_m);
+    // Relief stays subordinate to the resolved terrain shape at scene scale.
     vec3 normal = clay_view
         ? source_normal
-        : normalize(mix(source_normal, material.detail_normal, detail_visibility));
+        : normalize(mix(source_normal, material.detail_normal, 0.20));
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     vec3 view_direction = normalize(
         pc.camera_position_vertical_scale.xyz - frag_world_position);
@@ -142,7 +134,6 @@ void main() {
     color += terrain_lighting_direct(
         material.base_color, material.roughness, normal, view_direction,
         light_direction, light_radiance, frag_direct_visibility);
-
     CubeyAtmosphereSample aerial = terrain_aerial_perspective(
         pc.camera_position_vertical_scale.xyz, frag_world_position);
     if (debug_view == 8) {

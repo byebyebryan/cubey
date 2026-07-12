@@ -12,7 +12,13 @@ vec3 terrain_lighting_direct(vec3 base_color, float roughness, vec3 normal,
         return vec3(0.0);
     }
 
-    vec3 half_direction = normalize(view_direction + light_direction);
+    vec3 half_vector = view_direction + light_direction;
+    float half_length_squared = dot(half_vector, half_vector);
+    if (half_length_squared <= 1e-8) {
+        return cubey_pbr_lambert_diffuse(base_color) * light_radiance * ndotl *
+            clamp(direct_visibility, 0.0, 1.0);
+    }
+    vec3 half_direction = half_vector * inversesqrt(half_length_squared);
     float ndoth = max(dot(normal, half_direction), 0.0);
     float vdoth = max(dot(view_direction, half_direction), 0.0);
     vec3 f0 = vec3(0.04);

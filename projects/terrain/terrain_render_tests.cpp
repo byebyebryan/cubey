@@ -130,6 +130,24 @@ void test_clipmap_has_expected_extent_and_transition_data() {
     require(has_skirts, "terrain clipmap should add boundary skirts below transitioning levels");
 }
 
+void test_clipmap_patch_spans_preserve_level_cell_spacing() {
+    const cubey::projects::terrain::TerrainRuntimeConfig config{};
+    const auto clipmap = cubey::projects::terrain::terrain_clipmap_config(config);
+    const auto patches = cubey::render::clipmap_grid_2d_patches<64U>(clipmap);
+    for (const auto& patch : patches) {
+        const float expected_cell_size =
+            cubey::render::clipmap_grid_2d_level_cell_size(clipmap, patch.level);
+        const float actual_cell_size_x =
+            (patch.bounds.max_x - patch.bounds.min_x) / static_cast<float>(patch.cells_x);
+        const float actual_cell_size_z =
+            (patch.bounds.max_z - patch.bounds.min_z) / static_cast<float>(patch.cells_z);
+        require_near(actual_cell_size_x, expected_cell_size, 0.0001F,
+                     "terrain clipmap patch width should preserve advertised cell spacing");
+        require_near(actual_cell_size_z, expected_cell_size, 0.0001F,
+                     "terrain clipmap patch height should preserve advertised cell spacing");
+    }
+}
+
 void test_surface_controller_traversal_preserves_clearance() {
     const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 9012U,
@@ -195,6 +213,7 @@ int main() {
         test_ground_camera_and_shape_diagnostics_parse();
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();
+        test_clipmap_patch_spans_preserve_level_cell_spacing();
         test_surface_controller_traversal_preserves_clearance();
         test_ground_controller_uses_walking_scale_speed();
         std::cout << "terrain_render_tests: ok\n";

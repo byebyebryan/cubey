@@ -486,6 +486,11 @@ class TerrainApp {
     }
 
     [[nodiscard]] TerrainPushConstants push_constants(VkExtent2D extent) const {
+        const float pixel_angular_span =
+            extent.height == 0U
+                ? 0.0F
+                : (2.0F * std::tan(camera_.fovy_radians() * 0.5F)) /
+                      static_cast<float>(extent.height);
         return {
             .view_projection =
                 camera_.view_projection_matrix(frame_camera_transform_, aspect(extent)),
@@ -494,7 +499,7 @@ class TerrainApp {
                                                frame_camera_transform_.translation.z,
                                                runtime_config_.vertical_scale},
             .render_options = {terrain_debug_view_id(runtime_config_.debug_view),
-                               clipmap_config_.outer_half_extent, 0.0F, 0.0F},
+                               clipmap_config_.outer_half_extent, pixel_angular_span, 0.0F},
         };
     }
 

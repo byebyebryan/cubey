@@ -55,8 +55,9 @@ void main() {
     float height_z = terrain_source_base_height(
         terrain_uniforms.source, sample_xz + vec2(0.0, normal_step_m), footprint_m);
     vec2 gradient = vec2(height_x - base_height_m, height_z - base_height_m) / normal_step_m;
-    vec3 world_position = vec3(world_xz.x,
-        (height_m - in_normal.y) * pc.camera_position_vertical_scale.w, world_xz.y);
+    // Collapse transition vertices onto the coarse grid in both position and height.
+    vec3 world_position = vec3(sample_xz.x,
+        (height_m - in_normal.y) * pc.camera_position_vertical_scale.w, sample_xz.y);
 
     gl_Position = pc.view_projection * vec4(world_position, 1.0);
     frag_world_position = world_position;

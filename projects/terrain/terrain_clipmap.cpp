@@ -45,12 +45,13 @@ cubey::render::ClipmapGrid2DConfig terrain_clipmap_config(const TerrainRuntimeCo
         config.near_cell_size_m * static_cast<float>(config.cells_per_axis) * 0.5F;
     const float outer_half_extent =
         near_half_extent * static_cast<float>(1U << (config.lod_levels - 1U));
+    // Eleven coarse cells keeps every ring span on its advertised cell grid.
     return {
         .lod_levels = config.lod_levels,
         .cells_per_axis = config.cells_per_axis,
         .outer_half_extent = outer_half_extent,
         .transition_cells = 16.0F,
-        .max_transition_ratio = 0.35F,
+        .max_transition_ratio = 11.0F / 32.0F,
     };
 }
 
