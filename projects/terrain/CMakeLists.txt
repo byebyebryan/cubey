@@ -53,6 +53,22 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+add_executable(cubey_project_terrain_backdrop_report
+    terrain_backdrop_report.cpp
+)
+set_target_properties(
+    cubey_project_terrain_backdrop_report
+    PROPERTIES
+        OUTPUT_NAME terrain_backdrop_report
+)
+target_link_libraries(
+    cubey_project_terrain_backdrop_report
+    PRIVATE
+        cubey_project_terrain_render_support
+        cubey_project_warnings
+        nlohmann_json::nlohmann_json
+)
+
 cubey_atmosphere_shader_depends(CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS)
 cubey_forward_pbr_shader_depends(CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS)
 
@@ -125,6 +141,10 @@ if (BUILD_TESTING)
     add_test(
         NAME terrain_source_report_runs
         COMMAND cubey_project_terrain_source_report
+    )
+    add_test(
+        NAME terrain_backdrop_report_runs
+        COMMAND cubey_project_terrain_backdrop_report
     )
 
     add_executable(cubey_project_terrain_source_gpu_parity_tests
@@ -346,6 +366,56 @@ if (BUILD_TESTING)
         0.0001
     )
 
+    set(CUBEY_TERRAIN_BACKDROP_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-backdrop-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_backdrop_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_BACKDROP_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-camera-preset
+        backdrop
+        --terrain-presentation
+        backdrop
+    )
+    cubey_add_png_stats_test(
+        terrain_backdrop_headless_writes_png
+        "${CUBEY_TERRAIN_BACKDROP_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
+    set(CUBEY_TERRAIN_VEGETATION_COVERAGE_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-vegetation-coverage-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_vegetation_coverage_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_VEGETATION_COVERAGE_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-camera-preset
+        backdrop
+        --terrain-presentation
+        backdrop
+        --debug-view
+        vegetation-coverage
+    )
+    cubey_add_png_stats_test(
+        terrain_vegetation_coverage_headless_writes_png
+        "${CUBEY_TERRAIN_VEGETATION_COVERAGE_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_TERRAIN_SURFACE_HEADLESS_VIDEO_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/terrain-surface-headless.mp4"
@@ -383,10 +453,29 @@ if (BUILD_TESTING)
             --debug-view
             surface
         )
+        set(CUBEY_TERRAIN_BACKDROP_HEADLESS_VIDEO_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/terrain-backdrop-headless.mp4"
+        )
+        cubey_add_video_smoke_test(
+            terrain_backdrop_headless_writes_video
+            cubey_project_terrain
+            "${CUBEY_TERRAIN_BACKDROP_HEADLESS_VIDEO_OUTPUT}"
+            --terrain-seed
+            9012
+            --terrain-preset
+            mountain
+            --terrain-weathering
+            local
+            --terrain-camera-preset
+            surface
+            --terrain-presentation
+            backdrop
+        )
         cubey_label_tests(
             terrain
             terrain_surface_headless_writes_video
             terrain_ground_headless_writes_video
+            terrain_backdrop_headless_writes_video
         )
     endif()
 
@@ -396,6 +485,7 @@ if (BUILD_TESTING)
         terrain_source_tests
         terrain_render_tests
         terrain_source_report_runs
+        terrain_backdrop_report_runs
         terrain_source_gpu_parity_tests
         terrain_headless_writes_png
         terrain_headless_writes_png_stats
@@ -411,5 +501,9 @@ if (BUILD_TESTING)
         terrain_shadow_headless_writes_png_stats
         terrain_aerial_headless_writes_png
         terrain_aerial_headless_writes_png_stats
+        terrain_backdrop_headless_writes_png
+        terrain_backdrop_headless_writes_png_stats
+        terrain_vegetation_coverage_headless_writes_png
+        terrain_vegetation_coverage_headless_writes_png_stats
     )
 endif()
