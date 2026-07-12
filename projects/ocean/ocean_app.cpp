@@ -3,6 +3,7 @@
 #include "ocean_config.h"
 #include "ocean_gpu_resources.h"
 #include "ocean_mesh.h"
+#include "ocean_spectrum_diagnostics.h"
 #include "ocean_surface_frame.h"
 #include "ocean_ui.h"
 
@@ -79,7 +80,6 @@ constexpr float kCameraFarPlane = 14000.0F;
 constexpr float kCameraMinimumSurfaceClearanceMeters = 8.0F;
 constexpr VkFormat kOceanSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr VkFormat kOceanDepthFormat = VK_FORMAT_D32_SFLOAT;
-constexpr float kGravity = 9.81F;
 constexpr float kOceanSunElevationDegrees = 20.0F;
 constexpr float kOceanSunAzimuthDegrees = -20.0F;
 constexpr float kReferencePillarHalfWidthMeters = 0.50F;
@@ -452,16 +452,6 @@ ocean_atmosphere_run_state(const RunConfig& run_config) {
         cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
 }
 
-[[nodiscard]] float jonswap_alpha(float wind_speed, float fetch_length_m) {
-    return 0.076F *
-           std::pow((wind_speed * wind_speed) / std::max(fetch_length_m * kGravity, 0.001F), 0.22F);
-}
-
-[[nodiscard]] float jonswap_peak_frequency(float wind_speed, float fetch_length_m) {
-    return 22.0F * std::pow((kGravity * kGravity) / std::max(wind_speed * fetch_length_m, 0.001F),
-                            1.0F / 3.0F);
-}
-
 [[nodiscard]] std::uint32_t log2_exact(std::uint32_t value) {
     if (!ocean_is_power_of_two(value)) {
         throw std::runtime_error("ocean FFT resolution must be a power of two");
@@ -716,6 +706,7 @@ class OceanApp {
   public:
     explicit OceanApp(RunConfig config)
         : config_(std::move(config)), ocean_config_(ocean_config_from_run_config(config_)),
+          spectrum_diagnostics_(ocean_spectrum_diagnostics(ocean_config_)),
           clouds_config_(ocean_cloud_config_from_run_config(config_)),
           atmosphere_state_(ocean_atmosphere_run_state(config_)),
           atmosphere_lighting_(
@@ -767,6 +758,7 @@ class OceanApp {
             draw_ocean_ui({
                 .config = ocean_config_,
                 .diagnostics = diagnostics_,
+                .spectrum_diagnostics = spectrum_diagnostics_,
                 .surface_frame = draw_plan.surface_frame,
                 .draw_stats = draw_plan.stats,
                 .atmosphere = atmosphere_state_,
@@ -1280,6 +1272,7 @@ class OceanApp {
         if (ocean_wave_source_changed(ocean_config_, gpu_config_.value())) {
             spectrum_initialized_ = false;
             foam_initialized_ = false;
+            spectrum_diagnostics_ = ocean_spectrum_diagnostics(ocean_config_);
         }
         gpu_config_ = ocean_config_;
         sync_cloud_runtime_after_ui(context);
@@ -1706,8 +1699,8 @@ class OceanApp {
                 },
             .spectrum_options =
                 {
-                    jonswap_alpha(cascade.wind_speed, fetch_m),
-                    jonswap_peak_frequency(cascade.wind_speed, fetch_m),
+                    ocean_jonswap_alpha(cascade.wind_speed, fetch_m),
+                    ocean_jonswap_peak_frequency(cascade.wind_speed, fetch_m),
                     cascade.wind_speed,
                     radians(cascade.wind_direction_degrees),
                 },
@@ -2318,6 +2311,7 @@ class OceanApp {
 
     RunConfig config_;
     OceanConfig ocean_config_;
+    OceanSpectrumDiagnostics spectrum_diagnostics_;
     cubey::CloudEnvironmentConfig clouds_config_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_;
     cubey::render::AtmosphereEnvironmentLighting atmosphere_lighting_;

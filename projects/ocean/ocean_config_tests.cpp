@@ -1,6 +1,7 @@
 #include "ocean_config.h"
 #include "ocean_horizon.h"
 #include "ocean_mesh.h"
+#include "ocean_spectrum_diagnostics.h"
 #include "ocean_surface_frame.h"
 #include "ocean_ui.h"
 
@@ -111,6 +112,39 @@ int main() {
                     calm.surface_foam_strength < defaults.surface_foam_strength &&
                     defaults.surface_foam_strength < stormy.surface_foam_strength,
                 "sea states should order wave and foam energy from calm through stormy");
+        const ocean::OceanSpectrumDiagnostics calm_spectrum =
+            ocean::ocean_spectrum_diagnostics(calm);
+        const ocean::OceanSpectrumDiagnostics windy_spectrum =
+            ocean::ocean_spectrum_diagnostics(defaults);
+        const ocean::OceanSpectrumDiagnostics stormy_spectrum =
+            ocean::ocean_spectrum_diagnostics(stormy);
+        require_near(calm_spectrum.cascades[0].peak_wavelength_m, 19.0F, 0.5F,
+                     "calm C0 should expose its finite-depth spectral peak");
+        require_near(calm_spectrum.cascades[1].peak_wavelength_m, 13.1F, 0.5F,
+                     "calm C1 should expose its finite-depth spectral peak");
+        require_near(windy_spectrum.cascades[0].peak_wavelength_m, 78.1F, 0.8F,
+                     "windy C0 should expose its finite-depth spectral peak");
+        require_near(windy_spectrum.cascades[1].peak_wavelength_m, 58.6F, 0.8F,
+                     "windy C1 should expose its finite-depth spectral peak");
+        require_near(stormy_spectrum.cascades[0].peak_wavelength_m, 144.8F, 1.0F,
+                     "stormy C0 should expose its finite-depth spectral peak");
+        require_near(stormy_spectrum.cascades[1].peak_wavelength_m, 134.6F, 1.0F,
+                     "stormy C1 should expose its finite-depth spectral peak");
+        require(calm_spectrum.cascades[0].peak_supported &&
+                    calm_spectrum.cascades[1].peak_supported,
+                "calm peaks should fit in both active tiles");
+        require(windy_spectrum.cascades[0].peak_supported &&
+                    !windy_spectrum.cascades[1].peak_supported,
+                "windy C1 should report the peak just beyond its tile period");
+        require(!stormy_spectrum.cascades[0].peak_supported &&
+                    !stormy_spectrum.cascades[1].peak_supported,
+                "stormy peaks should report as omitted by both active tiles");
+        require(!windy_spectrum.cascades[0].domain_active &&
+                    !windy_spectrum.cascades[1].domain_active,
+                "zero minimum-wave controls should keep active spectral domains inactive");
+        require(windy_spectrum.overlapping_pair_count == 1U &&
+                    windy_spectrum.max_overlap_octaves > 6.0F,
+                "the active C0/C1 pair should report its broad full-spectrum overlap");
         ocean::OceanConfig custom = defaults;
         custom.cascades[0].wind_speed += 0.25F;
         require(ocean::ocean_infer_sea_state(custom) == ocean::OceanSeaState::Custom,
@@ -1425,10 +1459,10 @@ int main() {
                          "UI should show cascade shape contribution at the horizon");
         require_contains(ui_source, "Horizon wt",
                          "UI should show far-field shape and surface contribution weights");
-        require_contains(ui_source, "ocean_cascade_domain(ui.config, index)",
-                         "UI should expose cascade wavelength domain diagnostics");
-        require_contains(ui_source, "domain %.2f-%.2f m",
-                         "UI should show cascade diagnostic wavelength bands");
+        require_contains(ui_source, "ui.spectrum_diagnostics.cascades[index]",
+                         "UI should consume shared spectrum support diagnostics");
+        require_contains(ui_source, "peak %.1f m / safe %.2f-%.1f m",
+                         "UI should show peak and safe wavelength support");
         require_contains(ui_source, "Domain min waves",
                          "UI should expose per-slot spectral-domain cutoffs");
         require_contains(fragment_shader, "struct OceanFoamData",

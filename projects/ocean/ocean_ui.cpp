@@ -766,6 +766,10 @@ void draw_ocean_ui(OceanUiContext ui) {
         ImGui::Text("Map: %u", ui.config.map_size);
         ImGui::Text("Spectral domains: %s",
                     ui.config.spectral_domains_enabled ? "enabled" : "disabled");
+        ImGui::Text("Active overlap: %u pair%s / %.2f octaves max",
+                    ui.spectrum_diagnostics.overlapping_pair_count,
+                    ui.spectrum_diagnostics.overlapping_pair_count == 1U ? "" : "s",
+                    ui.spectrum_diagnostics.max_overlap_octaves);
         ImGui::Text("Terrain fields: %s",
                     ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
         ImGui::Text("Surface: %s", ocean_surface_mode_name(ui.surface_frame.surface_mode));
@@ -790,19 +794,19 @@ void draw_ocean_ui(OceanUiContext ui) {
                     ui.surface_frame.local_frame.up.x, ui.surface_frame.local_frame.up.y,
                     ui.surface_frame.local_frame.up.z);
         for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
+            if (!ocean_cascade_enabled(ui.config, index)) {
+                continue;
+            }
             char label[40]{};
             format_cascade_label(label, sizeof(label), index);
-            const OceanCascadeDomain domain = ocean_cascade_domain(ui.config, index);
-            if (domain.active) {
-                ImGui::Text("%s: %.0f m / disp %.2f / domain %.2f-%.2f m", label,
-                            ui.config.cascades[index].tile_length,
-                            ui.config.cascades[index].displacement_scale, domain.low_wavelength,
-                            domain.high_wavelength);
-            } else {
-                ImGui::Text("%s: %.0f m / disp %.2f / domain inactive", label,
-                            ui.config.cascades[index].tile_length,
-                            ui.config.cascades[index].displacement_scale);
-            }
+            const OceanCascadeSpectrumDiagnostics& spectrum =
+                ui.spectrum_diagnostics.cascades[index];
+            ImGui::Text("%s: peak %.1f m / safe %.2f-%.1f m / %s", label,
+                        spectrum.peak_wavelength_m, spectrum.safe_min_wavelength_m,
+                        spectrum.max_wavelength_m,
+                        spectrum.peak_supported ? "peak fits" : "peak omitted");
+            ImGui::Text("    domain %s / disp %.2f", spectrum.domain_active ? "active" : "inactive",
+                        ui.config.cascades[index].displacement_scale);
         }
         ImGui::Text("Mesh: %u LOD / %u patches / %u tris",
                     ui.surface_frame.mesh_config.mesh_lod_levels,
