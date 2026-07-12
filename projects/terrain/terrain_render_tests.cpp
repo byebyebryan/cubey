@@ -106,6 +106,9 @@ void test_ground_camera_and_shape_diagnostics_parse() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("materials") ==
                 cubey::projects::terrain::TerrainDebugView::MaterialWeights,
             "terrain runtime should parse the material-weight diagnostic alias");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("ambient") ==
+                cubey::projects::terrain::TerrainDebugView::AmbientVisibility,
+            "terrain runtime should parse the ambient-visibility diagnostic alias");
 }
 
 void test_backdrop_camera_configuration() {

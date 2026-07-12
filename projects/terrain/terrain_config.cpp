@@ -118,6 +118,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "normal";
     case TerrainDebugView::MaterialWeights:
         return "material-weights";
+    case TerrainDebugView::AmbientVisibility:
+        return "ambient-visibility";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -158,6 +160,9 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "material-weights" || name == "materials") {
         return TerrainDebugView::MaterialWeights;
+    }
+    if (name == "ambient-visibility" || name == "ambient") {
+        return TerrainDebugView::AmbientVisibility;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }

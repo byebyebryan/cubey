@@ -85,6 +85,8 @@ void main() {
             max(terrain_uniforms.source.elevation.y, 1.0),
         0.0, 1.0);
     float slope = 1.0 - clamp(source_normal.y, 0.0, 1.0);
+    float ambient_visibility = terrain_lighting_ambient_visibility(
+        source_normal, frag_landform_concavity_m);
     int debug_view = int(round(pc.render_options.x));
 
     if (debug_view == 1) {
@@ -159,6 +161,10 @@ void main() {
             material.material_weights.w, 1.0);
         return;
     }
+    if (debug_view == 12) {
+        out_color = vec4(vec3(ambient_visibility), 1.0);
+        return;
+    }
     // Relief stays subordinate to the resolved terrain shape at scene scale.
     float material_detail_blend = clamp(
         0.20 + material.material_weights.y * 0.28 +
@@ -172,7 +178,7 @@ void main() {
     vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
         atmosphere.primary_light_direction_intensity.w;
     vec3 color = terrain_lighting_ambient(
-        material.base_color, terrain_diffuse_irradiance(normal));
+        material.base_color, terrain_diffuse_irradiance(normal), ambient_visibility);
     color += terrain_lighting_direct(
         material.base_color, material.roughness, normal, view_direction,
         light_direction, light_radiance, frag_direct_visibility);

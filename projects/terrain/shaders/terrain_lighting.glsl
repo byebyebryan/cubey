@@ -32,8 +32,20 @@ vec3 terrain_lighting_direct(vec3 base_color, float roughness, vec3 normal,
         clamp(direct_visibility, 0.0, 1.0);
 }
 
-vec3 terrain_lighting_ambient(vec3 base_color, vec3 diffuse_irradiance) {
-    return base_color * max(diffuse_irradiance, vec3(0.0));
+float terrain_lighting_ambient_visibility(vec3 source_normal,
+                                         float landform_concavity_m) {
+    float upward = clamp(source_normal.y, 0.0, 1.0);
+    float cavity = smoothstep(6.0, 72.0, landform_concavity_m);
+    float exposed_ridge = smoothstep(12.0, 90.0, -landform_concavity_m);
+    float horizon_occlusion = (1.0 - upward) * 0.14;
+    return clamp(1.0 - cavity * 0.27 - horizon_occlusion + exposed_ridge * 0.035,
+                 0.62, 1.0);
+}
+
+vec3 terrain_lighting_ambient(vec3 base_color, vec3 diffuse_irradiance,
+                              float ambient_visibility) {
+    return base_color * max(diffuse_irradiance, vec3(0.0)) *
+        clamp(ambient_visibility, 0.0, 1.0);
 }
 
 #endif // CUBEY_TERRAIN_LIGHTING_GLSL
