@@ -89,6 +89,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): completed
   CPU/GPU source, traversable clipmap renderer, fixed review pack, measured
   preset baseline, and the boundary before external-consumer integration.
+- [Terrain rendering refinement](terrain-rendering-refinement.md): rendering-first
+  study for ground-level evaluation, heightfield shadows, atmosphere composition,
+  and procedural materials while the terrain source remains frozen.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
