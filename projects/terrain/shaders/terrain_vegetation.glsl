@@ -54,7 +54,7 @@ vec3 terrain_vegetation_color(TerrainVegetationCoverage coverage) {
 }
 
 float terrain_vegetation_influence(TerrainVegetationCoverage coverage) {
-    return min(0.75, coverage.ground * 0.46 + coverage.woody * 0.85);
+    return min(0.16, coverage.ground * 0.10 + coverage.woody * 0.18);
 }
 
 float terrain_vegetation_relief(vec2 world_xz, float pixel_footprint_m,

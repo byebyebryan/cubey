@@ -353,7 +353,7 @@ class TerrainApp {
         int debug_view = static_cast<int>(runtime_config_.debug_view);
         if (ImGui::Combo("View", &debug_view,
                          "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
-                         "Aerial transmittance\0Vegetation coverage\0Normal\0")) {
+                         "Aerial transmittance\0Vegetation coverage\0Normal\0Material weights\0")) {
             runtime_config_.debug_view = static_cast<TerrainDebugView>(debug_view);
         }
         if (source_changed) {

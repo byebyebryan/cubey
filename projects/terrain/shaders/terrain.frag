@@ -137,9 +137,13 @@ void main() {
     bool backdrop_presentation = int(round(pc.render_options.w)) == 1;
     TerrainMaterialSample material = clay_view
         ? terrain_clay_material(source_normal)
-        : terrain_material_sample(source_normal, frag_world_position.xz,
+        : terrain_material_sample(source_normal,
+                                  vec3(frag_world_position.x, frag_height_m,
+                                       frag_world_position.z),
                                   frag_height_m, frag_landform_concavity_m,
-                                  material_footprint_m, backdrop_presentation);
+                                  material_footprint_m, backdrop_presentation,
+                                  terrain_uniforms.source.elevation,
+                                  uint(terrain_uniforms.source.macro.control.x));
     if (debug_view == 9) {
         out_color = vec4(material.vegetation.ground, material.vegetation.woody, 0.0, 1.0);
         return;
@@ -148,10 +152,20 @@ void main() {
         out_color = vec4(source_normal * 0.5 + 0.5, 1.0);
         return;
     }
+    if (debug_view == 11) {
+        out_color = vec4(
+            material.material_weights.z + material.material_weights.y,
+            material.material_weights.x + material.material_weights.y,
+            material.material_weights.w, 1.0);
+        return;
+    }
     // Relief stays subordinate to the resolved terrain shape at scene scale.
+    float material_detail_blend = clamp(
+        0.20 + material.material_weights.y * 0.28 +
+        material.material_weights.z * 0.52, 0.0, 0.78);
     vec3 normal = clay_view
         ? source_normal
-        : normalize(mix(source_normal, material.detail_normal, 0.20));
+        : normalize(mix(source_normal, material.detail_normal, material_detail_blend));
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     vec3 view_direction = normalize(
         pc.camera_position_vertical_scale.xyz - frag_world_position);

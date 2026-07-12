@@ -116,6 +116,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "vegetation-coverage";
     case TerrainDebugView::Normal:
         return "normal";
+    case TerrainDebugView::MaterialWeights:
+        return "material-weights";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -153,6 +155,9 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "normal" || name == "normals") {
         return TerrainDebugView::Normal;
+    }
+    if (name == "material-weights" || name == "materials") {
+        return TerrainDebugView::MaterialWeights;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }
