@@ -244,6 +244,106 @@ if (BUILD_TESTING)
         0.001
     )
 
+    set(CUBEY_TERRAIN_GROUND_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ground-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_ground_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_GROUND_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-weathering
+        local
+        --terrain-camera-preset
+        ground
+        --debug-view
+        surface
+    )
+    cubey_add_png_stats_test(
+        terrain_ground_headless_writes_png
+        "${CUBEY_TERRAIN_GROUND_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
+    set(CUBEY_TERRAIN_CLAY_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-clay-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_clay_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_CLAY_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-camera-preset
+        oblique
+        --debug-view
+        clay
+    )
+    cubey_add_png_stats_test(
+        terrain_clay_headless_writes_png
+        "${CUBEY_TERRAIN_CLAY_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
+    set(CUBEY_TERRAIN_SHADOW_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-shadow-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_shadow_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_SHADOW_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-camera-preset
+        oblique
+        --debug-view
+        shadow
+        --sun-elevation
+        12
+    )
+    cubey_add_png_stats_test(
+        terrain_shadow_headless_writes_png
+        "${CUBEY_TERRAIN_SHADOW_HEADLESS_OUTPUT}"
+        0.001
+        0.0001
+    )
+
+    set(CUBEY_TERRAIN_AERIAL_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-aerial-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_aerial_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_AERIAL_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-camera-preset
+        oblique
+        --debug-view
+        aerial-transmittance
+    )
+    cubey_add_png_stats_test(
+        terrain_aerial_headless_writes_png
+        "${CUBEY_TERRAIN_AERIAL_HEADLESS_OUTPUT}"
+        0.001
+        0.0001
+    )
+
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_TERRAIN_SURFACE_HEADLESS_VIDEO_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/terrain-surface-headless.mp4"
@@ -263,7 +363,29 @@ if (BUILD_TESTING)
             --debug-view
             lod
         )
-        cubey_label_tests(terrain terrain_surface_headless_writes_video)
+        set(CUBEY_TERRAIN_GROUND_HEADLESS_VIDEO_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/terrain-ground-headless.mp4"
+        )
+        cubey_add_video_smoke_test(
+            terrain_ground_headless_writes_video
+            cubey_project_terrain
+            "${CUBEY_TERRAIN_GROUND_HEADLESS_VIDEO_OUTPUT}"
+            --terrain-seed
+            9012
+            --terrain-preset
+            mountain
+            --terrain-weathering
+            local
+            --terrain-camera-preset
+            ground
+            --debug-view
+            surface
+        )
+        cubey_label_tests(
+            terrain
+            terrain_surface_headless_writes_video
+            terrain_ground_headless_writes_video
+        )
     endif()
 
     cubey_label_tests(
@@ -279,5 +401,13 @@ if (BUILD_TESTING)
         terrain_surface_headless_writes_png_stats
         terrain_lod_headless_writes_png
         terrain_lod_headless_writes_png_stats
+        terrain_ground_headless_writes_png
+        terrain_ground_headless_writes_png_stats
+        terrain_clay_headless_writes_png
+        terrain_clay_headless_writes_png_stats
+        terrain_shadow_headless_writes_png
+        terrain_shadow_headless_writes_png_stats
+        terrain_aerial_headless_writes_png
+        terrain_aerial_headless_writes_png_stats
     )
 endif()
