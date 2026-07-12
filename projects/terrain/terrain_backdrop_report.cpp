@@ -47,17 +47,24 @@ int main() {
                 {"pitch_radians", plan.pitch_radians},
                 {"target_distance_m", plan.target_distance_m},
                 {"target_elevation_radians", plan.target_elevation_radians},
+                {"camera_clearance_m", plan.camera_clearance_m},
+                {"clearance_raise_m", plan.clearance_raise_m},
+                {"foreground_clear_distance_m", plan.foreground_clear_distance_m},
+                {"foreground_min_margin_m", plan.foreground_min_margin_m},
+                {"aspect_ratio", plan.aspect_ratio},
                 {"score", plan.score},
             });
         }
     }
 
     const nlohmann::json report{
-        {"schema", "cubey.terrain.backdrop-camera.v1"},
+        {"schema", "cubey.terrain.backdrop-camera.v2"},
         {"anchor_grid_m", {-4096, -2048, 0, 2048, 4096}},
         {"heading_count", 24},
         {"sample_distances_m", {400, 800, 1600, 3200, 6400}},
-        {"clearance_m", 120},
+        {"minimum_clearance_m", 150},
+        {"foreground_clear_distance_m", 300},
+        {"foreground_safety_margin_m", 10},
         {"vertical_fov_degrees", 40},
         {"plans", std::move(plans)},
     };

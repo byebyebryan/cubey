@@ -109,12 +109,13 @@ fi
 
 cat > "${OUT_DIR}/review-metadata.json" <<EOF
 {
-  "schema": "cubey.terrain.backdrop-presentation.v1",
+  "schema": "cubey.terrain.backdrop-presentation.v2",
   "source_sha256": "${source_sha256}",
   "source_frozen": true,
   "seeds": [0, 9012, 12345],
   "presets": ["mountain", "upland", "plains"],
-  "camera": {"preset": "backdrop", "clearance_m": 120, "vertical_fov_degrees": 40},
+  "camera": {"preset": "backdrop", "minimum_clearance_m": 150, "vertical_fov_degrees": 40},
+  "foreground": {"clear_distance_m": 300, "safety_margin_m": 10, "sample_step_m": 25},
   "presentation": {"default": "standard", "study": "backdrop", "geometry": false},
   "distance_contract": {"supported_lower_edge_m": 300, "ground_is_negative_control": true},
   "traversal": {"camera": "surface", "frames": 180, "fps": 30, "duration_seconds": 6},

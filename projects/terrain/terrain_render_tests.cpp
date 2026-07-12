@@ -6,8 +6,11 @@
 
 #include <cubey/core/run_config.h>
 
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
+#include <limits>
 #include <numbers>
 #include <stdexcept>
 #include <string>
@@ -23,6 +26,36 @@ void require(bool condition, std::string_view message) {
 
 void require_near(float actual, float expected, float tolerance, std::string_view message) {
     require(std::abs(actual - expected) <= tolerance, message);
+}
+
+float independent_backdrop_foreground_margin(
+    const cubey::projects::terrain::TerrainSourceParameters& source,
+    const cubey::projects::terrain::TerrainBackdropCameraPlan& plan, float vertical_scale,
+    float aspect_ratio) {
+    constexpr std::array<float, 3> ndc_x_values{-1.0F, 0.0F, 1.0F};
+    constexpr float vertical_fov = 40.0F * std::numbers::pi_v<float> / 180.0F;
+    constexpr float conservative_pitch = -2.0F * std::numbers::pi_v<float> / 180.0F;
+    const auto rotation =
+        cubey::math::angle_axis_quat(plan.yaw_radians, {0.0F, 1.0F, 0.0F}) *
+        cubey::math::angle_axis_quat(conservative_pitch, {1.0F, 0.0F, 0.0F});
+    const float tan_half_fov = std::tan(vertical_fov * 0.5F);
+    float minimum_margin = std::numeric_limits<float>::infinity();
+    for (const float ndc_x : ndc_x_values) {
+        const cubey::math::Vec3 ray = rotation * cubey::math::Vec3{
+            ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
+        const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
+        const cubey::math::Vec2 direction{ray.x / horizontal_length,
+                                          ray.z / horizontal_length};
+        const float vertical_slope = ray.y / horizontal_length;
+        for (float distance = 25.0F; distance <= 300.0F; distance += 25.0F) {
+            const auto sample = cubey::projects::terrain::sample_terrain(
+                source, {.world_xz = plan.anchor_xz + direction * distance});
+            const float ray_height = plan.transform.translation.y + distance * vertical_slope;
+            minimum_margin =
+                std::min(minimum_margin, ray_height - sample.height_m * vertical_scale);
+        }
+    }
+    return minimum_margin;
 }
 
 void test_runtime_config_defaults_to_the_v1_scene() {
@@ -106,7 +139,8 @@ void test_backdrop_planner_is_deterministic_and_clear() {
         cubey::projects::terrain::TerrainPreset::Upland,
         cubey::projects::terrain::TerrainPreset::Plains,
     };
-    constexpr std::array<std::uint64_t, 3> seeds{0U, 9012U, 12345U};
+    constexpr std::array<std::uint64_t, 6> seeds{0U, 1U, 42U, 9012U, 12345U,
+                                                 std::numeric_limits<std::uint64_t>::max()};
     for (const auto preset : presets) {
         for (const std::uint64_t seed : seeds) {
             const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
@@ -133,7 +167,7 @@ void test_backdrop_planner_is_deterministic_and_clear() {
                     "terrain backdrop target should use a supported sample distance");
             const auto anchor_sample = cubey::projects::terrain::sample_terrain(
                 source, {.world_xz = first.anchor_xz});
-            require(first.camera_clearance_m >= 150.0F,
+            require(first.camera_clearance_m >= 149.999F,
                     "terrain backdrop camera should preserve its minimum clearance");
             require_near(first.transform.translation.y,
                          anchor_sample.height_m + first.camera_clearance_m, 0.001F,
@@ -141,11 +175,57 @@ void test_backdrop_planner_is_deterministic_and_clear() {
             require(first.foreground_clear_distance_m == 300.0F &&
                         first.foreground_min_margin_m >= 9.999F,
                     "terrain backdrop camera should preserve the foreground contract");
+            require(independent_backdrop_foreground_margin(source, first, 1.0F,
+                                                           first.aspect_ratio) >= 9.998F,
+                    "terrain backdrop camera should independently clear the lower frustum");
             require(first.pitch_radians >= -2.0F * std::numbers::pi_v<float> / 180.0F &&
                         first.pitch_radians <= 12.0F * std::numbers::pi_v<float> / 180.0F,
                     "terrain backdrop pitch should remain in the presentation range");
         }
     }
+}
+
+void test_backdrop_planner_handles_review_aspect_ratios() {
+    constexpr std::array<float, 3> aspects{4.0F / 3.0F, 16.0F / 9.0F, 21.0F / 9.0F};
+    constexpr std::array presets{
+        cubey::projects::terrain::TerrainPreset::Mountain,
+        cubey::projects::terrain::TerrainPreset::Upland,
+        cubey::projects::terrain::TerrainPreset::Plains,
+    };
+    for (const float aspect : aspects) {
+        for (const auto preset : presets) {
+            const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+                .seed = 9012U,
+                .preset = preset,
+                .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
+            });
+            const auto plan =
+                cubey::projects::terrain::plan_terrain_backdrop_camera(source, 1.0F, aspect);
+            require_near(plan.aspect_ratio, aspect, 0.0F,
+                         "terrain backdrop plan should preserve its requested aspect ratio");
+            require(independent_backdrop_foreground_margin(source, plan, 1.0F, aspect) >= 9.998F,
+                    "terrain backdrop plan should clear representative review aspects");
+        }
+    }
+}
+
+void test_backdrop_traversal_preserves_planned_clearance() {
+    const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+        .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
+    });
+    const auto plan = cubey::projects::terrain::plan_terrain_backdrop_camera(source);
+    cubey::projects::terrain::TerrainSurfaceController controller(80.0F);
+    controller.set_home_pose(plan.anchor_xz, plan.yaw_radians, plan.pitch_radians);
+    for (std::uint32_t frame = 0U; frame < 600U; ++frame) {
+        controller.advance_forward(1.0 / 60.0);
+    }
+    const auto camera = controller.camera_transform(source, 1.0F, plan.camera_clearance_m);
+    const auto sample = cubey::projects::terrain::sample_terrain(
+        source, {.world_xz = {camera.translation.x, camera.translation.z}});
+    require_near(camera.translation.y, sample.height_m + plan.camera_clearance_m, 0.001F,
+                 "terrain backdrop traversal should preserve selected planned clearance");
 }
 
 void test_environment_gpu_parameters_preserve_atmosphere_lighting() {
@@ -297,6 +377,8 @@ int main() {
         test_backdrop_camera_configuration();
         test_backdrop_presentation_and_coverage_debug_parse();
         test_backdrop_planner_is_deterministic_and_clear();
+        test_backdrop_planner_handles_review_aspect_ratios();
+        test_backdrop_traversal_preserves_planned_clearance();
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();
         test_clipmap_patch_spans_preserve_level_cell_spacing();
