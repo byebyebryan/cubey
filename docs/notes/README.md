@@ -92,6 +92,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain rendering refinement](terrain-rendering-refinement.md): completed
   ground-level rendering checkpoint with heightfield shadows, atmosphere
   composition, procedural materials, LOD handoff fixes, and a frozen source.
+- [Terrain backdrop presentation](terrain-backdrop-presentation.md): opt-in
+  distant vegetation-coverage and deterministic framing study, with an explicit
+  close-range negative-control boundary.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
