@@ -101,6 +101,18 @@ from projected pixel footprint and contributes only a restrained normal
 perturbation, so it cannot alter geometry or advertise LOD boundaries. Materials
 remain presentation only; they do not become terrain truth.
 
+An opt-in backdrop presentation may derive distant vegetation coverage from
+height, slope, broad landform context, and footprint-filtered coherent fields.
+This is material coverage only: it cannot displace terrain, change CPU queries,
+provide collision, or claim individual grass or tree geometry. Its supported
+scene contract begins at roughly 300 m from the visible lower frame edge.
+Close-range foliage remains a separate future rendering product.
+
+The deterministic backdrop camera searches a fixed world-space anchor/heading
+set against the random-access source and seeds the traversable surface camera
+with the selected pose. It is a general framing tool across presets and seeds,
+not a table of authored landmarks. Headless stills keep that frame fixed.
+
 ## Configuration And Diagnostics
 
 The public run controls are:
@@ -109,20 +121,23 @@ The public run controls are:
 - `terrain.preset`: `mountain`, `upland`, or `plains`;
 - `terrain.weathering`: `off` or `local`;
 - `terrain.weathering_strength`;
-- existing terrain camera, cell-size, and vertical-scale controls.
+- existing terrain camera, cell-size, and vertical-scale controls;
+- `terrain.presentation`: `standard` or opt-in `backdrop` material coverage.
 
 The terrain app supports final surface, base/final height, slope, weathering
-delta, LOD, neutral clay, direct visibility, and aerial-transmittance views.
+delta, LOD, neutral clay, direct visibility, aerial-transmittance, and
+vegetation-coverage views.
 Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
-shape review from eye-level rendering and LOD review. Small bounded CPU sample
-grids are allowed for tests, statistics, and review metadata. The old raw-field
-exporter remains with the hydrology lab; terrain v1 does not emit a baked
-terrain product.
+shape review from eye-level rendering and LOD review. The 120 m `backdrop`
+camera adds deterministic source-aware framing with a 40-degree lens. Small
+bounded CPU sample grids are allowed for tests, statistics, and review metadata.
+The old raw-field exporter remains with the hydrology lab; terrain v1 does not
+emit a baked terrain product.
 
 Headless surface video advances the camera at a deterministic fixed forward
 speed while re-querying terrain clearance every frame. Orbit-camera video keeps
-the existing automatic rotation. PNG and interactive camera behavior are
-unchanged.
+the existing automatic rotation. Headless backdrop captures remain static;
+interactive backdrop use retains surface traversal. PNG behavior is unchanged.
 
 ## Acceptance
 

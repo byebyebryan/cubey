@@ -29,22 +29,30 @@ ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
   --terrain-seed 9012 \
   --terrain-preset mountain \
   --terrain-weathering local \
-  --terrain-camera-preset surface
+  --terrain-camera-preset backdrop \
+  --terrain-presentation backdrop
 
 ./build/dev/projects/terrain/terrain_source_report
 projects/terrain/capture_v1_review.sh
 projects/terrain/capture_rendering_review.sh
+projects/terrain/capture_backdrop_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
 rendering-refinement pack adds multi-sun clay, component diagnostics, one- and
 two-meter ground controls, a TerrainEngine control, and a deterministic
 eye-level traversal video under `outputs/terrain/rendering-refinement/`.
+The backdrop pack adds a nine-case framing matrix, standard/coverage controls,
+distance controls, a 1920 x 1080 showcase, and a moving surface diagnostic under
+`outputs/terrain/backdrop-presentation/`.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Camera presets are `oblique`, `profile`, `top`, `surface`,
-`surface-low`, and `ground`; debug views are `surface`, `height`, `base-height`,
-`slope`, `weathering`, `lod`, `clay`, `shadow`, and `aerial-transmittance`.
+`surface-low`, `ground`, and `backdrop`; debug views are `surface`, `height`,
+`base-height`, `slope`, `weathering`, `lod`, `clay`, `shadow`, `aerial-transmittance`, and
+`vegetation-coverage`. The `backdrop` camera is a deterministic source-aware
+frame intended for terrain beginning about 300 m from the visible
+foreground. Presentation modes are `standard` (default) and `backdrop`.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and

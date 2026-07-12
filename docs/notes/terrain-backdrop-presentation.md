@@ -2,8 +2,8 @@
 
 Date: 2026-07-12
 
-Status: implementation study. Terrain v1 source generation is frozen; this
-pass changes only camera composition and opt-in material presentation.
+Status: completed presentation checkpoint. Terrain v1 source generation stayed
+frozen; the pass changed only camera composition and opt-in material response.
 
 ## Problem
 
@@ -92,3 +92,54 @@ close vegetation.
   until it hides the missing geometry.
 - Capture-body cost remains below the existing `33.3 ms/frame` evaluation
   budget.
+
+## Outcome
+
+Terrain now has a deterministic `backdrop` camera. It evaluates a fixed `5 x 5`
+anchor grid and 24 headings against clean source samples at 400, 800, 1600,
+3200, and 6400 m. The score favors distant prominence, lateral silhouette
+variation, useful target distance, and a clear near field in that order. The
+winning pose uses 120 m final-source clearance and a 40-degree vertical field
+of view. All nine preset/seed review cases select useful frames; target
+distances are 1600 or 3200 m. Headless backdrop captures remain static, while
+the same pose seeds the interactive surface controller.
+
+The opt-in `terrain.presentation=backdrop` path adds separate ground and woody
+coverage. A 96 m clean-source neighborhood supplies broad landform context;
+rotated kilometer, 155 m, and 31 m procedural fields supply regional, patch,
+and clump variation. Projected footprint filtering removes unresolved breakup.
+Coverage changes only base color, roughness, and restrained material relief,
+with total color influence capped at 75%. It does not affect terrain height,
+queries, collision, shadows, or source diagnostics. `vegetation-coverage`
+publishes the two fields as red and green channels.
+
+The matrix shows coherent distant meadow and dark woodland masses across all
+three presets. Mountains receive prominent relief framing; lower-relief upland
+and plains cases correctly use long horizons rather than inventing peaks. The
+six-second moving surface capture shows no visible coverage seams or LOD bands.
+The two-meter ground control still reads as a smooth colored heightfield and is
+not supported as foliage presentation. The ordinary 70 m surface view is an
+intermediate diagnostic, not the backdrop contract.
+
+Generate the accepted pack with:
+
+```sh
+projects/terrain/capture_backdrop_review.sh
+```
+
+It replaces `outputs/terrain/backdrop-presentation/` with:
+
+- `terrain-backdrop-matrix-sheet.png`: three presets by three seeds;
+- `terrain-backdrop-comparison-sheet.png`: standard, backdrop, and coverage;
+- `terrain-backdrop-distance-sheet.png`: ground, surface, and backdrop controls;
+- `terrain-backdrop-showcase-1920x1080.png`: full-resolution presentation frame;
+- `terrain-backdrop-surface-traversal.mp4`: six-second temporal/LOD review;
+- camera-plan JSON, source summary, profile records, and review metadata.
+
+The source-summary SHA-256 remains
+`5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb`.
+On the local RTX 5070 Ti, 60 and 300 frame `960 x 540` video captures took
+`8.24 s` and `9.85 s`. Their incremental difference is approximately
+`6.71 ms/frame`, including capture submission, readback, and encoding, below
+the `33.3 ms/frame` evaluation budget. The profile reports video-frame
+submission itself at about `0.62 ms/frame`; startup remains a separate cost.
