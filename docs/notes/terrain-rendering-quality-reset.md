@@ -2,8 +2,8 @@
 
 Date: 2026-07-12
 
-Status: implementation study. Terrain source generation remains frozen while
-the standalone renderer is reopened for a native-resolution quality pass.
+Status: completed renderer checkpoint. Terrain source generation remained
+frozen through the native-resolution quality pass.
 
 ## Problem
 
@@ -84,3 +84,60 @@ from resolved source parameters rather than a separate authored map.
   shimmer.
 - Capture-body cost remains below 33.3 ms/frame.
 - The terrain source hash remains byte-identical.
+
+## Implemented Architecture
+
+The mesh still samples the terrain v1 source directly. Final shading now adds
+the weathering-delta derivative to the interpolated base gradient, avoiding
+both stale base-height normals and visible clipmap triangle normals. The shadow
+receiver uses final height; the two nearest horizon samples include local
+weathering while distant samples stay on the macro source where the local
+filter is below their useful footprint.
+
+One seeded 3D material evaluator supplies all presets. It samples physical
+fields at 680 m, 145 m, and 34 m, filters them by pixel footprint, and combines
+them with resolved relief scale, normalized elevation, final normal, and 96 m
+concavity. The result carries normalized ground, scree, rock, and snow weights,
+material-specific roughness, warped strata, and meso/local detail normals.
+Vegetation coverage remains available for backdrop composition, but its color
+influence is capped at 0.16 and cannot replace the geologic surface.
+
+Ambient visibility is a separate bounded lighting term. Concave or
+horizon-facing landforms can reduce sky irradiance, but the result is clamped
+to 0.62-1.0. It does not darken direct sun or modify atmospheric aerial
+perspective.
+
+## Review Evidence
+
+`projects/terrain/capture_rendering_quality_review.sh` writes the canonical
+ignored pack to `outputs/terrain/rendering-quality-reset/`. The pack includes:
+
+- a three-preset, three-seed backdrop matrix;
+- surface, clay, final-normal, shadow, material-weight, and ambient-visibility
+  diagnostics;
+- weathering-off versus local clay, normal, and shadow controls;
+- standard/backdrop comparison, native 1920 x 1080 still and crops;
+- standard and backdrop traversal videos plus a profiled capture;
+- three explicitly labeled external TerrainEngine screenshot oracles and a
+  SHA-256 provenance manifest.
+
+The final source-summary SHA-256 is still
+`5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb`.
+The 60- and 300-frame 960 x 540 timing runs took 8.24 s and 9.84 s. Their
+incremental difference is about 6.67 ms/frame including capture submission,
+inside the 33.3 ms workbench budget. The profiled video reports a 0.752 ms p95
+CPU submission span after warmup.
+
+## Checkpoint Read
+
+Mountain presentation is materially stronger than the previous smooth gray
+heightfield: snow is reachable across observed mountain seeds, mesostructure
+survives native resolution, and weathering affects the final normal and nearby
+shadow receiver. Upland and plains deliberately remain softer.
+
+This is not final terrain presentation. Lowland foreground remains too smooth
+for a close scene, direct-shadow diagnostics still expose a hard visibility
+transition at low sun, and there is no foliage geometry. The gap to the actual
+TerrainEngine screenshots also includes source silhouettes, water, clouds, and
+scene composition, not just material tuning. Those remain explicit follow-up
+work rather than hidden inside this renderer checkpoint.

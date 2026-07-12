@@ -99,8 +99,8 @@ the detailed foundation notes under `docs/architecture/`.
   strict 150 m AGL and 300 m lower-frustum contract for keeping backdrop framing
   out of unsupported surface-detail range.
 - [Terrain rendering quality reset](terrain-rendering-quality-reset.md):
-  native-resolution rendering correction for final-height shading, procedural
-  geology, landform lighting, and honest reference controls.
+  completed native-resolution correction for final-height shading, seeded
+  procedural geology, bounded landform lighting, and honest reference controls.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
