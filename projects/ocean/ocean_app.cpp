@@ -2166,6 +2166,14 @@ class OceanApp {
 
     void record_surface_moments(const cubey::vulkan::CommandRecorder& recorder,
                                 cubey::render::FrameSlot frame_slot) {
+        const bool moment_handoff_enabled = ocean_config_.spectral_lod_handoff > 0.0F;
+        const bool moment_debug_enabled =
+            ocean_config_.render_view == OceanRenderView::SlopeLod ||
+            ocean_config_.render_view == OceanRenderView::FoamLod ||
+            ocean_config_.render_view == OceanRenderView::FoamFiltered;
+        if (!moment_handoff_enabled && !moment_debug_enabled) {
+            return;
+        }
         cubey::vulkan::GpuTimestampProfiler* profiler = ocean_gpu_.profiler();
         for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
             if (!ocean_should_update_cascade(ocean_config_, cascade, ocean_compute_frame_index_,

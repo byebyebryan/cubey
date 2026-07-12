@@ -305,6 +305,7 @@ starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 and `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
+`--ocean-spectral-lod-handoff 0.0..1.0`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields` for captured
 diagnostics. The GUI's Feature Isolation section exposes global shape and foam
 strength, foam history, active cascade-slot work toggles, shape/detail

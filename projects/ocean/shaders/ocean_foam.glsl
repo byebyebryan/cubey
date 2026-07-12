@@ -250,7 +250,7 @@ vec4 ocean_foam_lod_data(float dist, float footprint_m) {
         total = vec2(1.0) - (vec2(1.0) - total) * (vec2(1.0) - cascade_coverage);
         transfer = max(transfer, statistics.z);
     }
-    float coverage = clamp(max(total.x * 0.55, total.y * 0.28), 0.0, 0.20);
+    float coverage = clamp(max(total.x * 0.05, total.y * 0.08), 0.0, 0.025);
     return vec4(total, coverage, transfer);
 }
 
@@ -266,6 +266,9 @@ OceanFoamData ocean_foam_data(float dist, float footprint_m) {
     float anti_repeat_factor =
         ocean_detail_anti_repeat_strength() *
         smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist);
+    bool slope_lod_enabled =
+        ocean_spectral_lod_handoff() > 0.0 ||
+        uint(ocean.debug_options.x + 0.5) == OCEAN_VIEW_SLOPE_LOD;
     for (uint cascade = 0u; cascade < 5u; ++cascade) {
         if (!ocean_cascade_enabled(cascade)) {
             continue;
@@ -287,7 +290,7 @@ OceanFoamData ocean_foam_data(float dist, float footprint_m) {
             data.detail += weighted_foam;
         }
         data.total += weighted_foam;
-        if (ocean_spectral_lod_handoff() > 0.0) {
+        if (slope_lod_enabled) {
             vec3 slope_lod = cascade_slope_lod_statistics(
                 cascade, frag_sample_position, tile_length, dist, footprint_m);
             data.slope_lod.x +=

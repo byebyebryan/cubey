@@ -63,6 +63,8 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view footprint
 ./build/dev/projects/ocean/ocean --debug-view energy-lod
 ./build/dev/projects/ocean/ocean --debug-view foam-filtered
+./build/dev/projects/ocean/ocean --debug-view slope-lod --ocean-spectral-lod-handoff 1
+./build/dev/projects/ocean/ocean --debug-view foam-lod --ocean-spectral-lod-handoff 1
 ./build/dev/projects/ocean/ocean --debug-view far-field
 ./build/dev/projects/ocean/ocean --debug-view cloud-shadow
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection
@@ -100,6 +102,7 @@ Headless captures can use
 `--ocean-curvature-strength 0.0..1.0`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
+`--ocean-spectral-lod-handoff 0.0..1.0`,
 `--ocean-terrain-fields`, `--no-ocean-terrain-fields`,
 `--cloud-quality quarter|half|full`, `--cloud-weather-preset ...`, and
 `--no-clouds`.

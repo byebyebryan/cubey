@@ -396,7 +396,7 @@ void main() {
             : 0.0;
     float near_foam_coverage = ocean_foam_coverage(foam_data, dist, ndotv);
     vec4 foam_lod_data = vec4(0.0);
-    if (ocean_spectral_lod_handoff() > 0.0) {
+    if (ocean_spectral_lod_handoff() > 0.0 || view == OCEAN_VIEW_FOAM_LOD) {
         foam_lod_data = ocean_foam_lod_data(dist, pixel_footprint_m);
     }
     float spectral_foam_coverage = foam_lod_data.z * ocean_spectral_lod_handoff();

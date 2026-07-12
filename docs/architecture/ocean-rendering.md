@@ -99,6 +99,13 @@ their contribution should be explicit:
 - headless captures can pin `--ocean-camera-preset mid|high|wide` so far-field
   changes are comparable without relying only on interactive inspection.
 
+The opt-in moment-pyramid proof is documented in
+[Ocean spectral LOD handoff](../notes/ocean-spectral-lod-handoff.md). It keeps
+the v1 surface default unchanged while testing a reusable slope/foam material
+handoff. Treat it as evidence for a future explicit spectral-band model, not as
+permission to keep stacking special far-field layers on the overlapping C0/C1
+configuration.
+
 The default fade bands are deliberately conservative after the anti-repeat
 experiments: displacement fades across roughly 8-24 wavelengths, surface detail
 across roughly 10-30 wavelengths, and coarse rings reject displacement between

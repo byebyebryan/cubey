@@ -1168,6 +1168,8 @@ int main() {
                          "surface descriptors should expose foam moment pyramids");
         require_contains(app_source, "record_surface_moments",
                          "ocean compute should rebuild surface moment pyramids after unpacking");
+        require_contains(app_source, "moment_handoff_enabled",
+                         "default rendering should skip opt-in surface moment dispatches");
         require_contains(vertex_shader, "float cascade_displacement_lod_weight",
                          "vertex shader should apply per-cascade displacement LOD weights");
         require_contains(vertex_shader, "float cascade_distance_lod_weight",
