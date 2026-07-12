@@ -59,6 +59,9 @@ void test_cloud_layer_shadow_projection_is_snapped_and_centered();
 void test_cloud_layer_runtime_separates_product_and_composite_descriptors();
 void test_cloud_layer_cmake_package_tracks_composite_modes();
 void test_cloud_layer_frame_uniforms_pack_environment_lighting();
+void test_cloud_environment_probe_config_rejects_invalid_values();
+void test_cloud_environment_probe_timeline_captures_coherently();
+void test_cloud_environment_prefilter_declares_cloud_contract();
 void test_adaptive_patch_lod_selects_quadtree_children();
 void test_adaptive_patch_lod_hysteresis_delays_split_and_merge();
 void test_adaptive_patch_lod_falls_back_at_patch_budget();
@@ -189,6 +192,7 @@ void test_texture_2d_config_preserves_mip_count();
 void test_texture_2d_byte_size_uses_compressed_blocks();
 void test_texture_cube_config_maps_transfer_sampled_cube_usage();
 void test_texture_cube_config_maps_color_attachment_sampled_usage();
+void test_texture_cube_config_maps_storage_sampled_usage();
 
 namespace cubey::tests {
 
@@ -283,6 +287,9 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_cloud_layer_runtime_separates_product_and_composite_descriptors),
         CUBEY_TEST(test_cloud_layer_cmake_package_tracks_composite_modes),
         CUBEY_TEST(test_cloud_layer_frame_uniforms_pack_environment_lighting),
+        CUBEY_TEST(test_cloud_environment_probe_config_rejects_invalid_values),
+        CUBEY_TEST(test_cloud_environment_probe_timeline_captures_coherently),
+        CUBEY_TEST(test_cloud_environment_prefilter_declares_cloud_contract),
         CUBEY_TEST(test_adaptive_patch_lod_selects_quadtree_children),
         CUBEY_TEST(test_adaptive_patch_lod_hysteresis_delays_split_and_merge),
         CUBEY_TEST(test_adaptive_patch_lod_falls_back_at_patch_budget),
@@ -373,6 +380,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_texture_2d_byte_size_uses_compressed_blocks),
         CUBEY_TEST(test_texture_cube_config_maps_transfer_sampled_cube_usage),
         CUBEY_TEST(test_texture_cube_config_maps_color_attachment_sampled_usage),
+        CUBEY_TEST(test_texture_cube_config_maps_storage_sampled_usage),
         CUBEY_TEST(test_depth_texture_config_maps_sampled_depth_usage),
         CUBEY_TEST(test_compute_generated_texture_config_validates_dispatch_shape),
         CUBEY_TEST(test_material_alpha_modes_map_to_blend_and_pass_policy),

@@ -273,6 +273,20 @@ ImageConfig transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32
     };
 }
 
+ImageConfig storage_sampled_cube_image_config(std::uint32_t extent, std::uint32_t mip_levels,
+                                              VkFormat format) {
+    return {
+        .extent = {extent, extent, 1},
+        .format = format,
+        .usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+        .flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+        .mip_levels = mip_levels,
+        .array_layers = 6,
+        .view_type = VK_IMAGE_VIEW_TYPE_CUBE,
+    };
+}
+
 ImageConfig color_attachment_sampled_cube_image_config(std::uint32_t extent,
                                                        std::uint32_t mip_levels,
                                                        VkFormat format) {

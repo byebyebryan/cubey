@@ -39,6 +39,7 @@ struct Texture3DConfig {
 
 enum class TextureCubeUsage : std::uint8_t {
     TransferSampled,
+    StorageSampled,
     ColorAttachmentSampled,
 };
 

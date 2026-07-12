@@ -113,6 +113,9 @@ class Image {
 [[nodiscard]] ImageConfig transfer_sampled_image_config(VkExtent2D extent, VkFormat format);
 [[nodiscard]] ImageConfig
 transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32_t mip_levels, VkFormat format);
+[[nodiscard]] ImageConfig storage_sampled_cube_image_config(std::uint32_t extent,
+                                                            std::uint32_t mip_levels,
+                                                            VkFormat format);
 [[nodiscard]] ImageConfig color_attachment_sampled_cube_image_config(std::uint32_t extent,
                                                                      std::uint32_t mip_levels,
                                                                      VkFormat format);

@@ -1,5 +1,6 @@
 #include <cubey/render/cloud_layer.h>
 #include <cubey/render/cloud_layer_config.h>
+#include <cubey/render/cloud_environment_probe.h>
 
 #include <cctype>
 #include <cmath>
@@ -328,4 +329,64 @@ void test_cloud_layer_frame_uniforms_pack_environment_lighting() {
                  "cloud uniforms should pack environment ambient color");
     require_near(uniforms.ambient_color_intensity.w, 1.4F, 0.001F,
                  "cloud uniforms should pack environment ambient intensity");
+}
+
+void test_cloud_environment_probe_config_rejects_invalid_values() {
+    cubey::render::CloudEnvironmentProbeConfig config{};
+    config.mip_levels = 8;
+    bool threw = false;
+    try {
+        cubey::render::validate_cloud_environment_probe_config(config);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "cloud environment probe should reject excessive mip counts");
+}
+
+void test_cloud_environment_probe_timeline_captures_coherently() {
+    cubey::render::CloudEnvironmentProbeTimeline timeline;
+    timeline.configure(4.0F);
+    require(timeline.capture_pending(), "new cloud environment probe should capture immediately");
+    require(!timeline.valid(), "new cloud environment probe should not expose invalid cubes");
+
+    timeline.capture_recorded();
+    require(timeline.valid(), "first coherent capture should make the probe valid");
+    require_near(timeline.blend(), 1.0F, 0.001F,
+                 "first coherent capture should not blend from undefined data");
+    require(timeline.generation() == 1U, "first capture should advance generation");
+
+    timeline.advance(0.125);
+    require(!timeline.capture_pending(), "probe should retain its cube before the interval");
+    timeline.advance(0.125);
+    require(timeline.capture_pending(), "probe should request a coherent update at four hertz");
+
+    timeline.capture_recorded();
+    require_near(timeline.blend(), 0.0F, 0.001F,
+                 "subsequent captures should start a crossfade");
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 0.5F, 0.001F,
+                 "crossfade should track the coherent update interval");
+    require(!timeline.capture_pending(), "probe should not overwrite a cube mid-crossfade");
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 1.0F, 0.001F,
+                 "crossfade should finish before the next capture");
+    require(timeline.capture_pending(), "finished crossfade should permit the next capture");
+}
+
+void test_cloud_environment_prefilter_declares_cloud_contract() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::render::cloud_environment_prefilter_pass_info();
+    require(pass.label == "cloud.environment.prefilter",
+            "cloud environment prefilter should keep its profiling label");
+    require(pass.descriptor_sets.size() == 1U &&
+                pass.descriptor_sets[0].bindings.size() == 3U,
+            "cloud environment prefilter should bind uniforms, clear sky, and cloud product");
+
+    const std::string shader = read_text_file(
+        source_root_path() /
+        "shaders/cubey/cloud/cloud_environment_prefilter.frag");
+    require(shader.find("cloud.rgb + clamp(cloud.a") != std::string::npos,
+            "cloud environment prefilter should compose radiance and transmittance");
+    require(shader.find("reflection_prefilter.glsl") != std::string::npos,
+            "cloud environment prefilter should reuse shared GGX sampling helpers");
 }

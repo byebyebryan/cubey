@@ -161,6 +161,7 @@ add_library(cubey_render STATIC
     render/atmosphere_night_sky_atlas.cpp
     render/atmosphere_reflection_probe.cpp
     render/celestial_body_frame.cpp
+    render/cloud_environment_probe.cpp
     render/cloud_layer.cpp
     render/forward_pass.cpp
     render/generated_ibl.cpp

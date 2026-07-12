@@ -170,6 +170,9 @@ cubey::vulkan::ImageConfig texture_cube_image_config(const TextureCubeConfig& co
     case TextureCubeUsage::TransferSampled:
         return cubey::vulkan::transfer_sampled_cube_image_config(config.extent, config.mip_levels,
                                                                  config.format);
+    case TextureCubeUsage::StorageSampled:
+        return cubey::vulkan::storage_sampled_cube_image_config(config.extent, config.mip_levels,
+                                                                config.format);
     case TextureCubeUsage::ColorAttachmentSampled:
         return cubey::vulkan::color_attachment_sampled_cube_image_config(
             config.extent, config.mip_levels, config.format);
