@@ -116,6 +116,7 @@ const uint OCEAN_VIEW_CLOUD_SHADOW = 26u;
 const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u;
 const uint OCEAN_VIEW_WATER_BODY = 28u;
 const uint OCEAN_VIEW_FRESNEL = 29u;
+const uint OCEAN_VIEW_SLOPE_LOD = 30u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -141,6 +142,7 @@ struct OceanFoamData {
     vec2 core;
     vec2 candidate;
     vec2 detail;
+    vec2 slope_lod;
 };
 
 struct OceanAerialPerspective {
@@ -408,6 +410,12 @@ void main() {
     roughness = mix(roughness, max(roughness, 0.58), material_distance);
     roughness = clamp(roughness + far_material_energy * ocean_far_roughness_strength(),
                       0.02, 1.0);
+    float spectral_slope_rms =
+        sqrt(max(foam_data.slope_lod.x, 0.0)) * ocean_normal_presentation_scale(dist);
+    float slope_filtered_roughness =
+        sqrt(clamp(roughness * roughness + spectral_slope_rms * spectral_slope_rms, 0.0, 1.0));
+    float slope_roughness_delta = max(slope_filtered_roughness - roughness, 0.0);
+    roughness = mix(roughness, slope_filtered_roughness, ocean_spectral_lod_handoff());
 
     float fresnel = ocean_dielectric_fresnel(ndotv);
     vec3 clear_reflection = ocean_environment_reflection(reflection_dir, roughness);
@@ -520,6 +528,9 @@ void main() {
         color = water_body;
     } else if (view == OCEAN_VIEW_FRESNEL) {
         color = vec3(fresnel);
+    } else if (view == OCEAN_VIEW_SLOPE_LOD) {
+        color = vec3(clamp(spectral_slope_rms * 16.0, 0.0, 1.0),
+                     clamp(slope_roughness_delta * 32.0, 0.0, 1.0), foam_data.slope_lod.y);
     }
 
     if (ocean.debug_options.w > 0.0) {

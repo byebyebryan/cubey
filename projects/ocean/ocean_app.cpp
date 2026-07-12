@@ -1536,7 +1536,7 @@ class OceanApp {
                     ocean_config_.far_field_enabled ? 1.0F : 0.0F,
                     ocean_config_.far_field_start_m,
                     ocean_config_.far_field_end_m,
-                    0.0F,
+                    ocean_config_.spectral_lod_handoff,
                 },
             .far_field_options2 =
                 {

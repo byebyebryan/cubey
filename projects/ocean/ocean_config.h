@@ -46,6 +46,7 @@ enum class OceanRenderView : std::uint32_t {
     CloudReflection = 27,
     WaterBody = 28,
     Fresnel = 29,
+    SlopeLod = 30,
 };
 
 enum class OceanFieldPrecision : std::uint32_t {
@@ -58,7 +59,7 @@ enum class OceanSurfaceMode : std::uint32_t {
     CurvedFar = 1,
 };
 
-inline constexpr std::array<OceanRenderView, 30> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 31> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory,     OceanRenderView::FoamCore,     OceanRenderView::FoamCandidate,
@@ -69,6 +70,7 @@ inline constexpr std::array<OceanRenderView, 30> kOceanRenderViews{
     OceanRenderView::Curvature,       OceanRenderView::Footprint,    OceanRenderView::EnergyLod,
     OceanRenderView::FoamFiltered,    OceanRenderView::FarField,     OceanRenderView::CloudShadow,
     OceanRenderView::CloudReflection, OceanRenderView::WaterBody,    OceanRenderView::Fresnel,
+    OceanRenderView::SlopeLod,
 };
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
     OceanFieldPrecision::Full,
@@ -174,6 +176,7 @@ struct OceanConfig {
     float cloud_reflection_strength = 0.75F;
     float cloud_shadow_strength = 0.45F;
     bool spectral_domains_enabled = true;
+    float spectral_lod_handoff = 0.0F;
     bool terrain_fields_enabled = false;
     OceanFieldPrecision field_precision = OceanFieldPrecision::Half;
     std::array<bool, kOceanCascadeCount> cascade_enabled{true, true, false, false, false};
@@ -354,6 +357,8 @@ struct OceanCascadeLodBand {
         return "water-body";
     case OceanRenderView::Fresnel:
         return "fresnel";
+    case OceanRenderView::SlopeLod:
+        return "slope-lod";
     }
     return "final";
 }
@@ -655,7 +660,8 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.far_detail_footprint_end_m <= config.far_detail_footprint_start_m ||
         config.far_reflection_variation_strength < 0.0F || config.sun_glitter_width <= 0.0F ||
         config.cloud_reflection_strength < 0.0F || config.cloud_reflection_strength > 1.0F ||
-        config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F) {
+        config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F ||
+        config.spectral_lod_handoff < 0.0F || config.spectral_lod_handoff > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
     for (const OceanCascadeConfig& cascade : config.cascades) {
@@ -682,6 +688,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.ocean.spectral_domains >= 0) {
         ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
+    }
+    if (run_config_float_is_set(config.ocean.spectral_lod_handoff)) {
+        ocean.spectral_lod_handoff = config.ocean.spectral_lod_handoff;
     }
     if (config.ocean.terrain_fields >= 0) {
         ocean.terrain_fields_enabled = config.ocean.terrain_fields != 0;

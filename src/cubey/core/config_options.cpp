@@ -152,7 +152,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 263> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 264> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -270,6 +270,10 @@ constexpr std::array<ConfigOptionDescriptor, 263> kRunConfigOptions{
            "--ocean-spectral-domains", "Spectral Domains", "Ocean",
            "Enable wavelength-domain separation between ocean cascades.", ConfigOptionType::Bool,
            no_range(), {}, "--no-ocean-spectral-domains"),
+    option(RunConfigOptionId::OceanSpectralLodHandoff, "ocean.spectral_lod_handoff",
+           "--ocean-spectral-lod-handoff", "Spectral LOD Handoff", "Ocean",
+           "Blend unresolved spectral slope and foam moments into stable material response.",
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanTerrainFields, "ocean.terrain_fields", "--ocean-terrain-fields",
            "Terrain Fields", "Ocean", "Enable terrain-ocean fields as an ocean influence.",
            ConfigOptionType::Bool, no_range(), {}, "--no-ocean-terrain-fields"),
@@ -1329,6 +1333,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
                                         : nlohmann::json(std::to_string(config.ocean.cascade));
     case RunConfigOptionId::OceanSpectralDomains:
         return optional_bool(config.ocean.spectral_domains);
+    case RunConfigOptionId::OceanSpectralLodHandoff:
+        return optional_float(config.ocean.spectral_lod_handoff);
     case RunConfigOptionId::OceanTerrainFields:
         return optional_bool(config.ocean.terrain_fields);
     case RunConfigOptionId::OceanWireOverlay:
@@ -1839,6 +1845,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
     adapter.writeField<int>("cascade", options.cascade);
     adapter.writeField<int>("spectral_domains", options.spectral_domains);
+    adapter.writeField<float>("spectral_lod_handoff", options.spectral_lod_handoff);
     adapter.writeField<int>("terrain_fields", options.terrain_fields);
     adapter.writeField<float>("planet_radius_scale", options.planet_radius_scale);
     adapter.writeField<float>("curvature_start_ratio", options.curvature_start_ratio);
@@ -1859,6 +1866,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) 
     adapter.readField<std::string>("camera_preset", options.camera_preset);
     adapter.readField<std::string>("cascade", cascade);
     adapter.readField<int>("spectral_domains", options.spectral_domains);
+    adapter.readField<float>("spectral_lod_handoff", options.spectral_lod_handoff);
     adapter.readField<int>("terrain_fields", options.terrain_fields);
     adapter.readField<float>("planet_radius_scale", options.planet_radius_scale);
     adapter.readField<float>("curvature_start_ratio", options.curvature_start_ratio);
@@ -2521,6 +2529,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::OceanSpectralDomains:
         config.ocean.spectral_domains = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::OceanSpectralLodHandoff:
+        config.ocean.spectral_lod_handoff = parse_config_float(value, option);
+        validate_range(config.ocean.spectral_lod_handoff, option);
         break;
     case RunConfigOptionId::OceanTerrainFields:
         config.ocean.terrain_fields = parse_config_bool(value, option) ? 1 : 0;

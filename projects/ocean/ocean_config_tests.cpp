@@ -661,6 +661,8 @@ int main() {
                      "ocean should default current-view cloud reflection contribution on");
         require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
                      "ocean should default shared cloud transmittance on conservatively");
+        require_near(defaults.spectral_lod_handoff, 0.0F, 0.001F,
+                     "ocean should keep the spectral LOD handoff disabled until visual review");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
                      defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeStartWaves,
@@ -767,6 +769,8 @@ int main() {
                 "water body debug view should parse");
         require(ocean::ocean_render_view_from_name("fresnel") == ocean::OceanRenderView::Fresnel,
                 "Fresnel debug view should parse");
+        require(ocean::ocean_render_view_from_name("slope-lod") == ocean::OceanRenderView::SlopeLod,
+                "slope LOD debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -822,8 +826,11 @@ int main() {
                     ocean::OceanRenderView::Fresnel,
                 "ocean debug view cycle should include Fresnel after the water body");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Fresnel) ==
+                    ocean::OceanRenderView::SlopeLod,
+                "ocean debug view cycle should include slope LOD after material diagnostics");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::SlopeLod) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after material diagnostics");
+                "ocean debug view cycle should wrap after slope LOD diagnostics");
 
         bool rejected = false;
         try {
@@ -845,6 +852,7 @@ int main() {
         run_config.ocean.cloud_reflection_strength = 0.82F;
         run_config.ocean.cloud_shadow_strength = 0.41F;
         run_config.ocean.spectral_domains = 0;
+        run_config.ocean.spectral_lod_handoff = 0.65F;
         run_config.ocean.terrain_fields = 1;
         run_config.pbr.exposure = 0.5F;
         const ocean::OceanConfig from_run_config = ocean::ocean_config_from_run_config(run_config);
@@ -873,6 +881,8 @@ int main() {
                      "run config should initialize cloud shadow strength");
         require(!from_run_config.spectral_domains_enabled,
                 "run config should initialize ocean spectral domain override");
+        require_near(from_run_config.spectral_lod_handoff, 0.65F, 0.001F,
+                     "run config should initialize spectral LOD handoff strength");
         require(from_run_config.terrain_fields_enabled,
                 "run config should initialize ocean terrain field override");
         require_near(from_run_config.exposure, 0.5F, 0.001F,
@@ -917,6 +927,8 @@ int main() {
                               "--ocean-map-size",
                               "256",
                               "--no-ocean-spectral-domains",
+                              "--ocean-spectral-lod-handoff",
+                              "0.65",
                               "--ocean-terrain-fields",
                               "--ocean-cascade",
                               "4",
@@ -937,7 +949,7 @@ int main() {
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        cubey::RunConfig parsed = cubey::parse_run_config(26, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(28, const_cast<char**>(argv));
         require(parsed.ocean.sea_state == "calm", "CLI parser should accept --ocean-sea-state");
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
@@ -952,6 +964,8 @@ int main() {
                      "CLI parser should accept --ocean-curvature-strength");
         require(parsed.ocean.spectral_domains == 0,
                 "CLI parser should accept --no-ocean-spectral-domains");
+        require_near(parsed.ocean.spectral_lod_handoff, 0.65F, 0.001F,
+                     "CLI parser should accept --ocean-spectral-lod-handoff");
         require(parsed.ocean.terrain_fields == 1,
                 "CLI parser should accept --ocean-terrain-fields");
         require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
@@ -1437,6 +1451,8 @@ int main() {
                          "UI should expose shared cloud shadow strength");
         require_contains(ui_source, "&ui.config.cloud_reflection_strength",
                          "UI should expose current-view cloud reflection strength");
+        require_contains(ui_source, "&ui.config.spectral_lod_handoff",
+                         "UI should expose the spectral LOD handoff control");
         require_not_contains(ui_source, "cloud_shadow_scale_m",
                              "UI should not expose removed procedural cloud scale");
         require_not_contains(ui_source, "cloud_shadow_speed_mps",
@@ -1513,6 +1529,12 @@ int main() {
             "fragment shader should not keep rejected far-whitecap anti-repeat path");
         require_contains(fragment_shader, "float ocean_far_detail_filter",
                          "fragment shader should filter far normal detail by footprint");
+        require_contains(fragment_shader, "float ocean_spectral_lod_handoff()",
+                         "fragment shader should expose the controlled spectral LOD handoff");
+        require_contains(fragment_shader, "cascade_slope_lod_statistics",
+                         "fragment shader should measure unresolved slope variance per cascade");
+        require_contains(fragment_shader, "slope_filtered_roughness",
+                         "fragment shader should transfer unresolved slope into BRDF roughness");
         require_contains(fragment_shader, "float ocean_far_reflection_variation",
                          "fragment shader should add broad far reflection variation");
         require_contains(fragment_shader, "float far_material_energy",

@@ -650,6 +650,9 @@ void draw_ocean_ui(OceanUiContext ui) {
                                         "Microfacet roughness used by ocean shading.");
         cubey::host::imgui_slider_float("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F,
                                         "%.2f", "Final normal-map intensity.");
+        cubey::host::imgui_slider_float(
+            "Spectral LOD", &ui.config.spectral_lod_handoff, 0.0F, 1.0F, "%.2f",
+            "Blend unresolved wave slope and foam statistics into stable distant material response.");
         cubey::host::imgui_checkbox(
             "Far field", &ui.config.far_field_enabled,
             "Hand unresolved distant wave energy into roughness, reflection, and glints.");
