@@ -76,10 +76,14 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         shaders/terrain_environment.glsl
+        shaders/terrain_lighting.glsl
+        shaders/terrain_material.glsl
         shaders/terrain_shadow.glsl
         shaders/terrain_source.glsl
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/fastnoise_lite.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"

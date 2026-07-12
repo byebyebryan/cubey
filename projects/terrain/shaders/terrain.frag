@@ -1,8 +1,9 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
-#include "cubey/procedural/noise.glsl"
 #include "terrain_environment.glsl"
+#include "terrain_lighting.glsl"
+#include "terrain_material.glsl"
 #include "terrain_source.glsl"
 
 layout(set = 0, binding = 0, std140) uniform TerrainSourceUniforms {
@@ -55,36 +56,6 @@ float terrain_child_boundary_detail_visibility(vec2 world_xz) {
         frag_child_half_extent_m);
     return smoothstep(frag_cell_size_m * 0.125, frag_cell_size_m * 2.0,
         boundary_distance_m);
-}
-
-float terrain_color_noise(vec2 world_xz) {
-    float broad = cubey_proc_value_noise_pcg_2d(world_xz * 0.0022);
-    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.045 + vec2(19.0, -31.0));
-    return mix(broad, fine, 0.42);
-}
-
-float terrain_material_relief(vec2 world_xz, float pixel_footprint_m) {
-    float broad_visibility = 1.0 - smoothstep(7.0, 26.0, pixel_footprint_m);
-    float fine_visibility = 1.0 - smoothstep(1.5, 7.0, pixel_footprint_m);
-    float broad = cubey_proc_value_noise_pcg_2d(world_xz * 0.055 + vec2(-7.0, 13.0)) - 0.5;
-    float fine = cubey_proc_value_noise_pcg_2d(world_xz * 0.22 + vec2(41.0, 5.0)) - 0.5;
-    return broad * broad_visibility * 2.6 + fine * fine_visibility * 0.55;
-}
-
-vec3 terrain_material_normal(vec3 source_normal, vec2 world_xz, float footprint_m) {
-    const float step_m = 0.75;
-    float center = terrain_material_relief(world_xz, footprint_m);
-    vec2 gradient = vec2(
-        terrain_material_relief(world_xz + vec2(step_m, 0.0), footprint_m) - center,
-        terrain_material_relief(world_xz + vec2(0.0, step_m), footprint_m) - center) /
-        step_m;
-    if (any(isnan(gradient)) || any(isinf(gradient))) {
-        return source_normal;
-    }
-    vec3 normal = vec3(source_normal.x - gradient.x, source_normal.y,
-        source_normal.z - gradient.y);
-    float length_squared = dot(normal, normal);
-    return length_squared > 1e-10 ? normal * inversesqrt(length_squared) : source_normal;
 }
 
 vec3 terrain_lod_color(float value) {
@@ -152,34 +123,25 @@ void main() {
     }
 
     bool clay_view = debug_view == 6;
-    float variation = terrain_color_noise(frag_world_position.xz);
-    vec3 grass = vec3(0.19, 0.30, 0.13) * mix(0.72, 1.20, variation);
-    vec3 soil = vec3(0.34, 0.27, 0.18) * mix(0.78, 1.15, variation);
-    vec3 rock = vec3(0.43, 0.42, 0.39) * mix(0.75, 1.18, variation);
-    vec3 snow = vec3(0.86, 0.88, 0.86) * mix(0.94, 1.04, variation);
-    vec3 base_color = mix(grass, soil, smoothstep(0.18, 0.48, slope));
-    base_color = mix(base_color, rock, smoothstep(0.34, 0.72, slope));
-    float snow_mask = smoothstep(1400.0, 2100.0, frag_height_m) *
-        (1.0 - smoothstep(0.38, 0.78, slope));
-    base_color = mix(base_color, snow, snow_mask);
-
-    vec3 detail_normal = terrain_material_normal(source_normal, frag_world_position.xz,
-        frag_footprint_m);
+    TerrainMaterialSample material = clay_view
+        ? terrain_clay_material(source_normal)
+        : terrain_material_sample(source_normal, frag_world_position.xz,
+                                  frag_height_m, frag_footprint_m);
     float detail_visibility = (1.0 - smoothstep(0.82, 0.98, frag_lod_morph)) *
         terrain_child_boundary_detail_visibility(frag_world_position.xz);
     vec3 normal = clay_view
         ? source_normal
-        : normalize(mix(source_normal, detail_normal, detail_visibility));
-    if (clay_view) {
-        base_color = vec3(0.42);
-    }
+        : normalize(mix(source_normal, material.detail_normal, detail_visibility));
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
-    float diffuse = max(dot(normal, light_direction), 0.0);
-    vec3 sun = atmosphere.primary_light_color_angular_radius.xyz *
-        (atmosphere.primary_light_direction_intensity.w * diffuse *
-         clamp(frag_direct_visibility, 0.0, 1.0));
-    vec3 ambient = terrain_diffuse_irradiance(normal);
-    vec3 color = base_color * (ambient + sun);
+    vec3 view_direction = normalize(
+        pc.camera_position_vertical_scale.xyz - frag_world_position);
+    vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
+        atmosphere.primary_light_direction_intensity.w;
+    vec3 color = terrain_lighting_ambient(
+        material.base_color, terrain_diffuse_irradiance(normal));
+    color += terrain_lighting_direct(
+        material.base_color, material.roughness, normal, view_direction,
+        light_direction, light_radiance, frag_direct_visibility);
 
     CubeyAtmosphereSample aerial = terrain_aerial_perspective(
         pc.camera_position_vertical_scale.xyz, frag_world_position);
