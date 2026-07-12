@@ -7,6 +7,22 @@ sun-glitter behavior easy to compare across ocean changes.
 
 All commands write under `outputs/`, which is intentionally ignored by git.
 
+## Sea-State Matrix
+
+Use the checked-in matrix to compare the accepted `Calm`, `Windy`, and `Stormy`
+states without changing quality or cascade workload:
+
+```sh
+projects/ocean/capture_sea_state_review.sh outputs/ocean-sea-state-review
+```
+
+The contact sheet places states in columns and low/mid/high clear views, cloudy
+mid view, twilight, displacement, and warmed foam diagnostics in rows. The
+default run also records a fixed-lighting motion clip for each state. Review the
+low and mid rows for wave/foam separation; the high row is intentionally a
+check of the current reflection-dominated far-field handoff rather than a
+promise of resolved wave geometry.
+
 ## Baseline Matrix
 
 Use this compact still matrix after changing cascade tuning, LOD policy,

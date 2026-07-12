@@ -41,3 +41,5 @@ before other terrain sources exist.
   shoreline/ocean handoff vocabulary that should remain an adapter target.
 - `docs/architecture/planet-rendering.md`: planet-scale terrain/ocean handoff
   and water-datum vocabulary.
+- `docs/notes/ocean-surface-v1.md`: accepted local open-water renderer scope,
+  standing-water reuse limits, and the future terrain/ocean composition order.

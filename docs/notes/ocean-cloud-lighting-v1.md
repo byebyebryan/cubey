@@ -106,7 +106,8 @@ remains negligible at this resolution.
 - Terrain, planet, and general PBR consumers remain future integrations; they
   should consume shared outputs rather than copy cloud density or march code.
 
-The next meaningful extension is a cached clouded environment product for
-offscreen/rough reflections, but only after the current-view surface result is
-visually accepted in motion. Planet-scale shadows and aerial/orbit clouds remain
-separate later-version work.
+The current-view surface result is accepted in motion as part of
+[Surface Ocean V1](ocean-surface-v1.md). The next meaningful extension is a
+cached clouded environment product for offscreen and rough reflections.
+Planet-scale shadows and aerial/orbit clouds remain separate later-version
+work.

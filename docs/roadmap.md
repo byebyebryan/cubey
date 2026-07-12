@@ -44,8 +44,12 @@ Current stable foundation pieces:
 - shared sky/celestial/atmosphere state used by atmosphere, ocean,
   glTF/PBR, water, pyro, and planet-scale adapters;
 - surface-only Cloud V1 promoted into the shared atmosphere/cloud layer and
-  consumed by atmosphere and ocean, with aerial/orbit cloud work explicitly
+  consumed by atmosphere and ocean, including bounded local ocean shadows and
+  current-view reflection reuse, with aerial/orbit cloud work explicitly
   deferred;
+- Surface Ocean V1 closed around a fixed-cost C0/C1 spectral core, independent
+  Calm/Windy/Stormy look presets, shared atmosphere/cloud lighting, and an
+  explicit terrain/water-body handoff boundary;
 - renderer foundation pieces for target views, render graph declaration,
   material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
   planning, and primitive mesh/draw helpers;
@@ -55,9 +59,9 @@ Current stable foundation pieces:
 
 Recommended next feature streams:
 
-- `projects/ocean`: water material/far-field quality, foam/whitecap tuning,
-  reflection/glitter/cloud-sky interaction, and later shoreline/bathymetry
-  integration.
+- `projects/ocean`: cached clouded environment lighting for offscreen/rough
+  reflections, then shoreline/bathymetry composition after terrain products are
+  ready; near-field interaction and spray remain later feature work.
 - `projects/planet` and terrain worktrees: local/global terrain morphing,
   streaming/residency contracts, and eventual ocean-as-local-water handoff.
 - `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
@@ -66,9 +70,9 @@ Recommended next feature streams:
 
 Known non-blockers:
 
-- `CloudEnvironmentRuntime` should eventually wrap generated cloud-resource
-  lifetime and per-frame input packaging above `CloudLayerRuntime`, but the
-  current atmosphere/ocean consumers are enough for Cloud V1 feature use.
+- The current-view ocean reflection product cannot represent offscreen clouds
+  or a rough clouded hemisphere. A cached cloud environment product is the next
+  bounded renderer extension; it should remain derived from shared cloud state.
 - `cloud_march.comp`, `surface_cloud_march.comp`, `planet_surface.frag`, and a
   few volume diagnostics shaders remain future split targets; the active shader
   foundation is sufficient for current feature work.
@@ -601,14 +605,16 @@ Project checkpoints:
   remains the frozen planet-aware pressure project for surface/high/orbit
   lessons, while `projects/cloud_ref_2` remains the cached-sky architecture
   reference. Cloud V1 is intentionally surface-only: atmosphere is the tuning
-  host and ocean is the surface-view consumer. Planet, aerial/high-altitude,
-  orbit shells, cached sky-cloud products, cloud shadows, reflections, and
-  clouded environment outputs are deferred until the surface layer is stable
-  without relying on cache, temporal reconstruction, or final blur.
+  host and ocean is the surface-view consumer. Ocean now consumes a bounded
+  local shadow product and current-view reflection reuse. Planet,
+  aerial/high-altitude, orbit shells, cached sky-cloud environments, and
+  general clouded PBR outputs remain deferred.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer
-  and future donor rather than the owner of planet-scale navigation.
+  and future donor rather than the owner of planet-scale navigation. Surface
+  Ocean V1 fixes the default cost at C0/C1 and adds Calm/Windy/Stormy behavior
+  presets without conflating sea state with quality or water-body ownership.
 - `projects/planet` is the current scale/LOD foundation project. It owns
   Earth-like scale, camera-relative cube-sphere surface LOD on the shared
   adaptive patch planner, project-local terrain fields, local-detail diagnostics,

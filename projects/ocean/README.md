@@ -25,6 +25,29 @@ Run a still capture:
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output /tmp/cubey-ocean.png
 ```
 
+## Sea States
+
+Ocean defaults to the `Windy` sea state. `Calm`, `Windy`, and `Stormy` are
+look/behavior presets over the same C0/C1 spectral workload; changing state does
+not change map size, field precision, enabled cascade count, cloud quality,
+camera, deterministic seeds, or wave directions. Applying a preset regenerates
+the spectrum and clears foam history, but does not reallocate the wave-field
+resources.
+
+```sh
+./build/dev/projects/ocean/ocean --ocean-sea-state calm
+./build/dev/projects/ocean/ocean --ocean-sea-state windy
+./build/dev/projects/ocean/ocean --ocean-sea-state stormy
+```
+
+Manual edits to preset-owned wave or material controls make the GUI state
+`Custom`. `Custom` is diagnostic UI state, not a serializable config value.
+Quality remains an independent choice through `--ocean-map-size` and
+`--ocean-field-precision`; water-body ownership and shoreline/depth data are a
+separate future terrain integration concern. The accepted contract and reuse
+boundary are recorded in
+[Surface Ocean V1](../../docs/notes/ocean-surface-v1.md).
+
 Useful debug views:
 
 ```sh
@@ -67,6 +90,7 @@ feature-isolation controls, and LOD breakdown tables for checking clipmap
 coverage, patch counts, triangle load, cascade distance fades, and mesh-cell
 support while tuning the mesh.
 Headless captures can use
+`--ocean-sea-state calm|windy|stormy`,
 `--ocean-cascade all|0|1|2|3|4`,
 `--ocean-camera-preset default|low|mid|high|close|overhead|wide`,
 `--ocean-surface-mode flat|curved-far`,
@@ -106,11 +130,11 @@ projected shadow is not an aerial/orbit or planet-scale weather solution. Those
 limits are recorded in
 [Ocean Cloud Lighting V1](../../docs/notes/ocean-cloud-lighting-v1.md).
 
-Cascades are now treated as regular slots. The default `Core` preset enables
-only C0 and C1, which are the reference-derived wave pair carrying the current
-shape and whitecaps. C2, C3, and C4 stay available as opt-in candidate slots for
-large-scale breakup or fine detail experiments, but they are not part of the
-default cost. Per-slot `Domain min waves` controls decide whether spectral
+Cascades are now treated as regular slots. Every serialized sea state uses the
+`Core` C0/C1 pair, which is the reference-derived wave pair carrying the
+current shape and whitecaps. C2, C3, and C4 stay available as opt-in candidate
+slots for large-scale breakup or fine detail experiments, but they are not part
+of the preset cost. Per-slot `Domain min waves` controls decide whether spectral
 domain filtering cuts a slot down to a wavelength band; C0/C1 default to the
 full spectrum so the primary whitecap carrier stays coherent. Foam is stored
 separately from normal data as persistent history, current Jacobian breaking
@@ -173,4 +197,10 @@ Cloud-specific ocean review captures:
 
 ```sh
 projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-review
+```
+
+Sea-state closure captures:
+
+```sh
+projects/ocean/capture_sea_state_review.sh outputs/ocean-sea-state-review
 ```
