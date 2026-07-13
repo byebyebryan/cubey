@@ -464,7 +464,7 @@ if (BUILD_TESTING)
         0.001
     )
 
-    foreach(diagnostic IN ITEMS normal material-weights ambient-visibility)
+    foreach(diagnostic IN ITEMS normal classification-normal material-weights ambient-visibility)
         string(REPLACE "-" "_" diagnostic_target "${diagnostic}")
         set(diagnostic_output
             "${CMAKE_CURRENT_BINARY_DIR}/terrain-${diagnostic}-headless.png"

@@ -57,6 +57,60 @@ float independent_backdrop_foreground_margin(
     return minimum_margin;
 }
 
+std::uint32_t independent_near_frame_occluded_ray_count(
+    const cubey::projects::terrain::TerrainSourceParameters& source,
+    const cubey::projects::terrain::TerrainBackdropCameraPlan& plan, float vertical_scale) {
+    constexpr std::array<float, 5> ndc_x_values{-1.0F, -0.5F, 0.0F, 0.5F, 1.0F};
+    constexpr std::array<float, 3> ndc_y_values{0.0F, 0.35F, 0.70F};
+    constexpr float vertical_fov = 40.0F * std::numbers::pi_v<float> / 180.0F;
+    const auto rotation = cubey::math::angle_axis_quat(plan.yaw_radians, {0.0F, 1.0F, 0.0F}) *
+                          cubey::math::angle_axis_quat(plan.pitch_radians, {1.0F, 0.0F, 0.0F});
+    const float tan_half_fov = std::tan(vertical_fov * 0.5F);
+    std::uint32_t occluded_ray_count = 0U;
+    for (const float ndc_y : ndc_y_values) {
+        for (const float ndc_x : ndc_x_values) {
+            const cubey::math::Vec3 ray =
+                rotation * cubey::math::Vec3{ndc_x * tan_half_fov * plan.aspect_ratio,
+                                             ndc_y * tan_half_fov, -1.0F};
+            const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
+            const cubey::math::Vec2 direction{ray.x / horizontal_length, ray.z / horizontal_length};
+            const float vertical_slope = ray.y / horizontal_length;
+            for (float distance = 100.0F; distance <= plan.target_distance_m * 0.75F;
+                 distance += 50.0F) {
+                const auto sample = cubey::projects::terrain::sample_terrain(
+                    source, {.world_xz = plan.anchor_xz + direction * distance});
+                const float ray_height = plan.transform.translation.y + distance * vertical_slope;
+                if (sample.height_m * vertical_scale >= ray_height) {
+                    ++occluded_ray_count;
+                    break;
+                }
+            }
+        }
+    }
+    return occluded_ray_count;
+}
+
+void require_near_frame_contract(const cubey::projects::terrain::TerrainSourceParameters& source,
+                                 const cubey::projects::terrain::TerrainBackdropCameraPlan& plan,
+                                 float vertical_scale) {
+    constexpr float ray_count = 15.0F;
+    require(plan.near_frame_occluded_ray_count <= 2U,
+            "terrain camera should reject excessive near-frame occupancy");
+    require_near(plan.near_frame_test_distance_m, plan.target_distance_m * 0.75F, 0.001F,
+                 "terrain camera should test the near three quarters of its target distance");
+    require_near(plan.near_frame_occupancy_ratio,
+                 static_cast<float>(plan.near_frame_occluded_ray_count) / ray_count, 0.000001F,
+                 "terrain camera should report its near-frame occupancy ratio");
+    require(plan.near_frame_occluded_ray_count ==
+                independent_near_frame_occluded_ray_count(source, plan, vertical_scale),
+            "terrain camera occupancy should match an independent ray test");
+    require(plan.near_frame_occluded_ray_count == 0U
+                ? plan.near_frame_nearest_hit_distance_m == 0.0F
+                : plan.near_frame_nearest_hit_distance_m >= 100.0F &&
+                      plan.near_frame_nearest_hit_distance_m <= plan.near_frame_test_distance_m,
+            "terrain camera should report a bounded nearest near-frame hit");
+}
+
 void test_runtime_config_defaults_to_the_v1_scene() {
     const cubey::RunConfig run_config{};
     const auto config =
@@ -262,6 +316,9 @@ void test_backdrop_planner_is_deterministic_and_clear() {
                          "terrain backdrop heading should be deterministic");
             require_near(first.score, second.score, 0.0F,
                          "terrain backdrop score should be deterministic");
+            require(first.near_frame_occluded_ray_count == second.near_frame_occluded_ray_count &&
+                        first.near_frame_occupancy_ratio == second.near_frame_occupancy_ratio,
+                    "terrain backdrop occupancy should be deterministic");
             require(std::isfinite(first.transform.translation.x) &&
                         std::isfinite(first.transform.translation.y) &&
                         std::isfinite(first.transform.translation.z) &&
@@ -285,6 +342,7 @@ void test_backdrop_planner_is_deterministic_and_clear() {
             require(first.pitch_radians >= -2.0F * std::numbers::pi_v<float> / 180.0F &&
                         first.pitch_radians <= 12.0F * std::numbers::pi_v<float> / 180.0F,
                     "terrain backdrop pitch should remain in the presentation range");
+            require_near_frame_contract(source, first, 1.0F);
 
             const auto midground = cubey::projects::terrain::plan_terrain_backdrop_camera(
                 source, 1.0F, 16.0F / 9.0F,
@@ -297,6 +355,7 @@ void test_backdrop_planner_is_deterministic_and_clear() {
             require(independent_backdrop_foreground_margin(source, midground, 1.0F,
                                                            midground.aspect_ratio) >= 9.998F,
                     "terrain midground camera should independently clear the lower frustum");
+            require_near_frame_contract(source, midground, 1.0F);
         }
     }
 }
