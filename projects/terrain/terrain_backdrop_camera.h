@@ -4,7 +4,18 @@
 
 #include <cubey/scene/transform_3d.h>
 
+#include <cstdint>
+#include <string_view>
+
 namespace cubey::projects::terrain {
+
+enum class TerrainBackdropCameraProfile : std::uint8_t {
+    Backdrop,
+    Midground,
+};
+
+[[nodiscard]] std::string_view
+terrain_backdrop_camera_profile_name(TerrainBackdropCameraProfile profile) noexcept;
 
 struct TerrainBackdropCameraPlan {
     cubey::Transform3D transform{};
@@ -22,8 +33,9 @@ struct TerrainBackdropCameraPlan {
     float score = 0.0F;
 };
 
-[[nodiscard]] TerrainBackdropCameraPlan
-plan_terrain_backdrop_camera(const TerrainSourceParameters& source, float vertical_scale = 1.0F,
-                             float aspect_ratio = 16.0F / 9.0F);
+[[nodiscard]] TerrainBackdropCameraPlan plan_terrain_backdrop_camera(
+    const TerrainSourceParameters& source, float vertical_scale = 1.0F,
+    float aspect_ratio = 16.0F / 9.0F,
+    TerrainBackdropCameraProfile profile = TerrainBackdropCameraProfile::Backdrop);
 
 } // namespace cubey::projects::terrain

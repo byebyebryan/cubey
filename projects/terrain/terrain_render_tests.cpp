@@ -184,6 +184,17 @@ void test_backdrop_camera_configuration() {
     require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
                  40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
                  "terrain backdrop camera should use a restrained field of view");
+
+    run_config.terrain.camera_preset = "midground";
+    const auto midground =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(midground.camera == cubey::projects::terrain::TerrainCameraPreset::Midground,
+            "terrain runtime should parse the midground camera");
+    require(cubey::projects::terrain::terrain_camera_is_surface(midground.camera) &&
+                !cubey::projects::terrain::terrain_camera_advances_headless(midground.camera),
+            "terrain midground camera should be a static surface camera");
+    require_near(cubey::projects::terrain::terrain_camera_clearance_m(midground.camera), 150.0F,
+                 0.0F, "terrain midground camera should retain backdrop clearance");
 }
 
 void test_backdrop_presentation_and_coverage_debug_parse() {
@@ -231,8 +242,8 @@ void test_backdrop_planner_is_deterministic_and_clear() {
                         std::isfinite(first.transform.translation.z) &&
                         std::isfinite(first.score) && first.score >= 0.0F,
                     "terrain backdrop plan should remain finite");
-            require(first.target_distance_m >= 400.0F && first.target_distance_m <= 6400.0F,
-                    "terrain backdrop target should use a supported sample distance");
+            require(first.target_distance_m >= 3200.0F && first.target_distance_m <= 6400.0F,
+                    "terrain backdrop target should stay in the far presentation tier");
             const auto anchor_sample =
                 cubey::projects::terrain::sample_terrain(source, {.world_xz = first.anchor_xz});
             require(first.camera_clearance_m >= 149.999F,
@@ -249,6 +260,18 @@ void test_backdrop_planner_is_deterministic_and_clear() {
             require(first.pitch_radians >= -2.0F * std::numbers::pi_v<float> / 180.0F &&
                         first.pitch_radians <= 12.0F * std::numbers::pi_v<float> / 180.0F,
                     "terrain backdrop pitch should remain in the presentation range");
+
+            const auto midground = cubey::projects::terrain::plan_terrain_backdrop_camera(
+                source, 1.0F, 16.0F / 9.0F,
+                cubey::projects::terrain::TerrainBackdropCameraProfile::Midground);
+            require(midground.target_distance_m == 1600.0F,
+                    "terrain midground target should retain the fixed stress distance");
+            require(midground.camera_clearance_m >= 149.999F &&
+                        midground.foreground_min_margin_m >= 9.999F,
+                    "terrain midground camera should preserve backdrop clearance contracts");
+            require(independent_backdrop_foreground_margin(source, midground, 1.0F,
+                                                           midground.aspect_ratio) >= 9.998F,
+                    "terrain midground camera should independently clear the lower frustum");
         }
     }
 }

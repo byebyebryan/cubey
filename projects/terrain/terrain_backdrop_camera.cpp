@@ -5,15 +5,16 @@
 #include <cmath>
 #include <limits>
 #include <numbers>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
 namespace cubey::projects::terrain {
 namespace {
 
-constexpr std::array<float, 5> kAnchorCoordinates{-4096.0F, -2048.0F, 0.0F, 2048.0F,
-                                                   4096.0F};
-constexpr std::array<float, 5> kSampleDistances{400.0F, 800.0F, 1600.0F, 3200.0F, 6400.0F};
+constexpr std::array<float, 5> kAnchorCoordinates{-4096.0F, -2048.0F, 0.0F, 2048.0F, 4096.0F};
+constexpr std::array<float, 2> kBackdropSampleDistances{3200.0F, 6400.0F};
+constexpr std::array<float, 1> kMidgroundSampleDistances{1600.0F};
 constexpr std::array<float, 3> kLateralFactors{-0.18F, 0.0F, 0.18F};
 constexpr std::array<float, 3> kLowerFrustumNdcX{-1.0F, 0.0F, 1.0F};
 constexpr std::uint32_t kHeadingCount = 24U;
@@ -36,6 +37,13 @@ constexpr float kMaximumPitchRadians = 12.0F * std::numbers::pi_v<float> / 180.0
     return std::exp(-1.35F * log_distance * log_distance);
 }
 
+[[nodiscard]] std::span<const float>
+sample_distances(TerrainBackdropCameraProfile profile) noexcept {
+    return profile == TerrainBackdropCameraProfile::Midground
+               ? std::span<const float>{kMidgroundSampleDistances}
+               : std::span<const float>{kBackdropSampleDistances};
+}
+
 struct HeadingEvaluation {
     float score = -std::numeric_limits<float>::infinity();
     float target_distance_m = 0.0F;
@@ -54,10 +62,10 @@ struct ForegroundClearance {
     float minimum_margin_m = 0.0F;
 };
 
-[[nodiscard]] ForegroundClearance
-foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 anchor,
-                     float anchor_height_m, float yaw_radians, float vertical_scale,
-                     float aspect_ratio) {
+[[nodiscard]] ForegroundClearance foreground_clearance(const TerrainSourceParameters& source,
+                                                       cubey::math::Vec2 anchor,
+                                                       float anchor_height_m, float yaw_radians,
+                                                       float vertical_scale, float aspect_ratio) {
     const cubey::math::Quat conservative_rotation =
         cubey::math::angle_axis_quat(yaw_radians, {0.0F, 1.0F, 0.0F}) *
         cubey::math::angle_axis_quat(kMinimumPitchRadians, {1.0F, 0.0F, 0.0F});
@@ -65,34 +73,35 @@ foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 an
     float required_camera_height_m = anchor_height_m + kMinimumCameraClearanceM;
 
     for (const float ndc_x : kLowerFrustumNdcX) {
-        const cubey::math::Vec3 ray = conservative_rotation * cubey::math::Vec3{
-            ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
+        const cubey::math::Vec3 ray =
+            conservative_rotation *
+            cubey::math::Vec3{ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
         const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
         const cubey::math::Vec2 horizontal_direction{ray.x / horizontal_length,
                                                      ray.z / horizontal_length};
         const float vertical_slope = ray.y / horizontal_length;
-        for (float distance_m = kForegroundSampleStepM;
-             distance_m <= kForegroundClearDistanceM; distance_m += kForegroundSampleStepM) {
+        for (float distance_m = kForegroundSampleStepM; distance_m <= kForegroundClearDistanceM;
+             distance_m += kForegroundSampleStepM) {
             const cubey::math::Vec2 position = anchor + horizontal_direction * distance_m;
             const float terrain_height_m =
                 sample_terrain(source, {.world_xz = position}).height_m * vertical_scale;
             required_camera_height_m =
                 std::max(required_camera_height_m,
-                         terrain_height_m + kForegroundSafetyMarginM -
-                             distance_m * vertical_slope);
+                         terrain_height_m + kForegroundSafetyMarginM - distance_m * vertical_slope);
         }
     }
 
     float minimum_margin_m = std::numeric_limits<float>::infinity();
     for (const float ndc_x : kLowerFrustumNdcX) {
-        const cubey::math::Vec3 ray = conservative_rotation * cubey::math::Vec3{
-            ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
+        const cubey::math::Vec3 ray =
+            conservative_rotation *
+            cubey::math::Vec3{ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
         const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
         const cubey::math::Vec2 horizontal_direction{ray.x / horizontal_length,
                                                      ray.z / horizontal_length};
         const float vertical_slope = ray.y / horizontal_length;
-        for (float distance_m = kForegroundSampleStepM;
-             distance_m <= kForegroundClearDistanceM; distance_m += kForegroundSampleStepM) {
+        for (float distance_m = kForegroundSampleStepM; distance_m <= kForegroundClearDistanceM;
+             distance_m += kForegroundSampleStepM) {
             const cubey::math::Vec2 position = anchor + horizontal_direction * distance_m;
             const float terrain_height_m =
                 sample_terrain(source, {.world_xz = position}).height_m * vertical_scale;
@@ -109,7 +118,8 @@ foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 an
 
 [[nodiscard]] HeadingEvaluation evaluate_heading(const TerrainSourceParameters& clean_source,
                                                  cubey::math::Vec2 anchor, float yaw_radians,
-                                                 float vertical_scale) {
+                                                 float vertical_scale,
+                                                 TerrainBackdropCameraProfile profile) {
     const cubey::math::Vec2 forward{std::sin(yaw_radians), -std::cos(yaw_radians)};
     const cubey::math::Vec2 right{std::cos(yaw_radians), std::sin(yaw_radians)};
     const float anchor_height =
@@ -117,13 +127,12 @@ foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 an
     const float relief_scale = std::max(clean_source.height_scale_m * vertical_scale, 80.0F);
 
     float best_peak_score = -1.0F;
-    float best_distance = kSampleDistances.front();
+    const std::span<const float> distances = sample_distances(profile);
+    float best_distance = distances.front();
     cubey::math::Vec2 best_target = anchor + forward * best_distance;
     float silhouette_sum = 0.0F;
 
-    for (std::size_t distance_index = 0; distance_index < kSampleDistances.size();
-         ++distance_index) {
-        const float distance = kSampleDistances[distance_index];
+    for (const float distance : distances) {
         std::array<float, 3> heights{};
         for (std::size_t lateral_index = 0; lateral_index < kLateralFactors.size();
              ++lateral_index) {
@@ -142,19 +151,18 @@ foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 an
             best_distance = distance;
             const auto peak = std::max_element(heights.begin(), heights.end());
             const std::size_t peak_index = static_cast<std::size_t>(peak - heights.begin());
-            best_target = anchor + forward * distance +
-                          right * (distance * kLateralFactors[peak_index]);
+            best_target =
+                anchor + forward * distance + right * (distance * kLateralFactors[peak_index]);
         }
 
         silhouette_sum +=
-            saturate((std::abs(heights[0] - heights[1]) +
-                      std::abs(heights[2] - heights[1]) + 0.5F * std::abs(heights[2] - heights[0])) /
+            saturate((std::abs(heights[0] - heights[1]) + std::abs(heights[2] - heights[1]) +
+                      0.5F * std::abs(heights[2] - heights[0])) /
                      (relief_scale * 0.30F));
-
     }
 
     const float peak_score = saturate(best_peak_score);
-    const float silhouette_score = saturate(silhouette_sum / kSampleDistances.size());
+    const float silhouette_score = saturate(silhouette_sum / static_cast<float>(distances.size()));
     const float distance_score = useful_distance_score(best_distance);
     return {
         .score = 0.50F * peak_score + 0.25F * silhouette_score + 0.15F * distance_score,
@@ -165,9 +173,14 @@ foreground_clearance(const TerrainSourceParameters& source, cubey::math::Vec2 an
 
 } // namespace
 
+std::string_view
+terrain_backdrop_camera_profile_name(TerrainBackdropCameraProfile profile) noexcept {
+    return profile == TerrainBackdropCameraProfile::Midground ? "midground" : "backdrop";
+}
+
 TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParameters& source,
-                                                       float vertical_scale,
-                                                       float aspect_ratio) {
+                                                       float vertical_scale, float aspect_ratio,
+                                                       TerrainBackdropCameraProfile profile) {
     if (!std::isfinite(vertical_scale) || vertical_scale <= 0.0F) {
         throw std::runtime_error("terrain backdrop camera vertical scale must be positive");
     }
@@ -185,11 +198,10 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
         for (const float anchor_x : kAnchorCoordinates) {
             const cubey::math::Vec2 anchor{anchor_x, anchor_z};
             for (std::uint32_t heading = 0U; heading < kHeadingCount; ++heading) {
-                const float yaw = static_cast<float>(heading) * 2.0F *
-                                  std::numbers::pi_v<float> /
+                const float yaw = static_cast<float>(heading) * 2.0F * std::numbers::pi_v<float> /
                                   static_cast<float>(kHeadingCount);
                 const HeadingEvaluation evaluation =
-                    evaluate_heading(clean_source, anchor, yaw, vertical_scale);
+                    evaluate_heading(clean_source, anchor, yaw, vertical_scale, profile);
                 candidates.push_back({.anchor = anchor, .yaw_radians = yaw, .heading = evaluation});
             }
         }
@@ -207,8 +219,8 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
         const float anchor_height =
             sample_terrain(source, {.world_xz = candidate.anchor}).height_m * vertical_scale;
         const ForegroundClearance clearance =
-            foreground_clearance(source, candidate.anchor, anchor_height,
-                                 candidate.yaw_radians, vertical_scale, aspect_ratio);
+            foreground_clearance(source, candidate.anchor, anchor_height, candidate.yaw_radians,
+                                 vertical_scale, aspect_ratio);
         const float clearance_raise =
             std::max(clearance.camera_clearance_m - kMinimumCameraClearanceM, 0.0F);
         const float clearance_efficiency = 1.0F - saturate(clearance_raise / 300.0F);
@@ -220,9 +232,8 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
         const TerrainSample target_sample =
             sample_terrain(source, {.world_xz = candidate.heading.target_xz});
         const float target_height = target_sample.height_m * vertical_scale;
-        const float elevation =
-            std::atan2(target_height - clearance.camera_height_m,
-                       candidate.heading.target_distance_m);
+        const float elevation = std::atan2(target_height - clearance.camera_height_m,
+                                           candidate.heading.target_distance_m);
         const float pitch = std::clamp(elevation - kPeakAboveFrameCenterRadians,
                                        kMinimumPitchRadians, kMaximumPitchRadians);
         best = {
@@ -231,8 +242,7 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
                     .translation = {candidate.anchor.x, clearance.camera_height_m,
                                     candidate.anchor.y},
                     .rotation =
-                        cubey::math::angle_axis_quat(candidate.yaw_radians,
-                                                     {0.0F, 1.0F, 0.0F}) *
+                        cubey::math::angle_axis_quat(candidate.yaw_radians, {0.0F, 1.0F, 0.0F}) *
                         cubey::math::angle_axis_quat(pitch, {1.0F, 0.0F, 0.0F}),
                 },
             .anchor_xz = candidate.anchor,

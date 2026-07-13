@@ -152,6 +152,7 @@ struct CompiledTerrainGraph {
     case TerrainCameraPreset::SurfaceLow:
     case TerrainCameraPreset::Ground:
     case TerrainCameraPreset::Backdrop:
+    case TerrainCameraPreset::Midground:
         return {};
     }
     return {};
@@ -361,7 +362,8 @@ class TerrainApp {
         }
         int camera = static_cast<int>(runtime_config_.camera);
         if (ImGui::Combo("Camera", &camera,
-                         "Oblique\0Profile\0Top\0Surface\0Surface low\0Ground\0Backdrop\0")) {
+                         "Oblique\0Profile\0Top\0Surface\0Surface low\0Ground\0Backdrop\0"
+                         "Midground\0")) {
             runtime_config_.camera = static_cast<TerrainCameraPreset>(camera);
             apply_camera_preset();
         }
@@ -390,7 +392,8 @@ class TerrainApp {
         source_parameters_ = resolve_terrain_source_parameters(runtime_config_.source);
         scene_summary_ = terrain_scene_summary(source_parameters_, clipmap_config_);
         backdrop_plan_.reset();
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
+            runtime_config_.camera == TerrainCameraPreset::Midground) {
             apply_camera_preset();
         }
     }
@@ -403,10 +406,14 @@ class TerrainApp {
         }
         surface_controller_.set_home_speed_mps(
             terrain_camera_traversal_speed_mps(runtime_config_.camera));
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
+            runtime_config_.camera == TerrainCameraPreset::Midground) {
             if (!backdrop_plan_.has_value()) {
                 backdrop_plan_ = plan_terrain_backdrop_camera(
-                    source_parameters_, runtime_config_.vertical_scale, initial_aspect_ratio());
+                    source_parameters_, runtime_config_.vertical_scale, initial_aspect_ratio(),
+                    runtime_config_.camera == TerrainCameraPreset::Midground
+                        ? TerrainBackdropCameraProfile::Midground
+                        : TerrainBackdropCameraProfile::Backdrop);
             }
             surface_controller_.set_home_pose(backdrop_plan_->anchor_xz,
                                               backdrop_plan_->yaw_radians,
@@ -553,7 +560,8 @@ class TerrainApp {
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
         if (terrain_camera_is_surface(runtime_config_.camera)) {
-            const float clearance = runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+            const float clearance = (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
+                                     runtime_config_.camera == TerrainCameraPreset::Midground) &&
                                             backdrop_plan_.has_value()
                                         ? backdrop_plan_->camera_clearance_m
                                         : terrain_camera_clearance_m(runtime_config_.camera);

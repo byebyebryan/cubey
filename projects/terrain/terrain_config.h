@@ -17,6 +17,7 @@ enum class TerrainCameraPreset : std::uint8_t {
     SurfaceLow,
     Ground,
     Backdrop,
+    Midground,
 };
 
 enum class TerrainDebugView : std::uint8_t {

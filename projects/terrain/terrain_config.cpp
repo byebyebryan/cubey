@@ -23,6 +23,8 @@ std::string_view terrain_camera_preset_name(TerrainCameraPreset preset) {
         return "ground";
     case TerrainCameraPreset::Backdrop:
         return "backdrop";
+    case TerrainCameraPreset::Midground:
+        return "midground";
     }
     throw std::runtime_error("unknown terrain camera preset");
 }
@@ -49,12 +51,16 @@ TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
     if (name == "backdrop") {
         return TerrainCameraPreset::Backdrop;
     }
+    if (name == "midground") {
+        return TerrainCameraPreset::Midground;
+    }
     throw std::runtime_error("unknown terrain camera preset: " + std::string(name));
 }
 
 bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept {
     return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
-           preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Backdrop;
+           preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Backdrop ||
+           preset == TerrainCameraPreset::Midground;
 }
 
 bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept {
@@ -71,6 +77,7 @@ float terrain_camera_clearance_m(TerrainCameraPreset preset) {
     case TerrainCameraPreset::Ground:
         return 2.0F;
     case TerrainCameraPreset::Backdrop:
+    case TerrainCameraPreset::Midground:
         return 150.0F;
     case TerrainCameraPreset::Oblique:
     case TerrainCameraPreset::Profile:
@@ -84,12 +91,17 @@ float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept {
     if (preset == TerrainCameraPreset::Ground) {
         return 12.0F;
     }
-    return preset == TerrainCameraPreset::Backdrop ? 80.0F : 220.0F;
+    return preset == TerrainCameraPreset::Backdrop || preset == TerrainCameraPreset::Midground
+               ? 80.0F
+               : 220.0F;
 }
 
 float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept {
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
-    return (preset == TerrainCameraPreset::Backdrop ? 40.0F : 60.0F) * degrees_to_radians;
+    return (preset == TerrainCameraPreset::Backdrop || preset == TerrainCameraPreset::Midground
+                ? 40.0F
+                : 60.0F) *
+           degrees_to_radians;
 }
 
 std::string_view terrain_debug_view_name(TerrainDebugView view) {
