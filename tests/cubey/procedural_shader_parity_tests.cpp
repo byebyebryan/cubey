@@ -93,6 +93,45 @@ void require_near(float actual, float expected, float tolerance, const char* mes
     return mix(mix(x00, x10, ty), mix(x01, x11, ty), tz);
 }
 
+[[nodiscard]] float glsl_gradient_3d(std::int32_t x, std::int32_t y, std::int32_t z, float dx,
+                                     float dy, float dz, std::uint32_t seed) {
+    const std::uint32_t hash = glsl_hash_u32_3d(x, y, z, seed) & 15U;
+    const float u = hash < 8U ? dx : dy;
+    const float v = hash < 4U ? dy : (hash == 12U || hash == 14U ? dx : dz);
+    return ((hash & 1U) == 0U ? u : -u) + ((hash & 2U) == 0U ? v : -v);
+}
+
+[[nodiscard]] float glsl_gradient_noise_3d(float x, float y, float z, std::uint32_t seed) {
+    const float floor_x = std::floor(x);
+    const float floor_y = std::floor(y);
+    const float floor_z = std::floor(z);
+    const auto x0 = static_cast<std::int32_t>(floor_x);
+    const auto y0 = static_cast<std::int32_t>(floor_y);
+    const auto z0 = static_cast<std::int32_t>(floor_z);
+    const float local_x = x - floor_x;
+    const float local_y = y - floor_y;
+    const float local_z = z - floor_z;
+    const float tx = glsl_smootherstep01(local_x);
+    const float ty = glsl_smootherstep01(local_y);
+    const float tz = glsl_smootherstep01(local_z);
+
+    const float x00 =
+        mix(glsl_gradient_3d(x0, y0, z0, local_x, local_y, local_z, seed),
+            glsl_gradient_3d(x0 + 1, y0, z0, local_x - 1.0F, local_y, local_z, seed), tx);
+    const float x10 = mix(
+        glsl_gradient_3d(x0, y0 + 1, z0, local_x, local_y - 1.0F, local_z, seed),
+        glsl_gradient_3d(x0 + 1, y0 + 1, z0, local_x - 1.0F, local_y - 1.0F, local_z, seed), tx);
+    const float x01 = mix(
+        glsl_gradient_3d(x0, y0, z0 + 1, local_x, local_y, local_z - 1.0F, seed),
+        glsl_gradient_3d(x0 + 1, y0, z0 + 1, local_x - 1.0F, local_y, local_z - 1.0F, seed), tx);
+    const float x11 =
+        mix(glsl_gradient_3d(x0, y0 + 1, z0 + 1, local_x, local_y - 1.0F, local_z - 1.0F, seed),
+            glsl_gradient_3d(x0 + 1, y0 + 1, z0 + 1, local_x - 1.0F, local_y - 1.0F, local_z - 1.0F,
+                             seed),
+            tx);
+    return std::clamp(mix(mix(x00, x10, ty), mix(x01, x11, ty), tz), -1.0F, 1.0F);
+}
+
 [[nodiscard]] float glsl_fbm_3d(float x, float y, float z, std::uint32_t seed,
                                 std::uint32_t octaves) {
     float amplitude = 0.5F;
@@ -173,6 +212,10 @@ void test_procedural_shader_3d_noise_helpers_match_glsl_contracts() {
                                                        sample.seed),
                      glsl_value_noise_3d(sample.x, sample.y, sample.z, sample.seed), 0.000001F,
                      "procedural 3D value noise should match GLSL 3D value noise");
+        require_near(
+            cubey::procedural::gradient_noise_3d(sample.x, sample.y, sample.z, sample.seed),
+            glsl_gradient_noise_3d(sample.x, sample.y, sample.z, sample.seed), 0.000001F,
+            "procedural 3D gradient noise should match GLSL 3D gradient noise");
         require_near(cubey::procedural::fbm_3d(sample.x, sample.y, sample.z, sample.seed,
                                                {.octaves = 5}),
                      glsl_fbm_3d(sample.x, sample.y, sample.z, sample.seed, 5U), 0.000001F,

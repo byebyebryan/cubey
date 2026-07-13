@@ -64,6 +64,39 @@ float cubey_proc_value_noise_3d(vec3 value, uint seed) {
     return mix(mix(x00, x10, shaped.y), mix(x01, x11, shaped.y), shaped.z);
 }
 
+float cubey_proc_gradient_3d(ivec3 cell, vec3 offset, uint seed) {
+    uint hash_value = cubey_proc_hash_u32_3d(cell, seed) & 15U;
+    float u = hash_value < 8U ? offset.x : offset.y;
+    float v = hash_value < 4U ? offset.y :
+        ((hash_value == 12U || hash_value == 14U) ? offset.x : offset.z);
+    return ((hash_value & 1U) == 0U ? u : -u) +
+        ((hash_value & 2U) == 0U ? v : -v);
+}
+
+float cubey_proc_gradient_noise_3d(vec3 value, uint seed) {
+    ivec3 cell = ivec3(floor(value));
+    vec3 local = value - vec3(cell);
+    vec3 shaped = cubey_proc_smootherstep01(local);
+
+    float x00 = mix(cubey_proc_gradient_3d(cell + ivec3(0, 0, 0), local, seed),
+        cubey_proc_gradient_3d(cell + ivec3(1, 0, 0), local - vec3(1.0, 0.0, 0.0), seed),
+        shaped.x);
+    float x10 = mix(cubey_proc_gradient_3d(cell + ivec3(0, 1, 0),
+            local - vec3(0.0, 1.0, 0.0), seed),
+        cubey_proc_gradient_3d(cell + ivec3(1, 1, 0), local - vec3(1.0, 1.0, 0.0), seed),
+        shaped.x);
+    float x01 = mix(cubey_proc_gradient_3d(cell + ivec3(0, 0, 1),
+            local - vec3(0.0, 0.0, 1.0), seed),
+        cubey_proc_gradient_3d(cell + ivec3(1, 0, 1), local - vec3(1.0, 0.0, 1.0), seed),
+        shaped.x);
+    float x11 = mix(cubey_proc_gradient_3d(cell + ivec3(0, 1, 1),
+            local - vec3(0.0, 1.0, 1.0), seed),
+        cubey_proc_gradient_3d(cell + ivec3(1, 1, 1), local - vec3(1.0, 1.0, 1.0), seed),
+        shaped.x);
+    return clamp(mix(mix(x00, x10, shaped.y), mix(x01, x11, shaped.y), shaped.z),
+        -1.0, 1.0);
+}
+
 float cubey_proc_fbm_3d(vec3 value, uint seed, uint octaves) {
     float amplitude = 0.5;
     float frequency = 1.0;

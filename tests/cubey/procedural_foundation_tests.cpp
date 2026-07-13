@@ -1161,6 +1161,14 @@ void test_procedural_3d_noise_is_deterministic_and_stable() {
     require(std::fabs(first - changed_seed) > 0.000001F,
             "3D value noise should vary when the seed changes");
 
+    const float gradient = cubey::procedural::gradient_noise_3d(1.25F, -3.75F, 0.5F, 17U);
+    require_near(gradient, cubey::procedural::gradient_noise_3d(1.25F, -3.75F, 0.5F, 17U),
+                 0.000001F, "3D gradient noise should be deterministic");
+    require(gradient >= -1.0F && gradient <= 1.0F,
+            "3D gradient noise should remain in signed unit range");
+    require_near(cubey::procedural::gradient_noise_3d(2.0F, -4.0F, 1.0F, 17U), 0.0F, 0.000001F,
+                 "3D gradient noise should be neutral at lattice points");
+
     const float fbm = cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5});
     require(fbm >= -1.0F && fbm <= 1.0F, "3D fbm should remain in signed unit range");
 

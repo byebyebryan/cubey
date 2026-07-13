@@ -79,8 +79,7 @@ to_fast_cellular_return(CoherentCellularReturn return_type) {
     return FastNoiseLite::CellularReturnType_Distance;
 }
 
-[[nodiscard]] FastNoiseLite::DomainWarpType to_fast_domain_warp_type(
-    CoherentDomainWarpType type) {
+[[nodiscard]] FastNoiseLite::DomainWarpType to_fast_domain_warp_type(CoherentDomainWarpType type) {
     switch (type) {
     case CoherentDomainWarpType::OpenSimplex2:
         return FastNoiseLite::DomainWarpType_OpenSimplex2;
@@ -92,8 +91,8 @@ to_fast_cellular_return(CoherentCellularReturn return_type) {
     return FastNoiseLite::DomainWarpType_OpenSimplex2;
 }
 
-[[nodiscard]] FastNoiseLite::FractalType to_fast_domain_warp_fractal_type(
-    CoherentDomainWarpFractalType type) {
+[[nodiscard]] FastNoiseLite::FractalType
+to_fast_domain_warp_fractal_type(CoherentDomainWarpFractalType type) {
     switch (type) {
     case CoherentDomainWarpFractalType::None:
         return FastNoiseLite::FractalType_None;
@@ -157,8 +156,7 @@ CoherentWarp2D domain_warp_2d(float x, float y, const CoherentDomainWarpConfig& 
     return {.x = x, .y = y};
 }
 
-CoherentWarp3D domain_warp_3d(float x, float y, float z,
-                              const CoherentDomainWarpConfig& config) {
+CoherentWarp3D domain_warp_3d(float x, float y, float z, const CoherentDomainWarpConfig& config) {
     FastNoiseLite noise = make_domain_warp_noise(config);
     noise.DomainWarp(x, y, z);
     return {.x = x, .y = y, .z = z};
@@ -264,8 +262,7 @@ float value_noise_3d(float x, float y, float z, std::uint32_t seed) {
 
     const auto corner = [seed](std::int32_t ix, std::int32_t iy, std::int32_t iz) {
         constexpr float kInv24Bit = 1.0F / 16'777'215.0F;
-        return static_cast<float>(hash_u32(ix, iy, iz, seed) >> 8U) * kInv24Bit * 2.0F -
-               1.0F;
+        return static_cast<float>(hash_u32(ix, iy, iz, seed) >> 8U) * kInv24Bit * 2.0F - 1.0F;
     };
 
     const float x00 = lerp(corner(x0, y0, z0), corner(x0 + 1, y0, z0), tx);
@@ -273,6 +270,40 @@ float value_noise_3d(float x, float y, float z, std::uint32_t seed) {
     const float x01 = lerp(corner(x0, y0, z0 + 1), corner(x0 + 1, y0, z0 + 1), tx);
     const float x11 = lerp(corner(x0, y0 + 1, z0 + 1), corner(x0 + 1, y0 + 1, z0 + 1), tx);
     return lerp(lerp(x00, x10, ty), lerp(x01, x11, ty), tz);
+}
+
+float gradient_noise_3d(float x, float y, float z, std::uint32_t seed) {
+    const float floor_x = std::floor(x);
+    const float floor_y = std::floor(y);
+    const float floor_z = std::floor(z);
+    const auto x0 = static_cast<std::int32_t>(floor_x);
+    const auto y0 = static_cast<std::int32_t>(floor_y);
+    const auto z0 = static_cast<std::int32_t>(floor_z);
+    const float local_x = x - floor_x;
+    const float local_y = y - floor_y;
+    const float local_z = z - floor_z;
+    const float tx = smootherstep01(local_x);
+    const float ty = smootherstep01(local_y);
+    const float tz = smootherstep01(local_z);
+
+    const auto corner = [seed](std::int32_t ix, std::int32_t iy, std::int32_t iz, float dx,
+                               float dy, float dz) {
+        const std::uint32_t hash = hash_u32(ix, iy, iz, seed) & 15U;
+        const float u = hash < 8U ? dx : dy;
+        const float v = hash < 4U ? dy : (hash == 12U || hash == 14U ? dx : dz);
+        return ((hash & 1U) == 0U ? u : -u) + ((hash & 2U) == 0U ? v : -v);
+    };
+
+    const float x00 = lerp(corner(x0, y0, z0, local_x, local_y, local_z),
+                           corner(x0 + 1, y0, z0, local_x - 1.0F, local_y, local_z), tx);
+    const float x10 = lerp(corner(x0, y0 + 1, z0, local_x, local_y - 1.0F, local_z),
+                           corner(x0 + 1, y0 + 1, z0, local_x - 1.0F, local_y - 1.0F, local_z), tx);
+    const float x01 = lerp(corner(x0, y0, z0 + 1, local_x, local_y, local_z - 1.0F),
+                           corner(x0 + 1, y0, z0 + 1, local_x - 1.0F, local_y, local_z - 1.0F), tx);
+    const float x11 =
+        lerp(corner(x0, y0 + 1, z0 + 1, local_x, local_y - 1.0F, local_z - 1.0F),
+             corner(x0 + 1, y0 + 1, z0 + 1, local_x - 1.0F, local_y - 1.0F, local_z - 1.0F), tx);
+    return std::clamp(lerp(lerp(x00, x10, ty), lerp(x01, x11, ty), tz), -1.0F, 1.0F);
 }
 
 float fbm_3d(float x, float y, float z, std::uint32_t seed, const Fbm3DConfig& config) {

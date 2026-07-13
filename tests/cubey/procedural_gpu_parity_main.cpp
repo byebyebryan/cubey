@@ -22,7 +22,7 @@
 namespace {
 
 constexpr int kSkip = 77;
-constexpr std::size_t kSampleCount = 5;
+constexpr std::size_t kSampleCount = 6;
 
 [[nodiscard]] bool contains(std::string_view haystack, std::string_view needle) {
     return haystack.find(needle) != std::string_view::npos;
@@ -66,6 +66,7 @@ constexpr std::size_t kSampleCount = 5;
     return {
         cubey::procedural::hash_to_unit_masked_24(123456789U),
         cubey::procedural::value_noise_3d(1.25F, -3.75F, 0.5F, 17U),
+        cubey::procedural::gradient_noise_3d(1.25F, -3.75F, 0.5F, 17U),
         cubey::procedural::fbm_3d(2.4F, -0.7F, 1.9F, 42U, {.octaves = 5}),
         cubey::procedural::sample_coherent_noise_3d(12.5F, -7.25F, 3.5F, simplex),
         cubey::procedural::sample_coherent_noise_2d(6.25F, -2.75F, perlin_fbm),
@@ -159,11 +160,13 @@ void run_parity_test() {
     constexpr std::array labels{
         "cubey_proc_hash01_u32",
         "cubey_proc_value_noise_3d",
+        "cubey_proc_gradient_noise_3d",
         "cubey_proc_fbm_3d",
         "FastNoiseLite OpenSimplex2 3D",
         "FastNoiseLite Perlin FBM 2D",
     };
     constexpr std::array tolerances{
+        0.000001F,
         0.000001F,
         0.000001F,
         0.000001F,

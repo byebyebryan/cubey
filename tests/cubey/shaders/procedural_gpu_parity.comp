@@ -28,7 +28,8 @@ void main() {
 
     parity_output.values[0] = cubey_proc_hash01_u32(123456789U);
     parity_output.values[1] = cubey_proc_value_noise_3d(vec3(1.25, -3.75, 0.5), 17U);
-    parity_output.values[2] = cubey_proc_fbm_3d(vec3(2.4, -0.7, 1.9), 42U, 5U);
-    parity_output.values[3] = fnlGetNoise3D(simplex, 12.5, -7.25, 3.5);
-    parity_output.values[4] = fnlGetNoise2D(perlin_fbm, 6.25, -2.75);
+    parity_output.values[2] = cubey_proc_gradient_noise_3d(vec3(1.25, -3.75, 0.5), 17U);
+    parity_output.values[3] = cubey_proc_fbm_3d(vec3(2.4, -0.7, 1.9), 42U, 5U);
+    parity_output.values[4] = fnlGetNoise3D(simplex, 12.5, -7.25, 3.5);
+    parity_output.values[5] = fnlGetNoise2D(perlin_fbm, 6.25, -2.75);
 }
