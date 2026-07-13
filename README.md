@@ -301,19 +301,18 @@ timestamp queries are available.
 `ocean` is a rendering-focused water project rather than a CFD solver. It now
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 `--ocean-map-size 128|256|512|1024`,
-`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|foam-core|foam-candidate|foam-detail|lod|sky-radiance|reflection|direct-light|ambient-light|exposure|raw-foam|lit-foam|terrain-depth|terrain-shore|terrain-slope`,
+`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|lod|footprint|energy-lod|far-field|cloud-shadow|cloud-reflection|cloud-reflection-validity|sky-radiance|reflection|specular|direct-light|ambient-light|exposure|terrain-depth|terrain-shore|terrain-slope|curvature`,
 and `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
-`--ocean-spectral-lod-handoff 0.0..1.0`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields` for captured
-diagnostics. The GUI's Feature Isolation section exposes global shape and foam
-strength, foam history, active cascade-slot work toggles, shape/detail
-anti-repeat, split atmosphere material influence, shape/normal/foam fade
-distances, and terrain foam controls for checking which additions help or hurt
-the reference-derived core. Final view also composites the shared surface cloud
-layer over the atmosphere sky by default; use `--no-clouds` for the clear-sky
-A/B path while cloud shadows/reflections remain deferred.
+diagnostics. The GUI groups wave fields, surface material, lighting, scale/LOD,
+shared environment, and diagnostics; each cascade owns its workload and wave
+parameters. Final view composites the shared surface cloud layer over the
+atmosphere sky, projects cloud shadows onto the local ocean, and uses planar
+cloud reflection with a cached environment fallback. Use `--no-clouds` for the
+clear-sky path. The canonical visual matrix is
+`projects/ocean/capture_ocean_review.sh`.
 The old `ocean_ref` and `ocean_legacy` projects were retired after their useful
 comparison and donor work landed in `ocean`; use git history if a deleted
 implementation detail is needed for archaeology.

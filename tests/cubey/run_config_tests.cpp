@@ -380,7 +380,6 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "ocean.map_size",
         "ocean.cascade",
         "ocean.spectral_domains",
-        "ocean.spectral_lod_handoff",
         "ocean.terrain_fields",
         "ocean.cloud_reflection_source",
         "ocean.cloud_environment_extent",
@@ -590,7 +589,6 @@ void test_run_config_loads_json_config_file() {
     "map_size": 512,
     "cascade": "4",
     "spectral_domains": false,
-    "spectral_lod_handoff": 0.65,
     "terrain_fields": true,
     "cloud_reflection_source": "planar",
     "cloud_environment_extent": 128,
@@ -698,8 +696,6 @@ void test_run_config_loads_json_config_file() {
             "config file should set ocean controls");
     require(config.ocean.spectral_domains == 0 && config.ocean.terrain_fields == 1,
             "config file should set ocean tri-state booleans");
-    require(config.ocean.spectral_lod_handoff == 0.65F,
-            "config file should set ocean spectral LOD handoff strength");
     require(config.ocean.cloud_reflection_strength == 0.8F &&
                 config.ocean.cloud_shadow_strength == 0.4F,
             "config file should set ocean cloud-lighting strengths");
@@ -1681,9 +1677,7 @@ void test_run_config_parses_ocean_controls() {
     std::string reflection_value = "0.8";
     std::string shadow_flag = "--ocean-cloud-shadow-strength";
     std::string shadow_value = "0.4";
-    std::string handoff_flag = "--ocean-spectral-lod-handoff";
-    std::string handoff_value = "0.65";
-    std::array<char*, 19> argv{program.data(),          sea_state_flag.data(),
+    std::array<char*, 17> argv{program.data(),          sea_state_flag.data(),
                                sea_state_value.data(),  map_flag.data(),
                                map_value.data(),        precision_flag.data(),
                                precision_value.data(),  cascade_flag.data(),
@@ -1691,8 +1685,7 @@ void test_run_config_parses_ocean_controls() {
                                wire_flag.data(),        opacity_flag.data(),
                                opacity_value.data(),    reflection_flag.data(),
                                reflection_value.data(), shadow_flag.data(),
-                               shadow_value.data(),     handoff_flag.data(),
-                               handoff_value.data()};
+                               shadow_value.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1708,9 +1701,6 @@ void test_run_config_parses_ocean_controls() {
             "run config should parse ocean cloud reflection strength");
     require(config.ocean.cloud_shadow_strength == 0.4F,
             "run config should parse ocean cloud shadow strength");
-    require(config.ocean.spectral_lod_handoff == 0.65F,
-            "run config should parse ocean spectral LOD handoff strength");
-
     std::string all_value = "all";
     std::array<char*, 3> all_argv{program.data(), cascade_flag.data(), all_value.data()};
     const cubey::RunConfig all_config =
