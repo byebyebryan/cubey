@@ -20,6 +20,7 @@ struct SamplerConfig {
     float min_lod = 0.0F;
     float max_lod = 0.0F;
     float mip_lod_bias = 0.0F;
+    float max_anisotropy = 1.0F;
 };
 
 [[nodiscard]] VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config);

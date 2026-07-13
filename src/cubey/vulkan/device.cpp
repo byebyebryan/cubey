@@ -87,8 +87,7 @@ void Device::wait_idle() const {
     }
 }
 
-bool Device::supports_image_format_features(VkFormat format,
-                                            VkFormatFeatureFlags required) const {
+bool Device::supports_image_format_features(VkFormat format, VkFormatFeatureFlags required) const {
     VkFormatProperties properties{};
     vkGetPhysicalDeviceFormatProperties(physical_device_, format, &properties);
     return (properties.optimalTilingFeatures & required) == required;
@@ -222,6 +221,9 @@ void Device::create_device(const DeviceConfig& config) {
     }
     if (supported_features_.shaderStorageImageExtendedFormats == VK_TRUE) {
         enabled_features_.shaderStorageImageExtendedFormats = VK_TRUE;
+    }
+    if (supported_features_.samplerAnisotropy == VK_TRUE) {
+        enabled_features_.samplerAnisotropy = VK_TRUE;
     }
     if (config.require_tessellation_shader) {
         enabled_features_.tessellationShader = VK_TRUE;

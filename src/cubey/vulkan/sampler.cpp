@@ -2,6 +2,8 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace cubey::vulkan {
@@ -21,8 +23,8 @@ VkSamplerCreateInfo sampler_create_info(const SamplerConfig& config) {
     info.addressModeU = resolved_address_mode(config.address_mode_u, config.address_mode);
     info.addressModeV = resolved_address_mode(config.address_mode_v, config.address_mode);
     info.addressModeW = resolved_address_mode(config.address_mode_w, config.address_mode);
-    info.anisotropyEnable = VK_FALSE;
-    info.maxAnisotropy = 1.0F;
+    info.anisotropyEnable = config.max_anisotropy > 1.0F ? VK_TRUE : VK_FALSE;
+    info.maxAnisotropy = std::max(config.max_anisotropy, 1.0F);
     info.borderColor = config.border_color;
     info.unnormalizedCoordinates = VK_FALSE;
     info.compareEnable = config.compare_enable;
@@ -39,7 +41,15 @@ Sampler::Sampler(const Device& device, const SamplerConfig& config) : device_(de
         throw std::runtime_error("sampler creation requires a valid Vulkan device");
     }
 
-    const VkSamplerCreateInfo info = sampler_create_info(config);
+    if (!std::isfinite(config.max_anisotropy) || config.max_anisotropy < 1.0F) {
+        throw std::runtime_error("sampler max anisotropy must be finite and at least one");
+    }
+    SamplerConfig resolved = config;
+    resolved.max_anisotropy =
+        device.sampler_anisotropy_enabled()
+            ? std::min(config.max_anisotropy, device.properties().limits.maxSamplerAnisotropy)
+            : 1.0F;
+    const VkSamplerCreateInfo info = sampler_create_info(resolved);
     check(vkCreateSampler(device_, &info, nullptr, &sampler_), "vkCreateSampler");
 }
 

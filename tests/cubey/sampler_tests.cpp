@@ -27,6 +27,8 @@ void test_sampler_config_describes_shadow_sampling() {
     require(defaults.address_mode_w == VK_SAMPLER_ADDRESS_MODE_MAX_ENUM,
             "sampler should default W addressing to the shared fallback");
     require(defaults.compare_enable == VK_FALSE, "sampler compare should default off");
+    require(defaults.max_anisotropy == 1.0F,
+            "sampler anisotropy should default to the disabled value");
 
     const cubey::vulkan::SamplerConfig config{
         .min_filter = VK_FILTER_NEAREST,
@@ -39,6 +41,7 @@ void test_sampler_config_describes_shadow_sampling() {
         .min_lod = 1.0F,
         .max_lod = 5.0F,
         .mip_lod_bias = 0.25F,
+        .max_anisotropy = 8.0F,
     };
 
     const VkSamplerCreateInfo info = cubey::vulkan::sampler_create_info(config);
@@ -62,6 +65,12 @@ void test_sampler_config_describes_shadow_sampling() {
     require(info.minLod == 1.0F, "sampler create info should preserve min LOD");
     require(info.maxLod == 5.0F, "sampler create info should preserve max LOD");
     require(info.mipLodBias == 0.25F, "sampler create info should preserve mip LOD bias");
+    require(info.anisotropyEnable == VK_TRUE && info.maxAnisotropy == 8.0F,
+            "sampler create info should preserve requested anisotropy");
+
+    const VkSamplerCreateInfo default_info = cubey::vulkan::sampler_create_info(defaults);
+    require(default_info.anisotropyEnable == VK_FALSE && default_info.maxAnisotropy == 1.0F,
+            "default sampler create info should disable anisotropy");
 
     const cubey::vulkan::SamplerConfig axis_config{
         .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,

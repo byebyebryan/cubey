@@ -61,6 +61,12 @@ class Device {
     bool tessellation_shader_enabled() const {
         return enabled_features_.tessellationShader == VK_TRUE;
     }
+    bool supports_sampler_anisotropy() const {
+        return supported_features_.samplerAnisotropy == VK_TRUE;
+    }
+    bool sampler_anisotropy_enabled() const {
+        return enabled_features_.samplerAnisotropy == VK_TRUE;
+    }
     bool supports_timestamp_queries() const {
         return queue_timestamp_valid_bits_ != 0;
     }
