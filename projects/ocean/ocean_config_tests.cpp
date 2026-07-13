@@ -1925,6 +1925,10 @@ int main() {
                          "ocean surface shader should sample the reflected cloud product");
         require_contains(fragment_shader, "ocean_planar_cloud_reflection",
                          "ocean surface shader should isolate planar cloud projection");
+        require_contains(
+            fragment_shader,
+            "cloud_environment_options.x + 0.5), 0.0, 3.0",
+            "ocean surface shader should preserve the planar reflection source ID");
         require_contains(fragment_shader, "roughness * roughness * max_lod + 0.25",
                          "planar cloud reflection should use roughness-filtered mips");
         require_contains(fragment_shader, "planar_reflection_sample.visibility",

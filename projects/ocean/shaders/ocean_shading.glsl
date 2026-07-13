@@ -140,7 +140,7 @@ float ocean_cloud_reflection_strength() {
 }
 
 int ocean_cloud_reflection_source() {
-    return int(clamp(floor(ocean_features.cloud_environment_options.x + 0.5), 0.0, 2.0));
+    return int(clamp(floor(ocean_features.cloud_environment_options.x + 0.5), 0.0, 3.0));
 }
 
 float ocean_cloud_environment_blend() {
