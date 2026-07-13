@@ -39,17 +39,18 @@ Wave facets project their actual reflection direction into this guarded view.
 The cached cloud environment is sampled only when that projection is invalid or
 when curved-far geometry no longer agrees with the local receiver plane.
 
-## Acceptance
+## Accepted Checkpoint
 
 The bakeoff keeps `current-view`, `cached`, and `hybrid` available while adding
 `planar`. It covers noon, sunset, and night at mid and high camera presets, plus
-moving-camera and time-of-day sequences. Planar becomes the default only when:
+moving water/cloud and time-of-day sequences. Planar is now the default because:
 
 - ordinary visible ocean pixels have no hard cloud-reflection cutoff;
 - source handoff does not read as two differently colored reflections;
-- reflected clouds remain stable during camera and lighting motion; and
-- the reflected cloud pass adds at most 1.0 ms average GPU time at 1280x720.
+- reflected clouds remain stable during cloud, wave, and lighting motion; and
+- the reflected cloud pass averaged 0.304 ms at 1280x720.
 
-If the pass exceeds budget, reduce view steps from 32 to 24, then resolution
-scale from 0.50 to 0.375. Do not trade coverage for cost or add temporal jitter
-in this checkpoint.
+The accepted product remains at half resolution and 32 steps because it is well
+inside the 1.0 ms budget. It has no temporal jitter. The 64-pixel coherent cache
+remains active as a broad fallback and averaged 0.075 ms per frame in the same
+profile run.

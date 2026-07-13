@@ -22,20 +22,16 @@ sun/specular glitter, and lit foam. `cloud-shadow` displays raw transmittance;
 `direct-light` provides receiver-side A/B inspection. A 1x1 white fallback
 keeps `--no-clouds` and disabled coupling valid.
 
-Ocean also reuses the resolved current-view cloud product for reflection. The
-surface shader projects a reflected world direction into the current camera,
-uses a bounded roughness-scaled five-tap filter, reconstructs cloud radiance over the
-matching clear atmosphere background, and blends that clouded result with the
-existing atmosphere probe. The product remains explicit radiance plus
-transmittance; it is never converted to a signed delta against one background
-and applied to another differently filtered background. This keeps twilight
-occlusion from clipping individual reflection channels into false colors.
-Directions outside the current view, along product edges, or on wave facets
-that reflect below the sky horizon fade back to the clear-sky probe. A 1x1
-clear fallback keeps non-cloud paths valid, and `cloud-reflection` isolates the
-contribution.
+Ocean now defaults to a dedicated planar reflected cloud view. The shared cloud
+field is marched from a camera mirrored across the local water datum at half
+resolution and 32 steps, with a 15 percent field-of-view guard band. Water
+facets project their actual reflected direction into that product and select a
+roughness-filtered mip. The result remains explicit radiance plus transmittance;
+it is never converted to a signed delta against one background and applied to
+another differently filtered background. This keeps twilight occlusion from
+clipping individual reflection channels into false colors.
 
-Ocean now also owns an opt-in cached cloud environment probe. It captures the
+Ocean also owns a cached cloud environment probe. It captures the
 same surface cloud density and lighting model in all six cube directions,
 composes cloud radiance and transmittance over the matching clear-sky cube,
 and GGX-prefilters the result before exposing it to water shading. A capture is
@@ -43,22 +39,25 @@ coherent: all six faces and mip levels are completed together, then two whole
 environments crossfade over one refresh interval. The default is a 64-pixel
 cube refreshed at 4 Hz with 32 cloud-march steps.
 
-`ocean.cloud_reflection_source` selects the comparison path:
+`ocean.cloud_reflection_source` selects the production or comparison path:
 
-- `current-view` preserves the previous screen-projected product and remains
-  the default, so the cached probe adds no recurring work unless requested.
+- `current-view` preserves the original screen-projected product as a bounded
+  low-cost baseline.
 - `cached` samples only the roughness-filtered cloud environment and therefore
   covers offscreen directions without screen-edge falloff.
 - `hybrid` uses the cache as the broad/offscreen base and overlays the existing
   filtered current-view product wherever that projection is valid.
+- `planar` is the default. It samples the coherent reflected cloud view and
+  falls back to the cache only outside the guarded projection or local receiver
+  approximation. Below-horizon facets remain on the clear environment.
 
-`cloud-reflection` displays the selected source. Probe extent and update rate
-are available through config, CLI, and the ocean Shading panel; Diagnostics
-reports readiness, generation, crossfade, and capture age. Until the first
-coherent capture completes, both cached descriptors point to the clear
-atmosphere reflection probe. Cached sampling uses squared roughness with a small
-fractional-mip stability bias so the 64-pixel cache does not over-blur moderate seas;
-hybrid restores the bounded current-view product inside its valid projection.
+`cloud-reflection` displays the selected source and
+`cloud-reflection-validity` shows planar coverage. Probe and planar quality
+controls are available through config, CLI, and the ocean Shading panel;
+Diagnostics reports cache readiness, generation, crossfade, and capture age.
+Until the first coherent capture completes, cached descriptors point to the
+clear atmosphere reflection probe. Both products use squared roughness with a
+small fractional-mip stability bias.
 
 Ocean consumes sun and moon lighting independently. Its dynamic atmosphere
 probe uses coherent full-cube updates so a reflective surface never samples six
@@ -89,17 +88,20 @@ Generate the full-resolution deterministic pack with:
 projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-lighting-v1
 ```
 
-Generate the focused current/cached/hybrid comparison with:
+Generate the focused four-source comparison with:
 
 ```sh
 projects/ocean/capture_cloud_environment_review.sh \
-  outputs/ocean-cloud-environment-v1
+  outputs/ocean-cloud-reflection-planar-v1
 ```
 
-The pack covers noon cloud/no-cloud composition, reflection off/on and raw
-contribution, projected transmittance and direct-light shadow A/B, mid/high
-camera behavior, sunset/night lighting, an aligned twilight sun corridor and
-water-body diagnostic, and cloud density/depth diagnostics.
+The focused pack covers current-view, cached, hybrid, and planar at noon,
+sunset, and night from mid and high cameras. It also emits planar coverage and
+isolated-reflection diagnostics. The broader pack covers noon cloud/no-cloud
+composition, reflection off/on and raw contribution, projected transmittance
+and direct-light shadow A/B, mid/high camera behavior, sunset/night lighting,
+an aligned twilight sun corridor and water-body diagnostic, and cloud
+density/depth diagnostics.
 Shadow-specific captures use the runtime default scattered weather. High
 coverage now correctly approaches an opaque deck and is not useful as the A/B
 review fixture.
@@ -143,19 +145,34 @@ but caused a six-frame luminance sawtooth at dawn. Coherent updates deliberately
 spend about 0.62 ms more to remove that discontinuity. The detailed shadow pass
 remains negligible at this resolution.
 
+The accepted planar bakeoff used 120 post-warmup frames in a 1280x720, 60 fps
+headless-video run on the same RTX 5070 Ti. The ocean map was 128 because the
+reflection products are independent of FFT map size.
+
+| Reflection source work | Average GPU time |
+|---|---:|
+| Current-view extra pass | 0.000 ms |
+| Cached environment, amortized | 0.075 ms/frame |
+| Planar reflected cloud view | 0.304 ms/frame |
+| Planar plus cached fallback | 0.379 ms/frame |
+
+The planar pass is comfortably below its 1.0 ms budget at the accepted half
+resolution, 32 steps, and six filtered mip levels.
+
 ## Boundaries
 
 - This is a surface and horizon-scale contract, not an aerial/orbit solution.
-- Current-view reflection still cannot show offscreen clouds. Cached and
-  hybrid modes close that ocean-specific gap, but the probe is not yet owned by
-  the general atmosphere environment or exposed to PBR consumers.
+- Current-view reflection still cannot show offscreen clouds; it remains a
+  comparison mode. Planar closes the ordinary surface-view gap, with the cache
+  as broad fallback, but neither product is yet exposed to general PBR
+  consumers.
 - The reflection input is the cloud march product, before the visible
   compositor's metadata-aware edge resolve and final look pass. This limits
   exact visual agreement between reflected and directly visible clouds.
 - The 64-pixel cache is intentionally a broad environment product. Its isolated
-  `cached` mode can reveal low-resolution horizon blocks on sharp facets;
-  `hybrid` is the practical combined path because it replaces those in-view
-  samples while retaining cached offscreen coverage.
+  `cached` mode can reveal low-resolution horizon blocks on sharp facets.
+- Planar reflection assumes a local water receiver plane. It is not general
+  scene reflection and does not solve aerial/orbit or planet-scale water.
 - The shadow projection follows a bounded local receiver plane. It is not a
   cascaded planet-scale weather shadow system.
 - One local shadow projection cannot preserve both near detail and the entire

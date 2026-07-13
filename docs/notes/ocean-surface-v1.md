@@ -92,13 +92,13 @@ The intended local composition order is:
    fields;
 4. cloud/aerial overlays and HDR post.
 
-The next ocean rendering batch should add a cached, roughness-filterable
-clouded environment product. Current-view cloud reflection is accepted but
-cannot represent offscreen clouds or a stable rough hemisphere. After terrain
-products merge, the next integration batch should consume real bathymetry,
-shore distance, local datum, and scene depth before attempting surf or shallow
-water. Near-field wakes, spray, refraction, and dedicated river/lake solvers are
-later work.
+Ocean now defaults to a coherent reflected cloud view with a cached,
+roughness-filtered cloud environment fallback. General geometry reflection and
+aerial/orbit cloud reflection remain outside the local surface contract. After
+terrain products merge, the next integration batch should consume real
+bathymetry, shore distance, local datum, and scene depth before attempting surf
+or shallow water. Near-field wakes, spray, refraction, and dedicated river/lake
+solvers are later work.
 
 Planet-scale navigation, global ocean topology, aerial/orbit clouds, and global
 weather remain owned by `projects/planet` or future shared planet adapters.

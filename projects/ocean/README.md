@@ -68,6 +68,7 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view far-field
 ./build/dev/projects/ocean/ocean --debug-view cloud-shadow
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection
+./build/dev/projects/ocean/ocean --debug-view cloud-reflection-validity
 ./build/dev/projects/ocean/ocean --debug-view sky-radiance
 ./build/dev/projects/ocean/ocean --debug-view reflection
 ./build/dev/projects/ocean/ocean --debug-view direct-light
@@ -104,6 +105,10 @@ Headless captures can use
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-spectral-lod-handoff 0.0..1.0`,
 `--ocean-terrain-fields`, `--no-ocean-terrain-fields`,
+`--ocean-cloud-reflection-source current-view|cached|hybrid|planar`,
+`--ocean-cloud-planar-resolution-scale 0.25..1.0`,
+`--ocean-cloud-planar-view-steps 8..128`,
+`--ocean-cloud-planar-guard-band 0.0..0.5`,
 `--cloud-quality quarter|half|full`, `--cloud-weather-preset ...`, and
 `--no-clouds`.
 
@@ -117,20 +122,20 @@ texture is bound for terrain depth/shore/slope debug views; enabling
 full bathymetry, seafloor visibility, or surf-zone rendering.
 
 Final view composites the shared Cloud V1 surface-volume layer over the
-atmosphere sky before ocean post. The water material also consumes two bounded
-shared products: a projected low-frequency cloud-transmittance map for direct
-light and the current view's cloud radiance/transmittance product for reflected
-clouds. `cloud-shadow` shows the real projected transmittance map,
-`direct-light` supports shadow A/B checks, and `cloud-reflection` isolates the
-view-space reflection contribution. The Shading panel exposes independent
-coupling strengths and skips disabled work; `--no-clouds` keeps the clear-sky
-fallback valid.
+atmosphere sky before ocean post. The water material consumes a projected
+cloud-transmittance map for direct light and defaults to a dedicated reflected
+cloud view for coherent radiance/transmittance across the visible ocean. A
+roughness-filtered cached cloud environment covers invalid planar directions.
+`current-view`, `cached`, and `hybrid` remain comparison paths.
+`cloud-shadow` shows projected transmittance, `cloud-reflection` isolates the
+selected reflected lighting, and `cloud-reflection-validity` shows planar versus
+fallback coverage. The Shading panel exposes independent coupling strengths and
+skips disabled work; `--no-clouds` keeps the clear-sky fallback valid.
 
-This remains a surface-view integration. Reflection reuse is limited to cloud
-directions visible in the current camera product and fades to the clear-sky
-probe outside that footprint. It is not a dynamic clouded cubemap, and the
-projected shadow is not an aerial/orbit or planet-scale weather solution. Those
-limits are recorded in
+This remains a surface-view integration. The planar reflected camera is a local
+receiver-plane approximation, not general scene reflection, and the projected
+shadow is not an aerial/orbit or planet-scale weather solution. Those limits
+are recorded in
 [Ocean Cloud Lighting V1](../../docs/notes/ocean-cloud-lighting-v1.md).
 
 Cascades are now treated as regular slots. Every serialized sea state uses the
