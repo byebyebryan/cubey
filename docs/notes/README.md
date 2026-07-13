@@ -101,6 +101,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain rendering quality reset](terrain-rendering-quality-reset.md):
   completed native-resolution correction for final-height shading, seeded
   procedural geology, bounded landform lighting, and honest reference controls.
+- [Terrain resolution and bandwidth prototype](terrain-resolution-bandwidth-prototype.md):
+  opt-in adaptive mountain geometry, source-v2 spectrum, and generated material
+  texture contract while source v1 and the control renderer remain stable.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
