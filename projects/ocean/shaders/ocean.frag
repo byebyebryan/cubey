@@ -454,9 +454,14 @@ void main() {
     vec3 current_view_sky_reflection =
         mix(clear_sky_reflection, current_clouded_sky_reflection,
             cloud_reflection_sample.visibility);
-    vec3 cached_reflection = ocean_cloud_environment_valid()
-                                 ? ocean_cached_cloud_reflection(reflection_dir, roughness)
-                                 : clear_reflection;
+    float reflection_sky_visibility = smoothstep(-0.02, 0.005, reflection_dir.y);
+    vec3 cached_cloud_reflection = ocean_cloud_environment_valid()
+                                       ? ocean_cached_cloud_reflection(reflection_dir, roughness)
+                                       : clear_reflection;
+    vec3 cached_reflection =
+        mix(clear_reflection, cached_cloud_reflection, reflection_sky_visibility);
+    vec3 cached_sky_reflection =
+        mix(clear_sky_reflection, cached_cloud_reflection, reflection_sky_visibility);
     vec3 planar_clouded_sky_reflection =
         planar_reflection_sample.radiance +
         planar_reflection_sample.transmittance * clear_sky_reflection;
@@ -468,19 +473,19 @@ void main() {
     vec3 selected_cloud_sky_reflection = current_view_sky_reflection;
     if (cloud_reflection_source == 1) {
         selected_cloud_reflection = cached_reflection;
-        selected_cloud_sky_reflection = cached_reflection;
+        selected_cloud_sky_reflection = cached_sky_reflection;
     } else if (cloud_reflection_source == 2) {
         float current_view_detail = cloud_reflection_sample.visibility;
         selected_cloud_reflection =
             mix(cached_reflection, current_clouded_environment_reflection, current_view_detail);
         selected_cloud_sky_reflection =
-            mix(cached_reflection, current_clouded_sky_reflection, current_view_detail);
+            mix(cached_sky_reflection, current_clouded_sky_reflection, current_view_detail);
     } else if (cloud_reflection_source == 3) {
         selected_cloud_reflection =
             mix(cached_reflection, planar_clouded_environment_reflection,
                 planar_reflection_sample.visibility);
         selected_cloud_sky_reflection =
-            mix(cached_reflection, planar_clouded_sky_reflection,
+            mix(cached_sky_reflection, planar_clouded_sky_reflection,
                 planar_reflection_sample.visibility);
     }
     float cloud_reflection_strength = ocean_cloud_reflection_strength();

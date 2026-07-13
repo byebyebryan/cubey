@@ -1923,6 +1923,10 @@ int main() {
                          "planar cloud reflection should use roughness-filtered mips");
         require_contains(fragment_shader, "planar_reflection_sample.visibility",
                          "planar cloud reflection should expose a bounded validity weight");
+        require_contains(fragment_shader, "cached_sky_reflection",
+                         "cached fallback should preserve clear below-horizon facets");
+        require_contains(fragment_shader, "smoothstep(0.0, 0.06, edge_distance)",
+                         "planar cloud reflection should soften its guarded product edge");
         require_contains(fragment_shader, "ocean_cached_cloud_reflection",
                          "ocean surface shader should select a roughness-filtered cached environment");
         require_contains(fragment_shader, "filtered_roughness * filtered_roughness * max_lod + 0.25",

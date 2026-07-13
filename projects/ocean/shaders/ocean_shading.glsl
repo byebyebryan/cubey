@@ -496,10 +496,10 @@ OceanCloudReflectionSample ocean_planar_cloud_reflection(vec3 direction, float r
     }
 
     float edge_distance = min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y));
-    float edge_visibility = smoothstep(0.0, 0.035, edge_distance);
+    float edge_visibility = smoothstep(0.0, 0.06, edge_distance);
     float sky_facet_visibility = smoothstep(-0.02, 0.005, raw_dir.y);
     float plane_alignment = clamp(dot(normalize(surface_up), vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
-    float planar_visibility = smoothstep(0.906, 0.978, plane_alignment);
+    float planar_visibility = smoothstep(0.70, 0.85, plane_alignment);
     float max_lod = max(ocean_features.cloud_planar_forward_lod.w, 0.0);
     float lod = min(max_lod, roughness * roughness * max_lod + 0.25);
     vec4 cloud = textureLod(cloud_planar_reflection_texture, uv, lod);
