@@ -102,20 +102,23 @@ void main() {
     frag_direct_visibility = terrain_heightfield_shadow(
         terrain_uniforms.source, sample_xz, height_m,
         pc.camera_position_vertical_scale.w, footprint_m);
-    const float landform_radius_m = 96.0;
-    float landform_footprint_m = max(footprint_m, landform_radius_m);
-    float landform_neighbor_height = 0.25 * (
-        terrain_source_base_height(terrain_uniforms.source,
-            sample_xz + vec2(landform_radius_m, 0.0), landform_footprint_m) +
-        terrain_source_base_height(terrain_uniforms.source,
-            sample_xz - vec2(landform_radius_m, 0.0), landform_footprint_m) +
-        terrain_source_base_height(terrain_uniforms.source,
-            sample_xz + vec2(0.0, landform_radius_m), landform_footprint_m) +
-        terrain_source_base_height(terrain_uniforms.source,
-            sample_xz - vec2(0.0, landform_radius_m), landform_footprint_m));
-    float landform_center_height = terrain_source_base_height(
-        terrain_uniforms.source, sample_xz, landform_footprint_m);
-    frag_landform_concavity_m = landform_neighbor_height - landform_center_height;
+    frag_landform_concavity_m = 0.0;
+    if (terrain_uniforms.source.source_control.x != 2) {
+        const float landform_radius_m = 96.0;
+        float landform_footprint_m = max(footprint_m, landform_radius_m);
+        float landform_neighbor_height = 0.25 * (
+            terrain_source_base_height(terrain_uniforms.source,
+                sample_xz + vec2(landform_radius_m, 0.0), landform_footprint_m) +
+            terrain_source_base_height(terrain_uniforms.source,
+                sample_xz - vec2(landform_radius_m, 0.0), landform_footprint_m) +
+            terrain_source_base_height(terrain_uniforms.source,
+                sample_xz + vec2(0.0, landform_radius_m), landform_footprint_m) +
+            terrain_source_base_height(terrain_uniforms.source,
+                sample_xz - vec2(0.0, landform_radius_m), landform_footprint_m));
+        float landform_center_height = terrain_source_base_height(
+            terrain_uniforms.source, sample_xz, landform_footprint_m);
+        frag_landform_concavity_m = landform_neighbor_height - landform_center_height;
+    }
     frag_tess_factor = patch_tess_factor;
     frag_projected_edge_px = patch_projected_edge_px;
 }

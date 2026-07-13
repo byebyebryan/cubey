@@ -22,8 +22,14 @@ float terrain_heightfield_shadow(TerrainSourceGpuParameters source, vec2 surface
     float distance_m = max(8.0, footprint_m * 2.0);
     float max_horizon_slope = -1e10;
     float height_bias_m = max(1.0, footprint_m * 0.5) * vertical_scale;
+    bool hierarchical_source = source.source_control.x == 2;
+    int sample_count = hierarchical_source ? 3 : 16;
+    float distance_growth = hierarchical_source ? 16.0 : 1.6;
 
     for (int sample_index = 0; sample_index < 16; ++sample_index) {
+        if (sample_index >= sample_count) {
+            break;
+        }
         float sample_footprint_m = max(footprint_m, distance_m * 0.025);
         vec2 sample_xz = surface_xz + horizontal_direction * distance_m;
         float sample_height = terrain_source_base_height(source, sample_xz, sample_footprint_m);
@@ -36,7 +42,7 @@ float terrain_heightfield_shadow(TerrainSourceGpuParameters source, vec2 surface
         sample_height *= vertical_scale;
         max_horizon_slope = max(max_horizon_slope,
             (sample_height - origin_height - height_bias_m) / distance_m);
-        distance_m *= 1.6;
+        distance_m *= distance_growth;
     }
 
     float angular_softness = max(atmosphere.primary_light_color_angular_radius.w * 2.0, 0.008);

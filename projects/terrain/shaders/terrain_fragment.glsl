@@ -134,10 +134,12 @@ void main() {
 #if CUBEY_TERRAIN_LAYERED_MATERIAL
     float fragment_normal_blend = 0.60 *
         (1.0 - smoothstep(3.0, 8.0, material_footprint_m));
-    shading_base_gradient_xz = mix(
-        shading_base_gradient_xz,
-        terrain_fragment_source_gradient_xz(material_footprint_m),
-        fragment_normal_blend);
+    if (fragment_normal_blend > 0.0) {
+        shading_base_gradient_xz = mix(
+            shading_base_gradient_xz,
+            terrain_fragment_source_gradient_xz(material_footprint_m),
+            fragment_normal_blend);
+    }
 #endif
     vec2 shading_gradient_xz = shading_base_gradient_xz + weathering_gradient_xz;
     vec3 classification_normal = normalize(vec3(
