@@ -76,7 +76,7 @@ constexpr float kRidgeNeutral = 0.65F;
 
 [[nodiscard]] float sample_v3_signed_band(const TerrainSourceBandParameters& band,
                                           cubey::math::Vec2 world_xz, float footprint_m) {
-    const cubey::math::Vec2 rotated{
+    cubey::math::Vec2 octave_position{
         kRotationCos * world_xz.x - kRotationSin * world_xz.y,
         kRotationSin * world_xz.x + kRotationCos * world_xz.y,
     };
@@ -87,11 +87,16 @@ constexpr float kRidgeNeutral = 0.65F;
     for (std::uint32_t octave = 0; octave < band.octaves; ++octave) {
         const float footprint_weight = octave_footprint_weight(frequency, footprint_m);
         const float octave_f = static_cast<float>(octave);
-        const float sample = cubey::procedural::value_noise_3d(
-            rotated.x * frequency + octave_f * 17.31F, rotated.y * frequency - octave_f * 9.17F,
-            octave_f * 0.713F + 0.37F, static_cast<std::uint32_t>(band.seed) + octave * 1013U);
+        const float sample = cubey::procedural::gradient_noise_3d(
+            octave_position.x * frequency + octave_f * 17.31F,
+            octave_position.y * frequency - octave_f * 9.17F, octave_f * 0.713F + 0.37F,
+            static_cast<std::uint32_t>(band.seed) + octave * 1013U);
         value += sample * footprint_weight * amplitude;
         weight += amplitude;
+        octave_position = {
+            kRotationCos * octave_position.x - kRotationSin * octave_position.y,
+            kRotationSin * octave_position.x + kRotationCos * octave_position.y,
+        };
         frequency *= band.lacunarity;
         amplitude *= band.gain;
     }
@@ -316,20 +321,21 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
                                   2.0F, 0.50F, 0.0F);
             result.v3.range = band(terrain_band_seed(config.seed, "terrain.v3.range"), 3U,
                                    24'000.0F, 2.0F, 0.50F, 0.0F);
-            result.v3.massif = band(terrain_band_seed(config.seed, "terrain.v3.massif"), 4U,
-                                    12'000.0F, 2.0F, 0.48F, 0.0F);
-            result.v3.ridge = band(terrain_band_seed(config.seed, "terrain.v3.ridge"), 3U, 6'000.0F,
-                                   2.0F, 0.48F, 0.0F);
+            result.v3.massif = band(terrain_band_seed(config.seed, "terrain.v3.massif"), 6U,
+                                    8'000.0F, 2.0F, 0.55F, 0.0F);
+            result.v3.ridge = band(terrain_band_seed(config.seed, "terrain.v3.ridge"), 5U, 6'000.0F,
+                                   2.0F, 0.52F, 0.0F);
             result.v3.meso = band(terrain_band_seed(config.seed, "terrain.v3.meso"), 4U, 1'200.0F,
                                   2.0F, 0.45F, 0.0F);
             result.v3.warp_strength_m = 2'000.0F;
             result.v3.valley_ratio = 0.35F;
             result.v3.valley_cap_m = 900.0F;
-            result.v3.ridge_ratio = 0.18F;
-            result.v3.ridge_cap_m = 600.0F;
-            result.v3.meso_ratio = 0.04F;
-            result.v3.meso_cap_m = 160.0F;
-            result.elevation_power = 2.20F;
+            result.v3.ridge_ratio = 0.14F;
+            result.v3.ridge_cap_m = 450.0F;
+            result.v3.meso_ratio = 0.05F;
+            result.v3.meso_cap_m = 140.0F;
+            result.height_scale_m = 4'000.0F;
+            result.elevation_power = 1.55F;
         }
         break;
     case TerrainPreset::Upland:
@@ -386,25 +392,26 @@ TerrainSourceComponents sample_terrain_source_components(const TerrainSourcePara
         query.world_xz + cubey::math::Vec2{warp_x, warp_z} * parameters.v3.warp_strength_m;
 
     const float range_noise = sample_v3_signed_band(parameters.v3.range, warped, query.footprint_m);
-    const float range_support = smoothstep(-0.25F, 0.45F, range_noise);
+    const float range_support = smoothstep(-0.32F, 0.42F, range_noise);
     const float massif_noise = sample_v3_signed_band(
         parameters.v3.massif, warped + cubey::math::Vec2{3'107.0F, -1'903.0F}, query.footprint_m);
     const float massif_unit = std::clamp(massif_noise * 0.5F + 0.5F, 0.0F, 1.0F);
-    const float massif_shape = 0.24F + 0.76F * smoothstep(0.22F, 0.82F, massif_unit);
-    const float macro_profile = range_support * massif_shape;
+    const float massif_shape = 0.20F + 0.80F * smoothstep(0.28F, 0.74F, massif_unit);
+    const float macro_profile = std::pow(range_support, 1.45F) * massif_shape;
     const float massif_height_m =
         parameters.base_height_m +
         parameters.height_scale_m * std::pow(macro_profile, parameters.elevation_power);
 
-    const float valley_gate = 1.0F - smoothstep(0.18F, 0.48F, massif_unit);
+    const float valley_gate = 1.0F - smoothstep(0.26F, 0.48F, massif_unit);
     const float valley_delta_m =
         -std::min(massif_height_m * parameters.v3.valley_ratio, parameters.v3.valley_cap_m) *
         valley_gate * range_support;
 
     const float ridge_field = sample_v3_signed_band(
         parameters.v3.ridge, warped + cubey::math::Vec2{-2'411.0F, 5'327.0F}, query.footprint_m);
-    const float ridge_body = smoothstep(0.22F, 0.72F, 1.0F - std::abs(ridge_field));
-    const float highland_gate = smoothstep(0.18F, 0.65F, macro_profile);
+    const float ridge_signal = std::clamp(1.0F - std::abs(ridge_field), 0.0F, 1.0F);
+    const float ridge_body = ridge_signal * ridge_signal * ridge_signal * ridge_signal;
+    const float highland_gate = smoothstep(0.10F, 0.58F, macro_profile);
     const float ridge_delta_m =
         std::min(massif_height_m * parameters.v3.ridge_ratio, parameters.v3.ridge_cap_m) *
         ridge_body * highland_gate;
@@ -412,7 +419,7 @@ TerrainSourceComponents sample_terrain_source_components(const TerrainSourcePara
     const float meso_field = sample_v3_signed_band(
         parameters.v3.meso, warped + cubey::math::Vec2{1'127.0F, 2'813.0F}, query.footprint_m);
     const float face_gate =
-        smoothstep(0.12F, 0.55F, macro_profile) * (1.0F - smoothstep(0.72F, 0.92F, macro_profile));
+        smoothstep(0.10F, 0.48F, macro_profile) * (1.0F - smoothstep(0.78F, 0.96F, macro_profile));
     const float meso_delta_m =
         meso_field *
         std::min(massif_height_m * parameters.v3.meso_ratio, parameters.v3.meso_cap_m) * face_gate;

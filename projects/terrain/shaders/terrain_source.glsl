@@ -94,24 +94,27 @@ float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
 
 float terrain_source_v3_signed_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
         float footprint_m) {
-    vec2 rotated = vec2(0.8 * world_xz.x - 0.6 * world_xz.y,
+    vec2 octave_position = vec2(0.8 * world_xz.x - 0.6 * world_xz.y,
         0.6 * world_xz.x + 0.8 * world_xz.y);
     float frequency = band.shape.x;
     float amplitude = 1.0;
     float value = 0.0;
     float weight = 0.0;
-    for (int octave = 0; octave < 4; ++octave) {
+    for (int octave = 0; octave < 8; ++octave) {
         if (octave >= band.control.y) {
             break;
         }
         float footprint_weight = terrain_source_octave_footprint_weight(frequency, footprint_m);
         float octave_f = float(octave);
-        float sample_value = cubey_proc_value_noise_3d(vec3(
-            rotated.x * frequency + octave_f * 17.31,
-            rotated.y * frequency - octave_f * 9.17,
+        float sample_value = cubey_proc_gradient_noise_3d(vec3(
+            octave_position.x * frequency + octave_f * 17.31,
+            octave_position.y * frequency - octave_f * 9.17,
             octave_f * 0.713 + 0.37), uint(band.control.x + octave * 1013));
         value += sample_value * footprint_weight * amplitude;
         weight += amplitude;
+        octave_position = vec2(
+            0.8 * octave_position.x - 0.6 * octave_position.y,
+            0.6 * octave_position.x + 0.8 * octave_position.y);
         frequency *= band.shape.y;
         amplitude *= band.shape.z;
     }
@@ -129,30 +132,31 @@ TerrainSourceComponents terrain_source_v3_components(TerrainSourceGpuParameters 
     vec2 warped = world_xz + vec2(warp_x, warp_z) * parameters.v3_composition_0.x;
 
     float range_noise = terrain_source_v3_signed_band(parameters.v3_range, warped, footprint_m);
-    float range_support = smoothstep(-0.25, 0.45, range_noise);
+    float range_support = smoothstep(-0.32, 0.42, range_noise);
     float massif_noise = terrain_source_v3_signed_band(parameters.v3_massif,
         warped + vec2(3107.0, -1903.0), footprint_m);
     float massif_unit = clamp(massif_noise * 0.5 + 0.5, 0.0, 1.0);
-    float massif_shape = 0.24 + 0.76 * smoothstep(0.22, 0.82, massif_unit);
-    float macro_profile = range_support * massif_shape;
+    float massif_shape = 0.20 + 0.80 * smoothstep(0.28, 0.74, massif_unit);
+    float macro_profile = pow(range_support, 1.45) * massif_shape;
     float massif_height_m = parameters.elevation.x + parameters.elevation.y *
         pow(macro_profile, parameters.elevation.z);
 
-    float valley_gate = 1.0 - smoothstep(0.18, 0.48, massif_unit);
+    float valley_gate = 1.0 - smoothstep(0.26, 0.48, massif_unit);
     float valley_delta_m = -min(massif_height_m * parameters.v3_composition_0.y,
         parameters.v3_composition_0.z) * valley_gate * range_support;
 
     float ridge_field = terrain_source_v3_signed_band(parameters.v3_ridge,
         warped + vec2(-2411.0, 5327.0), footprint_m);
-    float ridge_body = smoothstep(0.22, 0.72, 1.0 - abs(ridge_field));
-    float highland_gate = smoothstep(0.18, 0.65, macro_profile);
+    float ridge_signal = clamp(1.0 - abs(ridge_field), 0.0, 1.0);
+    float ridge_body = ridge_signal * ridge_signal * ridge_signal * ridge_signal;
+    float highland_gate = smoothstep(0.10, 0.58, macro_profile);
     float ridge_delta_m = min(massif_height_m * parameters.v3_composition_0.w,
         parameters.v3_composition_1.x) * ridge_body * highland_gate;
 
     float meso_field = terrain_source_v3_signed_band(parameters.v3_meso,
         warped + vec2(1127.0, 2813.0), footprint_m);
-    float face_gate = smoothstep(0.12, 0.55, macro_profile) *
-        (1.0 - smoothstep(0.72, 0.92, macro_profile));
+    float face_gate = smoothstep(0.10, 0.48, macro_profile) *
+        (1.0 - smoothstep(0.78, 0.96, macro_profile));
     float meso_delta_m = meso_field *
         min(massif_height_m * parameters.v3_composition_1.y,
             parameters.v3_composition_1.z) * face_gate;

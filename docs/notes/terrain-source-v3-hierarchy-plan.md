@@ -37,22 +37,23 @@ base height = massif height
 
 - `range_support` comes from a three-octave 24 km signed field after a broad
   two-component 32 km domain warp capped at 2 km.
-- `massif_height_m` comes from a four-octave 12 km signed field. Nonlinear
+- `massif_height_m` comes from a six-octave 8 km signed field. Nonlinear
   elevation shaping applies only to this broad profile.
 - `valley_delta_m` comes from the negative lobe of the same massif field. It is
   not an independent channel or line and is capped at 35% of massif height and
   900 m.
 - `ridge_delta_m` applies one broadened ridge transform after accumulating a
-  three-octave 6 km field. It is gated by range and highland support and capped
-  at 18% of massif height and 600 m. Ridge extraction is never applied to each
+  five-octave 6 km field. It is gated by range and highland support and capped
+  at 14% of massif height and 450 m. Ridge extraction is never applied to each
   octave independently.
 - `meso_delta_m` is signed four-octave detail from 1.2 km through 150 m. It is
-  suppressed near summit silhouettes and capped at 4% of massif height and
-  160 m.
+  suppressed near summit silhouettes and capped at 5% of massif height and
+  140 m.
 
-Each octave uses the existing footprint filter. Unresolved bands approach a
-stable neutral value rather than changing macro height. Geometry stops at
-approximately 150 m; generated material and normal paths own finer scales.
+Each octave rotates away from the preceding gradient-noise lattice and uses the
+existing footprint filter. Unresolved bands approach a stable neutral value
+rather than changing macro height. Geometry stops at approximately 150 m;
+generated material and normal paths own finer scales.
 
 ## Diagnostics
 
