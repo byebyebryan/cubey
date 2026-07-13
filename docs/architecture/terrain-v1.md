@@ -1,10 +1,10 @@
 # Terrain V1 Runtime
 
-Date: 2026-07-11
+Date: 2026-07-12
 
-Status: implemented v1 source and rendering checkpoint. The previous CPU patch
-and analytical landscape work is preserved in
-`projects/terrain_hydrology_lab`; it is not the terrain v1 product.
+Status: implemented v1 source plus opt-in quality and layered-midground
+rendering checkpoints. The previous CPU patch and analytical landscape work is
+preserved in `projects/terrain_hydrology_lab`; it is not the terrain v1 product.
 
 ## Goal
 
@@ -113,6 +113,15 @@ rock, and snow tiles with complete mip chains and warped triplanar projection.
 These textures add sub-meter through tens-of-meter presentation bandwidth
 without changing source height or introducing imported runtime assets.
 
+The `layered` quality candidate keeps those same four material classes but
+generates two 1024 x 1024 products per layer: linear albedo with blend height,
+and tangent normal with roughness and bounded cavity. Explicit-gradient warped
+triplanar sampling requests 8x anisotropy and falls back to trilinear filtering
+when the device does not support anisotropic samplers. Height may refine an
+existing material transition but cannot override slope/elevation macro weights.
+Per-fragment source-normal recovery and mipmapped material normals add local
+form without displacing geometry; both fade by projected footprint.
+
 An opt-in backdrop presentation may derive distant vegetation coverage from
 height, slope, broad landform context, and footprint-filtered coherent fields.
 This is material coverage only: it cannot displace terrain, change CPU queries,
@@ -120,12 +129,15 @@ provide collision, or claim individual grass or tree geometry. Its supported
 scene contract begins at roughly 300 m from the visible lower frame edge.
 Close-range foliage remains a separate future rendering product.
 
-The deterministic backdrop camera searches a fixed world-space anchor/heading
+The deterministic camera planner searches a fixed world-space anchor/heading
 set against the random-access source and seeds the traversable surface camera
-with the selected pose. Its 150 m minimum AGL can rise when final terrain would
-enter the lower frustum within 300 m; center and corner rays retain a 10 m
-safety margin. It is a general framing tool across presets and seeds, not a
-table of authored landmarks. Headless stills keep that frame fixed.
+with the selected pose. The production `backdrop` profile considers 3.2 km and
+6.4 km targets. The `midground` review profile fixes the target at 1.6 km so
+detail cannot be hidden by the backdrop distance floor. Their 150 m minimum AGL
+can rise when final terrain would enter the lower frustum within 300 m; center
+and corner rays retain a 10 m safety margin. They are general framing tools
+across presets and seeds, not tables of authored landmarks. Headless stills
+keep either frame fixed.
 
 ## Configuration And Diagnostics
 
@@ -135,6 +147,7 @@ The public run controls are:
 - `terrain.preset`: `mountain`, `upland`, or `plains`;
 - `terrain.source_version`: `v1` or mountain-only `v2`;
 - `terrain.render_path`: `control` or mountain-only `quality`;
+- `terrain.surface_detail`: `tile` or quality-only `layered`;
 - `terrain.target_edge_px`: adaptive quality target from `2` through `16`;
 - `terrain.weathering`: `off` or `local`;
 - `terrain.weathering_strength`;
@@ -142,21 +155,23 @@ The public run controls are:
 - `terrain.presentation`: `standard` or opt-in `backdrop` material coverage.
 
 The terrain app supports final surface, base/final height, slope, weathering
-delta, LOD, neutral clay, direct visibility, aerial-transmittance, and
-vegetation-coverage views.
+delta, LOD, neutral clay, direct visibility, aerial transmittance, vegetation
+coverage, source/material normals, material weights, albedo, roughness, blend
+height, and cavity views.
 Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
 shape review from eye-level rendering and LOD review. The `backdrop` camera
 adds deterministic source-aware framing with a 40-degree lens, a 150 m AGL
-floor, and candidate-specific foreground clearance. Small
+floor, and candidate-specific foreground clearance. The `midground` camera
+reuses that contract at a deterministic 1.6 km target. Small
 bounded CPU sample grids are allowed for tests, statistics, and review metadata.
 The old raw-field exporter remains with the hydrology lab; terrain v1 does not
 emit a baked terrain product.
 
-Headless surface video advances the camera at a deterministic fixed forward
-speed while re-querying terrain clearance every frame. Orbit-camera video keeps
-the existing automatic rotation. Headless backdrop captures remain static;
-interactive backdrop use retains surface traversal at the selected planned AGL.
-PNG behavior is unchanged.
+Headless surface and midground video advance the camera at a deterministic fixed
+forward speed while re-querying terrain clearance every frame. Orbit-camera
+video keeps the existing automatic rotation. Headless backdrop video and all
+stills remain static; interactive backdrop use retains surface traversal at the
+selected planned AGL. PNG behavior is unchanged.
 
 ## Acceptance
 
@@ -174,3 +189,10 @@ Across seeds `0`, `9012`, and `12345`:
 
 The fixed review pack compares the reboot against `terrain-engine-ref`, but the
 new runtime has no code or link dependency on `terrain_ref`.
+
+The v3 renderer review additionally requires byte-identical tile/layered height
+views, a bounded material-normal detail increase, a moving midground traversal,
+and measured frame/memory evidence. The accepted pack records zero changed
+height pixels, `1.2927x` material-normal Laplacian energy, a `23.8544 ms`
+layered wall-frame interval at 960 x 540, and `73.25 MiB` device-local use. The
+layered renderer remains opt-in and near-ground terrain remains unsupported.

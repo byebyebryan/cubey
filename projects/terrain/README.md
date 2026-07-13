@@ -2,9 +2,11 @@
 
 `projects/terrain` is the active directly sampled terrain runtime. The default
 remains the v1 control path. An opt-in mountain quality prototype adds adaptive
-tessellation, source v2 detail, and generated mipmapped material tiles. The CPU
-source library currently provides deterministic world-space height and gradient
-queries for the shared `mountain`, `upland`, and `plains` parameterized source.
+tessellation and source v2 detail. Its opt-in `layered` surface-detail mode adds
+generated albedo-height and normal-roughness-cavity material layers for the
+supported backdrop and midground tiers. The CPU source library currently
+provides deterministic world-space height and gradient queries for the shared
+`mountain`, `upland`, and `plains` parameterized source.
 The matching GLSL evaluator consumes the packed resolved parameters and is
 checked against CPU samples through Vulkan readback. Optional local weathering
 is bounded, footprint-filtered, and explicitly non-hydraulic.
@@ -39,14 +41,17 @@ ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
   --terrain-preset mountain \
   --terrain-render-path quality \
   --terrain-source-version v2 \
+  --terrain-surface-detail layered \
   --terrain-target-edge-px 4 \
-  --terrain-camera-preset backdrop
+  --terrain-camera-preset midground \
+  --terrain-presentation backdrop
 
 ./build/dev/projects/terrain/terrain_source_report
 projects/terrain/capture_v1_review.sh
 projects/terrain/capture_rendering_review.sh
 projects/terrain/capture_backdrop_review.sh
 projects/terrain/capture_resolution_bandwidth_review.sh
+projects/terrain/capture_midground_detail_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -58,15 +63,19 @@ distance controls, a 1920 x 1080 showcase, and a moving surface diagnostic under
 `outputs/terrain/backdrop-presentation/`.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
-`local`. Camera presets are `oblique`, `profile`, `top`, `surface`,
-`surface-low`, `ground`, and `backdrop`; debug views are `surface`, `height`,
-`base-height`, `slope`, `weathering`, `lod`, `clay`, `shadow`,
-`aerial-transmittance`, `vegetation-coverage`, `tessellation-factor`,
-`projected-edge`, `source-bands`, `material-albedo`, and `material-normal`. The
-`backdrop` camera is a deterministic source-aware frame intended for terrain
-beginning about 300 m from the visible foreground. It uses at least 150 m AGL
-and raises candidates when final terrain would violate that foreground
-boundary. Presentation modes are `standard` (default) and `backdrop`.
+`local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
+Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
+`ground`, `backdrop`, and `midground`. The deterministic source-aware `backdrop`
+profile selects terrain at least 3.2 km away; `midground` fixes the detail stress
+tier at 1.6 km. Both retain at least 150 m AGL and the existing 300 m
+lower-frustum clearance contract. Presentation modes are `standard` (default)
+and `backdrop`.
+
+Debug views include final/base height, slope, weathering, LOD, clay, shadow,
+aerial transmittance, vegetation coverage, source/material normals, material
+weights, projected edges, source bands, albedo, roughness, blend height, and
+cavity. The fixed v3 A/B pack is written under
+`outputs/terrain/midground-detail-v3/`.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and

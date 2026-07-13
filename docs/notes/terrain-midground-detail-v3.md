@@ -2,8 +2,8 @@
 
 Date: 2026-07-12
 
-Status: planned A/B renderer batch. The existing `quality` path paired with
-source v2 remains the reproducible control.
+Status: implemented and measured opt-in renderer checkpoint. The existing
+`quality + tile` path paired with source v2 remains the reproducible control.
 
 ## Read Of The Current Pack
 
@@ -107,3 +107,63 @@ face structure rather than cloudy color or noisy silhouettes. Seed `12345`
 must expose more convincing detail without visible tiling, speckle, or
 high-frequency geometric noise. The candidate remains opt-in after this batch;
 default promotion and external scene integration are later decisions.
+
+## Implemented Checkpoint
+
+The candidate landed as `terrain.surface_detail=layered`, valid only with the
+mountain quality renderer. It adds:
+
+- separate deterministic `backdrop` (3.2/6.4 km) and `midground` (1.6 km)
+  camera profiles;
+- bounded anisotropic sampler support in the shared Vulkan renderer;
+- four generated albedo-height and normal-roughness-cavity material pairs;
+- explicit-gradient warped triplanar sampling, height-assisted transitions,
+  source-normal recovery, and footprint-driven normal fade;
+- material roughness, height, and cavity diagnostics;
+- a fixed A/B, motion, identity, timing, and memory review script.
+
+The generated recipes use periodic gradient noise rather than exposing a
+square value-noise lattice. Broad ground relief and color are intentionally
+subdued. Rock combines warped and rotated gradient octaves rather than an
+absolute-value ridge field, because the latter drew closed contour loops over
+broad faces. These are material-domain corrections only; source and geometry
+remain frozen.
+
+Generate the accepted pack with:
+
+```sh
+projects/terrain/capture_midground_detail_review.sh
+```
+
+It replaces `outputs/terrain/midground-detail-v3/` and records:
+
+| Measure | Tile | Layered | Result |
+| --- | ---: | ---: | ---: |
+| changed height pixels | - | - | `0` |
+| material-normal Laplacian energy | `3.8645e9` | `4.99579e9` | `1.2927x` |
+| observed 960 x 540 frame interval | `22.3009 ms` | `23.8544 ms` | `+1.5535 ms` |
+| device-local use | `52.00 MiB` | `73.25 MiB` | `+21.25 MiB` |
+
+The source-report hashes remain unchanged for v1 and v2. Validation-enabled
+native captures cover backdrop seeds `0`, `9012`, and `12345`, plus midground
+seeds `9012` and `12345`. A 90-frame moving midground capture checks temporal
+behavior. Seed `0` retains its macro read; seeds `9012` and `12345` gain visible
+face structure without changing silhouette or height.
+
+## Remaining Boundary
+
+The candidate is accepted as an opt-in renderer study, not promoted to the
+default. It remains mountain-only and intentionally stops at the 1.6 km
+midground tier. Generated periodic materials, material classification, and the
+simple source still fall short of close terrain, authored geology, debris,
+water, or vegetation geometry. The next decision should come from a real scene
+consumer rather than another isolated resolution increase.
+
+## Validation
+
+The final validation-enabled review pack passed its source-hash, height-identity,
+detail-band, frame-budget, and device-memory gates. Focused terrain render and
+layered PNG tests passed `3/3` in `18.29 s`. The full dev build completed and the
+repository suite passed `226/226` tests in `1136.48 s`, including atmosphere,
+cloud, ocean, planet, fluid, active terrain, hydrology-lab, reference, and
+legacy gates.

@@ -5,6 +5,11 @@ Date: 2026-07-12
 Status: implemented opt-in mountain quality prototype. The existing control
 renderer and source v1 remain the default.
 
+Follow-up: the implemented
+[midground detail v3](terrain-midground-detail-v3.md) checkpoint adds bounded
+anisotropy and an opt-in layered material path. The measurements and limits
+below remain the historical quality-v2 baseline.
+
 ## What Landed
 
 The prototype separates three previously conflated limits:
