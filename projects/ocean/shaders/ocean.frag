@@ -471,16 +471,10 @@ void main() {
     int cloud_reflection_source = ocean_cloud_reflection_source();
     vec3 selected_cloud_reflection = current_view_reflection;
     vec3 selected_cloud_sky_reflection = current_view_sky_reflection;
-    if (cloud_reflection_source == 1) {
+    if (cloud_reflection_source == OCEAN_CLOUD_REFLECTION_SOURCE_CACHED) {
         selected_cloud_reflection = cached_reflection;
         selected_cloud_sky_reflection = cached_sky_reflection;
-    } else if (cloud_reflection_source == 2) {
-        float current_view_detail = cloud_reflection_sample.visibility;
-        selected_cloud_reflection =
-            mix(cached_reflection, current_clouded_environment_reflection, current_view_detail);
-        selected_cloud_sky_reflection =
-            mix(cached_sky_reflection, current_clouded_sky_reflection, current_view_detail);
-    } else if (cloud_reflection_source == 3) {
+    } else if (cloud_reflection_source == OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR) {
         selected_cloud_reflection =
             mix(cached_reflection, planar_clouded_environment_reflection,
                 planar_reflection_sample.visibility);

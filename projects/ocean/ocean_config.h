@@ -64,8 +64,7 @@ enum class OceanSurfaceMode : std::uint32_t {
 enum class OceanCloudReflectionSource : std::uint32_t {
     CurrentView = 0,
     CachedEnvironment = 1,
-    Hybrid = 2,
-    Planar = 3,
+    Planar = 2,
 };
 
 inline constexpr std::array<OceanRenderView, 33> kOceanRenderViews{
@@ -90,10 +89,9 @@ inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
     OceanSurfaceMode::Flat,
     OceanSurfaceMode::CurvedFar,
 };
-inline constexpr std::array<OceanCloudReflectionSource, 4> kOceanCloudReflectionSources{
+inline constexpr std::array<OceanCloudReflectionSource, 3> kOceanCloudReflectionSources{
     OceanCloudReflectionSource::CurrentView,
     OceanCloudReflectionSource::CachedEnvironment,
-    OceanCloudReflectionSource::Hybrid,
     OceanCloudReflectionSource::Planar,
 };
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
@@ -417,12 +415,18 @@ ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
         return "current-view";
     case OceanCloudReflectionSource::CachedEnvironment:
         return "cached";
-    case OceanCloudReflectionSource::Hybrid:
-        return "hybrid";
     case OceanCloudReflectionSource::Planar:
         return "planar";
     }
-    return "current-view";
+    return "planar";
+}
+
+[[nodiscard]] inline const char*
+ocean_cloud_reflection_source_ui_name(OceanCloudReflectionSource source) {
+    if (source == OceanCloudReflectionSource::CurrentView) {
+        return "current-view (reference)";
+    }
+    return ocean_cloud_reflection_source_name(source);
 }
 
 [[nodiscard]] inline OceanFieldPrecision ocean_field_precision_from_name(std::string_view name) {
@@ -455,9 +459,6 @@ ocean_cloud_reflection_source_from_name(std::string_view name) {
     }
     if (name == "cached") {
         return OceanCloudReflectionSource::CachedEnvironment;
-    }
-    if (name == "hybrid") {
-        return OceanCloudReflectionSource::Hybrid;
     }
     if (name == "planar") {
         return OceanCloudReflectionSource::Planar;

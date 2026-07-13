@@ -592,7 +592,7 @@ void test_run_config_loads_json_config_file() {
     "spectral_domains": false,
     "spectral_lod_handoff": 0.65,
     "terrain_fields": true,
-    "cloud_reflection_source": "hybrid",
+    "cloud_reflection_source": "planar",
     "cloud_environment_extent": 128,
     "cloud_environment_update_hz": 8.0,
     "cloud_planar_resolution_scale": 0.625,
@@ -703,7 +703,7 @@ void test_run_config_loads_json_config_file() {
     require(config.ocean.cloud_reflection_strength == 0.8F &&
                 config.ocean.cloud_shadow_strength == 0.4F,
             "config file should set ocean cloud-lighting strengths");
-    require(config.ocean.cloud_reflection_source == "hybrid" &&
+    require(config.ocean.cloud_reflection_source == "planar" &&
                 config.ocean.cloud_environment_extent == 128U &&
                 config.ocean.cloud_environment_update_hz == 8.0F,
             "config file should set cached ocean cloud environment controls");

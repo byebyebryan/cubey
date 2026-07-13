@@ -139,8 +139,13 @@ float ocean_cloud_reflection_strength() {
     return clamp(ocean_features.cloud_lighting_options.w, 0.0, 1.0);
 }
 
+const int OCEAN_CLOUD_REFLECTION_SOURCE_CURRENT_VIEW = 0;
+const int OCEAN_CLOUD_REFLECTION_SOURCE_CACHED = 1;
+const int OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR = 2;
+
 int ocean_cloud_reflection_source() {
-    return int(clamp(floor(ocean_features.cloud_environment_options.x + 0.5), 0.0, 3.0));
+    return int(clamp(floor(ocean_features.cloud_environment_options.x + 0.5), 0.0,
+                     float(OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR)));
 }
 
 float ocean_cloud_environment_blend() {

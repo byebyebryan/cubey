@@ -49,8 +49,8 @@ constexpr std::array<std::string_view, 3> kOceanSeaStates{"calm", "windy", "stor
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
-constexpr std::array<std::string_view, 4> kOceanCloudReflectionSources{
-    "current-view", "cached", "hybrid", "planar"};
+constexpr std::array<std::string_view, 3> kOceanCloudReflectionSources{
+    "current-view", "cached", "planar"};
 constexpr std::array<std::string_view, 7> kOceanCameraPresets{
     "default", "low", "mid", "high", "close", "overhead", "wide",
 };
@@ -286,7 +286,8 @@ constexpr std::array<ConfigOptionDescriptor, 270> kRunConfigOptions{
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanCloudReflectionSource, "ocean.cloud_reflection_source",
            "--ocean-cloud-reflection-source", "Cloud Reflection Source", "Ocean",
-           "Cloud reflection source: current-view, cached, or hybrid.", ConfigOptionType::Enum,
+           "Cloud reflection source: planar, cached, or current-view reference.",
+           ConfigOptionType::Enum,
            no_range(), enum_choices(kOceanCloudReflectionSources)),
     option(RunConfigOptionId::OceanCloudEnvironmentExtent, "ocean.cloud_environment_extent",
            "--ocean-cloud-environment-extent", "Cloud Probe Extent", "Ocean",
@@ -311,7 +312,8 @@ constexpr std::array<ConfigOptionDescriptor, 270> kRunConfigOptions{
            ConfigOptionType::Float, bounded_range(0.0, 0.5)),
     option(RunConfigOptionId::OceanCloudReflectionStrength, "ocean.cloud_reflection_strength",
            "--ocean-cloud-reflection-strength", "Cloud Reflection", "Ocean",
-           "Strength of current-view cloud radiance in ocean reflections.", ConfigOptionType::Float,
+           "Strength of the selected cloud environment in ocean reflections.",
+           ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanCloudShadowStrength, "ocean.cloud_shadow_strength",
            "--ocean-cloud-shadow-strength", "Cloud Shadow", "Ocean",

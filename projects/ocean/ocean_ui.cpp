@@ -694,8 +694,8 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Strength of the selected cloud environment in ocean reflections.");
         cubey::host::imgui_enum_combo(
             "Reflection source", ui.config.cloud_reflection_source,
-            kOceanCloudReflectionSources, ocean_cloud_reflection_source_name,
-            "Planar renders a coherent reflected cloud view; cached supplies broad coverage; current-view and hybrid remain diagnostics.");
+            kOceanCloudReflectionSources, ocean_cloud_reflection_source_ui_name,
+            "Planar is the production ocean path; cached supplies broad coverage; current-view remains a bounded reference.");
         ImGui::BeginDisabled(ui.config.cloud_reflection_source ==
                              OceanCloudReflectionSource::CurrentView);
         constexpr std::array<std::uint32_t, 3> cloud_environment_extents{32U, 64U, 128U};

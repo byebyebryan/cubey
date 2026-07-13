@@ -668,6 +668,13 @@ int main() {
         require(ocean::ocean_cloud_reflection_source_from_name("current-view") ==
                     ocean::OceanCloudReflectionSource::CurrentView,
                 "current-view cloud reflection should remain explicitly selectable");
+        bool hybrid_rejected = false;
+        try {
+            static_cast<void>(ocean::ocean_cloud_reflection_source_from_name("hybrid"));
+        } catch (const std::runtime_error&) {
+            hybrid_rejected = true;
+        }
+        require(hybrid_rejected, "retired hybrid cloud reflections should be rejected");
         require(defaults.cloud_environment_extent == 64U,
                 "ocean should default the cached cloud environment to 64 pixels per face");
         require_near(defaults.cloud_environment_update_hz, 4.0F, 0.001F,
@@ -879,7 +886,7 @@ int main() {
         run_config.ocean.curvature_start_ratio = 0.20F;
         run_config.ocean.curvature_end_ratio = 0.80F;
         run_config.ocean.curvature_strength = 0.35F;
-        run_config.ocean.cloud_reflection_source = "hybrid";
+        run_config.ocean.cloud_reflection_source = "planar";
         run_config.ocean.cloud_environment_extent = 128U;
         run_config.ocean.cloud_environment_update_hz = 8.0F;
         run_config.ocean.cloud_planar_resolution_scale = 0.75F;
@@ -914,7 +921,7 @@ int main() {
         require_near(from_run_config.cloud_reflection_strength, 0.82F, 0.001F,
                      "run config should initialize cloud reflection strength");
         require(from_run_config.cloud_reflection_source ==
-                    ocean::OceanCloudReflectionSource::Hybrid,
+                    ocean::OceanCloudReflectionSource::Planar,
                 "run config should initialize cloud reflection source");
         require(from_run_config.cloud_environment_extent == 128U,
                 "run config should initialize cloud environment extent");
@@ -1925,10 +1932,17 @@ int main() {
                          "ocean surface shader should sample the reflected cloud product");
         require_contains(fragment_shader, "ocean_planar_cloud_reflection",
                          "ocean surface shader should isolate planar cloud projection");
-        require_contains(
-            fragment_shader,
-            "cloud_environment_options.x + 0.5), 0.0, 3.0",
-            "ocean surface shader should preserve the planar reflection source ID");
+        require_contains(fragment_shader,
+                         "const int OCEAN_CLOUD_REFLECTION_SOURCE_CURRENT_VIEW = 0",
+                         "ocean shader should declare the current-view reference source ID");
+        require_contains(fragment_shader,
+                         "const int OCEAN_CLOUD_REFLECTION_SOURCE_CACHED = 1",
+                         "ocean shader should declare the cached source ID");
+        require_contains(fragment_shader,
+                         "const int OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR = 2",
+                         "ocean shader should declare the planar source ID");
+        require_contains(fragment_shader, "float(OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR)",
+                         "ocean shader should clamp source IDs through the planar contract");
         require_contains(fragment_shader, "roughness * roughness * max_lod + 0.25",
                          "planar cloud reflection should use roughness-filtered mips");
         require_contains(fragment_shader, "planar_reflection_sample.visibility",
@@ -1941,8 +1955,10 @@ int main() {
                          "ocean surface shader should select a roughness-filtered cached environment");
         require_contains(fragment_shader, "filtered_roughness * filtered_roughness * max_lod + 0.25",
                          "cached cloud reflections should bias toward stable broad response");
-        require_contains(fragment_shader, "current_view_detail = cloud_reflection_sample.visibility",
-                         "hybrid reflections should preserve current-view detail where available");
+        require_not_contains(fragment_shader, "current_view_detail",
+                             "ocean shader should remove the retired hybrid handoff");
+        require_not_contains(app_source, "OceanCloudReflectionSource::Hybrid",
+                             "ocean runtime should remove retired hybrid scheduling");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u",
                          "ocean surface shader should expose cloud reflection diagnostics");
         require_contains(fragment_shader, "ocean_filtered_cloud_reflection_product",

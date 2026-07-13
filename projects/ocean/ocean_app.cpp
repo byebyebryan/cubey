@@ -1629,8 +1629,6 @@ class OceanApp {
         bool selected_cloud_reflection_valid = cloud_reflection_valid;
         if (ocean_config_.cloud_reflection_source == OceanCloudReflectionSource::CachedEnvironment) {
             selected_cloud_reflection_valid = cloud_environment.valid;
-        } else if (ocean_config_.cloud_reflection_source == OceanCloudReflectionSource::Hybrid) {
-            selected_cloud_reflection_valid = cloud_reflection_valid || cloud_environment.valid;
         } else if (ocean_config_.cloud_reflection_source == OceanCloudReflectionSource::Planar) {
             selected_cloud_reflection_valid = cloud_planar.valid || cloud_environment.valid;
         }
@@ -2109,8 +2107,7 @@ class OceanApp {
         const bool visible_clouds_enabled = cloud_composite_enabled() && cloud_uniforms.has_value();
         const bool current_view_cloud_reflection_enabled =
             cloud_product_enabled && ocean_config_.cloud_reflection_strength > 0.0F &&
-            (ocean_config_.cloud_reflection_source == OceanCloudReflectionSource::CurrentView ||
-             ocean_config_.cloud_reflection_source == OceanCloudReflectionSource::Hybrid) &&
+            ocean_config_.cloud_reflection_source == OceanCloudReflectionSource::CurrentView &&
             (visible_clouds_enabled || render_view_ == OceanRenderView::Reflection ||
              render_view_ == OceanRenderView::CloudReflection);
         const bool cloud_march_enabled =
