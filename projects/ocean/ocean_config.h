@@ -138,7 +138,7 @@ struct OceanConfig {
     std::uint32_t mesh_cells = 512U;
     std::uint32_t mesh_lod_levels = 5U;
     float mesh_extent = 5600.0F;
-    float horizon_fog = 0.50F;
+    float horizon_fog = 0.44F;
     bool horizon_auto_extent = true;
     float horizon_extent_margin = 1.25F;
     float horizon_target_near_cell_m = 2.0F;
@@ -176,18 +176,18 @@ struct OceanConfig {
     float self_shadow_bias = 0.18F;
     std::uint32_t self_shadow_steps = 8U;
     float terrain_foam_strength = 1.0F;
-    float shape_fade_distance_scale = 1.0F;
-    float normal_fade_distance_scale = 1.0F;
-    float foam_fade_distance_scale = 1.0F;
+    float shape_fade_distance_scale = 1.10F;
+    float normal_fade_distance_scale = 1.05F;
+    float foam_fade_distance_scale = 1.15F;
     bool far_field_enabled = true;
-    float far_field_start_m = 450.0F;
-    float far_field_end_m = 2200.0F;
-    float far_roughness_strength = 0.09F;
-    float far_glint_strength = 0.30F;
+    float far_field_start_m = 360.0F;
+    float far_field_end_m = 2600.0F;
+    float far_roughness_strength = 0.14F;
+    float far_glint_strength = 0.32F;
     float far_detail_footprint_start_m = 0.9F;
     float far_detail_footprint_end_m = 5.0F;
-    float far_reflection_variation_strength = 0.06F;
-    float sun_glitter_width = 0.09F;
+    float far_reflection_variation_strength = 0.085F;
+    float sun_glitter_width = 0.095F;
     OceanCloudReflectionSource cloud_reflection_source =
         OceanCloudReflectionSource::Planar;
     std::uint32_t cloud_environment_extent = 64U;
@@ -195,8 +195,8 @@ struct OceanConfig {
     float cloud_planar_resolution_scale = 0.5F;
     std::uint32_t cloud_planar_view_steps = 32U;
     float cloud_planar_guard_band = 0.15F;
-    float cloud_reflection_strength = 0.40F;
-    float cloud_shadow_strength = 0.45F;
+    float cloud_reflection_strength = 0.38F;
+    float cloud_shadow_strength = 0.40F;
     bool spectral_domains_enabled = true;
     float spectral_lod_handoff = 0.0F;
     bool terrain_fields_enabled = false;

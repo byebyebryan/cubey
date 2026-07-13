@@ -45,10 +45,10 @@ struct OceanSeaStateSettings {
     float foam_density = 3.15F;
     float foam_sharpness = 0.62F;
     float self_shadow_strength = 0.45F;
-    float far_roughness_strength = 0.12F;
-    float far_glint_strength = 0.28F;
-    float far_reflection_variation_strength = 0.08F;
-    float sun_glitter_width = 0.10F;
+    float far_roughness_strength = 0.22F;
+    float far_glint_strength = 0.27F;
+    float far_reflection_variation_strength = 0.14F;
+    float sun_glitter_width = 0.12F;
 
     friend bool operator==(const OceanSeaStateSettings&, const OceanSeaStateSettings&) = default;
 };

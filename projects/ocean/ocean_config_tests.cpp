@@ -633,31 +633,31 @@ int main() {
                 "ocean should default wave self-shadow sample count");
         require_near(defaults.terrain_foam_strength, 1.0F, 0.001F,
                      "ocean should default terrain foam contribution on");
-        require_near(defaults.shape_fade_distance_scale, 1.0F, 0.001F,
+        require_near(defaults.shape_fade_distance_scale, 1.10F, 0.001F,
                      "ocean should default shape fade distance unchanged");
-        require_near(defaults.normal_fade_distance_scale, 1.0F, 0.001F,
+        require_near(defaults.normal_fade_distance_scale, 1.05F, 0.001F,
                      "ocean should default normal fade distance unchanged");
-        require_near(defaults.foam_fade_distance_scale, 1.0F, 0.001F,
+        require_near(defaults.foam_fade_distance_scale, 1.15F, 0.001F,
                      "ocean should default foam fade distance unchanged");
         require(defaults.far_field_enabled,
                 "ocean should default statistical far-field material handoff on");
-        require_near(defaults.far_field_start_m, 450.0F, 0.001F,
+        require_near(defaults.far_field_start_m, 360.0F, 0.001F,
                      "ocean should default far-field start distance");
-        require_near(defaults.far_field_end_m, 2200.0F, 0.001F,
+        require_near(defaults.far_field_end_m, 2600.0F, 0.001F,
                      "ocean should default far-field end distance");
-        require_near(defaults.far_roughness_strength, 0.09F, 0.001F,
+        require_near(defaults.far_roughness_strength, 0.14F, 0.001F,
                      "windy ocean should use moderate far-field roughness");
-        require_near(defaults.far_glint_strength, 0.30F, 0.001F,
+        require_near(defaults.far_glint_strength, 0.32F, 0.001F,
                      "windy ocean should retain far-field sun glitter");
         require_near(defaults.far_detail_footprint_start_m, 0.9F, 0.001F,
                      "ocean should default far-detail footprint fade start");
         require_near(defaults.far_detail_footprint_end_m, 5.0F, 0.001F,
                      "ocean should default far-detail footprint fade end");
-        require_near(defaults.far_reflection_variation_strength, 0.06F, 0.001F,
+        require_near(defaults.far_reflection_variation_strength, 0.085F, 0.001F,
                      "windy ocean should keep broad far reflection variation restrained");
-        require_near(defaults.sun_glitter_width, 0.09F, 0.001F,
+        require_near(defaults.sun_glitter_width, 0.095F, 0.001F,
                      "windy ocean should use a moderate reflected-sun corridor width");
-        require_near(defaults.cloud_reflection_strength, 0.40F, 0.001F,
+        require_near(defaults.cloud_reflection_strength, 0.38F, 0.001F,
                      "ocean should keep default cloud reflections below close-range saturation");
         require(defaults.cloud_reflection_source ==
                     ocean::OceanCloudReflectionSource::Planar,
@@ -685,19 +685,22 @@ int main() {
                 "ocean should default planar cloud reflections to 32 view steps");
         require_near(defaults.cloud_planar_guard_band, 0.15F, 0.001F,
                      "ocean should reserve a reflected cloud guard band");
-        require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
+        require_near(defaults.cloud_shadow_strength, 0.40F, 0.001F,
                      "ocean should default shared cloud transmittance on conservatively");
         require_near(defaults.spectral_lod_handoff, 0.0F, 0.001F,
                      "ocean should keep the spectral LOD handoff disabled until visual review");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
-                     defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeStartWaves,
+                     defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeStartWaves *
+                         defaults.shape_fade_distance_scale,
                      0.001F, "ocean should derive cascade displacement fade starts from tile size");
         require_near(cascade0_lod.displacement_fade_end,
-                     defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeEndWaves,
+                     defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeEndWaves *
+                         defaults.shape_fade_distance_scale,
                      0.001F, "ocean should derive cascade displacement fade ends from tile size");
         require_near(cascade0_lod.surface_fade_start,
-                     defaults.cascades[0].tile_length * ocean::kOceanCascadeSurfaceFadeStartWaves,
+                     defaults.cascades[0].tile_length * ocean::kOceanCascadeSurfaceFadeStartWaves *
+                         defaults.shape_fade_distance_scale,
                      0.001F, "ocean should derive cascade surface fade starts from tile size");
         require_near(cascade0_lod.mesh_cell_full,
                      defaults.cascades[0].tile_length / ocean::kOceanCascadeMeshFullTileCellDivisor,

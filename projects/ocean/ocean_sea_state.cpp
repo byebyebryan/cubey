@@ -100,10 +100,10 @@ OceanSeaStateSettings ocean_sea_state_settings(OceanSeaState state) {
             .foam_density = 1.0F,
             .foam_sharpness = 0.62F,
             .self_shadow_strength = 0.15F,
-            .far_roughness_strength = 0.05F,
-            .far_glint_strength = 0.34F,
-            .far_reflection_variation_strength = 0.03F,
-            .sun_glitter_width = 0.07F,
+            .far_roughness_strength = 0.035F,
+            .far_glint_strength = 0.38F,
+            .far_reflection_variation_strength = 0.018F,
+            .sun_glitter_width = 0.065F,
         };
     case OceanSeaState::Windy:
         return {
@@ -135,10 +135,10 @@ OceanSeaStateSettings ocean_sea_state_settings(OceanSeaState state) {
             .foam_density = 2.65F,
             .foam_sharpness = 0.65F,
             .self_shadow_strength = 0.30F,
-            .far_roughness_strength = 0.09F,
-            .far_glint_strength = 0.30F,
-            .far_reflection_variation_strength = 0.06F,
-            .sun_glitter_width = 0.09F,
+            .far_roughness_strength = 0.14F,
+            .far_glint_strength = 0.32F,
+            .far_reflection_variation_strength = 0.085F,
+            .sun_glitter_width = 0.095F,
         };
     case OceanSeaState::Stormy:
         return {
@@ -170,10 +170,10 @@ OceanSeaStateSettings ocean_sea_state_settings(OceanSeaState state) {
             .foam_density = 3.0F,
             .foam_sharpness = 0.67F,
             .self_shadow_strength = 0.45F,
-            .far_roughness_strength = 0.12F,
-            .far_glint_strength = 0.28F,
-            .far_reflection_variation_strength = 0.08F,
-            .sun_glitter_width = 0.10F,
+            .far_roughness_strength = 0.22F,
+            .far_glint_strength = 0.27F,
+            .far_reflection_variation_strength = 0.14F,
+            .sun_glitter_width = 0.12F,
         };
     case OceanSeaState::Custom:
         break;
