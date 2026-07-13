@@ -29,7 +29,6 @@ layout(set = 0, binding = 18) uniform TerrainOceanFieldParams {
 layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 feature_options;
     vec4 feature_options2;
-    vec4 material_options;
     vec4 fade_options;
     vec4 cascade_options;
     vec4 self_shadow_options;
@@ -52,10 +51,9 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 moon_light_color;
 } ocean_features;
 layout(set = 0, binding = 20) uniform sampler2D cloud_shadow_transmittance_texture;
-layout(set = 0, binding = 21) uniform sampler2D cloud_reflection_product_texture;
-layout(set = 0, binding = 22) uniform samplerCube cloud_environment_previous_texture;
-layout(set = 0, binding = 23) uniform samplerCube cloud_environment_current_texture;
-layout(set = 0, binding = 24) uniform sampler2D cloud_planar_reflection_texture;
+layout(set = 0, binding = 21) uniform samplerCube cloud_environment_previous_texture;
+layout(set = 0, binding = 22) uniform samplerCube cloud_environment_current_texture;
+layout(set = 0, binding = 23) uniform sampler2D cloud_planar_reflection_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -91,9 +89,6 @@ const uint OCEAN_VIEW_NORMAL = 3u;
 const uint OCEAN_VIEW_FOAM = 4u;
 const uint OCEAN_VIEW_FOAM_SOURCE = 5u;
 const uint OCEAN_VIEW_FOAM_HISTORY = 6u;
-const uint OCEAN_VIEW_FOAM_CORE = 7u;
-const uint OCEAN_VIEW_FOAM_CANDIDATE = 8u;
-const uint OCEAN_VIEW_FOAM_DETAIL = 9u;
 const uint OCEAN_VIEW_LOD = 10u;
 const uint OCEAN_VIEW_SKY_RADIANCE = 11u;
 const uint OCEAN_VIEW_REFLECTION = 12u;
@@ -137,9 +132,6 @@ const float OCEAN_REFERENCE_PILLAR_MAX_Y = 25.0;
 struct OceanFoamData {
     vec2 gradient;
     vec2 total;
-    vec2 core;
-    vec2 candidate;
-    vec2 detail;
 };
 
 struct OceanAerialPerspective {
@@ -412,23 +404,9 @@ void main() {
     float fresnel = ocean_dielectric_fresnel(ndotv);
     vec3 reflection_sky_dir = ocean_above_horizon_reflection_direction(reflection_dir);
     vec3 clear_reflection = ocean_environment_reflection(reflection_dir, roughness);
-    OceanCloudReflectionSample cloud_reflection_sample =
-        ocean_current_view_cloud_reflection(reflection_dir, roughness);
     OceanCloudReflectionSample planar_reflection_sample =
         ocean_planar_cloud_reflection(reflection_dir, roughness, frag_surface_up);
     vec3 clear_sky_reflection = ocean_sky_radiance(reflection_sky_dir);
-    vec3 current_clouded_sky_reflection =
-        cloud_reflection_sample.radiance +
-        cloud_reflection_sample.transmittance * clear_sky_reflection;
-    vec3 current_clouded_environment_reflection =
-        cloud_reflection_sample.radiance +
-        cloud_reflection_sample.transmittance * clear_reflection;
-    vec3 current_view_reflection =
-        mix(clear_reflection, current_clouded_environment_reflection,
-            cloud_reflection_sample.visibility);
-    vec3 current_view_sky_reflection =
-        mix(clear_sky_reflection, current_clouded_sky_reflection,
-            cloud_reflection_sample.visibility);
     float reflection_sky_visibility = smoothstep(-0.02, 0.005, reflection_dir.y);
     vec3 cached_cloud_reflection = ocean_cloud_environment_valid()
                                        ? ocean_cached_cloud_reflection(reflection_dir, roughness)
@@ -444,12 +422,9 @@ void main() {
         planar_reflection_sample.radiance +
         planar_reflection_sample.transmittance * clear_reflection;
     int cloud_reflection_source = ocean_cloud_reflection_source();
-    vec3 selected_cloud_reflection = current_view_reflection;
-    vec3 selected_cloud_sky_reflection = current_view_sky_reflection;
-    if (cloud_reflection_source == OCEAN_CLOUD_REFLECTION_SOURCE_CACHED) {
-        selected_cloud_reflection = cached_reflection;
-        selected_cloud_sky_reflection = cached_sky_reflection;
-    } else if (cloud_reflection_source == OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR) {
+    vec3 selected_cloud_reflection = cached_reflection;
+    vec3 selected_cloud_sky_reflection = cached_sky_reflection;
+    if (cloud_reflection_source == OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR) {
         selected_cloud_reflection =
             mix(cached_reflection, planar_clouded_environment_reflection,
                 planar_reflection_sample.visibility);
@@ -509,12 +484,6 @@ void main() {
         color = vec3(foam_current);
     } else if (view == OCEAN_VIEW_FOAM_HISTORY) {
         color = vec3(foam_persistent);
-    } else if (view == OCEAN_VIEW_FOAM_CORE) {
-        color = vec3(foam_data.core.x);
-    } else if (view == OCEAN_VIEW_FOAM_CANDIDATE) {
-        color = vec3(foam_data.candidate.x);
-    } else if (view == OCEAN_VIEW_FOAM_DETAIL) {
-        color = vec3(foam_data.detail.x);
     } else if (view == OCEAN_VIEW_LOD) {
         float lod_support = active_displacement_lod_weight(dist, frag_mesh_cell_size);
         color = debug_lod_color(ocean.debug_options.y, ocean.debug_options.z) *

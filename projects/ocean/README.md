@@ -56,9 +56,6 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view foam
 ./build/dev/projects/ocean/ocean --debug-view foam-source
 ./build/dev/projects/ocean/ocean --debug-view foam-history
-./build/dev/projects/ocean/ocean --debug-view foam-core
-./build/dev/projects/ocean/ocean --debug-view foam-candidate
-./build/dev/projects/ocean/ocean --debug-view foam-detail
 ./build/dev/projects/ocean/ocean --debug-view lod
 ./build/dev/projects/ocean/ocean --debug-view footprint
 ./build/dev/projects/ocean/ocean --debug-view energy-lod
@@ -101,9 +98,8 @@ Headless captures can use
 `--ocean-curvature-strength 0.0..1.0`,
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
-`--ocean-spectral-lod-handoff 0.0..1.0`,
 `--ocean-terrain-fields`, `--no-ocean-terrain-fields`,
-`--ocean-cloud-reflection-source current-view|cached|planar`,
+`--ocean-cloud-reflection-source cached|planar`,
 `--ocean-cloud-planar-resolution-scale 0.25..1.0`,
 `--ocean-cloud-planar-view-steps 8..128`,
 `--ocean-cloud-planar-guard-band 0.0..0.5`,
@@ -124,8 +120,8 @@ atmosphere sky before ocean post. The water material consumes a projected
 cloud-transmittance map for direct light and defaults to a dedicated reflected
 cloud view for coherent radiance/transmittance across the visible ocean. A
 roughness-filtered cached cloud environment covers invalid planar directions.
-`cached` remains the broad production fallback, while `current-view` is retained
-only as a bounded quality reference.
+`cached` remains the broad production fallback when the planar product does not
+cover a reflected direction.
 `cloud-shadow` shows projected transmittance, `cloud-reflection` isolates the
 selected reflected lighting, and `cloud-reflection-validity` shows planar versus
 fallback coverage. The Shading panel exposes independent coupling strengths and
@@ -147,14 +143,14 @@ full spectrum so the primary whitecap carrier stays coherent. Foam is stored
 separately from normal data as persistent history, current Jacobian breaking
 source, determinant, and compression diagnostic channels. Final whitecap
 coverage is driven from the total enabled-slot foam signal, while
-`foam-core`/`foam-candidate`/`foam-detail` remain debug buckets. Compression is
-currently a diagnostic signal only. This is still not a localized wind or
+selected-cascade inspection provides the per-slot diagnostic view. Compression
+is currently a diagnostic signal only. This is still not a localized wind or
 weather simulation.
 
-Feature isolation controls expose global shape strength, global foam strength,
-foam history, shape and detail anti-repeat, split atmosphere material influence,
-shape/normal/foam fade distances, terrain foam strength, far-field material
-energy, sun glitter, and broad reflection variation. Shape LOD now
+Ocean controls expose global shape strength, global foam strength, foam history,
+shape and detail anti-repeat, shape/normal/foam fade distances, terrain foam
+strength, far-field material energy, sun glitter, and broad reflection
+variation. Shape LOD now
 combines distance fade with mesh-cell support, so coarse clipmap rings stop
 carrying displacement detail that the current mesh cannot represent while
 normal/foam detail can continue as shading-only contribution. Far normal detail
@@ -165,9 +161,7 @@ surface detail fades over roughly 10-30 wavelengths, and mesh-cell support fades
 displacement between about `tile / 10` and `tile / 4`. The `Active cascade work`
 toggles are stronger than
 contribution sliders: they skip disabled cascade spectrum, modulation, FFT, and
-unpack dispatches, then hide those cascades from the surface shader. Use `All
-slots`, `Core`, and `Cheap` to check which slots and material additions are
-worth their GPU cost.
+unpack dispatches, then hide those cascades from the surface shader.
 
 The far-field target is photo-oriented rather than reference-demo-oriented:
 distant water should be a low-contrast reflective plane with subtle swell hints,

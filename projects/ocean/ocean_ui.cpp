@@ -137,109 +137,6 @@ void request_camera_preset(OceanUiContext& ui, OceanCameraPreset preset) {
     ui.camera_preset_requested = true;
 }
 
-void apply_feature_preset(OceanUiContext& ui, const char* preset) {
-    if (std::string_view{preset} == "exp-full") {
-        ui.config.cascade_enabled.fill(true);
-        ui.config.surface_shape_strength = 1.0F;
-        ui.config.surface_foam_strength = 1.0F;
-        ui.config.foam_history_strength = 1.0F;
-        ui.config.atmosphere_material_strength = 1.0F;
-        ui.config.atmosphere_sky_strength = 1.0F;
-        ui.config.atmosphere_reflection_strength = 1.0F;
-        ui.config.atmosphere_light_strength = 1.0F;
-        ui.config.foam_lighting_strength = 1.0F;
-        ui.config.self_shadow_strength = 0.45F;
-        ui.config.terrain_foam_strength = 1.0F;
-        ui.config.shape_fade_distance_scale = 1.0F;
-        ui.config.normal_fade_distance_scale = 1.0F;
-        ui.config.foam_fade_distance_scale = 1.0F;
-        ui.config.far_field_enabled = true;
-        ui.config.far_roughness_strength = 0.12F;
-        ui.config.far_glint_strength = 0.28F;
-        ui.config.far_detail_footprint_start_m = 0.9F;
-        ui.config.far_detail_footprint_end_m = 5.0F;
-        ui.config.far_reflection_variation_strength = 0.08F;
-        ui.config.sun_glitter_width = 0.10F;
-        ui.diagnostics.shape_anti_repeat_strength = 1.0F;
-        ui.diagnostics.detail_anti_repeat_strength = 1.0F;
-        ui.config.spectral_domains_enabled = true;
-        return;
-    }
-    if (std::string_view{preset} == "ref-like") {
-        ui.config.cascade_enabled = {true, true, false, false, false};
-        ui.config.surface_shape_strength = 1.0F;
-        ui.config.surface_foam_strength = 1.0F;
-        ui.config.foam_history_strength = 1.0F;
-        ui.config.atmosphere_material_strength = 1.0F;
-        ui.config.atmosphere_sky_strength = 1.0F;
-        ui.config.atmosphere_reflection_strength = 1.0F;
-        ui.config.atmosphere_light_strength = 1.0F;
-        ui.config.foam_lighting_strength = 1.0F;
-        ui.config.self_shadow_strength = 0.35F;
-        ui.config.terrain_foam_strength = 0.0F;
-        ui.config.shape_fade_distance_scale = 1.0F;
-        ui.config.normal_fade_distance_scale = 1.0F;
-        ui.config.foam_fade_distance_scale = 1.0F;
-        ui.config.far_field_enabled = false;
-        ui.config.far_roughness_strength = 0.0F;
-        ui.config.far_glint_strength = 0.0F;
-        ui.config.far_detail_footprint_start_m = 0.9F;
-        ui.config.far_detail_footprint_end_m = 5.0F;
-        ui.config.far_reflection_variation_strength = 0.0F;
-        ui.config.sun_glitter_width = 0.10F;
-        ui.diagnostics.shape_anti_repeat_strength = 0.0F;
-        ui.diagnostics.detail_anti_repeat_strength = 0.0F;
-        ui.config.spectral_domains_enabled = false;
-        return;
-    }
-    if (std::string_view{preset} == "cheap") {
-        ui.config.cascade_enabled = {true, true, false, false, false};
-        ui.config.surface_shape_strength = 1.0F;
-        ui.config.surface_foam_strength = 0.85F;
-        ui.config.foam_history_strength = 0.65F;
-        ui.config.atmosphere_material_strength = 1.0F;
-        ui.config.atmosphere_sky_strength = 0.65F;
-        ui.config.atmosphere_reflection_strength = 0.35F;
-        ui.config.atmosphere_light_strength = 1.0F;
-        ui.config.foam_lighting_strength = 0.55F;
-        ui.config.self_shadow_strength = 0.0F;
-        ui.config.terrain_foam_strength = 0.0F;
-        ui.config.shape_fade_distance_scale = 0.85F;
-        ui.config.normal_fade_distance_scale = 0.80F;
-        ui.config.foam_fade_distance_scale = 0.80F;
-        ui.config.far_field_enabled = false;
-        ui.config.far_roughness_strength = 0.0F;
-        ui.config.far_glint_strength = 0.0F;
-        ui.config.far_detail_footprint_start_m = 0.9F;
-        ui.config.far_detail_footprint_end_m = 5.0F;
-        ui.config.far_reflection_variation_strength = 0.0F;
-        ui.config.sun_glitter_width = 0.10F;
-        ui.diagnostics.shape_anti_repeat_strength = 0.0F;
-        ui.diagnostics.detail_anti_repeat_strength = 0.0F;
-        ui.config.spectral_domains_enabled = false;
-        return;
-    }
-    if (std::string_view{preset} == "no-history") {
-        ui.config.foam_history_strength = 0.0F;
-        return;
-    }
-    if (std::string_view{preset} == "static-material") {
-        ui.config.atmosphere_material_strength = 0.0F;
-        ui.config.atmosphere_sky_strength = 0.0F;
-        ui.config.atmosphere_reflection_strength = 0.0F;
-        ui.config.atmosphere_light_strength = 0.0F;
-        ui.config.foam_lighting_strength = 0.0F;
-        ui.config.self_shadow_strength = 0.0F;
-    }
-}
-
-void draw_feature_preset_button(OceanUiContext& ui, const char* label, const char* preset,
-                                const char* help) {
-    if (cubey::host::imgui_button(label, help)) {
-        apply_feature_preset(ui, preset);
-    }
-}
-
 void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, const char* label) {
     const bool selected = ui.camera_preset == preset;
     if (selected) {
@@ -259,8 +156,7 @@ void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
     const cubey::host::ScopedImGuiGroup group(
         label, {.default_open = false,
                 .level = 1U,
-                .help = "Per-slot spectral wave controls. Enable a slot from Feature Isolation "
-                        "to include it in compute and surface sampling."});
+                .help = "Per-slot spectral wave controls for compute and surface sampling."});
     if (!group) {
         return;
     }
@@ -437,10 +333,10 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Spectral domains", &ui.config.spectral_domains_enabled,
             "Limit cascades to wavelength bands so scales blend without duplicating energy.");
         cubey::host::imgui_slider_float(
-            "Shape anti-repeat", &ui.diagnostics.shape_anti_repeat_strength, 0.0F, 1.0F, "%.2f",
+            "Shape anti-repeat", &ui.config.shape_anti_repeat_strength, 0.0F, 1.0F, "%.2f",
             "Strength of the secondary displacement sample used to break tiling.");
         cubey::host::imgui_slider_float(
-            "Detail anti-repeat", &ui.diagnostics.detail_anti_repeat_strength, 0.0F, 1.0F,
+            "Detail anti-repeat", &ui.config.detail_anti_repeat_strength, 0.0F, 1.0F,
             "%.2f", "Strength of far-field normal/foam domain perturbation.");
         cubey::host::imgui_slider_float("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m",
                                         "Water depth used by the dispersion model.");
@@ -451,23 +347,11 @@ void draw_ocean_ui(OceanUiContext ui) {
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Feature Isolation",
+            "Wave Presentation",
             {.default_open = false,
-             .help = "Strength gates and slot toggles around the core C0/C1 wave pair."}};
+             .help = "Global wave, foam, fade, and cascade workload controls."}};
         group) {
-        const cubey::host::ScopedImGuiId section_id("Feature Isolation");
-        draw_feature_preset_button(ui, "All slots", "exp-full",
-                                   "Enable every cascade slot for comparison.");
-        ImGui::SameLine();
-        draw_feature_preset_button(ui, "Core", "ref-like", "Use the default C0/C1 core slots.");
-        ImGui::SameLine();
-        draw_feature_preset_button(ui, "Cheap", "cheap",
-                                   "Keep the material readable while reducing expensive extras.");
-        draw_feature_preset_button(ui, "No history", "no-history",
-                                   "Disable persistent foam history contribution.");
-        ImGui::SameLine();
-        draw_feature_preset_button(ui, "Static material", "static-material",
-                                   "Blend water material sampling away from atmosphere probes.");
+        const cubey::host::ScopedImGuiId section_id("Wave Presentation");
 
         ImGui::TextUnformatted("Active cascade work");
         cubey::host::imgui_attach_help(
@@ -526,21 +410,6 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float("Foam history", &ui.config.foam_history_strength, 0.0F,
                                         1.5F, "%.2f",
                                         "Persistent foam history contribution to final coverage.");
-        cubey::host::imgui_slider_float(
-            "Atmosphere master", &ui.config.atmosphere_material_strength, 0.0F, 1.0F, "%.2f",
-            "Master blend for runtime atmosphere influence on the water material.");
-        cubey::host::imgui_slider_float(
-            "Sky radiance", &ui.config.atmosphere_sky_strength, 0.0F, 1.0F, "%.2f",
-            "Blend ambient sky and horizon fog from static sky to runtime atmosphere radiance.");
-        cubey::host::imgui_slider_float(
-            "Reflection probe", &ui.config.atmosphere_reflection_strength, 0.0F, 1.0F, "%.2f",
-            "Blend water reflections from sky radiance to the runtime atmosphere reflection probe.");
-        cubey::host::imgui_slider_float(
-            "Light response", &ui.config.atmosphere_light_strength, 0.0F, 1.0F, "%.2f",
-            "Blend direct and ambient material energy from static daylight to runtime sun/moon.");
-        cubey::host::imgui_slider_float(
-            "Foam lighting", &ui.config.foam_lighting_strength, 0.0F, 1.0F, "%.2f",
-            "Blend foam shading from static brightness to runtime day/night lighting.");
         cubey::host::imgui_slider_float("Terrain foam", &ui.config.terrain_foam_strength, 0.0F,
                                         2.0F, "%.2f",
                                         "Strength of optional shoreline foam from terrain fields.");
@@ -692,9 +561,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_enum_combo(
             "Reflection source", ui.config.cloud_reflection_source,
             kOceanCloudReflectionSources, ocean_cloud_reflection_source_ui_name,
-            "Planar is the production ocean path; cached supplies broad coverage; current-view remains a bounded reference.");
-        ImGui::BeginDisabled(ui.config.cloud_reflection_source ==
-                             OceanCloudReflectionSource::CurrentView);
+            "Planar is the production ocean path; cached supplies broad environment coverage.");
         constexpr std::array<std::uint32_t, 3> cloud_environment_extents{32U, 64U, 128U};
         cubey::host::imgui_uint32_combo(
             "Probe extent", &ui.config.cloud_environment_extent, cloud_environment_extents,
@@ -702,7 +569,6 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float(
             "Probe rate", &ui.config.cloud_environment_update_hz, 0.5F, 30.0F, "%.1f Hz",
             "Coherent six-face refresh rate; captures crossfade over one refresh interval.");
-        ImGui::EndDisabled();
         ImGui::BeginDisabled(ui.config.cloud_reflection_source !=
                              OceanCloudReflectionSource::Planar);
         cubey::host::imgui_slider_float(

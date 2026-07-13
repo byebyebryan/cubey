@@ -34,7 +34,6 @@ struct OceanGpuResourceConfig {
 struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 feature_options;
     cubey::math::Vec4 feature_options2;
-    cubey::math::Vec4 material_options;
     cubey::math::Vec4 fade_options;
     cubey::math::Vec4 cascade_options;
     cubey::math::Vec4 self_shadow_options;
@@ -57,7 +56,7 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 moon_light_color;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 92U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 88U);
 
 class OceanGpuResources {
   public:
@@ -80,9 +79,6 @@ class OceanGpuResources {
     void update_cloud_shadow_descriptor(const cubey::vulkan::Device& device,
                                         cubey::render::FrameSlot frame_slot, VkSampler sampler,
                                         VkImageView image_view, VkImageLayout image_layout);
-    void update_cloud_reflection_descriptor(const cubey::vulkan::Device& device,
-                                            cubey::render::FrameSlot frame_slot, VkSampler sampler,
-                                            VkImageView image_view, VkImageLayout image_layout);
     void update_cloud_environment_descriptors(
         const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
         const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current);

@@ -27,8 +27,6 @@ struct OceanDiagnosticsConfig {
     bool wire_overlay = false;
     bool size_reference_enabled = true;
     float wire_opacity = 0.65F;
-    float shape_anti_repeat_strength = 1.0F;
-    float detail_anti_repeat_strength = 1.0F;
 };
 
 struct OceanMeshDrawStats {

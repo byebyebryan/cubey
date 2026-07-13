@@ -8,7 +8,6 @@ layout(set = 0, binding = 4) uniform sampler2D displacement_cascade4_texture;
 layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 feature_options;
     vec4 feature_options2;
-    vec4 material_options;
     vec4 fade_options;
     vec4 cascade_options;
     vec4 self_shadow_options;

@@ -49,8 +49,7 @@ constexpr std::array<std::string_view, 3> kOceanSeaStates{"calm", "windy", "stor
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
-constexpr std::array<std::string_view, 3> kOceanCloudReflectionSources{
-    "current-view", "cached", "planar"};
+constexpr std::array<std::string_view, 2> kOceanCloudReflectionSources{"cached", "planar"};
 constexpr std::array<std::string_view, 7> kOceanCameraPresets{
     "default", "low", "mid", "high", "close", "overhead", "wide",
 };
@@ -282,7 +281,7 @@ constexpr std::array<ConfigOptionDescriptor, 270> kRunConfigOptions{
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanCloudReflectionSource, "ocean.cloud_reflection_source",
            "--ocean-cloud-reflection-source", "Cloud Reflection Source", "Ocean",
-           "Cloud reflection source: planar, cached, or current-view reference.",
+           "Cloud reflection source: planar or cached environment.",
            ConfigOptionType::Enum,
            no_range(), enum_choices(kOceanCloudReflectionSources)),
     option(RunConfigOptionId::OceanCloudEnvironmentExtent, "ocean.cloud_environment_extent",

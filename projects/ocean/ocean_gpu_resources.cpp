@@ -21,10 +21,8 @@ constexpr std::uint32_t kOceanSurfaceFeatureUniformBinding =
     kOceanSurfaceTerrainFieldUniformBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudShadowBinding =
     kOceanSurfaceFeatureUniformBinding + 1U;
-constexpr std::uint32_t kOceanSurfaceCloudReflectionBinding =
-    kOceanSurfaceCloudShadowBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudEnvironmentPreviousBinding =
-    kOceanSurfaceCloudReflectionBinding + 1U;
+    kOceanSurfaceCloudShadowBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudEnvironmentCurrentBinding =
     kOceanSurfaceCloudEnvironmentPreviousBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudPlanarReflectionBinding =
@@ -390,12 +388,6 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
-    surface_bindings[kOceanSurfaceCloudReflectionBinding] =
-        cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = kOceanSurfaceCloudReflectionBinding,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        };
     surface_bindings[kOceanSurfaceCloudEnvironmentPreviousBinding] =
         cubey::vulkan::DescriptorSetBindingConfig{
             .binding = kOceanSurfaceCloudEnvironmentPreviousBinding,
@@ -542,16 +534,6 @@ void OceanGpuResources::update_cloud_shadow_descriptor(
     writes
         .combined_image_sampler(surface_set(frame_slot), kOceanSurfaceCloudShadowBinding, sampler,
                                 image_view, image_layout)
-        .update(device);
-}
-
-void OceanGpuResources::update_cloud_reflection_descriptor(
-    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot, VkSampler sampler,
-    VkImageView image_view, VkImageLayout image_layout) {
-    cubey::vulkan::DescriptorWriteBatch writes;
-    writes
-        .combined_image_sampler(surface_set(frame_slot), kOceanSurfaceCloudReflectionBinding,
-                                sampler, image_view, image_layout)
         .update(device);
 }
 

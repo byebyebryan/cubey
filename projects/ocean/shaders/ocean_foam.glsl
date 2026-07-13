@@ -124,9 +124,6 @@ OceanFoamData ocean_foam_data(float dist, float footprint_m) {
     OceanFoamData data;
     data.gradient = vec2(0.0);
     data.total = vec2(0.0);
-    data.core = vec2(0.0);
-    data.candidate = vec2(0.0);
-    data.detail = vec2(0.0);
 
     float anti_repeat_factor =
         ocean_detail_anti_repeat_strength() *
@@ -144,19 +141,9 @@ OceanFoamData ocean_foam_data(float dist, float footprint_m) {
         float lod_weight = cascade_surface_lod_weight(cascade, dist);
         vec2 weighted_foam = normal_foam.zw * lod_weight * ocean_surface_foam_strength();
         data.gradient += normal_foam.xy * normal_scale * lod_weight;
-        if (cascade < 2u) {
-            data.core += weighted_foam;
-        } else if (cascade < 4u) {
-            data.candidate += weighted_foam;
-        } else {
-            data.detail += weighted_foam;
-        }
         data.total += weighted_foam;
     }
     data.total = clamp(data.total, 0.0, 1.0);
-    data.core = clamp(data.core, 0.0, 1.0);
-    data.candidate = clamp(data.candidate, 0.0, 1.0);
-    data.detail = clamp(data.detail, 0.0, 1.0);
     data.gradient *= ocean_normal_presentation_scale(dist);
     data.gradient *= mix(1.0, 0.08, ocean_far_detail_filter(dist, footprint_m));
     return data;
@@ -211,8 +198,7 @@ vec3 ocean_lit_foam_color(vec3 foam_color, vec3 normal, float direct_shadow, flo
     vec3 far_foam = foam_color * (vec3(ambient_light * 0.18) + directional_light * 0.34) +
                     ocean_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.08;
     vec3 dynamic_foam = mix(lit_foam, far_foam, far_factor * 0.55);
-    vec3 static_foam = foam_color * 0.62 + ocean_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.05;
-    return mix(static_foam, dynamic_foam, ocean_foam_lighting_strength());
+    return dynamic_foam;
 }
 
 vec3 ocean_shaded_foam(vec3 water, vec3 foam_color, vec3 normal, float direct_shadow,

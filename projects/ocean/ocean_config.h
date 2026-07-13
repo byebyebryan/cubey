@@ -23,9 +23,6 @@ enum class OceanRenderView : std::uint32_t {
     Foam = 4,
     FoamSource = 5,
     FoamHistory = 6,
-    FoamCore = 7,
-    FoamCandidate = 8,
-    FoamDetail = 9,
     Lod = 10,
     SkyRadiance = 11,
     Reflection = 12,
@@ -60,16 +57,14 @@ enum class OceanSurfaceMode : std::uint32_t {
 };
 
 enum class OceanCloudReflectionSource : std::uint32_t {
-    CurrentView = 0,
-    CachedEnvironment = 1,
-    Planar = 2,
+    CachedEnvironment = 0,
+    Planar = 1,
 };
 
-inline constexpr std::array<OceanRenderView, 31> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 28> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
-    OceanRenderView::FoamHistory,     OceanRenderView::FoamCore,     OceanRenderView::FoamCandidate,
-    OceanRenderView::FoamDetail,      OceanRenderView::Lod,          OceanRenderView::SkyRadiance,
+    OceanRenderView::FoamHistory,     OceanRenderView::Lod,          OceanRenderView::SkyRadiance,
     OceanRenderView::Reflection,      OceanRenderView::DirectLight,  OceanRenderView::AmbientLight,
     OceanRenderView::Exposure,        OceanRenderView::FoamRaw,      OceanRenderView::FoamLit,
     OceanRenderView::TerrainDepth,    OceanRenderView::TerrainShore, OceanRenderView::TerrainSlope,
@@ -86,8 +81,7 @@ inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
     OceanSurfaceMode::Flat,
     OceanSurfaceMode::CurvedFar,
 };
-inline constexpr std::array<OceanCloudReflectionSource, 3> kOceanCloudReflectionSources{
-    OceanCloudReflectionSource::CurrentView,
+inline constexpr std::array<OceanCloudReflectionSource, 2> kOceanCloudReflectionSources{
     OceanCloudReflectionSource::CachedEnvironment,
     OceanCloudReflectionSource::Planar,
 };
@@ -146,6 +140,8 @@ struct OceanConfig {
     OceanSeaState sea_state = OceanSeaState::Windy;
     std::uint32_t map_size = kOceanDefaultMapSize;
     float depth = 20.0F;
+    float shape_anti_repeat_strength = 1.0F;
+    float detail_anti_repeat_strength = 1.0F;
     float roughness = 0.34F;
     float normal_strength = 0.82F;
     float exposure = 0.0F;
@@ -160,11 +156,6 @@ struct OceanConfig {
     float surface_shape_strength = 1.0F;
     float surface_foam_strength = 0.92F;
     float foam_history_strength = 0.80F;
-    float atmosphere_material_strength = 1.0F;
-    float atmosphere_sky_strength = 1.0F;
-    float atmosphere_reflection_strength = 1.0F;
-    float atmosphere_light_strength = 1.0F;
-    float foam_lighting_strength = 1.0F;
     float self_shadow_strength = 0.30F;
     float self_shadow_distance = 44.0F;
     float self_shadow_bias = 0.18F;
@@ -326,12 +317,6 @@ struct OceanCascadeLodBand {
         return "foam-source";
     case OceanRenderView::FoamHistory:
         return "foam-history";
-    case OceanRenderView::FoamCore:
-        return "foam-core";
-    case OceanRenderView::FoamCandidate:
-        return "foam-candidate";
-    case OceanRenderView::FoamDetail:
-        return "foam-detail";
     case OceanRenderView::Lod:
         return "lod";
     case OceanRenderView::SkyRadiance:
@@ -401,8 +386,6 @@ struct OceanCascadeLodBand {
 [[nodiscard]] inline const char*
 ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
     switch (source) {
-    case OceanCloudReflectionSource::CurrentView:
-        return "current-view";
     case OceanCloudReflectionSource::CachedEnvironment:
         return "cached";
     case OceanCloudReflectionSource::Planar:
@@ -413,9 +396,6 @@ ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
 
 [[nodiscard]] inline const char*
 ocean_cloud_reflection_source_ui_name(OceanCloudReflectionSource source) {
-    if (source == OceanCloudReflectionSource::CurrentView) {
-        return "current-view (reference)";
-    }
     return ocean_cloud_reflection_source_name(source);
 }
 
@@ -443,9 +423,6 @@ ocean_cloud_reflection_source_ui_name(OceanCloudReflectionSource source) {
 ocean_cloud_reflection_source_from_name(std::string_view name) {
     if (name.empty()) {
         return OceanCloudReflectionSource::Planar;
-    }
-    if (name == "current-view") {
-        return OceanCloudReflectionSource::CurrentView;
     }
     if (name == "cached") {
         return OceanCloudReflectionSource::CachedEnvironment;
@@ -665,12 +642,9 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.foam_density < 0.0F || config.foam_sharpness < 0.0F ||
         config.foam_sharpness > 1.0F || config.surface_shape_strength < 0.0F ||
         config.surface_foam_strength < 0.0F || config.foam_history_strength < 0.0F ||
-        config.atmosphere_material_strength < 0.0F || config.atmosphere_material_strength > 1.0F ||
-        config.atmosphere_sky_strength < 0.0F || config.atmosphere_sky_strength > 1.0F ||
-        config.atmosphere_reflection_strength < 0.0F ||
-        config.atmosphere_reflection_strength > 1.0F || config.atmosphere_light_strength < 0.0F ||
-        config.atmosphere_light_strength > 1.0F || config.foam_lighting_strength < 0.0F ||
-        config.foam_lighting_strength > 1.0F || config.self_shadow_strength < 0.0F ||
+        config.shape_anti_repeat_strength < 0.0F || config.shape_anti_repeat_strength > 1.0F ||
+        config.detail_anti_repeat_strength < 0.0F || config.detail_anti_repeat_strength > 1.0F ||
+        config.self_shadow_strength < 0.0F ||
         config.self_shadow_strength > 1.0F || config.self_shadow_distance <= 0.0F ||
         config.self_shadow_bias < 0.0F || config.self_shadow_steps == 0U ||
         config.self_shadow_steps > 24U || config.terrain_foam_strength < 0.0F ||
