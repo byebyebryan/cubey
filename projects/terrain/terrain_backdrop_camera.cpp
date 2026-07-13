@@ -17,12 +17,17 @@ constexpr std::array<float, 2> kBackdropSampleDistances{3200.0F, 6400.0F};
 constexpr std::array<float, 1> kMidgroundSampleDistances{1600.0F};
 constexpr std::array<float, 3> kLateralFactors{-0.18F, 0.0F, 0.18F};
 constexpr std::array<float, 3> kLowerFrustumNdcX{-1.0F, 0.0F, 1.0F};
+constexpr std::array<float, 5> kNearFrameNdcX{-0.9F, -0.45F, 0.0F, 0.45F, 0.9F};
+constexpr std::array<float, 3> kNearFrameNdcY{0.0F, 0.35F, 0.70F};
 constexpr std::uint32_t kHeadingCount = 24U;
-constexpr std::size_t kFramingShortlistCount = 16U;
+constexpr std::size_t kFramingShortlistCount = 64U;
+constexpr std::uint32_t kMaximumNearFrameOccludedRayCount = 2U;
 constexpr float kMinimumCameraClearanceM = 150.0F;
 constexpr float kForegroundClearDistanceM = 300.0F;
 constexpr float kForegroundSampleStepM = 25.0F;
 constexpr float kForegroundSafetyMarginM = 10.0F;
+constexpr float kNearFrameStartDistanceM = 100.0F;
+constexpr float kNearFrameSampleStepM = 50.0F;
 constexpr float kBackdropVerticalFovRadians = 40.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kPeakAboveFrameCenterRadians = 5.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kMinimumPitchRadians = -2.0F * std::numbers::pi_v<float> / 180.0F;
@@ -60,6 +65,13 @@ struct ForegroundClearance {
     float camera_height_m = 0.0F;
     float camera_clearance_m = 0.0F;
     float minimum_margin_m = 0.0F;
+};
+
+struct NearFrameOcclusion {
+    float test_distance_m = 0.0F;
+    std::uint32_t occluded_ray_count = 0U;
+    float occupancy_ratio = 0.0F;
+    float nearest_hit_distance_m = 0.0F;
 };
 
 [[nodiscard]] ForegroundClearance foreground_clearance(const TerrainSourceParameters& source,
@@ -171,6 +183,54 @@ struct ForegroundClearance {
     };
 }
 
+[[nodiscard]] NearFrameOcclusion near_frame_occlusion(const TerrainSourceParameters& source,
+                                                      cubey::math::Vec2 anchor,
+                                                      float camera_height_m, float yaw_radians,
+                                                      float pitch_radians, float target_distance_m,
+                                                      float vertical_scale, float aspect_ratio) {
+    const cubey::math::Quat rotation =
+        cubey::math::angle_axis_quat(yaw_radians, {0.0F, 1.0F, 0.0F}) *
+        cubey::math::angle_axis_quat(pitch_radians, {1.0F, 0.0F, 0.0F});
+    const float tan_half_fov = std::tan(kBackdropVerticalFovRadians * 0.5F);
+    const float test_distance_m = target_distance_m * 0.5F;
+    std::uint32_t occluded_ray_count = 0U;
+    float nearest_hit_distance_m = std::numeric_limits<float>::infinity();
+
+    for (const float ndc_y : kNearFrameNdcY) {
+        for (const float ndc_x : kNearFrameNdcX) {
+            const cubey::math::Vec3 ray =
+                rotation *
+                cubey::math::Vec3{ndc_x * tan_half_fov * aspect_ratio, ndc_y * tan_half_fov, -1.0F};
+            const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
+            const cubey::math::Vec2 horizontal_direction{ray.x / horizontal_length,
+                                                         ray.z / horizontal_length};
+            const float vertical_slope = ray.y / horizontal_length;
+            for (float distance_m = kNearFrameStartDistanceM; distance_m <= test_distance_m;
+                 distance_m += kNearFrameSampleStepM) {
+                const cubey::math::Vec2 position = anchor + horizontal_direction * distance_m;
+                const float terrain_height_m =
+                    sample_terrain(source, {.world_xz = position}).height_m * vertical_scale;
+                const float ray_height_m = camera_height_m + distance_m * vertical_slope;
+                if (terrain_height_m < ray_height_m) {
+                    continue;
+                }
+                ++occluded_ray_count;
+                nearest_hit_distance_m = std::min(nearest_hit_distance_m, distance_m);
+                break;
+            }
+        }
+    }
+
+    constexpr float ray_count = static_cast<float>(kNearFrameNdcX.size() * kNearFrameNdcY.size());
+    return {
+        .test_distance_m = test_distance_m,
+        .occluded_ray_count = occluded_ray_count,
+        .occupancy_ratio = static_cast<float>(occluded_ray_count) / ray_count,
+        .nearest_hit_distance_m =
+            std::isfinite(nearest_hit_distance_m) ? nearest_hit_distance_m : 0.0F,
+    };
+}
+
 } // namespace
 
 std::string_view
@@ -215,7 +275,11 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
 
     TerrainBackdropCameraPlan best{};
     best.score = -std::numeric_limits<float>::infinity();
+    bool best_is_admissible = false;
     for (const BackdropCandidate& candidate : candidates) {
+        if (best_is_admissible && candidate.heading.score + 0.10F <= best.score) {
+            break;
+        }
         const float anchor_height =
             sample_terrain(source, {.world_xz = candidate.anchor}).height_m * vertical_scale;
         const ForegroundClearance clearance =
@@ -225,10 +289,6 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
             std::max(clearance.camera_clearance_m - kMinimumCameraClearanceM, 0.0F);
         const float clearance_efficiency = 1.0F - saturate(clearance_raise / 300.0F);
         const float score = candidate.heading.score + 0.10F * clearance_efficiency;
-        if (score <= best.score) {
-            continue;
-        }
-
         const TerrainSample target_sample =
             sample_terrain(source, {.world_xz = candidate.heading.target_xz});
         const float target_height = target_sample.height_m * vertical_scale;
@@ -236,6 +296,28 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
                                            candidate.heading.target_distance_m);
         const float pitch = std::clamp(elevation - kPeakAboveFrameCenterRadians,
                                        kMinimumPitchRadians, kMaximumPitchRadians);
+        const NearFrameOcclusion occlusion = near_frame_occlusion(
+            source, candidate.anchor, clearance.camera_height_m, candidate.yaw_radians, pitch,
+            candidate.heading.target_distance_m, vertical_scale, aspect_ratio);
+        const bool is_admissible =
+            occlusion.occluded_ray_count <= kMaximumNearFrameOccludedRayCount;
+        const bool lower_fallback_occupancy =
+            !is_admissible && !best_is_admissible &&
+            occlusion.occluded_ray_count < best.near_frame_occluded_ray_count;
+        const bool equal_fallback_occupancy =
+            !is_admissible && !best_is_admissible &&
+            occlusion.occluded_ray_count == best.near_frame_occluded_ray_count;
+        const bool no_best = !std::isfinite(best.score);
+        const bool should_select =
+            is_admissible
+                ? (!best_is_admissible || score > best.score)
+                : (!best_is_admissible && (no_best || lower_fallback_occupancy ||
+                                           (equal_fallback_occupancy && score > best.score)));
+        if (!should_select) {
+            continue;
+        }
+
+        best_is_admissible = is_admissible;
         best = {
             .transform =
                 {
@@ -256,6 +338,10 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
             .clearance_raise_m = clearance_raise,
             .foreground_clear_distance_m = kForegroundClearDistanceM,
             .foreground_min_margin_m = clearance.minimum_margin_m,
+            .near_frame_test_distance_m = occlusion.test_distance_m,
+            .near_frame_occluded_ray_count = occlusion.occluded_ray_count,
+            .near_frame_occupancy_ratio = occlusion.occupancy_ratio,
+            .near_frame_nearest_hit_distance_m = occlusion.nearest_hit_distance_m,
             .aspect_ratio = aspect_ratio,
             .score = score,
         };

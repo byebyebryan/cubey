@@ -29,6 +29,10 @@ struct TerrainBackdropCameraPlan {
     float clearance_raise_m = 0.0F;
     float foreground_clear_distance_m = 0.0F;
     float foreground_min_margin_m = 0.0F;
+    float near_frame_test_distance_m = 0.0F;
+    std::uint32_t near_frame_occluded_ray_count = 0U;
+    float near_frame_occupancy_ratio = 0.0F;
+    float near_frame_nearest_hit_distance_m = 0.0F;
     float aspect_ratio = 16.0F / 9.0F;
     float score = 0.0F;
 };

@@ -59,6 +59,10 @@ int main() {
                     {"clearance_raise_m", plan.clearance_raise_m},
                     {"foreground_clear_distance_m", plan.foreground_clear_distance_m},
                     {"foreground_min_margin_m", plan.foreground_min_margin_m},
+                    {"near_frame_test_distance_m", plan.near_frame_test_distance_m},
+                    {"near_frame_occluded_ray_count", plan.near_frame_occluded_ray_count},
+                    {"near_frame_occupancy_ratio", plan.near_frame_occupancy_ratio},
+                    {"near_frame_nearest_hit_distance_m", plan.near_frame_nearest_hit_distance_m},
                     {"aspect_ratio", plan.aspect_ratio},
                     {"score", plan.score},
                 });
@@ -67,7 +71,7 @@ int main() {
     }
 
     const nlohmann::json report{
-        {"schema", "cubey.terrain.backdrop-camera.v3"},
+        {"schema", "cubey.terrain.backdrop-camera.v4"},
         {"anchor_grid_m", {-4096, -2048, 0, 2048, 4096}},
         {"heading_count", 24},
         {"backdrop_sample_distances_m", {3200, 6400}},
@@ -75,6 +79,12 @@ int main() {
         {"minimum_clearance_m", 150},
         {"foreground_clear_distance_m", 300},
         {"foreground_safety_margin_m", 10},
+        {"near_frame_ndc_x", {-0.9, -0.45, 0.0, 0.45, 0.9}},
+        {"near_frame_ndc_y", {0.0, 0.35, 0.70}},
+        {"near_frame_start_distance_m", 100},
+        {"near_frame_sample_step_m", 50},
+        {"near_frame_target_distance_fraction", 0.5},
+        {"near_frame_maximum_occluded_rays", 2},
         {"vertical_fov_degrees", 40},
         {"plans", std::move(plans)},
     };
