@@ -114,6 +114,7 @@ enum class RunConfigOptionId {
     PlanetAtmosphereMode,
     TerrainSeed,
     TerrainPreset,
+    TerrainSourceVersion,
     TerrainWeathering,
     TerrainWeatheringStrength,
     TerrainCellSize,

@@ -35,17 +35,15 @@ float independent_backdrop_foreground_margin(
     constexpr std::array<float, 3> ndc_x_values{-1.0F, 0.0F, 1.0F};
     constexpr float vertical_fov = 40.0F * std::numbers::pi_v<float> / 180.0F;
     constexpr float conservative_pitch = -2.0F * std::numbers::pi_v<float> / 180.0F;
-    const auto rotation =
-        cubey::math::angle_axis_quat(plan.yaw_radians, {0.0F, 1.0F, 0.0F}) *
-        cubey::math::angle_axis_quat(conservative_pitch, {1.0F, 0.0F, 0.0F});
+    const auto rotation = cubey::math::angle_axis_quat(plan.yaw_radians, {0.0F, 1.0F, 0.0F}) *
+                          cubey::math::angle_axis_quat(conservative_pitch, {1.0F, 0.0F, 0.0F});
     const float tan_half_fov = std::tan(vertical_fov * 0.5F);
     float minimum_margin = std::numeric_limits<float>::infinity();
     for (const float ndc_x : ndc_x_values) {
-        const cubey::math::Vec3 ray = rotation * cubey::math::Vec3{
-            ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
+        const cubey::math::Vec3 ray =
+            rotation * cubey::math::Vec3{ndc_x * tan_half_fov * aspect_ratio, -tan_half_fov, -1.0F};
         const float horizontal_length = std::sqrt(ray.x * ray.x + ray.z * ray.z);
-        const cubey::math::Vec2 direction{ray.x / horizontal_length,
-                                          ray.z / horizontal_length};
+        const cubey::math::Vec2 direction{ray.x / horizontal_length, ray.z / horizontal_length};
         const float vertical_slope = ray.y / horizontal_length;
         for (float distance = 25.0F; distance <= 300.0F; distance += 25.0F) {
             const auto sample = cubey::projects::terrain::sample_terrain(
@@ -64,6 +62,8 @@ void test_runtime_config_defaults_to_the_v1_scene() {
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.source.preset == cubey::projects::terrain::TerrainPreset::Mountain,
             "terrain runtime should default to mountain preset");
+    require(config.source.version == cubey::projects::terrain::TerrainSourceVersion::V1,
+            "terrain runtime should default to source v1");
     require(config.source.weathering == cubey::projects::terrain::TerrainWeatheringMode::Local,
             "terrain runtime should default to local weathering");
     require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Oblique,
@@ -76,6 +76,52 @@ void test_runtime_config_defaults_to_the_v1_scene() {
                  "terrain runtime should default to two-meter near cells");
     require(config.lod_levels == 8U && config.cells_per_axis == 128U,
             "terrain runtime should use the v1 clipmap dimensions");
+}
+
+void test_source_v2_extends_only_mountain_detail_band() {
+    using namespace cubey::projects::terrain;
+    const TerrainSourceParameters v1 = resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = TerrainPreset::Mountain,
+    });
+    const TerrainSourceParameters v2 = resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = TerrainPreset::Mountain,
+        .version = TerrainSourceVersion::V2,
+    });
+    require(v1.macro.seed == v2.macro.seed && v1.macro.octaves == v2.macro.octaves &&
+                v1.structure.seed == v2.structure.seed &&
+                v1.structure.octaves == v2.structure.octaves &&
+                v1.height_scale_m == v2.height_scale_m && v1.elevation_power == v2.elevation_power,
+            "terrain source v2 should preserve v1 macro structure and elevation");
+    require(v2.detail.octaves == 8U, "terrain source v2 should expose eight detail octaves");
+    require_near(v2.detail.lacunarity, 2.03F, 0.0F,
+                 "terrain source v2 should preserve detail lacunarity");
+    require_near(v2.detail.gain, 0.52F, 0.0F, "terrain source v2 should preserve detail gain");
+    require_near(v2.detail.ridge_mix, 0.24F, 0.0F,
+                 "terrain source v2 should preserve detail ridge mix");
+    require_near(v2.detail_weight, 0.16F, 0.0F,
+                 "terrain source v2 should increase detail composition weight");
+
+    bool rejected = false;
+    try {
+        (void)resolve_terrain_source_parameters({
+            .preset = TerrainPreset::Upland,
+            .version = TerrainSourceVersion::V2,
+        });
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain source v2 should reject unsupported presets");
+}
+
+void test_runtime_config_parses_source_v2() {
+    cubey::RunConfig run_config{};
+    run_config.terrain.source_version = "v2";
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.source.version == cubey::projects::terrain::TerrainSourceVersion::V2,
+            "terrain runtime should parse source v2");
 }
 
 void test_ground_camera_and_shape_diagnostics_parse() {
@@ -92,8 +138,8 @@ void test_ground_camera_and_shape_diagnostics_parse() {
             "terrain ground camera should use surface traversal");
     require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 2.0F, 0.0F,
                  "terrain ground camera should use eye-level clearance");
-    require_near(cubey::projects::terrain::terrain_camera_traversal_speed_mps(config.camera),
-                 12.0F, 0.0F, "terrain ground camera should use walking-scale traversal");
+    require_near(cubey::projects::terrain::terrain_camera_traversal_speed_mps(config.camera), 12.0F,
+                 0.0F, "terrain ground camera should use walking-scale traversal");
     require(cubey::projects::terrain::terrain_debug_view_from_name("shadow") ==
                 cubey::projects::terrain::TerrainDebugView::Shadow,
             "terrain runtime should parse the shadow diagnostic");
@@ -114,15 +160,16 @@ void test_ground_camera_and_shape_diagnostics_parse() {
 void test_backdrop_camera_configuration() {
     cubey::RunConfig run_config;
     run_config.terrain.camera_preset = "backdrop";
-    const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Backdrop,
             "terrain runtime should parse the backdrop camera");
     require(cubey::projects::terrain::terrain_camera_is_surface(config.camera),
             "terrain backdrop camera should remain interactively traversable");
     require(!cubey::projects::terrain::terrain_camera_advances_headless(config.camera),
             "terrain backdrop camera should remain static in headless captures");
-    require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 150.0F,
-                 0.0F, "terrain backdrop camera should clear the local surface");
+    require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 150.0F, 0.0F,
+                 "terrain backdrop camera should clear the local surface");
     require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
                  40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
                  "terrain backdrop camera should use a restrained field of view");
@@ -132,7 +179,8 @@ void test_backdrop_presentation_and_coverage_debug_parse() {
     cubey::RunConfig run_config;
     run_config.terrain.presentation = "backdrop";
     run_config.debug_view = "vegetation-coverage";
-    const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.presentation == cubey::projects::terrain::TerrainPresentationMode::Backdrop,
             "terrain runtime should parse backdrop presentation");
     require(config.debug_view == cubey::projects::terrain::TerrainDebugView::VegetationCoverage,
@@ -148,8 +196,8 @@ void test_backdrop_planner_is_deterministic_and_clear() {
         cubey::projects::terrain::TerrainPreset::Upland,
         cubey::projects::terrain::TerrainPreset::Plains,
     };
-    constexpr std::array<std::uint64_t, 6> seeds{0U, 1U, 42U, 9012U, 12345U,
-                                                 std::numeric_limits<std::uint64_t>::max()};
+    constexpr std::array<std::uint64_t, 6> seeds{
+        0U, 1U, 42U, 9012U, 12345U, std::numeric_limits<std::uint64_t>::max()};
     for (const auto preset : presets) {
         for (const std::uint64_t seed : seeds) {
             const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
@@ -174,8 +222,8 @@ void test_backdrop_planner_is_deterministic_and_clear() {
                     "terrain backdrop plan should remain finite");
             require(first.target_distance_m >= 400.0F && first.target_distance_m <= 6400.0F,
                     "terrain backdrop target should use a supported sample distance");
-            const auto anchor_sample = cubey::projects::terrain::sample_terrain(
-                source, {.world_xz = first.anchor_xz});
+            const auto anchor_sample =
+                cubey::projects::terrain::sample_terrain(source, {.world_xz = first.anchor_xz});
             require(first.camera_clearance_m >= 149.999F,
                     "terrain backdrop camera should preserve its minimum clearance");
             require_near(first.transform.translation.y,
@@ -244,15 +292,14 @@ void test_environment_gpu_parameters_preserve_atmosphere_lighting() {
     const auto frame = cubey::render::atmosphere_environment_frame_uniforms(environment, {});
     const auto lighting = cubey::render::atmosphere_environment_lighting(environment);
     const auto gpu = cubey::projects::terrain::terrain_environment_gpu_parameters(frame, lighting);
-    require_near(gpu.primary_light_direction_intensity.x,
-                 lighting.primary_light_direction.x, 0.0001F,
-                 "terrain environment should preserve primary light direction");
-    require_near(gpu.primary_light_direction_intensity.w, lighting.primary_light_intensity,
-                 0.0001F, "terrain environment should preserve primary light intensity");
-    require_near(gpu.primary_light_color_angular_radius.w, frame.sun_direction_radius.w,
-                 0.0001F, "terrain daylight should preserve the sun angular radius");
-    require_near(gpu.diffuse_irradiance_sh[0].x, lighting.diffuse_irradiance_sh[0].x,
-                 0.0001F, "terrain environment should preserve diffuse irradiance SH");
+    require_near(gpu.primary_light_direction_intensity.x, lighting.primary_light_direction.x,
+                 0.0001F, "terrain environment should preserve primary light direction");
+    require_near(gpu.primary_light_direction_intensity.w, lighting.primary_light_intensity, 0.0001F,
+                 "terrain environment should preserve primary light intensity");
+    require_near(gpu.primary_light_color_angular_radius.w, frame.sun_direction_radius.w, 0.0001F,
+                 "terrain daylight should preserve the sun angular radius");
+    require_near(gpu.diffuse_irradiance_sh[0].x, lighting.diffuse_irradiance_sh[0].x, 0.0001F,
+                 "terrain environment should preserve diffuse irradiance SH");
 }
 
 void test_clipmap_has_expected_extent_and_transition_data() {
@@ -343,8 +390,8 @@ void test_surface_controller_traversal_preserves_clearance() {
         require(std::isfinite(camera.translation.x) && std::isfinite(camera.translation.y) &&
                     std::isfinite(camera.translation.z),
                 "terrain traversal camera transform should stay finite");
-        require_near(camera.translation.y, sample.height_m * vertical_scale + clearance_m,
-                     0.001F, "terrain traversal should preserve requested surface clearance");
+        require_near(camera.translation.y, sample.height_m * vertical_scale + clearance_m, 0.001F,
+                     "terrain traversal should preserve requested surface clearance");
     }
 
     const cubey::Transform3D finish =
@@ -382,6 +429,8 @@ void test_ground_controller_uses_walking_scale_speed() {
 int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
+        test_source_v2_extends_only_mountain_detail_band();
+        test_runtime_config_parses_source_v2();
         test_ground_camera_and_shape_diagnostics_parse();
         test_backdrop_camera_configuration();
         test_backdrop_presentation_and_coverage_debug_parse();

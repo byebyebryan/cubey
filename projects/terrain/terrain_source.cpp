@@ -179,7 +179,30 @@ TerrainWeatheringMode terrain_weathering_mode_from_name(std::string_view name) {
     throw std::runtime_error("unknown terrain weathering mode: " + std::string(name));
 }
 
+std::string_view terrain_source_version_name(TerrainSourceVersion version) {
+    switch (version) {
+    case TerrainSourceVersion::V1:
+        return "v1";
+    case TerrainSourceVersion::V2:
+        return "v2";
+    }
+    throw std::runtime_error("unknown terrain source version");
+}
+
+TerrainSourceVersion terrain_source_version_from_name(std::string_view name) {
+    if (name.empty() || name == "v1") {
+        return TerrainSourceVersion::V1;
+    }
+    if (name == "v2") {
+        return TerrainSourceVersion::V2;
+    }
+    throw std::runtime_error("unknown terrain source version: " + std::string(name));
+}
+
 void validate_terrain_source_config(const TerrainSourceConfig& config) {
+    if (config.version == TerrainSourceVersion::V2 && config.preset != TerrainPreset::Mountain) {
+        throw std::runtime_error("terrain source v2 currently supports only the mountain preset");
+    }
     if (!std::isfinite(config.weathering_strength) || config.weathering_strength < 0.0F ||
         config.weathering_strength > 1.0F) {
         throw std::runtime_error("terrain weathering strength must be within [0, 1]");
@@ -234,6 +257,10 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
         result.gradient_step_m = 2.0F;
         result.weathering_radius_m = 18.0F;
         result.weathering_max_delta_m = 60.0F;
+        if (config.version == TerrainSourceVersion::V2) {
+            result.detail = band(detail_seed, 8U, 900.0F, 2.03F, 0.52F, 0.24F);
+            result.detail_weight = 0.16F;
+        }
         break;
     case TerrainPreset::Upland:
         result.macro = band(macro_seed, 4U, 14'000.0F, 2.01F, 0.50F, 0.02F);

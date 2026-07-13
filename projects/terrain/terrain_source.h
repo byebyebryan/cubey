@@ -18,11 +18,17 @@ enum class TerrainWeatheringMode : std::uint8_t {
     Local,
 };
 
+enum class TerrainSourceVersion : std::uint8_t {
+    V1,
+    V2,
+};
+
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
 
 struct TerrainSourceConfig {
     std::uint64_t seed = kTerrainDefaultSeed;
     TerrainPreset preset = TerrainPreset::Mountain;
+    TerrainSourceVersion version = TerrainSourceVersion::V1;
     TerrainWeatheringMode weathering = TerrainWeatheringMode::Off;
     float weathering_strength = 1.0F;
 };
@@ -77,6 +83,8 @@ struct TerrainSourceSummary {
 [[nodiscard]] TerrainPreset terrain_preset_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_weathering_mode_name(TerrainWeatheringMode mode);
 [[nodiscard]] TerrainWeatheringMode terrain_weathering_mode_from_name(std::string_view name);
+[[nodiscard]] std::string_view terrain_source_version_name(TerrainSourceVersion version);
+[[nodiscard]] TerrainSourceVersion terrain_source_version_from_name(std::string_view name);
 
 void validate_terrain_source_config(const TerrainSourceConfig& config);
 void validate_terrain_source_parameters(const TerrainSourceParameters& parameters);

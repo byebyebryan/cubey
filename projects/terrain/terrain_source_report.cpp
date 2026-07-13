@@ -5,6 +5,8 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <stdexcept>
+#include <string_view>
 
 namespace {
 
@@ -21,13 +23,26 @@ constexpr std::uint32_t kSamplesPerAxis = 65U;
 
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    cubey::projects::terrain::TerrainSourceVersion version =
+        cubey::projects::terrain::TerrainSourceVersion::V1;
+    if (argc == 3 && std::string_view(argv[1]) == "--source-version") {
+        version = cubey::projects::terrain::terrain_source_version_from_name(argv[2]);
+    } else if (argc != 1) {
+        throw std::runtime_error("usage: terrain_source_report [--source-version v1|v2]");
+    }
+
     nlohmann::json summaries = nlohmann::json::array();
     for (const TerrainPreset preset : kPresets) {
+        if (version == cubey::projects::terrain::TerrainSourceVersion::V2 &&
+            preset != TerrainPreset::Mountain) {
+            continue;
+        }
         for (const std::uint64_t seed : kSeeds) {
             const auto parameters = cubey::projects::terrain::resolve_terrain_source_parameters({
                 .seed = seed,
                 .preset = preset,
+                .version = version,
             });
             const auto summary = cubey::projects::terrain::summarize_terrain_source(
                 parameters, {0.0F, 0.0F}, kExtentM, kSamplesPerAxis);
@@ -44,8 +59,12 @@ int main() {
     }
 
     const nlohmann::json report{
-        {"schema", "cubey.terrain.v1.source-summary"}, {"domain_extent_m", kExtentM},
-        {"samples_per_axis", kSamplesPerAxis},         {"weathering", "off"},
+        {"schema", version == cubey::projects::terrain::TerrainSourceVersion::V1
+                       ? "cubey.terrain.v1.source-summary"
+                       : "cubey.terrain.v2.source-summary"},
+        {"domain_extent_m", kExtentM},
+        {"samples_per_axis", kSamplesPerAxis},
+        {"weathering", "off"},
         {"summaries", std::move(summaries)},
     };
     std::cout << report.dump(2) << '\n';

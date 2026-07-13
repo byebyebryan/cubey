@@ -200,6 +200,7 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     TerrainRuntimeConfig result{};
     result.source.seed = config.terrain.seed_set ? config.terrain.seed : kTerrainDefaultSeed;
     result.source.preset = terrain_preset_from_name(config.terrain.preset);
+    result.source.version = terrain_source_version_from_name(config.terrain.source_version);
     result.source.weathering = config.terrain.weathering.empty()
                                    ? TerrainWeatheringMode::Local
                                    : terrain_weathering_mode_from_name(config.terrain.weathering);
