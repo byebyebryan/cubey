@@ -1,0 +1,55 @@
+# Ocean Cloud Reflection Strategy
+
+The accepted surface cloud renderer exposes radiance and transmittance, but no
+single reflection representation is correct at every cost and viewing regime.
+This note fixes the source hierarchy used by the ocean implementation and keeps
+the existing cached-cloud checkpoint available for comparison.
+
+## Source Comparison
+
+- `current-view` projects reflected directions into the visible cloud product.
+  It is detailed and inexpensive, but cannot represent clouds outside the main
+  camera view. Its edge fade is an information boundary, not a tuning issue.
+- `cached` captures all six directions, crossfades coherent updates, and
+  prefilters the result for roughness. It provides complete, stable coverage,
+  but a practical low-resolution cache cannot preserve sharp cloud structure.
+- `hybrid` overlays the current-view color wherever its projection is valid.
+  It closes some detail loss, but can expose a transition between two complete
+  reflection signals with different spatial filtering.
+- `planar` renders the shared cloud field into a reflected camera view. It gives
+  the visible ocean one coherent detailed signal, including offscreen clouds,
+  while retaining the cached environment only as an invalid-region fallback.
+
+Screen-space reflections do not solve cloud coverage because they retain the
+same current-frame visibility boundary. A dedicated per-reflection-ray cloud
+march remains the higher-cost fallback if storm-scale waves expose the planar
+approximation. General geometry reflections are a separate renderer feature.
+
+## Planar V1 Contract
+
+The reflected product is a cloud-only foundation component. It shares generated
+noise and weather resources with the visible cloud layer, mirrors the camera
+around a caller-provided receiver plane, and emits HDR radiance/transmittance
+plus a roughness-filtered mip chain. It has no temporal history; coherent
+every-frame updates are more important than amortizing a view-dependent image.
+
+Initial defaults are half resolution, 32 view steps, one stable Bayer sample,
+six filtered mip levels, and a 15 percent reflected field-of-view guard band.
+Wave facets project their actual reflection direction into this guarded view.
+The cached cloud environment is sampled only when that projection is invalid or
+when curved-far geometry no longer agrees with the local receiver plane.
+
+## Acceptance
+
+The bakeoff keeps `current-view`, `cached`, and `hybrid` available while adding
+`planar`. It covers noon, sunset, and night at mid and high camera presets, plus
+moving-camera and time-of-day sequences. Planar becomes the default only when:
+
+- ordinary visible ocean pixels have no hard cloud-reflection cutoff;
+- source handoff does not read as two differently colored reflections;
+- reflected clouds remain stable during camera and lighting motion; and
+- the reflected cloud pass adds at most 1.0 ms average GPU time at 1280x720.
+
+If the pass exceeds budget, reduce view steps from 32 to 24, then resolution
+scale from 0.50 to 0.375. Do not trade coverage for cost or add temporal jitter
+in this checkpoint.
