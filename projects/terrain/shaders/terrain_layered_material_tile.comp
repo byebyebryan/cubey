@@ -1,0 +1,140 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, rgba8) uniform writeonly image2D output_tile;
+
+layout(push_constant) uniform TerrainLayeredMaterialPushConstants {
+    uint seed;
+    uint material;
+    uint product;
+    uint padding;
+} pc;
+
+const float terrain_tile_tau = 6.28318530718;
+const float terrain_tile_period_m = 256.0;
+
+float terrain_tile_hash(uint value) {
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return float(value & 0x00ffffffU) / float(0x01000000U);
+}
+
+uint terrain_tile_cell_hash(ivec2 cell, int period, uint salt) {
+    ivec2 wrapped = ivec2((cell.x % period + period) % period,
+                          (cell.y % period + period) % period);
+    return uint(wrapped.x) * 0x9e3779b9U ^ uint(wrapped.y) * 0x85ebca6bU ^
+        pc.seed ^ salt * 0xc2b2ae35U;
+}
+
+float terrain_tile_lattice(ivec2 cell, int period, uint salt) {
+    return terrain_tile_hash(terrain_tile_cell_hash(cell, period, salt)) * 2.0 - 1.0;
+}
+
+float terrain_tile_noise(vec2 uv, int cycles, uint salt) {
+    vec2 position = uv * float(cycles);
+    ivec2 cell = ivec2(floor(position));
+    vec2 blend = fract(position);
+    blend = blend * blend * (3.0 - 2.0 * blend);
+    float a = terrain_tile_lattice(cell, cycles, salt);
+    float b = terrain_tile_lattice(cell + ivec2(1, 0), cycles, salt);
+    float c = terrain_tile_lattice(cell + ivec2(0, 1), cycles, salt);
+    float d = terrain_tile_lattice(cell + ivec2(1, 1), cycles, salt);
+    return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
+}
+
+vec2 terrain_tile_point(ivec2 cell, int period, uint salt) {
+    uint value = terrain_tile_cell_hash(cell, period, salt);
+    return vec2(terrain_tile_hash(value), terrain_tile_hash(value ^ 0x68bc21ebU));
+}
+
+float terrain_tile_cellular(vec2 uv, int cycles, uint salt) {
+    vec2 position = uv * float(cycles);
+    ivec2 base = ivec2(floor(position));
+    vec2 local = fract(position);
+    float nearest = 4.0;
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            ivec2 offset = ivec2(x, y);
+            vec2 point = terrain_tile_point(base + offset, cycles, salt);
+            nearest = min(nearest, length(vec2(offset) + point - local));
+        }
+    }
+    return clamp(nearest * 1.35, 0.0, 1.0);
+}
+
+float terrain_layer_height_unit(vec2 uv) {
+    if (pc.material == 0U) {
+        return 0.50 + 0.22 * terrain_tile_noise(uv, 4, 11U) +
+            0.15 * terrain_tile_noise(uv, 16, 13U) +
+            0.08 * terrain_tile_noise(uv, 64, 17U);
+    }
+    if (pc.material == 1U) {
+        float coarse = 1.0 - terrain_tile_cellular(uv, 16, 23U);
+        float fine = 1.0 - terrain_tile_cellular(uv, 64, 29U);
+        return 0.30 + 0.46 * coarse + 0.24 * fine;
+    }
+    if (pc.material == 2U) {
+        vec2 warp = vec2(terrain_tile_noise(uv, 4, 31U),
+                         terrain_tile_noise(uv, 4, 37U)) * 0.045;
+        vec2 warped = fract(uv + warp);
+        float strata = 0.5 + 0.5 * sin(terrain_tile_tau *
+            (warped.y * 16.0 + terrain_tile_noise(warped, 8, 41U) * 0.9));
+        float fracture = 1.0 - smoothstep(0.02, 0.14,
+            abs(terrain_tile_noise(warped, 32, 43U)));
+        return 0.25 + 0.48 * strata + 0.27 * fracture;
+    }
+    return 0.50 + 0.20 * terrain_tile_noise(uv, 8, 47U) +
+        0.08 * terrain_tile_noise(uv, 32, 53U);
+}
+
+float terrain_layer_height_m(vec2 uv) {
+    const float height_scale_m[4] = float[4](0.45, 1.20, 2.40, 0.30);
+    return terrain_layer_height_unit(fract(uv)) * height_scale_m[pc.material];
+}
+
+vec3 terrain_layer_albedo(vec2 uv, float height_unit) {
+    const vec3 base_srgb[4] = vec3[4](
+        vec3(0.28, 0.25, 0.20), vec3(0.36, 0.32, 0.26),
+        vec3(0.39, 0.39, 0.38), vec3(0.84, 0.87, 0.89));
+    float broad = terrain_tile_noise(uv, 4, 61U + pc.material * 7U);
+    float meso = terrain_tile_noise(uv, 16, 67U + pc.material * 11U);
+    float contrast = pc.material == 3U ? 0.045 : (pc.material == 0U ? 0.12 : 0.20);
+    vec3 srgb = base_srgb[pc.material] *
+        (1.0 + broad * contrast + meso * contrast * 0.45 + (height_unit - 0.5) * 0.08);
+    if (pc.material == 2U) {
+        srgb *= mix(vec3(0.82, 0.86, 0.90), vec3(1.08, 1.03, 0.96), height_unit);
+    }
+    return pow(clamp(srgb, vec3(0.0), vec3(1.0)), vec3(2.2));
+}
+
+void main() {
+    ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 extent = imageSize(output_tile);
+    if (any(greaterThanEqual(texel, extent))) {
+        return;
+    }
+    vec2 uv = (vec2(texel) + 0.5) / vec2(extent);
+    float height_unit = clamp(terrain_layer_height_unit(uv), 0.0, 1.0);
+    if (pc.product == 0U) {
+        imageStore(output_tile, texel, vec4(terrain_layer_albedo(uv, height_unit), height_unit));
+        return;
+    }
+
+    vec2 step_uv = 1.0 / vec2(extent);
+    float center = terrain_layer_height_m(uv);
+    float texel_world_m = terrain_tile_period_m / float(extent.x);
+    vec2 gradient = vec2(
+        terrain_layer_height_m(uv + vec2(step_uv.x, 0.0)) - center,
+        terrain_layer_height_m(uv + vec2(0.0, step_uv.y)) - center) / texel_world_m;
+    vec3 tangent_normal = normalize(vec3(-gradient, 1.0));
+    const float base_roughness[4] = float[4](0.94, 0.91, 0.76, 0.86);
+    float roughness = clamp(base_roughness[pc.material] +
+        terrain_tile_noise(uv, 32, 73U + pc.material * 13U) * 0.055, 0.04, 1.0);
+    float cavity = clamp(0.90 + (height_unit - 0.5) * 0.16, 0.78, 1.0);
+    imageStore(output_tile, texel,
+        vec4(tangent_normal.xy * 0.5 + 0.5, roughness, cavity));
+}

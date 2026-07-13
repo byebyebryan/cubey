@@ -429,6 +429,8 @@ void test_quality_material_tile_contract() {
                  "quality material tiles should preserve their world period");
     require(cubey::projects::terrain::kTerrainMaterialTileCount == 4U,
             "quality materials should expose ground scree rock and snow tiles");
+    require(cubey::projects::terrain::kTerrainLayeredMaterialTextureCount == 8U,
+            "layered materials should expose two products for four terrain layers");
 }
 
 void test_surface_controller_traversal_preserves_clearance() {
