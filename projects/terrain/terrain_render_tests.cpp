@@ -75,6 +75,8 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should default to standard presentation");
     require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Control,
             "terrain runtime should default to control rendering");
+    require(config.surface_detail == cubey::projects::terrain::TerrainSurfaceDetail::Tile,
+            "terrain runtime should default to current tile detail");
     require_near(config.target_edge_px, 4.0F, 0.0F,
                  "terrain runtime should default to four-pixel quality edges");
     require_near(config.near_cell_size_m, 2.0F, 0.0F,
@@ -124,6 +126,7 @@ void test_runtime_config_parses_source_v2() {
     cubey::RunConfig run_config{};
     run_config.terrain.source_version = "v2";
     run_config.terrain.render_path = "quality";
+    run_config.terrain.surface_detail = "layered";
     run_config.terrain.target_edge_px = 6.0F;
     const auto config =
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
@@ -131,8 +134,20 @@ void test_runtime_config_parses_source_v2() {
             "terrain runtime should parse source v2");
     require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Quality,
             "terrain runtime should parse quality rendering");
+    require(config.surface_detail == cubey::projects::terrain::TerrainSurfaceDetail::Layered,
+            "terrain runtime should parse layered surface detail");
     require_near(config.target_edge_px, 6.0F, 0.0F,
                  "terrain runtime should parse the quality edge target");
+
+    cubey::RunConfig invalid;
+    invalid.terrain.surface_detail = "layered";
+    bool rejected = false;
+    try {
+        (void)cubey::projects::terrain::terrain_runtime_config_from_run_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "layered surface detail should reject the control geometry path");
 }
 
 void test_ground_camera_and_shape_diagnostics_parse() {
@@ -166,6 +181,13 @@ void test_ground_camera_and_shape_diagnostics_parse() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("ambient") ==
                 cubey::projects::terrain::TerrainDebugView::AmbientVisibility,
             "terrain runtime should parse the ambient-visibility diagnostic alias");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("roughness") ==
+                    cubey::projects::terrain::TerrainDebugView::MaterialRoughness &&
+                cubey::projects::terrain::terrain_debug_view_from_name("blend-height") ==
+                    cubey::projects::terrain::TerrainDebugView::MaterialHeight &&
+                cubey::projects::terrain::terrain_debug_view_from_name("cavity") ==
+                    cubey::projects::terrain::TerrainDebugView::MaterialCavity,
+            "terrain runtime should parse layered material diagnostics");
 }
 
 void test_backdrop_camera_configuration() {

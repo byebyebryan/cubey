@@ -116,6 +116,7 @@ enum class RunConfigOptionId {
     TerrainPreset,
     TerrainSourceVersion,
     TerrainRenderPath,
+    TerrainSurfaceDetail,
     TerrainTargetEdgePx,
     TerrainWeathering,
     TerrainWeatheringStrength,

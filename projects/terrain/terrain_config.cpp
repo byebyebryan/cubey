@@ -142,6 +142,12 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "material-normal";
     case TerrainDebugView::SourceBands:
         return "source-bands";
+    case TerrainDebugView::MaterialRoughness:
+        return "material-roughness";
+    case TerrainDebugView::MaterialHeight:
+        return "material-height";
+    case TerrainDebugView::MaterialCavity:
+        return "material-cavity";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -201,6 +207,15 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     if (name == "source-bands" || name == "bands") {
         return TerrainDebugView::SourceBands;
     }
+    if (name == "material-roughness" || name == "roughness") {
+        return TerrainDebugView::MaterialRoughness;
+    }
+    if (name == "material-height" || name == "blend-height") {
+        return TerrainDebugView::MaterialHeight;
+    }
+    if (name == "material-cavity" || name == "cavity") {
+        return TerrainDebugView::MaterialCavity;
+    }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }
 
@@ -244,6 +259,26 @@ TerrainRenderPath terrain_render_path_from_name(std::string_view name) {
     throw std::runtime_error("unknown terrain render path: " + std::string(name));
 }
 
+std::string_view terrain_surface_detail_name(TerrainSurfaceDetail detail) {
+    switch (detail) {
+    case TerrainSurfaceDetail::Tile:
+        return "tile";
+    case TerrainSurfaceDetail::Layered:
+        return "layered";
+    }
+    throw std::runtime_error("unknown terrain surface detail");
+}
+
+TerrainSurfaceDetail terrain_surface_detail_from_name(std::string_view name) {
+    if (name.empty() || name == "tile") {
+        return TerrainSurfaceDetail::Tile;
+    }
+    if (name == "layered") {
+        return TerrainSurfaceDetail::Layered;
+    }
+    throw std::runtime_error("unknown terrain surface detail: " + std::string(name));
+}
+
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     validate_terrain_source_config(config.source);
     if (!std::isfinite(config.near_cell_size_m) || config.near_cell_size_m <= 0.0F ||
@@ -256,6 +291,10 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     if (config.render_path == TerrainRenderPath::Quality &&
         config.source.preset != TerrainPreset::Mountain) {
         throw std::runtime_error("quality terrain rendering currently supports only mountain");
+    }
+    if (config.surface_detail == TerrainSurfaceDetail::Layered &&
+        config.render_path != TerrainRenderPath::Quality) {
+        throw std::runtime_error("layered terrain surface detail requires quality rendering");
     }
 }
 
@@ -275,6 +314,7 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     result.presentation = terrain_presentation_mode_from_name(config.terrain.presentation);
     result.render_path = terrain_render_path_from_name(config.terrain.render_path);
+    result.surface_detail = terrain_surface_detail_from_name(config.terrain.surface_detail);
     result.target_edge_px = cubey::run_config_float_is_set(config.terrain.target_edge_px)
                                 ? config.terrain.target_edge_px
                                 : 4.0F;

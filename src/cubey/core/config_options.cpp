@@ -108,6 +108,7 @@ constexpr std::array<std::string_view, 9> kTerrainCameraPresets{
 constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
 constexpr std::array<std::string_view, 2> kTerrainSourceVersions{"v1", "v2"};
 constexpr std::array<std::string_view, 2> kTerrainRenderPaths{"control", "quality"};
+constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"tile", "layered"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
@@ -155,7 +156,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 266> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 267> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -451,6 +452,10 @@ constexpr std::array<ConfigOptionDescriptor, 266> kRunConfigOptions{
     option(RunConfigOptionId::TerrainRenderPath, "terrain.render_path", "--terrain-render-path",
            "Render Path", "Terrain", "Terrain geometry and material rendering path.",
            ConfigOptionType::Enum, no_range(), enum_choices(kTerrainRenderPaths)),
+    option(RunConfigOptionId::TerrainSurfaceDetail, "terrain.surface_detail",
+           "--terrain-surface-detail", "Surface Detail", "Terrain",
+           "Terrain quality material detail path.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainSurfaceDetails)),
     option(RunConfigOptionId::TerrainTargetEdgePx, "terrain.target_edge_px",
            "--terrain-target-edge-px", "Target Edge Pixels", "Terrain",
            "Target projected terrain edge length for adaptive tessellation.",
@@ -1456,6 +1461,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainRenderPath:
         return config.terrain.render_path.empty() ? nlohmann::json(nullptr)
                                                   : nlohmann::json(config.terrain.render_path);
+    case RunConfigOptionId::TerrainSurfaceDetail:
+        return config.terrain.surface_detail.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.surface_detail);
     case RunConfigOptionId::TerrainTargetEdgePx:
         return optional_float(config.terrain.target_edge_px);
     case RunConfigOptionId::TerrainWeathering:
@@ -2030,6 +2039,10 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::GltfOptions& options) {
 inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& options) {
     adapter.writeField<std::uint64_t>("seed", options.seed);
     adapter.writeField<std::string>("preset", options.preset);
+    adapter.writeField<std::string>("source_version", options.source_version);
+    adapter.writeField<std::string>("render_path", options.render_path);
+    adapter.writeField<std::string>("surface_detail", options.surface_detail);
+    adapter.writeField<float>("target_edge_px", options.target_edge_px);
     adapter.writeField<std::string>("weathering", options.weathering);
     adapter.writeField<float>("weathering_strength", options.weathering_strength);
     adapter.writeField<float>("cell_size", options.cell_size);
@@ -2052,6 +2065,10 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
 inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options) {
     adapter.readField<std::uint64_t>("seed", options.seed);
     adapter.readField<std::string>("preset", options.preset);
+    adapter.readField<std::string>("source_version", options.source_version);
+    adapter.readField<std::string>("render_path", options.render_path);
+    adapter.readField<std::string>("surface_detail", options.surface_detail);
+    adapter.readField<float>("target_edge_px", options.target_edge_px);
     adapter.readField<std::string>("weathering", options.weathering);
     adapter.readField<float>("weathering_strength", options.weathering_strength);
     adapter.readField<float>("cell_size", options.cell_size);
@@ -2738,6 +2755,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainRenderPath:
         config.terrain.render_path = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainSurfaceDetail:
+        config.terrain.surface_detail = std::string(value);
         break;
     case RunConfigOptionId::TerrainTargetEdgePx:
         config.terrain.target_edge_px = parse_config_float(value, option);

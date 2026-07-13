@@ -11,7 +11,6 @@ layout(push_constant) uniform TerrainLayeredMaterialPushConstants {
     uint padding;
 } pc;
 
-const float terrain_tile_tau = 6.28318530718;
 const float terrain_tile_period_m = 256.0;
 
 float terrain_tile_hash(uint value) {
@@ -79,20 +78,20 @@ float terrain_layer_height_unit(vec2 uv) {
     }
     if (pc.material == 2U) {
         vec2 warp = vec2(terrain_tile_noise(uv, 4, 31U),
-                         terrain_tile_noise(uv, 4, 37U)) * 0.045;
+                         terrain_tile_noise(uv, 4, 37U)) * 0.070;
         vec2 warped = fract(uv + warp);
-        float strata = 0.5 + 0.5 * sin(terrain_tile_tau *
-            (warped.y * 16.0 + terrain_tile_noise(warped, 8, 41U) * 0.9));
+        float broad_ridge = 1.0 - abs(terrain_tile_noise(warped, 8, 41U));
+        float broken_ridge = 1.0 - abs(terrain_tile_noise(warped, 16, 47U));
         float fracture = 1.0 - smoothstep(0.02, 0.14,
             abs(terrain_tile_noise(warped, 32, 43U)));
-        return 0.25 + 0.48 * strata + 0.27 * fracture;
+        return 0.22 + 0.42 * broad_ridge + 0.22 * broken_ridge + 0.14 * fracture;
     }
     return 0.50 + 0.20 * terrain_tile_noise(uv, 8, 47U) +
         0.08 * terrain_tile_noise(uv, 32, 53U);
 }
 
 float terrain_layer_height_m(vec2 uv) {
-    const float height_scale_m[4] = float[4](0.45, 1.20, 2.40, 0.30);
+    const float height_scale_m[4] = float[4](0.45, 1.20, 1.35, 0.30);
     return terrain_layer_height_unit(fract(uv)) * height_scale_m[pc.material];
 }
 

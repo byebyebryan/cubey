@@ -91,6 +91,7 @@ cubey_add_app_target(
         shaders/terrain_layered_material_tile.comp
         shaders/terrain.frag
         shaders/terrain_quality.frag
+        shaders/terrain_layered.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
@@ -103,6 +104,7 @@ cubey_add_app_target(
         shaders/terrain_lighting.glsl
         shaders/terrain_material.glsl
         shaders/terrain_fragment.glsl
+        shaders/terrain_layered_material.glsl
         shaders/terrain_quality_material.glsl
         shaders/terrain_vegetation.glsl
         shaders/terrain_shadow.glsl

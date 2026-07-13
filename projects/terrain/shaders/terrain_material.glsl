@@ -10,6 +10,8 @@ struct TerrainMaterialSample {
     float roughness;
     vec3 detail_normal;
     vec4 material_weights;
+    float cavity;
+    float blend_height;
     TerrainVegetationCoverage vegetation;
 };
 
@@ -136,6 +138,8 @@ TerrainMaterialSample terrain_material_sample(vec3 source_normal, vec3 world_pos
     material.detail_normal = terrain_material_detail_normal(
         source_normal, world_position, source_seed, pixel_footprint_m, vegetation);
     material.material_weights = material_weights;
+    material.cavity = 1.0;
+    material.blend_height = 0.5;
     material.vegetation = vegetation;
     return material;
 }
@@ -146,6 +150,8 @@ TerrainMaterialSample terrain_clay_material(vec3 source_normal) {
     material.roughness = 0.90;
     material.detail_normal = source_normal;
     material.material_weights = vec4(0.0);
+    material.cavity = 1.0;
+    material.blend_height = 0.5;
     material.vegetation = TerrainVegetationCoverage(0.0, 0.0);
     return material;
 }
