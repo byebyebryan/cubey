@@ -385,6 +385,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "ocean.cloud_reflection_source",
         "ocean.cloud_environment_extent",
         "ocean.cloud_environment_update_hz",
+        "ocean.cloud_planar_resolution_scale",
+        "ocean.cloud_planar_view_steps",
+        "ocean.cloud_planar_guard_band",
         "ocean.cloud_reflection_strength",
         "ocean.cloud_shadow_strength",
         "planet.scale_preset",
@@ -592,6 +595,9 @@ void test_run_config_loads_json_config_file() {
     "cloud_reflection_source": "hybrid",
     "cloud_environment_extent": 128,
     "cloud_environment_update_hz": 8.0,
+    "cloud_planar_resolution_scale": 0.625,
+    "cloud_planar_view_steps": 40,
+    "cloud_planar_guard_band": 0.2,
     "cloud_reflection_strength": 0.8,
     "cloud_shadow_strength": 0.4
   },
@@ -701,6 +707,10 @@ void test_run_config_loads_json_config_file() {
                 config.ocean.cloud_environment_extent == 128U &&
                 config.ocean.cloud_environment_update_hz == 8.0F,
             "config file should set cached ocean cloud environment controls");
+    require(config.ocean.cloud_planar_resolution_scale == 0.625F &&
+                config.ocean.cloud_planar_view_steps == 40U &&
+                config.ocean.cloud_planar_guard_band == 0.2F,
+            "config file should set planar ocean cloud reflection controls");
     require(config.planet.atmosphere_mode == "physical",
             "config file should set planet atmosphere mode");
     require(config.terrain.seed_set && config.terrain.seed == 12345U,

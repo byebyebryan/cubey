@@ -104,6 +104,25 @@ if (BUILD_TESTING)
         --ocean-cloud-environment-extent
         32
     )
+    set(CUBEY_OCEAN_PLANAR_CLOUD_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/ocean-planar-cloud-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        ocean_planar_cloud_reflection_writes_png
+        cubey_project_ocean
+        "${CUBEY_OCEAN_PLANAR_CLOUD_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        4
+        --ocean-map-size
+        128
+        --ocean-cloud-reflection-source
+        planar
+        --ocean-cloud-planar-resolution-scale
+        0.5
+        --ocean-cloud-planar-view-steps
+        16
+    )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_OCEAN_HEADLESS_VIDEO_SMOKE_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/ocean-headless.mp4"

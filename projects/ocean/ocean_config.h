@@ -48,6 +48,7 @@ enum class OceanRenderView : std::uint32_t {
     Fresnel = 29,
     SlopeLod = 30,
     FoamLod = 31,
+    CloudReflectionValidity = 32,
 };
 
 enum class OceanFieldPrecision : std::uint32_t {
@@ -64,9 +65,10 @@ enum class OceanCloudReflectionSource : std::uint32_t {
     CurrentView = 0,
     CachedEnvironment = 1,
     Hybrid = 2,
+    Planar = 3,
 };
 
-inline constexpr std::array<OceanRenderView, 32> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 33> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory,     OceanRenderView::FoamCore,     OceanRenderView::FoamCandidate,
@@ -78,6 +80,7 @@ inline constexpr std::array<OceanRenderView, 32> kOceanRenderViews{
     OceanRenderView::FoamFiltered,    OceanRenderView::FarField,     OceanRenderView::CloudShadow,
     OceanRenderView::CloudReflection, OceanRenderView::WaterBody,    OceanRenderView::Fresnel,
     OceanRenderView::SlopeLod,        OceanRenderView::FoamLod,
+    OceanRenderView::CloudReflectionValidity,
 };
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
     OceanFieldPrecision::Full,
@@ -87,10 +90,11 @@ inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
     OceanSurfaceMode::Flat,
     OceanSurfaceMode::CurvedFar,
 };
-inline constexpr std::array<OceanCloudReflectionSource, 3> kOceanCloudReflectionSources{
+inline constexpr std::array<OceanCloudReflectionSource, 4> kOceanCloudReflectionSources{
     OceanCloudReflectionSource::CurrentView,
     OceanCloudReflectionSource::CachedEnvironment,
     OceanCloudReflectionSource::Hybrid,
+    OceanCloudReflectionSource::Planar,
 };
 inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U, 512U, 1024U};
 inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
@@ -189,6 +193,9 @@ struct OceanConfig {
         OceanCloudReflectionSource::CurrentView;
     std::uint32_t cloud_environment_extent = 64U;
     float cloud_environment_update_hz = 4.0F;
+    float cloud_planar_resolution_scale = 0.5F;
+    std::uint32_t cloud_planar_view_steps = 32U;
+    float cloud_planar_guard_band = 0.15F;
     float cloud_reflection_strength = 0.75F;
     float cloud_shadow_strength = 0.45F;
     bool spectral_domains_enabled = true;
@@ -377,6 +384,8 @@ struct OceanCascadeLodBand {
         return "slope-lod";
     case OceanRenderView::FoamLod:
         return "foam-lod";
+    case OceanRenderView::CloudReflectionValidity:
+        return "cloud-reflection-validity";
     }
     return "final";
 }
@@ -410,6 +419,8 @@ ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
         return "cached";
     case OceanCloudReflectionSource::Hybrid:
         return "hybrid";
+    case OceanCloudReflectionSource::Planar:
+        return "planar";
     }
     return "current-view";
 }
@@ -444,6 +455,9 @@ ocean_cloud_reflection_source_from_name(std::string_view name) {
     }
     if (name == "hybrid") {
         return OceanCloudReflectionSource::Hybrid;
+    }
+    if (name == "planar") {
+        return OceanCloudReflectionSource::Planar;
     }
     throw std::runtime_error("unknown ocean cloud reflection source: " + std::string(name));
 }
@@ -709,6 +723,11 @@ inline void validate_ocean_config(const OceanConfig& config) {
          config.cloud_environment_extent != 128U) ||
         !std::isfinite(config.cloud_environment_update_hz) ||
         config.cloud_environment_update_hz < 0.5F || config.cloud_environment_update_hz > 30.0F ||
+        !std::isfinite(config.cloud_planar_resolution_scale) ||
+        config.cloud_planar_resolution_scale < 0.25F ||
+        config.cloud_planar_resolution_scale > 1.0F || config.cloud_planar_view_steps < 8U ||
+        config.cloud_planar_view_steps > 128U || !std::isfinite(config.cloud_planar_guard_band) ||
+        config.cloud_planar_guard_band < 0.0F || config.cloud_planar_guard_band > 0.5F ||
         config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F ||
         config.spectral_lod_handoff < 0.0F || config.spectral_lod_handoff > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
@@ -768,6 +787,15 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (run_config_float_is_set(config.ocean.cloud_environment_update_hz)) {
         ocean.cloud_environment_update_hz = config.ocean.cloud_environment_update_hz;
+    }
+    if (run_config_float_is_set(config.ocean.cloud_planar_resolution_scale)) {
+        ocean.cloud_planar_resolution_scale = config.ocean.cloud_planar_resolution_scale;
+    }
+    if (config.ocean.cloud_planar_view_steps != 0U) {
+        ocean.cloud_planar_view_steps = config.ocean.cloud_planar_view_steps;
+    }
+    if (run_config_float_is_set(config.ocean.cloud_planar_guard_band)) {
+        ocean.cloud_planar_guard_band = config.ocean.cloud_planar_guard_band;
     }
     if (run_config_float_is_set(config.ocean.cloud_shadow_strength)) {
         ocean.cloud_shadow_strength = config.ocean.cloud_shadow_strength;

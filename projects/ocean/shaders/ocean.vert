@@ -20,6 +20,11 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cloud_shadow_world_to_uv_x;
     vec4 cloud_shadow_world_to_uv_y;
     vec4 cloud_lighting_options;
+    vec4 cloud_environment_options;
+    vec4 cloud_planar_right_aspect;
+    vec4 cloud_planar_up_tan_half_fovy;
+    vec4 cloud_planar_forward_lod;
+    vec4 cloud_planar_options;
     vec4 sun_light_direction_intensity;
     vec4 sun_light_color;
     vec4 moon_light_direction_intensity;

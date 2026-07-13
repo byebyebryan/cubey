@@ -469,6 +469,46 @@ OceanCloudReflectionSample ocean_current_view_cloud_reflection(vec3 direction, f
     return OceanCloudReflectionSample(cloud.rgb, cloud.a, visibility);
 }
 
+OceanCloudReflectionSample ocean_planar_cloud_reflection(vec3 direction, float roughness,
+                                                         vec3 surface_up) {
+    if (ocean_cloud_reflection_strength() <= 0.0 ||
+        ocean_features.cloud_planar_options.x < 0.5) {
+        return OceanCloudReflectionSample(vec3(0.0), 1.0, 0.0);
+    }
+
+    vec3 raw_dir = normalize(direction);
+    vec3 dir = ocean_above_horizon_reflection_direction(raw_dir);
+    vec3 right = ocean_features.cloud_planar_right_aspect.xyz;
+    vec3 up = ocean_features.cloud_planar_up_tan_half_fovy.xyz;
+    vec3 forward = ocean_features.cloud_planar_forward_lod.xyz;
+    float forward_distance = dot(dir, forward);
+    float aspect = max(ocean_features.cloud_planar_right_aspect.w, 0.0001);
+    float tan_half_fovy = max(ocean_features.cloud_planar_up_tan_half_fovy.w, 0.0001);
+    if (forward_distance <= 0.0001) {
+        return OceanCloudReflectionSample(vec3(0.0), 1.0, 0.0);
+    }
+
+    vec2 ndc = vec2(dot(dir, right) / (forward_distance * aspect * tan_half_fovy),
+                    -dot(dir, up) / (forward_distance * tan_half_fovy));
+    vec2 uv = ndc * 0.5 + 0.5;
+    if (any(lessThanEqual(uv, vec2(0.0))) || any(greaterThanEqual(uv, vec2(1.0)))) {
+        return OceanCloudReflectionSample(vec3(0.0), 1.0, 0.0);
+    }
+
+    float edge_distance = min(min(uv.x, uv.y), min(1.0 - uv.x, 1.0 - uv.y));
+    float edge_visibility = smoothstep(0.0, 0.035, edge_distance);
+    float sky_facet_visibility = smoothstep(-0.02, 0.005, raw_dir.y);
+    float plane_alignment = clamp(dot(normalize(surface_up), vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
+    float planar_visibility = smoothstep(0.906, 0.978, plane_alignment);
+    float max_lod = max(ocean_features.cloud_planar_forward_lod.w, 0.0);
+    float lod = min(max_lod, roughness * roughness * max_lod + 0.25);
+    vec4 cloud = textureLod(cloud_planar_reflection_texture, uv, lod);
+    cloud.rgb = max(cloud.rgb, vec3(0.0));
+    cloud.a = clamp(cloud.a, 0.0, 1.0);
+    return OceanCloudReflectionSample(
+        cloud.rgb, cloud.a, edge_visibility * sky_facet_visibility * planar_visibility);
+}
+
 vec3 ocean_cached_cloud_reflection(vec3 direction, float roughness) {
     vec3 dir = ocean_above_horizon_reflection_direction(direction);
     float max_lod = ocean_cloud_environment_max_lod();

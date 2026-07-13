@@ -695,7 +695,7 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_enum_combo(
             "Reflection source", ui.config.cloud_reflection_source,
             kOceanCloudReflectionSources, ocean_cloud_reflection_source_name,
-            "Current-view is the existing low-cost projection; cached captures all directions; hybrid overlays sharp current-view detail.");
+            "Planar renders a coherent reflected cloud view; cached supplies broad coverage; current-view and hybrid remain diagnostics.");
         ImGui::BeginDisabled(ui.config.cloud_reflection_source ==
                              OceanCloudReflectionSource::CurrentView);
         constexpr std::array<std::uint32_t, 3> cloud_environment_extents{32U, 64U, 128U};
@@ -705,6 +705,21 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float(
             "Probe rate", &ui.config.cloud_environment_update_hz, 0.5F, 30.0F, "%.1f Hz",
             "Coherent six-face refresh rate; captures crossfade over one refresh interval.");
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(ui.config.cloud_reflection_source !=
+                             OceanCloudReflectionSource::Planar);
+        cubey::host::imgui_slider_float(
+            "Planar resolution", &ui.config.cloud_planar_resolution_scale, 0.25F, 1.0F,
+            "%.3f", "Resolution scale of the every-frame reflected cloud product.");
+        int planar_steps = static_cast<int>(ui.config.cloud_planar_view_steps);
+        if (cubey::host::imgui_slider_int(
+                "Planar steps", &planar_steps, 8, 128,
+                "View-march steps used by the reflected cloud product.")) {
+            ui.config.cloud_planar_view_steps = static_cast<std::uint32_t>(planar_steps);
+        }
+        cubey::host::imgui_slider_float(
+            "Planar guard", &ui.config.cloud_planar_guard_band, 0.0F, 0.5F, "%.2f",
+            "Extra reflected field of view reserved for steep wave facets.");
         ImGui::EndDisabled();
         cubey::host::imgui_slider_float(
             "Cloud shadow", &ui.config.cloud_shadow_strength, 0.0F, 1.0F, "%.2f",

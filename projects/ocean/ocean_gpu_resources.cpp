@@ -34,8 +34,10 @@ constexpr std::uint32_t kOceanSurfaceCloudEnvironmentPreviousBinding =
     kOceanSurfaceCloudReflectionBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudEnvironmentCurrentBinding =
     kOceanSurfaceCloudEnvironmentPreviousBinding + 1U;
-constexpr std::uint32_t kOceanSurfaceBindingCount =
+constexpr std::uint32_t kOceanSurfaceCloudPlanarReflectionBinding =
     kOceanSurfaceCloudEnvironmentCurrentBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceBindingCount =
+    kOceanSurfaceCloudPlanarReflectionBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -505,6 +507,12 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
+    surface_bindings[kOceanSurfaceCloudPlanarReflectionBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceCloudPlanarReflectionBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -689,6 +697,18 @@ void OceanGpuResources::update_cloud_environment_descriptors(
         .combined_image_sampler(surface_set(frame_slot),
                                 kOceanSurfaceCloudEnvironmentCurrentBinding,
                                 current.sampler().handle(), current.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .update(device);
+}
+
+void OceanGpuResources::update_cloud_planar_reflection_descriptor(
+    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+    const cubey::render::Texture2D& texture) {
+    cubey::vulkan::DescriptorWriteBatch writes;
+    writes
+        .combined_image_sampler(surface_set(frame_slot),
+                                kOceanSurfaceCloudPlanarReflectionBinding,
+                                texture.sampler().handle(), texture.view(),
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         .update(device);
 }

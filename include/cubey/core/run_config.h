@@ -115,6 +115,9 @@ struct RunConfig {
         std::string cloud_reflection_source{};
         std::uint32_t cloud_environment_extent = 0;
         float cloud_environment_update_hz = kRunConfigUnsetFloat;
+        float cloud_planar_resolution_scale = kRunConfigUnsetFloat;
+        std::uint32_t cloud_planar_view_steps = 0;
+        float cloud_planar_guard_band = kRunConfigUnsetFloat;
         float cloud_reflection_strength = kRunConfigUnsetFloat;
         float cloud_shadow_strength = kRunConfigUnsetFloat;
         bool wire_overlay = false;

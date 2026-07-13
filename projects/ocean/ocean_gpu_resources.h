@@ -53,13 +53,17 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 cloud_shadow_world_to_uv_y;
     cubey::math::Vec4 cloud_lighting_options;
     cubey::math::Vec4 cloud_environment_options;
+    cubey::math::Vec4 cloud_planar_right_aspect;
+    cubey::math::Vec4 cloud_planar_up_tan_half_fovy;
+    cubey::math::Vec4 cloud_planar_forward_lod;
+    cubey::math::Vec4 cloud_planar_options;
     cubey::math::Vec4 sun_light_direction_intensity;
     cubey::math::Vec4 sun_light_color;
     cubey::math::Vec4 moon_light_direction_intensity;
     cubey::math::Vec4 moon_light_color;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 76U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 92U);
 
 class OceanGpuResources {
   public:
@@ -88,6 +92,9 @@ class OceanGpuResources {
     void update_cloud_environment_descriptors(
         const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
         const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current);
+    void update_cloud_planar_reflection_descriptor(
+        const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+        const cubey::render::Texture2D& texture);
     void upload_surface_feature_uniforms(cubey::render::FrameSlot frame_slot,
                                          const OceanSurfaceFeatureUniforms& uniforms) const;
 

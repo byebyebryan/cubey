@@ -666,6 +666,12 @@ int main() {
                 "ocean should default the cached cloud environment to 64 pixels per face");
         require_near(defaults.cloud_environment_update_hz, 4.0F, 0.001F,
                      "ocean should default the cached cloud environment to four hertz");
+        require_near(defaults.cloud_planar_resolution_scale, 0.5F, 0.001F,
+                     "ocean should default planar cloud reflections to half resolution");
+        require(defaults.cloud_planar_view_steps == 32U,
+                "ocean should default planar cloud reflections to 32 view steps");
+        require_near(defaults.cloud_planar_guard_band, 0.15F, 0.001F,
+                     "ocean should reserve a reflected cloud guard band");
         require_near(defaults.cloud_shadow_strength, 0.45F, 0.001F,
                      "ocean should default shared cloud transmittance on conservatively");
         require_near(defaults.spectral_lod_handoff, 0.0F, 0.001F,
@@ -771,6 +777,9 @@ int main() {
         require(ocean::ocean_render_view_from_name("cloud-reflection") ==
                     ocean::OceanRenderView::CloudReflection,
                 "cloud reflection debug view should parse");
+        require(ocean::ocean_render_view_from_name("cloud-reflection-validity") ==
+                    ocean::OceanRenderView::CloudReflectionValidity,
+                "cloud reflection validity debug view should parse");
         require(ocean::ocean_render_view_from_name("water-body") ==
                     ocean::OceanRenderView::WaterBody,
                 "water body debug view should parse");
@@ -841,8 +850,11 @@ int main() {
                     ocean::OceanRenderView::FoamLod,
                 "ocean debug view cycle should include foam LOD after slope LOD");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamLod) ==
+                    ocean::OceanRenderView::CloudReflectionValidity,
+                "ocean debug view cycle should include planar validity after LOD diagnostics");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudReflectionValidity) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after LOD handoff diagnostics");
+                "ocean debug view cycle should wrap after planar validity diagnostics");
 
         bool rejected = false;
         try {
@@ -864,6 +876,9 @@ int main() {
         run_config.ocean.cloud_reflection_source = "hybrid";
         run_config.ocean.cloud_environment_extent = 128U;
         run_config.ocean.cloud_environment_update_hz = 8.0F;
+        run_config.ocean.cloud_planar_resolution_scale = 0.75F;
+        run_config.ocean.cloud_planar_view_steps = 48U;
+        run_config.ocean.cloud_planar_guard_band = 0.22F;
         run_config.ocean.cloud_reflection_strength = 0.82F;
         run_config.ocean.cloud_shadow_strength = 0.41F;
         run_config.ocean.spectral_domains = 0;
@@ -899,6 +914,12 @@ int main() {
                 "run config should initialize cloud environment extent");
         require_near(from_run_config.cloud_environment_update_hz, 8.0F, 0.001F,
                      "run config should initialize cloud environment update rate");
+        require_near(from_run_config.cloud_planar_resolution_scale, 0.75F, 0.001F,
+                     "run config should initialize planar cloud resolution");
+        require(from_run_config.cloud_planar_view_steps == 48U,
+                "run config should initialize planar cloud step count");
+        require_near(from_run_config.cloud_planar_guard_band, 0.22F, 0.001F,
+                     "run config should initialize planar cloud guard band");
         require_near(from_run_config.cloud_shadow_strength, 0.41F, 0.001F,
                      "run config should initialize cloud shadow strength");
         require(!from_run_config.spectral_domains_enabled,
@@ -1247,7 +1268,7 @@ int main() {
                          "app should pass detail anti-repeat as feature uniform data");
         require_contains(
             app_source,
-            "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow, cloud_reflection)",
+            "surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow, cloud_reflection,",
             "app should isolate shader feature controls in a frame uniform");
         require_contains(app_source, "OceanMeshDrawPlan ocean_mesh_draw_plan",
                          "ocean app should centralize visible mesh patch planning");
@@ -1481,6 +1502,12 @@ int main() {
                          "UI should expose cached cloud environment resolution");
         require_contains(ui_source, "&ui.config.cloud_environment_update_hz",
                          "UI should expose cached cloud environment refresh rate");
+        require_contains(ui_source, "&ui.config.cloud_planar_resolution_scale",
+                         "UI should expose planar cloud resolution");
+        require_contains(ui_source, "&planar_steps",
+                         "UI should expose planar cloud view steps");
+        require_contains(ui_source, "&ui.config.cloud_planar_guard_band",
+                         "UI should expose the planar reflected-view guard band");
         require_contains(ui_source, "&ui.config.spectral_lod_handoff",
                          "UI should expose the spectral LOD handoff control");
         require_not_contains(ui_source, "cloud_shadow_scale_m",
@@ -1789,7 +1816,7 @@ int main() {
                          "GPU resource header should carry independent sun lighting");
         require_contains(gpu_header_source, "moon_light_direction_intensity",
                          "GPU resource header should carry independent moon lighting");
-        require_contains(gpu_header_source, "sizeof(float) * 76U",
+        require_contains(gpu_header_source, "sizeof(float) * 92U",
                          "GPU resource header should size active feature and lighting uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
@@ -1888,6 +1915,14 @@ int main() {
                          "ocean surface shader should sample the previous cached environment");
         require_contains(fragment_shader, "samplerCube cloud_environment_current_texture",
                          "ocean surface shader should sample the current cached environment");
+        require_contains(fragment_shader, "sampler2D cloud_planar_reflection_texture",
+                         "ocean surface shader should sample the reflected cloud product");
+        require_contains(fragment_shader, "ocean_planar_cloud_reflection",
+                         "ocean surface shader should isolate planar cloud projection");
+        require_contains(fragment_shader, "roughness * roughness * max_lod + 0.25",
+                         "planar cloud reflection should use roughness-filtered mips");
+        require_contains(fragment_shader, "planar_reflection_sample.visibility",
+                         "planar cloud reflection should expose a bounded validity weight");
         require_contains(fragment_shader, "ocean_cached_cloud_reflection",
                          "ocean surface shader should select a roughness-filtered cached environment");
         require_contains(fragment_shader, "filtered_roughness * filtered_roughness * max_lod + 0.25",
@@ -1934,6 +1969,10 @@ int main() {
                          "ocean should reuse the current cloud product for reflections");
         require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",
                          "ocean should skip cloud reflection work when coupling is disabled");
+        require_contains(app_source, "cloud_planar_reflection_.record",
+                         "ocean should record a dedicated reflected cloud view");
+        require_contains(app_source, "ocean.cloud_planar_reflection",
+                         "ocean should profile the reflected cloud view independently");
         require_contains(app_source,
                          "scene_pass.read_texture(cloud_reflection.radiance_transmittance",
                          "ocean scene should declare its cloud reflection dependency");
