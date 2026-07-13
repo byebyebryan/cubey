@@ -163,6 +163,7 @@ add_library(cubey_render STATIC
     render/celestial_body_frame.cpp
     render/cloud_environment_probe.cpp
     render/cloud_layer.cpp
+    render/cloud_planar_reflection.cpp
     render/forward_pass.cpp
     render/generated_ibl.cpp
     render/frame_data.cpp

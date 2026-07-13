@@ -648,4 +648,23 @@ cubey::vulkan::ImageView create_texture_cube_face_view(const cubey::vulkan::Devi
                 });
 }
 
+cubey::vulkan::ImageView create_texture_2d_mip_view(const cubey::vulkan::Device& device,
+                                                    const Texture2D& texture,
+                                                    std::uint32_t mip_level) {
+    if (mip_level >= texture.mip_levels()) {
+        throw std::runtime_error("texture 2D mip view level is out of range");
+    }
+    return cubey::vulkan::ImageView(
+        device, cubey::vulkan::ImageViewConfig{
+                    .image = texture.handle(),
+                    .format = texture.format(),
+                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .view_type = VK_IMAGE_VIEW_TYPE_2D,
+                    .base_mip_level = mip_level,
+                    .level_count = 1,
+                    .base_array_layer = 0,
+                    .layer_count = 1,
+                });
+}
+
 } // namespace cubey::render

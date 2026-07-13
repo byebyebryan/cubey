@@ -61,6 +61,9 @@ void test_cloud_layer_cmake_package_tracks_composite_modes();
 void test_cloud_layer_frame_uniforms_pack_environment_lighting();
 void test_cloud_environment_probe_config_rejects_invalid_values();
 void test_cloud_environment_probe_timeline_captures_coherently();
+void test_cloud_planar_reflection_config_and_extent();
+void test_cloud_planar_reflected_frame_mirrors_camera_and_expands_fov();
+void test_cloud_planar_filter_declares_stable_mip_contract();
 void test_cloud_environment_prefilter_declares_cloud_contract();
 void test_adaptive_patch_lod_selects_quadtree_children();
 void test_adaptive_patch_lod_hysteresis_delays_split_and_merge();
@@ -289,6 +292,9 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_cloud_layer_frame_uniforms_pack_environment_lighting),
         CUBEY_TEST(test_cloud_environment_probe_config_rejects_invalid_values),
         CUBEY_TEST(test_cloud_environment_probe_timeline_captures_coherently),
+        CUBEY_TEST(test_cloud_planar_reflection_config_and_extent),
+        CUBEY_TEST(test_cloud_planar_reflected_frame_mirrors_camera_and_expands_fov),
+        CUBEY_TEST(test_cloud_planar_filter_declares_stable_mip_contract),
         CUBEY_TEST(test_cloud_environment_prefilter_declares_cloud_contract),
         CUBEY_TEST(test_adaptive_patch_lod_selects_quadtree_children),
         CUBEY_TEST(test_adaptive_patch_lod_hysteresis_delays_split_and_merge),

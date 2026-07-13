@@ -127,6 +127,9 @@ class Texture2D {
         return image_.format();
     }
     [[nodiscard]] VkExtent2D extent() const;
+    [[nodiscard]] std::uint32_t mip_levels() const {
+        return image_.mip_levels();
+    }
     [[nodiscard]] bool has_sampler() const {
         return sampler_.has_value();
     }
@@ -261,5 +264,8 @@ class DepthTexture {
 [[nodiscard]] cubey::vulkan::ImageView create_texture_cube_face_view(
     const cubey::vulkan::Device& device, const TextureCube& texture, std::uint32_t mip_level,
     std::uint32_t face_index);
+[[nodiscard]] cubey::vulkan::ImageView
+create_texture_2d_mip_view(const cubey::vulkan::Device& device, const Texture2D& texture,
+                           std::uint32_t mip_level);
 
 } // namespace cubey::render
