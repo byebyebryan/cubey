@@ -121,6 +121,11 @@ when the device does not support anisotropic samplers. Height may refine an
 existing material transition but cannot override slope/elevation macro weights.
 Per-fragment source-normal recovery and mipmapped material normals add local
 form without displacing geometry; both fade by projected footprint.
+The geometry-footprint classification normal remains separate from that
+recovered shading normal. Slope, vegetation, broad ambient visibility, and
+macro material weights use the classification normal; layered projection and
+lighting may use the more detailed shading normal. Height-assisted texture
+blending refines only local layer composition and cannot rewrite macro weights.
 
 An opt-in backdrop presentation may derive distant vegetation coverage from
 height, slope, broad landform context, and footprint-filtered coherent fields.
@@ -137,7 +142,10 @@ detail cannot be hidden by the backdrop distance floor. Their 150 m minimum AGL
 can rise when final terrain would enter the lower frustum within 300 m; center
 and corner rays retain a 10 m safety margin. They are general framing tools
 across presets and seeds, not tables of authored landmarks. Headless stills
-keep either frame fixed.
+keep either frame fixed. A separate center/upper-frame test samples 15 rays
+through 75% of target distance and admits at most two early terrain hits, which
+prevents a near side wall from consuming the intended backdrop or midground
+composition.
 
 ## Configuration And Diagnostics
 
@@ -157,7 +165,7 @@ The public run controls are:
 The terrain app supports final surface, base/final height, slope, weathering
 delta, LOD, neutral clay, direct visibility, aerial transmittance, vegetation
 coverage, source/material normals, material weights, albedo, roughness, blend
-height, and cavity views.
+height, cavity, and classification-normal views.
 Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
 shape review from eye-level rendering and LOD review. The `backdrop` camera
 adds deterministic source-aware framing with a 40-degree lens, a 150 m AGL

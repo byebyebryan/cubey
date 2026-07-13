@@ -52,6 +52,7 @@ projects/terrain/capture_rendering_review.sh
 projects/terrain/capture_backdrop_review.sh
 projects/terrain/capture_resolution_bandwidth_review.sh
 projects/terrain/capture_midground_detail_review.sh
+projects/terrain/capture_midground_correction_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -68,14 +69,18 @@ Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
 `ground`, `backdrop`, and `midground`. The deterministic source-aware `backdrop`
 profile selects terrain at least 3.2 km away; `midground` fixes the detail stress
 tier at 1.6 km. Both retain at least 150 m AGL and the existing 300 m
-lower-frustum clearance contract. Presentation modes are `standard` (default)
-and `backdrop`.
+lower-frustum clearance contract. A 15-ray center/upper-frame test rejects poses
+with more than two near occlusions through 75% of target distance. Presentation
+modes are `standard` (default) and `backdrop`.
 
 Debug views include final/base height, slope, weathering, LOD, clay, shadow,
 aerial transmittance, vegetation coverage, source/material normals, material
 weights, projected edges, source bands, albedo, roughness, blend height, and
-cavity. The fixed v3 A/B pack is written under
-`outputs/terrain/midground-detail-v3/`.
+cavity. `classification-normal` shows the geometry-footprint normal that owns
+macro material selection, while `normal` includes optional layered source
+recovery. The fixed v3 A/B pack remains under
+`outputs/terrain/midground-detail-v3/`; the accepted correction pack is under
+`outputs/terrain/midground-correction-v4/`.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and

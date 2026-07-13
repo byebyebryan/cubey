@@ -2,9 +2,8 @@
 
 Date: 2026-07-13
 
-Status: implementation contract. Terrain source v1/v2, geometry, tessellation,
-and runtime defaults remain frozen while the opt-in layered renderer and
-deterministic camera planner are corrected.
+Status: implemented and measured renderer/framing correction. Terrain source
+v1/v2, geometry, tessellation, and runtime defaults remain frozen.
 
 ## Review Read
 
@@ -95,3 +94,61 @@ The fixed tile/layered pack must prove:
 The review must keep clay, classification-normal, shading-normal,
 material-weight, material-albedo, final, timing, and memory evidence separate.
 No source-v3 work is accepted in this batch.
+
+## Implemented Checkpoint
+
+The fragment path now derives a geometry-footprint `classification_normal` and
+a separately recoverable `shading_normal`. Classification owns slope, material
+weights, vegetation, and broad ambient visibility. Layered source recovery,
+triplanar projection, material normals, clay, and final lighting use the
+shading normal. The new `classification-normal` view is available through the
+CLI, GUI, and PNG smoke suite.
+
+Layer height now produces private compositing weights with `0.12` influence and
+a 3-8 m footprint fade. It no longer overwrites macro material weights. The
+camera report advanced to `cubey.terrain.backdrop-camera.v4`; its independently
+tested framing rays cover the full horizontal frame through 75% of target
+distance. The first `[-0.9, 0.9]` and 50%-distance attempt missed a clipped
+seed `12345` side wall during visual review, so it was corrected before this
+checkpoint rather than accepted from metrics alone.
+
+Generate the accepted pack with:
+
+```sh
+projects/terrain/capture_midground_correction_review.sh
+```
+
+It replaces `outputs/terrain/midground-correction-v4/` and records:
+
+| Measure | Tile | Layered | Result |
+| --- | ---: | ---: | ---: |
+| changed height pixels, seeds 9012/12345 | - | - | `0 / 0` |
+| changed classification-normal pixels | - | - | `0 / 0` |
+| changed material-weight pixels | - | - | `0 / 0` |
+| material-normal Laplacian energy | `3.8645e9` | `4.96541e9` | `1.2849x` |
+| observed 960 x 540 frame interval | `21.1576 ms` | `22.7045 ms` | `+1.5469 ms` |
+| device-local use | `52.00 MiB` | `73.25 MiB` | `+21.25 MiB` |
+
+Source v1/v2 hashes remain unchanged. The complete 18-plan report has no pose
+above the 2-of-15 occupancy limit. Seed `0` retains its distant macro read;
+seed `9012` keeps the useful layered face response; seed `12345` no longer has
+candidate-only macro classification or a clipped near side wall.
+
+## Remaining Boundary
+
+Seed `12345` still exposes busy source-v2 morphology in both clay paths:
+similarly sized corrugation, narrow ridges, abrupt local shoulders, and pointy
+peaks. Layered shading makes that existing bandwidth more visible, but the
+matching classification and weight products show that it is no longer being
+invented by macro material selection. A later source-v3 batch should address
+mountain hierarchy directly and keep this pack as the renderer/framing control.
+
+The layered candidate remains opt-in and mountain-only. This checkpoint does
+not promote it, add close-surface fidelity, retune roughness broadly, or change
+the source, mesh, hydrology, vegetation, and external-scene boundaries.
+
+## Validation
+
+The validation-enabled v4 pack passed source-hash, image-identity, camera,
+detail-band, frame-budget, and device-memory gates. The full dev build passed,
+and the repository suite passed `228/228` tests in `1123.19 s`.
