@@ -145,7 +145,7 @@ views, reports, and a timing profile. The accepted run measured:
 | `12345` | `3690.35 m` | `0.4877` | `0.0295` | `0.0791` | `0.0084` |
 
 The six v3 camera plans remain within the 2-of-15 near-frame occupancy limit.
-The 960 x 540 quality/layered profile measured `31.3749 ms`, below the
+The final 960 x 540 quality/layered profile measured `31.2604 ms`, below the
 `33.3 ms` gate. V1/v2 report hashes remain
 `5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb`
 and `c9b1f9b94d7f2d14f8f301df59c29651207c279b43f31339815e552421b2b456`.
@@ -156,3 +156,7 @@ broader buildup. It is not a promotion candidate yet. Midground diagnostics
 still expose overly rounded slopes, broad parallel shoulder bands, and limited
 localized sharp form. Those are source-model findings for a later pass; they
 must not be hidden with closer camera placement or indiscriminate detail noise.
+
+The full dev build passed with no pending work, and the repository suite passed
+`228/228` tests in `1125.47 s`. The default v1 windowed and headless terrain
+smokes completed in `7.97 s` and `7.76 s` inside that run.
