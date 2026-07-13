@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
@@ -25,6 +26,28 @@ void validate_dynamic_graphics_pipeline_config(const DynamicGraphicsPipelineConf
     }
     if (config.shader_stages.empty()) {
         throw std::runtime_error("dynamic graphics pipeline requires at least one shader stage");
+    }
+    const bool patch_pipeline = config.topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    const auto has_stage = [&config](VkShaderStageFlagBits stage) {
+        return std::any_of(config.shader_stages.begin(), config.shader_stages.end(),
+                           [stage](const VkPipelineShaderStageCreateInfo& candidate) {
+                               return candidate.stage == stage;
+                           });
+    };
+    const bool has_control = has_stage(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    const bool has_evaluation = has_stage(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    if (patch_pipeline && config.patch_control_points == 0) {
+        throw std::runtime_error("patch graphics pipeline requires control points");
+    }
+    if (patch_pipeline && (!has_control || !has_evaluation)) {
+        throw std::runtime_error(
+            "patch graphics pipeline requires tessellation control and evaluation stages");
+    }
+    if (!patch_pipeline && config.patch_control_points != 0) {
+        throw std::runtime_error("non-patch graphics pipeline cannot declare control points");
+    }
+    if (!patch_pipeline && (has_control || has_evaluation)) {
+        throw std::runtime_error("tessellation stages require patch-list topology");
     }
     if ((config.depth_test || config.depth_write) && config.depth_format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error(
@@ -122,6 +145,10 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
     input_assembly_.topology = config.topology;
 
+    tessellation_ = vk_struct<VkPipelineTessellationStateCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO);
+    tessellation_.patchControlPoints = config.patch_control_points;
+
     viewport_state_ = vk_struct<VkPipelineViewportStateCreateInfo>(
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
     viewport_state_.viewportCount = 1;
@@ -184,6 +211,8 @@ DynamicGraphicsPipelineInfo::DynamicGraphicsPipelineInfo(
     create_info_.pStages = shader_stages_.data();
     create_info_.pVertexInputState = &vertex_input_;
     create_info_.pInputAssemblyState = &input_assembly_;
+    create_info_.pTessellationState =
+        config.topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST ? &tessellation_ : nullptr;
     create_info_.pViewportState = &viewport_state_;
     create_info_.pRasterizationState = &rasterizer_;
     create_info_.pMultisampleState = &multisample_;

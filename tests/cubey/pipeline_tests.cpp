@@ -14,6 +14,16 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename Function>
+void require_throws(Function&& function, const char* message) {
+    try {
+        function();
+    } catch (const std::runtime_error&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 } // namespace
 
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup() {
@@ -222,4 +232,43 @@ void test_pipeline_helpers_describe_multi_color_dynamic_graphics_pipeline_setup(
                 (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                  VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT),
             "multi-color pipeline should use full color write masks");
+}
+
+void test_pipeline_helpers_describe_tessellated_graphics_pipeline_setup() {
+    const std::array<VkPipelineShaderStageCreateInfo, 4> stages{
+        cubey::vulkan::shader_stage(VK_SHADER_STAGE_VERTEX_BIT,
+                                    reinterpret_cast<VkShaderModule>(0x81)),
+        cubey::vulkan::shader_stage(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+                                    reinterpret_cast<VkShaderModule>(0x82)),
+        cubey::vulkan::shader_stage(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+                                    reinterpret_cast<VkShaderModule>(0x83)),
+        cubey::vulkan::shader_stage(VK_SHADER_STAGE_FRAGMENT_BIT,
+                                    reinterpret_cast<VkShaderModule>(0x84)),
+    };
+    cubey::vulkan::DynamicGraphicsPipelineConfig config;
+    config.layout = reinterpret_cast<VkPipelineLayout>(0x85);
+    config.color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    config.shader_stages = stages;
+    config.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    config.patch_control_points = 4;
+
+    const cubey::vulkan::DynamicGraphicsPipelineInfo info(config);
+    require(info.create_info().pTessellationState != nullptr,
+            "patch pipeline should attach tessellation state");
+    require(info.create_info().pTessellationState->patchControlPoints == 4,
+            "patch pipeline should preserve control-point count");
+
+    cubey::vulkan::DynamicGraphicsPipelineConfig missing_points = config;
+    missing_points.patch_control_points = 0;
+    require_throws(
+        [&missing_points] {
+            static_cast<void>(cubey::vulkan::DynamicGraphicsPipelineInfo(missing_points));
+        },
+        "patch pipeline should reject missing control points");
+
+    cubey::vulkan::DynamicGraphicsPipelineConfig triangle = config;
+    triangle.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    require_throws(
+        [&triangle] { static_cast<void>(cubey::vulkan::DynamicGraphicsPipelineInfo(triangle)); },
+        "triangle pipeline should reject tessellation stages and control points");
 }

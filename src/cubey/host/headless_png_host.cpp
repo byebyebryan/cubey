@@ -337,6 +337,7 @@ void HeadlessPngHost::create_device() {
     device_config.required_queue_flags = config_.required_queue_flags;
     device_config.require_present = false;
     device_config.require_dynamic_rendering = config_.require_dynamic_rendering;
+    device_config.require_tessellation_shader = config_.require_tessellation_shader;
     device_.emplace(instance(), device_config);
 }
 

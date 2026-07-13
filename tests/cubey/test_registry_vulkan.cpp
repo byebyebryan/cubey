@@ -28,6 +28,7 @@ void test_immediate_commands_accepts_submission_coordinator();
 void test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup();
 void test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup();
 void test_pipeline_helpers_describe_multi_color_dynamic_graphics_pipeline_setup();
+void test_pipeline_helpers_describe_tessellated_graphics_pipeline_setup();
 void test_queue_submit_info_describes_waits_commands_signals_and_fence();
 void test_queue_submit_rejects_empty_command_buffer_list();
 void test_render_context_exposes_explicit_frame_boundary();
@@ -81,6 +82,7 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_pipeline_helpers_describe_dynamic_graphics_pipeline_setup),
         CUBEY_TEST(test_pipeline_helpers_describe_depth_only_dynamic_graphics_pipeline_setup),
         CUBEY_TEST(test_pipeline_helpers_describe_multi_color_dynamic_graphics_pipeline_setup),
+        CUBEY_TEST(test_pipeline_helpers_describe_tessellated_graphics_pipeline_setup),
         CUBEY_TEST(test_queue_submit_info_describes_waits_commands_signals_and_fence),
         CUBEY_TEST(test_queue_submit_rejects_empty_command_buffer_list),
         CUBEY_TEST(test_render_context_exposes_explicit_frame_boundary),

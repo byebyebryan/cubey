@@ -46,6 +46,20 @@ struct ShaderStageFile {
     return shader_stage_file(VK_SHADER_STAGE_FRAGMENT_BIT, std::move(path), std::move(entry_point));
 }
 
+[[nodiscard]] inline ShaderStageFile
+tessellation_control_shader_file(std::filesystem::path path,
+                                 std::string entry_point = "main") {
+    return shader_stage_file(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, std::move(path),
+                             std::move(entry_point));
+}
+
+[[nodiscard]] inline ShaderStageFile
+tessellation_evaluation_shader_file(std::filesystem::path path,
+                                    std::string entry_point = "main") {
+    return shader_stage_file(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, std::move(path),
+                             std::move(entry_point));
+}
+
 [[nodiscard]] inline ShaderStageFile compute_shader_file(std::filesystem::path path,
                                                          std::string entry_point = "main") {
     return shader_stage_file(VK_SHADER_STAGE_COMPUTE_BIT, std::move(path), std::move(entry_point));

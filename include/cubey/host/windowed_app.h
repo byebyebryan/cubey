@@ -22,6 +22,7 @@ struct WindowedAppConfig {
     VkImageUsageFlags swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     std::uint32_t frame_slot_count = 2;
     bool require_dynamic_rendering = true;
+    bool require_tessellation_shader = false;
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
     bool close_on_escape = false;

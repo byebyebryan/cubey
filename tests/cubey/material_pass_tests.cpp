@@ -192,6 +192,22 @@ void test_material_pass_info_validates_descriptor_and_push_constant_shape() {
             });
         },
         "material pass info should reject zero-sized push constants");
+    require_throws(
+        [] {
+            cubey::render::validate_material_pass_info(cubey::render::MaterialPassInfo{
+                .label = "patches without points",
+                .topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+            });
+        },
+        "patch material pass should require control points");
+    require_throws(
+        [] {
+            cubey::render::validate_material_pass_info(cubey::render::MaterialPassInfo{
+                .label = "triangles with points",
+                .patch_control_points = 4,
+            });
+        },
+        "triangle material pass should reject control points");
 }
 
 void test_push_constant_range_validation_enforces_device_limit_and_alignment() {

@@ -97,6 +97,12 @@ void validate_material_pass_info(const MaterialPassInfo& info) {
     if (info.label.empty()) {
         throw std::runtime_error("material pass label must be non-empty");
     }
+    if (info.topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST && info.patch_control_points == 0) {
+        throw std::runtime_error("patch material pass requires control points");
+    }
+    if (info.topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST && info.patch_control_points != 0) {
+        throw std::runtime_error("non-patch material pass cannot declare control points");
+    }
 
     for (auto current = info.descriptor_sets.begin(); current != info.descriptor_sets.end();
          ++current) {
@@ -138,6 +144,7 @@ void apply_material_pass_state(const MaterialPassInfo& info,
                                cubey::vulkan::DynamicGraphicsPipelineConfig& config) {
     validate_material_pass_info(info);
     config.topology = info.topology;
+    config.patch_control_points = info.patch_control_points;
     config.polygon_mode = info.polygon_mode;
     config.cull_mode = info.cull_mode;
     config.front_face = info.front_face;

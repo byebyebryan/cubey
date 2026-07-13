@@ -99,6 +99,7 @@ struct MaterialPassInfo {
     std::vector<MaterialDescriptorSetLayout> descriptor_sets{};
     std::vector<VkPushConstantRange> push_constants{};
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    std::uint32_t patch_control_points = 0;
     VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
     VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
     VkFrontFace front_face = VK_FRONT_FACE_COUNTER_CLOCKWISE;

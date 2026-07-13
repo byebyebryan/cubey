@@ -46,6 +46,7 @@ int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
             .swapchain_image_usage = config.swapchain_image_usage,
             .frame_slot_count = config.frame_slot_count,
             .require_dynamic_rendering = config.require_dynamic_rendering,
+            .require_tessellation_shader = config.require_tessellation_shader,
             .gpu_execution_mode = config.gpu_execution_mode,
         },
         {

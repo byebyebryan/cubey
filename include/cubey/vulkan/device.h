@@ -13,6 +13,7 @@ struct DeviceConfig {
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     bool require_present = true;
     bool require_dynamic_rendering = false;
+    bool require_tessellation_shader = false;
 };
 
 struct DeviceMemoryBudgetInfo {
@@ -53,6 +54,12 @@ class Device {
     }
     bool supports_shader_storage_image_extended_formats() const {
         return supported_features_.shaderStorageImageExtendedFormats == VK_TRUE;
+    }
+    bool supports_tessellation_shader() const {
+        return supported_features_.tessellationShader == VK_TRUE;
+    }
+    bool tessellation_shader_enabled() const {
+        return enabled_features_.tessellationShader == VK_TRUE;
     }
     bool supports_timestamp_queries() const {
         return queue_timestamp_valid_bits_ != 0;

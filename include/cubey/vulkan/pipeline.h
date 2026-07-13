@@ -19,6 +19,7 @@ struct DynamicGraphicsPipelineConfig {
     std::span<const VkVertexInputBindingDescription> vertex_bindings;
     std::span<const VkVertexInputAttributeDescription> vertex_attributes;
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    std::uint32_t patch_control_points = 0;
     VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
     VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
     VkFrontFace front_face = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -105,6 +106,7 @@ class DynamicGraphicsPipelineInfo {
     VkPipelineRenderingCreateInfo rendering_info_{};
     VkPipelineVertexInputStateCreateInfo vertex_input_{};
     VkPipelineInputAssemblyStateCreateInfo input_assembly_{};
+    VkPipelineTessellationStateCreateInfo tessellation_{};
     VkPipelineViewportStateCreateInfo viewport_state_{};
     VkPipelineRasterizationStateCreateInfo rasterizer_{};
     VkPipelineMultisampleStateCreateInfo multisample_{};
