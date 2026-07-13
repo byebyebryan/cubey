@@ -657,8 +657,8 @@ int main() {
                      "windy ocean should keep broad far reflection variation restrained");
         require_near(defaults.sun_glitter_width, 0.09F, 0.001F,
                      "windy ocean should use a moderate reflected-sun corridor width");
-        require_near(defaults.cloud_reflection_strength, 0.75F, 0.001F,
-                     "ocean should default cloud reflection contribution on");
+        require_near(defaults.cloud_reflection_strength, 0.40F, 0.001F,
+                     "ocean should keep default cloud reflections below close-range saturation");
         require(defaults.cloud_reflection_source ==
                     ocean::OceanCloudReflectionSource::Planar,
                 "ocean should default to coherent planar cloud reflections");
@@ -802,6 +802,8 @@ int main() {
                 "slope LOD debug view should parse");
         require(ocean::ocean_render_view_from_name("foam-lod") == ocean::OceanRenderView::FoamLod,
                 "foam LOD debug view should parse");
+        require(ocean::ocean_render_view_from_name("specular") == ocean::OceanRenderView::Specular,
+                "specular debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
                     ocean::OceanRenderView::FoamSource,
                 "ocean debug view cycle should include the foam source view");
@@ -866,8 +868,11 @@ int main() {
                     ocean::OceanRenderView::CloudReflectionValidity,
                 "ocean debug view cycle should include planar validity after LOD diagnostics");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudReflectionValidity) ==
+                    ocean::OceanRenderView::Specular,
+                "ocean debug view cycle should include specular after planar validity");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Specular) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after planar validity diagnostics");
+                "ocean debug view cycle should wrap after specular diagnostics");
 
         bool rejected = false;
         try {
@@ -1778,6 +1783,10 @@ int main() {
                          "fragment shader should expose sky radiance diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_REFLECTION = 12u",
                          "fragment shader should expose reflection diagnostics");
+        require_contains(fragment_shader, "const uint OCEAN_VIEW_SPECULAR = 33u",
+                         "fragment shader should expose specular diagnostics");
+        require_contains(fragment_shader, "ocean_specular_aa_roughness(normal, roughness)",
+                         "fragment shader should filter close-range specular normal variance");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_FOAM_RAW = 16u",
                          "fragment shader should expose raw foam diagnostics");
         require_contains(fragment_shader, "const uint OCEAN_VIEW_TERRAIN_DEPTH = 18u",

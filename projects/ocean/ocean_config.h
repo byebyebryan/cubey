@@ -49,6 +49,7 @@ enum class OceanRenderView : std::uint32_t {
     SlopeLod = 30,
     FoamLod = 31,
     CloudReflectionValidity = 32,
+    Specular = 33,
 };
 
 enum class OceanFieldPrecision : std::uint32_t {
@@ -67,7 +68,7 @@ enum class OceanCloudReflectionSource : std::uint32_t {
     Planar = 2,
 };
 
-inline constexpr std::array<OceanRenderView, 33> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 34> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory,     OceanRenderView::FoamCore,     OceanRenderView::FoamCandidate,
@@ -79,7 +80,7 @@ inline constexpr std::array<OceanRenderView, 33> kOceanRenderViews{
     OceanRenderView::FoamFiltered,    OceanRenderView::FarField,     OceanRenderView::CloudShadow,
     OceanRenderView::CloudReflection, OceanRenderView::WaterBody,    OceanRenderView::Fresnel,
     OceanRenderView::SlopeLod,        OceanRenderView::FoamLod,
-    OceanRenderView::CloudReflectionValidity,
+    OceanRenderView::CloudReflectionValidity, OceanRenderView::Specular,
 };
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
     OceanFieldPrecision::Full,
@@ -194,7 +195,7 @@ struct OceanConfig {
     float cloud_planar_resolution_scale = 0.5F;
     std::uint32_t cloud_planar_view_steps = 32U;
     float cloud_planar_guard_band = 0.15F;
-    float cloud_reflection_strength = 0.75F;
+    float cloud_reflection_strength = 0.40F;
     float cloud_shadow_strength = 0.45F;
     bool spectral_domains_enabled = true;
     float spectral_lod_handoff = 0.0F;
@@ -384,6 +385,8 @@ struct OceanCascadeLodBand {
         return "foam-lod";
     case OceanRenderView::CloudReflectionValidity:
         return "cloud-reflection-validity";
+    case OceanRenderView::Specular:
+        return "specular";
     }
     return "final";
 }

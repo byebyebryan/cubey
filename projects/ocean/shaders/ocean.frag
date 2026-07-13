@@ -127,6 +127,7 @@ const uint OCEAN_VIEW_FRESNEL = 29u;
 const uint OCEAN_VIEW_SLOPE_LOD = 30u;
 const uint OCEAN_VIEW_FOAM_LOD = 31u;
 const uint OCEAN_VIEW_CLOUD_REFLECTION_VALIDITY = 32u;
+const uint OCEAN_VIEW_SPECULAR = 33u;
 const float OCEAN_REFLECTANCE = 0.02;
 const float OCEAN_FAR_ANTI_REPEAT_START = 220.0;
 const float OCEAN_FAR_ANTI_REPEAT_END = 900.0;
@@ -433,6 +434,7 @@ void main() {
         sqrt(clamp(roughness * roughness + spectral_slope_rms * spectral_slope_rms, 0.0, 1.0));
     float slope_roughness_delta = max(slope_filtered_roughness - roughness, 0.0);
     roughness = mix(roughness, slope_filtered_roughness, ocean_spectral_lod_handoff());
+    roughness = ocean_specular_aa_roughness(normal, roughness);
 
     float fresnel = ocean_dielectric_fresnel(ndotv);
     vec3 reflection_sky_dir = ocean_above_horizon_reflection_direction(reflection_dir);
@@ -594,6 +596,8 @@ void main() {
     } else if (view == OCEAN_VIEW_CLOUD_REFLECTION_VALIDITY) {
         color = vec3(planar_reflection_sample.visibility,
                      1.0 - planar_reflection_sample.visibility, 0.0);
+    } else if (view == OCEAN_VIEW_SPECULAR) {
+        color = specular;
     }
 
     if (ocean.debug_options.w > 0.0) {

@@ -388,6 +388,15 @@ float ocean_dielectric_fresnel(float ndotv) {
     return OCEAN_REFLECTANCE + (1.0 - OCEAN_REFLECTANCE) * one_minus_v5;
 }
 
+float ocean_specular_aa_roughness(vec3 normal, float roughness) {
+    vec3 normal_dx = dFdx(normal);
+    vec3 normal_dy = dFdy(normal);
+    float normal_variance =
+        0.25 * (dot(normal_dx, normal_dx) + dot(normal_dy, normal_dy));
+    float kernel_roughness2 = min(2.0 * normal_variance, 0.18);
+    return sqrt(clamp(roughness * roughness + kernel_roughness2, 0.0004, 1.0));
+}
+
 float ocean_ggx_reflected_radiance(vec3 normal, vec3 view_dir, vec3 light_dir,
                                    float roughness) {
     float ndotv = max(dot(normal, view_dir), 0.0001);

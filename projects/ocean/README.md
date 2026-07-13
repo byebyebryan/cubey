@@ -71,6 +71,7 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection-validity
 ./build/dev/projects/ocean/ocean --debug-view sky-radiance
 ./build/dev/projects/ocean/ocean --debug-view reflection
+./build/dev/projects/ocean/ocean --debug-view specular
 ./build/dev/projects/ocean/ocean --debug-view direct-light
 ./build/dev/projects/ocean/ocean --debug-view ambient-light
 ./build/dev/projects/ocean/ocean --debug-view exposure
