@@ -17,7 +17,7 @@ constexpr std::array<float, 2> kBackdropSampleDistances{3200.0F, 6400.0F};
 constexpr std::array<float, 1> kMidgroundSampleDistances{1600.0F};
 constexpr std::array<float, 3> kLateralFactors{-0.18F, 0.0F, 0.18F};
 constexpr std::array<float, 3> kLowerFrustumNdcX{-1.0F, 0.0F, 1.0F};
-constexpr std::array<float, 5> kNearFrameNdcX{-0.9F, -0.45F, 0.0F, 0.45F, 0.9F};
+constexpr std::array<float, 5> kNearFrameNdcX{-1.0F, -0.5F, 0.0F, 0.5F, 1.0F};
 constexpr std::array<float, 3> kNearFrameNdcY{0.0F, 0.35F, 0.70F};
 constexpr std::uint32_t kHeadingCount = 24U;
 constexpr std::size_t kFramingShortlistCount = 64U;
@@ -192,7 +192,7 @@ struct NearFrameOcclusion {
         cubey::math::angle_axis_quat(yaw_radians, {0.0F, 1.0F, 0.0F}) *
         cubey::math::angle_axis_quat(pitch_radians, {1.0F, 0.0F, 0.0F});
     const float tan_half_fov = std::tan(kBackdropVerticalFovRadians * 0.5F);
-    const float test_distance_m = target_distance_m * 0.5F;
+    const float test_distance_m = target_distance_m * 0.75F;
     std::uint32_t occluded_ray_count = 0U;
     float nearest_hit_distance_m = std::numeric_limits<float>::infinity();
 

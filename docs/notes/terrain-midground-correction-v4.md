@@ -67,9 +67,9 @@ pixel-identical.
 
 After a candidate's final pitch is known, the planner tests the center and
 upper frame for terrain that blocks the intended target too early. It traces a
-5 x 3 ray grid at NDC x `[-0.9, -0.45, 0, 0.45, 0.9]` and y
-`[0, 0.35, 0.70]`, sampling every 50 m from 100 m through half the selected
-target distance.
+5 x 3 ray grid at NDC x `[-1, -0.5, 0, 0.5, 1]` and y
+`[0, 0.35, 0.70]`, sampling every 50 m from 100 m through three quarters of the
+selected target distance.
 
 A candidate is admissible when no more than 2 of the 15 rays hit terrain in
 that interval. The highest existing composition score wins among admissible
