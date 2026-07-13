@@ -107,6 +107,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain resolution and bandwidth checkpoint](terrain-resolution-bandwidth-checkpoint.md):
   implemented control/quality comparison, measured review pack, and remaining
   terrain-rendering limits.
+- [Terrain midground detail v3](terrain-midground-detail-v3.md): frozen macro
+  terrain boundary, reference-driven layered material direction, explicit
+  backdrop/midground tiers, and reproducible A/B acceptance contract.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
