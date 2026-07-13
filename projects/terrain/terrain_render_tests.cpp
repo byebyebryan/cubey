@@ -72,6 +72,10 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should default to surface view");
     require(config.presentation == cubey::projects::terrain::TerrainPresentationMode::Standard,
             "terrain runtime should default to standard presentation");
+    require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Control,
+            "terrain runtime should default to control rendering");
+    require_near(config.target_edge_px, 4.0F, 0.0F,
+                 "terrain runtime should default to four-pixel quality edges");
     require_near(config.near_cell_size_m, 2.0F, 0.0F,
                  "terrain runtime should default to two-meter near cells");
     require(config.lod_levels == 8U && config.cells_per_axis == 128U,
@@ -118,10 +122,16 @@ void test_source_v2_extends_only_mountain_detail_band() {
 void test_runtime_config_parses_source_v2() {
     cubey::RunConfig run_config{};
     run_config.terrain.source_version = "v2";
+    run_config.terrain.render_path = "quality";
+    run_config.terrain.target_edge_px = 6.0F;
     const auto config =
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.source.version == cubey::projects::terrain::TerrainSourceVersion::V2,
             "terrain runtime should parse source v2");
+    require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Quality,
+            "terrain runtime should parse quality rendering");
+    require_near(config.target_edge_px, 6.0F, 0.0F,
+                 "terrain runtime should parse the quality edge target");
 }
 
 void test_ground_camera_and_shape_diagnostics_parse() {
@@ -367,6 +377,27 @@ void test_clipmap_patch_spans_preserve_level_cell_spacing() {
     }
 }
 
+void test_quality_clipmap_uses_coarse_quad_patches() {
+    cubey::projects::terrain::TerrainRuntimeConfig config{};
+    config.render_path = cubey::projects::terrain::TerrainRenderPath::Quality;
+    const auto mesh = cubey::projects::terrain::make_terrain_quality_clipmap_mesh(config);
+    require(!mesh.vertices.empty() && mesh.indices.size() == mesh.vertices.size(),
+            "quality clipmap should index every patch control point");
+    require((mesh.indices.size() % 4U) == 0U && mesh.patch_count() > 0U,
+            "quality clipmap should use four-control-point patches");
+    require(mesh.vertices.size() < 10'000U,
+            "quality clipmap should stay coarse before GPU tessellation");
+    for (std::size_t index = 0; index < mesh.vertices.size(); index += 4U) {
+        require(mesh.vertices[index].color[2] > 0.0F && mesh.vertices[index].color[2] <= 16.0F &&
+                    mesh.vertices[index].normal[2] > 0.0F &&
+                    mesh.vertices[index].normal[2] <= 16.0F,
+                "quality patches should span at most sixteen logical cells per axis");
+        require(mesh.vertices[index].position[0] < mesh.vertices[index + 1U].position[0] &&
+                    mesh.vertices[index].position[2] < mesh.vertices[index + 3U].position[2],
+                "quality patch corners should preserve quad orientation");
+    }
+}
+
 void test_surface_controller_traversal_preserves_clearance() {
     const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 9012U,
@@ -440,6 +471,7 @@ int main() {
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();
         test_clipmap_patch_spans_preserve_level_cell_spacing();
+        test_quality_clipmap_uses_coarse_quad_patches();
         test_surface_controller_traversal_preserves_clearance();
         test_ground_controller_uses_walking_scale_speed();
         std::cout << "terrain_render_tests: ok\n";

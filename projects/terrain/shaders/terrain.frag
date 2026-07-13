@@ -29,6 +29,8 @@ layout(location = 9) in float frag_lod_morph;
 layout(location = 10) in float frag_footprint_m;
 layout(location = 11) in float frag_direct_visibility;
 layout(location = 12) in float frag_landform_concavity_m;
+layout(location = 13) flat in float frag_tess_factor;
+layout(location = 14) flat in float frag_projected_edge_px;
 
 layout(location = 0) out vec4 out_color;
 
@@ -163,6 +165,16 @@ void main() {
     }
     if (debug_view == 12) {
         out_color = vec4(vec3(ambient_visibility), 1.0);
+        return;
+    }
+    if (debug_view == 13) {
+        float factor = clamp(log2(max(frag_tess_factor, 1.0)) / 6.0, 0.0, 1.0);
+        out_color = vec4(mix(vec3(0.08, 0.20, 0.62), vec3(0.96, 0.32, 0.10), factor), 1.0);
+        return;
+    }
+    if (debug_view == 14) {
+        float edge = clamp(frag_projected_edge_px / 8.0, 0.0, 1.0);
+        out_color = vec4(mix(vec3(0.10, 0.55, 0.24), vec3(0.96, 0.18, 0.08), edge), 1.0);
         return;
     }
     // Relief stays subordinate to the resolved terrain shape at scene scale.

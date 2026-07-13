@@ -182,6 +182,8 @@ struct RunConfig {
         std::uint64_t seed = 0;
         std::string preset{};
         std::string source_version{};
+        std::string render_path{};
+        float target_edge_px = kRunConfigUnsetFloat;
         std::string weathering{};
         float weathering_strength = kRunConfigUnsetFloat;
         float cell_size = kRunConfigUnsetFloat;

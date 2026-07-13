@@ -37,6 +37,7 @@
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 #ifndef CUBEY_TERRAIN_SHADER_DIR
 #error "CUBEY_TERRAIN_SHADER_DIR must be defined by the terrain CMake target"
@@ -59,10 +60,11 @@ struct TerrainPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 camera_position_vertical_scale{0.0F, 0.0F, 0.0F, 1.0F};
     cubey::math::Vec4 render_options{0.0F, 16'384.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 quality_options{4.0F, 1.0F, 1.0F, 0.0F};
 };
 
 static_assert(sizeof(TerrainPushConstants) ==
-              sizeof(cubey::math::Mat4) + 2U * sizeof(cubey::math::Vec4));
+              sizeof(cubey::math::Mat4) + 3U * sizeof(cubey::math::Vec4));
 static_assert(sizeof(TerrainPushConstants) <= 128U);
 
 struct CompiledTerrainGraph {
@@ -74,9 +76,14 @@ struct CompiledTerrainGraph {
     return std::filesystem::path(CUBEY_TERRAIN_SHADER_DIR) / filename;
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo terrain_pass_info() {
+[[nodiscard]] cubey::render::MaterialPassInfo terrain_pass_info(bool quality) {
+    const VkShaderStageFlags terrain_stages =
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT |
+        (quality ? VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                       VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
+                 : 0U);
     const VkPushConstantRange push_constant_range{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .stageFlags = terrain_stages,
         .offset = 0,
         .size = sizeof(TerrainPushConstants),
     };
@@ -91,8 +98,7 @@ struct CompiledTerrainGraph {
                             cubey::vulkan::DescriptorSetBindingConfig{
                                 .binding = 0,
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                .stage_flags =
-                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                .stage_flags = terrain_stages,
                             },
                         },
                 },
@@ -103,13 +109,15 @@ struct CompiledTerrainGraph {
                             cubey::vulkan::DescriptorSetBindingConfig{
                                 .binding = 0,
                                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                .stage_flags =
-                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                .stage_flags = terrain_stages,
                             },
                         },
                 },
             },
         .push_constants = {push_constant_range},
+        .topology =
+            quality ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .patch_control_points = quality ? 4U : 0U,
         .cull_mode = VK_CULL_MODE_NONE,
         .depth_test = true,
         .depth_write = true,
@@ -188,6 +196,7 @@ class TerrainApp {
           runtime_config_(terrain_runtime_config_from_run_config(run_config_)),
           source_parameters_(resolve_terrain_source_parameters(runtime_config_.source)),
           clipmap_data_(make_terrain_clipmap_mesh(runtime_config_)),
+          quality_clipmap_data_(make_terrain_quality_clipmap_mesh(runtime_config_)),
           clipmap_config_(terrain_clipmap_config(runtime_config_)),
           scene_summary_(terrain_scene_summary(source_parameters_, clipmap_config_)),
           orbit_controller_(cubey::OrbitControllerConfig{
@@ -259,6 +268,8 @@ class TerrainApp {
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
+                .require_tessellation_shader =
+                    runtime_config_.render_path == TerrainRenderPath::Quality,
                 .close_on_escape = true,
             },
             std::move(callbacks));
@@ -270,6 +281,8 @@ class TerrainApp {
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
+        host_config.require_tessellation_shader =
+            runtime_config_.render_path == TerrainRenderPath::Quality;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
@@ -354,7 +367,7 @@ class TerrainApp {
         if (ImGui::Combo("View", &debug_view,
                          "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
                          "Aerial transmittance\0Vegetation coverage\0Normal\0Material weights\0"
-                         "Ambient visibility\0")) {
+                         "Ambient visibility\0Tessellation factor\0Projected edge\0")) {
             runtime_config_.debug_view = static_cast<TerrainDebugView>(debug_view);
         }
         if (source_changed) {
@@ -385,9 +398,8 @@ class TerrainApp {
             terrain_camera_traversal_speed_mps(runtime_config_.camera));
         if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
             if (!backdrop_plan_.has_value()) {
-                backdrop_plan_ =
-                    plan_terrain_backdrop_camera(source_parameters_, runtime_config_.vertical_scale,
-                                                 initial_aspect_ratio());
+                backdrop_plan_ = plan_terrain_backdrop_camera(
+                    source_parameters_, runtime_config_.vertical_scale, initial_aspect_ratio());
             }
             surface_controller_.set_home_pose(backdrop_plan_->anchor_xz,
                                               backdrop_plan_->yaw_radians,
@@ -403,16 +415,21 @@ class TerrainApp {
         if (global_resources_created_) {
             return;
         }
-        mesh_.emplace(gpu, clipmap_data_.mesh_config());
-        source_material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
-                                             .material_pass = terrain_pass_info(),
-                                             .descriptor_set = 0,
-                                             .frame_slot_count = frame_slot_count,
-                                             .uniform_binding = 0,
-                                         });
+        mesh_.emplace(gpu, runtime_config_.render_path == TerrainRenderPath::Quality
+                               ? quality_clipmap_data_.mesh_config()
+                               : clipmap_data_.mesh_config());
+        source_material_.emplace(device,
+                                 cubey::render::FrameUniformMaterialInstanceConfig{
+                                     .material_pass = terrain_pass_info(
+                                         runtime_config_.render_path == TerrainRenderPath::Quality),
+                                     .descriptor_set = 0,
+                                     .frame_slot_count = frame_slot_count,
+                                     .uniform_binding = 0,
+                                 });
         environment_material_.emplace(
             device, cubey::render::FrameUniformMaterialInstanceConfig{
-                        .material_pass = terrain_pass_info(),
+                        .material_pass = terrain_pass_info(runtime_config_.render_path ==
+                                                           TerrainRenderPath::Quality),
                         .descriptor_set = 1,
                         .frame_slot_count = frame_slot_count,
                         .uniform_binding = 0,
@@ -428,10 +445,19 @@ class TerrainApp {
 
     void create_swapchain_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                     VkFormat color_format, std::uint32_t frame_slot_count) {
-        const std::array terrain_shaders{
-            cubey::render::vertex_shader_file(shader_path("terrain.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("terrain.frag.spv")),
-        };
+        const bool quality = runtime_config_.render_path == TerrainRenderPath::Quality;
+        std::vector<cubey::render::ShaderStageFile> terrain_shaders;
+        terrain_shaders.reserve(quality ? 4U : 2U);
+        terrain_shaders.push_back(cubey::render::vertex_shader_file(
+            shader_path(quality ? "terrain_quality.vert.spv" : "terrain.vert.spv")));
+        if (quality) {
+            terrain_shaders.push_back(cubey::render::tessellation_control_shader_file(
+                shader_path("terrain_quality.tesc.spv")));
+            terrain_shaders.push_back(cubey::render::tessellation_evaluation_shader_file(
+                shader_path("terrain_quality.tese.spv")));
+        }
+        terrain_shaders.push_back(
+            cubey::render::fragment_shader_file(shader_path("terrain.frag.spv")));
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_input_layout();
         const std::array<VkDescriptorSetLayout, 2> terrain_descriptor_set_layouts{
@@ -451,7 +477,7 @@ class TerrainApp {
                         .vertex_bindings = vertex_input.bindings(),
                         .vertex_attributes = vertex_input.attribute_descriptions(),
                         .descriptor_set_layouts = terrain_descriptor_set_layouts,
-                        .material_pass = terrain_pass_info(),
+                        .material_pass = terrain_pass_info(quality),
                     },
                 .clear =
                     {
@@ -499,11 +525,10 @@ class TerrainApp {
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
         if (terrain_camera_is_surface(runtime_config_.camera)) {
-            const float clearance =
-                runtime_config_.camera == TerrainCameraPreset::Backdrop &&
-                        backdrop_plan_.has_value()
-                    ? backdrop_plan_->camera_clearance_m
-                    : terrain_camera_clearance_m(runtime_config_.camera);
+            const float clearance = runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+                                            backdrop_plan_.has_value()
+                                        ? backdrop_plan_->camera_clearance_m
+                                        : terrain_camera_clearance_m(runtime_config_.camera);
             return surface_controller_.camera_transform(source_parameters_,
                                                         runtime_config_.vertical_scale, clearance);
         }
@@ -529,16 +554,14 @@ class TerrainApp {
     [[nodiscard]] float initial_aspect_ratio() const {
         return run_config_.height == 0U
                    ? 1.0F
-                   : static_cast<float>(run_config_.width) /
-                         static_cast<float>(run_config_.height);
+                   : static_cast<float>(run_config_.width) / static_cast<float>(run_config_.height);
     }
 
     [[nodiscard]] TerrainPushConstants push_constants(VkExtent2D extent) const {
-        const float pixel_angular_span =
-            extent.height == 0U
-                ? 0.0F
-                : (2.0F * std::tan(camera_.fovy_radians() * 0.5F)) /
-                      static_cast<float>(extent.height);
+        const float pixel_angular_span = extent.height == 0U
+                                             ? 0.0F
+                                             : (2.0F * std::tan(camera_.fovy_radians() * 0.5F)) /
+                                                   static_cast<float>(extent.height);
         return {
             .view_projection =
                 camera_.view_projection_matrix(frame_camera_transform_, aspect(extent)),
@@ -549,6 +572,8 @@ class TerrainApp {
             .render_options = {terrain_debug_view_id(runtime_config_.debug_view),
                                clipmap_config_.outer_half_extent, pixel_angular_span,
                                terrain_presentation_id(runtime_config_.presentation)},
+            .quality_options = {runtime_config_.target_edge_px, static_cast<float>(extent.width),
+                                static_cast<float>(extent.height), 0.0F},
         };
     }
 
@@ -594,8 +619,13 @@ class TerrainApp {
                                               source_material().material(), frame_slot);
         cubey::render::bind_material_instance(recorder, terrain_forward_pass().pipeline(),
                                               environment_material().material(), frame_slot);
-        recorder.push_constants(terrain_forward_pass().pipeline().layout(),
-                                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+        const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT |
+                                          VK_SHADER_STAGE_FRAGMENT_BIT |
+                                          (runtime_config_.render_path == TerrainRenderPath::Quality
+                                               ? VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                                     VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
+                                               : 0U);
+        recorder.push_constants(terrain_forward_pass().pipeline().layout(), stages, 0,
                                 push_constants(color.extent));
         cubey::render::record_draw_item(recorder.handle(),
                                         cubey::render::DrawItem{.mesh = &mesh()});
@@ -628,7 +658,8 @@ class TerrainApp {
         graph.add_pass("terrain surface", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
             .write_depth(depth)
-            .material_pass(terrain_pass_info())
+            .material_pass(
+                terrain_pass_info(runtime_config_.render_path == TerrainRenderPath::Quality))
             .execute([this, scene_color, depth,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
                 record_terrain_pass(context.recorder(),
@@ -717,6 +748,7 @@ class TerrainApp {
     TerrainRuntimeConfig runtime_config_{};
     TerrainSourceParameters source_parameters_{};
     TerrainClipmapMeshData clipmap_data_{};
+    TerrainQualityClipmapMeshData quality_clipmap_data_{};
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};
     TerrainSourceSummary scene_summary_{};
     std::optional<TerrainBackdropCameraPlan> backdrop_plan_{};

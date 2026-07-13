@@ -1,6 +1,7 @@
 #include "terrain_clipmap.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <span>
@@ -37,6 +38,16 @@ cubey::render::MeshConfig TerrainClipmapMeshData::mesh_config() const {
     return cubey::render::indexed_mesh_config(
         std::span<const cubey::render::VertexPositionColorNormal>(vertices.data(), vertices.size()),
         std::span<const std::uint32_t>(indices.data(), indices.size()));
+}
+
+cubey::render::MeshConfig TerrainQualityClipmapMeshData::mesh_config() const {
+    return cubey::render::indexed_mesh_config(
+        std::span<const cubey::render::VertexPositionColorNormal>(vertices.data(), vertices.size()),
+        std::span<const std::uint32_t>(indices.data(), indices.size()));
+}
+
+std::uint32_t TerrainQualityClipmapMeshData::patch_count() const {
+    return cubey::render::mesh_index_count(indices.size() / 4U);
 }
 
 cubey::render::ClipmapGrid2DConfig terrain_clipmap_config(const TerrainRuntimeConfig& config) {
@@ -151,6 +162,65 @@ TerrainClipmapMeshData make_terrain_clipmap_mesh(const TerrainRuntimeConfig& con
     }
     mesh.diagnostics.total_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
     mesh.diagnostics.total_triangles = terrain_clipmap_triangle_count(mesh);
+    return mesh;
+}
+
+TerrainQualityClipmapMeshData
+make_terrain_quality_clipmap_mesh(const TerrainRuntimeConfig& config) {
+    constexpr std::uint32_t kCellsPerPatch = 16U;
+    const cubey::render::ClipmapGrid2DConfig clipmap_config = terrain_clipmap_config(config);
+    const auto patches = cubey::render::clipmap_grid_2d_patches<64U>(clipmap_config);
+
+    TerrainQualityClipmapMeshData mesh;
+    mesh.diagnostics = cubey::render::clipmap_grid_2d_diagnostics(clipmap_config, patches);
+    for (std::size_t patch_index = patches.count; patch_index > 0U; --patch_index) {
+        const cubey::render::ClipmapGrid2DPatch& patch = patches.patches[patch_index - 1U];
+        const float level_t = clipmap_config.lod_levels <= 1U
+                                  ? 0.0F
+                                  : static_cast<float>(patch.level) /
+                                        static_cast<float>(clipmap_config.lod_levels - 1U);
+        const float cell_size =
+            cubey::render::clipmap_grid_2d_level_cell_size(clipmap_config, patch.level);
+        const float child_half_extent =
+            patch.level == 0U ? 0.0F
+                              : cubey::render::clipmap_grid_2d_level_half_extent(clipmap_config,
+                                                                                 patch.level - 1U);
+        const float span_x = patch.bounds.max_x - patch.bounds.min_x;
+        const float span_z = patch.bounds.max_z - patch.bounds.min_z;
+        for (std::uint32_t z = 0; z < patch.cells_z; z += kCellsPerPatch) {
+            const std::uint32_t patch_cells_z = std::min(kCellsPerPatch, patch.cells_z - z);
+            const float z0 = patch.bounds.min_z +
+                             span_z * static_cast<float>(z) / static_cast<float>(patch.cells_z);
+            const float z1 = patch.bounds.min_z + span_z * static_cast<float>(z + patch_cells_z) /
+                                                      static_cast<float>(patch.cells_z);
+            for (std::uint32_t x = 0; x < patch.cells_x; x += kCellsPerPatch) {
+                const std::uint32_t patch_cells_x = std::min(kCellsPerPatch, patch.cells_x - x);
+                const float x0 = patch.bounds.min_x +
+                                 span_x * static_cast<float>(x) / static_cast<float>(patch.cells_x);
+                const float x1 = patch.bounds.min_x + span_x *
+                                                          static_cast<float>(x + patch_cells_x) /
+                                                          static_cast<float>(patch.cells_x);
+                const std::array corners{
+                    cubey::math::Vec2{x0, z0},
+                    cubey::math::Vec2{x1, z0},
+                    cubey::math::Vec2{x1, z1},
+                    cubey::math::Vec2{x0, z1},
+                };
+                for (const cubey::math::Vec2 corner : corners) {
+                    mesh.vertices.push_back({
+                        .position = {corner.x, 0.0F, corner.y},
+                        .color = {cell_size, level_t, static_cast<float>(patch_cells_x)},
+                        .normal = {child_half_extent,
+                                   cubey::render::clipmap_grid_2d_near_cell_size(clipmap_config),
+                                   static_cast<float>(patch_cells_z)},
+                    });
+                    mesh.indices.push_back(static_cast<std::uint32_t>(mesh.indices.size()));
+                }
+            }
+        }
+    }
+    mesh.diagnostics.total_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
+    mesh.diagnostics.total_triangles = 0U;
     return mesh;
 }
 

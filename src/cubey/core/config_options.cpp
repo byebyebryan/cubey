@@ -106,6 +106,7 @@ constexpr std::array<std::string_view, 8> kTerrainCameraPresets{
     "oblique", "profile", "top", "surface", "surface-low", "ground", "backdrop", "coastal-oblique"};
 constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
 constexpr std::array<std::string_view, 2> kTerrainSourceVersions{"v1", "v2"};
+constexpr std::array<std::string_view, 2> kTerrainRenderPaths{"control", "quality"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
@@ -153,7 +154,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 264> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 266> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -446,6 +447,13 @@ constexpr std::array<ConfigOptionDescriptor, 264> kRunConfigOptions{
            "--terrain-source-version", "Source Version", "Terrain",
            "Authoritative terrain source implementation version.", ConfigOptionType::Enum,
            no_range(), enum_choices(kTerrainSourceVersions)),
+    option(RunConfigOptionId::TerrainRenderPath, "terrain.render_path", "--terrain-render-path",
+           "Render Path", "Terrain", "Terrain geometry and material rendering path.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainRenderPaths)),
+    option(RunConfigOptionId::TerrainTargetEdgePx, "terrain.target_edge_px",
+           "--terrain-target-edge-px", "Target Edge Pixels", "Terrain",
+           "Target projected terrain edge length for adaptive tessellation.",
+           ConfigOptionType::Float, bounded_range(2.0, 16.0)),
     option(RunConfigOptionId::TerrainWeathering, "terrain.weathering", "--terrain-weathering",
            "Weathering", "Terrain", "Terrain v1 local weathering mode.", ConfigOptionType::Enum,
            no_range(), enum_choices(kTerrainWeatheringModes)),
@@ -1444,6 +1452,11 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.source_version.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.source_version);
+    case RunConfigOptionId::TerrainRenderPath:
+        return config.terrain.render_path.empty() ? nlohmann::json(nullptr)
+                                                  : nlohmann::json(config.terrain.render_path);
+    case RunConfigOptionId::TerrainTargetEdgePx:
+        return optional_float(config.terrain.target_edge_px);
     case RunConfigOptionId::TerrainWeathering:
         return config.terrain.weathering.empty() ? nlohmann::json(nullptr)
                                                  : nlohmann::json(config.terrain.weathering);
@@ -2721,6 +2734,13 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainSourceVersion:
         config.terrain.source_version = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainRenderPath:
+        config.terrain.render_path = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainTargetEdgePx:
+        config.terrain.target_edge_px = parse_config_float(value, option);
+        validate_range(config.terrain.target_edge_px, option);
         break;
     case RunConfigOptionId::TerrainWeathering:
         config.terrain.weathering = std::string(value);

@@ -120,6 +120,10 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "material-weights";
     case TerrainDebugView::AmbientVisibility:
         return "ambient-visibility";
+    case TerrainDebugView::TessellationFactor:
+        return "tessellation-factor";
+    case TerrainDebugView::ProjectedEdge:
+        return "projected-edge";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -164,6 +168,12 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     if (name == "ambient-visibility" || name == "ambient") {
         return TerrainDebugView::AmbientVisibility;
     }
+    if (name == "tessellation-factor" || name == "tessellation" || name == "tess") {
+        return TerrainDebugView::TessellationFactor;
+    }
+    if (name == "projected-edge" || name == "edge") {
+        return TerrainDebugView::ProjectedEdge;
+    }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }
 
@@ -187,12 +197,38 @@ TerrainPresentationMode terrain_presentation_mode_from_name(std::string_view nam
     throw std::runtime_error("unknown terrain presentation mode: " + std::string(name));
 }
 
+std::string_view terrain_render_path_name(TerrainRenderPath path) {
+    switch (path) {
+    case TerrainRenderPath::Control:
+        return "control";
+    case TerrainRenderPath::Quality:
+        return "quality";
+    }
+    throw std::runtime_error("unknown terrain render path");
+}
+
+TerrainRenderPath terrain_render_path_from_name(std::string_view name) {
+    if (name.empty() || name == "control") {
+        return TerrainRenderPath::Control;
+    }
+    if (name == "quality") {
+        return TerrainRenderPath::Quality;
+    }
+    throw std::runtime_error("unknown terrain render path: " + std::string(name));
+}
+
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     validate_terrain_source_config(config.source);
     if (!std::isfinite(config.near_cell_size_m) || config.near_cell_size_m <= 0.0F ||
         !std::isfinite(config.vertical_scale) || config.vertical_scale <= 0.0F ||
-        config.lod_levels == 0U || config.lod_levels > 12U || config.cells_per_axis < 16U) {
+        !std::isfinite(config.target_edge_px) || config.target_edge_px < 2.0F ||
+        config.target_edge_px > 16.0F || config.lod_levels == 0U || config.lod_levels > 12U ||
+        config.cells_per_axis < 16U) {
         throw std::runtime_error("invalid terrain runtime configuration");
+    }
+    if (config.render_path == TerrainRenderPath::Quality &&
+        config.source.preset != TerrainPreset::Mountain) {
+        throw std::runtime_error("quality terrain rendering currently supports only mountain");
     }
 }
 
@@ -211,6 +247,10 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     result.camera = terrain_camera_preset_from_name(config.terrain.camera_preset);
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     result.presentation = terrain_presentation_mode_from_name(config.terrain.presentation);
+    result.render_path = terrain_render_path_from_name(config.terrain.render_path);
+    result.target_edge_px = cubey::run_config_float_is_set(config.terrain.target_edge_px)
+                                ? config.terrain.target_edge_px
+                                : 4.0F;
     result.near_cell_size_m =
         cubey::run_config_float_is_set(config.terrain.cell_size) ? config.terrain.cell_size : 2.0F;
     result.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)

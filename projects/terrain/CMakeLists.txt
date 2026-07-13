@@ -83,6 +83,9 @@ cubey_add_app_target(
         terrain_app.cpp
     SHADERS
         shaders/terrain.vert
+        shaders/terrain_quality.vert
+        shaders/terrain_quality.tesc
+        shaders/terrain_quality.tese
         shaders/terrain.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"

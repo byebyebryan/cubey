@@ -33,6 +33,8 @@ enum class TerrainDebugView : std::uint8_t {
     Normal,
     MaterialWeights,
     AmbientVisibility,
+    TessellationFactor,
+    ProjectedEdge,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {
@@ -40,11 +42,18 @@ enum class TerrainPresentationMode : std::uint8_t {
     Backdrop,
 };
 
+enum class TerrainRenderPath : std::uint8_t {
+    Control,
+    Quality,
+};
+
 struct TerrainRuntimeConfig {
     TerrainSourceConfig source{};
     TerrainCameraPreset camera = TerrainCameraPreset::Oblique;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
+    TerrainRenderPath render_path = TerrainRenderPath::Control;
+    float target_edge_px = 4.0F;
     float near_cell_size_m = 2.0F;
     float vertical_scale = 1.0F;
     std::uint32_t lod_levels = 8U;
@@ -62,6 +71,8 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] TerrainDebugView terrain_debug_view_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_presentation_mode_name(TerrainPresentationMode mode);
 [[nodiscard]] TerrainPresentationMode terrain_presentation_mode_from_name(std::string_view name);
+[[nodiscard]] std::string_view terrain_render_path_name(TerrainRenderPath path);
+[[nodiscard]] TerrainRenderPath terrain_render_path_from_name(std::string_view name);
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config);
 [[nodiscard]] TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& config);
 
