@@ -152,8 +152,8 @@ struct OceanConfig {
     OceanSeaState sea_state = OceanSeaState::Windy;
     std::uint32_t map_size = kOceanDefaultMapSize;
     float depth = 20.0F;
-    float roughness = 0.32F;
-    float normal_strength = 0.90F;
+    float roughness = 0.34F;
+    float normal_strength = 0.82F;
     float exposure = 0.0F;
     float water_color_r = 0.1F;
     float water_color_g = 0.15F;
@@ -161,11 +161,11 @@ struct OceanConfig {
     float foam_color_r = 0.73F;
     float foam_color_g = 0.67F;
     float foam_color_b = 0.62F;
-    float foam_density = 2.80F;
-    float foam_sharpness = 0.60F;
+    float foam_density = 2.65F;
+    float foam_sharpness = 0.65F;
     float surface_shape_strength = 1.0F;
-    float surface_foam_strength = 0.85F;
-    float foam_history_strength = 0.75F;
+    float surface_foam_strength = 0.92F;
+    float foam_history_strength = 0.80F;
     float atmosphere_material_strength = 1.0F;
     float atmosphere_sky_strength = 1.0F;
     float atmosphere_reflection_strength = 1.0F;
@@ -208,16 +208,16 @@ struct OceanConfig {
     std::array<OceanCascadeConfig, kOceanCascadeCount> cascades{
         OceanCascadeConfig{
             .tile_length = 88.0F,
-            .displacement_scale = 1.0F,
-            .normal_scale = 1.05F,
+            .displacement_scale = 1.04F,
+            .normal_scale = 0.94F,
             .wind_speed = 11.0F,
             .wind_direction_degrees = 20.0F,
             .fetch_length_km = 150.0F,
-            .swell = 0.80F,
-            .spread = 0.24F,
-            .detail = 1.0F,
-            .whitecap = 0.72F,
-            .foam_amount = 3.50F,
+            .swell = 0.84F,
+            .spread = 0.20F,
+            .detail = 0.96F,
+            .whitecap = 0.70F,
+            .foam_amount = 3.70F,
             .domain_min_waves = 0.0F,
             .seed_x = 1337,
             .seed_y = 4919,
@@ -225,16 +225,16 @@ struct OceanConfig {
         },
         OceanCascadeConfig{
             .tile_length = 57.0F,
-            .displacement_scale = 0.78F,
-            .normal_scale = 0.95F,
+            .displacement_scale = 0.72F,
+            .normal_scale = 0.78F,
             .wind_speed = 9.0F,
             .wind_direction_degrees = 17.0F,
             .fetch_length_km = 110.0F,
-            .swell = 0.72F,
-            .spread = 0.35F,
-            .detail = 1.0F,
-            .whitecap = 0.68F,
-            .foam_amount = 2.80F,
+            .swell = 0.74F,
+            .spread = 0.30F,
+            .detail = 0.90F,
+            .whitecap = 0.66F,
+            .foam_amount = 2.70F,
             .domain_min_waves = 0.0F,
             .seed_x = -2713,
             .seed_y = 8128,

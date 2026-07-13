@@ -515,9 +515,9 @@ int main() {
                      0.01F, "cascade 4 smallest wavelength should follow map sampling");
         require_near(cascade0.tile_length, 88.0F, 0.001F,
                      "cascade 0 should keep the reference primary crest scale");
-        require_near(cascade0.displacement_scale, 1.35F, 0.001F,
+        require_near(cascade0.displacement_scale, 1.42F, 0.001F,
                      "cascade 0 storm primary crest displacement should be tuned");
-        require_near(cascade0.normal_scale, 1.35F, 0.001F,
+        require_near(cascade0.normal_scale, 1.14F, 0.001F,
                      "cascade 0 storm primary crest normal should be tuned");
         require_near(cascade0.wind_speed, 18.0F, 0.001F,
                      "cascade 0 storm primary crest wind should be tuned");
@@ -525,18 +525,18 @@ int main() {
                      "cascade 0 wind direction should match Godot ref primary crest");
         require_near(cascade0.fetch_length_km, 350.0F, 0.001F,
                      "cascade 0 storm primary crest fetch should be tuned");
-        require_near(cascade0.spread, 0.14F, 0.001F,
+        require_near(cascade0.spread, 0.12F, 0.001F,
                      "cascade 0 storm primary crest spread should be tuned");
         require_near(cascade0.whitecap, 0.50F, 0.001F,
                      "cascade 0 storm primary crest whitecap should match ref-style breaking");
-        require_near(cascade0.foam_amount, 5.80F, 0.001F,
+        require_near(cascade0.foam_amount, 5.60F, 0.001F,
                      "cascade 0 storm primary crest foam should drive accumulated whitecaps");
 
         require_near(cascade1.tile_length, 57.0F, 0.001F,
                      "cascade 1 tile length should match Godot ref secondary wave");
-        require_near(cascade1.displacement_scale, 1.08F, 0.001F,
+        require_near(cascade1.displacement_scale, 1.10F, 0.001F,
                      "cascade 1 storm secondary wave displacement should be tuned");
-        require_near(cascade1.normal_scale, 1.35F, 0.001F,
+        require_near(cascade1.normal_scale, 1.02F, 0.001F,
                      "cascade 1 storm secondary wave normal should be tuned");
         require_near(cascade1.wind_speed, 16.0F, 0.001F,
                      "cascade 1 storm secondary wave wind should be tuned");
@@ -544,11 +544,11 @@ int main() {
                      "cascade 1 storm secondary wave direction should be tuned");
         require_near(cascade1.fetch_length_km, 330.0F, 0.001F,
                      "cascade 1 storm secondary wave fetch should be tuned");
-        require_near(cascade1.spread, 0.25F, 0.001F,
+        require_near(cascade1.spread, 0.22F, 0.001F,
                      "cascade 1 storm secondary wave spread should be tuned");
         require_near(cascade1.whitecap, 0.48F, 0.001F,
                      "cascade 1 storm secondary wave whitecap should match ref-style breaking");
-        require_near(cascade1.foam_amount, 4.80F, 0.001F,
+        require_near(cascade1.foam_amount, 4.50F, 0.001F,
                      "cascade 1 storm secondary wave foam should support accumulated whitecaps");
 
         require_near(cascade2.tile_length, 1531.0F, 0.001F,
@@ -596,9 +596,9 @@ int main() {
                      "cascade 4 storm detail foam should stay secondary");
         require_near(defaults.water_color_r, 0.1F, 0.001F, "water color should match Godot ref");
         require_near(defaults.foam_color_r, 0.73F, 0.001F, "foam color should match Godot ref");
-        require_near(defaults.foam_density, 2.80F, 0.001F,
+        require_near(defaults.foam_density, 2.65F, 0.001F,
                      "windy foam density should keep intermittent visible coverage");
-        require_near(defaults.foam_sharpness, 0.60F, 0.001F,
+        require_near(defaults.foam_sharpness, 0.65F, 0.001F,
                      "windy foam sharpness should keep a whitecap-biased response");
         const ocean::OceanDiagnosticsConfig diagnostics{};
         require(diagnostics.size_reference_enabled,
@@ -609,9 +609,9 @@ int main() {
                      "ocean diagnostics should default to detail anti-repeat sampling");
         require_near(defaults.surface_shape_strength, 1.0F, 0.001F,
                      "ocean should default surface shape contribution on");
-        require_near(defaults.surface_foam_strength, 0.85F, 0.001F,
+        require_near(defaults.surface_foam_strength, 0.92F, 0.001F,
                      "windy ocean should default to restrained surface foam");
-        require_near(defaults.foam_history_strength, 0.75F, 0.001F,
+        require_near(defaults.foam_history_strength, 0.80F, 0.001F,
                      "windy ocean should retain but not saturate foam history");
         require_near(defaults.atmosphere_material_strength, 1.0F, 0.001F,
                      "ocean should default atmosphere material contribution on");

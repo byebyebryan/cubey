@@ -28,6 +28,7 @@ struct OceanSeaStateCascadeSettings {
     float fetch_length_km = 150.0F;
     float swell = 0.8F;
     float spread = 0.2F;
+    float detail = 1.0F;
     float whitecap = 0.5F;
     float foam_amount = 8.0F;
 
