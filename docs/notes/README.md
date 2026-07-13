@@ -110,6 +110,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain midground detail v3](terrain-midground-detail-v3.md): implemented
   opt-in layered materials, explicit backdrop/midground tiers, measured A/B
   review pack, and frozen near-ground boundary.
+- [Terrain midground correction v4](terrain-midground-correction-v4.md): frozen
+  source/geometry contract for separating macro classification from shading
+  detail and rejecting near-frame camera occluders.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
