@@ -105,7 +105,7 @@ Headless captures can use
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-spectral-lod-handoff 0.0..1.0`,
 `--ocean-terrain-fields`, `--no-ocean-terrain-fields`,
-`--ocean-cloud-reflection-source current-view|cached|hybrid|planar`,
+`--ocean-cloud-reflection-source current-view|cached|planar`,
 `--ocean-cloud-planar-resolution-scale 0.25..1.0`,
 `--ocean-cloud-planar-view-steps 8..128`,
 `--ocean-cloud-planar-guard-band 0.0..0.5`,
@@ -126,7 +126,8 @@ atmosphere sky before ocean post. The water material consumes a projected
 cloud-transmittance map for direct light and defaults to a dedicated reflected
 cloud view for coherent radiance/transmittance across the visible ocean. A
 roughness-filtered cached cloud environment covers invalid planar directions.
-`current-view`, `cached`, and `hybrid` remain comparison paths.
+`cached` remains the broad production fallback, while `current-view` is retained
+only as a bounded quality reference.
 `cloud-shadow` shows projected transmittance, `cloud-reflection` isolates the
 selected reflected lighting, and `cloud-reflection-validity` shows planar versus
 fallback coverage. The Shading panel exposes independent coupling strengths and

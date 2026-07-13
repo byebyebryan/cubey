@@ -39,14 +39,12 @@ coherent: all six faces and mip levels are completed together, then two whole
 environments crossfade over one refresh interval. The default is a 64-pixel
 cube refreshed at 4 Hz with 32 cloud-march steps.
 
-`ocean.cloud_reflection_source` selects the production or comparison path:
+`ocean.cloud_reflection_source` selects the production or reference path:
 
 - `current-view` preserves the original screen-projected product as a bounded
-  low-cost baseline.
+  low-cost reference. Its coverage boundary prevents production use.
 - `cached` samples only the roughness-filtered cloud environment and therefore
   covers offscreen directions without screen-edge falloff.
-- `hybrid` uses the cache as the broad/offscreen base and overlays the existing
-  filtered current-view product wherever that projection is valid.
 - `planar` is the default. It samples the coherent reflected cloud view and
   falls back to the cache only outside the guarded projection or local receiver
   approximation. Below-horizon facets remain on the clear environment.
@@ -88,16 +86,16 @@ Generate the full-resolution deterministic pack with:
 projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-lighting-v1
 ```
 
-Generate the focused four-source comparison with:
+Generate the focused production comparison and current-view reference with:
 
 ```sh
 projects/ocean/capture_cloud_environment_review.sh \
   outputs/ocean-cloud-reflection-planar-v1
 ```
 
-The focused pack covers current-view, cached, hybrid, and planar at noon,
-sunset, and night from mid and high cameras. It also emits planar coverage and
-isolated-reflection diagnostics. The broader pack covers noon cloud/no-cloud
+The focused pack compares cached and planar production paths at noon, sunset,
+and night from mid and high cameras. It emits current-view on separate reference
+sheets, plus planar coverage and isolated-reflection diagnostics. The broader pack covers noon cloud/no-cloud
 composition, reflection off/on and raw contribution, projected transmittance
 and direct-light shadow A/B, mid/high camera behavior, sunset/night lighting,
 an aligned twilight sun corridor and water-body diagnostic, and cloud
@@ -124,10 +122,11 @@ not a portable frame-rate benchmark.
 | Ocean scene | 1.025 ms |
 | Coherent atmosphere probe update | 0.774 ms |
 
-The cached cloud environment was separately measured over 80 post-warmup
-frames in a 960x540, 30 fps headless-video run with a 128 ocean map, 64-pixel
-probe, 32 probe march steps, and 4 Hz refresh. The current-view baseline and
-hybrid run kept cloud march and ocean-scene costs within normal run variance.
+The cached cloud environment was separately measured during the pre-closure
+bakeoff over 80 post-warmup frames in a 960x540, 30 fps headless-video run with
+a 128 ocean map, 64-pixel probe, 32 probe march steps, and 4 Hz refresh. The
+current-view baseline and now-retired hybrid run kept cloud march and ocean-scene
+costs within normal run variance.
 
 | Cached environment work | Average GPU time |
 |---|---:|
@@ -135,10 +134,11 @@ hybrid run kept cloud march and ocean-scene costs within normal run variance.
 | Active coherent six-face capture | 1.151 ms/capture |
 | Active captures observed | 9 / 77 timed frames |
 
-The hybrid capture's mean absolute frame-to-frame luma delta was 0.044 with a
-0.467 maximum in an H.264 signal-stat pass, versus 0.060 / 0.599 for the
-current-view run. This is a coarse discontinuity guard, not a perceptual motion
-metric, but it found no whole-environment flash at capture boundaries.
+The historical hybrid capture's mean absolute frame-to-frame luma delta was
+0.044 with a 0.467 maximum in an H.264 signal-stat pass, versus 0.060 / 0.599
+for the current-view run. Hybrid was later retired for its spatial handoff, but
+this remains evidence that coherent cache updates avoid whole-environment
+flashes at capture boundaries.
 
 An incremental one-face atmosphere update measured 0.149 ms in the same test,
 but caused a six-frame luminance sawtooth at dawn. Coherent updates deliberately
@@ -152,9 +152,9 @@ reflection products are independent of FFT map size.
 | Reflection source work | Average GPU time |
 |---|---:|
 | Current-view extra pass | 0.000 ms |
-| Cached environment, amortized | 0.075 ms/frame |
-| Planar reflected cloud view | 0.304 ms/frame |
-| Planar plus cached fallback | 0.379 ms/frame |
+| Cached environment, amortized | 0.083 ms/frame |
+| Planar reflected cloud view | 0.358 ms/frame |
+| Planar plus cached fallback | 0.441 ms/frame |
 
 The planar pass is comfortably below its 1.0 ms budget at the accepted half
 resolution, 32 steps, and six filtered mip levels.
@@ -163,7 +163,7 @@ resolution, 32 steps, and six filtered mip levels.
 
 - This is a surface and horizon-scale contract, not an aerial/orbit solution.
 - Current-view reflection still cannot show offscreen clouds; it remains a
-  comparison mode. Planar closes the ordinary surface-view gap, with the cache
+  reference mode. Planar closes the ordinary surface-view gap, with the cache
   as broad fallback, but neither product is yet exposed to general PBR
   consumers.
 - The reflection input is the cloud march product, before the visible
@@ -179,6 +179,11 @@ resolution, 32 steps, and six filtered mip levels.
   horizon footprint; aerial-scale coverage needs cascades or another LOD.
 - Terrain, planet, and general PBR consumers remain future integrations; they
   should consume shared outputs rather than copy cloud density or march code.
+
+`CloudEnvironmentProbe` already lives in the shared render layer. Ocean still
+owns its instance, update policy, and descriptor wiring; promotion into shared
+atmosphere/PBR lifecycle is intentionally deferred to a separate foundation
+batch.
 
 The surface result and ocean-owned cached environment are accepted as part of
 [Surface Ocean V1](ocean-surface-v1.md). General PBR ownership, planet-scale

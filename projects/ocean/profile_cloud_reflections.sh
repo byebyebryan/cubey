@@ -14,8 +14,12 @@ REPEATS="${REPEATS:-1}"
 PLANAR_SCALE="${PLANAR_SCALE:-0.5}"
 PLANAR_STEPS="${PLANAR_STEPS:-32}"
 PLANAR_GUARD="${PLANAR_GUARD:-0.15}"
+INCLUDE_REFERENCE="${INCLUDE_REFERENCE:-0}"
 
-sources=(current-view cached hybrid planar)
+sources=(cached planar)
+if [[ "${INCLUDE_REFERENCE}" == "1" ]]; then
+    sources+=(current-view)
+fi
 mkdir -p "${OUT_DIR}/profiles"
 summary="${OUT_DIR}/summary.csv"
 printf 'source,repeat,average_fps,cloud_march_ms,cloud_environment_ms,cloud_planar_ms,ocean_scene_ms,gpu_total_ms\n' >"${summary}"
@@ -76,6 +80,7 @@ done
     printf -- '- Ocean map: %s\n' "${MAP_SIZE}"
     printf -- '- Planar product: scale %s, %s steps, guard %s\n\n' \
         "${PLANAR_SCALE}" "${PLANAR_STEPS}" "${PLANAR_GUARD}"
+    printf -- '- Sources: %s\n\n' "${sources[*]}"
     printf '```csv\n'
     cat "${summary}"
     printf '```\n'

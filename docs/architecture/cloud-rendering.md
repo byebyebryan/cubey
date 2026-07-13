@@ -420,13 +420,16 @@ shared sky/celestial/atmosphere state and emits:
   low-frequency direct-light modulation;
 - a current-view radiance/transmittance contribution that consumers may reuse
   without another cloud march, subject to explicit screen-footprint fallback;
+- a reflected-camera radiance/transmittance product for local planar receivers;
+- a coherent, roughness-prefiltered cloud environment cache for broad fallback;
 - debug views for weather, base/detail density, lighting, shadow, distance,
   steps, and composition, plus deferred cache/local/orbit regime diagnostics.
 
-Deferred outputs include planet-scale shadow products and clouded
-sky/reflection probes for offscreen or general PBR consumers. Ocean proves the
-first direct-product contract without owning cloud raymarch code: it samples
-the shared shadow product and reuses the resolved current-view cloud product.
+Deferred outputs include planet-scale shadow products and shared PBR ownership
+of clouded environment bindings. Ocean proves the receiver contracts without
+owning cloud raymarch code: it samples the shared shadow product, uses the
+reflected-camera product for local detail, and falls back to a coherent cached
+environment.
 Planet, terrain, and glTF/PBR consumers should follow the same ownership rule
 when their scale and environment-product contracts are ready.
 
@@ -462,8 +465,8 @@ The active Cloud V1 milestone is:
 4. Keep sampling and resolve controls isolated so capture bundles can compare
    blue-noise/temporal, Bayer, interleaved, no-jitter, raw-final, and edge-mask
    output.
-5. Keep the accepted ocean shadow/current-view reflection products bounded and
-   measurable while preserving the standalone atmosphere tuning surface.
+5. Keep the accepted ocean shadow, planar reflection, and cached fallback
+   bounded and measurable while preserving the atmosphere tuning surface.
 
 Acceptance for this milestone:
 
@@ -478,6 +481,6 @@ Acceptance for this milestone:
   sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
-Only after that should the production layer resume aerial/orbit work, add the
-cached hemisphere path from `cloud_ref_2`, or promote direct cloud-product
-consumption beyond the bounded ocean surface contract.
+Only after that should the production layer resume aerial/orbit work or promote
+the cached cloud environment into general PBR consumption beyond the bounded
+ocean surface contract.
