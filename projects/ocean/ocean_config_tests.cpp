@@ -658,10 +658,16 @@ int main() {
         require_near(defaults.sun_glitter_width, 0.09F, 0.001F,
                      "windy ocean should use a moderate reflected-sun corridor width");
         require_near(defaults.cloud_reflection_strength, 0.75F, 0.001F,
-                     "ocean should default current-view cloud reflection contribution on");
+                     "ocean should default cloud reflection contribution on");
         require(defaults.cloud_reflection_source ==
+                    ocean::OceanCloudReflectionSource::Planar,
+                "ocean should default to coherent planar cloud reflections");
+        require(ocean::ocean_cloud_reflection_source_from_name("") ==
+                    ocean::OceanCloudReflectionSource::Planar,
+                "empty cloud reflection config should preserve the planar default");
+        require(ocean::ocean_cloud_reflection_source_from_name("current-view") ==
                     ocean::OceanCloudReflectionSource::CurrentView,
-                "ocean should keep cached cloud reflections opt-in");
+                "current-view cloud reflection should remain explicitly selectable");
         require(defaults.cloud_environment_extent == 64U,
                 "ocean should default the cached cloud environment to 64 pixels per face");
         require_near(defaults.cloud_environment_update_hz, 4.0F, 0.001F,

@@ -190,7 +190,7 @@ struct OceanConfig {
     float far_reflection_variation_strength = 0.06F;
     float sun_glitter_width = 0.09F;
     OceanCloudReflectionSource cloud_reflection_source =
-        OceanCloudReflectionSource::CurrentView;
+        OceanCloudReflectionSource::Planar;
     std::uint32_t cloud_environment_extent = 64U;
     float cloud_environment_update_hz = 4.0F;
     float cloud_planar_resolution_scale = 0.5F;
@@ -447,7 +447,10 @@ ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
 
 [[nodiscard]] inline OceanCloudReflectionSource
 ocean_cloud_reflection_source_from_name(std::string_view name) {
-    if (name.empty() || name == "current-view") {
+    if (name.empty()) {
+        return OceanCloudReflectionSource::Planar;
+    }
+    if (name == "current-view") {
         return OceanCloudReflectionSource::CurrentView;
     }
     if (name == "cached") {
