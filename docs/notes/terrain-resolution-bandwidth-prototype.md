@@ -2,10 +2,11 @@
 
 Date: 2026-07-12
 
-Status: implementation contract. The current terrain renderer and source v1
-remain the default control while an opt-in mountain quality path tests adaptive
-geometry, a broader authoritative height spectrum, and procedural material
-textures.
+Status: implemented. The current terrain renderer and source v1 remain the
+default control while an opt-in mountain quality path tests adaptive geometry,
+a broader authoritative height spectrum, and procedural material textures. See
+[`terrain-resolution-bandwidth-checkpoint.md`](terrain-resolution-bandwidth-checkpoint.md)
+for measured results and the review read.
 
 ## Evidence
 

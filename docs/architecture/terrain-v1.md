@@ -88,6 +88,13 @@ grid; height-only snapping is not sufficient to close T-junctions. Every
 fragment has one LOD owner, while a one-parent-cell raster guard and downward
 boundary skirts cover residual rasterization gaps.
 
+An opt-in mountain quality path keeps the same coverage and ownership model but
+submits coarse quad patches to Vulkan tessellation. Shared-edge projected sizes
+select power-of-two factors against a configurable pixel target; generated
+vertex spacing becomes the source footprint. This path requires tessellation
+support and is not the default. Source v2 independently extends only mountain's
+detail spectrum, allowing renderer and source changes to be reviewed separately.
+
 The scene uses the shared atmosphere integrator for sky and camera-to-surface
 aerial perspective. Diffuse-irradiance spherical harmonics and the atmosphere
 primary light feed a project-local dielectric GGX response. Broad direct-light
@@ -100,6 +107,11 @@ elevation rather than normalized per-preset height. Material relief is filtered
 from projected pixel footprint and contributes only a restrained normal
 perturbation, so it cannot alter geometry or advertise LOD boundaries. Materials
 remain presentation only; they do not become terrain truth.
+
+Quality materials add four seeded, periodic, compute-generated ground, scree,
+rock, and snow tiles with complete mip chains and warped triplanar projection.
+These textures add sub-meter through tens-of-meter presentation bandwidth
+without changing source height or introducing imported runtime assets.
 
 An opt-in backdrop presentation may derive distant vegetation coverage from
 height, slope, broad landform context, and footprint-filtered coherent fields.
@@ -121,6 +133,9 @@ The public run controls are:
 
 - `terrain.seed`;
 - `terrain.preset`: `mountain`, `upland`, or `plains`;
+- `terrain.source_version`: `v1` or mountain-only `v2`;
+- `terrain.render_path`: `control` or mountain-only `quality`;
+- `terrain.target_edge_px`: adaptive quality target from `2` through `16`;
 - `terrain.weathering`: `off` or `local`;
 - `terrain.weathering_strength`;
 - existing terrain camera, cell-size, and vertical-scale controls;

@@ -104,6 +104,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain resolution and bandwidth prototype](terrain-resolution-bandwidth-prototype.md):
   opt-in adaptive mountain geometry, source-v2 spectrum, and generated material
   texture contract while source v1 and the control renderer remain stable.
+- [Terrain resolution and bandwidth checkpoint](terrain-resolution-bandwidth-checkpoint.md):
+  implemented control/quality comparison, measured review pack, and remaining
+  terrain-rendering limits.
 - [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
   matrix, recipe status, freeze policy, and explicit carry/reject decisions for
   the production terrain reboot.
