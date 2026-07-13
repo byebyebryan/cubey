@@ -104,9 +104,12 @@ TerrainMaterialSample terrain_layered_material_sample(TerrainMaterialSample mate
                                                       vec3 world_position,
                                                       float pixel_footprint_m) {
     vec3 warp = vec3(
-        sin(world_position.z / 83.0),
-        sin((world_position.x + world_position.z) / 71.0),
-        sin(world_position.x / 79.0)) * 7.5;
+        sin(world_position.z / 173.0) +
+            0.55 * sin((world_position.x - world_position.z) / 97.0),
+        sin((world_position.x + world_position.z) / 149.0) +
+            0.50 * sin((world_position.x - world_position.z) / 61.0),
+        sin(world_position.x / 181.0) +
+            0.55 * sin((world_position.x + world_position.z) / 89.0)) * 18.0;
     vec3 warped_position = world_position + warp;
     TerrainLayerTextureSample layers[4];
     for (int index = 0; index < 4; ++index) {
@@ -133,7 +136,7 @@ TerrainMaterialSample terrain_layered_material_sample(TerrainMaterialSample mate
     }
 
     float normal_visibility = 1.0 - smoothstep(4.0, 12.0, pixel_footprint_m);
-    float normal_strength = dot(adjusted_weights, vec4(0.22, 0.36, 0.48, 0.12));
+    float normal_strength = dot(adjusted_weights, vec4(0.14, 0.36, 0.44, 0.12));
     material.base_color = mix(material.base_color, layered_albedo, 0.78);
     material.roughness = mix(material.roughness, layered_roughness, 0.82);
     material.detail_normal = normalize(mix(source_normal, normalize(layered_normal),

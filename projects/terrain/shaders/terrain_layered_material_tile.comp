@@ -12,6 +12,7 @@ layout(push_constant) uniform TerrainLayeredMaterialPushConstants {
 } pc;
 
 const float terrain_tile_period_m = 256.0;
+const float terrain_tile_tau = 6.28318530718;
 
 float terrain_tile_hash(uint value) {
     value ^= value >> 16U;
@@ -29,20 +30,24 @@ uint terrain_tile_cell_hash(ivec2 cell, int period, uint salt) {
         pc.seed ^ salt * 0xc2b2ae35U;
 }
 
-float terrain_tile_lattice(ivec2 cell, int period, uint salt) {
-    return terrain_tile_hash(terrain_tile_cell_hash(cell, period, salt)) * 2.0 - 1.0;
+vec2 terrain_tile_gradient(ivec2 cell, int period, uint salt) {
+    float angle = terrain_tile_hash(terrain_tile_cell_hash(cell, period, salt)) * terrain_tile_tau;
+    return vec2(cos(angle), sin(angle));
 }
 
 float terrain_tile_noise(vec2 uv, int cycles, uint salt) {
     vec2 position = uv * float(cycles);
     ivec2 cell = ivec2(floor(position));
-    vec2 blend = fract(position);
-    blend = blend * blend * (3.0 - 2.0 * blend);
-    float a = terrain_tile_lattice(cell, cycles, salt);
-    float b = terrain_tile_lattice(cell + ivec2(1, 0), cycles, salt);
-    float c = terrain_tile_lattice(cell + ivec2(0, 1), cycles, salt);
-    float d = terrain_tile_lattice(cell + ivec2(1, 1), cycles, salt);
-    return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
+    vec2 local = fract(position);
+    vec2 blend = local * local * local * (local * (local * 6.0 - 15.0) + 10.0);
+    float a = dot(terrain_tile_gradient(cell, cycles, salt), local);
+    float b = dot(terrain_tile_gradient(cell + ivec2(1, 0), cycles, salt),
+                  local - vec2(1.0, 0.0));
+    float c = dot(terrain_tile_gradient(cell + ivec2(0, 1), cycles, salt),
+                  local - vec2(0.0, 1.0));
+    float d = dot(terrain_tile_gradient(cell + ivec2(1, 1), cycles, salt),
+                  local - vec2(1.0));
+    return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y) * 1.41421356;
 }
 
 vec2 terrain_tile_point(ivec2 cell, int period, uint salt) {
@@ -67,9 +72,9 @@ float terrain_tile_cellular(vec2 uv, int cycles, uint salt) {
 
 float terrain_layer_height_unit(vec2 uv) {
     if (pc.material == 0U) {
-        return 0.50 + 0.22 * terrain_tile_noise(uv, 4, 11U) +
-            0.15 * terrain_tile_noise(uv, 16, 13U) +
-            0.08 * terrain_tile_noise(uv, 64, 17U);
+        return 0.50 + 0.14 * terrain_tile_noise(uv, 4, 11U) +
+            0.08 * terrain_tile_noise(uv, 16, 13U) +
+            0.04 * terrain_tile_noise(uv, 64, 17U);
     }
     if (pc.material == 1U) {
         float coarse = 1.0 - terrain_tile_cellular(uv, 16, 23U);
@@ -80,18 +85,18 @@ float terrain_layer_height_unit(vec2 uv) {
         vec2 warp = vec2(terrain_tile_noise(uv, 4, 31U),
                          terrain_tile_noise(uv, 4, 37U)) * 0.070;
         vec2 warped = fract(uv + warp);
-        float broad_ridge = 1.0 - abs(terrain_tile_noise(warped, 8, 41U));
-        float broken_ridge = 1.0 - abs(terrain_tile_noise(warped, 16, 47U));
-        float fracture = 1.0 - smoothstep(0.02, 0.14,
-            abs(terrain_tile_noise(warped, 32, 43U)));
-        return 0.22 + 0.42 * broad_ridge + 0.22 * broken_ridge + 0.14 * fracture;
+        vec2 rotated = mat2(1.0, 1.0, -1.0, 1.0) * warped;
+        float broad = terrain_tile_noise(warped, 7, 41U);
+        float broken = terrain_tile_noise(rotated, 17, 47U);
+        float granular = terrain_tile_noise(warped, 43, 43U);
+        return 0.50 + 0.23 * broad + 0.13 * broken + 0.06 * granular;
     }
     return 0.50 + 0.20 * terrain_tile_noise(uv, 8, 47U) +
         0.08 * terrain_tile_noise(uv, 32, 53U);
 }
 
 float terrain_layer_height_m(vec2 uv) {
-    const float height_scale_m[4] = float[4](0.45, 1.20, 1.35, 0.30);
+    const float height_scale_m[4] = float[4](0.28, 1.20, 1.10, 0.30);
     return terrain_layer_height_unit(fract(uv)) * height_scale_m[pc.material];
 }
 
@@ -101,9 +106,11 @@ vec3 terrain_layer_albedo(vec2 uv, float height_unit) {
         vec3(0.39, 0.39, 0.38), vec3(0.84, 0.87, 0.89));
     float broad = terrain_tile_noise(uv, 4, 61U + pc.material * 7U);
     float meso = terrain_tile_noise(uv, 16, 67U + pc.material * 11U);
-    float contrast = pc.material == 3U ? 0.045 : (pc.material == 0U ? 0.12 : 0.20);
+    float contrast = pc.material == 3U ? 0.045 : (pc.material == 0U ? 0.05 : 0.20);
+    float meso_weight = pc.material == 0U ? 0.20 : 0.45;
     vec3 srgb = base_srgb[pc.material] *
-        (1.0 + broad * contrast + meso * contrast * 0.45 + (height_unit - 0.5) * 0.08);
+        (1.0 + broad * contrast + meso * contrast * meso_weight +
+         (height_unit - 0.5) * 0.08);
     if (pc.material == 2U) {
         srgb *= mix(vec3(0.82, 0.86, 0.90), vec3(1.08, 1.03, 0.96), height_unit);
     }
