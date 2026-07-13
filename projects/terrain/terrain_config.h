@@ -35,6 +35,8 @@ enum class TerrainDebugView : std::uint8_t {
     AmbientVisibility,
     TessellationFactor,
     ProjectedEdge,
+    MaterialAlbedo,
+    MaterialNormal,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {

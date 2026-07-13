@@ -269,4 +269,15 @@ void test_compute_generated_texture_config_validates_dispatch_shape() {
         threw = true;
     }
     require(threw, "compute generated texture should reject inaccessible mips");
+
+    const std::array<std::byte, 3> unaligned_push{};
+    config.sampler.max_lod = 6.0F;
+    config.push_constants = unaligned_push;
+    threw = false;
+    try {
+        cubey::render::validate_compute_generated_texture_config(config);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "compute generated texture should reject unaligned push constants");
 }

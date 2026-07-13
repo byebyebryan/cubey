@@ -124,6 +124,10 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "tessellation-factor";
     case TerrainDebugView::ProjectedEdge:
         return "projected-edge";
+    case TerrainDebugView::MaterialAlbedo:
+        return "material-albedo";
+    case TerrainDebugView::MaterialNormal:
+        return "material-normal";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -173,6 +177,12 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "projected-edge" || name == "edge") {
         return TerrainDebugView::ProjectedEdge;
+    }
+    if (name == "material-albedo" || name == "albedo") {
+        return TerrainDebugView::MaterialAlbedo;
+    }
+    if (name == "material-normal" || name == "detail-normal") {
+        return TerrainDebugView::MaterialNormal;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }

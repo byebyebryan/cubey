@@ -4,6 +4,7 @@
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
+#include "terrain_material_tiles.h"
 #include "terrain_source_gpu.h"
 #include "terrain_surface_controller.h"
 
@@ -87,7 +88,7 @@ struct CompiledTerrainGraph {
         .offset = 0,
         .size = sizeof(TerrainPushConstants),
     };
-    return {
+    cubey::render::MaterialPassInfo result{
         .label = "terrain.forward",
         .descriptor_sets =
             {
@@ -122,6 +123,11 @@ struct CompiledTerrainGraph {
         .depth_test = true,
         .depth_write = true,
     };
+    if (quality) {
+        result.descriptor_sets.push_back(
+            cubey::render::sampled_texture_descriptor_set_layout(2, kTerrainMaterialTileCount));
+    }
+    return result;
 }
 
 [[nodiscard]] TerrainCameraFrame terrain_camera_frame(TerrainCameraPreset preset) {
@@ -367,7 +373,8 @@ class TerrainApp {
         if (ImGui::Combo("View", &debug_view,
                          "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
                          "Aerial transmittance\0Vegetation coverage\0Normal\0Material weights\0"
-                         "Ambient visibility\0Tessellation factor\0Projected edge\0")) {
+                         "Ambient visibility\0Tessellation factor\0Projected edge\0"
+                         "Material albedo\0Material normal\0")) {
             runtime_config_.debug_view = static_cast<TerrainDebugView>(debug_view);
         }
         if (source_changed) {
@@ -418,6 +425,22 @@ class TerrainApp {
         mesh_.emplace(gpu, runtime_config_.render_path == TerrainRenderPath::Quality
                                ? quality_clipmap_data_.mesh_config()
                                : clipmap_data_.mesh_config());
+        if (runtime_config_.render_path == TerrainRenderPath::Quality) {
+            material_tiles_.emplace(create_terrain_material_tiles(
+                device, gpu, shader_path("terrain_material_tile.comp.spv"),
+                runtime_config_.source.seed));
+            material_tile_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                        .material_pass = terrain_pass_info(true),
+                                                        .descriptor_set = 2,
+                                                    });
+            cubey::render::MaterialDescriptorWriter writer(material_tile_material_->set());
+            for (const cubey::render::SampledImageMaterialBinding& tile :
+                 terrain_material_tile_bindings(material_tiles_.value())) {
+                writer.combined_image_sampler(tile.binding, tile.sampler, tile.image_view,
+                                              tile.layout);
+            }
+            writer.update(device);
+        }
         source_material_.emplace(device,
                                  cubey::render::FrameUniformMaterialInstanceConfig{
                                      .material_pass = terrain_pass_info(
@@ -456,14 +479,17 @@ class TerrainApp {
             terrain_shaders.push_back(cubey::render::tessellation_evaluation_shader_file(
                 shader_path("terrain_quality.tese.spv")));
         }
-        terrain_shaders.push_back(
-            cubey::render::fragment_shader_file(shader_path("terrain.frag.spv")));
+        terrain_shaders.push_back(cubey::render::fragment_shader_file(
+            shader_path(quality ? "terrain_quality.frag.spv" : "terrain.frag.spv")));
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_input_layout();
-        const std::array<VkDescriptorSetLayout, 2> terrain_descriptor_set_layouts{
+        std::vector<VkDescriptorSetLayout> terrain_descriptor_set_layouts{
             source_material().layout(),
             environment_material().layout(),
         };
+        if (quality) {
+            terrain_descriptor_set_layouts.push_back(material_tile_material().layout());
+        }
         terrain_pass_.emplace(
             device,
             cubey::render::GraphicsPipelineTargetInfo{
@@ -517,6 +543,8 @@ class TerrainApp {
         hdr_post_frame_.destroy();
         atmosphere_background_.destroy();
         atmosphere_atlases_.reset();
+        material_tile_material_.reset();
+        material_tiles_.reset();
         source_material_.reset();
         environment_material_.reset();
         mesh_.reset();
@@ -619,6 +647,10 @@ class TerrainApp {
                                               source_material().material(), frame_slot);
         cubey::render::bind_material_instance(recorder, terrain_forward_pass().pipeline(),
                                               environment_material().material(), frame_slot);
+        if (runtime_config_.render_path == TerrainRenderPath::Quality) {
+            cubey::render::bind_material_instance(recorder, terrain_forward_pass().pipeline(),
+                                                  material_tile_material());
+        }
         const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT |
                                           VK_SHADER_STAGE_FRAGMENT_BIT |
                                           (runtime_config_.render_path == TerrainRenderPath::Quality
@@ -744,6 +776,13 @@ class TerrainApp {
         return environment_material_.value();
     }
 
+    [[nodiscard]] const cubey::render::MaterialInstance& material_tile_material() const {
+        if (!material_tile_material_.has_value()) {
+            throw std::runtime_error("terrain material tiles are not initialized");
+        }
+        return material_tile_material_.value();
+    }
+
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainSourceParameters source_parameters_{};
@@ -763,6 +802,8 @@ class TerrainApp {
         source_material_{};
     std::optional<cubey::render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>>
         environment_material_{};
+    std::optional<TerrainMaterialTiles> material_tiles_{};
+    std::optional<cubey::render::MaterialInstance> material_tile_material_{};
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_atlases_{};
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};

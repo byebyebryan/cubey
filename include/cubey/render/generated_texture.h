@@ -6,7 +6,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 
 namespace cubey::render {
@@ -20,6 +22,7 @@ struct ComputeGeneratedTexture2DConfig {
     std::uint32_t group_size_x = 1;
     std::uint32_t group_size_y = 1;
     std::uint32_t group_size_z = 1;
+    std::span<const std::byte> push_constants{};
     bool create_sampler = true;
     cubey::vulkan::SamplerConfig sampler{};
     VkFormatFeatureFlags required_format_features = VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT |

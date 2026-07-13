@@ -36,6 +36,7 @@ add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_camera.cpp
     terrain_clipmap.cpp
     terrain_environment_gpu.cpp
+    terrain_material_tiles.cpp
     terrain_surface_controller.cpp
 )
 target_include_directories(
@@ -86,7 +87,9 @@ cubey_add_app_target(
         shaders/terrain_quality.vert
         shaders/terrain_quality.tesc
         shaders/terrain_quality.tese
+        shaders/terrain_material_tile.comp
         shaders/terrain.frag
+        shaders/terrain_quality.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
@@ -98,6 +101,8 @@ cubey_add_app_target(
         shaders/terrain_environment.glsl
         shaders/terrain_lighting.glsl
         shaders/terrain_material.glsl
+        shaders/terrain_fragment.glsl
+        shaders/terrain_quality_material.glsl
         shaders/terrain_vegetation.glsl
         shaders/terrain_shadow.glsl
         shaders/terrain_source.glsl

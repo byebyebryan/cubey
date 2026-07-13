@@ -2,6 +2,7 @@
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
+#include "terrain_material_tiles.h"
 #include "terrain_surface_controller.h"
 
 #include <cubey/core/run_config.h>
@@ -398,6 +399,15 @@ void test_quality_clipmap_uses_coarse_quad_patches() {
     }
 }
 
+void test_quality_material_tile_contract() {
+    require(cubey::projects::terrain::kTerrainMaterialTileExtent == 1024U,
+            "quality material tiles should preserve review resolution");
+    require_near(cubey::projects::terrain::kTerrainMaterialTilePeriodM, 256.0F, 0.0F,
+                 "quality material tiles should preserve their world period");
+    require(cubey::projects::terrain::kTerrainMaterialTileCount == 4U,
+            "quality materials should expose ground scree rock and snow tiles");
+}
+
 void test_surface_controller_traversal_preserves_clearance() {
     const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 9012U,
@@ -472,6 +482,7 @@ int main() {
         test_clipmap_has_expected_extent_and_transition_data();
         test_clipmap_patch_spans_preserve_level_cell_spacing();
         test_quality_clipmap_uses_coarse_quad_patches();
+        test_quality_material_tile_contract();
         test_surface_controller_traversal_preserves_clearance();
         test_ground_controller_uses_walking_scale_speed();
         std::cout << "terrain_render_tests: ok\n";

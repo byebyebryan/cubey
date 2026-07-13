@@ -7,6 +7,7 @@
 
 #include <array>
 #include <stdexcept>
+#include <vector>
 
 namespace cubey::render {
 
@@ -39,6 +40,9 @@ void validate_compute_generated_texture_config(const ComputeGeneratedTexture2DCo
     static_cast<void>(compute_dispatch_group_count(config.extent.height, config.group_size_y));
     if (config.group_size_z == 0) {
         throw std::runtime_error("compute generated texture z group size must be positive");
+    }
+    if ((config.push_constants.size() % 4U) != 0U) {
+        throw std::runtime_error("compute generated texture push constants must be aligned");
     }
 }
 
@@ -81,14 +85,31 @@ Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& devic
     }};
     const cubey::vulkan::DescriptorSetInfo descriptor_info(bindings);
     cubey::vulkan::DescriptorSetBundle descriptors(device, descriptor_info);
+    cubey::vulkan::ImageView storage_view(device, cubey::vulkan::ImageViewConfig{
+                                                      .image = texture.handle(),
+                                                      .format = texture.format(),
+                                                      .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                      .view_type = VK_IMAGE_VIEW_TYPE_2D,
+                                                      .base_mip_level = 0,
+                                                      .level_count = 1,
+                                                  });
     cubey::vulkan::DescriptorWriteBatch descriptor_writes;
-    descriptor_writes.storage_image(descriptors.set(), 0, texture.view());
+    descriptor_writes.storage_image(descriptors.set(), 0, storage_view.handle());
     descriptor_writes.update(device);
 
     const std::array<VkDescriptorSetLayout, 1> set_layouts{descriptors.layout()};
+    std::vector<VkPushConstantRange> push_constant_ranges;
+    if (!config.push_constants.empty()) {
+        push_constant_ranges.push_back({
+            .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+            .offset = 0,
+            .size = static_cast<std::uint32_t>(config.push_constants.size()),
+        });
+    }
     const ComputePipelineResource pipeline(device, ComputePipelineResourceConfig{
                                                        .shader_stage = config.shader,
                                                        .descriptor_set_layouts = set_layouts,
+                                                       .push_constants = push_constant_ranges,
                                                    });
 
     const std::uint32_t group_count_x =
@@ -96,21 +117,26 @@ Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& devic
     const std::uint32_t group_count_y =
         compute_dispatch_group_count(config.extent.height, config.group_size_y);
 
+    const std::vector<std::byte> push_constants(config.push_constants.begin(),
+                                                config.push_constants.end());
     static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
         .label = config.label,
         .work =
-            [&texture, &pipeline, descriptor_set = descriptors.set(), group_count_x,
-             group_count_y](cubey::vulkan::GpuOwnerContext& context) {
+            [&texture, &pipeline, descriptor_set = descriptors.set(), group_count_x, group_count_y,
+             push_constants](cubey::vulkan::GpuOwnerContext& context) {
                 cubey::vulkan::ImmediateCommands commands(context);
                 const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
                 recorder.transition_image_layout(
                     cubey::vulkan::begin_storage_image_write_transition(texture.handle()));
-                record_compute_pipeline_dispatch(recorder, {
-                                                               .pipeline = &pipeline,
-                                                               .descriptor_set = descriptor_set,
-                                                               .group_count_x = group_count_x,
-                                                               .group_count_y = group_count_y,
-                                                           });
+                recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
+                recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
+                                             descriptor_set);
+                if (!push_constants.empty()) {
+                    recorder.push_constants_bytes(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                                  static_cast<std::uint32_t>(push_constants.size()),
+                                                  push_constants.data());
+                }
+                recorder.dispatch(group_count_x, group_count_y, 1U);
                 if (texture.mip_levels() > 1) {
                     record_generate_texture_2d_mips(commands.command_buffer(), texture,
                                                     VK_IMAGE_LAYOUT_GENERAL);
