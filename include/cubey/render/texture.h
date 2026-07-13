@@ -99,6 +99,7 @@ depth_texture_image_config(const DepthTextureConfig& config);
 [[nodiscard]] TextureFormatLayout texture_format_layout(VkFormat format);
 [[nodiscard]] std::size_t texture_format_byte_size(VkFormat format);
 [[nodiscard]] VkExtent2D texture_2d_mip_extent(VkExtent2D extent, std::uint32_t mip_level);
+[[nodiscard]] std::uint32_t texture_2d_mip_count(VkExtent2D extent);
 [[nodiscard]] VkExtent3D texture_3d_mip_extent(VkExtent3D extent, std::uint32_t mip_level);
 [[nodiscard]] std::size_t texture_2d_byte_size(VkExtent2D extent, std::uint32_t mip_levels,
                                                VkFormat format);
@@ -126,6 +127,9 @@ class Texture2D {
         return image_.format();
     }
     [[nodiscard]] VkExtent2D extent() const;
+    [[nodiscard]] std::uint32_t mip_levels() const {
+        return image_.mip_levels();
+    }
     [[nodiscard]] bool has_sampler() const {
         return sampler_.has_value();
     }
@@ -138,6 +142,9 @@ class Texture2D {
     cubey::vulkan::Image image_;
     std::optional<cubey::vulkan::Sampler> sampler_;
 };
+
+void record_generate_texture_2d_mips(VkCommandBuffer command_buffer, const Texture2D& texture,
+                                     VkImageLayout level_zero_layout);
 
 class Texture3D {
   public:

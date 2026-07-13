@@ -15,6 +15,7 @@ struct ComputeGeneratedTexture2DConfig {
     std::string label = "compute generated texture";
     VkExtent2D extent{1, 1};
     VkFormat format = VK_FORMAT_UNDEFINED;
+    std::uint32_t mip_levels = 1;
     ShaderStageFile shader{};
     std::uint32_t group_size_x = 1;
     std::uint32_t group_size_y = 1;

@@ -21,6 +21,14 @@ void validate_compute_generated_texture_config(const ComputeGeneratedTexture2DCo
     if (config.format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error("compute generated texture format must be defined");
     }
+    if (config.mip_levels == 0) {
+        throw std::runtime_error("compute generated texture mip count must be nonzero");
+    }
+    if (config.create_sampler && config.mip_levels > 1 &&
+        config.sampler.max_lod < static_cast<float>(config.mip_levels - 1U)) {
+        throw std::runtime_error(
+            "compute generated texture sampler must expose every generated mip");
+    }
     if (config.shader.path.empty()) {
         throw std::runtime_error("compute generated texture requires a compute shader path");
     }
@@ -40,8 +48,12 @@ void validate_compute_generated_texture_format(const cubey::vulkan::Device& devi
 
     VkFormatProperties properties{};
     vkGetPhysicalDeviceFormatProperties(device.physical_device(), config.format, &properties);
-    if ((properties.optimalTilingFeatures & config.required_format_features) !=
-        config.required_format_features) {
+    VkFormatFeatureFlags required = config.required_format_features;
+    if (config.mip_levels > 1) {
+        required |= VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT |
+                    VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    }
+    if ((properties.optimalTilingFeatures & required) != required) {
         throw std::runtime_error("compute generated texture format does not support required use");
     }
 }
@@ -53,6 +65,7 @@ Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& devic
 
     Texture2D texture(device, Texture2DConfig{
                                   .extent = config.extent,
+                                  .mip_levels = config.mip_levels,
                                   .format = config.format,
                                   .usage = Texture2DUsage::StorageSampled,
                                   .create_sampler = config.create_sampler,
@@ -98,9 +111,14 @@ Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& devic
                                                                .group_count_x = group_count_x,
                                                                .group_count_y = group_count_y,
                                                            });
-                recorder.transition_image_layout(
-                    cubey::vulkan::finish_storage_image_write_for_sampling_transition(
-                        texture.handle()));
+                if (texture.mip_levels() > 1) {
+                    record_generate_texture_2d_mips(commands.command_buffer(), texture,
+                                                    VK_IMAGE_LAYOUT_GENERAL);
+                } else {
+                    recorder.transition_image_layout(
+                        cubey::vulkan::finish_storage_image_write_for_sampling_transition(
+                            texture.handle()));
+                }
                 commands.submit_and_wait();
             },
     }));

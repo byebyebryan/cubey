@@ -101,7 +101,7 @@ void test_texture_2d_config_preserves_mip_count() {
         .extent = {128, 64},
         .mip_levels = 4,
         .format = VK_FORMAT_R8G8B8A8_UNORM,
-        .usage = cubey::render::Texture2DUsage::TransferSampled,
+        .usage = cubey::render::Texture2DUsage::StorageSampled,
         .create_sampler = false,
         .sampler = {},
     };
@@ -109,6 +109,10 @@ void test_texture_2d_config_preserves_mip_count() {
     const cubey::vulkan::ImageConfig image_config = cubey::render::texture_2d_image_config(config);
 
     require(image_config.mip_levels == 4, "texture image config should preserve mip count");
+    require((image_config.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) != 0,
+            "mipmapped storage texture should support transfer reads");
+    require((image_config.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0,
+            "mipmapped storage texture should support transfer writes");
 }
 
 void test_texture_2d_byte_size_uses_compressed_blocks() {
@@ -131,6 +135,8 @@ void test_texture_2d_byte_size_uses_compressed_blocks() {
             "2D mip extent should avoid overshifting and clamp distant mips");
     require(cubey::render::texture_cube_mip_extent(8, 40) == 1,
             "cube mip extent should avoid overshifting and clamp distant mips");
+    require(cubey::render::texture_2d_mip_count({128, 64}) == 8,
+            "2D mip count should include the one-texel level");
     require(cubey::render::texture_2d_byte_size({8, 4}, 3, VK_FORMAT_BC7_UNORM_BLOCK) == 64,
             "BC7 byte size should sum compressed block sizes across mips");
 }
@@ -250,4 +256,17 @@ void test_compute_generated_texture_config_validates_dispatch_shape() {
         threw = true;
     }
     require(threw, "compute generated texture config should reject zero group sizes");
+
+    config.group_size_x = 8;
+    config.mip_levels = 7;
+    config.sampler.max_lod = 6.0F;
+    cubey::render::validate_compute_generated_texture_config(config);
+    config.sampler.max_lod = 5.0F;
+    threw = false;
+    try {
+        cubey::render::validate_compute_generated_texture_config(config);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "compute generated texture should reject inaccessible mips");
 }
