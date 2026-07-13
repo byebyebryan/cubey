@@ -1,6 +1,6 @@
 # Surface Ocean V1
 
-Date: 2026-07-11
+Date: 2026-07-13
 
 Surface Ocean V1 is the accepted horizon-scale checkpoint for
 `projects/ocean`. It closes the current open-water look around the existing
@@ -10,8 +10,8 @@ coastal, river, shallow-water, aerial, or planet-scale rendering.
 
 ## Accepted Surface Contract
 
-- The renderer uses the regular C0/C1 spectral pair for every serialized sea
-  state. C2-C4 remain manual experiment slots and are not preset cost.
+- The renderer uses regular C0 and C1 spectral slots for every serialized sea
+  state. C2-C4 remain neutral opt-in slots and are not preset cost.
 - `Windy` is the default general-purpose state. `Calm` is reflection-led with
   restrained displacement and no persistent whitecap field. `Stormy` preserves
   the previously accepted ocean settings as the rough-water fallback.
@@ -43,15 +43,15 @@ defaults are covered by inference and config tests.
 Generate the deterministic review pack with:
 
 ```sh
-projects/ocean/capture_sea_state_review.sh outputs/ocean-sea-state-review
+MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-surface-v1
 ```
 
-The 3-column contact sheet compares Calm, Windy, and Stormy at low, mid, and
-high camera scales, then under shared clouds, twilight lighting, displacement,
-and warmed foam diagnostics. Fixed-lighting motion clips check wave evolution
-and foam history. All rows hold map size, C0/C1 workload, domains, directions,
-seeds, and environment inputs fixed unless the row explicitly tests clouds or
-twilight.
+The contact sheet compares Calm, Windy, and Stormy at low, mid, and high camera
+scales, then checks shared clouds, dawn/dusk/night lighting, warmed foam,
+reflection, shadow, specular, LOD, and far-field diagnostics. Use `MOTION=1` to
+add fixed-lighting wave clips and a cloudy dusk sequence. All rows hold map
+size, C0/C1 workload, domains, directions, seeds, and environment inputs fixed
+unless the row explicitly changes them.
 
 The accepted visual read is clear at low and mid scale. High views are still
 mostly carried by the reflection/glitter handoff; resolved shape and foam fade
@@ -92,7 +92,7 @@ The intended local composition order is:
    fields;
 4. cloud/aerial overlays and HDR post.
 
-Ocean now defaults to a coherent reflected cloud view with a cached,
+Ocean defaults to a coherent reflected cloud view with a cached,
 roughness-filtered cloud environment fallback. General geometry reflection and
 aerial/orbit cloud reflection remain outside the local surface contract. After
 terrain products merge, the next integration batch should consume real
@@ -102,3 +102,25 @@ solvers are later work.
 
 Planet-scale navigation, global ocean topology, aerial/orbit clouds, and global
 weather remain owned by `projects/planet` or future shared planet adapters.
+
+## Closure Decisions
+
+Accepted runtime paths:
+
+- shared atmosphere and surface-cloud environment as the lighting authority;
+- planar reflected clouds with cached environment fallback;
+- local projected cloud transmittance and bounded wave self-shadowing;
+- camera-relative clipmap geometry with altitude-aware sizing and culling;
+- reflection-led far water with footprint-filtered detail and sun glitter;
+- one configurable cascade array with C0/C1 enabled by presets.
+
+Removed closure experiments:
+
+- current-view and hybrid cloud reflections;
+- feature-isolation presets and port-era cascade roles;
+- spectral moment/mip handoff textures and compute work;
+- synthetic far normals and filtered far-whitecap carriers;
+- duplicate sea-state and cloud-specific capture harnesses.
+
+These removals are deliberate. Reintroducing one requires new evidence against
+the canonical review matrix rather than preserving it as another standing mode.

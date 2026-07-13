@@ -1,126 +1,94 @@
-# Ocean Visual Capture Recipes
+# Ocean Visual Captures
 
-These recipes are for repeatable manual checks while the active ocean renderer
-is still being tuned. They are not golden-image tests. The goal is to keep the
-far-field repetition, LOD contribution, foam coherence, atmosphere response, and
-sun-glitter behavior easy to compare across ocean changes.
+Ocean captures are review evidence, not golden-image tests. The canonical
+harness keeps sea state, camera scale, environment lighting, and diagnostics in
+one reproducible matrix.
 
-All commands write under `outputs/`, which is intentionally ignored by git.
-
-## Sea-State Matrix
-
-Use the checked-in matrix to compare the accepted `Calm`, `Windy`, and `Stormy`
-states without changing quality or cascade workload:
+## Canonical Review
 
 ```sh
-projects/ocean/capture_sea_state_review.sh outputs/ocean-sea-state-review
+MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-review
 ```
 
-The contact sheet places states in columns and low/mid/high clear views, cloudy
-mid view, twilight, displacement, and warmed foam diagnostics in rows. The
-default run also records a fixed-lighting motion clip for each state. Review the
-low and mid rows for wave/foam separation; the high row is intentionally a
-check of the current reflection-dominated far-field handoff rather than a
-promise of resolved wave geometry.
+The default 1280x720 pack records the source commit and generates:
 
-## Baseline Matrix
+- Calm, Windy, and Stormy clear-noon views at low, mid, and high cameras;
+- Windy cloudy-noon views at close, mid, high, and wide cameras;
+- fixed dawn, dusk, and night lighting checks;
+- warmed foam for all three sea states;
+- focused specular, reflection, cloud-shadow, LOD, and far-field diagnostics;
+- `manifest.tsv`, `index.md`, and `contact-sheet.png` when ImageMagick exists.
 
-Use this compact still matrix after changing cascade tuning, LOD policy,
-surface curvature, atmosphere lighting, or foam shading:
+Use motion when a change affects wave evolution, foam history, cloud motion,
+reflection stability, or time-of-day transitions:
 
 ```sh
-mkdir -p outputs/ocean-look
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output outputs/ocean-look/final-default.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view lod --output outputs/ocean-look/debug-lod.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view energy-lod --output outputs/ocean-look/debug-energy-lod.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view displacement --output outputs/ocean-look/debug-displacement.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam --output outputs/ocean-look/debug-foam.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-source --output outputs/ocean-look/debug-foam-source.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-history --output outputs/ocean-look/debug-foam-history.png
+MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-review-motion
 ```
 
-Check that the final view still reads as coherent cresting waves rather than
-rounded bulges, the LOD and energy views agree on which cascades are still
-resolvable, and the raw foam views do not collapse into regular
-texture tiling when the camera is pulled back.
-
-## Cascade Isolation
-
-Use these to verify which enabled slots are carrying shape and whitecaps. The
-default renderer should be meaningful with all cascades enabled and with C0/C1
-inspected independently. Disabled candidate slots should remain visibly absent
-until explicitly enabled in the GUI or through config files.
+Useful harness overrides:
 
 ```sh
-mkdir -p outputs/ocean-cascades
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view displacement --ocean-cascade all --output outputs/ocean-cascades/displacement-all.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view displacement --ocean-cascade 0 --output outputs/ocean-cascades/displacement-c0.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view displacement --ocean-cascade 1 --output outputs/ocean-cascades/displacement-c1.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-source --ocean-cascade all --output outputs/ocean-cascades/foam-source-all.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-source --ocean-cascade 0 --output outputs/ocean-cascades/foam-source-c0.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --debug-view foam-source --ocean-cascade 1 --output outputs/ocean-cascades/foam-source-c1.png
+WIDTH=1920 HEIGHT=1080 FRAMES=120 FOAM_FRAMES=180 \
+  MAP_SIZE=512 CLOUD_QUALITY=full MOTION=0 \
+  projects/ocean/capture_ocean_review.sh outputs/ocean-review-full
 ```
 
-## Far-Field Review
+## Review Contract
 
-Use these for repeatable zoomed-out stills:
+Check the matrix in this order:
+
+1. Low and close views retain coherent crest shapes instead of rounded bulges.
+2. Whitecaps follow crest regions and remain distinct across sea states.
+3. Mid/high views become reflection-led without turning featureless or exposing
+   FFT tile repetition.
+4. Sun glitter stays in a plausible reflected-light corridor.
+5. Cloud reflection has no planar coverage hole or false twilight colors.
+6. Cloud shadows modulate direct light without looking like a separate texture.
+7. Dawn, dusk, and night keep water, foam, and sky in the same exposure regime.
+8. LOD diagnostics agree with visible displacement and submitted triangle load.
+
+For motion, look specifically for reflection flashes, foam popping, moving tile
+boundaries, time-of-day discontinuities, and noise that is hidden in stills.
+
+## Focused Commands
+
+Use a focused command only after the canonical matrix identifies a failure:
 
 ```sh
-mkdir -p outputs/ocean-far-field
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset mid --output outputs/ocean-far-field/final-mid.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --output outputs/ocean-far-field/final-high.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --output outputs/ocean-far-field/final-wide.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view lod --output outputs/ocean-far-field/lod-wide.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view footprint --output outputs/ocean-far-field/footprint-wide.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view energy-lod --output outputs/ocean-far-field/energy-lod-wide.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view far-field --output outputs/ocean-far-field/far-field-wide.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset wide --debug-view foam-source --output outputs/ocean-far-field/foam-source-wide.png
+./build/dev/projects/ocean/ocean --headless --frames 120 \
+  --width 1280 --height 720 --ocean-sea-state windy \
+  --ocean-camera-preset high --debug-view energy-lod \
+  --output outputs/ocean-energy-lod.png
+
+./build/dev/projects/ocean/ocean --headless --frames 120 \
+  --width 1280 --height 720 --ocean-sea-state windy \
+  --ocean-camera-preset mid --debug-view cloud-reflection-validity \
+  --output outputs/ocean-reflection-validity.png
+
+./build/dev/projects/ocean/ocean --headless --frames 180 \
+  --width 1280 --height 720 --ocean-sea-state stormy \
+  --ocean-camera-preset low --no-clouds --debug-view foam \
+  --output outputs/ocean-stormy-foam.png
 ```
 
-Keep the view, time, and feature preset fixed while changing one LOD or cascade
-setting at a time. The important failure modes are:
-
-- visible FFT tile repetition in whitecaps or normal detail;
-- displacement carried by clipmap rings that are too coarse to represent it;
-- foam detail fading differently from wave shape, leaving a flat but tiled
-  texture cue;
-- filtered foam diagnostics becoming cloudy, noisy, or obviously locked to one
-  FFT tile;
-- high-frequency normal detail remaining visible as texture noise instead of
-  fading into roughness, reflection, and subtle swell hints;
-- sun glitter appearing as a uniform sparkle field instead of a reflected-light
-  corridor;
-- horizon coverage changing because automatic mesh extent silently expanded or
-  contracted.
-
-The `Diagnostics` panel should be open during far-field tuning. It exposes the
-effective horizon-expanded mesh, near/far cell size, clipmap patch load, and
-cascade LOD bands that decide which wave scales are still allowed to contribute.
-
-## Sun Glitter Review
-
-Use these to check the photo-reference target: far water should stay mostly
-smooth and reflective, with glitter concentrated under the reflected sun path
-rather than spread across the whole ocean:
+Cascade selection is diagnostic rather than a separate feature mode:
 
 ```sh
-mkdir -p outputs/ocean-glitter
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset mid --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --output outputs/ocean-glitter/high-sun-mid.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --output outputs/ocean-glitter/high-sun-high.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 8 --sun-azimuth -20 --pause-time --output outputs/ocean-glitter/low-sun-high.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --debug-view reflection --output outputs/ocean-glitter/reflection-high-sun-high.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --time-of-day-mode manual --sun-elevation 42 --sun-azimuth -20 --pause-time --debug-view far-field --output outputs/ocean-glitter/far-field-high-sun-high.png
+./build/dev/projects/ocean/ocean --headless --frames 120 \
+  --debug-view displacement --ocean-cascade 0 \
+  --output outputs/ocean-c0-displacement.png
 ```
 
-## Active Baseline Comparison
+## Performance Review
 
-The retired `ocean_ref` and `ocean_legacy` projects are available only through
-git history. For current tuning, compare repeatable active-ocean captures
-before and after a change:
+Cloud reflection source cost has a separate harness:
 
 ```sh
-mkdir -p outputs/ocean-active-baseline
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output outputs/ocean-active-baseline/default.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset mid --output outputs/ocean-active-baseline/mid.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --ocean-camera-preset high --debug-view energy-lod --output outputs/ocean-active-baseline/high-energy-lod.png
+projects/ocean/profile_cloud_reflections.sh outputs/ocean-reflection-profile
 ```
+
+It compares cached and planar sources and records component GPU spans. Do not
+infer runtime cost from capture-video wall time; use the generated profile
+summary and keep resolution, ocean map, cloud quality, warmup, and frame count
+fixed across comparisons.

@@ -39,10 +39,8 @@ coherent: all six faces and mip levels are completed together, then two whole
 environments crossfade over one refresh interval. The default is a 64-pixel
 cube refreshed at 4 Hz with 32 cloud-march steps.
 
-`ocean.cloud_reflection_source` selects the production or reference path:
+`ocean.cloud_reflection_source` selects one of two supported paths:
 
-- `current-view` preserves the original screen-projected product as a bounded
-  low-cost reference. Its coverage boundary prevents production use.
 - `cached` samples only the roughness-filtered cloud environment and therefore
   covers offscreen directions without screen-edge falloff.
 - `planar` is the default. It samples the coherent reflected cloud view and
@@ -72,7 +70,7 @@ Wave self-shadowing averages weighted blockers and fades at unstable near-zero
 sun elevations instead of turning one binary ray hit into large popping dark
 patches.
 
-Both paths are feature isolated. A zero shadow strength skips the shadow pass
+Both couplings are independently disableable. A zero shadow strength skips the shadow pass
 except in the raw diagnostic, and a zero reflection strength avoids marching
 clouds solely for reflection. Product and composite descriptor updates are
 separate so reflection-only diagnostics do not configure absent scene/depth
@@ -80,29 +78,15 @@ attachments.
 
 ## Review Matrix
 
-Generate the full-resolution deterministic pack with:
+Generate the deterministic closure pack with:
 
 ```sh
-projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-lighting-v1
+MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-cloud-lighting-v1
 ```
 
-Generate the focused production comparison and current-view reference with:
-
-```sh
-projects/ocean/capture_cloud_environment_review.sh \
-  outputs/ocean-cloud-reflection-planar-v1
-```
-
-The focused pack compares cached and planar production paths at noon, sunset,
-and night from mid and high cameras. It emits current-view on separate reference
-sheets, plus planar coverage and isolated-reflection diagnostics. The broader pack covers noon cloud/no-cloud
-composition, reflection off/on and raw contribution, projected transmittance
-and direct-light shadow A/B, mid/high camera behavior, sunset/night lighting,
-an aligned twilight sun corridor and water-body diagnostic, and cloud
-density/depth diagnostics.
-Shadow-specific captures use the runtime default scattered weather. High
-coverage now correctly approaches an opaque deck and is not useful as the A/B
-review fixture.
+The pack covers cloudy noon at multiple scales, dawn/dusk/night lighting,
+reflection, planar validity, projected transmittance, and motion. Use
+`profile_cloud_reflections.sh` for a focused cached-versus-planar cost run.
 
 The primary review framing uses the mid camera and the normal 512 ocean map.
 One near frame remains as an explicit stress case; it is not the visual target
@@ -162,10 +146,8 @@ resolution, 32 steps, and six filtered mip levels.
 ## Boundaries
 
 - This is a surface and horizon-scale contract, not an aerial/orbit solution.
-- Current-view reflection still cannot show offscreen clouds; it remains a
-  reference mode. Planar closes the ordinary surface-view gap, with the cache
-  as broad fallback, but neither product is yet exposed to general PBR
-  consumers.
+- Planar closes the ordinary surface-view gap, with the cache as broad fallback,
+  but neither product is yet exposed to general PBR consumers.
 - The reflection input is the cloud march product, before the visible
   compositor's metadata-aware edge resolve and final look pass. This limits
   exact visual agreement between reflected and directly visible clouds.

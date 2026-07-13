@@ -1,38 +1,28 @@
 # Ocean
 
-`ocean` is the active Cubey ocean renderer. It uses the GodotOceanWaves-derived
-spectrum/FFT/unpack core as a guardrail, then layers configurable cascade slots,
-atmosphere integration, terrain-field descriptors, expanded foam diagnostics,
-and debug views behind explicit feature-isolation controls.
+`ocean` is Cubey's active horizon-scale open-water renderer. It combines a
+GodotOceanWaves-derived spectral FFT core with camera-relative clipmap geometry,
+shared atmosphere and cloud lighting, persistent whitecaps, local curvature,
+and explicit LOD diagnostics.
 
-Scale-wise, `ocean` is intended to stop at horizon-scale and curved-local
-rendering. That is not a bad endpoint: the project already exercises the water
-renderer, FFT cascade cost model, atmosphere integration, terrain-field
-boundary, LOD diagnostics, and curvature controls. Full planet-scale navigation,
-surface patching, streaming terrain/bathymetry, and planet-scale weather/clouds
-belong in `projects/planet`; ocean should be ported or wrapped there when the
-planet frame, adaptive patch LOD, and render-order contracts are ready.
+The accepted scope is a surface and curved-local ocean. Global ocean topology,
+aerial/orbit water, shorelines, bathymetry, refraction, spray, wakes, and
+shallow-water flow remain separate integration work.
 
-GodotOceanWaves is MIT licensed; the required notice is kept in
+GodotOceanWaves is MIT licensed; its notice is in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Known-good fallback before the LOD data/domain architecture work:
-`ocean-known-good-material-v1` (`400d45c`).
-
-Run a still capture:
+## Run
 
 ```sh
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 1280 --height 720 --output /tmp/cubey-ocean.png
+./build/dev/projects/ocean/ocean
+./build/dev/projects/ocean/ocean --headless --frames 120 \
+  --width 1280 --height 720 --output /tmp/cubey-ocean.png
 ```
 
-## Sea States
-
-Ocean defaults to the `Windy` sea state. `Calm`, `Windy`, and `Stormy` are
-look/behavior presets over the same C0/C1 spectral workload; changing state does
-not change map size, field precision, enabled cascade count, cloud quality,
-camera, deterministic seeds, or wave directions. Applying a preset regenerates
-the spectrum and clears foam history, but does not reallocate the wave-field
-resources.
+The default is the `Windy` sea state with a 512 map, half-precision wave fields,
+two active cascade slots, shared atmosphere/clouds, planar cloud reflection, and
+cached environment fallback.
 
 ```sh
 ./build/dev/projects/ocean/ocean --ocean-sea-state calm
@@ -40,15 +30,73 @@ resources.
 ./build/dev/projects/ocean/ocean --ocean-sea-state stormy
 ```
 
-Manual edits to preset-owned wave or material controls make the GUI state
-`Custom`. `Custom` is diagnostic UI state, not a serializable config value.
-Quality remains an independent choice through `--ocean-map-size` and
-`--ocean-field-precision`; water-body ownership and shoreline/depth data are a
-separate future terrain integration concern. The accepted contract and reuse
-boundary are recorded in
-[Surface Ocean V1](../../docs/notes/ocean-surface-v1.md).
+Sea state changes wave energy, whitecap response, foam, roughness, self-shadow,
+and far-field material response. It does not change field quality, active work
+count, camera, environment, seeds, or cascade directions. Manual edits to
+preset-owned settings appear as `Custom` in the GUI.
 
-Useful debug views:
+## Controls
+
+Playback, sea state, and camera preset are always visible. The remaining
+controls are collapsed into six domains:
+
+- **Waves**: field quality, depth, anti-repeat, presentation, and C0-C4 slots.
+- **Surface**: water material and foam.
+- **Lighting**: cloud reflections, cloud shadows, and wave self-shadowing.
+- **Scale & LOD**: clipmap mesh, curved horizon, far field, and distance fades.
+- **Environment**: shared atmosphere/cloud controls and optional terrain fields.
+- **Diagnostics**: render views, cascade inspection, wireframe, scale pillar,
+  runtime state, and performance counters.
+
+Each cascade owns its enabled state, map size, update interval, and spectral
+parameters. C0 and C1 are active in the three sea-state presets; C2-C4 are
+neutral opt-in slots rather than special macro/detail roles.
+
+Config files are the preferred way to persist complete runs. Useful CLI
+overrides include:
+
+```text
+--ocean-sea-state calm|windy|stormy
+--ocean-map-size 128|256|512|1024
+--ocean-field-precision half|full
+--ocean-camera-preset default|low|mid|high|close|overhead|wide
+--ocean-cascade all|0|1|2|3|4
+--ocean-surface-mode flat|curved-far
+--ocean-cloud-reflection-source cached|planar
+--cloud-quality quarter|half|full
+--no-clouds
+```
+
+## Rendering
+
+The water material is an ocean-specific dielectric surface rather than the
+general forward-PBR material. It consumes the shared environment's sun, moon,
+sky radiance, exposure, and cloud products.
+
+Cloud lighting has three bounded products:
+
+- a local projected transmittance map for direct-light shadows;
+- a reflected planar cloud view for detailed visible-ocean reflection;
+- a roughness-filtered cached cloud environment for broad fallback coverage.
+
+The planar source is the production default. Cached-only mode is useful for
+general coverage and diagnostics. The rejected current-view and hybrid sources
+have been removed.
+
+Far water is intentionally reflection-led. Resolved displacement and normal
+detail fade when distance and mesh footprint can no longer represent them;
+unresolved energy feeds roughness, broad reflection variation, and a bounded sun
+glitter corridor. Removed moment-pyramid, synthetic far-normal, and filtered
+far-whitecap experiments are available only through git history.
+
+The mesh remains a camera-relative `ClipmapGrid2D`. Automatic horizon extent and
+altitude-aware cell sizing reduce near-grid cost in high views, while patch
+culling keeps submitted triangles separate from generated clipmap triangles.
+The shared adaptive planet patch planner is not used by this local renderer.
+
+## Diagnostics
+
+Common debug views:
 
 ```sh
 ./build/dev/projects/ocean/ocean --debug-view displacement
@@ -63,145 +111,42 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view cloud-shadow
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection-validity
-./build/dev/projects/ocean/ocean --debug-view sky-radiance
 ./build/dev/projects/ocean/ocean --debug-view reflection
 ./build/dev/projects/ocean/ocean --debug-view specular
-./build/dev/projects/ocean/ocean --debug-view direct-light
-./build/dev/projects/ocean/ocean --debug-view ambient-light
-./build/dev/projects/ocean/ocean --debug-view exposure
-./build/dev/projects/ocean/ocean --debug-view terrain-depth
-./build/dev/projects/ocean/ocean --debug-view terrain-shore
-./build/dev/projects/ocean/ocean --debug-view terrain-slope
-./build/dev/projects/ocean/ocean --debug-view curvature
-./build/dev/projects/ocean/ocean --debug-view lod --ocean-wire-overlay
-./build/dev/projects/ocean/ocean --debug-view displacement --ocean-cascade 0
-./build/dev/projects/ocean/ocean --no-ocean-spectral-domains
-./build/dev/projects/ocean/ocean --ocean-terrain-fields
 ```
 
-The GUI panel also includes cascade isolation, camera presets including a wide
-repeat-inspection camera plus mid/high large-scale inspection views, a paused
-single-frame step button, a portable wire overlay, a 50 m sea-level-centered
-size reference pillar in final view with 1 m, 5 m, and 10 m markers plus a
-basic direct-light ocean shadow, experimental heightfield wave self-shadowing,
-feature-isolation controls, and LOD breakdown tables for checking clipmap
-coverage, patch counts, triangle load, cascade distance fades, and mesh-cell
-support while tuning the mesh.
-Headless captures can use
-`--ocean-sea-state calm|windy|stormy`,
-`--ocean-cascade all|0|1|2|3|4`,
-`--ocean-camera-preset default|low|mid|high|close|overhead|wide`,
-`--ocean-surface-mode flat|curved-far`,
-`--ocean-planet-radius-scale 0.01..10.0`,
-`--ocean-curvature-start-ratio 0.0..1.0`,
-`--ocean-curvature-end-ratio 0.0..1.0`,
-`--ocean-curvature-strength 0.0..1.0`,
-`--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
-`--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
-`--ocean-terrain-fields`, `--no-ocean-terrain-fields`,
-`--ocean-cloud-reflection-source cached|planar`,
-`--ocean-cloud-planar-resolution-scale 0.25..1.0`,
-`--ocean-cloud-planar-view-steps 8..128`,
-`--ocean-cloud-planar-guard-band 0.0..0.5`,
-`--cloud-quality quarter|half|full`, `--cloud-weather-preset ...`, and
-`--no-clouds`.
+The Diagnostics panel reports effective horizon coverage, clipmap and submitted
+triangle counts, cascade support bands, cloud-product state, and GPU spans. The
+50 m sea-level-centered pillar provides a scale reference and a simple analytic
+shadow caster.
 
-The visible sky now uses the shared `atmosphere` background path, and water
-lighting samples the runtime atmosphere sky/probe data for reflection, ambient
-fill, horizon fog, and night-aware foam shading. Ocean still uses its own
-non-PBR water material, but the background atlases now come from the shared
-generated lunar and night-sky atlas path. A diagnostic terrain-ocean field
-texture is bound for terrain depth/shore/slope debug views; enabling
-`--ocean-terrain-fields` only proves a small shoreline foam hook and is not yet
-full bathymetry, seafloor visibility, or surf-zone rendering.
+## Review
 
-Final view composites the shared Cloud V1 surface-volume layer over the
-atmosphere sky before ocean post. The water material consumes a projected
-cloud-transmittance map for direct light and defaults to a dedicated reflected
-cloud view for coherent radiance/transmittance across the visible ocean. A
-roughness-filtered cached cloud environment covers invalid planar directions.
-`cached` remains the broad production fallback when the planar product does not
-cover a reflected direction.
-`cloud-shadow` shows projected transmittance, `cloud-reflection` isolates the
-selected reflected lighting, and `cloud-reflection-validity` shows planar versus
-fallback coverage. The Shading panel exposes independent coupling strengths and
-skips disabled work; `--no-clouds` keeps the clear-sky fallback valid.
-
-This remains a surface-view integration. The planar reflected camera is a local
-receiver-plane approximation, not general scene reflection, and the projected
-shadow is not an aerial/orbit or planet-scale weather solution. Those limits
-are recorded in
-[Ocean Cloud Lighting V1](../../docs/notes/ocean-cloud-lighting-v1.md).
-
-Cascades are now treated as regular slots. Every serialized sea state uses the
-`Core` C0/C1 pair, which is the reference-derived wave pair carrying the
-current shape and whitecaps. C2, C3, and C4 stay available as opt-in candidate
-slots for large-scale breakup or fine detail experiments, but they are not part
-of the preset cost. Per-slot `Domain min waves` controls decide whether spectral
-domain filtering cuts a slot down to a wavelength band; C0/C1 default to the
-full spectrum so the primary whitecap carrier stays coherent. Foam is stored
-separately from normal data as persistent history, current Jacobian breaking
-source, determinant, and compression diagnostic channels. Final whitecap
-coverage is driven from the total enabled-slot foam signal, while
-selected-cascade inspection provides the per-slot diagnostic view. Compression
-is currently a diagnostic signal only. This is still not a localized wind or
-weather simulation.
-
-Ocean controls expose global shape strength, global foam strength, foam history,
-shape and detail anti-repeat, shape/normal/foam fade distances, terrain foam
-strength, far-field material energy, sun glitter, and broad reflection
-variation. Shape LOD now
-combines distance fade with mesh-cell support, so coarse clipmap rings stop
-carrying displacement detail that the current mesh cannot represent while
-normal/foam detail can continue as shading-only contribution. Far normal detail
-also fades by pixel footprint, then feeds roughness/reflection instead of adding
-more geometry-like noise. The default LOD policy is intentionally conservative
-for zoomed-out inspection: displacement fades over roughly 8-24 wavelengths,
-surface detail fades over roughly 10-30 wavelengths, and mesh-cell support fades
-displacement between about `tile / 10` and `tile / 4`. The `Active cascade work`
-toggles are stronger than
-contribution sliders: they skip disabled cascade spectrum, modulation, FFT, and
-unpack dispatches, then hide those cascades from the surface shader.
-
-The far-field target is photo-oriented rather than reference-demo-oriented:
-distant water should be a low-contrast reflective plane with subtle swell hints,
-broad sky-reflection patches, and a sun-glitter corridor when the light/view
-geometry supports it. `footprint` shows the estimated pixel footprint in meters,
-`energy-lod` shows unresolved wave energy against displacement and surface LOD
-support, and `far-field` shows active material handoff energy plus footprint
-filtering. The rejected filtered far-whitecap, surface-moment handoff, and
-synthetic far-normal carriers were removed because they exposed FFT tiling or
-added cost without improving the accepted views.
-
-Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
-planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but
-ocean has not moved to that model; the next ocean LOD pass should deliberately
-compare staying on clipmaps against adopting adaptive patches only where planet
-handoff, horizon coverage, or shoreline integration needs that address space.
-
-The default FFT map is `512`, and ocean wave fields default to half precision.
-Use `--ocean-map-size 1024 --ocean-field-precision full` only when comparing
-against a maximum-quality brute-force mode. Smoke tests and fast local checks
-can use `--ocean-map-size 128`.
-
-Performance context for the current spectral FFT path is captured in
-[Ocean performance notes](../../docs/notes/ocean-performance.md). In short,
-`512` plus half precision is the current practical default on slower GPUs,
-disabled cascades no longer allocate or dispatch full wave resources, and
-`256` currently loses too much wave, normal, and foam detail for the primary
-presentation path.
-
-Repeatable visual review commands are captured in
-[Ocean visual capture recipes](../../docs/notes/ocean-visual-captures.md).
-
-Cloud-specific ocean review captures:
+Use the single canonical closure harness after changing waves, foam, LOD,
+lighting, reflection, or environment integration:
 
 ```sh
-projects/ocean/capture_cloud_review.sh outputs/ocean-cloud-review
+MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-review
+MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-review-motion
 ```
 
-Sea-state closure captures:
+It records the source commit, emits a manifest and index, compares all three sea
+states at low/mid/high scales, covers cloudy noon and dawn/dusk/night lighting,
+and includes focused foam, reflection, shadow, specular, LOD, and far-field
+diagnostics. `profile_cloud_reflections.sh` is the focused cached-versus-planar
+performance harness.
 
-```sh
-projects/ocean/capture_sea_state_review.sh outputs/ocean-sea-state-review
-```
+Current decisions and boundaries are summarized in
+[Surface Ocean V1](../../docs/notes/ocean-surface-v1.md). Architecture and
+review guidance live in
+[Ocean rendering](../../docs/architecture/ocean-rendering.md) and
+[Ocean visual captures](../../docs/notes/ocean-visual-captures.md).
+
+## Deferred Work
+
+- Consume real terrain bathymetry, shore distance, water datum, and scene depth.
+- Add shoreline/surf behavior, seafloor visibility, and robust underwater view.
+- Add local wakes, interaction ripples, spray, and particle whitewater.
+- Define a planet adapter for global ocean topology and aerial/orbit views.
+- Decide whether lakes can reuse this renderer after terrain water-body products
+  exist; rivers and shallow flow require a different model.

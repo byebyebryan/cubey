@@ -71,9 +71,8 @@ Recommended next feature streams:
 
 Known non-blockers:
 
-- The current-view ocean reflection product remains a bounded quality reference.
-  Planar plus cached fallback is the accepted ocean path; general PBR consumers
-  do not yet receive the cached cloud environment.
+- Planar plus cached fallback is the accepted ocean reflection path; general PBR
+  consumers do not yet receive the cached cloud environment.
 - `cloud_march.comp`, `surface_cloud_march.comp`, `planet_surface.frag`, and a
   few volume diagnostics shaders remain future split targets; the active shader
   foundation is sufficient for current feature work.
@@ -604,12 +603,12 @@ Project checkpoints:
   direct march, cloud product/composite passes, nested controls, and diagnostics
   for raw density, transmittance, lighting, distance, and steps. `clouds_legacy`
   remains the frozen planet-aware pressure project for surface/high/orbit
-  lessons, while `projects/cloud_ref_2` remains the cached-sky architecture
-  reference. Cloud V1 is intentionally surface-only: atmosphere is the tuning
-  host and ocean is the surface-view consumer. Ocean now consumes a bounded
-  local shadow product and current-view reflection reuse. Planet,
-  aerial/high-altitude, orbit shells, cached sky-cloud environments, and
-  general clouded PBR outputs remain deferred.
+  lessons, while `projects/cloud_ref_2` remains a historical cached-sky
+  architecture reference. Cloud V1 is intentionally surface-only: atmosphere
+  is the tuning host and ocean is the surface-view consumer. Ocean consumes a
+  bounded local shadow product and planar cloud reflection with a cached
+  environment fallback. Planet, aerial/high-altitude, orbit shells, shared PBR
+  ownership of the cache, and general clouded PBR outputs remain deferred.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer
