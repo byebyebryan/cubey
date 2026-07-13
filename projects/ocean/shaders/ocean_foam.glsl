@@ -69,47 +69,6 @@ vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
                min(1.0, pixels_per_meter * 0.1));
 }
 
-vec4 sample_normal_moments(uint cascade, vec2 uv, float lod) {
-    if (cascade == 0u) {
-        return textureLod(normal_moments_cascade0_texture, uv, lod);
-    }
-    if (cascade == 1u) {
-        return textureLod(normal_moments_cascade1_texture, uv, lod);
-    }
-    if (cascade == 2u) {
-        return textureLod(normal_moments_cascade2_texture, uv, lod);
-    }
-    if (cascade == 3u) {
-        return textureLod(normal_moments_cascade3_texture, uv, lod);
-    }
-    return textureLod(normal_moments_cascade4_texture, uv, lod);
-}
-
-vec4 sample_foam_moments(uint cascade, vec2 uv, float lod) {
-    if (cascade == 0u) {
-        return textureLod(foam_moments_cascade0_texture, uv, lod);
-    }
-    if (cascade == 1u) {
-        return textureLod(foam_moments_cascade1_texture, uv, lod);
-    }
-    if (cascade == 2u) {
-        return textureLod(foam_moments_cascade2_texture, uv, lod);
-    }
-    if (cascade == 3u) {
-        return textureLod(foam_moments_cascade3_texture, uv, lod);
-    }
-    return textureLod(foam_moments_cascade4_texture, uv, lod);
-}
-
-vec4 sample_filtered_foam(uint cascade, vec2 position, float tile_length, float footprint_m) {
-    float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
-    float source_texel_footprint = max(2.0, footprint_m * pixels_per_meter);
-    float max_lod = max(log2(cascade_map_size(cascade)) - 1.0, 0.0);
-    float filter_level = clamp(log2(source_texel_footprint) - 1.0, 0.0, max_lod);
-    vec2 uv = position / tile_length;
-    return sample_foam_moments(cascade, uv, filter_level);
-}
-
 bool ocean_detail_anti_repeat_enabled(float factor) {
     return factor > 0.0;
 }
@@ -123,21 +82,6 @@ float cascade_surface_lod_weight(uint cascade, float dist) {
 float ocean_normal_presentation_scale(float dist) {
     return mix(0.015, ocean.foam_color.w,
                exp(-dist * 0.0175 / ocean_normal_fade_distance_scale()));
-}
-
-vec2 filtered_foam_total(float dist, float footprint_m) {
-    vec2 total = vec2(0.0);
-    for (uint cascade = 0u; cascade < 5u; ++cascade) {
-        if (!ocean_cascade_enabled(cascade)) {
-            continue;
-        }
-        float tile_length = max(cascade_tile_length(cascade), 0.001);
-        vec4 filtered =
-            sample_filtered_foam(cascade, frag_sample_position, tile_length, footprint_m);
-        float lod_weight = cascade_surface_lod_weight(cascade, dist);
-        total += filtered.xy * lod_weight * ocean_surface_foam_strength();
-    }
-    return clamp(total, 0.0, 1.0);
 }
 
 vec4 sample_normal_foam_domain(uint cascade, vec2 position, float tile_length,
@@ -176,84 +120,6 @@ vec4 sample_normal_foam_gradient(uint cascade, vec2 position, float tile_length,
     return vec4(gradient, foam);
 }
 
-float ocean_surface_moment_lod(uint cascade, float tile_length, float footprint_m) {
-    float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
-    float source_texel_footprint = max(1.0, footprint_m * pixels_per_meter);
-    float max_lod = max(log2(cascade_map_size(cascade)) - 1.0, 0.0);
-    return clamp(log2(max(source_texel_footprint, 2.0)) - 1.0, 0.0, max_lod);
-}
-
-float ocean_surface_handoff_moment_lod(uint cascade, float tile_length, float footprint_m,
-                                       float transfer) {
-    float footprint_lod = ocean_surface_moment_lod(cascade, tile_length, footprint_m);
-    float max_lod = max(log2(cascade_map_size(cascade)) - 1.0, 0.0);
-    return mix(footprint_lod, max_lod, transfer * transfer);
-}
-
-float ocean_surface_lod_transfer(uint cascade, float tile_length, float dist, float footprint_m) {
-    float pixels_per_meter = cascade_map_size(cascade) / max(tile_length, 0.001);
-    float source_texel_footprint = max(1.0, footprint_m * pixels_per_meter);
-    float footprint_transfer = smoothstep(1.0, 4.0, source_texel_footprint);
-    float resolved_detail =
-        cascade_surface_lod_weight(cascade, dist) *
-        mix(1.0, 0.08, ocean_far_detail_filter(dist, footprint_m));
-    return max(footprint_transfer, 1.0 - resolved_detail);
-}
-
-vec3 cascade_slope_lod_statistics(uint cascade, vec2 position, float tile_length, float dist,
-                                  float footprint_m) {
-    float transfer = ocean_surface_lod_transfer(cascade, tile_length, dist, footprint_m);
-    float moment_lod =
-        ocean_surface_handoff_moment_lod(cascade, tile_length, footprint_m, transfer);
-    vec4 moments = sample_normal_moments(cascade, position / tile_length, moment_lod);
-    float slope_variance = max(moments.z - dot(moments.xy, moments.xy), 0.0);
-    return vec3(slope_variance, clamp(transfer, 0.0, 1.0), moment_lod);
-}
-
-vec2 foam_moment_sparse_coverage(vec4 moments) {
-    vec2 mean = clamp(moments.xy, vec2(0.0), vec2(1.0));
-    vec2 second = clamp(max(moments.zw, mean * mean), vec2(0.0), vec2(1.0));
-    vec2 occupancy = mean * mean / max(second, vec2(0.00001));
-    vec2 amplitude = second / max(mean, vec2(0.00001));
-    vec2 variance = max(second - mean * mean, vec2(0.0));
-    vec2 intermittency = variance / max(second, vec2(0.00001));
-    vec2 amplitude_gate =
-        vec2(smoothstep(0.06, 0.40, amplitude.x), smoothstep(0.12, 0.52, amplitude.y));
-    vec2 sparse_gate = smoothstep(vec2(0.04), vec2(0.50), intermittency);
-    return clamp(occupancy * amplitude_gate * sparse_gate, vec2(0.0), vec2(1.0));
-}
-
-vec3 cascade_foam_lod_statistics(uint cascade, vec2 position, float tile_length, float dist,
-                                 float footprint_m) {
-    float transfer = ocean_surface_lod_transfer(cascade, tile_length, dist, footprint_m);
-    float moment_lod =
-        ocean_surface_handoff_moment_lod(cascade, tile_length, footprint_m, transfer);
-    vec4 moments = sample_foam_moments(cascade, position / tile_length, moment_lod);
-    vec2 coverage = foam_moment_sparse_coverage(moments);
-    return vec3(coverage, clamp(transfer, 0.0, 1.0));
-}
-
-vec4 ocean_foam_lod_data(float dist, float footprint_m) {
-    vec2 total = vec2(0.0);
-    float transfer = 0.0;
-    float density_scale = clamp(ocean.inspection_options.z * 0.45, 0.0, 2.0);
-    for (uint cascade = 0u; cascade < 5u; ++cascade) {
-        if (!ocean_cascade_enabled(cascade)) {
-            continue;
-        }
-        float tile_length = max(cascade_tile_length(cascade), 0.001);
-        vec3 statistics = cascade_foam_lod_statistics(
-            cascade, frag_sample_position, tile_length, dist, footprint_m);
-        vec2 cascade_coverage = clamp(statistics.xy * statistics.z *
-                                          ocean_surface_foam_strength() * density_scale,
-                                      vec2(0.0), vec2(0.50));
-        total = vec2(1.0) - (vec2(1.0) - total) * (vec2(1.0) - cascade_coverage);
-        transfer = max(transfer, statistics.z);
-    }
-    float coverage = clamp(max(total.x * 0.05, total.y * 0.08), 0.0, 0.025);
-    return vec4(total, coverage, transfer);
-}
-
 OceanFoamData ocean_foam_data(float dist, float footprint_m) {
     OceanFoamData data;
     data.gradient = vec2(0.0);
@@ -261,14 +127,10 @@ OceanFoamData ocean_foam_data(float dist, float footprint_m) {
     data.core = vec2(0.0);
     data.candidate = vec2(0.0);
     data.detail = vec2(0.0);
-    data.slope_lod = vec2(0.0);
 
     float anti_repeat_factor =
         ocean_detail_anti_repeat_strength() *
         smoothstep(OCEAN_FAR_ANTI_REPEAT_START, OCEAN_FAR_ANTI_REPEAT_END, dist);
-    bool slope_lod_enabled =
-        ocean_spectral_lod_handoff() > 0.0 ||
-        uint(ocean.debug_options.x + 0.5) == OCEAN_VIEW_SLOPE_LOD;
     for (uint cascade = 0u; cascade < 5u; ++cascade) {
         if (!ocean_cascade_enabled(cascade)) {
             continue;
@@ -290,13 +152,6 @@ OceanFoamData ocean_foam_data(float dist, float footprint_m) {
             data.detail += weighted_foam;
         }
         data.total += weighted_foam;
-        if (slope_lod_enabled) {
-            vec3 slope_lod = cascade_slope_lod_statistics(
-                cascade, frag_sample_position, tile_length, dist, footprint_m);
-            data.slope_lod.x +=
-                slope_lod.x * normal_scale * normal_scale * slope_lod.y;
-            data.slope_lod.y = max(data.slope_lod.y, slope_lod.y);
-        }
     }
     data.total = clamp(data.total, 0.0, 1.0);
     data.core = clamp(data.core, 0.0, 1.0);

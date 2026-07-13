@@ -173,12 +173,6 @@ int main() {
         require(ocean::ocean_is_supported_map_size(1024), "ocean should support 1024 maps");
         require(!ocean::ocean_is_supported_map_size(192),
                 "ocean should reject non-reference map sizes");
-        require(ocean::ocean_surface_moment_level_count(128U) == 7U &&
-                    ocean::ocean_surface_moment_level_count(1024U) == 10U,
-                "surface moment pyramids should cover every supported map down to one texel");
-        require(ocean::ocean_surface_moment_level_size(512U, 0U) == 256U &&
-                    ocean::ocean_surface_moment_level_size(512U, 8U) == 1U,
-                "surface moment levels should halve from the source map to one texel");
         require(defaults.mesh_cells >= ocean::kOceanMinMeshCells &&
                     defaults.mesh_cells <= ocean::kOceanMaxMeshCells,
                 "default mesh resolution should be in supported range");
@@ -687,8 +681,6 @@ int main() {
                      "ocean should reserve a reflected cloud guard band");
         require_near(defaults.cloud_shadow_strength, 0.40F, 0.001F,
                      "ocean should default shared cloud transmittance on conservatively");
-        require_near(defaults.spectral_lod_handoff, 0.0F, 0.001F,
-                     "ocean should keep the spectral LOD handoff disabled until visual review");
         const ocean::OceanCascadeLodBand cascade0_lod = ocean::ocean_cascade_lod_band(defaults, 0);
         require_near(cascade0_lod.displacement_fade_start,
                      defaults.cascades[0].tile_length * ocean::kOceanCascadeDistanceFadeStartWaves *
@@ -782,9 +774,6 @@ int main() {
         require(ocean::ocean_render_view_from_name("energy-lod") ==
                     ocean::OceanRenderView::EnergyLod,
                 "energy LOD debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-filtered") ==
-                    ocean::OceanRenderView::FoamFiltered,
-                "filtered foam debug view should parse");
         require(ocean::ocean_render_view_from_name("far-field") == ocean::OceanRenderView::FarField,
                 "far-field debug view should parse");
         require(ocean::ocean_render_view_from_name("cloud-shadow") ==
@@ -801,10 +790,6 @@ int main() {
                 "water body debug view should parse");
         require(ocean::ocean_render_view_from_name("fresnel") == ocean::OceanRenderView::Fresnel,
                 "Fresnel debug view should parse");
-        require(ocean::ocean_render_view_from_name("slope-lod") == ocean::OceanRenderView::SlopeLod,
-                "slope LOD debug view should parse");
-        require(ocean::ocean_render_view_from_name("foam-lod") == ocean::OceanRenderView::FoamLod,
-                "foam LOD debug view should parse");
         require(ocean::ocean_render_view_from_name("specular") == ocean::OceanRenderView::Specular,
                 "specular debug view should parse");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Foam) ==
@@ -844,11 +829,8 @@ int main() {
                     ocean::OceanRenderView::EnergyLod,
                 "ocean debug view cycle should include energy LOD after footprint");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::EnergyLod) ==
-                    ocean::OceanRenderView::FoamFiltered,
-                "ocean debug view cycle should include filtered foam after energy LOD");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamFiltered) ==
                     ocean::OceanRenderView::FarField,
-                "ocean debug view cycle should include far-field after filtered foam");
+                "ocean debug view cycle should include far-field after energy LOD");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::FarField) ==
                     ocean::OceanRenderView::CloudShadow,
                 "ocean debug view cycle should include cloud shadow after far-field");
@@ -862,14 +844,8 @@ int main() {
                     ocean::OceanRenderView::Fresnel,
                 "ocean debug view cycle should include Fresnel after the water body");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Fresnel) ==
-                    ocean::OceanRenderView::SlopeLod,
-                "ocean debug view cycle should include slope LOD after material diagnostics");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::SlopeLod) ==
-                    ocean::OceanRenderView::FoamLod,
-                "ocean debug view cycle should include foam LOD after slope LOD");
-        require(ocean::next_ocean_render_view(ocean::OceanRenderView::FoamLod) ==
                     ocean::OceanRenderView::CloudReflectionValidity,
-                "ocean debug view cycle should include planar validity after LOD diagnostics");
+                "ocean debug view cycle should include planar validity after material diagnostics");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::CloudReflectionValidity) ==
                     ocean::OceanRenderView::Specular,
                 "ocean debug view cycle should include specular after planar validity");
@@ -903,7 +879,6 @@ int main() {
         run_config.ocean.cloud_reflection_strength = 0.82F;
         run_config.ocean.cloud_shadow_strength = 0.41F;
         run_config.ocean.spectral_domains = 0;
-        run_config.ocean.spectral_lod_handoff = 0.65F;
         run_config.ocean.terrain_fields = 1;
         run_config.pbr.exposure = 0.5F;
         const ocean::OceanConfig from_run_config = ocean::ocean_config_from_run_config(run_config);
@@ -945,8 +920,6 @@ int main() {
                      "run config should initialize cloud shadow strength");
         require(!from_run_config.spectral_domains_enabled,
                 "run config should initialize ocean spectral domain override");
-        require_near(from_run_config.spectral_lod_handoff, 0.65F, 0.001F,
-                     "run config should initialize spectral LOD handoff strength");
         require(from_run_config.terrain_fields_enabled,
                 "run config should initialize ocean terrain field override");
         require_near(from_run_config.exposure, 0.5F, 0.001F,
@@ -991,8 +964,6 @@ int main() {
                               "--ocean-map-size",
                               "256",
                               "--no-ocean-spectral-domains",
-                              "--ocean-spectral-lod-handoff",
-                              "0.65",
                               "--ocean-terrain-fields",
                               "--ocean-cascade",
                               "4",
@@ -1013,7 +984,7 @@ int main() {
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        cubey::RunConfig parsed = cubey::parse_run_config(28, const_cast<char**>(argv));
+        cubey::RunConfig parsed = cubey::parse_run_config(26, const_cast<char**>(argv));
         require(parsed.ocean.sea_state == "calm", "CLI parser should accept --ocean-sea-state");
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
@@ -1028,8 +999,6 @@ int main() {
                      "CLI parser should accept --ocean-curvature-strength");
         require(parsed.ocean.spectral_domains == 0,
                 "CLI parser should accept --no-ocean-spectral-domains");
-        require_near(parsed.ocean.spectral_lod_handoff, 0.65F, 0.001F,
-                     "CLI parser should accept --ocean-spectral-lod-handoff");
         require(parsed.ocean.terrain_fields == 1,
                 "CLI parser should accept --ocean-terrain-fields");
         require(parsed.ocean.cascade == 4, "CLI parser should accept --ocean-cascade");
@@ -1137,8 +1106,6 @@ int main() {
             read_text_file(source_root / "shaders/ocean_modulate_body.glsl");
         const std::string unpack_shader =
             read_text_file(source_root / "shaders/ocean_unpack_body.glsl");
-        const std::string surface_moment_shader =
-            read_text_file(source_root / "shaders/ocean_surface_moment_filter_body.glsl");
         const std::string spectrum_entry =
             read_text_file(source_root / "shaders/ocean_spectrum.comp");
         const std::string spectrum_half_entry =
@@ -1217,18 +1184,6 @@ int main() {
         require_contains(unpack_shader,
                          "imageStore(foam_image, id, vec4(persistent, current_source",
                          "unpack shader should write persistent and current foam separately");
-        require_contains(surface_moment_shader, "dot(value.xy, value.xy)",
-                         "surface moment filter should preserve unresolved normal variance");
-        require_contains(surface_moment_shader, "value.x * value.x, value.y * value.y",
-                         "surface moment filter should preserve foam first and second moments");
-        require_contains(gpu_resources_source, "kOceanSurfaceNormalMomentBinding",
-                         "surface descriptors should expose normal moment pyramids");
-        require_contains(gpu_resources_source, "kOceanSurfaceFoamMomentBinding",
-                         "surface descriptors should expose foam moment pyramids");
-        require_contains(app_source, "record_surface_moments",
-                         "ocean compute should rebuild surface moment pyramids after unpacking");
-        require_contains(app_source, "moment_handoff_enabled",
-                         "default rendering should skip opt-in surface moment dispatches");
         require_contains(vertex_shader, "float cascade_displacement_lod_weight",
                          "vertex shader should apply per-cascade displacement LOD weights");
         require_contains(vertex_shader, "float cascade_distance_lod_weight",
@@ -1529,8 +1484,6 @@ int main() {
                          "UI should expose planar cloud view steps");
         require_contains(ui_source, "&ui.config.cloud_planar_guard_band",
                          "UI should expose the planar reflected-view guard band");
-        require_contains(ui_source, "&ui.config.spectral_lod_handoff",
-                         "UI should expose the spectral LOD handoff control");
         require_not_contains(ui_source, "cloud_shadow_scale_m",
                              "UI should not expose removed procedural cloud scale");
         require_not_contains(ui_source, "cloud_shadow_speed_mps",
@@ -1607,20 +1560,6 @@ int main() {
             "fragment shader should not keep rejected far-whitecap anti-repeat path");
         require_contains(fragment_shader, "float ocean_far_detail_filter",
                          "fragment shader should filter far normal detail by footprint");
-        require_contains(fragment_shader, "float ocean_spectral_lod_handoff()",
-                         "fragment shader should expose the controlled spectral LOD handoff");
-        require_contains(fragment_shader, "cascade_slope_lod_statistics",
-                         "fragment shader should measure unresolved slope variance per cascade");
-        require_contains(fragment_shader, "slope_filtered_roughness",
-                         "fragment shader should transfer unresolved slope into BRDF roughness");
-        require_contains(fragment_shader, "foam_moment_sparse_coverage",
-                         "fragment shader should derive sparse coverage from foam moments");
-        require_contains(fragment_shader, "ocean_surface_handoff_moment_lod",
-                         "surface handoff should converge periodic fields toward global moments");
-        require_contains(fragment_shader, "ocean_foam_lod_data",
-                         "fragment shader should aggregate filtered foam across active cascades");
-        require_contains(fragment_shader, "spectral_foam_coverage",
-                         "fragment shader should hand unresolved foam into final coverage");
         require_contains(fragment_shader, "float ocean_far_reflection_variation",
                          "fragment shader should add broad far reflection variation");
         require_contains(fragment_shader, "float far_material_energy",

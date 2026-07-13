@@ -27,8 +27,6 @@ cubey_add_app_target(
         shaders/ocean_fft_half.comp
         shaders/ocean_unpack.comp
         shaders/ocean_unpack_half.comp
-        shaders/ocean_surface_moment_filter.comp
-        shaders/ocean_surface_moment_filter_half.comp
         shaders/ocean.vert
         shaders/ocean.frag
         shaders/ocean_reference_pillar.vert
@@ -47,7 +45,6 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_modulate_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_fft_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_unpack_body.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_surface_moment_filter_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"

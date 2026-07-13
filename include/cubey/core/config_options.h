@@ -66,7 +66,6 @@ enum class RunConfigOptionId {
     OceanCurvatureStrength,
     OceanCascade,
     OceanSpectralDomains,
-    OceanSpectralLodHandoff,
     OceanTerrainFields,
     OceanWireOverlay,
     OceanWireOpacity,

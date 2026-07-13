@@ -62,9 +62,6 @@ Useful debug views:
 ./build/dev/projects/ocean/ocean --debug-view lod
 ./build/dev/projects/ocean/ocean --debug-view footprint
 ./build/dev/projects/ocean/ocean --debug-view energy-lod
-./build/dev/projects/ocean/ocean --debug-view foam-filtered
-./build/dev/projects/ocean/ocean --debug-view slope-lod --ocean-spectral-lod-handoff 1
-./build/dev/projects/ocean/ocean --debug-view foam-lod --ocean-spectral-lod-handoff 1
 ./build/dev/projects/ocean/ocean --debug-view far-field
 ./build/dev/projects/ocean/ocean --debug-view cloud-shadow
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection
@@ -177,10 +174,10 @@ distant water should be a low-contrast reflective plane with subtle swell hints,
 broad sky-reflection patches, and a sun-glitter corridor when the light/view
 geometry supports it. `footprint` shows the estimated pixel footprint in meters,
 `energy-lod` shows unresolved wave energy against displacement and surface LOD
-support, `foam-filtered` shows the filtered foam coverage pyramid, and
-`far-field` shows active material handoff energy plus footprint filtering. The
-rejected filtered far-whitecap and synthetic far-normal carriers were removed
-because they exposed FFT tiling as stipple or camera-stretched streaks.
+support, and `far-field` shows active material handoff energy plus footprint
+filtering. The rejected filtered far-whitecap, surface-moment handoff, and
+synthetic far-normal carriers were removed because they exposed FFT tiling or
+added cost without improving the accepted views.
 
 Ocean still uses a camera-relative `clipmap_grid_2d` surface mesh. The shared
 planet-scale `adaptive_patch_lod` planner is available in `cubey::render`, but

@@ -66,8 +66,6 @@ the detailed foundation notes under `docs/architecture/`.
   explicit surface-only limits.
 - [Ocean visual capture recipes](ocean-visual-captures.md): repeatable ocean
   debug, cascade isolation, far-field, and reference comparison matrix.
-- [Ocean spectral LOD handoff](ocean-spectral-lod-handoff.md): opt-in slope and
-  foam moment proof, warmed review harness, rejected variants, and measured cost.
 - [Cloud and weather rendering research](cloud-weather-rendering-research.md):
   historical cloud research, reference-code passes, and checkpoints that led to
   the current production direction in `docs/architecture/cloud-rendering.md`.

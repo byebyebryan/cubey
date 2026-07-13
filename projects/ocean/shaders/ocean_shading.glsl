@@ -127,10 +127,6 @@ float ocean_far_field_end_m() {
     return max(ocean_features.far_field_options.z, ocean_far_field_start_m() + 0.001);
 }
 
-float ocean_spectral_lod_handoff() {
-    return clamp(ocean_features.far_field_options.w, 0.0, 1.0);
-}
-
 float ocean_cloud_shadow_strength() {
     return clamp(ocean_features.cloud_lighting_options.x, 0.0, 1.0);
 }

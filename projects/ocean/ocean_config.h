@@ -40,14 +40,11 @@ enum class OceanRenderView : std::uint32_t {
     Curvature = 21,
     Footprint = 22,
     EnergyLod = 23,
-    FoamFiltered = 24,
     FarField = 25,
     CloudShadow = 26,
     CloudReflection = 27,
     WaterBody = 28,
     Fresnel = 29,
-    SlopeLod = 30,
-    FoamLod = 31,
     CloudReflectionValidity = 32,
     Specular = 33,
 };
@@ -68,7 +65,7 @@ enum class OceanCloudReflectionSource : std::uint32_t {
     Planar = 2,
 };
 
-inline constexpr std::array<OceanRenderView, 34> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 31> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory,     OceanRenderView::FoamCore,     OceanRenderView::FoamCandidate,
@@ -77,9 +74,8 @@ inline constexpr std::array<OceanRenderView, 34> kOceanRenderViews{
     OceanRenderView::Exposure,        OceanRenderView::FoamRaw,      OceanRenderView::FoamLit,
     OceanRenderView::TerrainDepth,    OceanRenderView::TerrainShore, OceanRenderView::TerrainSlope,
     OceanRenderView::Curvature,       OceanRenderView::Footprint,    OceanRenderView::EnergyLod,
-    OceanRenderView::FoamFiltered,    OceanRenderView::FarField,     OceanRenderView::CloudShadow,
+    OceanRenderView::FarField,        OceanRenderView::CloudShadow,
     OceanRenderView::CloudReflection, OceanRenderView::WaterBody,    OceanRenderView::Fresnel,
-    OceanRenderView::SlopeLod,        OceanRenderView::FoamLod,
     OceanRenderView::CloudReflectionValidity, OceanRenderView::Specular,
 };
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
@@ -99,8 +95,6 @@ inline constexpr std::array<std::uint32_t, 4> kOceanSupportedMapSizes{128U, 256U
 inline constexpr std::uint32_t kOceanDefaultMapSize = 512U;
 inline constexpr std::uint32_t kOceanCascadeCount = 5U;
 inline constexpr std::uint32_t kOceanSpectrumFieldCount = 2U;
-inline constexpr std::uint32_t kOceanSurfaceMomentKindCount = 2U;
-inline constexpr std::uint32_t kOceanSurfaceMomentMaxLevelCount = 10U;
 inline constexpr std::uint32_t kOceanMinMeshCells = 32U;
 inline constexpr std::uint32_t kOceanMaxMeshCells = 512U;
 inline constexpr std::uint32_t kOceanMinMeshLodLevels = 1U;
@@ -198,7 +192,6 @@ struct OceanConfig {
     float cloud_reflection_strength = 0.38F;
     float cloud_shadow_strength = 0.40F;
     bool spectral_domains_enabled = true;
-    float spectral_lod_handoff = 0.0F;
     bool terrain_fields_enabled = false;
     OceanFieldPrecision field_precision = OceanFieldPrecision::Half;
     std::array<bool, kOceanCascadeCount> cascade_enabled{true, true, false, false, false};
@@ -367,8 +360,6 @@ struct OceanCascadeLodBand {
         return "footprint";
     case OceanRenderView::EnergyLod:
         return "energy-lod";
-    case OceanRenderView::FoamFiltered:
-        return "foam-filtered";
     case OceanRenderView::FarField:
         return "far-field";
     case OceanRenderView::CloudShadow:
@@ -379,10 +370,6 @@ struct OceanCascadeLodBand {
         return "water-body";
     case OceanRenderView::Fresnel:
         return "fresnel";
-    case OceanRenderView::SlopeLod:
-        return "slope-lod";
-    case OceanRenderView::FoamLod:
-        return "foam-lod";
     case OceanRenderView::CloudReflectionValidity:
         return "cloud-reflection-validity";
     case OceanRenderView::Specular:
@@ -540,37 +527,6 @@ ocean_cloud_reflection_source_from_name(std::string_view name) {
         throw std::runtime_error("ocean cascade index out of range");
     }
     return std::max(1U, config.cascade_update_intervals[cascade]);
-}
-
-[[nodiscard]] inline std::uint32_t ocean_surface_moment_level_count(std::uint32_t map_size) {
-    if (!ocean_is_power_of_two(map_size) || map_size < 2U) {
-        throw std::runtime_error("ocean surface moment map size must be a power of two");
-    }
-    std::uint32_t level_count = 0U;
-    for (std::uint32_t size = map_size; size > 1U; size >>= 1U) {
-        ++level_count;
-    }
-    if (level_count > kOceanSurfaceMomentMaxLevelCount) {
-        throw std::runtime_error("ocean surface moment level count exceeds storage capacity");
-    }
-    return level_count;
-}
-
-[[nodiscard]] inline std::uint32_t ocean_surface_moment_level_size(std::uint32_t map_size,
-                                                                   std::uint32_t level) {
-    if (level >= ocean_surface_moment_level_count(map_size)) {
-        throw std::runtime_error("ocean surface moment level index out of range");
-    }
-    return std::max(1U, map_size >> (level + 1U));
-}
-
-[[nodiscard]] inline std::uint32_t ocean_surface_moment_level_size(const OceanConfig& config,
-                                                                   std::uint32_t cascade,
-                                                                   std::uint32_t level) {
-    if (cascade >= kOceanCascadeCount) {
-        throw std::runtime_error("ocean cascade index out of range");
-    }
-    return ocean_surface_moment_level_size(ocean_cascade_map_size(config, cascade), level);
 }
 
 [[nodiscard]] inline OceanCascadeLodBand ocean_cascade_lod_band(const OceanConfig& config,
@@ -735,8 +691,7 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.cloud_planar_resolution_scale > 1.0F || config.cloud_planar_view_steps < 8U ||
         config.cloud_planar_view_steps > 128U || !std::isfinite(config.cloud_planar_guard_band) ||
         config.cloud_planar_guard_band < 0.0F || config.cloud_planar_guard_band > 0.5F ||
-        config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F ||
-        config.spectral_lod_handoff < 0.0F || config.spectral_lod_handoff > 1.0F) {
+        config.cloud_shadow_strength < 0.0F || config.cloud_shadow_strength > 1.0F) {
         throw std::runtime_error("ocean shading controls are out of range");
     }
     for (const OceanCascadeConfig& cascade : config.cascades) {
@@ -763,9 +718,6 @@ inline void validate_ocean_config(const OceanConfig& config) {
     }
     if (config.ocean.spectral_domains >= 0) {
         ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
-    }
-    if (run_config_float_is_set(config.ocean.spectral_lod_handoff)) {
-        ocean.spectral_lod_handoff = config.ocean.spectral_lod_handoff;
     }
     if (config.ocean.terrain_fields >= 0) {
         ocean.terrain_fields_enabled = config.ocean.terrain_fields != 0;

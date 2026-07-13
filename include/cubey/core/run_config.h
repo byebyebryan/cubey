@@ -105,7 +105,6 @@ struct RunConfig {
         std::string camera_preset{};
         int cascade = -1;
         int spectral_domains = -1;
-        float spectral_lod_handoff = kRunConfigUnsetFloat;
         int terrain_fields = -1;
         float planet_radius_scale = kRunConfigUnsetFloat;
         float curvature_start_ratio = kRunConfigUnsetFloat;

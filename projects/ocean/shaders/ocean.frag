@@ -51,21 +51,11 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 moon_light_direction_intensity;
     vec4 moon_light_color;
 } ocean_features;
-layout(set = 0, binding = 20) uniform sampler2D normal_moments_cascade0_texture;
-layout(set = 0, binding = 21) uniform sampler2D normal_moments_cascade1_texture;
-layout(set = 0, binding = 22) uniform sampler2D normal_moments_cascade2_texture;
-layout(set = 0, binding = 23) uniform sampler2D normal_moments_cascade3_texture;
-layout(set = 0, binding = 24) uniform sampler2D normal_moments_cascade4_texture;
-layout(set = 0, binding = 25) uniform sampler2D foam_moments_cascade0_texture;
-layout(set = 0, binding = 26) uniform sampler2D foam_moments_cascade1_texture;
-layout(set = 0, binding = 27) uniform sampler2D foam_moments_cascade2_texture;
-layout(set = 0, binding = 28) uniform sampler2D foam_moments_cascade3_texture;
-layout(set = 0, binding = 29) uniform sampler2D foam_moments_cascade4_texture;
-layout(set = 0, binding = 30) uniform sampler2D cloud_shadow_transmittance_texture;
-layout(set = 0, binding = 31) uniform sampler2D cloud_reflection_product_texture;
-layout(set = 0, binding = 32) uniform samplerCube cloud_environment_previous_texture;
-layout(set = 0, binding = 33) uniform samplerCube cloud_environment_current_texture;
-layout(set = 0, binding = 34) uniform sampler2D cloud_planar_reflection_texture;
+layout(set = 0, binding = 20) uniform sampler2D cloud_shadow_transmittance_texture;
+layout(set = 0, binding = 21) uniform sampler2D cloud_reflection_product_texture;
+layout(set = 0, binding = 22) uniform samplerCube cloud_environment_previous_texture;
+layout(set = 0, binding = 23) uniform samplerCube cloud_environment_current_texture;
+layout(set = 0, binding = 24) uniform sampler2D cloud_planar_reflection_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;
@@ -118,14 +108,11 @@ const uint OCEAN_VIEW_TERRAIN_SLOPE = 20u;
 const uint OCEAN_VIEW_CURVATURE = 21u;
 const uint OCEAN_VIEW_FOOTPRINT = 22u;
 const uint OCEAN_VIEW_ENERGY_LOD = 23u;
-const uint OCEAN_VIEW_FOAM_FILTERED = 24u;
 const uint OCEAN_VIEW_FAR_FIELD = 25u;
 const uint OCEAN_VIEW_CLOUD_SHADOW = 26u;
 const uint OCEAN_VIEW_CLOUD_REFLECTION = 27u;
 const uint OCEAN_VIEW_WATER_BODY = 28u;
 const uint OCEAN_VIEW_FRESNEL = 29u;
-const uint OCEAN_VIEW_SLOPE_LOD = 30u;
-const uint OCEAN_VIEW_FOAM_LOD = 31u;
 const uint OCEAN_VIEW_CLOUD_REFLECTION_VALIDITY = 32u;
 const uint OCEAN_VIEW_SPECULAR = 33u;
 const float OCEAN_REFLECTANCE = 0.02;
@@ -153,7 +140,6 @@ struct OceanFoamData {
     vec2 core;
     vec2 candidate;
     vec2 detail;
-    vec2 slope_lod;
 };
 
 struct OceanAerialPerspective {
@@ -405,14 +391,7 @@ void main() {
                   ocean_terrain_foam_strength()
             : 0.0;
     float near_foam_coverage = ocean_foam_coverage(foam_data, dist, ndotv);
-    vec4 foam_lod_data = vec4(0.0);
-    if (ocean_spectral_lod_handoff() > 0.0 || view == OCEAN_VIEW_FOAM_LOD) {
-        foam_lod_data = ocean_foam_lod_data(dist, pixel_footprint_m);
-    }
-    float spectral_foam_coverage = foam_lod_data.z * ocean_spectral_lod_handoff();
-    float resolved_foam_coverage = max(near_foam_coverage, terrain_shore_foam);
-    float foam_coverage = 1.0 - (1.0 - resolved_foam_coverage) *
-                                    (1.0 - spectral_foam_coverage);
+    float foam_coverage = max(near_foam_coverage, terrain_shore_foam);
     float ambient_light = ocean_ambient_light_scale();
     float reference_shadow = ocean_reference_pillar_shadow(frag_world_position, sun_dir);
     float wave_shadow = ocean_wave_self_shadow(frag_sample_position,
@@ -428,12 +407,6 @@ void main() {
     roughness = mix(roughness, max(roughness, 0.58), material_distance);
     roughness = clamp(roughness + far_material_energy * ocean_far_roughness_strength(),
                       0.02, 1.0);
-    float spectral_slope_rms =
-        sqrt(max(foam_data.slope_lod.x, 0.0)) * ocean_normal_presentation_scale(dist);
-    float slope_filtered_roughness =
-        sqrt(clamp(roughness * roughness + spectral_slope_rms * spectral_slope_rms, 0.0, 1.0));
-    float slope_roughness_delta = max(slope_filtered_roughness - roughness, 0.0);
-    roughness = mix(roughness, slope_filtered_roughness, ocean_spectral_lod_handoff());
     roughness = ocean_specular_aa_roughness(normal, roughness);
 
     float fresnel = ocean_dielectric_fresnel(ndotv);
@@ -574,9 +547,6 @@ void main() {
         color = debug_footprint_color(pixel_footprint_m);
     } else if (view == OCEAN_VIEW_ENERGY_LOD) {
         color = vec3(unresolved_lod_energy, displacement_lod, surface_lod);
-    } else if (view == OCEAN_VIEW_FOAM_FILTERED) {
-        vec2 filtered = filtered_foam_total(dist, pixel_footprint_m);
-        color = vec3(filtered.x, filtered.y, max(filtered.x, filtered.y));
     } else if (view == OCEAN_VIEW_FAR_FIELD) {
         color = vec3(far_field_energy, far_material_energy, far_detail_filter);
     } else if (view == OCEAN_VIEW_CLOUD_SHADOW) {
@@ -587,12 +557,6 @@ void main() {
         color = water_body;
     } else if (view == OCEAN_VIEW_FRESNEL) {
         color = vec3(fresnel);
-    } else if (view == OCEAN_VIEW_SLOPE_LOD) {
-        color = vec3(clamp(spectral_slope_rms * 16.0, 0.0, 1.0),
-                     clamp(slope_roughness_delta * 32.0, 0.0, 1.0), foam_data.slope_lod.y);
-    } else if (view == OCEAN_VIEW_FOAM_LOD) {
-        color = vec3(clamp(foam_lod_data.x * 4.0, 0.0, 1.0),
-                     clamp(foam_lod_data.y * 4.0, 0.0, 1.0), foam_lod_data.w);
     } else if (view == OCEAN_VIEW_CLOUD_REFLECTION_VALIDITY) {
         color = vec3(planar_reflection_sample.visibility,
                      1.0 - planar_reflection_sample.visibility, 0.0);

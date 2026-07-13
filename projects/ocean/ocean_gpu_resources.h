@@ -10,7 +10,6 @@
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
-#include <cubey/vulkan/image.h>
 
 #include <vulkan/vulkan.h>
 
@@ -22,11 +21,6 @@
 #include <vector>
 
 namespace cubey::projects::ocean {
-
-enum class OceanSurfaceMomentKind : std::uint32_t {
-    Normal = 0U,
-    Foam = 1U,
-};
 
 struct OceanGpuResourceConfig {
     OceanConfig ocean{};
@@ -107,7 +101,6 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& modulate_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& fft_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& unpack_pipeline() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource& surface_moment_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet spectrum_set(std::uint32_t cascade) const;
     [[nodiscard]] VkDescriptorSet modulate_set(std::uint32_t cascade) const;
@@ -130,17 +123,9 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& foam(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& normal_moments(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& foam_moments(std::uint32_t cascade) const;
-    [[nodiscard]] VkDescriptorSet surface_moment_set(OceanSurfaceMomentKind kind,
-                                                     std::uint32_t cascade,
-                                                     std::uint32_t level) const;
     [[nodiscard]] const cubey::render::Texture2D& fallback_field() const;
     [[nodiscard]] bool cascade_allocated(std::uint32_t cascade) const;
     [[nodiscard]] std::uint32_t cascade_resolution(std::uint32_t cascade) const;
-    [[nodiscard]] std::uint32_t surface_moment_level_count(std::uint32_t cascade) const;
-    [[nodiscard]] std::uint32_t surface_moment_resolution(std::uint32_t cascade,
-                                                          std::uint32_t level) const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -150,11 +135,6 @@ class OceanGpuResources {
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
     using FieldTextureArray = std::array<std::optional<cubey::render::Texture2D>,
                                          kOceanCascadeCount * kOceanSpectrumFieldCount>;
-    using SurfaceMomentMipViewArray =
-        std::array<std::optional<cubey::vulkan::ImageView>,
-                   kOceanSurfaceMomentKindCount * kOceanCascadeCount *
-                       kOceanSurfaceMomentMaxLevelCount>;
-
     void create_textures(const cubey::vulkan::Device& device, const OceanConfig& config);
     void create_descriptor_sets(const cubey::vulkan::Device& device,
                                 std::uint32_t frame_slot_count);
@@ -178,9 +158,6 @@ class OceanGpuResources {
     TextureArray displacement_{};
     TextureArray normal_{};
     TextureArray foam_{};
-    TextureArray normal_moments_{};
-    TextureArray foam_moments_{};
-    SurfaceMomentMipViewArray surface_moment_mip_views_{};
     std::optional<cubey::render::Texture2D> fallback_field_;
     std::array<bool, kOceanCascadeCount> cascade_allocated_{};
     std::array<std::uint32_t, kOceanCascadeCount> cascade_resolutions_{};
@@ -201,13 +178,6 @@ class OceanGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> unpack_pool_;
     std::array<VkDescriptorSet, kOceanCascadeCount> unpack_sets_{};
 
-    std::optional<cubey::vulkan::DescriptorSetLayout> surface_moment_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> surface_moment_pool_;
-    std::array<VkDescriptorSet,
-               kOceanSurfaceMomentKindCount * kOceanCascadeCount *
-                   kOceanSurfaceMomentMaxLevelCount>
-        surface_moment_sets_{};
-
     std::optional<cubey::vulkan::DescriptorSetLayout> surface_layout_;
     std::optional<cubey::vulkan::DescriptorPool> surface_pool_;
     std::vector<VkDescriptorSet> surface_sets_{};
@@ -218,7 +188,6 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> unpack_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> surface_moment_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
