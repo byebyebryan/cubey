@@ -74,6 +74,12 @@ void main() {
     frag_cell_size_m = cell_size_m;
     frag_lod_morph = morph;
     frag_footprint_m = footprint_m;
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 1
+    frag_direct_visibility = terrain_heightfield_shadow_v3(
+        terrain_uniforms.source, sample_xz, height_m,
+        pc.camera_position_vertical_scale.w, footprint_m);
+    frag_landform_concavity_m = 0.0;
+#else
     frag_direct_visibility = terrain_heightfield_shadow(
         terrain_uniforms.source, sample_xz, height_m,
         pc.camera_position_vertical_scale.w, footprint_m);
@@ -91,6 +97,7 @@ void main() {
     float landform_center_height = terrain_source_base_height(
         terrain_uniforms.source, sample_xz, landform_footprint_m);
     frag_landform_concavity_m = landform_neighbor_height - landform_center_height;
+#endif
     frag_tess_factor = 1.0;
     frag_projected_edge_px = 0.0;
 }

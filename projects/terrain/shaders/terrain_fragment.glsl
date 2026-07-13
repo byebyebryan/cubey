@@ -264,6 +264,23 @@ void main() {
     }
     if (debug_view == 17) {
         vec3 bands;
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 1
+        TerrainSourceComponents components = terrain_source_v3_components(
+            terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
+        bands = vec3(components.range_support,
+            clamp(components.massif_height_m / max(terrain_uniforms.source.elevation.y, 1.0),
+                0.0, 1.0),
+            clamp(components.ridge_delta_m /
+                max(terrain_uniforms.source.v3_composition_1.x, 1.0), 0.0, 1.0));
+#elif CUBEY_TERRAIN_SOURCE_VARIANT == 0
+        bands = vec3(
+            terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
+                                frag_footprint_m),
+            terrain_source_band(terrain_uniforms.source.structure, frag_world_position.xz,
+                                frag_footprint_m),
+            terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
+                                frag_footprint_m));
+#else
         if (terrain_uniforms.source.source_control.x == 2) {
             TerrainSourceComponents components = terrain_source_v3_components(
                 terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
@@ -281,6 +298,7 @@ void main() {
                 terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
                                     frag_footprint_m));
         }
+#endif
         out_color = vec4(bands, 1.0);
         return;
     }
@@ -300,6 +318,7 @@ void main() {
         out_color = vec4(classification_normal * 0.5 + 0.5, 1.0);
         return;
     }
+#if CUBEY_TERRAIN_SOURCE_VARIANT != 0
     if (debug_view >= 22 && debug_view <= 26) {
         TerrainSourceComponents components = terrain_source_v3_components(
             terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
@@ -322,6 +341,7 @@ void main() {
         }
         return;
     }
+#endif
     // Relief stays subordinate to the resolved terrain shape at scene scale.
     float material_detail_blend = clamp(
         0.20 + material.material_weights.y * 0.28 +

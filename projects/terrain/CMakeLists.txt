@@ -82,6 +82,8 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         terrain_app.cpp
+    SHADER_DEFINES
+        CUBEY_TERRAIN_SOURCE_VARIANT=0
     SHADERS
         shaders/terrain.vert
         shaders/terrain_quality.vert
@@ -119,6 +121,44 @@ cubey_add_app_target(
         ${CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS}
 )
+set(CUBEY_TERRAIN_SOURCE_SHADER_SOURCES
+    shaders/terrain.vert
+    shaders/terrain_quality.tesc
+    shaders/terrain_quality.tese
+    shaders/terrain.frag
+    shaders/terrain_quality.frag
+    shaders/terrain_layered.frag
+)
+add_custom_target(cubey_project_terrain_v3_shader_bundle)
+cubey_add_glsl_shaders(
+    cubey_project_terrain_v3_shader_bundle
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/v3"
+    DEFINES CUBEY_TERRAIN_SOURCE_VARIANT=1
+    INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        "${CMAKE_SOURCE_DIR}/shaders"
+    DEPENDS
+        shaders/terrain_environment.glsl
+        shaders/terrain_lighting.glsl
+        shaders/terrain_material.glsl
+        shaders/terrain_fragment.glsl
+        shaders/terrain_layered_material.glsl
+        shaders/terrain_quality_material.glsl
+        shaders/terrain_vegetation.glsl
+        shaders/terrain_shadow.glsl
+        shaders/terrain_source.glsl
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/fastnoise_lite.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"
+        ${CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS}
+        ${CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS}
+    SOURCES ${CUBEY_TERRAIN_SOURCE_SHADER_SOURCES}
+)
+add_dependencies(cubey_project_terrain cubey_project_terrain_v3_shader_bundle)
 target_link_libraries(
     cubey_project_terrain
     PRIVATE
@@ -176,6 +216,7 @@ if (BUILD_TESTING)
     cubey_add_glsl_shaders(
         cubey_project_terrain_source_gpu_parity_tests
         OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/gpu-parity"
+        DEFINES CUBEY_TERRAIN_SOURCE_VARIANT=2
         INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         SOURCES
             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_source_parity.comp"

@@ -98,6 +98,15 @@ concavity estimate. V1 and v2 retain their exact 16-probe and concavity paths.
 Layered fragment-normal recovery is skipped whenever its existing distance fade
 is zero for every source version.
 
+Terrain source shaders are compiled as separate legacy and v3 variants. The
+legacy variant keeps the original parameter-struct prefix and excludes all v3
+functions and appended fields; the parity shader alone keeps multi-version
+dispatch. Passing the full appended struct by value through the generic legacy
+shader raised a 320 x 180 v1 capture from `7.88 s` and `249 MiB` to `41.47 s`
+and `1.95 GiB` during Vulkan pipeline compilation even though v3 was not
+selected. Dedicated variants restore the exact pre-v3 legacy SPIR-V sizes and
+keep the hierarchical compiler cost on the opt-in path.
+
 V3 presentation and timing captures use weathering off. The source's meso band
 provides bounded local form; applying the existing local weathering kernel adds
 eight complete neighbor evaluations and exceeds the frame budget. A cached or

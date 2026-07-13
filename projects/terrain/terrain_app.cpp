@@ -73,8 +73,8 @@ struct CompiledTerrainGraph {
     cubey::render::RenderGraphTextureHandle scene_color{};
 };
 
-[[nodiscard]] std::filesystem::path shader_path(const char* filename) {
-    return std::filesystem::path(CUBEY_TERRAIN_SHADER_DIR) / filename;
+[[nodiscard]] std::filesystem::path shader_path(std::filesystem::path filename) {
+    return std::filesystem::path(CUBEY_TERRAIN_SHADER_DIR) / std::move(filename);
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_pass_info(bool quality, bool layered) {
@@ -491,19 +491,28 @@ class TerrainApp {
                                     VkFormat color_format, std::uint32_t frame_slot_count) {
         const bool quality = runtime_config_.render_path == TerrainRenderPath::Quality;
         const bool layered = runtime_config_.surface_detail == TerrainSurfaceDetail::Layered;
+        const bool hierarchical_source =
+            runtime_config_.source.version == TerrainSourceVersion::V3;
+        const auto source_shader_path = [hierarchical_source](const char* filename) {
+            return shader_path(hierarchical_source
+                                   ? std::filesystem::path("v3") / filename
+                                   : std::filesystem::path(filename));
+        };
         std::vector<cubey::render::ShaderStageFile> terrain_shaders;
         terrain_shaders.reserve(quality ? 4U : 2U);
         terrain_shaders.push_back(cubey::render::vertex_shader_file(
-            shader_path(quality ? "terrain_quality.vert.spv" : "terrain.vert.spv")));
+            quality ? shader_path("terrain_quality.vert.spv")
+                    : source_shader_path("terrain.vert.spv")));
         if (quality) {
             terrain_shaders.push_back(cubey::render::tessellation_control_shader_file(
-                shader_path("terrain_quality.tesc.spv")));
+                source_shader_path("terrain_quality.tesc.spv")));
             terrain_shaders.push_back(cubey::render::tessellation_evaluation_shader_file(
-                shader_path("terrain_quality.tese.spv")));
+                source_shader_path("terrain_quality.tese.spv")));
         }
         terrain_shaders.push_back(cubey::render::fragment_shader_file(
-            shader_path(layered ? "terrain_layered.frag.spv"
-                                : (quality ? "terrain_quality.frag.spv" : "terrain.frag.spv"))));
+            source_shader_path(layered ? "terrain_layered.frag.spv"
+                                       : (quality ? "terrain_quality.frag.spv"
+                                                  : "terrain.frag.spv"))));
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_input_layout();
         std::vector<VkDescriptorSetLayout> terrain_descriptor_set_layouts{
