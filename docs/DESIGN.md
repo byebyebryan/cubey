@@ -338,10 +338,10 @@ named explicitly and live in either `examples/` or `projects/`:
   example-local private modules for lifecycle, resources, scene setup, and
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
-  work, including `atmosphere`, `clouds`, `smoke_2d`, `water_2d`, `water_3d`,
-  `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
-  `planet`, `procedural_terrain_legacy`, and `pbr_furnace`, plus later candidates
-  such as `marching_cubes` and `sdf_sculpt`.
+  work, including `atmosphere`, `terrain`, `smoke_2d`, `water_2d`, `water_3d`,
+  `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`, `planet`,
+  and `pbr_furnace`; reference, paused-lab, and legacy targets remain beside
+  them with explicit names and status docs.
 - `third_party/` - small vendored dependencies with explicit license notes.
 - `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
@@ -505,11 +505,9 @@ cubey/
         atmosphere_app.* -- solar time, sky, moon, Milky Way, and HDR post host path
         atmosphere_environment.* -- project-to-shared atmosphere config adapter
         atmosphere_ui.* -- live atmosphere and night-sky controls
-      clouds/
-        CMakeLists.txt
-        main.cpp
-        clouds_app.*      -- planet-aware cloud shell host/headless orchestration
-        clouds_config.*   -- cloud/weather camera, quality, and layer config
+      cloud_ref/          -- TerrainEngine-style surface-cloud reference
+      cloud_ref_2/        -- Godot-v2-style cache architecture reference
+      clouds_legacy/      -- frozen planet-aware cloud/weather prototype
       fractal_2d/
         CMakeLists.txt
         main.cpp
@@ -597,16 +595,21 @@ cubey/
         main.cpp
         ocean_app.*       -- active reference-derived ocean host/headless orchestration
         ocean_gpu_resources.* -- spectrum, FFT, unpack textures, descriptors, and pipelines
-        ocean_ui.*        -- live ocean renderer controls
+        ocean_sea_state.* -- Calm/Windy/Stormy preset contract
+        ocean_surface_frame.* -- local frame, horizon, and effective mesh state
+        ocean_ui.*        -- grouped wave/surface/lighting/LOD/environment controls
         shaders/
           ocean_spectrum.comp -- seeded GodotOceanWaves-style spectrum generation
           ocean_modulate.comp -- time-evolved frequency-domain fields
           ocean_fft.comp  -- in-repo staged Stockham FFT passes
           ocean_unpack.comp -- displacement, normals, and foam from FFT fields
           ocean.vert      -- camera-relative clipmap and cascaded displacement
-          ocean.frag      -- water shading, foam, and debug views
+          ocean.frag      -- water, foam, shared environment lighting, diagnostics
       planet/             -- planet frame, surface LOD, terrain field, and sky foundation
-      procedural_terrain/ -- terrain, bathymetry, shoreline, and LOD diagnostics
+      terrain/            -- directly sampled terrain source and clipmap runtime
+      terrain_hydrology_lab/ -- paused regional hydrology/product experiment
+      terrain_ref/        -- frozen visual/source reference lane
+      procedural_terrain_legacy/ -- preserved coastal terrain/bathymetry demo
       pbr_furnace/
         CMakeLists.txt
         main.cpp

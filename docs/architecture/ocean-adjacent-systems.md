@@ -17,8 +17,10 @@ ocean renderer through small data and shader contracts:
 - `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, and
   horizon aerial perspective, now also hosting the surface-only Cloud V1 layer
   through the shared cloud runtime.
-- `projects/procedural_terrain_legacy`: heightfield terrain, bathymetry, shoreline
-  masks, material masks, and terrain/scene depth rendering.
+- `projects/terrain`: active directly sampled heightfield terrain and clipmap
+  rendering. It does not yet own bathymetry or shoreline products.
+- `projects/terrain_hydrology_lab`: paused regional terrain-product evidence for
+  exported fields, routing, and future shoreline/bathymetry work.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
 - `projects/planet`: whole-world scale, camera-relative origin, planet surface
@@ -89,16 +91,18 @@ Current foundation checkpoint:
 - `gltf_viewer`, `projects/atmosphere`, and `projects/ocean` now all use the
   shared generated lunar and night-sky atlas upload path instead of
   project-local placeholder textures;
-- `projects/ocean` still uses its own non-PBR water material. Full terrain
-  depth, clouds, and aerial-perspective composition remain future integration
+- `projects/ocean` still uses its own non-PBR water material. Surface-cloud
+  shadows and planar/cached reflection are integrated; full terrain scene depth,
+  bathymetry, and aerial-perspective composition remain future integration
   points.
 
 ## Terrain And Bathymetry Project
 
 The ocean renderer needs land and underwater shape before shoreline water can
-look convincing. That does not require a shallow-water solver on day one. A
-static procedural terrain and bathymetry source is enough to unlock much better
-composition, shallow color, beach edges, and surf masks.
+look convincing. That does not require a shallow-water solver on day one. The
+active directly sampled terrain runtime establishes the height-query and clipmap
+baseline, but a separate static bathymetry/shoreline product is still needed to
+unlock shallow color, beach edges, and surf masks.
 
 First useful scope:
 
@@ -118,9 +122,12 @@ Ocean integration target:
 - port legacy seafloor/refraction behavior only after the active wave core still
   matches or improves on the reference baseline.
 
-`projects/procedural_terrain_legacy` should stay rendering/data focused. Gameplay
-water movement, rainfall, sources, sinks, and flooding belong in
-`projects/fluid_25d`.
+`projects/terrain` should remain a directly sampled terrain renderer. Regional
+products such as drainage, shoreline distance, and exported bathymetry belong
+in a resumed product-generation track based on the paused
+`projects/terrain_hydrology_lab`; dynamic gameplay water belongs in
+`projects/fluid_25d`. `projects/procedural_terrain_legacy` remains evidence for
+the earlier coastal field contract, not the target for new implementation.
 
 Current foundation checkpoint:
 
@@ -129,13 +136,14 @@ Current foundation checkpoint:
   material masks;
 - the shared packer uploads that contract as one `RGBA32F` texture with
   `height_m`, `water_depth_m`, `shore_sdf_m`, and `slope` in `R/G/B/A`;
-- `projects/procedural_terrain_legacy` exports its analytical fields through this
-  shared view, while `projects/ocean` can bind and inspect a diagnostic field
-  texture through `terrain-depth`, `terrain-shore`, and `terrain-slope` debug
-  views;
+- `projects/procedural_terrain_legacy` proves an adapter from analytical coastal
+  fields into this shared view, while `projects/ocean` can bind and inspect a
+  generated diagnostic field texture through `terrain-depth`, `terrain-shore`,
+  and `terrain-slope` debug views;
 - the current ocean terrain field influence is intentionally opt-in and minimal:
   it proves the descriptor/shader boundary and a small shoreline foam hook, but
-  it is not yet real bathymetry-driven surf or seafloor rendering.
+  it is not yet connected to `projects/terrain`, nor is it real
+  bathymetry-driven surf or seafloor rendering.
 
 ## Fluid 2.5D Relationship
 
@@ -212,22 +220,23 @@ LOD selection helper moved to `cubey::render` after the planet behavior
 stabilized, but project-specific terrain, ocean, and planet policies remain
 outside that helper.
 
-## Suggested Order
+## Current Integration Order
 
-1. Build `projects/atmosphere` as a clear-sky scattering demo with headless
-   capture output.
-2. Build `projects/procedural_terrain_legacy` as a terrain and bathymetry data demo.
-3. Refine ocean/material lighting now that atmosphere background, reflection,
-   fog, and light-energy coherence are in place.
-4. Integrate terrain scene color/depth plus bathymetry into ocean for shallow
-   water and shorelines.
-5. Continue `fluid_25d` toward dynamic terrain water, then feed its fields into
-   the same shoreline/bathymetry contract.
-6. Continue `projects/planet` as the planet-frame, LOD, local sky, and
-   celestial owner before trying to make ocean itself planet-scale.
-7. Keep the atmosphere-hosted Cloud V1 surface layer integrated for
-   atmosphere/ocean backgrounds, and defer high/aerial/orbit cloud products
-   until a dedicated later-version track.
+1. Keep Surface Ocean V1 and the atmosphere-hosted surface-cloud path stable as
+   the visual baseline; aerial/orbit clouds remain a later-version track.
+2. Define a current terrain water-body product for datum, bathymetry, shoreline
+   distance, and opaque scene depth without expanding the active terrain source
+   into a hydrology system.
+3. Adapt that product into the existing terrain-ocean field contract, replacing
+   the ocean's generated diagnostic texture without changing the wave core.
+4. Add shallow attenuation, seafloor visibility, shoreline foam, and wet-edge
+   composition in independently inspectable slices.
+5. Resume `fluid_25d` only when dynamic terrain-bound water is required, then
+   feed its state through the same contract rather than adding solver policy to
+   ocean.
+6. Continue `projects/planet` as the planet-frame, LOD, local sky, and celestial
+   owner before making ocean itself planet-scale.
 
-This sequence keeps each project independently useful while aiming every slice
-at concrete ocean integration points.
+This order keeps the landed renderers independently useful and makes the next
+cross-project dependency explicit instead of routing new work through legacy
+projects.

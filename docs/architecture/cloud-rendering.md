@@ -56,7 +56,8 @@ cloud app. The current stable path is:
   clouds;
 - `projects/ocean`: surface-view consumer that composites shared clouds over
   the atmosphere background, samples projected cloud transmittance for direct
-  light, and reuses current-view cloud radiance/transmittance for reflections;
+  light, renders a reflected-camera cloud product for local planar reflection,
+  and uses a coherent filtered cloud environment as broad fallback;
 - `projects/planet`: deferred aerial/orbit pressure surface; not a Cloud V1
   consumer and not the source of surface-cloud defaults yet.
 
@@ -372,8 +373,8 @@ Deferred beyond Cloud V1:
 - a stronger planet-scale weather model than fixed experimental synoptic
   anchors, dry slots, and procedural breakup;
 - terrain and planet consumption of projected cloud shadows;
-- a clouded environment probe or cubemap for offscreen, rough, and PBR
-  reflections beyond ocean's current-view surface integration;
+- shared atmosphere/PBR lifecycle and descriptor ownership for the cloud
+  environment probe already proven by ocean;
 - full cached octahedral sky blending;
 - temporal reconstruction beyond basic diagnostic toggles;
 - blue-noise/spatiotemporal sampling until a useful temporal path exists;
@@ -418,8 +419,8 @@ shared sky/celestial/atmosphere state and emits:
   density for reconstruction and future depth-aware composition;
 - an optional texel-snapped, receiver-plane cloud transmittance product for
   low-frequency direct-light modulation;
-- a current-view radiance/transmittance contribution that consumers may reuse
-  without another cloud march, subject to explicit screen-footprint fallback;
+- a visible-view radiance/transmittance product for final background
+  composition and diagnostics;
 - a reflected-camera radiance/transmittance product for local planar receivers;
 - a coherent, roughness-prefiltered cloud environment cache for broad fallback;
 - debug views for weather, base/detail density, lighting, shadow, distance,

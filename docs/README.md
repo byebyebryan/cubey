@@ -44,8 +44,8 @@ Detailed current foundation notes live under
   shared source field, operator, and process-driver direction for procedural
   assets.
 - [Ocean rendering](architecture/ocean-rendering.md):
-  active/reference/legacy ocean split, reference-derived wave
-  core, feature donor boundaries, and breaking-wave tradeoffs.
+  active local-ocean runtime, spectral wave/foam fields, clipmap LOD,
+  shared environment lighting, and terrain/planet boundaries.
 - [Ocean horizon and curved-local scale](architecture/ocean-horizon-and-planet-scale.md):
   ocean/planet scale boundary, curved far-surface mapping, and local-frame
   handoff direction.
@@ -54,6 +54,9 @@ Detailed current foundation notes live under
 - [Terrain reboot direction](architecture/terrain-reboot.md): local terrain
   product generator strategy, previous terrain lessons, reference takeaways,
   product contract, and first vertical slice.
+- [Terrain v1 patch product](architecture/terrain-v1.md): active directly
+  sampled terrain source, clipmap runtime, bounded weathering, and consumer
+  boundary.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [Cloud rendering](architecture/cloud-rendering.md): surface-only Cloud V1
@@ -75,10 +78,10 @@ Project-specific design stays beside the project:
 Active projects:
 
 - [Atmosphere](../projects/atmosphere/README.md)
+- [Terrain](../projects/terrain/README.md)
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
 - [Water 2D](../projects/fluid/water_2d/README.md)
 - [Water 3D](../projects/fluid/water_3d/README.md)
-- [Fluid 2.5D](../projects/fluid_25d/README.md)
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
@@ -89,6 +92,11 @@ Reference projects:
 - [Cloud Ref](../projects/cloud_ref/README.md)
 - [Cloud Ref 2](../projects/cloud_ref_2/README.md)
 - [Terrain Ref](../projects/terrain_ref/README.md)
+
+Paused labs and design-only projects:
+
+- [Terrain Hydrology Lab](../projects/terrain_hydrology_lab/README.md)
+- [Fluid 2.5D design](../projects/fluid_25d/README.md)
 
 Legacy snapshots:
 
