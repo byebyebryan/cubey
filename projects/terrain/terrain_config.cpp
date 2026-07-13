@@ -150,6 +150,16 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "material-cavity";
     case TerrainDebugView::ClassificationNormal:
         return "classification-normal";
+    case TerrainDebugView::SourceRange:
+        return "source-range";
+    case TerrainDebugView::SourceMassif:
+        return "source-massif";
+    case TerrainDebugView::SourceValley:
+        return "source-valley";
+    case TerrainDebugView::SourceRidge:
+        return "source-ridge";
+    case TerrainDebugView::SourceMeso:
+        return "source-meso";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -220,6 +230,21 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "classification-normal" || name == "macro-normal") {
         return TerrainDebugView::ClassificationNormal;
+    }
+    if (name == "source-range" || name == "range-support") {
+        return TerrainDebugView::SourceRange;
+    }
+    if (name == "source-massif" || name == "massif") {
+        return TerrainDebugView::SourceMassif;
+    }
+    if (name == "source-valley" || name == "valley-delta") {
+        return TerrainDebugView::SourceValley;
+    }
+    if (name == "source-ridge" || name == "ridge-delta") {
+        return TerrainDebugView::SourceRidge;
+    }
+    if (name == "source-meso" || name == "meso-delta") {
+        return TerrainDebugView::SourceMeso;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }
@@ -300,6 +325,14 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     if (config.surface_detail == TerrainSurfaceDetail::Layered &&
         config.render_path != TerrainRenderPath::Quality) {
         throw std::runtime_error("layered terrain surface detail requires quality rendering");
+    }
+    const bool v3_component_view = config.debug_view == TerrainDebugView::SourceRange ||
+                                   config.debug_view == TerrainDebugView::SourceMassif ||
+                                   config.debug_view == TerrainDebugView::SourceValley ||
+                                   config.debug_view == TerrainDebugView::SourceRidge ||
+                                   config.debug_view == TerrainDebugView::SourceMeso;
+    if (v3_component_view && config.source.version != TerrainSourceVersion::V3) {
+        throw std::runtime_error("terrain source component views require source v3");
     }
 }
 

@@ -513,4 +513,62 @@ TerrainSourceSummary summarize_terrain_source(const TerrainSourceParameters& par
     return result;
 }
 
+TerrainSourceComponentSummary
+summarize_terrain_source_components(const TerrainSourceParameters& parameters,
+                                    cubey::math::Vec2 center_xz, float extent_m,
+                                    std::uint32_t samples_per_axis) {
+    if (parameters.version != TerrainSourceVersion::V3 || !std::isfinite(extent_m) ||
+        extent_m <= 0.0F || samples_per_axis < 2U) {
+        throw std::runtime_error("invalid terrain source component summary domain");
+    }
+    TerrainSourceComponentSummary result{};
+    double range_sum = 0.0;
+    double range_coverage = 0.0;
+    double massif_squared_sum = 0.0;
+    double valley_squared_sum = 0.0;
+    double ridge_squared_sum = 0.0;
+    double meso_squared_sum = 0.0;
+    const float denominator = static_cast<float>(samples_per_axis - 1U);
+    for (std::uint32_t z = 0; z < samples_per_axis; ++z) {
+        for (std::uint32_t x = 0; x < samples_per_axis; ++x) {
+            const TerrainQuery query{
+                .world_xz =
+                    {
+                        center_xz.x - extent_m * 0.5F +
+                            extent_m * static_cast<float>(x) / denominator,
+                        center_xz.y - extent_m * 0.5F +
+                            extent_m * static_cast<float>(z) / denominator,
+                    },
+            };
+            const TerrainSourceComponents components =
+                sample_terrain_source_components(parameters, query);
+            range_sum += components.range_support;
+            range_coverage += components.range_support >= 0.5F ? 1.0 : 0.0;
+            massif_squared_sum += static_cast<double>(components.massif_height_m) *
+                                  static_cast<double>(components.massif_height_m);
+            valley_squared_sum += static_cast<double>(components.valley_delta_m) *
+                                  static_cast<double>(components.valley_delta_m);
+            ridge_squared_sum += static_cast<double>(components.ridge_delta_m) *
+                                 static_cast<double>(components.ridge_delta_m);
+            meso_squared_sum += static_cast<double>(components.meso_delta_m) *
+                                static_cast<double>(components.meso_delta_m);
+            result.massif_max_m = std::max(result.massif_max_m, components.massif_height_m);
+            result.valley_max_abs_m =
+                std::max(result.valley_max_abs_m, std::abs(components.valley_delta_m));
+            result.ridge_max_m = std::max(result.ridge_max_m, components.ridge_delta_m);
+            result.meso_max_abs_m =
+                std::max(result.meso_max_abs_m, std::abs(components.meso_delta_m));
+        }
+    }
+    const double sample_count =
+        static_cast<double>(samples_per_axis) * static_cast<double>(samples_per_axis);
+    result.range_support_mean = static_cast<float>(range_sum / sample_count);
+    result.range_support_coverage = static_cast<float>(range_coverage / sample_count);
+    result.massif_rms_m = static_cast<float>(std::sqrt(massif_squared_sum / sample_count));
+    result.valley_rms_m = static_cast<float>(std::sqrt(valley_squared_sum / sample_count));
+    result.ridge_rms_m = static_cast<float>(std::sqrt(ridge_squared_sum / sample_count));
+    result.meso_rms_m = static_cast<float>(std::sqrt(meso_squared_sum / sample_count));
+    return result;
+}
+
 } // namespace cubey::projects::terrain

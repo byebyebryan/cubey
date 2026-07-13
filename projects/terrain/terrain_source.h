@@ -106,6 +106,19 @@ struct TerrainSourceSummary {
     float mean_slope = 0.0F;
 };
 
+struct TerrainSourceComponentSummary {
+    float range_support_mean = 0.0F;
+    float range_support_coverage = 0.0F;
+    float massif_rms_m = 0.0F;
+    float massif_max_m = 0.0F;
+    float valley_rms_m = 0.0F;
+    float valley_max_abs_m = 0.0F;
+    float ridge_rms_m = 0.0F;
+    float ridge_max_m = 0.0F;
+    float meso_rms_m = 0.0F;
+    float meso_max_abs_m = 0.0F;
+};
+
 [[nodiscard]] std::string_view terrain_preset_name(TerrainPreset preset);
 [[nodiscard]] TerrainPreset terrain_preset_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_weathering_mode_name(TerrainWeatheringMode mode);
@@ -127,5 +140,9 @@ sample_terrain_source_components(const TerrainSourceParameters& parameters,
 [[nodiscard]] TerrainSourceSummary
 summarize_terrain_source(const TerrainSourceParameters& parameters, cubey::math::Vec2 center_xz,
                          float extent_m, std::uint32_t samples_per_axis);
+[[nodiscard]] TerrainSourceComponentSummary
+summarize_terrain_source_components(const TerrainSourceParameters& parameters,
+                                    cubey::math::Vec2 center_xz, float extent_m,
+                                    std::uint32_t samples_per_axis);
 
 } // namespace cubey::projects::terrain

@@ -215,6 +215,33 @@ void test_runtime_config_parses_source_v3() {
             "terrain runtime should parse source v3");
 }
 
+void test_source_v3_component_views_require_source_v3() {
+    using namespace cubey::projects::terrain;
+    require(terrain_debug_view_from_name("range-support") == TerrainDebugView::SourceRange &&
+                terrain_debug_view_from_name("massif") == TerrainDebugView::SourceMassif &&
+                terrain_debug_view_from_name("valley-delta") == TerrainDebugView::SourceValley &&
+                terrain_debug_view_from_name("ridge-delta") == TerrainDebugView::SourceRidge &&
+                terrain_debug_view_from_name("meso-delta") == TerrainDebugView::SourceMeso,
+            "terrain runtime should parse source v3 component views");
+
+    cubey::RunConfig valid{};
+    valid.terrain.source_version = "v3";
+    valid.debug_view = "source-ridge";
+    const TerrainRuntimeConfig config = terrain_runtime_config_from_run_config(valid);
+    require(config.debug_view == TerrainDebugView::SourceRidge,
+            "terrain source v3 should accept component views");
+
+    cubey::RunConfig invalid{};
+    invalid.debug_view = "source-ridge";
+    bool rejected = false;
+    try {
+        (void)terrain_runtime_config_from_run_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain source component views should reject legacy sources");
+}
+
 void test_ground_camera_and_shape_diagnostics_parse() {
     cubey::RunConfig run_config{};
     run_config.terrain.camera_preset = "ground";
@@ -593,6 +620,7 @@ int main() {
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();
         test_runtime_config_parses_source_v3();
+        test_source_v3_component_views_require_source_v3();
         test_ground_camera_and_shape_diagnostics_parse();
         test_backdrop_camera_configuration();
         test_backdrop_presentation_and_coverage_debug_parse();

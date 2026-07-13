@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
             });
             const auto summary = cubey::projects::terrain::summarize_terrain_source(
                 parameters, {0.0F, 0.0F}, kExtentM, kSamplesPerAxis);
-            summaries.push_back({
+            nlohmann::json entry{
                 {"preset", cubey::projects::terrain::terrain_preset_name(preset)},
                 {"seed", seed},
                 {"min_height_m", summary.min_height_m},
@@ -54,7 +54,25 @@ int main(int argc, char** argv) {
                 {"mean_height_m", summary.mean_height_m},
                 {"relief_m", summary.max_height_m - summary.min_height_m},
                 {"mean_slope", summary.mean_slope},
-            });
+            };
+            if (version == cubey::projects::terrain::TerrainSourceVersion::V3) {
+                const auto components =
+                    cubey::projects::terrain::summarize_terrain_source_components(
+                        parameters, {0.0F, 0.0F}, kExtentM, kSamplesPerAxis);
+                entry["components"] = {
+                    {"range_support_mean", components.range_support_mean},
+                    {"range_support_coverage", components.range_support_coverage},
+                    {"massif_rms_m", components.massif_rms_m},
+                    {"massif_max_m", components.massif_max_m},
+                    {"valley_rms_m", components.valley_rms_m},
+                    {"valley_max_abs_m", components.valley_max_abs_m},
+                    {"ridge_rms_m", components.ridge_rms_m},
+                    {"ridge_max_m", components.ridge_max_m},
+                    {"meso_rms_m", components.meso_rms_m},
+                    {"meso_max_abs_m", components.meso_max_abs_m},
+                };
+            }
+            summaries.push_back(std::move(entry));
         }
     }
 

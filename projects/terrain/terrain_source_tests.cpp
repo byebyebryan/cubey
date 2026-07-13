@@ -176,6 +176,15 @@ void test_source_v3_components_are_bounded_and_reconstruct_height() {
         rejected = true;
     }
     require(rejected, "terrain source v3 should reject unsupported presets");
+
+    const auto summary = cubey::projects::terrain::summarize_terrain_source_components(
+        parameters, {0.0F, 0.0F}, 32'768.0F, 33U);
+    require(summary.range_support_mean >= 0.0F && summary.range_support_mean <= 1.0F &&
+                summary.range_support_coverage >= 0.0F && summary.range_support_coverage <= 1.0F,
+            "terrain source v3 summary should keep support statistics normalized");
+    require(std::isfinite(summary.massif_rms_m) && std::isfinite(summary.valley_rms_m) &&
+                std::isfinite(summary.ridge_rms_m) && std::isfinite(summary.meso_rms_m),
+            "terrain source v3 summary should keep contribution statistics finite");
 }
 
 void test_clean_source_publishes_no_weathering_delta() {

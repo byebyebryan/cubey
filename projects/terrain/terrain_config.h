@@ -43,6 +43,11 @@ enum class TerrainDebugView : std::uint8_t {
     MaterialHeight,
     MaterialCavity,
     ClassificationNormal,
+    SourceRange,
+    SourceMassif,
+    SourceValley,
+    SourceRidge,
+    SourceMeso,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {

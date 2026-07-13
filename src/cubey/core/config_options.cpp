@@ -106,7 +106,7 @@ constexpr std::array<std::string_view, 9> kTerrainCameraPresets{
     "oblique", "profile",  "top",       "surface",        "surface-low",
     "ground",  "backdrop", "midground", "coastal-oblique"};
 constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
-constexpr std::array<std::string_view, 2> kTerrainSourceVersions{"v1", "v2"};
+constexpr std::array<std::string_view, 3> kTerrainSourceVersions{"v1", "v2", "v3"};
 constexpr std::array<std::string_view, 2> kTerrainRenderPaths{"control", "quality"};
 constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"tile", "layered"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};

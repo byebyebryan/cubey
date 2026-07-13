@@ -83,6 +83,14 @@ vec3 terrain_lod_color(float value) {
     return colors[index];
 }
 
+vec3 terrain_source_delta_color(float delta_m, float extent_m) {
+    float normalized = clamp(delta_m / max(extent_m, 0.001), -1.0, 1.0);
+    vec3 neutral = vec3(0.13, 0.14, 0.15);
+    return normalized < 0.0
+        ? mix(neutral, vec3(0.16, 0.48, 0.86), -normalized)
+        : mix(neutral, vec3(0.92, 0.36, 0.12), normalized);
+}
+
 vec2 terrain_weathering_gradient_xz() {
     vec2 position_dx = dFdx(frag_world_position.xz);
     vec2 position_dy = dFdy(frag_world_position.xz);
@@ -253,13 +261,24 @@ void main() {
         return;
     }
     if (debug_view == 17) {
-        vec3 bands = vec3(
-            terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
-                                frag_footprint_m),
-            terrain_source_band(terrain_uniforms.source.structure, frag_world_position.xz,
-                                frag_footprint_m),
-            terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
-                                frag_footprint_m));
+        vec3 bands;
+        if (terrain_uniforms.source.source_control.x == 2) {
+            TerrainSourceComponents components = terrain_source_v3_components(
+                terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
+            bands = vec3(components.range_support,
+                clamp(components.massif_height_m / max(terrain_uniforms.source.elevation.y, 1.0),
+                    0.0, 1.0),
+                clamp(components.ridge_delta_m /
+                    max(terrain_uniforms.source.v3_composition_1.x, 1.0), 0.0, 1.0));
+        } else {
+            bands = vec3(
+                terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
+                                    frag_footprint_m),
+                terrain_source_band(terrain_uniforms.source.structure, frag_world_position.xz,
+                                    frag_footprint_m),
+                terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
+                                    frag_footprint_m));
+        }
         out_color = vec4(bands, 1.0);
         return;
     }
@@ -277,6 +296,28 @@ void main() {
     }
     if (debug_view == 21) {
         out_color = vec4(classification_normal * 0.5 + 0.5, 1.0);
+        return;
+    }
+    if (debug_view >= 22 && debug_view <= 26) {
+        TerrainSourceComponents components = terrain_source_v3_components(
+            terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
+        if (debug_view == 22) {
+            out_color = vec4(vec3(components.range_support), 1.0);
+        } else if (debug_view == 23) {
+            float massif = clamp(
+                components.massif_height_m / max(terrain_uniforms.source.elevation.y, 1.0),
+                0.0, 1.0);
+            out_color = vec4(vec3(massif), 1.0);
+        } else if (debug_view == 24) {
+            out_color = vec4(terrain_source_delta_color(components.valley_delta_m,
+                terrain_uniforms.source.v3_composition_0.z), 1.0);
+        } else if (debug_view == 25) {
+            out_color = vec4(terrain_source_delta_color(components.ridge_delta_m,
+                terrain_uniforms.source.v3_composition_1.x), 1.0);
+        } else {
+            out_color = vec4(terrain_source_delta_color(components.meso_delta_m,
+                terrain_uniforms.source.v3_composition_1.z), 1.0);
+        }
         return;
     }
     // Relief stays subordinate to the resolved terrain shape at scene scale.
