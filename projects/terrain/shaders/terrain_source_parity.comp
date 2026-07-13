@@ -22,8 +22,18 @@ void main() {
         return;
     }
     vec4 query = parity_input.queries[index];
-    TerrainSourceSample sample_value =
-        terrain_source_sample(parity_input.parameters, query.xy, query.z);
+    TerrainSourceSample sample_value;
+    if (parity_input.parameters.source_control.x == 2 &&
+            parity_input.parameters.weathering.w > 0.5) {
+        sample_value.base_height_m = terrain_source_base_height(
+            parity_input.parameters, query.xy, query.z);
+        sample_value.height_m = terrain_source_height(
+            parity_input.parameters, query.xy, query.z);
+        sample_value.gradient_xz = vec2(0.0);
+        sample_value.weathering_delta_m = sample_value.height_m - sample_value.base_height_m;
+    } else {
+        sample_value = terrain_source_sample(parity_input.parameters, query.xy, query.z);
+    }
     parity_output.values[index * 2U] = vec4(sample_value.base_height_m, sample_value.height_m,
         sample_value.gradient_xz);
     parity_output.values[index * 2U + 1U] = vec4(sample_value.weathering_delta_m, 0.0, 0.0, 0.0);

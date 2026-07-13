@@ -29,12 +29,12 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string_view(argv[1]) == "--source-version") {
         version = cubey::projects::terrain::terrain_source_version_from_name(argv[2]);
     } else if (argc != 1) {
-        throw std::runtime_error("usage: terrain_source_report [--source-version v1|v2]");
+        throw std::runtime_error("usage: terrain_source_report [--source-version v1|v2|v3]");
     }
 
     nlohmann::json summaries = nlohmann::json::array();
     for (const TerrainPreset preset : kPresets) {
-        if (version == cubey::projects::terrain::TerrainSourceVersion::V2 &&
+        if (version != cubey::projects::terrain::TerrainSourceVersion::V1 &&
             preset != TerrainPreset::Mountain) {
             continue;
         }
@@ -59,9 +59,9 @@ int main(int argc, char** argv) {
     }
 
     const nlohmann::json report{
-        {"schema", version == cubey::projects::terrain::TerrainSourceVersion::V1
-                       ? "cubey.terrain.v1.source-summary"
-                       : "cubey.terrain.v2.source-summary"},
+        {"schema", "cubey.terrain." +
+                       std::string(cubey::projects::terrain::terrain_source_version_name(version)) +
+                       ".source-summary"},
         {"domain_extent_m", kExtentM},
         {"samples_per_axis", kSamplesPerAxis},
         {"weathering", "off"},

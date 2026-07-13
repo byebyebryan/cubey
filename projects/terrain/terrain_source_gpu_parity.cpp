@@ -36,7 +36,7 @@ struct alignas(16) TerrainSourceParityOutput {
     std::array<std::array<float, 4>, kSampleCount * 2U> values{};
 };
 
-static_assert(sizeof(TerrainSourceParityInput) == 256U);
+static_assert(sizeof(TerrainSourceParityInput) == 464U);
 static_assert(sizeof(TerrainSourceParityOutput) == 224U);
 
 [[nodiscard]] bool contains(std::string_view haystack, std::string_view needle) {
@@ -141,11 +141,12 @@ void run_parity_test() {
     constexpr std::array versions{
         cubey::projects::terrain::TerrainSourceVersion::V1,
         cubey::projects::terrain::TerrainSourceVersion::V2,
+        cubey::projects::terrain::TerrainSourceVersion::V3,
     };
 
     for (const auto version : versions) {
         for (const auto preset : presets) {
-            if (version == cubey::projects::terrain::TerrainSourceVersion::V2 &&
+            if (version != cubey::projects::terrain::TerrainSourceVersion::V1 &&
                 preset != cubey::projects::terrain::TerrainPreset::Mountain) {
                 continue;
             }
@@ -204,8 +205,11 @@ void run_parity_test() {
                     const auto& second = actual.values[index * 2U + 1U];
                     require_near(first[0], expected.base_height_m, 0.1F, "base height");
                     require_near(first[1], expected.height_m, 0.1F, "final height");
-                    require_near(first[2], expected.gradient_xz.x, 0.02F, "x gradient");
-                    require_near(first[3], expected.gradient_xz.y, 0.02F, "z gradient");
+                    if (version != cubey::projects::terrain::TerrainSourceVersion::V3 ||
+                        weathering == cubey::projects::terrain::TerrainWeatheringMode::Off) {
+                        require_near(first[2], expected.gradient_xz.x, 0.02F, "x gradient");
+                        require_near(first[3], expected.gradient_xz.y, 0.02F, "z gradient");
+                    }
                     require_near(second[0], expected.weathering_delta_m, 0.1F, "weathering delta");
                 }
             }

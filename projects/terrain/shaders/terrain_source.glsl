@@ -2,6 +2,7 @@
 #define CUBEY_TERRAIN_SOURCE_GLSL
 
 #include "cubey/procedural/fastnoise_lite.glsl"
+#include "cubey/procedural/noise.glsl"
 
 struct TerrainSourceGpuBandParameters {
     vec4 shape;
@@ -15,6 +16,23 @@ struct TerrainSourceGpuParameters {
     vec4 composition;
     vec4 elevation;
     vec4 weathering;
+    TerrainSourceGpuBandParameters v3_warp;
+    TerrainSourceGpuBandParameters v3_range;
+    TerrainSourceGpuBandParameters v3_massif;
+    TerrainSourceGpuBandParameters v3_ridge;
+    TerrainSourceGpuBandParameters v3_meso;
+    vec4 v3_composition_0;
+    vec4 v3_composition_1;
+    ivec4 source_control;
+};
+
+struct TerrainSourceComponents {
+    float range_support;
+    float massif_height_m;
+    float valley_delta_m;
+    float ridge_delta_m;
+    float meso_delta_m;
+    float base_height_m;
 };
 
 struct TerrainSourceSample {
@@ -74,8 +92,81 @@ float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
     return weight > 0.0 ? value / weight : 0.5;
 }
 
+float terrain_source_v3_signed_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
+        float footprint_m) {
+    vec2 rotated = vec2(0.8 * world_xz.x - 0.6 * world_xz.y,
+        0.6 * world_xz.x + 0.8 * world_xz.y);
+    float frequency = band.shape.x;
+    float amplitude = 1.0;
+    float value = 0.0;
+    float weight = 0.0;
+    for (int octave = 0; octave < 4; ++octave) {
+        if (octave >= band.control.y) {
+            break;
+        }
+        float footprint_weight = terrain_source_octave_footprint_weight(frequency, footprint_m);
+        float octave_f = float(octave);
+        float sample_value = cubey_proc_value_noise_3d(vec3(
+            rotated.x * frequency + octave_f * 17.31,
+            rotated.y * frequency - octave_f * 9.17,
+            octave_f * 0.713 + 0.37), uint(band.control.x + octave * 1013));
+        value += sample_value * footprint_weight * amplitude;
+        weight += amplitude;
+        frequency *= band.shape.y;
+        amplitude *= band.shape.z;
+    }
+    return weight > 0.0 ? value / weight : 0.0;
+}
+
+TerrainSourceComponents terrain_source_v3_components(TerrainSourceGpuParameters parameters,
+        vec2 world_xz, float footprint_m) {
+    TerrainSourceGpuBandParameters warp_z_band = parameters.v3_warp;
+    warp_z_band.control.x += 7919;
+    float warp_x = terrain_source_v3_signed_band(parameters.v3_warp,
+        world_xz + vec2(12031.0, -4507.0), footprint_m);
+    float warp_z = terrain_source_v3_signed_band(warp_z_band,
+        world_xz + vec2(-8213.0, 15119.0), footprint_m);
+    vec2 warped = world_xz + vec2(warp_x, warp_z) * parameters.v3_composition_0.x;
+
+    float range_noise = terrain_source_v3_signed_band(parameters.v3_range, warped, footprint_m);
+    float range_support = smoothstep(-0.25, 0.45, range_noise);
+    float massif_noise = terrain_source_v3_signed_band(parameters.v3_massif,
+        warped + vec2(3107.0, -1903.0), footprint_m);
+    float massif_unit = clamp(massif_noise * 0.5 + 0.5, 0.0, 1.0);
+    float massif_shape = 0.24 + 0.76 * smoothstep(0.22, 0.82, massif_unit);
+    float macro_profile = range_support * massif_shape;
+    float massif_height_m = parameters.elevation.x + parameters.elevation.y *
+        pow(macro_profile, parameters.elevation.z);
+
+    float valley_gate = 1.0 - smoothstep(0.18, 0.48, massif_unit);
+    float valley_delta_m = -min(massif_height_m * parameters.v3_composition_0.y,
+        parameters.v3_composition_0.z) * valley_gate * range_support;
+
+    float ridge_field = terrain_source_v3_signed_band(parameters.v3_ridge,
+        warped + vec2(-2411.0, 5327.0), footprint_m);
+    float ridge_body = smoothstep(0.22, 0.72, 1.0 - abs(ridge_field));
+    float highland_gate = smoothstep(0.18, 0.65, macro_profile);
+    float ridge_delta_m = min(massif_height_m * parameters.v3_composition_0.w,
+        parameters.v3_composition_1.x) * ridge_body * highland_gate;
+
+    float meso_field = terrain_source_v3_signed_band(parameters.v3_meso,
+        warped + vec2(1127.0, 2813.0), footprint_m);
+    float face_gate = smoothstep(0.12, 0.55, macro_profile) *
+        (1.0 - smoothstep(0.72, 0.92, macro_profile));
+    float meso_delta_m = meso_field *
+        min(massif_height_m * parameters.v3_composition_1.y,
+            parameters.v3_composition_1.z) * face_gate;
+    float base_height_m = max(
+        massif_height_m + valley_delta_m + ridge_delta_m + meso_delta_m, 0.0);
+    return TerrainSourceComponents(range_support, massif_height_m, valley_delta_m,
+        ridge_delta_m, meso_delta_m, base_height_m);
+}
+
 float terrain_source_base_height(TerrainSourceGpuParameters parameters, vec2 world_xz,
         float footprint_m) {
+    if (parameters.source_control.x == 2) {
+        return terrain_source_v3_components(parameters, world_xz, footprint_m).base_height_m;
+    }
     float macro_value = terrain_source_band(parameters.macro, world_xz, footprint_m);
     float structure_value = terrain_source_band(parameters.structure, world_xz, footprint_m);
     float detail_value = terrain_source_band(parameters.detail, world_xz, footprint_m);

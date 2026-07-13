@@ -21,6 +21,7 @@ enum class TerrainWeatheringMode : std::uint8_t {
 enum class TerrainSourceVersion : std::uint8_t {
     V1,
     V2,
+    V3,
 };
 
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
@@ -42,10 +43,27 @@ struct TerrainSourceBandParameters {
     float ridge_mix = 0.0F;
 };
 
+struct TerrainSourceV3Parameters {
+    TerrainSourceBandParameters warp{};
+    TerrainSourceBandParameters range{};
+    TerrainSourceBandParameters massif{};
+    TerrainSourceBandParameters ridge{};
+    TerrainSourceBandParameters meso{};
+    float warp_strength_m = 0.0F;
+    float valley_ratio = 0.0F;
+    float valley_cap_m = 0.0F;
+    float ridge_ratio = 0.0F;
+    float ridge_cap_m = 0.0F;
+    float meso_ratio = 0.0F;
+    float meso_cap_m = 0.0F;
+};
+
 struct TerrainSourceParameters {
+    TerrainSourceVersion version = TerrainSourceVersion::V1;
     TerrainSourceBandParameters macro{};
     TerrainSourceBandParameters structure{};
     TerrainSourceBandParameters detail{};
+    TerrainSourceV3Parameters v3{};
     float macro_weight = 0.5F;
     float structure_weight = 0.5F;
     float detail_weight = 0.1F;
@@ -72,6 +90,15 @@ struct TerrainSample {
     float weathering_delta_m = 0.0F;
 };
 
+struct TerrainSourceComponents {
+    float range_support = 0.0F;
+    float massif_height_m = 0.0F;
+    float valley_delta_m = 0.0F;
+    float ridge_delta_m = 0.0F;
+    float meso_delta_m = 0.0F;
+    float base_height_m = 0.0F;
+};
+
 struct TerrainSourceSummary {
     float min_height_m = 0.0F;
     float max_height_m = 0.0F;
@@ -90,6 +117,9 @@ void validate_terrain_source_config(const TerrainSourceConfig& config);
 void validate_terrain_source_parameters(const TerrainSourceParameters& parameters);
 [[nodiscard]] TerrainSourceParameters
 resolve_terrain_source_parameters(const TerrainSourceConfig& config);
+[[nodiscard]] TerrainSourceComponents
+sample_terrain_source_components(const TerrainSourceParameters& parameters,
+                                 const TerrainQuery& query);
 [[nodiscard]] float sample_terrain_base_height(const TerrainSourceParameters& parameters,
                                                const TerrainQuery& query);
 [[nodiscard]] TerrainSample sample_terrain(const TerrainSourceParameters& parameters,

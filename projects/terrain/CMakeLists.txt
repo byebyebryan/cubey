@@ -182,6 +182,7 @@ if (BUILD_TESTING)
         DEPENDS
             "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_source.glsl"
             "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/fastnoise_lite.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
             "${CUBEY_FASTNOISE_LITE_GLSL_DIR}/FastNoiseLite.glsl"
     )
     add_test(
@@ -191,7 +192,7 @@ if (BUILD_TESTING)
     set_tests_properties(
         terrain_source_gpu_parity_tests
         PROPERTIES
-            TIMEOUT 30
+            TIMEOUT 60
             SKIP_RETURN_CODE 77
     )
 

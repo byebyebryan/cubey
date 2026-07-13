@@ -12,6 +12,7 @@ namespace {
 using cubey::projects::terrain::TerrainPreset;
 using cubey::projects::terrain::TerrainQuery;
 using cubey::projects::terrain::TerrainSourceConfig;
+using cubey::projects::terrain::TerrainSourceVersion;
 using cubey::projects::terrain::TerrainWeatheringMode;
 
 void require(bool condition, std::string_view message) {
@@ -119,6 +120,64 @@ void test_footprint_filters_unresolved_detail() {
             "terrain footprint should suppress unresolved local variation");
 }
 
+void test_source_v3_components_are_bounded_and_reconstruct_height() {
+    const auto parameters = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 12345U,
+        .preset = TerrainPreset::Mountain,
+        .version = TerrainSourceVersion::V3,
+    });
+    require(cubey::projects::terrain::terrain_source_version_from_name("v3") ==
+                TerrainSourceVersion::V3,
+            "terrain should parse source v3");
+
+    for (int index = 0; index < 64; ++index) {
+        const TerrainQuery query{
+            .world_xz = {static_cast<float>(index) * 613.0F - 8'000.0F,
+                         static_cast<float>(index) * -347.0F + 4'000.0F},
+            .footprint_m = static_cast<float>(index % 7) * 16.0F,
+        };
+        const auto components =
+            cubey::projects::terrain::sample_terrain_source_components(parameters, query);
+        const float reconstructed = components.massif_height_m + components.valley_delta_m +
+                                    components.ridge_delta_m + components.meso_delta_m;
+        require(components.range_support >= 0.0F && components.range_support <= 1.0F,
+                "terrain source v3 range support should stay normalized");
+        require(components.valley_delta_m <= 0.001F &&
+                    std::abs(components.valley_delta_m) <=
+                        std::min(components.massif_height_m * parameters.v3.valley_ratio,
+                                 parameters.v3.valley_cap_m) +
+                            0.001F,
+                "terrain source v3 valley delta should remain bounded");
+        require(components.ridge_delta_m >= -0.001F &&
+                    components.ridge_delta_m <=
+                        std::min(components.massif_height_m * parameters.v3.ridge_ratio,
+                                 parameters.v3.ridge_cap_m) +
+                            0.001F,
+                "terrain source v3 ridge delta should remain bounded");
+        require(std::abs(components.meso_delta_m) <=
+                    std::min(components.massif_height_m * parameters.v3.meso_ratio,
+                             parameters.v3.meso_cap_m) +
+                        0.001F,
+                "terrain source v3 meso delta should remain bounded");
+        require_near(components.base_height_m, std::max(reconstructed, 0.0F), 0.001F,
+                     "terrain source v3 components should reconstruct base height");
+        require_near(cubey::projects::terrain::sample_terrain_base_height(parameters, query),
+                     components.base_height_m, 0.0F,
+                     "terrain source v3 base query should use component evaluation");
+    }
+
+    bool rejected = false;
+    try {
+        (void)cubey::projects::terrain::resolve_terrain_source_parameters({
+            .preset = TerrainPreset::Upland,
+            .version = TerrainSourceVersion::V3,
+        });
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain source v3 should reject unsupported presets");
+}
+
 void test_clean_source_publishes_no_weathering_delta() {
     const auto parameters = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 42U,
@@ -165,6 +224,7 @@ int main() {
         test_source_is_deterministic_and_uses_full_seed();
         test_presets_have_ordered_relief();
         test_footprint_filters_unresolved_detail();
+        test_source_v3_components_are_bounded_and_reconstruct_height();
         test_clean_source_publishes_no_weathering_delta();
         test_local_weathering_is_bounded_and_preserves_coarse_samples();
         std::cout << "terrain_source_tests: ok\n";

@@ -204,6 +204,17 @@ void test_runtime_config_parses_source_v2() {
     require(rejected, "layered surface detail should reject the control geometry path");
 }
 
+void test_runtime_config_parses_source_v3() {
+    cubey::RunConfig run_config{};
+    run_config.terrain.source_version = "v3";
+    run_config.terrain.render_path = "quality";
+    run_config.terrain.surface_detail = "layered";
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.source.version == cubey::projects::terrain::TerrainSourceVersion::V3,
+            "terrain runtime should parse source v3");
+}
+
 void test_ground_camera_and_shape_diagnostics_parse() {
     cubey::RunConfig run_config{};
     run_config.terrain.camera_preset = "ground";
@@ -581,6 +592,7 @@ int main() {
         test_runtime_config_defaults_to_the_v1_scene();
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();
+        test_runtime_config_parses_source_v3();
         test_ground_camera_and_shape_diagnostics_parse();
         test_backdrop_camera_configuration();
         test_backdrop_presentation_and_coverage_debug_parse();

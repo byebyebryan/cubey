@@ -30,6 +30,26 @@ terrain_source_gpu_parameters(const TerrainSourceParameters& parameters) {
                 parameters.weathering_strength,
                 parameters.weathering == TerrainWeatheringMode::Local ? 1.0F : 0.0F,
             },
+        .v3_warp = gpu_band(parameters.v3.warp),
+        .v3_range = gpu_band(parameters.v3.range),
+        .v3_massif = gpu_band(parameters.v3.massif),
+        .v3_ridge = gpu_band(parameters.v3.ridge),
+        .v3_meso = gpu_band(parameters.v3.meso),
+        .v3_composition_0 =
+            {
+                parameters.v3.warp_strength_m,
+                parameters.v3.valley_ratio,
+                parameters.v3.valley_cap_m,
+                parameters.v3.ridge_ratio,
+            },
+        .v3_composition_1 =
+            {
+                parameters.v3.ridge_cap_m,
+                parameters.v3.meso_ratio,
+                parameters.v3.meso_cap_m,
+                0.0F,
+            },
+        .source_control = {static_cast<std::int32_t>(parameters.version), 0, 0, 0},
     };
 }
 

@@ -74,6 +74,30 @@ constexpr float kRidgeNeutral = 0.65F;
     return weight > 0.0F ? value / weight : 0.5F;
 }
 
+[[nodiscard]] float sample_v3_signed_band(const TerrainSourceBandParameters& band,
+                                          cubey::math::Vec2 world_xz, float footprint_m) {
+    const cubey::math::Vec2 rotated{
+        kRotationCos * world_xz.x - kRotationSin * world_xz.y,
+        kRotationSin * world_xz.x + kRotationCos * world_xz.y,
+    };
+    float frequency = band.frequency;
+    float amplitude = 1.0F;
+    float value = 0.0F;
+    float weight = 0.0F;
+    for (std::uint32_t octave = 0; octave < band.octaves; ++octave) {
+        const float footprint_weight = octave_footprint_weight(frequency, footprint_m);
+        const float octave_f = static_cast<float>(octave);
+        const float sample = cubey::procedural::value_noise_3d(
+            rotated.x * frequency + octave_f * 17.31F, rotated.y * frequency - octave_f * 9.17F,
+            octave_f * 0.713F + 0.37F, static_cast<std::uint32_t>(band.seed) + octave * 1013U);
+        value += sample * footprint_weight * amplitude;
+        weight += amplitude;
+        frequency *= band.lacunarity;
+        amplitude *= band.gain;
+    }
+    return weight > 0.0F ? value / weight : 0.0F;
+}
+
 [[nodiscard]] TerrainSourceBandParameters band(std::int32_t seed, std::uint32_t octaves,
                                                float wavelength_m, float lacunarity, float gain,
                                                float ridge_mix) {
@@ -185,6 +209,8 @@ std::string_view terrain_source_version_name(TerrainSourceVersion version) {
         return "v1";
     case TerrainSourceVersion::V2:
         return "v2";
+    case TerrainSourceVersion::V3:
+        return "v3";
     }
     throw std::runtime_error("unknown terrain source version");
 }
@@ -196,12 +222,16 @@ TerrainSourceVersion terrain_source_version_from_name(std::string_view name) {
     if (name == "v2") {
         return TerrainSourceVersion::V2;
     }
+    if (name == "v3") {
+        return TerrainSourceVersion::V3;
+    }
     throw std::runtime_error("unknown terrain source version: " + std::string(name));
 }
 
 void validate_terrain_source_config(const TerrainSourceConfig& config) {
-    if (config.version == TerrainSourceVersion::V2 && config.preset != TerrainPreset::Mountain) {
-        throw std::runtime_error("terrain source v2 currently supports only the mountain preset");
+    if (config.version != TerrainSourceVersion::V1 && config.preset != TerrainPreset::Mountain) {
+        throw std::runtime_error(
+            "terrain source v2/v3 currently supports only the mountain preset");
     }
     if (!std::isfinite(config.weathering_strength) || config.weathering_strength < 0.0F ||
         config.weathering_strength > 1.0F) {
@@ -222,6 +252,26 @@ void validate_terrain_source_parameters(const TerrainSourceParameters& parameter
     validate_band(parameters.macro);
     validate_band(parameters.structure);
     validate_band(parameters.detail);
+    if (parameters.version == TerrainSourceVersion::V3) {
+        validate_band(parameters.v3.warp);
+        validate_band(parameters.v3.range);
+        validate_band(parameters.v3.massif);
+        validate_band(parameters.v3.ridge);
+        validate_band(parameters.v3.meso);
+        if (!std::isfinite(parameters.v3.warp_strength_m) ||
+            !std::isfinite(parameters.v3.valley_ratio) ||
+            !std::isfinite(parameters.v3.valley_cap_m) ||
+            !std::isfinite(parameters.v3.ridge_ratio) ||
+            !std::isfinite(parameters.v3.ridge_cap_m) || !std::isfinite(parameters.v3.meso_ratio) ||
+            !std::isfinite(parameters.v3.meso_cap_m) || parameters.v3.warp_strength_m < 0.0F ||
+            parameters.v3.valley_ratio < 0.0F || parameters.v3.valley_ratio > 1.0F ||
+            parameters.v3.valley_cap_m < 0.0F || parameters.v3.ridge_ratio < 0.0F ||
+            parameters.v3.ridge_ratio > 1.0F || parameters.v3.ridge_cap_m < 0.0F ||
+            parameters.v3.meso_ratio < 0.0F || parameters.v3.meso_ratio > 1.0F ||
+            parameters.v3.meso_cap_m < 0.0F) {
+            throw std::runtime_error("invalid terrain source v3 parameters");
+        }
+    }
     if (!std::isfinite(parameters.height_scale_m) || parameters.height_scale_m <= 0.0F ||
         !std::isfinite(parameters.elevation_power) || parameters.elevation_power <= 0.0F ||
         !std::isfinite(parameters.gradient_step_m) || parameters.gradient_step_m <= 0.0F ||
@@ -241,6 +291,7 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
     const std::int32_t detail_seed = terrain_band_seed(config.seed, "terrain.v1.detail");
 
     TerrainSourceParameters result{};
+    result.version = config.version;
     result.weathering = config.weathering;
     result.weathering_strength = config.weathering_strength;
     switch (config.preset) {
@@ -260,6 +311,25 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
         if (config.version == TerrainSourceVersion::V2) {
             result.detail = band(detail_seed, 8U, 900.0F, 2.03F, 0.52F, 0.24F);
             result.detail_weight = 0.16F;
+        } else if (config.version == TerrainSourceVersion::V3) {
+            result.v3.warp = band(terrain_band_seed(config.seed, "terrain.v3.warp"), 2U, 32'000.0F,
+                                  2.0F, 0.50F, 0.0F);
+            result.v3.range = band(terrain_band_seed(config.seed, "terrain.v3.range"), 3U,
+                                   24'000.0F, 2.0F, 0.50F, 0.0F);
+            result.v3.massif = band(terrain_band_seed(config.seed, "terrain.v3.massif"), 4U,
+                                    12'000.0F, 2.0F, 0.48F, 0.0F);
+            result.v3.ridge = band(terrain_band_seed(config.seed, "terrain.v3.ridge"), 3U, 6'000.0F,
+                                   2.0F, 0.48F, 0.0F);
+            result.v3.meso = band(terrain_band_seed(config.seed, "terrain.v3.meso"), 4U, 1'200.0F,
+                                  2.0F, 0.45F, 0.0F);
+            result.v3.warp_strength_m = 2'000.0F;
+            result.v3.valley_ratio = 0.35F;
+            result.v3.valley_cap_m = 900.0F;
+            result.v3.ridge_ratio = 0.18F;
+            result.v3.ridge_cap_m = 600.0F;
+            result.v3.meso_ratio = 0.04F;
+            result.v3.meso_cap_m = 160.0F;
+            result.elevation_power = 2.20F;
         }
         break;
     case TerrainPreset::Upland:
@@ -295,8 +365,74 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
     return result;
 }
 
+TerrainSourceComponents sample_terrain_source_components(const TerrainSourceParameters& parameters,
+                                                         const TerrainQuery& query) {
+    if (!std::isfinite(query.world_xz.x) || !std::isfinite(query.world_xz.y) ||
+        !std::isfinite(query.footprint_m) || query.footprint_m < 0.0F) {
+        throw std::runtime_error("invalid terrain query");
+    }
+    if (parameters.version != TerrainSourceVersion::V3) {
+        return {};
+    }
+
+    TerrainSourceBandParameters warp_z_band = parameters.v3.warp;
+    warp_z_band.seed += 7'919;
+    const float warp_x = sample_v3_signed_band(
+        parameters.v3.warp, query.world_xz + cubey::math::Vec2{12'031.0F, -4'507.0F},
+        query.footprint_m);
+    const float warp_z = sample_v3_signed_band(
+        warp_z_band, query.world_xz + cubey::math::Vec2{-8'213.0F, 15'119.0F}, query.footprint_m);
+    const cubey::math::Vec2 warped =
+        query.world_xz + cubey::math::Vec2{warp_x, warp_z} * parameters.v3.warp_strength_m;
+
+    const float range_noise = sample_v3_signed_band(parameters.v3.range, warped, query.footprint_m);
+    const float range_support = smoothstep(-0.25F, 0.45F, range_noise);
+    const float massif_noise = sample_v3_signed_band(
+        parameters.v3.massif, warped + cubey::math::Vec2{3'107.0F, -1'903.0F}, query.footprint_m);
+    const float massif_unit = std::clamp(massif_noise * 0.5F + 0.5F, 0.0F, 1.0F);
+    const float massif_shape = 0.24F + 0.76F * smoothstep(0.22F, 0.82F, massif_unit);
+    const float macro_profile = range_support * massif_shape;
+    const float massif_height_m =
+        parameters.base_height_m +
+        parameters.height_scale_m * std::pow(macro_profile, parameters.elevation_power);
+
+    const float valley_gate = 1.0F - smoothstep(0.18F, 0.48F, massif_unit);
+    const float valley_delta_m =
+        -std::min(massif_height_m * parameters.v3.valley_ratio, parameters.v3.valley_cap_m) *
+        valley_gate * range_support;
+
+    const float ridge_field = sample_v3_signed_band(
+        parameters.v3.ridge, warped + cubey::math::Vec2{-2'411.0F, 5'327.0F}, query.footprint_m);
+    const float ridge_body = smoothstep(0.22F, 0.72F, 1.0F - std::abs(ridge_field));
+    const float highland_gate = smoothstep(0.18F, 0.65F, macro_profile);
+    const float ridge_delta_m =
+        std::min(massif_height_m * parameters.v3.ridge_ratio, parameters.v3.ridge_cap_m) *
+        ridge_body * highland_gate;
+
+    const float meso_field = sample_v3_signed_band(
+        parameters.v3.meso, warped + cubey::math::Vec2{1'127.0F, 2'813.0F}, query.footprint_m);
+    const float face_gate =
+        smoothstep(0.12F, 0.55F, macro_profile) * (1.0F - smoothstep(0.72F, 0.92F, macro_profile));
+    const float meso_delta_m =
+        meso_field *
+        std::min(massif_height_m * parameters.v3.meso_ratio, parameters.v3.meso_cap_m) * face_gate;
+    const float base_height_m =
+        std::max(massif_height_m + valley_delta_m + ridge_delta_m + meso_delta_m, 0.0F);
+    return {
+        .range_support = range_support,
+        .massif_height_m = massif_height_m,
+        .valley_delta_m = valley_delta_m,
+        .ridge_delta_m = ridge_delta_m,
+        .meso_delta_m = meso_delta_m,
+        .base_height_m = base_height_m,
+    };
+}
+
 float sample_terrain_base_height(const TerrainSourceParameters& parameters,
                                  const TerrainQuery& query) {
+    if (parameters.version == TerrainSourceVersion::V3) {
+        return sample_terrain_source_components(parameters, query).base_height_m;
+    }
     if (!std::isfinite(query.world_xz.x) || !std::isfinite(query.world_xz.y) ||
         !std::isfinite(query.footprint_m) || query.footprint_m < 0.0F) {
         throw std::runtime_error("invalid terrain query");
