@@ -422,6 +422,45 @@ void test_backdrop_planner_handles_review_aspect_ratios() {
     }
 }
 
+void test_backdrop_planner_frames_hierarchical_source_peaks() {
+    constexpr std::array<std::uint64_t, 3> seeds{0U, 9012U, 12345U};
+    constexpr float peak_offset_radians = 5.0F * std::numbers::pi_v<float> / 180.0F;
+    constexpr float maximum_pitch_radians = 18.0F * std::numbers::pi_v<float> / 180.0F;
+    for (const std::uint64_t seed : seeds) {
+        const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+            .seed = seed,
+            .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+            .version = cubey::projects::terrain::TerrainSourceVersion::V3,
+        });
+        const auto plan = cubey::projects::terrain::plan_terrain_backdrop_camera(source);
+        const cubey::math::Vec3 camera_forward =
+            plan.transform.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F};
+        const cubey::math::Vec2 target_direction{
+            plan.target_position.x - plan.transform.translation.x,
+            plan.target_position.z - plan.transform.translation.z,
+        };
+        const float target_length = std::sqrt(target_direction.x * target_direction.x +
+                                              target_direction.y * target_direction.y);
+        const float camera_horizontal_length =
+            std::sqrt(camera_forward.x * camera_forward.x + camera_forward.z * camera_forward.z);
+        const float target_alignment =
+            (camera_forward.x * target_direction.x + camera_forward.z * target_direction.y) /
+            (camera_horizontal_length * target_length);
+        require(target_alignment >= 0.98F,
+                "terrain hierarchical backdrop should face its selected target");
+        require(plan.pitch_radians <= maximum_pitch_radians + 0.000001F,
+                "terrain hierarchical backdrop pitch should remain bounded");
+        const float desired_pitch = plan.target_elevation_radians - peak_offset_radians;
+        constexpr float minimum_pitch_radians =
+            -2.0F * std::numbers::pi_v<float> / 180.0F;
+        require_near(plan.pitch_radians,
+                     std::clamp(desired_pitch, minimum_pitch_radians, maximum_pitch_radians),
+                     0.000001F,
+                     "terrain hierarchical backdrop should frame or bound its peak");
+        require_near_frame_contract(source, plan, 1.0F);
+    }
+}
+
 void test_backdrop_traversal_preserves_planned_clearance() {
     const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 9012U,
@@ -626,6 +665,7 @@ int main() {
         test_backdrop_presentation_and_coverage_debug_parse();
         test_backdrop_planner_is_deterministic_and_clear();
         test_backdrop_planner_handles_review_aspect_ratios();
+        test_backdrop_planner_frames_hierarchical_source_peaks();
         test_backdrop_traversal_preserves_planned_clearance();
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();

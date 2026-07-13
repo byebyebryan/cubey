@@ -32,6 +32,7 @@ constexpr float kBackdropVerticalFovRadians = 40.0F * std::numbers::pi_v<float> 
 constexpr float kPeakAboveFrameCenterRadians = 5.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kMinimumPitchRadians = -2.0F * std::numbers::pi_v<float> / 180.0F;
 constexpr float kMaximumPitchRadians = 12.0F * std::numbers::pi_v<float> / 180.0F;
+constexpr float kHierarchicalMaximumPitchRadians = 18.0F * std::numbers::pi_v<float> / 180.0F;
 
 [[nodiscard]] float saturate(float value) {
     return std::clamp(value, 0.0F, 1.0F);
@@ -132,8 +133,9 @@ struct NearFrameOcclusion {
                                                  cubey::math::Vec2 anchor, float yaw_radians,
                                                  float vertical_scale,
                                                  TerrainBackdropCameraProfile profile) {
-    const cubey::math::Vec2 forward{std::sin(yaw_radians), -std::cos(yaw_radians)};
-    const cubey::math::Vec2 right{std::cos(yaw_radians), std::sin(yaw_radians)};
+    const float heading_sign = clean_source.version == TerrainSourceVersion::V3 ? -1.0F : 1.0F;
+    const cubey::math::Vec2 forward{heading_sign * std::sin(yaw_radians), -std::cos(yaw_radians)};
+    const cubey::math::Vec2 right{std::cos(yaw_radians), heading_sign * std::sin(yaw_radians)};
     const float anchor_height =
         sample_terrain(clean_source, {.world_xz = anchor}).height_m * vertical_scale;
     const float relief_scale = std::max(clean_source.height_scale_m * vertical_scale, 80.0F);
@@ -294,8 +296,11 @@ TerrainBackdropCameraPlan plan_terrain_backdrop_camera(const TerrainSourceParame
         const float target_height = target_sample.height_m * vertical_scale;
         const float elevation = std::atan2(target_height - clearance.camera_height_m,
                                            candidate.heading.target_distance_m);
+        const float maximum_pitch = source.version == TerrainSourceVersion::V3
+                                        ? kHierarchicalMaximumPitchRadians
+                                        : kMaximumPitchRadians;
         const float pitch = std::clamp(elevation - kPeakAboveFrameCenterRadians,
-                                       kMinimumPitchRadians, kMaximumPitchRadians);
+                                       kMinimumPitchRadians, maximum_pitch);
         const NearFrameOcclusion occlusion = near_frame_occlusion(
             source, candidate.anchor, clearance.camera_height_m, candidate.yaw_radians, pitch,
             candidate.heading.target_distance_m, vertical_scale, aspect_ratio);

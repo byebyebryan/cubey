@@ -5,6 +5,8 @@
 #include <array>
 #include <cstdint>
 #include <iostream>
+#include <stdexcept>
+#include <string_view>
 
 namespace {
 
@@ -31,18 +33,40 @@ constexpr std::array<cubey::projects::terrain::TerrainBackdropCameraProfile, 2> 
 
 } // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    cubey::projects::terrain::TerrainSourceVersion version =
+        cubey::projects::terrain::TerrainSourceVersion::V1;
+    if (argc == 3 && std::string_view(argv[1]) == "--source-version") {
+        version = cubey::projects::terrain::terrain_source_version_from_name(argv[2]);
+    } else if (argc != 1) {
+        throw std::runtime_error("usage: terrain_backdrop_report [--source-version v1|v2|v3]");
+    }
+
     nlohmann::json plans = nlohmann::json::array();
     for (const auto profile : kProfiles) {
         for (const TerrainPreset preset : kPresets) {
+            if (version != cubey::projects::terrain::TerrainSourceVersion::V1 &&
+                preset != TerrainPreset::Mountain) {
+                continue;
+            }
             for (const std::uint64_t seed : kSeeds) {
                 const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
                     .seed = seed,
                     .preset = preset,
+                    .version = version,
                     .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
                 });
                 const auto plan = cubey::projects::terrain::plan_terrain_backdrop_camera(
                     source, 1.0F, 16.0F / 9.0F, profile);
+                const float target_render_footprint_m =
+                    profile == cubey::projects::terrain::TerrainBackdropCameraProfile::Backdrop
+                        ? 64.0F
+                        : 32.0F;
+                const float target_render_height_m =
+                    cubey::projects::terrain::sample_terrain(
+                        source, {.world_xz = {plan.target_position.x, plan.target_position.z},
+                                 .footprint_m = target_render_footprint_m})
+                        .height_m;
                 plans.push_back({
                     {"profile",
                      cubey::projects::terrain::terrain_backdrop_camera_profile_name(profile)},
@@ -51,6 +75,8 @@ int main() {
                     {"anchor_xz_m", vec2_json(plan.anchor_xz)},
                     {"camera_position_m", vec3_json(plan.transform.translation)},
                     {"target_position_m", vec3_json(plan.target_position)},
+                    {"target_render_footprint_m", target_render_footprint_m},
+                    {"target_render_height_m", target_render_height_m},
                     {"yaw_radians", plan.yaw_radians},
                     {"pitch_radians", plan.pitch_radians},
                     {"target_distance_m", plan.target_distance_m},
@@ -72,6 +98,7 @@ int main() {
 
     const nlohmann::json report{
         {"schema", "cubey.terrain.backdrop-camera.v4"},
+        {"source_version", cubey::projects::terrain::terrain_source_version_name(version)},
         {"anchor_grid_m", {-4096, -2048, 0, 2048, 4096}},
         {"heading_count", 24},
         {"backdrop_sample_distances_m", {3200, 6400}},
