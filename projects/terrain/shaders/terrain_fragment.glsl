@@ -120,18 +120,24 @@ void main() {
     float material_footprint_m = max(
         0.35, length(pc.camera_position_vertical_scale.xyz - frag_world_position) *
                   pc.render_options.z);
-    vec2 base_gradient_xz = frag_base_gradient_xz;
+    vec2 weathering_gradient_xz = terrain_weathering_gradient_xz();
+    vec2 classification_gradient_xz = frag_base_gradient_xz + weathering_gradient_xz;
+    vec2 shading_base_gradient_xz = frag_base_gradient_xz;
 #if CUBEY_TERRAIN_LAYERED_MATERIAL
     float fragment_normal_blend = 0.60 *
         (1.0 - smoothstep(3.0, 8.0, material_footprint_m));
-    base_gradient_xz = mix(base_gradient_xz,
-                           terrain_fragment_source_gradient_xz(material_footprint_m),
-                           fragment_normal_blend);
+    shading_base_gradient_xz = mix(
+        shading_base_gradient_xz,
+        terrain_fragment_source_gradient_xz(material_footprint_m),
+        fragment_normal_blend);
 #endif
-    vec2 final_gradient_xz = base_gradient_xz + terrain_weathering_gradient_xz();
-    vec3 source_normal = normalize(vec3(
-        -final_gradient_xz.x * pc.camera_position_vertical_scale.w, 1.0,
-        -final_gradient_xz.y * pc.camera_position_vertical_scale.w));
+    vec2 shading_gradient_xz = shading_base_gradient_xz + weathering_gradient_xz;
+    vec3 classification_normal = normalize(vec3(
+        -classification_gradient_xz.x * pc.camera_position_vertical_scale.w, 1.0,
+        -classification_gradient_xz.y * pc.camera_position_vertical_scale.w));
+    vec3 shading_normal = normalize(vec3(
+        -shading_gradient_xz.x * pc.camera_position_vertical_scale.w, 1.0,
+        -shading_gradient_xz.y * pc.camera_position_vertical_scale.w));
     if (terrain_covered_by_finer_lod(frag_world_position.xz)) {
         discard;
     }
@@ -139,9 +145,9 @@ void main() {
         (frag_height_m - terrain_uniforms.source.elevation.x) /
             max(terrain_uniforms.source.elevation.y, 1.0),
         0.0, 1.0);
-    float slope = 1.0 - clamp(source_normal.y, 0.0, 1.0);
+    float slope = 1.0 - clamp(classification_normal.y, 0.0, 1.0);
     float ambient_visibility = terrain_lighting_ambient_visibility(
-        source_normal, frag_landform_concavity_m);
+        classification_normal, frag_landform_concavity_m);
     int debug_view = int(round(pc.render_options.x));
 
     if (debug_view == 1) {
@@ -190,8 +196,8 @@ void main() {
     // Keep procedural relief filtering continuous across clipmap ownership changes.
     bool backdrop_presentation = int(round(pc.render_options.w)) == 1;
     TerrainMaterialSample material = clay_view
-        ? terrain_clay_material(source_normal)
-        : terrain_material_sample(source_normal,
+        ? terrain_clay_material(shading_normal)
+        : terrain_material_sample(classification_normal,
                                   vec3(frag_world_position.x, frag_height_m,
                                        frag_world_position.z),
                                   frag_height_m, frag_landform_concavity_m,
@@ -201,12 +207,12 @@ void main() {
 #if CUBEY_TERRAIN_LAYERED_MATERIAL
     if (!clay_view) {
         material = terrain_layered_material_sample(
-            material, source_normal, frag_world_position, material_footprint_m);
+            material, shading_normal, frag_world_position, material_footprint_m);
     }
 #elif CUBEY_TERRAIN_QUALITY_MATERIAL
     if (!clay_view) {
         material = terrain_quality_material_sample(
-            material, source_normal, frag_world_position, material_footprint_m);
+            material, shading_normal, frag_world_position, material_footprint_m);
     }
 #endif
     if (debug_view == 9) {
@@ -214,7 +220,7 @@ void main() {
         return;
     }
     if (debug_view == 10) {
-        out_color = vec4(source_normal * 0.5 + 0.5, 1.0);
+        out_color = vec4(shading_normal * 0.5 + 0.5, 1.0);
         return;
     }
     if (debug_view == 11) {
@@ -269,13 +275,17 @@ void main() {
         out_color = vec4(vec3(material.cavity), 1.0);
         return;
     }
+    if (debug_view == 21) {
+        out_color = vec4(classification_normal * 0.5 + 0.5, 1.0);
+        return;
+    }
     // Relief stays subordinate to the resolved terrain shape at scene scale.
     float material_detail_blend = clamp(
         0.20 + material.material_weights.y * 0.28 +
         material.material_weights.z * 0.52, 0.0, 0.78);
     vec3 normal = clay_view
-        ? source_normal
-        : normalize(mix(source_normal, material.detail_normal, material_detail_blend));
+        ? shading_normal
+        : normalize(mix(shading_normal, material.detail_normal, material_detail_blend));
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     vec3 view_direction = normalize(
         pc.camera_position_vertical_scale.xyz - frag_world_position);

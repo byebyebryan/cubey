@@ -175,6 +175,9 @@ void test_ground_camera_and_shape_diagnostics_parse() {
     require(cubey::projects::terrain::terrain_debug_view_from_name("normals") ==
                 cubey::projects::terrain::TerrainDebugView::Normal,
             "terrain runtime should parse the final-normal diagnostic alias");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("macro-normal") ==
+                cubey::projects::terrain::TerrainDebugView::ClassificationNormal,
+            "terrain runtime should parse the classification-normal diagnostic alias");
     require(cubey::projects::terrain::terrain_debug_view_from_name("materials") ==
                 cubey::projects::terrain::TerrainDebugView::MaterialWeights,
             "terrain runtime should parse the material-weight diagnostic alias");

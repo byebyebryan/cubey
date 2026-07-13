@@ -148,6 +148,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "material-height";
     case TerrainDebugView::MaterialCavity:
         return "material-cavity";
+    case TerrainDebugView::ClassificationNormal:
+        return "classification-normal";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -215,6 +217,9 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "material-cavity" || name == "cavity") {
         return TerrainDebugView::MaterialCavity;
+    }
+    if (name == "classification-normal" || name == "macro-normal") {
+        return TerrainDebugView::ClassificationNormal;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }

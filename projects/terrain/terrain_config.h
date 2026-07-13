@@ -42,6 +42,7 @@ enum class TerrainDebugView : std::uint8_t {
     MaterialRoughness,
     MaterialHeight,
     MaterialCavity,
+    ClassificationNormal,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {
