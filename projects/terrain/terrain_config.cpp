@@ -128,6 +128,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "material-albedo";
     case TerrainDebugView::MaterialNormal:
         return "material-normal";
+    case TerrainDebugView::SourceBands:
+        return "source-bands";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -183,6 +185,9 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "material-normal" || name == "detail-normal") {
         return TerrainDebugView::MaterialNormal;
+    }
+    if (name == "source-bands" || name == "bands") {
+        return TerrainDebugView::SourceBands;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }

@@ -37,6 +37,7 @@ enum class TerrainDebugView : std::uint8_t {
     ProjectedEdge,
     MaterialAlbedo,
     MaterialNormal,
+    SourceBands,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {

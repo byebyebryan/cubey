@@ -374,7 +374,7 @@ class TerrainApp {
                          "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
                          "Aerial transmittance\0Vegetation coverage\0Normal\0Material weights\0"
                          "Ambient visibility\0Tessellation factor\0Projected edge\0"
-                         "Material albedo\0Material normal\0")) {
+                         "Material albedo\0Material normal\0Source bands\0")) {
             runtime_config_.debug_view = static_cast<TerrainDebugView>(debug_view);
         }
         if (source_changed) {

@@ -200,6 +200,17 @@ void main() {
         out_color = vec4(material.detail_normal * 0.5 + 0.5, 1.0);
         return;
     }
+    if (debug_view == 17) {
+        vec3 bands = vec3(
+            terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
+                                frag_footprint_m),
+            terrain_source_band(terrain_uniforms.source.structure, frag_world_position.xz,
+                                frag_footprint_m),
+            terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
+                                frag_footprint_m));
+        out_color = vec4(bands, 1.0);
+        return;
+    }
     // Relief stays subordinate to the resolved terrain shape at scene scale.
     float material_detail_blend = clamp(
         0.20 + material.material_weights.y * 0.28 +
