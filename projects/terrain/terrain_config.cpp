@@ -65,7 +65,7 @@ bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept {
 
 bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept {
     return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
-           preset == TerrainCameraPreset::Ground;
+           preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Midground;
 }
 
 float terrain_camera_clearance_m(TerrainCameraPreset preset) {

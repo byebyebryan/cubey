@@ -401,6 +401,43 @@ if (BUILD_TESTING)
         0.001
     )
 
+    set(CUBEY_TERRAIN_LAYERED_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-layered-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_layered_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_LAYERED_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-weathering
+        local
+        --terrain-render-path
+        quality
+        --terrain-source-version
+        v2
+        --terrain-surface-detail
+        layered
+        --terrain-camera-preset
+        midground
+        --terrain-presentation
+        backdrop
+        --validation
+    )
+    cubey_add_png_stats_test(
+        terrain_layered_headless_writes_png
+        "${CUBEY_TERRAIN_LAYERED_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
     set(CUBEY_TERRAIN_VEGETATION_COVERAGE_HEADLESS_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/terrain-vegetation-coverage-headless.png"
     )
@@ -545,6 +582,8 @@ if (BUILD_TESTING)
         terrain_aerial_headless_writes_png_stats
         terrain_backdrop_headless_writes_png
         terrain_backdrop_headless_writes_png_stats
+        terrain_layered_headless_writes_png
+        terrain_layered_headless_writes_png_stats
         terrain_vegetation_coverage_headless_writes_png
         terrain_vegetation_coverage_headless_writes_png_stats
     )

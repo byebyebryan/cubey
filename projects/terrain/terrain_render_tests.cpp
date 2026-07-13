@@ -213,8 +213,8 @@ void test_backdrop_camera_configuration() {
     require(midground.camera == cubey::projects::terrain::TerrainCameraPreset::Midground,
             "terrain runtime should parse the midground camera");
     require(cubey::projects::terrain::terrain_camera_is_surface(midground.camera) &&
-                !cubey::projects::terrain::terrain_camera_advances_headless(midground.camera),
-            "terrain midground camera should be a static surface camera");
+                cubey::projects::terrain::terrain_camera_advances_headless(midground.camera),
+            "terrain midground camera should advance during headless video captures");
     require_near(cubey::projects::terrain::terrain_camera_clearance_m(midground.camera), 150.0F,
                  0.0F, "terrain midground camera should retain backdrop clearance");
 }
