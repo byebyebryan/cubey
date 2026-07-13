@@ -86,12 +86,14 @@ constexpr float kRidgeNeutral = 0.65F;
     float weight = 0.0F;
     for (std::uint32_t octave = 0; octave < band.octaves; ++octave) {
         const float footprint_weight = octave_footprint_weight(frequency, footprint_m);
-        const float octave_f = static_cast<float>(octave);
-        const float sample = cubey::procedural::gradient_noise_3d(
-            octave_position.x * frequency + octave_f * 17.31F,
-            octave_position.y * frequency - octave_f * 9.17F, octave_f * 0.713F + 0.37F,
-            static_cast<std::uint32_t>(band.seed) + octave * 1013U);
-        value += sample * footprint_weight * amplitude;
+        if (footprint_weight > 0.0F) {
+            const float octave_f = static_cast<float>(octave);
+            const float sample = cubey::procedural::gradient_noise_3d(
+                octave_position.x * frequency + octave_f * 17.31F,
+                octave_position.y * frequency - octave_f * 9.17F, octave_f * 0.713F + 0.37F,
+                static_cast<std::uint32_t>(band.seed) + octave * 1013U);
+            value += sample * footprint_weight * amplitude;
+        }
         weight += amplitude;
         octave_position = {
             kRotationCos * octave_position.x - kRotationSin * octave_position.y,
@@ -328,8 +330,8 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
             result.v3.meso = band(terrain_band_seed(config.seed, "terrain.v3.meso"), 4U, 1'200.0F,
                                   2.0F, 0.45F, 0.0F);
             result.v3.warp_strength_m = 2'000.0F;
-            result.v3.valley_ratio = 0.35F;
-            result.v3.valley_cap_m = 900.0F;
+            result.v3.valley_ratio = 0.65F;
+            result.v3.valley_cap_m = 600.0F;
             result.v3.ridge_ratio = 0.14F;
             result.v3.ridge_cap_m = 450.0F;
             result.v3.meso_ratio = 0.05F;

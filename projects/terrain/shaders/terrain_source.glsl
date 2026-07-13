@@ -105,12 +105,14 @@ float terrain_source_v3_signed_band(TerrainSourceGpuBandParameters band, vec2 wo
             break;
         }
         float footprint_weight = terrain_source_octave_footprint_weight(frequency, footprint_m);
-        float octave_f = float(octave);
-        float sample_value = cubey_proc_gradient_noise_3d(vec3(
-            octave_position.x * frequency + octave_f * 17.31,
-            octave_position.y * frequency - octave_f * 9.17,
-            octave_f * 0.713 + 0.37), uint(band.control.x + octave * 1013));
-        value += sample_value * footprint_weight * amplitude;
+        if (footprint_weight > 0.0) {
+            float octave_f = float(octave);
+            float sample_value = cubey_proc_gradient_noise_3d(vec3(
+                octave_position.x * frequency + octave_f * 17.31,
+                octave_position.y * frequency - octave_f * 9.17,
+                octave_f * 0.713 + 0.37), uint(band.control.x + octave * 1013));
+            value += sample_value * footprint_weight * amplitude;
+        }
         weight += amplitude;
         octave_position = vec2(
             0.8 * octave_position.x - 0.6 * octave_position.y,
