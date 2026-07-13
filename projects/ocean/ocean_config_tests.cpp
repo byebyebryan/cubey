@@ -643,8 +643,7 @@ int main() {
                      "windy ocean should use a moderate reflected-sun corridor width");
         require_near(defaults.cloud_reflection_strength, 0.38F, 0.001F,
                      "ocean should keep default cloud reflections below close-range saturation");
-        require(defaults.cloud_reflection_source ==
-                    ocean::OceanCloudReflectionSource::Planar,
+        require(defaults.cloud_reflection_source == ocean::OceanCloudReflectionSource::Planar,
                 "ocean should default to coherent planar cloud reflections");
         require(ocean::ocean_cloud_reflection_source_from_name("") ==
                     ocean::OceanCloudReflectionSource::Planar,
@@ -1357,29 +1356,37 @@ int main() {
         require_not_contains(ui_source, "Feature Isolation",
                              "UI should not expose retired feature-isolation presets");
         require_contains(ui_source, "&ui.config.surface_shape_strength",
-                         "UI should expose surface shape isolation");
+                         "UI should expose global wave presentation strength");
         require_contains(ui_source, "&ui.config.surface_foam_strength",
-                         "UI should expose surface foam isolation");
+                         "UI should expose global foam presentation strength");
         require_contains(ui_source, "&ui.config.foam_history_strength",
-                         "UI should expose foam history isolation");
-        require_contains(ui_source, "Active cascade work",
-                         "UI should expose true cascade work toggles");
+                         "UI should expose persistent foam history strength");
         require_contains(ui_source, "\"Sea state\"",
                          "UI should expose first-class calm, windy, and stormy presets");
+        require_contains(ui_source, "\"Camera\", camera_preset",
+                         "UI should expose repeatable camera presets as a compact combo");
         require_contains(ui_source, "ocean_infer_sea_state",
                          "UI should report manual preset-owned edits as custom");
         require_contains(ui_source, "apply_ocean_sea_state",
                          "UI should apply coherent sea-state settings through the config helper");
         require_contains(ui_source, "steady_compute_dispatch_count",
                          "UI should expose a cascade-cost dispatch estimate");
-        require_contains(ui_source, "&ui.config.cascade_enabled[index]",
+        require_contains(ui_source, "&config.cascade_enabled[index]",
                          "UI should toggle cascade compute and surface contribution");
-        require_contains(ui_source, "Cascade work policy",
-                         "UI should expose per-cascade work policy controls");
-        require_contains(ui_source, "ui.config.cascade_update_intervals[index]",
+        require_contains(ui_source, "config.cascade_update_intervals[index]",
                          "UI should expose per-cascade update interval controls");
-        require_contains(ui_source, "&ui.config.cascade_map_sizes[index]",
+        require_contains(ui_source, "&config.cascade_map_sizes[index]",
                          "UI should expose per-cascade FFT map size controls");
+        require_contains(ui_source, "draw_cascade_controls(ui.config, index)",
+                         "UI should keep cascade workload and wave controls together");
+        require_contains(ui_source, "std::snprintf(buffer, size, \"C%u\", index)",
+                         "UI should use neutral cascade slot labels");
+        require_not_contains(ui_source, "GodotOceanWaves port",
+                             "UI should not retain port-era cascade labels");
+        require_not_contains(ui_source, "core A",
+                             "UI should not assign legacy semantic roles to cascade slots");
+        require_not_contains(ui_source, "return \"candidate\"",
+                             "UI should not assign legacy candidate roles to cascade slots");
         require_contains(ui_source, "OceanCameraPreset::Mid",
                          "UI should expose a mid-distance camera preset");
         require_contains(ui_source, "OceanCameraPreset::High",
@@ -1412,11 +1419,18 @@ int main() {
                          "UI should expose resolved curvature horizon drop");
         require_contains(ui_source, "&ui.config.self_shadow_strength",
                          "UI should expose wave self-shadow strength");
-        require_before(ui_source, "const cubey::host::ScopedImGuiId section_id(\"Shading\");",
+        require_before(ui_source, "const cubey::host::ScopedImGuiId section_id(\"Lighting\");",
                        "&ui.config.self_shadow_strength",
-                       "UI should keep wave self-shadow controls in the shading section");
-        require_before(ui_source, "&ui.config.self_shadow_strength", "&ui.config.foam_density",
-                       "UI should place wave self-shadow controls before foam material controls");
+                       "UI should keep wave self-shadow controls in the lighting section");
+        require_before(ui_source, "const cubey::host::ScopedImGuiId section_id(\"Surface\");",
+                       "&ui.config.foam_density",
+                       "UI should keep foam material controls in the surface section");
+        require_contains(ui_source, "\"Scale & LOD\"",
+                         "UI should group mesh and far-field controls by scale");
+        require_contains(ui_source, "\"Environment\"",
+                         "UI should group shared atmosphere and cloud controls");
+        require_contains(ui_source, "\"Diagnostics\"",
+                         "UI should group inspection and runtime counters");
         require_contains(ui_source, "&ui.config.far_field_enabled",
                          "UI should expose far-field material handoff");
         require_not_contains(ui_source, "&ui.config.far_normal_strength",
@@ -1445,8 +1459,7 @@ int main() {
                          "UI should expose cached cloud environment refresh rate");
         require_contains(ui_source, "&ui.config.cloud_planar_resolution_scale",
                          "UI should expose planar cloud resolution");
-        require_contains(ui_source, "&planar_steps",
-                         "UI should expose planar cloud view steps");
+        require_contains(ui_source, "&planar_steps", "UI should expose planar cloud view steps");
         require_contains(ui_source, "&ui.config.cloud_planar_guard_band",
                          "UI should expose the planar reflected-view guard band");
         require_not_contains(ui_source, "cloud_shadow_scale_m",
@@ -1485,7 +1498,7 @@ int main() {
                          "UI should use the effective ocean surface frame for LOD diagnostics");
         require_contains(ui_source, "ocean_cascade_lod_band(config, cascade)",
                          "UI should derive LOD diagnostics from shared config helpers");
-        require_contains(ui_source, "ocean_cascade_displacement_lod_weight(config, cascade",
+        require_contains(ui_source, "ocean_cascade_displacement_lod_weight(",
                          "UI should show cascade shape contribution at the horizon");
         require_contains(ui_source, "Horizon wt",
                          "UI should show far-field shape and surface contribution weights");
@@ -1830,11 +1843,9 @@ int main() {
                          "ocean surface shader should sample the reflected cloud product");
         require_contains(fragment_shader, "ocean_planar_cloud_reflection",
                          "ocean surface shader should isolate planar cloud projection");
-        require_contains(fragment_shader,
-                         "const int OCEAN_CLOUD_REFLECTION_SOURCE_CACHED = 0",
+        require_contains(fragment_shader, "const int OCEAN_CLOUD_REFLECTION_SOURCE_CACHED = 0",
                          "ocean shader should declare the cached source ID");
-        require_contains(fragment_shader,
-                         "const int OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR = 1",
+        require_contains(fragment_shader, "const int OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR = 1",
                          "ocean shader should declare the planar source ID");
         require_contains(fragment_shader, "float(OCEAN_CLOUD_REFLECTION_SOURCE_PLANAR)",
                          "ocean shader should clamp source IDs through the planar contract");
@@ -1846,9 +1857,11 @@ int main() {
                          "cached fallback should preserve clear below-horizon facets");
         require_contains(fragment_shader, "smoothstep(0.0, 0.06, edge_distance)",
                          "planar cloud reflection should soften its guarded product edge");
-        require_contains(fragment_shader, "ocean_cached_cloud_reflection",
-                         "ocean surface shader should select a roughness-filtered cached environment");
-        require_contains(fragment_shader, "filtered_roughness * filtered_roughness * max_lod + 0.25",
+        require_contains(
+            fragment_shader, "ocean_cached_cloud_reflection",
+            "ocean surface shader should select a roughness-filtered cached environment");
+        require_contains(fragment_shader,
+                         "filtered_roughness * filtered_roughness * max_lod + 0.25",
                          "cached cloud reflections should bias toward stable broad response");
         require_not_contains(fragment_shader, "current_view_detail",
                              "ocean shader should remove the retired hybrid handoff");
@@ -1859,13 +1872,11 @@ int main() {
         require_contains(fragment_shader, "sky_facet_visibility",
                          "ocean cloud reflections should reject below-horizon wave facets");
         require_contains(
-            fragment_shader,
-            "planar_reflection_sample.transmittance * clear_reflection",
+            fragment_shader, "planar_reflection_sample.transmittance * clear_reflection",
             "ocean clouds should composite over the matching filtered environment reflection");
-        require_contains(
-            fragment_shader,
-            "planar_reflection_sample.transmittance * clear_sky_reflection",
-            "ocean cloud diagnostics should composite over the matching analytic sky");
+        require_contains(fragment_shader,
+                         "planar_reflection_sample.transmittance * clear_sky_reflection",
+                         "ocean cloud diagnostics should composite over the matching analytic sky");
         require_not_contains(
             fragment_shader, "cloud_reflection_sample.delta",
             "ocean cloud reflections should not apply signed deltas across different backgrounds");
