@@ -8,8 +8,12 @@ vec3 terrain_lighting_direct(vec3 base_color, float roughness, vec3 normal,
                              vec3 light_radiance, float direct_visibility) {
     float ndotv = max(dot(normal, view_direction), 0.0);
     float ndotl = max(dot(normal, light_direction), 0.0);
-    if (ndotv <= 0.0 || ndotl <= 0.0) {
+    if (ndotl <= 0.0) {
         return vec3(0.0);
+    }
+    if (ndotv <= 0.0) {
+        return cubey_pbr_lambert_diffuse(base_color) * light_radiance * ndotl *
+            clamp(direct_visibility, 0.0, 1.0);
     }
 
     vec3 half_vector = view_direction + light_direction;

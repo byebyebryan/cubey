@@ -59,7 +59,6 @@ float terrain_quality_morph(vec2 local_xz, float cell_size_m) {
 
 void main() {
     float cell_size_m = patch_metadata[0].x;
-    vec2 patch_cells = vec2(patch_metadata[0].z, patch_ownership[0].z);
     float origin_snap_m = patch_ownership[0].y;
     vec2 level_origin = floor(pc.camera_position_vertical_scale.xz / origin_snap_m) * origin_snap_m;
     vec2 local_xz = terrain_quality_local_xz();
@@ -68,8 +67,10 @@ void main() {
     float coarse_cell_size_m = cell_size_m * 2.0;
     vec2 coarse_world_xz = floor(world_xz / coarse_cell_size_m + 0.5) * coarse_cell_size_m;
     vec2 sample_xz = mix(world_xz, coarse_world_xz, morph);
-    float generated_spacing_m = cell_size_m * max(patch_cells.x, patch_cells.y) /
-        max(patch_tess_factor, 1.0);
+    vec3 footprint_position = vec3(sample_xz.x, terrain_uniforms.source.elevation.x, sample_xz.y);
+    float generated_spacing_m = max(
+        0.25, length(pc.camera_position_vertical_scale.xyz - footprint_position) *
+                  pc.render_options.z * max(pc.quality_options.x, 1.0));
     float footprint_m = max(0.25, mix(generated_spacing_m,
         max(generated_spacing_m, coarse_cell_size_m), morph));
 
