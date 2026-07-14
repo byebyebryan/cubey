@@ -150,12 +150,14 @@ The final 960 x 540 quality/layered profile measured `31.2604 ms`, below the
 `5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb`
 and `c9b1f9b94d7f2d14f8f301df59c29651207c279b43f31339815e552421b2b456`.
 
-The far-field read is directionally successful: v3 replaces v2's uniformly
-corrugated field and thin-fin emphasis with connected mountain bodies and
-broader buildup. It is not a promotion candidate yet. Midground diagnostics
-still expose overly rounded slopes, broad parallel shoulder bands, and limited
-localized sharp form. Those are source-model findings for a later pass; they
-must not be hidden with closer camera placement or indiscriminate detail noise.
+The completed visual review rejected v3 as a promotion candidate. Its broad
+range placement remains useful in macro diagnostics, but matched clay and
+midground views read as rounded bodies with broad parallel shoulders and too
+little localized structure. The retained ridge and meso frequencies are
+composed too weakly to shape the massif, so this is not a framebuffer or mesh
+resolution failure. Fixing the ridge driver, valley driver, and composition
+order would constitute a new source architecture. The component diagnostics,
+domain warp, reports, and separate shader bundle remain useful reference work.
 
 The full dev build passed with no pending work, and the repository suite passed
 `228/228` tests in `1125.47 s`. The default v1 windowed and headless terrain
