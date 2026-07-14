@@ -60,6 +60,7 @@ class CloudEnvironmentRuntime {
     void destroy_surface_resources();
 
     void set_config(const CloudEnvironmentConfig& config);
+    void set_elapsed_seconds(double elapsed_seconds);
     [[nodiscard]] const CloudEnvironmentConfig& config() const noexcept;
     [[nodiscard]] double elapsed_seconds() const noexcept;
     void update_weather_texture(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,

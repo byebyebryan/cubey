@@ -67,8 +67,10 @@ void CloudEnvironmentRuntime::destroy_surface_resources() {
 
 void CloudEnvironmentRuntime::set_config(const CloudEnvironmentConfig& config) {
     config_ = config;
-    surface_.invalidate_history();
-    invalidate();
+}
+
+void CloudEnvironmentRuntime::set_elapsed_seconds(double elapsed_seconds) {
+    elapsed_seconds_ = elapsed_seconds;
 }
 
 const CloudEnvironmentConfig& CloudEnvironmentRuntime::config() const noexcept {
