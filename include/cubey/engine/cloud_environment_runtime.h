@@ -68,6 +68,8 @@ class CloudEnvironmentRuntime {
     [[nodiscard]] CloudEnvironmentRuntimeFrame
     frame(const CloudEnvironmentSurfaceViewInfo& view,
           const render::AtmosphereEnvironmentLighting& lighting) const;
+    void upload_surface_frame(render::FrameSlot frame_slot,
+                              const CloudEnvironmentRuntimeFrame& frame) const;
     [[nodiscard]] render::CloudLayerRuntimeFrame
     declare_surface_product(render::RenderGraphBuilder& graph, render::FrameSlot frame_slot,
                             const CloudEnvironmentRuntimeFrame& frame) const;
@@ -95,6 +97,7 @@ class CloudEnvironmentRuntime {
 
     [[nodiscard]] bool surface_resources_created() const noexcept;
     [[nodiscard]] const render::CloudLayerGeneratedResources& generated_resources() const;
+    [[nodiscard]] const cubey::vulkan::Sampler& shadow_sampler() const;
 
     void create_resources(const cubey::vulkan::Device& device,
                           const render::CloudEnvironmentProbeConfig& config,
@@ -102,6 +105,7 @@ class CloudEnvironmentRuntime {
                           const render::TextureCube& clear_sky);
     void create_pipelines(const cubey::vulkan::Device& device,
                           const render::CloudEnvironmentProbePipelineConfig& config);
+    void destroy_probe_resources();
     void destroy();
 
     void advance(double delta_seconds);

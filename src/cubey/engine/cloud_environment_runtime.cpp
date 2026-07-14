@@ -95,11 +95,16 @@ CloudEnvironmentRuntime::frame(const CloudEnvironmentSurfaceViewInfo& view,
                                            surface_.temporal_frame_index());
 }
 
+void CloudEnvironmentRuntime::upload_surface_frame(
+    render::FrameSlot frame_slot, const CloudEnvironmentRuntimeFrame& frame) const {
+    surface_.upload_frame_uniforms(frame_slot, frame.uniforms);
+}
+
 render::CloudLayerRuntimeFrame
 CloudEnvironmentRuntime::declare_surface_product(render::RenderGraphBuilder& graph,
                                                  render::FrameSlot frame_slot,
                                                  const CloudEnvironmentRuntimeFrame& frame) const {
-    surface_.upload_frame_uniforms(frame_slot, frame.uniforms);
+    upload_surface_frame(frame_slot, frame);
     return surface_.declare_product(graph, frame.view.target_extent, frame.layer, frame_slot,
                                     frame.uniforms);
 }
@@ -148,6 +153,10 @@ const render::CloudLayerGeneratedResources& CloudEnvironmentRuntime::generated_r
     return surface_.generated_resources();
 }
 
+const cubey::vulkan::Sampler& CloudEnvironmentRuntime::shadow_sampler() const {
+    return surface_.shadow_sampler();
+}
+
 void CloudEnvironmentRuntime::create_resources(
     const cubey::vulkan::Device& device, const render::CloudEnvironmentProbeConfig& config,
     const render::CloudLayerGeneratedResources& generated, const render::TextureCube& clear_sky) {
@@ -160,8 +169,12 @@ void CloudEnvironmentRuntime::create_pipelines(
     probe_.create_pipelines(device, config);
 }
 
-void CloudEnvironmentRuntime::destroy() {
+void CloudEnvironmentRuntime::destroy_probe_resources() {
     probe_.destroy();
+}
+
+void CloudEnvironmentRuntime::destroy() {
+    destroy_probe_resources();
     destroy_surface_target_resources();
     destroy_surface_resources();
 }

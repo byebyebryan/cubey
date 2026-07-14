@@ -1884,15 +1884,21 @@ int main() {
                              "ocean surface shader should remove procedural cloud scale");
         require_not_contains(fragment_shader, "cloud_shadow_speed_mps",
                              "ocean surface shader should remove procedural cloud drift");
-        require_contains(app_source, "cloud_runtime_.declare_shadow_product",
+        require_contains(app_source, "clouds.declare_shadow_product",
                          "ocean should request the shared projected cloud shadow product");
+        require_contains(app_source, "atmosphere_runtime_.clouds()",
+                         "ocean should consume clouds owned by the atmosphere runtime");
+        require_not_contains(app_source, "CloudLayerRuntime cloud_runtime_",
+                             "ocean should not retain a duplicate surface cloud runtime");
+        require_not_contains(app_source, "CloudEnvironmentRuntime cloud_environment_runtime_",
+                             "ocean should not retain a duplicate cached cloud runtime");
         require_contains(app_source, "ocean_config_.cloud_shadow_strength > 0.0F",
                          "ocean should skip the cloud shadow pass when coupling is disabled");
         require_contains(app_source, "render_view_ == OceanRenderView::CloudShadow",
                          "ocean should preserve raw cloud shadow diagnostics at zero strength");
         require_contains(app_source, "ocean_cloud_shadow_half_extent_m",
                          "ocean cloud shadows should use a camera-scale local projection");
-        require_before(app_source, "cloud_runtime_.declare_shadow_product",
+        require_before(app_source, "clouds.declare_shadow_product",
                        "graph.add_pass(\"ocean scene\"",
                        "ocean should generate cloud transmittance before drawing water");
         require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",
