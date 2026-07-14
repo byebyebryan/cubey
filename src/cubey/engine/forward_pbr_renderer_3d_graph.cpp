@@ -93,6 +93,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment = scene_plan.environment,
             .environment_intensity = global_.environment.intensity,
             .prefiltered_mip_levels = global_.environment.prefiltered_mip_levels,
+            .environment_blend = global_.environment.prefiltered_blend,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
             .debug_view = settings.debug_view,
         }));
@@ -102,6 +103,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .view_projection = scene_plan.view_projection_matrix,
             .camera_position = camera_position,
             .environment_intensity = global_.environment.intensity,
+            .environment_blend = global_.environment.prefiltered_blend,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
         }));
     if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
@@ -121,8 +123,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         current_render_graph(target.color_target, target.frame_slot, target.color_initial_state,
                              target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
                              resources.frame_meshes, resources.deformation_commands,
-                             *resources.materials, settings.debug_view,
-                             settings.background_mode);
+                             *resources.materials, settings.debug_view, settings.background_mode);
     global_.graph_executor.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -202,16 +203,14 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                   .write_depth(scene_depth)
                                   .material_pass(render::pbr_forward_pass_info());
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
-    scene_pass_builder.execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver,
-                                &materials,
-                                debug_view,
-                                background_mode](const render::RenderGraphExecutionContext&
-                                                     context) {
-        const render::ColorTargetView target =
-            render::resolved_color_target_view(context, scene_color);
-        record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                          materials, debug_view, background_mode);
-    });
+    scene_pass_builder.execute(
+        [this, scene_color, frame_slot, &scene_plan, mesh_resolver, &materials, debug_view,
+         background_mode](const render::RenderGraphExecutionContext& context) {
+            const render::ColorTargetView target =
+                render::resolved_color_target_view(context, scene_color);
+            record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
+                              materials, debug_view, background_mode);
+        });
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
         .read_texture(scene_color)
         .write_color(backbuffer)

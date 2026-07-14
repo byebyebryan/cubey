@@ -198,7 +198,7 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
         .environment_options =
             {
                 info.environment.diffuse_irradiance_sh_enabled ? 1.0F : 0.0F,
-                0.0F,
+                info.environment_blend,
                 0.0F,
                 0.0F,
             },
@@ -217,7 +217,7 @@ forward_pbr_renderer_3d_skybox_uniforms(const ForwardPbrRenderer3DSkyboxUniformI
                 std::cos(radians),
                 std::sin(radians),
                 info.environment_intensity,
-                0.0F,
+                info.environment_blend,
             },
     };
 }
@@ -244,8 +244,7 @@ bool ForwardPbrRenderer3D::Impl::has_global_resources() const {
     return global_.environment_initialized || global_.graph_executor.frame_slot_count() != 0 ||
            global_.shadow_pass.has_value() || global_.shadow_double_sided_pipeline.has_value() ||
            global_.scene_material.has_value() || global_.skybox_material.has_value() ||
-           global_.atmosphere_background.materials_created() ||
-           global_.post_material.has_value();
+           global_.atmosphere_background.materials_created() || global_.post_material.has_value();
 }
 
 bool ForwardPbrRenderer3D::Impl::has_swapchain_resources() const {
@@ -289,8 +288,7 @@ void ForwardPbrRenderer3D::Impl::require_swapchain_resources() const {
 
 void ForwardPbrRenderer3D::Impl::require_atmosphere_background_resources() const {
     if (!global_.atmosphere_background.materials_created()) {
-        throw std::runtime_error(
-            "forward PBR atmosphere background resources are not initialized");
+        throw std::runtime_error("forward PBR atmosphere background resources are not initialized");
     }
     static_cast<void>(global_.atmosphere_background.pipeline());
 }

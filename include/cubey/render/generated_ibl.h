@@ -43,10 +43,14 @@ struct PbrEnvironmentTextureBindings {
     VkSampler prefiltered_sampler = VK_NULL_HANDLE;
     VkImageView prefiltered_view = VK_NULL_HANDLE;
     VkImageLayout prefiltered_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkSampler previous_prefiltered_sampler = VK_NULL_HANDLE;
+    VkImageView previous_prefiltered_view = VK_NULL_HANDLE;
+    VkImageLayout previous_prefiltered_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     VkSampler brdf_lut_sampler = VK_NULL_HANDLE;
     VkImageView brdf_lut_view = VK_NULL_HANDLE;
     VkImageLayout brdf_lut_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     std::uint32_t prefiltered_mip_levels = 1;
+    float prefiltered_blend = 1.0F;
     float intensity = 1.0F;
 };
 
@@ -61,23 +65,18 @@ void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindin
 void validate_pbr_equirectangular_image(const PbrEquirectangularImage& image);
 [[nodiscard]] PbrEnvironmentTextureBindings
 pbr_environment_texture_bindings(const GeneratedPbrEnvironment& environment);
-[[nodiscard]] math::Vec3
-sample_pbr_equirectangular_radiance(const PbrEquirectangularImage& image,
-                                    math::Vec3 direction);
+[[nodiscard]] math::Vec3 sample_pbr_equirectangular_radiance(const PbrEquirectangularImage& image,
+                                                             math::Vec3 direction);
 [[nodiscard]] GeneratedPbrEnvironmentData
 generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config = {});
-[[nodiscard]] GeneratedPbrEnvironmentData
-generate_pbr_environment_data_from_equirectangular(
-    const PbrEquirectangularImage& image,
-    const GeneratedPbrEnvironmentConfig& config = {});
+[[nodiscard]] GeneratedPbrEnvironmentData generate_pbr_environment_data_from_equirectangular(
+    const PbrEquirectangularImage& image, const GeneratedPbrEnvironmentConfig& config = {});
 [[nodiscard]] GeneratedPbrEnvironment
 create_generated_pbr_environment(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu,
                                  const GeneratedPbrEnvironmentConfig& config = {});
-[[nodiscard]] GeneratedPbrEnvironment
-create_pbr_environment_from_equirectangular(
+[[nodiscard]] GeneratedPbrEnvironment create_pbr_environment_from_equirectangular(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const PbrEquirectangularImage& image,
-    const GeneratedPbrEnvironmentConfig& config = {});
+    const PbrEquirectangularImage& image, const GeneratedPbrEnvironmentConfig& config = {});
 
 } // namespace cubey::render

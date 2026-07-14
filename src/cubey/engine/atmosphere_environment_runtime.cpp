@@ -56,17 +56,17 @@ bool environment_equal(const render::AtmosphereEnvironmentConfig& lhs,
            lhs.sun_elevation_degrees == rhs.sun_elevation_degrees &&
            lhs.sun_azimuth_degrees == rhs.sun_azimuth_degrees &&
            lhs.camera_altitude_km == rhs.camera_altitude_km && lhs.ground_mode == rhs.ground_mode &&
-	           lhs.render_celestial_content == rhs.render_celestial_content &&
-	           lhs.render_sun_disk == rhs.render_sun_disk &&
-	           lhs.render_night_sky == rhs.render_night_sky &&
-	           lhs.render_moon_disk == rhs.render_moon_disk &&
-	           lhs.reference_geometry_enabled == rhs.reference_geometry_enabled &&
-	           lhs.reference_grid_km == rhs.reference_grid_km &&
-	           lhs.reference_intensity == rhs.reference_intensity;
+           lhs.render_celestial_content == rhs.render_celestial_content &&
+           lhs.render_sun_disk == rhs.render_sun_disk &&
+           lhs.render_night_sky == rhs.render_night_sky &&
+           lhs.render_moon_disk == rhs.render_moon_disk &&
+           lhs.reference_geometry_enabled == rhs.reference_geometry_enabled &&
+           lhs.reference_grid_km == rhs.reference_grid_km &&
+           lhs.reference_intensity == rhs.reference_intensity;
 }
 
-cubey::scene::Environment3D scene_environment_from_lighting(
-    const render::AtmosphereEnvironmentLighting& lighting) {
+cubey::scene::Environment3D
+scene_environment_from_lighting(const render::AtmosphereEnvironmentLighting& lighting) {
     return cubey::scene::Environment3D{
         .ambient_color = lighting.ambient_color,
         .ambient_intensity = 0.0F,
@@ -234,7 +234,10 @@ render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environm
     const render::TextureCube& prefiltered = reflection_probe_.prefiltered_cube();
     bindings.prefiltered_sampler = prefiltered.sampler().handle();
     bindings.prefiltered_view = prefiltered.view();
+    bindings.previous_prefiltered_sampler = prefiltered.sampler().handle();
+    bindings.previous_prefiltered_view = prefiltered.view();
     bindings.prefiltered_mip_levels = reflection_probe_.mip_levels();
+    bindings.prefiltered_blend = 1.0F;
     return bindings;
 }
 

@@ -99,6 +99,12 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                     .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                                 },
+                                cubey::vulkan::DescriptorSetBindingConfig{
+                                    .binding = static_cast<std::uint32_t>(
+                                        PbrSceneBinding::PreviousPrefilteredCube),
+                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                                },
                             },
                     },
                     MaterialDescriptorSetLayout{
@@ -248,6 +254,12 @@ MaterialPassInfo pbr_skybox_pass_info() {
                             cubey::vulkan::DescriptorSetBindingConfig{
                                 .binding =
                                     static_cast<std::uint32_t>(PbrSkyboxBinding::EnvironmentCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(
+                                    PbrSkyboxBinding::PreviousEnvironmentCube),
                                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                             },

@@ -180,6 +180,7 @@ enum class PbrSceneBinding : std::uint32_t {
     IrradianceCube = 2,
     PrefilteredCube = 3,
     BrdfLut = 4,
+    PreviousPrefilteredCube = 5,
 };
 
 enum class PbrMaterialBinding : std::uint32_t {
@@ -204,6 +205,7 @@ enum class PbrMaterialBinding : std::uint32_t {
 enum class PbrSkyboxBinding : std::uint32_t {
     SkyboxUniforms = 0,
     EnvironmentCube = 1,
+    PreviousEnvironmentCube = 2,
 };
 
 enum class PbrPostBinding : std::uint32_t {

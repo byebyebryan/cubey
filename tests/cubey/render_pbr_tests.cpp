@@ -99,8 +99,11 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
             "PBR forward pass should cull back faces by default");
     require(pass.descriptor_sets.size() == 2, "PBR pass should declare scene and material sets");
     require(pass.descriptor_sets[0].set == 0, "PBR scene descriptors should use set 0");
-    require(pass.descriptor_sets[0].bindings.size() == 5,
-            "PBR scene descriptors should include uniform, shadow map, and IBL textures");
+    require(pass.descriptor_sets[0].bindings.size() == 6,
+            "PBR scene descriptors should include uniform, shadow map, and blended IBL textures");
+    require(pass.descriptor_sets[0].bindings[5].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrSceneBinding::PreviousPrefilteredCube),
+            "PBR scene descriptors should retain the previous environment cube");
     require(pass.descriptor_sets[1].set == 1, "PBR material descriptors should use set 1");
     require(pass.descriptor_sets[1].bindings.size() == 16,
             "PBR material descriptors should include base and extension textures plus uniforms");
@@ -512,8 +515,8 @@ void test_pbr_skybox_pass_declares_scene_set() {
     require(!pass.depth_test && !pass.depth_write, "PBR skybox pass should not use depth");
     require(pass.descriptor_sets.size() == 1, "PBR skybox pass should declare one set");
     require(pass.descriptor_sets[0].set == 0, "PBR skybox descriptors should use set 0");
-    require(pass.descriptor_sets[0].bindings.size() == 2,
-            "PBR skybox pass should declare uniforms and environment cube");
+    require(pass.descriptor_sets[0].bindings.size() == 3,
+            "PBR skybox pass should declare uniforms and blended environment cubes");
     require(pass.descriptor_sets[0].bindings[0].binding == 0,
             "PBR skybox uniforms should use binding 0");
     require(pass.descriptor_sets[0].bindings[0].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -527,6 +530,10 @@ void test_pbr_skybox_pass_declares_scene_set() {
             "PBR skybox environment should be a sampled image");
     require(pass.descriptor_sets[0].bindings[1].stage_flags == VK_SHADER_STAGE_FRAGMENT_BIT,
             "PBR skybox environment should be fragment-only");
+    require(pass.descriptor_sets[0].bindings[2].binding == 2,
+            "PBR skybox previous environment should use binding 2");
+    require(pass.descriptor_sets[0].bindings[2].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            "PBR skybox previous environment should be a sampled image");
     require(pass.push_constants.empty(), "PBR skybox pass should not use push constants");
 }
 

@@ -11,6 +11,7 @@ layout(set = 0, binding = 0) uniform SkyboxUniforms {
 } skybox;
 
 layout(set = 0, binding = 1) uniform samplerCube environment_cube;
+layout(set = 0, binding = 2) uniform samplerCube previous_environment_cube;
 
 layout(location = 0) in vec2 frag_ndc;
 layout(location = 0) out vec4 out_color;
@@ -29,7 +30,10 @@ void main() {
     vec4 world = skybox.inverse_view_projection * vec4(frag_ndc, 1.0, 1.0);
     vec3 direction = normalize((world.xyz / world.w) - skybox.camera_position.xyz);
     vec3 environment_direction = rotate_environment_direction(direction);
-    vec3 color = textureLod(environment_cube, environment_direction, 0.0).rgb *
+    vec3 previous = textureLod(previous_environment_cube, environment_direction, 0.0).rgb;
+    vec3 current = textureLod(environment_cube, environment_direction, 0.0).rgb;
+    vec3 color = mix(previous, current,
+                     clamp(skybox.environment_rotation_intensity.w, 0.0, 1.0)) *
                  skybox.environment_rotation_intensity.z;
     out_color = vec4(color, 1.0);
 }

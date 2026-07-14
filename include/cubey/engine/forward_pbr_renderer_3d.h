@@ -70,6 +70,7 @@ struct ForwardPbrRenderer3DSceneUniformInfo {
     scene::Environment3D environment{};
     float environment_intensity = 1.0F;
     std::uint32_t prefiltered_mip_levels = 1;
+    float environment_blend = 1.0F;
     float environment_rotation_degrees = 0.0F;
     render::PbrDebugView debug_view = render::PbrDebugView::Final;
 };
@@ -78,6 +79,7 @@ struct ForwardPbrRenderer3DSkyboxUniformInfo {
     math::Mat4 view_projection{1.0F};
     math::Vec3 camera_position{0.0F, 0.0F, 0.0F};
     float environment_intensity = 1.0F;
+    float environment_blend = 1.0F;
     float environment_rotation_degrees = 0.0F;
 };
 
@@ -198,6 +200,8 @@ class ForwardPbrRenderer3D {
                                  const ForwardPbrRenderer3DGlobalResourcesInfo& info);
     void create_swapchain_resources(const vulkan::Device& device,
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
+    void update_environment(const vulkan::Device& device, render::FrameSlot frame_slot,
+                            const render::PbrEnvironmentTextureBindings& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
     void record(const ForwardPbrRenderer3DFrameRequestInfo& info);

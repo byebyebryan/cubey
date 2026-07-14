@@ -642,6 +642,7 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             },
         .environment_intensity = 5.0F,
         .prefiltered_mip_levels = 6,
+        .environment_blend = 0.35F,
         .environment_rotation_degrees = 90.0F,
         .debug_view = cubey::render::PbrDebugView::Shadow,
     });
@@ -677,6 +678,8 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             "forward PBR scene uniforms should pack diffuse SH coefficient four");
     require(uniforms.environment_options.x == 1.0F,
             "forward PBR scene uniforms should enable diffuse SH only when requested");
+    require(uniforms.environment_options.y == 0.35F,
+            "forward PBR scene uniforms should pack the environment crossfade");
 }
 
 void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass() {
@@ -741,6 +744,10 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
         read_source_file(root / "projects/gltf_viewer/gltf_viewer_render.cpp");
     const std::string gltf_scene =
         read_source_file(root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
+    const std::string fragment_shader =
+        read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr.frag");
+    const std::string skybox_shader =
+        read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr_skybox.frag");
 
     require_contains(header, "enum class ForwardPbrRenderer3DBackgroundMode",
                      "forward PBR settings should expose selectable background modes");
@@ -766,6 +773,14 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR resources should validate explicit environment bindings");
     require_contains(resources, "global_.environment = info.environment_textures",
                      "forward PBR resources should consume explicit environment bindings directly");
+    require_contains(header, "void update_environment",
+                     "forward PBR renderer should expose a frame-slot environment handoff");
+    require_contains(resources, "PreviousPrefilteredCube",
+                     "forward PBR resources should bind the previous environment generation");
+    require_contains(fragment_shader, "cubey_pbr_prefiltered_environment",
+                     "forward PBR materials should crossfade prefiltered environment generations");
+    require_contains(skybox_shader, "previous_environment_cube",
+                     "forward PBR skybox should crossfade environment generations coherently");
     require_contains(graph, "settings.atmosphere_background.value()",
                      "forward PBR record path should upload per-frame atmosphere uniforms");
     require_contains(recording, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
@@ -803,6 +818,7 @@ void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_envir
             .view_projection = cubey::math::Mat4{1.0F},
             .camera_position = {4.0F, 5.0F, 6.0F},
             .environment_intensity = 2.25F,
+            .environment_blend = 0.4F,
             .environment_rotation_degrees = 180.0F,
         });
 
@@ -816,6 +832,8 @@ void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_envir
                  "forward PBR skybox uniforms should pack rotation sine");
     require(uniforms.environment_rotation_intensity.z == 2.25F,
             "forward PBR skybox uniforms should pack environment intensity");
+    require(uniforms.environment_rotation_intensity.w == 0.4F,
+            "forward PBR skybox uniforms should pack the environment crossfade");
     require(uniforms.display_transform == cubey::math::Vec4{0.0F, 1.0F, 0.0F, 0.0F},
             "forward PBR skybox uniforms should leave display transform neutral");
 }

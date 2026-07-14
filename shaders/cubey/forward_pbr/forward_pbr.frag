@@ -21,6 +21,7 @@ layout(set = 0, binding = 1) uniform sampler2D shadow_map;
 layout(set = 0, binding = 2) uniform samplerCube irradiance_cube;
 layout(set = 0, binding = 3) uniform samplerCube prefiltered_cube;
 layout(set = 0, binding = 4) uniform sampler2D brdf_lut;
+layout(set = 0, binding = 5) uniform samplerCube previous_prefiltered_cube;
 layout(set = 1, binding = 0) uniform sampler2D base_color_texture;
 layout(set = 1, binding = 1) uniform sampler2D metallic_roughness_texture;
 layout(set = 1, binding = 2) uniform sampler2D normal_texture;
@@ -125,6 +126,13 @@ vec3 rotate_environment_direction(vec3 direction) {
         direction.y,
         (-s * direction.x) + (c * direction.z)
     );
+}
+
+vec3 cubey_pbr_prefiltered_environment(vec3 direction, float lod) {
+    vec3 rotated = rotate_environment_direction(direction);
+    vec3 previous = textureLod(previous_prefiltered_cube, rotated, lod).rgb;
+    vec3 current = textureLod(prefiltered_cube, rotated, lod).rgb;
+    return mix(previous, current, clamp(scene.environment_options.y, 0.0, 1.0));
 }
 
 vec3 cubey_pbr_evaluate_diffuse_irradiance_sh(vec3 direction) {
@@ -405,9 +413,8 @@ void main() {
     vec3 diffuse_ibl = irradiance * diffuse_color;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
-    vec3 prefiltered = textureLod(prefiltered_cube, rotate_environment_direction(reflection),
-                                  roughness * max_prefiltered_lod)
-                           .rgb;
+    vec3 prefiltered =
+        cubey_pbr_prefiltered_environment(reflection, roughness * max_prefiltered_lod);
     float specular_occlusion =
         cubey_pbr_specular_ao(ndotv, occlusion, roughness) *
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
@@ -415,10 +422,8 @@ void main() {
         prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
     vec3 sheen_ibl = irradiance * sheen_color * occlusion * 0.25;
     vec3 clearcoat_reflection = reflect(-view_direction, clearcoat_normal);
-    vec3 clearcoat_prefiltered =
-        textureLod(prefiltered_cube, rotate_environment_direction(clearcoat_reflection),
-                   clearcoat_roughness * max_prefiltered_lod)
-            .rgb;
+    vec3 clearcoat_prefiltered = cubey_pbr_prefiltered_environment(
+        clearcoat_reflection, clearcoat_roughness * max_prefiltered_lod);
     vec3 clearcoat_dfg =
         texture(brdf_lut, vec2(clearcoat_ndotv, clearcoat_roughness)).rgb;
     float clearcoat_specular_occlusion =

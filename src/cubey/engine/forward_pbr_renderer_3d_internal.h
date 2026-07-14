@@ -72,6 +72,8 @@ struct ForwardPbrRenderer3D::Impl {
                                  const ForwardPbrRenderer3DGlobalResourcesInfo& info);
     void create_swapchain_resources(const vulkan::Device& device,
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
+    void update_environment(const vulkan::Device& device, render::FrameSlot frame_slot,
+                            const render::PbrEnvironmentTextureBindings& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
     void record(const ForwardPbrRenderer3DRenderRequest& request);
@@ -99,16 +101,17 @@ struct ForwardPbrRenderer3D::Impl {
         Count,
     };
 
-    [[nodiscard]] CompiledGraph current_render_graph(
-        render::ColorTargetView color_target, render::FrameSlot frame_slot,
-        render::RenderGraphTextureState color_initial_state,
-        render::RenderGraphTextureState color_final_state,
-        const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
-        const render::MeshResourceTable<render::Mesh>& meshes,
-        const render::FrameMeshResourceTable* frame_meshes,
-        std::span<const render::GpuDeformationCommand> deformation_commands,
-        const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
-        ForwardPbrRenderer3DBackgroundMode background_mode);
+    [[nodiscard]] CompiledGraph
+    current_render_graph(render::ColorTargetView color_target, render::FrameSlot frame_slot,
+                         render::RenderGraphTextureState color_initial_state,
+                         render::RenderGraphTextureState color_final_state,
+                         const scene::RenderFramePlan3D& shadow_plan,
+                         const scene::RenderFramePlan3D& scene_plan,
+                         const render::MeshResourceTable<render::Mesh>& meshes,
+                         const render::FrameMeshResourceTable* frame_meshes,
+                         std::span<const render::GpuDeformationCommand> deformation_commands,
+                         const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
+                         ForwardPbrRenderer3DBackgroundMode background_mode);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
