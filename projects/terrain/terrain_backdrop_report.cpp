@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string_view(argv[1]) == "--source-version") {
         version = cubey::projects::terrain::terrain_source_version_from_name(argv[2]);
     } else if (argc != 1) {
-        throw std::runtime_error("usage: terrain_backdrop_report [--source-version v1|v2|v3]");
+        throw std::runtime_error("usage: terrain_backdrop_report [--source-version v1|v2|v2.1|v3]");
     }
 
     nlohmann::json plans = nlohmann::json::array();

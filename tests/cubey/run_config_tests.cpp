@@ -1717,7 +1717,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preset_flag = "--terrain-preset";
     std::string preset_value = "upland";
     std::string source_version_flag = "--terrain-source-version";
-    std::string source_version_value = "v3";
+    std::string source_version_value = "v2.1";
     std::string render_path_flag = "--terrain-render-path";
     std::string render_path_value = "quality";
     std::string surface_detail_flag = "--terrain-surface-detail";
@@ -1811,7 +1811,7 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.preset == "upland" && config.terrain.weathering == "local" &&
                 config.terrain.weathering_strength == 0.7F,
             "run config should parse terrain v1 source controls");
-    require(config.terrain.source_version == "v3" && config.terrain.render_path == "quality" &&
+    require(config.terrain.source_version == "v2.1" && config.terrain.render_path == "quality" &&
                 config.terrain.surface_detail == "layered" && config.terrain.target_edge_px == 5.0F,
             "run config should parse terrain quality detail controls");
     require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");

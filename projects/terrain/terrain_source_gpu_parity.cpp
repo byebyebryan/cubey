@@ -36,7 +36,7 @@ struct alignas(16) TerrainSourceParityOutput {
     std::array<std::array<float, 4>, kSampleCount * 2U> values{};
 };
 
-static_assert(sizeof(TerrainSourceParityInput) == 464U);
+static_assert(sizeof(TerrainSourceParityInput) == 480U);
 static_assert(sizeof(TerrainSourceParityOutput) == 224U);
 
 [[nodiscard]] bool contains(std::string_view haystack, std::string_view needle) {
@@ -123,10 +123,10 @@ void run_parity_test() {
     constexpr std::array<cubey::projects::terrain::TerrainQuery, kSampleCount> queries{{
         {.world_xz = {0.0F, 0.0F}, .footprint_m = 0.0F},
         {.world_xz = {1532.5F, -873.25F}, .footprint_m = 2.0F},
-        {.world_xz = {-8192.0F, 4096.0F}, .footprint_m = 8.0F},
+        {.world_xz = {-8192.0F, 4096.0F}, .footprint_m = 16.0F},
         {.world_xz = {12'500.0F, 22'750.0F}, .footprint_m = 32.0F},
         {.world_xz = {27'125.0F, -11'375.0F}, .footprint_m = 64.0F},
-        {.world_xz = {-48'000.0F, -17'000.0F}, .footprint_m = 128.0F},
+        {.world_xz = {-48'000.0F, -17'000.0F}, .footprint_m = 256.0F},
         {.world_xz = {61'000.0F, -52'000.0F}, .footprint_m = 512.0F},
     }};
     constexpr std::array presets{
@@ -141,6 +141,7 @@ void run_parity_test() {
     constexpr std::array versions{
         cubey::projects::terrain::TerrainSourceVersion::V1,
         cubey::projects::terrain::TerrainSourceVersion::V2,
+        cubey::projects::terrain::TerrainSourceVersion::V2_1,
         cubey::projects::terrain::TerrainSourceVersion::V3,
     };
 

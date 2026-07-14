@@ -204,6 +204,17 @@ void test_runtime_config_parses_source_v2() {
     require(rejected, "layered surface detail should reject the control geometry path");
 }
 
+void test_runtime_config_parses_source_v2_1() {
+    cubey::RunConfig run_config{};
+    run_config.terrain.source_version = "v2.1";
+    run_config.terrain.render_path = "quality";
+    run_config.terrain.surface_detail = "layered";
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.source.version == cubey::projects::terrain::TerrainSourceVersion::V2_1,
+            "terrain runtime should parse source v2.1");
+}
+
 void test_runtime_config_parses_source_v3() {
     cubey::RunConfig run_config{};
     run_config.terrain.source_version = "v3";
@@ -451,12 +462,10 @@ void test_backdrop_planner_frames_hierarchical_source_peaks() {
         require(plan.pitch_radians <= maximum_pitch_radians + 0.000001F,
                 "terrain hierarchical backdrop pitch should remain bounded");
         const float desired_pitch = plan.target_elevation_radians - peak_offset_radians;
-        constexpr float minimum_pitch_radians =
-            -2.0F * std::numbers::pi_v<float> / 180.0F;
+        constexpr float minimum_pitch_radians = -2.0F * std::numbers::pi_v<float> / 180.0F;
         require_near(plan.pitch_radians,
                      std::clamp(desired_pitch, minimum_pitch_radians, maximum_pitch_radians),
-                     0.000001F,
-                     "terrain hierarchical backdrop should frame or bound its peak");
+                     0.000001F, "terrain hierarchical backdrop should frame or bound its peak");
         require_near_frame_contract(source, plan, 1.0F);
     }
 }
@@ -658,6 +667,7 @@ int main() {
         test_runtime_config_defaults_to_the_v1_scene();
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();
+        test_runtime_config_parses_source_v2_1();
         test_runtime_config_parses_source_v3();
         test_source_v3_component_views_require_source_v3();
         test_ground_camera_and_shape_diagnostics_parse();

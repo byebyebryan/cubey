@@ -18,6 +18,7 @@ struct TerrainSourceGpuParameters {
     TerrainSourceGpuBandParameters macro;
     TerrainSourceGpuBandParameters structure;
     TerrainSourceGpuBandParameters detail;
+    vec4 v2_1_composition;
     vec4 composition;
     vec4 elevation;
     vec4 weathering;
@@ -104,6 +105,50 @@ float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
         amplitude *= band.shape.z;
     }
     return weight > 0.0 ? value / weight : 0.5;
+}
+
+vec2 terrain_source_band_split(TerrainSourceGpuBandParameters band, vec2 world_xz,
+        float footprint_m, int core_octaves) {
+    fnl_state noise = fnlCreateState(band.control.x);
+    noise.frequency = 1.0;
+    noise.noise_type = FNL_NOISE_OPENSIMPLEX2S;
+    noise.fractal_type = FNL_FRACTAL_NONE;
+
+    vec2 rotated = vec2(0.8 * world_xz.x - 0.6 * world_xz.y,
+        0.6 * world_xz.x + 0.8 * world_xz.y);
+    float frequency = band.shape.x;
+    float amplitude = 1.0;
+    float value = 0.0;
+    float fine_delta = 0.0;
+    float weight = 0.0;
+    for (int octave = 0; octave < 12; ++octave) {
+        if (octave >= band.control.y) {
+            break;
+        }
+        float footprint_weight =
+            terrain_source_octave_footprint_weight(frequency, footprint_m);
+        float neutral = mix(0.5, terrain_source_ridge_neutral, band.shape.w);
+        float shaped = neutral;
+        if (footprint_weight > 0.0) {
+            noise.seed = band.control.x + octave * 1013;
+            float octave_f = float(octave);
+            float sample_value = fnlGetNoise2D(noise,
+                rotated.x * frequency + octave_f * 17.31,
+                rotated.y * frequency - octave_f * 9.17);
+            float unit_value = sample_value * 0.5 + 0.5;
+            float ridge = 1.0 - abs(sample_value);
+            shaped = mix(unit_value, ridge, band.shape.w);
+        }
+        float filtered = mix(neutral, shaped, footprint_weight);
+        value += filtered * amplitude;
+        if (octave >= core_octaves) {
+            fine_delta += (filtered - neutral) * amplitude;
+        }
+        weight += amplitude;
+        frequency *= band.shape.y;
+        amplitude *= band.shape.z;
+    }
+    return weight > 0.0 ? vec2(value, fine_delta) / weight : vec2(0.5, 0.0);
 }
 #endif
 
@@ -197,15 +242,31 @@ float terrain_source_base_height(TerrainSourceGpuParameters parameters, vec2 wor
 #if CUBEY_TERRAIN_SOURCE_VARIANT != 1
     float macro_value = terrain_source_band(parameters.macro, world_xz, footprint_m);
     float structure_value = terrain_source_band(parameters.structure, world_xz, footprint_m);
-    float detail_value = terrain_source_band(parameters.detail, world_xz, footprint_m);
+    bool split_fine_detail = parameters.v2_1_composition.x > 0.5;
+    vec2 split_detail;
+    if (split_fine_detail) {
+        split_detail = terrain_source_band_split(parameters.detail, world_xz, footprint_m,
+            int(parameters.v2_1_composition.x + 0.5));
+    } else {
+        split_detail = vec2(terrain_source_band(parameters.detail, world_xz, footprint_m), 0.0);
+    }
+    float detail_value = split_detail.x;
     float mass = smoothstep(0.18, 0.82, macro_value);
     float structured = structure_value * (0.30 + 0.70 * mass);
-    float local_detail = (detail_value - 0.5) * (0.15 + 0.85 * mass);
+    float detail_gate = 0.15 + 0.85 * mass;
+    float local_detail = (detail_value - split_detail.y - 0.5) * detail_gate;
     float composed = clamp(parameters.composition.x * macro_value +
         parameters.composition.y * structured + parameters.composition.z * local_detail +
         parameters.composition.w, 0.0, 1.0);
-    return parameters.elevation.x +
+    float core_height_m = parameters.elevation.x +
         parameters.elevation.y * pow(composed, parameters.elevation.z);
+    if (!split_fine_detail) {
+        return core_height_m;
+    }
+    float fine_detail_m = clamp(parameters.elevation.y * parameters.composition.z *
+        parameters.v2_1_composition.y * split_detail.y * detail_gate,
+        -parameters.v2_1_composition.z, parameters.v2_1_composition.z);
+    return max(core_height_m + fine_detail_m, parameters.elevation.x);
 #endif
 }
 

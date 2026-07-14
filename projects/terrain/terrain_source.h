@@ -19,9 +19,10 @@ enum class TerrainWeatheringMode : std::uint8_t {
 };
 
 enum class TerrainSourceVersion : std::uint8_t {
-    V1,
-    V2,
-    V3,
+    V1 = 0,
+    V2 = 1,
+    V3 = 2,
+    V2_1 = 3,
 };
 
 inline constexpr std::uint64_t kTerrainDefaultSeed = 0x7465'7272'6169'6e01ULL;
@@ -58,11 +59,18 @@ struct TerrainSourceV3Parameters {
     float meso_cap_m = 0.0F;
 };
 
+struct TerrainSourceV2_1Parameters {
+    std::uint32_t core_detail_octaves = 0;
+    float fine_detail_strength = 0.0F;
+    float fine_detail_cap_m = 0.0F;
+};
+
 struct TerrainSourceParameters {
     TerrainSourceVersion version = TerrainSourceVersion::V1;
     TerrainSourceBandParameters macro{};
     TerrainSourceBandParameters structure{};
     TerrainSourceBandParameters detail{};
+    TerrainSourceV2_1Parameters v2_1{};
     TerrainSourceV3Parameters v3{};
     float macro_weight = 0.5F;
     float structure_weight = 0.5F;

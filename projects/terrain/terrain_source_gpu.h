@@ -17,6 +17,7 @@ struct alignas(16) TerrainSourceGpuParameters {
     TerrainSourceGpuBandParameters macro{};
     TerrainSourceGpuBandParameters structure{};
     TerrainSourceGpuBandParameters detail{};
+    std::array<float, 4> v2_1_composition{};
     std::array<float, 4> composition{};
     std::array<float, 4> elevation{};
     std::array<float, 4> weathering{};
@@ -32,7 +33,7 @@ struct alignas(16) TerrainSourceGpuParameters {
 
 static_assert(std::is_trivially_copyable_v<TerrainSourceGpuParameters>);
 static_assert(sizeof(TerrainSourceGpuBandParameters) == 32U);
-static_assert(sizeof(TerrainSourceGpuParameters) == 352U);
+static_assert(sizeof(TerrainSourceGpuParameters) == 368U);
 
 [[nodiscard]] TerrainSourceGpuParameters
 terrain_source_gpu_parameters(const TerrainSourceParameters& parameters);

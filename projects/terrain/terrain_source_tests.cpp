@@ -120,6 +120,78 @@ void test_footprint_filters_unresolved_detail() {
             "terrain footprint should suppress unresolved local variation");
 }
 
+void test_source_v2_1_separates_only_fine_detail() {
+    const auto v2 = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 12345U,
+        .preset = TerrainPreset::Mountain,
+        .version = TerrainSourceVersion::V2,
+    });
+    const auto v2_1 = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 12345U,
+        .preset = TerrainPreset::Mountain,
+        .version = TerrainSourceVersion::V2_1,
+    });
+    require(cubey::projects::terrain::terrain_source_version_from_name("v2.1") ==
+                TerrainSourceVersion::V2_1,
+            "terrain should parse source v2.1");
+    require(
+        v2.macro.seed == v2_1.macro.seed && v2.structure.seed == v2_1.structure.seed &&
+            v2.detail.seed == v2_1.detail.seed && v2.detail.octaves == v2_1.detail.octaves &&
+            v2.detail.frequency == v2_1.detail.frequency &&
+            v2.detail.lacunarity == v2_1.detail.lacunarity && v2.detail.gain == v2_1.detail.gain &&
+            v2.detail.ridge_mix == v2_1.detail.ridge_mix &&
+            v2.detail_weight == v2_1.detail_weight && v2.height_scale_m == v2_1.height_scale_m &&
+            v2.elevation_power == v2_1.elevation_power,
+        "terrain source v2.1 should preserve all v2 source bands");
+    require(v2_1.v2_1.core_detail_octaves == 3U,
+            "terrain source v2.1 should keep three core detail octaves");
+    require_near(v2_1.v2_1.fine_detail_strength, 0.5F, 0.0F,
+                 "terrain source v2.1 should use bounded fine strength");
+    require_near(v2_1.v2_1.fine_detail_cap_m, 30.0F, 0.0F,
+                 "terrain source v2.1 should cap additive fine relief");
+
+    bool changed = false;
+    for (int index = 0; index < 64; ++index) {
+        const cubey::math::Vec2 point{static_cast<float>(index) * 613.0F - 8'000.0F,
+                                      static_cast<float>(index) * -347.0F + 4'000.0F};
+        const float full_v2 = cubey::projects::terrain::sample_terrain_base_height(
+            v2, {.world_xz = point, .footprint_m = 0.0F});
+        const float full_v2_1 = cubey::projects::terrain::sample_terrain_base_height(
+            v2_1, {.world_xz = point, .footprint_m = 0.0F});
+        changed = changed || std::abs(full_v2 - full_v2_1) > 0.01F;
+        require(full_v2_1 >= v2_1.base_height_m,
+                "terrain source v2.1 should not fall below base height");
+
+        auto core_only = v2_1;
+        core_only.v2_1.fine_detail_strength = 0.0F;
+        const float core_height = cubey::projects::terrain::sample_terrain_base_height(
+            core_only, {.world_xz = point, .footprint_m = 0.0F});
+        require(std::abs(full_v2_1 - core_height) <= v2_1.v2_1.fine_detail_cap_m + 0.001F,
+                "terrain source v2.1 additive fine relief should remain capped");
+
+        for (const float footprint_m : {64.0F, 256.0F, 1024.0F}) {
+            const float coarse_v2 = cubey::projects::terrain::sample_terrain_base_height(
+                v2, {.world_xz = point, .footprint_m = footprint_m});
+            const float coarse_v2_1 = cubey::projects::terrain::sample_terrain_base_height(
+                v2_1, {.world_xz = point, .footprint_m = footprint_m});
+            require_near(coarse_v2_1, coarse_v2, 0.0F,
+                         "terrain source v2.1 should preserve resolved v2 geometry");
+        }
+    }
+    require(changed, "terrain source v2.1 should refine unfiltered detail");
+
+    bool rejected = false;
+    try {
+        (void)cubey::projects::terrain::resolve_terrain_source_parameters({
+            .preset = TerrainPreset::Upland,
+            .version = TerrainSourceVersion::V2_1,
+        });
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "terrain source v2.1 should reject unsupported presets");
+}
+
 void test_source_v3_components_are_bounded_and_reconstruct_height() {
     const auto parameters = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 12345U,
@@ -233,6 +305,7 @@ int main() {
         test_source_is_deterministic_and_uses_full_seed();
         test_presets_have_ordered_relief();
         test_footprint_filters_unresolved_detail();
+        test_source_v2_1_separates_only_fine_detail();
         test_source_v3_components_are_bounded_and_reconstruct_height();
         test_clean_source_publishes_no_weathering_delta();
         test_local_weathering_is_bounded_and_preserves_coarse_samples();

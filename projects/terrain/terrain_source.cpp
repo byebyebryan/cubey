@@ -17,6 +17,11 @@ constexpr float kRotationSin = 0.6F;
 // Neutral filtered ridge value approximates the mean of 1 - abs(OpenSimplex2S).
 constexpr float kRidgeNeutral = 0.65F;
 
+struct TerrainBandSplitSample {
+    float full = 0.5F;
+    float fine_delta = 0.0F;
+};
+
 [[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
     const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
     return t * t * (3.0F - 2.0F * t);
@@ -72,6 +77,52 @@ constexpr float kRidgeNeutral = 0.65F;
         amplitude *= band.gain;
     }
     return weight > 0.0F ? value / weight : 0.5F;
+}
+
+[[nodiscard]] TerrainBandSplitSample
+sample_terrain_band_split(const TerrainSourceBandParameters& band, cubey::math::Vec2 world_xz,
+                          float footprint_m, std::uint32_t core_octaves) {
+    cubey::procedural::CoherentNoiseConfig noise{
+        .seed = band.seed,
+        .frequency = 1.0F,
+        .noise_type = cubey::procedural::CoherentNoiseType::OpenSimplex2S,
+        .fractal_type = cubey::procedural::CoherentFractalType::None,
+    };
+
+    const cubey::math::Vec2 rotated{
+        kRotationCos * world_xz.x - kRotationSin * world_xz.y,
+        kRotationSin * world_xz.x + kRotationCos * world_xz.y,
+    };
+    float frequency = band.frequency;
+    float amplitude = 1.0F;
+    float value = 0.0F;
+    float fine_delta = 0.0F;
+    float weight = 0.0F;
+    for (std::uint32_t octave = 0; octave < band.octaves; ++octave) {
+        const float footprint_weight = octave_footprint_weight(frequency, footprint_m);
+        const float neutral = std::lerp(0.5F, kRidgeNeutral, band.ridge_mix);
+        float shaped = neutral;
+        if (footprint_weight > 0.0F) {
+            noise.seed = band.seed + static_cast<std::int32_t>(octave * 1013U);
+            const float octave_f = static_cast<float>(octave);
+            const float sample = cubey::procedural::sample_coherent_noise_2d(
+                rotated.x * frequency + octave_f * 17.31F, rotated.y * frequency - octave_f * 9.17F,
+                noise);
+            const float unit = sample * 0.5F + 0.5F;
+            const float ridge = 1.0F - std::abs(sample);
+            shaped = std::lerp(unit, ridge, band.ridge_mix);
+        }
+        const float filtered = std::lerp(neutral, shaped, footprint_weight);
+        value += filtered * amplitude;
+        if (octave >= core_octaves) {
+            fine_delta += (filtered - neutral) * amplitude;
+        }
+        weight += amplitude;
+        frequency *= band.lacunarity;
+        amplitude *= band.gain;
+    }
+    return weight > 0.0F ? TerrainBandSplitSample{value / weight, fine_delta / weight}
+                         : TerrainBandSplitSample{};
 }
 
 [[nodiscard]] float sample_v3_signed_band(const TerrainSourceBandParameters& band,
@@ -216,6 +267,8 @@ std::string_view terrain_source_version_name(TerrainSourceVersion version) {
         return "v1";
     case TerrainSourceVersion::V2:
         return "v2";
+    case TerrainSourceVersion::V2_1:
+        return "v2.1";
     case TerrainSourceVersion::V3:
         return "v3";
     }
@@ -229,6 +282,9 @@ TerrainSourceVersion terrain_source_version_from_name(std::string_view name) {
     if (name == "v2") {
         return TerrainSourceVersion::V2;
     }
+    if (name == "v2.1") {
+        return TerrainSourceVersion::V2_1;
+    }
     if (name == "v3") {
         return TerrainSourceVersion::V3;
     }
@@ -238,7 +294,7 @@ TerrainSourceVersion terrain_source_version_from_name(std::string_view name) {
 void validate_terrain_source_config(const TerrainSourceConfig& config) {
     if (config.version != TerrainSourceVersion::V1 && config.preset != TerrainPreset::Mountain) {
         throw std::runtime_error(
-            "terrain source v2/v3 currently supports only the mountain preset");
+            "terrain source v2/v2.1/v3 currently supports only the mountain preset");
     }
     if (!std::isfinite(config.weathering_strength) || config.weathering_strength < 0.0F ||
         config.weathering_strength > 1.0F) {
@@ -259,6 +315,16 @@ void validate_terrain_source_parameters(const TerrainSourceParameters& parameter
     validate_band(parameters.macro);
     validate_band(parameters.structure);
     validate_band(parameters.detail);
+    if (parameters.version == TerrainSourceVersion::V2_1) {
+        if (parameters.v2_1.core_detail_octaves == 0U ||
+            parameters.v2_1.core_detail_octaves >= parameters.detail.octaves ||
+            !std::isfinite(parameters.v2_1.fine_detail_strength) ||
+            !std::isfinite(parameters.v2_1.fine_detail_cap_m) ||
+            parameters.v2_1.fine_detail_strength < 0.0F ||
+            parameters.v2_1.fine_detail_cap_m < 0.0F) {
+            throw std::runtime_error("invalid terrain source v2.1 parameters");
+        }
+    }
     if (parameters.version == TerrainSourceVersion::V3) {
         validate_band(parameters.v3.warp);
         validate_band(parameters.v3.range);
@@ -315,9 +381,15 @@ TerrainSourceParameters resolve_terrain_source_parameters(const TerrainSourceCon
         result.gradient_step_m = 2.0F;
         result.weathering_radius_m = 18.0F;
         result.weathering_max_delta_m = 60.0F;
-        if (config.version == TerrainSourceVersion::V2) {
+        if (config.version == TerrainSourceVersion::V2 ||
+            config.version == TerrainSourceVersion::V2_1) {
             result.detail = band(detail_seed, 8U, 900.0F, 2.03F, 0.52F, 0.24F);
             result.detail_weight = 0.16F;
+            if (config.version == TerrainSourceVersion::V2_1) {
+                result.v2_1.core_detail_octaves = 3U;
+                result.v2_1.fine_detail_strength = 0.50F;
+                result.v2_1.fine_detail_cap_m = 30.0F;
+            }
         } else if (config.version == TerrainSourceVersion::V3) {
             result.v3.warp = band(terrain_band_seed(config.seed, "terrain.v3.warp"), 2U, 32'000.0F,
                                   2.0F, 0.50F, 0.0F);
@@ -449,16 +521,37 @@ float sample_terrain_base_height(const TerrainSourceParameters& parameters,
     const float macro = sample_terrain_band(parameters.macro, query.world_xz, query.footprint_m);
     const float structure =
         sample_terrain_band(parameters.structure, query.world_xz, query.footprint_m);
-    const float detail = sample_terrain_band(parameters.detail, query.world_xz, query.footprint_m);
+    TerrainBandSplitSample split_detail{};
+    const bool split_fine_detail = parameters.version == TerrainSourceVersion::V2_1;
+    float detail = 0.0F;
+    if (split_fine_detail) {
+        split_detail =
+            sample_terrain_band_split(parameters.detail, query.world_xz, query.footprint_m,
+                                      parameters.v2_1.core_detail_octaves);
+        detail = split_detail.full;
+    } else {
+        detail = sample_terrain_band(parameters.detail, query.world_xz, query.footprint_m);
+    }
     const float mass = smoothstep(0.18F, 0.82F, macro);
     const float structured = structure * (0.30F + 0.70F * mass);
-    const float local_detail = (detail - 0.5F) * (0.15F + 0.85F * mass);
+    const float detail_gate = 0.15F + 0.85F * mass;
+    const float local_detail =
+        (detail - (split_fine_detail ? split_detail.fine_delta : 0.0F) - 0.5F) * detail_gate;
     const float composed =
         std::clamp(parameters.macro_weight * macro + parameters.structure_weight * structured +
                        parameters.detail_weight * local_detail + parameters.elevation_bias,
                    0.0F, 1.0F);
-    return parameters.base_height_m +
-           parameters.height_scale_m * std::pow(composed, parameters.elevation_power);
+    const float core_height =
+        parameters.base_height_m +
+        parameters.height_scale_m * std::pow(composed, parameters.elevation_power);
+    if (!split_fine_detail) {
+        return core_height;
+    }
+    const float fine_detail_m =
+        std::clamp(parameters.height_scale_m * parameters.detail_weight *
+                       parameters.v2_1.fine_detail_strength * split_detail.fine_delta * detail_gate,
+                   -parameters.v2_1.fine_detail_cap_m, parameters.v2_1.fine_detail_cap_m);
+    return std::max(core_height + fine_detail_m, parameters.base_height_m);
 }
 
 TerrainSample sample_terrain(const TerrainSourceParameters& parameters, const TerrainQuery& query) {
