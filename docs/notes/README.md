@@ -114,8 +114,8 @@ the detailed foundation notes under `docs/architecture/`.
   source/geometry contract for separating macro classification from shading
   detail and rejecting near-frame camera occluders.
 - [Terrain source v2.1 refinement plan](terrain-source-v2-1-refinement-plan.md):
-  source-only scale separation that preserves v2 above a 64 m footprint while
-  bounding sub-110 m relief outside the nonlinear mountain profile.
+  implemented source-only scale separation that preserves v2 above a 64 m
+  footprint while bounding sub-110 m relief outside the nonlinear profile.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.

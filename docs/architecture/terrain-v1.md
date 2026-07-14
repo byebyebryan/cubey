@@ -153,7 +153,8 @@ The public run controls are:
 
 - `terrain.seed`;
 - `terrain.preset`: `mountain`, `upland`, or `plains`;
-- `terrain.source_version`: `v1` or mountain-only `v2`;
+- `terrain.source_version`: `v1`, mountain-only `v2`/`v2.1`, or retained
+  experimental mountain hierarchy `v3`;
 - `terrain.render_path`: `control` or mountain-only `quality`;
 - `terrain.surface_detail`: `tile` or quality-only `layered`;
 - `terrain.target_edge_px`: adaptive quality target from `2` through `16`;
@@ -197,6 +198,18 @@ Across seeds `0`, `9012`, and `12345`:
 
 The fixed review pack compares the reboot against `terrain-engine-ref`, but the
 new runtime has no code or link dependency on `terrain_ref`.
+
+The source v2.1 checkpoint preserves v2 geometry exactly at 64 m and coarser
+footprints. It moves only the 108 m and smaller detail-octave deviations outside
+the nonlinear elevation profile, scales them by 0.5, and caps their additive
+relief at 30 m. V1 remains the default; v2 and v2.1 remain mountain-only opt-in
+sources. V2.1 uses a dedicated shader bundle so its additional source evaluator
+does not increase legacy v1/v2 pipeline compilation. Generate its review pack
+with:
+
+```sh
+projects/terrain/capture_source_v2_1_review.sh
+```
 
 The v3 renderer review additionally requires byte-identical tile/layered height
 views, a bounded material-normal detail increase, a moving midground traversal,
