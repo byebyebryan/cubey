@@ -149,6 +149,8 @@ sample_terrain_source_components(const TerrainSourceParameters& parameters,
                                  const TerrainQuery& query);
 [[nodiscard]] float sample_terrain_base_height(const TerrainSourceParameters& parameters,
                                                const TerrainQuery& query);
+[[nodiscard]] float sample_terrain_height(const TerrainSourceParameters& parameters,
+                                          const TerrainQuery& query);
 [[nodiscard]] TerrainSample sample_terrain(const TerrainSourceParameters& parameters,
                                            const TerrainQuery& query);
 [[nodiscard]] TerrainSourceSummary

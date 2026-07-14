@@ -24,6 +24,7 @@ struct TerrainBackdropCameraPlan {
     float yaw_radians = 0.0F;
     float pitch_radians = 0.0F;
     float target_distance_m = 0.0F;
+    float minimum_target_distance_m = 0.0F;
     float target_elevation_radians = 0.0F;
     float camera_clearance_m = 0.0F;
     float clearance_raise_m = 0.0F;
@@ -33,6 +34,14 @@ struct TerrainBackdropCameraPlan {
     std::uint32_t near_frame_occluded_ray_count = 0U;
     float near_frame_occupancy_ratio = 0.0F;
     float near_frame_nearest_hit_distance_m = 0.0F;
+    float safe_zone_radius_m = 0.0F;
+    float yaw_half_angle_radians = 0.0F;
+    float safe_zone_foreground_min_margin_m = 0.0F;
+    float safe_zone_near_frame_test_distance_m = 0.0F;
+    std::uint32_t safe_zone_near_frame_max_occluded_ray_count = 0U;
+    float safe_zone_lower_frame_test_distance_m = 0.0F;
+    std::uint32_t safe_zone_lower_frame_max_occluded_ray_count = 0U;
+    bool far_field_contract_satisfied = false;
     float aspect_ratio = 16.0F / 9.0F;
     float score = 0.0F;
 };

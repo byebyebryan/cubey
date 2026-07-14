@@ -208,12 +208,6 @@ sample_terrain_band_split(const TerrainSourceBandParameters& band, cubey::math::
                       -parameters.weathering_max_delta_m, parameters.weathering_max_delta_m);
 }
 
-[[nodiscard]] float sample_terrain_height(const TerrainSourceParameters& parameters,
-                                          const TerrainQuery& query) {
-    const float base_height = sample_terrain_base_height(parameters, query);
-    return base_height + sample_terrain_weathering_delta(parameters, query, base_height);
-}
-
 } // namespace
 
 std::string_view terrain_preset_name(TerrainPreset preset) {
@@ -552,6 +546,11 @@ float sample_terrain_base_height(const TerrainSourceParameters& parameters,
                        parameters.v2_1.fine_detail_strength * split_detail.fine_delta * detail_gate,
                    -parameters.v2_1.fine_detail_cap_m, parameters.v2_1.fine_detail_cap_m);
     return std::max(core_height + fine_detail_m, parameters.base_height_m);
+}
+
+float sample_terrain_height(const TerrainSourceParameters& parameters, const TerrainQuery& query) {
+    const float base_height = sample_terrain_base_height(parameters, query);
+    return base_height + sample_terrain_weathering_delta(parameters, query, base_height);
 }
 
 TerrainSample sample_terrain(const TerrainSourceParameters& parameters, const TerrainQuery& query) {

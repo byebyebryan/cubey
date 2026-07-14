@@ -408,6 +408,7 @@ class TerrainApp {
         }
         surface_controller_.set_home_speed_mps(
             terrain_camera_traversal_speed_mps(runtime_config_.camera));
+        surface_controller_.clear_home_constraints();
         if (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
             runtime_config_.camera == TerrainCameraPreset::Midground) {
             if (!backdrop_plan_.has_value()) {
@@ -420,6 +421,11 @@ class TerrainApp {
             surface_controller_.set_home_pose(backdrop_plan_->anchor_xz,
                                               backdrop_plan_->yaw_radians,
                                               backdrop_plan_->pitch_radians);
+            if (runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+                runtime_config_.source.version == TerrainSourceVersion::V2_1) {
+                surface_controller_.set_home_constraints(backdrop_plan_->safe_zone_radius_m,
+                                                         backdrop_plan_->yaw_half_angle_radians);
+            }
         } else {
             surface_controller_.set_home_pose({0.0F, 0.0F}, 0.62F, -0.12F);
         }

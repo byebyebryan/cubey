@@ -433,6 +433,81 @@ void test_backdrop_planner_handles_review_aspect_ratios() {
     }
 }
 
+void test_far_field_v1_camera_contract() {
+    constexpr std::array<std::uint64_t, 3> seeds{0U, 9012U, 12345U};
+    constexpr float expected_yaw_half_angle = 30.0F * std::numbers::pi_v<float> / 180.0F;
+    for (const std::uint64_t seed : seeds) {
+        const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+            .seed = seed,
+            .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+            .version = cubey::projects::terrain::TerrainSourceVersion::V2_1,
+            .weathering = cubey::projects::terrain::TerrainWeatheringMode::Local,
+        });
+        const auto plan = cubey::projects::terrain::plan_terrain_backdrop_camera(source);
+        require(plan.far_field_contract_satisfied,
+                "terrain far-field v1 should find a valid natural staging zone");
+        require_near(plan.safe_zone_radius_m, 200.0F, 0.0F,
+                     "terrain far-field v1 should publish its movement radius");
+        require_near(plan.yaw_half_angle_radians, expected_yaw_half_angle, 0.000001F,
+                     "terrain far-field v1 should publish its directional cone");
+        require(plan.target_distance_m >= 3400.0F && plan.minimum_target_distance_m >= 3200.0F,
+                "terrain far-field v1 should preserve target distance throughout the zone");
+        require(plan.safe_zone_foreground_min_margin_m >= 9.99F,
+                "terrain far-field v1 should clear the lower foreground throughout the zone");
+        require(plan.safe_zone_near_frame_test_distance_m == 2400.0F &&
+                    plan.safe_zone_near_frame_max_occluded_ray_count == 0U,
+                "terrain far-field v1 should keep center and upper rays clear through 2.4 km");
+        require(plan.safe_zone_lower_frame_test_distance_m == 1200.0F &&
+                    plan.safe_zone_lower_frame_max_occluded_ray_count <= 2U,
+                "terrain far-field v1 should reject a nearby lower-frame terrain wall");
+
+        const cubey::math::Vec2 target_xz{plan.target_position.x, plan.target_position.z};
+        for (std::uint32_t position_index = 0U; position_index < 8U; ++position_index) {
+            const float angle =
+                static_cast<float>(position_index) * std::numbers::pi_v<float> / 4.0F;
+            const cubey::math::Vec2 position =
+                plan.anchor_xz +
+                cubey::math::Vec2{std::cos(angle), std::sin(angle)} * plan.safe_zone_radius_m;
+            const cubey::math::Vec2 offset = target_xz - position;
+            require(std::sqrt(offset.x * offset.x + offset.y * offset.y) >= 3199.99F,
+                    "terrain far-field v1 perimeter should independently preserve distance");
+        }
+
+        if (seed != 9012U) {
+            continue;
+        }
+        cubey::projects::terrain::TerrainSurfaceController controller(80.0F);
+        controller.set_home_pose(plan.anchor_xz, plan.yaw_radians, plan.pitch_radians);
+        controller.set_home_constraints(plan.safe_zone_radius_m, plan.yaw_half_angle_radians);
+        const cubey::Transform3D home_camera =
+            controller.camera_transform(source, 1.0F, plan.camera_clearance_m);
+        const cubey::math::Vec3 home_forward_3d =
+            home_camera.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F};
+        const float home_horizontal_length = std::sqrt(home_forward_3d.x * home_forward_3d.x +
+                                                       home_forward_3d.z * home_forward_3d.z);
+        const cubey::math::Vec2 home_forward{home_forward_3d.x / home_horizontal_length,
+                                             home_forward_3d.z / home_horizontal_length};
+        controller.advance_forward(100.0);
+        auto camera = controller.camera_transform(source, 1.0F, plan.camera_clearance_m);
+        const float movement_x = camera.translation.x - plan.anchor_xz.x;
+        const float movement_z = camera.translation.z - plan.anchor_xz.y;
+        require_near(std::sqrt(movement_x * movement_x + movement_z * movement_z), 200.0F, 0.01F,
+                     "terrain far-field controller should clamp movement to the zone");
+
+        controller.apply_look_delta(2.0F, 0.0F);
+        camera = controller.camera_transform(source, 1.0F, plan.camera_clearance_m);
+        const cubey::math::Vec3 camera_forward_3d =
+            camera.rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F};
+        const float horizontal_length = std::sqrt(camera_forward_3d.x * camera_forward_3d.x +
+                                                  camera_forward_3d.z * camera_forward_3d.z);
+        const cubey::math::Vec2 camera_forward{camera_forward_3d.x / horizontal_length,
+                                               camera_forward_3d.z / horizontal_length};
+        require_near(home_forward.x * camera_forward.x + home_forward.y * camera_forward.y,
+                     std::cos(expected_yaw_half_angle), 0.00001F,
+                     "terrain far-field controller should clamp yaw to the directional cone");
+    }
+}
+
 void test_backdrop_planner_frames_hierarchical_source_peaks() {
     constexpr std::array<std::uint64_t, 3> seeds{0U, 9012U, 12345U};
     constexpr float peak_offset_radians = 5.0F * std::numbers::pi_v<float> / 180.0F;
@@ -675,6 +750,7 @@ int main() {
         test_backdrop_presentation_and_coverage_debug_parse();
         test_backdrop_planner_is_deterministic_and_clear();
         test_backdrop_planner_handles_review_aspect_ratios();
+        test_far_field_v1_camera_contract();
         test_backdrop_planner_frames_hierarchical_source_peaks();
         test_backdrop_traversal_preserves_planned_clearance();
         test_environment_gpu_parameters_preserve_atmosphere_lighting();

@@ -2,11 +2,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 namespace cubey::projects::terrain {
 namespace {
 
 constexpr float kLookRadiansPerPixel = 0.0045F;
+
+[[nodiscard]] float normalize_angle(float angle_radians) {
+    return std::remainder(angle_radians, 2.0F * std::numbers::pi_v<float>);
+}
 
 } // namespace
 
@@ -33,6 +38,22 @@ void TerrainSurfaceController::set_home_pose(cubey::math::Vec2 position_xz, floa
     reset();
 }
 
+void TerrainSurfaceController::set_home_constraints(float movement_radius_m,
+                                                    float yaw_half_angle_radians) {
+    if (!std::isfinite(movement_radius_m) || movement_radius_m < 0.0F ||
+        !std::isfinite(yaw_half_angle_radians) || yaw_half_angle_radians < 0.0F) {
+        return;
+    }
+    movement_radius_m_ = movement_radius_m;
+    yaw_half_angle_radians_ = yaw_half_angle_radians;
+    apply_home_constraints();
+}
+
+void TerrainSurfaceController::clear_home_constraints() {
+    movement_radius_m_ = -1.0F;
+    yaw_half_angle_radians_ = -1.0F;
+}
+
 void TerrainSurfaceController::set_home_speed_mps(float speed_mps) {
     if (!std::isfinite(speed_mps) || speed_mps <= 0.0F) {
         return;
@@ -41,9 +62,20 @@ void TerrainSurfaceController::set_home_speed_mps(float speed_mps) {
     speed_mps_ = speed_mps;
 }
 
+void TerrainSurfaceController::apply_look_delta(float yaw_delta_radians,
+                                                float pitch_delta_radians) {
+    if (!std::isfinite(yaw_delta_radians) || !std::isfinite(pitch_delta_radians)) {
+        return;
+    }
+    yaw_radians_ += yaw_delta_radians;
+    pitch_radians_ = std::clamp(pitch_radians_ + pitch_delta_radians, -1.20F, 0.65F);
+    apply_home_constraints();
+}
+
 void TerrainSurfaceController::advance_forward(double delta_seconds) {
     const cubey::math::Vec2 forward{std::sin(yaw_radians_), -std::cos(yaw_radians_)};
     position_xz_ += forward * speed_mps_ * static_cast<float>(delta_seconds);
+    apply_home_constraints();
 }
 
 void TerrainSurfaceController::update(const cubey::input::FilteredInputFrame& input,
@@ -54,9 +86,8 @@ void TerrainSurfaceController::update(const cubey::input::FilteredInputFrame& in
     if (input.mouse_enabled() && input.mouse_button_down(cubey::input::MouseButton::Left)) {
         const cubey::input::PointerDelta delta =
             input.mouse_button_delta(cubey::input::MouseButton::Left);
-        yaw_radians_ -= static_cast<float>(delta.x) * kLookRadiansPerPixel;
-        pitch_radians_ -= static_cast<float>(delta.y) * kLookRadiansPerPixel;
-        pitch_radians_ = std::clamp(pitch_radians_, -1.20F, 0.65F);
+        apply_look_delta(-static_cast<float>(delta.x) * kLookRadiansPerPixel,
+                         -static_cast<float>(delta.y) * kLookRadiansPerPixel);
     }
     if (input.scroll_delta().y != 0.0) {
         speed_mps_ *= std::pow(1.18F, static_cast<float>(input.scroll_delta().y));
@@ -82,6 +113,22 @@ void TerrainSurfaceController::update(const cubey::input::FilteredInputFrame& in
     if (length > 0.0F) {
         movement /= length;
         position_xz_ += movement * speed_mps_ * static_cast<float>(delta_seconds);
+        apply_home_constraints();
+    }
+}
+
+void TerrainSurfaceController::apply_home_constraints() {
+    if (movement_radius_m_ >= 0.0F) {
+        cubey::math::Vec2 offset = position_xz_ - home_position_xz_;
+        const float length = std::sqrt(offset.x * offset.x + offset.y * offset.y);
+        if (length > movement_radius_m_ && length > 0.0F) {
+            position_xz_ = home_position_xz_ + offset * (movement_radius_m_ / length);
+        }
+    }
+    if (yaw_half_angle_radians_ >= 0.0F) {
+        const float offset = normalize_angle(yaw_radians_ - home_yaw_radians_);
+        yaw_radians_ = home_yaw_radians_ +
+                       std::clamp(offset, -yaw_half_angle_radians_, yaw_half_angle_radians_);
     }
 }
 
