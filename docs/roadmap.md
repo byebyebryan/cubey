@@ -45,8 +45,9 @@ Current stable foundation pieces:
   glTF/PBR, water, pyro, and planet-scale adapters;
 - surface-only Cloud V1 promoted into the shared atmosphere/cloud layer and
   consumed by atmosphere and ocean, including bounded local ocean shadows and
-  planar reflection with cached fallback, with aerial/orbit cloud work
-  explicitly deferred;
+  planar reflection with cached fallback; the cached cloud environment now has
+  shared lifecycle/PBR descriptor ownership and a glTF material proof, while
+  aerial/orbit cloud work remains explicitly deferred;
 - Surface Ocean V1 closed around a fixed-cost C0/C1 spectral core, independent
   Calm/Windy/Stormy look presets, shared atmosphere/cloud lighting, and an
   explicit terrain/water-body handoff boundary;
@@ -61,8 +62,8 @@ Recommended next feature streams:
 
 - `projects/ocean`: shoreline/bathymetry composition after terrain products are
   ready; near-field interaction and spray remain later feature work.
-- renderer foundation: promote the shared cached cloud probe into atmosphere/PBR
-  lifecycle and descriptor ownership without copying ocean integration code.
+- renderer foundation: use the shared dynamic environment handoff for future
+  atmosphere/PBR consumers instead of adding project-local probe descriptors.
 - `projects/planet` and terrain worktrees: local/global terrain morphing,
   streaming/residency contracts, and eventual ocean-as-local-water handoff.
 - `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
@@ -71,8 +72,9 @@ Recommended next feature streams:
 
 Known non-blockers:
 
-- Planar plus cached fallback is the accepted ocean reflection path; general PBR
-  consumers do not yet receive the cached cloud environment.
+- The filtered cloud environment is available to general PBR, but visible cloud
+  composition, cloud shadows, and planar reflections remain explicit products;
+  one cached cubemap should not be treated as a replacement for them.
 - `cloud_march.comp`, `surface_cloud_march.comp`, `planet_surface.frag`, and a
   few volume diagnostics shaders remain future split targets; the active shader
   foundation is sufficient for current feature work.

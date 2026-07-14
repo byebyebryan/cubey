@@ -19,10 +19,10 @@ temporary reference mode.
 
 Cloud V1 is intentionally surface-only. Its job is credible clouds for ground,
 ocean, and horizon-scale atmosphere-backed views. Aerial, high-altitude, orbit,
-satellite-style weather, cloud-top shells, cached sky-cloud products, and
-surface-to-orbit transitions are deferred to later versions. They can stay in
-the tree as explicit experiments and references, but they are not V1 acceptance
-criteria and should not drive surface cloud defaults.
+satellite-style weather, visible cloud-top caches, and surface-to-orbit
+transitions are deferred to later versions. The bounded filtered environment
+cache used by reflections is a surface integration product, not an aerial/orbit
+cloud renderer.
 
 The V1 production renderer should combine:
 
@@ -48,6 +48,9 @@ cloud app. The current stable path is:
 
 - `cubey::render::CloudLayerRuntime`: owns generated noise/weather textures,
   the cloud product, optional temporal pass, metadata, and composition;
+- `cubey::CloudEnvironmentRuntime`: owns the coherent double-buffered cloud
+  cubemap lifecycle, refresh cadence, generation blending, fallback packaging,
+  and the shared PBR texture-binding handoff;
 - `cubey::CloudEnvironmentConfig`: owns the project-facing cloud settings,
   defaults, weather presets, and run-config mapping;
 - `cubey::host::draw_cloud_environment_controls`: owns the shared V1 tuning UI
@@ -58,16 +61,18 @@ cloud app. The current stable path is:
   the atmosphere background, samples projected cloud transmittance for direct
   light, renders a reflected-camera cloud product for local planar reflection,
   and uses a coherent filtered cloud environment as broad fallback;
+- `projects/gltf_viewer`: general forward-PBR proof that consumes the filtered
+  cloud environment above the procedural clear-sky probe without adding a
+  project-local cloud compositor;
 - `projects/planet`: deferred aerial/orbit pressure surface; not a Cloud V1
   consumer and not the source of surface-cloud defaults yet.
 
-The remaining ownership gap is a `CloudEnvironmentRuntime`-level wrapper above
-`CloudLayerRuntime`. Today each consumer still decides when to create generated
-cloud resources, when config changes require weather/noise refresh, how to
-package frame inputs from atmosphere/celestial lighting, and which optional
-shadow/reflection products it needs. That is acceptable for Cloud V1
-integration, but it should be addressed before adding more cloud consumers or
-reviving aerial/orbit work.
+Consumers still decide which cloud products they need and package local camera
+and atmosphere lighting into `CloudLayerFrameInfo`. Generated noise/weather
+ownership also remains with the visible cloud layer because shadows, planar
+views, and cached environments share those resources. The cached environment's
+scheduling, invalidation, previous/current generation state, and PBR descriptor
+contract are no longer project-local.
 
 Treat the accepted production mode as `surface-volume`: full-resolution, auto
 distance with the lower-sky horizon handoff, TerrainEngine-style density/noise,
@@ -270,10 +275,11 @@ amplifies bad cloud shape.
 ## Production Shape
 
 The production cloud renderer now lives as the shared cloud layer consumed by
-`projects/atmosphere` and by `projects/ocean` for surface-view sky composition.
-It should continue to be tested and tuned in atmosphere before ocean water
-materials or PBR viewers consume cloud products directly. Planet high/orbit
-views are a later-version track, not the current production target.
+`projects/atmosphere` and `projects/ocean` for surface-view sky composition.
+Ocean consumes local shadow, planar reflection, and cached fallback products;
+the glTF viewer validates the cached environment through general PBR materials.
+Planet high/orbit views are a later-version track, not the current production
+target.
 
 Initial scope:
 
@@ -468,6 +474,8 @@ The active Cloud V1 milestone is:
    output.
 5. Keep the accepted ocean shadow, planar reflection, and cached fallback
    bounded and measurable while preserving the atmosphere tuning surface.
+6. Keep the shared cached environment coherent in forward PBR while visible
+   cloud composition remains an explicit consumer choice.
 
 Acceptance for this milestone:
 
@@ -482,6 +490,7 @@ Acceptance for this milestone:
   sampling, lighting, composition, and metadata output;
 - the implementation does not duplicate project-local atmosphere horizon logic.
 
-Only after that should the production layer resume aerial/orbit work or promote
-the cached cloud environment into general PBR consumption beyond the bounded
-ocean surface contract.
+The filtered surface-cloud environment is now available to general PBR through
+`CloudEnvironmentRuntime` and per-frame `ForwardPbrRenderer3D` environment
+updates. This does not change the later milestone for aerial/orbit cloud shape,
+weather, visibility, or transitions.

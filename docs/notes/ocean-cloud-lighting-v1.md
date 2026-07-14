@@ -159,14 +159,16 @@ resolution, 32 steps, and six filtered mip levels.
   cascaded planet-scale weather shadow system.
 - One local shadow projection cannot preserve both near detail and the entire
   horizon footprint; aerial-scale coverage needs cascades or another LOD.
-- Terrain, planet, and general PBR consumers remain future integrations; they
-  should consume shared outputs rather than copy cloud density or march code.
+- Terrain and planet remain future integrations; general PBR now consumes the
+  shared filtered environment and should continue to avoid copied cloud march
+  or descriptor code.
 
-`CloudEnvironmentProbe` already lives in the shared render layer. Ocean still
-owns its instance, update policy, and descriptor wiring; promotion into shared
-atmosphere/PBR lifecycle is intentionally deferred to a separate foundation
-batch.
+Ocean now uses `CloudEnvironmentRuntime` for probe lifetime, update cadence,
+invalidation, and coherent generation state. Its custom water material still
+owns ocean-specific cached-versus-planar descriptors; general PBR receives the
+same cached environment through `PbrEnvironmentTextureBindings` and the
+renderer frame-slot handoff.
 
-The surface result and ocean-owned cached environment are accepted as part of
-[Surface Ocean V1](ocean-surface-v1.md). General PBR ownership, planet-scale
-shadows, and aerial/orbit clouds remain separate later-version work.
+The surface result and cached environment are accepted as part of [Surface
+Ocean V1](ocean-surface-v1.md). Planet-scale shadows and aerial/orbit clouds
+remain separate later-version work.

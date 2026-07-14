@@ -145,6 +145,8 @@ versioned section and use that section as the release notes.
 - Shared surface-cloud runtime with generated weather/noise fields, projected
   receiver shadows, reflected planar cloud views, and a coherent filtered cloud
   environment cache.
+- Shared cloud-environment lifecycle and forward-PBR generation blending, with
+  clouded procedural reflections validated in the glTF viewer.
 - `projects/ocean`, a horizon-scale spectral ocean with configurable cascade
   workload, Calm/Windy/Stormy presets, persistent whitecaps, clipmap LOD,
   curved-local surface mapping, shared environment lighting, and deterministic

@@ -79,6 +79,10 @@ Cloud lighting has three bounded products:
 - a reflected planar cloud view for detailed visible-ocean reflection;
 - a roughness-filtered cached cloud environment for broad fallback coverage.
 
+The cached product uses the shared `CloudEnvironmentRuntime` lifecycle and
+generation state. Ocean retains only its water-specific cached/planar selection
+and descriptor wiring.
+
 The planar source is the production default. Cached-only mode is useful for
 general coverage and diagnostics. The rejected current-view and hybrid sources
 have been removed.
