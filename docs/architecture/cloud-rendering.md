@@ -61,9 +61,12 @@ cloud app. The current stable path is:
   the atmosphere background, samples projected cloud transmittance for direct
   light, renders a reflected-camera cloud product for local planar reflection,
   and uses a coherent filtered cloud environment as broad fallback;
-- `projects/gltf_viewer`: general forward-PBR proof that consumes the filtered
-  cloud environment above the procedural clear-sky probe without adding a
-  project-local cloud compositor;
+- `projects/gltf_viewer`: general forward-PBR consumer that uses the engine
+  renderer's optional depth-aware cloud composition and the filtered cloud
+  environment above the procedural clear-sky probe;
+- `projects/fluid/water_3d`: refractive-water consumer that composes clouds into
+  its HDR scene background before the water surface pass and reuses the same
+  filtered environment through its existing PBR bindings;
 - `projects/planet`: deferred aerial/orbit pressure surface; not a Cloud V1
   consumer and not the source of surface-cloud defaults yet.
 
@@ -73,6 +76,13 @@ ownership also remains with the visible cloud layer because shadows, planar
 views, and cached environments share those resources. The cached environment's
 scheduling, invalidation, previous/current generation state, and PBR descriptor
 contract are no longer project-local.
+
+Visible cloud ownership follows the same rule in every accepted surface
+consumer: the project's `AtmosphereEnvironmentRuntime` owns one
+`CloudEnvironmentRuntime`. Consumers may add local adapters such as ocean's
+planar reflection, but they must not create a second generated-cloud or cached
+environment runtime beside it. Static HDR/generated environment modes do not
+create or compose procedural clouds.
 
 Treat the accepted production mode as `surface-volume`: full-resolution, auto
 distance with the lower-sky horizon handoff, TerrainEngine-style density/noise,

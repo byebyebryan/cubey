@@ -31,8 +31,9 @@ it is never converted to a signed delta against one background and applied to
 another differently filtered background. This keeps twilight occlusion from
 clipping individual reflection channels into false colors.
 
-Ocean also owns a cached cloud environment probe. It captures the
-same surface cloud density and lighting model in all six cube directions,
+Ocean also consumes the cached cloud environment probe owned by its shared
+atmosphere runtime. It captures the same surface cloud density and lighting
+model in all six cube directions,
 composes cloud radiance and transmittance over the matching clear-sky cube,
 and GGX-prefilters the result before exposing it to water shading. A capture is
 coherent: all six faces and mip levels are completed together, then two whole
@@ -163,8 +164,9 @@ resolution, 32 steps, and six filtered mip levels.
   shared filtered environment and should continue to avoid copied cloud march
   or descriptor code.
 
-Ocean now uses `CloudEnvironmentRuntime` for probe lifetime, update cadence,
-invalidation, and coherent generation state. Its custom water material still
+Ocean now uses the `CloudEnvironmentRuntime` owned by
+`AtmosphereEnvironmentRuntime` for probe lifetime, update cadence, invalidation,
+and coherent generation state. Its custom water material still
 owns ocean-specific cached-versus-planar descriptors; general PBR receives the
 same cached environment through `PbrEnvironmentTextureBindings` and the
 renderer frame-slot handoff.

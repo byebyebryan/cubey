@@ -34,10 +34,11 @@ still owns presets, UI, debug view selection, generated sky assets, and
 render-graph wiring; the render helpers are intended to be reusable by ocean and
 later terrain/environment work.
 
-Final view also uses the shared cloud-layer runtime. `CloudLayerRuntime` owns
-generated cloud resources, march/temporal/composite pipelines, render-graph
-products, descriptors, and temporal history; atmosphere consumes it in
-external-background mode so clouds are composited over the clear-sky background.
+Final view also uses the atmosphere runtime's shared cloud environment.
+`CloudEnvironmentRuntime` owns the visible `CloudLayerRuntime`, generated cloud
+resources, cached PBR environment, refresh state, and lifecycle; atmosphere
+consumes its visible product in external-background mode so clouds are
+composited over the clear-sky background.
 The Clouds panel exposes the shared quality, sampling, layer, weather, shape,
 lighting, and debug controls, and existing `clouds.*` config/CLI overrides
 apply here too. Cloud V1 is intentionally surface-only: `surface-volume`,
@@ -48,8 +49,10 @@ reference fallback is needed. Aerial/high-altitude/orbit controls remain exposed
 only as deferred experiments. `--cloud-view-samples 2 --cloud-view-sample-mode
 single-frame` is the direct local-volume sampling reference; `--cloud-temporal
 --cloud-view-samples 2 --cloud-view-sample-mode temporal-phased` is the cheaper
-temporal reconstruction candidate. Cloud shadows and cloud-driven reflection or
-environment-lighting outputs remain deferred.
+temporal reconstruction candidate. The foundation now exposes a filtered cloud
+environment for PBR consumers, while atmosphere itself does not visualize that
+cache. Projected shadows and consumer-specific planar reflections remain
+explicit opt-in products rather than implicit parts of the sky pass.
 
 Useful runs:
 

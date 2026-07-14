@@ -43,11 +43,11 @@ Current stable foundation pieces:
   water, atmosphere, ocean, and cloud fields;
 - shared sky/celestial/atmosphere state used by atmosphere, ocean,
   glTF/PBR, water, pyro, and planet-scale adapters;
-- surface-only Cloud V1 promoted into the shared atmosphere/cloud layer and
-  consumed by atmosphere and ocean, including bounded local ocean shadows and
-  planar reflection with cached fallback; the cached cloud environment now has
-  shared lifecycle/PBR descriptor ownership and a glTF material proof, while
-  aerial/orbit cloud work remains explicitly deferred;
+- surface-only Cloud V1 promoted into the shared atmosphere environment and
+  consumed directly by atmosphere, glTF Viewer, ocean, and Water 3D. The shared
+  runtime owns visible cloud products plus the cached PBR environment; ocean
+  adds bounded local shadows and planar reflection, while aerial/orbit cloud
+  work remains explicitly deferred;
 - Surface Ocean V1 closed around a fixed-cost C0/C1 spectral core, independent
   Calm/Windy/Stormy look presets, shared atmosphere/cloud lighting, and an
   explicit terrain/water-body handoff boundary;

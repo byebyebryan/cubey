@@ -45,7 +45,10 @@ Radiance HDR equirectangular environment assets:
   reflection prefilter remain in `shaders/cubey/`.
   `Environment3D` can opt into SH diffuse ambient, while the reusable forward
   PBR renderer can bind either a complete generated/HDR environment or explicit
-  environment texture bindings supplied by a project. `projects/ocean` also
+  environment texture bindings supplied by a project. Its render request can
+  also carry an atmosphere-owned surface-cloud frame; final PBR views compose
+  that product against HDR scene color and sampled scene depth before display
+  post. `projects/ocean` also
   consumes the runtime reflection probe directly for water reflection while its
   bespoke ocean shader remains outside the full PBR material path;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
@@ -117,8 +120,9 @@ renderer-wide material management explicit future work.
   development and material inspection, but higher-quality offline filtering and
   prefiltered KTX/KTX2 deployment remain future work.
 - Atmosphere-driven PBR now covers procedural visible background, direct light,
-  diffuse SH, and a low-resolution runtime atmosphere reflection probe for
-  specular IBL in `gltf_viewer`. `projects/ocean` uses the shared atmosphere
+  diffuse SH, a low-resolution runtime atmosphere reflection probe, direct
+  surface-cloud composition, and a filtered cloud reflection environment in
+  `gltf_viewer`. `projects/ocean` uses the shared atmosphere
   background plus the same runtime sky/reflection probes for water reflection,
   fog, and fill, but its water material remains bespoke rather than a full PBR
   surface. The runtime is intentionally V1: it keeps the static/generated
