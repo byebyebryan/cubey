@@ -7,6 +7,8 @@
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/engine/cloud_environment_config.h>
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/engine/gltf_scene_importer.h>
@@ -15,6 +17,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/cloud_layer.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
@@ -86,6 +89,9 @@ class GltfViewerApp {
     [[nodiscard]] cubey::render::PbrEnvironmentTextureBindings pbr_environment_bindings() const;
     void create_atmosphere_environment_runtime(const cubey::vulkan::Device& device,
                                                std::uint32_t frame_slot_count);
+    void create_cloud_environment_runtime(const cubey::vulkan::Device& device,
+                                          cubey::vulkan::GpuRuntime& gpu,
+                                          std::uint32_t frame_slot_count);
     void create_fallback_material(const cubey::vulkan::Device& device,
                                   std::uint32_t frame_slot_count);
     [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
@@ -99,12 +105,15 @@ class GltfViewerApp {
     [[nodiscard]] bool update_atmosphere_time(double delta_seconds);
     void draw_ui(cubey::host::WindowedAppContext& context);
     void refresh_atmosphere_controls();
+    void refresh_cloud_controls(cubey::host::WindowedAppContext& context);
     void refresh_atmosphere_lighting_scene();
     void update_camera_transform();
     [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_background_uniforms(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
+    [[nodiscard]] cubey::render::CloudLayerConfig cloud_layer_config() const;
+    [[nodiscard]] cubey::render::CloudLayerFrameInfo cloud_layer_frame_info() const;
     [[nodiscard]] float display_exposure() const;
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const;
     [[nodiscard]] cubey::Scene& scene();
@@ -121,6 +130,8 @@ class GltfViewerApp {
                               cubey::render::RenderGraphCommandBufferMode command_buffer_mode);
     void record_atmosphere_environment_if_needed(const cubey::vulkan::CommandRecorder& recorder,
                                                  cubey::render::FrameSlot frame_slot);
+    void record_cloud_environment_if_needed(const cubey::vulkan::CommandRecorder& recorder,
+                                            cubey::render::FrameSlot frame_slot);
     void record_viewer_frame(cubey::host::WindowedAppContext& context,
                              const cubey::host::WindowedRenderFrame& frame);
     void record_viewer_capture(cubey::host::HeadlessPngContext& context,
@@ -141,6 +152,10 @@ class GltfViewerApp {
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
+    cubey::CloudEnvironmentConfig clouds_config_{};
+    cubey::render::CloudLayerRuntime cloud_generated_runtime_{};
+    cubey::CloudEnvironmentRuntime cloud_environment_runtime_{};
+    double cloud_elapsed_seconds_ = 0.0;
     cubey::animation::GltfAnimationPlayback animation_playback_{};
     std::optional<cubey::animation::GltfAnimationSample> animation_sample_{};
     std::uint32_t triangle_count_ = 0;

@@ -1,6 +1,7 @@
 #include "gltf_viewer_app_internal.h"
 
 #include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/scene/transform_3d.h>
@@ -56,6 +57,16 @@ gltf_viewer_atmosphere_run_state(const RunConfig& run_config) {
                 cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
+}
+
+[[nodiscard]] cubey::CloudEnvironmentConfig
+gltf_viewer_cloud_config(const RunConfig& run_config) {
+    cubey::CloudEnvironmentConfig clouds{};
+    cubey::apply_cloud_environment_run_config(clouds, run_config.clouds);
+    clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    return clouds;
 }
 
 std::filesystem::path shader_path(const char* filename) {
@@ -125,7 +136,8 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 
 GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)), debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
-      atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)) {
+      atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)),
+      clouds_config_(gltf_viewer_cloud_config(config_)) {
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
 }
 
@@ -140,11 +152,26 @@ bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
 
 void GltfViewerApp::refresh_atmosphere_controls() {
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    cloud_environment_runtime_.invalidate();
     refresh_atmosphere_lighting_scene();
 }
 
+void GltfViewerApp::refresh_cloud_controls(cubey::host::WindowedAppContext& context) {
+    if (!use_atmosphere_environment_source() ||
+        !cloud_environment_runtime_.resources_created()) {
+        return;
+    }
+    cloud_generated_runtime_.update_weather_texture(
+        context.device(), context.gpu(),
+        cubey::render::cloud_layer_runtime_shader_files(
+            CUBEY_GLTF_VIEWER_SHADER_DIR,
+            cubey::render::CloudLayerCompositeMode::ExternalBackground)
+            .generated.weather,
+        cloud_layer_config());
+    cloud_environment_runtime_.invalidate();
+}
+
 void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
-    (void)context;
     if (!cubey::host::begin_control_panel("glTF Viewer", {.width = 430.0F})) {
         ImGui::End();
         return;
@@ -155,6 +182,15 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
                                 .help = "Shared procedural atmosphere used by the glTF viewer sky, "
                                         "lighting, PBR environment, and exposure."})) {
         refresh_atmosphere_controls();
+    }
+    if (use_atmosphere_environment_source() &&
+        cubey::host::draw_cloud_environment_controls(
+            clouds_config_,
+            {.label = "Cloud Environment",
+             .default_open = false,
+             .help = "Shared surface-cloud field cached into the PBR environment.",
+             .enabled_help = "Include clouds in PBR environment reflections."})) {
+        refresh_cloud_controls(context);
     }
 
     ImGui::End();
@@ -183,6 +219,10 @@ int GltfViewerApp::run_windowed() {
         update_animation(static_cast<float>(timing.delta_seconds));
         if (update_atmosphere_time(timing.delta_seconds)) {
             refresh_atmosphere_lighting_scene();
+        }
+        if (clouds_config_.enabled && cloud_environment_runtime_.resources_created()) {
+            cloud_elapsed_seconds_ += timing.delta_seconds;
+            cloud_environment_runtime_.advance(timing.delta_seconds);
         }
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::D)) {
@@ -246,6 +286,10 @@ int GltfViewerApp::run_headless() {
             update_animation(static_cast<float>(frame.timing.delta_seconds));
             if (update_atmosphere_time(frame.timing.delta_seconds)) {
                 refresh_atmosphere_lighting_scene();
+            }
+            if (clouds_config_.enabled && cloud_environment_runtime_.resources_created()) {
+                cloud_elapsed_seconds_ += frame.timing.delta_seconds;
+                cloud_environment_runtime_.advance(frame.timing.delta_seconds);
             }
             orbit_controller_.update(frame.timing.delta_seconds);
             update_camera_transform();

@@ -39,6 +39,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     const bool use_atmosphere_environment = use_atmosphere_environment_source();
     if (use_atmosphere_environment) {
         create_atmosphere_environment_runtime(device, frame_slot_count);
+        create_cloud_environment_runtime(device, gpu, frame_slot_count);
     }
     forward_pbr_renderer_ =
         &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
@@ -158,7 +159,12 @@ cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bind
         return cubey::render::pbr_environment_texture_bindings(ibl_environment());
     }
 
-    return atmosphere_runtime_.pbr_environment_bindings(ibl_environment());
+    const cubey::render::PbrEnvironmentTextureBindings clear_sky =
+        atmosphere_runtime_.pbr_environment_bindings(ibl_environment());
+    if (!clouds_config_.enabled) {
+        return clear_sky;
+    }
+    return cloud_environment_runtime_.pbr_environment_bindings(clear_sky);
 }
 
 void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::Device& device,
@@ -184,6 +190,40 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
                         shader_path("atmosphere_reflection_prefilter.frag.spv"),
                 });
     atmosphere_runtime_.mark_full_update_pending();
+}
+
+void GltfViewerApp::create_cloud_environment_runtime(const cubey::vulkan::Device& device,
+                                                     cubey::vulkan::GpuRuntime& gpu,
+                                                     std::uint32_t frame_slot_count) {
+    if (cloud_environment_runtime_.resources_created()) {
+        return;
+    }
+    const cubey::render::CloudLayerRuntimeShaderFiles shaders =
+        cubey::render::cloud_layer_runtime_shader_files(
+            CUBEY_GLTF_VIEWER_SHADER_DIR,
+            cubey::render::CloudLayerCompositeMode::ExternalBackground);
+    cloud_generated_runtime_.create_generated_resources(device, gpu, shaders.generated,
+                                                        cloud_layer_config());
+    cloud_environment_runtime_.create_resources(
+        device,
+        cubey::render::CloudEnvironmentProbeConfig{
+            .extent = 64,
+            .mip_levels = 5,
+            .view_steps = 32,
+            .update_hz = 4.0F,
+            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+            .frame_slot_count = frame_slot_count,
+        },
+        cloud_generated_runtime_.generated_resources(),
+        atmosphere_runtime_.reflection_probe().sky_radiance_cube());
+    cloud_environment_runtime_.create_pipelines(
+        device,
+        cubey::render::CloudEnvironmentProbePipelineConfig{
+            .cloud_march = shaders.surface_march,
+            .prefilter_vertex = cubey::render::vertex_shader_file(shader_path("atmosphere.vert.spv")),
+            .prefilter_fragment = cubey::render::fragment_shader_file(
+                shader_path("cloud_environment_prefilter.frag.spv")),
+        });
 }
 
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,

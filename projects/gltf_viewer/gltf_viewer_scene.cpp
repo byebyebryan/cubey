@@ -204,6 +204,38 @@ cubey::render::AtmosphereEnvironmentFrameUniforms GltfViewerApp::atmosphere_back
         .background;
 }
 
+cubey::render::CloudLayerConfig GltfViewerApp::cloud_layer_config() const {
+    cubey::render::CloudLayerConfig cloud = clouds_config_.layer;
+    cloud.planet_radius_m = atmosphere_state_.environment.bottom_radius_km * 1000.0F;
+    cloud.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    cloud.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+    cloud.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    cloud.wind_offset_m =
+        static_cast<float>(cloud_elapsed_seconds_) * clouds_config_.wind_speed_mps;
+    return cloud;
+}
+
+cubey::render::CloudLayerFrameInfo GltfViewerApp::cloud_layer_frame_info() const {
+    const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
+    return {
+        .camera_position =
+            {0.0F, atmosphere_state_.environment.camera_altitude_km * 1000.0F, 0.0F},
+        .sun_direction = lighting.sun_direction,
+        .sun_color = lighting.sun_color,
+        .sun_intensity = lighting.sun_intensity,
+        .moon_direction = lighting.moon_direction,
+        .moon_color = lighting.moon_color,
+        .moon_intensity = lighting.moon_intensity,
+        .ambient_color = lighting.ambient_color,
+        .ambient_intensity = lighting.ambient_intensity,
+        .target_extent = {64, 64},
+        .camera_mode = 0.0F,
+        .external_background = true,
+        .near_plane_m = 1.0F,
+        .far_plane_m = 400000.0F,
+    };
+}
+
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {
     const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
     return cubey::LightPacket3D{
