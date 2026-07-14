@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/atmosphere_reflection_probe.h>
@@ -89,6 +90,8 @@ class AtmosphereEnvironmentRuntime {
     [[nodiscard]] render::PbrEnvironmentTextureBindings
     pbr_environment_bindings(const render::GeneratedPbrEnvironment& fallback) const;
     [[nodiscard]] const render::AtmosphereReflectionProbe& reflection_probe() const;
+    [[nodiscard]] CloudEnvironmentRuntime& clouds() noexcept;
+    [[nodiscard]] const CloudEnvironmentRuntime& clouds() const noexcept;
 
   private:
     void refresh_lighting();
@@ -96,6 +99,7 @@ class AtmosphereEnvironmentRuntime {
     render::AtmosphereEnvironmentConfig environment_{};
     render::AtmosphereEnvironmentLighting lighting_{};
     render::AtmosphereReflectionProbe reflection_probe_{};
+    CloudEnvironmentRuntime clouds_{};
     bool environment_initialized_ = false;
     bool full_update_pending_ = true;
     std::uint32_t face_cursor_ = 0;

@@ -114,6 +114,7 @@ void AtmosphereEnvironmentRuntime::create_pipelines(
 }
 
 void AtmosphereEnvironmentRuntime::destroy() {
+    clouds_.destroy();
     reflection_probe_.destroy();
     mark_full_update_pending();
 }
@@ -128,6 +129,7 @@ bool AtmosphereEnvironmentRuntime::set_environment(
     environment_ = environment;
     environment_initialized_ = true;
     refresh_lighting();
+    clouds_.invalidate();
     if (update_mode == AtmosphereReflectionProbeUpdateMode::CoherentFull) {
         mark_full_update_pending();
     } else if (!full_update_pending_) {
@@ -238,6 +240,9 @@ render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environm
     bindings.previous_prefiltered_view = prefiltered.view();
     bindings.prefiltered_mip_levels = reflection_probe_.mip_levels();
     bindings.prefiltered_blend = 1.0F;
+    if (clouds_.resources_created()) {
+        return clouds_.pbr_environment_bindings(bindings);
+    }
     return bindings;
 }
 
@@ -246,6 +251,14 @@ const render::AtmosphereReflectionProbe& AtmosphereEnvironmentRuntime::reflectio
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
     return reflection_probe_;
+}
+
+CloudEnvironmentRuntime& AtmosphereEnvironmentRuntime::clouds() noexcept {
+    return clouds_;
+}
+
+const CloudEnvironmentRuntime& AtmosphereEnvironmentRuntime::clouds() const noexcept {
+    return clouds_;
 }
 
 void AtmosphereEnvironmentRuntime::refresh_lighting() {

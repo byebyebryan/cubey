@@ -11,6 +11,8 @@ void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment(
 void test_atmosphere_environment_runtime_reports_changed_environment();
 void test_atmosphere_environment_runtime_builds_frame_payload();
 void test_atmosphere_environment_runtime_builds_celestial_frame_payload();
+void test_cloud_environment_runtime_builds_coherent_surface_frame();
+void test_atmosphere_environment_runtime_owns_optional_cloud_foundation();
 void test_atmosphere_environment_runtime_requires_resources_before_bindings();
 void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change();
 void test_engine_attaches_gpu_services_to_project_context();
@@ -107,6 +109,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_atmosphere_environment_runtime_reports_changed_environment),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_frame_payload),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_celestial_frame_payload),
+        CUBEY_TEST(test_cloud_environment_runtime_builds_coherent_surface_frame),
+        CUBEY_TEST(test_atmosphere_environment_runtime_owns_optional_cloud_foundation),
         CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
         CUBEY_TEST(test_atmosphere_environment_runtime_queues_all_faces_after_environment_change),
         CUBEY_TEST(test_engine_exposes_project_runtime_services),

@@ -256,7 +256,7 @@ void test_atmosphere_environment_runtime_builds_frame_payload() {
             "atmosphere runtime frame should carry scene environment lighting");
     require(frame.scene_environment.diffuse_irradiance_sh[0] ==
                 frame.lighting.diffuse_irradiance_sh[0],
-	            "atmosphere runtime frame should keep lighting and scene environment in sync");
+            "atmosphere runtime frame should keep lighting and scene environment in sync");
 }
 
 void test_atmosphere_environment_runtime_builds_celestial_frame_payload() {
@@ -295,8 +295,65 @@ void test_atmosphere_environment_runtime_builds_celestial_frame_payload() {
                  "celestial runtime frame should preserve shared moon illumination");
     require_near(frame.lighting.sun_direction.y, 1.0F, 0.0001F,
                  "celestial runtime frame lighting should use shared sun direction");
-    require(frame.scene_environment.diffuse_irradiance_sh[0] == frame.lighting.diffuse_irradiance_sh[0],
+    require(frame.scene_environment.diffuse_irradiance_sh[0] ==
+                frame.lighting.diffuse_irradiance_sh[0],
             "celestial runtime frame should keep derived scene environment and lighting in sync");
+}
+
+void test_cloud_environment_runtime_builds_coherent_surface_frame() {
+    cubey::CloudEnvironmentConfig config;
+    config.wind_speed_mps = 12.0F;
+    config.layer.planet_radius_m = 6371000.0F;
+    cubey::render::AtmosphereEnvironmentLighting lighting;
+    lighting.sun_direction = {0.0F, 0.5F, 0.5F};
+    lighting.sun_color = {1.0F, 0.4F, 0.2F};
+    lighting.sun_intensity = 3.0F;
+    lighting.moon_intensity = 0.25F;
+    lighting.ambient_intensity = 0.75F;
+
+    const cubey::CloudEnvironmentRuntimeFrame frame =
+        cubey::cloud_environment_runtime_frame(config, 2.5, lighting,
+                                               cubey::CloudEnvironmentSurfaceViewInfo{
+                                                   .camera_position = {2.0F, 300.0F, 4.0F},
+                                                   .camera_right = {0.0F, 0.0F, 1.0F},
+                                                   .camera_up = {0.0F, 1.0F, 0.0F},
+                                                   .camera_forward = {1.0F, 0.0F, 0.0F},
+                                                   .tan_half_fovy = 0.5F,
+                                                   .target_extent = {1280, 720},
+                                                   .near_plane_m = 0.25F,
+                                                   .far_plane_m = 500000.0F,
+                                                   .scene_depth_occlusion_enabled = true,
+                                                   .scene_depth_fade_m = 750.0F,
+                                               },
+                                               7U);
+
+    require(frame.enabled, "default shared clouds should produce an enabled surface frame");
+    require_near(frame.layer.wind_offset_m, 30.0F, 0.0001F,
+                 "surface frame should resolve cloud motion from shared elapsed time");
+    require_near(frame.view.sun_intensity, 3.0F, 0.0001F,
+                 "surface frame should use shared atmosphere direct-light intensity");
+    require_near(frame.view.sun_color.y, 0.4F, 0.0001F,
+                 "surface frame should use shared atmosphere direct-light color");
+    require(frame.view.target_extent.width == 1280 && frame.view.target_extent.height == 720,
+            "surface frame should preserve the consumer target extent");
+    require(frame.view.scene_depth_occlusion_enabled,
+            "surface frame should preserve consumer depth-occlusion policy");
+    require_near(frame.uniforms.scene_depth_options.z, 1.0F, 0.0001F,
+                 "surface uniforms should enable scene-depth occlusion");
+    require_near(frame.uniforms.temporal_options.x, 7.0F, 0.0001F,
+                 "surface uniforms should preserve the shared temporal frame index");
+}
+
+void test_atmosphere_environment_runtime_owns_optional_cloud_foundation() {
+    cubey::AtmosphereEnvironmentRuntime runtime;
+    require(!runtime.clouds().surface_resources_created(),
+            "atmosphere runtime should not allocate optional clouds by default");
+
+    cubey::CloudEnvironmentConfig disabled;
+    disabled.enabled = false;
+    const cubey::CloudEnvironmentRuntimeFrame frame = cubey::cloud_environment_runtime_frame(
+        disabled, 0.0, runtime.lighting(), cubey::CloudEnvironmentSurfaceViewInfo{});
+    require(!frame.enabled, "disabled shared clouds should produce a disabled surface frame");
 }
 
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
