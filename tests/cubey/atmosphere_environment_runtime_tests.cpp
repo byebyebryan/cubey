@@ -233,6 +233,59 @@ void test_atmosphere_environment_runtime_reports_changed_environment() {
             "atmosphere runtime should report semantic environment edits as changed");
 }
 
+void test_atmosphere_reflection_probe_timeline_publishes_coherent_captures() {
+    cubey::render::AtmosphereReflectionProbeTimeline timeline;
+    timeline.configure(4.0F);
+
+    require(timeline.capture_pending(), "reflection timeline should request its initial capture");
+    require(!timeline.valid(), "reflection timeline should start without a published capture");
+
+    timeline.capture_recorded();
+    require(timeline.valid(), "reflection timeline should publish its first complete capture");
+    require(!timeline.capture_pending(), "recording should clear the pending capture");
+    require_near(timeline.blend(), 1.0F, 0.0001F,
+                 "the first capture should publish without a fallback crossfade");
+    require(timeline.generation() == 1U, "the first capture should advance generation");
+
+    timeline.request_capture();
+    timeline.advance(0.125);
+    require(!timeline.capture_pending(),
+            "a dirty reflection should wait for the configured capture cadence");
+    timeline.advance(0.125);
+    require(timeline.capture_pending(),
+            "a dirty reflection should become pending at the configured cadence");
+
+    timeline.capture_recorded();
+    require_near(timeline.blend(), 0.0F, 0.0001F,
+                 "a replacement capture should begin by showing the previous environment");
+    require(timeline.generation() == 2U, "a replacement capture should advance generation");
+
+    timeline.request_capture();
+    timeline.request_capture();
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 0.5F, 0.0001F,
+                 "the environment crossfade should advance continuously");
+    require(!timeline.capture_pending(),
+            "repeated changes should coalesce while the published pair is blending");
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 1.0F, 0.0001F,
+                 "the environment crossfade should finish over one update interval");
+    require(timeline.capture_pending(),
+            "coalesced changes should request one capture after the crossfade completes");
+}
+
+void test_atmosphere_reflection_probe_timeline_is_change_driven() {
+    cubey::render::AtmosphereReflectionProbeTimeline timeline;
+    timeline.configure(4.0F);
+    timeline.capture_recorded();
+    timeline.advance(10.0);
+
+    require(!timeline.capture_pending(),
+            "an unchanged atmosphere should not refresh its reflection probe periodically");
+    require(timeline.generation() == 1U,
+            "an unchanged atmosphere should preserve the published generation");
+}
+
 void test_atmosphere_environment_runtime_builds_frame_payload() {
     cubey::AtmosphereEnvironmentRuntime runtime;
     cubey::render::AtmosphereEnvironmentConfig environment;
@@ -376,7 +429,7 @@ void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
     require(threw, "atmosphere runtime should reject resource access before resources exist");
 }
 
-void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change() {
+void test_atmosphere_environment_runtime_publishes_coherent_probe_updates() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string header = cubey::tests::read_source_file(
         source_root / "include/cubey/engine/atmosphere_environment_runtime.h");
@@ -389,24 +442,19 @@ void test_atmosphere_environment_runtime_queues_all_faces_after_environment_chan
     cubey::tests::require_contains(
         header, "environment_initialized_",
         "atmosphere runtime should track whether an environment has been assigned");
-    cubey::tests::require_contains(
-        header, "std::uint32_t pending_face_updates_",
-        "atmosphere runtime should track queued incremental face updates");
-    cubey::tests::require_contains(
-        header, "AtmosphereReflectionProbeUpdateMode",
-        "atmosphere runtime should expose coherent and incremental probe update policies");
+    cubey::tests::require_contains(header, "void advance(double delta_seconds)",
+                                   "atmosphere runtime should own reflection cadence advancement");
     cubey::tests::require_contains(source, "return false",
                                    "atmosphere runtime should skip unchanged environment updates");
     cubey::tests::require_contains(
-        source, "pending_face_updates_ = 6U",
-        "atmosphere runtime should refresh every cube face after an environment change");
-    cubey::tests::require_contains(
-        source, "--pending_face_updates_",
-        "atmosphere runtime should drain one queued face update per recording call");
-    cubey::tests::require_contains(
-        source, "AtmosphereReflectionProbeUpdateMode::CoherentFull",
-        "atmosphere runtime should support atomically refreshing reflective environments");
+        source, "reflection_probe_.request_update()",
+        "atmosphere runtime should queue a coherent capture after an environment change");
+    cubey::tests::require_contains(source, "reflection_probe_.record_pending_update",
+                                   "atmosphere runtime should publish complete probe updates");
     cubey::tests::require_not_contains(
-        source, "time_dirty_",
-        "atmosphere runtime should not collapse an environment change into one dirty face");
+        source, "clouds_.invalidate()",
+        "time-of-day changes should not reset cloud environment interpolation");
+    cubey::tests::require_not_contains(
+        source, "record_face_update",
+        "atmosphere runtime should not expose partially updated cube faces");
 }

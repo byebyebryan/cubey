@@ -391,11 +391,14 @@ float ocean_ggx_reflected_radiance(vec3 normal, vec3 view_dir, vec3 light_dir,
 
 vec3 ocean_environment_reflection(vec3 direction, float roughness) {
     vec3 dir = ocean_above_horizon_reflection_direction(direction);
-    vec3 reflection =
+    float lod = clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD;
+    vec3 previous =
         textureLod(atmosphere_reflection_texture, dir,
-                   clamp(roughness, 0.0, 1.0) * OCEAN_ATMOSPHERE_REFLECTION_MAX_LOD)
+                   lod)
             .rgb;
-    return reflection;
+    vec3 current = textureLod(atmosphere_reflection_current_texture, dir, lod).rgb;
+    return mix(previous, current,
+               clamp(ocean_features.atmosphere_environment_options.x, 0.0, 1.0));
 }
 
 struct OceanCloudReflectionSample {

@@ -45,6 +45,7 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 cloud_shadow_world_to_uv_x;
     cubey::math::Vec4 cloud_shadow_world_to_uv_y;
     cubey::math::Vec4 cloud_lighting_options;
+    cubey::math::Vec4 atmosphere_environment_options;
     cubey::math::Vec4 cloud_environment_options;
     cubey::math::Vec4 cloud_planar_right_aspect;
     cubey::math::Vec4 cloud_planar_up_tan_half_fovy;
@@ -56,7 +57,7 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 moon_light_color;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 88U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 92U);
 
 class OceanGpuResources {
   public:
@@ -69,7 +70,9 @@ class OceanGpuResources {
     void create(const cubey::vulkan::Device& device, const OceanGpuResourceConfig& config);
     void reset();
     void update_atmosphere_probe_descriptors(const cubey::vulkan::Device& device,
-                                             const cubey::render::TextureCube& reflection_probe,
+                                             cubey::render::FrameSlot frame_slot,
+                                             const cubey::render::TextureCube& previous,
+                                             const cubey::render::TextureCube& current,
                                              const cubey::render::TextureCube& sky_radiance);
     void update_terrain_ocean_field_descriptor(const cubey::vulkan::Device& device,
                                                const cubey::render::Texture2D& fields);

@@ -15,14 +15,10 @@
 
 namespace cubey {
 
-enum class AtmosphereReflectionProbeUpdateMode {
-    IncrementalFaces,
-    CoherentFull,
-};
-
 struct AtmosphereEnvironmentRuntimeResourceConfig {
     std::uint32_t reflection_extent = 64;
     std::uint32_t reflection_mip_levels = 5;
+    float reflection_update_hz = 4.0F;
     VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
     std::uint32_t frame_slot_count = 1;
     render::AtmosphereBackgroundTextureBindings atmosphere_textures{};
@@ -69,10 +65,9 @@ class AtmosphereEnvironmentRuntime {
                           const AtmosphereEnvironmentRuntimePipelineConfig& config);
     void destroy();
 
-    bool set_environment(const render::AtmosphereEnvironmentConfig& environment,
-                         AtmosphereReflectionProbeUpdateMode update_mode =
-                             AtmosphereReflectionProbeUpdateMode::IncrementalFaces);
-    void mark_full_update_pending();
+    bool set_environment(const render::AtmosphereEnvironmentConfig& environment);
+    void advance(double delta_seconds);
+    void force_reflection_refresh();
     void record_pending_update(const cubey::vulkan::CommandRecorder& recorder,
                                render::FrameSlot frame_slot);
     void update_atmosphere_texture_bindings(
@@ -101,9 +96,6 @@ class AtmosphereEnvironmentRuntime {
     render::AtmosphereReflectionProbe reflection_probe_{};
     CloudEnvironmentRuntime clouds_{};
     bool environment_initialized_ = false;
-    bool full_update_pending_ = true;
-    std::uint32_t face_cursor_ = 0;
-    std::uint32_t pending_face_updates_ = 0;
 };
 
 } // namespace cubey

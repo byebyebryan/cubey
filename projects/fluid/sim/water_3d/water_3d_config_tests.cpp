@@ -841,8 +841,12 @@ int main() {
         require_contains(app, "environment.render_moon_disk = false",
                          "water 3D atmosphere background should suppress the inline moon disk");
         require_contains(app, "upload_moon_body", "water 3D should upload geometry moon uniforms");
-        require_contains(app, "mark_full_update_pending",
+        require_contains(app, "force_reflection_refresh",
                          "water 3D should keep atmosphere reflection updates coherent");
+        require_contains(app, "atmosphere_runtime_.advance",
+                         "water 3D should advance coherent atmosphere and cloud probes together");
+        require_not_contains(app, "clouds().advance",
+                             "water 3D should not own a separate cloud-probe cadence");
         require_contains(app, "record_pending_update",
                          "water 3D should refresh the atmosphere reflection probe before drawing");
         require_contains(ui, "draw_atmosphere_environment_controls",

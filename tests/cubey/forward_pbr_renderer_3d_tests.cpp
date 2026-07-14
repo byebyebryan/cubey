@@ -762,6 +762,8 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
     const std::string cmake = read_source_file(root / "cmake/CubeyShaders.cmake");
     const std::string gltf_assets =
         read_source_file(root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
+    const std::string gltf_app =
+        read_source_file(root / "projects/gltf_viewer/gltf_viewer_app.cpp");
     const std::string gltf_render =
         read_source_file(root / "projects/gltf_viewer/gltf_viewer_render.cpp");
     const std::string gltf_scene =
@@ -834,6 +836,10 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "glTF viewer should create the shared atmosphere environment runtime");
     require_contains(gltf_assets, "pbr_environment_bindings",
                      "glTF viewer should feed explicit PBR environment bindings");
+    require_contains(gltf_app, "atmosphere_runtime_.advance",
+                     "glTF viewer should advance coherent atmosphere and cloud probes together");
+    require_not_contains(gltf_app, "clouds().advance",
+                         "glTF viewer should not own a separate cloud-probe cadence");
     require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "glTF viewer should select the procedural atmosphere background");
     require_contains(gltf_render, "record_atmosphere_environment_if_needed",

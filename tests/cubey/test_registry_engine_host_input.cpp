@@ -9,12 +9,14 @@ void test_capture_queue_video_encoder_rejects_dimension_mismatch();
 void test_capture_queue_video_encoder_propagates_worker_errors();
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment();
 void test_atmosphere_environment_runtime_reports_changed_environment();
+void test_atmosphere_reflection_probe_timeline_publishes_coherent_captures();
+void test_atmosphere_reflection_probe_timeline_is_change_driven();
 void test_atmosphere_environment_runtime_builds_frame_payload();
 void test_atmosphere_environment_runtime_builds_celestial_frame_payload();
 void test_cloud_environment_runtime_builds_coherent_surface_frame();
 void test_atmosphere_environment_runtime_owns_optional_cloud_foundation();
 void test_atmosphere_environment_runtime_requires_resources_before_bindings();
-void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change();
+void test_atmosphere_environment_runtime_publishes_coherent_probe_updates();
 void test_engine_attaches_gpu_services_to_project_context();
 void test_engine_created_scenes_validate_render_resource_handles();
 void test_engine_creates_independent_scenes();
@@ -108,12 +110,14 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_atmosphere_environment_run_state_resolves_control_mutations),
         CUBEY_TEST(test_atmosphere_environment_runtime_derives_lighting_and_scene_environment),
         CUBEY_TEST(test_atmosphere_environment_runtime_reports_changed_environment),
+        CUBEY_TEST(test_atmosphere_reflection_probe_timeline_publishes_coherent_captures),
+        CUBEY_TEST(test_atmosphere_reflection_probe_timeline_is_change_driven),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_frame_payload),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_celestial_frame_payload),
         CUBEY_TEST(test_cloud_environment_runtime_builds_coherent_surface_frame),
         CUBEY_TEST(test_atmosphere_environment_runtime_owns_optional_cloud_foundation),
         CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
-        CUBEY_TEST(test_atmosphere_environment_runtime_queues_all_faces_after_environment_change),
+        CUBEY_TEST(test_atmosphere_environment_runtime_publishes_coherent_probe_updates),
         CUBEY_TEST(test_engine_exposes_project_runtime_services),
         CUBEY_TEST(test_engine_attaches_gpu_services_to_project_context),
         CUBEY_TEST(test_engine_reuses_project_frame_for_same_timing),

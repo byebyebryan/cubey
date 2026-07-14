@@ -218,9 +218,7 @@ int GltfViewerApp::run_windowed() {
         if (update_atmosphere_time(timing.delta_seconds)) {
             refresh_atmosphere_lighting_scene();
         }
-        if (clouds_config_.enabled && atmosphere_runtime_.clouds().resources_created()) {
-            atmosphere_runtime_.clouds().advance(timing.delta_seconds);
-        }
+        atmosphere_runtime_.advance(timing.delta_seconds);
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::D)) {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
@@ -285,9 +283,7 @@ int GltfViewerApp::run_headless() {
             if (update_atmosphere_time(frame.timing.delta_seconds)) {
                 refresh_atmosphere_lighting_scene();
             }
-            if (clouds_config_.enabled && atmosphere_runtime_.clouds().resources_created()) {
-                atmosphere_runtime_.clouds().advance(frame.timing.delta_seconds);
-            }
+            atmosphere_runtime_.advance(frame.timing.delta_seconds);
             orbit_controller_.update(frame.timing.delta_seconds);
             update_camera_transform();
         };

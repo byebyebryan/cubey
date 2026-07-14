@@ -202,9 +202,8 @@ class Water3DApp {
 
         update_camera_input(context, project_frame.delta_seconds);
         update_atmosphere_time(project_frame.delta_seconds);
-        if (use_atmosphere_environment_source() && clouds_config_.enabled &&
-            atmosphere_runtime_.clouds().resources_created()) {
-            atmosphere_runtime_.clouds().advance(project_frame.delta_seconds);
+        if (use_atmosphere_environment_source()) {
+            atmosphere_runtime_.advance(project_frame.delta_seconds);
         }
     }
 
@@ -575,7 +574,7 @@ class Water3DApp {
                     .reflection_prefilter_fragment_shader =
                         shader_dir / "atmosphere_reflection_prefilter.frag.spv",
                 });
-            atmosphere_runtime_.mark_full_update_pending();
+            atmosphere_runtime_.force_reflection_refresh();
         }
         atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     }
@@ -741,9 +740,8 @@ class Water3DApp {
                                           const ProjectFrame& frame,
                                           cubey::profiling::ProfileRecorder* profile_recorder) {
         update_atmosphere_time(frame.delta_seconds);
-        if (use_atmosphere_environment_source() && clouds_config_.enabled &&
-            atmosphere_runtime_.clouds().resources_created()) {
-            atmosphere_runtime_.clouds().advance(frame.delta_seconds);
+        if (use_atmosphere_environment_source()) {
+            atmosphere_runtime_.advance(frame.delta_seconds);
         }
         const std::uint64_t frame_index = profile_frame_index(frame);
         static_cast<void>(gpu.submit_and_wait({

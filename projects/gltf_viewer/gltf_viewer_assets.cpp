@@ -183,7 +183,7 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
                     .reflection_prefilter_fragment_shader =
                         shader_path("atmosphere_reflection_prefilter.frag.spv"),
                 });
-    atmosphere_runtime_.mark_full_update_pending();
+    atmosphere_runtime_.force_reflection_refresh();
 }
 
 void GltfViewerApp::create_cloud_environment_runtime(const cubey::vulkan::Device& device,

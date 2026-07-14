@@ -95,11 +95,11 @@ void AtmosphereEnvironmentRuntime::create_resources(
                                        render::AtmosphereReflectionProbeConfig{
                                            .extent = config.reflection_extent,
                                            .mip_levels = config.reflection_mip_levels,
+                                           .update_hz = config.reflection_update_hz,
                                            .format = config.format,
                                            .frame_slot_count = config.frame_slot_count,
                                            .atmosphere_textures = config.atmosphere_textures,
                                        });
-    mark_full_update_pending();
 }
 
 void AtmosphereEnvironmentRuntime::create_pipelines(
@@ -116,12 +116,11 @@ void AtmosphereEnvironmentRuntime::create_pipelines(
 void AtmosphereEnvironmentRuntime::destroy() {
     clouds_.destroy();
     reflection_probe_.destroy();
-    mark_full_update_pending();
+    environment_initialized_ = false;
 }
 
 bool AtmosphereEnvironmentRuntime::set_environment(
-    const render::AtmosphereEnvironmentConfig& environment,
-    AtmosphereReflectionProbeUpdateMode update_mode) {
+    const render::AtmosphereEnvironmentConfig& environment) {
     if (environment_initialized_ && environment_equal(environment_, environment)) {
         return false;
     }
@@ -129,19 +128,19 @@ bool AtmosphereEnvironmentRuntime::set_environment(
     environment_ = environment;
     environment_initialized_ = true;
     refresh_lighting();
-    clouds_.invalidate();
-    if (update_mode == AtmosphereReflectionProbeUpdateMode::CoherentFull) {
-        mark_full_update_pending();
-    } else if (!full_update_pending_) {
-        pending_face_updates_ = 6U;
+    if (resources_created()) {
+        reflection_probe_.request_update();
     }
     return true;
 }
 
-void AtmosphereEnvironmentRuntime::mark_full_update_pending() {
-    full_update_pending_ = true;
-    face_cursor_ = 0;
-    pending_face_updates_ = 0;
+void AtmosphereEnvironmentRuntime::advance(double delta_seconds) {
+    reflection_probe_.advance(delta_seconds);
+    clouds_.advance(delta_seconds);
+}
+
+void AtmosphereEnvironmentRuntime::force_reflection_refresh() {
+    reflection_probe_.invalidate();
 }
 
 void AtmosphereEnvironmentRuntime::record_pending_update(
@@ -154,18 +153,7 @@ void AtmosphereEnvironmentRuntime::record_pending_update(
         .frame_slot = frame_slot,
         .environment = environment_,
     };
-    if (full_update_pending_) {
-        reflection_probe_.record_full_update(recorder, update);
-        full_update_pending_ = false;
-        face_cursor_ = 0;
-        pending_face_updates_ = 0;
-        return;
-    }
-    if (pending_face_updates_ > 0) {
-        reflection_probe_.record_face_update(recorder, update, face_cursor_);
-        face_cursor_ = (face_cursor_ + 1U) % 6U;
-        --pending_face_updates_;
-    }
+    (void)reflection_probe_.record_pending_update(recorder, update);
 }
 
 void AtmosphereEnvironmentRuntime::update_atmosphere_texture_bindings(
@@ -233,13 +221,15 @@ render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environm
 
     render::PbrEnvironmentTextureBindings bindings =
         render::pbr_environment_texture_bindings(fallback);
-    const render::TextureCube& prefiltered = reflection_probe_.prefiltered_cube();
-    bindings.prefiltered_sampler = prefiltered.sampler().handle();
-    bindings.prefiltered_view = prefiltered.view();
-    bindings.previous_prefiltered_sampler = prefiltered.sampler().handle();
-    bindings.previous_prefiltered_view = prefiltered.view();
-    bindings.prefiltered_mip_levels = reflection_probe_.mip_levels();
-    bindings.prefiltered_blend = 1.0F;
+    const render::AtmosphereReflectionProbeSnapshot atmosphere = reflection_probe_.snapshot();
+    if (atmosphere.valid) {
+        bindings.prefiltered_sampler = atmosphere.current->sampler().handle();
+        bindings.prefiltered_view = atmosphere.current->view();
+        bindings.previous_prefiltered_sampler = atmosphere.previous->sampler().handle();
+        bindings.previous_prefiltered_view = atmosphere.previous->view();
+        bindings.prefiltered_mip_levels = atmosphere.current->mip_levels();
+        bindings.prefiltered_blend = atmosphere.blend;
+    }
     if (clouds_.resources_created()) {
         return clouds_.pbr_environment_bindings(bindings);
     }
