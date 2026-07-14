@@ -89,6 +89,11 @@ struct ForwardPbrRenderer3D::Impl {
     struct CompiledGraph {
         render::CompiledRenderGraph graph;
         render::RenderGraphTextureHandle scene_color;
+        render::RenderGraphTextureHandle post_scene_color;
+        render::RenderGraphTextureHandle scene_depth;
+        render::RenderGraphTextureHandle cloud_scene_color;
+        render::CloudLayerRuntimeFrame cloud;
+        bool clouds_enabled = false;
     };
     enum class ForwardPbrPipelineVariant : std::uint8_t {
         Opaque,
@@ -111,7 +116,8 @@ struct ForwardPbrRenderer3D::Impl {
                          const render::FrameMeshResourceTable* frame_meshes,
                          std::span<const render::GpuDeformationCommand> deformation_commands,
                          const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
-                         ForwardPbrRenderer3DBackgroundMode background_mode);
+                         ForwardPbrRenderer3DBackgroundMode background_mode,
+                         const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,

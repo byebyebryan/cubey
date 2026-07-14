@@ -6,24 +6,32 @@
 namespace cubey::projects::gltf_viewer {
 
 void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
-                                           VkFormat color_format) {
+                                           VkFormat color_format, std::uint32_t frame_slot_count) {
     forward_pbr_renderer().create_swapchain_resources(
         device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                     .extent = extent,
                     .color_format = color_format,
                     .materials = &import_resources_.materials,
                 });
+    if (use_atmosphere_environment_source()) {
+        atmosphere_runtime_.clouds().create_surface_target_resources(
+            device,
+            cubey::render::cloud_layer_runtime_shader_files(
+                CUBEY_GLTF_VIEWER_SHADER_DIR,
+                cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth),
+            cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
+            VK_FORMAT_R16G16B16A16_SFLOAT, extent, frame_slot_count);
+    }
 }
 
 void GltfViewerApp::destroy_swapchain_resources() {
+    atmosphere_runtime_.clouds().destroy_surface_target_resources();
     engine_.renderers().destroy_swapchain_resources();
 }
 
 void GltfViewerApp::destroy_all_resources() {
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
-    cloud_environment_runtime_.destroy();
-    cloud_generated_runtime_.destroy_generated_resources();
     atmosphere_runtime_.destroy();
     ibl_environment_.reset();
     atmosphere_background_atlases_.reset();
@@ -68,9 +76,22 @@ void GltfViewerApp::record_viewer_target(
         cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =
         deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
+    std::optional<cubey::CloudEnvironmentRuntimeFrame> cloud_frame;
+    if (use_atmosphere_environment_source() && clouds_config_.enabled) {
+        cloud_frame = cloud_environment_frame(scene_view, color_target.extent);
+    }
     record_atmosphere_environment_if_needed(recorder, frame_slot);
-    record_cloud_environment_if_needed(recorder, frame_slot);
+    if (cloud_frame.has_value()) {
+        record_cloud_environment_if_needed(recorder, frame_slot, cloud_frame.value());
+    }
     forward_pbr_renderer().update_environment(device, frame_slot, pbr_environment_bindings());
+    std::optional<cubey::ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds;
+    if (cloud_frame.has_value()) {
+        atmosphere_clouds = cubey::ForwardPbrRenderer3DAtmosphereClouds{
+            .runtime = &atmosphere_runtime_.clouds(),
+            .frame = cloud_frame.value(),
+        };
+    }
     forward_pbr_renderer().record({
         .device = &device,
         .command_buffer = command_buffer,
@@ -100,6 +121,7 @@ void GltfViewerApp::record_viewer_target(
                 .background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere,
                 .atmosphere_background =
                     atmosphere_background_uniforms(scene_view, color_target.extent),
+                .atmosphere_clouds = atmosphere_clouds,
             },
     });
     if (owns_command_buffer) {
@@ -127,21 +149,13 @@ void GltfViewerApp::record_atmosphere_environment_if_needed(
 }
 
 void GltfViewerApp::record_cloud_environment_if_needed(
-    const cubey::vulkan::CommandRecorder& recorder, cubey::render::FrameSlot frame_slot) {
-    if (!use_atmosphere_environment_source() || !clouds_config_.enabled) {
-        return;
-    }
-    if (!cloud_environment_runtime_.resources_created() ||
-        !cloud_environment_runtime_.pipelines_created()) {
+    const cubey::vulkan::CommandRecorder& recorder, cubey::render::FrameSlot frame_slot,
+    const cubey::CloudEnvironmentRuntimeFrame& frame) {
+    cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
+    if (!clouds.resources_created() || !clouds.pipelines_created()) {
         throw std::runtime_error("glTF viewer cloud environment runtime is not initialized");
     }
-    static_cast<void>(cloud_environment_runtime_.record_pending_update(
-        recorder,
-        cubey::render::CloudEnvironmentProbeUpdateInfo{
-            .frame_slot = frame_slot,
-            .cloud = cloud_layer_config(),
-            .frame = cloud_layer_frame_info(),
-        }));
+    static_cast<void>(clouds.record_pending_update(recorder, frame_slot, frame));
 }
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,

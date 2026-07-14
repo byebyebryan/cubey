@@ -53,14 +53,12 @@ gltf_viewer_atmosphere_run_state(const RunConfig& run_config) {
         {
             .sun_elevation_degrees = direction_elevation_degrees(kLightDirection),
             .sun_azimuth_degrees = direction_azimuth_degrees(kLightDirection),
-            .ground_mode =
-                cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
 }
 
-[[nodiscard]] cubey::CloudEnvironmentConfig
-gltf_viewer_cloud_config(const RunConfig& run_config) {
+[[nodiscard]] cubey::CloudEnvironmentConfig gltf_viewer_cloud_config(const RunConfig& run_config) {
     cubey::CloudEnvironmentConfig clouds{};
     cubey::apply_cloud_environment_run_config(clouds, run_config.clouds);
     clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
@@ -152,23 +150,21 @@ bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
 
 void GltfViewerApp::refresh_atmosphere_controls() {
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
-    cloud_environment_runtime_.invalidate();
     refresh_atmosphere_lighting_scene();
 }
 
 void GltfViewerApp::refresh_cloud_controls(cubey::host::WindowedAppContext& context) {
-    if (!use_atmosphere_environment_source() ||
-        !cloud_environment_runtime_.resources_created()) {
+    cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
+    if (!use_atmosphere_environment_source() || !clouds.surface_resources_created()) {
         return;
     }
-    cloud_generated_runtime_.update_weather_texture(
-        context.device(), context.gpu(),
+    clouds.set_config(cloud_environment_config());
+    const cubey::render::CloudLayerRuntimeShaderFiles shaders =
         cubey::render::cloud_layer_runtime_shader_files(
             CUBEY_GLTF_VIEWER_SHADER_DIR,
-            cubey::render::CloudLayerCompositeMode::ExternalBackground)
-            .generated.weather,
-        cloud_layer_config());
-    cloud_environment_runtime_.invalidate();
+            cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
+    clouds.update_weather_texture(context.device(), context.gpu(), shaders.generated.weather);
+    clouds.invalidate();
 }
 
 void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
@@ -188,8 +184,10 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
             clouds_config_,
             {.label = "Cloud Environment",
              .default_open = false,
-             .help = "Shared surface-cloud field cached into the PBR environment.",
-             .enabled_help = "Include clouds in PBR environment reflections."})) {
+             .help = "Shared surface clouds composed into the procedural sky and cached for PBR "
+                     "reflections.",
+             .enabled_help = "Render direct clouds with scene-depth occlusion and include them in "
+                             "PBR environment reflections."})) {
         refresh_cloud_controls(context);
     }
 
@@ -209,7 +207,7 @@ int GltfViewerApp::run_windowed() {
         create_global_resources_if_needed(context.device(), context.gpu(),
                                           context.frame_slot_count());
         create_frame_resources(context.device(), context.swapchain().extent(),
-                               context.swapchain().format());
+                               context.swapchain().format(), context.frame_slot_count());
     };
     callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
         (void)context;
@@ -220,9 +218,8 @@ int GltfViewerApp::run_windowed() {
         if (update_atmosphere_time(timing.delta_seconds)) {
             refresh_atmosphere_lighting_scene();
         }
-        if (clouds_config_.enabled && cloud_environment_runtime_.resources_created()) {
-            cloud_elapsed_seconds_ += timing.delta_seconds;
-            cloud_environment_runtime_.advance(timing.delta_seconds);
+        if (clouds_config_.enabled && atmosphere_runtime_.clouds().resources_created()) {
+            atmosphere_runtime_.clouds().advance(timing.delta_seconds);
         }
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::D)) {
@@ -277,7 +274,8 @@ int GltfViewerApp::run_headless() {
         create_global_resources_if_needed(context.device(), context.gpu(),
                                           cubey::host::headless_capture_frame_slot_count(config_));
         create_frame_resources(context.device(), context.render_target().extent,
-                               context.render_target().format);
+                               context.render_target().format,
+                               cubey::host::headless_capture_frame_slot_count(config_));
     };
     if (config_.capture_mode == CaptureMode::Video) {
         orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
@@ -287,9 +285,8 @@ int GltfViewerApp::run_headless() {
             if (update_atmosphere_time(frame.timing.delta_seconds)) {
                 refresh_atmosphere_lighting_scene();
             }
-            if (clouds_config_.enabled && cloud_environment_runtime_.resources_created()) {
-                cloud_elapsed_seconds_ += frame.timing.delta_seconds;
-                cloud_environment_runtime_.advance(frame.timing.delta_seconds);
+            if (clouds_config_.enabled && atmosphere_runtime_.clouds().resources_created()) {
+                atmosphere_runtime_.clouds().advance(frame.timing.delta_seconds);
             }
             orbit_controller_.update(frame.timing.delta_seconds);
             update_camera_transform();

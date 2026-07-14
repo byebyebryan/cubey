@@ -99,6 +99,7 @@ render::CloudLayerRuntimeFrame
 CloudEnvironmentRuntime::declare_surface_product(render::RenderGraphBuilder& graph,
                                                  render::FrameSlot frame_slot,
                                                  const CloudEnvironmentRuntimeFrame& frame) const {
+    surface_.upload_frame_uniforms(frame_slot, frame.uniforms);
     return surface_.declare_product(graph, frame.view.target_extent, frame.layer, frame_slot,
                                     frame.uniforms);
 }

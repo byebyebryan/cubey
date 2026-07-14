@@ -362,6 +362,8 @@ void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering() {
                      "forward PBR swapchain creation should require global resources first");
     require_contains(resources, "require_no_swapchain_resources();",
                      "forward PBR swapchain creation should reject duplicate create calls");
+    require_contains(resources, "depth_attachment.emplace(device, info.extent, true)",
+                     "forward PBR scene depth should support atmosphere cloud sampling");
     require_contains(graph, "require_swapchain_resources();",
                      "forward PBR record should require swapchain resources before recording");
 }
@@ -412,6 +414,24 @@ void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_background
 
     request.settings.atmosphere_background.emplace();
     cubey::validate_forward_pbr_renderer_3d_render_request(request);
+}
+
+void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_clouds() {
+    cubey::CloudEnvironmentRuntime clouds;
+    cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
+    request.settings.atmosphere_clouds = cubey::ForwardPbrRenderer3DAtmosphereClouds{
+        .runtime = &clouds,
+    };
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR atmosphere clouds should require the atmosphere background");
+
+    request.settings.background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere;
+    request.settings.atmosphere_background.emplace();
+    cubey::validate_forward_pbr_renderer_3d_render_request(request);
+
+    request.settings.atmosphere_clouds->runtime = nullptr;
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR atmosphere clouds should require a runtime");
 }
 
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
@@ -474,6 +494,8 @@ void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform() 
             "forward PBR renderer settings should default to the IBL skybox background");
     require(!settings.atmosphere_background.has_value(),
             "forward PBR renderer settings should not carry atmosphere uniforms by default");
+    require(!settings.atmosphere_clouds.has_value(),
+            "forward PBR renderer settings should not enable atmosphere clouds by default");
 }
 
 void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback() {
@@ -783,6 +805,16 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR skybox should crossfade environment generations coherently");
     require_contains(graph, "settings.atmosphere_background.value()",
                      "forward PBR record path should upload per-frame atmosphere uniforms");
+    require_contains(header, "ForwardPbrRenderer3DAtmosphereClouds",
+                     "forward PBR settings should accept a shared atmosphere cloud frame");
+    require_contains(graph, "declare_surface_product",
+                     "forward PBR graph should declare the shared cloud march product");
+    require_contains(graph, "declare_surface_composite",
+                     "forward PBR graph should composite clouds over the atmosphere scene");
+    require_contains(graph, "render_graph.scene_depth",
+                     "forward PBR clouds should resolve descriptors against scene depth");
+    require_contains(graph, ".read_texture(post_scene_color)",
+                     "forward PBR post should consume the cloud-composited scene color");
     require_contains(recording, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
                      "forward PBR scene pass should branch to the atmosphere background");
     require_contains(cmake, "shaders/cubey/atmosphere/atmosphere.frag",
@@ -806,6 +838,8 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "glTF viewer should select the procedural atmosphere background");
     require_contains(gltf_render, "record_atmosphere_environment_if_needed",
                      "glTF viewer should update the atmosphere runtime before PBR recording");
+    require_contains(gltf_render, ".atmosphere_clouds = atmosphere_clouds",
+                     "glTF viewer should compose shared clouds into the visible atmosphere");
     require_contains(gltf_scene, "atmosphere_runtime_",
                      "glTF viewer should derive atmosphere background uniforms from the runtime");
     require_contains(gltf_scene, ".frame({",

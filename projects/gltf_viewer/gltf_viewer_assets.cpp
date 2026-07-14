@@ -158,13 +158,7 @@ cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bind
     if (!use_atmosphere_environment_source()) {
         return cubey::render::pbr_environment_texture_bindings(ibl_environment());
     }
-
-    const cubey::render::PbrEnvironmentTextureBindings clear_sky =
-        atmosphere_runtime_.pbr_environment_bindings(ibl_environment());
-    if (!clouds_config_.enabled) {
-        return clear_sky;
-    }
-    return cloud_environment_runtime_.pbr_environment_bindings(clear_sky);
+    return atmosphere_runtime_.pbr_environment_bindings(ibl_environment());
 }
 
 void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::Device& device,
@@ -195,35 +189,33 @@ void GltfViewerApp::create_atmosphere_environment_runtime(const cubey::vulkan::D
 void GltfViewerApp::create_cloud_environment_runtime(const cubey::vulkan::Device& device,
                                                      cubey::vulkan::GpuRuntime& gpu,
                                                      std::uint32_t frame_slot_count) {
-    if (cloud_environment_runtime_.resources_created()) {
+    cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
+    if (clouds.resources_created()) {
         return;
     }
     const cubey::render::CloudLayerRuntimeShaderFiles shaders =
         cubey::render::cloud_layer_runtime_shader_files(
             CUBEY_GLTF_VIEWER_SHADER_DIR,
-            cubey::render::CloudLayerCompositeMode::ExternalBackground);
-    cloud_generated_runtime_.create_generated_resources(device, gpu, shaders.generated,
-                                                        cloud_layer_config());
-    cloud_environment_runtime_.create_resources(
-        device,
-        cubey::render::CloudEnvironmentProbeConfig{
-            .extent = 64,
-            .mip_levels = 5,
-            .view_steps = 32,
-            .update_hz = 4.0F,
-            .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-            .frame_slot_count = frame_slot_count,
-        },
-        cloud_generated_runtime_.generated_resources(),
-        atmosphere_runtime_.reflection_probe().sky_radiance_cube());
-    cloud_environment_runtime_.create_pipelines(
-        device,
-        cubey::render::CloudEnvironmentProbePipelineConfig{
-            .cloud_march = shaders.surface_march,
-            .prefilter_vertex = cubey::render::vertex_shader_file(shader_path("atmosphere.vert.spv")),
-            .prefilter_fragment = cubey::render::fragment_shader_file(
-                shader_path("cloud_environment_prefilter.frag.spv")),
-        });
+            cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
+    clouds.create_surface_resources(device, gpu, shaders.generated, cloud_environment_config());
+    clouds.create_resources(device,
+                            cubey::render::CloudEnvironmentProbeConfig{
+                                .extent = 64,
+                                .mip_levels = 5,
+                                .view_steps = 32,
+                                .update_hz = 4.0F,
+                                .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                .frame_slot_count = frame_slot_count,
+                            },
+                            clouds.generated_resources(),
+                            atmosphere_runtime_.reflection_probe().sky_radiance_cube());
+    clouds.create_pipelines(device, cubey::render::CloudEnvironmentProbePipelineConfig{
+                                        .cloud_march = shaders.surface_march,
+                                        .prefilter_vertex = cubey::render::vertex_shader_file(
+                                            shader_path("atmosphere.vert.spv")),
+                                        .prefilter_fragment = cubey::render::fragment_shader_file(
+                                            shader_path("cloud_environment_prefilter.frag.spv")),
+                                    });
 }
 
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,

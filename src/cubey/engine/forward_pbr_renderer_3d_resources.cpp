@@ -250,7 +250,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     require_no_swapchain_resources();
     validate_scene_color_format(device, config_.scene_color_format);
 
-    swapchain_.depth_attachment.emplace(device, info.extent);
+    swapchain_.depth_attachment.emplace(device, info.extent, true);
     swapchain_.post_sampler.emplace(device,
                                     vulkan::SamplerConfig{
                                         .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,

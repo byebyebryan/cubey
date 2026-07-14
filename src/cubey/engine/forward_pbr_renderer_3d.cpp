@@ -110,6 +110,15 @@ void validate_forward_pbr_renderer_3d_render_request(
         throw std::runtime_error(
             "forward PBR atmosphere background requires atmosphere frame uniforms");
     }
+    if (request.settings.atmosphere_clouds.has_value()) {
+        if (request.settings.background_mode != ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
+            throw std::runtime_error(
+                "forward PBR atmosphere clouds require the atmosphere background");
+        }
+        if (request.settings.atmosphere_clouds->runtime == nullptr) {
+            throw std::runtime_error("forward PBR atmosphere clouds require a runtime");
+        }
+    }
 }
 
 ForwardPbrRenderer3DFramePlans

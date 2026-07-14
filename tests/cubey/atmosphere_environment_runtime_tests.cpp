@@ -354,6 +354,13 @@ void test_atmosphere_environment_runtime_owns_optional_cloud_foundation() {
     const cubey::CloudEnvironmentRuntimeFrame frame = cubey::cloud_environment_runtime_frame(
         disabled, 0.0, runtime.lighting(), cubey::CloudEnvironmentSurfaceViewInfo{});
     require(!frame.enabled, "disabled shared clouds should produce a disabled surface frame");
+
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string source = cubey::tests::read_source_file(
+        source_root / "src/cubey/engine/cloud_environment_runtime.cpp");
+    cubey::tests::require_contains(
+        source, "surface_.upload_frame_uniforms(frame_slot, frame.uniforms)",
+        "shared cloud product declaration should upload its coherent frame uniforms");
 }
 
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {

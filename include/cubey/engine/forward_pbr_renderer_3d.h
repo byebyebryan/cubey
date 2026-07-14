@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/deformation.h>
@@ -121,6 +122,11 @@ enum class ForwardPbrRenderer3DBackgroundMode : std::uint8_t {
     Atmosphere,
 };
 
+struct ForwardPbrRenderer3DAtmosphereClouds {
+    CloudEnvironmentRuntime* runtime = nullptr;
+    CloudEnvironmentRuntimeFrame frame{};
+};
+
 struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
@@ -129,6 +135,7 @@ struct ForwardPbrRenderer3DSettings {
     ForwardPbrRenderer3DBackgroundMode background_mode =
         ForwardPbrRenderer3DBackgroundMode::IblSkybox;
     std::optional<render::AtmosphereEnvironmentFrameUniforms> atmosphere_background{};
+    std::optional<ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds{};
 };
 
 struct ForwardPbrRenderer3DRenderRequest {
