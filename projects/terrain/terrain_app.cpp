@@ -491,28 +491,31 @@ class TerrainApp {
                                     VkFormat color_format, std::uint32_t frame_slot_count) {
         const bool quality = runtime_config_.render_path == TerrainRenderPath::Quality;
         const bool layered = runtime_config_.surface_detail == TerrainSurfaceDetail::Layered;
-        const bool hierarchical_source =
-            runtime_config_.source.version == TerrainSourceVersion::V3;
-        const auto source_shader_path = [hierarchical_source](const char* filename) {
-            return shader_path(hierarchical_source
-                                   ? std::filesystem::path("v3") / filename
-                                   : std::filesystem::path(filename));
+        std::filesystem::path source_shader_directory;
+        if (runtime_config_.source.version == TerrainSourceVersion::V3) {
+            source_shader_directory = "v3";
+        } else if (runtime_config_.source.version == TerrainSourceVersion::V2_1) {
+            source_shader_directory = "v2-1";
+        }
+        const auto source_shader_path = [&source_shader_directory](const char* filename) {
+            return shader_path(source_shader_directory.empty()
+                                   ? std::filesystem::path(filename)
+                                   : source_shader_directory / filename);
         };
         std::vector<cubey::render::ShaderStageFile> terrain_shaders;
         terrain_shaders.reserve(quality ? 4U : 2U);
-        terrain_shaders.push_back(cubey::render::vertex_shader_file(
-            quality ? shader_path("terrain_quality.vert.spv")
-                    : source_shader_path("terrain.vert.spv")));
+        terrain_shaders.push_back(
+            cubey::render::vertex_shader_file(quality ? shader_path("terrain_quality.vert.spv")
+                                                      : source_shader_path("terrain.vert.spv")));
         if (quality) {
             terrain_shaders.push_back(cubey::render::tessellation_control_shader_file(
                 source_shader_path("terrain_quality.tesc.spv")));
             terrain_shaders.push_back(cubey::render::tessellation_evaluation_shader_file(
                 source_shader_path("terrain_quality.tese.spv")));
         }
-        terrain_shaders.push_back(cubey::render::fragment_shader_file(
-            source_shader_path(layered ? "terrain_layered.frag.spv"
-                                       : (quality ? "terrain_quality.frag.spv"
-                                                  : "terrain.frag.spv"))));
+        terrain_shaders.push_back(cubey::render::fragment_shader_file(source_shader_path(
+            layered ? "terrain_layered.frag.spv"
+                    : (quality ? "terrain_quality.frag.spv" : "terrain.frag.spv"))));
         const cubey::render::VertexInputLayout vertex_input =
             cubey::render::vertex_position_color_normal_input_layout();
         std::vector<VkDescriptorSetLayout> terrain_descriptor_set_layouts{

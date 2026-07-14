@@ -4,7 +4,7 @@
 #include "cubey/procedural/fastnoise_lite.glsl"
 #include "cubey/procedural/noise.glsl"
 
-// 0 compiles the legacy source, 1 compiles v3, and 2 keeps runtime dispatch for parity tests.
+// 0 compiles legacy v1/v2, 1 compiles v3, 2 keeps parity dispatch, and 3 compiles v2.1.
 #ifndef CUBEY_TERRAIN_SOURCE_VARIANT
 #define CUBEY_TERRAIN_SOURCE_VARIANT 2
 #endif
@@ -18,11 +18,13 @@ struct TerrainSourceGpuParameters {
     TerrainSourceGpuBandParameters macro;
     TerrainSourceGpuBandParameters structure;
     TerrainSourceGpuBandParameters detail;
-    vec4 v2_1_composition;
     vec4 composition;
     vec4 elevation;
     vec4 weathering;
 #if CUBEY_TERRAIN_SOURCE_VARIANT != 0
+    vec4 v2_1_composition;
+#endif
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 1 || CUBEY_TERRAIN_SOURCE_VARIANT == 2
     TerrainSourceGpuBandParameters v3_warp;
     TerrainSourceGpuBandParameters v3_range;
     TerrainSourceGpuBandParameters v3_massif;
@@ -36,7 +38,7 @@ struct TerrainSourceGpuParameters {
 #endif
 };
 
-#if CUBEY_TERRAIN_SOURCE_VARIANT != 0
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 1 || CUBEY_TERRAIN_SOURCE_VARIANT == 2
 struct TerrainSourceComponents {
     float range_support;
     float massif_height_m;
@@ -67,7 +69,7 @@ float terrain_source_octave_footprint_weight(float frequency, float footprint_m)
     return 1.0 - smoothstep(wavelength_m * 0.25, wavelength_m * 0.5, footprint_m);
 }
 
-#if CUBEY_TERRAIN_SOURCE_VARIANT != 1
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 0
 float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
         float footprint_m) {
     fnl_state noise = fnlCreateState(band.control.x);
@@ -106,8 +108,8 @@ float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
     }
     return weight > 0.0 ? value / weight : 0.5;
 }
-
-vec2 terrain_source_band_split(TerrainSourceGpuBandParameters band, vec2 world_xz,
+#elif CUBEY_TERRAIN_SOURCE_VARIANT == 2 || CUBEY_TERRAIN_SOURCE_VARIANT == 3
+vec2 terrain_source_band_sample(TerrainSourceGpuBandParameters band, vec2 world_xz,
         float footprint_m, int core_octaves) {
     fnl_state noise = fnlCreateState(band.control.x);
     noise.frequency = 1.0;
@@ -150,9 +152,14 @@ vec2 terrain_source_band_split(TerrainSourceGpuBandParameters band, vec2 world_x
     }
     return weight > 0.0 ? vec2(value, fine_delta) / weight : vec2(0.5, 0.0);
 }
+
+float terrain_source_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
+        float footprint_m) {
+    return terrain_source_band_sample(band, world_xz, footprint_m, band.control.y).x;
+}
 #endif
 
-#if CUBEY_TERRAIN_SOURCE_VARIANT != 0
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 1 || CUBEY_TERRAIN_SOURCE_VARIANT == 2
 float terrain_source_v3_signed_band(TerrainSourceGpuBandParameters band, vec2 world_xz,
         float footprint_m) {
     vec2 octave_position = vec2(0.8 * world_xz.x - 0.6 * world_xz.y,
@@ -232,20 +239,36 @@ TerrainSourceComponents terrain_source_v3_components(TerrainSourceGpuParameters 
 
 float terrain_source_base_height(TerrainSourceGpuParameters parameters, vec2 world_xz,
         float footprint_m) {
-#if CUBEY_TERRAIN_SOURCE_VARIANT == 1
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 0
+    float macro_value = terrain_source_band(parameters.macro, world_xz, footprint_m);
+    float structure_value = terrain_source_band(parameters.structure, world_xz, footprint_m);
+    float detail_value = terrain_source_band(parameters.detail, world_xz, footprint_m);
+    float mass = smoothstep(0.18, 0.82, macro_value);
+    float structured = structure_value * (0.30 + 0.70 * mass);
+    float local_detail = (detail_value - 0.5) * (0.15 + 0.85 * mass);
+    float composed = clamp(parameters.composition.x * macro_value +
+        parameters.composition.y * structured + parameters.composition.z * local_detail +
+        parameters.composition.w, 0.0, 1.0);
+    return parameters.elevation.x +
+        parameters.elevation.y * pow(composed, parameters.elevation.z);
+#elif CUBEY_TERRAIN_SOURCE_VARIANT == 1
     return terrain_source_v3_components(parameters, world_xz, footprint_m).base_height_m;
-#elif CUBEY_TERRAIN_SOURCE_VARIANT == 2
+#else
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 2
     if (parameters.source_control.x == 2) {
         return terrain_source_v3_components(parameters, world_xz, footprint_m).base_height_m;
     }
 #endif
-#if CUBEY_TERRAIN_SOURCE_VARIANT != 1
     float macro_value = terrain_source_band(parameters.macro, world_xz, footprint_m);
     float structure_value = terrain_source_band(parameters.structure, world_xz, footprint_m);
-    bool split_fine_detail = parameters.v2_1_composition.x > 0.5;
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 2
+    bool split_fine_detail = parameters.source_control.x == 3;
+#else
+    const bool split_fine_detail = true;
+#endif
     vec2 split_detail;
     if (split_fine_detail) {
-        split_detail = terrain_source_band_split(parameters.detail, world_xz, footprint_m,
+        split_detail = terrain_source_band_sample(parameters.detail, world_xz, footprint_m,
             int(parameters.v2_1_composition.x + 0.5));
     } else {
         split_detail = vec2(terrain_source_band(parameters.detail, world_xz, footprint_m), 0.0);

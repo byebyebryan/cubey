@@ -17,10 +17,10 @@ struct alignas(16) TerrainSourceGpuParameters {
     TerrainSourceGpuBandParameters macro{};
     TerrainSourceGpuBandParameters structure{};
     TerrainSourceGpuBandParameters detail{};
-    std::array<float, 4> v2_1_composition{};
     std::array<float, 4> composition{};
     std::array<float, 4> elevation{};
     std::array<float, 4> weathering{};
+    std::array<float, 4> v2_1_composition{};
     TerrainSourceGpuBandParameters v3_warp{};
     TerrainSourceGpuBandParameters v3_range{};
     TerrainSourceGpuBandParameters v3_massif{};

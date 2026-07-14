@@ -272,7 +272,7 @@ void main() {
                 0.0, 1.0),
             clamp(components.ridge_delta_m /
                 max(terrain_uniforms.source.v3_composition_1.x, 1.0), 0.0, 1.0));
-#elif CUBEY_TERRAIN_SOURCE_VARIANT == 0
+#elif CUBEY_TERRAIN_SOURCE_VARIANT == 0 || CUBEY_TERRAIN_SOURCE_VARIANT == 3
         bands = vec3(
             terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
                                 frag_footprint_m),
@@ -318,7 +318,7 @@ void main() {
         out_color = vec4(classification_normal * 0.5 + 0.5, 1.0);
         return;
     }
-#if CUBEY_TERRAIN_SOURCE_VARIANT != 0
+#if CUBEY_TERRAIN_SOURCE_VARIANT == 1 || CUBEY_TERRAIN_SOURCE_VARIANT == 2
     if (debug_view >= 22 && debug_view <= 26) {
         TerrainSourceComponents components = terrain_source_v3_components(
             terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);

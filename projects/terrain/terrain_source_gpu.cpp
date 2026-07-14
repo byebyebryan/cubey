@@ -19,13 +19,6 @@ terrain_source_gpu_parameters(const TerrainSourceParameters& parameters) {
         .macro = gpu_band(parameters.macro),
         .structure = gpu_band(parameters.structure),
         .detail = gpu_band(parameters.detail),
-        .v2_1_composition =
-            {
-                static_cast<float>(parameters.v2_1.core_detail_octaves),
-                parameters.v2_1.fine_detail_strength,
-                parameters.v2_1.fine_detail_cap_m,
-                0.0F,
-            },
         .composition = {parameters.macro_weight, parameters.structure_weight,
                         parameters.detail_weight, parameters.elevation_bias},
         .elevation = {parameters.base_height_m, parameters.height_scale_m,
@@ -36,6 +29,13 @@ terrain_source_gpu_parameters(const TerrainSourceParameters& parameters) {
                 parameters.weathering_max_delta_m,
                 parameters.weathering_strength,
                 parameters.weathering == TerrainWeatheringMode::Local ? 1.0F : 0.0F,
+            },
+        .v2_1_composition =
+            {
+                static_cast<float>(parameters.v2_1.core_detail_octaves),
+                parameters.v2_1.fine_detail_strength,
+                parameters.v2_1.fine_detail_cap_m,
+                0.0F,
             },
         .v3_warp = gpu_band(parameters.v3.warp),
         .v3_range = gpu_band(parameters.v3.range),
