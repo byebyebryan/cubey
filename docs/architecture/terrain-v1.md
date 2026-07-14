@@ -90,10 +90,12 @@ boundary skirts cover residual rasterization gaps.
 
 An opt-in mountain quality path keeps the same coverage and ownership model but
 submits coarse quad patches to Vulkan tessellation. Shared-edge projected sizes
-select power-of-two factors against a configurable pixel target; generated
-vertex spacing becomes the source footprint. This path requires tessellation
-support and is not the default. Source v2 independently extends only mountain's
-detail spectrum, allowing renderer and source changes to be reviewed separately.
+select power-of-two factors against a configurable pixel target. The filtered
+source footprint comes from camera distance, pixel angular span, and that same
+screen-space target, which makes it independent of patch-local maximum
+tessellation. This path requires tessellation support and is not the default.
+Source v2 independently extends only mountain's detail spectrum, allowing
+renderer and source changes to be reviewed separately.
 
 The scene uses the shared atmosphere integrator for sky and camera-to-surface
 aerial perspective. Diffuse-irradiance spherical harmonics and the atmosphere
@@ -148,11 +150,16 @@ prevents a near side wall from consuming the intended backdrop or midground
 composition.
 
 The far-field v1 product tightens that general backdrop study for mountain
-source v2.1. It reserves a 200 m local camera zone, a directional 30-degree yaw
-cone, and a 3.2 km minimum effective target distance at the reference 40-degree
-lens. The planner owns natural source-region selection; terrain masking and
-camera-relative deformation are not part of the contract. Midground and free
-terrain traversal remain diagnostics.
+source v2.1. It evaluates 3.4 km and 6.6 km targets, reserves a 200 m local
+camera zone, a directional 30-degree yaw cone, and a 3.2 km minimum effective
+target distance at the reference 40-degree lens. The planner validates the zone
+center and eight perimeter points at the home yaw and both cone limits. It
+requires lower-frustum clearance through 300 m, clear center/upper rays through
+2.4 km, and no broad lower-frame wall through 1.2 km. If natural placement
+cannot satisfy the contract, the result is marked invalid and movement is
+locked to its deterministic fallback pose. Terrain masking and camera-relative
+deformation are not part of the contract. Midground and free terrain traversal
+remain diagnostics.
 
 ## Configuration And Diagnostics
 

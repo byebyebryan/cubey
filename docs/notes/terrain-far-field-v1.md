@@ -2,7 +2,7 @@
 
 Date: 2026-07-14
 
-Status: implementation contract.
+Status: implemented and visually reviewed.
 
 ## Product Boundary
 
@@ -41,15 +41,25 @@ falls back to a fixed viewpoint; it must not silently claim far-field support.
 ## Frozen Boundary
 
 This checkpoint does not change source v1, v2, or v2.1 equations, source
-parameters, weathering, CPU/GPU queries, materials, vegetation coverage,
-atmosphere, lighting, or exposure. It does not add a camera-relative mask or a
-world-space low-relief envelope. A relief envelope remains a later fallback
-only if broader seed testing shows that natural placement is insufficient.
+parameters, weathering, CPU/GPU values, materials, vegetation coverage,
+atmosphere, lighting parameters, or exposure. It does not add a camera-relative
+mask or a world-space low-relief envelope. A relief envelope remains a later
+fallback only if broader seed testing shows that natural placement is
+insufficient.
 
-The visual correction in this batch is limited to camera composition and
-terrain coverage cracks. The quality tessellation path must evaluate shared
-edges with identical world position, source footprint, and height so sky cannot
-leak through the terrain surface.
+The quality tessellation source footprint is now derived from camera distance,
+pixel angular span, and the configured screen-space edge target. It no longer
+depends on a patch's maximum tessellation factor, so shared world positions
+receive the same filtered source input across patch and LOD ownership changes.
+
+The apparent blue coverage cracks in early clay captures were not missing
+terrain rasterization. Shadow, LOD, normal, ambient, and aerial diagnostics all
+retained continuous coverage. The actual cause was the direct-lighting helper
+dropping both diffuse and specular response when an interpolated shading normal
+briefly crossed `N dot V = 0` on a visible steep slope. Diffuse response now
+remains governed by `N dot L`; only the view-dependent specular response needs
+a positive `N dot V`. This is a lighting correctness fix, not a parameter or
+presentation retune.
 
 ## Acceptance
 
@@ -67,3 +77,28 @@ For mountain source v2.1 seeds `0`, `9012`, and `12345`:
 
 Material, atmosphere, and lighting tuning are outside this checkpoint even if
 the review pack identifies later presentation opportunities.
+
+## Validation Checkpoint
+
+Generate the accepted pack with:
+
+```sh
+projects/terrain/capture_far_field_v1_review.sh
+```
+
+The pack is written to `outputs/terrain/far-field-v1/`. It contains native
+1920 x 1080 surface and clay captures for all three seeds, 1600 m midground
+negative controls, clay/shadow/LOD continuity diagnostics, the backdrop planner
+report, and machine-checked review metadata.
+
+All three required seeds selected the 3400 m tier and passed the complete zone
+contract. Their worst supported-position target distances were `3267.16 m`,
+`3255.38 m`, and `3207.23 m`. Worst lower-foreground margins were `10.00 m`,
+`17.87 m`, and `23.70 m`; center/upper and lower-wall tests reported zero
+occluded rays for every seed. Seed `0` required `272.00 m` of terrain-relative
+clearance, while seeds `9012` and `12345` retained the `150 m` floor.
+
+The far-field contact sheet remains convincing at the supported distance. The
+midground sheet exposes the expected large foreground forms and insufficient
+surface bandwidth, so 1600 m remains a useful negative control rather than a
+quietly promoted product tier.
