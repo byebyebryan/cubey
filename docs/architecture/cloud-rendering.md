@@ -84,6 +84,13 @@ planar reflection, but they must not create a second generated-cloud or cached
 environment runtime beside it. Static HDR/generated environment modes do not
 create or compose procedural clouds.
 
+`AtmosphereEnvironmentRuntime::advance` is the single cadence owner for both
+the clear-sky reflection probe and its cloud environment. Ordinary solar-clock
+changes only request a new coherent clear-sky generation; they do not invalidate
+the cloud timeline. Cloud invalidation is reserved for structural cloud edits,
+such as weather/noise resource changes, where retaining the old generation would
+misrepresent the active field.
+
 Treat the accepted production mode as `surface-volume`: full-resolution, auto
 distance with the lower-sky horizon handoff, TerrainEngine-style density/noise,
 Bayer sampling, single-frame sampling, terrain-post resolve, and no temporal

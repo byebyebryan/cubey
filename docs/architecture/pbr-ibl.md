@@ -45,10 +45,14 @@ Radiance HDR equirectangular environment assets:
   reflection prefilter remain in `shaders/cubey/`.
   `Environment3D` can opt into SH diffuse ambient, while the reusable forward
   PBR renderer can bind either a complete generated/HDR environment or explicit
-  environment texture bindings supplied by a project. Its render request can
-  also carry an atmosphere-owned surface-cloud frame; final PBR views compose
-  that product against HDR scene color and sampled scene depth before display
-  post. `projects/ocean` also
+  environment texture bindings supplied by a project. Dynamic atmosphere
+  reflections are published as coherent full cubemaps: two prefiltered cubes
+  retain the previous and current generations, updates are rate-limited to 4 Hz
+  by default, and consumers crossfade over the update interval. No consumer can
+  observe a cube assembled from different time-of-day faces. Its render request
+  can also carry an atmosphere-owned surface-cloud frame; final PBR views
+  compose that product against HDR scene color and sampled scene depth before
+  display post. `projects/ocean` also
   consumes the runtime reflection probe directly for water reflection while its
   bespoke ocean shader remains outside the full PBR material path;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
@@ -127,9 +131,11 @@ renderer-wide material management explicit future work.
   fog, and fill, but its water material remains bespoke rather than a full PBR
   surface. The runtime is intentionally V1: it keeps the static/generated
   diffuse irradiance and DFG resources as fallback foundation pieces, uses SH for
-  atmosphere diffuse lighting, updates all reflection faces on first use, skips
-  unchanged environment assignments, and then updates one reflection face per
-  frame after an actual procedural environment change.
+  atmosphere diffuse lighting, updates all reflection faces coherently on first
+  use, skips unchanged environment assignments, coalesces changes between probe
+  ticks, and atomically publishes complete replacement generations. The same
+  runtime advances its cloud environment so time-of-day changes do not reset the
+  cloud probe's previous/current interpolation.
 - The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
   real-time approximations. Transmission, refraction, volume absorption,
   dispersion, and OIT-quality transparent material behavior remain future work.
