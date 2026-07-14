@@ -26,10 +26,18 @@ constexpr std::uint32_t kSamplesPerAxis = 65U;
 int main(int argc, char** argv) {
     cubey::projects::terrain::TerrainSourceVersion version =
         cubey::projects::terrain::TerrainSourceVersion::V1;
-    if (argc == 3 && std::string_view(argv[1]) == "--source-version") {
-        version = cubey::projects::terrain::terrain_source_version_from_name(argv[2]);
-    } else if (argc != 1) {
-        throw std::runtime_error("usage: terrain_source_report [--source-version v1|v2|v2.1|v3]");
+    bool include_scale_response = false;
+    for (int index = 1; index < argc; ++index) {
+        const std::string_view argument = argv[index];
+        if (argument == "--source-version" && index + 1 < argc) {
+            version = cubey::projects::terrain::terrain_source_version_from_name(argv[++index]);
+        } else if (argument == "--scale-response") {
+            include_scale_response = true;
+        } else {
+            throw std::runtime_error(
+                "usage: terrain_source_report [--source-version v1|v2|v2.1|v3] "
+                "[--scale-response]");
+        }
     }
 
     nlohmann::json summaries = nlohmann::json::array();
@@ -72,11 +80,21 @@ int main(int argc, char** argv) {
                     {"meso_max_abs_m", components.meso_max_abs_m},
                 };
             }
+            if (include_scale_response) {
+                const auto scale_response =
+                    cubey::projects::terrain::summarize_terrain_source_scale_response(
+                        parameters, {0.0F, 0.0F}, kExtentM, kSamplesPerAxis);
+                entry["scale_response"] = {
+                    {"fine_residual_rms_m", scale_response.fine_residual_rms_m},
+                    {"meso_residual_rms_m", scale_response.meso_residual_rms_m},
+                    {"structure_residual_rms_m", scale_response.structure_residual_rms_m},
+                };
+            }
             summaries.push_back(std::move(entry));
         }
     }
 
-    const nlohmann::json report{
+    nlohmann::json report{
         {"schema", "cubey.terrain." +
                        std::string(cubey::projects::terrain::terrain_source_version_name(version)) +
                        ".source-summary"},
@@ -85,6 +103,9 @@ int main(int argc, char** argv) {
         {"weathering", "off"},
         {"summaries", std::move(summaries)},
     };
+    if (include_scale_response) {
+        report["scale_response_footprints_m"] = {0, 64, 256, 1024};
+    }
     std::cout << report.dump(2) << '\n';
     return 0;
 }

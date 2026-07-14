@@ -192,6 +192,34 @@ void test_source_v2_1_separates_only_fine_detail() {
     require(rejected, "terrain source v2.1 should reject unsupported presets");
 }
 
+void test_source_v2_1_scale_response_preserves_coarse_bands() {
+    const auto v2 = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = TerrainPreset::Mountain,
+        .version = TerrainSourceVersion::V2,
+    });
+    const auto v2_1 = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = TerrainPreset::Mountain,
+        .version = TerrainSourceVersion::V2_1,
+    });
+    const auto control = cubey::projects::terrain::summarize_terrain_source_scale_response(
+        v2, {0.0F, 0.0F}, 16'384.0F, 33U);
+    const auto candidate = cubey::projects::terrain::summarize_terrain_source_scale_response(
+        v2_1, {0.0F, 0.0F}, 16'384.0F, 33U);
+    require(std::isfinite(candidate.fine_residual_rms_m) &&
+                std::isfinite(candidate.meso_residual_rms_m) &&
+                std::isfinite(candidate.structure_residual_rms_m),
+            "terrain source scale response should stay finite");
+    require(candidate.fine_residual_rms_m > 0.0F &&
+                candidate.fine_residual_rms_m < control.fine_residual_rms_m,
+            "terrain source v2.1 should retain but reduce fine residual energy");
+    require_near(candidate.meso_residual_rms_m, control.meso_residual_rms_m, 0.0F,
+                 "terrain source v2.1 should preserve meso response");
+    require_near(candidate.structure_residual_rms_m, control.structure_residual_rms_m, 0.0F,
+                 "terrain source v2.1 should preserve structure response");
+}
+
 void test_source_v3_components_are_bounded_and_reconstruct_height() {
     const auto parameters = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 12345U,
@@ -306,6 +334,7 @@ int main() {
         test_presets_have_ordered_relief();
         test_footprint_filters_unresolved_detail();
         test_source_v2_1_separates_only_fine_detail();
+        test_source_v2_1_scale_response_preserves_coarse_bands();
         test_source_v3_components_are_bounded_and_reconstruct_height();
         test_clean_source_publishes_no_weathering_delta();
         test_local_weathering_is_bounded_and_preserves_coarse_samples();

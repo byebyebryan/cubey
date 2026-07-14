@@ -673,4 +673,47 @@ summarize_terrain_source_components(const TerrainSourceParameters& parameters,
     return result;
 }
 
+TerrainSourceScaleResponseSummary
+summarize_terrain_source_scale_response(const TerrainSourceParameters& parameters,
+                                        cubey::math::Vec2 center_xz, float extent_m,
+                                        std::uint32_t samples_per_axis) {
+    if (!std::isfinite(extent_m) || extent_m <= 0.0F || samples_per_axis < 2U) {
+        throw std::runtime_error("invalid terrain source scale response domain");
+    }
+    double fine_squared_sum = 0.0;
+    double meso_squared_sum = 0.0;
+    double structure_squared_sum = 0.0;
+    const float denominator = static_cast<float>(samples_per_axis - 1U);
+    for (std::uint32_t z = 0; z < samples_per_axis; ++z) {
+        for (std::uint32_t x = 0; x < samples_per_axis; ++x) {
+            const cubey::math::Vec2 world_xz{
+                center_xz.x - extent_m * 0.5F + extent_m * static_cast<float>(x) / denominator,
+                center_xz.y - extent_m * 0.5F + extent_m * static_cast<float>(z) / denominator,
+            };
+            const float height_0 =
+                sample_terrain_base_height(parameters, {.world_xz = world_xz, .footprint_m = 0.0F});
+            const float height_64 = sample_terrain_base_height(
+                parameters, {.world_xz = world_xz, .footprint_m = 64.0F});
+            const float height_256 = sample_terrain_base_height(
+                parameters, {.world_xz = world_xz, .footprint_m = 256.0F});
+            const float height_1024 = sample_terrain_base_height(
+                parameters, {.world_xz = world_xz, .footprint_m = 1024.0F});
+            const double fine = static_cast<double>(height_0 - height_64);
+            const double meso = static_cast<double>(height_64 - height_256);
+            const double structure = static_cast<double>(height_256 - height_1024);
+            fine_squared_sum += fine * fine;
+            meso_squared_sum += meso * meso;
+            structure_squared_sum += structure * structure;
+        }
+    }
+    const double sample_count =
+        static_cast<double>(samples_per_axis) * static_cast<double>(samples_per_axis);
+    return {
+        .fine_residual_rms_m = static_cast<float>(std::sqrt(fine_squared_sum / sample_count)),
+        .meso_residual_rms_m = static_cast<float>(std::sqrt(meso_squared_sum / sample_count)),
+        .structure_residual_rms_m =
+            static_cast<float>(std::sqrt(structure_squared_sum / sample_count)),
+    };
+}
+
 } // namespace cubey::projects::terrain

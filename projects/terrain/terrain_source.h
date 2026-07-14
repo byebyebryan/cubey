@@ -127,6 +127,12 @@ struct TerrainSourceComponentSummary {
     float meso_max_abs_m = 0.0F;
 };
 
+struct TerrainSourceScaleResponseSummary {
+    float fine_residual_rms_m = 0.0F;
+    float meso_residual_rms_m = 0.0F;
+    float structure_residual_rms_m = 0.0F;
+};
+
 [[nodiscard]] std::string_view terrain_preset_name(TerrainPreset preset);
 [[nodiscard]] TerrainPreset terrain_preset_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_weathering_mode_name(TerrainWeatheringMode mode);
@@ -152,5 +158,9 @@ summarize_terrain_source(const TerrainSourceParameters& parameters, cubey::math:
 summarize_terrain_source_components(const TerrainSourceParameters& parameters,
                                     cubey::math::Vec2 center_xz, float extent_m,
                                     std::uint32_t samples_per_axis);
+[[nodiscard]] TerrainSourceScaleResponseSummary
+summarize_terrain_source_scale_response(const TerrainSourceParameters& parameters,
+                                        cubey::math::Vec2 center_xz, float extent_m,
+                                        std::uint32_t samples_per_axis);
 
 } // namespace cubey::projects::terrain

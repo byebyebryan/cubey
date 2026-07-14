@@ -194,6 +194,10 @@ if (BUILD_TESTING)
         COMMAND cubey_project_terrain_source_report
     )
     add_test(
+        NAME terrain_source_scale_report_runs
+        COMMAND cubey_project_terrain_source_report --source-version v2.1 --scale-response
+    )
+    add_test(
         NAME terrain_backdrop_report_runs
         COMMAND cubey_project_terrain_backdrop_report
     )
@@ -606,6 +610,7 @@ if (BUILD_TESTING)
         terrain_source_tests
         terrain_render_tests
         terrain_source_report_runs
+        terrain_source_scale_report_runs
         terrain_backdrop_report_runs
         terrain_source_gpu_parity_tests
         terrain_headless_writes_png
