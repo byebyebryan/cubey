@@ -10,6 +10,8 @@
 #include <cubey/core/profiling.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/engine/cloud_environment_config.h>
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/frame_stats.h>
@@ -30,6 +32,7 @@
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
 
@@ -74,6 +77,21 @@ water_3d_atmosphere_run_state(const RunConfig& config) {
         });
 }
 
+[[nodiscard]] cubey::CloudEnvironmentConfig water_3d_cloud_config(const RunConfig& config) {
+    cubey::CloudEnvironmentConfig clouds{};
+    cubey::apply_cloud_environment_run_config(clouds, config.clouds);
+    clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    return clouds;
+}
+
+[[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles water_3d_cloud_shader_files() {
+    return cubey::render::cloud_layer_runtime_shader_files(
+        CUBEY_WATER_3D_SHADER_DIR,
+        cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
+}
+
 [[nodiscard]] cubey::render::EnvironmentLightingUniforms
 water_3d_static_environment_lighting(float exposure, float intensity) {
     cubey::render::AtmosphereEnvironmentLighting lighting;
@@ -100,6 +118,7 @@ class Water3DApp {
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
           water_config_(water_3d_config_from_run_config(config_)),
           atmosphere_state_(water_3d_atmosphere_run_state(config_)),
+          clouds_config_(water_3d_cloud_config(config_)),
           render_view_(water_3d_render_view_from_name(config_.debug_view)) {
         if (use_atmosphere_environment_source()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
@@ -125,7 +144,7 @@ class Water3DApp {
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_render_pipeline(context.device(), context.swapchain().format(),
-                                   context.swapchain().extent());
+                                   context.swapchain().extent(), context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
@@ -183,6 +202,10 @@ class Water3DApp {
 
         update_camera_input(context, project_frame.delta_seconds);
         update_atmosphere_time(project_frame.delta_seconds);
+        if (use_atmosphere_environment_source() && clouds_config_.enabled &&
+            atmosphere_runtime_.clouds().resources_created()) {
+            atmosphere_runtime_.clouds().advance(project_frame.delta_seconds);
+        }
     }
 
     void update_camera_input(cubey::host::WindowedAppContext& context, double delta_seconds) {
@@ -214,25 +237,31 @@ class Water3DApp {
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
-        if (draw_water_3d_ui({
-                .title = app_info_.ui_title,
-                .config = water_config_,
-                .atmosphere = use_atmosphere_environment_source() ? &atmosphere_state_ : nullptr,
-                .runtime_state = runtime_state_,
-                .resources = resources_,
-                .performance =
-                    {
-                        .frame_stats = latest_frame_stats_,
-                        .latest_fps = latest_fps_,
-                        .latest_frame_ms = latest_frame_ms_,
-                        .process = process_stats_.sample(),
-                        .device_memory_budget = context.device().device_memory_budget(),
-                    },
-                .render_view = render_view_,
-                .paused = paused_,
-                .reset_requested = reset_requested_,
-            })) {
+        const bool procedural_environment = use_atmosphere_environment_source();
+        const Water3DUiResult result = draw_water_3d_ui({
+            .title = app_info_.ui_title,
+            .config = water_config_,
+            .atmosphere = procedural_environment ? &atmosphere_state_ : nullptr,
+            .clouds = procedural_environment ? &clouds_config_ : nullptr,
+            .runtime_state = runtime_state_,
+            .resources = resources_,
+            .performance =
+                {
+                    .frame_stats = latest_frame_stats_,
+                    .latest_fps = latest_fps_,
+                    .latest_frame_ms = latest_frame_ms_,
+                    .process = process_stats_.sample(),
+                    .device_memory_budget = context.device().device_memory_budget(),
+                },
+            .render_view = render_view_,
+            .paused = paused_,
+            .reset_requested = reset_requested_,
+        });
+        if (result.atmosphere_changed) {
             refresh_atmosphere_environment();
+        }
+        if (result.clouds_changed) {
+            refresh_cloud_environment(context);
         }
     }
 
@@ -250,6 +279,32 @@ class Water3DApp {
         if (atmosphere_runtime_.resources_created()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
         }
+    }
+
+    void refresh_cloud_environment(cubey::host::WindowedAppContext& context) {
+        cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
+        if (!use_atmosphere_environment_source()) {
+            return;
+        }
+        if (clouds_config_.enabled && !clouds.surface_resources_created()) {
+            cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                                 "vkDeviceWaitIdle water 3D cloud enable");
+            static_cast<void>(context.gpu().drain());
+            create_cloud_environment_runtime(context.device(), context.gpu(),
+                                             context.frame_slot_count());
+            atmosphere_runtime_.clouds().create_surface_target_resources(
+                context.device(), water_3d_cloud_shader_files(),
+                cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
+                kWater3DSceneColorFormat, context.swapchain().extent(), context.frame_slot_count());
+            static_cast<void>(context.gpu().drain());
+        }
+        if (!clouds.surface_resources_created()) {
+            return;
+        }
+        clouds.set_config(clouds_config_);
+        clouds.update_weather_texture(context.device(), context.gpu(),
+                                      water_3d_cloud_shader_files().generated.weather);
+        clouds.invalidate();
     }
 
     void update_atmosphere_time(double delta_seconds) {
@@ -330,6 +385,27 @@ class Water3DApp {
         };
     }
 
+    [[nodiscard]] cubey::CloudEnvironmentRuntimeFrame
+    cloud_environment_frame(const Water3DRenderCamera& camera, VkExtent2D extent) {
+        cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
+        clouds.set_config(clouds_config_);
+        return clouds.frame(
+            cubey::CloudEnvironmentSurfaceViewInfo{
+                .camera_position = camera.position,
+                .camera_right = camera.right,
+                .camera_up = camera.up,
+                .camera_forward = camera.forward,
+                .tan_half_fovy = std::tan(camera.fovy_radians * 0.5F),
+                .target_extent = extent,
+                .near_plane_m = kCameraNearPlane,
+                .far_plane_m = kCameraFarPlane,
+                .external_background = true,
+                .scene_depth_occlusion_enabled = true,
+                .scene_depth_fade_m = 2.0F,
+            },
+            atmosphere_runtime_.lighting());
+    }
+
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_background_uniforms(const Water3DRenderCamera& camera, VkExtent2D extent) const {
         const float aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
@@ -405,6 +481,7 @@ class Water3DApp {
     }
 
     void destroy_swapchain_resources() {
+        atmosphere_runtime_.clouds().destroy_surface_target_resources();
         resources_.destroy_swapchain_resources();
     }
 
@@ -503,11 +580,48 @@ class Water3DApp {
         atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     }
 
+    void create_cloud_environment_runtime(cubey::vulkan::Device& device,
+                                          cubey::vulkan::GpuRuntime& gpu,
+                                          std::uint32_t frame_slot_count) {
+        if (!use_atmosphere_environment_source() || !clouds_config_.enabled) {
+            return;
+        }
+        cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
+        const cubey::render::CloudLayerRuntimeShaderFiles shaders = water_3d_cloud_shader_files();
+        if (!clouds.surface_resources_created()) {
+            clouds.create_surface_resources(device, gpu, shaders.generated, clouds_config_);
+        }
+        if (!clouds.resources_created()) {
+            clouds.create_resources(device,
+                                    cubey::render::CloudEnvironmentProbeConfig{
+                                        .extent = 64,
+                                        .mip_levels = 5,
+                                        .view_steps = 32,
+                                        .update_hz = 4.0F,
+                                        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                        .frame_slot_count = frame_slot_count,
+                                    },
+                                    clouds.generated_resources(),
+                                    atmosphere_runtime_.reflection_probe().sky_radiance_cube());
+            clouds.create_pipelines(
+                device,
+                cubey::render::CloudEnvironmentProbePipelineConfig{
+                    .cloud_march = shaders.surface_march,
+                    .prefilter_vertex = cubey::render::vertex_shader_file(
+                        std::filesystem::path(CUBEY_WATER_3D_SHADER_DIR) / "atmosphere.vert.spv"),
+                    .prefilter_fragment = cubey::render::fragment_shader_file(
+                        std::filesystem::path(CUBEY_WATER_3D_SHADER_DIR) /
+                        "cloud_environment_prefilter.frag.spv"),
+                });
+        }
+    }
+
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count) {
         create_environment_resources_if_needed(device, gpu);
         create_atmosphere_environment_runtime(device, gpu, frame_slot_count);
+        create_cloud_environment_runtime(device, gpu, frame_slot_count);
         attach_project_gpu(gpu);
         resources_.create_global_resources_if_needed(device, gpu, runtime_.gpu(), water_config_,
                                                      frame_slot_count);
@@ -527,9 +641,16 @@ class Water3DApp {
     }
 
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
-                                VkExtent2D extent) {
+                                VkExtent2D extent, std::uint32_t frame_slot_count) {
         resources_.create_render_pipeline(device, color_format, extent,
                                           water_environment_bindings());
+        if (use_atmosphere_environment_source() &&
+            atmosphere_runtime_.clouds().surface_resources_created()) {
+            atmosphere_runtime_.clouds().create_surface_target_resources(
+                device, water_3d_cloud_shader_files(),
+                cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
+                kWater3DSceneColorFormat, extent, frame_slot_count);
+        }
     }
 
     void record_frame(cubey::host::WindowedAppContext& context,
@@ -554,6 +675,7 @@ class Water3DApp {
         if (is_water_3d_surface_view(render_view_)) {
             const Water3DConfig draw_config = render_config();
             const Water3DRenderCamera camera = render_camera(render_frame.color_target.extent);
+            std::optional<cubey::CloudEnvironmentRuntimeFrame> cloud_frame;
             resources_.upload_environment_lighting(render_frame.frame_slot,
                                                    environment_lighting_uniforms());
             if (use_atmosphere_environment_source()) {
@@ -566,13 +688,20 @@ class Water3DApp {
                         moon_body_frame_uniforms(render_frame.color_target.extent));
                 }
                 atmosphere_runtime_.record_pending_update(recorder, render_frame.frame_slot);
+                if (clouds_config_.enabled) {
+                    cloud_frame = cloud_environment_frame(camera, render_frame.color_target.extent);
+                    static_cast<void>(atmosphere_runtime_.clouds().record_pending_update(
+                        recorder, render_frame.frame_slot, cloud_frame.value()));
+                }
             }
             const Water3DEnvironmentTextureBindings environment = water_environment_bindings();
             record_water_3d_surface_draw(
                 render_frame.command_buffer, context.device(), surface_graph_executor_, resources_,
                 draw_config, render_frame.frame_slot, runtime_state_, render_view_, camera,
                 render_frame.color_target, Water3DRenderTargetMode::Present, environment,
-                moon_body_render_enabled(), profiler);
+                moon_body_render_enabled(),
+                cloud_frame.has_value() ? &atmosphere_runtime_.clouds() : nullptr,
+                cloud_frame.has_value() ? &cloud_frame.value() : nullptr, profiler);
         } else {
             cubey::render::record_present_render_target(
                 recorder, cubey::render::render_target_view(render_frame.color_target),
@@ -612,6 +741,10 @@ class Water3DApp {
                                           const ProjectFrame& frame,
                                           cubey::profiling::ProfileRecorder* profile_recorder) {
         update_atmosphere_time(frame.delta_seconds);
+        if (use_atmosphere_environment_source() && clouds_config_.enabled &&
+            atmosphere_runtime_.clouds().resources_created()) {
+            atmosphere_runtime_.clouds().advance(frame.delta_seconds);
+        }
         const std::uint64_t frame_index = profile_frame_index(frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "water_3d headless simulation frame",
@@ -653,7 +786,8 @@ class Water3DApp {
             create_global_resources_if_needed(
                 context.device(), context.gpu(),
                 cubey::host::headless_capture_frame_slot_count(config_));
-            create_render_pipeline(context.device(), target.format, target.extent);
+            create_render_pipeline(context.device(), target.format, target.extent,
+                                   cubey::host::headless_capture_frame_slot_count(config_));
         };
         if (config_.capture_mode == CaptureMode::Video) {
             orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
@@ -686,6 +820,7 @@ class Water3DApp {
                 const cubey::vulkan::CommandRecorder recorder(command_buffer);
                 const Water3DConfig draw_config = render_config();
                 const Water3DRenderCamera camera = render_camera(target.extent);
+                std::optional<cubey::CloudEnvironmentRuntimeFrame> cloud_frame;
                 resources_.upload_environment_lighting(frame.frame_slot,
                                                        environment_lighting_uniforms());
                 if (use_atmosphere_environment_source()) {
@@ -696,13 +831,20 @@ class Water3DApp {
                                                     moon_body_frame_uniforms(target.extent));
                     }
                     atmosphere_runtime_.record_pending_update(recorder, frame.frame_slot);
+                    if (clouds_config_.enabled) {
+                        cloud_frame = cloud_environment_frame(camera, target.extent);
+                        static_cast<void>(atmosphere_runtime_.clouds().record_pending_update(
+                            recorder, frame.frame_slot, cloud_frame.value()));
+                    }
                 }
                 const Water3DEnvironmentTextureBindings environment = water_environment_bindings();
-                record_water_3d_surface_draw(command_buffer, context.device(),
-                                             surface_graph_executor_, resources_, draw_config,
-                                             frame.frame_slot, runtime_state_, render_view_, camera,
-                                             target, Water3DRenderTargetMode::ColorAttachment,
-                                             environment, moon_body_render_enabled());
+                record_water_3d_surface_draw(
+                    command_buffer, context.device(), surface_graph_executor_, resources_,
+                    draw_config, frame.frame_slot, runtime_state_, render_view_, camera, target,
+                    Water3DRenderTargetMode::ColorAttachment, environment,
+                    moon_body_render_enabled(),
+                    cloud_frame.has_value() ? &atmosphere_runtime_.clouds() : nullptr,
+                    cloud_frame.has_value() ? &cloud_frame.value() : nullptr);
             } else {
                 record_water_3d_draw(command_buffer, resources_, water_config_, frame.frame_slot,
                                      runtime_state_, render_view_, render_camera(target.extent),
@@ -724,6 +866,7 @@ class Water3DApp {
     cubey::ProjectRuntimeAdapter runtime_;
     Water3DConfig water_config_;
     cubey::AtmosphereEnvironmentRunState atmosphere_state_;
+    cubey::CloudEnvironmentConfig clouds_config_;
     Water3DRuntimeState runtime_state_;
     Water3DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor surface_graph_executor_;

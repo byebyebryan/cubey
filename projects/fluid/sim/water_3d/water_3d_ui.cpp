@@ -3,6 +3,7 @@
 #include "water_3d_gpu_resources.h"
 
 #include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/imgui_helpers.h>
 
 #include <imgui.h>
@@ -41,11 +42,11 @@ void reset_simulation(Water3DUiContext& ui) {
 
 } // namespace
 
-bool draw_water_3d_ui(Water3DUiContext ui) {
-    bool environment_changed = false;
+Water3DUiResult draw_water_3d_ui(Water3DUiContext ui) {
+    Water3DUiResult result;
     if (!cubey::host::begin_control_panel(ui.title)) {
         ImGui::End();
-        return false;
+        return result;
     }
 
     cubey::host::imgui_checkbox("Paused", &ui.paused, "Pause water simulation time.");
@@ -60,8 +61,7 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
 
     ImGui::Spacing();
     if (const cubey::host::ScopedImGuiGroup group{
-            "Simulation",
-            {.help = "FLIP/PIC transfer, pressure, damping, and boundary controls."}};
+            "Simulation", {.help = "FLIP/PIC transfer, pressure, damping, and boundary controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Simulation");
         cubey::host::imgui_enum_combo("Transfer", ui.config.transfer_mode, kTransferModes,
@@ -78,8 +78,8 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
                                         1.000F, "%.3f");
         cubey::host::imgui_slider_float("Particle volume strength",
                                         &ui.config.particle_volume_strength, 0.0F, 48.0F, "%.1f");
-        cubey::host::imgui_slider_uint32("Transfer limit/cell",
-                                         &ui.config.max_particles_per_cell, 8U, 256U);
+        cubey::host::imgui_slider_uint32("Transfer limit/cell", &ui.config.max_particles_per_cell,
+                                         8U, 256U);
         cubey::host::imgui_slider_float("Gravity", &ui.config.gravity, -4.0F, 0.0F, "%.2f");
         cubey::host::imgui_slider_float("Boundary bounce", &ui.config.boundary_restitution, 0.0F,
                                         0.8F, "%.2f");
@@ -116,8 +116,8 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
         if (fill_center_changed) {
             reset_simulation(ui);
         }
-        cubey::host::imgui_slider_float3("Domain scale", ui.config.domain.scale.data(), 0.25F,
-                                         3.0F, "%.2f");
+        cubey::host::imgui_slider_float3("Domain scale", ui.config.domain.scale.data(), 0.25F, 3.0F,
+                                         "%.2f");
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
@@ -220,9 +220,8 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
                                         0.1F, 4.0F, "%.2f");
         cubey::host::imgui_slider_float("Surface fill px", &ui.config.surface_gap_fill_radius_px,
                                         0.0F, 3.0F, "%.1f");
-        cubey::host::imgui_slider_float("Surface smooth world",
-                                        &ui.config.surface_smoothing_radius_world, 0.0F, 0.04F,
-                                        "%.3f");
+        cubey::host::imgui_slider_float(
+            "Surface smooth world", &ui.config.surface_smoothing_radius_world, 0.0F, 0.04F, "%.3f");
         cubey::host::imgui_slider_float("Surface smooth max px",
                                         &ui.config.surface_smoothing_max_radius_px, 1.0F,
                                         kWater3DSurfaceMaxSmoothRadiusPx, "%.0f");
@@ -231,12 +230,11 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
         cubey::host::imgui_slider_float("Surface depth sigma", &ui.config.surface_depth_sigma,
                                         0.005F, 0.120F, "%.3f");
         cubey::host::imgui_slider_float("Thickness smoothing",
-                                        &ui.config.surface_thickness_smoothing, 0.0F, 1.0F,
-                                        "%.2f");
+                                        &ui.config.surface_thickness_smoothing, 0.0F, 1.0F, "%.2f");
         cubey::host::imgui_slider_float("Surface absorption", &ui.config.surface_absorption, 0.0F,
                                         5.0F, "%.2f");
-        cubey::host::imgui_slider_float("Surface refraction", &ui.config.surface_refraction_strength,
-                                        0.0F, 0.12F, "%.3f");
+        cubey::host::imgui_slider_float(
+            "Surface refraction", &ui.config.surface_refraction_strength, 0.0F, 0.12F, "%.3f");
         cubey::host::imgui_slider_float("Environment intensity", &ui.config.environment_intensity,
                                         0.0F, 4.0F, "%.2f");
         cubey::host::imgui_slider_float("Environment rotation",
@@ -248,12 +246,22 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
     }
 
     if (ui.atmosphere != nullptr) {
-        environment_changed |= cubey::host::draw_atmosphere_environment_controls(
+        result.atmosphere_changed |= cubey::host::draw_atmosphere_environment_controls(
             *ui.atmosphere,
             {.label = "Environment",
              .default_open = false,
              .help = "Shared procedural atmosphere driving water lighting, reflection, and "
                      "exposure."});
+    }
+    if (ui.clouds != nullptr) {
+        result.clouds_changed |= cubey::host::draw_cloud_environment_controls(
+            *ui.clouds,
+            {.label = "Cloud Environment",
+             .default_open = false,
+             .help = "Shared surface clouds composed behind refractive water and cached for PBR "
+                     "environment reflections.",
+             .enabled_help = "Render direct clouds and include them in water environment "
+                             "reflections."});
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
@@ -261,8 +269,7 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
             {.default_open = false, .help = "Foam shading and whitewater particle controls."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Foam and whitewater");
-        cubey::host::imgui_slider_float("Foam amount", &ui.config.foam_amount, 0.0F, 1.0F,
-                                        "%.2f");
+        cubey::host::imgui_slider_float("Foam amount", &ui.config.foam_amount, 0.0F, 1.0F, "%.2f");
         cubey::host::imgui_slider_float("Foam sharpness", &ui.config.foam_sharpness, 0.2F, 4.0F,
                                         "%.2f");
         cubey::host::imgui_checkbox("Whitewater", &ui.config.whitewater_enabled);
@@ -278,10 +285,10 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
                                         0.0F, kWater3DWhitewaterMaxBlurPx, "%.2f");
         cubey::host::imgui_slider_float("Whitewater lifetime", &ui.config.whitewater_lifetime,
                                         0.15F, 5.0F, "%.2f");
-        cubey::host::imgui_slider_float("Whitewater drag", &ui.config.whitewater_drag, 0.50F,
-                                        1.0F, "%.2f");
-        cubey::host::imgui_slider_float("Whitewater gravity",
-                                        &ui.config.whitewater_gravity_scale, 0.0F, 1.5F, "%.2f");
+        cubey::host::imgui_slider_float("Whitewater drag", &ui.config.whitewater_drag, 0.50F, 1.0F,
+                                        "%.2f");
+        cubey::host::imgui_slider_float("Whitewater gravity", &ui.config.whitewater_gravity_scale,
+                                        0.0F, 1.5F, "%.2f");
     }
 
     const std::uint32_t scanned_particles =
@@ -291,14 +298,14 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
             ? scanned_particles - ui.config.active_particle_count
             : 0U;
     const std::array<cubey::host::PerformanceCounter, 5> performance_counters{
-        cubey::host::PerformanceCounter{"Reset particles", ui.config.active_particle_count, nullptr},
+        cubey::host::PerformanceCounter{"Reset particles", ui.config.active_particle_count,
+                                        nullptr},
         cubey::host::PerformanceCounter{"Compute particles", scanned_particles, nullptr},
-        cubey::host::PerformanceCounter{
-            "Grid voxels",
-            static_cast<std::uint64_t>(ui.config.grid_width) *
-                static_cast<std::uint64_t>(ui.config.grid_height) *
-                static_cast<std::uint64_t>(ui.config.grid_depth),
-            nullptr},
+        cubey::host::PerformanceCounter{"Grid voxels",
+                                        static_cast<std::uint64_t>(ui.config.grid_width) *
+                                            static_cast<std::uint64_t>(ui.config.grid_height) *
+                                            static_cast<std::uint64_t>(ui.config.grid_depth),
+                                        nullptr},
         cubey::host::PerformanceCounter{"Emitter pool", touched_emitter_particles, nullptr},
         cubey::host::PerformanceCounter{"Whitewater capacity", ui.config.whitewater_capacity,
                                         nullptr},
@@ -321,14 +328,13 @@ bool draw_water_3d_ui(Water3DUiContext ui) {
         ImGui::Text("Particles: %u reset / %u capacity", ui.config.active_particle_count,
                     ui.config.particle_capacity);
         ImGui::Text("Compute particles: %u scanned", scanned_particles);
-        ImGui::Text("Emitter pool: %u touched / %u available",
-                    touched_emitter_particles,
+        ImGui::Text("Emitter pool: %u touched / %u available", touched_emitter_particles,
                     emitter_particle_pool_capacity_for_config(ui.config));
         ImGui::Text("Whitewater: %u capacity / %u max emit", ui.config.whitewater_capacity,
                     ui.config.whitewater_max_emit_per_frame);
     }
     ImGui::End();
-    return environment_changed;
+    return result;
 }
 
 } // namespace cubey::projects::fluid::water_3d

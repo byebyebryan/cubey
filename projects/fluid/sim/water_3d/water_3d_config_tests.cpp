@@ -392,6 +392,25 @@ int main() {
         const std::string diagnostics_cpp = read_text_file(
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "water_3d_diagnostics.cpp");
 
+        require_contains(app, "atmosphere_runtime_.clouds()",
+                         "water 3D should use atmosphere-owned shared clouds");
+        require_contains(app, "water_3d_cloud_config(config_)",
+                         "water 3D should consume shared cloud run config");
+        require_contains(app, "record_pending_update",
+                         "water 3D should refresh the cached cloud environment");
+        require_contains(commands, "water cloud scene color",
+                         "water 3D should composite visible clouds into its HDR scene");
+        require_contains(commands, "render_graph.surface_background",
+                         "water refraction should sample the cloud-composited background");
+        require_contains(commands, "render_graph.scene_depth",
+                         "water 3D clouds should use scene-depth occlusion");
+        require_contains(ui, "draw_cloud_environment_controls",
+                         "water 3D should expose shared cloud controls");
+        require_contains(cmake, "cubey_cloud_layer_shader_sources",
+                         "water 3D should use the shared cloud shader package");
+        require_contains(cmake, "CUBEY_WATER_3D_CLOUD_SHADER_DEPENDS",
+                         "water 3D should track shared cloud shader dependencies");
+
         require_contains(contract, "WATER3D_BINDING_W_FIELD",
                          "water 3D contract should expose the W face field");
         require_contains(contract, "WATER3D_BINDING_U_SCRATCH",
