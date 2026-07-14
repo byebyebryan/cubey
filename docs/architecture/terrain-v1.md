@@ -147,6 +147,13 @@ through 75% of target distance and admits at most two early terrain hits, which
 prevents a near side wall from consuming the intended backdrop or midground
 composition.
 
+The far-field v1 product tightens that general backdrop study for mountain
+source v2.1. It reserves a 200 m local camera zone, a directional 30-degree yaw
+cone, and a 3.2 km minimum effective target distance at the reference 40-degree
+lens. The planner owns natural source-region selection; terrain masking and
+camera-relative deformation are not part of the contract. Midground and free
+terrain traversal remain diagnostics.
+
 ## Configuration And Diagnostics
 
 The public run controls are:

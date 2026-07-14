@@ -116,6 +116,8 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain source v2.1 refinement plan](terrain-source-v2-1-refinement-plan.md):
   implemented source-only scale separation that preserves v2 above a 64 m
   footprint while bounding sub-110 m relief outside the nonlinear profile.
+- [Terrain far-field v1](terrain-far-field-v1.md): directional 3.2 km backdrop
+  contract, bounded local camera zone, and crack-free quality-rendering gate.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.
