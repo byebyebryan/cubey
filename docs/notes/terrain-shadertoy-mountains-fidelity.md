@@ -150,3 +150,46 @@ the `512`-cell result retains acceptable far-field silhouettes and its terrain
 surface p95 is no more than `1 ms` at `2560x1440`. Failure keeps Mountains as a
 source/presentation reference; it does not trigger per-constant tuning or a
 production source change.
+
+## Generalization Finding
+
+The v1 evidence pack is under
+`outputs/terrain_shadertoy_ref/mountains-generalization-v1/`. The source field
+and mesh remain continuous through every tested yaw at both fixed times. No
+view exposes a mesh-domain edge, hole, or broken silhouette.
+
+The far/open directional gate passes narrowly. Yaws `0`, `45`, `90`, `225`,
+`270`, and `315` degrees remain credible in both original and clay views. Yaws
+`135` and `180` are rejected because near terrain dominates the composition,
+not because the source loses continuity. The resulting six-of-eight pass shows
+that Mountains is more directionally robust than its original camera path
+suggested, while also confirming that a production backdrop still needs a
+detached inner radius instead of relying on source-camera placement.
+
+At `2560x1440`, terrain-surface p95 GPU timings after warmup are:
+
+| Cells | Normal | Shading | Surface p95 |
+| ---: | --- | --- | ---: |
+| 256 | geometry | clay | `0.300 ms` |
+| 512 | geometry | clay | `0.369 ms` |
+| 1024 | geometry | clay | `0.547 ms` |
+| 512 | atlas | clay | `0.370 ms` |
+| 512 | detailed | clay | `1.596 ms` |
+| 512 | atlas | original | `0.530 ms` |
+| 512 | detailed | original | `1.777 ms` |
+| 1024 | detailed | original | `2.334 ms` |
+
+Geometry density is not the primary runtime blocker in this range. Geometry
+normals remain visibly faceted even at `1024` cells. Atlas normals fit the
+budget, but finite-differencing the under-resolved detailed-height/tree channel
+produces conspicuous rectangular and block-aligned shading, so that shortcut is
+not visually viable. Exact detailed normals recover the reference character but
+dominate the surface cost and miss the `1 ms` gate.
+
+No tested `512`-cell configuration passes both the visual and runtime gates.
+Mountains therefore remains a source and presentation reference rather than a
+production candidate. The next bounded clean-room experiment should retain
+broad cached geometry and the detached all-yaw backdrop stage, but bake and
+prefilter a dedicated detail-normal product with explicit mip or footprint
+selection instead of reconstructing normals from an under-resolved height
+channel or evaluating the full source field per pixel.
