@@ -42,5 +42,11 @@ Generate the fixed comparison pack with:
 projects/terrain_shadertoy_ref/capture_mountains_fidelity.sh
 ```
 
+Generate the arbitrary-view, simplification, and GPU timing pack with:
+
+```sh
+projects/terrain_shadertoy_ref/capture_mountains_generalization.sh
+```
+
 The design, licensing boundary, and acceptance criteria are recorded in
 [`docs/notes/terrain-shadertoy-mountains-fidelity.md`](../../docs/notes/terrain-shadertoy-mountains-fidelity.md).
