@@ -98,7 +98,8 @@ if ! jq -e '
   all($detached[];
     .contract_satisfied == true and
     .panorama_sector_count == 24 and
-    .horizon_clear_sector_count == 24 and
+    .lower_frame_clear_sector_count == 24 and
+    .minimum_lower_frame_terrain_distance_m >= 1500 and
     .relief_sector_count >= 14 and
     .stage_radius_m == 300) and
   ($grounded | length) == 3 and
@@ -121,7 +122,8 @@ jq -n \
     source: {preset: "mountain", version: "v2.1", weathering: "off"},
     orbit: {radius_m: [50, 100, 150], detached_elevation_degrees: [4, 8, 12],
       grounded_elevation_degrees: [12, 20, 32], yaw_restricted: false},
-    ownership: {detached_radius_m: 300, stage_clearance_m: 240},
+    ownership: {detached_radius_m: 300},
+    minimum_visible_terrain_distance_m: 1500,
     known_negative_control: {sun_elevation_degrees: 22,
       issue: "sparse heightfield-shadow contour bands"},
     video_duration_seconds: $video_duration_seconds}' \

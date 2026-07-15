@@ -334,6 +334,35 @@ if (BUILD_TESTING)
         0.001
     )
 
+    set(CUBEY_TERRAIN_BACKDROP_STAGE_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-backdrop-stage-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_backdrop_stage_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_BACKDROP_STAGE_HEADLESS_OUTPUT}"
+        --headless
+        --terrain-seed
+        9012
+        --terrain-preset
+        mountain
+        --terrain-weathering
+        off
+        --terrain-camera-preset
+        backdrop-stage
+        --terrain-backdrop-min-distance
+        1500
+        --terrain-presentation
+        backdrop
+    )
+    set_tests_properties(terrain_backdrop_stage_headless_writes_png PROPERTIES TIMEOUT 60)
+    cubey_add_png_stats_test(
+        terrain_backdrop_stage_headless_writes_png
+        "${CUBEY_TERRAIN_BACKDROP_STAGE_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
     set(CUBEY_TERRAIN_SURFACE_HEADLESS_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/terrain-surface-headless.png"
     )
@@ -693,6 +722,8 @@ if (BUILD_TESTING)
         terrain_source_gpu_parity_tests
         terrain_headless_writes_png
         terrain_headless_writes_png_stats
+        terrain_backdrop_stage_headless_writes_png
+        terrain_backdrop_stage_headless_writes_png_stats
         terrain_surface_headless_writes_png
         terrain_surface_headless_writes_png_stats
         terrain_lod_headless_writes_png

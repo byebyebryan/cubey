@@ -72,6 +72,7 @@ projects/terrain/capture_midground_detail_review.sh
 projects/terrain/capture_midground_correction_review.sh
 projects/terrain/capture_source_v2_1_review.sh
 projects/terrain/capture_orbit_stage_review.sh
+projects/terrain/capture_midair_stage_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
