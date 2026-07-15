@@ -22,7 +22,7 @@ struct TerrainBackdropStageRequest {
     float guard_radius_m = 400.0F;
     float orbit_min_radius_m = 50.0F;
     float orbit_default_radius_m = 100.0F;
-    float orbit_max_radius_m = 150.0F;
+    float orbit_max_radius_m = 250.0F;
     float orbit_min_elevation_radians = 0.0F;
     float orbit_default_elevation_radians = 0.0F;
     float orbit_max_elevation_radians = 0.0F;

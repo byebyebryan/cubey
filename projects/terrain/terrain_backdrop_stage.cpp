@@ -478,11 +478,11 @@ TerrainBackdropStageRequest terrain_backdrop_stage_request(TerrainBackdropStageM
     TerrainBackdropStageRequest result{
         .mode = mode,
         .orbit_min_elevation_radians =
-            (mode == TerrainBackdropStageMode::Detached ? 4.0F : 12.0F) * kDegreesToRadians,
+            (mode == TerrainBackdropStageMode::Detached ? 0.0F : 12.0F) * kDegreesToRadians,
         .orbit_default_elevation_radians =
             (mode == TerrainBackdropStageMode::Detached ? 8.0F : 20.0F) * kDegreesToRadians,
         .orbit_max_elevation_radians =
-            (mode == TerrainBackdropStageMode::Detached ? 12.0F : 32.0F) * kDegreesToRadians,
+            (mode == TerrainBackdropStageMode::Detached ? 30.0F : 32.0F) * kDegreesToRadians,
         .vertical_fov_radians = 40.0F * kDegreesToRadians,
         .aspect_ratio = aspect_ratio,
         .vertical_scale = vertical_scale,

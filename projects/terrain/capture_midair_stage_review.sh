@@ -60,7 +60,7 @@ envelope_images=()
 for azimuth in 0 90 180 270; do
   output="${OUT_DIR}/ownership-envelope/seed-12345-azimuth-${azimuth}.png"
   capture "${output}" backdrop-stage 12345 "${azimuth}" \
-    --terrain-backdrop-orbit-radius 150 --terrain-backdrop-elevation 12
+    --terrain-backdrop-orbit-radius 250 --terrain-backdrop-elevation 30
   envelope_images+=("${output}")
 done
 montage -label '%t' "${envelope_images[@]}" -tile 2x2 -geometry 640x360+8+24 \
@@ -102,11 +102,11 @@ jq -n \
   '{schema: $schema, seeds: $seeds, azimuths_degrees: $azimuths,
     source: {preset: "mountain", version: "v2.1", weathering: "off"},
     views: ["backdrop", "backdrop-stage"],
-    orbit: {radius_m: [50, 100, 150], elevation_degrees: [4, 8, 12],
+    orbit: {radius_m: [50, 100, 250], elevation_degrees: [0, 8, 30],
       yaw_restricted: false},
     ownership: {detached_radius_m: 300},
     minimum_visible_terrain_distance_m: 1500,
-    proxy: {sphere_radius_m: 20, platform_size_m: [80, 80], stage_plane_y_m: -20},
+    proxy: {sphere_radius_m: 20},
     video_duration_seconds: $video_duration_seconds}' \
   > "${OUT_DIR}/review-metadata.json"
 

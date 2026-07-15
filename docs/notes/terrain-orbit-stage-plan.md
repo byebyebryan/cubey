@@ -22,9 +22,11 @@ mask, or author a feature into the source.
 
 `detached` is the supported far-field v1 product. The consumer owns the inner
 300 m around the focus. Terrain rendering excludes that local zone and starts
-beyond it. The orbit radius is 50-150 m, with a 100 m default. Elevation is
-4-12 degrees, with an 8-degree default. The canonical camera target is the
+beyond it. The orbit radius is 50-250 m, with a 100 m default. Elevation is
+0-30 degrees, with an 8-degree default. The canonical camera target is the
 consumer's local origin, and the conceptual stage plane is 20 m below it.
+The validation proxy renders only a 20 m sphere at the focus; it deliberately
+does not render a platform or ground plane owned by the consuming scene.
 
 Detached placement no longer uses a fixed height above the local ownership
 edge. That rule technically put the focus in the air but still let the bottom
@@ -35,7 +37,7 @@ envelope. This is a composition contract rather than a source-shaping rule.
 
 `grounded` is a supported diagnostic. Terrain stays continuous through the
 focus and placement searches for a naturally low-slope patch. The orbit radius
-is the same 50-150 m envelope. Elevation is 12-32 degrees, with a 20-degree
+is the same 50-250 m envelope. Elevation is 12-32 degrees, with a 20-degree
 default, and the camera target is 20 m above the selected surface. A candidate
 passes when the 300 m stage stays within 40 m of relief, its sampled p95 slope
 does not exceed 0.15, and every representative orbit camera retains 10 m of
@@ -89,9 +91,9 @@ silhouette slits where independently adapted parent and child patch edges meet
 during a full orbit.
 
 `backdrop` remains the clean orbit product view. `backdrop-stage` is a dedicated
-validation view with a neutral foreground proxy at the same local focus and the
-resolved placement metrics in the GUI. It validates depth, scale, lighting,
-and full-orbit composition without coupling terrain to a consuming project.
+validation view with a neutral sphere at the same local focus and the resolved
+placement metrics in the GUI. It validates depth, scale, lighting, and
+full-orbit composition without coupling terrain to a consuming project.
 `midground` remains the existing directional surface diagnostic.
 
 ## Acceptance

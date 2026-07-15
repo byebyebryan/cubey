@@ -145,13 +145,13 @@ materials, diagnostics, and heightfield shadows all sample that translated
 source location; clipmap ownership and camera coordinates remain local.
 
 Detached mode is the far-field product. The consumer owns the inner 300 m,
-which terrain rendering excludes. The stage sits 240 m above the highest clean
-terrain sample inside a 400 m guard radius, keeping the ownership boundary below
-the 40-degree frame throughout the supported 50-150 m radius and 4-12 degree
-elevation envelope. Yaw is unrestricted. Grounded mode keeps terrain continuous
-and searches for a naturally low-relief, low-slope stage as a placement
-diagnostic. `midground` retains the older directional 1.6 km surface camera for
-detail stress work; it is not the backdrop product.
+which terrain rendering excludes. The solver raises the physical focus enough
+to keep lower-frame terrain at least 1.5 km away throughout the supported
+50-250 m radius and 0-30 degree elevation envelope. Yaw is unrestricted.
+Grounded mode keeps terrain continuous and searches for a naturally low-relief,
+low-slope stage as a placement diagnostic. `midground` retains the older
+directional 1.6 km surface camera for detail stress work; it is not the backdrop
+product.
 
 Stage quality views use a uniform tessellation factor of 16 in detached mode
 and 32 in grounded mode. This keeps parent and child clipmap edges aligned

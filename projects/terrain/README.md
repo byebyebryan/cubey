@@ -88,8 +88,8 @@ Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
 `ground`, `backdrop`, `backdrop-stage`, and `midground`. The deterministic
 source-aware backdrop planner evaluates 24 azimuth sectors and supports
-unrestricted yaw within a 50-150 m orbit. Detached elevation is limited to
-4-12 degrees and defaults to a 1.5 km lower-frame terrain exclusion. Grounded
+unrestricted yaw within a 50-250 m orbit. Detached elevation is limited to
+0-30 degrees and defaults to a 1.5 km lower-frame terrain exclusion. Grounded
 elevation is limited to 12-32 degrees. Initial azimuth, radius, elevation, and
 validation distance are optional controls. `midground` remains the directional
 1.6 km detail stress tier. Presentation modes are `standard` (default) and

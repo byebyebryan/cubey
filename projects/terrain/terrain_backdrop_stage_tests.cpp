@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -36,8 +37,12 @@ void test_stage_requests_publish_the_medium_scene_contract() {
                  "detached stage should publish the minimum orbit radius");
     require_near(detached.orbit_default_radius_m, 100.0F, 0.0F,
                  "detached stage should publish the default orbit radius");
-    require_near(detached.orbit_max_radius_m, 150.0F, 0.0F,
+    require_near(detached.orbit_max_radius_m, 250.0F, 0.0F,
                  "detached stage should publish the maximum orbit radius");
+    require_near(detached.orbit_min_elevation_radians, 0.0F, 0.0F,
+                 "detached stage should allow a level orbit");
+    require_near(detached.orbit_max_elevation_radians, 30.0F * std::numbers::pi_v<float> / 180.0F,
+                 0.000001F, "detached stage should allow a broader elevated orbit");
     require_near(detached.minimum_visible_terrain_distance_m, 1'500.0F, 0.0F,
                  "detached stage should publish the far-field visibility contract");
     require(detached.orbit_max_elevation_radians < grounded.orbit_max_elevation_radians,

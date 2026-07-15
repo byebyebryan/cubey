@@ -337,17 +337,17 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     }
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
     const float minimum_elevation_radians =
-        (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 4.0F : 12.0F) *
+        (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 0.0F : 12.0F) *
         degrees_to_radians;
     const float maximum_elevation_radians =
-        (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 12.0F : 32.0F) *
+        (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 30.0F : 32.0F) *
         degrees_to_radians;
     if ((config.backdrop_azimuth_radians.has_value() &&
          !std::isfinite(config.backdrop_azimuth_radians.value())) ||
         (config.backdrop_orbit_radius_m.has_value() &&
          (!std::isfinite(config.backdrop_orbit_radius_m.value()) ||
           config.backdrop_orbit_radius_m.value() < 50.0F ||
-          config.backdrop_orbit_radius_m.value() > 150.0F)) ||
+          config.backdrop_orbit_radius_m.value() > 250.0F)) ||
         (config.backdrop_elevation_radians.has_value() &&
          (!std::isfinite(config.backdrop_elevation_radians.value()) ||
           config.backdrop_elevation_radians.value() < minimum_elevation_radians ||

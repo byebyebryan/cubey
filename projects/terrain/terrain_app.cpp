@@ -173,20 +173,14 @@ struct CompiledTerrainGraph {
 
 [[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal>
 terrain_stage_proxy_mesh_data() {
-    auto result = cubey::render::make_xz_plane_position_color_normal_mesh({
-        .center = {0.0F, -20.0F, 0.0F},
-        .half_extent_x = 40.0F,
-        .half_extent_z = 40.0F,
-        .color = {0.20F, 0.23F, 0.25F},
-    });
     const auto sphere = cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
         .radius = 20.0F,
         .latitude_segments = 24U,
         .longitude_segments = 48U,
         .color = {0.52F, 0.55F, 0.58F},
     });
-    const auto vertex_offset = static_cast<std::uint16_t>(result.vertices.size());
-    result.vertices.reserve(result.vertices.size() + sphere.vertices.size());
+    cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal> result;
+    result.vertices.reserve(sphere.vertices.size());
     for (const cubey::render::VertexPositionColorNormalUv& vertex : sphere.vertices) {
         result.vertices.push_back({
             .position = vertex.position,
@@ -194,10 +188,7 @@ terrain_stage_proxy_mesh_data() {
             .normal = vertex.normal,
         });
     }
-    result.indices.reserve(result.indices.size() + sphere.indices.size());
-    for (const std::uint16_t index : sphere.indices) {
-        result.indices.push_back(static_cast<std::uint16_t>(vertex_offset + index));
-    }
+    result.indices = sphere.indices;
     return result;
 }
 
