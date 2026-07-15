@@ -139,6 +139,9 @@ the detailed foundation notes under `docs/architecture/`.
   clean-room comparison of scalable mountain source operators through the
   accepted cached-backdrop renderer, with fixed calibration and provenance
   boundaries.
+- [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
+  optional external-source control that compares the unchanged Mountains
+  raymarch against an exact-source Cubey mesh transfer and staged ablations.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.

@@ -12,6 +12,7 @@ queue.
 | --- | --- | --- |
 | `projects/terrain` | Terrain v1 source runtime, clipmap renderer, traversal, and review. | Active. Keep one parameterized source model and a small public contract. |
 | `projects/terrain_ref` | TerrainEngine and curated ShaderToy visual controls. | Frozen. Maintenance and reproducibility fixes only. |
+| `projects/terrain_shadertoy_ref` | Optional external-source fidelity study for direct raymarch versus Cubey mesh transfer. | Experimental. Keep restricted source external; do not promote code directly. |
 | `projects/terrain_hydrology_lab` | Previous CPU patch, drainage diagnostics, graph routing, and analytical landscape evolution. | Paused. Preserve build/tests; do not feed terrain v1. |
 | `projects/terrain_workbench_legacy` | First river/mountain driver workbench. | Legacy. |
 | `projects/procedural_terrain_legacy` | Earlier coast/island terrain project. | Legacy. |
@@ -75,6 +76,12 @@ Review always includes:
 Material shading cannot be the only evidence. The height and slope views must
 show the same macro hierarchy, and outputs must be grouped by checkpoint rather
 than accumulated as an undifferentiated image dump.
+
+The external-source fidelity lane is a narrower exception to the clean-room
+production boundary. It exists only to determine why a complete reference scene
+works and where fidelity is lost during mesh transfer. Its source remains
+outside Cubey and its findings must be re-expressed independently before they
+can influence production code.
 
 ## Deferred Work
 
