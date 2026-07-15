@@ -29,6 +29,7 @@
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <imgui.h>
 #include <vulkan/vulkan.h>
@@ -52,6 +53,29 @@ namespace {
 
 constexpr VkFormat kTerrainSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr float kTerrainHeadlessOrbitSpeed = 0.18F;
+constexpr std::uint32_t kTerrainGpuProfilerPassCapacity = 8U;
+
+[[nodiscard]] std::uint64_t profile_frame_index(std::uint64_t frame_index) {
+    return frame_index == 0U ? 0U : frame_index - 1U;
+}
+
+[[nodiscard]] std::uint64_t collected_profile_frame_index(
+    std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
+    if (frame_index > frame_slot.count) {
+        return frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
+    }
+    return profile_frame_index(frame_index);
+}
+
+void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
+                        const std::vector<cubey::vulkan::GpuPassTiming>& timings) {
+    if (recorder == nullptr) {
+        return;
+    }
+    for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+        recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
+    }
+}
 
 struct TerrainCameraFrame {
     float pitch_radians = -0.58F;
@@ -313,6 +337,8 @@ class TerrainApp {
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
+            collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
+                                frame.frame_slot);
             record_target(context.device(), frame.command_buffer, frame.color_target,
                           frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
                           cubey::render::render_graph_present_texture_state(),
@@ -325,7 +351,7 @@ class TerrainApp {
                 .delta_seconds = timing.delta_seconds,
                 .width = context.swapchain().extent().width,
                 .height = context.swapchain().extent().height,
-                .triangles = terrain_clipmap_triangle_count(clipmap_data_),
+                .triangles = active_triangle_count(),
             };
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
@@ -388,6 +414,8 @@ class TerrainApp {
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
+            collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
+                                frame.frame_slot);
             record_target(context.device(), command_buffer, target, frame.frame_slot,
                           cubey::render::render_graph_color_attachment_texture_state(),
                           cubey::render::render_graph_color_attachment_texture_state(),
@@ -483,6 +511,13 @@ class TerrainApp {
             refresh_source();
         }
 
+        if (runtime_config_.render_path == TerrainRenderPath::Quality) {
+            ImGui::Text("Submitted patches: %u", quality_tile_data_.patch_count());
+        } else {
+            ImGui::Text("Submitted triangles: %u", active_triangle_count());
+        }
+        cubey::host::draw_gpu_timings(latest_gpu_timings());
+
         (void)cubey::host::draw_atmosphere_environment_controls(atmosphere_state_,
                                                                 {.default_open = false});
         ImGui::End();
@@ -554,6 +589,7 @@ class TerrainApp {
         if (global_resources_created_) {
             return;
         }
+        gpu_profiler_.emplace(device, frame_slot_count, kTerrainGpuProfilerPassCapacity);
         mesh_.emplace(gpu, runtime_config_.render_path == TerrainRenderPath::Quality
                                ? quality_tile_data_.mesh_config()
                                : clipmap_data_.mesh_config());
@@ -734,7 +770,40 @@ class TerrainApp {
         environment_material_.reset();
         stage_proxy_mesh_.reset();
         mesh_.reset();
+        gpu_profiler_.reset();
         global_resources_created_ = false;
+    }
+
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>&
+    latest_gpu_timings() const {
+        if (!gpu_profiler_.has_value()) {
+            static const std::vector<cubey::vulkan::GpuPassTiming> empty;
+            return empty;
+        }
+        return gpu_profiler_->latest_timings();
+    }
+
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* gpu_profiler() {
+        return gpu_profiler_.has_value() ? &gpu_profiler_.value() : nullptr;
+    }
+
+    void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
+                             std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        if (profiler == nullptr) {
+            return;
+        }
+        profiler->collect(frame_slot.index);
+        record_gpu_timings(profile_recorder, collected_profile_frame_index(frame_index, frame_slot),
+                           latest_gpu_timings());
+    }
+
+    [[nodiscard]] std::uint32_t active_triangle_count() const {
+        // Tessellation output is not known without a pipeline-statistics query. Reporting zero is
+        // preferable to presenting the control clipmap count as quality geometry.
+        return runtime_config_.render_path == TerrainRenderPath::Quality
+                   ? 0U
+                   : terrain_clipmap_triangle_count(clipmap_data_);
     }
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
@@ -997,6 +1066,29 @@ class TerrainApp {
             hdr_post_frame_.update_scene_color_descriptor(device, frame_slot, render_graph.graph,
                                                           resources, render_graph.scene_color);
         };
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        if (profiler != nullptr &&
+            command_buffer_mode == cubey::render::RenderGraphCommandBufferMode::BeginAndEnd) {
+            const cubey::vulkan::CommandRecorder recorder(command_buffer);
+            recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            profiler->begin_frame(command_buffer, frame_slot.index);
+            graph_executor_.record(
+                cubey::render::RenderGraphFrameRecordInfo{
+                    .device = &device,
+                    .command_buffer = command_buffer,
+                    .frame_slot = frame_slot,
+                    .label = "vkEndCommandBuffer terrain",
+                    .command_buffer_mode =
+                        cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                    .profiler = profiler,
+                },
+                render_graph.graph, prepare_resources);
+            recorder.end("vkEndCommandBuffer terrain");
+            return;
+        }
+        if (profiler != nullptr) {
+            profiler->begin_frame(command_buffer, frame_slot.index);
+        }
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &device,
@@ -1004,6 +1096,7 @@ class TerrainApp {
                 .frame_slot = frame_slot,
                 .label = "vkEndCommandBuffer terrain",
                 .command_buffer_mode = command_buffer_mode,
+                .profiler = profiler,
             },
             render_graph.graph, prepare_resources);
     }
@@ -1090,6 +1183,7 @@ class TerrainApp {
     std::optional<cubey::render::ForwardScenePass3D> terrain_pass_{};
     std::optional<cubey::render::GraphicsPipelineResource> stage_proxy_pipeline_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
+    std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     bool global_resources_created_ = false;
 };
 
