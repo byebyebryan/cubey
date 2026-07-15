@@ -80,7 +80,28 @@ render library expose clean headers and shader includes, but terrain-specific
 types are not promoted into the engine foundation until a second real consumer
 tests the boundary.
 
-The default control renderer samples height in the vertex shader over a
+The production renderer is the fixed-focus `backdrop` path. Selecting a
+`backdrop` or `backdrop-stage` camera defaults to this path and source v2.1 when
+neither is explicit. It samples one global polar field around the deterministic
+stage focus, with logarithmic radial spacing from the 300 m consumer boundary
+through the 3.2 km hidden band and out to 16.384 km. The high product uses 3,072
+angular intervals, 64 hidden radial intervals, 768 visible radial intervals,
+and 48 sectors. Neighboring sectors duplicate identical global boundary
+samples.
+
+Height, geometry normals, rock/snow classification, and bounded ambient
+visibility are cached at setup. A reduced far-field index set retains the high
+field's local normals while bounding submitted geometry. Conservative azimuth
+selection and frustum bounds cull sectors for every unrestricted yaw. The
+non-tessellated runtime shader performs environment lighting and aerial
+perspective only; it does not evaluate terrain source noise, weathering,
+terrain-shadow marches, or material tiles.
+
+The `control` clipmap and `quality` tessellation renderers below are retained
+explicit experiments and regression controls. They are not terrain v1
+acceptance paths.
+
+The control renderer samples height in the vertex shader over a
 camera-centered clipmap. It uses eight LOD levels, 128 cells per axis, a 2 m
 near cell, and about 16 km of outer radius. All levels use one origin snapped to
 that finest grid. Ring overlap is an exact eleven parent cells so patch spans
@@ -136,25 +157,27 @@ macro material weights use the classification normal; layered projection and
 lighting may use the more detailed shading normal. Height-assisted texture
 blending refines only local layer composition and cannot rewrite macro weights.
 
-An opt-in backdrop presentation may derive distant vegetation coverage from
+The retained live renderers' opt-in backdrop presentation may derive distant vegetation coverage from
 height, slope, broad landform context, and footprint-filtered coherent fields.
 This is material coverage only: it cannot displace terrain, change CPU queries,
 provide collision, or claim individual grass or tree geometry. Its supported
 scene contract begins at roughly 300 m from the visible lower frame edge.
 Close-range foliage remains a separate future rendering product.
 
-The production `backdrop` planner searches the random-access source for a local
+The backdrop stage planner searches the random-access source for a local
 360-degree orbit stage. It scores a bounded coarse grid, refines deterministic
 shortlists, and fully evaluates 16 candidates over 24 azimuth sectors. The
 selected source focus maps to local scene XZ without changing source equations,
-geometry scale, or terrain shape. Terrain displacement, weathering, procedural
-materials, diagnostics, and heightfield shadows all sample that translated
-source location; renderer ownership and camera coordinates remain local.
+geometry scale, or terrain shape. The cached product samples that translated
+location at setup. Live control and quality displacement, weathering,
+procedural materials, diagnostics, and heightfield shadows sample it during
+rendering. Renderer ownership and camera coordinates remain local.
 
-Detached mode is the far-field product. The consumer owns the inner 300 m,
-which terrain rendering excludes. The solver raises the physical focus enough
-to keep lower-frame terrain at least 1.5 km away throughout the supported
-50-250 m radius and 0-30 degree elevation envelope. Yaw is unrestricted.
+Detached mode is the far-field product. The consumer owns the inner 300 m and
+the cached renderer owns no visible terrain before 3.2 km. The solver raises
+the physical focus enough to keep lower-frame terrain at least 3.2 km away
+throughout the supported 50-250 m radius and 0-30 degree elevation envelope.
+Yaw is unrestricted.
 Grounded mode keeps terrain continuous and searches for a naturally low-relief,
 low-slope stage as a placement diagnostic. `midground` retains the older
 directional 1.6 km surface camera for detail stress work; it is not the backdrop
@@ -175,7 +198,9 @@ The public run controls are:
 - `terrain.preset`: `mountain`, `upland`, or `plains`;
 - `terrain.source_version`: `v1`, mountain-only `v2`/`v2.1`, or retained
   experimental mountain hierarchy `v3`;
-- `terrain.render_path`: `control` or mountain-only `quality`;
+- `terrain.render_path`: production `backdrop`, legacy `control`, or
+  mountain-only `quality`;
+- `terrain.backdrop_mesh_density`: `low`, `medium`, or default `high`;
 - `terrain.surface_detail`: `tile` or quality-only `layered`;
 - `terrain.target_edge_px`: adaptive quality target from `2` through `16`;
 - `terrain.weathering`: `off` or `local`;
@@ -184,6 +209,7 @@ The public run controls are:
 - `terrain.backdrop_mode`: `detached` or `grounded`;
 - optional `terrain.backdrop_azimuth_degrees`,
   `terrain.backdrop_orbit_radius_m`, and `terrain.backdrop_elevation_degrees`;
+- `terrain.backdrop_minimum_visible_distance_m`, defaulting to `3200`;
 - `terrain.presentation`: `standard` or opt-in `backdrop` material coverage.
 
 The terrain app supports final surface, base/final height, slope, weathering
@@ -196,8 +222,8 @@ shape review from eye-level rendering and LOD review. The `backdrop` camera
 uses the deterministic orbit stage and pitch/radius bounds above. The
 `midground` camera retains its deterministic 1.6 km directional target. Small
 bounded CPU sample grids are allowed for tests, statistics, and review metadata.
-The old raw-field exporter remains with the hydrology lab; terrain v1 does not
-emit a baked terrain product.
+The old raw-field exporter remains with the hydrology lab. Terrain v1 builds an
+in-memory cached backdrop product but does not yet persist or stream it.
 
 Headless surface and midground video advance the camera at a deterministic fixed
 forward speed while re-querying terrain clearance every frame. A headless
@@ -218,7 +244,16 @@ Across seeds `0`, `9012`, and `12345`:
 - CPU and GPU heights agree within `0.1 m` at tested coordinates and footprints;
 - surface traversal keeps the camera above terrain and exposes no LOD cracks or
   discontinuities;
-- rendering requires no per-frame CPU field generation or bulk artifacts.
+- rendering requires no per-frame CPU field generation or bulk artifacts;
+- the `terrain surface` GPU pass remains below `1.0 ms` p95 at 2560 x 1440 on
+  the RTX 5070 Ti review machine after 30 warmup frames and at least 120
+  measured samples.
+
+The accepted cached-backdrop pack records `0.876288 ms` terrain-surface p95
+over 146 measured samples. Setup plus first frame is `18,396 ms` and
+`342,728 KiB` peak process RSS, including stage search, bake, Vulkan startup,
+upload, and one frame. See
+[`terrain-cached-backdrop-v1-review.md`](../notes/terrain-cached-backdrop-v1-review.md).
 
 The fixed review pack compares the reboot against `terrain-engine-ref`, but the
 new runtime has no code or link dependency on `terrain_ref`.

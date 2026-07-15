@@ -2,9 +2,10 @@
 
 Date: 2026-07-15
 
-Status: implementation direction. This supersedes the quality-tile renderer as
+Status: implemented and accepted. This supersedes the quality-tile renderer as
 the terrain v1 product target while preserving it as geometry-continuity
-evidence.
+evidence. Measured evidence is recorded in
+[`terrain-cached-backdrop-v1-review.md`](terrain-cached-backdrop-v1-review.md).
 
 ## Why The Direction Changed
 
@@ -56,6 +57,20 @@ reported separately. Setup-time generation and resident memory are also
 reported so the runtime gain is not purchased with unbounded artifacts, but
 they are not folded into the per-frame surface budget.
 
+## Implementation Result
+
+The accepted high product samples 2,558,976 source points into 48 exact-seam
+polar sectors. It retains the high field for cached normals and diagnostics but
+uses a 540,672-triangle far-field index capacity before conservative azimuth
+and frustum culling. The runtime terrain shader reads cached geometry and
+classification only.
+
+The maintained 2560 x 1440 RTX 5070 Ti orbit recorded 146 post-warmup samples
+at `0.876288 ms` terrain-surface p95. Setup plus the first 640 x 360 frame took
+`18,396 ms` and reached `342,728 KiB` process RSS; that includes stage search,
+product generation, Vulkan startup, and upload. Runtime cost is accepted.
+Persistent caching and setup-time reduction remain deferred.
+
 ## Preserved And Deferred Work
 
 The `control` clipmap and `quality` tessellation paths remain explicit review
@@ -66,4 +81,3 @@ Hydrology, source redesign, close ground detail, foliage, water bodies, dynamic
 terrain cast shadows, camera translation, and general clipmap/streaming design
 remain separate work. The next source pass should begin only after the cached
 renderer establishes an honest distance and cost envelope.
-

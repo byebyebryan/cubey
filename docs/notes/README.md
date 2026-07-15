@@ -132,6 +132,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain cached backdrop pivot](terrain-cached-backdrop-pivot.md): current
   decision to replace per-frame procedural tessellation with a fixed-focus,
   setup-time cached mesh and a terrain-only sub-millisecond GPU budget.
+- [Terrain cached backdrop v1 review](terrain-cached-backdrop-v1-review.md):
+  accepted multi-seed fixed-focus product, ownership envelope, setup cost, and
+  1440p sub-millisecond terrain-pass evidence.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.

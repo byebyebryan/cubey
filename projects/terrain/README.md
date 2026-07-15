@@ -1,21 +1,27 @@
 # Terrain
 
-`projects/terrain` is pivoting from a directly sampled runtime to a cached,
-fixed-focus far-backdrop product. The control clipmap and opt-in adaptive
-tessellation path remain explicit review controls. Source v2.1 preserves v2 above a 64 m
+`projects/terrain` now provides a cached, fixed-focus far-backdrop product. The
+control clipmap and opt-in adaptive tessellation path remain explicit review
+controls. Source v2.1 preserves v2 above a 64 m
 footprint while moving sub-110 m detail into bounded additive relief. The
 opt-in `layered` surface-detail mode adds generated albedo-height and
-normal-roughness-cavity material layers for the supported backdrop and
-midground tiers. The CPU source library currently
-provides deterministic world-space height and gradient queries for the shared
+normal-roughness-cavity material layers for the retained live backdrop and
+midground controls. The CPU source library currently provides deterministic
+world-space height and gradient queries for the shared
 `mountain`, `upland`, and `plains` parameterized source.
 The matching GLSL evaluator consumes the packed resolved parameters and is
 checked against CPU samples through Vulkan readback. Optional local weathering
 is bounded, footprint-filtered, and explicitly non-hydraulic.
 
-The `terrain` app displaces geometry directly from that GLSL evaluator. The
-default control path uses a camera-centered eight-level clipmap with explicit
-single-owner LOD transitions. The opt-in quality path uses a camera-centered,
+The production `backdrop` path samples source v2.1 once into 48 static polar
+sectors spanning 3.2-16.384 km. Cached heights, normals, material
+classification, and ambient visibility feed a non-tessellated environment-lit
+shader. Conservative angular and frustum culling keep the terrain-only 1440p
+GPU pass below the v1 1 ms p95 budget. It performs no runtime source,
+weathering, terrain-shadow, tessellation, or material-tile evaluation.
+
+The retained control path uses a camera-centered eight-level clipmap with
+explicit single-owner LOD transitions. The opt-in quality path uses a camera-centered,
 world-aligned 128 by 128 tile field with shared edges and screen-driven adaptive
 tessellation over the same approximate coverage. It uses shared atmosphere
 transport and sky irradiance, terrain-local heightfield shadows, linear-space
@@ -25,7 +31,7 @@ clearance comes from the CPU query contract.
 The `backdrop` preset is a 360-degree orbit stage around a local mid-air
 foreground focus. Detached mode reserves the inner 300 m for a consuming scene,
 maps a deterministically selected source location under that local stage, and
-will solve a vertical offset that keeps lower-frame terrain at least 3.2 km away.
+solves a vertical offset that keeps lower-frame terrain at least 3.2 km away.
 `backdrop-stage` adds a neutral foreground proxy for interactive validation
 without changing the clean backdrop product view. Grounded mode keeps terrain
 continuous as a placement diagnostic. `midground` retains the older directional
@@ -79,6 +85,7 @@ projects/terrain/capture_source_v2_1_review.sh
 projects/terrain/capture_orbit_stage_review.sh
 projects/terrain/capture_midair_stage_review.sh
 projects/terrain/capture_quality_tile_review.sh
+projects/terrain/capture_cached_backdrop_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -92,6 +99,9 @@ The quality tile review covers six yaw directions, the supported stage
 radius/elevation envelope, three native-resolution seeds, geometry diagnostics,
 a profiled full orbit, and detached-stage ownership under
 `outputs/terrain/quality-tile-v1/`.
+The accepted cached-backdrop review covers three seeds, six relative azimuths,
+the full orbit envelope, cached diagnostics, setup cost, and the terrain-only
+GPU gate under `outputs/terrain/cached-backdrop-v1/`.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
@@ -99,7 +109,7 @@ Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
 `ground`, `backdrop`, `backdrop-stage`, and `midground`. The deterministic
 source-aware backdrop planner evaluates 24 azimuth sectors and supports
 unrestricted yaw within a 50-250 m orbit. Detached elevation is limited to
-0-30 degrees and defaults to a 1.5 km lower-frame terrain exclusion. Grounded
+0-30 degrees and defaults to a 3.2 km lower-frame terrain exclusion. Grounded
 elevation is limited to 12-32 degrees. Initial azimuth, radius, elevation, and
 validation distance are optional controls. `midground` remains the directional
 1.6 km detail stress tier. Presentation modes are `standard` (default) and
@@ -119,6 +129,11 @@ The fixed v3 A/B pack remains under
 `outputs/terrain/midground-detail-v3/`; the accepted correction pack is under
 `outputs/terrain/midground-correction-v4/`. The focused source v2.1 comparison
 is under `outputs/terrain/source-v2-1/`.
+
+The general terrain default remains source v1 plus the control renderer. A
+backdrop camera defaults to source v2.1, the cached `backdrop` render path, and
+`high` backdrop mesh density unless those options are explicit. `low` and
+`medium` densities are diagnostic controls.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and
