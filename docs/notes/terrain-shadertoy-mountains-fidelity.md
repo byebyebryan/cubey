@@ -65,3 +65,44 @@ This is an offline reference lane with no frame-time gate. The batch stops after
 the comparison pack and written findings. A successful transfer is evidence for
 which source and rendering pieces to adapt clean-room later; it is not permission
 to move restricted source into production.
+
+## Completed Finding
+
+The v1 evidence pack is under
+`outputs/terrain_shadertoy_ref/mountains-fidelity-v1/`. The direct raymarch
+recovers the recognizable Mountains scenes at all three fixed times. The
+`1024`-cell mesh preserves their macro silhouettes, ridge placement, waterline,
+and camera composition without cracks or missing terrain. This is materially
+closer than the earlier operator proxies and demonstrates that the source can
+be transferred to conventional mesh rendering.
+
+The transfer also explains why the reference works:
+
+- the five-octave `Terrain` field supplies broad, continuous relief, but its top
+  view is still a cloudy field rather than a self-evident authored mountain map;
+- ray intersection uses the broad field while six additional `Terrain2` octaves
+  provide distance-aware normals, separating silhouette frequency from shading
+  frequency;
+- the camera follows a source-selected path and samples terrain ahead to keep
+  useful clearance and compositions instead of asking arbitrary views to work;
+- trees, slope/elevation material bands, water, sky, fog, and exposure provide
+  scale and hide transitions that are conspicuous in neutral diagnostics.
+
+The topology ladder is the main warning. Even `1024` cells across the
+512-reference-unit domain shows obvious facets with geometry normals because
+the source camera approaches the terrain closely. Detailed normals conceal much
+of that error in the final image, but they do not increase silhouette density.
+A production mesh adaptation therefore needs view-dependent geometry density or
+an equivalent LOD/tessellation strategy; a single uniform grid is not a
+close-surface solution.
+
+Removing procedural tree displacement changes the silhouette much less than
+removing detailed normals or source shading. The strongest transferable lesson
+is therefore the layered frequency and presentation contract, not the tree
+height hack or a claim that one compact noise field solves terrain generally.
+
+This study passes its fidelity goal but does not promote restricted code or a
+new production source. The next clean-room terrain work should preserve broad
+geometry, independent shader-scale normal detail, source-aware framing, and
+distance-hiding atmosphere as explicit layers, then evaluate them through the
+cached backdrop and its sub-millisecond runtime budget.
