@@ -103,6 +103,12 @@ The accepted cached-backdrop review covers three seeds, six relative azimuths,
 the full orbit envelope, cached diagnostics, setup cost, and the terrain-only
 GPU gate under `outputs/terrain/cached-backdrop-v1/`.
 
+The isolated source-model study compares clean-room mountain operator families
+through the same cached-backdrop renderer without changing the production
+source. Its contract and provenance boundaries are recorded in
+[`docs/notes/terrain-source-model-study.md`](../../docs/notes/terrain-source-model-study.md).
+`projects/terrain_ref` remains frozen and is not linked by the study.
+
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
