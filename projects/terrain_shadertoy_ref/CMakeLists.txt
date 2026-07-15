@@ -22,12 +22,19 @@ cubey_add_app_target(
         main.cpp
         terrain_shadertoy_ref_app.cpp
         terrain_shadertoy_ref_config.cpp
+        terrain_shadertoy_ref_mesh.cpp
     SHADERS
         shaders/fullscreen.vert
+        shaders/mountains_camera_probe.frag
+        shaders/mountains_height_bake.frag
+        shaders/mountains_mesh.frag
+        shaders/mountains_mesh.vert
         shaders/mountains_raymarch.frag
+        shaders/mountains_sky.frag
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CUBEY_SHADERTOY_REF_DIR}"
     SHADER_DEPENDS
         "${CUBEY_SHADERTOY_MOUNTAINS_SOURCE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/reference_frame.glsl"
 )

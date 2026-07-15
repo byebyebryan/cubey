@@ -1,4 +1,5 @@
 #include "terrain_shadertoy_ref_app.h"
+#include "terrain_shadertoy_ref_mesh.h"
 
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -88,9 +89,6 @@ class TerrainShadertoyRefApp {
     }
 
     int run() {
-        if (reference_config_.render != ReferenceRender::Raymarch) {
-            throw std::runtime_error("mesh transfer is not available in this build stage");
-        }
         return run_config_.headless ? run_headless() : run_windowed();
     }
 
@@ -98,11 +96,11 @@ class TerrainShadertoyRefApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources(context.device(), context.gpu());
+            create_global_resources(context.device(), context.gpu(), context.swapchain().extent());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_pipeline(context.device(), context.swapchain().format(),
-                            context.swapchain().extent());
+                            context.swapchain().extent(), context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
@@ -120,7 +118,9 @@ class TerrainShadertoyRefApp {
             {
                 .run_config = run_config_,
                 .app_name = "terrain_shadertoy_ref",
-                .ready_status = "rendering external Mountains raymarch",
+                .ready_status = reference_config_.render == ReferenceRender::Mesh
+                                    ? "rendering external Mountains mesh transfer"
+                                    : "rendering external Mountains raymarch",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -136,14 +136,20 @@ class TerrainShadertoyRefApp {
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
-            create_global_resources(context.device(), context.gpu());
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_pipeline(context.device(), target.format, target.extent);
+            create_global_resources(context.device(), context.gpu(), target.extent);
+            create_pipeline(context.device(), target.format, target.extent,
+                            cubey::host::headless_capture_frame_slot_count(run_config_));
         };
-        callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
-                                          VkCommandBuffer command_buffer,
-                                          const cubey::host::HeadlessRenderTarget& target) {
-            record_reference_draw(cubey::vulkan::CommandRecorder(command_buffer), target);
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+                                        const cubey::host::HeadlessCaptureFrame& frame,
+                                        VkCommandBuffer command_buffer,
+                                        const cubey::host::HeadlessRenderTarget& target) {
+            if (reference_config_.render == ReferenceRender::Mesh) {
+                mesh_renderer_.record(command_buffer, target, frame.frame_slot, false);
+            } else {
+                record_reference_draw(cubey::vulkan::CommandRecorder(command_buffer), target);
+            }
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_swapchain_resources();
@@ -154,7 +160,8 @@ class TerrainShadertoyRefApp {
         return host.run();
     }
 
-    void create_global_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
+    void create_global_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                                 VkExtent2D reference_extent) {
         const std::vector<std::uint8_t> bytes = make_channel_texture_bytes();
         channel_texture_.emplace(cubey::render::create_uploaded_texture_2d(
             device, gpu,
@@ -170,9 +177,18 @@ class TerrainShadertoyRefApp {
                         .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
                     },
             }));
+        if (reference_config_.render == ReferenceRender::Mesh) {
+            mesh_renderer_.create_global_resources(device, gpu, reference_config_, reference_extent,
+                                                   channel_texture());
+        }
     }
 
-    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent) {
+    void create_pipeline(cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
+                         std::uint32_t frame_slot_count) {
+        if (reference_config_.render == ReferenceRender::Mesh) {
+            mesh_renderer_.create_frame_resources(device, color_format, extent, frame_slot_count);
+            return;
+        }
         const cubey::render::MaterialPassInfo pass = raymarch_pass_info();
         material_.emplace(device, cubey::render::MaterialInstanceConfig{
                                       .material_pass = pass,
@@ -200,11 +216,13 @@ class TerrainShadertoyRefApp {
     }
 
     void destroy_swapchain_resources() {
+        mesh_renderer_.destroy_frame_resources();
         pipeline_.reset();
         material_.reset();
     }
 
     void destroy_global_resources() {
+        mesh_renderer_.destroy_global_resources();
         channel_texture_.reset();
     }
 
@@ -238,7 +256,11 @@ class TerrainShadertoyRefApp {
             });
     }
 
-    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) const {
+    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) {
+        if (reference_config_.render == ReferenceRender::Mesh) {
+            mesh_renderer_.record(frame.command_buffer, frame.color_target, frame.frame_slot, true);
+            return;
+        }
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         cubey::render::record_present_render_target(
@@ -275,6 +297,7 @@ class TerrainShadertoyRefApp {
     std::optional<cubey::render::Texture2D> channel_texture_{};
     std::optional<cubey::render::MaterialInstance> material_{};
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_{};
+    MountainsMeshRenderer mesh_renderer_{};
 };
 
 } // namespace
