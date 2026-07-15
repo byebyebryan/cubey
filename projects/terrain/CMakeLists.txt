@@ -552,6 +552,7 @@ if (BUILD_TESTING)
         0.001
         0.001
     )
+    set_tests_properties(terrain_layered_headless_writes_png PROPERTIES TIMEOUT 30)
 
     set(CUBEY_TERRAIN_VEGETATION_COVERAGE_HEADLESS_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/terrain-vegetation-coverage-headless.png"
