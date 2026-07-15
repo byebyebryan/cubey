@@ -257,7 +257,40 @@ target_link_libraries(
 )
 add_dependencies(cubey_project_terrain_source_study cubey_project_terrain)
 
+add_executable(cubey_project_terrain_source_study_report
+    source_study/terrain_source_study_report.cpp
+)
+set_target_properties(
+    cubey_project_terrain_source_study_report
+    PROPERTIES
+        OUTPUT_NAME terrain_source_study_report
+)
+target_link_libraries(
+    cubey_project_terrain_source_study_report
+    PRIVATE
+        cubey_project_terrain_render_support
+        cubey_project_terrain_source_study_runtime
+        cubey::engine
+        cubey_project_warnings
+        nlohmann_json::nlohmann_json
+)
+
 if (BUILD_TESTING)
+    add_executable(cubey_project_terrain_source_study_tests
+        source_study/terrain_source_study_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_terrain_source_study_tests
+        PRIVATE
+            cubey_project_terrain_source_study_runtime
+            cubey_project_warnings
+    )
+    add_test(
+        NAME terrain_source_study_tests
+        COMMAND cubey_project_terrain_source_study_tests
+    )
+    set_tests_properties(terrain_source_study_tests PROPERTIES LABELS terrain TIMEOUT 120)
+
     add_executable(cubey_project_terrain_backdrop_product_tests
         terrain_backdrop_product_tests.cpp
     )

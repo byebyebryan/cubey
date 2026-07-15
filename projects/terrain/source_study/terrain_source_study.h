@@ -42,6 +42,8 @@ terrain_source_study_calibration(TerrainSourceStudyRecipe recipe);
 class TerrainSourceStudySource final : public TerrainHeightSource {
   public:
     TerrainSourceStudySource(TerrainSourceStudyRecipe recipe, std::uint64_t seed);
+    TerrainSourceStudySource(TerrainSourceStudyRecipe recipe, std::uint64_t seed,
+                             TerrainSourceStudyCalibration calibration);
 
     [[nodiscard]] TerrainHeightSourceMetadata metadata() const noexcept override;
     [[nodiscard]] float sample_height(const TerrainQuery& query) const override;

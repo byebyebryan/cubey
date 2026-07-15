@@ -171,7 +171,8 @@ struct RawEvaluator {
             .value;
     const float support = smoothstep(-0.52F, 0.42F, broad);
     const float folded = std::max(std::abs(field) * 1.9F - 0.18F, 0.0F);
-    return support * (0.28F + 0.72F * smoothstep(0.0F, 0.82F, folded));
+    const float folded_profile = folded / (0.42F + folded);
+    return support * (0.28F + 0.72F * folded_profile);
 }
 
 [[nodiscard]] float raw_mountains(const RawEvaluator& evaluator, const TerrainQuery& query) {
@@ -365,8 +366,18 @@ TerrainSourceStudyCalibration terrain_source_study_calibration(TerrainSourceStud
 
 TerrainSourceStudySource::TerrainSourceStudySource(TerrainSourceStudyRecipe recipe,
                                                    std::uint64_t seed)
-    : recipe_(recipe), seed_(seed), calibration_(terrain_source_study_calibration(recipe)),
+    : TerrainSourceStudySource(recipe, seed, terrain_source_study_calibration(recipe)) {}
+
+TerrainSourceStudySource::TerrainSourceStudySource(TerrainSourceStudyRecipe recipe,
+                                                   std::uint64_t seed,
+                                                   TerrainSourceStudyCalibration calibration)
+    : recipe_(recipe), seed_(seed), calibration_(calibration),
       control_parameters_(raw_evaluator(recipe, seed).control) {
+    if (!std::isfinite(calibration_.raw_p05) || !std::isfinite(calibration_.raw_p95) ||
+        !std::isfinite(calibration_.scale_m) || calibration_.raw_p95 <= calibration_.raw_p05 ||
+        calibration_.scale_m <= 0.0F || calibration_.sample_count == 0U) {
+        throw std::runtime_error("invalid terrain source study calibration");
+    }
     validate_terrain_height_source_metadata(metadata());
 }
 
