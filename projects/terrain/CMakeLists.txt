@@ -34,6 +34,7 @@ target_link_libraries(
 
 add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_camera.cpp
+    terrain_backdrop_stage.cpp
     terrain_clipmap.cpp
     terrain_environment_gpu.cpp
     terrain_material_tiles.cpp
@@ -221,6 +222,17 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME terrain_render_tests COMMAND cubey_project_terrain_render_tests)
+
+    add_executable(cubey_project_terrain_backdrop_stage_tests
+        terrain_backdrop_stage_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_terrain_backdrop_stage_tests
+        PRIVATE
+            cubey_project_terrain_render_support
+            cubey_project_warnings
+    )
+    add_test(NAME terrain_backdrop_stage_tests COMMAND cubey_project_terrain_backdrop_stage_tests)
 
     add_test(
         NAME terrain_source_report_runs
