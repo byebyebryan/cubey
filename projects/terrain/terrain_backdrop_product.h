@@ -1,7 +1,7 @@
 #pragma once
 
 #include "terrain_backdrop_density.h"
-#include "terrain_source.h"
+#include "terrain_height_source.h"
 
 #include <cubey/render/mesh.h>
 #include <cubey/render/primitive_mesh.h>
@@ -23,9 +23,9 @@ struct TerrainBackdropDensityProfile {
 terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept;
 
 struct TerrainBackdropProductRequest {
-    TerrainSourceParameters source{};
     cubey::math::Vec2 source_focus_xz{0.0F, 0.0F};
     TerrainBackdropMeshDensity density = TerrainBackdropMeshDensity::High;
+    std::uint32_t render_stride = 0U;
     float consumer_radius_m = 300.0F;
     float visible_inner_radius_m = 3'200.0F;
     float outer_radius_m = 16'384.0F;
@@ -67,11 +67,17 @@ struct TerrainBackdropProductDiagnostics {
 
 struct TerrainBackdropProduct {
     TerrainBackdropProductRequest request{};
+    TerrainHeightSourceMetadata source{};
     std::vector<TerrainBackdropSectorMesh> sectors{};
     TerrainBackdropProductDiagnostics diagnostics{};
 };
 
 [[nodiscard]] TerrainBackdropProduct
-make_terrain_backdrop_product(const TerrainBackdropProductRequest& request);
+make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
+                              const TerrainHeightSource& source);
+
+[[nodiscard]] TerrainBackdropProduct
+make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
+                              const TerrainSourceParameters& source, std::uint64_t seed = 0U);
 
 } // namespace cubey::projects::terrain

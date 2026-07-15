@@ -14,19 +14,22 @@ void require(bool condition, std::string_view message) {
     }
 }
 
-[[nodiscard]] cubey::projects::terrain::TerrainBackdropProductRequest
-request_for_seed(std::uint64_t seed) {
+[[nodiscard]] cubey::projects::terrain::TerrainBackdropProductRequest product_request() {
     return {
-        .source = cubey::projects::terrain::resolve_terrain_source_parameters({
-            .seed = seed,
-            .preset = cubey::projects::terrain::TerrainPreset::Mountain,
-            .version = cubey::projects::terrain::TerrainSourceVersion::V2_1,
-            .weathering = cubey::projects::terrain::TerrainWeatheringMode::Off,
-        }),
         .source_focus_xz = {4'000.0F, -8'000.0F},
         .density = cubey::projects::terrain::TerrainBackdropMeshDensity::Low,
         .vertical_offset_m = -1'200.0F,
     };
+}
+
+[[nodiscard]] cubey::projects::terrain::TerrainSourceParameters
+source_for_seed(std::uint64_t seed) {
+    return cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = seed,
+        .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+        .version = cubey::projects::terrain::TerrainSourceVersion::V2_1,
+        .weathering = cubey::projects::terrain::TerrainWeatheringMode::Off,
+    });
 }
 
 void test_density_profiles_publish_the_product_budget() {
@@ -51,8 +54,9 @@ void test_density_profiles_publish_the_product_budget() {
 
 void test_product_is_deterministic_connected_and_outside_the_stage() {
     using namespace cubey::projects::terrain;
-    const TerrainBackdropProduct first = make_terrain_backdrop_product(request_for_seed(9012U));
-    const TerrainBackdropProduct second = make_terrain_backdrop_product(request_for_seed(9012U));
+    const TerrainSourceParameters source = source_for_seed(9012U);
+    const TerrainBackdropProduct first = make_terrain_backdrop_product(product_request(), source);
+    const TerrainBackdropProduct second = make_terrain_backdrop_product(product_request(), source);
     const TerrainBackdropDensityProfile density = first.diagnostics.density;
     require(first.diagnostics.content_hash == second.diagnostics.content_hash,
             "cached backdrop product should be deterministic");
@@ -88,10 +92,37 @@ void test_product_is_deterministic_connected_and_outside_the_stage() {
 
 void test_product_hash_changes_with_the_source_seed() {
     using namespace cubey::projects::terrain;
-    const TerrainBackdropProduct first = make_terrain_backdrop_product(request_for_seed(0U));
-    const TerrainBackdropProduct second = make_terrain_backdrop_product(request_for_seed(12345U));
+    const TerrainBackdropProduct first =
+        make_terrain_backdrop_product(product_request(), source_for_seed(0U), 0U);
+    const TerrainBackdropProduct second =
+        make_terrain_backdrop_product(product_request(), source_for_seed(12345U), 12345U);
     require(first.diagnostics.content_hash != second.diagnostics.content_hash,
             "cached backdrop hash should track source content");
+}
+
+void test_parameter_adapter_preserves_the_product() {
+    using namespace cubey::projects::terrain;
+    const TerrainSourceParameters parameters = source_for_seed(9012U);
+    const ParameterTerrainHeightSource adapter(parameters, 9012U);
+    const TerrainBackdropProduct direct =
+        make_terrain_backdrop_product(product_request(), parameters, 9012U);
+    const TerrainBackdropProduct generic =
+        make_terrain_backdrop_product(product_request(), adapter);
+    require(direct.diagnostics.content_hash == generic.diagnostics.content_hash,
+            "parameter adapter should preserve cached backdrop content");
+    require(generic.source.seed == 9012U && generic.source.id == "terrain-parameters",
+            "cached backdrop should retain a source metadata snapshot");
+}
+
+void test_full_render_stride_retains_the_baked_topology() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest request = product_request();
+    request.density = TerrainBackdropMeshDensity::Medium;
+    request.render_stride = 1U;
+    const TerrainBackdropProduct product =
+        make_terrain_backdrop_product(request, source_for_seed(9012U), 9012U);
+    require(product.diagnostics.render_triangle_count == product.diagnostics.visible_triangle_count,
+            "explicit stride one should retain the full baked topology for source studies");
 }
 
 } // namespace
@@ -101,6 +132,8 @@ int main() {
         test_density_profiles_publish_the_product_budget();
         test_product_is_deterministic_connected_and_outside_the_stage();
         test_product_hash_changes_with_the_source_seed();
+        test_parameter_adapter_preserves_the_product();
+        test_full_render_stride_retains_the_baked_topology();
         std::cout << "terrain_backdrop_product_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

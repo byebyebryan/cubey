@@ -350,10 +350,11 @@ terrain_atmosphere_state(const RunConfig& config) {
 
 class TerrainApp {
   public:
-    explicit TerrainApp(RunConfig config)
+    TerrainApp(RunConfig config, TerrainAppOptions options)
         : run_config_(std::move(config)),
-          runtime_config_(terrain_runtime_config_from_run_config(run_config_)),
+          runtime_config_(terrain_runtime_config_from_run_config(run_config_)), options_(options),
           source_parameters_(resolve_terrain_source_parameters(runtime_config_.source)),
+          production_backdrop_source_(source_parameters_, runtime_config_.source.seed),
           clipmap_data_(runtime_config_.render_path == TerrainRenderPath::Control
                             ? make_terrain_clipmap_mesh(runtime_config_)
                             : TerrainClipmapMeshData{}),
@@ -607,6 +608,8 @@ class TerrainApp {
 
     void refresh_source() {
         source_parameters_ = resolve_terrain_source_parameters(runtime_config_.source);
+        production_backdrop_source_ =
+            ParameterTerrainHeightSource(source_parameters_, runtime_config_.source.seed);
         scene_summary_ = terrain_scene_summary(source_parameters_, clipmap_config_);
         backdrop_plan_.reset();
         backdrop_stage_plan_.reset();
@@ -625,16 +628,18 @@ class TerrainApp {
             throw std::runtime_error("cached terrain backdrop requires a stage plan");
         }
         const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
-        backdrop_product_ = make_terrain_backdrop_product({
-            .source = source_parameters_,
-            .source_focus_xz = plan.source_focus_xz,
-            .density = runtime_config_.backdrop_mesh_density,
-            .consumer_radius_m = plan.stage_radius_m,
-            .visible_inner_radius_m = runtime_config_.backdrop_minimum_visible_distance_m,
-            .outer_radius_m = clipmap_config_.outer_half_extent,
-            .vertical_scale = runtime_config_.vertical_scale,
-            .vertical_offset_m = plan.terrain_vertical_offset_m,
-        });
+        backdrop_product_ = make_terrain_backdrop_product(
+            {
+                .source_focus_xz = plan.source_focus_xz,
+                .density = runtime_config_.backdrop_mesh_density,
+                .render_stride = options_.backdrop_render_stride,
+                .consumer_radius_m = plan.stage_radius_m,
+                .visible_inner_radius_m = runtime_config_.backdrop_minimum_visible_distance_m,
+                .outer_radius_m = clipmap_config_.outer_half_extent,
+                .vertical_scale = runtime_config_.vertical_scale,
+                .vertical_offset_m = plan.terrain_vertical_offset_m,
+            },
+            backdrop_height_source());
     }
 
     void apply_camera_preset() {
@@ -655,7 +660,8 @@ class TerrainApp {
                     request.orbit_default_elevation_radians =
                         runtime_config_.backdrop_elevation_radians.value();
                 }
-                backdrop_stage_plan_ = plan_terrain_backdrop_stage(source_parameters_, request);
+                backdrop_stage_plan_ =
+                    plan_terrain_backdrop_stage(backdrop_height_source(), request);
             }
             const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
             orbit_controller_.set_distance_limits(plan.orbit_min_radius_m, plan.orbit_max_radius_m);
@@ -1359,9 +1365,16 @@ class TerrainApp {
         return surface_detail_material_.value();
     }
 
+    [[nodiscard]] const TerrainHeightSource& backdrop_height_source() const noexcept {
+        return options_.backdrop_source != nullptr ? *options_.backdrop_source
+                                                   : production_backdrop_source_;
+    }
+
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
+    TerrainAppOptions options_{};
     TerrainSourceParameters source_parameters_{};
+    ParameterTerrainHeightSource production_backdrop_source_;
     TerrainClipmapMeshData clipmap_data_{};
     TerrainQualityTileMeshData quality_tile_data_{};
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};
@@ -1398,9 +1411,13 @@ class TerrainApp {
 
 } // namespace
 
-int run_terrain(const cubey::RunConfig& config) {
-    TerrainApp app(config);
+int run_terrain_with_options(const cubey::RunConfig& config, TerrainAppOptions options) {
+    TerrainApp app(config, options);
     return app.run();
+}
+
+int run_terrain(const cubey::RunConfig& config) {
+    return run_terrain_with_options(config, {});
 }
 
 } // namespace cubey::projects::terrain

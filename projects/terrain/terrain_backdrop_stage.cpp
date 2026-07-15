@@ -55,10 +55,9 @@ struct LocalSummary {
     return std::sqrt(value.x * value.x + value.y * value.y);
 }
 
-[[nodiscard]] float sample_height(const TerrainSourceParameters& source,
-                                  cubey::math::Vec2 source_xz, float footprint_m,
-                                  float vertical_scale) {
-    return sample_terrain_height(source, {.world_xz = source_xz, .footprint_m = footprint_m}) *
+[[nodiscard]] float sample_height(const TerrainHeightSource& source, cubey::math::Vec2 source_xz,
+                                  float footprint_m, float vertical_scale) {
+    return source.sample_height({.world_xz = source_xz, .footprint_m = footprint_m}) *
            vertical_scale;
 }
 
@@ -73,7 +72,7 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
     }
 }
 
-[[nodiscard]] float cheap_candidate_score(const TerrainSourceParameters& source,
+[[nodiscard]] float cheap_candidate_score(const TerrainHeightSource& source,
                                           const TerrainBackdropStageRequest& request,
                                           cubey::math::Vec2 focus) {
     constexpr std::uint32_t ring_sample_count = 8U;
@@ -109,7 +108,7 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
 }
 
 [[nodiscard]] std::vector<SearchCandidate>
-score_candidates(const TerrainSourceParameters& source, const TerrainBackdropStageRequest& request,
+score_candidates(const TerrainHeightSource& source, const TerrainBackdropStageRequest& request,
                  const std::vector<cubey::math::Vec2>& focuses) {
     std::vector<SearchCandidate> result;
     result.reserve(focuses.size());
@@ -129,7 +128,7 @@ score_candidates(const TerrainSourceParameters& source, const TerrainBackdropSta
     return result;
 }
 
-[[nodiscard]] LocalSummary local_summary(const TerrainSourceParameters& source,
+[[nodiscard]] LocalSummary local_summary(const TerrainHeightSource& source,
                                          const TerrainBackdropStageRequest& request,
                                          cubey::math::Vec2 focus) {
     LocalSummary result{};
@@ -145,7 +144,7 @@ score_candidates(const TerrainSourceParameters& source, const TerrainBackdropSta
                 continue;
             }
             const TerrainSample sample =
-                sample_terrain(source, {.world_xz = focus + offset, .footprint_m = 16.0F});
+                source.sample({.world_xz = focus + offset, .footprint_m = 16.0F});
             const float height = sample.height_m * request.vertical_scale;
             result.minimum_height_m = std::min(result.minimum_height_m, height);
             result.maximum_height_m = std::max(result.maximum_height_m, height);
@@ -209,15 +208,15 @@ struct LowerFrameEnvelope {
                           up * tan_half_fovy);
 }
 
-[[nodiscard]] float required_detached_target_height(
-    const TerrainSourceParameters& source, const TerrainBackdropStageRequest& request,
-    cubey::math::Vec2 focus) {
+[[nodiscard]] float required_detached_target_height(const TerrainHeightSource& source,
+                                                    const TerrainBackdropStageRequest& request,
+                                                    cubey::math::Vec2 focus) {
     float required_height = -std::numeric_limits<float>::infinity();
     const std::array<float, 3> radii{request.orbit_min_radius_m, request.orbit_default_radius_m,
                                      request.orbit_max_radius_m};
-    const std::array<float, 3> elevations{
-        request.orbit_min_elevation_radians, request.orbit_default_elevation_radians,
-        request.orbit_max_elevation_radians};
+    const std::array<float, 3> elevations{request.orbit_min_elevation_radians,
+                                          request.orbit_default_elevation_radians,
+                                          request.orbit_max_elevation_radians};
     for (std::uint32_t sector = 0U; sector < kPanoramaSectorCount; ++sector) {
         const float yaw = static_cast<float>(sector) * 2.0F * std::numbers::pi_v<float> /
                           static_cast<float>(kPanoramaSectorCount);
@@ -234,8 +233,8 @@ struct LowerFrameEnvelope {
                         if (length(local_position) < request.stage_radius_m) {
                             continue;
                         }
-                        const float terrain_height = sample_height(
-                            source, focus + local_position, 32.0F, request.vertical_scale);
+                        const float terrain_height = sample_height(source, focus + local_position,
+                                                                   32.0F, request.vertical_scale);
                         required_height =
                             std::max(required_height, terrain_height + kLowerFrameHeightMarginM -
                                                           camera.height_m - ray.y * distance_m);
@@ -250,10 +249,11 @@ struct LowerFrameEnvelope {
     return required_height;
 }
 
-[[nodiscard]] float lower_frame_terrain_distance(
-    const TerrainSourceParameters& source, const TerrainBackdropStageRequest& request,
-    cubey::math::Vec2 focus, float target_height_m, float yaw_radians, float radius_m,
-    float elevation_radians) {
+[[nodiscard]] float lower_frame_terrain_distance(const TerrainHeightSource& source,
+                                                 const TerrainBackdropStageRequest& request,
+                                                 cubey::math::Vec2 focus, float target_height_m,
+                                                 float yaw_radians, float radius_m,
+                                                 float elevation_radians) {
     const OrbitCameraSample camera =
         orbit_camera_sample(yaw_radians, radius_m, elevation_radians, target_height_m);
     float first_hit = kLowerFrameTraceMaximumM;
@@ -279,16 +279,17 @@ struct LowerFrameEnvelope {
     return first_hit;
 }
 
-[[nodiscard]] LowerFrameEnvelope evaluate_lower_frame_envelope(
-    const TerrainSourceParameters& source, const TerrainBackdropStageRequest& request,
-    cubey::math::Vec2 focus, float target_height_m) {
+[[nodiscard]] LowerFrameEnvelope
+evaluate_lower_frame_envelope(const TerrainHeightSource& source,
+                              const TerrainBackdropStageRequest& request, cubey::math::Vec2 focus,
+                              float target_height_m) {
     LowerFrameEnvelope result;
     result.required_target_height_m = target_height_m;
     const std::array<float, 3> radii{request.orbit_min_radius_m, request.orbit_default_radius_m,
                                      request.orbit_max_radius_m};
-    const std::array<float, 3> elevations{
-        request.orbit_min_elevation_radians, request.orbit_default_elevation_radians,
-        request.orbit_max_elevation_radians};
+    const std::array<float, 3> elevations{request.orbit_min_elevation_radians,
+                                          request.orbit_default_elevation_radians,
+                                          request.orbit_max_elevation_radians};
     for (std::uint32_t sector = 0U; sector < kPanoramaSectorCount; ++sector) {
         const float yaw = static_cast<float>(sector) * 2.0F * std::numbers::pi_v<float> /
                           static_cast<float>(kPanoramaSectorCount);
@@ -312,13 +313,12 @@ struct LowerFrameEnvelope {
 }
 
 [[nodiscard]] TerrainBackdropStagePlan
-evaluate_full_candidate(const TerrainSourceParameters& source,
+evaluate_full_candidate(const TerrainHeightSource& source,
                         const TerrainBackdropStageRequest& request, cubey::math::Vec2 focus) {
     const LocalSummary local = local_summary(source, request, focus);
-    const float target_height =
-        request.mode == TerrainBackdropStageMode::Detached
-            ? required_detached_target_height(source, request, focus)
-            : local.center_height_m + request.subject_center_height_m;
+    const float target_height = request.mode == TerrainBackdropStageMode::Detached
+                                    ? required_detached_target_height(source, request, focus)
+                                    : local.center_height_m + request.subject_center_height_m;
     const float stage_plane = target_height - request.subject_center_height_m;
     const LowerFrameEnvelope lower_frame =
         evaluate_lower_frame_envelope(source, request, focus, target_height);
@@ -491,7 +491,7 @@ TerrainBackdropStageRequest terrain_backdrop_stage_request(TerrainBackdropStageM
     return result;
 }
 
-TerrainBackdropStagePlan plan_terrain_backdrop_stage(const TerrainSourceParameters& source,
+TerrainBackdropStagePlan plan_terrain_backdrop_stage(const TerrainHeightSource& source,
                                                      const TerrainBackdropStageRequest& request) {
     validate_request(request);
     std::vector<cubey::math::Vec2> coarse_focuses;
@@ -540,6 +540,13 @@ TerrainBackdropStagePlan plan_terrain_backdrop_stage(const TerrainSourceParamete
     }
     std::sort(full_plans.begin(), full_plans.end(), plan_is_better);
     return full_plans.front();
+}
+
+TerrainBackdropStagePlan plan_terrain_backdrop_stage(const TerrainSourceParameters& source,
+                                                     const TerrainBackdropStageRequest& request,
+                                                     std::uint64_t seed) {
+    const ParameterTerrainHeightSource adapter(source, seed);
+    return plan_terrain_backdrop_stage(adapter, request);
 }
 
 } // namespace cubey::projects::terrain

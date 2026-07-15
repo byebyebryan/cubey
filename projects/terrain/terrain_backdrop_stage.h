@@ -1,6 +1,6 @@
 #pragma once
 
-#include "terrain_source.h"
+#include "terrain_height_source.h"
 
 #include <cstdint>
 #include <string_view>
@@ -67,7 +67,11 @@ struct TerrainBackdropStagePlan {
 };
 
 [[nodiscard]] TerrainBackdropStagePlan
-plan_terrain_backdrop_stage(const TerrainSourceParameters& source,
+plan_terrain_backdrop_stage(const TerrainHeightSource& source,
                             const TerrainBackdropStageRequest& request);
+
+[[nodiscard]] TerrainBackdropStagePlan
+plan_terrain_backdrop_stage(const TerrainSourceParameters& source,
+                            const TerrainBackdropStageRequest& request, std::uint64_t seed = 0U);
 
 } // namespace cubey::projects::terrain
