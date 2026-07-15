@@ -14,6 +14,7 @@ enum class TerrainBackdropStageMode : std::uint8_t {
 
 [[nodiscard]] std::string_view
 terrain_backdrop_stage_mode_name(TerrainBackdropStageMode mode) noexcept;
+[[nodiscard]] TerrainBackdropStageMode terrain_backdrop_stage_mode_from_name(std::string_view name);
 
 struct TerrainBackdropStageRequest {
     TerrainBackdropStageMode mode = TerrainBackdropStageMode::Detached;
@@ -32,9 +33,9 @@ struct TerrainBackdropStageRequest {
     float vertical_scale = 1.0F;
 };
 
-[[nodiscard]] TerrainBackdropStageRequest terrain_backdrop_stage_request(
-    TerrainBackdropStageMode mode, float aspect_ratio = 16.0F / 9.0F,
-    float vertical_scale = 1.0F);
+[[nodiscard]] TerrainBackdropStageRequest
+terrain_backdrop_stage_request(TerrainBackdropStageMode mode, float aspect_ratio = 16.0F / 9.0F,
+                               float vertical_scale = 1.0F);
 
 struct TerrainBackdropStagePlan {
     TerrainBackdropStageMode mode = TerrainBackdropStageMode::Detached;

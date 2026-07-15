@@ -299,10 +299,24 @@ void test_ground_camera_and_shape_diagnostics_parse() {
 void test_backdrop_camera_configuration() {
     cubey::RunConfig run_config;
     run_config.terrain.camera_preset = "backdrop";
+    run_config.terrain.backdrop_mode = "grounded";
+    run_config.terrain.backdrop_azimuth_degrees = -90.0F;
+    run_config.terrain.backdrop_orbit_radius_m = 125.0F;
+    run_config.terrain.backdrop_elevation_degrees = 24.0F;
     const auto config =
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Backdrop,
             "terrain runtime should parse the backdrop camera");
+    require(config.backdrop_mode == cubey::projects::terrain::TerrainBackdropStageMode::Grounded &&
+                config.backdrop_azimuth_radians.has_value() &&
+                config.backdrop_orbit_radius_m == 125.0F &&
+                config.backdrop_elevation_radians.has_value(),
+            "terrain runtime should parse optional backdrop stage controls");
+    require_near(config.backdrop_azimuth_radians.value(), -0.5F * std::numbers::pi_v<float>,
+                 0.000001F, "terrain runtime should convert backdrop azimuth to radians");
+    require_near(config.backdrop_elevation_radians.value(),
+                 24.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
+                 "terrain runtime should convert backdrop elevation to radians");
     require(!cubey::projects::terrain::terrain_camera_is_surface(config.camera),
             "terrain backdrop camera should use unrestricted orbit control");
     require(!cubey::projects::terrain::terrain_camera_advances_headless(config.camera),

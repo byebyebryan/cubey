@@ -21,6 +21,11 @@ void require_near(float actual, float expected, float tolerance, std::string_vie
 }
 
 void test_stage_requests_publish_the_medium_scene_contract() {
+    require(cubey::projects::terrain::terrain_backdrop_stage_mode_from_name("") ==
+                    cubey::projects::terrain::TerrainBackdropStageMode::Detached &&
+                cubey::projects::terrain::terrain_backdrop_stage_mode_from_name("grounded") ==
+                    cubey::projects::terrain::TerrainBackdropStageMode::Grounded,
+            "stage mode names should preserve detached defaults and grounded diagnostics");
     const auto detached = cubey::projects::terrain::terrain_backdrop_stage_request(
         cubey::projects::terrain::TerrainBackdropStageMode::Detached);
     const auto grounded = cubey::projects::terrain::terrain_backdrop_stage_request(

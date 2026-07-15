@@ -83,8 +83,8 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
         const float yaw = static_cast<float>(index) * 2.0F * std::numbers::pi_v<float> /
                           static_cast<float>(ring_sample_count);
         const cubey::math::Vec2 direction = direction_from_yaw(yaw);
-        const float local_height = sample_height(
-            source, focus + direction * request.stage_radius_m, 64.0F, request.vertical_scale);
+        const float local_height = sample_height(source, focus + direction * request.stage_radius_m,
+                                                 64.0F, request.vertical_scale);
         minimum = std::min(minimum, local_height);
         maximum = std::max(maximum, local_height);
 
@@ -111,19 +111,18 @@ score_candidates(const TerrainSourceParameters& source, const TerrainBackdropSta
     std::vector<SearchCandidate> result;
     result.reserve(focuses.size());
     for (const cubey::math::Vec2 focus : focuses) {
-        result.push_back({.focus = focus,
-                          .score = cheap_candidate_score(source, request, focus)});
+        result.push_back({.focus = focus, .score = cheap_candidate_score(source, request, focus)});
     }
-    std::sort(result.begin(), result.end(), [](const SearchCandidate& lhs,
-                                               const SearchCandidate& rhs) {
-        if (lhs.score != rhs.score) {
-            return lhs.score > rhs.score;
-        }
-        if (lhs.focus.x != rhs.focus.x) {
-            return lhs.focus.x < rhs.focus.x;
-        }
-        return lhs.focus.y < rhs.focus.y;
-    });
+    std::sort(result.begin(), result.end(),
+              [](const SearchCandidate& lhs, const SearchCandidate& rhs) {
+                  if (lhs.score != rhs.score) {
+                      return lhs.score > rhs.score;
+                  }
+                  if (lhs.focus.x != rhs.focus.x) {
+                      return lhs.focus.x < rhs.focus.x;
+                  }
+                  return lhs.focus.y < rhs.focus.y;
+              });
     return result;
 }
 
@@ -152,11 +151,9 @@ score_candidates(const TerrainSourceParameters& source, const TerrainBackdropSta
     }
     result.relief_m = result.maximum_height_m - result.minimum_height_m;
     std::sort(slopes.begin(), slopes.end());
-    const std::size_t p95_index =
-        std::min(slopes.size() - 1U,
-                 static_cast<std::size_t>(
-                     std::ceil(static_cast<float>(slopes.size()) * 0.95F)) -
-                     1U);
+    const std::size_t p95_index = std::min(
+        slopes.size() - 1U,
+        static_cast<std::size_t>(std::ceil(static_cast<float>(slopes.size()) * 0.95F)) - 1U);
     result.p95_slope = slopes[p95_index];
     result.guard_maximum_height_m = result.maximum_height_m;
     for (std::uint32_t index = 0U; index < 16U; ++index) {
@@ -182,10 +179,9 @@ struct OrbitCameraSample {
     const float horizontal_radius = std::cos(elevation_radians) * radius_m;
     const cubey::math::Vec2 camera_xz = background_direction * -horizontal_radius;
     const float camera_height = target_height_m + std::sin(elevation_radians) * radius_m;
-    const cubey::math::Vec3 to_target{-camera_xz.x, target_height_m - camera_height,
-                                      -camera_xz.y};
-    const float forward_length =
-        std::sqrt(to_target.x * to_target.x + to_target.y * to_target.y + to_target.z * to_target.z);
+    const cubey::math::Vec3 to_target{-camera_xz.x, target_height_m - camera_height, -camera_xz.y};
+    const float forward_length = std::sqrt(to_target.x * to_target.x + to_target.y * to_target.y +
+                                           to_target.z * to_target.z);
     return {
         .local_xz = camera_xz,
         .height_m = camera_height,
@@ -208,8 +204,8 @@ struct OrbitCameraSample {
     };
     for (float distance_m = 200.0F; distance_m <= kHorizonTestDistanceM; distance_m += 100.0F) {
         const cubey::math::Vec2 local_position =
-            camera.local_xz + cubey::math::Vec2{horizon_direction.x, horizon_direction.z} *
-                                  distance_m;
+            camera.local_xz +
+            cubey::math::Vec2{horizon_direction.x, horizon_direction.z} * distance_m;
         if (request.mode == TerrainBackdropStageMode::Detached &&
             length(local_position) < request.stage_radius_m) {
             continue;
@@ -228,9 +224,10 @@ struct OrbitCameraSample {
 evaluate_full_candidate(const TerrainSourceParameters& source,
                         const TerrainBackdropStageRequest& request, cubey::math::Vec2 focus) {
     const LocalSummary local = local_summary(source, request, focus);
-    const float stage_plane = request.mode == TerrainBackdropStageMode::Detached
-                                  ? local.guard_maximum_height_m + request.detached_stage_clearance_m
-                                  : local.center_height_m;
+    const float stage_plane =
+        request.mode == TerrainBackdropStageMode::Detached
+            ? local.guard_maximum_height_m + request.detached_stage_clearance_m
+            : local.center_height_m;
     const float target_height = stage_plane + request.subject_center_height_m;
 
     std::uint32_t clear_sector_count = 0U;
@@ -256,9 +253,9 @@ evaluate_full_candidate(const TerrainSourceParameters& source,
             best_sector_score = prominence;
             showcase_yaw = yaw;
         }
-        const float clearance = horizon_clearance_distance(
-            source, request, focus, target_height, yaw, request.orbit_default_radius_m,
-            request.orbit_default_elevation_radians);
+        const float clearance = horizon_clearance_distance(source, request, focus, target_height,
+                                                           yaw, request.orbit_default_radius_m,
+                                                           request.orbit_default_elevation_radians);
         minimum_horizon_clearance = std::min(minimum_horizon_clearance, clearance);
         clear_sector_count += clearance >= kHorizonTestDistanceM ? 1U : 0U;
     }
@@ -269,22 +266,22 @@ evaluate_full_candidate(const TerrainSourceParameters& source,
         const float yaw = static_cast<float>(azimuth) * 2.0F * std::numbers::pi_v<float> /
                           static_cast<float>(kOrbitValidationAzimuthCount);
         for (const float radius_endpoint : endpoints) {
-            const float radius = std::lerp(request.orbit_min_radius_m, request.orbit_max_radius_m,
-                                           radius_endpoint);
+            const float radius =
+                std::lerp(request.orbit_min_radius_m, request.orbit_max_radius_m, radius_endpoint);
             for (const float elevation_endpoint : endpoints) {
                 const float elevation =
                     std::lerp(request.orbit_min_elevation_radians,
                               request.orbit_max_elevation_radians, elevation_endpoint);
                 const OrbitCameraSample camera =
                     orbit_camera_sample(yaw, radius, elevation, target_height);
-                const float terrain_height = sample_height(
-                    source, focus + camera.local_xz, 16.0F, request.vertical_scale);
+                const float terrain_height =
+                    sample_height(source, focus + camera.local_xz, 16.0F, request.vertical_scale);
                 minimum_camera_clearance =
                     std::min(minimum_camera_clearance, camera.height_m - terrain_height);
-                minimum_horizon_clearance = std::min(
-                    minimum_horizon_clearance,
-                    horizon_clearance_distance(source, request, focus, target_height, yaw, radius,
-                                               elevation));
+                minimum_horizon_clearance =
+                    std::min(minimum_horizon_clearance,
+                             horizon_clearance_distance(source, request, focus, target_height, yaw,
+                                                        radius, elevation));
             }
         }
     }
@@ -294,18 +291,15 @@ evaluate_full_candidate(const TerrainSourceParameters& source,
     const bool grounded_contract = local.relief_m <= kGroundedMaximumReliefM &&
                                    local.p95_slope <= kGroundedMaximumP95Slope &&
                                    minimum_camera_clearance >= kGroundedMinimumCameraClearanceM;
-    const bool contract = request.mode == TerrainBackdropStageMode::Detached
-                              ? panoramic_contract
-                              : grounded_contract;
+    const bool contract =
+        request.mode == TerrainBackdropStageMode::Detached ? panoramic_contract : grounded_contract;
     const float panorama_score =
         static_cast<float>(clear_sector_count) / static_cast<float>(kPanoramaSectorCount) +
-        1.5F * static_cast<float>(relief_sector_count) /
-            static_cast<float>(kPanoramaSectorCount) +
+        1.5F * static_cast<float>(relief_sector_count) / static_cast<float>(kPanoramaSectorCount) +
         std::clamp(prominence_sum / (static_cast<float>(kPanoramaSectorCount) * 600.0F), -1.0F,
                    2.0F);
-    const float grounded_score =
-        2.0F * (1.0F - std::clamp(local.relief_m / 160.0F, 0.0F, 1.0F)) +
-        2.0F * (1.0F - std::clamp(local.p95_slope / 0.6F, 0.0F, 1.0F));
+    const float grounded_score = 2.0F * (1.0F - std::clamp(local.relief_m / 160.0F, 0.0F, 1.0F)) +
+                                 2.0F * (1.0F - std::clamp(local.p95_slope / 0.6F, 0.0F, 1.0F));
     return {
         .mode = request.mode,
         .source_focus_xz = focus,
@@ -380,6 +374,16 @@ std::string_view terrain_backdrop_stage_mode_name(TerrainBackdropStageMode mode)
     return mode == TerrainBackdropStageMode::Detached ? "detached" : "grounded";
 }
 
+TerrainBackdropStageMode terrain_backdrop_stage_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "detached") {
+        return TerrainBackdropStageMode::Detached;
+    }
+    if (name == "grounded") {
+        return TerrainBackdropStageMode::Grounded;
+    }
+    throw std::runtime_error("unknown terrain backdrop stage mode: " + std::string(name));
+}
+
 TerrainBackdropStageRequest terrain_backdrop_stage_request(TerrainBackdropStageMode mode,
                                                            float aspect_ratio,
                                                            float vertical_scale) {
@@ -439,10 +443,10 @@ TerrainBackdropStagePlan plan_terrain_backdrop_stage(const TerrainSourceParamete
     const std::size_t full_count = std::min(kFullCandidateCount, fine.size());
     full_plans.reserve(full_count);
     for (std::size_t candidate = 0U; candidate < full_count; ++candidate) {
-        TerrainBackdropStagePlan plan = evaluate_full_candidate(source, request, fine[candidate].focus);
+        TerrainBackdropStagePlan plan =
+            evaluate_full_candidate(source, request, fine[candidate].focus);
         plan.coarse_candidate_count = static_cast<std::uint32_t>(coarse.size());
-        plan.refined_candidate_count =
-            static_cast<std::uint32_t>(medium.size() + fine.size());
+        plan.refined_candidate_count = static_cast<std::uint32_t>(medium.size() + fine.size());
         plan.full_candidate_count = static_cast<std::uint32_t>(full_count);
         full_plans.push_back(plan);
     }

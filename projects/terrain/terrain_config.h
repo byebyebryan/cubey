@@ -6,6 +6,7 @@
 #include <cubey/core/run_config.h>
 
 #include <cstdint>
+#include <optional>
 #include <string_view>
 
 namespace cubey::projects::terrain {
@@ -70,6 +71,9 @@ struct TerrainRuntimeConfig {
     TerrainSourceConfig source{};
     TerrainCameraPreset camera = TerrainCameraPreset::Oblique;
     TerrainBackdropStageMode backdrop_mode = TerrainBackdropStageMode::Detached;
+    std::optional<float> backdrop_azimuth_radians{};
+    std::optional<float> backdrop_orbit_radius_m{};
+    std::optional<float> backdrop_elevation_radians{};
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
     TerrainRenderPath render_path = TerrainRenderPath::Control;

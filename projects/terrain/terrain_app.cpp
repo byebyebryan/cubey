@@ -373,6 +373,14 @@ class TerrainApp {
         if (ImGui::Combo("Presentation", &presentation, "Standard\0Backdrop\0")) {
             runtime_config_.presentation = static_cast<TerrainPresentationMode>(presentation);
         }
+        int backdrop_mode = static_cast<int>(runtime_config_.backdrop_mode);
+        if (ImGui::Combo("Backdrop mode", &backdrop_mode, "Detached\0Grounded\0")) {
+            runtime_config_.backdrop_mode = static_cast<TerrainBackdropStageMode>(backdrop_mode);
+            backdrop_stage_plan_.reset();
+            if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+                apply_camera_preset();
+            }
+        }
         int debug_view = static_cast<int>(runtime_config_.debug_view);
         if (ImGui::Combo("View", &debug_view,
                          "Surface\0Height\0Base height\0Slope\0Weathering\0LOD\0Clay\0Shadow\0"
@@ -408,15 +416,21 @@ class TerrainApp {
                                clipmap_config_.outer_half_extent * 5.0F);
         if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
             if (!backdrop_stage_plan_.has_value()) {
-                backdrop_stage_plan_ = plan_terrain_backdrop_stage(
-                    source_parameters_,
-                    terrain_backdrop_stage_request(runtime_config_.backdrop_mode,
-                                                   initial_aspect_ratio(),
-                                                   runtime_config_.vertical_scale));
+                TerrainBackdropStageRequest request = terrain_backdrop_stage_request(
+                    runtime_config_.backdrop_mode, initial_aspect_ratio(),
+                    runtime_config_.vertical_scale);
+                if (runtime_config_.backdrop_orbit_radius_m.has_value()) {
+                    request.orbit_default_radius_m =
+                        runtime_config_.backdrop_orbit_radius_m.value();
+                }
+                if (runtime_config_.backdrop_elevation_radians.has_value()) {
+                    request.orbit_default_elevation_radians =
+                        runtime_config_.backdrop_elevation_radians.value();
+                }
+                backdrop_stage_plan_ = plan_terrain_backdrop_stage(source_parameters_, request);
             }
             const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
-            orbit_controller_.set_distance_limits(plan.orbit_min_radius_m,
-                                                  plan.orbit_max_radius_m);
+            orbit_controller_.set_distance_limits(plan.orbit_min_radius_m, plan.orbit_max_radius_m);
             orbit_controller_.set_home_distance(plan.orbit_default_radius_m);
             orbit_controller_.set_pitch_limits(
                 plan.orbit_default_elevation_radians - plan.orbit_max_elevation_radians,
@@ -612,10 +626,12 @@ class TerrainApp {
                 throw std::runtime_error("terrain backdrop stage is not initialized");
             }
             const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
+            const float initial_yaw =
+                runtime_config_.backdrop_azimuth_radians.value_or(plan.showcase_yaw_radians);
             return cubey::orbit_camera_transform({
                 .target = {0.0F, plan.target_height_m, 0.0F},
                 .distance = orbit_controller_.distance(),
-                .yaw = orbit_controller_.yaw() + plan.showcase_yaw_radians,
+                .yaw = orbit_controller_.yaw() + initial_yaw,
                 .pitch = orbit_controller_.pitch() - plan.orbit_default_elevation_radians,
             });
         }

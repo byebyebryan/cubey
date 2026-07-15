@@ -327,6 +327,10 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--planet-camera-mode",
         "--terrain-recipe",
         "--terrain-camera-preset",
+        "--terrain-backdrop-mode",
+        "--terrain-backdrop-azimuth",
+        "--terrain-backdrop-orbit-radius",
+        "--terrain-backdrop-elevation",
         "--terrain-presentation",
         "--terrain-vertical-scale",
         "--terrain-preview-runtime",
@@ -442,6 +446,10 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.cell_size",
         "terrain.recipe",
         "terrain.camera_preset",
+        "terrain.backdrop_mode",
+        "terrain.backdrop_azimuth_degrees",
+        "terrain.backdrop_orbit_radius_m",
+        "terrain.backdrop_elevation_degrees",
         "terrain.presentation",
         "terrain.vertical_scale",
         "terrain.preview_runtime",
@@ -619,6 +627,10 @@ void test_run_config_loads_json_config_file() {
     "weathering_strength": 0.65,
     "recipe": "temperate-mountain-range-stress",
     "camera_preset": "profile",
+    "backdrop_mode": "grounded",
+    "backdrop_azimuth_degrees": -90.0,
+    "backdrop_orbit_radius_m": 125.0,
+    "backdrop_elevation_degrees": 24.0,
     "presentation": "backdrop",
     "preview_runtime": "terrain-engine-ref",
     "preview_color": "height",
@@ -732,6 +744,11 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain recipe");
     require(config.terrain.camera_preset == "profile",
             "config file should set terrain camera preset");
+    require(config.terrain.backdrop_mode == "grounded" &&
+                config.terrain.backdrop_azimuth_degrees == -90.0F &&
+                config.terrain.backdrop_orbit_radius_m == 125.0F &&
+                config.terrain.backdrop_elevation_degrees == 24.0F,
+            "config file should set terrain backdrop stage controls");
     require(config.terrain.presentation == "backdrop",
             "config file should set terrain presentation");
     require(config.terrain.preview_runtime == "terrain-engine-ref",
@@ -1784,6 +1801,14 @@ void test_run_config_parses_terrain_controls() {
     std::string recipe_value = "temperate-mountain-range-stress";
     std::string camera_flag = "--terrain-camera-preset";
     std::string camera_value = "surface";
+    std::string backdrop_mode_flag = "--terrain-backdrop-mode";
+    std::string backdrop_mode_value = "grounded";
+    std::string backdrop_azimuth_flag = "--terrain-backdrop-azimuth";
+    std::string backdrop_azimuth_value = "-90";
+    std::string backdrop_radius_flag = "--terrain-backdrop-orbit-radius";
+    std::string backdrop_radius_value = "125";
+    std::string backdrop_elevation_flag = "--terrain-backdrop-elevation";
+    std::string backdrop_elevation_value = "24";
     std::string presentation_flag = "--terrain-presentation";
     std::string presentation_value = "backdrop";
     std::string vertical_scale_flag = "--terrain-vertical-scale";
@@ -1795,7 +1820,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 46> argv{program.data(),
+    std::array<char*, 54> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1830,6 +1855,14 @@ void test_run_config_parses_terrain_controls() {
                                recipe_value.data(),
                                camera_flag.data(),
                                camera_value.data(),
+                               backdrop_mode_flag.data(),
+                               backdrop_mode_value.data(),
+                               backdrop_azimuth_flag.data(),
+                               backdrop_azimuth_value.data(),
+                               backdrop_radius_flag.data(),
+                               backdrop_radius_value.data(),
+                               backdrop_elevation_flag.data(),
+                               backdrop_elevation_value.data(),
                                presentation_flag.data(),
                                presentation_value.data(),
                                vertical_scale_flag.data(),
@@ -1863,6 +1896,11 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain recipe");
     require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
+    require(config.terrain.backdrop_mode == "grounded" &&
+                config.terrain.backdrop_azimuth_degrees == -90.0F &&
+                config.terrain.backdrop_orbit_radius_m == 125.0F &&
+                config.terrain.backdrop_elevation_degrees == 24.0F,
+            "run config should parse terrain backdrop stage controls");
     require(config.terrain.presentation == "backdrop",
             "run config should parse terrain presentation");
     require(config.terrain.vertical_scale == 0.75F,

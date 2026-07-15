@@ -325,6 +325,25 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
         config.render_path != TerrainRenderPath::Quality) {
         throw std::runtime_error("layered terrain surface detail requires quality rendering");
     }
+    constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
+    const float minimum_elevation_radians =
+        (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 4.0F : 12.0F) *
+        degrees_to_radians;
+    const float maximum_elevation_radians =
+        (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 12.0F : 32.0F) *
+        degrees_to_radians;
+    if ((config.backdrop_azimuth_radians.has_value() &&
+         !std::isfinite(config.backdrop_azimuth_radians.value())) ||
+        (config.backdrop_orbit_radius_m.has_value() &&
+         (!std::isfinite(config.backdrop_orbit_radius_m.value()) ||
+          config.backdrop_orbit_radius_m.value() < 50.0F ||
+          config.backdrop_orbit_radius_m.value() > 150.0F)) ||
+        (config.backdrop_elevation_radians.has_value() &&
+         (!std::isfinite(config.backdrop_elevation_radians.value()) ||
+          config.backdrop_elevation_radians.value() < minimum_elevation_radians ||
+          config.backdrop_elevation_radians.value() > maximum_elevation_radians))) {
+        throw std::runtime_error("invalid terrain backdrop orbit configuration");
+    }
     const bool v3_component_view = config.debug_view == TerrainDebugView::SourceRange ||
                                    config.debug_view == TerrainDebugView::SourceMassif ||
                                    config.debug_view == TerrainDebugView::SourceValley ||
@@ -348,6 +367,26 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
             ? config.terrain.weathering_strength
             : 1.0F;
     result.camera = terrain_camera_preset_from_name(config.terrain.camera_preset);
+    if (config.terrain.backdrop_mode.empty() || config.terrain.backdrop_mode == "detached") {
+        result.backdrop_mode = TerrainBackdropStageMode::Detached;
+    } else if (config.terrain.backdrop_mode == "grounded") {
+        result.backdrop_mode = TerrainBackdropStageMode::Grounded;
+    } else {
+        throw std::runtime_error("unknown terrain backdrop stage mode: " +
+                                 config.terrain.backdrop_mode);
+    }
+    constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
+    if (cubey::run_config_float_is_set(config.terrain.backdrop_azimuth_degrees)) {
+        result.backdrop_azimuth_radians =
+            config.terrain.backdrop_azimuth_degrees * degrees_to_radians;
+    }
+    if (cubey::run_config_float_is_set(config.terrain.backdrop_orbit_radius_m)) {
+        result.backdrop_orbit_radius_m = config.terrain.backdrop_orbit_radius_m;
+    }
+    if (cubey::run_config_float_is_set(config.terrain.backdrop_elevation_degrees)) {
+        result.backdrop_elevation_radians =
+            config.terrain.backdrop_elevation_degrees * degrees_to_radians;
+    }
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     result.presentation = terrain_presentation_mode_from_name(config.terrain.presentation);
     result.render_path = terrain_render_path_from_name(config.terrain.render_path);

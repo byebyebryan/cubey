@@ -113,6 +113,7 @@ constexpr std::array<std::string_view, 2> kTerrainRenderPaths{"control", "qualit
 constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"tile", "layered"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
+constexpr std::array<std::string_view, 2> kTerrainBackdropModes{"detached", "grounded"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
                                                                       "terrain-engine-ref"};
 constexpr std::array<std::string_view, 5> kTerrainPreviewColors{"material", "height", "river",
@@ -158,7 +159,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 274> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 278> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -286,8 +287,7 @@ constexpr std::array<ConfigOptionDescriptor, 274> kRunConfigOptions{
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanCloudReflectionSource, "ocean.cloud_reflection_source",
            "--ocean-cloud-reflection-source", "Cloud Reflection Source", "Ocean",
-           "Cloud reflection source: planar or cached environment.",
-           ConfigOptionType::Enum,
+           "Cloud reflection source: planar or cached environment.", ConfigOptionType::Enum,
            no_range(), enum_choices(kOceanCloudReflectionSources)),
     option(RunConfigOptionId::OceanCloudEnvironmentExtent, "ocean.cloud_environment_extent",
            "--ocean-cloud-environment-extent", "Cloud Probe Extent", "Ocean",
@@ -313,8 +313,7 @@ constexpr std::array<ConfigOptionDescriptor, 274> kRunConfigOptions{
     option(RunConfigOptionId::OceanCloudReflectionStrength, "ocean.cloud_reflection_strength",
            "--ocean-cloud-reflection-strength", "Cloud Reflection", "Ocean",
            "Strength of the selected cloud environment in ocean reflections.",
-           ConfigOptionType::Float,
-           bounded_range(0.0, 1.0)),
+           ConfigOptionType::Float, bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanCloudShadowStrength, "ocean.cloud_shadow_strength",
            "--ocean-cloud-shadow-strength", "Cloud Shadow", "Ocean",
            "Strength of shared projected cloud transmittance on ocean direct lighting.",
@@ -528,6 +527,22 @@ constexpr std::array<ConfigOptionDescriptor, 274> kRunConfigOptions{
            "--terrain-camera-preset", "Camera Preset", "Terrain",
            "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainCameraPresets)),
+    option(RunConfigOptionId::TerrainBackdropMode, "terrain.backdrop_mode",
+           "--terrain-backdrop-mode", "Backdrop Mode", "Terrain/Backdrop Stage",
+           "Detached product stage or grounded placement diagnostic.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kTerrainBackdropModes)),
+    option(RunConfigOptionId::TerrainBackdropAzimuth, "terrain.backdrop_azimuth_degrees",
+           "--terrain-backdrop-azimuth", "Initial Azimuth", "Terrain/Backdrop Stage",
+           "Optional initial backdrop orbit azimuth in degrees; yaw remains unrestricted.",
+           ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
+    option(RunConfigOptionId::TerrainBackdropOrbitRadius, "terrain.backdrop_orbit_radius_m",
+           "--terrain-backdrop-orbit-radius", "Orbit Radius", "Terrain/Backdrop Stage",
+           "Optional initial backdrop orbit radius in meters.", ConfigOptionType::Float,
+           bounded_range(50.0, 150.0)),
+    option(RunConfigOptionId::TerrainBackdropElevation, "terrain.backdrop_elevation_degrees",
+           "--terrain-backdrop-elevation", "Orbit Elevation", "Terrain/Backdrop Stage",
+           "Optional initial backdrop orbit elevation in degrees.", ConfigOptionType::Float,
+           bounded_range(4.0, 32.0)),
     option(RunConfigOptionId::TerrainPresentation, "terrain.presentation", "--terrain-presentation",
            "Presentation", "Terrain",
            "Terrain material presentation: standard or distant backdrop coverage.",
@@ -1547,6 +1562,15 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainCameraPreset:
         return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.camera_preset);
+    case RunConfigOptionId::TerrainBackdropMode:
+        return config.terrain.backdrop_mode.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.terrain.backdrop_mode);
+    case RunConfigOptionId::TerrainBackdropAzimuth:
+        return optional_float(config.terrain.backdrop_azimuth_degrees);
+    case RunConfigOptionId::TerrainBackdropOrbitRadius:
+        return optional_float(config.terrain.backdrop_orbit_radius_m);
+    case RunConfigOptionId::TerrainBackdropElevation:
+        return optional_float(config.terrain.backdrop_elevation_degrees);
     case RunConfigOptionId::TerrainPresentation:
         return config.terrain.presentation.empty() ? nlohmann::json(nullptr)
                                                    : nlohmann::json(config.terrain.presentation);
@@ -2901,6 +2925,21 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainCameraPreset:
         config.terrain.camera_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainBackdropMode:
+        config.terrain.backdrop_mode = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainBackdropAzimuth:
+        config.terrain.backdrop_azimuth_degrees = parse_config_float(value, option);
+        validate_range(config.terrain.backdrop_azimuth_degrees, option);
+        break;
+    case RunConfigOptionId::TerrainBackdropOrbitRadius:
+        config.terrain.backdrop_orbit_radius_m = parse_config_float(value, option);
+        validate_range(config.terrain.backdrop_orbit_radius_m, option);
+        break;
+    case RunConfigOptionId::TerrainBackdropElevation:
+        config.terrain.backdrop_elevation_degrees = parse_config_float(value, option);
+        validate_range(config.terrain.backdrop_elevation_degrees, option);
         break;
     case RunConfigOptionId::TerrainPresentation:
         config.terrain.presentation = std::string(value);
