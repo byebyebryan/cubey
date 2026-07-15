@@ -303,12 +303,12 @@ void test_backdrop_camera_configuration() {
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Backdrop,
             "terrain runtime should parse the backdrop camera");
-    require(cubey::projects::terrain::terrain_camera_is_surface(config.camera),
-            "terrain backdrop camera should remain interactively traversable");
+    require(!cubey::projects::terrain::terrain_camera_is_surface(config.camera),
+            "terrain backdrop camera should use unrestricted orbit control");
     require(!cubey::projects::terrain::terrain_camera_advances_headless(config.camera),
             "terrain backdrop camera should remain static in headless captures");
     require_near(cubey::projects::terrain::terrain_camera_clearance_m(config.camera), 150.0F, 0.0F,
-                 "terrain backdrop camera should clear the local surface");
+                 "terrain backdrop clearance should remain available to legacy diagnostics");
     require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
                  40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
                  "terrain backdrop camera should use a restrained field of view");

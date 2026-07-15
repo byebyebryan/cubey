@@ -1,6 +1,7 @@
 #include "terrain_app.h"
 
 #include "terrain_backdrop_camera.h"
+#include "terrain_backdrop_stage.h"
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
@@ -62,10 +63,11 @@ struct TerrainPushConstants {
     cubey::math::Vec4 camera_position_vertical_scale{0.0F, 0.0F, 0.0F, 1.0F};
     cubey::math::Vec4 render_options{0.0F, 16'384.0F, 0.0F, 0.0F};
     cubey::math::Vec4 quality_options{4.0F, 1.0F, 1.0F, 0.0F};
+    cubey::math::Vec4 stage_options{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
 static_assert(sizeof(TerrainPushConstants) ==
-              sizeof(cubey::math::Mat4) + 3U * sizeof(cubey::math::Vec4));
+              sizeof(cubey::math::Mat4) + 4U * sizeof(cubey::math::Vec4));
 static_assert(sizeof(TerrainPushConstants) <= 128U);
 
 struct CompiledTerrainGraph {
@@ -394,6 +396,7 @@ class TerrainApp {
         source_parameters_ = resolve_terrain_source_parameters(runtime_config_.source);
         scene_summary_ = terrain_scene_summary(source_parameters_, clipmap_config_);
         backdrop_plan_.reset();
+        backdrop_stage_plan_.reset();
         if (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
             runtime_config_.camera == TerrainCameraPreset::Midground) {
             apply_camera_preset();
@@ -403,29 +406,39 @@ class TerrainApp {
     void apply_camera_preset() {
         camera_.set_projection(terrain_camera_fovy_radians(runtime_config_.camera), 0.1F,
                                clipmap_config_.outer_half_extent * 5.0F);
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+            if (!backdrop_stage_plan_.has_value()) {
+                backdrop_stage_plan_ = plan_terrain_backdrop_stage(
+                    source_parameters_,
+                    terrain_backdrop_stage_request(runtime_config_.backdrop_mode,
+                                                   initial_aspect_ratio(),
+                                                   runtime_config_.vertical_scale));
+            }
+            const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
+            orbit_controller_.set_distance_limits(plan.orbit_min_radius_m,
+                                                  plan.orbit_max_radius_m);
+            orbit_controller_.set_home_distance(plan.orbit_default_radius_m);
+            orbit_controller_.set_pitch_limits(
+                plan.orbit_default_elevation_radians - plan.orbit_max_elevation_radians,
+                plan.orbit_default_elevation_radians - plan.orbit_min_elevation_radians);
+            orbit_controller_.reset();
+            return;
+        }
         if (!terrain_camera_is_surface(runtime_config_.camera)) {
             return;
         }
         surface_controller_.set_home_speed_mps(
             terrain_camera_traversal_speed_mps(runtime_config_.camera));
         surface_controller_.clear_home_constraints();
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
-            runtime_config_.camera == TerrainCameraPreset::Midground) {
+        if (runtime_config_.camera == TerrainCameraPreset::Midground) {
             if (!backdrop_plan_.has_value()) {
                 backdrop_plan_ = plan_terrain_backdrop_camera(
                     source_parameters_, runtime_config_.vertical_scale, initial_aspect_ratio(),
-                    runtime_config_.camera == TerrainCameraPreset::Midground
-                        ? TerrainBackdropCameraProfile::Midground
-                        : TerrainBackdropCameraProfile::Backdrop);
+                    TerrainBackdropCameraProfile::Midground);
             }
             surface_controller_.set_home_pose(backdrop_plan_->anchor_xz,
                                               backdrop_plan_->yaw_radians,
                                               backdrop_plan_->pitch_radians);
-            if (runtime_config_.camera == TerrainCameraPreset::Backdrop &&
-                runtime_config_.source.version == TerrainSourceVersion::V2_1) {
-                surface_controller_.set_home_constraints(backdrop_plan_->safe_zone_radius_m,
-                                                         backdrop_plan_->yaw_half_angle_radians);
-            }
         } else {
             surface_controller_.set_home_pose({0.0F, 0.0F}, 0.62F, -0.12F);
         }
@@ -594,9 +607,20 @@ class TerrainApp {
     }
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+            if (!backdrop_stage_plan_.has_value()) {
+                throw std::runtime_error("terrain backdrop stage is not initialized");
+            }
+            const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
+            return cubey::orbit_camera_transform({
+                .target = {0.0F, plan.target_height_m, 0.0F},
+                .distance = orbit_controller_.distance(),
+                .yaw = orbit_controller_.yaw() + plan.showcase_yaw_radians,
+                .pitch = orbit_controller_.pitch() - plan.orbit_default_elevation_radians,
+            });
+        }
         if (terrain_camera_is_surface(runtime_config_.camera)) {
-            const float clearance = (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
-                                     runtime_config_.camera == TerrainCameraPreset::Midground) &&
+            const float clearance = runtime_config_.camera == TerrainCameraPreset::Midground &&
                                             backdrop_plan_.has_value()
                                         ? backdrop_plan_->camera_clearance_m
                                         : terrain_camera_clearance_m(runtime_config_.camera);
@@ -633,6 +657,14 @@ class TerrainApp {
                                              ? 0.0F
                                              : (2.0F * std::tan(camera_.fovy_radians() * 0.5F)) /
                                                    static_cast<float>(extent.height);
+        cubey::math::Vec4 stage_options{0.0F, 0.0F, 0.0F, 0.0F};
+        if (runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+            backdrop_stage_plan_.has_value()) {
+            const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
+            const bool detached = plan.mode == TerrainBackdropStageMode::Detached;
+            stage_options = {plan.source_focus_xz.x, plan.source_focus_xz.y,
+                             detached ? plan.stage_radius_m : 0.0F, detached ? 1.0F : 0.0F};
+        }
         return {
             .view_projection =
                 camera_.view_projection_matrix(frame_camera_transform_, aspect(extent)),
@@ -645,6 +677,7 @@ class TerrainApp {
                                terrain_presentation_id(runtime_config_.presentation)},
             .quality_options = {runtime_config_.target_edge_px, static_cast<float>(extent.width),
                                 static_cast<float>(extent.height), 0.0F},
+            .stage_options = stage_options,
         };
     }
 
@@ -835,6 +868,7 @@ class TerrainApp {
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};
     TerrainSourceSummary scene_summary_{};
     std::optional<TerrainBackdropCameraPlan> backdrop_plan_{};
+    std::optional<TerrainBackdropStagePlan> backdrop_stage_plan_{};
     cubey::OrbitController orbit_controller_;
     TerrainSurfaceController surface_controller_{};
     cubey::Camera3D camera_;

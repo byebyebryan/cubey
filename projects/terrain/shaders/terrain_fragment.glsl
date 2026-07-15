@@ -37,6 +37,8 @@ layout(push_constant) uniform TerrainPushConstants {
     mat4 view_projection;
     vec4 camera_position_vertical_scale;
     vec4 render_options;
+    vec4 quality_options;
+    vec4 stage_options;
 } pc;
 
 layout(location = 0) in vec3 frag_world_position;
@@ -56,6 +58,10 @@ layout(location = 13) flat in float frag_tess_factor;
 layout(location = 14) flat in float frag_projected_edge_px;
 
 layout(location = 0) out vec4 out_color;
+
+vec2 terrain_fragment_source_xz() {
+    return frag_world_position.xz + pc.stage_options.xy;
+}
 
 vec2 terrain_child_origin() {
     return floor(pc.camera_position_vertical_scale.xz / frag_origin_snap_m) *
@@ -108,23 +114,30 @@ vec2 terrain_weathering_gradient_xz() {
 #if CUBEY_TERRAIN_LAYERED_MATERIAL
 vec2 terrain_fragment_source_gradient_xz(float pixel_footprint_m) {
     float sample_step_m = clamp(pixel_footprint_m * 2.0, 2.0, 12.0);
+    vec2 source_xz = terrain_fragment_source_xz();
     float height_x0 = terrain_source_base_height(
-        terrain_uniforms.source, frag_world_position.xz - vec2(sample_step_m, 0.0),
+        terrain_uniforms.source, source_xz - vec2(sample_step_m, 0.0),
         pixel_footprint_m);
     float height_x1 = terrain_source_base_height(
-        terrain_uniforms.source, frag_world_position.xz + vec2(sample_step_m, 0.0),
+        terrain_uniforms.source, source_xz + vec2(sample_step_m, 0.0),
         pixel_footprint_m);
     float height_z0 = terrain_source_base_height(
-        terrain_uniforms.source, frag_world_position.xz - vec2(0.0, sample_step_m),
+        terrain_uniforms.source, source_xz - vec2(0.0, sample_step_m),
         pixel_footprint_m);
     float height_z1 = terrain_source_base_height(
-        terrain_uniforms.source, frag_world_position.xz + vec2(0.0, sample_step_m),
+        terrain_uniforms.source, source_xz + vec2(0.0, sample_step_m),
         pixel_footprint_m);
     return vec2(height_x1 - height_x0, height_z1 - height_z0) / (2.0 * sample_step_m);
 }
 #endif
 
 void main() {
+    if (pc.stage_options.w > 0.5 && length(frag_world_position.xz) < pc.stage_options.z) {
+        discard;
+    }
+    vec2 source_xz = terrain_fragment_source_xz();
+    vec3 source_material_position = vec3(source_xz.x, frag_height_m, source_xz.y);
+    vec3 source_render_position = vec3(source_xz.x, frag_world_position.y, source_xz.y);
     float material_footprint_m = max(
         0.35, length(pc.camera_position_vertical_scale.xyz - frag_world_position) *
                   pc.render_options.z);
@@ -208,8 +221,7 @@ void main() {
     TerrainMaterialSample material = clay_view
         ? terrain_clay_material(shading_normal)
         : terrain_material_sample(classification_normal,
-                                  vec3(frag_world_position.x, frag_height_m,
-                                       frag_world_position.z),
+                                  source_material_position,
                                   frag_height_m, frag_landform_concavity_m,
                                   material_footprint_m, backdrop_presentation,
                                   terrain_uniforms.source.elevation,
@@ -217,12 +229,12 @@ void main() {
 #if CUBEY_TERRAIN_LAYERED_MATERIAL
     if (!clay_view) {
         material = terrain_layered_material_sample(
-            material, shading_normal, frag_world_position, material_footprint_m);
+            material, shading_normal, source_render_position, material_footprint_m);
     }
 #elif CUBEY_TERRAIN_QUALITY_MATERIAL
     if (!clay_view) {
         material = terrain_quality_material_sample(
-            material, shading_normal, frag_world_position, material_footprint_m);
+            material, shading_normal, source_render_position, material_footprint_m);
     }
 #endif
     if (debug_view == 9) {
@@ -266,7 +278,7 @@ void main() {
         vec3 bands;
 #if CUBEY_TERRAIN_SOURCE_VARIANT == 1
         TerrainSourceComponents components = terrain_source_v3_components(
-            terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
+            terrain_uniforms.source, source_xz, frag_footprint_m);
         bands = vec3(components.range_support,
             clamp(components.massif_height_m / max(terrain_uniforms.source.elevation.y, 1.0),
                 0.0, 1.0),
@@ -274,16 +286,16 @@ void main() {
                 max(terrain_uniforms.source.v3_composition_1.x, 1.0), 0.0, 1.0));
 #elif CUBEY_TERRAIN_SOURCE_VARIANT == 0 || CUBEY_TERRAIN_SOURCE_VARIANT == 3
         bands = vec3(
-            terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
+            terrain_source_band(terrain_uniforms.source.macro, source_xz,
                                 frag_footprint_m),
-            terrain_source_band(terrain_uniforms.source.structure, frag_world_position.xz,
+            terrain_source_band(terrain_uniforms.source.structure, source_xz,
                                 frag_footprint_m),
-            terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
+            terrain_source_band(terrain_uniforms.source.detail, source_xz,
                                 frag_footprint_m));
 #else
         if (terrain_uniforms.source.source_control.x == 2) {
             TerrainSourceComponents components = terrain_source_v3_components(
-                terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
+                terrain_uniforms.source, source_xz, frag_footprint_m);
             bands = vec3(components.range_support,
                 clamp(components.massif_height_m / max(terrain_uniforms.source.elevation.y, 1.0),
                     0.0, 1.0),
@@ -291,11 +303,11 @@ void main() {
                     max(terrain_uniforms.source.v3_composition_1.x, 1.0), 0.0, 1.0));
         } else {
             bands = vec3(
-                terrain_source_band(terrain_uniforms.source.macro, frag_world_position.xz,
+                terrain_source_band(terrain_uniforms.source.macro, source_xz,
                                     frag_footprint_m),
-                terrain_source_band(terrain_uniforms.source.structure, frag_world_position.xz,
+                terrain_source_band(terrain_uniforms.source.structure, source_xz,
                                     frag_footprint_m),
-                terrain_source_band(terrain_uniforms.source.detail, frag_world_position.xz,
+                terrain_source_band(terrain_uniforms.source.detail, source_xz,
                                     frag_footprint_m));
         }
 #endif
@@ -321,7 +333,7 @@ void main() {
 #if CUBEY_TERRAIN_SOURCE_VARIANT == 1 || CUBEY_TERRAIN_SOURCE_VARIANT == 2
     if (debug_view >= 22 && debug_view <= 26) {
         TerrainSourceComponents components = terrain_source_v3_components(
-            terrain_uniforms.source, frag_world_position.xz, frag_footprint_m);
+            terrain_uniforms.source, source_xz, frag_footprint_m);
         if (debug_view == 22) {
             out_color = vec4(vec3(components.range_support), 1.0);
         } else if (debug_view == 23) {

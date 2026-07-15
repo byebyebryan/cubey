@@ -59,8 +59,7 @@ TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
 
 bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept {
     return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
-           preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Backdrop ||
-           preset == TerrainCameraPreset::Midground;
+           preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Midground;
 }
 
 bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept {

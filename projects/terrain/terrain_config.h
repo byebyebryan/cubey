@@ -1,5 +1,6 @@
 #pragma once
 
+#include "terrain_backdrop_stage.h"
 #include "terrain_source.h"
 
 #include <cubey/core/run_config.h>
@@ -68,6 +69,7 @@ enum class TerrainSurfaceDetail : std::uint8_t {
 struct TerrainRuntimeConfig {
     TerrainSourceConfig source{};
     TerrainCameraPreset camera = TerrainCameraPreset::Oblique;
+    TerrainBackdropStageMode backdrop_mode = TerrainBackdropStageMode::Detached;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
     TerrainRenderPath render_path = TerrainRenderPath::Control;

@@ -61,8 +61,8 @@ void test_detached_stage_search_is_deterministic_and_panoramic() {
                 "detached stage should keep every panoramic sector clear");
         require(first.relief_sector_count >= 14U,
                 "detached stage should retain useful relief in most sectors");
-        require(first.stage_plane_height_m >= first.source_center_height_m + 149.9F,
-                "detached stage should remain elevated above local terrain");
+        require(first.stage_plane_height_m >= first.source_center_height_m + 239.9F,
+                "detached stage should keep its ownership boundary below the orbit frame");
     }
 }
 

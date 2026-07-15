@@ -14,6 +14,7 @@ layout(push_constant) uniform TerrainPushConstants {
     vec4 camera_position_vertical_scale;
     vec4 render_options;
     vec4 quality_options;
+    vec4 stage_options;
 } pc;
 
 layout(location = 0) in vec3 control_position[];
@@ -35,7 +36,8 @@ vec2 terrain_quality_origin() {
 vec4 terrain_quality_clip(vec2 local_xz) {
     vec2 world_xz = local_xz + terrain_quality_origin();
     float footprint_m = max(control_metadata[0].x, 0.25);
-    float height_m = terrain_source_height(terrain_uniforms.source, world_xz, footprint_m);
+    float height_m = terrain_source_height(
+        terrain_uniforms.source, world_xz + pc.stage_options.xy, footprint_m);
     vec3 world_position = vec3(world_xz.x,
         height_m * pc.camera_position_vertical_scale.w, world_xz.y);
     return pc.view_projection * vec4(world_position, 1.0);

@@ -25,8 +25,11 @@ mask, or author a feature into the source.
 beyond it, while the camera and review contract keep the boundary below the
 final frame or behind consumer geometry. The orbit radius is 50-150 m, with a
 100 m default. Elevation is 4-12 degrees, with an 8-degree default. The
-foreground stage sits 150 m above the highest clean terrain sample inside a
+foreground stage sits 240 m above the highest clean terrain sample inside a
 400 m guard radius, and the canonical camera target is 20 m above that stage.
+The original 150 m estimate exposed the far ownership edge at the bottom of a
+40-degree frame. The revised clearance covers the maximum 150 m orbit radius
+and 12-degree elevation without constraining yaw.
 
 `grounded` is a supported diagnostic. Terrain stays continuous through the
 focus and placement searches for a naturally low-slope patch. The orbit radius

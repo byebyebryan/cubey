@@ -16,6 +16,7 @@ layout(push_constant) uniform TerrainPushConstants {
     vec4 camera_position_vertical_scale;
     vec4 render_options;
     vec4 quality_options;
+    vec4 stage_options;
 } pc;
 
 layout(location = 0) in vec3 patch_position[];
@@ -67,6 +68,7 @@ void main() {
     float coarse_cell_size_m = cell_size_m * 2.0;
     vec2 coarse_world_xz = floor(world_xz / coarse_cell_size_m + 0.5) * coarse_cell_size_m;
     vec2 sample_xz = mix(world_xz, coarse_world_xz, morph);
+    vec2 source_xz = sample_xz + pc.stage_options.xy;
     vec3 footprint_position = vec3(sample_xz.x, terrain_uniforms.source.elevation.x, sample_xz.y);
     float generated_spacing_m = max(
         0.25, length(pc.camera_position_vertical_scale.xyz - footprint_position) *
@@ -75,15 +77,15 @@ void main() {
         max(generated_spacing_m, coarse_cell_size_m), morph));
 
     float base_height_m = terrain_source_base_height(
-        terrain_uniforms.source, sample_xz, footprint_m);
+        terrain_uniforms.source, source_xz, footprint_m);
     float weathering_delta_m = terrain_source_weathering_delta(
-        terrain_uniforms.source, sample_xz, footprint_m, base_height_m);
+        terrain_uniforms.source, source_xz, footprint_m, base_height_m);
     float height_m = base_height_m + weathering_delta_m;
     float normal_step_m = max(1.0, footprint_m);
     float height_x = terrain_source_base_height(
-        terrain_uniforms.source, sample_xz + vec2(normal_step_m, 0.0), footprint_m);
+        terrain_uniforms.source, source_xz + vec2(normal_step_m, 0.0), footprint_m);
     float height_z = terrain_source_base_height(
-        terrain_uniforms.source, sample_xz + vec2(0.0, normal_step_m), footprint_m);
+        terrain_uniforms.source, source_xz + vec2(0.0, normal_step_m), footprint_m);
     vec3 world_position = vec3(sample_xz.x,
         height_m * pc.camera_position_vertical_scale.w, sample_xz.y);
 
@@ -102,26 +104,28 @@ void main() {
     frag_footprint_m = footprint_m;
 #if CUBEY_TERRAIN_SOURCE_VARIANT == 1
     frag_direct_visibility = terrain_heightfield_shadow_v3(
-        terrain_uniforms.source, sample_xz, height_m,
-        pc.camera_position_vertical_scale.w, footprint_m);
+        terrain_uniforms.source, source_xz, height_m,
+        pc.camera_position_vertical_scale.w, footprint_m, pc.stage_options.xy,
+        pc.stage_options.z * pc.stage_options.w);
     frag_landform_concavity_m = 0.0;
 #else
     frag_direct_visibility = terrain_heightfield_shadow(
-        terrain_uniforms.source, sample_xz, height_m,
-        pc.camera_position_vertical_scale.w, footprint_m);
+        terrain_uniforms.source, source_xz, height_m,
+        pc.camera_position_vertical_scale.w, footprint_m, pc.stage_options.xy,
+        pc.stage_options.z * pc.stage_options.w);
     const float landform_radius_m = 96.0;
     float landform_footprint_m = max(footprint_m, landform_radius_m);
     float landform_neighbor_height = 0.25 * (
         terrain_source_base_height(terrain_uniforms.source,
-            sample_xz + vec2(landform_radius_m, 0.0), landform_footprint_m) +
+            source_xz + vec2(landform_radius_m, 0.0), landform_footprint_m) +
         terrain_source_base_height(terrain_uniforms.source,
-            sample_xz - vec2(landform_radius_m, 0.0), landform_footprint_m) +
+            source_xz - vec2(landform_radius_m, 0.0), landform_footprint_m) +
         terrain_source_base_height(terrain_uniforms.source,
-            sample_xz + vec2(0.0, landform_radius_m), landform_footprint_m) +
+            source_xz + vec2(0.0, landform_radius_m), landform_footprint_m) +
         terrain_source_base_height(terrain_uniforms.source,
-            sample_xz - vec2(0.0, landform_radius_m), landform_footprint_m));
+            source_xz - vec2(0.0, landform_radius_m), landform_footprint_m));
     float landform_center_height = terrain_source_base_height(
-        terrain_uniforms.source, sample_xz, landform_footprint_m);
+        terrain_uniforms.source, source_xz, landform_footprint_m);
     frag_landform_concavity_m = landform_neighbor_height - landform_center_height;
 #endif
     frag_tess_factor = patch_tess_factor;
