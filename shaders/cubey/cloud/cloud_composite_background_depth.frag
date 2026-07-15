@@ -21,8 +21,13 @@ float cloud_linear_scene_depth(float raw_depth) {
                                           0.0001);
 }
 
+int cloud_scene_depth_mode() {
+    return int(params.scene_depth_options.z + 0.5);
+}
+
 float cloud_scene_depth_visibility(vec2 uv, float cloud_distance, float cloud_alpha) {
-    if (params.scene_depth_options.z < 0.5 || cloud_alpha <= 0.0001 || cloud_distance <= 0.0) {
+    if (cloud_scene_depth_mode() == CLOUD_SCENE_DEPTH_DISABLED || cloud_alpha <= 0.0001 ||
+        cloud_distance <= 0.0) {
         return 1.0;
     }
 
@@ -30,7 +35,7 @@ float cloud_scene_depth_visibility(vec2 uv, float cloud_distance, float cloud_al
     if (raw_depth >= 0.999999) {
         return 1.0;
     }
-    if (params.scene_depth_options.z >= 1.5) {
+    if (cloud_scene_depth_mode() == CLOUD_SCENE_DEPTH_OPAQUE_FOREGROUND) {
         return 0.0;
     }
 
@@ -49,7 +54,8 @@ void main() {
 
     // Opaque foreground pixels are not part of the cloud composite. Return the
     // scene color before cloud resolve/post samples can influence the result.
-    if ((final_view || raw_final_view) && params.scene_depth_options.z >= 1.5 &&
+    if ((final_view || raw_final_view) &&
+        cloud_scene_depth_mode() == CLOUD_SCENE_DEPTH_OPAQUE_FOREGROUND &&
         texture(scene_depth_texture, uv).r < 0.999999) {
         out_color = vec4(max(background, vec3(0.0)), 1.0);
         return;

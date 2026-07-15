@@ -3,6 +3,7 @@
 #include <cubey/render/cloud_environment_probe.h>
 #include <cubey/render/cloud_planar_reflection.h>
 
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <filesystem>
@@ -196,17 +197,45 @@ void test_cloud_layer_runtime_shader_files_select_composite_variants() {
             "cloud runtime should publish the projected shadow shader");
 }
 
+void test_cloud_layer_scene_depth_modes_match_shader_contract() {
+    cubey::render::CloudLayerConfig config{};
+    cubey::render::CloudLayerFrameInfo frame{};
+    const std::array modes{
+        cubey::render::CloudLayerSceneDepthMode::Disabled,
+        cubey::render::CloudLayerSceneDepthMode::DistanceAware,
+        cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
+    };
+    for (std::size_t index = 0; index < modes.size(); ++index) {
+        frame.scene_depth_mode = modes[index];
+        const cubey::render::CloudLayerFrameUniforms uniforms =
+            cubey::render::cloud_layer_frame_uniforms(config, frame);
+        require_near(uniforms.scene_depth_options.z, static_cast<float>(index), 0.0001F,
+                     "cloud uniforms should encode the scene-depth mode");
+    }
+
+    const std::string common =
+        read_text_file(source_root_path() / "shaders/cubey/cloud/cloud_common.glsl");
+    require(common.find("const int CLOUD_SCENE_DEPTH_DISABLED = 0;") != std::string::npos &&
+                common.find("const int CLOUD_SCENE_DEPTH_DISTANCE_AWARE = 1;") !=
+                    std::string::npos &&
+                common.find("const int CLOUD_SCENE_DEPTH_OPAQUE_FOREGROUND = 2;") !=
+                    std::string::npos,
+            "cloud scene-depth enum values should match GLSL constants");
+}
+
 void test_cloud_scene_depth_composite_bypasses_opaque_foreground_before_resolve() {
     const std::string shader = read_text_file(
         source_root_path() / "shaders/cubey/cloud/cloud_composite_background_depth.frag");
-    const std::size_t foreground_bypass = shader.find(
-        "if ((final_view || raw_final_view) && params.scene_depth_options.z >= 1.5");
+    const std::size_t foreground_bypass = shader.find("if ((final_view || raw_final_view)");
+    const std::size_t foreground_mode =
+        shader.find("CLOUD_SCENE_DEPTH_OPAQUE_FOREGROUND", foreground_bypass);
     const std::size_t scene_color_return =
         shader.find("out_color = vec4(max(background, vec3(0.0)), 1.0);", foreground_bypass);
     const std::size_t cloud_resolve = shader.find("vec4 raw_cloud =");
 
-    require(foreground_bypass != std::string::npos && scene_color_return != std::string::npos &&
-                cloud_resolve != std::string::npos && scene_color_return < cloud_resolve,
+    require(foreground_bypass != std::string::npos && foreground_mode != std::string::npos &&
+                scene_color_return != std::string::npos && cloud_resolve != std::string::npos &&
+                foreground_mode < scene_color_return && scene_color_return < cloud_resolve,
             "foreground-only cloud composition should return before cloud resolve samples");
     require(shader.find("return;", scene_color_return) < cloud_resolve,
             "foreground-only cloud composition should preserve scene color exactly");
@@ -416,8 +445,7 @@ void test_cloud_planar_reflected_frame_mirrors_camera_and_expands_fov() {
     frame.camera_forward = {0.0F, -0.5F, -0.8660254F};
     frame.tan_half_fovy = 0.5F;
     frame.temporal_frame_index = 11U;
-    frame.scene_depth_occlusion_enabled = true;
-    frame.scene_depth_foreground_only = true;
+    frame.scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::OpaqueForeground;
 
     const cubey::render::CloudLayerFrameInfo reflected =
         cubey::render::cloud_planar_reflected_frame(
@@ -436,8 +464,7 @@ void test_cloud_planar_reflected_frame_mirrors_camera_and_expands_fov() {
     require(reflected.target_extent.width == 640U && reflected.target_extent.height == 360U,
             "planar cloud frame should use the product extent");
     require(reflected.temporal_frame_index == 0U &&
-                !reflected.scene_depth_occlusion_enabled &&
-                !reflected.scene_depth_foreground_only,
+                reflected.scene_depth_mode == cubey::render::CloudLayerSceneDepthMode::Disabled,
             "planar cloud frame should be coherent and independent of scene depth");
 }
 

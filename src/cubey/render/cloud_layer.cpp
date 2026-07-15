@@ -240,6 +240,10 @@ static_assert(sizeof(CloudLayerShadowPushConstants) == sizeof(float) * 16U);
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
 
+[[nodiscard]] float scene_depth_mode_value(CloudLayerSceneDepthMode mode) {
+    return static_cast<float>(static_cast<std::uint32_t>(mode));
+}
+
 [[nodiscard]] float distance_mode_value(CloudLayerDistanceMode mode) {
     return static_cast<float>(static_cast<std::uint32_t>(mode));
 }
@@ -1023,9 +1027,7 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .scene_depth_options = {std::max(frame.near_plane_m, 0.0001F),
                                 std::max(frame.far_plane_m,
                                          std::max(frame.near_plane_m, 0.0001F) + 1.0F),
-                                frame.scene_depth_occlusion_enabled
-                                    ? (frame.scene_depth_foreground_only ? 2.0F : 1.0F)
-                                    : 0.0F,
+                                scene_depth_mode_value(frame.scene_depth_mode),
                                 std::max(frame.scene_depth_fade_m, 1.0F)},
         .density_options = {density_model_value(config.density_model), config.shape_domain_km,
                             config.footprint_filter_strength, static_cast<float>(view_samples)},

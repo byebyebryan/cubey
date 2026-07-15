@@ -375,8 +375,8 @@ void test_cloud_environment_runtime_builds_coherent_surface_frame() {
                                                    .target_extent = {1280, 720},
                                                    .near_plane_m = 0.25F,
                                                    .far_plane_m = 500000.0F,
-                                                   .scene_depth_occlusion_enabled = true,
-                                                   .scene_depth_foreground_only = true,
+                                                   .scene_depth_mode = cubey::render::
+                                                       CloudLayerSceneDepthMode::OpaqueForeground,
                                                    .scene_depth_fade_m = 750.0F,
                                                },
                                                7U);
@@ -390,9 +390,8 @@ void test_cloud_environment_runtime_builds_coherent_surface_frame() {
                  "surface frame should use shared atmosphere direct-light color");
     require(frame.view.target_extent.width == 1280 && frame.view.target_extent.height == 720,
             "surface frame should preserve the consumer target extent");
-    require(frame.view.scene_depth_occlusion_enabled,
-            "surface frame should preserve consumer depth-occlusion policy");
-    require(frame.view.scene_depth_foreground_only,
+    require(frame.view.scene_depth_mode ==
+                cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
             "surface frame should preserve foreground-only depth policy");
     require_near(frame.uniforms.scene_depth_options.z, 2.0F, 0.0001F,
                  "surface uniforms should encode foreground-only depth occlusion");

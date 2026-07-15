@@ -1257,7 +1257,7 @@ class PlanetApp {
                         .external_background = true,
                         .near_plane_m = frame_.near_plane_m,
                         .far_plane_m = frame_.far_plane_m,
-                        .scene_depth_occlusion_enabled = true,
+                        .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::DistanceAware,
                         .scene_depth_fade_m = kPlanetCloudSceneDepthFadeM,
                     });
     }
