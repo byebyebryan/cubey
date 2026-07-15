@@ -123,6 +123,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain orbit stage plan](terrain-orbit-stage-plan.md): current panoramic
   detached/grounded placement contract with unrestricted orbit yaw and no
   terrain-source conditioning.
+- [Terrain quality tile field](terrain-quality-tile-field.md): correction of
+  fixed-factor and mixed-LOD quality geometry with a finite world-aligned,
+  adaptively tessellated far-field tile contract.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.

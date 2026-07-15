@@ -13,11 +13,14 @@ The matching GLSL evaluator consumes the packed resolved parameters and is
 checked against CPU samples through Vulkan readback. Optional local weathering
 is bounded, footprint-filtered, and explicitly non-hydraulic.
 
-The `terrain` app displaces a camera-centered eight-level clipmap directly from
-that GLSL evaluator. It uses shared atmosphere transport and sky irradiance,
-terrain-local heightfield shadows, linear-space procedural nonmetal materials,
-explicit single-owner LOD transitions, diagnostic views, and a surface
-controller whose clearance comes from the CPU query contract.
+The `terrain` app displaces geometry directly from that GLSL evaluator. The
+default control path uses a camera-centered eight-level clipmap with explicit
+single-owner LOD transitions. The opt-in quality path uses a camera-centered,
+world-aligned 128 by 128 tile field with shared edges and screen-driven adaptive
+tessellation over the same approximate coverage. It uses shared atmosphere
+transport and sky irradiance, terrain-local heightfield shadows, linear-space
+procedural nonmetal materials, diagnostic views, and a surface controller whose
+clearance comes from the CPU query contract.
 
 The `backdrop` preset is a 360-degree orbit stage around a local mid-air
 foreground focus. Detached mode reserves the inner 300 m for a consuming scene,
@@ -73,6 +76,7 @@ projects/terrain/capture_midground_correction_review.sh
 projects/terrain/capture_source_v2_1_review.sh
 projects/terrain/capture_orbit_stage_review.sh
 projects/terrain/capture_midair_stage_review.sh
+projects/terrain/capture_quality_tile_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -82,6 +86,10 @@ eye-level traversal video under `outputs/terrain/rendering-refinement/`.
 The backdrop pack adds a nine-case framing matrix, standard/coverage controls,
 distance controls, a 1920 x 1080 showcase, and a moving surface diagnostic under
 `outputs/terrain/backdrop-presentation/`.
+The quality tile review covers six yaw directions, the supported stage
+radius/elevation envelope, three native-resolution seeds, geometry diagnostics,
+a profiled full orbit, and detached-stage ownership under
+`outputs/terrain/quality-tile-v1/`.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
@@ -101,10 +109,11 @@ so their opt-in source evaluators do not inflate v1/v2 pipeline compilation.
 Debug views include final/base height,
 slope, weathering, LOD, clay, shadow,
 aerial transmittance, vegetation coverage, source/material normals, material
-weights, projected edges, source bands, albedo, roughness, blend height, and
-cavity. `classification-normal` shows the geometry-footprint normal that owns
-macro material selection, while `normal` includes optional layered source
-recovery. The fixed v3 A/B pack remains under
+weights, projected edges, tessellation factors, detached stage ownership,
+source bands, albedo, roughness, blend height, and cavity.
+`classification-normal` shows the geometry-footprint normal that owns macro
+material selection, while `normal` includes optional layered source recovery.
+The fixed v3 A/B pack remains under
 `outputs/terrain/midground-detail-v3/`; the accepted correction pack is under
 `outputs/terrain/midground-correction-v4/`. The focused source v2.1 comparison
 is under `outputs/terrain/source-v2-1/`.

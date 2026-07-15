@@ -78,24 +78,29 @@ render library expose clean headers and shader includes, but terrain-specific
 types are not promoted into the engine foundation until a second real consumer
 tests the boundary.
 
-The standalone renderer samples height in the vertex shader over a
-camera-centered clipmap. The v1 default is eight LOD levels, 128 cells per axis,
-a 2 m near cell, and about 16 km of outer radius. All levels use one origin
-snapped to that finest grid. Ring overlap is an exact eleven parent cells so
-patch spans retain their advertised power-of-two cell spacing. Transition
-vertices collapse in `xz` while their source footprint moves toward the parent
-grid; height-only snapping is not sufficient to close T-junctions. Every
-fragment has one LOD owner, while a one-parent-cell raster guard and downward
-boundary skirts cover residual rasterization gaps.
+The default control renderer samples height in the vertex shader over a
+camera-centered clipmap. It uses eight LOD levels, 128 cells per axis, a 2 m
+near cell, and about 16 km of outer radius. All levels use one origin snapped to
+that finest grid. Ring overlap is an exact eleven parent cells so patch spans
+retain their advertised power-of-two cell spacing. Transition vertices collapse
+in `xz` while their source footprint moves toward the parent grid; height-only
+snapping is not sufficient to close T-junctions. Every fragment has one LOD
+owner, while a one-parent-cell raster guard and downward boundary skirts cover
+residual rasterization gaps.
 
-An opt-in mountain quality path keeps the same coverage and ownership model but
-submits coarse quad patches to Vulkan tessellation. Shared-edge projected sizes
-select power-of-two factors against a configurable pixel target. The filtered
-source footprint comes from camera distance, pixel angular span, and that same
-screen-space target, which makes it independent of patch-local maximum
-tessellation. This path requires tessellation support and is not the default.
-Source v2 independently extends only mountain's detail spectrum, allowing
-renderer and source changes to be reviewed separately.
+The opt-in mountain quality path keeps the same approximate coverage but does
+not reuse the clipmap ownership topology. It submits a camera-centered,
+world-aligned field of adjacent quad patches to Vulkan tessellation. The v1
+quality field is 128 by 128 patches over a 32.768 km span, with a maximum 256 m
+patch span and whole-patch recentering. Shared control edges and shared-edge
+projected sizes select power-of-two tessellation factors from 1 through 64
+against a configurable pixel target. The filtered source footprint comes from
+camera distance, pixel angular span, and that same screen-space target; it does
+not snap geometry or sampling to a nominal parent LOD. This is a finite
+far-field quality product, not a streaming or planet-scale LOD contract. It
+requires tessellation support and is not the default. Source v2 independently
+extends only mountain's detail spectrum, allowing renderer and source changes
+to be reviewed separately.
 
 The scene uses the shared atmosphere integrator for sky and camera-to-surface
 aerial perspective. Diffuse-irradiance spherical harmonics and the atmosphere
@@ -142,7 +147,7 @@ shortlists, and fully evaluates 16 candidates over 24 azimuth sectors. The
 selected source focus maps to local scene XZ without changing source equations,
 geometry scale, or terrain shape. Terrain displacement, weathering, procedural
 materials, diagnostics, and heightfield shadows all sample that translated
-source location; clipmap ownership and camera coordinates remain local.
+source location; renderer ownership and camera coordinates remain local.
 
 Detached mode is the far-field product. The consumer owns the inner 300 m,
 which terrain rendering excludes. The solver raises the physical focus enough
@@ -153,12 +158,12 @@ low-slope stage as a placement diagnostic. `midground` retains the older
 directional 1.6 km surface camera for detail stress work; it is not the backdrop
 product.
 
-Stage quality views use a uniform tessellation factor of 16 in detached mode
-and 32 in grounded mode. This keeps parent and child clipmap edges aligned
-through a full orbit; non-stage quality cameras retain projected-edge adaptive
-tessellation. The detached cutout owns rasterized geometry only. The local
-heightfield-shadow approximation continues through the translated source field
-so sparse horizon taps do not introduce rings at the ownership boundary.
+All quality views use the same screen-driven adaptive tessellation. Because the
+quality mesh has shared world-aligned tile edges and no overlapping parent
+levels, stage views do not need a fixed-factor exception to conceal parent/child
+silhouette mismatches. The detached cutout owns rasterized geometry only. The
+local heightfield-shadow approximation continues through the translated source
+field so sparse horizon taps do not introduce rings at the ownership boundary.
 
 ## Configuration And Diagnostics
 
@@ -182,7 +187,8 @@ The public run controls are:
 The terrain app supports final surface, base/final height, slope, weathering
 delta, LOD, neutral clay, direct visibility, aerial transmittance, vegetation
 coverage, source/material normals, material weights, albedo, roughness, blend
-height, cavity, and classification-normal views.
+height, cavity, classification-normal, projected-edge, tessellation-factor, and
+detached stage-ownership views.
 Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
 shape review from eye-level rendering and LOD review. The `backdrop` camera
 uses the deterministic orbit stage and pitch/radius bounds above. The
