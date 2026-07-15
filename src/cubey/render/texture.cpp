@@ -173,6 +173,9 @@ cubey::vulkan::ImageConfig texture_cube_image_config(const TextureCubeConfig& co
     case TextureCubeUsage::TransferSampled:
         return cubey::vulkan::transfer_sampled_cube_image_config(config.extent, config.mip_levels,
                                                                  config.format);
+    case TextureCubeUsage::StorageSampled:
+        return cubey::vulkan::storage_sampled_cube_image_config(config.extent, config.mip_levels,
+                                                                config.format);
     case TextureCubeUsage::ColorAttachmentSampled:
         return cubey::vulkan::color_attachment_sampled_cube_image_config(
             config.extent, config.mip_levels, config.format);
@@ -720,6 +723,25 @@ cubey::vulkan::ImageView create_texture_cube_face_view(const cubey::vulkan::Devi
                     .base_mip_level = mip_level,
                     .level_count = 1,
                     .base_array_layer = face_index,
+                    .layer_count = 1,
+                });
+}
+
+cubey::vulkan::ImageView create_texture_2d_mip_view(const cubey::vulkan::Device& device,
+                                                    const Texture2D& texture,
+                                                    std::uint32_t mip_level) {
+    if (mip_level >= texture.mip_levels()) {
+        throw std::runtime_error("texture 2D mip view level is out of range");
+    }
+    return cubey::vulkan::ImageView(
+        device, cubey::vulkan::ImageViewConfig{
+                    .image = texture.handle(),
+                    .format = texture.format(),
+                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .view_type = VK_IMAGE_VIEW_TYPE_2D,
+                    .base_mip_level = mip_level,
+                    .level_count = 1,
+                    .base_array_layer = 0,
                     .layer_count = 1,
                 });
 }

@@ -45,9 +45,11 @@ constexpr ConfigEnumChoices enum_choices(const std::array<std::string_view, Coun
 
 constexpr std::array<std::string_view, 2> kCaptureModes{"png", "video"};
 constexpr std::array<std::string_view, 2> kPbrEnvironmentSources{"static", "atmosphere"};
+constexpr std::array<std::string_view, 3> kOceanSeaStates{"calm", "windy", "stormy"};
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
+constexpr std::array<std::string_view, 2> kOceanCloudReflectionSources{"cached", "planar"};
 constexpr std::array<std::string_view, 7> kOceanCameraPresets{
     "default", "low", "mid", "high", "close", "overhead", "wide",
 };
@@ -156,7 +158,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 267> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 274> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -235,6 +237,9 @@ constexpr std::array<ConfigOptionDescriptor, 267> kRunConfigOptions{
            "Yaw rotation applied to the environment in degrees.", ConfigOptionType::Float),
     option(RunConfigOptionId::PbrExposure, "pbr.exposure", "--exposure", "Exposure", "PBR",
            "Manual exposure bias in stops.", ConfigOptionType::Float, bounded_range(-4.0, 4.0)),
+    option(RunConfigOptionId::OceanSeaState, "ocean.sea_state", "--ocean-sea-state", "Sea State",
+           "Ocean", "Tuned ocean surface state: calm, windy, or stormy.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kOceanSeaStates)),
     option(RunConfigOptionId::OceanMapSize, "ocean.map_size", "--ocean-map-size", "Map Size",
            "Ocean", "FFT map size for the active ocean project.", ConfigOptionType::UInt32,
            min_range(1.0)),
@@ -279,9 +284,36 @@ constexpr std::array<ConfigOptionDescriptor, 267> kRunConfigOptions{
     option(RunConfigOptionId::OceanWireOpacity, "ocean.wire_opacity", "--ocean-wire-opacity",
            "Wire Opacity", "Ocean", "Opacity used by the ocean wire overlay.",
            ConfigOptionType::Float, bounded_range(0.0, 1.0)),
+    option(RunConfigOptionId::OceanCloudReflectionSource, "ocean.cloud_reflection_source",
+           "--ocean-cloud-reflection-source", "Cloud Reflection Source", "Ocean",
+           "Cloud reflection source: planar or cached environment.",
+           ConfigOptionType::Enum,
+           no_range(), enum_choices(kOceanCloudReflectionSources)),
+    option(RunConfigOptionId::OceanCloudEnvironmentExtent, "ocean.cloud_environment_extent",
+           "--ocean-cloud-environment-extent", "Cloud Probe Extent", "Ocean",
+           "Resolution per face of the cached cloud reflection environment.",
+           ConfigOptionType::UInt32, bounded_range(32.0, 128.0)),
+    option(RunConfigOptionId::OceanCloudEnvironmentUpdateHz, "ocean.cloud_environment_update_hz",
+           "--ocean-cloud-environment-update-hz", "Cloud Probe Rate", "Ocean",
+           "Refresh rate of the coherent cached cloud reflection environment.",
+           ConfigOptionType::Float, bounded_range(0.5, 30.0)),
+    option(RunConfigOptionId::OceanCloudPlanarResolutionScale,
+           "ocean.cloud_planar_resolution_scale", "--ocean-cloud-planar-resolution-scale",
+           "Planar Cloud Resolution", "Ocean",
+           "Resolution scale of the every-frame reflected cloud view.", ConfigOptionType::Float,
+           bounded_range(0.25, 1.0)),
+    option(RunConfigOptionId::OceanCloudPlanarViewSteps, "ocean.cloud_planar_view_steps",
+           "--ocean-cloud-planar-view-steps", "Planar Cloud Steps", "Ocean",
+           "View-march steps used by the reflected cloud view.", ConfigOptionType::UInt32,
+           bounded_range(8.0, 128.0)),
+    option(RunConfigOptionId::OceanCloudPlanarGuardBand, "ocean.cloud_planar_guard_band",
+           "--ocean-cloud-planar-guard-band", "Planar Cloud Guard Band", "Ocean",
+           "Extra reflected field of view reserved for wave-facet directions.",
+           ConfigOptionType::Float, bounded_range(0.0, 0.5)),
     option(RunConfigOptionId::OceanCloudReflectionStrength, "ocean.cloud_reflection_strength",
            "--ocean-cloud-reflection-strength", "Cloud Reflection", "Ocean",
-           "Strength of current-view cloud radiance in ocean reflections.", ConfigOptionType::Float,
+           "Strength of the selected cloud environment in ocean reflections.",
+           ConfigOptionType::Float,
            bounded_range(0.0, 1.0)),
     option(RunConfigOptionId::OceanCloudShadowStrength, "ocean.cloud_shadow_strength",
            "--ocean-cloud-shadow-strength", "Cloud Shadow", "Ocean",
@@ -1321,6 +1353,9 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.pbr.environment_rotation_degrees;
     case RunConfigOptionId::PbrExposure:
         return config.pbr.exposure;
+    case RunConfigOptionId::OceanSeaState:
+        return config.ocean.sea_state.empty() ? nlohmann::json(nullptr)
+                                              : nlohmann::json(config.ocean.sea_state);
     case RunConfigOptionId::OceanMapSize:
         return config.ocean.map_size == 0U ? nlohmann::json(nullptr)
                                            : nlohmann::json(config.ocean.map_size);
@@ -1352,6 +1387,24 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.ocean.wire_overlay;
     case RunConfigOptionId::OceanWireOpacity:
         return optional_float(config.ocean.wire_opacity);
+    case RunConfigOptionId::OceanCloudReflectionSource:
+        return config.ocean.cloud_reflection_source.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.cloud_reflection_source);
+    case RunConfigOptionId::OceanCloudEnvironmentExtent:
+        return config.ocean.cloud_environment_extent == 0U
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.cloud_environment_extent);
+    case RunConfigOptionId::OceanCloudEnvironmentUpdateHz:
+        return optional_float(config.ocean.cloud_environment_update_hz);
+    case RunConfigOptionId::OceanCloudPlanarResolutionScale:
+        return optional_float(config.ocean.cloud_planar_resolution_scale);
+    case RunConfigOptionId::OceanCloudPlanarViewSteps:
+        return config.ocean.cloud_planar_view_steps == 0U
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.cloud_planar_view_steps);
+    case RunConfigOptionId::OceanCloudPlanarGuardBand:
+        return optional_float(config.ocean.cloud_planar_guard_band);
     case RunConfigOptionId::OceanCloudReflectionStrength:
         return optional_float(config.ocean.cloud_reflection_strength);
     case RunConfigOptionId::OceanCloudShadowStrength:
@@ -1865,6 +1918,7 @@ namespace lazy::serializable {
 using JsonAdapter = NlohmannJsonAdapter;
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& options) {
+    adapter.writeField<std::string>("sea_state", options.sea_state);
     adapter.writeField<std::uint32_t>("map_size", options.map_size);
     adapter.writeField<std::string>("field_precision", options.field_precision);
     adapter.writeField<std::string>("surface_mode", options.surface_mode);
@@ -1877,6 +1931,13 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
     adapter.writeField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.writeField<float>("curvature_strength", options.curvature_strength);
     adapter.writeField<float>("wire_opacity", options.wire_opacity);
+    adapter.writeField<std::string>("cloud_reflection_source", options.cloud_reflection_source);
+    adapter.writeField<std::uint32_t>("cloud_environment_extent", options.cloud_environment_extent);
+    adapter.writeField<float>("cloud_environment_update_hz", options.cloud_environment_update_hz);
+    adapter.writeField<float>("cloud_planar_resolution_scale",
+                              options.cloud_planar_resolution_scale);
+    adapter.writeField<std::uint32_t>("cloud_planar_view_steps", options.cloud_planar_view_steps);
+    adapter.writeField<float>("cloud_planar_guard_band", options.cloud_planar_guard_band);
     adapter.writeField<float>("cloud_reflection_strength", options.cloud_reflection_strength);
     adapter.writeField<float>("cloud_shadow_strength", options.cloud_shadow_strength);
     adapter.writeField<bool>("wire_overlay", options.wire_overlay);
@@ -1884,6 +1945,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::OceanOptions& optio
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) {
     std::string cascade = options.cascade < 0 ? "all" : std::to_string(options.cascade);
+    adapter.readField<std::string>("sea_state", options.sea_state);
     adapter.readField<std::uint32_t>("map_size", options.map_size);
     adapter.readField<std::string>("field_precision", options.field_precision);
     adapter.readField<std::string>("surface_mode", options.surface_mode);
@@ -1896,6 +1958,13 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::OceanOptions& options) 
     adapter.readField<float>("curvature_end_ratio", options.curvature_end_ratio);
     adapter.readField<float>("curvature_strength", options.curvature_strength);
     adapter.readField<float>("wire_opacity", options.wire_opacity);
+    adapter.readField<std::string>("cloud_reflection_source", options.cloud_reflection_source);
+    adapter.readField<std::uint32_t>("cloud_environment_extent", options.cloud_environment_extent);
+    adapter.readField<float>("cloud_environment_update_hz", options.cloud_environment_update_hz);
+    adapter.readField<float>("cloud_planar_resolution_scale",
+                             options.cloud_planar_resolution_scale);
+    adapter.readField<std::uint32_t>("cloud_planar_view_steps", options.cloud_planar_view_steps);
+    adapter.readField<float>("cloud_planar_guard_band", options.cloud_planar_guard_band);
     adapter.readField<float>("cloud_reflection_strength", options.cloud_reflection_strength);
     adapter.readField<float>("cloud_shadow_strength", options.cloud_shadow_strength);
     adapter.readField<bool>("wire_overlay", options.wire_overlay);
@@ -2526,6 +2595,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         validate_range(config.pbr.exposure, option);
         config.pbr.exposure_explicit = true;
         break;
+    case RunConfigOptionId::OceanSeaState:
+        config.ocean.sea_state = std::string(value);
+        break;
     case RunConfigOptionId::OceanMapSize:
         config.ocean.map_size = parse_number<std::uint32_t>(value, option, "unsigned integer");
         break;
@@ -2569,6 +2641,31 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::OceanWireOpacity:
         config.ocean.wire_opacity = parse_config_float(value, option);
         validate_range(config.ocean.wire_opacity, option);
+        break;
+    case RunConfigOptionId::OceanCloudReflectionSource:
+        config.ocean.cloud_reflection_source = std::string(value);
+        break;
+    case RunConfigOptionId::OceanCloudEnvironmentExtent:
+        config.ocean.cloud_environment_extent =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.ocean.cloud_environment_extent, option);
+        break;
+    case RunConfigOptionId::OceanCloudEnvironmentUpdateHz:
+        config.ocean.cloud_environment_update_hz = parse_config_float(value, option);
+        validate_range(config.ocean.cloud_environment_update_hz, option);
+        break;
+    case RunConfigOptionId::OceanCloudPlanarResolutionScale:
+        config.ocean.cloud_planar_resolution_scale = parse_config_float(value, option);
+        validate_range(config.ocean.cloud_planar_resolution_scale, option);
+        break;
+    case RunConfigOptionId::OceanCloudPlanarViewSteps:
+        config.ocean.cloud_planar_view_steps =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.ocean.cloud_planar_view_steps, option);
+        break;
+    case RunConfigOptionId::OceanCloudPlanarGuardBand:
+        config.ocean.cloud_planar_guard_band = parse_config_float(value, option);
+        validate_range(config.ocean.cloud_planar_guard_band, option);
         break;
     case RunConfigOptionId::OceanCloudReflectionStrength:
         config.ocean.cloud_reflection_strength = parse_config_float(value, option);

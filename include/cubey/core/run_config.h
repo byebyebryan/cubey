@@ -98,6 +98,7 @@ struct RunConfig {
     };
 
     struct OceanOptions {
+        std::string sea_state{};
         std::uint32_t map_size = 0;
         std::string field_precision{};
         std::string surface_mode{};
@@ -110,6 +111,12 @@ struct RunConfig {
         float curvature_end_ratio = kRunConfigUnsetFloat;
         float curvature_strength = kRunConfigUnsetFloat;
         float wire_opacity = kRunConfigUnsetFloat;
+        std::string cloud_reflection_source{};
+        std::uint32_t cloud_environment_extent = 0;
+        float cloud_environment_update_hz = kRunConfigUnsetFloat;
+        float cloud_planar_resolution_scale = kRunConfigUnsetFloat;
+        std::uint32_t cloud_planar_view_steps = 0;
+        float cloud_planar_guard_band = kRunConfigUnsetFloat;
         float cloud_reflection_strength = kRunConfigUnsetFloat;
         float cloud_shadow_strength = kRunConfigUnsetFloat;
         bool wire_overlay = false;

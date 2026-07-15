@@ -139,6 +139,19 @@ versioned section and use that section as the release notes.
 - Premultiplied-alpha blending policy for forward PBR alpha materials.
 - Optional in-process H.264 MP4 capture for headless runs when libav/FFmpeg
   development packages are available at configure time.
+- Shared atmosphere/celestial environment state with procedural clear sky,
+  dynamic time of day, exposure, moon, stars, Milky Way, environment lighting,
+  and reusable project controls.
+- Shared surface-cloud runtime with generated weather/noise fields, projected
+  receiver shadows, reflected planar cloud views, and a coherent filtered cloud
+  environment cache.
+- `projects/ocean`, a horizon-scale spectral ocean with configurable cascade
+  workload, Calm/Windy/Stormy presets, persistent whitecaps, clipmap LOD,
+  curved-local surface mapping, shared environment lighting, and deterministic
+  visual review tooling.
+- `projects/terrain`, a directly sampled CPU/GLSL terrain source and
+  camera-relative clipmap renderer with CPU/GPU parity tests and fixed visual
+  review packs.
 
 ### Changed
 
@@ -216,6 +229,16 @@ versioned section and use that section as the release notes.
 - Headless capture can now produce either one PNG frame or a deterministic MP4
   sequence; video capture uses a small in-flight render/readback slot ring and
   CPU encoding on a worker thread.
+- Surface clouds are hosted by `projects/atmosphere`; the dedicated cloud
+  projects are explicitly reference or legacy lanes rather than competing
+  production owners.
+- Ocean cloud lighting now uses a planar reflected-camera product with cached
+  environment fallback. Current-view/hybrid reflections, spectral-moment
+  handoff experiments, synthetic far normals, and filtered far-whitecaps were
+  removed after review.
+- Ocean controls are grouped by Waves, Surface, Lighting, Scale & LOD,
+  Environment, and Diagnostics, with shared atmosphere/cloud controls exposed
+  through their foundation components.
 
 ## Pre-2.0 History
 

@@ -13,8 +13,8 @@ than the root design and roadmap.
 - [Procedural generation foundation](procedural-generation.md): shared source
   field, operator, and process-driver direction for procedural assets.
 - [Ocean rendering](ocean-rendering.md):
-  active/reference/legacy ocean split, reference-derived wave core, feature
-  donor boundaries, and breaking-wave tradeoffs.
+  active local-ocean runtime, spectral wave/foam fields, clipmap LOD, shared
+  environment lighting, and terrain/planet boundaries.
 - [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
   horizon-scale local ocean, planet-compatible contracts, curved-local
   rendering, and explicit handoff to planet-scale work.

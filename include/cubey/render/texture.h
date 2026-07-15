@@ -39,6 +39,7 @@ struct Texture3DConfig {
 
 enum class TextureCubeUsage : std::uint8_t {
     TransferSampled,
+    StorageSampled,
     ColorAttachmentSampled,
 };
 
@@ -267,5 +268,8 @@ class DepthTexture {
 [[nodiscard]] cubey::vulkan::ImageView create_texture_cube_face_view(
     const cubey::vulkan::Device& device, const TextureCube& texture, std::uint32_t mip_level,
     std::uint32_t face_index);
+[[nodiscard]] cubey::vulkan::ImageView
+create_texture_2d_mip_view(const cubey::vulkan::Device& device, const Texture2D& texture,
+                           std::uint32_t mip_level);
 
 } // namespace cubey::render

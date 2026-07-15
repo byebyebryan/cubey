@@ -1,5 +1,7 @@
 #include <cubey/render/cloud_layer.h>
 #include <cubey/render/cloud_layer_config.h>
+#include <cubey/render/cloud_environment_probe.h>
+#include <cubey/render/cloud_planar_reflection.h>
 
 #include <cctype>
 #include <cmath>
@@ -279,6 +281,12 @@ void test_cloud_layer_cmake_package_tracks_composite_modes() {
     require(shadow_march.find("#include \"cubey/cloud/cloud_surface_density.glsl\"") !=
                 std::string::npos,
             "cloud shadow pass should consume the shared density field");
+    require(shadow_march.find("cloud_sample_density_terrain_ref(") != std::string::npos &&
+                shadow_march.find("true, 0.0") != std::string::npos,
+            "cloud shadow pass should evaluate the detailed visible-cloud density field");
+    require(shadow_march.find("optical_depth +=") != std::string::npos &&
+                shadow_march.find("exp(-optical_depth)") != std::string::npos,
+            "cloud shadow pass should integrate Beer optical depth along the light ray");
     require(!std::filesystem::exists(source_root / "shaders/cubey/cloud/cloud_composite.frag"),
             "shared cloud package should not keep an unused standalone composite shader");
     require(atmosphere_cmake.find("COMPOSITE background") != std::string::npos,
@@ -322,4 +330,130 @@ void test_cloud_layer_frame_uniforms_pack_environment_lighting() {
                  "cloud uniforms should pack environment ambient color");
     require_near(uniforms.ambient_color_intensity.w, 1.4F, 0.001F,
                  "cloud uniforms should pack environment ambient intensity");
+}
+
+void test_cloud_environment_probe_config_rejects_invalid_values() {
+    cubey::render::CloudEnvironmentProbeConfig config{};
+    config.mip_levels = 8;
+    bool threw = false;
+    try {
+        cubey::render::validate_cloud_environment_probe_config(config);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "cloud environment probe should reject excessive mip counts");
+}
+
+void test_cloud_environment_probe_timeline_captures_coherently() {
+    cubey::render::CloudEnvironmentProbeTimeline timeline;
+    timeline.configure(4.0F);
+    require(timeline.capture_pending(), "new cloud environment probe should capture immediately");
+    require(!timeline.valid(), "new cloud environment probe should not expose invalid cubes");
+
+    timeline.capture_recorded();
+    require(timeline.valid(), "first coherent capture should make the probe valid");
+    require_near(timeline.blend(), 1.0F, 0.001F,
+                 "first coherent capture should not blend from undefined data");
+    require(timeline.generation() == 1U, "first capture should advance generation");
+
+    timeline.advance(0.125);
+    require(!timeline.capture_pending(), "probe should retain its cube before the interval");
+    timeline.advance(0.125);
+    require(timeline.capture_pending(), "probe should request a coherent update at four hertz");
+
+    timeline.capture_recorded();
+    require_near(timeline.blend(), 0.0F, 0.001F,
+                 "subsequent captures should start a crossfade");
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 0.5F, 0.001F,
+                 "crossfade should track the coherent update interval");
+    require(!timeline.capture_pending(), "probe should not overwrite a cube mid-crossfade");
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 1.0F, 0.001F,
+                 "crossfade should finish before the next capture");
+    require(timeline.capture_pending(), "finished crossfade should permit the next capture");
+}
+
+void test_cloud_planar_reflection_config_and_extent() {
+    cubey::render::CloudPlanarReflectionConfig config{};
+    config.target_extent = {1280U, 720U};
+    cubey::render::validate_cloud_planar_reflection_config(config);
+    const VkExtent2D extent = cubey::render::cloud_planar_reflection_extent(config);
+    require(extent.width == 640U && extent.height == 360U,
+            "planar cloud reflection should default to half resolution");
+
+    config.mip_levels = 20U;
+    bool threw = false;
+    try {
+        cubey::render::validate_cloud_planar_reflection_config(config);
+    } catch (const std::runtime_error&) {
+        threw = true;
+    }
+    require(threw, "planar cloud reflection should reject excessive mip counts");
+}
+
+void test_cloud_planar_reflected_frame_mirrors_camera_and_expands_fov() {
+    cubey::render::CloudLayerFrameInfo frame{};
+    frame.camera_position = {4.0F, 12.0F, -3.0F};
+    frame.camera_right = {1.0F, 0.0F, 0.0F};
+    frame.camera_up = {0.0F, 0.8660254F, -0.5F};
+    frame.camera_forward = {0.0F, -0.5F, -0.8660254F};
+    frame.tan_half_fovy = 0.5F;
+    frame.temporal_frame_index = 11U;
+    frame.scene_depth_occlusion_enabled = true;
+
+    const cubey::render::CloudLayerFrameInfo reflected =
+        cubey::render::cloud_planar_reflected_frame(
+            frame, {0.0F, 2.0F, 0.0F}, {0.0F, 1.0F, 0.0F}, {640U, 360U}, 0.15F);
+
+    require_near(reflected.camera_position.y, -8.0F, 0.001F,
+                 "planar cloud camera should mirror around the receiver plane");
+    require_near(reflected.camera_forward.y, 0.5F, 0.001F,
+                 "planar cloud forward should mirror vertically");
+    require_near(reflected.camera_up.y, -0.8660254F, 0.001F,
+                 "planar cloud up should mirror vertically");
+    require_near(reflected.camera_right.x, 1.0F, 0.001F,
+                 "planar cloud right should preserve the horizontal axis");
+    require_near(reflected.tan_half_fovy, 0.575F, 0.001F,
+                 "planar cloud view should include its guard band");
+    require(reflected.target_extent.width == 640U && reflected.target_extent.height == 360U,
+            "planar cloud frame should use the product extent");
+    require(reflected.temporal_frame_index == 0U &&
+                !reflected.scene_depth_occlusion_enabled,
+            "planar cloud frame should be coherent and independent of scene depth");
+}
+
+void test_cloud_planar_filter_declares_stable_mip_contract() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::render::cloud_planar_reflection_filter_pass_info();
+    require(pass.label == "cloud.planar.filter",
+            "planar cloud filter should keep its profiling label");
+    require(pass.descriptor_sets.size() == 1U &&
+                pass.descriptor_sets[0].bindings.size() == 1U,
+            "planar cloud filter should consume one radiance-transmittance source");
+    require(pass.push_constants.size() == 1U,
+            "planar cloud filter should control the base copy and mip filter radius");
+
+    const std::string shader = read_text_file(
+        source_root_path() / "shaders/cubey/cloud/cloud_planar_filter.frag");
+    require(shader.find("value * (1.0 / 16.0)") != std::string::npos,
+            "planar cloud filter should use a normalized stable spatial kernel");
+}
+
+void test_cloud_environment_prefilter_declares_cloud_contract() {
+    const cubey::render::MaterialPassInfo pass =
+        cubey::render::cloud_environment_prefilter_pass_info();
+    require(pass.label == "cloud.environment.prefilter",
+            "cloud environment prefilter should keep its profiling label");
+    require(pass.descriptor_sets.size() == 1U &&
+                pass.descriptor_sets[0].bindings.size() == 3U,
+            "cloud environment prefilter should bind uniforms, clear sky, and cloud product");
+
+    const std::string shader = read_text_file(
+        source_root_path() /
+        "shaders/cubey/cloud/cloud_environment_prefilter.frag");
+    require(shader.find("cloud.rgb + clamp(cloud.a") != std::string::npos,
+            "cloud environment prefilter should compose radiance and transmittance");
+    require(shader.find("reflection_prefilter.glsl") != std::string::npos,
+            "cloud environment prefilter should reuse shared GGX sampling helpers");
 }

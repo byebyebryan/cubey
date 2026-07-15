@@ -34,7 +34,6 @@ struct OceanGpuResourceConfig {
 struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 feature_options;
     cubey::math::Vec4 feature_options2;
-    cubey::math::Vec4 material_options;
     cubey::math::Vec4 fade_options;
     cubey::math::Vec4 cascade_options;
     cubey::math::Vec4 self_shadow_options;
@@ -46,9 +45,18 @@ struct OceanSurfaceFeatureUniforms {
     cubey::math::Vec4 cloud_shadow_world_to_uv_x;
     cubey::math::Vec4 cloud_shadow_world_to_uv_y;
     cubey::math::Vec4 cloud_lighting_options;
+    cubey::math::Vec4 cloud_environment_options;
+    cubey::math::Vec4 cloud_planar_right_aspect;
+    cubey::math::Vec4 cloud_planar_up_tan_half_fovy;
+    cubey::math::Vec4 cloud_planar_forward_lod;
+    cubey::math::Vec4 cloud_planar_options;
+    cubey::math::Vec4 sun_light_direction_intensity;
+    cubey::math::Vec4 sun_light_color;
+    cubey::math::Vec4 moon_light_direction_intensity;
+    cubey::math::Vec4 moon_light_color;
 };
 
-static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 56U);
+static_assert(sizeof(OceanSurfaceFeatureUniforms) == sizeof(float) * 88U);
 
 class OceanGpuResources {
   public:
@@ -71,9 +79,12 @@ class OceanGpuResources {
     void update_cloud_shadow_descriptor(const cubey::vulkan::Device& device,
                                         cubey::render::FrameSlot frame_slot, VkSampler sampler,
                                         VkImageView image_view, VkImageLayout image_layout);
-    void update_cloud_reflection_descriptor(const cubey::vulkan::Device& device,
-                                            cubey::render::FrameSlot frame_slot, VkSampler sampler,
-                                            VkImageView image_view, VkImageLayout image_layout);
+    void update_cloud_environment_descriptors(
+        const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+        const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current);
+    void update_cloud_planar_reflection_descriptor(
+        const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+        const cubey::render::Texture2D& texture);
     void upload_surface_feature_uniforms(cubey::render::FrameSlot frame_slot,
                                          const OceanSurfaceFeatureUniforms& uniforms) const;
 
@@ -86,7 +97,6 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& modulate_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& fft_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& unpack_pipeline() const;
-    [[nodiscard]] const cubey::render::ComputePipelineResource& foam_filter_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet spectrum_set(std::uint32_t cascade) const;
     [[nodiscard]] VkDescriptorSet modulate_set(std::uint32_t cascade) const;
@@ -109,15 +119,9 @@ class OceanGpuResources {
     [[nodiscard]] const cubey::render::Texture2D& displacement(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& normal(std::uint32_t cascade) const;
     [[nodiscard]] const cubey::render::Texture2D& foam(std::uint32_t cascade) const;
-    [[nodiscard]] const cubey::render::Texture2D& foam_filtered(std::uint32_t cascade,
-                                                                std::uint32_t level) const;
-    [[nodiscard]] VkDescriptorSet foam_filter_set(std::uint32_t cascade,
-                                                  std::uint32_t level) const;
     [[nodiscard]] const cubey::render::Texture2D& fallback_field() const;
     [[nodiscard]] bool cascade_allocated(std::uint32_t cascade) const;
     [[nodiscard]] std::uint32_t cascade_resolution(std::uint32_t cascade) const;
-    [[nodiscard]] std::uint32_t foam_filter_resolution(std::uint32_t cascade,
-                                                       std::uint32_t level) const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -127,7 +131,6 @@ class OceanGpuResources {
     using TextureArray = std::array<std::optional<cubey::render::Texture2D>, kOceanCascadeCount>;
     using FieldTextureArray = std::array<std::optional<cubey::render::Texture2D>,
                                          kOceanCascadeCount * kOceanSpectrumFieldCount>;
-
     void create_textures(const cubey::vulkan::Device& device, const OceanConfig& config);
     void create_descriptor_sets(const cubey::vulkan::Device& device,
                                 std::uint32_t frame_slot_count);
@@ -151,9 +154,6 @@ class OceanGpuResources {
     TextureArray displacement_{};
     TextureArray normal_{};
     TextureArray foam_{};
-    std::array<std::optional<cubey::render::Texture2D>,
-               kOceanCascadeCount * kOceanFoamFilterLevelCount>
-        foam_filtered_{};
     std::optional<cubey::render::Texture2D> fallback_field_;
     std::array<bool, kOceanCascadeCount> cascade_allocated_{};
     std::array<std::uint32_t, kOceanCascadeCount> cascade_resolutions_{};
@@ -174,11 +174,6 @@ class OceanGpuResources {
     std::optional<cubey::vulkan::DescriptorPool> unpack_pool_;
     std::array<VkDescriptorSet, kOceanCascadeCount> unpack_sets_{};
 
-    std::optional<cubey::vulkan::DescriptorSetLayout> foam_filter_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> foam_filter_pool_;
-    std::array<VkDescriptorSet, kOceanCascadeCount * kOceanFoamFilterLevelCount>
-        foam_filter_sets_{};
-
     std::optional<cubey::vulkan::DescriptorSetLayout> surface_layout_;
     std::optional<cubey::vulkan::DescriptorPool> surface_pool_;
     std::vector<VkDescriptorSet> surface_sets_{};
@@ -189,7 +184,6 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> unpack_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> foam_filter_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };

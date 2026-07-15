@@ -119,7 +119,8 @@ void AtmosphereEnvironmentRuntime::destroy() {
 }
 
 bool AtmosphereEnvironmentRuntime::set_environment(
-    const render::AtmosphereEnvironmentConfig& environment) {
+    const render::AtmosphereEnvironmentConfig& environment,
+    AtmosphereReflectionProbeUpdateMode update_mode) {
     if (environment_initialized_ && environment_equal(environment_, environment)) {
         return false;
     }
@@ -127,7 +128,9 @@ bool AtmosphereEnvironmentRuntime::set_environment(
     environment_ = environment;
     environment_initialized_ = true;
     refresh_lighting();
-    if (!full_update_pending_) {
+    if (update_mode == AtmosphereReflectionProbeUpdateMode::CoherentFull) {
+        mark_full_update_pending();
+    } else if (!full_update_pending_) {
         pending_face_updates_ = 6U;
     }
     return true;

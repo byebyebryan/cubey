@@ -328,6 +328,9 @@ void test_atmosphere_environment_runtime_queues_all_faces_after_environment_chan
     cubey::tests::require_contains(
         header, "std::uint32_t pending_face_updates_",
         "atmosphere runtime should track queued incremental face updates");
+    cubey::tests::require_contains(
+        header, "AtmosphereReflectionProbeUpdateMode",
+        "atmosphere runtime should expose coherent and incremental probe update policies");
     cubey::tests::require_contains(source, "return false",
                                    "atmosphere runtime should skip unchanged environment updates");
     cubey::tests::require_contains(
@@ -336,6 +339,9 @@ void test_atmosphere_environment_runtime_queues_all_faces_after_environment_chan
     cubey::tests::require_contains(
         source, "--pending_face_updates_",
         "atmosphere runtime should drain one queued face update per recording call");
+    cubey::tests::require_contains(
+        source, "AtmosphereReflectionProbeUpdateMode::CoherentFull",
+        "atmosphere runtime should support atomically refreshing reflective environments");
     cubey::tests::require_not_contains(
         source, "time_dirty_",
         "atmosphere runtime should not collapse an environment change into one dirty face");

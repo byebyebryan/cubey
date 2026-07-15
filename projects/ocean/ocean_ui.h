@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ocean_config.h"
+#include "ocean_spectrum_diagnostics.h"
 #include "ocean_surface_frame.h"
 
 #include <cubey/engine/atmosphere_environment_config.h>
@@ -26,8 +27,6 @@ struct OceanDiagnosticsConfig {
     bool wire_overlay = false;
     bool size_reference_enabled = true;
     float wire_opacity = 0.65F;
-    float shape_anti_repeat_strength = 1.0F;
-    float detail_anti_repeat_strength = 1.0F;
 };
 
 struct OceanMeshDrawStats {
@@ -41,11 +40,16 @@ struct OceanMeshDrawStats {
 struct OceanUiContext {
     OceanConfig& config;
     OceanDiagnosticsConfig& diagnostics;
+    const OceanSpectrumDiagnostics& spectrum_diagnostics;
     OceanSurfaceFrame surface_frame;
     OceanMeshDrawStats draw_stats;
     cubey::AtmosphereEnvironmentRunState& atmosphere;
     cubey::CloudEnvironmentConfig& clouds;
     cubey::host::PerformanceUiContext performance;
+    std::uint64_t cloud_environment_generation = 0;
+    float cloud_environment_blend = 1.0F;
+    float cloud_environment_age_seconds = 0.0F;
+    bool cloud_environment_valid = false;
     OceanRenderView& render_view;
     OceanCameraPreset& camera_preset;
     bool& paused;

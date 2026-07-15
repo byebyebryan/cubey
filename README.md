@@ -51,13 +51,14 @@ Current active projects:
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
-- `terrain`: active CPU terrain patch product with a coherent mountain source,
-  named geometry fields, bounded regional hydrology diagnostics, scalar
-  exports, and a product-backed 3D review renderer.
+- `terrain`: active directly sampled CPU/GLSL terrain source with shared
+  mountain/upland/plains presets, bounded local weathering, CPU/GPU parity
+  checks, a camera-relative clipmap renderer, and fixed visual review packs.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
-  spectrum/FFT/unpack core, with configurable cascade slots, atmosphere
-  lighting, terrain-field hooks, shared cloud sky/background composition,
-  foam/debug views, and feature-isolation controls.
+  spectrum/FFT/unpack core, with Calm/Windy/Stormy presets, configurable
+  cascade slots, persistent whitecaps, camera-relative clipmap LOD, curved
+  local horizon mapping, shared atmosphere/cloud lighting, planar cloud
+  reflection with cached fallback, and terrain-field hooks.
 - `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
   vorticity, pressure projection, debug views, and
   deterministic headless capture output.
@@ -83,6 +84,14 @@ Current active projects:
   rendering, shadow maps, and headless capture.
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
+
+Paused and design-only projects:
+
+- `terrain_hydrology_lab`: buildable snapshot of the previous regional terrain
+  product, routing, and analytical landscape-evolution work; paused while the
+  active terrain path establishes its direct-sampling runtime.
+- `fluid_25d`: design-only shallow-water direction for terrain-bound rivers,
+  flooding, sources, and sinks.
 
 Reference and legacy projects:
 
@@ -146,6 +155,7 @@ Project-local docs:
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
 - [Planet](projects/planet/README.md)
 - [Terrain](projects/terrain/README.md)
+- [Terrain Hydrology Lab](projects/terrain_hydrology_lab/README.md)
 - [Terrain Ref](projects/terrain_ref/README.md)
 - [Terrain Workbench Legacy](projects/terrain_workbench_legacy/README.md)
 - [Terrain Lab Legacy](projects/terrain_lab_legacy/README.md)
@@ -301,18 +311,18 @@ timestamp queries are available.
 `ocean` is a rendering-focused water project rather than a CFD solver. It now
 starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
 `--ocean-map-size 128|256|512|1024`,
-`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|foam-core|foam-candidate|foam-detail|lod|sky-radiance|reflection|direct-light|ambient-light|exposure|raw-foam|lit-foam|terrain-depth|terrain-shore|terrain-slope`,
+`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|lod|footprint|energy-lod|far-field|cloud-shadow|cloud-reflection|cloud-reflection-validity|sky-radiance|reflection|specular|direct-light|ambient-light|exposure|terrain-depth|terrain-shore|terrain-slope|curvature`,
 and `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use
 `--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
 `--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
 `--ocean-terrain-fields`, and `--no-ocean-terrain-fields` for captured
-diagnostics. The GUI's Feature Isolation section exposes global shape and foam
-strength, foam history, active cascade-slot work toggles, shape/detail
-anti-repeat, split atmosphere material influence, shape/normal/foam fade
-distances, and terrain foam controls for checking which additions help or hurt
-the reference-derived core. Final view also composites the shared surface cloud
-layer over the atmosphere sky by default; use `--no-clouds` for the clear-sky
-A/B path while cloud shadows/reflections remain deferred.
+diagnostics. The GUI groups wave fields, surface material, lighting, scale/LOD,
+shared environment, and diagnostics; each cascade owns its workload and wave
+parameters. Final view composites the shared surface cloud layer over the
+atmosphere sky, projects cloud shadows onto the local ocean, and uses planar
+cloud reflection with a cached environment fallback. Use `--no-clouds` for the
+clear-sky path. The canonical visual matrix is
+`projects/ocean/capture_ocean_review.sh`.
 The old `ocean_ref` and `ocean_legacy` projects were retired after their useful
 comparison and donor work landed in `ocean`; use git history if a deleted
 implementation detail is needed for archaeology.

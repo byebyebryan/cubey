@@ -8,7 +8,6 @@ layout(set = 0, binding = 4) uniform sampler2D displacement_cascade4_texture;
 layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 feature_options;
     vec4 feature_options2;
-    vec4 material_options;
     vec4 fade_options;
     vec4 cascade_options;
     vec4 self_shadow_options;
@@ -20,6 +19,15 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cloud_shadow_world_to_uv_x;
     vec4 cloud_shadow_world_to_uv_y;
     vec4 cloud_lighting_options;
+    vec4 cloud_environment_options;
+    vec4 cloud_planar_right_aspect;
+    vec4 cloud_planar_up_tan_half_fovy;
+    vec4 cloud_planar_forward_lod;
+    vec4 cloud_planar_options;
+    vec4 sun_light_direction_intensity;
+    vec4 sun_light_color;
+    vec4 moon_light_direction_intensity;
+    vec4 moon_light_color;
 } ocean_features;
 
 layout(push_constant) uniform OceanParams {
@@ -27,7 +35,6 @@ layout(push_constant) uniform OceanParams {
     vec4 camera_time;
     vec4 mesh_options;
     vec4 patch_bounds;
-    vec4 sun_direction;
     vec4 debug_options;
     vec4 inspection_options;
     vec4 tile_lengths;

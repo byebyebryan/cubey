@@ -14,6 +14,8 @@ cubey_add_app_target(
     SOURCES
         ocean_app.cpp
         ocean_gpu_resources.cpp
+        ocean_sea_state.cpp
+        ocean_spectrum_diagnostics.cpp
         ocean_ui.cpp
         main.cpp
     SHADERS
@@ -25,8 +27,6 @@ cubey_add_app_target(
         shaders/ocean_fft_half.comp
         shaders/ocean_unpack.comp
         shaders/ocean_unpack_half.comp
-        shaders/ocean_foam_filter.comp
-        shaders/ocean_foam_filter_half.comp
         shaders/ocean.vert
         shaders/ocean.frag
         shaders/ocean_reference_pillar.vert
@@ -45,7 +45,6 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_modulate_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_fft_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_unpack_body.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam_filter_body.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
@@ -57,6 +56,8 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(cubey_project_ocean_tests
         ocean_config_tests.cpp
+        ocean_sea_state.cpp
+        ocean_spectrum_diagnostics.cpp
     )
     target_compile_definitions(cubey_project_ocean_tests
         PRIVATE
@@ -82,6 +83,42 @@ if (BUILD_TESTING)
         4
         --ocean-map-size
         128
+    )
+    set(CUBEY_OCEAN_CACHED_CLOUD_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/ocean-cached-cloud-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        ocean_cached_cloud_environment_writes_png
+        cubey_project_ocean
+        "${CUBEY_OCEAN_CACHED_CLOUD_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        4
+        --ocean-map-size
+        128
+        --ocean-cloud-reflection-source
+        cached
+        --ocean-cloud-environment-extent
+        32
+    )
+    set(CUBEY_OCEAN_PLANAR_CLOUD_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/ocean-planar-cloud-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        ocean_planar_cloud_reflection_writes_png
+        cubey_project_ocean
+        "${CUBEY_OCEAN_PLANAR_CLOUD_SMOKE_OUTPUT}"
+        --headless
+        --frames
+        4
+        --ocean-map-size
+        128
+        --ocean-cloud-reflection-source
+        planar
+        --ocean-cloud-planar-resolution-scale
+        0.5
+        --ocean-cloud-planar-view-steps
+        16
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_OCEAN_HEADLESS_VIDEO_SMOKE_OUTPUT

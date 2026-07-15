@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <string_view>
 
 namespace cubey::projects::ocean {
 namespace {
@@ -24,24 +23,34 @@ struct OceanLodStats {
     std::uint32_t vertices = 0;
 };
 
-[[nodiscard]] const char* cascade_role_name(std::uint32_t index) {
-    switch (index) {
-    case 0:
-        return "core A";
-    case 1:
-        return "core B";
-    case 2:
-        return "candidate";
-    case 3:
-        return "candidate";
-    case 4:
-        return "candidate";
-    }
-    return "slot";
+void format_cascade_label(char* buffer, std::size_t size, std::uint32_t index) {
+    std::snprintf(buffer, size, "C%u", index);
 }
 
-void format_cascade_label(char* buffer, std::size_t size, std::uint32_t index) {
-    std::snprintf(buffer, size, "C%u %s", index, cascade_role_name(index));
+inline constexpr std::array<OceanCameraPreset, 7> kOceanCameraPresets{
+    OceanCameraPreset::Default, OceanCameraPreset::Low,   OceanCameraPreset::Mid,
+    OceanCameraPreset::High,    OceanCameraPreset::Close, OceanCameraPreset::Overhead,
+    OceanCameraPreset::Wide,
+};
+
+[[nodiscard]] const char* ocean_camera_preset_name(OceanCameraPreset preset) {
+    switch (preset) {
+    case OceanCameraPreset::Default:
+        return "default";
+    case OceanCameraPreset::Low:
+        return "low";
+    case OceanCameraPreset::Mid:
+        return "mid";
+    case OceanCameraPreset::High:
+        return "high";
+    case OceanCameraPreset::Close:
+        return "close";
+    case OceanCameraPreset::Overhead:
+        return "overhead";
+    case OceanCameraPreset::Wide:
+        return "wide";
+    }
+    return "default";
 }
 
 void draw_map_size_combo(OceanConfig& config) {
@@ -137,140 +146,32 @@ void request_camera_preset(OceanUiContext& ui, OceanCameraPreset preset) {
     ui.camera_preset_requested = true;
 }
 
-void apply_feature_preset(OceanUiContext& ui, const char* preset) {
-    if (std::string_view{preset} == "exp-full") {
-        ui.config.cascade_enabled.fill(true);
-        ui.config.surface_shape_strength = 1.0F;
-        ui.config.surface_foam_strength = 1.0F;
-        ui.config.foam_history_strength = 1.0F;
-        ui.config.atmosphere_material_strength = 1.0F;
-        ui.config.atmosphere_sky_strength = 1.0F;
-        ui.config.atmosphere_reflection_strength = 1.0F;
-        ui.config.atmosphere_light_strength = 1.0F;
-        ui.config.foam_lighting_strength = 1.0F;
-        ui.config.self_shadow_strength = 0.45F;
-        ui.config.terrain_foam_strength = 1.0F;
-        ui.config.shape_fade_distance_scale = 1.0F;
-        ui.config.normal_fade_distance_scale = 1.0F;
-        ui.config.foam_fade_distance_scale = 1.0F;
-        ui.config.far_field_enabled = true;
-        ui.config.far_roughness_strength = 0.12F;
-        ui.config.far_glint_strength = 0.28F;
-        ui.config.far_detail_footprint_start_m = 0.9F;
-        ui.config.far_detail_footprint_end_m = 5.0F;
-        ui.config.far_reflection_variation_strength = 0.08F;
-        ui.config.sun_glitter_width = 0.10F;
-        ui.diagnostics.shape_anti_repeat_strength = 1.0F;
-        ui.diagnostics.detail_anti_repeat_strength = 1.0F;
-        ui.config.spectral_domains_enabled = true;
-        return;
-    }
-    if (std::string_view{preset} == "ref-like") {
-        ui.config.cascade_enabled = {true, true, false, false, false};
-        ui.config.surface_shape_strength = 1.0F;
-        ui.config.surface_foam_strength = 1.0F;
-        ui.config.foam_history_strength = 1.0F;
-        ui.config.atmosphere_material_strength = 1.0F;
-        ui.config.atmosphere_sky_strength = 1.0F;
-        ui.config.atmosphere_reflection_strength = 1.0F;
-        ui.config.atmosphere_light_strength = 1.0F;
-        ui.config.foam_lighting_strength = 1.0F;
-        ui.config.self_shadow_strength = 0.35F;
-        ui.config.terrain_foam_strength = 0.0F;
-        ui.config.shape_fade_distance_scale = 1.0F;
-        ui.config.normal_fade_distance_scale = 1.0F;
-        ui.config.foam_fade_distance_scale = 1.0F;
-        ui.config.far_field_enabled = false;
-        ui.config.far_roughness_strength = 0.0F;
-        ui.config.far_glint_strength = 0.0F;
-        ui.config.far_detail_footprint_start_m = 0.9F;
-        ui.config.far_detail_footprint_end_m = 5.0F;
-        ui.config.far_reflection_variation_strength = 0.0F;
-        ui.config.sun_glitter_width = 0.10F;
-        ui.diagnostics.shape_anti_repeat_strength = 0.0F;
-        ui.diagnostics.detail_anti_repeat_strength = 0.0F;
-        ui.config.spectral_domains_enabled = false;
-        return;
-    }
-    if (std::string_view{preset} == "cheap") {
-        ui.config.cascade_enabled = {true, true, false, false, false};
-        ui.config.surface_shape_strength = 1.0F;
-        ui.config.surface_foam_strength = 0.85F;
-        ui.config.foam_history_strength = 0.65F;
-        ui.config.atmosphere_material_strength = 1.0F;
-        ui.config.atmosphere_sky_strength = 0.65F;
-        ui.config.atmosphere_reflection_strength = 0.35F;
-        ui.config.atmosphere_light_strength = 1.0F;
-        ui.config.foam_lighting_strength = 0.55F;
-        ui.config.self_shadow_strength = 0.0F;
-        ui.config.terrain_foam_strength = 0.0F;
-        ui.config.shape_fade_distance_scale = 0.85F;
-        ui.config.normal_fade_distance_scale = 0.80F;
-        ui.config.foam_fade_distance_scale = 0.80F;
-        ui.config.far_field_enabled = false;
-        ui.config.far_roughness_strength = 0.0F;
-        ui.config.far_glint_strength = 0.0F;
-        ui.config.far_detail_footprint_start_m = 0.9F;
-        ui.config.far_detail_footprint_end_m = 5.0F;
-        ui.config.far_reflection_variation_strength = 0.0F;
-        ui.config.sun_glitter_width = 0.10F;
-        ui.diagnostics.shape_anti_repeat_strength = 0.0F;
-        ui.diagnostics.detail_anti_repeat_strength = 0.0F;
-        ui.config.spectral_domains_enabled = false;
-        return;
-    }
-    if (std::string_view{preset} == "no-history") {
-        ui.config.foam_history_strength = 0.0F;
-        return;
-    }
-    if (std::string_view{preset} == "static-material") {
-        ui.config.atmosphere_material_strength = 0.0F;
-        ui.config.atmosphere_sky_strength = 0.0F;
-        ui.config.atmosphere_reflection_strength = 0.0F;
-        ui.config.atmosphere_light_strength = 0.0F;
-        ui.config.foam_lighting_strength = 0.0F;
-        ui.config.self_shadow_strength = 0.0F;
-    }
-}
-
-void draw_feature_preset_button(OceanUiContext& ui, const char* label, const char* preset,
-                                const char* help) {
-    if (cubey::host::imgui_button(label, help)) {
-        apply_feature_preset(ui, preset);
-    }
-}
-
-void draw_camera_preset_button(OceanUiContext& ui, OceanCameraPreset preset, const char* label) {
-    const bool selected = ui.camera_preset == preset;
-    if (selected) {
-        ImGui::BeginDisabled();
-    }
-    if (cubey::host::imgui_button(label, "Move the camera to this inspection preset.")) {
-        request_camera_preset(ui, preset);
-    }
-    if (selected) {
-        ImGui::EndDisabled();
-    }
-}
-
-void draw_cascade_controls(OceanCascadeConfig& cascade, std::uint32_t index) {
+void draw_cascade_controls(OceanConfig& config, std::uint32_t index) {
+    OceanCascadeConfig& cascade = config.cascades[index];
     char label[40]{};
     format_cascade_label(label, sizeof(label), index);
     const cubey::host::ScopedImGuiGroup group(
         label, {.default_open = false,
                 .level = 1U,
-                .help = "Per-slot spectral wave controls. Enable a slot from Feature Isolation "
-                        "to include it in compute and surface sampling."});
+                .help = "Per-slot spectral wave controls for compute and surface sampling."});
     if (!group) {
         return;
     }
 
     const cubey::host::ScopedImGuiId section_id(label);
+    cubey::host::imgui_checkbox("Enabled", &config.cascade_enabled[index],
+                                "Enable this cascade's compute work and surface samples.");
+    draw_cascade_map_size_combo("Map size", &config.cascade_map_sizes[index], config.map_size);
+    int update_interval = static_cast<int>(config.cascade_update_intervals[index]);
+    if (cubey::host::imgui_slider_int("Update interval", &update_interval, 1, 8,
+                                      "Frame interval for recomputing this cascade.")) {
+        config.cascade_update_intervals[index] =
+            static_cast<std::uint32_t>(std::clamp(update_interval, 1, 8));
+    }
     cubey::host::imgui_slider_float("Tile length", &cascade.tile_length, 8.0F, 2400.0F, "%.0f m",
                                     "World-space repeat length for this cascade.");
     cubey::host::imgui_slider_float("Displacement scale", &cascade.displacement_scale, 0.0F, 2.0F,
-                                    "%.2f",
-                                    "Vertical and horizontal displacement contribution.");
+                                    "%.2f", "Vertical and horizontal displacement contribution.");
     cubey::host::imgui_slider_float("Normal scale", &cascade.normal_scale, 0.0F, 2.0F, "%.2f",
                                     "Surface-normal contribution from this cascade.");
     cubey::host::imgui_slider_float("Wind speed", &cascade.wind_speed, 0.1F, 32.0F, "%.1f m/s",
@@ -300,9 +201,8 @@ void draw_lod_diagnostics(const OceanSurfaceFrame& surface_frame) {
     const OceanConfig& config = surface_frame.mesh_config;
     const OceanHorizonDiagnostics& horizon = surface_frame.horizon;
 
-    ImGui::Text("Effective mesh: %u cells / %u LOD / %.1f km half",
-                config.mesh_cells, config.mesh_lod_levels,
-                horizon.mesh_half_extent_m / kOceanMetersPerKilometer);
+    ImGui::Text("Effective mesh: %u cells / %u LOD / %.1f km half", config.mesh_cells,
+                config.mesh_lod_levels, horizon.mesh_half_extent_m / kOceanMetersPerKilometer);
     ImGui::Text("Cell size: near %.2f m / target %.2f m / far %.2f m",
                 ocean_mesh_near_cell_size(config), horizon.target_near_cell_size_m,
                 horizon.far_cell_size_m);
@@ -359,9 +259,8 @@ void draw_lod_diagnostics(const OceanSurfaceFrame& surface_frame) {
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
         const OceanCascadeConfig& cascade_config = ocean_cascade(config, cascade);
         const OceanCascadeLodBand lod = ocean_cascade_lod_band(config, cascade);
-        const float shape_weight =
-            ocean_cascade_displacement_lod_weight(config, cascade, horizon.horizon_distance_m,
-                                                  horizon.far_cell_size_m);
+        const float shape_weight = ocean_cascade_displacement_lod_weight(
+            config, cascade, horizon.horizon_distance_m, horizon.far_cell_size_m);
         const float surface_weight =
             ocean_cascade_surface_lod_weight(config, cascade, horizon.horizon_distance_m);
         ImGui::TableNextRow();
@@ -386,6 +285,7 @@ void draw_lod_diagnostics(const OceanSurfaceFrame& surface_frame) {
 } // namespace
 
 void draw_ocean_ui(OceanUiContext ui) {
+    ui.config.sea_state = ocean_infer_sea_state(ui.config);
     if (!cubey::host::begin_control_panel("Ocean", {.width = 430.0F})) {
         ImGui::End();
         return;
@@ -402,24 +302,24 @@ void draw_ocean_ui(OceanUiContext ui) {
         ui.step_requested = true;
     }
     ImGui::EndDisabled();
-    cubey::host::imgui_enum_combo("Debug view", ui.render_view, kOceanRenderViews,
-                                  ocean_render_view_name,
-                                  "Inspect final shading, wave fields, foam, lighting, and LOD.");
-    draw_selected_cascade_combo(ui.diagnostics);
-    cubey::host::imgui_checkbox("Wire overlay", &ui.diagnostics.wire_overlay,
-                                "Draw mesh topology over the ocean surface.");
-    ImGui::BeginDisabled(!ui.diagnostics.wire_overlay);
-    cubey::host::imgui_slider_float("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F,
-                                    "%.2f", "Opacity used by the wire overlay.");
-    ImGui::EndDisabled();
-    cubey::host::imgui_checkbox(
-        "Size pillar", &ui.diagnostics.size_reference_enabled,
-        "Draw the 50 m sea-level-centered scale pillar and its basic direct-light ocean shadow.");
+    OceanSeaState sea_state = ui.config.sea_state;
+    if (cubey::host::imgui_enum_combo(
+            "Sea state", sea_state, kOceanSeaStatePresets, ocean_sea_state_name,
+            "Apply a coherent wave and foam preset. Manual edits are reported as custom.")) {
+        apply_ocean_sea_state(ui.config, sea_state);
+    }
+    OceanCameraPreset camera_preset = ui.camera_preset;
+    if (cubey::host::imgui_enum_combo("Camera", camera_preset, kOceanCameraPresets,
+                                      ocean_camera_preset_name,
+                                      "Move the camera to a repeatable inspection viewpoint.")) {
+        request_camera_preset(ui, camera_preset);
+    }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Wave Core", {.help = "Global controls for the FFT wave field and terrain coupling."}};
+            "Waves",
+            {.default_open = false, .help = "Spectral field, presentation, and cascade controls."}};
         group) {
-        const cubey::host::ScopedImGuiId section_id("Wave Core");
+        const cubey::host::ScopedImGuiId section_id("Waves");
         draw_map_size_combo(ui.config);
         cubey::host::imgui_enum_combo(
             "Field precision", ui.config.field_precision, kOceanFieldPrecisions,
@@ -430,397 +330,425 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Spectral domains", &ui.config.spectral_domains_enabled,
             "Limit cascades to wavelength bands so scales blend without duplicating energy.");
         cubey::host::imgui_slider_float(
-            "Shape anti-repeat", &ui.diagnostics.shape_anti_repeat_strength, 0.0F, 1.0F, "%.2f",
+            "Shape anti-repeat", &ui.config.shape_anti_repeat_strength, 0.0F, 1.0F, "%.2f",
             "Strength of the secondary displacement sample used to break tiling.");
-        cubey::host::imgui_slider_float(
-            "Detail anti-repeat", &ui.diagnostics.detail_anti_repeat_strength, 0.0F, 1.0F,
-            "%.2f", "Strength of far-field normal/foam domain perturbation.");
+        cubey::host::imgui_slider_float("Detail anti-repeat",
+                                        &ui.config.detail_anti_repeat_strength, 0.0F, 1.0F, "%.2f",
+                                        "Strength of far-field normal/foam domain perturbation.");
         cubey::host::imgui_slider_float("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m",
                                         "Water depth used by the dispersion model.");
-        cubey::host::imgui_checkbox(
-            "Terrain field influence", &ui.config.terrain_fields_enabled,
-            "Use terrain-ocean fields to affect the ocean instead of diagnostics only.");
-        ImGui::TextUnformatted("GodotOceanWaves port");
-    }
-
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Feature Isolation",
-            {.default_open = false,
-             .help = "Strength gates and slot toggles around the core C0/C1 wave pair."}};
-        group) {
-        const cubey::host::ScopedImGuiId section_id("Feature Isolation");
-        draw_feature_preset_button(ui, "All slots", "exp-full",
-                                   "Enable every cascade slot for comparison.");
-        ImGui::SameLine();
-        draw_feature_preset_button(ui, "Core", "ref-like", "Use the default C0/C1 core slots.");
-        ImGui::SameLine();
-        draw_feature_preset_button(ui, "Cheap", "cheap",
-                                   "Keep the material readable while reducing expensive extras.");
-        draw_feature_preset_button(ui, "No history", "no-history",
-                                   "Disable persistent foam history contribution.");
-        ImGui::SameLine();
-        draw_feature_preset_button(ui, "Static material", "static-material",
-                                   "Blend water material sampling away from atmosphere probes.");
-
-        ImGui::TextUnformatted("Active cascade work");
-        cubey::host::imgui_attach_help(
-            "Disabled cascades skip spectrum, modulation, FFT, and unpack dispatches and are "
-            "also hidden from the surface shader.");
-        for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
-            if (index > 0U) {
-                ImGui::SameLine();
-            }
-            char label[8]{};
-            std::snprintf(label, sizeof(label), "C%u", index);
-            cubey::host::imgui_checkbox(label, &ui.config.cascade_enabled[index],
-                                        "Enable this cascade's compute work and surface samples.");
+        if (const cubey::host::ScopedImGuiGroup presentation{
+                "Presentation",
+                {.default_open = false, .level = 1U, .help = "Global wave presentation controls."}};
+            presentation) {
+            cubey::host::imgui_slider_float(
+                "Shape strength", &ui.config.surface_shape_strength, 0.0F, 1.5F, "%.2f",
+                "Global displacement and normal strength for enabled cascades.");
         }
-        ImGui::Text("Active cascades: %u/%u", active_cascade_count(ui.config),
-                    kOceanCascadeCount);
-        ImGui::Text("Steady compute dispatches: %u/frame",
-                    steady_compute_dispatch_count(ui.config));
-        if (ImGui::BeginTable("Cascade work policy", 4,
-                              ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
-            ImGui::TableSetupColumn("Cascade");
-            ImGui::TableSetupColumn("Map");
-            ImGui::TableSetupColumn("Interval");
-            ImGui::TableSetupColumn("Effective");
-            ImGui::TableHeadersRow();
+        if (const cubey::host::ScopedImGuiGroup cascades{
+                "Cascades",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Wave cascade slots and their compute workload."}};
+            cascades) {
+            ImGui::Text("Active: %u/%u / %u dispatches per frame", active_cascade_count(ui.config),
+                        kOceanCascadeCount, steady_compute_dispatch_count(ui.config));
             for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
-                char id[8]{};
-                std::snprintf(id, sizeof(id), "C%u", index);
-                const cubey::host::ScopedImGuiId row_id(id);
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::Text("C%u", index);
-                ImGui::TableSetColumnIndex(1);
-                draw_cascade_map_size_combo("##map", &ui.config.cascade_map_sizes[index],
-                                            ui.config.map_size);
-                ImGui::TableSetColumnIndex(2);
-                int interval = static_cast<int>(ui.config.cascade_update_intervals[index]);
-                if (cubey::host::imgui_slider_int("##interval", &interval, 1, 8,
-                                                  "Frame interval for recomputing this cascade.")) {
-                    ui.config.cascade_update_intervals[index] =
-                        static_cast<std::uint32_t>(std::clamp(interval, 1, 8));
-                }
-                ImGui::TableSetColumnIndex(3);
-                ImGui::Text("%u / %u frame%s", ocean_cascade_map_size(ui.config, index),
-                            ocean_cascade_update_interval(ui.config, index),
-                            ocean_cascade_update_interval(ui.config, index) == 1U ? "" : "s");
+                draw_cascade_controls(ui.config, index);
             }
-            ImGui::EndTable();
         }
-        cubey::host::imgui_slider_float(
-            "Shape strength", &ui.config.surface_shape_strength, 0.0F, 1.5F, "%.2f",
-            "Global displacement and normal strength for enabled cascade slots.");
-        cubey::host::imgui_slider_float(
-            "Foam strength", &ui.config.surface_foam_strength, 0.0F, 2.0F, "%.2f",
-            "Global presentation foam strength for enabled cascade slots.");
-        cubey::host::imgui_slider_float("Foam history", &ui.config.foam_history_strength, 0.0F,
-                                        1.5F, "%.2f",
-                                        "Persistent foam history contribution to final coverage.");
-        cubey::host::imgui_slider_float(
-            "Atmosphere master", &ui.config.atmosphere_material_strength, 0.0F, 1.0F, "%.2f",
-            "Master blend for runtime atmosphere influence on the water material.");
-        cubey::host::imgui_slider_float(
-            "Sky radiance", &ui.config.atmosphere_sky_strength, 0.0F, 1.0F, "%.2f",
-            "Blend ambient sky and horizon fog from static sky to runtime atmosphere radiance.");
-        cubey::host::imgui_slider_float(
-            "Reflection probe", &ui.config.atmosphere_reflection_strength, 0.0F, 1.0F, "%.2f",
-            "Blend water reflections from sky radiance to the runtime atmosphere reflection probe.");
-        cubey::host::imgui_slider_float(
-            "Light response", &ui.config.atmosphere_light_strength, 0.0F, 1.0F, "%.2f",
-            "Blend direct and ambient material energy from static daylight to runtime sun/moon.");
-        cubey::host::imgui_slider_float(
-            "Foam lighting", &ui.config.foam_lighting_strength, 0.0F, 1.0F, "%.2f",
-            "Blend foam shading from static brightness to runtime day/night lighting.");
-        cubey::host::imgui_slider_float("Terrain foam", &ui.config.terrain_foam_strength, 0.0F,
-                                        2.0F, "%.2f",
-                                        "Strength of optional shoreline foam from terrain fields.");
-        cubey::host::imgui_slider_float(
-            "Shape fade", &ui.config.shape_fade_distance_scale, 0.25F, 2.5F, "%.2f",
-            "Distance multiplier for per-cascade displacement fade-out.");
-        cubey::host::imgui_slider_float(
-            "Normal fade", &ui.config.normal_fade_distance_scale, 0.25F, 2.5F, "%.2f",
-            "Distance multiplier for far-field normal fade-out.");
-        cubey::host::imgui_slider_float(
-            "Foam fade", &ui.config.foam_fade_distance_scale, 0.25F, 2.5F, "%.2f",
-            "Distance multiplier for persistent/current foam fade-out.");
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Camera",
-            {.default_open = false,
-             .help = "Quick camera viewpoints for inspecting wave shape and scale."}};
-        group) {
-        const cubey::host::ScopedImGuiId section_id("Camera");
-        draw_camera_preset_button(ui, OceanCameraPreset::Default, "Default");
-        ImGui::SameLine();
-        draw_camera_preset_button(ui, OceanCameraPreset::Low, "Low");
-        ImGui::SameLine();
-        draw_camera_preset_button(ui, OceanCameraPreset::Mid, "Mid");
-        ImGui::SameLine();
-        draw_camera_preset_button(ui, OceanCameraPreset::High, "High");
-        ImGui::SameLine();
-        draw_camera_preset_button(ui, OceanCameraPreset::Close, "Close");
-        ImGui::SameLine();
-        draw_camera_preset_button(ui, OceanCameraPreset::Overhead, "Overhead");
-        ImGui::SameLine();
-        draw_camera_preset_button(ui, OceanCameraPreset::Wide, "Wide");
-    }
-
-    if (const cubey::host::ScopedImGuiGroup group{
-            "Mesh",
+            "Scale & LOD",
             {.default_open = false,
              .help = "Camera-relative ocean mesh and clipmap LOD controls."}};
         group) {
-        const cubey::host::ScopedImGuiId section_id("Mesh");
-        int mesh_cells = static_cast<int>(ui.config.mesh_cells);
-        if (cubey::host::imgui_slider_int(
-                "Base cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
-                static_cast<int>(kOceanMaxMeshCells), "Grid resolution per clipmap patch.")) {
-            ui.config.mesh_cells = static_cast<std::uint32_t>(
-                std::clamp(mesh_cells, static_cast<int>(kOceanMinMeshCells),
-                           static_cast<int>(kOceanMaxMeshCells)));
+        const cubey::host::ScopedImGuiId section_id("Scale & LOD");
+        if (const cubey::host::ScopedImGuiGroup mesh{
+                "Mesh",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Camera-relative clipmap mesh and horizon coverage."}};
+            mesh) {
+            int mesh_cells = static_cast<int>(ui.config.mesh_cells);
+            if (cubey::host::imgui_slider_int(
+                    "Base cells", &mesh_cells, static_cast<int>(kOceanMinMeshCells),
+                    static_cast<int>(kOceanMaxMeshCells), "Grid resolution per clipmap patch.")) {
+                ui.config.mesh_cells = static_cast<std::uint32_t>(
+                    std::clamp(mesh_cells, static_cast<int>(kOceanMinMeshCells),
+                               static_cast<int>(kOceanMaxMeshCells)));
+            }
+            int mesh_lod_levels = static_cast<int>(ui.config.mesh_lod_levels);
+            if (cubey::host::imgui_slider_int("LOD levels", &mesh_lod_levels,
+                                              static_cast<int>(kOceanMinMeshLodLevels),
+                                              static_cast<int>(kOceanMaxMeshLodLevels),
+                                              "Number of concentric mesh LOD rings.")) {
+                ui.config.mesh_lod_levels = static_cast<std::uint32_t>(
+                    std::clamp(mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
+                               static_cast<int>(kOceanMaxMeshLodLevels)));
+            }
+            cubey::host::imgui_slider_float("Extent", &ui.config.mesh_extent, 400.0F, 128000.0F,
+                                            "%.0f m",
+                                            "Minimum half extent covered by the ocean mesh.");
+            cubey::host::imgui_checkbox(
+                "Auto horizon", &ui.config.horizon_auto_extent,
+                "Derive effective mesh extent from camera altitude and planet radius.");
+            cubey::host::imgui_slider_float("Horizon margin", &ui.config.horizon_extent_margin,
+                                            1.0F, 2.0F, "%.2f",
+                                            "Safety multiplier applied to the computed horizon.");
+            cubey::host::imgui_slider_float(
+                "Target near cell", &ui.config.horizon_target_near_cell_m, 0.5F, 8.0F, "%.2f m",
+                "Preferred near-field cell size when auto horizon is on.");
+            cubey::host::imgui_slider_float(
+                "Altitude cell ratio", &ui.config.horizon_altitude_cell_ratio, 0.0F, 0.08F, "%.3f",
+                "High-camera multiplier for the effective near-cell target. Larger values make "
+                "high "
+                "views use fewer mesh cells.");
+            cubey::host::imgui_slider_float("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F,
+                                            "%.2f", "Distance fade used to soften the horizon.");
+            cubey::host::imgui_enum_combo(
+                "Surface mode", ui.config.surface_mode, kOceanSurfaceModes, ocean_surface_mode_name,
+                "Flat keeps the old tangent plane; curved-far bends the far field.");
+            cubey::host::imgui_slider_float(
+                "Planet scale", &ui.config.planet_radius_scale, 0.02F, 2.0F, "%.2f",
+                "Scale applied to the ocean surface radius. Lower values exaggerate curvature.");
+            cubey::host::imgui_slider_float(
+                "Curve start", &ui.config.curvature_start_ratio, 0.0F, 0.95F, "%.2f horizon",
+                "Fraction of horizon distance where spherical far-surface drop begins.");
+            cubey::host::imgui_slider_float("Curve end", &ui.config.curvature_end_ratio, 0.05F,
+                                            1.0F, "%.2f horizon",
+                                            "Fraction of horizon distance where spherical "
+                                            "far-surface drop reaches full strength.");
+            cubey::host::imgui_slider_float("Curve strength", &ui.config.curvature_strength, 0.0F,
+                                            1.0F, "%.2f",
+                                            "Strength of curved far-ocean surface mapping.");
+            if (ui.config.curvature_start_ratio >= ui.config.curvature_end_ratio) {
+                ui.config.curvature_end_ratio =
+                    std::min(1.0F, ui.config.curvature_start_ratio + 0.01F);
+                ui.config.curvature_start_ratio = std::min(ui.config.curvature_start_ratio,
+                                                           ui.config.curvature_end_ratio - 0.01F);
+            }
         }
-        int mesh_lod_levels = static_cast<int>(ui.config.mesh_lod_levels);
-        if (cubey::host::imgui_slider_int(
-                "LOD levels", &mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
-                static_cast<int>(kOceanMaxMeshLodLevels), "Number of concentric mesh LOD rings.")) {
-            ui.config.mesh_lod_levels = static_cast<std::uint32_t>(
-                std::clamp(mesh_lod_levels, static_cast<int>(kOceanMinMeshLodLevels),
-                           static_cast<int>(kOceanMaxMeshLodLevels)));
+        if (const cubey::host::ScopedImGuiGroup far_field{
+                "Far Field",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Statistical material response for unresolved distant waves."}};
+            far_field) {
+            cubey::host::imgui_checkbox(
+                "Enabled", &ui.config.far_field_enabled,
+                "Hand unresolved distant wave energy into roughness, reflection, and glints.");
+            ImGui::BeginDisabled(!ui.config.far_field_enabled);
+            cubey::host::imgui_slider_float("Start", &ui.config.far_field_start_m, 50.0F, 1800.0F,
+                                            "%.0f m", "Distance where far-field response begins.");
+            cubey::host::imgui_slider_float(
+                "End", &ui.config.far_field_end_m, 200.0F, 5000.0F, "%.0f m",
+                "Distance where far-field response reaches full strength.");
+            if (ui.config.far_field_end_m <= ui.config.far_field_start_m) {
+                ui.config.far_field_end_m = ui.config.far_field_start_m + 1.0F;
+            }
+            cubey::host::imgui_slider_float(
+                "Roughness", &ui.config.far_roughness_strength, 0.0F, 0.5F, "%.2f",
+                "Roughness increase driven by unresolved distant wave energy.");
+            cubey::host::imgui_slider_float(
+                "Sun glitter", &ui.config.far_glint_strength, 0.0F, 0.8F, "%.2f",
+                "Far-field specular strength along the reflected sun corridor.");
+            cubey::host::imgui_slider_float("Glitter width", &ui.config.sun_glitter_width, 0.02F,
+                                            0.40F, "%.2f",
+                                            "Angular width of the reflected-sun corridor.");
+            cubey::host::imgui_slider_float(
+                "Detail start", &ui.config.far_detail_footprint_start_m, 0.1F, 6.0F, "%.2f m",
+                "Pixel footprint where distant normal detail begins fading.");
+            cubey::host::imgui_slider_float(
+                "Detail end", &ui.config.far_detail_footprint_end_m, 0.2F, 16.0F, "%.2f m",
+                "Pixel footprint where distant normal detail reaches its residual strength.");
+            if (ui.config.far_detail_footprint_end_m <= ui.config.far_detail_footprint_start_m) {
+                ui.config.far_detail_footprint_end_m =
+                    ui.config.far_detail_footprint_start_m + 0.01F;
+            }
+            cubey::host::imgui_slider_float(
+                "Reflection variation", &ui.config.far_reflection_variation_strength, 0.0F, 0.3F,
+                "%.2f", "Broad low-frequency variation applied to distant reflected sky.");
+            ImGui::EndDisabled();
         }
-        cubey::host::imgui_slider_float("Extent", &ui.config.mesh_extent, 400.0F, 128000.0F,
-                                        "%.0f m",
-                                        "Minimum half extent covered by the ocean mesh.");
-        cubey::host::imgui_checkbox(
-            "Auto horizon", &ui.config.horizon_auto_extent,
-            "Derive effective mesh extent from camera altitude and planet radius.");
-        cubey::host::imgui_slider_float("Horizon margin", &ui.config.horizon_extent_margin, 1.0F,
-                                        2.0F, "%.2f",
-                                        "Safety multiplier applied to the computed horizon.");
-        cubey::host::imgui_slider_float("Target near cell",
-                                        &ui.config.horizon_target_near_cell_m, 0.5F, 8.0F,
-                                        "%.2f m",
-                                        "Preferred near-field cell size when auto horizon is on.");
-        cubey::host::imgui_slider_float(
-            "Altitude cell ratio", &ui.config.horizon_altitude_cell_ratio, 0.0F, 0.08F, "%.3f",
-            "High-camera multiplier for the effective near-cell target. Larger values make high "
-            "views use fewer mesh cells.");
-        cubey::host::imgui_slider_float("Horizon fog", &ui.config.horizon_fog, 0.0F, 1.0F, "%.2f",
-                                        "Distance fade used to soften the horizon.");
-        cubey::host::imgui_enum_combo("Surface mode", ui.config.surface_mode, kOceanSurfaceModes,
-                                      ocean_surface_mode_name,
-                                      "Flat keeps the old tangent plane; curved-far bends the far field.");
-        cubey::host::imgui_slider_float(
-            "Planet scale", &ui.config.planet_radius_scale, 0.02F, 2.0F, "%.2f",
-            "Scale applied to the ocean surface radius. Lower values exaggerate curvature.");
-        cubey::host::imgui_slider_float(
-            "Curve start", &ui.config.curvature_start_ratio, 0.0F, 0.95F, "%.2f horizon",
-            "Fraction of horizon distance where spherical far-surface drop begins.");
-        cubey::host::imgui_slider_float(
-            "Curve end", &ui.config.curvature_end_ratio, 0.05F, 1.0F, "%.2f horizon",
-            "Fraction of horizon distance where spherical far-surface drop reaches full strength.");
-        cubey::host::imgui_slider_float("Curve strength", &ui.config.curvature_strength, 0.0F,
-                                        1.0F, "%.2f",
-                                        "Strength of curved far-ocean surface mapping.");
-        if (ui.config.curvature_start_ratio >= ui.config.curvature_end_ratio) {
-            ui.config.curvature_end_ratio =
-                std::min(1.0F, ui.config.curvature_start_ratio + 0.01F);
-            ui.config.curvature_start_ratio =
-                std::min(ui.config.curvature_start_ratio, ui.config.curvature_end_ratio - 0.01F);
+        if (const cubey::host::ScopedImGuiGroup fades{
+                "Presentation Fades",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Distance multipliers for shape, normal, and foam presentation."}};
+            fades) {
+            cubey::host::imgui_slider_float(
+                "Shape", &ui.config.shape_fade_distance_scale, 0.25F, 2.5F, "%.2f",
+                "Distance multiplier for per-cascade displacement fade-out.");
+            cubey::host::imgui_slider_float("Normal", &ui.config.normal_fade_distance_scale, 0.25F,
+                                            2.5F, "%.2f",
+                                            "Distance multiplier for far-field normal fade-out.");
+            cubey::host::imgui_slider_float(
+                "Foam", &ui.config.foam_fade_distance_scale, 0.25F, 2.5F, "%.2f",
+                "Distance multiplier for persistent and current foam fade-out.");
         }
     }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Shading",
+            "Surface",
             {.default_open = false,
              .help = "Surface material, foam, color, and exposure controls."}};
         group) {
-        const cubey::host::ScopedImGuiId section_id("Shading");
-        cubey::host::imgui_slider_float("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f",
-                                        "Microfacet roughness used by ocean shading.");
-        cubey::host::imgui_slider_float("Normal strength", &ui.config.normal_strength, 0.0F, 2.0F,
-                                        "%.2f", "Final normal-map intensity.");
-        cubey::host::imgui_checkbox(
-            "Far field", &ui.config.far_field_enabled,
-            "Hand unresolved distant wave energy into roughness, reflection, and glints.");
-        ImGui::BeginDisabled(!ui.config.far_field_enabled);
-        cubey::host::imgui_slider_float("Far start", &ui.config.far_field_start_m, 50.0F,
-                                        1800.0F, "%.0f m",
-                                        "Distance where statistical far-field material response begins.");
-        cubey::host::imgui_slider_float("Far end", &ui.config.far_field_end_m, 200.0F, 5000.0F,
-                                        "%.0f m",
-                                        "Distance where statistical far-field material response reaches full strength.");
-        if (ui.config.far_field_end_m <= ui.config.far_field_start_m) {
-            ui.config.far_field_end_m = ui.config.far_field_start_m + 1.0F;
+        const cubey::host::ScopedImGuiId section_id("Surface");
+        if (const cubey::host::ScopedImGuiGroup material{
+                "Material",
+                {.default_open = false, .level = 1U, .help = "Water material response and tint."}};
+            material) {
+            cubey::host::imgui_slider_float("Roughness", &ui.config.roughness, 0.0F, 1.0F, "%.2f",
+                                            "Microfacet roughness used by ocean shading.");
+            cubey::host::imgui_slider_float("Normal strength", &ui.config.normal_strength, 0.0F,
+                                            2.0F, "%.2f", "Final normal-map intensity.");
+            cubey::host::imgui_slider_float("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f",
+                                            "Manual exposure bias in stops.");
+            cubey::host::imgui_color_edit3("Water", &ui.config.water_color_r,
+                                           "Base water tint before lighting.");
         }
-        cubey::host::imgui_slider_float(
-            "Far roughness", &ui.config.far_roughness_strength, 0.0F, 0.5F, "%.2f",
-            "Roughness increase driven by unresolved distant wave energy.");
-        cubey::host::imgui_slider_float(
-            "Sun glitter", &ui.config.far_glint_strength, 0.0F, 0.8F, "%.2f",
-            "Far-field specular strength along the reflected sun corridor.");
-        cubey::host::imgui_slider_float(
-            "Glitter width", &ui.config.sun_glitter_width, 0.02F, 0.40F, "%.2f",
-            "Angular width of the far-field reflected-sun corridor.");
-        cubey::host::imgui_slider_float(
-            "Far detail start", &ui.config.far_detail_footprint_start_m, 0.1F, 6.0F, "%.2f m",
-            "Pixel footprint where distant normal detail starts fading into material response.");
-        cubey::host::imgui_slider_float(
-            "Far detail end", &ui.config.far_detail_footprint_end_m, 0.2F, 16.0F, "%.2f m",
-            "Pixel footprint where distant normal detail reaches its minimum residual strength.");
-        if (ui.config.far_detail_footprint_end_m <= ui.config.far_detail_footprint_start_m) {
-            ui.config.far_detail_footprint_end_m = ui.config.far_detail_footprint_start_m + 0.01F;
+        if (const cubey::host::ScopedImGuiGroup foam{
+                "Foam",
+                {.default_open = false, .level = 1U, .help = "Whitecap coverage and history."}};
+            foam) {
+            cubey::host::imgui_slider_float(
+                "Strength", &ui.config.surface_foam_strength, 0.0F, 2.0F, "%.2f",
+                "Global presentation foam strength for enabled cascades.");
+            cubey::host::imgui_slider_float(
+                "History", &ui.config.foam_history_strength, 0.0F, 1.5F, "%.2f",
+                "Persistent foam history contribution to final coverage.");
+            cubey::host::imgui_slider_float("Density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f",
+                                            "Global density multiplier for foam.");
+            cubey::host::imgui_slider_float("Sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F,
+                                            "%.2f", "Contrast of the foam mask.");
+            cubey::host::imgui_color_edit3("Color", &ui.config.foam_color_r,
+                                           "Foam tint before lighting.");
         }
-        cubey::host::imgui_slider_float(
-            "Far reflection patches", &ui.config.far_reflection_variation_strength, 0.0F,
-            0.3F, "%.2f",
-            "Broad low-frequency variation applied to distant reflected sky and atmosphere.");
-        ImGui::EndDisabled();
-        cubey::host::imgui_slider_float(
-            "Cloud reflection", &ui.config.cloud_reflection_strength, 0.0F, 1.0F, "%.2f",
-            "Strength of current-view cloud radiance in ocean reflections.");
-        cubey::host::imgui_slider_float(
-            "Cloud shadow", &ui.config.cloud_shadow_strength, 0.0F, 1.0F, "%.2f",
-            "Strength of shared cloud transmittance on direct ocean lighting.");
-        cubey::host::imgui_slider_float(
-            "Wave shadow", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",
-            "Strength of experimental heightfield ray-marched wave self-shadowing.");
-        cubey::host::imgui_slider_float(
-            "Shadow reach", &ui.config.self_shadow_distance, 4.0F, 160.0F, "%.0f m",
-            "Maximum distance marched through the wave heightfield toward the light.");
-        cubey::host::imgui_slider_float(
-            "Shadow bias", &ui.config.self_shadow_bias, 0.0F, 1.0F, "%.2f m",
-            "Height bias used to reduce self-shadow acne on the current wave surface.");
-        int self_shadow_steps = static_cast<int>(ui.config.self_shadow_steps);
-        if (cubey::host::imgui_slider_int(
-                "Shadow steps", &self_shadow_steps, 1, 24,
-                "Heightfield samples used by experimental wave self-shadowing.")) {
-            ui.config.self_shadow_steps =
-                static_cast<std::uint32_t>(std::clamp(self_shadow_steps, 1, 24));
-        }
-        cubey::host::imgui_slider_float("Foam density", &ui.config.foam_density, 0.0F, 4.0F, "%.2f",
-                                        "Global density multiplier for rendered foam.");
-        cubey::host::imgui_slider_float("Foam sharpness", &ui.config.foam_sharpness, 0.0F, 1.0F,
-                                        "%.2f", "Contrast of the foam mask.");
-        cubey::host::imgui_slider_float("Exposure", &ui.config.exposure, -4.0F, 4.0F, "%.2f",
-                                        "Manual exposure bias in stops.");
-        cubey::host::imgui_color_edit3("Water", &ui.config.water_color_r,
-                                       "Base water tint before lighting.");
-        cubey::host::imgui_color_edit3("Foam", &ui.config.foam_color_r,
-                                       "Foam tint before lighting.");
     }
 
-    ui.atmosphere_changed =
-        cubey::host::draw_atmosphere_environment_controls(ui.atmosphere, {.default_open = false}) ||
-        ui.atmosphere_changed;
-
-    static_cast<void>(cubey::host::draw_cloud_environment_controls(
-        ui.clouds,
-        {.help = "Shared surface-view cloud layer composited over the ocean sky.",
-         .show_aerial_orbit_controls = false}));
+    if (const cubey::host::ScopedImGuiGroup group{
+            "Lighting",
+            {.default_open = false,
+             .help = "Cloud reflections, cloud shadows, and wave self-shadowing."}};
+        group) {
+        const cubey::host::ScopedImGuiId section_id("Lighting");
+        if (const cubey::host::ScopedImGuiGroup reflections{
+                "Reflections",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Planar cloud reflection with cached environment fallback."}};
+            reflections) {
+            cubey::host::imgui_slider_float("Strength", &ui.config.cloud_reflection_strength, 0.0F,
+                                            1.0F, "%.2f",
+                                            "Strength of cloud radiance in ocean reflections.");
+            cubey::host::imgui_enum_combo(
+                "Source", ui.config.cloud_reflection_source, kOceanCloudReflectionSources,
+                ocean_cloud_reflection_source_ui_name,
+                "Planar is the production path; cached supplies broad environment coverage.");
+            constexpr std::array<std::uint32_t, 3> cloud_environment_extents{32U, 64U, 128U};
+            cubey::host::imgui_uint32_combo("Probe extent", &ui.config.cloud_environment_extent,
+                                            cloud_environment_extents,
+                                            "Resolution per face of the cached cloud environment.");
+            cubey::host::imgui_slider_float("Probe rate", &ui.config.cloud_environment_update_hz,
+                                            0.5F, 30.0F, "%.1f Hz",
+                                            "Coherent six-face refresh rate.");
+            ImGui::BeginDisabled(ui.config.cloud_reflection_source !=
+                                 OceanCloudReflectionSource::Planar);
+            cubey::host::imgui_slider_float(
+                "Planar resolution", &ui.config.cloud_planar_resolution_scale, 0.25F, 1.0F, "%.3f",
+                "Resolution scale of the reflected cloud product.");
+            int planar_steps = static_cast<int>(ui.config.cloud_planar_view_steps);
+            if (cubey::host::imgui_slider_int("Planar steps", &planar_steps, 8, 128,
+                                              "View-march steps for reflected clouds.")) {
+                ui.config.cloud_planar_view_steps = static_cast<std::uint32_t>(planar_steps);
+            }
+            cubey::host::imgui_slider_float("Planar guard", &ui.config.cloud_planar_guard_band,
+                                            0.0F, 0.5F, "%.2f",
+                                            "Extra reflected field of view for steep wave facets.");
+            ImGui::EndDisabled();
+        }
+        if (const cubey::host::ScopedImGuiGroup shadows{
+                "Shadows",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Cloud transmittance and wave heightfield self-shadowing."}};
+            shadows) {
+            cubey::host::imgui_slider_float(
+                "Cloud", &ui.config.cloud_shadow_strength, 0.0F, 1.0F, "%.2f",
+                "Strength of shared cloud transmittance on direct ocean lighting.");
+            cubey::host::imgui_slider_float(
+                "Wave", &ui.config.self_shadow_strength, 0.0F, 1.0F, "%.2f",
+                "Strength of heightfield ray-marched wave self-shadowing.");
+            cubey::host::imgui_slider_float(
+                "Reach", &ui.config.self_shadow_distance, 4.0F, 160.0F, "%.0f m",
+                "Maximum distance marched through the wave heightfield.");
+            cubey::host::imgui_slider_float("Bias", &ui.config.self_shadow_bias, 0.0F, 1.0F,
+                                            "%.2f m",
+                                            "Height bias used to reduce self-shadow acne.");
+            int self_shadow_steps = static_cast<int>(ui.config.self_shadow_steps);
+            if (cubey::host::imgui_slider_int("Steps", &self_shadow_steps, 1, 24,
+                                              "Heightfield samples used by wave shadows.")) {
+                ui.config.self_shadow_steps =
+                    static_cast<std::uint32_t>(std::clamp(self_shadow_steps, 1, 24));
+            }
+        }
+    }
 
     if (const cubey::host::ScopedImGuiGroup group{
-            "Cascades",
+            "Environment",
             {.default_open = false,
-             .help = "Wave cascade slots. Defaults use C0/C1; other slots are opt-in."}};
+             .help = "Shared atmosphere, clouds, and terrain-ocean coupling."}};
         group) {
-        const cubey::host::ScopedImGuiId section_id("Cascades");
-        for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
-            draw_cascade_controls(ui.config.cascades[index], index);
+        const cubey::host::ScopedImGuiId section_id("Environment");
+        ui.atmosphere_changed =
+            cubey::host::draw_atmosphere_environment_controls(
+                ui.atmosphere, {.label = "Atmosphere", .default_open = false, .level = 1U}) ||
+            ui.atmosphere_changed;
+        static_cast<void>(cubey::host::draw_cloud_environment_controls(
+            ui.clouds, {.default_open = false,
+                        .level = 1U,
+                        .help = "Shared surface-view cloud layer composited over the ocean sky.",
+                        .show_aerial_orbit_controls = false}));
+        if (const cubey::host::ScopedImGuiGroup terrain{
+                "Terrain Integration",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Optional terrain-ocean field coupling."}};
+            terrain) {
+            cubey::host::imgui_checkbox(
+                "Field influence", &ui.config.terrain_fields_enabled,
+                "Use terrain-ocean fields to affect the ocean instead of diagnostics only.");
+            cubey::host::imgui_slider_float(
+                "Shore foam", &ui.config.terrain_foam_strength, 0.0F, 2.0F, "%.2f",
+                "Strength of optional shoreline foam from terrain fields.");
         }
     }
 
     const std::array<cubey::host::PerformanceCounter, 6> performance_counters{
-        cubey::host::PerformanceCounter{
-            "Clip patches", ui.draw_stats.generated_patches, nullptr},
+        cubey::host::PerformanceCounter{"Clip patches", ui.draw_stats.generated_patches, nullptr},
         cubey::host::PerformanceCounter{"Draw patches", ui.draw_stats.submitted_patches, nullptr},
-        cubey::host::PerformanceCounter{"LOD levels",
-                                        ui.surface_frame.mesh_config.mesh_lod_levels, nullptr},
+        cubey::host::PerformanceCounter{"LOD levels", ui.surface_frame.mesh_config.mesh_lod_levels,
+                                        nullptr},
         cubey::host::PerformanceCounter{"Clip tris", ui.draw_stats.generated_triangles, nullptr},
         cubey::host::PerformanceCounter{"Draw tris", ui.draw_stats.submitted_triangles, nullptr},
         cubey::host::PerformanceCounter{
             "Horizon cover",
-            static_cast<std::uint64_t>(
-                std::max(0.0F, ui.surface_frame.horizon.coverage_ratio) * 100.0F),
+            static_cast<std::uint64_t>(std::max(0.0F, ui.surface_frame.horizon.coverage_ratio) *
+                                       100.0F),
             "%"},
     };
     cubey::host::PerformanceUiContext performance = ui.performance;
     performance.counters = performance_counters;
-    cubey::host::draw_performance_ui(performance);
+    performance.config = {
+        .label = "Performance",
+        .default_open = false,
+        .level = 1U,
+    };
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Diagnostics",
-            {.default_open = false, .help = "Read-only runtime, cascade, and mesh statistics."}};
+            {.default_open = false,
+             .help = "Debug views, overlays, performance, and runtime statistics."}};
         group) {
         const cubey::host::ScopedImGuiId section_id("Diagnostics");
-        ImGui::Text("Map: %u", ui.config.map_size);
-        ImGui::Text("Spectral domains: %s",
-                    ui.config.spectral_domains_enabled ? "enabled" : "disabled");
-        ImGui::Text("Terrain fields: %s",
-                    ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
-        ImGui::Text("Surface: %s", ocean_surface_mode_name(ui.surface_frame.surface_mode));
-        ImGui::Text("Curvature: %.1f-%.1f km / strength %.2f",
-                    ui.surface_frame.curvature_start_m / kOceanMetersPerKilometer,
-                    ui.surface_frame.curvature_end_m / kOceanMetersPerKilometer,
-                    ui.surface_frame.curvature_strength);
-        ImGui::Text("Horizon drop: %.1f m",
-                    ocean_surface_curvature_drop_m(ui.surface_frame.horizon.horizon_distance_m,
-                                                   ui.surface_frame.local_frame.planet_radius_m,
-                                                   ui.surface_frame.curvature_start_m,
-                                                   ui.surface_frame.curvature_end_m,
-                                                   ui.surface_frame.curvature_strength));
-        ImGui::Text("Datum: %.1f m / planet %.0f km",
-                    ui.surface_frame.local_frame.water_datum_m,
-                    ui.surface_frame.local_frame.planet_radius_m / kOceanMetersPerKilometer);
-        ImGui::Text("Frame origin: %.1f, %.1f, %.1f km",
-                    ui.surface_frame.local_frame.world_origin_m.x / kOceanMetersPerKilometer,
-                    ui.surface_frame.local_frame.world_origin_m.y / kOceanMetersPerKilometer,
-                    ui.surface_frame.local_frame.world_origin_m.z / kOceanMetersPerKilometer);
-        ImGui::Text("Frame up: %.2f, %.2f, %.2f",
-                    ui.surface_frame.local_frame.up.x, ui.surface_frame.local_frame.up.y,
-                    ui.surface_frame.local_frame.up.z);
-        for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
-            char label[40]{};
-            format_cascade_label(label, sizeof(label), index);
-            const OceanCascadeDomain domain = ocean_cascade_domain(ui.config, index);
-            if (domain.active) {
-                ImGui::Text("%s: %.0f m / disp %.2f / domain %.2f-%.2f m", label,
-                            ui.config.cascades[index].tile_length,
-                            ui.config.cascades[index].displacement_scale, domain.low_wavelength,
-                            domain.high_wavelength);
-            } else {
-                ImGui::Text("%s: %.0f m / disp %.2f / domain inactive", label,
-                            ui.config.cascades[index].tile_length,
+        cubey::host::imgui_enum_combo(
+            "Render view", ui.render_view, kOceanRenderViews, ocean_render_view_name,
+            "Inspect final shading, wave fields, foam, lighting, and LOD.");
+        draw_selected_cascade_combo(ui.diagnostics);
+        cubey::host::imgui_checkbox("Wire overlay", &ui.diagnostics.wire_overlay,
+                                    "Draw mesh topology over the ocean surface.");
+        ImGui::BeginDisabled(!ui.diagnostics.wire_overlay);
+        cubey::host::imgui_slider_float("Wire opacity", &ui.diagnostics.wire_opacity, 0.05F, 1.0F,
+                                        "%.2f", "Opacity used by the wire overlay.");
+        ImGui::EndDisabled();
+        cubey::host::imgui_checkbox(
+            "Size pillar", &ui.diagnostics.size_reference_enabled,
+            "Draw the 50 m sea-level-centered scale pillar and its direct-light shadow.");
+        cubey::host::draw_performance_ui(performance);
+        if (const cubey::host::ScopedImGuiGroup runtime{
+                "Runtime",
+                {.default_open = false,
+                 .level = 1U,
+                 .help = "Resolved cascade, surface-frame, and mesh statistics."}};
+            runtime) {
+            ImGui::Text("Map: %u", ui.config.map_size);
+            ImGui::Text("Spectral domains: %s",
+                        ui.config.spectral_domains_enabled ? "enabled" : "disabled");
+            ImGui::Text("Active overlap: %u pair%s / %.2f octaves max",
+                        ui.spectrum_diagnostics.overlapping_pair_count,
+                        ui.spectrum_diagnostics.overlapping_pair_count == 1U ? "" : "s",
+                        ui.spectrum_diagnostics.max_overlap_octaves);
+            ImGui::Text("Terrain fields: %s",
+                        ui.config.terrain_fields_enabled ? "influence enabled" : "diagnostic only");
+            ImGui::Text("Cloud env: %s / gen %llu / blend %.2f / age %.2f s",
+                        ui.cloud_environment_valid ? "ready" : "clear fallback",
+                        static_cast<unsigned long long>(ui.cloud_environment_generation),
+                        ui.cloud_environment_blend, ui.cloud_environment_age_seconds);
+            ImGui::Text("Surface: %s", ocean_surface_mode_name(ui.surface_frame.surface_mode));
+            ImGui::Text("Curvature: %.1f-%.1f km / strength %.2f",
+                        ui.surface_frame.curvature_start_m / kOceanMetersPerKilometer,
+                        ui.surface_frame.curvature_end_m / kOceanMetersPerKilometer,
+                        ui.surface_frame.curvature_strength);
+            ImGui::Text("Horizon drop: %.1f m",
+                        ocean_surface_curvature_drop_m(ui.surface_frame.horizon.horizon_distance_m,
+                                                       ui.surface_frame.local_frame.planet_radius_m,
+                                                       ui.surface_frame.curvature_start_m,
+                                                       ui.surface_frame.curvature_end_m,
+                                                       ui.surface_frame.curvature_strength));
+            ImGui::Text("Datum: %.1f m / planet %.0f km",
+                        ui.surface_frame.local_frame.water_datum_m,
+                        ui.surface_frame.local_frame.planet_radius_m / kOceanMetersPerKilometer);
+            ImGui::Text("Frame origin: %.1f, %.1f, %.1f km",
+                        ui.surface_frame.local_frame.world_origin_m.x / kOceanMetersPerKilometer,
+                        ui.surface_frame.local_frame.world_origin_m.y / kOceanMetersPerKilometer,
+                        ui.surface_frame.local_frame.world_origin_m.z / kOceanMetersPerKilometer);
+            ImGui::Text("Frame up: %.2f, %.2f, %.2f", ui.surface_frame.local_frame.up.x,
+                        ui.surface_frame.local_frame.up.y, ui.surface_frame.local_frame.up.z);
+            for (std::uint32_t index = 0; index < kOceanCascadeCount; ++index) {
+                if (!ocean_cascade_enabled(ui.config, index)) {
+                    continue;
+                }
+                char label[40]{};
+                format_cascade_label(label, sizeof(label), index);
+                const OceanCascadeSpectrumDiagnostics& spectrum =
+                    ui.spectrum_diagnostics.cascades[index];
+                ImGui::Text("%s: peak %.1f m / safe %.2f-%.1f m / %s", label,
+                            spectrum.peak_wavelength_m, spectrum.safe_min_wavelength_m,
+                            spectrum.max_wavelength_m,
+                            spectrum.peak_supported ? "peak fits" : "peak omitted");
+                ImGui::Text("    domain %s / disp %.2f",
+                            spectrum.domain_active ? "active" : "inactive",
                             ui.config.cascades[index].displacement_scale);
             }
+            ImGui::Text("Mesh: %u LOD / %u patches / %u tris",
+                        ui.surface_frame.mesh_config.mesh_lod_levels,
+                        ui.draw_stats.generated_patches, ui.draw_stats.generated_triangles);
+            ImGui::Text("Submitted: %u patches / %u tris / culled %u patches",
+                        ui.draw_stats.submitted_patches, ui.draw_stats.submitted_triangles,
+                        ui.draw_stats.culled_patches);
+            ImGui::Text("Base cells: %u configured / %u effective", ui.config.mesh_cells,
+                        ui.surface_frame.mesh_config.mesh_cells);
+            ImGui::Text("Near cell: %.2f m",
+                        ocean_mesh_near_cell_size(ui.surface_frame.mesh_config));
+            ImGui::Text("Target near cell: %.2f m",
+                        ui.surface_frame.horizon.target_near_cell_size_m);
+            ImGui::Text("Far cell: %.2f m", ui.surface_frame.horizon.far_cell_size_m);
+            ImGui::Text("Camera altitude: %.1f m", ui.surface_frame.horizon.camera_altitude_m);
+            ImGui::Text("Horizon: %.1f km / required extent %.1f km",
+                        ui.surface_frame.horizon.horizon_distance_m / kOceanMetersPerKilometer,
+                        ui.surface_frame.horizon.required_half_extent_m / kOceanMetersPerKilometer);
+            ImGui::Text("Mesh extent: %.1f km / coverage %.0f%%",
+                        ui.surface_frame.horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
+                        ui.surface_frame.horizon.coverage_ratio * 100.0F);
+            ImGui::Text("Vertices: %u",
+                        ocean_mesh_total_vertex_count(ui.surface_frame.mesh_config));
+            draw_lod_diagnostics(ui.surface_frame);
         }
-        ImGui::Text("Mesh: %u LOD / %u patches / %u tris",
-                    ui.surface_frame.mesh_config.mesh_lod_levels,
-                    ui.draw_stats.generated_patches, ui.draw_stats.generated_triangles);
-        ImGui::Text("Submitted: %u patches / %u tris / culled %u patches",
-                    ui.draw_stats.submitted_patches, ui.draw_stats.submitted_triangles,
-                    ui.draw_stats.culled_patches);
-        ImGui::Text("Base cells: %u configured / %u effective", ui.config.mesh_cells,
-                    ui.surface_frame.mesh_config.mesh_cells);
-        ImGui::Text("Near cell: %.2f m", ocean_mesh_near_cell_size(ui.surface_frame.mesh_config));
-        ImGui::Text("Target near cell: %.2f m",
-                    ui.surface_frame.horizon.target_near_cell_size_m);
-        ImGui::Text("Far cell: %.2f m", ui.surface_frame.horizon.far_cell_size_m);
-        ImGui::Text("Camera altitude: %.1f m", ui.surface_frame.horizon.camera_altitude_m);
-        ImGui::Text("Horizon: %.1f km / required extent %.1f km",
-                    ui.surface_frame.horizon.horizon_distance_m / kOceanMetersPerKilometer,
-                    ui.surface_frame.horizon.required_half_extent_m / kOceanMetersPerKilometer);
-        ImGui::Text("Mesh extent: %.1f km / coverage %.0f%%",
-                    ui.surface_frame.horizon.mesh_half_extent_m / kOceanMetersPerKilometer,
-                    ui.surface_frame.horizon.coverage_ratio * 100.0F);
-        ImGui::Text("Vertices: %u",
-                    ocean_mesh_total_vertex_count(ui.surface_frame.mesh_config));
-        draw_lod_diagnostics(ui.surface_frame);
     }
 
+    ui.config.sea_state = ocean_infer_sea_state(ui.config);
     ImGui::End();
 }
 

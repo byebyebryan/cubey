@@ -64,7 +64,7 @@ float ocean_far_sun_glitter(vec3 reflection_dir, vec3 sun_dir, vec2 position,
     }
     float alignment = max(dot(normalize(reflection_dir), normalize(sun_dir)), 0.0);
     float corridor = smoothstep(max(0.0, 1.0 - ocean_sun_glitter_width()), 1.0, alignment);
-    float light_gate = smoothstep(0.015, 0.35, ocean_primary_light_intensity());
+    float light_gate = smoothstep(0.015, 0.35, ocean_sun_light_intensity());
     float broad_variation = ocean_far_reflection_variation(position, far_material_energy);
     float variation = mix(0.72, 1.22, clamp((broad_variation - 0.65) / 0.60, 0.0, 1.0));
     return corridor * strength * light_gate * variation;

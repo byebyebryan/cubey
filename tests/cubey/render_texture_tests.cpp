@@ -232,6 +232,27 @@ void test_texture_cube_config_maps_color_attachment_sampled_usage() {
             "color attachment cube should keep a cube view");
 }
 
+void test_texture_cube_config_maps_storage_sampled_usage() {
+    const cubey::render::TextureCubeConfig config{
+        .extent = 64,
+        .mip_levels = 1,
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+        .usage = cubey::render::TextureCubeUsage::StorageSampled,
+        .create_sampler = true,
+        .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE},
+    };
+
+    const cubey::vulkan::ImageConfig image_config =
+        cubey::render::texture_cube_image_config(config);
+    require((image_config.usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0,
+            "storage cube should support compute writes");
+    require((image_config.usage & VK_IMAGE_USAGE_SAMPLED_BIT) != 0,
+            "storage cube should support shader sampling");
+    require(image_config.array_layers == 6, "storage cube should preserve six faces");
+    require(image_config.view_type == VK_IMAGE_VIEW_TYPE_CUBE,
+            "storage cube should keep a sampled cube view");
+}
+
 void test_compute_generated_texture_config_validates_dispatch_shape() {
     require(cubey::render::compute_dispatch_group_count(64, 8) == 8,
             "compute generated texture dispatch should divide exact groups");
