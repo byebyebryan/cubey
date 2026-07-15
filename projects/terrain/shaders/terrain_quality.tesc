@@ -53,6 +53,13 @@ float terrain_quality_projected_edge(vec4 first, vec4 second) {
 }
 
 float terrain_quality_factor(float projected_edge_px) {
+    // A single stage-wide density prevents parent/child silhouette slits during orbit.
+    if (pc.stage_options.w > 0.5) {
+        return 16.0;
+    }
+    if (pc.stage_options.w < -0.5) {
+        return 32.0;
+    }
     float requested = max(projected_edge_px / max(pc.quality_options.x, 1.0), 1.0);
     return clamp(exp2(ceil(log2(requested))), 1.0, 64.0);
 }

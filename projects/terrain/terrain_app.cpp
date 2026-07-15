@@ -36,6 +36,7 @@
 #include <array>
 #include <cmath>
 #include <filesystem>
+#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -303,7 +304,14 @@ class TerrainApp {
         };
         if (run_config_.capture_mode == CaptureMode::Video) {
             if (!terrain_camera_is_surface(runtime_config_.camera)) {
-                orbit_controller_.set_auto_rotation_speed(kTerrainHeadlessOrbitSpeed);
+                float orbit_speed = kTerrainHeadlessOrbitSpeed;
+                if (runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+                    run_config_.frames > 1U && run_config_.fps > 0U) {
+                    const float duration_seconds = static_cast<float>(run_config_.frames) /
+                                                   static_cast<float>(run_config_.fps);
+                    orbit_speed = 2.0F * std::numbers::pi_v<float> / duration_seconds;
+                }
+                orbit_controller_.set_auto_rotation_speed(orbit_speed);
             }
             callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
@@ -678,8 +686,9 @@ class TerrainApp {
             backdrop_stage_plan_.has_value()) {
             const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
             const bool detached = plan.mode == TerrainBackdropStageMode::Detached;
+            // The sign selects stage tessellation; positive also enables the ownership cutout.
             stage_options = {plan.source_focus_xz.x, plan.source_focus_xz.y,
-                             detached ? plan.stage_radius_m : 0.0F, detached ? 1.0F : 0.0F};
+                             detached ? plan.stage_radius_m : 0.0F, detached ? 1.0F : -1.0F};
         }
         return {
             .view_projection =

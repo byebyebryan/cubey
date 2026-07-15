@@ -105,14 +105,12 @@ void main() {
 #if CUBEY_TERRAIN_SOURCE_VARIANT == 1
     frag_direct_visibility = terrain_heightfield_shadow_v3(
         terrain_uniforms.source, source_xz, height_m,
-        pc.camera_position_vertical_scale.w, footprint_m, pc.stage_options.xy,
-        pc.stage_options.z * pc.stage_options.w);
+        pc.camera_position_vertical_scale.w, footprint_m);
     frag_landform_concavity_m = 0.0;
 #else
     frag_direct_visibility = terrain_heightfield_shadow(
         terrain_uniforms.source, source_xz, height_m,
-        pc.camera_position_vertical_scale.w, footprint_m, pc.stage_options.xy,
-        pc.stage_options.z * pc.stage_options.w);
+        pc.camera_position_vertical_scale.w, footprint_m);
     const float landform_radius_m = 96.0;
     float landform_footprint_m = max(footprint_m, landform_radius_m);
     float landform_neighbor_height = 0.25 * (
