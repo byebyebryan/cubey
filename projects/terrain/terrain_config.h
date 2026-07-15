@@ -19,6 +19,7 @@ enum class TerrainCameraPreset : std::uint8_t {
     SurfaceLow,
     Ground,
     Backdrop,
+    BackdropStage,
     Midground,
 };
 
@@ -74,6 +75,7 @@ struct TerrainRuntimeConfig {
     std::optional<float> backdrop_azimuth_radians{};
     std::optional<float> backdrop_orbit_radius_m{};
     std::optional<float> backdrop_elevation_radians{};
+    float backdrop_minimum_visible_distance_m = 1'500.0F;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
     TerrainRenderPath render_path = TerrainRenderPath::Control;
@@ -88,6 +90,7 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] std::string_view terrain_camera_preset_name(TerrainCameraPreset preset);
 [[nodiscard]] TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name);
 [[nodiscard]] bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept;
+[[nodiscard]] bool terrain_camera_is_backdrop(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] float terrain_camera_clearance_m(TerrainCameraPreset preset);
 [[nodiscard]] float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept;

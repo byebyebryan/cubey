@@ -141,6 +141,7 @@ enum class RunConfigOptionId {
     TerrainBackdropAzimuth,
     TerrainBackdropOrbitRadius,
     TerrainBackdropElevation,
+    TerrainBackdropMinimumDistance,
     TerrainPresentation,
     TerrainVerticalScale,
     TerrainPreviewRuntime,

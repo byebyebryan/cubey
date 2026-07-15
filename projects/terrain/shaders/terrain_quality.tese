@@ -87,7 +87,7 @@ void main() {
     float height_z = terrain_source_base_height(
         terrain_uniforms.source, source_xz + vec2(0.0, normal_step_m), footprint_m);
     vec3 world_position = vec3(sample_xz.x,
-        height_m * pc.camera_position_vertical_scale.w, sample_xz.y);
+        height_m * pc.camera_position_vertical_scale.w + pc.quality_options.w, sample_xz.y);
 
     gl_Position = pc.view_projection * vec4(world_position, 1.0);
     frag_world_position = world_position;

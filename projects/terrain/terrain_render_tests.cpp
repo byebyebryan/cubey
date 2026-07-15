@@ -303,6 +303,7 @@ void test_backdrop_camera_configuration() {
     run_config.terrain.backdrop_azimuth_degrees = -90.0F;
     run_config.terrain.backdrop_orbit_radius_m = 125.0F;
     run_config.terrain.backdrop_elevation_degrees = 24.0F;
+    run_config.terrain.backdrop_minimum_visible_distance_m = 1'750.0F;
     const auto config =
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
     require(config.camera == cubey::projects::terrain::TerrainCameraPreset::Backdrop,
@@ -310,7 +311,8 @@ void test_backdrop_camera_configuration() {
     require(config.backdrop_mode == cubey::projects::terrain::TerrainBackdropStageMode::Grounded &&
                 config.backdrop_azimuth_radians.has_value() &&
                 config.backdrop_orbit_radius_m == 125.0F &&
-                config.backdrop_elevation_radians.has_value(),
+                config.backdrop_elevation_radians.has_value() &&
+                config.backdrop_minimum_visible_distance_m == 1'750.0F,
             "terrain runtime should parse optional backdrop stage controls");
     require_near(config.backdrop_azimuth_radians.value(), -0.5F * std::numbers::pi_v<float>,
                  0.000001F, "terrain runtime should convert backdrop azimuth to radians");
@@ -326,6 +328,13 @@ void test_backdrop_camera_configuration() {
     require_near(cubey::projects::terrain::terrain_camera_fovy_radians(config.camera),
                  40.0F * std::numbers::pi_v<float> / 180.0F, 0.000001F,
                  "terrain backdrop camera should use a restrained field of view");
+
+    run_config.terrain.camera_preset = "backdrop-stage";
+    const auto stage = cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(stage.camera == cubey::projects::terrain::TerrainCameraPreset::BackdropStage &&
+                cubey::projects::terrain::terrain_camera_is_backdrop(stage.camera) &&
+                !cubey::projects::terrain::terrain_camera_is_surface(stage.camera),
+            "terrain runtime should expose a dedicated orbiting backdrop stage view");
 
     run_config.terrain.camera_preset = "midground";
     const auto midground =

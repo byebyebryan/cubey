@@ -62,7 +62,8 @@ void main() {
         terrain_uniforms.source, source_xz + vec2(0.0, normal_step_m), footprint_m);
     // Collapse transition vertices onto the coarse grid in both position and height.
     vec3 world_position = vec3(sample_xz.x,
-        (height_m - in_normal.y) * pc.camera_position_vertical_scale.w, sample_xz.y);
+        (height_m - in_normal.y) * pc.camera_position_vertical_scale.w + pc.quality_options.w,
+        sample_xz.y);
 
     gl_Position = pc.view_projection * vec4(world_position, 1.0);
     frag_world_position = world_position;

@@ -23,6 +23,8 @@ std::string_view terrain_camera_preset_name(TerrainCameraPreset preset) {
         return "ground";
     case TerrainCameraPreset::Backdrop:
         return "backdrop";
+    case TerrainCameraPreset::BackdropStage:
+        return "backdrop-stage";
     case TerrainCameraPreset::Midground:
         return "midground";
     }
@@ -51,6 +53,9 @@ TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
     if (name == "backdrop") {
         return TerrainCameraPreset::Backdrop;
     }
+    if (name == "backdrop-stage") {
+        return TerrainCameraPreset::BackdropStage;
+    }
     if (name == "midground") {
         return TerrainCameraPreset::Midground;
     }
@@ -60,6 +65,10 @@ TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
 bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept {
     return preset == TerrainCameraPreset::Surface || preset == TerrainCameraPreset::SurfaceLow ||
            preset == TerrainCameraPreset::Ground || preset == TerrainCameraPreset::Midground;
+}
+
+bool terrain_camera_is_backdrop(TerrainCameraPreset preset) noexcept {
+    return preset == TerrainCameraPreset::Backdrop || preset == TerrainCameraPreset::BackdropStage;
 }
 
 bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept {
@@ -76,6 +85,7 @@ float terrain_camera_clearance_m(TerrainCameraPreset preset) {
     case TerrainCameraPreset::Ground:
         return 2.0F;
     case TerrainCameraPreset::Backdrop:
+    case TerrainCameraPreset::BackdropStage:
     case TerrainCameraPreset::Midground:
         return 150.0F;
     case TerrainCameraPreset::Oblique:
@@ -90,14 +100,14 @@ float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept {
     if (preset == TerrainCameraPreset::Ground) {
         return 12.0F;
     }
-    return preset == TerrainCameraPreset::Backdrop || preset == TerrainCameraPreset::Midground
+    return terrain_camera_is_backdrop(preset) || preset == TerrainCameraPreset::Midground
                ? 80.0F
                : 220.0F;
 }
 
 float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept {
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
-    return (preset == TerrainCameraPreset::Backdrop || preset == TerrainCameraPreset::Midground
+    return (terrain_camera_is_backdrop(preset) || preset == TerrainCameraPreset::Midground
                 ? 40.0F
                 : 60.0F) *
            degrees_to_radians;
@@ -341,7 +351,10 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
         (config.backdrop_elevation_radians.has_value() &&
          (!std::isfinite(config.backdrop_elevation_radians.value()) ||
           config.backdrop_elevation_radians.value() < minimum_elevation_radians ||
-          config.backdrop_elevation_radians.value() > maximum_elevation_radians))) {
+          config.backdrop_elevation_radians.value() > maximum_elevation_radians)) ||
+        !std::isfinite(config.backdrop_minimum_visible_distance_m) ||
+        config.backdrop_minimum_visible_distance_m < 750.0F ||
+        config.backdrop_minimum_visible_distance_m > 2'500.0F) {
         throw std::runtime_error("invalid terrain backdrop orbit configuration");
     }
     const bool v3_component_view = config.debug_view == TerrainDebugView::SourceRange ||
@@ -386,6 +399,10 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     if (cubey::run_config_float_is_set(config.terrain.backdrop_elevation_degrees)) {
         result.backdrop_elevation_radians =
             config.terrain.backdrop_elevation_degrees * degrees_to_radians;
+    }
+    if (cubey::run_config_float_is_set(config.terrain.backdrop_minimum_visible_distance_m)) {
+        result.backdrop_minimum_visible_distance_m =
+            config.terrain.backdrop_minimum_visible_distance_m;
     }
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     result.presentation = terrain_presentation_mode_from_name(config.terrain.presentation);

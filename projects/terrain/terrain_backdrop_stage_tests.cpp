@@ -97,6 +97,30 @@ void test_grounded_stage_returns_a_finite_natural_candidate() {
             "grounded stage should publish its bounded search budget");
 }
 
+void test_detached_distance_solver_generalizes_across_presets() {
+    constexpr std::array presets{
+        cubey::projects::terrain::TerrainPreset::Mountain,
+        cubey::projects::terrain::TerrainPreset::Upland,
+        cubey::projects::terrain::TerrainPreset::Plains,
+    };
+    for (const auto preset : presets) {
+        const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+            .seed = 9012U,
+            .preset = preset,
+            .version = preset == cubey::projects::terrain::TerrainPreset::Mountain
+                           ? cubey::projects::terrain::TerrainSourceVersion::V2_1
+                           : cubey::projects::terrain::TerrainSourceVersion::V1,
+        });
+        const auto request = cubey::projects::terrain::terrain_backdrop_stage_request(
+            cubey::projects::terrain::TerrainBackdropStageMode::Detached);
+        const auto plan = cubey::projects::terrain::plan_terrain_backdrop_stage(source, request);
+        require(plan.lower_frame_clear_sector_count == 24U &&
+                    plan.minimum_lower_frame_terrain_distance_m >=
+                        request.minimum_visible_terrain_distance_m,
+                "detached stage should preserve lower-frame distance across terrain presets");
+    }
+}
+
 } // namespace
 
 int main() {
@@ -104,6 +128,7 @@ int main() {
         test_stage_requests_publish_the_medium_scene_contract();
         test_detached_stage_search_is_deterministic_and_panoramic();
         test_grounded_stage_returns_a_finite_natural_candidate();
+        test_detached_distance_solver_generalizes_across_presets();
         std::cout << "terrain_backdrop_stage_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

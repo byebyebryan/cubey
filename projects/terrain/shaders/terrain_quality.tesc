@@ -39,7 +39,7 @@ vec4 terrain_quality_clip(vec2 local_xz) {
     float height_m = terrain_source_height(
         terrain_uniforms.source, world_xz + pc.stage_options.xy, footprint_m);
     vec3 world_position = vec3(world_xz.x,
-        height_m * pc.camera_position_vertical_scale.w, world_xz.y);
+        height_m * pc.camera_position_vertical_scale.w + pc.quality_options.w, world_xz.y);
     return pc.view_projection * vec4(world_position, 1.0);
 }
 
@@ -67,9 +67,10 @@ float terrain_quality_factor(float projected_edge_px) {
 bool terrain_quality_outside_frustum(vec2 origin) {
     vec4 bounds[8];
     float minimum_height = (terrain_uniforms.source.elevation.x - 128.0) *
-        pc.camera_position_vertical_scale.w;
+        pc.camera_position_vertical_scale.w + pc.quality_options.w;
     float maximum_height = (terrain_uniforms.source.elevation.x +
-        terrain_uniforms.source.elevation.y + 128.0) * pc.camera_position_vertical_scale.w;
+        terrain_uniforms.source.elevation.y + 128.0) * pc.camera_position_vertical_scale.w +
+        pc.quality_options.w;
     for (int corner = 0; corner < 4; ++corner) {
         vec2 world_xz = control_position[corner].xz + origin;
         bounds[corner] = pc.view_projection * vec4(world_xz.x, minimum_height, world_xz.y, 1.0);

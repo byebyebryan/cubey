@@ -23,6 +23,7 @@
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pass.h>
+#include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
@@ -67,9 +68,15 @@ struct TerrainPushConstants {
     cubey::math::Vec4 stage_options{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
+struct TerrainStageProxyPushConstants {
+    cubey::math::Mat4 view_projection{1.0F};
+    cubey::math::Vec4 camera_position{0.0F, 0.0F, 0.0F, 0.0F};
+};
+
 static_assert(sizeof(TerrainPushConstants) ==
               sizeof(cubey::math::Mat4) + 4U * sizeof(cubey::math::Vec4));
 static_assert(sizeof(TerrainPushConstants) <= 128U);
+static_assert(sizeof(TerrainStageProxyPushConstants) <= 128U);
 
 struct CompiledTerrainGraph {
     cubey::render::CompiledRenderGraph graph{};
@@ -133,6 +140,67 @@ struct CompiledTerrainGraph {
     return result;
 }
 
+[[nodiscard]] cubey::render::MaterialPassInfo terrain_stage_proxy_pass_info() {
+    return {
+        .label = "terrain.stage-proxy",
+        .descriptor_sets =
+            {
+                cubey::render::MaterialDescriptorSetLayout{
+                    .set = 1,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = 0,
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
+                },
+            },
+        .push_constants =
+            {
+                VkPushConstantRange{
+                    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .offset = 0,
+                    .size = sizeof(TerrainStageProxyPushConstants),
+                },
+            },
+        .cull_mode = VK_CULL_MODE_NONE,
+        .depth_test = true,
+        .depth_write = true,
+    };
+}
+
+[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal>
+terrain_stage_proxy_mesh_data() {
+    auto result = cubey::render::make_xz_plane_position_color_normal_mesh({
+        .center = {0.0F, -20.0F, 0.0F},
+        .half_extent_x = 40.0F,
+        .half_extent_z = 40.0F,
+        .color = {0.20F, 0.23F, 0.25F},
+    });
+    const auto sphere = cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
+        .radius = 20.0F,
+        .latitude_segments = 24U,
+        .longitude_segments = 48U,
+        .color = {0.52F, 0.55F, 0.58F},
+    });
+    const auto vertex_offset = static_cast<std::uint16_t>(result.vertices.size());
+    result.vertices.reserve(result.vertices.size() + sphere.vertices.size());
+    for (const cubey::render::VertexPositionColorNormalUv& vertex : sphere.vertices) {
+        result.vertices.push_back({
+            .position = vertex.position,
+            .color = vertex.color,
+            .normal = vertex.normal,
+        });
+    }
+    result.indices.reserve(result.indices.size() + sphere.indices.size());
+    for (const std::uint16_t index : sphere.indices) {
+        result.indices.push_back(static_cast<std::uint16_t>(vertex_offset + index));
+    }
+    return result;
+}
+
 [[nodiscard]] TerrainCameraFrame terrain_camera_frame(TerrainCameraPreset preset) {
     switch (preset) {
     case TerrainCameraPreset::Oblique:
@@ -155,6 +223,7 @@ struct CompiledTerrainGraph {
     case TerrainCameraPreset::SurfaceLow:
     case TerrainCameraPreset::Ground:
     case TerrainCameraPreset::Backdrop:
+    case TerrainCameraPreset::BackdropStage:
     case TerrainCameraPreset::Midground:
         return {};
     }
@@ -305,7 +374,7 @@ class TerrainApp {
         if (run_config_.capture_mode == CaptureMode::Video) {
             if (!terrain_camera_is_surface(runtime_config_.camera)) {
                 float orbit_speed = kTerrainHeadlessOrbitSpeed;
-                if (runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+                if (terrain_camera_is_backdrop(runtime_config_.camera) &&
                     run_config_.frames > 1U && run_config_.fps > 0U) {
                     const float duration_seconds = static_cast<float>(run_config_.frames) /
                                                    static_cast<float>(run_config_.fps);
@@ -373,7 +442,7 @@ class TerrainApp {
         int camera = static_cast<int>(runtime_config_.camera);
         if (ImGui::Combo("Camera", &camera,
                          "Oblique\0Profile\0Top\0Surface\0Surface low\0Ground\0Backdrop\0"
-                         "Midground\0")) {
+                         "Backdrop stage\0Midground\0")) {
             runtime_config_.camera = static_cast<TerrainCameraPreset>(camera);
             apply_camera_preset();
         }
@@ -385,8 +454,27 @@ class TerrainApp {
         if (ImGui::Combo("Backdrop mode", &backdrop_mode, "Detached\0Grounded\0")) {
             runtime_config_.backdrop_mode = static_cast<TerrainBackdropStageMode>(backdrop_mode);
             backdrop_stage_plan_.reset();
-            if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+            if (terrain_camera_is_backdrop(runtime_config_.camera)) {
                 apply_camera_preset();
+            }
+        }
+        if (terrain_camera_is_backdrop(runtime_config_.camera)) {
+            (void)ImGui::SliderFloat("Minimum terrain distance",
+                                     &runtime_config_.backdrop_minimum_visible_distance_m, 750.0F,
+                                     2'500.0F, "%.0f m");
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                backdrop_stage_plan_.reset();
+                apply_camera_preset();
+            }
+            if (backdrop_stage_plan_.has_value()) {
+                const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
+                ImGui::Text("Focus altitude: %.0f m", plan.target_height_m);
+                ImGui::Text("Terrain offset: %.0f m", plan.terrain_vertical_offset_m);
+                ImGui::Text("Lower-frame terrain: %.0f m",
+                            plan.minimum_lower_frame_terrain_distance_m);
+                ImGui::Text("Orbit: %.0f m / %.1f deg", orbit_controller_.distance(),
+                            (plan.orbit_default_elevation_radians - orbit_controller_.pitch()) *
+                                180.0F / std::numbers::pi_v<float>);
             }
         }
         int debug_view = static_cast<int>(runtime_config_.debug_view);
@@ -413,7 +501,7 @@ class TerrainApp {
         scene_summary_ = terrain_scene_summary(source_parameters_, clipmap_config_);
         backdrop_plan_.reset();
         backdrop_stage_plan_.reset();
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop ||
+        if (terrain_camera_is_backdrop(runtime_config_.camera) ||
             runtime_config_.camera == TerrainCameraPreset::Midground) {
             apply_camera_preset();
         }
@@ -422,11 +510,13 @@ class TerrainApp {
     void apply_camera_preset() {
         camera_.set_projection(terrain_camera_fovy_radians(runtime_config_.camera), 0.1F,
                                clipmap_config_.outer_half_extent * 5.0F);
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+        if (terrain_camera_is_backdrop(runtime_config_.camera)) {
             if (!backdrop_stage_plan_.has_value()) {
                 TerrainBackdropStageRequest request = terrain_backdrop_stage_request(
                     runtime_config_.backdrop_mode, initial_aspect_ratio(),
                     runtime_config_.vertical_scale);
+                request.minimum_visible_terrain_distance_m =
+                    runtime_config_.backdrop_minimum_visible_distance_m;
                 if (runtime_config_.backdrop_orbit_radius_m.has_value()) {
                     request.orbit_default_radius_m =
                         runtime_config_.backdrop_orbit_radius_m.value();
@@ -475,6 +565,8 @@ class TerrainApp {
         mesh_.emplace(gpu, runtime_config_.render_path == TerrainRenderPath::Quality
                                ? quality_clipmap_data_.mesh_config()
                                : clipmap_data_.mesh_config());
+        const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
+        stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
         if (runtime_config_.render_path == TerrainRenderPath::Quality) {
             const bool layered = runtime_config_.surface_detail == TerrainSurfaceDetail::Layered;
             std::vector<cubey::render::SampledImageMaterialBinding> bindings;
@@ -588,6 +680,29 @@ class TerrainApp {
                     },
             });
 
+        const std::array stage_proxy_shaders{
+            cubey::render::vertex_shader_file(shader_path("terrain_stage_proxy.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("terrain_stage_proxy.frag.spv")),
+        };
+        const cubey::render::VertexInputLayout stage_proxy_vertex_input =
+            cubey::render::vertex_position_color_normal_input_layout();
+        const std::array stage_proxy_descriptor_set_layouts{
+            source_material().layout(),
+            environment_material().layout(),
+        };
+        stage_proxy_pipeline_.emplace(
+            device,
+            cubey::render::GraphicsPipelineFileResourceConfig{
+                .extent = extent,
+                .color_format = kTerrainSceneColorFormat,
+                .depth_format = terrain_forward_pass().depth_target().format,
+                .shader_stage_files = stage_proxy_shaders,
+                .vertex_bindings = stage_proxy_vertex_input.bindings(),
+                .vertex_attributes = stage_proxy_vertex_input.attribute_descriptions(),
+                .descriptor_set_layouts = stage_proxy_descriptor_set_layouts,
+                .material_pass = terrain_stage_proxy_pass_info(),
+            });
+
         const std::array atmosphere_shaders{
             cubey::render::vertex_shader_file(shader_path("atmosphere.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("atmosphere.frag.spv")),
@@ -611,6 +726,7 @@ class TerrainApp {
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
         atmosphere_background_.destroy_pipeline();
+        stage_proxy_pipeline_.reset();
         terrain_pass_.reset();
     }
 
@@ -624,12 +740,13 @@ class TerrainApp {
         material_tiles_.reset();
         source_material_.reset();
         environment_material_.reset();
+        stage_proxy_mesh_.reset();
         mesh_.reset();
         global_resources_created_ = false;
     }
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop) {
+        if (terrain_camera_is_backdrop(runtime_config_.camera)) {
             if (!backdrop_stage_plan_.has_value()) {
                 throw std::runtime_error("terrain backdrop stage is not initialized");
             }
@@ -637,7 +754,7 @@ class TerrainApp {
             const float initial_yaw =
                 runtime_config_.backdrop_azimuth_radians.value_or(plan.showcase_yaw_radians);
             return cubey::orbit_camera_transform({
-                .target = {0.0F, plan.target_height_m, 0.0F},
+                .target = {0.0F, 0.0F, 0.0F},
                 .distance = orbit_controller_.distance(),
                 .yaw = orbit_controller_.yaw() + initial_yaw,
                 .pitch = orbit_controller_.pitch() - plan.orbit_default_elevation_radians,
@@ -682,13 +799,15 @@ class TerrainApp {
                                              : (2.0F * std::tan(camera_.fovy_radians() * 0.5F)) /
                                                    static_cast<float>(extent.height);
         cubey::math::Vec4 stage_options{0.0F, 0.0F, 0.0F, 0.0F};
-        if (runtime_config_.camera == TerrainCameraPreset::Backdrop &&
+        float terrain_vertical_offset_m = 0.0F;
+        if (terrain_camera_is_backdrop(runtime_config_.camera) &&
             backdrop_stage_plan_.has_value()) {
             const TerrainBackdropStagePlan& plan = backdrop_stage_plan_.value();
             const bool detached = plan.mode == TerrainBackdropStageMode::Detached;
             // The sign selects stage tessellation; positive also enables the ownership cutout.
             stage_options = {plan.source_focus_xz.x, plan.source_focus_xz.y,
                              detached ? plan.stage_radius_m : 0.0F, detached ? 1.0F : -1.0F};
+            terrain_vertical_offset_m = plan.terrain_vertical_offset_m;
         }
         return {
             .view_projection =
@@ -701,13 +820,18 @@ class TerrainApp {
                                clipmap_config_.outer_half_extent, pixel_angular_span,
                                terrain_presentation_id(runtime_config_.presentation)},
             .quality_options = {runtime_config_.target_edge_px, static_cast<float>(extent.width),
-                                static_cast<float>(extent.height), 0.0F},
+                                static_cast<float>(extent.height), terrain_vertical_offset_m},
             .stage_options = stage_options,
         };
     }
 
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_uniforms(VkExtent2D extent) const {
+        float physical_camera_height_m = frame_camera_transform_.translation.y;
+        if (terrain_camera_is_backdrop(runtime_config_.camera) &&
+            backdrop_stage_plan_.has_value()) {
+            physical_camera_height_m += backdrop_stage_plan_->target_height_m;
+        }
         return cubey::render::atmosphere_environment_frame_uniforms(
             atmosphere_state_.environment,
             {
@@ -716,7 +840,7 @@ class TerrainApp {
                 .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
                 .camera_position_km = {0.0F,
                                        atmosphere_state_.environment.bottom_radius_km +
-                                           std::max(frame_camera_transform_.translation.y, 0.0F) *
+                                           std::max(physical_camera_height_m, 0.0F) *
                                                0.001F,
                                        0.0F},
                 .camera_position_km_explicit = true,
@@ -765,6 +889,38 @@ class TerrainApp {
         recorder.end_rendering();
     }
 
+    void record_stage_proxy_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                 cubey::render::ColorTargetView color,
+                                 cubey::render::DepthTargetView depth,
+                                 cubey::render::FrameSlot frame_slot) const {
+        const cubey::render::RenderTargetView target =
+            cubey::render::render_target_view(color, depth);
+        const cubey::render::RenderTargetRenderingInfo rendering(
+            target, terrain_forward_pass().clear_values(),
+            cubey::render::RenderTargetAttachmentOps{
+                .color = cubey::vulkan::load_store_attachment_ops(),
+                .depth = cubey::vulkan::load_store_attachment_ops(),
+            });
+        recorder.begin_rendering(rendering.info());
+        recorder.set_viewport_and_scissor(color.extent);
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, stage_proxy_pipeline().pipeline());
+        cubey::render::bind_material_instance(recorder, stage_proxy_pipeline(),
+                                              environment_material().material(), frame_slot);
+        recorder.push_constants(
+            stage_proxy_pipeline().layout(),
+            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+            TerrainStageProxyPushConstants{
+                .view_projection =
+                    camera_.view_projection_matrix(frame_camera_transform_, aspect(color.extent)),
+                .camera_position = {frame_camera_transform_.translation.x,
+                                    frame_camera_transform_.translation.y,
+                                    frame_camera_transform_.translation.z, 0.0F},
+            });
+        cubey::render::record_draw_item(
+            recorder.handle(), cubey::render::DrawItem{.mesh = &stage_proxy_mesh()});
+        recorder.end_rendering();
+    }
+
     [[nodiscard]] CompiledTerrainGraph
     current_render_graph(cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
                          cubey::render::RenderGraphTextureState target_initial_state,
@@ -801,6 +957,19 @@ class TerrainApp {
                                     cubey::render::resolved_depth_target_view(context, depth),
                                     frame_slot);
             });
+        if (runtime_config_.camera == TerrainCameraPreset::BackdropStage) {
+            graph.add_pass("terrain stage proxy", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_color(scene_color)
+                .write_depth(depth)
+                .material_pass(terrain_stage_proxy_pass_info())
+                .execute([this, scene_color, depth,
+                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_stage_proxy_pass(
+                        context.recorder(),
+                        cubey::render::resolved_color_target_view(context, scene_color),
+                        cubey::render::resolved_depth_target_view(context, depth), frame_slot);
+                });
+        }
         graph.add_pass("terrain post", cubey::render::RenderGraphQueueDomain::Graphics)
             .read_texture(scene_color)
             .write_color(backbuffer)
@@ -861,6 +1030,20 @@ class TerrainApp {
         return terrain_pass_.value();
     }
 
+    [[nodiscard]] const cubey::render::Mesh& stage_proxy_mesh() const {
+        if (!stage_proxy_mesh_.has_value()) {
+            throw std::runtime_error("terrain stage proxy mesh is not initialized");
+        }
+        return stage_proxy_mesh_.value();
+    }
+
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& stage_proxy_pipeline() const {
+        if (!stage_proxy_pipeline_.has_value()) {
+            throw std::runtime_error("terrain stage proxy pipeline is not initialized");
+        }
+        return stage_proxy_pipeline_.value();
+    }
+
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<TerrainSourceGpuParameters>&
     source_material() const {
         if (!source_material_.has_value()) {
@@ -901,6 +1084,7 @@ class TerrainApp {
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
 
     std::optional<cubey::render::Mesh> mesh_{};
+    std::optional<cubey::render::Mesh> stage_proxy_mesh_{};
     std::optional<cubey::render::FrameUniformMaterialInstance<TerrainSourceGpuParameters>>
         source_material_{};
     std::optional<cubey::render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>>
@@ -912,6 +1096,7 @@ class TerrainApp {
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};
     std::optional<cubey::render::ForwardScenePass3D> terrain_pass_{};
+    std::optional<cubey::render::GraphicsPipelineResource> stage_proxy_pipeline_{};
     cubey::render::RenderGraphFrameExecutor graph_executor_{};
     bool global_resources_created_ = false;
 };

@@ -331,6 +331,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--terrain-backdrop-azimuth",
         "--terrain-backdrop-orbit-radius",
         "--terrain-backdrop-elevation",
+        "--terrain-backdrop-min-distance",
         "--terrain-presentation",
         "--terrain-vertical-scale",
         "--terrain-preview-runtime",
@@ -450,6 +451,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.backdrop_azimuth_degrees",
         "terrain.backdrop_orbit_radius_m",
         "terrain.backdrop_elevation_degrees",
+        "terrain.backdrop_minimum_visible_distance_m",
         "terrain.presentation",
         "terrain.vertical_scale",
         "terrain.preview_runtime",
@@ -631,6 +633,7 @@ void test_run_config_loads_json_config_file() {
     "backdrop_azimuth_degrees": -90.0,
     "backdrop_orbit_radius_m": 125.0,
     "backdrop_elevation_degrees": 24.0,
+    "backdrop_minimum_visible_distance_m": 1750.0,
     "presentation": "backdrop",
     "preview_runtime": "terrain-engine-ref",
     "preview_color": "height",
@@ -747,7 +750,8 @@ void test_run_config_loads_json_config_file() {
     require(config.terrain.backdrop_mode == "grounded" &&
                 config.terrain.backdrop_azimuth_degrees == -90.0F &&
                 config.terrain.backdrop_orbit_radius_m == 125.0F &&
-                config.terrain.backdrop_elevation_degrees == 24.0F,
+                config.terrain.backdrop_elevation_degrees == 24.0F &&
+                config.terrain.backdrop_minimum_visible_distance_m == 1750.0F,
             "config file should set terrain backdrop stage controls");
     require(config.terrain.presentation == "backdrop",
             "config file should set terrain presentation");
@@ -1809,6 +1813,8 @@ void test_run_config_parses_terrain_controls() {
     std::string backdrop_radius_value = "125";
     std::string backdrop_elevation_flag = "--terrain-backdrop-elevation";
     std::string backdrop_elevation_value = "24";
+    std::string backdrop_distance_flag = "--terrain-backdrop-min-distance";
+    std::string backdrop_distance_value = "1750";
     std::string presentation_flag = "--terrain-presentation";
     std::string presentation_value = "backdrop";
     std::string vertical_scale_flag = "--terrain-vertical-scale";
@@ -1820,7 +1826,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 54> argv{program.data(),
+    std::array<char*, 56> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1863,6 +1869,8 @@ void test_run_config_parses_terrain_controls() {
                                backdrop_radius_value.data(),
                                backdrop_elevation_flag.data(),
                                backdrop_elevation_value.data(),
+                               backdrop_distance_flag.data(),
+                               backdrop_distance_value.data(),
                                presentation_flag.data(),
                                presentation_value.data(),
                                vertical_scale_flag.data(),
@@ -1899,7 +1907,8 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.backdrop_mode == "grounded" &&
                 config.terrain.backdrop_azimuth_degrees == -90.0F &&
                 config.terrain.backdrop_orbit_radius_m == 125.0F &&
-                config.terrain.backdrop_elevation_degrees == 24.0F,
+                config.terrain.backdrop_elevation_degrees == 24.0F &&
+                config.terrain.backdrop_minimum_visible_distance_m == 1750.0F,
             "run config should parse terrain backdrop stage controls");
     require(config.terrain.presentation == "backdrop",
             "run config should parse terrain presentation");

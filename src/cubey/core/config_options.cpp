@@ -104,9 +104,9 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
                                                               "pic/flip"};
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
-constexpr std::array<std::string_view, 9> kTerrainCameraPresets{
+constexpr std::array<std::string_view, 10> kTerrainCameraPresets{
     "oblique", "profile",  "top",       "surface",        "surface-low",
-    "ground",  "backdrop", "midground", "coastal-oblique"};
+    "ground",  "backdrop", "backdrop-stage", "midground", "coastal-oblique"};
 constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
 constexpr std::array<std::string_view, 4> kTerrainSourceVersions{"v1", "v2", "v2.1", "v3"};
 constexpr std::array<std::string_view, 2> kTerrainRenderPaths{"control", "quality"};
@@ -159,7 +159,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 278> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 279> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -543,6 +543,11 @@ constexpr std::array<ConfigOptionDescriptor, 278> kRunConfigOptions{
            "--terrain-backdrop-elevation", "Orbit Elevation", "Terrain/Backdrop Stage",
            "Optional initial backdrop orbit elevation in degrees.", ConfigOptionType::Float,
            bounded_range(4.0, 32.0)),
+    option(RunConfigOptionId::TerrainBackdropMinimumDistance,
+           "terrain.backdrop_minimum_visible_distance_m", "--terrain-backdrop-min-distance",
+           "Minimum Terrain Distance", "Terrain/Backdrop Stage",
+           "Minimum lower-frame terrain distance for detached backdrop placement.",
+           ConfigOptionType::Float, bounded_range(750.0, 2500.0)),
     option(RunConfigOptionId::TerrainPresentation, "terrain.presentation", "--terrain-presentation",
            "Presentation", "Terrain",
            "Terrain material presentation: standard or distant backdrop coverage.",
@@ -1571,6 +1576,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return optional_float(config.terrain.backdrop_orbit_radius_m);
     case RunConfigOptionId::TerrainBackdropElevation:
         return optional_float(config.terrain.backdrop_elevation_degrees);
+    case RunConfigOptionId::TerrainBackdropMinimumDistance:
+        return optional_float(config.terrain.backdrop_minimum_visible_distance_m);
     case RunConfigOptionId::TerrainPresentation:
         return config.terrain.presentation.empty() ? nlohmann::json(nullptr)
                                                    : nlohmann::json(config.terrain.presentation);
@@ -2940,6 +2947,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
     case RunConfigOptionId::TerrainBackdropElevation:
         config.terrain.backdrop_elevation_degrees = parse_config_float(value, option);
         validate_range(config.terrain.backdrop_elevation_degrees, option);
+        break;
+    case RunConfigOptionId::TerrainBackdropMinimumDistance:
+        config.terrain.backdrop_minimum_visible_distance_m = parse_config_float(value, option);
+        validate_range(config.terrain.backdrop_minimum_visible_distance_m, option);
         break;
     case RunConfigOptionId::TerrainPresentation:
         config.terrain.presentation = std::string(value);

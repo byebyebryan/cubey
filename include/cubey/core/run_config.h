@@ -208,6 +208,7 @@ struct RunConfig {
         float backdrop_azimuth_degrees = kRunConfigUnsetFloat;
         float backdrop_orbit_radius_m = kRunConfigUnsetFloat;
         float backdrop_elevation_degrees = kRunConfigUnsetFloat;
+        float backdrop_minimum_visible_distance_m = kRunConfigUnsetFloat;
         std::string presentation{};
         std::string preview_runtime{};
         std::string preview_color{};
