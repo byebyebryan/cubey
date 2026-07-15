@@ -71,6 +71,7 @@ struct ReferenceFrameUniforms {
     cubey::math::Vec4 camera_forward{};
     cubey::math::Vec4 domain_center_extent_surface{};
     cubey::math::Vec4 resolution_options{};
+    cubey::math::Vec4 diagnostic_options{};
 };
 
 struct ReferenceGridVertex {
@@ -84,7 +85,7 @@ struct ReferenceGridData {
 
 static_assert(sizeof(SourcePushConstants) == 32U);
 static_assert(sizeof(BakePushConstants) == 48U);
-static_assert(sizeof(ReferenceFrameUniforms) == 160U);
+static_assert(sizeof(ReferenceFrameUniforms) == 176U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TERRAIN_SHADERTOY_REF_SHADER_DIR) / filename;
@@ -149,6 +150,13 @@ source_fullscreen_pass_info(const char* label, std::uint32_t push_constant_size)
 [[nodiscard]] cubey::render::MaterialPassInfo sky_pass_info() {
     return {
         .label = "terrain_shadertoy_ref.sky",
+        .descriptor_sets = {frame_descriptor_layout()},
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo diagnostic_pass_info() {
+    return {
+        .label = "terrain_shadertoy_ref.atlas_diagnostic",
         .descriptor_sets = {frame_descriptor_layout()},
     };
 }
@@ -323,6 +331,19 @@ class MountainsMeshRenderer::Impl {
                                           .material_pass = sky_pass_info(),
                                       });
 
+        const std::array<cubey::render::ShaderStageFile, 2> diagnostic_shaders{
+            cubey::render::vertex_shader_file(shader_path("fullscreen.vert.spv")),
+            cubey::render::fragment_shader_file(shader_path("mountains_atlas_diagnostic.frag.spv")),
+        };
+        diagnostic_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                                 .extent = extent,
+                                                 .color_format = color_format,
+                                                 .depth_format = depth_attachment_->format(),
+                                                 .shader_stage_files = diagnostic_shaders,
+                                                 .descriptor_set_layouts = layouts,
+                                                 .material_pass = diagnostic_pass_info(),
+                                             });
+
         const std::array<VkVertexInputBindingDescription, 1> bindings{{
             {
                 .binding = 0,
@@ -356,6 +377,7 @@ class MountainsMeshRenderer::Impl {
 
     void destroy_frame_resources() {
         mesh_pipeline_.reset();
+        diagnostic_pipeline_.reset();
         sky_pipeline_.reset();
         frame_material_.reset();
         depth_attachment_.reset();
@@ -379,6 +401,14 @@ class MountainsMeshRenderer::Impl {
         };
         const auto record_scene = [this,
                                    frame_slot](const cubey::vulkan::CommandRecorder& recorder) {
+            if (config_.diagnostic != ReferenceDiagnostic::Final) {
+                cubey::render::record_fullscreen_pipeline_draw(
+                    recorder, {
+                                  .pipeline = &diagnostic_pipeline(),
+                                  .descriptor_set = frame_material().set(frame_slot),
+                              });
+                return;
+            }
             cubey::render::record_fullscreen_pipeline_draw(
                 recorder, {
                               .pipeline = &sky_pipeline(),
@@ -586,6 +616,13 @@ class MountainsMeshRenderer::Impl {
                     config_.normal == ReferenceNormal::Detailed ? 1.0F : 0.0F,
                     config_.shading == ReferenceShading::Original ? 1.0F : 0.0F,
                 },
+            .diagnostic_options =
+                {
+                    config_.diagnostic == ReferenceDiagnostic::Height ? 1.0F : 2.0F,
+                    -10.0F,
+                    180.0F,
+                    4.0F,
+                },
         };
     }
 
@@ -618,6 +655,13 @@ class MountainsMeshRenderer::Impl {
         return mesh_pipeline_.value();
     }
 
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& diagnostic_pipeline() const {
+        if (!diagnostic_pipeline_.has_value()) {
+            throw std::runtime_error("reference diagnostic pipeline is not initialized");
+        }
+        return diagnostic_pipeline_.value();
+    }
+
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const {
         if (!depth_attachment_.has_value()) {
             throw std::runtime_error("reference depth attachment is not initialized");
@@ -641,6 +685,7 @@ class MountainsMeshRenderer::Impl {
     std::optional<cubey::render::FrameUniformMaterialInstance<ReferenceFrameUniforms>>
         frame_material_{};
     std::optional<cubey::render::GraphicsPipelineResource> sky_pipeline_{};
+    std::optional<cubey::render::GraphicsPipelineResource> diagnostic_pipeline_{};
     std::optional<cubey::render::GraphicsPipelineResource> mesh_pipeline_{};
 };
 

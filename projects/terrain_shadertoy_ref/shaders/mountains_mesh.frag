@@ -25,7 +25,12 @@ vec3 detailedNormal(float distance_to_camera) {
 
 void main() {
     cameraPos = reference_frame.camera_position_time.xyz;
-    Map(in_world_position);
+    if (reference_frame.domain_center_extent_surface.w > 0.5) {
+        Map(in_world_position);
+    } else {
+        treeLine = 0.0;
+        treeCol = 0.0;
+    }
     const float distance_to_camera = length(in_world_position - cameraPos);
     const vec3 normal = reference_frame.resolution_options.z > 0.5
         ? detailedNormal(distance_to_camera)

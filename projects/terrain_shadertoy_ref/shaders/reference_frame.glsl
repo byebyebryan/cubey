@@ -6,6 +6,7 @@ layout(set = 0, binding = 0, std140) uniform ReferenceFrame {
     vec4 camera_forward;
     vec4 domain_center_extent_surface;
     vec4 resolution_options;
+    vec4 diagnostic_options;
 } reference_frame;
 
 layout(set = 0, binding = 1) uniform sampler2D reference_height_atlas;

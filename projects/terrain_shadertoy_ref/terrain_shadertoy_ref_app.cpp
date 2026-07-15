@@ -89,6 +89,10 @@ class TerrainShadertoyRefApp {
     }
 
     int run() {
+        if (reference_config_.render == ReferenceRender::Raymarch &&
+            reference_config_.diagnostic != ReferenceDiagnostic::Final) {
+            throw std::runtime_error("reference diagnostics require --reference-render mesh");
+        }
         return run_config_.headless ? run_headless() : run_windowed();
     }
 

@@ -93,6 +93,17 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
             } else {
                 throw std::runtime_error("--reference-shading must be original or clay");
             }
+        } else if (option == "--reference-diagnostic") {
+            const std::string_view value = require_value(argc, argv, index, option);
+            if (value == "final") {
+                parsed.reference_config.diagnostic = ReferenceDiagnostic::Final;
+            } else if (value == "height") {
+                parsed.reference_config.diagnostic = ReferenceDiagnostic::Height;
+            } else if (value == "slope") {
+                parsed.reference_config.diagnostic = ReferenceDiagnostic::Slope;
+            } else {
+                throw std::runtime_error("--reference-diagnostic must be final, height, or slope");
+            }
         } else {
             parsed.forwarded_arguments.emplace_back(argv[index]);
         }

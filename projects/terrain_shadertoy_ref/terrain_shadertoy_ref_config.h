@@ -26,11 +26,18 @@ enum class ReferenceShading : std::uint8_t {
     Clay,
 };
 
+enum class ReferenceDiagnostic : std::uint8_t {
+    Final,
+    Height,
+    Slope,
+};
+
 struct TerrainShadertoyRefConfig {
     ReferenceRender render = ReferenceRender::Raymarch;
     ReferenceMeshSurface mesh_surface = ReferenceMeshSurface::Map;
     ReferenceNormal normal = ReferenceNormal::Detailed;
     ReferenceShading shading = ReferenceShading::Original;
+    ReferenceDiagnostic diagnostic = ReferenceDiagnostic::Final;
     float reference_time_seconds = 20.0F;
     std::uint32_t mesh_cells = 1024U;
 };

@@ -26,6 +26,7 @@ cubey_add_app_target(
     SHADERS
         shaders/fullscreen.vert
         shaders/mountains_camera_probe.frag
+        shaders/mountains_atlas_diagnostic.frag
         shaders/mountains_height_bake.frag
         shaders/mountains_mesh.frag
         shaders/mountains_mesh.vert
