@@ -30,6 +30,7 @@ cloud_environment_runtime_frame(const CloudEnvironmentConfig& config, double ela
         .near_plane_m = view.near_plane_m,
         .far_plane_m = view.far_plane_m,
         .scene_depth_occlusion_enabled = view.scene_depth_occlusion_enabled,
+        .scene_depth_foreground_only = view.scene_depth_foreground_only,
         .scene_depth_fade_m = view.scene_depth_fade_m,
     };
     return {

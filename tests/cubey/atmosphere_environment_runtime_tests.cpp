@@ -376,6 +376,7 @@ void test_cloud_environment_runtime_builds_coherent_surface_frame() {
                                                    .near_plane_m = 0.25F,
                                                    .far_plane_m = 500000.0F,
                                                    .scene_depth_occlusion_enabled = true,
+                                                   .scene_depth_foreground_only = true,
                                                    .scene_depth_fade_m = 750.0F,
                                                },
                                                7U);
@@ -391,8 +392,10 @@ void test_cloud_environment_runtime_builds_coherent_surface_frame() {
             "surface frame should preserve the consumer target extent");
     require(frame.view.scene_depth_occlusion_enabled,
             "surface frame should preserve consumer depth-occlusion policy");
-    require_near(frame.uniforms.scene_depth_options.z, 1.0F, 0.0001F,
-                 "surface uniforms should enable scene-depth occlusion");
+    require(frame.view.scene_depth_foreground_only,
+            "surface frame should preserve foreground-only depth policy");
+    require_near(frame.uniforms.scene_depth_options.z, 2.0F, 0.0001F,
+                 "surface uniforms should encode foreground-only depth occlusion");
     require_near(frame.uniforms.temporal_options.x, 7.0F, 0.0001F,
                  "surface uniforms should preserve the shared temporal frame index");
 }

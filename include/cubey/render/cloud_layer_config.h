@@ -278,6 +278,7 @@ struct CloudLayerFrameInfo {
     float near_plane_m = 1.0F;
     float far_plane_m = 1000.0F;
     bool scene_depth_occlusion_enabled = false;
+    bool scene_depth_foreground_only = false;
     float scene_depth_fade_m = 500.0F;
 };
 

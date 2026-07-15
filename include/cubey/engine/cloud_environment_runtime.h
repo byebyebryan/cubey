@@ -22,6 +22,7 @@ struct CloudEnvironmentSurfaceViewInfo {
     float far_plane_m = 400000.0F;
     bool external_background = true;
     bool scene_depth_occlusion_enabled = false;
+    bool scene_depth_foreground_only = false;
     float scene_depth_fade_m = 500.0F;
 };
 

@@ -233,6 +233,7 @@ GltfViewerApp::cloud_environment_frame(const cubey::SceneReadView& view,
             .far_plane_m = camera.far_z(),
             .external_background = true,
             .scene_depth_occlusion_enabled = true,
+            .scene_depth_foreground_only = true,
             .scene_depth_fade_m = 500.0F,
         },
         atmosphere_runtime_.lighting());

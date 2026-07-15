@@ -30,6 +30,9 @@ float cloud_scene_depth_visibility(vec2 uv, float cloud_distance, float cloud_al
     if (raw_depth >= 0.999999) {
         return 1.0;
     }
+    if (params.scene_depth_options.z >= 1.5) {
+        return 0.0;
+    }
 
     float scene_distance = cloud_linear_scene_depth(raw_depth);
     float fade_distance = max(params.scene_depth_options.w, scene_distance * 0.0025);
@@ -43,6 +46,15 @@ void main() {
     bool raw_final_view = debug_view == CLOUD_DEBUG_RAW_FINAL;
     vec3 direction = cloud_view_direction(frag_position);
     vec3 background = texture(background_texture, uv).rgb;
+
+    // Opaque foreground pixels are not part of the cloud composite. Return the
+    // scene color before cloud resolve/post samples can influence the result.
+    if ((final_view || raw_final_view) && params.scene_depth_options.z >= 1.5 &&
+        texture(scene_depth_texture, uv).r < 0.999999) {
+        out_color = vec4(max(background, vec3(0.0)), 1.0);
+        return;
+    }
+
     vec4 raw_cloud = texture(cloud_product_texture, uv);
     vec4 raw_metadata = texture(cloud_metadata_texture, uv);
     vec4 resolved_cloud = cloud_resolve_cloud_product(uv, direction);

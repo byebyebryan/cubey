@@ -47,6 +47,7 @@ prefilter_uniforms(const ViewRayBasis3D& view_rays, float roughness,
     face.camera_mode = 0.0F;
     face.external_background = false;
     face.scene_depth_occlusion_enabled = false;
+    face.scene_depth_foreground_only = false;
     return face;
 }
 

@@ -143,6 +143,7 @@ CloudLayerFrameInfo cloud_planar_reflected_frame(const CloudLayerFrameInfo& fram
     reflected.camera_mode = 0.0F;
     reflected.external_background = false;
     reflected.scene_depth_occlusion_enabled = false;
+    reflected.scene_depth_foreground_only = false;
     return reflected;
 }
 
