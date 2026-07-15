@@ -19,6 +19,13 @@ terrain-local heightfield shadows, linear-space procedural nonmetal materials,
 explicit single-owner LOD transitions, diagnostic views, and a surface
 controller whose clearance comes from the CPU query contract.
 
+The `backdrop` preset is a 360-degree orbit stage around a local foreground
+focus. Detached mode reserves the inner 300 m for a consuming scene and maps a
+deterministically selected source location under that local stage without
+modifying the terrain field. Grounded mode keeps terrain continuous as a
+placement diagnostic. `midground` retains the older directional surface stress
+view.
+
 This project does not own regional hydrology or a baked terrain product. The
 previous patch, exporter, routing, and analytical landscape code lives in
 `projects/terrain_hydrology_lab`.
@@ -45,12 +52,16 @@ ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
   --terrain-source-version v2.1 \
   --terrain-surface-detail layered \
   --terrain-target-edge-px 4 \
-  --terrain-camera-preset midground \
+  --terrain-camera-preset backdrop \
+  --terrain-backdrop-mode detached \
+  --terrain-backdrop-orbit-radius 100 \
+  --terrain-backdrop-elevation 8 \
   --terrain-presentation backdrop
 
 ./build/dev/projects/terrain/terrain_source_report
 ./build/dev/projects/terrain/terrain_source_report \
   --source-version v2.1 --scale-response
+./build/dev/projects/terrain/terrain_backdrop_stage_report
 projects/terrain/capture_v1_review.sh
 projects/terrain/capture_rendering_review.sh
 projects/terrain/capture_backdrop_review.sh
@@ -58,6 +69,7 @@ projects/terrain/capture_resolution_bandwidth_review.sh
 projects/terrain/capture_midground_detail_review.sh
 projects/terrain/capture_midground_correction_review.sh
 projects/terrain/capture_source_v2_1_review.sh
+projects/terrain/capture_orbit_stage_review.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -72,11 +84,12 @@ Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
 `ground`, `backdrop`, and `midground`. The deterministic source-aware `backdrop`
-profile selects terrain at least 3.2 km away; `midground` fixes the detail stress
-tier at 1.6 km. Both retain at least 150 m AGL and the existing 300 m
-lower-frustum clearance contract. A 15-ray center/upper-frame test rejects poses
-with more than two near occlusions through 75% of target distance. Presentation
-modes are `standard` (default) and `backdrop`.
+planner evaluates 24 azimuth sectors and supports unrestricted yaw within a
+50-150 m orbit. Detached elevation is limited to 4-12 degrees and uses a 240 m
+stage clearance to keep the 300 m ownership edge out of frame. Grounded
+elevation is limited to 12-32 degrees. Initial azimuth, radius, and elevation
+are optional controls. `midground` remains the directional 1.6 km detail stress
+tier. Presentation modes are `standard` (default) and `backdrop`.
 
 Source versions are `v1` (default), mountain-only `v2` and `v2.1`, and the
 retained experimental `v3` hierarchy. V2.1 and v3 use dedicated shader bundles

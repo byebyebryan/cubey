@@ -136,30 +136,29 @@ provide collision, or claim individual grass or tree geometry. Its supported
 scene contract begins at roughly 300 m from the visible lower frame edge.
 Close-range foliage remains a separate future rendering product.
 
-The deterministic camera planner searches a fixed world-space anchor/heading
-set against the random-access source and seeds the traversable surface camera
-with the selected pose. The production `backdrop` profile considers 3.2 km and
-6.4 km targets. The `midground` review profile fixes the target at 1.6 km so
-detail cannot be hidden by the backdrop distance floor. Their 150 m minimum AGL
-can rise when final terrain would enter the lower frustum within 300 m; center
-and corner rays retain a 10 m safety margin. They are general framing tools
-across presets and seeds, not tables of authored landmarks. Headless stills
-keep either frame fixed. A separate center/upper-frame test samples 15 rays
-through 75% of target distance and admits at most two early terrain hits, which
-prevents a near side wall from consuming the intended backdrop or midground
-composition.
+The production `backdrop` planner searches the random-access source for a local
+360-degree orbit stage. It scores a bounded coarse grid, refines deterministic
+shortlists, and fully evaluates 16 candidates over 24 azimuth sectors. The
+selected source focus maps to local scene XZ without changing source equations,
+geometry scale, or terrain shape. Terrain displacement, weathering, procedural
+materials, diagnostics, and heightfield shadows all sample that translated
+source location; clipmap ownership and camera coordinates remain local.
 
-The far-field v1 product tightens that general backdrop study for mountain
-source v2.1. It evaluates 3.4 km and 6.6 km targets, reserves a 200 m local
-camera zone, a directional 30-degree yaw cone, and a 3.2 km minimum effective
-target distance at the reference 40-degree lens. The planner validates the zone
-center and eight perimeter points at the home yaw and both cone limits. It
-requires lower-frustum clearance through 300 m, clear center/upper rays through
-2.4 km, and no broad lower-frame wall through 1.2 km. If natural placement
-cannot satisfy the contract, the result is marked invalid and movement is
-locked to its deterministic fallback pose. Terrain masking and camera-relative
-deformation are not part of the contract. Midground and free terrain traversal
-remain diagnostics.
+Detached mode is the far-field product. The consumer owns the inner 300 m,
+which terrain rendering excludes. The stage sits 240 m above the highest clean
+terrain sample inside a 400 m guard radius, keeping the ownership boundary below
+the 40-degree frame throughout the supported 50-150 m radius and 4-12 degree
+elevation envelope. Yaw is unrestricted. Grounded mode keeps terrain continuous
+and searches for a naturally low-relief, low-slope stage as a placement
+diagnostic. `midground` retains the older directional 1.6 km surface camera for
+detail stress work; it is not the backdrop product.
+
+Stage quality views use a uniform tessellation factor of 16 in detached mode
+and 32 in grounded mode. This keeps parent and child clipmap edges aligned
+through a full orbit; non-stage quality cameras retain projected-edge adaptive
+tessellation. The detached cutout owns rasterized geometry only. The local
+heightfield-shadow approximation continues through the translated source field
+so sparse horizon taps do not introduce rings at the ownership boundary.
 
 ## Configuration And Diagnostics
 
@@ -175,6 +174,9 @@ The public run controls are:
 - `terrain.weathering`: `off` or `local`;
 - `terrain.weathering_strength`;
 - existing terrain camera, cell-size, and vertical-scale controls;
+- `terrain.backdrop_mode`: `detached` or `grounded`;
+- optional `terrain.backdrop_azimuth_degrees`,
+  `terrain.backdrop_orbit_radius_m`, and `terrain.backdrop_elevation_degrees`;
 - `terrain.presentation`: `standard` or opt-in `backdrop` material coverage.
 
 The terrain app supports final surface, base/final height, slope, weathering
@@ -183,18 +185,18 @@ coverage, source/material normals, material weights, albedo, roughness, blend
 height, cavity, and classification-normal views.
 Orbit, 70 m surface, 18 m surface-low, and 2 m ground cameras separate broad
 shape review from eye-level rendering and LOD review. The `backdrop` camera
-adds deterministic source-aware framing with a 40-degree lens, a 150 m AGL
-floor, and candidate-specific foreground clearance. The `midground` camera
-reuses that contract at a deterministic 1.6 km target. Small
+uses the deterministic orbit stage and pitch/radius bounds above. The
+`midground` camera retains its deterministic 1.6 km directional target. Small
 bounded CPU sample grids are allowed for tests, statistics, and review metadata.
 The old raw-field exporter remains with the hydrology lab; terrain v1 does not
 emit a baked terrain product.
 
 Headless surface and midground video advance the camera at a deterministic fixed
-forward speed while re-querying terrain clearance every frame. Orbit-camera
-video keeps the existing automatic rotation. Headless backdrop video and all
-stills remain static; interactive backdrop use retains surface traversal at the
-selected planned AGL. PNG behavior is unchanged.
+forward speed while re-querying terrain clearance every frame. A headless
+backdrop video completes one full orbit over the requested capture duration;
+stills remain fixed at the selected or requested initial azimuth. Interactive
+backdrop control allows unrestricted yaw while clamping radius and elevation to
+the validated mode envelope. PNG behavior is unchanged.
 
 ## Acceptance
 

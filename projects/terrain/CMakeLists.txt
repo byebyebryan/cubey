@@ -71,6 +71,22 @@ target_link_libraries(
         nlohmann_json::nlohmann_json
 )
 
+add_executable(cubey_project_terrain_backdrop_stage_report
+    terrain_backdrop_stage_report.cpp
+)
+set_target_properties(
+    cubey_project_terrain_backdrop_stage_report
+    PROPERTIES
+        OUTPUT_NAME terrain_backdrop_stage_report
+)
+target_link_libraries(
+    cubey_project_terrain_backdrop_stage_report
+    PRIVATE
+        cubey_project_terrain_render_support
+        cubey_project_warnings
+        nlohmann_json::nlohmann_json
+)
+
 cubey_atmosphere_shader_depends(CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS)
 cubey_forward_pbr_shader_depends(CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS)
 
@@ -245,6 +261,10 @@ if (BUILD_TESTING)
     add_test(
         NAME terrain_backdrop_report_runs
         COMMAND cubey_project_terrain_backdrop_report
+    )
+    add_test(
+        NAME terrain_backdrop_stage_report_runs
+        COMMAND cubey_project_terrain_backdrop_stage_report
     )
 
     add_executable(cubey_project_terrain_source_gpu_parity_tests
@@ -480,6 +500,10 @@ if (BUILD_TESTING)
         9012
         --terrain-preset
         mountain
+        --terrain-source-version
+        v2.1
+        --terrain-weathering
+        off
         --terrain-camera-preset
         backdrop
         --terrain-presentation
@@ -541,6 +565,10 @@ if (BUILD_TESTING)
         9012
         --terrain-preset
         mountain
+        --terrain-source-version
+        v2.1
+        --terrain-weathering
+        off
         --terrain-camera-preset
         backdrop
         --terrain-presentation
@@ -654,9 +682,11 @@ if (BUILD_TESTING)
         terrain_reaches_glfw
         terrain_source_tests
         terrain_render_tests
+        terrain_backdrop_stage_tests
         terrain_source_report_runs
         terrain_source_scale_report_runs
         terrain_backdrop_report_runs
+        terrain_backdrop_stage_report_runs
         terrain_source_gpu_parity_tests
         terrain_headless_writes_png
         terrain_headless_writes_png_stats
