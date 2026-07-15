@@ -1749,8 +1749,7 @@ class OceanApp {
             .near_plane_m = kCameraNearPlane,
             .far_plane_m = surface_frame.projection_far_plane_m,
             .external_background = true,
-            .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::DistanceAware,
-            .scene_depth_fade_m = 500.0F,
+            .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
         };
     }
 

@@ -25,13 +25,12 @@ int cloud_scene_depth_mode() {
     return int(params.scene_depth_options.z + 0.5);
 }
 
-float cloud_scene_depth_visibility(vec2 uv, float cloud_distance, float cloud_alpha) {
+float cloud_scene_depth_visibility(float raw_depth, float cloud_distance, float cloud_alpha) {
     if (cloud_scene_depth_mode() == CLOUD_SCENE_DEPTH_DISABLED || cloud_alpha <= 0.0001 ||
         cloud_distance <= 0.0) {
         return 1.0;
     }
 
-    float raw_depth = texture(scene_depth_texture, uv).r;
     if (raw_depth >= 0.999999) {
         return 1.0;
     }
@@ -51,18 +50,26 @@ void main() {
     bool raw_final_view = debug_view == CLOUD_DEBUG_RAW_FINAL;
     vec3 direction = cloud_view_direction(frag_position);
     vec3 background = texture(background_texture, uv).rgb;
+    float raw_scene_depth = texture(scene_depth_texture, uv).r;
 
     // Opaque foreground pixels are not part of the cloud composite. Return the
     // scene color before cloud resolve/post samples can influence the result.
     if ((final_view || raw_final_view) &&
         cloud_scene_depth_mode() == CLOUD_SCENE_DEPTH_OPAQUE_FOREGROUND &&
-        texture(scene_depth_texture, uv).r < 0.999999) {
+        raw_scene_depth < 0.999999) {
         out_color = vec4(max(background, vec3(0.0)), 1.0);
         return;
     }
 
     vec4 raw_cloud = texture(cloud_product_texture, uv);
     vec4 raw_metadata = texture(cloud_metadata_texture, uv);
+    float raw_scene_visibility = cloud_scene_depth_visibility(
+        raw_scene_depth, raw_metadata.r, cloud_metadata_alpha(raw_cloud, raw_metadata));
+    if ((final_view || raw_final_view) && raw_scene_visibility <= 0.0001) {
+        out_color = vec4(max(background, vec3(0.0)), 1.0);
+        return;
+    }
+
     vec4 resolved_cloud = cloud_resolve_cloud_product(uv, direction);
     float edge_mask = cloud_resolve_edge_mask(uv, raw_cloud, raw_metadata, direction);
     float resolve_strength = cloud_resolve_strength(uv, raw_cloud, raw_metadata, direction);
@@ -70,7 +77,8 @@ void main() {
     float cloud_alpha = 1.0 - clamp(cloud.a, 0.0, 1.0);
 
     if (final_view || raw_final_view) {
-        float scene_visibility = cloud_scene_depth_visibility(uv, raw_metadata.r, cloud_alpha);
+        float scene_visibility =
+            cloud_scene_depth_visibility(raw_scene_depth, raw_metadata.r, cloud_alpha);
         cloud.rgb *= scene_visibility;
         cloud.a = mix(1.0, cloud.a, scene_visibility);
         cloud_alpha *= scene_visibility;
@@ -79,7 +87,7 @@ void main() {
     vec3 color = background * clamp(cloud.a, 0.0, 1.0) + cloud.rgb;
 
     if (debug_view == CLOUD_DEBUG_SCENE_DEPTH_OCCLUSION) {
-        float visibility = cloud_scene_depth_visibility(uv, raw_metadata.r,
+        float visibility = cloud_scene_depth_visibility(raw_scene_depth, raw_metadata.r,
                                                         cloud_metadata_alpha(raw_cloud,
                                                                              raw_metadata));
         color = vec3(1.0 - visibility);

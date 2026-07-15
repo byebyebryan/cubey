@@ -399,8 +399,7 @@ class Water3DApp {
                 .near_plane_m = kCameraNearPlane,
                 .far_plane_m = kCameraFarPlane,
                 .external_background = true,
-                .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::DistanceAware,
-                .scene_depth_fade_m = 2.0F,
+                .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
             },
             atmosphere_runtime_.lighting());
     }

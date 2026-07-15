@@ -241,6 +241,42 @@ void test_cloud_scene_depth_composite_bypasses_opaque_foreground_before_resolve(
             "foreground-only cloud composition should preserve scene color exactly");
 }
 
+void test_cloud_scene_depth_composite_bypasses_fully_occluded_distance_before_resolve() {
+    const std::string shader = read_text_file(
+        source_root_path() / "shaders/cubey/cloud/cloud_composite_background_depth.frag");
+    const std::size_t raw_visibility = shader.find("float raw_scene_visibility =");
+    const std::size_t distance_bypass = shader.find(
+        "if ((final_view || raw_final_view) && raw_scene_visibility <= 0.0001)", raw_visibility);
+    const std::size_t scene_color_return =
+        shader.find("out_color = vec4(max(background, vec3(0.0)), 1.0);", distance_bypass);
+    const std::size_t cloud_resolve = shader.find("vec4 resolved_cloud =");
+
+    require(raw_visibility != std::string::npos && distance_bypass != std::string::npos &&
+                scene_color_return != std::string::npos && cloud_resolve != std::string::npos &&
+                raw_visibility < distance_bypass && scene_color_return < cloud_resolve,
+            "fully occluded distance-aware clouds should return before resolve samples");
+    require(shader.find("return;", scene_color_return) < cloud_resolve,
+            "fully occluded distance-aware clouds should preserve scene color exactly");
+}
+
+void test_cloud_scene_depth_consumers_select_explicit_policies() {
+    const std::filesystem::path root = source_root_path();
+    const std::string gltf =
+        read_text_file(root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
+    const std::string ocean = read_text_file(root / "projects/ocean/ocean_app.cpp");
+    const std::string water =
+        read_text_file(root / "projects/fluid/sim/water_3d/water_3d_app.cpp");
+    const std::string planet = read_text_file(root / "projects/planet/planet_app.cpp");
+    constexpr std::string_view opaque = "CloudLayerSceneDepthMode::OpaqueForeground";
+    constexpr std::string_view distance = "CloudLayerSceneDepthMode::DistanceAware";
+
+    require(gltf.find(opaque) != std::string::npos && ocean.find(opaque) != std::string::npos &&
+                water.find(opaque) != std::string::npos,
+            "surface background consumers should preserve opaque foreground scene color");
+    require(planet.find(distance) != std::string::npos,
+            "planet should retain physical distance-aware cloud composition");
+}
+
 void test_cloud_layer_shadow_projection_is_snapped_and_centered() {
     const cubey::render::CloudLayerShadowRequest request{
         .receiver_center = {123.1F, 4.0F, -56.9F},
