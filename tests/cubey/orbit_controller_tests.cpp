@@ -108,3 +108,25 @@ void test_orbit_controller_scroll_zoom_clamps_distance() {
     controller.reset();
     require_close(controller.distance(), 3.0F, "reset should restore updated home distance");
 }
+
+void test_orbit_controller_supports_configurable_pitch_limits() {
+    cubey::OrbitController controller(cubey::OrbitControllerConfig{
+        .min_pitch = -0.2F,
+        .max_pitch = 0.1F,
+    });
+
+    controller.begin_drag(0.0, 0.0);
+    controller.drag_to(0.0, -100.0);
+    controller.end_drag();
+    require_close(controller.pitch(), 0.1F, "orbit pitch should clamp to configured maximum");
+
+    controller.begin_drag(0.0, 0.0);
+    controller.drag_to(0.0, 100.0);
+    controller.end_drag();
+    require_close(controller.pitch(), -0.2F, "orbit pitch should clamp to configured minimum");
+
+    controller.set_pitch_limits(-0.05F, 0.05F);
+    require_close(controller.pitch(), -0.05F, "pitch should reclamp when limits shrink");
+    controller.reset();
+    require_close(controller.pitch(), 0.0F, "reset should return to zero inside pitch limits");
+}

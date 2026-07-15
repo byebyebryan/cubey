@@ -8,9 +8,13 @@ namespace cubey {
 namespace {
 
 constexpr float kDragRadiansPerPixel = 0.01F;
-constexpr float kMaxPitchRadians = 1.45F;
 
 [[nodiscard]] OrbitControllerConfig validated_config(OrbitControllerConfig config) {
+    if (!std::isfinite(config.distance) || !std::isfinite(config.min_distance) ||
+        !std::isfinite(config.max_distance) || !std::isfinite(config.zoom_base) ||
+        !std::isfinite(config.min_pitch) || !std::isfinite(config.max_pitch)) {
+        throw std::invalid_argument("orbit controller config values must be finite");
+    }
     if (config.min_distance <= 0.0F) {
         throw std::invalid_argument("orbit controller min distance must be positive");
     }
@@ -19,6 +23,9 @@ constexpr float kMaxPitchRadians = 1.45F;
     }
     if (config.zoom_base <= 0.0F || config.zoom_base >= 1.0F) {
         throw std::invalid_argument("orbit controller zoom base must be between 0 and 1");
+    }
+    if (config.max_pitch < config.min_pitch) {
+        throw std::invalid_argument("orbit controller max pitch must be >= min pitch");
     }
     config.distance = std::clamp(config.distance, config.min_distance, config.max_distance);
     return config;
@@ -39,8 +46,22 @@ void OrbitController::set_distance_limits(float min_distance, float max_distance
         .min_distance = min_distance,
         .max_distance = max_distance,
         .zoom_base = config_.zoom_base,
+        .min_pitch = config_.min_pitch,
+        .max_pitch = config_.max_pitch,
     });
     distance_ = std::clamp(distance_, config_.min_distance, config_.max_distance);
+}
+
+void OrbitController::set_pitch_limits(float min_pitch, float max_pitch) {
+    config_ = validated_config({
+        .distance = config_.distance,
+        .min_distance = config_.min_distance,
+        .max_distance = config_.max_distance,
+        .zoom_base = config_.zoom_base,
+        .min_pitch = min_pitch,
+        .max_pitch = max_pitch,
+    });
+    pitch_ = std::clamp(pitch_, config_.min_pitch, config_.max_pitch);
 }
 
 void OrbitController::set_home_distance(float distance) {
@@ -49,6 +70,8 @@ void OrbitController::set_home_distance(float distance) {
         .min_distance = config_.min_distance,
         .max_distance = config_.max_distance,
         .zoom_base = config_.zoom_base,
+        .min_pitch = config_.min_pitch,
+        .max_pitch = config_.max_pitch,
     });
     distance_ = config_.distance;
 }
@@ -65,7 +88,7 @@ void OrbitController::update(double delta_seconds) {
 
 void OrbitController::reset() {
     yaw_ = 0.0F;
-    pitch_ = 0.0F;
+    pitch_ = std::clamp(0.0F, config_.min_pitch, config_.max_pitch);
     paused_ = false;
     dragging_ = false;
     last_x_ = 0.0;
@@ -101,7 +124,7 @@ void OrbitController::drag_to(double x, double y) {
 
     yaw_ -= static_cast<float>(x - last_x_) * kDragRadiansPerPixel;
     pitch_ -= static_cast<float>(y - last_y_) * kDragRadiansPerPixel;
-    pitch_ = std::clamp(pitch_, -kMaxPitchRadians, kMaxPitchRadians);
+    pitch_ = std::clamp(pitch_, config_.min_pitch, config_.max_pitch);
     last_x_ = x;
     last_y_ = y;
 }
@@ -162,7 +185,7 @@ void OrbitController::apply_input(bool reset_pressed, bool pause_pressed, double
     if (dragging_) {
         yaw_ -= static_cast<float>(mouse_delta.x) * kDragRadiansPerPixel;
         pitch_ -= static_cast<float>(mouse_delta.y) * kDragRadiansPerPixel;
-        pitch_ = std::clamp(pitch_, -kMaxPitchRadians, kMaxPitchRadians);
+        pitch_ = std::clamp(pitch_, config_.min_pitch, config_.max_pitch);
     }
 
     update(delta_seconds);

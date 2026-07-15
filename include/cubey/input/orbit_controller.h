@@ -9,6 +9,8 @@ struct OrbitControllerConfig {
     float min_distance = 0.35F;
     float max_distance = 80.0F;
     float zoom_base = 0.86F;
+    float min_pitch = -1.45F;
+    float max_pitch = 1.45F;
 };
 
 class OrbitController {
@@ -17,6 +19,7 @@ class OrbitController {
 
     void set_auto_rotation_speed(float radians_per_second);
     void set_distance_limits(float min_distance, float max_distance);
+    void set_pitch_limits(float min_pitch, float max_pitch);
     void set_home_distance(float distance);
     void set_distance(float distance);
 
