@@ -76,7 +76,7 @@ struct TerrainRuntimeConfig {
     std::optional<float> backdrop_azimuth_radians{};
     std::optional<float> backdrop_orbit_radius_m{};
     std::optional<float> backdrop_elevation_radians{};
-    float backdrop_minimum_visible_distance_m = 1'500.0F;
+    float backdrop_minimum_visible_distance_m = 3'200.0F;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
     TerrainRenderPath render_path = TerrainRenderPath::Control;

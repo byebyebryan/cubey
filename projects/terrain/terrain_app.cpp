@@ -480,7 +480,7 @@ class TerrainApp {
         if (terrain_camera_is_backdrop(runtime_config_.camera)) {
             (void)ImGui::SliderFloat("Minimum terrain distance",
                                      &runtime_config_.backdrop_minimum_visible_distance_m, 750.0F,
-                                     2'500.0F, "%.0f m");
+                                     6'000.0F, "%.0f m");
             if (ImGui::IsItemDeactivatedAfterEdit()) {
                 backdrop_stage_plan_.reset();
                 apply_camera_preset();

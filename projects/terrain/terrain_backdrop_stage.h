@@ -27,7 +27,7 @@ struct TerrainBackdropStageRequest {
     float orbit_default_elevation_radians = 0.0F;
     float orbit_max_elevation_radians = 0.0F;
     float subject_center_height_m = 20.0F;
-    float minimum_visible_terrain_distance_m = 1'500.0F;
+    float minimum_visible_terrain_distance_m = 3'200.0F;
     float vertical_fov_radians = 0.0F;
     float aspect_ratio = 16.0F / 9.0F;
     float vertical_scale = 1.0F;

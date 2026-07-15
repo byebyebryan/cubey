@@ -351,7 +351,7 @@ if (BUILD_TESTING)
         --terrain-camera-preset
         backdrop-stage
         --terrain-backdrop-min-distance
-        1500
+        3200
         --terrain-presentation
         backdrop
     )

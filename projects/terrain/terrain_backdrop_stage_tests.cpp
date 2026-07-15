@@ -43,7 +43,7 @@ void test_stage_requests_publish_the_medium_scene_contract() {
                  "detached stage should allow a level orbit");
     require_near(detached.orbit_max_elevation_radians, 30.0F * std::numbers::pi_v<float> / 180.0F,
                  0.000001F, "detached stage should allow a broader elevated orbit");
-    require_near(detached.minimum_visible_terrain_distance_m, 1'500.0F, 0.0F,
+    require_near(detached.minimum_visible_terrain_distance_m, 3'200.0F, 0.0F,
                  "detached stage should publish the far-field visibility contract");
     require(detached.orbit_max_elevation_radians < grounded.orbit_max_elevation_radians,
             "detached stage should preserve a shallower orbit than grounded diagnostics");
@@ -74,7 +74,7 @@ void test_detached_stage_search_is_deterministic_and_panoramic() {
                 "detached stage should keep every lower-frame sector clear");
         require(first.relief_sector_count >= 14U,
                 "detached stage should retain useful relief in most sectors");
-        require(first.minimum_lower_frame_terrain_distance_m >= 1'500.0F,
+        require(first.minimum_lower_frame_terrain_distance_m >= 3'200.0F,
                 "detached stage should keep terrain outside the lower-frame distance");
         require_near(first.terrain_vertical_offset_m, -first.target_height_m, 0.0F,
                      "detached stage should map the physical focus to local zero");

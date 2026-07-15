@@ -33,7 +33,7 @@ capture() {
     --terrain-weathering off --terrain-render-path quality \
     --terrain-source-version v2.1 --terrain-surface-detail layered \
     --terrain-target-edge-px 4 --terrain-camera-preset "${camera}" \
-    --terrain-backdrop-mode detached --terrain-backdrop-min-distance 1500 \
+    --terrain-backdrop-mode detached --terrain-backdrop-min-distance 3200 \
     --terrain-backdrop-azimuth "${azimuth}" --terrain-presentation backdrop \
     --debug-view surface --sun-elevation 30 --sun-azimuth -55 --validation "$@"
 }
@@ -72,7 +72,7 @@ montage -label '%t' "${envelope_images[@]}" -tile 2x2 -geometry 640x360+8+24 \
   --terrain-render-path quality --terrain-source-version v2.1 \
   --terrain-surface-detail layered --terrain-target-edge-px 4 \
   --terrain-camera-preset backdrop-stage --terrain-backdrop-mode detached \
-  --terrain-backdrop-min-distance 1500 --terrain-presentation backdrop \
+  --terrain-backdrop-min-distance 3200 --terrain-presentation backdrop \
   --debug-view surface --sun-elevation 30 --sun-azimuth -55 --validation
 
 "${REPORT_APP}" > "${OUT_DIR}/reports/backdrop-stage.json"
@@ -83,7 +83,7 @@ if ! jq -e '
     .contract_satisfied == true and
     .panorama_sector_count == 24 and
     .lower_frame_clear_sector_count == 24 and
-    .minimum_lower_frame_terrain_distance_m >= 1500 and
+    .minimum_lower_frame_terrain_distance_m >= 3200 and
     .relief_sector_count >= 14 and
     .stage_radius_m == 300)
 ' "${OUT_DIR}/reports/backdrop-stage.json" >/dev/null; then
@@ -105,7 +105,7 @@ jq -n \
     orbit: {radius_m: [50, 100, 250], elevation_degrees: [0, 8, 30],
       yaw_restricted: false},
     ownership: {detached_radius_m: 300},
-    minimum_visible_terrain_distance_m: 1500,
+    minimum_visible_terrain_distance_m: 3200,
     proxy: {sphere_radius_m: 20},
     video_duration_seconds: $video_duration_seconds}' \
   > "${OUT_DIR}/review-metadata.json"

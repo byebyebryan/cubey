@@ -547,7 +547,7 @@ constexpr std::array<ConfigOptionDescriptor, 279> kRunConfigOptions{
            "terrain.backdrop_minimum_visible_distance_m", "--terrain-backdrop-min-distance",
            "Minimum Terrain Distance", "Terrain/Backdrop Stage",
            "Minimum lower-frame terrain distance for detached backdrop placement.",
-           ConfigOptionType::Float, bounded_range(750.0, 2500.0)),
+           ConfigOptionType::Float, bounded_range(750.0, 6000.0)),
     option(RunConfigOptionId::TerrainPresentation, "terrain.presentation", "--terrain-presentation",
            "Presentation", "Terrain",
            "Terrain material presentation: standard or distant backdrop coverage.",

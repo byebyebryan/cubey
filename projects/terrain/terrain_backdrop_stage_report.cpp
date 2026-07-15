@@ -70,7 +70,7 @@ int main() {
         {"schema", "cubey.terrain.backdrop-stage.v2"},
         {"source", {{"preset", "mountain"}, {"version", "v2.1"}, {"weathering", "off"}}},
         {"detached_stage_radius_m", 300},
-        {"minimum_visible_terrain_distance_m", 1500},
+        {"minimum_visible_terrain_distance_m", 3200},
         {"panorama_azimuth_count", 24},
         {"review_azimuth_count", 8},
         {"plans", std::move(plans)},

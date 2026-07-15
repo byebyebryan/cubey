@@ -38,7 +38,7 @@ capture() {
     --terrain-weathering local --terrain-render-path quality \
     --terrain-source-version v2.1 --terrain-surface-detail layered \
     --terrain-target-edge-px 4 --terrain-camera-preset "${camera}" \
-    --terrain-backdrop-mode detached --terrain-backdrop-min-distance 1500 \
+    --terrain-backdrop-mode detached --terrain-backdrop-min-distance 3200 \
     --terrain-backdrop-azimuth "${azimuth}" --terrain-backdrop-orbit-radius "${radius}" \
     --terrain-backdrop-elevation "${elevation}" --terrain-presentation backdrop \
     --debug-view "${view}" --sun-elevation 30 --sun-azimuth -55 --validation
@@ -100,7 +100,7 @@ montage -label '%t' "${native_images[@]}" -tile 3x1 -geometry 640x360+8+24 \
   --terrain-render-path quality --terrain-source-version v2.1 \
   --terrain-surface-detail layered --terrain-target-edge-px 4 \
   --terrain-camera-preset backdrop --terrain-backdrop-mode detached \
-  --terrain-backdrop-min-distance 1500 --terrain-presentation backdrop \
+  --terrain-backdrop-min-distance 3200 --terrain-presentation backdrop \
   --debug-view surface --sun-elevation 30 --sun-azimuth -55 --validation \
   --profile-output "${OUT_DIR}/profile/quality-tile" --profile-warmup-frames 5
 
@@ -110,7 +110,7 @@ if ! jq -e '
   ($detached | length) == 3 and
   all($detached[];
     .contract_satisfied == true and
-    .minimum_lower_frame_terrain_distance_m >= 1500 and
+    .minimum_lower_frame_terrain_distance_m >= 3200 and
     .stage_radius_m == 300)
 ' "${OUT_DIR}/reports/backdrop-stage.json" >/dev/null; then
   printf 'terrain quality tile review: backdrop stage contract failed\n' >&2

@@ -21,7 +21,7 @@ constexpr std::size_t kFineShortlistCount = 8U;
 constexpr std::size_t kFullCandidateCount = 16U;
 constexpr float kLowerFrameTraceStartM = 100.0F;
 constexpr float kLowerFrameTraceStepM = 50.0F;
-constexpr float kLowerFrameTraceMaximumM = 2'400.0F;
+constexpr float kLowerFrameTraceMaximumM = 6'600.0F;
 constexpr float kLowerFrameHeightMarginM = 20.0F;
 constexpr std::array<float, 5> kLowerFrameNdcX{-1.0F, -0.5F, 0.0F, 0.5F, 1.0F};
 constexpr float kReliefNearDistanceM = 3'200.0F;

@@ -359,7 +359,7 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
           config.backdrop_elevation_radians.value() > maximum_elevation_radians)) ||
         !std::isfinite(config.backdrop_minimum_visible_distance_m) ||
         config.backdrop_minimum_visible_distance_m < 750.0F ||
-        config.backdrop_minimum_visible_distance_m > 2'500.0F) {
+        config.backdrop_minimum_visible_distance_m > 6'000.0F) {
         throw std::runtime_error("invalid terrain backdrop orbit configuration");
     }
     const bool v3_component_view = config.debug_view == TerrainDebugView::SourceRange ||
