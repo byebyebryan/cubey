@@ -34,6 +34,7 @@ target_link_libraries(
 
 add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_camera.cpp
+    terrain_backdrop_product.cpp
     terrain_backdrop_stage.cpp
     terrain_clipmap.cpp
     terrain_environment_gpu.cpp
@@ -219,6 +220,21 @@ target_link_libraries(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_terrain_backdrop_product_tests
+        terrain_backdrop_product_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_terrain_backdrop_product_tests
+        PRIVATE
+            cubey_project_terrain_render_support
+            cubey_project_warnings
+    )
+    add_test(
+        NAME terrain_backdrop_product_tests
+        COMMAND cubey_project_terrain_backdrop_product_tests
+    )
+    set_tests_properties(terrain_backdrop_product_tests PROPERTIES LABELS terrain TIMEOUT 120)
+
     add_executable(cubey_project_terrain_source_tests
         terrain_source_tests.cpp
     )
