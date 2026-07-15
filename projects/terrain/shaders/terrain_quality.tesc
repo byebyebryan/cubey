@@ -33,9 +33,17 @@ vec2 terrain_quality_origin() {
     return floor(pc.camera_position_vertical_scale.xz / origin_snap_m) * origin_snap_m;
 }
 
+float terrain_quality_footprint(vec2 world_xz) {
+    vec3 footprint_position = vec3(
+        world_xz.x, terrain_uniforms.source.elevation.x, world_xz.y);
+    return max(
+        0.25, length(pc.camera_position_vertical_scale.xyz - footprint_position) *
+                  pc.render_options.z * max(pc.quality_options.x, 1.0));
+}
+
 vec4 terrain_quality_clip(vec2 local_xz) {
     vec2 world_xz = local_xz + terrain_quality_origin();
-    float footprint_m = max(control_metadata[0].x, 0.25);
+    float footprint_m = terrain_quality_footprint(world_xz);
     float height_m = terrain_source_height(
         terrain_uniforms.source, world_xz + pc.stage_options.xy, footprint_m);
     vec3 world_position = vec3(world_xz.x,
@@ -53,24 +61,20 @@ float terrain_quality_projected_edge(vec4 first, vec4 second) {
 }
 
 float terrain_quality_factor(float projected_edge_px) {
-    // A single stage-wide density prevents parent/child silhouette slits during orbit.
-    if (pc.stage_options.w > 0.5) {
-        return 16.0;
-    }
-    if (pc.stage_options.w < -0.5) {
-        return 32.0;
-    }
     float requested = max(projected_edge_px / max(pc.quality_options.x, 1.0), 1.0);
     return clamp(exp2(ceil(log2(requested))), 1.0, 64.0);
 }
 
 bool terrain_quality_outside_frustum(vec2 origin) {
     vec4 bounds[8];
-    float minimum_height = (terrain_uniforms.source.elevation.x - 128.0) *
+    float weathering_envelope = terrain_uniforms.source.weathering.w > 0.5
+        ? terrain_uniforms.source.weathering.y
+        : 0.0;
+    float minimum_height = (terrain_uniforms.source.elevation.x - weathering_envelope) *
         pc.camera_position_vertical_scale.w + pc.quality_options.w;
     float maximum_height = (terrain_uniforms.source.elevation.x +
-        terrain_uniforms.source.elevation.y + 128.0) * pc.camera_position_vertical_scale.w +
-        pc.quality_options.w;
+        terrain_uniforms.source.elevation.y + weathering_envelope) *
+        pc.camera_position_vertical_scale.w + pc.quality_options.w;
     for (int corner = 0; corner < 4; ++corner) {
         vec2 world_xz = control_position[corner].xz + origin;
         bounds[corner] = pc.view_projection * vec4(world_xz.x, minimum_height, world_xz.y, 1.0);

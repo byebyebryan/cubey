@@ -48,33 +48,17 @@ vec2 terrain_quality_local_xz() {
     return mix(bottom, top, gl_TessCoord.y);
 }
 
-float terrain_quality_morph(vec2 local_xz, float cell_size_m) {
-    float outer = cell_size_m * 64.0;
-    float transition = min(cell_size_m * 2.0 * 16.0, outer * (11.0 / 32.0));
-    float distance_to_outer = outer - max(abs(local_xz.x), abs(local_xz.y));
-    if (distance_to_outer <= cell_size_m) {
-        return 1.0;
-    }
-    return 1.0 - smoothstep(0.0, transition, distance_to_outer);
-}
-
 void main() {
     float cell_size_m = patch_metadata[0].x;
     float origin_snap_m = patch_ownership[0].y;
     vec2 level_origin = floor(pc.camera_position_vertical_scale.xz / origin_snap_m) * origin_snap_m;
     vec2 local_xz = terrain_quality_local_xz();
     vec2 world_xz = local_xz + level_origin;
-    float morph = terrain_quality_morph(local_xz, cell_size_m);
-    float coarse_cell_size_m = cell_size_m * 2.0;
-    vec2 coarse_world_xz = floor(world_xz / coarse_cell_size_m + 0.5) * coarse_cell_size_m;
-    vec2 sample_xz = mix(world_xz, coarse_world_xz, morph);
-    vec2 source_xz = sample_xz + pc.stage_options.xy;
-    vec3 footprint_position = vec3(sample_xz.x, terrain_uniforms.source.elevation.x, sample_xz.y);
-    float generated_spacing_m = max(
+    vec2 source_xz = world_xz + pc.stage_options.xy;
+    vec3 footprint_position = vec3(world_xz.x, terrain_uniforms.source.elevation.x, world_xz.y);
+    float footprint_m = max(
         0.25, length(pc.camera_position_vertical_scale.xyz - footprint_position) *
                   pc.render_options.z * max(pc.quality_options.x, 1.0));
-    float footprint_m = max(0.25, mix(generated_spacing_m,
-        max(generated_spacing_m, coarse_cell_size_m), morph));
 
     float base_height_m = terrain_source_base_height(
         terrain_uniforms.source, source_xz, footprint_m);
@@ -86,8 +70,8 @@ void main() {
         terrain_uniforms.source, source_xz + vec2(normal_step_m, 0.0), footprint_m);
     float height_z = terrain_source_base_height(
         terrain_uniforms.source, source_xz + vec2(0.0, normal_step_m), footprint_m);
-    vec3 world_position = vec3(sample_xz.x,
-        height_m * pc.camera_position_vertical_scale.w + pc.quality_options.w, sample_xz.y);
+    vec3 world_position = vec3(world_xz.x,
+        height_m * pc.camera_position_vertical_scale.w + pc.quality_options.w, world_xz.y);
 
     gl_Position = pc.view_projection * vec4(world_position, 1.0);
     frag_world_position = world_position;
@@ -100,7 +84,7 @@ void main() {
     frag_child_half_extent_m = patch_ownership[0].x;
     frag_origin_snap_m = origin_snap_m;
     frag_cell_size_m = cell_size_m;
-    frag_lod_morph = morph;
+    frag_lod_morph = 0.0;
     frag_footprint_m = footprint_m;
 #if CUBEY_TERRAIN_SOURCE_VARIANT == 1
     frag_direct_visibility = terrain_heightfield_shadow_v3(
