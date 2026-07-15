@@ -58,17 +58,20 @@ cloud app. The current stable path is:
 - `projects/atmosphere`: primary tuning and inspection surface for shared
   clouds;
 - `projects/ocean`: surface-view consumer that composites shared clouds over
-  the atmosphere background, samples projected cloud transmittance for direct
-  light, renders a reflected-camera cloud product for local planar reflection,
-  and uses a coherent filtered cloud environment as broad fallback;
+  the atmosphere background while preserving every opaque scene pixel, samples
+  projected cloud transmittance for direct light, renders a reflected-camera
+  cloud product for local planar reflection, and uses a coherent filtered cloud
+  environment as broad fallback;
 - `projects/gltf_viewer`: general forward-PBR consumer that uses the engine
-  renderer's optional depth-aware cloud composition and the filtered cloud
+  renderer's opaque-foreground cloud composition and the filtered cloud
   environment above the procedural clear-sky probe;
 - `projects/fluid/water_3d`: refractive-water consumer that composes clouds into
-  its HDR scene background before the water surface pass and reuses the same
-  filtered environment through its existing PBR bindings;
-- `projects/planet`: deferred aerial/orbit pressure surface; not a Cloud V1
-  consumer and not the source of surface-cloud defaults yet.
+  its HDR scene background without modifying opaque scene pixels before the
+  water surface pass, and reuses the same filtered environment through its
+  existing PBR bindings;
+- `projects/planet`: deferred aerial/orbit pressure surface that retains physical
+  distance-aware cloud/surface composition; not a Cloud V1 consumer and not the
+  source of surface-cloud defaults yet.
 
 Consumers still decide which cloud products they need and package local camera
 and atmosphere lighting into `CloudLayerFrameInfo`. Generated noise/weather
@@ -76,6 +79,14 @@ ownership also remains with the visible cloud layer because shadows, planar
 views, and cached environments share those resources. The cached environment's
 scheduling, invalidation, previous/current generation state, and PBR descriptor
 contract are no longer project-local.
+
+Scene-depth composition is an explicit render policy, not a cloud tuning option.
+Atmosphere-only, cached-environment, and planar-reflection products disable scene
+depth. glTF Viewer, ocean, and Water 3D preserve any opaque foreground pixel
+exactly because their visible cloud product is a background layer. Planet compares
+cloud-hit distance against scene depth because its cloud shell may legitimately
+appear in front of the surface. Both active depth modes return untouched HDR scene
+color before cloud resolve/post work whenever geometry fully occludes the cloud.
 
 Visible cloud ownership follows the same rule in every accepted surface
 consumer: the project's `AtmosphereEnvironmentRuntime` owns one
@@ -466,9 +477,11 @@ assumptions without adopting cloud internals.
 
 The final composite tone and color post pass is shared through
 `shaders/cubey/cloud/cloud_composite_post.glsl`. The active composite shaders
-are the external-background variants used by atmosphere, ocean, and planet;
-legacy standalone/reference cloud projects keep their own local shaders instead
-of depending on a shared standalone composite entry point.
+are the external-background variants: atmosphere uses the background-only path;
+glTF Viewer, ocean, and Water 3D use opaque-foreground scene depth; and planet
+uses physical distance-aware scene depth. Legacy standalone/reference cloud
+projects keep their own local shaders instead of depending on a shared standalone
+composite entry point.
 
 ## Current Milestone
 

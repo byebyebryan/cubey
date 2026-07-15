@@ -6,7 +6,7 @@ tuning happens through `projects/atmosphere`; glTF Viewer, ocean, and Water 3D
 consume the accepted surface-view environment products, while planet remains an
 opt-in scale-pressure target.
 
-## Current Status 2026-07-13
+## Current Status 2026-07-15
 
 Cloud V1 is now an atmosphere-owned environment feature rather than a
 project-local render helper. Each accepted surface consumer owns one
@@ -15,12 +15,12 @@ project-local render helper. Each accepted surface consumer owns one
 the filtered PBR environment. Current direct consumers are:
 
 - `projects/atmosphere`: primary surface-cloud tuning and diagnostics;
-- `projects/gltf_viewer`: depth-aware forward-PBR sky composition plus cached
-  material reflection;
-- `projects/ocean`: visible composition, projected local shadow, planar cloud
-  reflection, and cached fallback;
-- `projects/fluid/water_3d`: visible HDR background composition before water
-  refraction plus cached environment reflection.
+- `projects/gltf_viewer`: opaque-foreground forward-PBR sky composition plus
+  cached material reflection;
+- `projects/ocean`: opaque-foreground visible composition, projected local
+  shadow, planar cloud reflection, and cached fallback;
+- `projects/fluid/water_3d`: opaque-foreground HDR background composition before
+  water refraction plus cached environment reflection.
 
 Static environment modes bypass procedural cloud resource creation and
 composition. `projects/planet` remains an explicit pressure path, not an
@@ -79,20 +79,23 @@ and remaining limits are recorded in
 - `projects/ocean` now compiles the shared cloud shaders and uses the
   `CloudEnvironmentRuntime` owned by its atmosphere runtime. It composites
   surface-volume clouds over the atmosphere sky in final view by default. The
-  cloud product uses ocean scene depth for sky
-  composition and the shared atmosphere sun/moon/ambient lighting state.
+  cloud product uses strict opaque-foreground scene depth for sky composition,
+  so resolve/post processing cannot modify water or reference-pillar pixels, and
+  uses the shared atmosphere sun/moon/ambient lighting state.
   `--no-clouds` keeps the clear-sky A/B path. Ocean also requests the shared
   projected `CloudLayerShadowProduct` for direct-light modulation and reuses
   resolved cloud radiance/transmittance for current-view reflections.
 - `projects/gltf_viewer` uses the engine-owned forward-PBR cloud composition
-  path with scene depth and consumes the same runtime's filtered environment
-  for material reflection.
+  path with strict opaque-foreground scene depth and consumes the same runtime's
+  filtered environment for material reflection.
 - `projects/fluid/water_3d` composes shared clouds into scene color before its
-  refractive water pass and consumes the filtered environment through its
-  existing PBR bindings. Static environment mode bypasses clouds.
+  refractive water pass, preserves opaque scene pixels exactly, and consumes the
+  filtered environment through its existing PBR bindings. Static environment
+  mode bypasses clouds.
 - `projects/planet` now has an opt-in `--clouds` path that composites the shared
-  cloud product over the planet HDR scene using scene depth. It is an integration
-  checkpoint, not a finished cloud shadow/reflection/environment-lighting path.
+  cloud product over the planet HDR scene using physical distance-aware scene
+  depth. It is an integration checkpoint, not a finished cloud
+  shadow/reflection/environment-lighting path.
 
 ## Remaining Gaps
 
