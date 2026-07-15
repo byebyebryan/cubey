@@ -13,6 +13,7 @@
 namespace cubey::vulkan {
 class Device;
 class GpuRuntime;
+class GpuTimestampProfiler;
 } // namespace cubey::vulkan
 
 namespace cubey::render {
@@ -39,7 +40,8 @@ class MountainsMeshRenderer {
     void destroy_global_resources();
 
     void record(VkCommandBuffer command_buffer, const cubey::render::ColorTargetView& color_target,
-                cubey::render::FrameSlot frame_slot, bool present);
+                cubey::render::FrameSlot frame_slot, bool present,
+                cubey::vulkan::GpuTimestampProfiler* profiler);
 
   private:
     class Impl;

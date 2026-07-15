@@ -151,6 +151,19 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    if (CUBEY_HAS_LIBAV)
+        add_test(
+            NAME terrain_shadertoy_ref_profile_writes_gpu_spans
+            COMMAND
+                "${CMAKE_COMMAND}"
+                "-DAPP=$<TARGET_FILE:cubey_project_terrain_shadertoy_ref>"
+                "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/terrain-shadertoy-ref-profile.mp4"
+                "-DPROFILE=${CMAKE_CURRENT_BINARY_DIR}/terrain-shadertoy-ref-profile"
+                -P
+                "${CMAKE_CURRENT_SOURCE_DIR}/validate_profile.cmake"
+        )
+    endif()
+
     cubey_label_tests(
         reference
         terrain_shadertoy_ref_tests
@@ -161,4 +174,7 @@ if (BUILD_TESTING)
         terrain_shadertoy_ref_height_writes_png
         terrain_shadertoy_ref_height_writes_png_stats
     )
+    if (CUBEY_HAS_LIBAV)
+        cubey_label_tests(reference terrain_shadertoy_ref_profile_writes_gpu_spans)
+    endif()
 endif()

@@ -13,6 +13,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/image.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -398,7 +399,8 @@ class MountainsMeshRenderer::Impl {
     }
 
     void record(VkCommandBuffer command_buffer, const cubey::render::ColorTargetView& color_target,
-                cubey::render::FrameSlot frame_slot, bool present) {
+                cubey::render::FrameSlot frame_slot, bool present,
+                cubey::vulkan::GpuTimestampProfiler* profiler) {
         frame_material().upload(frame_slot, frame_uniforms(color_target.extent));
         const cubey::render::RenderTargetView target = cubey::render::render_target_view(
             color_target, cubey::render::depth_target_view(depth_attachment()));
@@ -406,9 +408,12 @@ class MountainsMeshRenderer::Impl {
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
             .depth = cubey::render::depth_clear_value(),
         };
-        const auto record_scene = [this,
-                                   frame_slot](const cubey::vulkan::CommandRecorder& recorder) {
+        const auto record_scene = [this, frame_slot,
+                                   profiler](const cubey::vulkan::CommandRecorder& recorder) {
             if (config_.diagnostic != ReferenceDiagnostic::Final) {
+                cubey::vulkan::GpuTimestampScope profile_scope(
+                    profiler, recorder.handle(), frame_slot.index,
+                    "terrain_shadertoy_ref.diagnostic");
                 cubey::render::record_fullscreen_pipeline_draw(
                     recorder, {
                                   .pipeline = &diagnostic_pipeline(),
@@ -416,23 +421,41 @@ class MountainsMeshRenderer::Impl {
                               });
                 return;
             }
-            cubey::render::record_fullscreen_pipeline_draw(
-                recorder, {
-                              .pipeline = &sky_pipeline(),
-                              .descriptor_set = frame_material().set(frame_slot),
-                          });
-            recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipeline().pipeline());
-            recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipeline().layout(),
-                                         0, frame_material().set(frame_slot));
-            cubey::render::record_draw_item(recorder.handle(), {.mesh = &mesh()});
+            {
+                cubey::vulkan::GpuTimestampScope profile_scope(
+                    profiler, recorder.handle(), frame_slot.index,
+                    "terrain_shadertoy_ref.sky");
+                cubey::render::record_fullscreen_pipeline_draw(
+                    recorder, {
+                                  .pipeline = &sky_pipeline(),
+                                  .descriptor_set = frame_material().set(frame_slot),
+                              });
+            }
+            {
+                cubey::vulkan::GpuTimestampScope profile_scope(
+                    profiler, recorder.handle(), frame_slot.index,
+                    "terrain_shadertoy_ref.surface");
+                recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       mesh_pipeline().pipeline());
+                recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                             mesh_pipeline().layout(), 0,
+                                             frame_material().set(frame_slot));
+                cubey::render::record_draw_item(recorder.handle(), {.mesh = &mesh()});
+            }
         };
 
         const cubey::vulkan::CommandRecorder recorder(command_buffer);
         if (present) {
             recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            if (profiler != nullptr) {
+                profiler->begin_frame(command_buffer, frame_slot.index);
+            }
             cubey::render::record_present_render_target_pass(recorder, target, clear, record_scene);
             recorder.end("vkEndCommandBuffer terrain ShaderToy mesh reference");
         } else {
+            if (profiler != nullptr) {
+                profiler->begin_frame(command_buffer, frame_slot.index);
+            }
             recorder.transition_image_layout(
                 cubey::vulkan::begin_depth_attachment_transition(depth_attachment().handle()));
             cubey::render::record_render_target_pass(recorder, target, clear, record_scene);
@@ -723,8 +746,9 @@ void MountainsMeshRenderer::destroy_global_resources() {
 
 void MountainsMeshRenderer::record(VkCommandBuffer command_buffer,
                                    const cubey::render::ColorTargetView& color_target,
-                                   cubey::render::FrameSlot frame_slot, bool present) {
-    impl_->record(command_buffer, color_target, frame_slot, present);
+                                   cubey::render::FrameSlot frame_slot, bool present,
+                                   cubey::vulkan::GpuTimestampProfiler* profiler) {
+    impl_->record(command_buffer, color_target, frame_slot, present, profiler);
 }
 
 } // namespace cubey::projects::terrain_shadertoy_ref

@@ -1,6 +1,7 @@
 #include "terrain_shadertoy_ref_app.h"
 #include "terrain_shadertoy_ref_mesh.h"
 
+#include <cubey/core/profiling.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/render/material.h>
@@ -12,6 +13,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
@@ -32,6 +34,29 @@ namespace cubey::projects::terrain_shadertoy_ref {
 namespace {
 
 constexpr std::uint32_t kChannelTextureExtent = 256U;
+constexpr std::uint32_t kReferenceGpuProfilerPassCapacity = 3U;
+
+[[nodiscard]] std::uint64_t profile_frame_index(std::uint64_t frame_index) {
+    return frame_index == 0U ? 0U : frame_index - 1U;
+}
+
+[[nodiscard]] std::uint64_t collected_profile_frame_index(std::uint64_t frame_index,
+                                                          cubey::render::FrameSlot frame_slot) {
+    if (frame_index > frame_slot.count) {
+        return frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
+    }
+    return profile_frame_index(frame_index);
+}
+
+void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
+                        const std::vector<cubey::vulkan::GpuPassTiming>& timings) {
+    if (recorder == nullptr) {
+        return;
+    }
+    for (const cubey::vulkan::GpuPassTiming& timing : timings) {
+        recorder->record_gpu_span(frame_index, timing.label, timing.milliseconds);
+    }
+}
 
 struct RaymarchPushConstants {
     std::array<float, 4> resolution_time{};
@@ -100,7 +125,8 @@ class TerrainShadertoyRefApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources(context.device(), context.gpu(), context.swapchain().extent());
+            create_global_resources(context.device(), context.gpu(), context.swapchain().extent(),
+                                    context.frame_slot_count());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             create_pipeline(context.device(), context.swapchain().format(),
@@ -109,9 +135,9 @@ class TerrainShadertoyRefApp {
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
         };
-        callbacks.record_frame = [this](cubey::host::WindowedAppContext&,
+        callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-            record_windowed_frame(frame);
+            record_windowed_frame(context, frame);
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
@@ -141,18 +167,26 @@ class TerrainShadertoyRefApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            create_global_resources(context.device(), context.gpu(), target.extent);
+            create_global_resources(context.device(), context.gpu(), target.extent,
+                                    cubey::host::headless_capture_frame_slot_count(run_config_));
             create_pipeline(context.device(), target.format, target.extent,
                             cubey::host::headless_capture_frame_slot_count(run_config_));
         };
-        callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
+            collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
+                                frame.frame_slot);
             if (reference_config_.render == ReferenceRender::Mesh) {
-                mesh_renderer_.record(command_buffer, target, frame.frame_slot, false);
+                mesh_renderer_.record(command_buffer, target, frame.frame_slot, false,
+                                      gpu_profiler());
             } else {
-                record_reference_draw(cubey::vulkan::CommandRecorder(command_buffer), target);
+                if (cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler()) {
+                    profiler->begin_frame(command_buffer, frame.frame_slot.index);
+                }
+                record_reference_draw(cubey::vulkan::CommandRecorder(command_buffer), target,
+                                      frame.frame_slot);
             }
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
@@ -165,7 +199,8 @@ class TerrainShadertoyRefApp {
     }
 
     void create_global_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-                                 VkExtent2D reference_extent) {
+                                 VkExtent2D reference_extent, std::uint32_t frame_slot_count) {
+        gpu_profiler_.emplace(device, frame_slot_count, kReferenceGpuProfilerPassCapacity);
         const std::vector<std::uint8_t> bytes = make_channel_texture_bytes();
         channel_texture_.emplace(cubey::render::create_uploaded_texture_2d(
             device, gpu,
@@ -228,6 +263,7 @@ class TerrainShadertoyRefApp {
     void destroy_global_resources() {
         mesh_renderer_.destroy_global_resources();
         channel_texture_.reset();
+        gpu_profiler_.reset();
     }
 
     [[nodiscard]] RaymarchPushConstants push_constants(VkExtent2D extent) const {
@@ -244,7 +280,11 @@ class TerrainShadertoyRefApp {
     }
 
     void record_reference_draw(const cubey::vulkan::CommandRecorder& recorder,
-                               const cubey::render::ColorTargetView& target) const {
+                               const cubey::render::ColorTargetView& target,
+                               cubey::render::FrameSlot frame_slot) {
+        cubey::vulkan::GpuTimestampScope profile_scope(
+            gpu_profiler(), recorder.handle(), frame_slot.index,
+            "terrain_shadertoy_ref.raymarch");
         const RaymarchPushConstants constants = push_constants(target.extent);
         cubey::render::record_render_target_pass(
             recorder, cubey::render::render_target_view(target),
@@ -260,17 +300,24 @@ class TerrainShadertoyRefApp {
             });
     }
 
-    void record_windowed_frame(const cubey::host::WindowedRenderFrame& frame) {
+    void record_windowed_frame(cubey::host::WindowedAppContext& context,
+                               const cubey::host::WindowedRenderFrame& frame) {
+        collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
+                            frame.frame_slot);
         if (reference_config_.render == ReferenceRender::Mesh) {
-            mesh_renderer_.record(frame.command_buffer, frame.color_target, frame.frame_slot, true);
+            mesh_renderer_.record(frame.command_buffer, frame.color_target, frame.frame_slot, true,
+                                  gpu_profiler());
             return;
         }
         const cubey::vulkan::CommandRecorder recorder(frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        if (cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler()) {
+            profiler->begin_frame(frame.command_buffer, frame.frame_slot.index);
+        }
         cubey::render::record_present_render_target(
             recorder, cubey::render::render_target_view(frame.color_target),
             [this, &frame](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_reference_draw(present_recorder, frame.color_target);
+                record_reference_draw(present_recorder, frame.color_target, frame.frame_slot);
             });
         recorder.end("vkEndCommandBuffer terrain ShaderToy reference");
     }
@@ -296,11 +343,27 @@ class TerrainShadertoyRefApp {
         return pipeline_.value();
     }
 
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* gpu_profiler() {
+        return gpu_profiler_.has_value() ? &gpu_profiler_.value() : nullptr;
+    }
+
+    void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
+                             std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
+        cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
+        if (profiler == nullptr) {
+            return;
+        }
+        profiler->collect(frame_slot.index);
+        record_gpu_timings(profile_recorder, collected_profile_frame_index(frame_index, frame_slot),
+                           profiler->latest_timings());
+    }
+
     RunConfig run_config_;
     TerrainShadertoyRefConfig reference_config_;
     std::optional<cubey::render::Texture2D> channel_texture_{};
     std::optional<cubey::render::MaterialInstance> material_{};
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_{};
+    std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     MountainsMeshRenderer mesh_renderer_{};
 };
 
