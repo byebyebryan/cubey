@@ -2,7 +2,12 @@
 
 Date: 2026-07-14
 
-Status: implemented and visually reviewed.
+Status: implemented and visually reviewed, then superseded by the panoramic
+orbit-stage contract in [`terrain-orbit-stage-plan.md`](terrain-orbit-stage-plan.md).
+
+The measurements below remain the accepted record of the directional
+checkpoint. Its 200 m movement zone and 30-degree yaw cone are not the current
+backdrop product contract.
 
 ## Product Boundary
 
