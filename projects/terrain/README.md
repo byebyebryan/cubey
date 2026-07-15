@@ -48,8 +48,10 @@ Build and test the source contract with:
 ```sh
 cmake --build --preset dev --target \
   cubey_project_terrain_source_tests \
-  cubey_project_terrain_source_gpu_parity_tests
-ctest --preset dev -R '^terrain_source(_gpu_parity)?_tests$' --output-on-failure
+  cubey_project_terrain_source_gpu_parity_tests \
+  cubey_project_terrain_source_study \
+  cubey_project_terrain_source_study_report
+ctest --preset dev -R '^terrain_source(_gpu_parity|_study)?_tests$' --output-on-failure
 
 ./build/dev/projects/terrain/terrain \
   --terrain-seed 9012 \
@@ -86,6 +88,7 @@ projects/terrain/capture_orbit_stage_review.sh
 projects/terrain/capture_midair_stage_review.sh
 projects/terrain/capture_quality_tile_review.sh
 projects/terrain/capture_cached_backdrop_review.sh
+projects/terrain/capture_source_model_study.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -108,6 +111,10 @@ through the same cached-backdrop renderer without changing the production
 source. Its contract and provenance boundaries are recorded in
 [`docs/notes/terrain-source-model-study.md`](../../docs/notes/terrain-source-model-study.md).
 `projects/terrain_ref` remains frozen and is not linked by the study.
+The study pack writes fixed-range top-field, slope, clay, and common-material
+contact sheets under `outputs/terrain/source-model-study-v1/`. Run it headlessly
+with `projects/terrain/capture_source_model_study.sh`; top-level `REVIEW.txt`
+defines the review order and raw frames remain grouped by recipe and seed.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.

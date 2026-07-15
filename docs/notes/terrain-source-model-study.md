@@ -99,3 +99,45 @@ production stride-three topology and the terrain-only `<1 ms` p95 GPU gate.
 This batch stops after the comparison pack. Erosion, hydrology, biomes,
 close-range terrain, material detail, and source promotion remain later
 decisions.
+
+## Initial Pack Finding
+
+The completed v1 pack does not justify promoting a candidate:
+
+- `control-v2-1` remains the only consistently dramatic silhouette, but its
+  high slope density still reads as thin fins, jagged summits, and noise piles;
+- `terrain-engine-fbm` and `elevated-derivative` are coherent and stable, but
+  their calibrated silhouettes are too subdued and rounded to establish a
+  mountain hierarchy;
+- `swiss-derivative` is seed-unstable and produces sparse wall-like relief when
+  the folded field activates;
+- `mountains-signed` supplies broad buildup but not enough ridge or summit
+  structure at this world scale;
+- `rainforest-cliff` is useful evidence for bounded cliff emphasis, but reads as
+  mesas or bulges rather than a mountain range;
+- `mountain-peak-warp` is the most promising alternate structure family, yet
+  still lacks a convincing range-to-ridge-to-summit hierarchy across the fixed
+  seeds.
+
+The study therefore rejects a source-only swap as the next production change.
+The useful result is narrower: derivative damping, signed octave coupling,
+cliff remapping, and derivative warp are now isolated operators that can inform
+a later hierarchical source. Do not resume per-candidate constant tuning in
+this lane or mistake the TerrainEngine source for the appearance of its full
+tessellation, material, lighting, and scene stack.
+
+Reproduce it with:
+
+```sh
+cmake --build --preset dev --target \
+  cubey_project_terrain_source_study \
+  cubey_project_terrain_source_study_report
+projects/terrain/capture_source_model_study.sh
+```
+
+Review `terrain-source-study-height.png` and
+`terrain-source-study-slope.png` first. The three clay sheets then compare the
+same source families across seeds without material camouflage. The final
+seed-`9012` presentation sheet tests compatibility with the common renderer;
+it is not source truth. `source-report.json` records calibration, field
+distributions, local relief, throughput, hashes, and stage plans.
