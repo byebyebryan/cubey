@@ -58,6 +58,23 @@ target_link_libraries(
         cubey_project_warnings
 )
 
+add_library(cubey_project_terrain_source_study_runtime STATIC
+    source_study/terrain_source_study.cpp
+)
+target_include_directories(
+    cubey_project_terrain_source_study_runtime
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/source_study"
+)
+target_link_libraries(
+    cubey_project_terrain_source_study_runtime
+    PUBLIC
+        cubey_project_terrain_runtime
+    PRIVATE
+        cubey_project_warnings
+)
+
 add_executable(cubey_project_terrain_backdrop_report
     terrain_backdrop_report.cpp
 )
@@ -222,6 +239,23 @@ target_link_libraries(
         cubey_project_terrain_render_support
         cubey_project_terrain_runtime
 )
+
+cubey_add_app_target(
+    cubey_project_terrain_source_study
+    OUTPUT_NAME terrain_source_study
+    SHADER_DEFINE CUBEY_TERRAIN_SHADER_DIR
+    SOURCES
+        source_study/main.cpp
+        terrain_app.cpp
+)
+target_link_libraries(
+    cubey_project_terrain_source_study
+    PRIVATE
+        cubey_project_terrain_render_support
+        cubey_project_terrain_runtime
+        cubey_project_terrain_source_study_runtime
+)
+add_dependencies(cubey_project_terrain_source_study cubey_project_terrain)
 
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_backdrop_product_tests
