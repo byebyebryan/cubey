@@ -1,8 +1,8 @@
 # Terrain
 
-`projects/terrain` is the active directly sampled terrain runtime. The default
-remains the v1 control path. Opt-in mountain quality prototypes add adaptive
-tessellation and source v2 detail. Source v2.1 preserves v2 above a 64 m
+`projects/terrain` is pivoting from a directly sampled runtime to a cached,
+fixed-focus far-backdrop product. The control clipmap and opt-in adaptive
+tessellation path remain explicit review controls. Source v2.1 preserves v2 above a 64 m
 footprint while moving sub-110 m detail into bounded additive relief. The
 opt-in `layered` surface-detail mode adds generated albedo-height and
 normal-roughness-cavity material layers for the supported backdrop and
@@ -25,13 +25,15 @@ clearance comes from the CPU query contract.
 The `backdrop` preset is a 360-degree orbit stage around a local mid-air
 foreground focus. Detached mode reserves the inner 300 m for a consuming scene,
 maps a deterministically selected source location under that local stage, and
-solves a vertical offset that keeps lower-frame terrain at least 1.5 km away.
+will solve a vertical offset that keeps lower-frame terrain at least 3.2 km away.
 `backdrop-stage` adds a neutral foreground proxy for interactive validation
 without changing the clean backdrop product view. Grounded mode keeps terrain
 continuous as a placement diagnostic. `midground` retains the older directional
 surface stress view.
 
-This project does not own regional hydrology or a baked terrain product. The
+This project does not own regional hydrology. The active pivot adds a
+project-local baked backdrop product; it does not promote a general terrain
+cache or streaming interface into engine foundation. The
 previous patch, exporter, routing, and analytical landscape code lives in
 `projects/terrain_hydrology_lab`.
 

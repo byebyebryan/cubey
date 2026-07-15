@@ -129,6 +129,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain quality tile field](terrain-quality-tile-field.md): correction of
   fixed-factor and mixed-LOD quality geometry with a finite world-aligned,
   adaptively tessellated far-field tile contract.
+- [Terrain cached backdrop pivot](terrain-cached-backdrop-pivot.md): current
+  decision to replace per-frame procedural tessellation with a fixed-focus,
+  setup-time cached mesh and a terrain-only sub-millisecond GPU budget.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.

@@ -2,9 +2,9 @@
 
 Date: 2026-06-21
 
-Status: directional context. The reference lane is now frozen and the concrete
-first implementation contract is defined in
-[`terrain-v1.md`](terrain-v1.md).
+Status: directional context. The reference lane is frozen and the active
+fixed-focus cached runtime contract is defined in [`terrain-v1.md`](terrain-v1.md)
+and [`terrain-cached-backdrop-pivot.md`](../notes/terrain-cached-backdrop-pivot.md).
 
 This document captures the terrain reboot direction. It promotes the useful
 lessons from `terrain_lab_legacy`, `procedural_terrain_legacy`, the terrain

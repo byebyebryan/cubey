@@ -1,28 +1,30 @@
 # Terrain V1 Runtime
 
-Date: 2026-07-12
+Date: 2026-07-15
 
-Status: implemented v1 source plus opt-in quality and layered-midground
-rendering checkpoints. The previous CPU patch and analytical landscape work is
-preserved in `projects/terrain_hydrology_lab`; it is not the terrain v1 product.
+Status: source v2.1 is frozen while terrain v1 pivots from direct runtime
+sampling to the fixed-focus cached backdrop defined in
+[`terrain-cached-backdrop-pivot.md`](../notes/terrain-cached-backdrop-pivot.md).
+The control clipmap and quality tessellation paths remain historical review
+controls, not the target product.
 
 ## Goal
 
-Terrain v1 is a deterministic, directly sampleable planar heightfield runtime.
-It should provide a credible procedural landscape for rendering-engine stress,
-surface traversal, and future scene backdrops without requiring an offline
-generation pass.
+Terrain v1 is a deterministic planar heightfield source plus a cached,
+fixed-focus backdrop product. It should provide credible far terrain for
+rendering-engine stress and scene composition without paying procedural source
+or process cost every frame.
 
 The first product is deliberately narrower than a terrain simulator:
 
 - one coherent source model with `mountain`, `upland`, and `plains` presets;
-- matching GPU rendering and CPU point queries;
+- matching source evidence and CPU point queries;
 - optional bounded local weathering;
-- a camera-centered LOD renderer and a traversable standalone scene;
+- a setup-time baked field and cullable static backdrop mesh;
 - neutral diagnostics and multi-seed visual review.
 
-Hydrology, rivers, lakes, coastlines, biomes, vegetation, planet mapping, and
-bulk field baking are separate later products or experiments.
+Hydrology, rivers, lakes, coastlines, biomes, vegetation, planet mapping,
+translation, and streaming are separate later products or experiments.
 
 ## Source Contract
 
