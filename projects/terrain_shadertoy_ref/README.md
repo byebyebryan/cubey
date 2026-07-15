@@ -20,17 +20,21 @@ The main local options are:
 ```text
 --reference-render raymarch|mesh
 --reference-time SECONDS
+--reference-yaw-offset-deg DEGREES
 --reference-mesh-cells 256|512|1024
 --reference-mesh-surface terrain|map
---reference-normal geometry|detailed
+--reference-normal geometry|atlas|detailed
 --reference-shading original|clay
 --reference-diagnostic final|height|slope
 ```
 
 `terrain` is the five-octave base height. `map` includes the source's procedural
-tree displacement. Detailed normals evaluate the additional six source octaves;
-geometry normals expose mesh topology directly. Height and slope diagnostics
-render the baked field from above and require the mesh path.
+tree displacement. Atlas normals finite-difference the baked detailed-height
+channel; detailed normals evaluate the additional six source octaves directly;
+geometry normals expose mesh topology. Nonzero yaw offsets rotate the probed
+source camera basis around world up while retaining its position, pitch,
+elevation, and roll. They require final mesh rendering. Height and slope
+diagnostics render the baked field from above and require the mesh path.
 
 Generate the fixed comparison pack with:
 

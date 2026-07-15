@@ -1,6 +1,8 @@
 #include "terrain_shadertoy_ref_config.h"
+#include "terrain_shadertoy_ref_camera.h"
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <stdexcept>
 #include <string_view>
@@ -20,10 +22,19 @@ namespace {
 [[nodiscard]] float parse_time(std::string_view value) {
     std::size_t parsed = 0;
     const float result = std::stof(std::string(value), &parsed);
-    if (parsed != value.size() || result < 0.0F) {
+    if (parsed != value.size() || !std::isfinite(result) || result < 0.0F) {
         throw std::runtime_error("--reference-time requires a non-negative number");
     }
     return result;
+}
+
+[[nodiscard]] float parse_yaw(std::string_view value) {
+    std::size_t parsed = 0;
+    const float result = std::stof(std::string(value), &parsed);
+    if (parsed != value.size() || !std::isfinite(result)) {
+        throw std::runtime_error("--reference-yaw-offset-deg requires a finite number");
+    }
+    return normalize_reference_yaw_degrees(result);
 }
 
 [[nodiscard]] std::uint32_t parse_mesh_cells(std::string_view value) {
@@ -63,6 +74,9 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
         } else if (option == "--reference-time") {
             parsed.reference_config.reference_time_seconds =
                 parse_time(require_value(argc, argv, index, option));
+        } else if (option == "--reference-yaw-offset-deg") {
+            parsed.reference_config.yaw_offset_degrees =
+                parse_yaw(require_value(argc, argv, index, option));
         } else if (option == "--reference-mesh-cells") {
             parsed.reference_config.mesh_cells =
                 parse_mesh_cells(require_value(argc, argv, index, option));
@@ -79,10 +93,13 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
             const std::string_view value = require_value(argc, argv, index, option);
             if (value == "geometry") {
                 parsed.reference_config.normal = ReferenceNormal::Geometry;
+            } else if (value == "atlas") {
+                parsed.reference_config.normal = ReferenceNormal::Atlas;
             } else if (value == "detailed") {
                 parsed.reference_config.normal = ReferenceNormal::Detailed;
             } else {
-                throw std::runtime_error("--reference-normal must be geometry or detailed");
+                throw std::runtime_error(
+                    "--reference-normal must be geometry, atlas, or detailed");
             }
         } else if (option == "--reference-shading") {
             const std::string_view value = require_value(argc, argv, index, option);
@@ -107,6 +124,14 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
         } else {
             parsed.forwarded_arguments.emplace_back(argv[index]);
         }
+    }
+    if (parsed.reference_config.yaw_offset_degrees != 0.0F &&
+        parsed.reference_config.render != ReferenceRender::Mesh) {
+        throw std::runtime_error("reference yaw overrides require --reference-render mesh");
+    }
+    if (parsed.reference_config.yaw_offset_degrees != 0.0F &&
+        parsed.reference_config.diagnostic != ReferenceDiagnostic::Final) {
+        throw std::runtime_error("reference yaw overrides require final rendering");
     }
     return parsed;
 }

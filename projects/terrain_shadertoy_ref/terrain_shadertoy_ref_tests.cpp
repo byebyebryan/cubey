@@ -1,5 +1,7 @@
 #include "terrain_shadertoy_ref_config.h"
+#include "terrain_shadertoy_ref_camera.h"
 
+#include <cmath>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
@@ -14,6 +16,10 @@ void require(bool condition, std::string_view message) {
     if (!condition) {
         throw std::runtime_error(std::string(message));
     }
+}
+
+void require_near(float actual, float expected, float tolerance, std::string_view message) {
+    require(std::abs(actual - expected) <= tolerance, message);
 }
 
 template <typename Callback> void require_throws(Callback&& callback, std::string_view message) {
@@ -44,6 +50,8 @@ void test_defaults_and_forwarding() {
             "reference renderer should default to raymarch");
     require(parsed.reference_config.reference_time_seconds == 20.0F,
             "reference time should default to 20 seconds");
+    require(parsed.reference_config.yaw_offset_degrees == 0.0F,
+            "reference yaw should default to the source view");
     require(parsed.reference_config.mesh_cells == 1024U,
             "reference grid should default to 1024 cells");
     require(parsed.reference_config.mesh_surface == ReferenceMeshSurface::Map,
@@ -67,32 +75,36 @@ void test_full_reference_configuration() {
         "mesh",
         "--reference-time",
         "40.5",
+        "--reference-yaw-offset-deg",
+        "450",
         "--reference-mesh-cells",
         "512",
         "--reference-mesh-surface",
         "terrain",
         "--reference-normal",
-        "geometry",
+        "atlas",
         "--reference-shading",
         "clay",
         "--reference-diagnostic",
-        "slope",
+        "final",
         "--headless",
     });
     require(parsed.reference_config.render == ReferenceRender::Mesh,
             "reference renderer should parse mesh");
     require(parsed.reference_config.reference_time_seconds == 40.5F,
             "reference time should parse decimals");
+    require(parsed.reference_config.yaw_offset_degrees == 90.0F,
+            "reference yaw should normalize full rotations");
     require(parsed.reference_config.mesh_cells == 512U,
             "reference grid should parse supported sizes");
     require(parsed.reference_config.mesh_surface == ReferenceMeshSurface::Terrain,
             "reference surface should parse terrain");
-    require(parsed.reference_config.normal == ReferenceNormal::Geometry,
-            "reference normal should parse geometry");
+    require(parsed.reference_config.normal == ReferenceNormal::Atlas,
+            "reference normal should parse atlas");
     require(parsed.reference_config.shading == ReferenceShading::Clay,
             "reference shading should parse clay");
-    require(parsed.reference_config.diagnostic == ReferenceDiagnostic::Slope,
-            "reference diagnostic should parse slope");
+    require(parsed.reference_config.diagnostic == ReferenceDiagnostic::Final,
+            "reference diagnostic should parse final");
     require(parsed.forwarded_arguments ==
                 std::vector<std::string>{"terrain_shadertoy_ref", "--headless"},
             "reference arguments should be removed before host parsing");
@@ -113,6 +125,52 @@ void test_invalid_reference_options() {
     require_throws(
         [] { static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-diagnostic"})); },
         "missing diagnostic value should fail");
+    require_throws(
+        [] {
+            static_cast<void>(parse(
+                {"terrain_shadertoy_ref", "--reference-yaw-offset-deg", "nan"}));
+        },
+        "non-finite yaw should fail");
+    require_throws(
+        [] {
+            static_cast<void>(parse(
+                {"terrain_shadertoy_ref", "--reference-yaw-offset-deg", "90"}));
+        },
+        "raymarch yaw override should fail");
+    require_throws(
+        [] {
+            static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-render", "mesh",
+                                     "--reference-yaw-offset-deg", "90",
+                                     "--reference-diagnostic", "height"}));
+        },
+        "diagnostic yaw override should fail");
+}
+
+void test_reference_camera_yaw() {
+    using namespace cubey::projects::terrain_shadertoy_ref;
+    const ReferenceCamera camera{
+        .position = {1.0F, 2.0F, 3.0F},
+        .right = {1.0F, 0.0F, 0.0F},
+        .up = {0.0F, 1.0F, 0.0F},
+        .forward = {0.0F, 0.0F, -1.0F},
+    };
+    const ReferenceCamera identity = rotate_reference_camera_yaw(camera, 360.0F);
+    require(identity.position == camera.position && identity.right == camera.right &&
+                identity.up == camera.up && identity.forward == camera.forward,
+            "full yaw rotation should retain the exact source camera");
+
+    const ReferenceCamera rotated = rotate_reference_camera_yaw(camera, 90.0F);
+    require(rotated.position == camera.position, "yaw should not translate the source camera");
+    require_near(rotated.forward.x, -1.0F, 0.00001F,
+                 "positive yaw should rotate forward around world up");
+    require_near(rotated.forward.y, 0.0F, 0.00001F,
+                 "yaw should preserve forward elevation");
+    require_near(rotated.forward.z, 0.0F, 0.00001F,
+                 "quarter yaw should rotate forward off source z");
+    require_near(glm::length(rotated.right), 1.0F, 0.00001F,
+                 "yaw should preserve right basis length");
+    require_near(glm::dot(rotated.right, rotated.up), 0.0F, 0.00001F,
+                 "yaw should preserve an orthogonal camera basis");
 }
 
 } // namespace
@@ -122,6 +180,7 @@ int main() {
         test_defaults_and_forwarding();
         test_full_reference_configuration();
         test_invalid_reference_options();
+        test_reference_camera_yaw();
         std::cout << "terrain_shadertoy_ref tests passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {

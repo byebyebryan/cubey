@@ -23,6 +23,20 @@ vec3 detailedNormal(float distance_to_camera) {
     return normalize(cross(x_sample, z_sample));
 }
 
+vec3 atlasNormal(float distance_to_camera) {
+    const float p = 0.02 + 0.00005 * distance_to_camera * distance_to_camera;
+    const vec2 uv_step = vec2(p / reference_frame.domain_center_extent_surface.z);
+    const float center_height = texture(reference_height_atlas, in_atlas_uv).b;
+    const float x_height = texture(reference_height_atlas,
+                                   in_atlas_uv + vec2(uv_step.x, 0.0)).b;
+    const float z_height = texture(reference_height_atlas,
+                                   in_atlas_uv - vec2(0.0, uv_step.y)).b;
+    const vec3 center = vec3(0.0, center_height, 0.0);
+    const vec3 x_sample = center - vec3(p, x_height, 0.0);
+    const vec3 z_sample = center - vec3(0.0, z_height, -p);
+    return normalize(cross(x_sample, z_sample));
+}
+
 void main() {
     cameraPos = reference_frame.camera_position_time.xyz;
     if (reference_frame.domain_center_extent_surface.w > 0.5) {
@@ -32,9 +46,10 @@ void main() {
         treeCol = 0.0;
     }
     const float distance_to_camera = length(in_world_position - cameraPos);
-    const vec3 normal = reference_frame.resolution_options.z > 0.5
+    const int normal_mode = int(round(reference_frame.resolution_options.z));
+    const vec3 normal = normal_mode == 2
         ? detailedNormal(distance_to_camera)
-        : geometryNormal();
+        : normal_mode == 1 ? atlasNormal(distance_to_camera) : geometryNormal();
 
     vec3 color;
     if (reference_frame.resolution_options.w > 0.5) {

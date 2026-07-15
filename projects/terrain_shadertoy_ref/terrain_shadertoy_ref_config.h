@@ -18,6 +18,7 @@ enum class ReferenceMeshSurface : std::uint8_t {
 
 enum class ReferenceNormal : std::uint8_t {
     Geometry,
+    Atlas,
     Detailed,
 };
 
@@ -39,6 +40,7 @@ struct TerrainShadertoyRefConfig {
     ReferenceShading shading = ReferenceShading::Original;
     ReferenceDiagnostic diagnostic = ReferenceDiagnostic::Final;
     float reference_time_seconds = 20.0F;
+    float yaw_offset_degrees = 0.0F;
     std::uint32_t mesh_cells = 1024U;
 };
 

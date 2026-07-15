@@ -21,6 +21,7 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         terrain_shadertoy_ref_app.cpp
+        terrain_shadertoy_ref_camera.cpp
         terrain_shadertoy_ref_config.cpp
         terrain_shadertoy_ref_mesh.cpp
     SHADERS
@@ -43,6 +44,7 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(
         cubey_project_terrain_shadertoy_ref_tests
+        terrain_shadertoy_ref_camera.cpp
         terrain_shadertoy_ref_config.cpp
         terrain_shadertoy_ref_tests.cpp
     )
@@ -106,6 +108,10 @@ if (BUILD_TESTING)
         20
         --reference-mesh-cells
         256
+        --reference-yaw-offset-deg
+        90
+        --reference-normal
+        atlas
     )
     cubey_add_png_stats_test(
         terrain_shadertoy_ref_mesh_writes_png

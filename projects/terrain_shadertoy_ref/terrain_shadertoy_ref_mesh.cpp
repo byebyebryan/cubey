@@ -1,4 +1,5 @@
 #include "terrain_shadertoy_ref_mesh.h"
+#include "terrain_shadertoy_ref_camera.h"
 
 #include <cubey/core/math.h>
 #include <cubey/render/material.h>
@@ -54,13 +55,6 @@ struct BakePushConstants {
     cubey::math::Vec4 resolution_time{};
     cubey::math::Vec4 mouse{};
     cubey::math::Vec4 domain_center_extent{};
-};
-
-struct ReferenceCamera {
-    cubey::math::Vec3 position{};
-    cubey::math::Vec3 right{};
-    cubey::math::Vec3 up{};
-    cubey::math::Vec3 forward{};
 };
 
 struct ReferenceFrameUniforms {
@@ -253,6 +247,18 @@ source_fullscreen_pass_info(const char* label, std::uint32_t push_constant_size)
            glm::inverse(camera_world);
 }
 
+[[nodiscard]] float reference_normal_mode(ReferenceNormal normal) {
+    switch (normal) {
+    case ReferenceNormal::Geometry:
+        return 0.0F;
+    case ReferenceNormal::Atlas:
+        return 1.0F;
+    case ReferenceNormal::Detailed:
+        return 2.0F;
+    }
+    throw std::runtime_error("unknown reference normal mode");
+}
+
 } // namespace
 
 class MountainsMeshRenderer::Impl {
@@ -263,7 +269,8 @@ class MountainsMeshRenderer::Impl {
                                  const cubey::render::Texture2D& channel_texture) {
         config_ = config;
         channel_texture_ = &channel_texture;
-        camera_ = probe_camera(device, gpu, reference_extent);
+        camera_ = rotate_reference_camera_yaw(
+            probe_camera(device, gpu, reference_extent), config_.yaw_offset_degrees);
         height_atlas_.emplace(device,
                               cubey::render::Texture2DConfig{
                                   .extent = {kHeightAtlasExtent, kHeightAtlasExtent},
@@ -613,7 +620,7 @@ class MountainsMeshRenderer::Impl {
                 {
                     static_cast<float>(extent.width),
                     static_cast<float>(extent.height),
-                    config_.normal == ReferenceNormal::Detailed ? 1.0F : 0.0F,
+                    reference_normal_mode(config_.normal),
                     config_.shading == ReferenceShading::Original ? 1.0F : 0.0F,
                 },
             .diagnostic_options =
