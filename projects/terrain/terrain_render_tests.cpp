@@ -361,6 +361,12 @@ void test_backdrop_presentation_and_coverage_debug_parse() {
     require(cubey::projects::terrain::terrain_presentation_mode_name(config.presentation) ==
                 "backdrop",
             "terrain presentation should retain its canonical name");
+    require(cubey::projects::terrain::terrain_debug_view_from_name("ownership") ==
+                    cubey::projects::terrain::TerrainDebugView::StageOwnership &&
+                cubey::projects::terrain::terrain_debug_view_name(
+                    cubey::projects::terrain::TerrainDebugView::StageOwnership) ==
+                    "stage-ownership",
+            "terrain runtime should expose the detached-stage ownership diagnostic");
 }
 
 void test_backdrop_planner_is_deterministic_and_clear() {

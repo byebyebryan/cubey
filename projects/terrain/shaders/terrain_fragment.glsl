@@ -132,7 +132,11 @@ vec2 terrain_fragment_source_gradient_xz(float pixel_footprint_m) {
 #endif
 
 void main() {
-    if (pc.stage_options.w > 0.5 && length(frag_world_position.xz) < pc.stage_options.z) {
+    int debug_view = int(round(pc.render_options.x));
+    float stage_distance_m = length(frag_world_position.xz);
+    bool detached_inner_zone =
+        pc.stage_options.w > 0.5 && stage_distance_m < pc.stage_options.z;
+    if (detached_inner_zone && debug_view != 27) {
         discard;
     }
     vec2 source_xz = terrain_fragment_source_xz();
@@ -164,6 +168,13 @@ void main() {
     if (terrain_covered_by_finer_lod(frag_world_position.xz)) {
         discard;
     }
+    if (debug_view == 27) {
+        vec3 color = detached_inner_zone ? vec3(0.92, 0.28, 0.12) : vec3(0.10, 0.65, 0.78);
+        float boundary = 1.0 - smoothstep(
+            0.0, 5.0, abs(stage_distance_m - pc.stage_options.z));
+        out_color = vec4(mix(color, vec3(1.0, 0.84, 0.18), boundary), 1.0);
+        return;
+    }
     float normalized_height = clamp(
         (frag_height_m - terrain_uniforms.source.elevation.x) /
             max(terrain_uniforms.source.elevation.y, 1.0),
@@ -171,8 +182,6 @@ void main() {
     float slope = 1.0 - clamp(classification_normal.y, 0.0, 1.0);
     float ambient_visibility = terrain_lighting_ambient_visibility(
         classification_normal, frag_landform_concavity_m);
-    int debug_view = int(round(pc.render_options.x));
-
     if (debug_view == 1) {
         vec3 low = vec3(0.08, 0.18, 0.26);
         vec3 mid = vec3(0.34, 0.48, 0.30);

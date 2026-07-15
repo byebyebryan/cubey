@@ -51,6 +51,7 @@ enum class TerrainDebugView : std::uint8_t {
     SourceValley,
     SourceRidge,
     SourceMeso,
+    StageOwnership,
 };
 
 enum class TerrainPresentationMode : std::uint8_t {

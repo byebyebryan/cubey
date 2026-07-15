@@ -169,6 +169,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) {
         return "source-ridge";
     case TerrainDebugView::SourceMeso:
         return "source-meso";
+    case TerrainDebugView::StageOwnership:
+        return "stage-ownership";
     }
     throw std::runtime_error("unknown terrain debug view");
 }
@@ -254,6 +256,9 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "source-meso" || name == "meso-delta") {
         return TerrainDebugView::SourceMeso;
+    }
+    if (name == "stage-ownership" || name == "ownership") {
+        return TerrainDebugView::StageOwnership;
     }
     throw std::runtime_error("unknown terrain debug view: " + std::string(name));
 }
