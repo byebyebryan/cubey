@@ -19,12 +19,14 @@ terrain-local heightfield shadows, linear-space procedural nonmetal materials,
 explicit single-owner LOD transitions, diagnostic views, and a surface
 controller whose clearance comes from the CPU query contract.
 
-The `backdrop` preset is a 360-degree orbit stage around a local foreground
-focus. Detached mode reserves the inner 300 m for a consuming scene and maps a
-deterministically selected source location under that local stage without
-modifying the terrain field. Grounded mode keeps terrain continuous as a
-placement diagnostic. `midground` retains the older directional surface stress
-view.
+The `backdrop` preset is a 360-degree orbit stage around a local mid-air
+foreground focus. Detached mode reserves the inner 300 m for a consuming scene,
+maps a deterministically selected source location under that local stage, and
+solves a vertical offset that keeps lower-frame terrain at least 1.5 km away.
+`backdrop-stage` adds a neutral foreground proxy for interactive validation
+without changing the clean backdrop product view. Grounded mode keeps terrain
+continuous as a placement diagnostic. `midground` retains the older directional
+surface stress view.
 
 This project does not own regional hydrology or a baked terrain product. The
 previous patch, exporter, routing, and analytical landscape code lives in
@@ -83,13 +85,14 @@ distance controls, a 1920 x 1080 showcase, and a moving surface diagnostic under
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
-`ground`, `backdrop`, and `midground`. The deterministic source-aware `backdrop`
-planner evaluates 24 azimuth sectors and supports unrestricted yaw within a
-50-150 m orbit. Detached elevation is limited to 4-12 degrees and uses a 240 m
-stage clearance to keep the 300 m ownership edge out of frame. Grounded
-elevation is limited to 12-32 degrees. Initial azimuth, radius, and elevation
-are optional controls. `midground` remains the directional 1.6 km detail stress
-tier. Presentation modes are `standard` (default) and `backdrop`.
+`ground`, `backdrop`, `backdrop-stage`, and `midground`. The deterministic
+source-aware backdrop planner evaluates 24 azimuth sectors and supports
+unrestricted yaw within a 50-150 m orbit. Detached elevation is limited to
+4-12 degrees and defaults to a 1.5 km lower-frame terrain exclusion. Grounded
+elevation is limited to 12-32 degrees. Initial azimuth, radius, elevation, and
+validation distance are optional controls. `midground` remains the directional
+1.6 km detail stress tier. Presentation modes are `standard` (default) and
+`backdrop`.
 
 Source versions are `v1` (default), mountain-only `v2` and `v2.1`, and the
 retained experimental `v3` hierarchy. V2.1 and v3 use dedicated shader bundles
