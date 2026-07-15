@@ -546,6 +546,7 @@ if (BUILD_TESTING)
         0.001
         0.001
     )
+    set_tests_properties(terrain_backdrop_headless_writes_png PROPERTIES TIMEOUT 60)
 
     set(CUBEY_TERRAIN_LAYERED_HEADLESS_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/terrain-layered-headless.png"
@@ -614,6 +615,7 @@ if (BUILD_TESTING)
         0.001
         0.001
     )
+    set_tests_properties(terrain_vegetation_coverage_headless_writes_png PROPERTIES TIMEOUT 60)
 
     foreach(diagnostic IN ITEMS normal classification-normal material-weights ambient-visibility)
         string(REPLACE "-" "_" diagnostic_target "${diagnostic}")
