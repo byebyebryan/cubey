@@ -206,36 +206,14 @@ void hash_float(std::uint64_t& hash, float value) {
         for (const std::uint32_t index : sector.indices) {
             hash_u32(hash, index);
         }
+        for (const std::uint32_t index : sector.render_indices) {
+            hash_u32(hash, index);
+        }
     }
     return hash;
 }
 
 } // namespace
-
-std::string_view terrain_backdrop_mesh_density_name(TerrainBackdropMeshDensity density) noexcept {
-    switch (density) {
-    case TerrainBackdropMeshDensity::Low:
-        return "low";
-    case TerrainBackdropMeshDensity::Medium:
-        return "medium";
-    case TerrainBackdropMeshDensity::High:
-        return "high";
-    }
-    return "high";
-}
-
-TerrainBackdropMeshDensity terrain_backdrop_mesh_density_from_name(std::string_view name) {
-    if (name == "low") {
-        return TerrainBackdropMeshDensity::Low;
-    }
-    if (name == "medium") {
-        return TerrainBackdropMeshDensity::Medium;
-    }
-    if (name.empty() || name == "high") {
-        return TerrainBackdropMeshDensity::High;
-    }
-    throw std::runtime_error("unknown terrain backdrop mesh density: " + std::string(name));
-}
 
 TerrainBackdropDensityProfile
 terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept {
@@ -253,11 +231,11 @@ terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept {
 cubey::render::MeshConfig TerrainBackdropSectorMesh::mesh_config() const {
     return cubey::render::indexed_mesh_config(
         std::span<const cubey::render::VertexPositionColorNormal>(vertices),
-        std::span<const std::uint32_t>(indices));
+        std::span<const std::uint32_t>(render_indices));
 }
 
 std::uint32_t TerrainBackdropSectorMesh::triangle_count() const noexcept {
-    return static_cast<std::uint32_t>(indices.size() / 3U);
+    return static_cast<std::uint32_t>(render_indices.size() / 3U);
 }
 
 TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProductRequest& request) {
@@ -311,6 +289,11 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         density.angular_intervals / density.sector_count;
     const std::uint32_t visible_radial_begin = density.hidden_radial_intervals;
     const std::uint32_t visible_radial_rows = density.visible_radial_intervals + 1U;
+    const std::uint32_t angular_render_stride =
+        request.density == TerrainBackdropMeshDensity::High
+            ? 3U
+            : (request.density == TerrainBackdropMeshDensity::Medium ? 2U : 1U);
+    const std::uint32_t radial_render_stride = angular_render_stride;
 
     float minimum_height = std::numeric_limits<float>::infinity();
     float maximum_height = -std::numeric_limits<float>::infinity();
@@ -370,6 +353,41 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                                       {inner0, inner1, outer0, inner1, outer1, outer0});
             }
         }
+        std::vector<std::uint32_t> render_angular_vertices;
+        for (std::uint32_t angular = 0U; angular < angular_intervals_per_sector;
+             angular += angular_render_stride) {
+            render_angular_vertices.push_back(angular);
+        }
+        if (render_angular_vertices.back() != angular_intervals_per_sector) {
+            render_angular_vertices.push_back(angular_intervals_per_sector);
+        }
+        std::vector<std::uint32_t> render_radial_vertices;
+        for (std::uint32_t radial = 0U; radial < density.visible_radial_intervals;
+             radial += radial_render_stride) {
+            render_radial_vertices.push_back(radial);
+        }
+        if (render_radial_vertices.back() != density.visible_radial_intervals) {
+            render_radial_vertices.push_back(density.visible_radial_intervals);
+        }
+        sector.render_indices.reserve((render_angular_vertices.size() - 1U) *
+                                      (render_radial_vertices.size() - 1U) * 6U);
+        for (std::size_t radial = 0U; radial + 1U < render_radial_vertices.size(); ++radial) {
+            for (std::size_t angular = 0U; angular + 1U < render_angular_vertices.size();
+                 ++angular) {
+                const std::uint32_t inner0 = render_radial_vertices[radial] * angular_vertex_count +
+                                             render_angular_vertices[angular];
+                const std::uint32_t inner1 = render_radial_vertices[radial] * angular_vertex_count +
+                                             render_angular_vertices[angular + 1U];
+                const std::uint32_t outer0 =
+                    render_radial_vertices[radial + 1U] * angular_vertex_count +
+                    render_angular_vertices[angular];
+                const std::uint32_t outer1 =
+                    render_radial_vertices[radial + 1U] * angular_vertex_count +
+                    render_angular_vertices[angular + 1U];
+                sector.render_indices.insert(sector.render_indices.end(),
+                                             {inner0, inner1, outer0, inner1, outer1, outer0});
+            }
+        }
         sector.bounds = finalize_bounds(bounds);
     }
 
@@ -410,6 +428,9 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         .maximum_height_m = maximum_height,
         .maximum_sector_boundary_delta_m = maximum_boundary_delta,
     };
+    for (const TerrainBackdropSectorMesh& sector : product.sectors) {
+        product.diagnostics.render_triangle_count += sector.triangle_count();
+    }
     product.diagnostics.content_hash = content_hash(product);
     return product;
 }

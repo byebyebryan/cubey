@@ -68,6 +68,8 @@ void test_product_is_deterministic_connected_and_outside_the_stage() {
                 static_cast<std::uint64_t>(density.angular_intervals) *
                     density.visible_radial_intervals * 2U,
             "cached backdrop should publish its exact triangle budget");
+    require(first.diagnostics.render_triangle_count == first.diagnostics.visible_triangle_count,
+            "low backdrop product should retain every generated triangle for rendering");
     for (const TerrainBackdropSectorMesh& sector : first.sectors) {
         for (const auto& vertex : sector.vertices) {
             const float radius = std::sqrt(vertex.position[0] * vertex.position[0] +

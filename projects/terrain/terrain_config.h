@@ -1,5 +1,6 @@
 #pragma once
 
+#include "terrain_backdrop_density.h"
 #include "terrain_backdrop_stage.h"
 #include "terrain_source.h"
 
@@ -62,6 +63,7 @@ enum class TerrainPresentationMode : std::uint8_t {
 enum class TerrainRenderPath : std::uint8_t {
     Control,
     Quality,
+    Backdrop,
 };
 
 enum class TerrainSurfaceDetail : std::uint8_t {
@@ -80,6 +82,7 @@ struct TerrainRuntimeConfig {
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainPresentationMode presentation = TerrainPresentationMode::Standard;
     TerrainRenderPath render_path = TerrainRenderPath::Control;
+    TerrainBackdropMeshDensity backdrop_mesh_density = TerrainBackdropMeshDensity::High;
     TerrainSurfaceDetail surface_detail = TerrainSurfaceDetail::Tile;
     float target_edge_px = 4.0F;
     float near_cell_size_m = 2.0F;

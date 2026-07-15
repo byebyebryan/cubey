@@ -100,9 +100,8 @@ float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept {
     if (preset == TerrainCameraPreset::Ground) {
         return 12.0F;
     }
-    return terrain_camera_is_backdrop(preset) || preset == TerrainCameraPreset::Midground
-               ? 80.0F
-               : 220.0F;
+    return terrain_camera_is_backdrop(preset) || preset == TerrainCameraPreset::Midground ? 80.0F
+                                                                                          : 220.0F;
 }
 
 float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept {
@@ -289,6 +288,8 @@ std::string_view terrain_render_path_name(TerrainRenderPath path) {
         return "control";
     case TerrainRenderPath::Quality:
         return "quality";
+    case TerrainRenderPath::Backdrop:
+        return "backdrop";
     }
     throw std::runtime_error("unknown terrain render path");
 }
@@ -299,6 +300,9 @@ TerrainRenderPath terrain_render_path_from_name(std::string_view name) {
     }
     if (name == "quality") {
         return TerrainRenderPath::Quality;
+    }
+    if (name == "backdrop") {
+        return TerrainRenderPath::Backdrop;
     }
     throw std::runtime_error("unknown terrain render path: " + std::string(name));
 }
@@ -340,6 +344,10 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
         config.render_path != TerrainRenderPath::Quality) {
         throw std::runtime_error("layered terrain surface detail requires quality rendering");
     }
+    if (config.render_path == TerrainRenderPath::Backdrop &&
+        !terrain_camera_is_backdrop(config.camera)) {
+        throw std::runtime_error("cached terrain backdrop rendering requires a backdrop camera");
+    }
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
     const float minimum_elevation_radians =
         (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 0.0F : 12.0F) *
@@ -376,7 +384,6 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     TerrainRuntimeConfig result{};
     result.source.seed = config.terrain.seed_set ? config.terrain.seed : kTerrainDefaultSeed;
     result.source.preset = terrain_preset_from_name(config.terrain.preset);
-    result.source.version = terrain_source_version_from_name(config.terrain.source_version);
     result.source.weathering = config.terrain.weathering.empty()
                                    ? TerrainWeatheringMode::Local
                                    : terrain_weathering_mode_from_name(config.terrain.weathering);
@@ -385,6 +392,10 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
             ? config.terrain.weathering_strength
             : 1.0F;
     result.camera = terrain_camera_preset_from_name(config.terrain.camera_preset);
+    result.source.version =
+        config.terrain.source_version.empty() && terrain_camera_is_backdrop(result.camera)
+            ? TerrainSourceVersion::V2_1
+            : terrain_source_version_from_name(config.terrain.source_version);
     if (config.terrain.backdrop_mode.empty() || config.terrain.backdrop_mode == "detached") {
         result.backdrop_mode = TerrainBackdropStageMode::Detached;
     } else if (config.terrain.backdrop_mode == "grounded") {
@@ -411,7 +422,12 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     }
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     result.presentation = terrain_presentation_mode_from_name(config.terrain.presentation);
-    result.render_path = terrain_render_path_from_name(config.terrain.render_path);
+    result.render_path =
+        config.terrain.render_path.empty() && terrain_camera_is_backdrop(result.camera)
+            ? TerrainRenderPath::Backdrop
+            : terrain_render_path_from_name(config.terrain.render_path);
+    result.backdrop_mesh_density =
+        terrain_backdrop_mesh_density_from_name(config.terrain.backdrop_mesh_density);
     result.surface_detail = terrain_surface_detail_from_name(config.terrain.surface_detail);
     result.target_edge_px = cubey::run_config_float_is_set(config.terrain.target_edge_px)
                                 ? config.terrain.target_edge_px

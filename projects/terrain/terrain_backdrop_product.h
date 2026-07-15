@@ -1,5 +1,6 @@
 #pragma once
 
+#include "terrain_backdrop_density.h"
 #include "terrain_source.h"
 
 #include <cubey/render/mesh.h>
@@ -11,12 +12,6 @@
 
 namespace cubey::projects::terrain {
 
-enum class TerrainBackdropMeshDensity : std::uint8_t {
-    Low,
-    Medium,
-    High,
-};
-
 struct TerrainBackdropDensityProfile {
     std::uint32_t angular_intervals = 0U;
     std::uint32_t hidden_radial_intervals = 0U;
@@ -24,10 +19,6 @@ struct TerrainBackdropDensityProfile {
     std::uint32_t sector_count = 0U;
 };
 
-[[nodiscard]] std::string_view
-terrain_backdrop_mesh_density_name(TerrainBackdropMeshDensity density) noexcept;
-[[nodiscard]] TerrainBackdropMeshDensity
-terrain_backdrop_mesh_density_from_name(std::string_view name);
 [[nodiscard]] TerrainBackdropDensityProfile
 terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept;
 
@@ -52,6 +43,7 @@ struct TerrainBackdropSectorBounds {
 struct TerrainBackdropSectorMesh {
     std::vector<cubey::render::VertexPositionColorNormal> vertices{};
     std::vector<std::uint32_t> indices{};
+    std::vector<std::uint32_t> render_indices{};
     TerrainBackdropSectorBounds bounds{};
     float begin_azimuth_radians = 0.0F;
     float end_azimuth_radians = 0.0F;
@@ -66,6 +58,7 @@ struct TerrainBackdropProductDiagnostics {
     std::uint64_t visible_vertex_count = 0U;
     std::uint64_t visible_index_count = 0U;
     std::uint64_t visible_triangle_count = 0U;
+    std::uint64_t render_triangle_count = 0U;
     float minimum_height_m = 0.0F;
     float maximum_height_m = 0.0F;
     float maximum_sector_boundary_delta_m = 0.0F;

@@ -440,6 +440,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.preset",
         "terrain.source_version",
         "terrain.render_path",
+        "terrain.backdrop_mesh_density",
         "terrain.surface_detail",
         "terrain.target_edge_px",
         "terrain.weathering",

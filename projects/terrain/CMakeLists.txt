@@ -1,4 +1,5 @@
 add_library(cubey_project_terrain_runtime STATIC
+    terrain_backdrop_density.cpp
     terrain_config.cpp
     terrain_source.cpp
     terrain_source_gpu.cpp
@@ -104,6 +105,8 @@ cubey_add_app_target(
         CUBEY_TERRAIN_SOURCE_VARIANT=0
     SHADERS
         shaders/terrain.vert
+        shaders/terrain_backdrop.vert
+        shaders/terrain_backdrop.frag
         shaders/terrain_quality.vert
         shaders/terrain_quality.tesc
         shaders/terrain_quality.tese

@@ -105,11 +105,12 @@ constexpr std::array<std::string_view, 4> kWaterTransferModes{"apic", "pic-flip"
 constexpr std::array<std::string_view, 4> kWater3DP2GModes{"active", "active-faces", "tiled",
                                                            "tiled-faces"};
 constexpr std::array<std::string_view, 10> kTerrainCameraPresets{
-    "oblique", "profile",  "top",       "surface",        "surface-low",
-    "ground",  "backdrop", "backdrop-stage", "midground", "coastal-oblique"};
+    "oblique",  "profile",        "top",       "surface",        "surface-low", "ground",
+    "backdrop", "backdrop-stage", "midground", "coastal-oblique"};
 constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", "plains"};
 constexpr std::array<std::string_view, 4> kTerrainSourceVersions{"v1", "v2", "v2.1", "v3"};
-constexpr std::array<std::string_view, 2> kTerrainRenderPaths{"control", "quality"};
+constexpr std::array<std::string_view, 3> kTerrainRenderPaths{"control", "quality", "backdrop"};
+constexpr std::array<std::string_view, 3> kTerrainBackdropMeshDensities{"low", "medium", "high"};
 constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"tile", "layered"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
@@ -159,7 +160,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 279> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -483,6 +484,10 @@ constexpr std::array<ConfigOptionDescriptor, 279> kRunConfigOptions{
     option(RunConfigOptionId::TerrainRenderPath, "terrain.render_path", "--terrain-render-path",
            "Render Path", "Terrain", "Terrain geometry and material rendering path.",
            ConfigOptionType::Enum, no_range(), enum_choices(kTerrainRenderPaths)),
+    option(RunConfigOptionId::TerrainBackdropMeshDensity, "terrain.backdrop_mesh_density",
+           "--terrain-backdrop-mesh-density", "Backdrop Mesh Density", "Terrain/Backdrop Stage",
+           "Cached fixed-focus terrain backdrop mesh density.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainBackdropMeshDensities)),
     option(RunConfigOptionId::TerrainSurfaceDetail, "terrain.surface_detail",
            "--terrain-surface-detail", "Surface Detail", "Terrain",
            "Terrain quality material detail path.", ConfigOptionType::Enum, no_range(),
@@ -1534,6 +1539,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainRenderPath:
         return config.terrain.render_path.empty() ? nlohmann::json(nullptr)
                                                   : nlohmann::json(config.terrain.render_path);
+    case RunConfigOptionId::TerrainBackdropMeshDensity:
+        return config.terrain.backdrop_mesh_density.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.backdrop_mesh_density);
     case RunConfigOptionId::TerrainSurfaceDetail:
         return config.terrain.surface_detail.empty()
                    ? nlohmann::json(nullptr)
@@ -2883,6 +2892,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainRenderPath:
         config.terrain.render_path = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainBackdropMeshDensity:
+        config.terrain.backdrop_mesh_density = std::string(value);
         break;
     case RunConfigOptionId::TerrainSurfaceDetail:
         config.terrain.surface_detail = std::string(value);

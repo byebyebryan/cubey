@@ -139,6 +139,32 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should use the v1 clipmap dimensions");
 }
 
+void test_backdrop_camera_defaults_to_the_cached_v2_1_product() {
+    cubey::RunConfig run_config{};
+    run_config.terrain.camera_preset = "backdrop-stage";
+    const auto config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(config.source.version == cubey::projects::terrain::TerrainSourceVersion::V2_1,
+            "backdrop camera should default to the frozen v2.1 source");
+    require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Backdrop,
+            "backdrop camera should default to the cached product renderer");
+    require(config.backdrop_mesh_density ==
+                cubey::projects::terrain::TerrainBackdropMeshDensity::High,
+            "cached backdrop should default to high mesh density");
+
+    run_config.terrain.source_version = "v1";
+    run_config.terrain.render_path = "control";
+    run_config.terrain.backdrop_mesh_density = "low";
+    const auto explicit_config =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    require(explicit_config.source.version == cubey::projects::terrain::TerrainSourceVersion::V1 &&
+                explicit_config.render_path ==
+                    cubey::projects::terrain::TerrainRenderPath::Control &&
+                explicit_config.backdrop_mesh_density ==
+                    cubey::projects::terrain::TerrainBackdropMeshDensity::Low,
+            "explicit backdrop diagnostics should preserve legacy source and render controls");
+}
+
 void test_source_v2_extends_only_mountain_detail_band() {
     using namespace cubey::projects::terrain;
     const TerrainSourceParameters v1 = resolve_terrain_source_parameters({
@@ -681,8 +707,7 @@ void test_quality_tile_field_uses_world_aligned_quad_patches() {
     const auto mesh = cubey::projects::terrain::make_terrain_quality_tile_mesh(config);
     require(!mesh.vertices.empty() && mesh.indices.size() == mesh.vertices.size(),
             "quality tile field should index every patch control point");
-    require(mesh.diagnostics.patches_per_axis == 128U &&
-                mesh.diagnostics.patch_count == 16'384U &&
+    require(mesh.diagnostics.patches_per_axis == 128U && mesh.diagnostics.patch_count == 16'384U &&
                 mesh.patch_count() == mesh.diagnostics.patch_count,
             "quality tile field should cover the default extent with a 128 by 128 grid");
     require_near(mesh.diagnostics.patch_span_m, 256.0F, 0.0F,
@@ -706,8 +731,7 @@ void test_quality_tile_field_uses_world_aligned_quad_patches() {
     const std::uint32_t patches_per_axis = mesh.diagnostics.patches_per_axis;
     for (std::uint32_t z = 0; z < patches_per_axis; ++z) {
         for (std::uint32_t x = 0; x < patches_per_axis; ++x) {
-            const std::size_t patch =
-                (static_cast<std::size_t>(z) * patches_per_axis + x) * 4U;
+            const std::size_t patch = (static_cast<std::size_t>(z) * patches_per_axis + x) * 4U;
             if (x + 1U < patches_per_axis) {
                 const std::size_t right = patch + 4U;
                 require(mesh.vertices[patch + 1U].position == mesh.vertices[right].position &&
@@ -716,11 +740,9 @@ void test_quality_tile_field_uses_world_aligned_quad_patches() {
                         "quality horizontal neighbors should share exact edge controls");
             }
             if (z + 1U < patches_per_axis) {
-                const std::size_t top =
-                    patch + static_cast<std::size_t>(patches_per_axis) * 4U;
+                const std::size_t top = patch + static_cast<std::size_t>(patches_per_axis) * 4U;
                 require(mesh.vertices[patch + 3U].position == mesh.vertices[top].position &&
-                            mesh.vertices[patch + 2U].position ==
-                                mesh.vertices[top + 1U].position,
+                            mesh.vertices[patch + 2U].position == mesh.vertices[top + 1U].position,
                         "quality vertical neighbors should share exact edge controls");
             }
         }
@@ -805,6 +827,7 @@ void test_ground_controller_uses_walking_scale_speed() {
 int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
+        test_backdrop_camera_defaults_to_the_cached_v2_1_product();
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();
         test_runtime_config_parses_source_v2_1();
