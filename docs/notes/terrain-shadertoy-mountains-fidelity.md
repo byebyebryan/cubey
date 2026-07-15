@@ -106,3 +106,47 @@ new production source. The next clean-room terrain work should preserve broad
 geometry, independent shader-scale normal detail, source-aware framing, and
 distance-hiding atmosphere as explicit layers, then evaluate them through the
 cached backdrop and its sub-millisecond runtime budget.
+
+## Generalization And Runtime Study
+
+The fidelity result does not establish that Mountains survives arbitrary views
+or fits the production backdrop budget. Run a second, bounded study in
+`projects/terrain_shadertoy_ref`; do not change `projects/terrain` in this pass.
+
+Use the probed source camera position, elevation, pitch, and roll as the control.
+Rotate its complete camera basis around world up in 45-degree increments while
+leaving the source field and mesh domain fixed. Time `0` is the far/open lane and
+time `20` is the demanding mid-field lane. Capture both the original presentation
+and neutral clay at offsets `0`, `45`, `90`, `135`, `180`, `225`, `270`, and
+`315` degrees. The raymarch remains an unchanged control and does not accept the
+camera override.
+
+Add a third mesh-normal mode between geometry normals and exact `Terrain2`
+evaluation. The atlas mode finite-differences the detailed-height channel already
+baked into the `2048x2048` height atlas, using the same distance-aware footprint
+as the source normal. Compare `256`, `512`, and `1024` cell grids crossed with
+geometry, atlas, and exact detailed normals at time `0`/yaw `180` and time
+`20`/yaw `0` under clay shading.
+
+GPU timestamps must isolate raymarch, sky, mesh surface, and diagnostics from
+host, capture, and encoding work. Profile the following time-`20`, yaw-`0`
+configurations at `2560x1440` for 90 frames with 30 warmup frames:
+
+- `256`, `512`, and `1024` cells with geometry normals and clay shading;
+- `512` cells with atlas and detailed normals under clay shading;
+- `512` cells with atlas and detailed normals under original shading;
+- the `1024`-cell detailed/original fidelity control.
+
+The evidence pack belongs under
+`outputs/terrain_shadertoy_ref/mountains-generalization-v1/` and records the
+external source hash and license, Cubey commit, GPU, triangle counts, resource
+sizes, exact arguments, and surface p50/p95 timings. Captures and profiles remain
+ignored local evidence.
+
+The source is broadly reusable only if at least six of eight far/open directions
+remain credible in both original and clay views without domain edges, near-camera
+blockage, or broken silhouettes. A simplification is production-eligible only if
+the `512`-cell result retains acceptable far-field silhouettes and its terrain
+surface p95 is no more than `1 ms` at `2560x1440`. Failure keeps Mountains as a
+source/presentation reference; it does not trigger per-constant tuning or a
+production source change.
