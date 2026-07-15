@@ -27,8 +27,9 @@ constexpr std::uint32_t kOceanSurfaceCloudEnvironmentCurrentBinding =
     kOceanSurfaceCloudEnvironmentPreviousBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceCloudPlanarReflectionBinding =
     kOceanSurfaceCloudEnvironmentCurrentBinding + 1U;
-constexpr std::uint32_t kOceanSurfaceBindingCount =
+constexpr std::uint32_t kOceanSurfaceReflectionCurrentBinding =
     kOceanSurfaceCloudPlanarReflectionBinding + 1U;
+constexpr std::uint32_t kOceanSurfaceBindingCount = kOceanSurfaceReflectionCurrentBinding + 1U;
 
 [[nodiscard]] std::filesystem::path shader_path(const std::filesystem::path& shader_dir,
                                                 const char* filename) {
@@ -406,6 +407,12 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
+    surface_bindings[kOceanSurfaceReflectionCurrentBinding] =
+        cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = kOceanSurfaceReflectionCurrentBinding,
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        };
     const cubey::vulkan::DescriptorSetInfo surface_info =
         descriptor_info(surface_bindings, frame_slot_count);
     surface_layout_.emplace(device, surface_info.layout_info());
@@ -477,30 +484,30 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
 }
 
 void OceanGpuResources::update_atmosphere_probe_descriptors(
-    const cubey::vulkan::Device& device, const cubey::render::TextureCube& reflection_probe,
+    const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
+    const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current,
     const cubey::render::TextureCube& sky_radiance) {
     if (surface_sets_.empty()) {
         throw std::runtime_error("ocean surface descriptor set is not initialized");
     }
     cubey::vulkan::DescriptorWriteBatch writes;
-    for (VkDescriptorSet surface_set : surface_sets_) {
-        writes
-            .combined_image_sampler(surface_set, kOceanSurfaceReflectionBinding,
-                                    reflection_probe.sampler().handle(), reflection_probe.view(),
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .combined_image_sampler(surface_set, kOceanSurfaceSkyRadianceBinding,
-                                    sky_radiance.sampler().handle(), sky_radiance.view(),
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .combined_image_sampler(surface_set,
-                                    kOceanSurfaceCloudEnvironmentPreviousBinding,
-                                    reflection_probe.sampler().handle(), reflection_probe.view(),
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .combined_image_sampler(surface_set,
-                                    kOceanSurfaceCloudEnvironmentCurrentBinding,
-                                    reflection_probe.sampler().handle(), reflection_probe.view(),
-                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-    writes.update(device);
+    const VkDescriptorSet set = surface_set(frame_slot);
+    writes
+        .combined_image_sampler(set, kOceanSurfaceReflectionBinding, previous.sampler().handle(),
+                                previous.view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(set, kOceanSurfaceReflectionCurrentBinding,
+                                current.sampler().handle(), current.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(set, kOceanSurfaceSkyRadianceBinding,
+                                sky_radiance.sampler().handle(), sky_radiance.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(set, kOceanSurfaceCloudEnvironmentPreviousBinding,
+                                current.sampler().handle(), current.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .combined_image_sampler(set, kOceanSurfaceCloudEnvironmentCurrentBinding,
+                                current.sampler().handle(), current.view(),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        .update(device);
 }
 
 void OceanGpuResources::update_terrain_ocean_field_descriptor(

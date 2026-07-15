@@ -121,8 +121,10 @@ directory is configured, and otherwise renders a generated PBR cube. It can use
 `--environment path/to/env.hdr` or the optional fetched Filament
 `lightroom_14b.hdr` sample for static HDR-backed IBL; by default it renders the
 procedural atmosphere as the visible background and captures that atmosphere
-through the shared atmosphere runtime for specular IBL. Atmosphere diffuse
-lighting uses SH. It creates camera and light entities around imported bounds,
+through the shared atmosphere runtime for specular IBL. The same runtime owns
+surface clouds: the forward renderer composites them after opaque scene/depth
+rendering and before display post, while its cached cloud environment feeds PBR
+reflections. Atmosphere diffuse lighting uses SH. It creates camera and light entities around imported bounds,
 builds shadow and scene frame plans, and hands those plans plus scene resources
 to an engine-owned `ForwardPbrRenderer3D` through the shared forward-PBR request
 helper for pass recording. Its reusable

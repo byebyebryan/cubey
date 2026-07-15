@@ -41,10 +41,12 @@ WIDTH=1280 HEIGHT=720 FRAMES=2 QUALITY=quarter \
   projects/planet/capture_cloud_review.sh outputs/planet-cloud-review-current
 ```
 
-The pass added a planet-only cloud composite shader that samples scene depth and
-suppresses final cloud contribution when opaque scene depth is closer than the
-cloud hit distance. Planet also opts its forward depth attachment into sampled
-usage; other forward-pass users keep non-sampled depth by default.
+The pass uses the shared cloud composite shader in physical distance-aware mode:
+it samples scene depth and suppresses final cloud contribution when opaque scene
+depth is closer than the cloud hit distance. Fully occluded pixels return the
+untouched HDR scene color before cloud resolve/post work. Planet also opts its
+forward depth attachment into sampled usage; other forward-pass users keep
+non-sampled depth by default.
 
 The planet `--clouds` defaults now use quarter resolution, no temporal resolve,
 automatic local/orbit distance handling, and a wider high-altitude transition.

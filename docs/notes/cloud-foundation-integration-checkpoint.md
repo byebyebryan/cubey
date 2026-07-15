@@ -2,9 +2,30 @@
 
 This note checkpoints the integration scope that promoted the former
 `projects/cloud` standalone renderer into a shared weather layer. Current cloud
-tuning happens through `projects/atmosphere`; ocean consumes the accepted
-surface-view path in final sky, and planet consumes the shared runtime as an
-opt-in integration target.
+tuning happens through `projects/atmosphere`; glTF Viewer, ocean, and Water 3D
+consume the accepted surface-view environment products, while planet remains an
+opt-in scale-pressure target.
+
+## Current Status 2026-07-15
+
+Cloud V1 is now an atmosphere-owned environment feature rather than a
+project-local render helper. Each accepted surface consumer owns one
+`AtmosphereEnvironmentRuntime`, and that runtime owns one
+`CloudEnvironmentRuntime` for generated cloud resources, visible products, and
+the filtered PBR environment. Current direct consumers are:
+
+- `projects/atmosphere`: primary surface-cloud tuning and diagnostics;
+- `projects/gltf_viewer`: opaque-foreground forward-PBR sky composition plus
+  cached material reflection;
+- `projects/ocean`: opaque-foreground visible composition, projected local
+  shadow, planar cloud reflection, and cached fallback;
+- `projects/fluid/water_3d`: opaque-foreground HDR background composition before
+  water refraction plus cached environment reflection.
+
+Static environment modes bypass procedural cloud resource creation and
+composition. `projects/planet` remains an explicit pressure path, not an
+accepted aerial/orbit consumer. Cloud V1 still claims only surface and
+lower-sky views.
 
 The original checkpoint below predates direct cloud-lighting consumption.
 Ocean now consumes a real projected shadow product and the resolved current-view
@@ -12,7 +33,7 @@ cloud product for surface reflections. The current contract, performance data,
 and remaining limits are recorded in
 [`ocean-cloud-lighting-v1.md`](ocean-cloud-lighting-v1.md).
 
-## Batch Scope
+## Original Batch Scope
 
 - Promote reusable cloud contracts for cloud radiance/transmittance, metadata,
   low-frequency shadowing, and a future reflection contribution.
@@ -55,30 +76,40 @@ and remaining limits are recorded in
   clear-sky atmosphere in final view, and exposes a collapsed Clouds control
   group backed by the same `clouds.*` run-config overrides used by the
   standalone cloud project.
-- `projects/ocean` now compiles the shared cloud shaders, owns a
-  `CloudLayerRuntime`, and composites surface-volume clouds over the atmosphere
-  sky in final view by default. The cloud product uses ocean scene depth for sky
-  composition and the shared atmosphere sun/moon/ambient lighting state.
+- `projects/ocean` now compiles the shared cloud shaders and uses the
+  `CloudEnvironmentRuntime` owned by its atmosphere runtime. It composites
+  surface-volume clouds over the atmosphere sky in final view by default. The
+  cloud product uses strict opaque-foreground scene depth for sky composition,
+  so resolve/post processing cannot modify water or reference-pillar pixels, and
+  uses the shared atmosphere sun/moon/ambient lighting state.
   `--no-clouds` keeps the clear-sky A/B path. Ocean also requests the shared
   projected `CloudLayerShadowProduct` for direct-light modulation and reuses
   resolved cloud radiance/transmittance for current-view reflections.
+- `projects/gltf_viewer` uses the engine-owned forward-PBR cloud composition
+  path with strict opaque-foreground scene depth and consumes the same runtime's
+  filtered environment for material reflection.
+- `projects/fluid/water_3d` composes shared clouds into scene color before its
+  refractive water pass, preserves opaque scene pixels exactly, and consumes the
+  filtered environment through its existing PBR bindings. Static environment
+  mode bypasses clouds.
 - `projects/planet` now has an opt-in `--clouds` path that composites the shared
-  cloud product over the planet HDR scene using scene depth. It is an integration
-  checkpoint, not a finished cloud shadow/reflection/environment-lighting path.
+  cloud product over the planet HDR scene using physical distance-aware scene
+  depth. It is an integration checkpoint, not a finished cloud
+  shadow/reflection/environment-lighting path.
 
 ## Remaining Gaps
 
-- The shared runtime is still a render-layer helper, not a full environment
-  system. It now outputs a bounded projected shadow product, but it does not yet
-  produce a clouded environment probe or planet-scale lighting product.
-- Atmosphere has runtime-backed cloud controls and can enable temporal resolve,
-  but cloud debug-view surfacing, lighting feedback into the atmosphere, and
-  cloud-driven environment/reflection outputs remain deferred.
-- Ocean consumes the projected shadow and current-view reflection products, but
-  offscreen cloud reflection directions still fall back to the clear-sky probe.
-- Planet cloud shadows, reflections, and final high-oblique/orbit transition
-  polish remain deferred until the active planet sky/horizon issues are
-  stabilized.
+- The filtered cloud environment is deliberately low-resolution and
+  roughness-oriented. It is not a replacement for direct visible composition,
+  local planar reflection, or projected shadows.
+- Atmosphere owns and tunes the cloud environment but does not yet expose a
+  dedicated cache visualization or cloud-lighting feedback into clear-sky
+  scattering.
+- Generic forward PBR and Water 3D consume visible clouds and cached reflection,
+  but do not request projected cloud shadows. Ocean remains the bounded local
+  shadow proof.
+- Planet cloud shadows, reflections, credible high-oblique/orbit rendering, and
+  surface-to-orbit transitions remain deferred.
 
 ## Runtime Promotion Checkpoint
 
@@ -88,8 +119,9 @@ captures and visual tuning, and planet proves that a consumer can reuse the same
 cloud renderer without copying descriptor or temporal-history code.
 
 At the original checkpoint, production shadow/reflection products were out of
-scope. Ocean now proves the bounded surface contract; terrain/planet shadows,
-clouded environment probes, and aerial/orbit products remain out of scope.
+scope. Ocean now proves the bounded surface contract, and the shared filtered
+environment now proves broad PBR reflection. Terrain/planet shadows and
+aerial/orbit products remain out of scope.
 
 ## High-Oblique Baseline 2026-06-28
 

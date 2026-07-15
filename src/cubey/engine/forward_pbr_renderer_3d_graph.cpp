@@ -93,6 +93,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment = scene_plan.environment,
             .environment_intensity = global_.environment.intensity,
             .prefiltered_mip_levels = global_.environment.prefiltered_mip_levels,
+            .environment_blend = global_.environment.prefiltered_blend,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
             .debug_view = settings.debug_view,
         }));
@@ -102,6 +103,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .view_projection = scene_plan.view_projection_matrix,
             .camera_position = camera_position,
             .environment_intensity = global_.environment.intensity,
+            .environment_blend = global_.environment.prefiltered_blend,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
         }));
     if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
@@ -117,12 +119,13 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .tonemap = uses_final_display_transform ? settings.tonemap : render::PbrTonemap::Linear,
         }));
 
-    const CompiledGraph render_graph =
-        current_render_graph(target.color_target, target.frame_slot, target.color_initial_state,
-                             target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
-                             resources.frame_meshes, resources.deformation_commands,
-                             *resources.materials, settings.debug_view,
-                             settings.background_mode);
+    const CompiledGraph render_graph = current_render_graph(
+        target.color_target, target.frame_slot, target.color_initial_state,
+        target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
+        resources.frame_meshes, resources.deformation_commands, *resources.materials,
+        settings.debug_view, settings.background_mode, settings.atmosphere_clouds);
+    CloudEnvironmentRuntime* cloud_runtime =
+        settings.atmosphere_clouds.has_value() ? settings.atmosphere_clouds->runtime : nullptr;
     global_.graph_executor.record(
         render::RenderGraphFrameRecordInfo{
             .device = target.device,
@@ -132,11 +135,19 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .command_buffer_mode = target.command_buffer_mode,
         },
         render_graph.graph,
-        [this, device = target.device, frame_slot = target.frame_slot,
+        [this, device = target.device, frame_slot = target.frame_slot, cloud_runtime,
          &render_graph](const render::RenderGraphResourceSet& graph_resources) {
             update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
-                                   render_graph.scene_color);
+                                   render_graph.post_scene_color);
+            if (render_graph.clouds_enabled) {
+                cloud_runtime->update_surface_descriptors(
+                    *device, frame_slot, render_graph.graph, graph_resources, render_graph.cloud,
+                    render_graph.scene_color, render_graph.scene_depth);
+            }
         });
+    if (render_graph.clouds_enabled) {
+        cloud_runtime->complete_surface_frame(target.frame_slot, render_graph.cloud);
+    }
     swapchain_.shadow_depth_is_sampled = true;
 }
 
@@ -149,7 +160,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::FrameMeshResourceTable* frame_meshes,
     std::span<const render::GpuDeformationCommand> deformation_commands,
     const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
-    ForwardPbrRenderer3DBackgroundMode background_mode) {
+    ForwardPbrRenderer3DBackgroundMode background_mode,
+    const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds) {
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
@@ -163,6 +175,20 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::RenderGraphTextureHandle scene_depth =
         graph.import_depth_target("scene depth", render::depth_target_view(depth_attachment()),
                                   render::render_graph_undefined_texture_state());
+    render::RenderGraphTextureHandle post_scene_color = scene_color;
+    render::RenderGraphTextureHandle cloud_scene_color{};
+    render::CloudLayerRuntimeFrame cloud_frame{};
+    const bool clouds_enabled =
+        debug_view == render::PbrDebugView::Final && clouds.has_value() && clouds->frame.enabled;
+    if (clouds_enabled) {
+        cloud_scene_color = graph.create_texture(render::RenderGraphTextureDesc{
+            .label = "atmosphere cloud scene color",
+            .extent = {color_target.extent.width, color_target.extent.height, 1},
+            .format = config_.scene_color_format,
+            .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        });
+        cloud_frame = clouds->runtime->declare_surface_product(graph, frame_slot, clouds->frame);
+    }
     const std::optional<render::RenderGraphTextureState> shadow_initial_state =
         swapchain_.shadow_depth_is_sampled ? render::render_graph_sampled_depth_texture_state()
                                            : render::render_graph_undefined_texture_state();
@@ -202,18 +228,21 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                   .write_depth(scene_depth)
                                   .material_pass(render::pbr_forward_pass_info());
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
-    scene_pass_builder.execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver,
-                                &materials,
-                                debug_view,
-                                background_mode](const render::RenderGraphExecutionContext&
-                                                     context) {
-        const render::ColorTargetView target =
-            render::resolved_color_target_view(context, scene_color);
-        record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                          materials, debug_view, background_mode);
-    });
+    scene_pass_builder.execute(
+        [this, scene_color, frame_slot, &scene_plan, mesh_resolver, &materials, debug_view,
+         background_mode](const render::RenderGraphExecutionContext& context) {
+            const render::ColorTargetView target =
+                render::resolved_color_target_view(context, scene_color);
+            record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
+                              materials, debug_view, background_mode);
+        });
+    if (clouds_enabled) {
+        clouds->runtime->declare_surface_composite(graph, cloud_scene_color, cloud_frame,
+                                                   frame_slot, scene_color, scene_depth);
+        post_scene_color = cloud_scene_color;
+    }
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
-        .read_texture(scene_color)
+        .read_texture(post_scene_color)
         .write_color(backbuffer)
         .material_pass(render::pbr_post_pass_info())
         .execute(
@@ -224,6 +253,11 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     return {
         .graph = graph.compile(),
         .scene_color = scene_color,
+        .post_scene_color = post_scene_color,
+        .scene_depth = scene_depth,
+        .cloud_scene_color = cloud_scene_color,
+        .cloud = cloud_frame,
+        .clouds_enabled = clouds_enabled,
     };
 }
 

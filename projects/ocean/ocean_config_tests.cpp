@@ -1746,7 +1746,7 @@ int main() {
                          "GPU resource header should carry independent sun lighting");
         require_contains(gpu_header_source, "moon_light_direction_intensity",
                          "GPU resource header should carry independent moon lighting");
-        require_contains(gpu_header_source, "sizeof(float) * 88U",
+        require_contains(gpu_header_source, "sizeof(float) * 92U",
                          "GPU resource header should size active feature and lighting uniforms");
         require_contains(gpu_header_source, "self_shadow_options",
                          "GPU resource header should pack wave self-shadow controls");
@@ -1813,8 +1813,8 @@ int main() {
         require_contains(app_source, "atmosphere_environment_lighting",
                          "ocean app should derive sun direction from the shared lighting helper");
         require_contains(
-            app_source, "AtmosphereReflectionProbeUpdateMode::CoherentFull",
-            "ocean should update its reflective atmosphere without mixed-time cube faces");
+            app_source, "atmosphere_runtime_.advance",
+            "ocean should advance coherent atmosphere and cloud environments together");
         require_not_contains(
             vertex_shader, "vec4 sun_direction;",
             "ocean surface push constants should not duplicate feature lighting uniforms");
@@ -1826,7 +1826,12 @@ int main() {
             "ocean surface shader should read continuous moon intensity from feature uniforms");
         require_contains(
             fragment_shader, "samplerCube atmosphere_reflection_texture",
-            "ocean surface shader should sample the shared atmosphere reflection probe");
+            "ocean surface shader should sample the previous atmosphere reflection probe");
+        require_contains(
+            fragment_shader, "samplerCube atmosphere_reflection_current_texture",
+            "ocean surface shader should sample the current atmosphere reflection probe");
+        require_contains(fragment_shader, "atmosphere_environment_options.x",
+                         "ocean surface shader should crossfade coherent atmosphere probes");
         require_contains(fragment_shader, "ocean_environment_reflection",
                          "ocean surface shader should isolate atmosphere reflection lookup");
         require_contains(fragment_shader, "ocean_above_horizon_reflection_direction",
@@ -1884,15 +1889,21 @@ int main() {
                              "ocean surface shader should remove procedural cloud scale");
         require_not_contains(fragment_shader, "cloud_shadow_speed_mps",
                              "ocean surface shader should remove procedural cloud drift");
-        require_contains(app_source, "cloud_runtime_.declare_shadow_product",
+        require_contains(app_source, "clouds.declare_shadow_product",
                          "ocean should request the shared projected cloud shadow product");
+        require_contains(app_source, "atmosphere_runtime_.clouds()",
+                         "ocean should consume clouds owned by the atmosphere runtime");
+        require_not_contains(app_source, "CloudLayerRuntime cloud_runtime_",
+                             "ocean should not retain a duplicate surface cloud runtime");
+        require_not_contains(app_source, "CloudEnvironmentRuntime cloud_environment_runtime_",
+                             "ocean should not retain a duplicate cached cloud runtime");
         require_contains(app_source, "ocean_config_.cloud_shadow_strength > 0.0F",
                          "ocean should skip the cloud shadow pass when coupling is disabled");
         require_contains(app_source, "render_view_ == OceanRenderView::CloudShadow",
                          "ocean should preserve raw cloud shadow diagnostics at zero strength");
         require_contains(app_source, "ocean_cloud_shadow_half_extent_m",
                          "ocean cloud shadows should use a camera-scale local projection");
-        require_before(app_source, "cloud_runtime_.declare_shadow_product",
+        require_before(app_source, "clouds.declare_shadow_product",
                        "graph.add_pass(\"ocean scene\"",
                        "ocean should generate cloud transmittance before drawing water");
         require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",

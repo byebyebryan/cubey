@@ -38,6 +38,7 @@ static_assert(sizeof(AtmosphereReflectionPrefilterUniforms) == sizeof(float) * 1
 struct AtmosphereReflectionProbeConfig {
     std::uint32_t extent = 64;
     std::uint32_t mip_levels = 5;
+    float update_hz = 4.0F;
     VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
     std::uint32_t frame_slot_count = 1;
     AtmosphereBackgroundTextureBindings atmosphere_textures{};
@@ -53,6 +54,45 @@ struct AtmosphereReflectionProbePipelineConfig {
 struct AtmosphereReflectionProbeUpdateInfo {
     FrameSlot frame_slot{};
     AtmosphereEnvironmentConfig environment{};
+};
+
+struct AtmosphereReflectionProbeSnapshot {
+    const TextureCube* previous = nullptr;
+    const TextureCube* current = nullptr;
+    float blend = 1.0F;
+    std::uint64_t generation = 0;
+    bool valid = false;
+};
+
+class AtmosphereReflectionProbeTimeline {
+  public:
+    void configure(float update_hz);
+    void reset();
+    void request_capture();
+    void advance(double delta_seconds);
+    void capture_recorded();
+
+    [[nodiscard]] bool capture_pending() const noexcept {
+        return capture_pending_;
+    }
+    [[nodiscard]] bool valid() const noexcept {
+        return valid_;
+    }
+    [[nodiscard]] float blend() const noexcept {
+        return blend_;
+    }
+    [[nodiscard]] std::uint64_t generation() const noexcept {
+        return generation_;
+    }
+
+  private:
+    float update_interval_seconds_ = 0.25F;
+    float age_seconds_ = 0.0F;
+    float blend_ = 1.0F;
+    std::uint64_t generation_ = 0;
+    bool valid_ = false;
+    bool dirty_ = true;
+    bool capture_pending_ = true;
 };
 
 [[nodiscard]] MaterialPassInfo atmosphere_reflection_prefilter_pass_info();
@@ -74,11 +114,11 @@ class AtmosphereReflectionProbe {
     void destroy_pipelines();
     void destroy();
 
-    void record_full_update(const cubey::vulkan::CommandRecorder& recorder,
-                            const AtmosphereReflectionProbeUpdateInfo& info);
-    void record_face_update(const cubey::vulkan::CommandRecorder& recorder,
-                            const AtmosphereReflectionProbeUpdateInfo& info,
-                            std::uint32_t face_index);
+    void advance(double delta_seconds);
+    void request_update();
+    void invalidate();
+    [[nodiscard]] bool record_pending_update(const cubey::vulkan::CommandRecorder& recorder,
+                                             const AtmosphereReflectionProbeUpdateInfo& info);
     void
     update_atmosphere_texture_bindings(const cubey::vulkan::Device& device,
                                        const AtmosphereBackgroundTextureBindings& textures) const;
@@ -86,7 +126,7 @@ class AtmosphereReflectionProbe {
     [[nodiscard]] bool resources_created() const noexcept;
     [[nodiscard]] bool pipelines_created() const noexcept;
     [[nodiscard]] const TextureCube& sky_radiance_cube() const;
-    [[nodiscard]] const TextureCube& prefiltered_cube() const;
+    [[nodiscard]] AtmosphereReflectionProbeSnapshot snapshot() const;
     [[nodiscard]] std::uint32_t mip_levels() const noexcept {
         return mip_levels_;
     }
@@ -101,7 +141,7 @@ class AtmosphereReflectionProbe {
                          const AtmosphereEnvironmentConfig& environment, std::uint32_t face_index);
     void record_prefilter_face_mip(const cubey::vulkan::CommandRecorder& recorder,
                                    FrameSlot frame_slot, std::uint32_t face_index,
-                                   std::uint32_t mip_level);
+                                   std::uint32_t mip_level, std::uint32_t buffer_index);
     [[nodiscard]] const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&
     sky_face_material(std::uint32_t face_index) const;
     [[nodiscard]] const FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>&
@@ -112,18 +152,19 @@ class AtmosphereReflectionProbe {
                          VkAccessFlags src_access, VkAccessFlags dst_access,
                          VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) const;
     [[nodiscard]] VkImageLayout current_sky_layout(std::uint32_t face_index) const;
-    [[nodiscard]] VkImageLayout current_prefiltered_layout(std::uint32_t mip_level,
+    [[nodiscard]] VkImageLayout current_prefiltered_layout(std::uint32_t buffer_index,
+                                                           std::uint32_t mip_level,
                                                            std::uint32_t face_index) const;
 
     std::uint32_t extent_ = 0;
     std::uint32_t mip_levels_ = 0;
     VkFormat format_ = VK_FORMAT_UNDEFINED;
     std::optional<TextureCube> sky_radiance_cube_{};
-    std::optional<TextureCube> prefiltered_cube_{};
+    std::array<std::optional<TextureCube>, 2> prefiltered_cubes_{};
     std::vector<cubey::vulkan::ImageView> sky_face_views_{};
-    std::vector<cubey::vulkan::ImageView> prefiltered_face_views_{};
+    std::array<std::vector<cubey::vulkan::ImageView>, 2> prefiltered_face_views_{};
     std::array<bool, 6> sky_face_initialized_{};
-    std::vector<bool> prefiltered_face_mip_initialized_{};
+    std::array<std::vector<bool>, 2> prefiltered_face_mip_initialized_{};
     AtmosphereBackgroundFrame atmosphere_frame_{};
     std::array<std::unique_ptr<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>>, 6>
         sky_face_materials_{};
@@ -131,6 +172,9 @@ class AtmosphereReflectionProbe {
         std::unique_ptr<FrameUniformMaterialInstance<AtmosphereReflectionPrefilterUniforms>>>
         prefilter_materials_{};
     std::optional<GraphicsPipelineResource> prefilter_pipeline_{};
+    AtmosphereReflectionProbeTimeline timeline_{};
+    std::uint32_t previous_buffer_index_ = 0;
+    std::uint32_t current_buffer_index_ = 0;
 };
 
 } // namespace cubey::render

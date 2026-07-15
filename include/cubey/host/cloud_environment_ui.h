@@ -12,6 +12,7 @@ struct CloudEnvironmentUiConfig {
     std::uint32_t level = 0;
     const char* help =
         "Shared Cloud V1 surface-volume layer composited into the atmosphere-backed scene.";
+    const char* enabled_help = "Composite the shared cloud layer in final view.";
     bool show_aerial_orbit_controls = false;
     bool show_regime_status = false;
     cubey::render::CloudLayerViewRegime regime{};

@@ -45,23 +45,21 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
     orbit_controller_.set_distance_limits(std::max(radius * 0.05F, 0.05F),
                                           std::max(radius * 10.0F, camera_distance * 2.0F));
     orbit_controller_.set_home_distance(camera_distance);
-    camera_entity_ =
-        cubey::scene::create_camera_entity_3d(setup,
-                                              cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                                                  .target = scene_bounds_.center,
-                                                  .distance = orbit_controller_.distance(),
-                                                  .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
-                                                  .pitch =
-                                                      kCameraBasePitch + orbit_controller_.pitch(),
-                                              }),
-                                              cubey::Camera3D({
-                                                  .near_z = std::max(radius * 0.001F, 0.01F),
-                                                  .far_z = std::max(radius * 12.0F, 100.0F),
-                                              }));
+    camera_entity_ = cubey::scene::create_camera_entity_3d(
+        setup,
+        cubey::orbit_camera_transform(cubey::OrbitCameraState{
+            .target = scene_bounds_.center,
+            .distance = orbit_controller_.distance(),
+            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
+        }),
+        cubey::Camera3D({
+            .near_z = std::max(radius * 0.001F, 0.01F),
+            .far_z = std::max(radius * 12.0F, 100.0F),
+        }));
 
     const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
-    const cubey::math::Vec3 light_direction =
-        glm::normalize(lighting.primary_light_direction);
+    const cubey::math::Vec3 light_direction = glm::normalize(lighting.primary_light_direction);
     const cubey::math::Vec3 light_eye =
         scene_bounds_.center + (light_direction * std::max(radius * 4.0F, 6.0F));
     light_camera_entity_ = cubey::scene::create_camera_entity_3d(
@@ -111,8 +109,7 @@ void GltfViewerApp::refresh_atmosphere_lighting_scene() {
 
     const float radius = std::max(glm::length(scene_bounds_.half_extent), 1.0F);
     const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
-    const cubey::math::Vec3 light_direction =
-        glm::normalize(lighting.primary_light_direction);
+    const cubey::math::Vec3 light_direction = glm::normalize(lighting.primary_light_direction);
     const cubey::math::Vec3 light_eye =
         scene_bounds_.center + (light_direction * std::max(radius * 4.0F, 6.0F));
 
@@ -129,14 +126,13 @@ void GltfViewerApp::refresh_atmosphere_lighting_scene() {
 
 void GltfViewerApp::update_camera_transform() {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
-    edits.transforms3d().set_local_transform(camera_entity_,
-                                             cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                                                 .target = scene_bounds_.center,
-                                                 .distance = orbit_controller_.distance(),
-                                                 .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
-                                                 .pitch =
-                                                     kCameraBasePitch + orbit_controller_.pitch(),
-                                             }));
+    edits.transforms3d().set_local_transform(
+        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                            .target = scene_bounds_.center,
+                            .distance = orbit_controller_.distance(),
+                            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+                            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
+                        }));
     scene().commit(edits);
 }
 
@@ -170,14 +166,15 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
     });
 }
 
-cubey::render::AtmosphereEnvironmentFrameUniforms GltfViewerApp::atmosphere_background_uniforms(
-    const cubey::SceneReadView& view, VkExtent2D color_extent) const {
+cubey::render::AtmosphereEnvironmentFrameUniforms
+GltfViewerApp::atmosphere_background_uniforms(const cubey::SceneReadView& view,
+                                              VkExtent2D color_extent) const {
     if (color_extent.width == 0 || color_extent.height == 0) {
         throw std::runtime_error("glTF viewer atmosphere background requires a nonzero extent");
     }
 
-    const float aspect = static_cast<float>(color_extent.width) /
-                         static_cast<float>(color_extent.height);
+    const float aspect =
+        static_cast<float>(color_extent.width) / static_cast<float>(color_extent.height);
     const cubey::CameraInstance3D camera_instance = view.cameras3d().instance(camera_entity_);
     const cubey::Camera3D& camera = view.cameras3d().camera(camera_instance);
     const cubey::math::Mat4& world =
@@ -202,6 +199,42 @@ cubey::render::AtmosphereEnvironmentFrameUniforms GltfViewerApp::atmosphere_back
             .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
         })
         .background;
+}
+
+cubey::CloudEnvironmentConfig GltfViewerApp::cloud_environment_config() const {
+    cubey::CloudEnvironmentConfig cloud = clouds_config_;
+    cloud.layer.planet_radius_m = atmosphere_state_.environment.bottom_radius_km * 1000.0F;
+    cloud.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    cloud.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
+    cloud.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    return cloud;
+}
+
+cubey::CloudEnvironmentRuntimeFrame
+GltfViewerApp::cloud_environment_frame(const cubey::SceneReadView& view,
+                                       VkExtent2D color_extent) const {
+    const cubey::CameraInstance3D camera_instance = view.cameras3d().instance(camera_entity_);
+    const cubey::Camera3D& camera = view.cameras3d().camera(camera_instance);
+    const cubey::math::Mat4& world =
+        view.transforms3d().world_affine_matrix(view.transforms3d().instance(camera_entity_));
+    const cubey::math::Vec3 right = glm::normalize(cubey::math::Vec3{world[0]});
+    const cubey::math::Vec3 up = glm::normalize(cubey::math::Vec3{world[1]});
+    const cubey::math::Vec3 forward = glm::normalize(-cubey::math::Vec3{world[2]});
+    return atmosphere_runtime_.clouds().frame(
+        cubey::CloudEnvironmentSurfaceViewInfo{
+            .camera_position = {0.0F, atmosphere_state_.environment.camera_altitude_km * 1000.0F,
+                                0.0F},
+            .camera_right = right,
+            .camera_up = up,
+            .camera_forward = forward,
+            .tan_half_fovy = std::tan(camera.fovy_radians() * 0.5F),
+            .target_extent = color_extent,
+            .near_plane_m = camera.near_z(),
+            .far_plane_m = camera.far_z(),
+            .external_background = true,
+            .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
+        },
+        atmosphere_runtime_.lighting());
 }
 
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {

@@ -6,6 +6,7 @@
 
 namespace cubey {
 struct AtmosphereEnvironmentRunState;
+struct CloudEnvironmentConfig;
 } // namespace cubey
 
 namespace cubey::projects::fluid::water_3d {
@@ -16,6 +17,7 @@ struct Water3DUiContext {
     const char* title = nullptr;
     Water3DConfig& config;
     cubey::AtmosphereEnvironmentRunState* atmosphere = nullptr;
+    cubey::CloudEnvironmentConfig* clouds = nullptr;
     Water3DRuntimeState& runtime_state;
     Water3DGpuResources& resources;
     cubey::host::PerformanceUiContext performance;
@@ -24,6 +26,11 @@ struct Water3DUiContext {
     bool& reset_requested;
 };
 
-[[nodiscard]] bool draw_water_3d_ui(Water3DUiContext ui);
+struct Water3DUiResult {
+    bool atmosphere_changed = false;
+    bool clouds_changed = false;
+};
+
+[[nodiscard]] Water3DUiResult draw_water_3d_ui(Water3DUiContext ui);
 
 } // namespace cubey::projects::fluid::water_3d

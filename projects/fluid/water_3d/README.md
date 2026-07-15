@@ -22,8 +22,13 @@ environment reflection, Beer-Lambert absorption, a heuristic screen-space foam
 mask, and visual-only secondary whitewater spray/foam particles. The default
 environment source is the shared procedural atmosphere, including dynamic
 reflection-probe updates, environment lighting, exposure, and nested Environment
-controls. Pass `--pbr-environment-source static` to use the generated/HDR IBL
-fallback instead. The old particle splats remain as an opaque debug view. SSR,
+controls. Its atmosphere-owned surface clouds are composited into the HDR scene
+before water refraction, and the filtered cloud environment feeds broad water
+reflection through the existing PBR bindings. The shared Cloud Environment
+panel and `clouds.*` config/CLI options drive both products. Pass `--no-clouds`
+for a clear procedural A/B, or `--pbr-environment-source static` to use the
+generated/HDR IBL fallback without procedural clouds. The old particle splats
+remain as an opaque debug view. SSR,
 anisotropic particle kernels, marching cubes, mesh generation, and richer
 collision are still deferred until the 3D solver and renderer contract are
 stable.
@@ -55,11 +60,14 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --grid-width 64 --grid-height 64 --grid-depth 64 --frames 120 --profile-output water3d-64-diagnostics --profile-diagnostics --profile-diagnostic-interval 4 --no-validation
 ./build/dev/projects/fluid/water_3d/water_3d --water3d-transfer pic-flip --water3d-transfer-limit 96 --no-water3d-wave
 ./build/dev/projects/fluid/water_3d/water_3d --water3d-hose --water3d-drain --water3d-rain --no-water3d-whitewater
+./build/dev/projects/fluid/water_3d/water_3d --no-clouds
+./build/dev/projects/fluid/water_3d/water_3d --pbr-environment-source static
 ```
 
 Interactive controls include fill size/placement, render-domain scale, hose,
 drain, wave, rain, solver settings, surface reconstruction, whitewater, and
-frame/GPU-memory diagnostics.
+frame/GPU-memory diagnostics. Procedural mode also exposes the shared atmosphere
+and Cloud V1 controls; static environment mode hides those controls.
 
 Water-specific CLI controls:
 

@@ -34,6 +34,12 @@ enum class CloudLayerBackgroundMode : std::uint32_t {
     WaterContext = 1,
 };
 
+enum class CloudLayerSceneDepthMode : std::uint32_t {
+    Disabled = 0,
+    DistanceAware = 1,
+    OpaqueForeground = 2,
+};
+
 enum class CloudLayerDistanceMode : std::uint32_t {
     Auto = 0,
     Local = 1,
@@ -277,7 +283,7 @@ struct CloudLayerFrameInfo {
     bool external_background = false;
     float near_plane_m = 1.0F;
     float far_plane_m = 1000.0F;
-    bool scene_depth_occlusion_enabled = false;
+    CloudLayerSceneDepthMode scene_depth_mode = CloudLayerSceneDepthMode::Disabled;
     float scene_depth_fade_m = 500.0F;
 };
 

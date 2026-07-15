@@ -28,7 +28,6 @@ inline constexpr VkDeviceSize kWater3DRenderPushConstantBytes =
 inline constexpr std::uint32_t kWater3DGpuProfilerPassCapacity = 128;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
-inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_WATER_3D_SHADER_DIR) / filename;

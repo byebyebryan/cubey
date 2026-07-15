@@ -35,20 +35,20 @@ float read_float(std::span<const std::uint8_t> bytes, std::size_t float_index) {
     return value;
 }
 
-float read_lut_channel(std::span<const std::uint8_t> bytes, std::uint32_t extent,
-                       std::uint32_t x, std::uint32_t y, std::uint32_t channel) {
+float read_lut_channel(std::span<const std::uint8_t> bytes, std::uint32_t extent, std::uint32_t x,
+                       std::uint32_t y, std::uint32_t channel) {
     const std::size_t texel = (static_cast<std::size_t>(y) * static_cast<std::size_t>(extent)) +
                               static_cast<std::size_t>(x);
     return read_float(bytes, (texel * 4U) + channel);
 }
 
 float read_cube_channel(std::span<const std::uint8_t> bytes, std::uint32_t extent,
-                        std::uint32_t mip, std::uint32_t face, std::uint32_t x,
-                        std::uint32_t y, std::uint32_t channel) {
+                        std::uint32_t mip, std::uint32_t face, std::uint32_t x, std::uint32_t y,
+                        std::uint32_t channel) {
     std::size_t texel_offset = 0;
     for (std::uint32_t prior_mip = 0; prior_mip < mip; ++prior_mip) {
-        const std::uint32_t prior_extent = cubey::render::texture_cube_mip_extent(extent,
-                                                                                  prior_mip);
+        const std::uint32_t prior_extent =
+            cubey::render::texture_cube_mip_extent(extent, prior_mip);
         texel_offset += static_cast<std::size_t>(6U) * prior_extent * prior_extent;
     }
 
@@ -161,18 +161,14 @@ void test_generated_pbr_environment_data_is_deterministic_and_sized() {
             "generated irradiance alpha should be one");
     require(std::isfinite(read_float(data.brdf_lut_rgba32f, 0)),
             "generated DFG LUT should contain finite floats");
-    require(read_float(data.brdf_lut_rgba32f, 3) == 1.0F,
-            "generated DFG LUT alpha should be one");
+    require(read_float(data.brdf_lut_rgba32f, 3) == 1.0F, "generated DFG LUT alpha should be one");
 }
 
 void test_generated_pbr_environment_config_rejects_zero_dimensions() {
     cubey::render::GeneratedPbrEnvironmentConfig config;
     config.prefiltered_mip_levels = 0;
-    require_throws(
-        [&] {
-            cubey::render::validate_generated_pbr_environment_config(config);
-        },
-        "generated IBL config should reject zero mip counts");
+    require_throws([&] { cubey::render::validate_generated_pbr_environment_config(config); },
+                   "generated IBL config should reject zero mip counts");
 }
 
 void test_pbr_environment_texture_bindings_validate_required_views() {
@@ -181,6 +177,8 @@ void test_pbr_environment_texture_bindings_validate_required_views() {
         .irradiance_view = reinterpret_cast<VkImageView>(0x11),
         .prefiltered_sampler = reinterpret_cast<VkSampler>(0x12),
         .prefiltered_view = reinterpret_cast<VkImageView>(0x13),
+        .previous_prefiltered_sampler = reinterpret_cast<VkSampler>(0x12),
+        .previous_prefiltered_view = reinterpret_cast<VkImageView>(0x13),
         .brdf_lut_sampler = reinterpret_cast<VkSampler>(0x14),
         .brdf_lut_view = reinterpret_cast<VkImageView>(0x15),
         .prefiltered_mip_levels = 4,
@@ -189,9 +187,8 @@ void test_pbr_environment_texture_bindings_validate_required_views() {
     cubey::render::validate_pbr_environment_texture_bindings(bindings);
 
     bindings.prefiltered_view = VK_NULL_HANDLE;
-    require_throws(
-        [&] { cubey::render::validate_pbr_environment_texture_bindings(bindings); },
-        "PBR environment bindings should reject missing prefiltered cube views");
+    require_throws([&] { cubey::render::validate_pbr_environment_texture_bindings(bindings); },
+                   "PBR environment bindings should reject missing prefiltered cube views");
 }
 
 void test_generated_pbr_dfg_lut_stores_energy_compensation_term() {
@@ -211,12 +208,10 @@ void test_generated_pbr_dfg_lut_stores_energy_compensation_term() {
                                              grazing_to_mid_view, high_roughness, 0);
     const float dfg_bias = read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
                                             grazing_to_mid_view, high_roughness, 1);
-    const float white_conductor_energy =
-        read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
-                         grazing_to_mid_view, high_roughness, 2);
-    const float alpha =
-        read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent, grazing_to_mid_view,
-                         high_roughness, 3);
+    const float white_conductor_energy = read_lut_channel(
+        data.brdf_lut_rgba32f, config.brdf_lut_extent, grazing_to_mid_view, high_roughness, 2);
+    const float alpha = read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
+                                         grazing_to_mid_view, high_roughness, 3);
 
     require(std::isfinite(dfg_scale) && std::isfinite(dfg_bias) &&
                 std::isfinite(white_conductor_energy),
@@ -251,12 +246,10 @@ void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix() 
     constexpr std::uint32_t face = 0;
     constexpr std::uint32_t x = 0;
     constexpr std::uint32_t y = 0;
-    const std::uint32_t mip_extent = cubey::render::texture_cube_mip_extent(
-        config.prefiltered_extent, mip);
-    const float u = ((static_cast<float>(x) + 0.5F) / static_cast<float>(mip_extent)) * 2.0F -
-                    1.0F;
-    const float v = ((static_cast<float>(y) + 0.5F) / static_cast<float>(mip_extent)) * 2.0F -
-                    1.0F;
+    const std::uint32_t mip_extent =
+        cubey::render::texture_cube_mip_extent(config.prefiltered_extent, mip);
+    const float u = ((static_cast<float>(x) + 0.5F) / static_cast<float>(mip_extent)) * 2.0F - 1.0F;
+    const float v = ((static_cast<float>(y) + 0.5F) / static_cast<float>(mip_extent)) * 2.0F - 1.0F;
     const float roughness =
         static_cast<float>(mip) / static_cast<float>(config.prefiltered_mip_levels - 1U);
     const TestVec3 legacy =
@@ -280,8 +273,7 @@ void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix() 
                                  std::fabs(actual_b - sharp_b);
     require(sharp_distance > 0.001F,
             "rough prefiltered mip should differ from the sharp radiance mip");
-    const float legacy_distance = std::fabs(actual_r - legacy.x) +
-                                  std::fabs(actual_g - legacy.y) +
+    const float legacy_distance = std::fabs(actual_r - legacy.x) + std::fabs(actual_g - legacy.y) +
                                   std::fabs(actual_b - legacy.z);
     require(legacy_distance > 0.001F,
             "rough prefiltered mip should not use the legacy radiance-to-average mix");
@@ -290,9 +282,8 @@ void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix() 
 void test_pbr_equirectangular_sampling_maps_cardinal_directions() {
     std::vector<float> pixels(8U * 2U * 4U, 0.02F);
     const auto set_pixel = [&pixels](std::uint32_t x, std::uint32_t y, TestVec3 color) {
-        const std::size_t offset = ((static_cast<std::size_t>(y) * 8U) +
-                                    static_cast<std::size_t>(x)) *
-                                   4U;
+        const std::size_t offset =
+            ((static_cast<std::size_t>(y) * 8U) + static_cast<std::size_t>(x)) * 4U;
         pixels[offset + 0U] = color.x;
         pixels[offset + 1U] = color.y;
         pixels[offset + 2U] = color.z;
@@ -311,12 +302,10 @@ void test_pbr_equirectangular_sampling_maps_cardinal_directions() {
         .rgba32f = pixels,
     };
 
-    const cubey::math::Vec3 forward =
-        cubey::render::sample_pbr_equirectangular_radiance(
-            image, cubey::math::Vec3{0.0F, 0.0F, 1.0F});
-    const cubey::math::Vec3 right =
-        cubey::render::sample_pbr_equirectangular_radiance(
-            image, cubey::math::Vec3{1.0F, 0.0F, 0.0F});
+    const cubey::math::Vec3 forward = cubey::render::sample_pbr_equirectangular_radiance(
+        image, cubey::math::Vec3{0.0F, 0.0F, 1.0F});
+    const cubey::math::Vec3 right = cubey::render::sample_pbr_equirectangular_radiance(
+        image, cubey::math::Vec3{1.0F, 0.0F, 0.0F});
 
     require(std::fabs(forward.r - 1.0F) < 0.0001F,
             "equirectangular +Z should sample the center longitude");
@@ -324,16 +313,14 @@ void test_pbr_equirectangular_sampling_maps_cardinal_directions() {
             "equirectangular +Z should preserve center color");
     require(std::fabs(right.r - 0.1F) < 0.0001F,
             "equirectangular +X should sample the three-quarter longitude");
-    require(std::fabs(right.g - 1.0F) < 0.0001F,
-            "equirectangular +X should preserve side color");
+    require(std::fabs(right.g - 1.0F) < 0.0001F, "equirectangular +X should preserve side color");
 }
 
 void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr() {
     std::vector<float> pixels(8U * 2U * 4U, 0.1F);
     const auto set_pixel = [&pixels](std::uint32_t x, std::uint32_t y, TestVec3 color) {
-        const std::size_t offset = ((static_cast<std::size_t>(y) * 8U) +
-                                    static_cast<std::size_t>(x)) *
-                                   4U;
+        const std::size_t offset =
+            ((static_cast<std::size_t>(y) * 8U) + static_cast<std::size_t>(x)) * 4U;
         pixels[offset + 0U] = color.x;
         pixels[offset + 1U] = color.y;
         pixels[offset + 2U] = color.z;
@@ -375,11 +362,11 @@ void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr() {
                     static_cast<std::size_t>(config.brdf_lut_extent) *
                     cubey::render::texture_format_byte_size(VK_FORMAT_R32G32B32A32_SFLOAT),
             "HDR DFG LUT should match expected byte size");
-    require(std::fabs(read_cube_channel(data.prefiltered_cube_rgba32f,
-                                        config.prefiltered_extent, 0, 4, 0, 0, 0) -
+    require(std::fabs(read_cube_channel(data.prefiltered_cube_rgba32f, config.prefiltered_extent, 0,
+                                        4, 0, 0, 0) -
                       0.7F) < 0.0001F,
             "sharp HDR prefiltered +Z texel should sample source radiance");
-    require(read_cube_channel(data.prefiltered_cube_rgba32f,
-                              config.prefiltered_extent, 0, 4, 0, 0, 3) == 1.0F,
+    require(read_cube_channel(data.prefiltered_cube_rgba32f, config.prefiltered_extent, 0, 4, 0, 0,
+                              3) == 1.0F,
             "HDR prefiltered alpha should remain one");
 }

@@ -176,6 +176,9 @@ class CloudLayerRuntime {
     [[nodiscard]] std::uint32_t temporal_frame_index() const noexcept {
         return temporal_frame_index_;
     }
+    [[nodiscard]] bool generated_resources_created() const noexcept {
+        return generated_.has_value();
+    }
     [[nodiscard]] const CloudLayerGeneratedResources& generated_resources() const;
 
     void upload_frame_uniforms(FrameSlot frame_slot, const CloudLayerFrameUniforms& uniforms) const;
@@ -203,9 +206,8 @@ class CloudLayerRuntime {
                                     const RenderGraphResourceSet& resources,
                                     const CloudLayerRuntimeFrame& frame) const;
     void update_composite_descriptors(
-        const cubey::vulkan::Device& device, FrameSlot frame_slot,
-        const CompiledRenderGraph& graph, const RenderGraphResourceSet& resources,
-        const CloudLayerRuntimeFrame& frame,
+        const cubey::vulkan::Device& device, FrameSlot frame_slot, const CompiledRenderGraph& graph,
+        const RenderGraphResourceSet& resources, const CloudLayerRuntimeFrame& frame,
         std::optional<RenderGraphTextureHandle> background = std::nullopt,
         std::optional<RenderGraphTextureHandle> scene_depth = std::nullopt) const;
     void update_shadow_descriptors(const cubey::vulkan::Device& device, FrameSlot frame_slot,

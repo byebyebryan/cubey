@@ -26,6 +26,8 @@
 
 namespace cubey::projects::fluid::water_3d {
 
+inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+
 struct Water3DEnvironmentTextureBindings {
     cubey::render::PbrEnvironmentTextureBindings pbr{};
     VkSampler display_sampler = VK_NULL_HANDLE;

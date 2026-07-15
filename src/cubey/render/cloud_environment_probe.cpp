@@ -46,7 +46,7 @@ prefilter_uniforms(const ViewRayBasis3D& view_rays, float roughness,
     face.target_extent = {extent, extent};
     face.camera_mode = 0.0F;
     face.external_background = false;
-    face.scene_depth_occlusion_enabled = false;
+    face.scene_depth_mode = CloudLayerSceneDepthMode::Disabled;
     return face;
 }
 

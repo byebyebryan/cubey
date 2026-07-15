@@ -201,7 +201,11 @@ full engine architecture.
   glTF extension lobes: clearcoat, sheen, anisotropy, and iridescence. Optional
   extension texture slots stay fixed in the descriptor layout, while material
   texture flags gate shader fetches for absent textures. The scene set includes
-  irradiance cube, prefiltered cube, and the DFG/BRDF lookup binding.
+  irradiance, previous/current prefiltered cubes, and the DFG/BRDF lookup.
+  `PbrEnvironmentTextureBindings` carries the generation blend, and
+  `ForwardPbrRenderer3D::update_environment` updates one safe frame-slot set so
+  dynamic atmosphere/cloud probes crossfade without rebuilding the renderer or
+  popping between captures.
   `PbrDisplayTransform`
   carries final exposure, tone-map, and output-encoding controls; the reusable
   forward PBR renderer applies it in the post pass after HDR scene-color

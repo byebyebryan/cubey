@@ -1,5 +1,7 @@
 cubey_forward_pbr_shader_sources(CUBEY_FORWARD_PBR_SHADERS)
 cubey_forward_pbr_shader_depends(CUBEY_FORWARD_PBR_SHADER_DEPENDS)
+cubey_cloud_layer_shader_sources(CUBEY_GLTF_VIEWER_CLOUD_SHADERS COMPOSITE background-depth)
+cubey_cloud_layer_shader_depends(CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_gltf_viewer
@@ -15,11 +17,13 @@ cubey_add_app_target(
         main.cpp
     SHADERS
         ${CUBEY_FORWARD_PBR_SHADERS}
+        ${CUBEY_GLTF_VIEWER_CLOUD_SHADERS}
         shaders/gltf_deform.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         ${CUBEY_FORWARD_PBR_SHADER_DEPENDS}
+        ${CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS}
 )
 
 if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
@@ -43,7 +47,7 @@ if (BUILD_TESTING)
         NAME gltf_viewer_uses_forward_pbr_renderer_3d
         COMMAND
             /bin/sh -c
-            "grep -q 'engine_\\.renderers()\\.create_forward_pbr_renderer_3d' \"$1\" && grep -q 'forward_pbr_renderer().record({' \"$2\" && ! grep -R --include='*.cpp' --include='*.h' -q 'ForwardPbrRenderer3D pbr_renderer_' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q '<cubey/render/shadow_map.h>' \"$3\""
+            "grep -q 'engine_\\.renderers()\\.create_forward_pbr_renderer_3d' \"$1\" && grep -q 'forward_pbr_renderer().record({' \"$2\" && grep -q 'clouds.record_pending_update' \"$2\" && grep -q 'atmosphere_clouds' \"$2\" && grep -q 'forward_pbr_renderer().update_environment' \"$2\" && ! grep -R --include='*.cpp' --include='*.h' -q 'ForwardPbrRenderer3D pbr_renderer_' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q '<cubey/render/shadow_map.h>' \"$3\""
             gltf_viewer_uses_forward_pbr_renderer_3d
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_render.cpp"

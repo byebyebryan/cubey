@@ -68,13 +68,13 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     return glm::mix(math::Vec3{0.035F, 0.038F, 0.042F}, generated_radiance(direction), 0.34F);
 }
 
-[[nodiscard]] std::size_t checked_equirectangular_value_count(
-    const PbrEquirectangularImage& image) {
+[[nodiscard]] std::size_t
+checked_equirectangular_value_count(const PbrEquirectangularImage& image) {
     if (image.width == 0 || image.height == 0) {
         throw std::runtime_error("PBR equirectangular image dimensions must be nonzero");
     }
-    const std::size_t pixel_count = static_cast<std::size_t>(image.width) *
-                                    static_cast<std::size_t>(image.height);
+    const std::size_t pixel_count =
+        static_cast<std::size_t>(image.width) * static_cast<std::size_t>(image.height);
     if (pixel_count > std::numeric_limits<std::size_t>::max() / 4U) {
         throw std::runtime_error("PBR equirectangular image is too large");
     }
@@ -83,10 +83,10 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
 
 [[nodiscard]] math::Vec3 equirectangular_texel(const PbrEquirectangularImage& image,
                                                std::uint32_t x, std::uint32_t y) {
-    const std::size_t offset = ((static_cast<std::size_t>(y) *
-                                 static_cast<std::size_t>(image.width)) +
-                                static_cast<std::size_t>(x)) *
-                               4U;
+    const std::size_t offset =
+        ((static_cast<std::size_t>(y) * static_cast<std::size_t>(image.width)) +
+         static_cast<std::size_t>(x)) *
+        4U;
     return {
         image.rgba32f[offset + 0U],
         image.rgba32f[offset + 1U],
@@ -94,8 +94,9 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     };
 }
 
-[[nodiscard]] math::Vec3 sample_pbr_equirectangular_radiance_unchecked(
-    const PbrEquirectangularImage& image, math::Vec3 direction) {
+[[nodiscard]] math::Vec3
+sample_pbr_equirectangular_radiance_unchecked(const PbrEquirectangularImage& image,
+                                              math::Vec3 direction) {
     const math::Vec3 normal = glm::normalize(direction);
     float u = (std::atan2(normal.x, normal.z) / (2.0F * kPi)) + 0.5F;
     u -= std::floor(u);
@@ -107,15 +108,13 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     const float floor_y = std::floor(sample_y);
     const std::uint32_t width = image.width;
     const std::uint32_t height = image.height;
-    const std::uint32_t x0 =
-        static_cast<std::uint32_t>(static_cast<std::int64_t>(floor_x) %
-                                   static_cast<std::int64_t>(width) +
-                                   static_cast<std::int64_t>(width)) %
-        width;
+    const std::uint32_t x0 = static_cast<std::uint32_t>(static_cast<std::int64_t>(floor_x) %
+                                                            static_cast<std::int64_t>(width) +
+                                                        static_cast<std::int64_t>(width)) %
+                             width;
     const std::uint32_t x1 = (x0 + 1U) % width;
     const std::uint32_t y0 =
-        static_cast<std::uint32_t>(std::clamp(floor_y, 0.0F,
-                                              static_cast<float>(height - 1U)));
+        static_cast<std::uint32_t>(std::clamp(floor_y, 0.0F, static_cast<float>(height - 1U)));
     const std::uint32_t y1 = std::min(y0 + 1U, height - 1U);
     const float tx = sample_x - floor_x;
     const float ty = std::clamp(sample_y - floor_y, 0.0F, 1.0F);
@@ -147,8 +146,7 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     const float alpha = roughness * roughness;
     const float alpha2 = alpha * alpha;
     const float phi = 2.0F * kPi * xi[0];
-    const float cos_theta =
-        std::sqrt((1.0F - xi[1]) / (1.0F + ((alpha2 - 1.0F) * xi[1])));
+    const float cos_theta = std::sqrt((1.0F - xi[1]) / (1.0F + ((alpha2 - 1.0F) * xi[1])));
     const float sin_theta = std::sqrt(std::max(1.0F - (cos_theta * cos_theta), 0.0F));
     return {
         std::cos(phi) * sin_theta,
@@ -157,8 +155,7 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     };
 }
 
-[[nodiscard]] float visibility_smith_ggx_correlated(float ndotv, float ndotl,
-                                                    float roughness) {
+[[nodiscard]] float visibility_smith_ggx_correlated(float ndotv, float ndotl, float roughness) {
     const float alpha = roughness * roughness;
     const float alpha2 = alpha * alpha;
     const float lambda_v =
@@ -170,8 +167,7 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
 
 [[nodiscard]] math::Vec3 tangent_to_world(math::Vec3 sample, math::Vec3 normal) {
     const math::Vec3 up =
-        std::fabs(normal.z) < 0.999F ? math::Vec3{0.0F, 0.0F, 1.0F}
-                                     : math::Vec3{0.0F, 1.0F, 0.0F};
+        std::fabs(normal.z) < 0.999F ? math::Vec3{0.0F, 0.0F, 1.0F} : math::Vec3{0.0F, 1.0F, 0.0F};
     const math::Vec3 tangent = glm::normalize(glm::cross(up, normal));
     const math::Vec3 bitangent = glm::cross(normal, tangent);
     return glm::normalize((tangent * sample.x) + (bitangent * sample.y) + (normal * sample.z));
@@ -258,21 +254,19 @@ void append_rgba32f(std::vector<std::uint8_t>& bytes, std::array<float, 4> rgba)
     return color / total_weight;
 }
 
-void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent,
-                 std::uint32_t mip_levels, auto&& sample) {
+void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent, std::uint32_t mip_levels,
+                 auto&& sample) {
     for (std::uint32_t mip = 0; mip < mip_levels; ++mip) {
         const std::uint32_t mip_extent = texture_cube_mip_extent(extent, mip);
         for (std::uint32_t face = 0; face < kCubeFaceCount; ++face) {
             for (std::uint32_t y = 0; y < mip_extent; ++y) {
                 for (std::uint32_t x = 0; x < mip_extent; ++x) {
-                    const float u = ((static_cast<float>(x) + 0.5F) /
-                                     static_cast<float>(mip_extent)) *
-                                        2.0F -
-                                    1.0F;
-                    const float v = ((static_cast<float>(y) + 0.5F) /
-                                     static_cast<float>(mip_extent)) *
-                                        2.0F -
-                                    1.0F;
+                    const float u =
+                        ((static_cast<float>(x) + 0.5F) / static_cast<float>(mip_extent)) * 2.0F -
+                        1.0F;
+                    const float v =
+                        ((static_cast<float>(y) + 0.5F) / static_cast<float>(mip_extent)) * 2.0F -
+                        1.0F;
                     const math::Vec3 color = sample(cube_direction(face, u, v), mip);
                     append_rgba32f(bytes, {color.x, color.y, color.z, 1.0F});
                 }
@@ -283,11 +277,9 @@ void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent,
 
 void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
     for (std::uint32_t y = 0; y < extent; ++y) {
-        const float roughness =
-            (static_cast<float>(y) + 0.5F) / static_cast<float>(extent);
+        const float roughness = (static_cast<float>(y) + 0.5F) / static_cast<float>(extent);
         for (std::uint32_t x = 0; x < extent; ++x) {
-            const float ndotv =
-                (static_cast<float>(x) + 0.5F) / static_cast<float>(extent);
+            const float ndotv = (static_cast<float>(x) + 0.5F) / static_cast<float>(extent);
             const math::Vec3 view{
                 std::sqrt(std::max(1.0F - (ndotv * ndotv), 0.0F)),
                 0.0F,
@@ -306,8 +298,7 @@ void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
                 if (ndotl > 0.0F && ndoth > 0.0F && vdoth > 0.0F) {
                     const float visibility =
                         visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
-                    const float geometry_visibility =
-                        (4.0F * visibility * ndotl * vdoth) / ndoth;
+                    const float geometry_visibility = (4.0F * visibility * ndotl * vdoth) / ndoth;
                     const float fresnel = std::pow(1.0F - vdoth, 5.0F);
                     scale += (1.0F - fresnel) * geometry_visibility;
                     bias += fresnel * geometry_visibility;
@@ -361,9 +352,8 @@ void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
         {
             .extent = {config.brdf_lut_extent, config.brdf_lut_extent},
             .format = kIblTextureFormat,
-            .bytes =
-                std::span<const std::uint8_t>{data.brdf_lut_rgba32f.data(),
-                                              data.brdf_lut_rgba32f.size()},
+            .bytes = std::span<const std::uint8_t>{data.brdf_lut_rgba32f.data(),
+                                                   data.brdf_lut_rgba32f.size()},
             .create_sampler = true,
             .sampler = ibl_sampler(1),
         });
@@ -394,11 +384,20 @@ void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindin
         bindings.prefiltered_view == VK_NULL_HANDLE) {
         throw std::runtime_error("PBR environment prefiltered cube binding is not initialized");
     }
+    if (bindings.previous_prefiltered_sampler == VK_NULL_HANDLE ||
+        bindings.previous_prefiltered_view == VK_NULL_HANDLE) {
+        throw std::runtime_error(
+            "PBR environment previous prefiltered cube binding is not initialized");
+    }
     if (bindings.brdf_lut_sampler == VK_NULL_HANDLE || bindings.brdf_lut_view == VK_NULL_HANDLE) {
         throw std::runtime_error("PBR environment BRDF LUT binding is not initialized");
     }
     if (bindings.prefiltered_mip_levels == 0) {
         throw std::runtime_error("PBR environment prefiltered mip count must be nonzero");
+    }
+    if (!std::isfinite(bindings.prefiltered_blend) || bindings.prefiltered_blend < 0.0F ||
+        bindings.prefiltered_blend > 1.0F) {
+        throw std::runtime_error("PBR environment prefiltered blend must be within [0, 1]");
     }
 }
 
@@ -416,6 +415,8 @@ pbr_environment_texture_bindings(const GeneratedPbrEnvironment& environment) {
         .irradiance_view = environment.irradiance_cube.view(),
         .prefiltered_sampler = environment.prefiltered_cube.sampler().handle(),
         .prefiltered_view = environment.prefiltered_cube.view(),
+        .previous_prefiltered_sampler = environment.prefiltered_cube.sampler().handle(),
+        .previous_prefiltered_view = environment.prefiltered_cube.view(),
         .brdf_lut_sampler = environment.brdf_lut.sampler().handle(),
         .brdf_lut_view = environment.brdf_lut.view(),
         .prefiltered_mip_levels = environment.prefiltered_mip_levels,
@@ -438,23 +439,22 @@ generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config) {
     GeneratedPbrEnvironmentData data;
     data.irradiance_cube_rgba32f.reserve(texture_cube_byte_size(
         config.irradiance_extent, 1, texture_format_byte_size(kIblTextureFormat)));
-    append_cube(data.irradiance_cube_rgba32f, config.irradiance_extent, 1,
-                [](math::Vec3 direction, std::uint32_t) {
-        return generated_irradiance(direction);
-    });
+    append_cube(
+        data.irradiance_cube_rgba32f, config.irradiance_extent, 1,
+        [](math::Vec3 direction, std::uint32_t) { return generated_irradiance(direction); });
 
-    data.prefiltered_cube_rgba32f.reserve(texture_cube_byte_size(
-        config.prefiltered_extent, config.prefiltered_mip_levels,
-        texture_format_byte_size(kIblTextureFormat)));
+    data.prefiltered_cube_rgba32f.reserve(
+        texture_cube_byte_size(config.prefiltered_extent, config.prefiltered_mip_levels,
+                               texture_format_byte_size(kIblTextureFormat)));
     append_cube(data.prefiltered_cube_rgba32f, config.prefiltered_extent,
-                config.prefiltered_mip_levels,
-                [&config](math::Vec3 direction, std::uint32_t mip) {
-        const float roughness = config.prefiltered_mip_levels == 1
-                                    ? 0.0F
-                                    : static_cast<float>(mip) /
-                                          static_cast<float>(config.prefiltered_mip_levels - 1U);
-        return generated_prefiltered(direction, roughness);
-    });
+                config.prefiltered_mip_levels, [&config](math::Vec3 direction, std::uint32_t mip) {
+                    const float roughness =
+                        config.prefiltered_mip_levels == 1
+                            ? 0.0F
+                            : static_cast<float>(mip) /
+                                  static_cast<float>(config.prefiltered_mip_levels - 1U);
+                    return generated_prefiltered(direction, roughness);
+                });
 
     const std::size_t brdf_bytes = static_cast<std::size_t>(config.brdf_lut_extent) *
                                    static_cast<std::size_t>(config.brdf_lut_extent) *
@@ -464,8 +464,9 @@ generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config) {
     return data;
 }
 
-GeneratedPbrEnvironmentData generate_pbr_environment_data_from_equirectangular(
-    const PbrEquirectangularImage& image, const GeneratedPbrEnvironmentConfig& config) {
+GeneratedPbrEnvironmentData
+generate_pbr_environment_data_from_equirectangular(const PbrEquirectangularImage& image,
+                                                   const GeneratedPbrEnvironmentConfig& config) {
     validate_generated_pbr_environment_config(config);
     validate_pbr_equirectangular_image(image);
     GeneratedPbrEnvironmentData data;
@@ -473,21 +474,22 @@ GeneratedPbrEnvironmentData generate_pbr_environment_data_from_equirectangular(
         config.irradiance_extent, 1, texture_format_byte_size(kIblTextureFormat)));
     append_cube(data.irradiance_cube_rgba32f, config.irradiance_extent, 1,
                 [&image](math::Vec3 direction, std::uint32_t) {
-        return equirectangular_irradiance(image, direction);
-    });
+                    return equirectangular_irradiance(image, direction);
+                });
 
-    data.prefiltered_cube_rgba32f.reserve(texture_cube_byte_size(
-        config.prefiltered_extent, config.prefiltered_mip_levels,
-        texture_format_byte_size(kIblTextureFormat)));
+    data.prefiltered_cube_rgba32f.reserve(
+        texture_cube_byte_size(config.prefiltered_extent, config.prefiltered_mip_levels,
+                               texture_format_byte_size(kIblTextureFormat)));
     append_cube(data.prefiltered_cube_rgba32f, config.prefiltered_extent,
                 config.prefiltered_mip_levels,
                 [&image, &config](math::Vec3 direction, std::uint32_t mip) {
-        const float roughness = config.prefiltered_mip_levels == 1
-                                    ? 0.0F
-                                    : static_cast<float>(mip) /
-                                          static_cast<float>(config.prefiltered_mip_levels - 1U);
-        return equirectangular_prefiltered(image, direction, roughness);
-    });
+                    const float roughness =
+                        config.prefiltered_mip_levels == 1
+                            ? 0.0F
+                            : static_cast<float>(mip) /
+                                  static_cast<float>(config.prefiltered_mip_levels - 1U);
+                    return equirectangular_prefiltered(image, direction, roughness);
+                });
 
     const std::size_t brdf_bytes = static_cast<std::size_t>(config.brdf_lut_extent) *
                                    static_cast<std::size_t>(config.brdf_lut_extent) *
@@ -497,9 +499,10 @@ GeneratedPbrEnvironmentData generate_pbr_environment_data_from_equirectangular(
     return data;
 }
 
-GeneratedPbrEnvironment create_generated_pbr_environment(
-    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    const GeneratedPbrEnvironmentConfig& config) {
+GeneratedPbrEnvironment
+create_generated_pbr_environment(const cubey::vulkan::Device& device,
+                                 cubey::vulkan::GpuRuntime& gpu,
+                                 const GeneratedPbrEnvironmentConfig& config) {
     const GeneratedPbrEnvironmentData data = generate_pbr_environment_data(config);
     return create_pbr_environment_from_data(device, gpu, config, data);
 }

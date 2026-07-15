@@ -1,5 +1,6 @@
 #include "water_3d_commands.h"
 
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
 #include <cubey/render/render_graph.h>
@@ -30,7 +31,6 @@ inline constexpr std::uint32_t kWater3DEmitterKindHose = 0;
 inline constexpr std::uint32_t kWater3DEmitterKindRain = 1;
 inline constexpr VkFormat kWater3DSurfaceScalarFormat = VK_FORMAT_R32_SFLOAT;
 inline constexpr VkFormat kWater3DSurfacePackedFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
-inline constexpr VkFormat kWater3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 inline constexpr float kWater3DSurfaceDepthSentinel = 1000000.0F;
 
 struct RenderPushConstants {
@@ -1016,6 +1016,7 @@ void record_whitewater_pass(const cubey::vulkan::CommandRecorder& recorder,
 struct SurfaceRenderGraph {
     cubey::render::CompiledRenderGraph graph;
     cubey::render::RenderGraphTextureHandle scene_color{};
+    cubey::render::RenderGraphTextureHandle surface_background{};
     cubey::render::RenderGraphTextureHandle scene_depth{};
     cubey::render::RenderGraphTextureHandle raw_depth{};
     cubey::render::RenderGraphTextureHandle raw_thickness{};
@@ -1023,6 +1024,9 @@ struct SurfaceRenderGraph {
     cubey::render::RenderGraphTextureHandle packed_b{};
     cubey::render::RenderGraphTextureHandle final_surface{};
     cubey::render::RenderGraphTextureHandle whitewater{};
+    cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+    cubey::render::CloudLayerRuntimeFrame cloud{};
+    bool clouds_enabled = false;
 };
 
 [[nodiscard]] VkDescriptorSet surface_source_descriptor_set(Water3DGpuResources& resources,
@@ -1037,7 +1041,9 @@ struct SurfaceRenderGraph {
     const Water3DConfig& config, cubey::render::FrameSlot frame_slot,
     const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
     const Water3DRenderCamera& camera, Water3DRenderTargetMode target_mode,
-    bool atmosphere_background_enabled, bool moon_body_enabled) {
+    bool atmosphere_background_enabled, bool moon_body_enabled,
+    cubey::CloudEnvironmentRuntime* clouds,
+    const cubey::CloudEnvironmentRuntimeFrame* cloud_runtime_frame) {
     Water3DGpuResources* resource_ptr = &resources;
     const Water3DConfig* config_ptr = &config;
     const Water3DRuntimeState* runtime_state_ptr = &runtime_state;
@@ -1056,6 +1062,16 @@ struct SurfaceRenderGraph {
     const cubey::render::RenderGraphTextureHandle scene_color =
         graph.create_texture(surface_color_texture_desc("water scene color", color_target.extent,
                                                         kWater3DSceneColorFormat));
+    cubey::render::RenderGraphTextureHandle surface_background = scene_color;
+    cubey::render::RenderGraphTextureHandle cloud_scene_color{};
+    cubey::render::CloudLayerRuntimeFrame cloud_frame{};
+    const bool clouds_enabled =
+        clouds != nullptr && cloud_runtime_frame != nullptr && cloud_runtime_frame->enabled;
+    if (clouds_enabled) {
+        cloud_scene_color = graph.create_texture(surface_color_texture_desc(
+            "water cloud scene color", color_target.extent, kWater3DSceneColorFormat));
+        cloud_frame = clouds->declare_surface_product(graph, frame_slot, *cloud_runtime_frame);
+    }
     const cubey::render::RenderGraphTextureHandle scene_depth =
         graph.create_texture(surface_depth_texture_desc("water scene depth", color_target.extent,
                                                         resources.depth_attachment().format()));
@@ -1094,6 +1110,11 @@ struct SurfaceRenderGraph {
                 cubey::render::resolved_depth_target_view(context, scene_depth),
                 atmosphere_background_enabled, moon_body_enabled);
         });
+    if (clouds_enabled) {
+        clouds->declare_surface_composite(graph, cloud_scene_color, cloud_frame, frame_slot,
+                                          scene_color, scene_depth);
+        surface_background = cloud_scene_color;
+    }
     graph.add_pass("water surface depth", cubey::render::RenderGraphQueueDomain::Graphics)
         .write_color(raw_depth)
         .write_depth(visibility_depth)
@@ -1216,7 +1237,7 @@ struct SurfaceRenderGraph {
         });
 
     graph.add_pass("water surface composite", cubey::render::RenderGraphQueueDomain::Graphics)
-        .read_texture(scene_color)
+        .read_texture(surface_background)
         .read_texture(scene_depth)
         .read_texture(current_surface.handle)
         .read_texture(whitewater)
@@ -1238,6 +1259,7 @@ struct SurfaceRenderGraph {
     return {
         .graph = graph.compile(),
         .scene_color = scene_color,
+        .surface_background = surface_background,
         .scene_depth = scene_depth,
         .raw_depth = raw_depth,
         .raw_thickness = raw_thickness,
@@ -1245,6 +1267,9 @@ struct SurfaceRenderGraph {
         .packed_b = packed_b,
         .final_surface = current_surface.handle,
         .whitewater = whitewater,
+        .cloud_scene_color = cloud_scene_color,
+        .cloud = cloud_frame,
+        .clouds_enabled = clouds_enabled,
     };
 }
 
@@ -1564,14 +1589,17 @@ void record_water_3d_surface_draw(
     const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
     const Water3DRenderCamera& camera, cubey::render::ColorTargetView color_target,
     Water3DRenderTargetMode target_mode, const Water3DEnvironmentTextureBindings& environment,
-    bool moon_body_enabled, cubey::vulkan::GpuTimestampProfiler* profiler) {
+    bool moon_body_enabled, cubey::CloudEnvironmentRuntime* clouds,
+    const cubey::CloudEnvironmentRuntimeFrame* cloud_runtime_frame,
+    cubey::vulkan::GpuTimestampProfiler* profiler) {
     if (!is_water_3d_surface_view(render_view)) {
         throw std::runtime_error("water 3D surface draw requires a surface render view");
     }
 
     const SurfaceRenderGraph render_graph = build_water_3d_surface_graph(
         color_target, resources, config, frame_slot, runtime_state, render_view, camera,
-        target_mode, environment.atmosphere_background_textures.has_value(), moon_body_enabled);
+        target_mode, environment.atmosphere_background_textures.has_value(), moon_body_enabled,
+        clouds, cloud_runtime_frame);
     graph_executor.record(
         cubey::render::RenderGraphFrameRecordInfo{
             .device = &device,
@@ -1582,7 +1610,7 @@ void record_water_3d_surface_draw(
             .profiler = profiler,
         },
         render_graph.graph,
-        [&resources, &device, frame_slot, &environment,
+        [&resources, &device, frame_slot, &environment, clouds,
          &render_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
             resources.update_surface_descriptors(
                 device, frame_slot,
@@ -1597,13 +1625,21 @@ void record_water_3d_surface_draw(
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
                                                              render_graph.final_surface),
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
-                                                             render_graph.scene_color),
+                                                             render_graph.surface_background),
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
                                                              render_graph.scene_depth),
                 cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
                                                              render_graph.whitewater),
                 environment);
+            if (render_graph.clouds_enabled) {
+                clouds->update_surface_descriptors(
+                    device, frame_slot, render_graph.graph, graph_resources, render_graph.cloud,
+                    render_graph.scene_color, render_graph.scene_depth);
+            }
         });
+    if (render_graph.clouds_enabled) {
+        clouds->complete_surface_frame(frame_slot, render_graph.cloud);
+    }
 }
 
 } // namespace cubey::projects::fluid::water_3d

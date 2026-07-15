@@ -36,11 +36,11 @@ void ForwardPbrRenderer3D::create_global_resources(
 void ForwardPbrRenderer3D::Impl::create_global_resources(
     const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
     std::uint32_t frame_slot_count) {
-    create_global_resources(device, ForwardPbrRenderer3DGlobalResourcesInfo{
-                                        .environment_textures =
-                                            render::pbr_environment_texture_bindings(environment),
-                                        .frame_slot_count = frame_slot_count,
-                                    });
+    create_global_resources(
+        device, ForwardPbrRenderer3DGlobalResourcesInfo{
+                    .environment_textures = render::pbr_environment_texture_bindings(environment),
+                    .frame_slot_count = frame_slot_count,
+                });
 }
 
 void ForwardPbrRenderer3D::create_global_resources(
@@ -121,6 +121,13 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                                 .image_view = global_.environment.prefiltered_view,
                                 .layout = global_.environment.prefiltered_layout,
                             },
+                            render::SampledImageMaterialBinding{
+                                .binding = forward_pbr_renderer_3d_binding(
+                                    render::PbrSkyboxBinding::PreviousEnvironmentCube),
+                                .sampler = global_.environment.previous_prefiltered_sampler,
+                                .image_view = global_.environment.previous_prefiltered_view,
+                                .layout = global_.environment.previous_prefiltered_layout,
+                            },
                         },
                 });
     if (info.atmosphere_background_textures.has_value()) {
@@ -170,15 +177,57 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                         .image_view = global_.environment.brdf_lut_view,
                         .layout = global_.environment.brdf_lut_layout,
                     },
+                    render::SampledImageMaterialBinding{
+                        .binding = forward_pbr_renderer_3d_binding(
+                            render::PbrSceneBinding::PreviousPrefilteredCube),
+                        .sampler = global_.environment.previous_prefiltered_sampler,
+                        .image_view = global_.environment.previous_prefiltered_view,
+                        .layout = global_.environment.previous_prefiltered_layout,
+                    },
                 },
         });
     global_.post_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
-                                       .material_pass = render::pbr_post_pass_info(),
-                                       .descriptor_set = 0,
-                                       .frame_slot_count = info.frame_slot_count,
-                                       .uniform_binding = forward_pbr_renderer_3d_binding(
-                                           render::PbrPostBinding::PostUniforms),
-                                   });
+                                              .material_pass = render::pbr_post_pass_info(),
+                                              .descriptor_set = 0,
+                                              .frame_slot_count = info.frame_slot_count,
+                                              .uniform_binding = forward_pbr_renderer_3d_binding(
+                                                  render::PbrPostBinding::PostUniforms),
+                                          });
+}
+
+void ForwardPbrRenderer3D::update_environment(
+    const vulkan::Device& device, render::FrameSlot frame_slot,
+    const render::PbrEnvironmentTextureBindings& environment) {
+    impl_->update_environment(device, frame_slot, environment);
+}
+
+void ForwardPbrRenderer3D::Impl::update_environment(
+    const vulkan::Device& device, render::FrameSlot frame_slot,
+    const render::PbrEnvironmentTextureBindings& environment) {
+    require_global_resources();
+    render::validate_pbr_environment_texture_bindings(environment);
+    global_.environment = environment;
+
+    render::MaterialDescriptorWriter(scene_material().set(frame_slot))
+        .combined_image_sampler(
+            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
+            environment.prefiltered_sampler, environment.prefiltered_view,
+            environment.prefiltered_layout)
+        .combined_image_sampler(
+            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PreviousPrefilteredCube),
+            environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
+            environment.previous_prefiltered_layout)
+        .update(device);
+    render::MaterialDescriptorWriter(skybox_material().set(frame_slot))
+        .combined_image_sampler(
+            forward_pbr_renderer_3d_binding(render::PbrSkyboxBinding::EnvironmentCube),
+            environment.prefiltered_sampler, environment.prefiltered_view,
+            environment.prefiltered_layout)
+        .combined_image_sampler(
+            forward_pbr_renderer_3d_binding(render::PbrSkyboxBinding::PreviousEnvironmentCube),
+            environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
+            environment.previous_prefiltered_layout)
+        .update(device);
 }
 
 void ForwardPbrRenderer3D::create_swapchain_resources(
@@ -201,27 +250,29 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     require_no_swapchain_resources();
     validate_scene_color_format(device, config_.scene_color_format);
 
-    swapchain_.depth_attachment.emplace(device, info.extent);
-    swapchain_.post_sampler.emplace(device, vulkan::SamplerConfig{
-                                      .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                                  });
+    swapchain_.depth_attachment.emplace(device, info.extent, true);
+    swapchain_.post_sampler.emplace(device,
+                                    vulkan::SamplerConfig{
+                                        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                    });
 
     const std::array<render::ShaderStageFile, 2> skybox_shaders{
         render::vertex_shader_file(config_.skybox_vertex_shader),
         render::fragment_shader_file(config_.skybox_fragment_shader),
     };
     const std::array<VkDescriptorSetLayout, 1> skybox_layouts{skybox_material().layout()};
-    swapchain_.skybox_pipeline.emplace(device, render::graphics_pipeline_file_resource_config(
-                                         {
-                                             .extent = info.extent,
-                                             .color_format = config_.scene_color_format,
-                                             .depth_format = depth_attachment().format(),
-                                         },
-                                         {
-                                             .shader_stage_files = skybox_shaders,
-                                             .descriptor_set_layouts = skybox_layouts,
-                                             .material_pass = render::pbr_skybox_pass_info(),
-                                         }));
+    swapchain_.skybox_pipeline.emplace(device,
+                                       render::graphics_pipeline_file_resource_config(
+                                           {
+                                               .extent = info.extent,
+                                               .color_format = config_.scene_color_format,
+                                               .depth_format = depth_attachment().format(),
+                                           },
+                                           {
+                                               .shader_stage_files = skybox_shaders,
+                                               .descriptor_set_layouts = skybox_layouts,
+                                               .material_pass = render::pbr_skybox_pass_info(),
+                                           }));
     if (global_.atmosphere_background.materials_created()) {
         if (config_.atmosphere_vertex_shader.empty() ||
             config_.atmosphere_fragment_shader.empty()) {
@@ -345,15 +396,15 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     };
     const std::array<VkDescriptorSetLayout, 1> post_layouts{post_material().layout()};
     swapchain_.post_pipeline.emplace(device, render::graphics_pipeline_file_resource_config(
-                                       {
-                                           .extent = info.extent,
-                                           .color_format = info.color_format,
-                                       },
-                                       {
-                                           .shader_stage_files = post_shaders,
-                                           .descriptor_set_layouts = post_layouts,
-                                           .material_pass = render::pbr_post_pass_info(),
-                                       }));
+                                                 {
+                                                     .extent = info.extent,
+                                                     .color_format = info.color_format,
+                                                 },
+                                                 {
+                                                     .shader_stage_files = post_shaders,
+                                                     .descriptor_set_layouts = post_layouts,
+                                                     .material_pass = render::pbr_post_pass_info(),
+                                                 }));
 }
 
 void ForwardPbrRenderer3D::destroy_swapchain_resources() {

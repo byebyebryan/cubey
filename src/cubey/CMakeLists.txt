@@ -241,6 +241,7 @@ add_library(cubey_engine STATIC
     engine/atmosphere_environment_config.cpp
     engine/atmosphere_environment_runtime.cpp
     engine/capture_queue.cpp
+    engine/cloud_environment_runtime.cpp
     engine/engine.cpp
     engine/gltf_basisu_texture.cpp
     engine/gltf_scene_importer.cpp

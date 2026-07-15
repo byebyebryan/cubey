@@ -54,6 +54,14 @@ inside the 1.0 ms budget. It has no temporal jitter. The 64-pixel coherent cache
 remains active as a broad fallback. The post-closure profile measured the cache
 at 0.083 ms, Planar at 0.358 ms, and their combined work at 0.441 ms per frame.
 
+The clear-atmosphere reflection beneath those cloud products now follows the
+same previous/current publication contract. Ocean binds both complete
+prefiltered atmosphere generations and crossfades them in its custom material;
+it no longer forces a full six-face atmosphere capture every frame. A 30 FPS
+dynamic-dawn profile recorded the fixed-cost capture about every eight frames:
+capture frames cost roughly 0.77 ms, idle frames were effectively zero, and the
+57-frame average was 0.109 ms.
+
 The initial planar selector accidentally clamped source IDs before the planar
 value, which made the UI execute the retired hybrid branch. Source IDs now have
 an explicit contiguous C++/GLSL contract. Hybrid was removed because its

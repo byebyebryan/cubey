@@ -9,10 +9,14 @@ void test_capture_queue_video_encoder_rejects_dimension_mismatch();
 void test_capture_queue_video_encoder_propagates_worker_errors();
 void test_atmosphere_environment_runtime_derives_lighting_and_scene_environment();
 void test_atmosphere_environment_runtime_reports_changed_environment();
+void test_atmosphere_reflection_probe_timeline_publishes_coherent_captures();
+void test_atmosphere_reflection_probe_timeline_is_change_driven();
 void test_atmosphere_environment_runtime_builds_frame_payload();
 void test_atmosphere_environment_runtime_builds_celestial_frame_payload();
+void test_cloud_environment_runtime_builds_coherent_surface_frame();
+void test_atmosphere_environment_runtime_owns_optional_cloud_foundation();
 void test_atmosphere_environment_runtime_requires_resources_before_bindings();
-void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change();
+void test_atmosphere_environment_runtime_publishes_coherent_probe_updates();
 void test_engine_attaches_gpu_services_to_project_context();
 void test_engine_created_scenes_validate_render_resource_handles();
 void test_engine_creates_independent_scenes();
@@ -52,6 +56,7 @@ void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform();
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes();
 void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields();
 void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_background_uniforms();
+void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_clouds();
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields();
 void test_forward_pbr_renderer_3d_render_request_validates_required_view_fields();
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display();
@@ -106,10 +111,14 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_atmosphere_environment_run_state_resolves_control_mutations),
         CUBEY_TEST(test_atmosphere_environment_runtime_derives_lighting_and_scene_environment),
         CUBEY_TEST(test_atmosphere_environment_runtime_reports_changed_environment),
+        CUBEY_TEST(test_atmosphere_reflection_probe_timeline_publishes_coherent_captures),
+        CUBEY_TEST(test_atmosphere_reflection_probe_timeline_is_change_driven),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_frame_payload),
         CUBEY_TEST(test_atmosphere_environment_runtime_builds_celestial_frame_payload),
+        CUBEY_TEST(test_cloud_environment_runtime_builds_coherent_surface_frame),
+        CUBEY_TEST(test_atmosphere_environment_runtime_owns_optional_cloud_foundation),
         CUBEY_TEST(test_atmosphere_environment_runtime_requires_resources_before_bindings),
-        CUBEY_TEST(test_atmosphere_environment_runtime_queues_all_faces_after_environment_change),
+        CUBEY_TEST(test_atmosphere_environment_runtime_publishes_coherent_probe_updates),
         CUBEY_TEST(test_engine_exposes_project_runtime_services),
         CUBEY_TEST(test_engine_attaches_gpu_services_to_project_context),
         CUBEY_TEST(test_engine_reuses_project_frame_for_same_timing),
@@ -138,6 +147,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_render_request_validates_atmosphere_background_uniforms),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_atmosphere_clouds),
         CUBEY_TEST(test_forward_pbr_renderer_3d_frame_plan_selects_required_passes),
         CUBEY_TEST(test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform),
         CUBEY_TEST(test_forward_pbr_renderer_3d_selects_requested_light_or_fallback),

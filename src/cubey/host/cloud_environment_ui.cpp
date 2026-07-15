@@ -35,8 +35,7 @@ bool draw_cloud_environment_controls(cubey::CloudEnvironmentConfig& clouds,
         const ScopedImGuiId section_id(config.label);
         cubey::render::CloudLayerConfig& layer = clouds.layer;
 
-        mark_changed(imgui_checkbox("Clouds", &clouds.enabled,
-                                    "Composite the shared cloud layer in final view."),
+        mark_changed(imgui_checkbox("Clouds", &clouds.enabled, config.enabled_help),
                      changed);
         if (!clouds.enabled) {
             ImGui::BeginDisabled();

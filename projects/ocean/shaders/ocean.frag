@@ -40,6 +40,7 @@ layout(set = 0, binding = 19) uniform OceanFeatureParams {
     vec4 cloud_shadow_world_to_uv_x;
     vec4 cloud_shadow_world_to_uv_y;
     vec4 cloud_lighting_options;
+    vec4 atmosphere_environment_options;
     vec4 cloud_environment_options;
     vec4 cloud_planar_right_aspect;
     vec4 cloud_planar_up_tan_half_fovy;
@@ -54,6 +55,7 @@ layout(set = 0, binding = 20) uniform sampler2D cloud_shadow_transmittance_textu
 layout(set = 0, binding = 21) uniform samplerCube cloud_environment_previous_texture;
 layout(set = 0, binding = 22) uniform samplerCube cloud_environment_current_texture;
 layout(set = 0, binding = 23) uniform sampler2D cloud_planar_reflection_texture;
+layout(set = 0, binding = 24) uniform samplerCube atmosphere_reflection_current_texture;
 
 layout(push_constant) uniform OceanParams {
     mat4 view_projection;

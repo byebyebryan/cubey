@@ -1,3 +1,5 @@
+cubey_cloud_layer_shader_sources(CUBEY_WATER_3D_CLOUD_SHADERS COMPOSITE background-depth)
+cubey_cloud_layer_shader_depends(CUBEY_WATER_3D_CLOUD_SHADER_DEPENDS)
 cubey_atmosphere_shader_depends(CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS)
 
 cubey_add_app_target(
@@ -10,6 +12,7 @@ cubey_add_app_target(
         --grid-width 32
         --grid-height 32
         --grid-depth 32
+        --no-clouds
     SOURCES
         ../sim/water_3d/water_3d_app.cpp
         ../sim/water_3d/water_3d_commands.cpp
@@ -36,6 +39,7 @@ cubey_add_app_target(
         ../../../shaders/cubey/sky/celestial_body.vert
         ../../../shaders/cubey/sky/celestial_body.frag
         ../../../shaders/cubey/atmosphere_reflection_prefilter.frag
+        ${CUBEY_WATER_3D_CLOUD_SHADERS}
         ../sim/water_3d/shaders/water_3d_reset.comp
         ../sim/water_3d/shaders/water_3d_clear_grid.comp
         ../sim/water_3d/shaders/water_3d_clear_bins.comp
@@ -72,6 +76,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/water_3d/shaders/water_3d_surface_helpers.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_3d_grid.glsl"
         ${CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS}
+        ${CUBEY_WATER_3D_CLOUD_SHADER_DEPENDS}
 )
 
 target_link_libraries(
@@ -123,7 +128,22 @@ if (BUILD_TESTING)
         --grid-width 32
         --grid-height 32
         --grid-depth 32
+        --no-clouds
     )
+    set(CUBEY_WATER_3D_CLOUD_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/water-3d-cloud-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        water_3d_cloud_headless_writes_png
+        cubey_project_water_3d
+        "${CUBEY_WATER_3D_CLOUD_SMOKE_OUTPUT}"
+        --headless
+        --frames 1
+        --grid-width 32
+        --grid-height 32
+        --grid-depth 32
+    )
+    set_tests_properties(water_3d_cloud_headless_writes_png PROPERTIES TIMEOUT 60)
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_WATER_3D_HEADLESS_VIDEO_SMOKE_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/water-3d-headless.mp4"
@@ -135,6 +155,7 @@ if (BUILD_TESTING)
             --grid-width 32
             --grid-height 32
             --grid-depth 32
+            --no-clouds
         )
     endif()
 endif()

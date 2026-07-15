@@ -4,6 +4,7 @@
 #include <cubey/vulkan/image_transitions.h>
 
 #include <array>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
 
@@ -132,10 +133,63 @@ std::array<ViewRayBasis3D, 6> atmosphere_reflection_probe_cube_face_view_rays() 
     };
 }
 
+void AtmosphereReflectionProbeTimeline::configure(float update_hz) {
+    if (!std::isfinite(update_hz) || update_hz <= 0.0F) {
+        throw std::runtime_error("atmosphere reflection probe update rate must be positive");
+    }
+    update_interval_seconds_ = 1.0F / update_hz;
+    reset();
+}
+
+void AtmosphereReflectionProbeTimeline::reset() {
+    age_seconds_ = 0.0F;
+    blend_ = 1.0F;
+    generation_ = 0;
+    valid_ = false;
+    dirty_ = true;
+    capture_pending_ = true;
+}
+
+void AtmosphereReflectionProbeTimeline::request_capture() {
+    dirty_ = true;
+    if (!valid_ || (blend_ >= 1.0F && age_seconds_ >= update_interval_seconds_)) {
+        capture_pending_ = true;
+    }
+}
+
+void AtmosphereReflectionProbeTimeline::advance(double delta_seconds) {
+    if (!std::isfinite(delta_seconds) || delta_seconds < 0.0) {
+        throw std::runtime_error(
+            "atmosphere reflection probe delta must be finite and non-negative");
+    }
+    if (!valid_) {
+        return;
+    }
+    const float delta = static_cast<float>(delta_seconds);
+    age_seconds_ += delta;
+    blend_ = std::min(1.0F, blend_ + delta / update_interval_seconds_);
+    if (dirty_ && blend_ >= 1.0F && age_seconds_ >= update_interval_seconds_) {
+        capture_pending_ = true;
+    }
+}
+
+void AtmosphereReflectionProbeTimeline::capture_recorded() {
+    const bool had_valid_capture = valid_;
+    valid_ = true;
+    dirty_ = false;
+    capture_pending_ = false;
+    age_seconds_ = 0.0F;
+    blend_ = had_valid_capture ? 0.0F : 1.0F;
+    ++generation_;
+}
+
 void AtmosphereReflectionProbe::create_resources(const cubey::vulkan::Device& device,
                                                  const AtmosphereReflectionProbeConfig& config) {
     if (config.extent == 0 || config.mip_levels == 0) {
         throw std::runtime_error("atmosphere reflection probe dimensions must be nonzero");
+    }
+    if (!std::isfinite(config.update_hz) || config.update_hz <= 0.0F) {
+        throw std::runtime_error("atmosphere reflection probe update rate must be positive");
     }
     if (config.format == VK_FORMAT_UNDEFINED) {
         throw std::runtime_error("atmosphere reflection probe requires a color format");
@@ -164,29 +218,38 @@ void AtmosphereReflectionProbe::create_resources(const cubey::vulkan::Device& de
                                            .create_sampler = true,
                                            .sampler = cube_sampler,
                                        });
-    prefiltered_cube_.emplace(device, TextureCubeConfig{
-                                          .extent = extent_,
-                                          .mip_levels = mip_levels_,
-                                          .format = format_,
-                                          .usage = TextureCubeUsage::ColorAttachmentSampled,
-                                          .create_sampler = true,
-                                          .sampler = cube_sampler,
-                                      });
+    for (std::optional<TextureCube>& prefiltered : prefiltered_cubes_) {
+        prefiltered.emplace(device, TextureCubeConfig{
+                                        .extent = extent_,
+                                        .mip_levels = mip_levels_,
+                                        .format = format_,
+                                        .usage = TextureCubeUsage::ColorAttachmentSampled,
+                                        .create_sampler = true,
+                                        .sampler = cube_sampler,
+                                    });
+    }
 
     sky_face_views_.reserve(6U);
     for (std::uint32_t face = 0; face < 6U; ++face) {
         sky_face_views_.push_back(
             create_texture_cube_face_view(device, *sky_radiance_cube_, 0, face));
     }
-    prefiltered_face_views_.reserve(static_cast<std::size_t>(mip_levels_) * 6U);
-    for (std::uint32_t mip = 0; mip < mip_levels_; ++mip) {
-        for (std::uint32_t face = 0; face < 6U; ++face) {
-            prefiltered_face_views_.push_back(
-                create_texture_cube_face_view(device, *prefiltered_cube_, mip, face));
+    for (std::size_t buffer = 0; buffer < prefiltered_cubes_.size(); ++buffer) {
+        std::vector<cubey::vulkan::ImageView>& views = prefiltered_face_views_.at(buffer);
+        views.reserve(static_cast<std::size_t>(mip_levels_) * 6U);
+        for (std::uint32_t mip = 0; mip < mip_levels_; ++mip) {
+            for (std::uint32_t face = 0; face < 6U; ++face) {
+                views.push_back(create_texture_cube_face_view(
+                    device, prefiltered_cubes_.at(buffer).value(), mip, face));
+            }
         }
+        prefiltered_face_mip_initialized_.at(buffer).assign(
+            static_cast<std::size_t>(mip_levels_) * 6U, false);
     }
     sky_face_initialized_.fill(false);
-    prefiltered_face_mip_initialized_.assign(static_cast<std::size_t>(mip_levels_) * 6U, false);
+    timeline_.configure(config.update_hz);
+    previous_buffer_index_ = 0;
+    current_buffer_index_ = 0;
 
     atmosphere_frame_.create_materials(device, AtmosphereBackgroundFrameMaterialConfig{
                                                    .frame_slot_count = config.frame_slot_count,
@@ -265,40 +328,69 @@ void AtmosphereReflectionProbe::destroy() {
         material.reset();
     }
     atmosphere_frame_.destroy();
-    prefiltered_face_views_.clear();
+    for (std::vector<cubey::vulkan::ImageView>& views : prefiltered_face_views_) {
+        views.clear();
+    }
     sky_face_views_.clear();
-    prefiltered_cube_.reset();
+    for (std::optional<TextureCube>& prefiltered : prefiltered_cubes_) {
+        prefiltered.reset();
+    }
     sky_radiance_cube_.reset();
-    prefiltered_face_mip_initialized_.clear();
+    for (std::vector<bool>& initialized : prefiltered_face_mip_initialized_) {
+        initialized.clear();
+    }
     sky_face_initialized_.fill(false);
+    timeline_.reset();
+    previous_buffer_index_ = 0;
+    current_buffer_index_ = 0;
     extent_ = 0;
     mip_levels_ = 0;
     format_ = VK_FORMAT_UNDEFINED;
 }
 
-void AtmosphereReflectionProbe::record_full_update(
+void AtmosphereReflectionProbe::advance(double delta_seconds) {
+    timeline_.advance(delta_seconds);
+}
+
+void AtmosphereReflectionProbe::request_update() {
+    timeline_.request_capture();
+}
+
+void AtmosphereReflectionProbe::invalidate() {
+    timeline_.reset();
+    previous_buffer_index_ = 0;
+    current_buffer_index_ = 0;
+}
+
+bool AtmosphereReflectionProbe::record_pending_update(
     const cubey::vulkan::CommandRecorder& recorder,
     const AtmosphereReflectionProbeUpdateInfo& info) {
+    if (!timeline_.capture_pending()) {
+        return false;
+    }
+    if (!resources_created() || !pipelines_created()) {
+        throw std::runtime_error("atmosphere reflection probe is not initialized");
+    }
+    std::uint32_t write_index = 0;
+    if (timeline_.valid()) {
+        previous_buffer_index_ = current_buffer_index_;
+        write_index = (current_buffer_index_ + 1U) % 2U;
+        current_buffer_index_ = write_index;
+    } else {
+        previous_buffer_index_ = 0;
+        current_buffer_index_ = 0;
+    }
+
     for (std::uint32_t face = 0; face < 6U; ++face) {
         record_sky_face(recorder, info.frame_slot, info.environment, face);
     }
     for (std::uint32_t mip = 0; mip < mip_levels_; ++mip) {
         for (std::uint32_t face = 0; face < 6U; ++face) {
-            record_prefilter_face_mip(recorder, info.frame_slot, face, mip);
+            record_prefilter_face_mip(recorder, info.frame_slot, face, mip, write_index);
         }
     }
-}
-
-void AtmosphereReflectionProbe::record_face_update(const cubey::vulkan::CommandRecorder& recorder,
-                                                   const AtmosphereReflectionProbeUpdateInfo& info,
-                                                   std::uint32_t face_index) {
-    if (face_index >= 6U) {
-        throw std::runtime_error("atmosphere reflection probe face index is out of range");
-    }
-    record_sky_face(recorder, info.frame_slot, info.environment, face_index);
-    for (std::uint32_t mip = 0; mip < mip_levels_; ++mip) {
-        record_prefilter_face_mip(recorder, info.frame_slot, face_index, mip);
-    }
+    timeline_.capture_recorded();
+    return true;
 }
 
 void AtmosphereReflectionProbe::update_atmosphere_texture_bindings(
@@ -316,7 +408,8 @@ void AtmosphereReflectionProbe::update_atmosphere_texture_bindings(
 }
 
 bool AtmosphereReflectionProbe::resources_created() const noexcept {
-    return sky_radiance_cube_.has_value() && prefiltered_cube_.has_value();
+    return sky_radiance_cube_.has_value() && prefiltered_cubes_[0].has_value() &&
+           prefiltered_cubes_[1].has_value();
 }
 
 bool AtmosphereReflectionProbe::pipelines_created() const noexcept {
@@ -330,11 +423,27 @@ const TextureCube& AtmosphereReflectionProbe::sky_radiance_cube() const {
     return sky_radiance_cube_.value();
 }
 
-const TextureCube& AtmosphereReflectionProbe::prefiltered_cube() const {
-    if (!prefiltered_cube_.has_value()) {
-        throw std::runtime_error("atmosphere reflection probe prefiltered cube is not initialized");
+AtmosphereReflectionProbeSnapshot AtmosphereReflectionProbe::snapshot() const {
+    if (!resources_created()) {
+        return {};
     }
-    return prefiltered_cube_.value();
+    if (!timeline_.valid()) {
+        const TextureCube* initial = &prefiltered_cubes_.at(0).value();
+        return {
+            .previous = initial,
+            .current = initial,
+            .blend = 1.0F,
+            .generation = 0,
+            .valid = false,
+        };
+    }
+    return {
+        .previous = &prefiltered_cubes_.at(previous_buffer_index_).value(),
+        .current = &prefiltered_cubes_.at(current_buffer_index_).value(),
+        .blend = timeline_.blend(),
+        .generation = timeline_.generation(),
+        .valid = true,
+    };
 }
 
 ColorTargetView
@@ -392,9 +501,12 @@ void AtmosphereReflectionProbe::record_sky_face(const cubey::vulkan::CommandReco
 
 void AtmosphereReflectionProbe::record_prefilter_face_mip(
     const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot, std::uint32_t face_index,
-    std::uint32_t mip_level) {
+    std::uint32_t mip_level, std::uint32_t buffer_index) {
     if (!pipelines_created()) {
         throw std::runtime_error("atmosphere reflection probe pipelines are not initialized");
+    }
+    if (buffer_index >= prefiltered_cubes_.size()) {
+        throw std::runtime_error("atmosphere reflection probe buffer index is out of range");
     }
     const std::array<ViewRayBasis3D, 6> face_view_rays =
         atmosphere_reflection_probe_cube_face_view_rays();
@@ -407,18 +519,21 @@ void AtmosphereReflectionProbe::record_prefilter_face_mip(
                     prefilter_uniforms(face_view_rays.at(face_index), roughness, mip_level));
 
     const std::size_t index = face_mip_index(mip_level, face_index);
-    transition_face(
-        recorder, prefiltered_cube_->handle(), mip_level, face_index,
-        current_prefiltered_layout(mip_level, face_index), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        prefiltered_face_mip_initialized_.at(index) ? VK_ACCESS_SHADER_READ_BIT : 0,
-        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        prefiltered_face_mip_initialized_.at(index) ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                                                    : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    TextureCube& prefiltered = prefiltered_cubes_.at(buffer_index).value();
+    std::vector<bool>& initialized = prefiltered_face_mip_initialized_.at(buffer_index);
+    transition_face(recorder, prefiltered.handle(), mip_level, face_index,
+                    current_prefiltered_layout(buffer_index, mip_level, face_index),
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    initialized.at(index) ? VK_ACCESS_SHADER_READ_BIT : 0,
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                    initialized.at(index) ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                          : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     record_render_target_pass(
         recorder,
-        render_target_view(face_target(*prefiltered_cube_, extent_, format_,
-                                       prefiltered_face_views_, mip_level, face_index)),
+        render_target_view(face_target(prefiltered, extent_, format_,
+                                       prefiltered_face_views_.at(buffer_index), mip_level,
+                                       face_index)),
         RenderClearValues{.color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F)},
         [this, frame_slot, &material](const cubey::vulkan::CommandRecorder& pass_recorder) {
             record_fullscreen_pipeline_draw(pass_recorder,
@@ -428,12 +543,12 @@ void AtmosphereReflectionProbe::record_prefilter_face_mip(
                                                 .descriptor_set_index = 0,
                                             });
         });
-    transition_face(recorder, prefiltered_cube_->handle(), mip_level, face_index,
+    transition_face(recorder, prefiltered.handle(), mip_level, face_index,
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-    prefiltered_face_mip_initialized_.at(index) = true;
+    initialized.at(index) = true;
 }
 
 const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&
@@ -485,12 +600,12 @@ VkImageLayout AtmosphereReflectionProbe::current_sky_layout(std::uint32_t face_i
                                                 : VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
-VkImageLayout
-AtmosphereReflectionProbe::current_prefiltered_layout(std::uint32_t mip_level,
-                                                      std::uint32_t face_index) const {
+VkImageLayout AtmosphereReflectionProbe::current_prefiltered_layout(
+    std::uint32_t buffer_index, std::uint32_t mip_level, std::uint32_t face_index) const {
     const std::size_t index = face_mip_index(mip_level, face_index);
-    return prefiltered_face_mip_initialized_.at(index) ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                                                       : VK_IMAGE_LAYOUT_UNDEFINED;
+    return prefiltered_face_mip_initialized_.at(buffer_index).at(index)
+               ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+               : VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 } // namespace cubey::render

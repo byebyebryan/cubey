@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/deformation.h>
@@ -70,6 +71,7 @@ struct ForwardPbrRenderer3DSceneUniformInfo {
     scene::Environment3D environment{};
     float environment_intensity = 1.0F;
     std::uint32_t prefiltered_mip_levels = 1;
+    float environment_blend = 1.0F;
     float environment_rotation_degrees = 0.0F;
     render::PbrDebugView debug_view = render::PbrDebugView::Final;
 };
@@ -78,6 +80,7 @@ struct ForwardPbrRenderer3DSkyboxUniformInfo {
     math::Mat4 view_projection{1.0F};
     math::Vec3 camera_position{0.0F, 0.0F, 0.0F};
     float environment_intensity = 1.0F;
+    float environment_blend = 1.0F;
     float environment_rotation_degrees = 0.0F;
 };
 
@@ -119,6 +122,11 @@ enum class ForwardPbrRenderer3DBackgroundMode : std::uint8_t {
     Atmosphere,
 };
 
+struct ForwardPbrRenderer3DAtmosphereClouds {
+    CloudEnvironmentRuntime* runtime = nullptr;
+    CloudEnvironmentRuntimeFrame frame{};
+};
+
 struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
@@ -127,6 +135,7 @@ struct ForwardPbrRenderer3DSettings {
     ForwardPbrRenderer3DBackgroundMode background_mode =
         ForwardPbrRenderer3DBackgroundMode::IblSkybox;
     std::optional<render::AtmosphereEnvironmentFrameUniforms> atmosphere_background{};
+    std::optional<ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds{};
 };
 
 struct ForwardPbrRenderer3DRenderRequest {
@@ -198,6 +207,8 @@ class ForwardPbrRenderer3D {
                                  const ForwardPbrRenderer3DGlobalResourcesInfo& info);
     void create_swapchain_resources(const vulkan::Device& device,
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
+    void update_environment(const vulkan::Device& device, render::FrameSlot frame_slot,
+                            const render::PbrEnvironmentTextureBindings& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
     void record(const ForwardPbrRenderer3DFrameRequestInfo& info);

@@ -74,6 +74,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Cloud pre-merge checkpoint](cloud-pre-merge-checkpoint.md): current
   production cloud capture recipe and known-good read before syncing cloud work
   into other worktrees.
+- [Cloud foundation integration checkpoint](cloud-foundation-integration-checkpoint.md):
+  current shared runtime ownership, accepted surface consumers, direct/cached
+  product boundaries, and deferred aerial/orbit scope.
 - [Planet cloud integration checkpoint](planet-cloud-integration.md): current
   planet cloud capture baseline, depth-composition issue list, and deferred
   integration work.

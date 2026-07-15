@@ -233,6 +233,59 @@ void test_atmosphere_environment_runtime_reports_changed_environment() {
             "atmosphere runtime should report semantic environment edits as changed");
 }
 
+void test_atmosphere_reflection_probe_timeline_publishes_coherent_captures() {
+    cubey::render::AtmosphereReflectionProbeTimeline timeline;
+    timeline.configure(4.0F);
+
+    require(timeline.capture_pending(), "reflection timeline should request its initial capture");
+    require(!timeline.valid(), "reflection timeline should start without a published capture");
+
+    timeline.capture_recorded();
+    require(timeline.valid(), "reflection timeline should publish its first complete capture");
+    require(!timeline.capture_pending(), "recording should clear the pending capture");
+    require_near(timeline.blend(), 1.0F, 0.0001F,
+                 "the first capture should publish without a fallback crossfade");
+    require(timeline.generation() == 1U, "the first capture should advance generation");
+
+    timeline.request_capture();
+    timeline.advance(0.125);
+    require(!timeline.capture_pending(),
+            "a dirty reflection should wait for the configured capture cadence");
+    timeline.advance(0.125);
+    require(timeline.capture_pending(),
+            "a dirty reflection should become pending at the configured cadence");
+
+    timeline.capture_recorded();
+    require_near(timeline.blend(), 0.0F, 0.0001F,
+                 "a replacement capture should begin by showing the previous environment");
+    require(timeline.generation() == 2U, "a replacement capture should advance generation");
+
+    timeline.request_capture();
+    timeline.request_capture();
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 0.5F, 0.0001F,
+                 "the environment crossfade should advance continuously");
+    require(!timeline.capture_pending(),
+            "repeated changes should coalesce while the published pair is blending");
+    timeline.advance(0.125);
+    require_near(timeline.blend(), 1.0F, 0.0001F,
+                 "the environment crossfade should finish over one update interval");
+    require(timeline.capture_pending(),
+            "coalesced changes should request one capture after the crossfade completes");
+}
+
+void test_atmosphere_reflection_probe_timeline_is_change_driven() {
+    cubey::render::AtmosphereReflectionProbeTimeline timeline;
+    timeline.configure(4.0F);
+    timeline.capture_recorded();
+    timeline.advance(10.0);
+
+    require(!timeline.capture_pending(),
+            "an unchanged atmosphere should not refresh its reflection probe periodically");
+    require(timeline.generation() == 1U,
+            "an unchanged atmosphere should preserve the published generation");
+}
+
 void test_atmosphere_environment_runtime_builds_frame_payload() {
     cubey::AtmosphereEnvironmentRuntime runtime;
     cubey::render::AtmosphereEnvironmentConfig environment;
@@ -256,7 +309,7 @@ void test_atmosphere_environment_runtime_builds_frame_payload() {
             "atmosphere runtime frame should carry scene environment lighting");
     require(frame.scene_environment.diffuse_irradiance_sh[0] ==
                 frame.lighting.diffuse_irradiance_sh[0],
-	            "atmosphere runtime frame should keep lighting and scene environment in sync");
+            "atmosphere runtime frame should keep lighting and scene environment in sync");
 }
 
 void test_atmosphere_environment_runtime_builds_celestial_frame_payload() {
@@ -295,8 +348,74 @@ void test_atmosphere_environment_runtime_builds_celestial_frame_payload() {
                  "celestial runtime frame should preserve shared moon illumination");
     require_near(frame.lighting.sun_direction.y, 1.0F, 0.0001F,
                  "celestial runtime frame lighting should use shared sun direction");
-    require(frame.scene_environment.diffuse_irradiance_sh[0] == frame.lighting.diffuse_irradiance_sh[0],
+    require(frame.scene_environment.diffuse_irradiance_sh[0] ==
+                frame.lighting.diffuse_irradiance_sh[0],
             "celestial runtime frame should keep derived scene environment and lighting in sync");
+}
+
+void test_cloud_environment_runtime_builds_coherent_surface_frame() {
+    cubey::CloudEnvironmentConfig config;
+    config.wind_speed_mps = 12.0F;
+    config.layer.planet_radius_m = 6371000.0F;
+    cubey::render::AtmosphereEnvironmentLighting lighting;
+    lighting.sun_direction = {0.0F, 0.5F, 0.5F};
+    lighting.sun_color = {1.0F, 0.4F, 0.2F};
+    lighting.sun_intensity = 3.0F;
+    lighting.moon_intensity = 0.25F;
+    lighting.ambient_intensity = 0.75F;
+
+    const cubey::CloudEnvironmentRuntimeFrame frame =
+        cubey::cloud_environment_runtime_frame(config, 2.5, lighting,
+                                               cubey::CloudEnvironmentSurfaceViewInfo{
+                                                   .camera_position = {2.0F, 300.0F, 4.0F},
+                                                   .camera_right = {0.0F, 0.0F, 1.0F},
+                                                   .camera_up = {0.0F, 1.0F, 0.0F},
+                                                   .camera_forward = {1.0F, 0.0F, 0.0F},
+                                                   .tan_half_fovy = 0.5F,
+                                                   .target_extent = {1280, 720},
+                                                   .near_plane_m = 0.25F,
+                                                   .far_plane_m = 500000.0F,
+                                                   .scene_depth_mode = cubey::render::
+                                                       CloudLayerSceneDepthMode::OpaqueForeground,
+                                                   .scene_depth_fade_m = 750.0F,
+                                               },
+                                               7U);
+
+    require(frame.enabled, "default shared clouds should produce an enabled surface frame");
+    require_near(frame.layer.wind_offset_m, 30.0F, 0.0001F,
+                 "surface frame should resolve cloud motion from shared elapsed time");
+    require_near(frame.view.sun_intensity, 3.0F, 0.0001F,
+                 "surface frame should use shared atmosphere direct-light intensity");
+    require_near(frame.view.sun_color.y, 0.4F, 0.0001F,
+                 "surface frame should use shared atmosphere direct-light color");
+    require(frame.view.target_extent.width == 1280 && frame.view.target_extent.height == 720,
+            "surface frame should preserve the consumer target extent");
+    require(frame.view.scene_depth_mode ==
+                cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
+            "surface frame should preserve foreground-only depth policy");
+    require_near(frame.uniforms.scene_depth_options.z, 2.0F, 0.0001F,
+                 "surface uniforms should encode foreground-only depth occlusion");
+    require_near(frame.uniforms.temporal_options.x, 7.0F, 0.0001F,
+                 "surface uniforms should preserve the shared temporal frame index");
+}
+
+void test_atmosphere_environment_runtime_owns_optional_cloud_foundation() {
+    cubey::AtmosphereEnvironmentRuntime runtime;
+    require(!runtime.clouds().surface_resources_created(),
+            "atmosphere runtime should not allocate optional clouds by default");
+
+    cubey::CloudEnvironmentConfig disabled;
+    disabled.enabled = false;
+    const cubey::CloudEnvironmentRuntimeFrame frame = cubey::cloud_environment_runtime_frame(
+        disabled, 0.0, runtime.lighting(), cubey::CloudEnvironmentSurfaceViewInfo{});
+    require(!frame.enabled, "disabled shared clouds should produce a disabled surface frame");
+
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string source = cubey::tests::read_source_file(
+        source_root / "src/cubey/engine/cloud_environment_runtime.cpp");
+    cubey::tests::require_contains(
+        source, "surface_.upload_frame_uniforms(frame_slot, frame.uniforms)",
+        "shared cloud product declaration should upload its coherent frame uniforms");
 }
 
 void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
@@ -312,7 +431,7 @@ void test_atmosphere_environment_runtime_requires_resources_before_bindings() {
     require(threw, "atmosphere runtime should reject resource access before resources exist");
 }
 
-void test_atmosphere_environment_runtime_queues_all_faces_after_environment_change() {
+void test_atmosphere_environment_runtime_publishes_coherent_probe_updates() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string header = cubey::tests::read_source_file(
         source_root / "include/cubey/engine/atmosphere_environment_runtime.h");
@@ -325,24 +444,19 @@ void test_atmosphere_environment_runtime_queues_all_faces_after_environment_chan
     cubey::tests::require_contains(
         header, "environment_initialized_",
         "atmosphere runtime should track whether an environment has been assigned");
-    cubey::tests::require_contains(
-        header, "std::uint32_t pending_face_updates_",
-        "atmosphere runtime should track queued incremental face updates");
-    cubey::tests::require_contains(
-        header, "AtmosphereReflectionProbeUpdateMode",
-        "atmosphere runtime should expose coherent and incremental probe update policies");
+    cubey::tests::require_contains(header, "void advance(double delta_seconds)",
+                                   "atmosphere runtime should own reflection cadence advancement");
     cubey::tests::require_contains(source, "return false",
                                    "atmosphere runtime should skip unchanged environment updates");
     cubey::tests::require_contains(
-        source, "pending_face_updates_ = 6U",
-        "atmosphere runtime should refresh every cube face after an environment change");
-    cubey::tests::require_contains(
-        source, "--pending_face_updates_",
-        "atmosphere runtime should drain one queued face update per recording call");
-    cubey::tests::require_contains(
-        source, "AtmosphereReflectionProbeUpdateMode::CoherentFull",
-        "atmosphere runtime should support atomically refreshing reflective environments");
+        source, "reflection_probe_.request_update()",
+        "atmosphere runtime should queue a coherent capture after an environment change");
+    cubey::tests::require_contains(source, "reflection_probe_.record_pending_update",
+                                   "atmosphere runtime should publish complete probe updates");
     cubey::tests::require_not_contains(
-        source, "time_dirty_",
-        "atmosphere runtime should not collapse an environment change into one dirty face");
+        source, "clouds_.invalidate()",
+        "time-of-day changes should not reset cloud environment interpolation");
+    cubey::tests::require_not_contains(
+        source, "record_face_update",
+        "atmosphere runtime should not expose partially updated cube faces");
 }

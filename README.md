@@ -68,8 +68,9 @@ Current active projects:
   frame/memory diagnostics, and deterministic headless capture output.
 - `water_3d`: 3D APIC free-surface liquid in a long showcase tank, with stable
   particle-grid transfer ranges, screen-space water surface rendering, rain,
-  hose/drain/wave controls, whitewater, shared procedural environment lighting,
-  profiling diagnostics, and headless capture output.
+  hose/drain/wave controls, whitewater, shared procedural atmosphere/cloud
+  composition and reflection, profiling diagnostics, and headless capture
+  output.
 - `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
   MacCormack advection, combustion, projection, vorticity confinement,
   raymarching, shared procedural environment lighting, orbit camera controls,
@@ -80,8 +81,8 @@ Current active projects:
 - `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
-  upload, rigid/morph/skinned animation, generated or HDR-backed IBL, skybox
-  rendering, shadow maps, and headless capture.
+  upload, rigid/morph/skinned animation, generated or HDR-backed IBL, shared
+  atmosphere/cloud composition, shadow maps, and headless capture.
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
 
@@ -285,8 +286,10 @@ particle storage stable and builds sorted particle-index ranges for transfer,
 then renders the default view through a screen-space surface path with
 refraction, absorption, environment reflection, foam, and secondary whitewater.
 By default it uses the shared procedural atmosphere as its sky/reflection/
-lighting source; `--pbr-environment-source static` keeps the older static IBL
-fallback.
+lighting source. Surface clouds are composed before the refractive water pass
+and also feed the filtered environment reflection. Use `--no-clouds` for the
+clear procedural path; `--pbr-environment-source static` keeps the older static
+IBL fallback and skips procedural clouds.
 Use `--water3d-transfer apic|pic-flip`, `--water3d-transfer-limit N`,
 `--water3d-p2g-mode active|tiled`, `--water3d-hose`, `--water3d-drain`,
 `--water3d-rain`, `--water3d-wave`, `--water3d-whitewater`, and

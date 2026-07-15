@@ -55,6 +55,10 @@ void test_cloud_layer_edge_mask_debug_view_round_trips();
 void test_cloud_layer_debug_views_round_trip_all_names();
 void test_cloud_layer_debug_views_match_glsl_constants();
 void test_cloud_layer_runtime_shader_files_select_composite_variants();
+void test_cloud_layer_scene_depth_modes_match_shader_contract();
+void test_cloud_scene_depth_composite_bypasses_opaque_foreground_before_resolve();
+void test_cloud_scene_depth_composite_bypasses_fully_occluded_distance_before_resolve();
+void test_cloud_scene_depth_consumers_select_explicit_policies();
 void test_cloud_layer_shadow_projection_is_snapped_and_centered();
 void test_cloud_layer_runtime_separates_product_and_composite_descriptors();
 void test_cloud_layer_cmake_package_tracks_composite_modes();
@@ -286,6 +290,11 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_cloud_layer_debug_views_round_trip_all_names),
         CUBEY_TEST(test_cloud_layer_debug_views_match_glsl_constants),
         CUBEY_TEST(test_cloud_layer_runtime_shader_files_select_composite_variants),
+        CUBEY_TEST(test_cloud_layer_scene_depth_modes_match_shader_contract),
+        CUBEY_TEST(test_cloud_scene_depth_composite_bypasses_opaque_foreground_before_resolve),
+        CUBEY_TEST(
+            test_cloud_scene_depth_composite_bypasses_fully_occluded_distance_before_resolve),
+        CUBEY_TEST(test_cloud_scene_depth_consumers_select_explicit_policies),
         CUBEY_TEST(test_cloud_layer_shadow_projection_is_snapped_and_centered),
         CUBEY_TEST(test_cloud_layer_runtime_separates_product_and_composite_descriptors),
         CUBEY_TEST(test_cloud_layer_cmake_package_tracks_composite_modes),
