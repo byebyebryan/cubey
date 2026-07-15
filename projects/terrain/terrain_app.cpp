@@ -266,7 +266,7 @@ class TerrainApp {
           runtime_config_(terrain_runtime_config_from_run_config(run_config_)),
           source_parameters_(resolve_terrain_source_parameters(runtime_config_.source)),
           clipmap_data_(make_terrain_clipmap_mesh(runtime_config_)),
-          quality_clipmap_data_(make_terrain_quality_clipmap_mesh(runtime_config_)),
+          quality_tile_data_(make_terrain_quality_tile_mesh(runtime_config_)),
           clipmap_config_(terrain_clipmap_config(runtime_config_)),
           scene_summary_(terrain_scene_summary(source_parameters_, clipmap_config_)),
           orbit_controller_(cubey::OrbitControllerConfig{
@@ -554,7 +554,7 @@ class TerrainApp {
             return;
         }
         mesh_.emplace(gpu, runtime_config_.render_path == TerrainRenderPath::Quality
-                               ? quality_clipmap_data_.mesh_config()
+                               ? quality_tile_data_.mesh_config()
                                : clipmap_data_.mesh_config());
         const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
         stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
@@ -1063,7 +1063,7 @@ class TerrainApp {
     TerrainRuntimeConfig runtime_config_{};
     TerrainSourceParameters source_parameters_{};
     TerrainClipmapMeshData clipmap_data_{};
-    TerrainQualityClipmapMeshData quality_clipmap_data_{};
+    TerrainQualityTileMeshData quality_tile_data_{};
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};
     TerrainSourceSummary scene_summary_{};
     std::optional<TerrainBackdropCameraPlan> backdrop_plan_{};

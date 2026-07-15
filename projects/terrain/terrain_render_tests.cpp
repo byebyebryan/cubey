@@ -669,25 +669,61 @@ void test_clipmap_patch_spans_preserve_level_cell_spacing() {
     }
 }
 
-void test_quality_clipmap_uses_coarse_quad_patches() {
+void test_quality_tile_field_uses_world_aligned_quad_patches() {
     cubey::projects::terrain::TerrainRuntimeConfig config{};
     config.render_path = cubey::projects::terrain::TerrainRenderPath::Quality;
-    const auto mesh = cubey::projects::terrain::make_terrain_quality_clipmap_mesh(config);
+    const auto mesh = cubey::projects::terrain::make_terrain_quality_tile_mesh(config);
     require(!mesh.vertices.empty() && mesh.indices.size() == mesh.vertices.size(),
-            "quality clipmap should index every patch control point");
-    require((mesh.indices.size() % 4U) == 0U && mesh.patch_count() > 0U,
-            "quality clipmap should use four-control-point patches");
-    require(mesh.vertices.size() < 10'000U,
-            "quality clipmap should stay coarse before GPU tessellation");
+            "quality tile field should index every patch control point");
+    require(mesh.diagnostics.patches_per_axis == 128U &&
+                mesh.diagnostics.patch_count == 16'384U &&
+                mesh.patch_count() == mesh.diagnostics.patch_count,
+            "quality tile field should cover the default extent with a 128 by 128 grid");
+    require_near(mesh.diagnostics.patch_span_m, 256.0F, 0.0F,
+                 "quality tile patches should preserve the supported maximum span");
+    require_near(mesh.diagnostics.half_extent_m, 16'384.0F, 0.0F,
+                 "quality tile field should preserve clipmap coverage");
+    require((mesh.indices.size() % 4U) == 0U && mesh.vertices.size() == 65'536U,
+            "quality tile field should use four-control-point patches");
     for (std::size_t index = 0; index < mesh.vertices.size(); index += 4U) {
-        require(mesh.vertices[index].color[2] > 0.0F && mesh.vertices[index].color[2] <= 16.0F &&
-                    mesh.vertices[index].normal[2] > 0.0F &&
-                    mesh.vertices[index].normal[2] <= 16.0F,
-                "quality patches should span at most sixteen logical cells per axis");
+        require_near(mesh.vertices[index].color[0], mesh.diagnostics.patch_span_m, 0.0F,
+                     "quality tiles should publish their physical span");
+        require_near(mesh.vertices[index].normal[0], 0.0F, 0.0F,
+                     "quality tiles should not publish child LOD ownership");
+        require_near(mesh.vertices[index].normal[1], mesh.diagnostics.patch_span_m, 0.0F,
+                     "quality tiles should recenter by whole patch increments");
         require(mesh.vertices[index].position[0] < mesh.vertices[index + 1U].position[0] &&
                     mesh.vertices[index].position[2] < mesh.vertices[index + 3U].position[2],
-                "quality patch corners should preserve quad orientation");
+                "quality tile corners should preserve quad orientation");
     }
+
+    const std::uint32_t patches_per_axis = mesh.diagnostics.patches_per_axis;
+    for (std::uint32_t z = 0; z < patches_per_axis; ++z) {
+        for (std::uint32_t x = 0; x < patches_per_axis; ++x) {
+            const std::size_t patch =
+                (static_cast<std::size_t>(z) * patches_per_axis + x) * 4U;
+            if (x + 1U < patches_per_axis) {
+                const std::size_t right = patch + 4U;
+                require(mesh.vertices[patch + 1U].position == mesh.vertices[right].position &&
+                            mesh.vertices[patch + 2U].position ==
+                                mesh.vertices[right + 3U].position,
+                        "quality horizontal neighbors should share exact edge controls");
+            }
+            if (z + 1U < patches_per_axis) {
+                const std::size_t top =
+                    patch + static_cast<std::size_t>(patches_per_axis) * 4U;
+                require(mesh.vertices[patch + 3U].position == mesh.vertices[top].position &&
+                            mesh.vertices[patch + 2U].position ==
+                                mesh.vertices[top + 1U].position,
+                        "quality vertical neighbors should share exact edge controls");
+            }
+        }
+    }
+    require_near(mesh.vertices.front().position[0], -mesh.diagnostics.half_extent_m, 0.0F,
+                 "quality tile field should begin at the negative extent");
+    require_near(mesh.vertices[mesh.vertices.size() - 2U].position[0],
+                 mesh.diagnostics.half_extent_m, 0.0F,
+                 "quality tile field should end at the positive extent");
 }
 
 void test_quality_material_tile_contract() {
@@ -779,7 +815,7 @@ int main() {
         test_environment_gpu_parameters_preserve_atmosphere_lighting();
         test_clipmap_has_expected_extent_and_transition_data();
         test_clipmap_patch_spans_preserve_level_cell_spacing();
-        test_quality_clipmap_uses_coarse_quad_patches();
+        test_quality_tile_field_uses_world_aligned_quad_patches();
         test_quality_material_tile_contract();
         test_surface_controller_traversal_preserves_clearance();
         test_ground_controller_uses_walking_scale_speed();

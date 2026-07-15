@@ -40,13 +40,13 @@ cubey::render::MeshConfig TerrainClipmapMeshData::mesh_config() const {
         std::span<const std::uint32_t>(indices.data(), indices.size()));
 }
 
-cubey::render::MeshConfig TerrainQualityClipmapMeshData::mesh_config() const {
+cubey::render::MeshConfig TerrainQualityTileMeshData::mesh_config() const {
     return cubey::render::indexed_mesh_config(
         std::span<const cubey::render::VertexPositionColorNormal>(vertices.data(), vertices.size()),
         std::span<const std::uint32_t>(indices.data(), indices.size()));
 }
 
-std::uint32_t TerrainQualityClipmapMeshData::patch_count() const {
+std::uint32_t TerrainQualityTileMeshData::patch_count() const {
     return cubey::render::mesh_index_count(indices.size() / 4U);
 }
 
@@ -165,62 +165,67 @@ TerrainClipmapMeshData make_terrain_clipmap_mesh(const TerrainRuntimeConfig& con
     return mesh;
 }
 
-TerrainQualityClipmapMeshData
-make_terrain_quality_clipmap_mesh(const TerrainRuntimeConfig& config) {
-    constexpr std::uint32_t kCellsPerPatch = 16U;
+TerrainQualityTileMeshData make_terrain_quality_tile_mesh(const TerrainRuntimeConfig& config) {
+    constexpr float kMaximumPatchSpanM = 256.0F;
     const cubey::render::ClipmapGrid2DConfig clipmap_config = terrain_clipmap_config(config);
-    const auto patches = cubey::render::clipmap_grid_2d_patches<64U>(clipmap_config);
+    const float half_extent_m = clipmap_config.outer_half_extent;
+    const double diameter_m = static_cast<double>(half_extent_m) * 2.0;
+    const double patches_per_axis_double =
+        std::ceil(diameter_m / static_cast<double>(kMaximumPatchSpanM));
+    if (patches_per_axis_double <= 0.0 ||
+        patches_per_axis_double > static_cast<double>(std::numeric_limits<std::uint32_t>::max())) {
+        throw std::runtime_error("terrain quality tile count exceeds uint32 range");
+    }
+    const std::uint32_t patches_per_axis =
+        static_cast<std::uint32_t>(patches_per_axis_double);
+    const std::uint64_t patch_count = static_cast<std::uint64_t>(patches_per_axis) *
+                                      static_cast<std::uint64_t>(patches_per_axis);
+    const std::uint64_t control_point_count = patch_count * 4U;
+    if (control_point_count > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error("terrain quality tile controls exceed uint32 range");
+    }
+    const float patch_span_m =
+        static_cast<float>(diameter_m / static_cast<double>(patches_per_axis));
 
-    TerrainQualityClipmapMeshData mesh;
-    mesh.diagnostics = cubey::render::clipmap_grid_2d_diagnostics(clipmap_config, patches);
-    for (std::size_t patch_index = patches.count; patch_index > 0U; --patch_index) {
-        const cubey::render::ClipmapGrid2DPatch& patch = patches.patches[patch_index - 1U];
-        const float level_t = clipmap_config.lod_levels <= 1U
-                                  ? 0.0F
-                                  : static_cast<float>(patch.level) /
-                                        static_cast<float>(clipmap_config.lod_levels - 1U);
-        const float cell_size =
-            cubey::render::clipmap_grid_2d_level_cell_size(clipmap_config, patch.level);
-        const float child_half_extent =
-            patch.level == 0U ? 0.0F
-                              : cubey::render::clipmap_grid_2d_level_half_extent(clipmap_config,
-                                                                                 patch.level - 1U);
-        const float span_x = patch.bounds.max_x - patch.bounds.min_x;
-        const float span_z = patch.bounds.max_z - patch.bounds.min_z;
-        for (std::uint32_t z = 0; z < patch.cells_z; z += kCellsPerPatch) {
-            const std::uint32_t patch_cells_z = std::min(kCellsPerPatch, patch.cells_z - z);
-            const float z0 = patch.bounds.min_z +
-                             span_z * static_cast<float>(z) / static_cast<float>(patch.cells_z);
-            const float z1 = patch.bounds.min_z + span_z * static_cast<float>(z + patch_cells_z) /
-                                                      static_cast<float>(patch.cells_z);
-            for (std::uint32_t x = 0; x < patch.cells_x; x += kCellsPerPatch) {
-                const std::uint32_t patch_cells_x = std::min(kCellsPerPatch, patch.cells_x - x);
-                const float x0 = patch.bounds.min_x +
-                                 span_x * static_cast<float>(x) / static_cast<float>(patch.cells_x);
-                const float x1 = patch.bounds.min_x + span_x *
-                                                          static_cast<float>(x + patch_cells_x) /
-                                                          static_cast<float>(patch.cells_x);
-                const std::array corners{
-                    cubey::math::Vec2{x0, z0},
-                    cubey::math::Vec2{x1, z0},
-                    cubey::math::Vec2{x1, z1},
-                    cubey::math::Vec2{x0, z1},
-                };
-                for (const cubey::math::Vec2 corner : corners) {
-                    mesh.vertices.push_back({
-                        .position = {corner.x, 0.0F, corner.y},
-                        .color = {cell_size, level_t, static_cast<float>(patch_cells_x)},
-                        .normal = {child_half_extent,
-                                   cubey::render::clipmap_grid_2d_near_cell_size(clipmap_config),
-                                   static_cast<float>(patch_cells_z)},
-                    });
-                    mesh.indices.push_back(static_cast<std::uint32_t>(mesh.indices.size()));
-                }
+    TerrainQualityTileMeshData mesh;
+    mesh.diagnostics = {
+        .patches_per_axis = patches_per_axis,
+        .patch_count = static_cast<std::uint32_t>(patch_count),
+        .patch_span_m = patch_span_m,
+        .half_extent_m = half_extent_m,
+    };
+    mesh.vertices.reserve(static_cast<std::size_t>(control_point_count));
+    mesh.indices.reserve(static_cast<std::size_t>(control_point_count));
+    for (std::uint32_t z = 0; z < patches_per_axis; ++z) {
+        const float z0 = std::lerp(-half_extent_m, half_extent_m,
+                                   static_cast<float>(z) /
+                                       static_cast<float>(patches_per_axis));
+        const float z1 = std::lerp(-half_extent_m, half_extent_m,
+                                   static_cast<float>(z + 1U) /
+                                       static_cast<float>(patches_per_axis));
+        for (std::uint32_t x = 0; x < patches_per_axis; ++x) {
+            const float x0 = std::lerp(-half_extent_m, half_extent_m,
+                                       static_cast<float>(x) /
+                                           static_cast<float>(patches_per_axis));
+            const float x1 = std::lerp(-half_extent_m, half_extent_m,
+                                       static_cast<float>(x + 1U) /
+                                           static_cast<float>(patches_per_axis));
+            const std::array corners{
+                cubey::math::Vec2{x0, z0},
+                cubey::math::Vec2{x1, z0},
+                cubey::math::Vec2{x1, z1},
+                cubey::math::Vec2{x0, z1},
+            };
+            for (const cubey::math::Vec2 corner : corners) {
+                mesh.vertices.push_back({
+                    .position = {corner.x, 0.0F, corner.y},
+                    .color = {patch_span_m, 0.0F, 1.0F},
+                    .normal = {0.0F, patch_span_m, 1.0F},
+                });
+                mesh.indices.push_back(static_cast<std::uint32_t>(mesh.indices.size()));
             }
         }
     }
-    mesh.diagnostics.total_vertices = static_cast<std::uint32_t>(mesh.vertices.size());
-    mesh.diagnostics.total_triangles = 0U;
     return mesh;
 }
 
