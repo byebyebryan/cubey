@@ -27,7 +27,7 @@ struct TerrainBackdropStageRequest {
     float orbit_default_elevation_radians = 0.0F;
     float orbit_max_elevation_radians = 0.0F;
     float subject_center_height_m = 20.0F;
-    float detached_stage_clearance_m = 240.0F;
+    float minimum_visible_terrain_distance_m = 1'500.0F;
     float vertical_fov_radians = 0.0F;
     float aspect_ratio = 16.0F / 9.0F;
     float vertical_scale = 1.0F;
@@ -43,6 +43,7 @@ struct TerrainBackdropStagePlan {
     float source_center_height_m = 0.0F;
     float stage_plane_height_m = 0.0F;
     float target_height_m = 0.0F;
+    float terrain_vertical_offset_m = 0.0F;
     float local_relief_m = 0.0F;
     float local_p95_slope = 0.0F;
     float minimum_camera_clearance_m = 0.0F;
@@ -55,9 +56,9 @@ struct TerrainBackdropStagePlan {
     float orbit_default_elevation_radians = 0.0F;
     float orbit_max_elevation_radians = 0.0F;
     std::uint32_t panorama_sector_count = 0U;
-    std::uint32_t horizon_clear_sector_count = 0U;
+    std::uint32_t lower_frame_clear_sector_count = 0U;
     std::uint32_t relief_sector_count = 0U;
-    float minimum_horizon_clearance_distance_m = 0.0F;
+    float minimum_lower_frame_terrain_distance_m = 0.0F;
     std::uint32_t coarse_candidate_count = 0U;
     std::uint32_t refined_candidate_count = 0U;
     std::uint32_t full_candidate_count = 0U;

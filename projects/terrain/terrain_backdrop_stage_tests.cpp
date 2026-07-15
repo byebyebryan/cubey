@@ -38,6 +38,8 @@ void test_stage_requests_publish_the_medium_scene_contract() {
                  "detached stage should publish the default orbit radius");
     require_near(detached.orbit_max_radius_m, 150.0F, 0.0F,
                  "detached stage should publish the maximum orbit radius");
+    require_near(detached.minimum_visible_terrain_distance_m, 1'500.0F, 0.0F,
+                 "detached stage should publish the far-field visibility contract");
     require(detached.orbit_max_elevation_radians < grounded.orbit_max_elevation_radians,
             "detached stage should preserve a shallower orbit than grounded diagnostics");
 }
@@ -62,12 +64,15 @@ void test_detached_stage_search_is_deterministic_and_panoramic() {
                      "detached stage score should be deterministic");
         require(first.contract_satisfied,
                 "detached stage should satisfy the panoramic contract for review seeds");
-        require(first.panorama_sector_count == 24U && first.horizon_clear_sector_count == 24U,
-                "detached stage should keep every panoramic sector clear");
+        require(first.panorama_sector_count == 24U &&
+                    first.lower_frame_clear_sector_count == 24U,
+                "detached stage should keep every lower-frame sector clear");
         require(first.relief_sector_count >= 14U,
                 "detached stage should retain useful relief in most sectors");
-        require(first.stage_plane_height_m >= first.source_center_height_m + 239.9F,
-                "detached stage should keep its ownership boundary below the orbit frame");
+        require(first.minimum_lower_frame_terrain_distance_m >= 1'500.0F,
+                "detached stage should keep terrain outside the lower-frame distance");
+        require_near(first.terrain_vertical_offset_m, -first.target_height_m, 0.0F,
+                     "detached stage should map the physical focus to local zero");
     }
 }
 
@@ -86,6 +91,8 @@ void test_grounded_stage_returns_a_finite_natural_candidate() {
             "grounded stage should return finite best-effort diagnostics");
     require_near(plan.stage_plane_height_m, plan.source_center_height_m, 0.001F,
                  "grounded stage should preserve natural center height");
+    require_near(plan.terrain_vertical_offset_m, -plan.target_height_m, 0.0F,
+                 "grounded stage should publish the same local coordinate mapping");
     require(plan.coarse_candidate_count == 289U && plan.full_candidate_count == 16U,
             "grounded stage should publish its bounded search budget");
 }

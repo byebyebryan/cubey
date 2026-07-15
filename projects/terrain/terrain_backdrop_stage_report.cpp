@@ -41,6 +41,7 @@ int main() {
                 {"source_center_height_m", plan.source_center_height_m},
                 {"stage_plane_height_m", plan.stage_plane_height_m},
                 {"target_height_m", plan.target_height_m},
+                {"terrain_vertical_offset_m", plan.terrain_vertical_offset_m},
                 {"local_relief_m", plan.local_relief_m},
                 {"local_p95_slope", plan.local_p95_slope},
                 {"minimum_camera_clearance_m", plan.minimum_camera_clearance_m},
@@ -52,9 +53,10 @@ int main() {
                  {plan.orbit_min_elevation_radians, plan.orbit_default_elevation_radians,
                   plan.orbit_max_elevation_radians}},
                 {"panorama_sector_count", plan.panorama_sector_count},
-                {"horizon_clear_sector_count", plan.horizon_clear_sector_count},
+                {"lower_frame_clear_sector_count", plan.lower_frame_clear_sector_count},
                 {"relief_sector_count", plan.relief_sector_count},
-                {"minimum_horizon_clearance_distance_m", plan.minimum_horizon_clearance_distance_m},
+                {"minimum_lower_frame_terrain_distance_m",
+                 plan.minimum_lower_frame_terrain_distance_m},
                 {"candidate_counts",
                  {plan.coarse_candidate_count, plan.refined_candidate_count,
                   plan.full_candidate_count}},
@@ -65,10 +67,10 @@ int main() {
     }
 
     const nlohmann::json report{
-        {"schema", "cubey.terrain.backdrop-stage.v1"},
+        {"schema", "cubey.terrain.backdrop-stage.v2"},
         {"source", {{"preset", "mountain"}, {"version", "v2.1"}, {"weathering", "off"}}},
         {"detached_stage_radius_m", 300},
-        {"detached_stage_clearance_m", 240},
+        {"minimum_visible_terrain_distance_m", 1500},
         {"panorama_azimuth_count", 24},
         {"review_azimuth_count", 8},
         {"plans", std::move(plans)},
