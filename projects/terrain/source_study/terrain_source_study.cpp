@@ -143,7 +143,10 @@ struct RawEvaluator {
         if (visibility > 0.0F) {
             const NoiseSample noise = value_noise_derivative(
                 position, octave_seed(evaluator.seed, "terrain.source-study.primary", octave));
-            derivative += noise.derivative * (amplitude * visibility);
+            // The accumulated derivative is the shaping signal, not another
+            // amplitude-weighted height octave. Keeping its full octave
+            // response makes this family materially different from plain fBm.
+            derivative += noise.derivative * visibility;
             const float derivative_energy =
                 derivative.x * derivative.x + derivative.y * derivative.y;
             sum += amplitude * visibility * noise.value / (1.0F + damping * derivative_energy);
@@ -164,53 +167,44 @@ struct RawEvaluator {
 
 [[nodiscard]] float raw_swiss(const RawEvaluator& evaluator, const TerrainQuery& query) {
     const float field = derivative_damped_fbm(evaluator, query, 9U, 2.0F, 0.5F, 1.6F);
-    const float broad =
-        value_noise_derivative(
-            query.world_xz / (kBasePeriodM * 1.8F),
-            cubey::procedural::derive_seed(evaluator.seed, "terrain.source-study.secondary"))
-            .value;
-    const float support = smoothstep(-0.52F, 0.42F, broad);
-    const float folded = std::max(std::abs(field) * 1.9F - 0.18F, 0.0F);
-    const float folded_profile = folded / (0.42F + folded);
-    return support * (0.28F + 0.72F * folded_profile);
+    const float folded = std::abs(field) * 2.0F - 1.0F;
+    const float activation = smoothstep(-0.82F, 0.38F, folded);
+    return activation * std::max(folded + 0.82F, 0.0F);
 }
 
 [[nodiscard]] float raw_mountains(const RawEvaluator& evaluator, const TerrainQuery& query) {
     cubey::math::Vec2 position = query.world_xz / kBasePeriodM;
-    const float broad =
+    const float broad_driver =
         value_noise_derivative(
-            position * 0.42F,
+            position * 0.25F,
             cubey::procedural::derive_seed(evaluator.seed, "terrain.source-study.secondary"))
-                .value *
-            0.5F +
-        0.5F;
-    const float uplift = std::pow(smoothstep(0.18F, 0.90F, broad), 2.4F);
+            .value *
+        0.75F + 0.15F;
+    const float uplift = 0.06F + broad_driver * broad_driver;
     float amplitude = 1.0F;
     float wavelength_m = kBasePeriodM;
     float signed_sum = 0.0F;
     float weight = 0.0F;
+    const std::uint64_t structure_seed =
+        cubey::procedural::derive_seed(evaluator.seed, "terrain.source-study.primary");
     for (std::uint32_t octave = 0U; octave < 8U; ++octave) {
         const float visibility = octave_visibility(wavelength_m, query.footprint_m);
         const float noise =
-            value_noise_derivative(
-                position, octave_seed(evaluator.seed, "terrain.source-study.primary", octave))
-                    .value *
-                0.5F +
-            0.5F;
+            value_noise_derivative(position, structure_seed).value * 0.5F + 0.5F;
         signed_sum += amplitude * visibility * noise;
         weight += std::abs(amplitude) * visibility;
-        amplitude *= -0.43F;
-        position = rotated(position) * 1.92F;
-        wavelength_m /= 1.92F;
+        amplitude *= -0.4F;
+        position = rotated(position) * 2.05F;
+        wavelength_m /= 2.05F;
     }
     const float structure = weight > 0.0F ? signed_sum / weight : 0.0F;
     const float remote_mass = std::pow(
-        std::abs(value_noise_derivative(query.world_xz / (kBasePeriodM * 4.5F),
+        std::abs(value_noise_derivative(query.world_xz / (kBasePeriodM * 12.0F),
                                         cubey::procedural::derive_seed(
                                             evaluator.seed, "terrain.source-study.remote-mass"))
                      .value),
-        4.0F);
-    return uplift * (0.65F + 0.75F * structure) + 1.8F * remote_mass;
+        5.0F);
+    return uplift * (0.35F + 1.65F * structure) + 0.18F * remote_mass;
 }
 
 [[nodiscard]] float raw_rainforest(const RawEvaluator& evaluator, const TerrainQuery& query) {
