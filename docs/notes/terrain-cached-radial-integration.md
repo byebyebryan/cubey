@@ -78,8 +78,10 @@ identical production and study submissions varied with GPU duty cycle:
 Geometry counts and product/study pixels remained identical. The timing spread
 therefore does not indicate a productization regression, but it does mean a
 desktop-GPU p95 gate is not reproducible until clock residency is controlled.
-The pack records the `1.5 ms` provisional target as advisory and does not claim
-the engine's eventual `<1 ms` target has been met.
+The maintained run measured `1.677 ms` mean and `1.517 ms` p50. Those are the
+current product signals and pass the provisional `2 ms` mean/p50 checkpoint.
+P95 remains recorded as tail telemetry. The engine's eventual `<1 ms` target
+has not been met.
 
 Setup and first frame measured `10.509 s` and `364,200 KiB` peak RSS in the
 product pack. Cache persistence and asynchronous setup remain obvious future

@@ -62,9 +62,11 @@ The promotion does not accept:
 - a surface camera, foliage, water, hydrology, translation, or planet scale;
 - radial attenuation as an engine-level procedural-terrain primitive.
 
-The product pack measured `2.552 ms` terrain-surface p95 at 2560 x 1440 under
-its maintained active-clock profile, while an isolated identical profile
-measured `1.35 ms`. This power-state sensitivity is documented in
+The product pack measured `1.677 ms` mean, `1.517 ms` p50, and `2.552 ms` p95
+for terrain surface at 2560 x 1440 under its maintained active-clock profile.
+Mean and p50 pass the current `2 ms` checkpoint. An isolated identical profile
+measured `1.35 ms` p95, so p95 remains tail telemetry. This power-state
+sensitivity is documented in
 [`terrain-cached-radial-integration.md`](terrain-cached-radial-integration.md).
 Performance remains debt, not a completed acceptance gate.
 

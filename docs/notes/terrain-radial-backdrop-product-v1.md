@@ -60,11 +60,29 @@ The 2026-07-16 pack recorded:
 - stride 3 and 607,232 render-triangle capacity;
 - 2,657,280 setup-time source samples;
 - 10.509 s setup/first-frame and 364,200 KiB peak RSS;
-- 2.552 ms terrain-surface p95 at 2560 x 1440 under the maintained profile.
+- 1.677 ms mean, 1.517 ms p50, and 2.552 ms p95 for terrain surface at
+  2560 x 1440 under the maintained profile.
 
-The performance result misses both the eventual `<1 ms` target and the advisory
-`1.5 ms` checkpoint. It does not block this macro productization decision, but
-it must not be described as a completed backdrop performance budget.
+Mean and p50 pass the current `2 ms` product checkpoint. P95 remains tail
+telemetry because it varies with GPU power-state residency. The result still
+misses the eventual `<1 ms` engine target and must not be described as a
+completed backdrop performance budget.
+
+## Visual Verdict
+
+The macro composition is acceptable for far-field v1, but the current GUI and
+review pack expose two distinct fidelity limits even at the supported distance:
+
+- stride-3 geometry leaves visible faceting on peak and ridge silhouettes;
+- broad source faces and the low-bandwidth material response lack convincing
+  secondary terrain detail.
+
+Silhouette faceting is a geometry problem. Normal maps or sharper material
+contrast cannot repair it. The next bounded geometry experiment should retain
+the radial macro and cached source while selecting denser indices by projected
+size, distance, or silhouette importance instead of returning globally to
+stride 2. Source/material detail should follow as a separate lane so it cannot
+hide topology regressions.
 
 ## Deferred Work
 

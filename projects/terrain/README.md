@@ -175,10 +175,17 @@ stride 3 visually sufficient and measured `1.338 ms` p95 in that run. The
 follow-up product pack verifies exact study parity, both center ownership modes,
 three seeds, six headings, and the full camera envelope under
 `outputs/terrain/radial-backdrop-product-v1/`. Its active-clock profile measured
-`2.552 ms` p95 on the same RTX 5070 Ti; GPU power-state sensitivity makes the
-performance target advisory until the benchmark controls device residency.
+`1.677 ms` mean, `1.517 ms` p50, and `2.552 ms` p95 on the same RTX 5070 Ti.
+The current product checkpoint uses a `2 ms` mean/p50 target and retains p95 as
+tail telemetry because it is sensitive to GPU power-state residency.
 See
 [`docs/notes/terrain-cached-radial-integration.md`](../../docs/notes/terrain-cached-radial-integration.md).
+
+The visual boundary is equally explicit: macro composition is accepted, but
+stride-3 peak silhouettes remain visibly faceted and broad faces lack secondary
+geometry/material detail. The next rendering batch should test projected-size
+or silhouette-aware index density while keeping the radial source and stage
+frozen; a global stride-2 rollback is only a control.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.

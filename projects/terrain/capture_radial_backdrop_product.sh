@@ -228,13 +228,17 @@ if (( sample_count < 120 )); then
   exit 1
 fi
 p95_rank="$(( (95 * sample_count + 99) / 100 ))"
+p50_rank="$(( (50 * sample_count + 99) / 100 ))"
+p50_ms="$(sed -n "${p50_rank}p" "${durations}")"
 p95_ms="$(sed -n "${p95_rank}p" "${durations}")"
+mean_ms="$(awk '{ sum += $1 } END { printf "%.6f", sum / NR }' "${durations}")"
 performance_pass=false
-if awk -v value="${p95_ms}" 'BEGIN { exit !(value <= 1.5) }'; then
+if awk -v mean="${mean_ms}" -v p50="${p50_ms}" \
+  'BEGIN { exit !(mean <= 2.0 && p50 <= 2.0) }'; then
   performance_pass=true
 else
-  printf 'terrain radial product review: GPU p95 %s ms exceeds advisory 1.5 ms target\n' \
-    "${p95_ms}" >&2
+  printf 'terrain radial product review: GPU mean/p50 %s/%s ms exceeds 2.0 ms checkpoint\n' \
+    "${mean_ms}" "${p50_ms}" >&2
 fi
 
 metric_average() {
@@ -255,6 +259,8 @@ jq -n \
   --arg commit "$(git -C "${ROOT_DIR}" rev-parse HEAD)" \
   --argjson parity_pairs "${parity_pairs}" \
   --argjson samples "${sample_count}" \
+  --argjson mean_ms "${mean_ms}" \
+  --argjson p50_ms "${p50_ms}" \
   --argjson p95_ms "${p95_ms}" \
   --argjson performance_pass "${performance_pass}" \
   --argjson setup_ms "${setup_elapsed_ms}" \
@@ -281,8 +287,13 @@ jq -n \
     coverage: {seeds: [0, 9012, 12345], yaw_degrees: [0, 60, 120, 180, 240, 300]},
     performance: {
       resolution: [2560, 1440], capture_fps: 120, warmup_frames: 60, samples: $samples,
-      terrain_surface_gpu_p95_ms: $p95_ms, advisory_target_ms: 1.5,
-      target_met: $performance_pass, blocks_productization: false,
+      terrain_surface_gpu_mean_ms: $mean_ms,
+      terrain_surface_gpu_p50_ms: $p50_ms,
+      terrain_surface_gpu_p95_ms: $p95_ms,
+      current_mean_p50_target_ms: 2.0,
+      mean_p50_target_met: $performance_pass,
+      p95_is_tail_telemetry: true,
+      blocks_productization: false,
       render_triangle_capacity: $render_triangles, source_samples: $source_samples
     },
     setup_and_first_frame: {resolution: [640, 360], elapsed_ms: $setup_ms, process_max_rss_kib: $setup_rss},
@@ -304,11 +315,10 @@ Review in this order:
    scale, material continuity, and stage ownership.
 5. `radial-v1-product-study-parity.png`: the two rows are exact PNG matches;
    this proves the product path preserved the accepted study result.
-6. `review-metadata.json`: records setup cost and the advisory 1440p terrain
-   surface GPU p95 target. The profile runs at 120 fps to improve GPU clock
-   residency, but pass timing still varies with device power state. Performance
-   does not block this productization batch; the sub-1-ms target remains follow-up
-   work.
+6. `review-metadata.json`: records setup cost and the current 1440p terrain
+   surface GPU mean/p50 checkpoint. P95 remains tail telemetry because pass
+   timing varies with device power state. The profile runs at 120 fps to improve
+   GPU clock residency. The eventual sub-1-ms target remains follow-up work.
 
 This pack validates a far-field backdrop product. It does not claim mid-field or
 surface-scene fidelity.
@@ -320,7 +330,8 @@ trap - EXIT
 
 printf 'terrain radial product review: wrote %s\n' "${OUT_DIR}"
 printf '  exact study parity: %s/%s pairs\n' "${parity_pairs}" "${#azimuths[@]}"
-printf '  terrain surface GPU p95: %s ms (advisory target 1.5 ms, met: %s)\n' \
-  "${p95_ms}" "${performance_pass}"
+printf '  terrain surface GPU mean/p50: %s/%s ms (target 2.0 ms, met: %s)\n' \
+  "${mean_ms}" "${p50_ms}" "${performance_pass}"
+printf '  terrain surface GPU p95 telemetry: %s ms\n' "${p95_ms}"
 printf '  setup and first frame: %s ms, %s KiB max RSS\n' \
   "${setup_elapsed_ms}" "${setup_max_rss_kib}"

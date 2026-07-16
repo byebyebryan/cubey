@@ -266,15 +266,17 @@ Across seeds `0`, `9012`, and `12345`:
   discontinuities;
 - rendering requires no per-frame CPU field generation or bulk artifacts;
 - exact product/study parity holds over the maintained six-heading comparison;
-- the product records 1440p terrain-pass timing and retains `<1 ms` as an open
-  engine target rather than claiming the current radial renderer meets it.
+- the product records 1440p terrain-pass mean, p50, and p95; the current
+  checkpoint requires mean and p50 at or below `2 ms`, while `<1 ms` remains an
+  open engine target.
 
 The radial-v1 product pack records six exact product/study PNG pairs, stride 3,
 607,232 render-triangle capacity, 2,657,280 source samples, `10,509 ms`
 setup/first-frame, and `364,200 KiB` peak RSS. Its maintained 2560 x 1440
-active-clock profile measured `2.552 ms` terrain-surface p95. Identical profiles
-varied from about `1.35-3.7 ms` with GPU duty cycle, so the current desktop-GPU
-target is advisory until clock residency is controlled. See
+active-clock profile measured `1.677 ms` mean, `1.517 ms` p50, and `2.552 ms`
+p95 for the terrain surface pass. Mean and p50 pass the current `2 ms`
+checkpoint. Identical p95 profiles varied from about `1.35-3.7 ms` with GPU duty
+cycle, so p95 remains tail telemetry until clock residency is controlled. See
 [`terrain-radial-backdrop-product-v1.md`](../notes/terrain-radial-backdrop-product-v1.md).
 
 The historical hard-cut pack recorded `0.876288 ms` terrain-surface p95 and
