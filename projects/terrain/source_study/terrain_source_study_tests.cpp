@@ -1,5 +1,7 @@
 #include "terrain_source_study.h"
 
+#include "terrain_mountain_backdrop_source.h"
+
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -64,6 +66,30 @@ void test_calibration_and_samples_are_deterministic() {
     }
 }
 
+void test_mountain_hierarchy_delegates_to_production_source() {
+    using namespace cubey::projects::terrain;
+    const TerrainSourceStudyCalibration calibration =
+        terrain_source_study_calibration(TerrainSourceStudyRecipe::MountainsHierarchyV2);
+    const TerrainSourceStudySource study(TerrainSourceStudyRecipe::MountainsHierarchyV2, 9012U,
+                                         calibration);
+    const TerrainMountainBackdropSource production(9012U);
+    constexpr std::array<float, 5> footprints{0.0F, 16.0F, 256.0F, 2'500.0F, 6'000.0F};
+    for (int z = -4; z <= 4; ++z) {
+        for (int x = -4; x <= 4; ++x) {
+            for (const float footprint : footprints) {
+                const TerrainQuery query{
+                    .world_xz = {static_cast<float>(x) * 3'500.0F + 137.0F,
+                                 static_cast<float>(z) * 3'500.0F - 281.0F},
+                    .footprint_m = footprint,
+                };
+                require(study.sample_raw_height(query) == production.sample_raw_height(query) &&
+                            study.sample_height(query) == production.sample_height(query),
+                        "mountain hierarchy study should exactly delegate to production");
+            }
+        }
+    }
+}
+
 void test_seeds_and_footprints_change_the_field() {
     using namespace cubey::projects::terrain;
     for (const TerrainSourceStudyRecipeInfo& info : terrain_source_study_recipes()) {
@@ -121,6 +147,7 @@ int main() {
     try {
         test_registry_is_complete_and_strict();
         test_calibration_and_samples_are_deterministic();
+        test_mountain_hierarchy_delegates_to_production_source();
         test_seeds_and_footprints_change_the_field();
         test_neighbor_samples_remain_continuous();
         std::cout << "terrain_source_study_tests: ok\n";

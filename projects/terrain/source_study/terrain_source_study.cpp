@@ -1,5 +1,7 @@
 #include "terrain_source_study.h"
 
+#include "terrain_mountain_backdrop_source.h"
+
 #include <cubey/procedural/noise.h>
 #include <cubey/procedural/seed.h>
 
@@ -210,47 +212,6 @@ struct RawEvaluator {
     return uplift * (0.35F + 1.65F * structure) + 0.18F * remote_mass;
 }
 
-[[nodiscard]] float raw_mountains_hierarchy_v2(const RawEvaluator& evaluator,
-                                               const TerrainQuery& query) {
-    constexpr float kStructurePeriodM = 3'000.0F;
-    constexpr float kEnvelopePeriodM = 7'000.0F;
-    constexpr float kUpliftPeriodM = 14'000.0F;
-    constexpr float kLacunarity = 2.08F;
-    constexpr float kSignedGain = -0.32F;
-    constexpr std::uint32_t kStructureOctaves = 6U;
-
-    const std::uint64_t envelope_seed = cubey::procedural::derive_seed(
-        evaluator.seed, "terrain.source-study.mountains-v2.envelope");
-    const std::uint64_t structure_seed = cubey::procedural::derive_seed(
-        evaluator.seed, "terrain.source-study.mountains-v2.structure");
-    const std::uint64_t uplift_seed =
-        cubey::procedural::derive_seed(evaluator.seed, "terrain.source-study.mountains-v2.uplift");
-
-    const float envelope_noise =
-        value_noise_derivative(query.world_xz / kEnvelopePeriodM, envelope_seed).value * 0.5F +
-        0.5F;
-    const float envelope = 0.18F + 0.82F * std::pow(envelope_noise, 1.7F);
-
-    cubey::math::Vec2 position = query.world_xz / kStructurePeriodM;
-    float wavelength_m = kStructurePeriodM;
-    float amplitude = 1.0F;
-    float signed_structure = 0.0F;
-    for (std::uint32_t octave = 0U; octave < kStructureOctaves; ++octave) {
-        const float visibility = octave_visibility(wavelength_m, query.footprint_m);
-        const float noise = value_noise_derivative(position, structure_seed).value * 0.5F + 0.5F;
-        const float filtered_noise = std::lerp(0.5F, noise, visibility);
-        signed_structure += amplitude * filtered_noise;
-        amplitude *= kSignedGain;
-        position = rotated(position) * kLacunarity;
-        wavelength_m /= kLacunarity;
-    }
-
-    const float uplift_noise =
-        value_noise_derivative(query.world_xz / kUpliftPeriodM, uplift_seed).value * 0.5F + 0.5F;
-    const float sparse_uplift = std::pow(uplift_noise, 4.5F);
-    return envelope * (0.22F + signed_structure) + sparse_uplift * 0.70F;
-}
-
 [[nodiscard]] float raw_rainforest(const RawEvaluator& evaluator, const TerrainQuery& query) {
     cubey::math::Vec2 position = query.world_xz / kBasePeriodM;
     float amplitude = 0.5F;
@@ -322,7 +283,7 @@ struct RawEvaluator {
     case TerrainSourceStudyRecipe::MountainsSigned:
         return raw_mountains(evaluator, query);
     case TerrainSourceStudyRecipe::MountainsHierarchyV2:
-        return raw_mountains_hierarchy_v2(evaluator, query);
+        return sample_terrain_mountain_backdrop_raw(evaluator.seed, query);
     case TerrainSourceStudyRecipe::RainforestCliff:
         return raw_rainforest(evaluator, query);
     case TerrainSourceStudyRecipe::MountainPeakWarp:
@@ -363,6 +324,16 @@ TerrainSourceStudyRecipe terrain_source_study_recipe_from_name(std::string_view 
 }
 
 TerrainSourceStudyCalibration terrain_source_study_calibration(TerrainSourceStudyRecipe recipe) {
+    if (recipe == TerrainSourceStudyRecipe::MountainsHierarchyV2) {
+        const TerrainMountainBackdropCalibration calibration =
+            terrain_mountain_backdrop_calibration();
+        return {
+            .raw_p05 = calibration.raw_p05,
+            .raw_p95 = calibration.raw_p95,
+            .scale_m = calibration.scale_m,
+            .sample_count = calibration.sample_count,
+        };
+    }
     std::vector<float> samples;
     samples.reserve(static_cast<std::size_t>(kCalibrationSeeds.size()) *
                     kCalibrationSamplesPerAxis * kCalibrationSamplesPerAxis);

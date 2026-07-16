@@ -2,6 +2,7 @@ add_library(cubey_project_terrain_runtime STATIC
     terrain_backdrop_density.cpp
     terrain_config.cpp
     terrain_height_source.cpp
+    terrain_mountain_backdrop_source.cpp
     terrain_source.cpp
     terrain_source_gpu.cpp
 )

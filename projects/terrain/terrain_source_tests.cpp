@@ -1,3 +1,4 @@
+#include "terrain_mountain_backdrop_source.h"
 #include "terrain_source.h"
 
 #include <array>
@@ -42,6 +43,55 @@ void test_names_and_validation() {
         rejected = true;
     }
     require(rejected, "terrain should reject unknown presets");
+}
+
+void test_mountain_backdrop_source_contract() {
+    using cubey::projects::terrain::TerrainMountainBackdropSource;
+    using cubey::projects::terrain::terrain_mountain_backdrop_calibration;
+    const auto calibration = terrain_mountain_backdrop_calibration();
+    require_near(calibration.raw_p05, 0.0927082449F, 0.0F,
+                 "mountain backdrop should freeze its lower calibration bound");
+    require_near(calibration.raw_p95, 0.6683836579F, 0.0F,
+                 "mountain backdrop should freeze its upper calibration bound");
+    require_near(calibration.scale_m, 6'079.8149414F, 0.0F,
+                 "mountain backdrop should freeze its physical scale");
+    require(calibration.sample_count == 198'147U,
+            "mountain backdrop should retain its calibration sample count");
+
+    constexpr std::array<TerrainQuery, 5> queries{{
+        {.world_xz = {0.0F, 0.0F}, .footprint_m = 0.0F},
+        {.world_xz = {4'000.0F, -8'000.0F}, .footprint_m = 16.0F},
+        {.world_xz = {-12'000.0F, 6'000.0F}, .footprint_m = 256.0F},
+        {.world_xz = {16'000.0F, 16'000.0F}, .footprint_m = 2'500.0F},
+        {.world_xz = {-7'500.0F, 11'250.0F}, .footprint_m = 6'000.0F},
+    }};
+    const TerrainMountainBackdropSource first(9012U);
+    const TerrainMountainBackdropSource repeat(9012U);
+    const TerrainMountainBackdropSource changed(12345U);
+    require(first.metadata().id == "mountains-hierarchy-v2" &&
+                first.metadata().relief_scale_m == 3'500.0F,
+            "mountain backdrop should publish stable source metadata");
+    bool seed_changed = false;
+    bool footprint_changed = false;
+    for (const TerrainQuery& query : queries) {
+        const float height = first.sample_height(query);
+        require(std::isfinite(height) && height >= 0.0F && height == repeat.sample_height(query),
+                "mountain backdrop should be finite, non-negative, and deterministic");
+        seed_changed = seed_changed || std::abs(height - changed.sample_height(query)) > 0.01F;
+        const TerrainQuery fine{.world_xz = query.world_xz, .footprint_m = 0.0F};
+        footprint_changed = footprint_changed ||
+                            std::abs(first.sample_height(fine) - height) > 0.01F;
+    }
+    require(seed_changed, "mountain backdrop should use the terrain seed");
+    require(footprint_changed, "mountain backdrop should filter unresolved structure");
+
+    bool rejected = false;
+    try {
+        (void)first.sample_height({.world_xz = {0.0F, 0.0F}, .footprint_m = -1.0F});
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "mountain backdrop should reject invalid queries");
 }
 
 void test_source_is_deterministic_and_uses_full_seed() {
@@ -330,6 +380,7 @@ void test_local_weathering_is_bounded_and_preserves_coarse_samples() {
 int main() {
     try {
         test_names_and_validation();
+        test_mountain_backdrop_source_contract();
         test_source_is_deterministic_and_uses_full_seed();
         test_presets_have_ordered_relief();
         test_footprint_filters_unresolved_detail();
