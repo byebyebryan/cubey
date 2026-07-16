@@ -86,3 +86,46 @@ The terrain-surface pass must remain below 1 ms p95 at 2560 x 1440 over at least
 120 post-warmup samples. The batch ends with a documented verdict. Translation,
 streaming, close terrain, vegetation, water, hydrology, and production
 promotion remain separate work.
+
+## Completed Review
+
+The fixed pack is under
+`outputs/terrain/directional-backdrop-study-v1/`. It contains all four hierarchy
+lanes for seeds `0`, `9012`, and `12345`, six unrestricted yaw samples per lane,
+the v2.1 control, orbit-envelope checks, source/gate diagnostics, presentation
+captures, and GPU profiles.
+
+The continuous-center topology passes its mechanical purpose. No center hole,
+sector seam, or detached ownership edge is visible, and the validation sphere
+rests on the sampled floor. That result is retained as an opt-in study path;
+the production cutout remains unchanged.
+
+Placement alone fails. The bounded hierarchy search selects `23`, `24`, and
+`23` mountain sectors for the three seeds, with no open sectors and a failed
+placement contract in every case. Moving the focus within the unchanged source
+therefore does not produce the low-side composition this study needs.
+
+One-sided shaping meets the numeric panorama contract with `9-10` mountain
+sectors and `11-14` open sectors, but fails visual review. Its broad and detail
+gates remain legible as a directional band in top diagnostics. In clay, several
+mountain-facing headings become a near-frame-filling wall while other headings
+lose useful mountain silhouette entirely. The same behavior appears in the
+v2.1 control, so this is a composition problem rather than a hierarchy-v2-only
+artifact. The `250 m / 30 degree` envelope also reads as terrain-filled rather
+than as a reusable backdrop view.
+
+At the study's explicit full render stride, the 2560 x 1440 terrain pass misses
+the performance gate: the hard-cut control measures `1.540 ms` p95 and shaped
+continuous measures `5.496 ms` p95 over `146` post-warmup samples each. This is
+not a regression in production defaults, which retain their coarser render
+stride and cutout topology, but it prevents promoting the study configuration.
+
+## Verdict
+
+Reject both directional lanes for production. Placement-only cannot find the
+required composition in the tested source, and the shaping fallback replaces a
+circular artifact with an exposed directional one while adding substantial
+geometry cost. Retain the planner, relief wrapper, continuous topology, report,
+and capture app as isolated evidence and reusable diagnostics. Do not add
+another shaping iteration in this batch; the accepted cached hard-cut backdrop
+remains the runtime default.

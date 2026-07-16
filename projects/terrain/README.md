@@ -50,8 +50,11 @@ cmake --build --preset dev --target \
   cubey_project_terrain_source_tests \
   cubey_project_terrain_source_gpu_parity_tests \
   cubey_project_terrain_source_study \
-  cubey_project_terrain_source_study_report
-ctest --preset dev -R '^terrain_source(_gpu_parity|_study)?_tests$' --output-on-failure
+  cubey_project_terrain_source_study_report \
+  cubey_project_terrain_directional_backdrop_study \
+  cubey_project_terrain_directional_backdrop_report
+ctest --preset dev -R 'terrain_(source(_gpu_parity|_study)?|directional.*)_tests' \
+  --output-on-failure
 
 ./build/dev/projects/terrain/terrain \
   --terrain-seed 9012 \
@@ -90,6 +93,7 @@ projects/terrain/capture_quality_tile_review.sh
 projects/terrain/capture_cached_backdrop_review.sh
 projects/terrain/capture_source_model_study.sh
 projects/terrain/capture_mountains_source_decision.sh
+projects/terrain/capture_directional_backdrop_study.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -121,6 +125,13 @@ defines the review order and raw frames remain grouped by recipe and seed.
 The focused Mountains decision pack uses only v2.1, the old signed candidate,
 and the corrected hierarchy candidate, plus exact-reference scale diagnostics,
 under `outputs/terrain/mountains-source-decision-v2/`.
+
+The directional backdrop study compares the accepted hard cut against a
+continuous center, source-only placement, and one-sided relief composition.
+Its multi-seed pack is under
+`outputs/terrain/directional-backdrop-study-v1/`; the completed decision in
+[`docs/notes/terrain-directional-backdrop-study.md`](../../docs/notes/terrain-directional-backdrop-study.md)
+rejects both directional lanes and leaves production defaults unchanged.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
