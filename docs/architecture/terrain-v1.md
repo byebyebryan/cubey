@@ -8,6 +8,12 @@ sampling to the fixed-focus cached backdrop defined in
 The control clipmap and quality tessellation paths remain historical review
 controls, not the target product.
 
+The cached hard-cut renderer remains accepted production v1. The next
+composition target is the study-only radial v2 macro baseline in
+[`terrain-radial-backdrop-macro-baseline.md`](../notes/terrain-radial-backdrop-macro-baseline.md).
+It becomes production only after cached integration preserves the visual
+contract and sub-millisecond runtime gate.
+
 ## Goal
 
 Terrain v1 is a deterministic planar heightfield source plus a cached,
@@ -96,6 +102,12 @@ selection and frustum bounds cull sectors for every unrestricted yaw. The
 non-tessellated runtime shader performs environment lighting and aerial
 perspective only; it does not evaluate terrain source noise, weathering,
 terrain-shadow marches, or material tiles.
+
+The radial v2 follow-up does not replace this path in place. Its `32.768 km`
+domain, `1-24 km` broad transition, `5-30 km` detail transition, elevated focus,
+and `100-1000 m` orbit are targets for a new cached integration lane. Radial
+composition is evaluated only during the bake; it must not add per-frame source
+sampling or procedural shaping to the runtime shader.
 
 The `control` clipmap and `quality` tessellation renderers below are retained
 explicit experiments and regression controls. They are not terrain v1

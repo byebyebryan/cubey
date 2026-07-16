@@ -4,6 +4,11 @@ Date: 2026-07-15
 
 Status: accepted fixed-focus terrain v1 backdrop checkpoint.
 
+The next composition target is the accepted radial v2 macro baseline in
+[`terrain-radial-backdrop-macro-baseline.md`](terrain-radial-backdrop-macro-baseline.md).
+This cached hard-cut product remains production until that expanded-domain lane
+passes the same runtime gate.
+
 ## Accepted Product
 
 The production `backdrop` path bakes source v2.1 once around the deterministic
@@ -70,6 +75,8 @@ surface.
 
 ## Deferred Work
 
+- cached radial-v2 integration over the expanded `32.768 km` domain while
+  preserving the sub-millisecond terrain pass;
 - persistent disk cache and asynchronous load/upload;
 - translated focus, streaming, general terrain LOD, and planet integration;
 - a richer cached material product and scene shadow integration;

@@ -147,8 +147,11 @@ envelope but restores broad structure over `1-24 km` and source detail over
 `5-30 km` in every direction. Its current comparison pack is written to
 `outputs/terrain/radial-backdrop-expanded-v2/`. The broad band stays hidden in
 the tested scene views and fills the directional lane's empty headings, but its
-circular low-relief basin remains explicit in diagnostics, so it stays isolated
-from the production backdrop source.
+circular low-relief basin remains explicit in diagnostics. V2 is now the
+accepted macro-composition baseline, while the current cached hard-cut backdrop
+remains production until radial composition passes cached integration, detail,
+and the `<1 ms` runtime gate. See
+[`docs/notes/terrain-radial-backdrop-macro-baseline.md`](../../docs/notes/terrain-radial-backdrop-macro-baseline.md).
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.

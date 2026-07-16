@@ -135,6 +135,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain cached backdrop v1 review](terrain-cached-backdrop-v1-review.md):
   accepted multi-seed fixed-focus product, ownership envelope, setup cost, and
   1440p sub-millisecond terrain-pass evidence.
+- [Terrain radial backdrop macro baseline](terrain-radial-backdrop-macro-baseline.md):
+  accepted expanded-domain composition and camera target, with explicit cached
+  integration, detail, performance, and stop boundaries.
 - [Terrain source model study](terrain-source-model-study.md): controlled
   clean-room comparison of scalable mountain source operators through the
   accepted cached-backdrop renderer, with fixed calibration and provenance
@@ -149,9 +152,8 @@ the detailed foundation notes under `docs/architecture/`.
   bounded clean-room correction of the mountain scale hierarchy, external
   component diagnostics, and the measured rejection before any production v4.
 - [Terrain directional backdrop study](terrain-directional-backdrop-study.md):
-  rejected placement-first comparison of continuous low terrain, directional
-  mountain arcs, and one-sided relief composition for fixed-focus scenes; the
-  report retains the mechanically sound continuous-center diagnostic.
+  rejected directional placement/shaping comparison plus the radial follow-up
+  evidence that led to the accepted macro baseline.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.

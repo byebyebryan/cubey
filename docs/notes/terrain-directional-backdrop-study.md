@@ -2,6 +2,10 @@
 
 Date: 2026-07-16
 
+Status: directional composition rejected; the later radial v2 follow-up is
+accepted as the macro baseline in
+[`terrain-radial-backdrop-macro-baseline.md`](terrain-radial-backdrop-macro-baseline.md).
+
 ## Decision
 
 The cached terrain product is a fixed-focus backdrop, not a general traversable
@@ -237,5 +241,11 @@ horizon and no visible circular shelf.
 Top diagnostics show the intended larger change. The fully quiet core is much
 smaller, gate gradients span more of the domain, and shaped slope transitions
 more gradually into the source. The center remains deliberately calm and the
-radial signature remains measurable, so this does not alter the study-only
-verdict. Prefer v2 over v1 for subsequent radial backdrop evaluation.
+radial signature remains measurable. The implementation therefore stays
+study-only, while v2 is accepted as the macro-composition target. Prefer v2
+over v1 for subsequent radial backdrop evaluation.
+
+The radial result closes this composition study. Subsequent work follows the
+cached-integration and detail boundaries in
+[`terrain-radial-backdrop-macro-baseline.md`](terrain-radial-backdrop-macro-baseline.md)
+rather than adding another transition variant here.
