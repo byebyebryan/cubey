@@ -23,6 +23,7 @@ common_args=(
   --terrain-preset mountain
   --terrain-weathering local
   --terrain-camera-preset backdrop
+  --terrain-backdrop-profile hard-cut-v1
   --terrain-backdrop-mode detached
   --terrain-backdrop-min-distance 3200
   --terrain-presentation backdrop

@@ -39,6 +39,7 @@ for preset in "${presets[@]}"; do
       --width 640 --height 360 \
       --terrain-seed "${seed}" --terrain-preset "${preset}" \
       --terrain-weathering local --terrain-camera-preset backdrop \
+      --terrain-backdrop-profile hard-cut-v1 \
       --terrain-presentation backdrop --debug-view surface
     matrix_images+=("${output}")
   done
@@ -47,26 +48,34 @@ done
 capture_terrain "${OUT_DIR}/comparison/mountain-standard.png" \
   --width 960 --height 540 --terrain-seed 9012 --terrain-preset mountain \
   --terrain-weathering local --terrain-camera-preset backdrop \
+  --terrain-backdrop-profile hard-cut-v1 \
   --terrain-presentation standard --debug-view surface
 capture_terrain "${OUT_DIR}/comparison/mountain-backdrop.png" \
   --width 960 --height 540 --terrain-seed 9012 --terrain-preset mountain \
   --terrain-weathering local --terrain-camera-preset backdrop \
+  --terrain-backdrop-profile hard-cut-v1 \
   --terrain-presentation backdrop --debug-view surface
 capture_terrain "${OUT_DIR}/comparison/mountain-coverage.png" \
   --width 960 --height 540 --terrain-seed 9012 --terrain-preset mountain \
   --terrain-weathering local --terrain-camera-preset backdrop \
+  --terrain-backdrop-profile hard-cut-v1 \
   --terrain-presentation backdrop --debug-view vegetation-coverage
 
 for camera in ground surface backdrop; do
+  profile_args=()
+  if [[ "${camera}" == "backdrop" ]]; then
+    profile_args=(--terrain-backdrop-profile hard-cut-v1)
+  fi
   capture_terrain "${OUT_DIR}/distance/mountain-${camera}-backdrop.png" \
     --width 960 --height 540 --terrain-seed 9012 --terrain-preset mountain \
     --terrain-weathering local --terrain-camera-preset "${camera}" \
-    --terrain-presentation backdrop --debug-view surface
+    "${profile_args[@]}" --terrain-presentation backdrop --debug-view surface
 done
 
 capture_terrain "${OUT_DIR}/terrain-backdrop-showcase-1920x1080.png" \
   --width 1920 --height 1080 --terrain-seed 9012 --terrain-preset mountain \
   --terrain-weathering local --terrain-camera-preset backdrop \
+  --terrain-backdrop-profile hard-cut-v1 \
   --terrain-presentation backdrop --debug-view surface \
   --sun-elevation 22 --sun-azimuth -55
 

@@ -41,6 +41,7 @@ for preset in "${presets[@]}"; do
     capture_terrain "${output}" \
       --width 640 --height 360 --terrain-seed "${seed}" --terrain-preset "${preset}" \
       --terrain-weathering local --terrain-camera-preset backdrop \
+      --terrain-backdrop-profile hard-cut-v1 \
       --terrain-presentation backdrop --debug-view surface
     matrix_images+=("${output}")
   done
@@ -79,6 +80,7 @@ for presentation in standard backdrop; do
   capture_terrain "${OUT_DIR}/comparison/mountain-${presentation}.png" \
     --width 960 --height 540 --terrain-seed 9012 --terrain-preset mountain \
     --terrain-weathering local --terrain-camera-preset backdrop \
+    --terrain-backdrop-profile hard-cut-v1 \
     --terrain-presentation "${presentation}" --debug-view surface \
     --sun-elevation 22 --sun-azimuth -55
 done
@@ -87,6 +89,7 @@ showcase="${OUT_DIR}/native/mountain-backdrop-1920x1080.png"
 capture_terrain "${showcase}" \
   --width 1920 --height 1080 --terrain-seed 9012 --terrain-preset mountain \
   --terrain-weathering local --terrain-camera-preset backdrop \
+  --terrain-backdrop-profile hard-cut-v1 \
   --terrain-presentation backdrop --debug-view surface \
   --sun-elevation 22 --sun-azimuth -55
 magick "${showcase}" -crop 960x540+0+540 +repage \

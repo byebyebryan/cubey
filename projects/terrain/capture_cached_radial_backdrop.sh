@@ -99,6 +99,7 @@ run_production_video() {
   "${PRODUCTION_APP}" --headless --capture video --frames "${frame_count}" --fps 30 \
     --width "${width}" --height "${height}" --output "${output}" \
     --terrain-preset mountain --terrain-weathering local --terrain-seed 9012 \
+    --terrain-backdrop-profile hard-cut-v1 \
     --terrain-camera-preset backdrop --terrain-backdrop-mode detached \
     --terrain-backdrop-min-distance 3200 --terrain-presentation backdrop \
     --sun-elevation 30 --sun-azimuth -55 --debug-view surface --validation \
