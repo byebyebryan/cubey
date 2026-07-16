@@ -14,6 +14,7 @@ enum class TerrainSourceStudyRecipe : std::uint8_t {
     ElevatedDerivative,
     SwissDerivative,
     MountainsSigned,
+    MountainsHierarchyV2,
     RainforestCliff,
     MountainPeakWarp,
 };

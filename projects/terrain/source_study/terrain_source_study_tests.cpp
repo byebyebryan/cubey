@@ -19,7 +19,7 @@ void require(bool condition, std::string_view message) {
 void test_registry_is_complete_and_strict() {
     using namespace cubey::projects::terrain;
     const auto recipes = terrain_source_study_recipes();
-    require(recipes.size() == 7U, "source study should publish the fixed seven-recipe matrix");
+    require(recipes.size() == 8U, "source study should publish the eight-recipe matrix");
     for (const TerrainSourceStudyRecipeInfo& info : recipes) {
         require(!info.id.empty() && !info.operator_family.empty() && !info.reference.empty(),
                 "source study recipes should retain review metadata");
