@@ -2,9 +2,10 @@
 #include "terrain_source_study.h"
 
 #include "terrain_directional_relief.h"
+#include "terrain_radial_relief.h"
 
-#include <cubey/engine/capture_queue.h>
 #include <cubey/core/jobs.h>
+#include <cubey/engine/capture_queue.h>
 
 #include <nlohmann/json.hpp>
 
@@ -34,6 +35,7 @@ struct Options {
     std::uint64_t seed = 9012U;
     std::uint32_t grid_size = 512U;
     bool expanded = false;
+    bool radial = false;
     float focus_height_m = 500.0F;
 };
 
@@ -44,21 +46,23 @@ struct Options {
         if (option == "--output-dir" && index + 1 < argc) {
             result.output_dir = argv[++index];
         } else if (option == "--recipe" && index + 1 < argc) {
-            result.recipe = cubey::projects::terrain::terrain_source_study_recipe_from_name(
-                argv[++index]);
+            result.recipe =
+                cubey::projects::terrain::terrain_source_study_recipe_from_name(argv[++index]);
         } else if (option == "--seed" && index + 1 < argc) {
             result.seed = std::stoull(argv[++index]);
         } else if (option == "--grid-size" && index + 1 < argc) {
             result.grid_size = static_cast<std::uint32_t>(std::stoul(argv[++index]));
         } else if (option == "--expanded") {
             result.expanded = true;
+        } else if (option == "--radial") {
+            result.expanded = true;
+            result.radial = true;
         } else if (option == "--focus-height" && index + 1 < argc) {
             result.focus_height_m = std::stof(argv[++index]);
         } else {
-            throw std::runtime_error(
-                "usage: terrain_directional_backdrop_report --output-dir path "
-                "[--recipe id] [--seed integer] [--grid-size 128..1024] "
-                "[--expanded] [--focus-height 100..1000]");
+            throw std::runtime_error("usage: terrain_directional_backdrop_report --output-dir path "
+                                     "[--recipe id] [--seed integer] [--grid-size 128..1024] "
+                                     "[--expanded] [--radial] [--focus-height 100..1000]");
         }
     }
     if (result.output_dir.empty() || result.grid_size < 128U || result.grid_size > 1'024U ||
@@ -95,10 +99,8 @@ void write_pixel(std::vector<std::uint8_t>& rgba, std::size_t index,
                              heights[static_cast<std::size_t>(y) * size + x0];
             const float dy = heights[static_cast<std::size_t>(y1) * size + x] -
                              heights[static_cast<std::size_t>(y0) * size + x];
-            const float gradient_x =
-                dx / (spacing_m * static_cast<float>(x1 - x0));
-            const float gradient_y =
-                dy / (spacing_m * static_cast<float>(y1 - y0));
+            const float gradient_x = dx / (spacing_m * static_cast<float>(x1 - x0));
+            const float gradient_y = dy / (spacing_m * static_cast<float>(y1 - y0));
             result[static_cast<std::size_t>(y) * size + x] =
                 std::sqrt(gradient_x * gradient_x + gradient_y * gradient_y);
         }
@@ -106,8 +108,8 @@ void write_pixel(std::vector<std::uint8_t>& rgba, std::size_t index,
     return result;
 }
 
-[[nodiscard]] nlohmann::json placement_json(
-    const cubey::projects::terrain::TerrainDirectionalPlacementPlan& placement) {
+[[nodiscard]] nlohmann::json
+placement_json(const cubey::projects::terrain::TerrainDirectionalPlacementPlan& placement) {
     nlohmann::json sectors = nlohmann::json::array();
     for (const auto& sector : placement.sectors) {
         sectors.push_back({
@@ -140,8 +142,8 @@ void write_pixel(std::vector<std::uint8_t>& rgba, std::size_t index,
     };
 }
 
-[[nodiscard]] nlohmann::json stage_json(
-    const cubey::projects::terrain::TerrainBackdropStagePlan& stage) {
+[[nodiscard]] nlohmann::json
+stage_json(const cubey::projects::terrain::TerrainBackdropStagePlan& stage) {
     return {
         {"target_height_m", stage.target_height_m},
         {"source_center_height_m", stage.source_center_height_m},
@@ -169,15 +171,21 @@ int main(int argc, char** argv) {
         const Options options = parse_options(argc, argv);
         std::filesystem::create_directories(options.output_dir);
         const TerrainSourceStudySource base_source(options.recipe, options.seed);
-        const TerrainDirectionalPlacementPlan placement =
-            plan_terrain_directional_placement(base_source, directional_backdrop_placement_request());
+        const TerrainDirectionalPlacementPlan placement = plan_terrain_directional_placement(
+            base_source, directional_backdrop_placement_request());
         const TerrainDirectionalReliefParameters relief_parameters =
             options.expanded ? expanded_directional_backdrop_relief_parameters(placement)
                              : TerrainDirectionalReliefParameters{
                                    .focus_xz = placement.source_focus_xz,
                                    .mountain_yaw_radians = placement.mountain_yaw_radians,
                                };
-        const TerrainDirectionalReliefSource shaped_source(base_source, relief_parameters);
+        const TerrainRadialReliefParameters radial_parameters =
+            expanded_radial_backdrop_relief_parameters(placement);
+        const TerrainDirectionalReliefSource directional_source(base_source, relief_parameters);
+        const TerrainRadialReliefSource radial_source(base_source, radial_parameters);
+        const TerrainHeightSource& shaped_source =
+            options.radial ? static_cast<const TerrainHeightSource&>(radial_source)
+                           : static_cast<const TerrainHeightSource&>(directional_source);
         const TerrainBackdropStagePlan placement_stage =
             make_directional_backdrop_stage_plan(base_source, placement);
         TerrainDirectionalBackdropStageParameters shaped_stage_parameters;
@@ -189,12 +197,11 @@ int main(int argc, char** argv) {
                 .orbit_max_radius_m = 1'000.0F,
             };
         }
-        const TerrainBackdropStagePlan shaped_stage =
-            make_directional_backdrop_stage_plan(shaped_source, placement, 1.0F,
-                                                 shaped_stage_parameters);
+        const TerrainBackdropStagePlan shaped_stage = make_directional_backdrop_stage_plan(
+            shaped_source, placement, 1.0F, shaped_stage_parameters);
 
-        const float extent_m = options.expanded ? expanded_directional_backdrop_outer_radius_m()
-                                                : kDefaultExtentM;
+        const float extent_m =
+            options.expanded ? expanded_directional_backdrop_outer_radius_m() : kDefaultExtentM;
         const float spacing_m = 2.0F * extent_m / static_cast<float>(options.grid_size - 1U);
         const std::size_t sample_count =
             static_cast<std::size_t>(options.grid_size) * options.grid_size;
@@ -211,20 +218,31 @@ int main(int argc, char** argv) {
             handles.push_back(jobs.submit([&, begin, end] {
                 for (std::uint32_t y = begin; y < end; ++y) {
                     for (std::uint32_t x = 0U; x < options.grid_size; ++x) {
-                        const std::size_t index = static_cast<std::size_t>(y) * options.grid_size + x;
+                        const std::size_t index =
+                            static_cast<std::size_t>(y) * options.grid_size + x;
                         const TerrainQuery query{
-                            .world_xz = placement.source_focus_xz +
-                                        cubey::math::Vec2{-extent_m + static_cast<float>(x) * spacing_m,
-                                                          -extent_m + static_cast<float>(y) * spacing_m},
+                            .world_xz =
+                                placement.source_focus_xz +
+                                cubey::math::Vec2{-extent_m + static_cast<float>(x) * spacing_m,
+                                                  -extent_m + static_cast<float>(y) * spacing_m},
                             .footprint_m = spacing_m,
                         };
                         base_heights[index] = base_source.sample_height(query);
-                        const TerrainDirectionalReliefSample shaped =
-                            shaped_source.sample_composition(query);
-                        shaped_heights[index] = shaped.height_m;
-                        floor_heights[index] = shaped.floor_height_m;
-                        broad_gates[index] = shaped.broad_gate;
-                        detail_gates[index] = shaped.detail_gate;
+                        if (options.radial) {
+                            const TerrainRadialReliefSample shaped =
+                                radial_source.sample_composition(query);
+                            shaped_heights[index] = shaped.height_m;
+                            floor_heights[index] = shaped.floor_height_m;
+                            broad_gates[index] = shaped.broad_gate;
+                            detail_gates[index] = shaped.detail_gate;
+                        } else {
+                            const TerrainDirectionalReliefSample shaped =
+                                directional_source.sample_composition(query);
+                            shaped_heights[index] = shaped.height_m;
+                            floor_heights[index] = shaped.floor_height_m;
+                            broad_gates[index] = shaped.broad_gate;
+                            detail_gates[index] = shaped.detail_gate;
+                        }
                     }
                 }
             }));
@@ -251,8 +269,7 @@ int main(int argc, char** argv) {
                 write_pixel(base_rgba, index, scalar_color(base_heights[index], kHeightMaximumM));
                 write_pixel(shaped_rgba, index,
                             scalar_color(shaped_heights[index], kHeightMaximumM));
-                write_pixel(floor_rgba, index,
-                            scalar_color(floor_heights[index], kHeightMaximumM));
+                write_pixel(floor_rgba, index, scalar_color(floor_heights[index], kHeightMaximumM));
                 write_pixel(base_slope_rgba, index,
                             scalar_color(base_slopes[index], kSlopeMaximum));
                 write_pixel(shaped_slope_rgba, index,
@@ -267,10 +284,11 @@ int main(int argc, char** argv) {
                 if (yaw < 0.0F) {
                     yaw += 2.0F * std::numbers::pi_v<float>;
                 }
-                const std::uint32_t sector = std::min(
-                    static_cast<std::uint32_t>(yaw / (2.0F * std::numbers::pi_v<float>) *
-                                               static_cast<float>(placement.sector_count)),
-                    placement.sector_count - 1U);
+                const std::uint32_t sector =
+                    std::min(static_cast<std::uint32_t>(
+                                 yaw / (2.0F * std::numbers::pi_v<float>)*static_cast<float>(
+                                           placement.sector_count)),
+                             placement.sector_count - 1U);
                 std::array<std::uint8_t, 4> color =
                     scalar_color(base_heights[index], kHeightMaximumM);
                 const bool on_ring = std::abs(radius - 2'000.0F) < spacing_m * 2.0F ||
@@ -313,28 +331,48 @@ int main(int argc, char** argv) {
         backlog.finish_all();
         encode_jobs.shutdown();
 
+        nlohmann::json shaping;
+        if (options.radial) {
+            shaping = {
+                {"transition", "radial"},
+                {"floor_footprint_m", radial_parameters.floor_footprint_m},
+                {"floor_relief_fraction", radial_parameters.floor_relief_fraction},
+                {"structure_footprint_m", radial_parameters.structure_footprint_m},
+                {"broad_range_m",
+                 {radial_parameters.broad_start_m, radial_parameters.broad_full_m}},
+                {"detail_range_m",
+                 {radial_parameters.detail_start_m, radial_parameters.detail_full_m}},
+            };
+        } else {
+            shaping = {
+                {"transition", "directional"},
+                {"floor_footprint_m", relief_parameters.floor_footprint_m},
+                {"floor_relief_fraction", relief_parameters.floor_relief_fraction},
+                {"structure_footprint_m", relief_parameters.structure_footprint_m},
+                {"broad_range_m",
+                 {relief_parameters.broad_start_m, relief_parameters.broad_full_m}},
+                {"detail_range_m",
+                 {relief_parameters.detail_start_m, relief_parameters.detail_full_m}},
+                {"warp_period_m", relief_parameters.warp_period_m},
+                {"warp_amplitude_m", relief_parameters.warp_amplitude_m},
+                {"warp_octaves", relief_parameters.warp_octaves},
+            };
+        }
         const nlohmann::json report{
-            {"schema", options.expanded ? "cubey.terrain.directional-backdrop-study.v2"
-                                         : "cubey.terrain.directional-backdrop-study.v1"},
-            {"mode", options.expanded ? "expanded" : "baseline"},
+            {"schema", options.radial     ? "cubey.terrain.radial-backdrop-study.v1"
+                       : options.expanded ? "cubey.terrain.directional-backdrop-study.v2"
+                                          : "cubey.terrain.directional-backdrop-study.v1"},
+            {"mode", options.radial     ? "expanded-radial"
+                     : options.expanded ? "expanded"
+                                        : "baseline"},
             {"recipe", terrain_source_study_recipe_name(options.recipe)},
             {"seed", options.seed},
-            {"domain", {{"extent_m", extent_m}, {"grid_size", options.grid_size},
-                        {"spacing_m", spacing_m}}},
+            {"domain",
+             {{"extent_m", extent_m}, {"grid_size", options.grid_size}, {"spacing_m", spacing_m}}},
             {"placement", placement_json(placement)},
             {"placement_stage", stage_json(placement_stage)},
             {"shaped_stage", stage_json(shaped_stage)},
-            {"shaping",
-             {{"floor_footprint_m", relief_parameters.floor_footprint_m},
-              {"floor_relief_fraction", relief_parameters.floor_relief_fraction},
-              {"structure_footprint_m", relief_parameters.structure_footprint_m},
-              {"broad_range_m",
-               {relief_parameters.broad_start_m, relief_parameters.broad_full_m}},
-              {"detail_range_m",
-               {relief_parameters.detail_start_m, relief_parameters.detail_full_m}},
-              {"warp_period_m", relief_parameters.warp_period_m},
-              {"warp_amplitude_m", relief_parameters.warp_amplitude_m},
-              {"warp_octaves", relief_parameters.warp_octaves}}},
+            {"shaping", std::move(shaping)},
         };
         std::ofstream output(options.output_dir / "report.json");
         if (!output) {

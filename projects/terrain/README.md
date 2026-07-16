@@ -95,6 +95,7 @@ projects/terrain/capture_source_model_study.sh
 projects/terrain/capture_mountains_source_decision.sh
 projects/terrain/capture_directional_backdrop_study.sh
 projects/terrain/capture_directional_backdrop_expanded.sh
+projects/terrain/capture_radial_backdrop_expanded.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -140,6 +141,12 @@ Its surface-first and expanded-domain source pack is under
 `outputs/terrain/directional-backdrop-expanded-v1/`. The pack improves
 far-field composition but still exposes a directional shaping band and misses
 the production GPU budget, so it remains diagnostic-only.
+
+The companion `expanded-radial` lane uses the same expanded terrain and camera
+envelope but restores broad structure over `6-24 km` and source detail over
+`12-29 km` in every direction. Its comparison pack is written to
+`outputs/terrain/radial-backdrop-expanded-v1/`; it remains isolated from the
+production backdrop source.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
