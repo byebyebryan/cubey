@@ -644,8 +644,8 @@ class MountainsMeshRenderer::Impl {
             .camera_forward = cubey::math::Vec4(camera_.forward, 0.0F),
             .domain_center_extent_surface =
                 {
-                    camera_.position.x,
-                    camera_.position.z,
+                    source_camera_.position.x,
+                    source_camera_.position.z,
                     kMeshDomainExtent,
                     config_.mesh_surface == ReferenceMeshSurface::Map ? 1.0F : 0.0F,
                 },
