@@ -545,6 +545,8 @@ if (BUILD_TESTING)
         --headless
         --terrain-seed
         9012
+        --terrain-backdrop-profile
+        hard-cut-v1
         --terrain-preset
         mountain
         --terrain-weathering
@@ -560,6 +562,33 @@ if (BUILD_TESTING)
     cubey_add_png_stats_test(
         terrain_backdrop_stage_headless_writes_png
         "${CUBEY_TERRAIN_BACKDROP_STAGE_HEADLESS_OUTPUT}"
+        0.001
+        0.001
+    )
+
+    set(CUBEY_TERRAIN_RADIAL_BACKDROP_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-radial-backdrop-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_radial_backdrop_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_RADIAL_BACKDROP_HEADLESS_OUTPUT}"
+        --headless
+        --width
+        320
+        --height
+        180
+        --terrain-seed
+        9012
+        --terrain-backdrop-profile
+        radial-v1
+        --terrain-camera-preset
+        backdrop-stage
+    )
+    set_tests_properties(terrain_radial_backdrop_headless_writes_png PROPERTIES TIMEOUT 120)
+    cubey_add_png_stats_test(
+        terrain_radial_backdrop_headless_writes_png
+        "${CUBEY_TERRAIN_RADIAL_BACKDROP_HEADLESS_OUTPUT}"
         0.001
         0.001
     )
@@ -730,6 +759,8 @@ if (BUILD_TESTING)
         --headless
         --terrain-seed
         9012
+        --terrain-backdrop-profile
+        hard-cut-v1
         --terrain-preset
         mountain
         --terrain-source-version
@@ -797,6 +828,8 @@ if (BUILD_TESTING)
         --headless
         --terrain-seed
         9012
+        --terrain-backdrop-profile
+        hard-cut-v1
         --terrain-preset
         mountain
         --terrain-source-version
@@ -927,6 +960,8 @@ if (BUILD_TESTING)
         terrain_headless_writes_png_stats
         terrain_backdrop_stage_headless_writes_png
         terrain_backdrop_stage_headless_writes_png_stats
+        terrain_radial_backdrop_headless_writes_png
+        terrain_radial_backdrop_headless_writes_png_stats
         terrain_surface_headless_writes_png
         terrain_surface_headless_writes_png_stats
         terrain_lod_headless_writes_png

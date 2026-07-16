@@ -30,6 +30,7 @@ int run_source_study(cubey::RunConfig config) {
     const auto recipe =
         cubey::projects::terrain::terrain_source_study_recipe_from_name(config.terrain.recipe);
     config.terrain.render_path = "backdrop";
+    config.terrain.backdrop_profile = "hard-cut-v1";
     config.terrain.backdrop_mesh_density = "high";
     config.terrain.camera_preset =
         config.terrain.camera_preset.empty() ? "backdrop" : config.terrain.camera_preset;

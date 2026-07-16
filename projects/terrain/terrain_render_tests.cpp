@@ -139,7 +139,7 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should use the v1 clipmap dimensions");
 }
 
-void test_backdrop_camera_defaults_to_the_cached_v2_1_product() {
+void test_backdrop_camera_defaults_to_the_cached_radial_product() {
     cubey::RunConfig run_config{};
     run_config.terrain.camera_preset = "backdrop-stage";
     const auto config =
@@ -148,6 +148,14 @@ void test_backdrop_camera_defaults_to_the_cached_v2_1_product() {
             "backdrop camera should default to the frozen v2.1 source");
     require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Backdrop,
             "backdrop camera should default to the cached product renderer");
+    require(config.backdrop_profile ==
+                    cubey::projects::terrain::TerrainBackdropProfile::RadialV1 &&
+                config.backdrop_center ==
+                    cubey::projects::terrain::TerrainBackdropCenterOwnership::Continuous &&
+                config.backdrop_minimum_visible_distance_m == 6'000.0F &&
+                config.presentation ==
+                    cubey::projects::terrain::TerrainPresentationMode::Backdrop,
+            "backdrop camera should default to the radial-v1 product contract");
     require(config.backdrop_mesh_density ==
                 cubey::projects::terrain::TerrainBackdropMeshDensity::High,
             "cached backdrop should default to high mesh density");
@@ -388,6 +396,7 @@ void test_ground_camera_and_shape_diagnostics_parse() {
 void test_backdrop_camera_configuration() {
     cubey::RunConfig run_config;
     run_config.terrain.camera_preset = "backdrop";
+    run_config.terrain.backdrop_profile = "hard-cut-v1";
     run_config.terrain.backdrop_mode = "grounded";
     run_config.terrain.backdrop_azimuth_degrees = -90.0F;
     run_config.terrain.backdrop_orbit_radius_m = 125.0F;
@@ -425,9 +434,10 @@ void test_backdrop_camera_configuration() {
                 !cubey::projects::terrain::terrain_camera_is_surface(stage.camera),
             "terrain runtime should expose a dedicated orbiting backdrop stage view");
 
-    run_config.terrain.camera_preset = "midground";
-    const auto midground =
-        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config);
+    cubey::RunConfig midground_run_config;
+    midground_run_config.terrain.camera_preset = "midground";
+    const auto midground = cubey::projects::terrain::terrain_runtime_config_from_run_config(
+        midground_run_config);
     require(midground.camera == cubey::projects::terrain::TerrainCameraPreset::Midground,
             "terrain runtime should parse the midground camera");
     require(cubey::projects::terrain::terrain_camera_is_surface(midground.camera) &&
@@ -890,7 +900,7 @@ void test_ground_controller_uses_walking_scale_speed() {
 int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
-        test_backdrop_camera_defaults_to_the_cached_v2_1_product();
+        test_backdrop_camera_defaults_to_the_cached_radial_product();
         test_backdrop_product_profiles_parse_and_validate();
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();

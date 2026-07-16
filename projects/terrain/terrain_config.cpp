@@ -87,11 +87,11 @@ std::string_view terrain_backdrop_profile_name(TerrainBackdropProfile profile) n
 }
 
 TerrainBackdropProfile terrain_backdrop_profile_from_name(std::string_view name) {
-    if (name.empty() || name == "hard-cut-v1") {
-        return TerrainBackdropProfile::HardCutV1;
-    }
-    if (name == "radial-v1") {
+    if (name.empty() || name == "radial-v1") {
         return TerrainBackdropProfile::RadialV1;
+    }
+    if (name == "hard-cut-v1") {
+        return TerrainBackdropProfile::HardCutV1;
     }
     throw std::runtime_error("unknown terrain backdrop profile: " + std::string(name));
 }

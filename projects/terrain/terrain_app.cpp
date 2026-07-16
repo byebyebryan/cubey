@@ -1,12 +1,15 @@
 #include "terrain_app.h"
 
 #include "terrain_backdrop_camera.h"
+#include "terrain_backdrop_profile.h"
 #include "terrain_backdrop_product.h"
 #include "terrain_backdrop_stage.h"
 #include "terrain_clipmap.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
 #include "terrain_material_tiles.h"
+#include "terrain_mountain_backdrop_source.h"
+#include "terrain_radial_relief.h"
 #include "terrain_source_gpu.h"
 #include "terrain_surface_controller.h"
 
@@ -378,6 +381,7 @@ class TerrainApp {
               .far_z = clipmap_config_.outer_half_extent * 5.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)) {
+        configure_backdrop_profile();
         apply_camera_preset();
         create_backdrop_product_if_needed();
     }
@@ -516,6 +520,18 @@ class TerrainApp {
         }
 
         const bool cached_backdrop = runtime_config_.render_path == TerrainRenderPath::Backdrop;
+        if (cached_backdrop && backdrop_product_.has_value()) {
+            const TerrainBackdropProduct& product = backdrop_product_.value();
+            const std::string_view profile_name = active_backdrop_profile_name();
+            const std::string_view source_name = product.source.id;
+            ImGui::Text("Profile: %.*s", static_cast<int>(profile_name.size()),
+                        profile_name.data());
+            ImGui::Text("Source: %.*s", static_cast<int>(source_name.size()), source_name.data());
+            ImGui::Text("Center: %s", product.center.has_value() ? "continuous" : "consumer-owned");
+            ImGui::Text("Stride: %u", backdrop_render_stride(product.request));
+            ImGui::Text("Domain: %.3f km", product.request.outer_radius_m / 1'000.0F);
+            ImGui::Separator();
+        }
         bool source_changed = false;
         ImGui::BeginDisabled(cached_backdrop);
         int preset = static_cast<int>(runtime_config_.source.preset);
@@ -619,6 +635,40 @@ class TerrainApp {
             runtime_config_.camera == TerrainCameraPreset::Midground) {
             apply_camera_preset();
         }
+    }
+
+    void configure_backdrop_profile() {
+        if (runtime_config_.render_path != TerrainRenderPath::Backdrop ||
+            runtime_config_.backdrop_profile != TerrainBackdropProfile::RadialV1 ||
+            options_.backdrop_source != nullptr) {
+            return;
+        }
+        radial_backdrop_base_source_.emplace(runtime_config_.source.seed);
+        const TerrainDirectionalPlacementPlan placement = plan_terrain_directional_placement(
+            radial_backdrop_base_source_.value(), {});
+        radial_backdrop_source_.emplace(
+            radial_backdrop_base_source_.value(),
+            terrain_radial_backdrop_relief_parameters(placement));
+        const TerrainRadialBackdropProfile profile = terrain_radial_backdrop_profile();
+        TerrainFocusedBackdropStageParameters stage_parameters = profile.stage;
+        if (runtime_config_.backdrop_orbit_radius_m.has_value()) {
+            stage_parameters.orbit_default_radius_m =
+                runtime_config_.backdrop_orbit_radius_m.value();
+        }
+        if (runtime_config_.backdrop_elevation_radians.has_value()) {
+            stage_parameters.orbit_default_elevation_radians =
+                runtime_config_.backdrop_elevation_radians.value();
+        }
+        options_.backdrop_source = &radial_backdrop_source_.value();
+        options_.backdrop_render_stride = profile.render_stride;
+        options_.backdrop_center_mode =
+            runtime_config_.backdrop_center == TerrainBackdropCenterOwnership::Continuous
+                ? TerrainBackdropCenterMode::Continuous
+                : TerrainBackdropCenterMode::Cutout;
+        options_.backdrop_outer_radius_m = profile.outer_radius_m;
+        backdrop_stage_plan_ = plan_terrain_focused_backdrop_stage(
+            radial_backdrop_source_.value(), placement, runtime_config_.vertical_scale,
+            stage_parameters);
     }
 
     void create_backdrop_product_if_needed() {
@@ -949,6 +999,13 @@ class TerrainApp {
                                         static_cast<double>(diagnostics.render_triangle_count));
         profile_recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
                                         static_cast<double>(diagnostics.source_sample_count));
+        profile_recorder->record_metric(
+            frame_index, "terrain.backdrop", "render_stride",
+            static_cast<double>(backdrop_render_stride(backdrop_product().request)));
+        profile_recorder->record_metric(frame_index, "terrain.backdrop", "outer_radius_m",
+                                        backdrop_product().request.outer_radius_m);
+        profile_recorder->record_metric(frame_index, "terrain.backdrop", "continuous_center",
+                                        backdrop_product().center.has_value() ? 1.0 : 0.0);
     }
 
     [[nodiscard]] std::uint32_t active_triangle_count() const {
@@ -1413,11 +1470,30 @@ class TerrainApp {
                                                    : production_backdrop_source_;
     }
 
+    [[nodiscard]] static std::uint32_t
+    backdrop_render_stride(const TerrainBackdropProductRequest& request) noexcept {
+        if (request.render_stride != 0U) {
+            return request.render_stride;
+        }
+        return request.density == TerrainBackdropMeshDensity::High
+                   ? 3U
+                   : (request.density == TerrainBackdropMeshDensity::Medium ? 2U : 1U);
+    }
+
+    [[nodiscard]] std::string_view active_backdrop_profile_name() const noexcept {
+        if (options_.backdrop_source != nullptr && !radial_backdrop_source_.has_value()) {
+            return "injected-study";
+        }
+        return terrain_backdrop_profile_name(runtime_config_.backdrop_profile);
+    }
+
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainAppOptions options_{};
     TerrainSourceParameters source_parameters_{};
     ParameterTerrainHeightSource production_backdrop_source_;
+    std::optional<TerrainMountainBackdropSource> radial_backdrop_base_source_{};
+    std::optional<TerrainRadialReliefSource> radial_backdrop_source_{};
     TerrainClipmapMeshData clipmap_data_{};
     TerrainQualityTileMeshData quality_tile_data_{};
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};

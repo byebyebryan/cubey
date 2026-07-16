@@ -59,6 +59,7 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
     const TerrainSourceStudyRecipe recipe =
         terrain_source_study_recipe_from_name(config.terrain.recipe);
     config.terrain.render_path = "backdrop";
+    config.terrain.backdrop_profile = "hard-cut-v1";
     config.terrain.backdrop_mesh_density = "high";
     config.terrain.camera_preset =
         config.terrain.camera_preset.empty() ? "backdrop" : config.terrain.camera_preset;
