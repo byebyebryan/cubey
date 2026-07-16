@@ -177,3 +177,40 @@ At 2560 x 1440, the full-stride terrain pass measures `4.451 ms` p95 over `146`
 post-warmup samples and fails the `<1 ms` production gate. Retain
 `expanded-shaped` as a useful study/debug composition and do not promote it to
 the cached backdrop default.
+
+## Expanded Radial Comparison
+
+The directional result leaves several headings empty and exposes its one-sided
+uplift shelf. A companion `expanded-radial` lane tests the opposite composition
+without changing the mountain source, renderer, terrain extent, or camera:
+
+- retain the source-derived `8 km` filtered floor and `2.5 km` structure level;
+- restore broad structure from `6-24 km` radial distance;
+- restore source detail from `12-29 km` radial distance;
+- keep the `32.768 km` outer radius, `500 m` focus height, `400 m` default
+  orbit, and unrestricted yaw;
+- use an unwarped radial distance so this remains a controlled circular test.
+
+The comparison pack is under
+`outputs/terrain/radial-backdrop-expanded-v1/`. It contains `1024 x 1024`
+source, floor, shaped-height, slope, and gate fields for seeds `0`, `9012`, and
+`12345`; six-heading surface rows for all three seeds; a matched directional
+control; and a clay silhouette row.
+
+The wide band removes the visible hard cutoff in scene views. It also restores
+mountain occupancy in every tested heading, avoiding the directional lane's
+empty sectors and exposed one-sided shelf. Variation still comes from the
+wrapped procedural source, so the horizon does not become a geometrically
+uniform wall.
+
+The diagnostic maps make the compromise explicit. Both gates remain perfect
+circles, shaped slope contains a circular low-relief region, and the central
+foreground is visibly quieter and flatter than the restored source. The
+surface orbit hides that transition at this scale, but the composition now
+implies mountains in every direction. Several seed/headings also crop very tall
+source peaks, which is a source/framing issue rather than a gate discontinuity.
+
+Keep `expanded-radial` as the stronger unrestricted-yaw comparison lane, not as
+a production source contract. It demonstrates that a large transition band is
+viable for the backdrop framing problem, while confirming that circular
+composition and terrain-source quality remain separate decisions.

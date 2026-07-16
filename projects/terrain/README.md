@@ -145,8 +145,10 @@ the production GPU budget, so it remains diagnostic-only.
 The companion `expanded-radial` lane uses the same expanded terrain and camera
 envelope but restores broad structure over `6-24 km` and source detail over
 `12-29 km` in every direction. Its comparison pack is written to
-`outputs/terrain/radial-backdrop-expanded-v1/`; it remains isolated from the
-production backdrop source.
+`outputs/terrain/radial-backdrop-expanded-v1/`. The broad band stays hidden in
+the tested scene views and fills the directional lane's empty headings, but its
+circular low-relief basin remains explicit in diagnostics, so it stays isolated
+from the production backdrop source.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
