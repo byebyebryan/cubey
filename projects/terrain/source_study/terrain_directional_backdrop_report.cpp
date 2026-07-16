@@ -36,6 +36,8 @@ struct Options {
     std::uint32_t grid_size = 512U;
     bool expanded = false;
     bool radial = false;
+    cubey::projects::terrain::TerrainRadialFidelity radial_fidelity =
+        cubey::projects::terrain::TerrainRadialFidelity::Control;
     float focus_height_m = 500.0F;
 };
 
@@ -57,12 +59,19 @@ struct Options {
         } else if (option == "--radial") {
             result.expanded = true;
             result.radial = true;
+        } else if (option == "--radial-fidelity" && index + 1 < argc) {
+            result.expanded = true;
+            result.radial = true;
+            result.radial_fidelity =
+                cubey::projects::terrain::terrain_radial_fidelity_from_name(argv[++index]);
         } else if (option == "--focus-height" && index + 1 < argc) {
             result.focus_height_m = std::stof(argv[++index]);
         } else {
             throw std::runtime_error("usage: terrain_directional_backdrop_report --output-dir path "
                                      "[--recipe id] [--seed integer] [--grid-size 128..1024] "
-                                     "[--expanded] [--radial] [--focus-height 100..1000]");
+                                     "[--expanded] [--radial] "
+                                     "[--radial-fidelity control|source|material|combined] "
+                                     "[--focus-height 100..1000]");
         }
     }
     if (result.output_dir.empty() || result.grid_size < 128U || result.grid_size > 1'024U ||
@@ -180,7 +189,7 @@ int main(int argc, char** argv) {
                                    .mountain_yaw_radians = placement.mountain_yaw_radians,
                                };
         const TerrainRadialReliefParameters radial_parameters =
-            expanded_radial_backdrop_relief_parameters(placement);
+            radial_fidelity_backdrop_relief_parameters(placement, options.radial_fidelity);
         const TerrainDirectionalReliefSource directional_source(base_source, relief_parameters);
         const TerrainRadialReliefSource radial_source(base_source, radial_parameters);
         const TerrainHeightSource& shaped_source =
@@ -208,6 +217,8 @@ int main(int argc, char** argv) {
         std::vector<float> base_heights(sample_count);
         std::vector<float> shaped_heights(sample_count);
         std::vector<float> floor_heights(sample_count);
+        std::vector<float> structure_heights(sample_count);
+        std::vector<float> detail_heights(sample_count);
         std::vector<float> broad_gates(sample_count);
         std::vector<float> detail_gates(sample_count);
         cubey::jobs::JobSystem jobs(std::max(1U, std::thread::hardware_concurrency()));
@@ -233,6 +244,8 @@ int main(int argc, char** argv) {
                                 radial_source.sample_composition(query);
                             shaped_heights[index] = shaped.height_m;
                             floor_heights[index] = shaped.floor_height_m;
+                            structure_heights[index] = shaped.structure_height_m;
+                            detail_heights[index] = shaped.detail_height_m;
                             broad_gates[index] = shaped.broad_gate;
                             detail_gates[index] = shaped.detail_gate;
                         } else {
@@ -258,6 +271,8 @@ int main(int argc, char** argv) {
         std::vector<std::uint8_t> base_rgba(sample_count * 4U);
         std::vector<std::uint8_t> shaped_rgba(sample_count * 4U);
         std::vector<std::uint8_t> floor_rgba(sample_count * 4U);
+        std::vector<std::uint8_t> structure_rgba(sample_count * 4U);
+        std::vector<std::uint8_t> filtered_detail_rgba(sample_count * 4U);
         std::vector<std::uint8_t> base_slope_rgba(sample_count * 4U);
         std::vector<std::uint8_t> shaped_slope_rgba(sample_count * 4U);
         std::vector<std::uint8_t> broad_rgba(sample_count * 4U);
@@ -270,6 +285,12 @@ int main(int argc, char** argv) {
                 write_pixel(shaped_rgba, index,
                             scalar_color(shaped_heights[index], kHeightMaximumM));
                 write_pixel(floor_rgba, index, scalar_color(floor_heights[index], kHeightMaximumM));
+                if (options.radial) {
+                    write_pixel(structure_rgba, index,
+                                scalar_color(structure_heights[index], kHeightMaximumM));
+                    write_pixel(filtered_detail_rgba, index,
+                                scalar_color(detail_heights[index], kHeightMaximumM));
+                }
                 write_pixel(base_slope_rgba, index,
                             scalar_color(base_slopes[index], kSlopeMaximum));
                 write_pixel(shaped_slope_rgba, index,
@@ -320,9 +341,16 @@ int main(int argc, char** argv) {
                 .rgba8 = std::move(rgba),
             }));
         };
+        if (options.radial) {
+            enqueue("full-source-height.png", base_rgba);
+        }
         enqueue("base-height.png", std::move(base_rgba));
         enqueue("shaped-height.png", std::move(shaped_rgba));
         enqueue("floor-height.png", std::move(floor_rgba));
+        if (options.radial) {
+            enqueue("structure-height.png", std::move(structure_rgba));
+            enqueue("filtered-detail-height.png", std::move(filtered_detail_rgba));
+        }
         enqueue("base-slope.png", std::move(base_slope_rgba));
         enqueue("shaped-slope.png", std::move(shaped_slope_rgba));
         enqueue("broad-gate.png", std::move(broad_rgba));
@@ -338,6 +366,7 @@ int main(int argc, char** argv) {
                 {"floor_footprint_m", radial_parameters.floor_footprint_m},
                 {"floor_relief_fraction", radial_parameters.floor_relief_fraction},
                 {"structure_footprint_m", radial_parameters.structure_footprint_m},
+                {"detail_footprint_m", radial_parameters.detail_footprint_m},
                 {"broad_range_m",
                  {radial_parameters.broad_start_m, radial_parameters.broad_full_m}},
                 {"detail_range_m",
@@ -367,6 +396,7 @@ int main(int argc, char** argv) {
                                         : "baseline"},
             {"recipe", terrain_source_study_recipe_name(options.recipe)},
             {"seed", options.seed},
+            {"radial_fidelity", terrain_radial_fidelity_name(options.radial_fidelity)},
             {"domain",
              {{"extent_m", extent_m}, {"grid_size", options.grid_size}, {"spacing_m", spacing_m}}},
             {"placement", placement_json(placement)},

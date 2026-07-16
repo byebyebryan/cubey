@@ -82,12 +82,55 @@ void test_composition_is_deterministic() {
             "radial relief should publish stable source metadata");
 }
 
+void test_zero_detail_footprint_preserves_current_composition() {
+    using namespace cubey::projects::terrain;
+    const FootprintSource source;
+    TerrainRadialReliefParameters parameters;
+    parameters.detail_footprint_m = 0.0F;
+    const TerrainRadialReliefSource relief(source, parameters);
+    for (const float radius : {0.0F, 4'000.0F, 15'000.0F, 32'000.0F}) {
+        const TerrainQuery query{.world_xz = {radius, 0.0F}, .footprint_m = 16.0F};
+        const TerrainRadialReliefSample sample = relief.sample_composition(query);
+        const float expected =
+            sample.floor_height_m +
+            sample.broad_gate * (sample.structure_height_m - sample.floor_height_m) +
+            sample.detail_gate * (sample.source_height_m - sample.structure_height_m);
+        require(sample.detail_height_m == sample.source_height_m,
+                "zero detail footprint should retain the full source sample");
+        require(sample.height_m == expected,
+                "zero detail footprint should preserve the previous composition exactly");
+    }
+}
+
+void test_filtered_detail_uses_only_source_footprints() {
+    using namespace cubey::projects::terrain;
+    const FootprintSource source;
+    TerrainRadialReliefParameters parameters;
+    parameters.structure_footprint_m = 900.0F;
+    parameters.detail_footprint_m = 180.0F;
+    parameters.detail_full_m = 24'000.0F;
+    const TerrainRadialReliefSource relief(source, parameters);
+
+    const TerrainRadialReliefSample far =
+        relief.sample_composition({.world_xz = {24'000.0F, 0.0F}, .footprint_m = 16.0F});
+    require_near(far.structure_height_m, source.sample_height({.footprint_m = 900.0F}), 0.0F,
+                 "candidate structure should use the configured coherent footprint");
+    require_near(far.detail_height_m, source.sample_height({.footprint_m = 180.0F}), 0.0F,
+                 "candidate detail should use the configured coherent footprint");
+    require(far.detail_height_m != far.source_height_m,
+            "candidate diagnostics should distinguish filtered detail from the full source");
+    require_near(far.height_m, far.detail_height_m, 0.001F,
+                 "candidate far field should resolve to filtered coherent detail");
+}
+
 } // namespace
 
 int main() {
     try {
         test_composition_is_centered_and_isotropic();
         test_composition_is_deterministic();
+        test_zero_detail_footprint_preserves_current_composition();
+        test_filtered_detail_uses_only_source_footprints();
         std::cout << "terrain_radial_relief_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

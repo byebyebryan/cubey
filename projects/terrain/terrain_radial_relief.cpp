@@ -20,12 +20,15 @@ void validate_terrain_radial_relief_parameters(const TerrainRadialReliefParamete
         std::isfinite(parameters.floor_footprint_m) &&
         std::isfinite(parameters.floor_relief_fraction) &&
         std::isfinite(parameters.structure_footprint_m) &&
-        std::isfinite(parameters.broad_start_m) && std::isfinite(parameters.broad_full_m) &&
-        std::isfinite(parameters.detail_start_m) && std::isfinite(parameters.detail_full_m);
+        std::isfinite(parameters.detail_footprint_m) && std::isfinite(parameters.broad_start_m) &&
+        std::isfinite(parameters.broad_full_m) && std::isfinite(parameters.detail_start_m) &&
+        std::isfinite(parameters.detail_full_m);
     if (!finite || parameters.floor_footprint_m <= parameters.structure_footprint_m ||
-        parameters.structure_footprint_m <= 0.0F || parameters.floor_relief_fraction < 0.0F ||
-        parameters.floor_relief_fraction > 1.0F || parameters.broad_start_m < 0.0F ||
-        parameters.broad_full_m <= parameters.broad_start_m ||
+        parameters.structure_footprint_m <= 0.0F || parameters.detail_footprint_m < 0.0F ||
+        (parameters.detail_footprint_m > 0.0F &&
+         parameters.detail_footprint_m >= parameters.structure_footprint_m) ||
+        parameters.floor_relief_fraction < 0.0F || parameters.floor_relief_fraction > 1.0F ||
+        parameters.broad_start_m < 0.0F || parameters.broad_full_m <= parameters.broad_start_m ||
         parameters.detail_start_m < parameters.broad_start_m ||
         parameters.detail_full_m <= parameters.detail_start_m ||
         parameters.detail_full_m < parameters.broad_full_m) {
@@ -66,6 +69,12 @@ TerrainRadialReliefSource::sample_composition(const TerrainQuery& query) const {
     structure_query.footprint_m =
         std::max(structure_query.footprint_m, parameters_.structure_footprint_m);
     const float structure_height = source_.sample_height(structure_query);
+    float detail_height = source_height;
+    if (parameters_.detail_footprint_m > query.footprint_m) {
+        TerrainQuery detail_query = query;
+        detail_query.footprint_m = parameters_.detail_footprint_m;
+        detail_height = source_.sample_height(detail_query);
+    }
     TerrainQuery floor_query = query;
     floor_query.footprint_m = std::max(floor_query.footprint_m, parameters_.floor_footprint_m);
     const float filtered_floor = source_.sample_height(floor_query);
@@ -80,12 +89,13 @@ TerrainRadialReliefSource::sample_composition(const TerrainQuery& query) const {
     const float detail_gate =
         smootherstep(parameters_.detail_start_m, parameters_.detail_full_m, radial_distance);
     const float height = floor_height + broad_gate * (structure_height - floor_height) +
-                         detail_gate * (source_height - structure_height);
+                         detail_gate * (detail_height - structure_height);
     return {
         .height_m = height,
         .source_height_m = source_height,
         .floor_height_m = floor_height,
         .structure_height_m = structure_height,
+        .detail_height_m = detail_height,
         .radial_distance_m = radial_distance,
         .broad_gate = broad_gate,
         .detail_gate = detail_gate,

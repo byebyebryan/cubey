@@ -18,8 +18,7 @@ void require(bool condition, std::string_view message) {
     }
 }
 
-template <typename Function>
-void require_throws(Function&& function, std::string_view message) {
+template <typename Function> void require_throws(Function&& function, std::string_view message) {
     try {
         function();
     } catch (const std::exception&) {
@@ -78,6 +77,29 @@ void test_lane_names_round_trip() {
     }
 }
 
+void test_radial_fidelity_contract() {
+    using namespace cubey::projects::terrain;
+    for (const TerrainRadialFidelity fidelity : {
+             TerrainRadialFidelity::Control,
+             TerrainRadialFidelity::Source,
+             TerrainRadialFidelity::Material,
+             TerrainRadialFidelity::Combined,
+         }) {
+        require(terrain_radial_fidelity_from_name(terrain_radial_fidelity_name(fidelity)) ==
+                    fidelity,
+                "radial fidelity names should round trip");
+    }
+    require(!terrain_radial_fidelity_uses_source_detail(TerrainRadialFidelity::Control) &&
+                !terrain_radial_fidelity_uses_material_detail(TerrainRadialFidelity::Control) &&
+                terrain_radial_fidelity_uses_source_detail(TerrainRadialFidelity::Source) &&
+                !terrain_radial_fidelity_uses_material_detail(TerrainRadialFidelity::Source) &&
+                !terrain_radial_fidelity_uses_source_detail(TerrainRadialFidelity::Material) &&
+                terrain_radial_fidelity_uses_material_detail(TerrainRadialFidelity::Material) &&
+                terrain_radial_fidelity_uses_source_detail(TerrainRadialFidelity::Combined) &&
+                terrain_radial_fidelity_uses_material_detail(TerrainRadialFidelity::Combined),
+            "radial fidelity variants should form the requested two by two ablation");
+}
+
 void test_cached_radial_stride_contract() {
     using namespace cubey::projects::terrain;
     require(cached_radial_backdrop_render_stride() == 3U,
@@ -90,9 +112,8 @@ void test_cached_radial_stride_contract() {
                    "cached radial should reject unreviewed coarser strides");
 
     constexpr TerrainRadialBackdropProfile profile = terrain_radial_backdrop_profile();
-    require(profile.outer_radius_m == 32'768.0F &&
-                profile.visible_inner_radius_m == 6'000.0F && profile.render_stride == 3U &&
-                profile.stage.focus_height_m == 500.0F &&
+    require(profile.outer_radius_m == 32'768.0F && profile.visible_inner_radius_m == 6'000.0F &&
+                profile.render_stride == 3U && profile.stage.focus_height_m == 500.0F &&
                 profile.stage.orbit_min_radius_m == 100.0F &&
                 profile.stage.orbit_default_radius_m == 400.0F &&
                 profile.stage.orbit_max_radius_m == 1'000.0F,
@@ -134,7 +155,7 @@ void test_expanded_stage_uses_far_field_scale() {
         expanded_radial_backdrop_relief_parameters(placement);
     require(radial.floor_footprint_m == 6'000.0F && radial.broad_start_m == 1'000.0F &&
                 radial.broad_full_m == 24'000.0F && radial.detail_start_m == 5'000.0F &&
-                radial.detail_full_m == 30'000.0F,
+                radial.detail_full_m == 30'000.0F && radial.detail_footprint_m == 0.0F,
             "radial relief should use a broad far-field transition band");
     require(radial.focus_xz.x == placement.source_focus_xz.x &&
                 radial.focus_xz.y == placement.source_focus_xz.y,
@@ -155,6 +176,32 @@ void test_expanded_stage_uses_far_field_scale() {
             "expanded stage should allow a one-kilometer orbit");
     require(stage.minimum_camera_clearance_m >= 10.0F,
             "expanded orbit envelope should remain above terrain");
+}
+
+void test_radial_fidelity_source_parameters_preserve_macro_boundary() {
+    using namespace cubey::projects::terrain;
+    const DirectionalStageSource source;
+    const TerrainDirectionalPlacementPlan placement = evaluate_terrain_directional_placement(
+        source, directional_backdrop_placement_request(), {0.0F, 0.0F});
+    const TerrainRadialReliefParameters control =
+        radial_fidelity_backdrop_relief_parameters(placement, TerrainRadialFidelity::Control);
+    const TerrainRadialReliefParameters material =
+        radial_fidelity_backdrop_relief_parameters(placement, TerrainRadialFidelity::Material);
+    const TerrainRadialReliefParameters candidate =
+        radial_fidelity_backdrop_relief_parameters(placement, TerrainRadialFidelity::Combined);
+    require(control.structure_footprint_m == 2'500.0F && control.detail_footprint_m == 0.0F &&
+                control.detail_full_m == 30'000.0F,
+            "control should retain radial-v1 source parameters");
+    require(material.structure_footprint_m == control.structure_footprint_m &&
+                material.detail_footprint_m == control.detail_footprint_m &&
+                material.detail_full_m == control.detail_full_m,
+            "material-only should retain the control source parameters");
+    require(candidate.floor_footprint_m == 6'000.0F && candidate.floor_relief_fraction == 0.08F &&
+                candidate.structure_footprint_m == 900.0F &&
+                candidate.detail_footprint_m == 180.0F && candidate.broad_start_m == 1'000.0F &&
+                candidate.broad_full_m == 24'000.0F && candidate.detail_start_m == 5'000.0F &&
+                candidate.detail_full_m == 24'000.0F,
+            "source candidate should change only the reviewed coherent scale separation");
 }
 
 void test_cached_radial_stride_only_changes_render_topology() {
@@ -232,9 +279,11 @@ void test_cached_radial_stride_only_changes_render_topology() {
 int main() {
     try {
         test_lane_names_round_trip();
+        test_radial_fidelity_contract();
         test_cached_radial_stride_contract();
         test_stage_is_grounded_and_camera_clear();
         test_expanded_stage_uses_far_field_scale();
+        test_radial_fidelity_source_parameters_preserve_macro_boundary();
         test_cached_radial_stride_only_changes_render_topology();
         std::cout << "terrain_directional_backdrop_study_tests: ok\n";
         return 0;

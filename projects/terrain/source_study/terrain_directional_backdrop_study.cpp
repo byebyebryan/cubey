@@ -56,6 +56,45 @@ TerrainDirectionalBackdropLane terrain_directional_backdrop_lane_from_name(std::
     throw std::runtime_error("unknown terrain directional backdrop lane: " + std::string(name));
 }
 
+std::string_view terrain_radial_fidelity_name(TerrainRadialFidelity fidelity) noexcept {
+    switch (fidelity) {
+    case TerrainRadialFidelity::Control:
+        return "control";
+    case TerrainRadialFidelity::Source:
+        return "source";
+    case TerrainRadialFidelity::Material:
+        return "material";
+    case TerrainRadialFidelity::Combined:
+        return "combined";
+    }
+    return "control";
+}
+
+TerrainRadialFidelity terrain_radial_fidelity_from_name(std::string_view name) {
+    if (name.empty() || name == "control") {
+        return TerrainRadialFidelity::Control;
+    }
+    if (name == "source") {
+        return TerrainRadialFidelity::Source;
+    }
+    if (name == "material") {
+        return TerrainRadialFidelity::Material;
+    }
+    if (name == "combined") {
+        return TerrainRadialFidelity::Combined;
+    }
+    throw std::runtime_error("unknown terrain radial fidelity variant: " + std::string(name));
+}
+
+bool terrain_radial_fidelity_uses_source_detail(TerrainRadialFidelity fidelity) noexcept {
+    return fidelity == TerrainRadialFidelity::Source || fidelity == TerrainRadialFidelity::Combined;
+}
+
+bool terrain_radial_fidelity_uses_material_detail(TerrainRadialFidelity fidelity) noexcept {
+    return fidelity == TerrainRadialFidelity::Material ||
+           fidelity == TerrainRadialFidelity::Combined;
+}
+
 TerrainDirectionalPlacementRequest directional_backdrop_placement_request() {
     return {};
 }
@@ -83,8 +122,20 @@ expanded_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan
     return terrain_radial_backdrop_relief_parameters(placement);
 }
 
-std::uint32_t cached_radial_backdrop_render_stride(
-    std::optional<std::uint32_t> requested_stride) {
+TerrainRadialReliefParameters
+radial_fidelity_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement,
+                                           TerrainRadialFidelity fidelity) {
+    TerrainRadialReliefParameters parameters =
+        expanded_radial_backdrop_relief_parameters(placement);
+    if (terrain_radial_fidelity_uses_source_detail(fidelity)) {
+        parameters.structure_footprint_m = 900.0F;
+        parameters.detail_footprint_m = 180.0F;
+        parameters.detail_full_m = 24'000.0F;
+    }
+    return parameters;
+}
+
+std::uint32_t cached_radial_backdrop_render_stride(std::optional<std::uint32_t> requested_stride) {
     const std::uint32_t stride = requested_stride.value_or(3U);
     if (stride < 1U || stride > 3U) {
         throw std::runtime_error("cached radial render stride must be 1, 2, or 3");

@@ -9,6 +9,7 @@ struct TerrainRadialReliefParameters {
     float floor_footprint_m = 6'000.0F;
     float floor_relief_fraction = 0.08F;
     float structure_footprint_m = 2'500.0F;
+    float detail_footprint_m = 0.0F;
     float broad_start_m = 1'000.0F;
     float broad_full_m = 24'000.0F;
     float detail_start_m = 5'000.0F;
@@ -20,6 +21,7 @@ struct TerrainRadialReliefSample {
     float source_height_m = 0.0F;
     float floor_height_m = 0.0F;
     float structure_height_m = 0.0F;
+    float detail_height_m = 0.0F;
     float radial_distance_m = 0.0F;
     float broad_gate = 0.0F;
     float detail_gate = 0.0F;
