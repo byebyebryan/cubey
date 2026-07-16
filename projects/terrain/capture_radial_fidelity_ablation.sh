@@ -193,6 +193,19 @@ magick montage "${material_diagnostic_inputs[@]}" -tile 3x2 -geometry 640x360+8+
 
 "${REPORT_APP}" --output-dir "${TMP_DIR}/source-components" \
   --recipe "${recipe}" --seed 9012 --grid-size 512 --radial-fidelity source
+"${REPORT_APP}" --output-dir "${TMP_DIR}/control-components" \
+  --recipe "${recipe}" --seed 9012 --grid-size 512 --radial-fidelity control
+source_stage_parity="$(jq -n \
+  --slurpfile control "${TMP_DIR}/control-components/report.json" \
+  --slurpfile source "${TMP_DIR}/source-components/report.json" \
+  '{passed: ($control[0].placement == $source[0].placement and
+      $control[0].shaped_stage == $source[0].shaped_stage),
+    control: $control[0].shaped_stage,
+    source: $source[0].shaped_stage}')"
+if [[ "$(jq -r '.passed' <<<"${source_stage_parity}")" != true ]]; then
+  printf 'terrain radial fidelity ablation: source candidate changed stage clearance\n' >&2
+  exit 1
+fi
 component_inputs=()
 for spec in \
   "full-source-height.png|full source" \
@@ -341,6 +354,7 @@ jq -n \
   --arg recipe "${recipe}" \
   --arg default_parity_hash "${default_parity_hash}" \
   --argjson performance_pass "${performance_pass}" \
+  --argjson source_stage_parity "${source_stage_parity}" \
   --slurpfile profiles "${TMP_DIR}/profiles.json" \
   --slurpfile setups "${TMP_DIR}/setups.json" \
   '{
@@ -379,7 +393,8 @@ jq -n \
       material_preserves_control_product_hash:
         ($profiles[0].material.product_hash == $profiles[0].control.product_hash),
       combined_preserves_source_product_hash:
-        ($profiles[0].combined.product_hash == $profiles[0].source.product_hash)
+        ($profiles[0].combined.product_hash == $profiles[0].source.product_hash),
+      source_preserves_placement_and_shaped_stage: $source_stage_parity
     },
     setup_and_first_frame: $setups[0],
     performance: {
@@ -395,7 +410,7 @@ rm "${TMP_DIR}/profiles.json" "${TMP_DIR}/setups.json"
 cat > "${TMP_DIR}/REVIEW.md" <<EOF
 # Terrain Radial Fidelity Ablation V1
 
-Status: capture complete; visual verdict pending review.
+Status: completed; bounded ablation passes; no production promotion.
 
 Review in this order:
 
@@ -426,8 +441,20 @@ Combined terrain surface GPU mean/p50 is ${combined_mean}/${combined_p50} ms
 against the 2 ms checkpoint (pass: ${performance_pass}). P95 is ${combined_p95}
 ms and remains tail telemetry.
 
-This pack is an ablation, not a promotion. Record the visual verdict only after
-reviewing the sheets and orbit in the stated order.
+Recorded verdict:
+
+- Source passes: the coherent candidate adds readable intermediate shoulders
+  and slopes without noisy ridge fields, fins, spikes, or changed stage
+  clearance.
+- Material passes: the filtered candidate adds restrained face structure to
+  ground and exposed rock without obvious repetition, speckle, swimming, mip
+  transitions, or horizon aliasing. Snow remains intentionally subtle.
+- Combined passes: it is visibly stronger than control for all three reviewed
+  seeds, does not regress the third, and retains the accepted macro composition.
+- Product-hash, default-path, stage-clearance, and 2 ms mean/p50 gates pass.
+
+This pack is an ablation, not a promotion. Production adoption remains a
+separate batch.
 EOF
 
 rm -rf "${OUT_DIR}"
