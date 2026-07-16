@@ -82,11 +82,10 @@ void test_cached_radial_stride_contract() {
     using namespace cubey::projects::terrain;
     require(cached_radial_backdrop_render_stride() == 3U,
             "cached radial should default to production-style stride three");
-    require(cached_radial_backdrop_render_stride(2U) == 2U &&
+    require(cached_radial_backdrop_render_stride(1U) == 1U &&
+                cached_radial_backdrop_render_stride(2U) == 2U &&
                 cached_radial_backdrop_render_stride(3U) == 3U,
             "cached radial should accept the fixed comparison strides");
-    require_throws([] { (void)cached_radial_backdrop_render_stride(1U); },
-                   "cached radial should reserve stride one for the expanded control");
     require_throws([] { (void)cached_radial_backdrop_render_stride(4U); },
                    "cached radial should reject unreviewed coarser strides");
 

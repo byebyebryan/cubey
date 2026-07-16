@@ -68,28 +68,43 @@ telemetry because it varies with GPU power-state residency. The result still
 misses the eventual `<1 ms` engine target and must not be described as a
 completed backdrop performance budget.
 
-## Visual Verdict
+## Topology A/B Verdict
 
-The macro composition is acceptable for far-field v1, but the current GUI and
-review pack expose two distinct fidelity limits even at the supported distance:
+The first GUI review made peak edges and broad faces read as low polygon count.
+That diagnosis was tested directly instead of immediately adding runtime LOD.
+Run `projects/terrain/capture_radial_lod_ab.sh` to reproduce the 1440p pack in
+`outputs/terrain/radial-lod-ab-v1/`. The pack varies only the cached radial
+render-index stride and includes orbit overviews, lossless fixed-angle controls,
+projected-edge diagnostics, and GPU profiles at both the 100 m stress distance
+and 400 m product distance.
 
-- stride-3 geometry leaves visible faceting on peak and ridge silhouettes;
-- broad source faces and the low-bandwidth material response lack convincing
-  secondary terrain detail.
+In the recorded run:
 
-Silhouette faceting is a geometry problem. Normal maps or sharper material
-contrast cannot repair it. The next bounded geometry experiment should retain
-the radial macro and cached source while selecting denser indices by projected
-size, distance, or silhouette importance instead of returning globally to
-stride 2. Source/material detail should follow as a separate lane so it cannot
-hide topology regressions.
+- stride 1 submitted 1,668,096 triangles across 11 visible sectors;
+- stride 2 submitted 419,328 triangles across the same sectors;
+- stride 3 submitted 190,464 triangles across the same sectors;
+- stride 1 versus stride 3 final surface RMSE was about `0.17%` at both focused
+  distances and produced no meaningful silhouette improvement;
+- the projected-edge diagnostic exposed larger local differences, but those
+  differences did not survive final shading at normal inspection scale;
+- stride 1 measured `1.844 ms` mean and `1.858 ms` p50, versus stride 3 at
+  `1.299 ms` mean and `1.260 ms` p50 in this active-clock run.
+
+The fixed-control result rejects insufficient submitted topology as the main
+cause of the current rough or faceted read. The dominant limits are the broad
+baked source shape and low-bandwidth normal/material response. Keep stride 3
+for radial-v1 and move the next visual pass to those inputs. A projected-error
+LOD policy remains relevant when the camera envelope expands or when triangle
+work must be redistributed, but it is not expected to improve the current
+product-distance image by itself.
 
 ## Deferred Work
 
-The immediate follow-up is terrain fidelity after integration: secondary source
-detail, silhouette bandwidth, and procedural material response, evaluated in
-close diagnostics but accepted at far-field distance. Separately measure and
-optimize cache setup, persistence, sector/index policy, and GPU cost.
+The immediate follow-up is terrain fidelity after integration: more coherent
+secondary source relief plus higher-bandwidth procedural normal and material
+response, evaluated in close diagnostics but accepted at far-field distance.
+Separately measure and optimize cache setup, persistence, sector/index policy,
+and GPU cost.
 
 Hydrology, foliage, terrain streaming, traversable terrain, and an external
 engine-level terrain API remain outside radial-v1.

@@ -279,6 +279,14 @@ checkpoint. Identical p95 profiles varied from about `1.35-3.7 ms` with GPU duty
 cycle, so p95 remains tail telemetry until clock residency is controlled. See
 [`terrain-radial-backdrop-product-v1.md`](../notes/terrain-radial-backdrop-product-v1.md).
 
+The subsequent fixed-control stride A/B compared the same cached source and
+camera with stride 1, 2, and 3. Increasing visible submissions from 190,464 to
+1,668,096 triangles changed focused final surface frames by only about `0.17%`
+normalized RMSE at both the 100 m stress and 400 m product distances. Runtime
+LOD is therefore not the immediate visual-quality dependency for radial-v1;
+source relief and normal/material bandwidth own the current image limit. LOD
+remains a future range, transition, and workload-distribution concern.
+
 The historical hard-cut pack recorded `0.876288 ms` terrain-surface p95 and
 remains useful as a performance/regression control. It is no longer the default
 composition. See

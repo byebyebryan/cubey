@@ -86,8 +86,8 @@ expanded_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan
 std::uint32_t cached_radial_backdrop_render_stride(
     std::optional<std::uint32_t> requested_stride) {
     const std::uint32_t stride = requested_stride.value_or(3U);
-    if (stride != 2U && stride != 3U) {
-        throw std::runtime_error("cached radial render stride must be 2 or 3");
+    if (stride < 1U || stride > 3U) {
+        throw std::runtime_error("cached radial render stride must be 1, 2, or 3");
     }
     return stride;
 }
