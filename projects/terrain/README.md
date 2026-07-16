@@ -153,6 +153,14 @@ remains production until radial composition passes cached integration, detail,
 and the `<1 ms` runtime gate. See
 [`docs/notes/terrain-radial-backdrop-macro-baseline.md`](../../docs/notes/terrain-radial-backdrop-macro-baseline.md).
 
+The opt-in `cached-radial` lane keeps that accepted macro composition and full
+baked source product while reducing only its render index topology to stride 2
+or 3. Run `projects/terrain/capture_cached_radial_backdrop.sh` to write the
+multi-seed visual, camera-envelope, diagnostic, setup-cost, workload, and 1440p
+GPU comparison to `outputs/terrain/cached-radial-v1/`. The script records a
+missed `<1 ms` candidate gate instead of aborting, and it does not change the
+current production hard-cut backdrop.
+
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
