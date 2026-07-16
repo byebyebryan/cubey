@@ -1,0 +1,75 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, rgba8) uniform writeonly image2D output_texture;
+
+layout(push_constant) uniform TerrainBackdropMaterialPushConstants {
+    uint seed;
+} pc;
+
+float backdrop_hash(uint value) {
+    value ^= value >> 16U;
+    value *= 0x7feb352dU;
+    value ^= value >> 15U;
+    value *= 0x846ca68bU;
+    value ^= value >> 16U;
+    return float(value & 0x00ffffffU) / float(0x01000000U);
+}
+
+float backdrop_lattice(ivec2 cell, int period, uint salt) {
+    ivec2 wrapped = ivec2((cell.x % period + period) % period,
+                          (cell.y % period + period) % period);
+    uint combined = uint(wrapped.x) * 0x9e3779b9U ^ uint(wrapped.y) * 0x85ebca6bU ^
+        pc.seed ^ salt * 0xc2b2ae35U;
+    return backdrop_hash(combined) * 2.0 - 1.0;
+}
+
+float backdrop_band(vec2 uv, int cycles, uint salt) {
+    vec2 position = uv * float(cycles);
+    ivec2 cell = ivec2(floor(position));
+    vec2 blend = fract(position);
+    blend = blend * blend * (3.0 - 2.0 * blend);
+    float a = backdrop_lattice(cell, cycles, salt);
+    float b = backdrop_lattice(cell + ivec2(1, 0), cycles, salt);
+    float c = backdrop_lattice(cell + ivec2(0, 1), cycles, salt);
+    float d = backdrop_lattice(cell + ivec2(1, 1), cycles, salt);
+    return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
+}
+
+vec4 backdrop_bands(vec2 uv) {
+    float band_512 = backdrop_band(uv, 4, 11U);
+    float band_186 = backdrop_band(uv, 11, 17U);
+    float band_71 = backdrop_band(uv, 29, 23U);
+    float band_29 = backdrop_band(uv, 71, 31U);
+    float band_11 = backdrop_band(uv, 186, 43U);
+    float band_4_4 = backdrop_band(uv, 465, 59U);
+    float relief = 0.31 * band_512 + 0.24 * band_186 + 0.18 * band_71 +
+        0.13 * band_29 + 0.09 * band_11 + 0.05 * band_4_4;
+    float albedo = 0.38 * band_512 + 0.28 * band_186 + 0.19 * band_71 +
+        0.10 * band_29 + 0.05 * band_11;
+    float roughness = 0.24 * band_186 - 0.27 * band_71 + 0.24 * band_29 -
+        0.16 * band_11 + 0.09 * band_4_4;
+    return vec4(relief, albedo, roughness, 0.0);
+}
+
+void main() {
+    ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 extent = imageSize(output_texture);
+    if (any(greaterThanEqual(texel, extent))) {
+        return;
+    }
+    vec2 uv = (vec2(texel) + 0.5) / vec2(extent);
+    vec2 step_uv = 1.0 / vec2(extent);
+    float left = backdrop_bands(fract(uv - vec2(step_uv.x, 0.0))).x;
+    float right = backdrop_bands(fract(uv + vec2(step_uv.x, 0.0))).x;
+    float down = backdrop_bands(fract(uv - vec2(0.0, step_uv.y))).x;
+    float up = backdrop_bands(fract(uv + vec2(0.0, step_uv.y))).x;
+    vec2 gradient = 0.5 * vec2(right - left, up - down) * vec2(extent);
+    vec3 tangent_normal = normalize(vec3(-gradient * 0.025, 1.0));
+    vec4 bands = backdrop_bands(uv);
+    imageStore(output_texture, texel,
+               vec4(tangent_normal.xy * 0.5 + 0.5,
+                    clamp(0.5 + 0.42 * bands.y, 0.0, 1.0),
+                    clamp(0.5 + 0.46 * bands.z, 0.0, 1.0)));
+}

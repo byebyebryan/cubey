@@ -37,6 +37,7 @@ target_link_libraries(
 
 add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_camera.cpp
+    terrain_backdrop_material.cpp
     terrain_backdrop_profile.cpp
     terrain_backdrop_product.cpp
     terrain_backdrop_stage.cpp
@@ -130,6 +131,8 @@ cubey_add_app_target(
         shaders/terrain.vert
         shaders/terrain_backdrop.vert
         shaders/terrain_backdrop.frag
+        shaders/terrain_backdrop_detail.frag
+        shaders/terrain_backdrop_material.comp
         shaders/terrain_quality.vert
         shaders/terrain_quality.tesc
         shaders/terrain_quality.tese
