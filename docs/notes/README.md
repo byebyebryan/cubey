@@ -145,6 +145,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [ShaderToy terrain source-shape studies](terrain-shadertoy-source-shape-studies.md):
   external Swiss Alps, Mountain Peak, and erosion-filter comparisons in the
   shared mesh and orbit harness.
+- [Mountains-guided terrain source correction](terrain-mountains-guided-source-correction.md):
+  bounded clean-room correction of the mountain scale hierarchy, external
+  component diagnostics, and the promotion gate before any production v4.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.
