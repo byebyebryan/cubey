@@ -23,7 +23,7 @@
 
 namespace {
 
-constexpr float kExtentM = 16'384.0F;
+constexpr float kDefaultExtentM = 16'384.0F;
 constexpr float kHeightMaximumM = 6'000.0F;
 constexpr float kSlopeMaximum = 2.0F;
 
@@ -33,6 +33,8 @@ struct Options {
         cubey::projects::terrain::TerrainSourceStudyRecipe::MountainsHierarchyV2;
     std::uint64_t seed = 9012U;
     std::uint32_t grid_size = 512U;
+    bool expanded = false;
+    float focus_height_m = 500.0F;
 };
 
 [[nodiscard]] Options parse_options(int argc, char** argv) {
@@ -48,13 +50,20 @@ struct Options {
             result.seed = std::stoull(argv[++index]);
         } else if (option == "--grid-size" && index + 1 < argc) {
             result.grid_size = static_cast<std::uint32_t>(std::stoul(argv[++index]));
+        } else if (option == "--expanded") {
+            result.expanded = true;
+        } else if (option == "--focus-height" && index + 1 < argc) {
+            result.focus_height_m = std::stof(argv[++index]);
         } else {
             throw std::runtime_error(
                 "usage: terrain_directional_backdrop_report --output-dir path "
-                "[--recipe id] [--seed integer] [--grid-size 128..1024]");
+                "[--recipe id] [--seed integer] [--grid-size 128..1024] "
+                "[--expanded] [--focus-height 100..1000]");
         }
     }
-    if (result.output_dir.empty() || result.grid_size < 128U || result.grid_size > 1'024U) {
+    if (result.output_dir.empty() || result.grid_size < 128U || result.grid_size > 1'024U ||
+        !std::isfinite(result.focus_height_m) || result.focus_height_m < 100.0F ||
+        result.focus_height_m > 1'000.0F) {
         throw std::runtime_error("invalid terrain directional backdrop report options");
     }
     return result;
@@ -135,12 +144,19 @@ void write_pixel(std::vector<std::uint8_t>& rgba, std::size_t index,
     const cubey::projects::terrain::TerrainBackdropStagePlan& stage) {
     return {
         {"target_height_m", stage.target_height_m},
+        {"source_center_height_m", stage.source_center_height_m},
+        {"focus_height_m", stage.target_height_m - stage.source_center_height_m},
         {"terrain_vertical_offset_m", stage.terrain_vertical_offset_m},
         {"local_relief_m", stage.local_relief_m},
         {"local_p95_slope", stage.local_p95_slope},
         {"minimum_camera_clearance_m", stage.minimum_camera_clearance_m},
         {"relief_sector_count", stage.relief_sector_count},
         {"open_sector_count", stage.lower_frame_clear_sector_count},
+        {"orbit_radius_m",
+         {stage.orbit_min_radius_m, stage.orbit_default_radius_m, stage.orbit_max_radius_m}},
+        {"orbit_elevation_radians",
+         {stage.orbit_min_elevation_radians, stage.orbit_default_elevation_radians,
+          stage.orbit_max_elevation_radians}},
         {"contract_satisfied", stage.contract_satisfied},
     };
 }
@@ -155,17 +171,31 @@ int main(int argc, char** argv) {
         const TerrainSourceStudySource base_source(options.recipe, options.seed);
         const TerrainDirectionalPlacementPlan placement =
             plan_terrain_directional_placement(base_source, directional_backdrop_placement_request());
-        const TerrainDirectionalReliefSource shaped_source(
-            base_source, TerrainDirectionalReliefParameters{
-                             .focus_xz = placement.source_focus_xz,
-                             .mountain_yaw_radians = placement.mountain_yaw_radians,
-                         });
+        const TerrainDirectionalReliefParameters relief_parameters =
+            options.expanded ? expanded_directional_backdrop_relief_parameters(placement)
+                             : TerrainDirectionalReliefParameters{
+                                   .focus_xz = placement.source_focus_xz,
+                                   .mountain_yaw_radians = placement.mountain_yaw_radians,
+                               };
+        const TerrainDirectionalReliefSource shaped_source(base_source, relief_parameters);
         const TerrainBackdropStagePlan placement_stage =
             make_directional_backdrop_stage_plan(base_source, placement);
+        TerrainDirectionalBackdropStageParameters shaped_stage_parameters;
+        if (options.expanded) {
+            shaped_stage_parameters = {
+                .focus_height_m = options.focus_height_m,
+                .orbit_min_radius_m = 100.0F,
+                .orbit_default_radius_m = 400.0F,
+                .orbit_max_radius_m = 1'000.0F,
+            };
+        }
         const TerrainBackdropStagePlan shaped_stage =
-            make_directional_backdrop_stage_plan(shaped_source, placement);
+            make_directional_backdrop_stage_plan(shaped_source, placement, 1.0F,
+                                                 shaped_stage_parameters);
 
-        const float spacing_m = 2.0F * kExtentM / static_cast<float>(options.grid_size - 1U);
+        const float extent_m = options.expanded ? expanded_directional_backdrop_outer_radius_m()
+                                                : kDefaultExtentM;
+        const float spacing_m = 2.0F * extent_m / static_cast<float>(options.grid_size - 1U);
         const std::size_t sample_count =
             static_cast<std::size_t>(options.grid_size) * options.grid_size;
         std::vector<float> base_heights(sample_count);
@@ -184,8 +214,8 @@ int main(int argc, char** argv) {
                         const std::size_t index = static_cast<std::size_t>(y) * options.grid_size + x;
                         const TerrainQuery query{
                             .world_xz = placement.source_focus_xz +
-                                        cubey::math::Vec2{-kExtentM + static_cast<float>(x) * spacing_m,
-                                                          -kExtentM + static_cast<float>(y) * spacing_m},
+                                        cubey::math::Vec2{-extent_m + static_cast<float>(x) * spacing_m,
+                                                          -extent_m + static_cast<float>(y) * spacing_m},
                             .footprint_m = spacing_m,
                         };
                         base_heights[index] = base_source.sample_height(query);
@@ -230,8 +260,8 @@ int main(int argc, char** argv) {
                 write_pixel(broad_rgba, index, scalar_color(broad_gates[index], 1.0F));
                 write_pixel(detail_rgba, index, scalar_color(detail_gates[index], 1.0F));
 
-                const float local_x = -kExtentM + static_cast<float>(x) * spacing_m;
-                const float local_z = -kExtentM + static_cast<float>(y) * spacing_m;
+                const float local_x = -extent_m + static_cast<float>(x) * spacing_m;
+                const float local_z = -extent_m + static_cast<float>(y) * spacing_m;
                 const float radius = std::sqrt(local_x * local_x + local_z * local_z);
                 float yaw = std::atan2(local_x, -local_z);
                 if (yaw < 0.0F) {
@@ -284,18 +314,27 @@ int main(int argc, char** argv) {
         encode_jobs.shutdown();
 
         const nlohmann::json report{
-            {"schema", "cubey.terrain.directional-backdrop-study.v1"},
+            {"schema", options.expanded ? "cubey.terrain.directional-backdrop-study.v2"
+                                         : "cubey.terrain.directional-backdrop-study.v1"},
+            {"mode", options.expanded ? "expanded" : "baseline"},
             {"recipe", terrain_source_study_recipe_name(options.recipe)},
             {"seed", options.seed},
-            {"domain", {{"extent_m", kExtentM}, {"grid_size", options.grid_size},
+            {"domain", {{"extent_m", extent_m}, {"grid_size", options.grid_size},
                         {"spacing_m", spacing_m}}},
             {"placement", placement_json(placement)},
             {"placement_stage", stage_json(placement_stage)},
             {"shaped_stage", stage_json(shaped_stage)},
-            {"shaping", {{"floor_footprint_m", 6'000}, {"floor_relief_fraction", 0.08},
-                         {"structure_footprint_m", 1'500}, {"broad_range_m", {2'500, 8'000}},
-                         {"detail_range_m", {5'000, 10'000}},
-                         {"warp_period_m", 14'000}, {"warp_amplitude_m", 1'250}}},
+            {"shaping",
+             {{"floor_footprint_m", relief_parameters.floor_footprint_m},
+              {"floor_relief_fraction", relief_parameters.floor_relief_fraction},
+              {"structure_footprint_m", relief_parameters.structure_footprint_m},
+              {"broad_range_m",
+               {relief_parameters.broad_start_m, relief_parameters.broad_full_m}},
+              {"detail_range_m",
+               {relief_parameters.detail_start_m, relief_parameters.detail_full_m}},
+              {"warp_period_m", relief_parameters.warp_period_m},
+              {"warp_amplitude_m", relief_parameters.warp_amplitude_m},
+              {"warp_octaves", relief_parameters.warp_octaves}}},
         };
         std::ofstream output(options.output_dir / "report.json");
         if (!output) {
