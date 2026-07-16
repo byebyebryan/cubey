@@ -37,13 +37,16 @@ void test_density_profiles_publish_the_product_budget() {
     const auto low = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::Low);
     const auto medium = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::Medium);
     const auto high = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::High);
-    require(low.angular_intervals == 1'024U && low.hidden_radial_intervals == 32U &&
+    require(low.angular_intervals == 1'024U && low.center_radial_intervals == 16U &&
+                low.hidden_radial_intervals == 32U &&
                 low.visible_radial_intervals == 256U && low.sector_count == 32U,
             "low backdrop density should remain a bounded diagnostic product");
-    require(medium.angular_intervals == 2'048U && medium.hidden_radial_intervals == 48U &&
+    require(medium.angular_intervals == 2'048U && medium.center_radial_intervals == 24U &&
+                medium.hidden_radial_intervals == 48U &&
                 medium.visible_radial_intervals == 512U && medium.sector_count == 32U,
             "medium backdrop density should remain a review product");
-    require(high.angular_intervals == 3'072U && high.hidden_radial_intervals == 64U &&
+    require(high.angular_intervals == 3'072U && high.center_radial_intervals == 32U &&
+                high.hidden_radial_intervals == 64U &&
                 high.visible_radial_intervals == 768U && high.sector_count == 48U,
             "high backdrop density should publish the v1 production budget");
     require(terrain_backdrop_mesh_density_from_name("") == TerrainBackdropMeshDensity::High &&
@@ -125,6 +128,35 @@ void test_full_render_stride_retains_the_baked_topology() {
             "explicit stride one should retain the full baked topology for source studies");
 }
 
+void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest request = product_request();
+    request.center_mode = TerrainBackdropCenterMode::Continuous;
+    const TerrainBackdropProduct product =
+        make_terrain_backdrop_product(request, source_for_seed(9012U), 9012U);
+    const TerrainBackdropDensityProfile density = product.diagnostics.density;
+    require(product.center.has_value(),
+            "continuous backdrop should publish one center mesh");
+    require(product.diagnostics.source_sample_count ==
+                static_cast<std::uint64_t>(density.angular_intervals) *
+                    (density.center_radial_intervals + density.hidden_radial_intervals +
+                     density.visible_radial_intervals + 1U),
+            "continuous backdrop should sample center, transition, and outer rows once");
+    const auto& center = product.center.value();
+    require(std::abs(center.vertices.front().position[0]) < 0.001F &&
+                std::abs(center.vertices.front().position[2]) < 0.001F,
+            "continuous backdrop center fan should begin at the focus");
+    require(product.diagnostics.center_vertex_count == center.vertices.size() &&
+                product.diagnostics.center_triangle_count == center.indices.size() / 3U &&
+                product.diagnostics.center_render_triangle_count == center.triangle_count(),
+            "continuous backdrop should report its center topology exactly");
+    require(product.diagnostics.maximum_sector_boundary_delta_m == 0.0F,
+            "continuous center and outer sectors should share exact boundary samples");
+    require(product.diagnostics.render_triangle_count >
+                product.sectors.size() * product.sectors.front().triangle_count(),
+            "continuous backdrop draw budget should include the center mesh");
+}
+
 } // namespace
 
 int main() {
@@ -134,6 +166,7 @@ int main() {
         test_product_hash_changes_with_the_source_seed();
         test_parameter_adapter_preserves_the_product();
         test_full_render_stride_retains_the_baked_topology();
+        test_continuous_product_fills_the_center_and_preserves_the_outer_seam();
         std::cout << "terrain_backdrop_product_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

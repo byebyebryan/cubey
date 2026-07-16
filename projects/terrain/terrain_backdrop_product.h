@@ -7,13 +7,20 @@
 #include <cubey/render/primitive_mesh.h>
 
 #include <cstdint>
+#include <optional>
 #include <string_view>
 #include <vector>
 
 namespace cubey::projects::terrain {
 
+enum class TerrainBackdropCenterMode : std::uint8_t {
+    Cutout,
+    Continuous,
+};
+
 struct TerrainBackdropDensityProfile {
     std::uint32_t angular_intervals = 0U;
+    std::uint32_t center_radial_intervals = 0U;
     std::uint32_t hidden_radial_intervals = 0U;
     std::uint32_t visible_radial_intervals = 0U;
     std::uint32_t sector_count = 0U;
@@ -25,6 +32,7 @@ terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept;
 struct TerrainBackdropProductRequest {
     cubey::math::Vec2 source_focus_xz{0.0F, 0.0F};
     TerrainBackdropMeshDensity density = TerrainBackdropMeshDensity::High;
+    TerrainBackdropCenterMode center_mode = TerrainBackdropCenterMode::Cutout;
     std::uint32_t render_stride = 0U;
     float consumer_radius_m = 300.0F;
     float visible_inner_radius_m = 3'200.0F;
@@ -55,6 +63,10 @@ struct TerrainBackdropSectorMesh {
 struct TerrainBackdropProductDiagnostics {
     TerrainBackdropDensityProfile density{};
     std::uint64_t source_sample_count = 0U;
+    std::uint64_t center_vertex_count = 0U;
+    std::uint64_t center_index_count = 0U;
+    std::uint64_t center_triangle_count = 0U;
+    std::uint64_t center_render_triangle_count = 0U;
     std::uint64_t visible_vertex_count = 0U;
     std::uint64_t visible_index_count = 0U;
     std::uint64_t visible_triangle_count = 0U;
@@ -68,6 +80,7 @@ struct TerrainBackdropProductDiagnostics {
 struct TerrainBackdropProduct {
     TerrainBackdropProductRequest request{};
     TerrainHeightSourceMetadata source{};
+    std::optional<TerrainBackdropSectorMesh> center{};
     std::vector<TerrainBackdropSectorMesh> sectors{};
     TerrainBackdropProductDiagnostics diagnostics{};
 };

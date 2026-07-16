@@ -106,6 +106,7 @@ struct TerrainBackdropPushConstants {
 };
 
 struct TerrainBackdropDrawPlan {
+    bool center_visible = false;
     std::vector<bool> visible_sectors{};
     std::uint32_t submitted_sector_count = 0U;
     std::uint32_t submitted_triangle_count = 0U;
@@ -632,6 +633,7 @@ class TerrainApp {
             {
                 .source_focus_xz = plan.source_focus_xz,
                 .density = runtime_config_.backdrop_mesh_density,
+                .center_mode = options_.backdrop_center_mode,
                 .render_stride = options_.backdrop_render_stride,
                 .consumer_radius_m = plan.stage_radius_m,
                 .visible_inner_radius_m = runtime_config_.backdrop_minimum_visible_distance_m,
@@ -701,6 +703,9 @@ class TerrainApp {
         gpu_profiler_.emplace(device, frame_slot_count, kTerrainGpuProfilerPassCapacity);
         if (runtime_config_.render_path == TerrainRenderPath::Backdrop) {
             const TerrainBackdropProduct& product = backdrop_product();
+            if (product.center.has_value()) {
+                backdrop_center_mesh_.emplace(gpu, product.center->mesh_config());
+            }
             backdrop_sector_meshes_.reserve(product.sectors.size());
             for (const TerrainBackdropSectorMesh& sector : product.sectors) {
                 backdrop_sector_meshes_.emplace_back(gpu, sector.mesh_config());
@@ -894,6 +899,7 @@ class TerrainApp {
         source_material_.reset();
         environment_material_.reset();
         stage_proxy_mesh_.reset();
+        backdrop_center_mesh_.reset();
         backdrop_sector_meshes_.clear();
         mesh_.reset();
         gpu_profiler_.reset();
@@ -937,6 +943,10 @@ class TerrainApp {
     [[nodiscard]] TerrainBackdropDrawPlan backdrop_draw_plan(VkExtent2D extent) const {
         const TerrainBackdropProduct& product = backdrop_product();
         TerrainBackdropDrawPlan plan;
+        if (product.center.has_value()) {
+            plan.center_visible = true;
+            plan.submitted_triangle_count += product.center->triangle_count();
+        }
         plan.visible_sectors.resize(product.sectors.size());
         const cubey::math::Mat4 view_projection =
             camera_.view_projection_matrix(frame_camera_transform_, aspect(extent));
@@ -1124,6 +1134,10 @@ class TerrainApp {
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                     backdrop_push_constants(color.extent));
             latest_backdrop_draw_plan_ = backdrop_draw_plan(color.extent);
+            if (latest_backdrop_draw_plan_.center_visible) {
+                cubey::render::record_draw_item(
+                    recorder.handle(), cubey::render::DrawItem{.mesh = &backdrop_center_mesh()});
+            }
             for (std::size_t index = 0U; index < backdrop_sector_meshes_.size(); ++index) {
                 if (latest_backdrop_draw_plan_.visible_sectors[index]) {
                     cubey::render::record_draw_item(
@@ -1320,6 +1334,13 @@ class TerrainApp {
         return backdrop_product_.value();
     }
 
+    [[nodiscard]] const cubey::render::Mesh& backdrop_center_mesh() const {
+        if (!backdrop_center_mesh_.has_value()) {
+            throw std::runtime_error("terrain backdrop center mesh is not initialized");
+        }
+        return backdrop_center_mesh_.value();
+    }
+
     [[nodiscard]] const cubey::render::ForwardScenePass3D& terrain_forward_pass() const {
         if (!terrain_pass_.has_value()) {
             throw std::runtime_error("terrain forward pass is not initialized");
@@ -1389,6 +1410,7 @@ class TerrainApp {
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
 
     std::optional<cubey::render::Mesh> mesh_{};
+    std::optional<cubey::render::Mesh> backdrop_center_mesh_{};
     std::vector<cubey::render::Mesh> backdrop_sector_meshes_{};
     mutable TerrainBackdropDrawPlan latest_backdrop_draw_plan_{};
     std::optional<cubey::render::Mesh> stage_proxy_mesh_{};
