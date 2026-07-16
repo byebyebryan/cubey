@@ -53,16 +53,55 @@ namespace {
 
 } // namespace
 
+std::string_view reference_study_name(ReferenceStudy study) {
+    switch (study) {
+    case ReferenceStudy::Mountains:
+        return "mountains";
+    case ReferenceStudy::SwissAlps:
+        return "swiss-alps";
+    case ReferenceStudy::MountainPeak:
+        return "mountain-peak";
+    case ReferenceStudy::ErosionFilter:
+        return "erosion-filter";
+    }
+    throw std::runtime_error("unknown terrain ShaderToy reference study");
+}
+
+ReferenceStudy reference_study_from_name(std::string_view name) {
+    if (name.empty() || name == "mountains") {
+        return ReferenceStudy::Mountains;
+    }
+    if (name == "swiss-alps") {
+        return ReferenceStudy::SwissAlps;
+    }
+    if (name == "mountain-peak") {
+        return ReferenceStudy::MountainPeak;
+    }
+    if (name == "erosion-filter") {
+        return ReferenceStudy::ErosionFilter;
+    }
+    throw std::runtime_error("--reference-study must be mountains, swiss-alps, mountain-peak, or "
+                             "erosion-filter");
+}
+
 ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** argv) {
     if (argc <= 0 || argv == nullptr || argv[0] == nullptr) {
         throw std::runtime_error("terrain ShaderToy reference requires argv[0]");
     }
 
     ParsedTerrainShadertoyRefArgs parsed;
+    bool render_explicit = false;
+    bool surface_explicit = false;
+    bool normal_explicit = false;
+    bool shading_explicit = false;
     parsed.forwarded_arguments.emplace_back(argv[0]);
     for (int index = 1; index < argc; ++index) {
         const std::string_view option = argv[index];
-        if (option == "--reference-render") {
+        if (option == "--reference-study") {
+            parsed.reference_config.study =
+                reference_study_from_name(require_value(argc, argv, index, option));
+        } else if (option == "--reference-render") {
+            render_explicit = true;
             const std::string_view value = require_value(argc, argv, index, option);
             if (value == "raymarch") {
                 parsed.reference_config.render = ReferenceRender::Raymarch;
@@ -81,6 +120,7 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
             parsed.reference_config.mesh_cells =
                 parse_mesh_cells(require_value(argc, argv, index, option));
         } else if (option == "--reference-mesh-surface") {
+            surface_explicit = true;
             const std::string_view value = require_value(argc, argv, index, option);
             if (value == "terrain") {
                 parsed.reference_config.mesh_surface = ReferenceMeshSurface::Terrain;
@@ -90,6 +130,7 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
                 throw std::runtime_error("--reference-mesh-surface must be terrain or map");
             }
         } else if (option == "--reference-normal") {
+            normal_explicit = true;
             const std::string_view value = require_value(argc, argv, index, option);
             if (value == "geometry") {
                 parsed.reference_config.normal = ReferenceNormal::Geometry;
@@ -102,6 +143,7 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
                     "--reference-normal must be geometry, atlas, or detailed");
             }
         } else if (option == "--reference-shading") {
+            shading_explicit = true;
             const std::string_view value = require_value(argc, argv, index, option);
             if (value == "original") {
                 parsed.reference_config.shading = ReferenceShading::Original;
@@ -123,6 +165,34 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
             }
         } else {
             parsed.forwarded_arguments.emplace_back(argv[index]);
+        }
+    }
+    if (parsed.reference_config.study != ReferenceStudy::Mountains) {
+        if (!render_explicit) {
+            parsed.reference_config.render = ReferenceRender::Mesh;
+        }
+        if (!surface_explicit) {
+            parsed.reference_config.mesh_surface = ReferenceMeshSurface::Terrain;
+        }
+        if (!normal_explicit) {
+            parsed.reference_config.normal = ReferenceNormal::Atlas;
+        }
+        if (!shading_explicit) {
+            parsed.reference_config.shading = ReferenceShading::Clay;
+        }
+        if (parsed.reference_config.render != ReferenceRender::Mesh) {
+            throw std::runtime_error("non-Mountains studies require --reference-render mesh");
+        }
+        if (parsed.reference_config.mesh_surface != ReferenceMeshSurface::Terrain) {
+            throw std::runtime_error(
+                "non-Mountains studies require --reference-mesh-surface terrain");
+        }
+        if (parsed.reference_config.normal == ReferenceNormal::Detailed) {
+            throw std::runtime_error(
+                "non-Mountains studies support geometry or atlas normals only");
+        }
+        if (parsed.reference_config.shading != ReferenceShading::Clay) {
+            throw std::runtime_error("non-Mountains studies require --reference-shading clay");
         }
     }
     if (parsed.reference_config.yaw_offset_degrees != 0.0F &&

@@ -1,9 +1,9 @@
 # Terrain ShaderToy Reference
 
 `terrain_shadertoy_ref` is an optional, local-only fidelity study. It compiles
-the external ShaderToy Mountains source without copying it into Cubey, renders
-the original raymarch, and transfers the same source fields to a dense Cubey
-mesh for controlled comparison.
+selected external ShaderToy terrain sources without copying them into Cubey,
+then transfers their height fields to one Cubey mesh and diagnostic harness for
+controlled comparison. Mountains also retains its original raymarch control.
 
 Configure with the default sibling reference checkout:
 
@@ -13,11 +13,12 @@ cmake --build --preset dev --target cubey_project_terrain_shadertoy_ref
 ```
 
 Override the source directory with `-DCUBEY_SHADERTOY_REF_DIR=/path/to/ShaderToy`.
-When `mountains.glsl` is absent, CMake skips the app and its tests.
+When any required study source is absent, CMake skips the app and its tests.
 
 The main local options are:
 
 ```text
+--reference-study mountains|swiss-alps|mountain-peak|erosion-filter
 --reference-render raymarch|mesh
 --reference-time SECONDS
 --reference-yaw-offset-deg DEGREES
@@ -27,6 +28,18 @@ The main local options are:
 --reference-shading original|clay
 --reference-diagnostic final|height|slope
 ```
+
+Mountains retains the original defaults. The other studies default to mesh
+rendering, terrain-only geometry, atlas normals, and clay shading. They reject
+the Mountains-only raymarch, map/tree surface, detailed normal, and original
+material options instead of silently producing a misleading hybrid.
+
+`swiss-alps` transfers the medium- and high-octave derivative-damped terrain
+field. `mountain-peak` retains the reference's radial attenuation and is an
+audit-only example, not a candidate global source. `erosion-filter` applies the
+external Phacelle erosion filter to the Mountains base and blends 25% of its
+result back into the source field; the raw reference strength overwhelms this
+base and is intentionally not presented as a viable default.
 
 `terrain` is the five-octave base height. `map` includes the source's procedural
 tree displacement. Atlas normals finite-difference the baked detailed-height
@@ -53,5 +66,13 @@ Generate the arbitrary-view, simplification, and GPU timing pack with:
 projects/terrain_shadertoy_ref/capture_mountains_generalization.sh
 ```
 
+Generate the multi-source morphology pack with:
+
+```sh
+projects/terrain_shadertoy_ref/capture_source_shape_studies.sh
+```
+
 The design, licensing boundary, and acceptance criteria are recorded in
 [`docs/notes/terrain-shadertoy-mountains-fidelity.md`](../../docs/notes/terrain-shadertoy-mountains-fidelity.md).
+The multi-source scope and licensing boundary are recorded in
+[`docs/notes/terrain-shadertoy-source-shape-studies.md`](../../docs/notes/terrain-shadertoy-source-shape-studies.md).

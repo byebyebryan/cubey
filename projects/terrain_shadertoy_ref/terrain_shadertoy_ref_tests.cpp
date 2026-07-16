@@ -47,6 +47,8 @@ void test_defaults_and_forwarding() {
     using namespace cubey::projects::terrain_shadertoy_ref;
     const ParsedTerrainShadertoyRefArgs parsed =
         parse({"terrain_shadertoy_ref", "--headless", "--width", "640"});
+    require(parsed.reference_config.study == ReferenceStudy::Mountains,
+            "reference study should default to Mountains");
     require(parsed.reference_config.render == ReferenceRender::Raymarch,
             "reference renderer should default to raymarch");
     require(parsed.reference_config.reference_time_seconds == 20.0F,
@@ -111,6 +113,27 @@ void test_full_reference_configuration() {
             "reference arguments should be removed before host parsing");
 }
 
+void test_non_mountains_study_defaults() {
+    using namespace cubey::projects::terrain_shadertoy_ref;
+    const ParsedTerrainShadertoyRefArgs swiss =
+        parse({"terrain_shadertoy_ref", "--reference-study", "swiss-alps", "--headless"});
+    require(swiss.reference_config.study == ReferenceStudy::SwissAlps,
+            "Swiss Alps study should parse");
+    require(swiss.reference_config.render == ReferenceRender::Mesh &&
+                swiss.reference_config.mesh_surface == ReferenceMeshSurface::Terrain &&
+                swiss.reference_config.normal == ReferenceNormal::Atlas &&
+                swiss.reference_config.shading == ReferenceShading::Clay,
+            "non-Mountains studies should select the comparison defaults");
+    require(swiss.forwarded_arguments ==
+                std::vector<std::string>{"terrain_shadertoy_ref", "--headless"},
+            "reference study arguments should not reach the host");
+
+    require(reference_study_from_name("mountain-peak") == ReferenceStudy::MountainPeak &&
+                reference_study_from_name("erosion-filter") == ReferenceStudy::ErosionFilter &&
+                reference_study_name(ReferenceStudy::Mountains) == "mountains",
+            "all source-shape study names should round trip");
+}
+
 void test_invalid_reference_options() {
     require_throws(
         [] { static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-render", "tiles"})); },
@@ -126,6 +149,30 @@ void test_invalid_reference_options() {
     require_throws(
         [] { static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-diagnostic"})); },
         "missing diagnostic value should fail");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse({"terrain_shadertoy_ref", "--reference-study", "unknown"}));
+        },
+        "unknown reference study should fail");
+    require_throws(
+        [] {
+            static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-study", "swiss-alps",
+                                     "--reference-render", "raymarch"}));
+        },
+        "Swiss Alps raymarch request should fail");
+    require_throws(
+        [] {
+            static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-study",
+                                     "mountain-peak", "--reference-normal", "detailed"}));
+        },
+        "Mountain Peak detailed-normal request should fail");
+    require_throws(
+        [] {
+            static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-study",
+                                     "erosion-filter", "--reference-shading", "original"}));
+        },
+        "erosion original-shading request should fail");
     require_throws(
         [] {
             static_cast<void>(parse(
@@ -194,6 +241,7 @@ int main() {
     try {
         test_defaults_and_forwarding();
         test_full_reference_configuration();
+        test_non_mountains_study_defaults();
         test_invalid_reference_options();
         test_reference_camera_yaw();
         std::cout << "terrain_shadertoy_ref tests passed\n";

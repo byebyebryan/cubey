@@ -2,9 +2,17 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace cubey::projects::terrain_shadertoy_ref {
+
+enum class ReferenceStudy : std::uint8_t {
+    Mountains,
+    SwissAlps,
+    MountainPeak,
+    ErosionFilter,
+};
 
 enum class ReferenceRender : std::uint8_t {
     Raymarch,
@@ -34,6 +42,7 @@ enum class ReferenceDiagnostic : std::uint8_t {
 };
 
 struct TerrainShadertoyRefConfig {
+    ReferenceStudy study = ReferenceStudy::Mountains;
     ReferenceRender render = ReferenceRender::Raymarch;
     ReferenceMeshSurface mesh_surface = ReferenceMeshSurface::Map;
     ReferenceNormal normal = ReferenceNormal::Detailed;
@@ -43,6 +52,9 @@ struct TerrainShadertoyRefConfig {
     float yaw_offset_degrees = 0.0F;
     std::uint32_t mesh_cells = 1024U;
 };
+
+[[nodiscard]] std::string_view reference_study_name(ReferenceStudy study);
+[[nodiscard]] ReferenceStudy reference_study_from_name(std::string_view name);
 
 struct ParsedTerrainShadertoyRefArgs {
     TerrainShadertoyRefConfig reference_config{};

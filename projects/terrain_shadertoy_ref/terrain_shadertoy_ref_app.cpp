@@ -102,6 +102,10 @@ static_assert(sizeof(RaymarchPushConstants) == 32U);
     return bytes;
 }
 
+[[nodiscard]] std::vector<std::uint8_t> make_control_texture_bytes() {
+    return std::vector<std::uint8_t>(kChannelTextureExtent * kChannelTextureExtent * 4U, 0U);
+}
+
 class TerrainShadertoyRefApp {
   public:
     TerrainShadertoyRefApp(RunConfig run_config, TerrainShadertoyRefConfig reference_config)
@@ -155,13 +159,17 @@ class TerrainShadertoyRefApp {
             destroy_global_resources();
         };
 
+        const std::string ready_status =
+            reference_config_.render == ReferenceRender::Mesh
+                ? "rendering external terrain source study " +
+                      std::string(reference_study_name(reference_config_.study))
+                : "rendering external Mountains raymarch";
+
         return cubey::host::run_windowed_app(
             {
                 .run_config = run_config_,
                 .app_name = "terrain_shadertoy_ref",
-                .ready_status = reference_config_.render == ReferenceRender::Mesh
-                                    ? "rendering external Mountains mesh transfer"
-                                    : "rendering external Mountains raymarch",
+                .ready_status = ready_status.c_str(),
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -227,9 +235,24 @@ class TerrainShadertoyRefApp {
                         .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
                     },
             }));
+        const std::vector<std::uint8_t> control_bytes = make_control_texture_bytes();
+        control_texture_.emplace(cubey::render::create_uploaded_texture_2d(
+            device, gpu,
+            {
+                .extent = {kChannelTextureExtent, kChannelTextureExtent},
+                .format = VK_FORMAT_R8G8B8A8_UNORM,
+                .rgba8 = std::span<const std::uint8_t>(control_bytes.data(), control_bytes.size()),
+                .create_sampler = true,
+                .sampler =
+                    {
+                        .min_filter = VK_FILTER_NEAREST,
+                        .mag_filter = VK_FILTER_NEAREST,
+                        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                    },
+            }));
         if (reference_config_.render == ReferenceRender::Mesh) {
             mesh_renderer_.create_global_resources(device, gpu, reference_config_, reference_extent,
-                                                   channel_texture());
+                                                   channel_texture(), control_texture());
             const float focus_distance = mesh_renderer_.inspection_focus_distance();
             orbit_controller_.set_distance_limits(std::max(focus_distance * 0.1F, 2.0F),
                                                   std::max(focus_distance * 8.0F, 512.0F));
@@ -279,6 +302,7 @@ class TerrainShadertoyRefApp {
 
     void destroy_global_resources() {
         mesh_renderer_.destroy_global_resources();
+        control_texture_.reset();
         channel_texture_.reset();
         gpu_profiler_.reset();
     }
@@ -346,6 +370,13 @@ class TerrainShadertoyRefApp {
         return channel_texture_.value();
     }
 
+    [[nodiscard]] const cubey::render::Texture2D& control_texture() const {
+        if (!control_texture_.has_value()) {
+            throw std::runtime_error("reference control texture is not initialized");
+        }
+        return control_texture_.value();
+    }
+
     [[nodiscard]] const cubey::render::MaterialInstance& material() const {
         if (!material_.has_value()) {
             throw std::runtime_error("reference material is not initialized");
@@ -378,11 +409,12 @@ class TerrainShadertoyRefApp {
     RunConfig run_config_;
     TerrainShadertoyRefConfig reference_config_;
     std::optional<cubey::render::Texture2D> channel_texture_{};
+    std::optional<cubey::render::Texture2D> control_texture_{};
     std::optional<cubey::render::MaterialInstance> material_{};
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     cubey::OrbitController orbit_controller_{};
-    MountainsMeshRenderer mesh_renderer_{};
+    ReferenceMeshRenderer mesh_renderer_{};
 };
 
 } // namespace

@@ -22,18 +22,19 @@ class Texture2D;
 
 namespace cubey::projects::terrain_shadertoy_ref {
 
-class MountainsMeshRenderer {
+class ReferenceMeshRenderer {
   public:
-    MountainsMeshRenderer();
-    ~MountainsMeshRenderer();
+    ReferenceMeshRenderer();
+    ~ReferenceMeshRenderer();
 
-    MountainsMeshRenderer(const MountainsMeshRenderer&) = delete;
-    MountainsMeshRenderer& operator=(const MountainsMeshRenderer&) = delete;
+    ReferenceMeshRenderer(const ReferenceMeshRenderer&) = delete;
+    ReferenceMeshRenderer& operator=(const ReferenceMeshRenderer&) = delete;
 
     void create_global_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                                  const TerrainShadertoyRefConfig& config,
                                  VkExtent2D reference_extent,
-                                 const cubey::render::Texture2D& channel_texture);
+                                 const cubey::render::Texture2D& channel_texture,
+                                 const cubey::render::Texture2D& control_texture);
     void create_frame_resources(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent, std::uint32_t frame_slot_count);
     void destroy_frame_resources();

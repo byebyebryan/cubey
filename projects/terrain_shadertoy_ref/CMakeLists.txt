@@ -6,13 +6,26 @@ set(
 )
 
 set(CUBEY_SHADERTOY_MOUNTAINS_SOURCE "${CUBEY_SHADERTOY_REF_DIR}/mountains.glsl")
-if (NOT EXISTS "${CUBEY_SHADERTOY_MOUNTAINS_SOURCE}")
-    message(
-        STATUS
-        "Skipping terrain_shadertoy_ref: ${CUBEY_SHADERTOY_MOUNTAINS_SOURCE} was not found"
-    )
-    return()
-endif()
+set(CUBEY_SHADERTOY_MOUNTAIN_PEAK_SOURCE "${CUBEY_SHADERTOY_REF_DIR}/mountain_peak.glsl")
+set(CUBEY_SHADERTOY_SWISS_COMMON_SOURCE "${CUBEY_SHADERTOY_REF_DIR}/swiss_alps_common.glsl")
+set(CUBEY_SHADERTOY_SWISS_TERRAIN_SOURCE "${CUBEY_SHADERTOY_REF_DIR}/swiss_alps_buffer_b.glsl")
+set(CUBEY_SHADERTOY_EROSION_COMMON_SOURCE "${CUBEY_SHADERTOY_REF_DIR}/eroded_mountains_common.glsl")
+set(CUBEY_SHADERTOY_EROSION_FILTER_SOURCE "${CUBEY_SHADERTOY_REF_DIR}/eroded_mountains_buffer_b.glsl")
+set(
+    CUBEY_SHADERTOY_STUDY_SOURCES
+    "${CUBEY_SHADERTOY_MOUNTAINS_SOURCE}"
+    "${CUBEY_SHADERTOY_MOUNTAIN_PEAK_SOURCE}"
+    "${CUBEY_SHADERTOY_SWISS_COMMON_SOURCE}"
+    "${CUBEY_SHADERTOY_SWISS_TERRAIN_SOURCE}"
+    "${CUBEY_SHADERTOY_EROSION_COMMON_SOURCE}"
+    "${CUBEY_SHADERTOY_EROSION_FILTER_SOURCE}"
+)
+foreach(CUBEY_SHADERTOY_STUDY_SOURCE IN LISTS CUBEY_SHADERTOY_STUDY_SOURCES)
+    if (NOT EXISTS "${CUBEY_SHADERTOY_STUDY_SOURCE}")
+        message(STATUS "Skipping terrain_shadertoy_ref: ${CUBEY_SHADERTOY_STUDY_SOURCE} was not found")
+        return()
+    endif()
+endforeach()
 
 cubey_add_app_target(
     cubey_project_terrain_shadertoy_ref
@@ -26,6 +39,9 @@ cubey_add_app_target(
         terrain_shadertoy_ref_mesh.cpp
     SHADERS
         shaders/fullscreen.vert
+        shaders/erosion_height_bake.frag
+        shaders/erosion_input_bake.frag
+        shaders/mountain_peak_height_bake.frag
         shaders/mountains_camera_probe.frag
         shaders/mountains_atlas_diagnostic.frag
         shaders/mountains_height_bake.frag
@@ -33,11 +49,12 @@ cubey_add_app_target(
         shaders/mountains_mesh.vert
         shaders/mountains_raymarch.frag
         shaders/mountains_sky.frag
+        shaders/swiss_alps_height_bake.frag
     SHADER_INCLUDE_DIRS
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CUBEY_SHADERTOY_REF_DIR}"
     SHADER_DEPENDS
-        "${CUBEY_SHADERTOY_MOUNTAINS_SOURCE}"
+        ${CUBEY_SHADERTOY_STUDY_SOURCES}
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/reference_frame.glsl"
 )
 
@@ -151,6 +168,35 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    foreach(CUBEY_TERRAIN_SHADERTOY_REF_STUDY IN ITEMS swiss-alps mountain-peak erosion-filter)
+        string(REPLACE "-" "_" CUBEY_TERRAIN_SHADERTOY_REF_STUDY_ID
+               "${CUBEY_TERRAIN_SHADERTOY_REF_STUDY}")
+        set(
+            CUBEY_TERRAIN_SHADERTOY_REF_STUDY_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/terrain-shadertoy-ref-${CUBEY_TERRAIN_SHADERTOY_REF_STUDY}-smoke.png"
+        )
+        cubey_add_png_smoke_test(
+            terrain_shadertoy_ref_${CUBEY_TERRAIN_SHADERTOY_REF_STUDY_ID}_writes_png
+            cubey_project_terrain_shadertoy_ref
+            "${CUBEY_TERRAIN_SHADERTOY_REF_STUDY_OUTPUT}"
+            --headless
+            --width
+            320
+            --height
+            180
+            --reference-study
+            "${CUBEY_TERRAIN_SHADERTOY_REF_STUDY}"
+            --reference-mesh-cells
+            256
+        )
+        cubey_add_png_stats_test(
+            terrain_shadertoy_ref_${CUBEY_TERRAIN_SHADERTOY_REF_STUDY_ID}_writes_png
+            "${CUBEY_TERRAIN_SHADERTOY_REF_STUDY_OUTPUT}"
+            0.00001
+            0.00005
+        )
+    endforeach()
+
     if (CUBEY_HAS_LIBAV)
         add_test(
             NAME terrain_shadertoy_ref_profile_writes_gpu_spans
@@ -173,6 +219,12 @@ if (BUILD_TESTING)
         terrain_shadertoy_ref_mesh_writes_png_stats
         terrain_shadertoy_ref_height_writes_png
         terrain_shadertoy_ref_height_writes_png_stats
+        terrain_shadertoy_ref_swiss_alps_writes_png
+        terrain_shadertoy_ref_swiss_alps_writes_png_stats
+        terrain_shadertoy_ref_mountain_peak_writes_png
+        terrain_shadertoy_ref_mountain_peak_writes_png_stats
+        terrain_shadertoy_ref_erosion_filter_writes_png
+        terrain_shadertoy_ref_erosion_filter_writes_png_stats
     )
     if (CUBEY_HAS_LIBAV)
         cubey_label_tests(reference terrain_shadertoy_ref_profile_writes_gpu_spans)

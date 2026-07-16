@@ -58,3 +58,9 @@ for every study. The goal is comparative morphology: broad mass, shoulders,
 peak buildup, ridge width, and obvious masks or seams. This batch does not
 promote a source, modify `projects/terrain`, tune the production renderer, or
 set a runtime budget.
+
+The erosion adapter evaluates the reference filter with its documented demo
+parameters, then blends 25 percent of the result back into the Mountains base.
+At full transfer strength the filter produces dense narrow fins and overwhelms
+the base hierarchy. The reduced blend is a bounded process comparison, not a
+claim that the parameters generalize unchanged.

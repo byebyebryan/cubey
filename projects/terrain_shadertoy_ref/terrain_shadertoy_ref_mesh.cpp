@@ -42,10 +42,22 @@ namespace cubey::projects::terrain_shadertoy_ref {
 namespace {
 
 constexpr std::uint32_t kHeightAtlasExtent = 2048U;
-constexpr float kMeshDomainExtent = 512.0F;
-constexpr float kReferenceFovyRadians = 1.1760052F;
-constexpr float kReferenceNear = 0.1F;
-constexpr float kReferenceFar = 240.0F;
+
+struct ReferenceStudyRuntime {
+    ReferenceCamera camera{};
+    cubey::math::Vec2 domain_center{};
+    float domain_extent = 512.0F;
+    float fovy_radians = 1.1760052F;
+    float near_z = 0.1F;
+    float far_z = 240.0F;
+    float diagnostic_min_height = -10.0F;
+    float diagnostic_max_height = 180.0F;
+    float diagnostic_slope = 4.0F;
+    const char* bake_shader = "mountains_height_bake.frag.spv";
+    bool probe_mountains_camera = true;
+    bool erosion_filter = false;
+    float camera_height_offset = 0.0F;
+};
 
 struct SourcePushConstants {
     cubey::math::Vec4 resolution_time{};
@@ -84,6 +96,21 @@ static_assert(sizeof(ReferenceFrameUniforms) == 176U);
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename) {
     return std::filesystem::path(CUBEY_TERRAIN_SHADERTOY_REF_SHADER_DIR) / filename;
+}
+
+[[nodiscard]] cubey::render::Texture2DConfig height_atlas_config() {
+    return {
+        .extent = {kHeightAtlasExtent, kHeightAtlasExtent},
+        .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+        .usage = cubey::render::Texture2DUsage::ColorAttachmentSampled,
+        .create_sampler = true,
+        .sampler =
+            {
+                .min_filter = VK_FILTER_LINEAR,
+                .mag_filter = VK_FILTER_LINEAR,
+                .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            },
+    };
 }
 
 [[nodiscard]] cubey::render::MaterialDescriptorSetLayout channel_descriptor_layout() {
@@ -238,14 +265,78 @@ source_fullscreen_pass_info(const char* label, std::uint32_t push_constant_size)
 }
 
 [[nodiscard]] cubey::math::Mat4 reference_view_projection(const ReferenceCamera& camera,
+                                                          const ReferenceStudyRuntime& runtime,
                                                           float aspect) {
     cubey::math::Mat4 camera_world{1.0F};
     camera_world[0] = cubey::math::Vec4(camera.right, 0.0F);
     camera_world[1] = cubey::math::Vec4(camera.up, 0.0F);
     camera_world[2] = cubey::math::Vec4(-camera.forward, 0.0F);
     camera_world[3] = cubey::math::Vec4(camera.position, 1.0F);
-    return cubey::math::perspective(kReferenceFovyRadians, aspect, kReferenceNear, kReferenceFar) *
+    return cubey::math::perspective(runtime.fovy_radians, aspect, runtime.near_z, runtime.far_z) *
            glm::inverse(camera_world);
+}
+
+[[nodiscard]] ReferenceCamera look_at_camera(cubey::math::Vec3 position,
+                                             cubey::math::Vec3 target,
+                                             float focus_distance) {
+    const cubey::math::Vec3 forward = glm::normalize(target - position);
+    const cubey::math::Vec3 right =
+        glm::normalize(glm::cross(forward, cubey::math::Vec3{0.0F, 1.0F, 0.0F}));
+    return {
+        .position = position,
+        .right = right,
+        .up = glm::normalize(glm::cross(right, forward)),
+        .forward = forward,
+        .focus_distance = focus_distance,
+    };
+}
+
+[[nodiscard]] ReferenceStudyRuntime reference_study_runtime(ReferenceStudy study) {
+    switch (study) {
+    case ReferenceStudy::Mountains:
+        return {};
+    case ReferenceStudy::SwissAlps: {
+        const cubey::math::Vec3 position{0.0F, 1.6F, -1125.0F};
+        const cubey::math::Vec3 direction =
+            glm::normalize(cubey::math::Vec3{0.0F, 0.15F, -1.2F});
+        const cubey::math::Vec3 target = position + direction * 100.0F;
+        return {
+            .camera = look_at_camera(position, target, 100.0F),
+            .domain_center = {target.x, target.z},
+            .domain_extent = 220.0F,
+            .fovy_radians = 0.70F,
+            .near_z = 0.05F,
+            .far_z = 260.0F,
+            .diagnostic_min_height = -1.0F,
+            .diagnostic_max_height = 5.0F,
+            .diagnostic_slope = 1.5F,
+            .bake_shader = "swiss_alps_height_bake.frag.spv",
+            .probe_mountains_camera = false,
+        };
+    }
+    case ReferenceStudy::MountainPeak:
+        return {
+            .camera = look_at_camera({0.0F, 8.0F, 40.0F}, {0.0F, 5.0F, 0.0F}, 40.112342F),
+            .domain_center = {0.0F, 0.0F},
+            .domain_extent = 80.0F,
+            .fovy_radians = 0.93F,
+            .near_z = 0.05F,
+            .far_z = 140.0F,
+            .diagnostic_min_height = 0.0F,
+            .diagnostic_max_height = 18.0F,
+            .diagnostic_slope = 3.0F,
+            .bake_shader = "mountain_peak_height_bake.frag.spv",
+            .probe_mountains_camera = false,
+        };
+    case ReferenceStudy::ErosionFilter: {
+        ReferenceStudyRuntime runtime{};
+        runtime.bake_shader = "erosion_height_bake.frag.spv";
+        runtime.erosion_filter = true;
+        runtime.camera_height_offset = 8.0F;
+        return runtime;
+    }
+    }
+    throw std::runtime_error("unknown terrain ShaderToy reference study");
 }
 
 [[nodiscard]] float reference_normal_mode(ReferenceNormal normal) {
@@ -262,30 +353,29 @@ source_fullscreen_pass_info(const char* label, std::uint32_t push_constant_size)
 
 } // namespace
 
-class MountainsMeshRenderer::Impl {
+class ReferenceMeshRenderer::Impl {
   public:
     void create_global_resources(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                                  const TerrainShadertoyRefConfig& config,
                                  VkExtent2D reference_extent,
-                                 const cubey::render::Texture2D& channel_texture) {
+                                 const cubey::render::Texture2D& channel_texture,
+                                 const cubey::render::Texture2D& control_texture) {
         config_ = config;
+        runtime_ = reference_study_runtime(config.study);
         channel_texture_ = &channel_texture;
-        source_camera_ = rotate_reference_camera_yaw(probe_camera(device, gpu, reference_extent),
-                                                     config_.yaw_offset_degrees);
+        control_texture_ = &control_texture;
+        ReferenceCamera base_camera = runtime_.camera;
+        if (runtime_.probe_mountains_camera) {
+            base_camera = probe_camera(device, gpu, reference_extent);
+            runtime_.domain_center = {base_camera.position.x, base_camera.position.z};
+        }
+        base_camera.position.y += runtime_.camera_height_offset;
+        source_camera_ = rotate_reference_camera_yaw(base_camera, config_.yaw_offset_degrees);
         camera_ = source_camera_;
-        height_atlas_.emplace(device,
-                              cubey::render::Texture2DConfig{
-                                  .extent = {kHeightAtlasExtent, kHeightAtlasExtent},
-                                  .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                                  .usage = cubey::render::Texture2DUsage::ColorAttachmentSampled,
-                                  .create_sampler = true,
-                                  .sampler =
-                                      {
-                                          .min_filter = VK_FILTER_LINEAR,
-                                          .mag_filter = VK_FILTER_LINEAR,
-                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                                      },
-                              });
+        height_atlas_.emplace(device, height_atlas_config());
+        if (runtime_.erosion_filter) {
+            source_atlas_.emplace(device, height_atlas_config());
+        }
         bake_height_atlas(device, gpu);
 
         const ReferenceGridData grid = make_reference_grid(config_.mesh_cells);
@@ -395,7 +485,9 @@ class MountainsMeshRenderer::Impl {
     void destroy_global_resources() {
         destroy_frame_resources();
         mesh_.reset();
+        source_atlas_.reset();
         height_atlas_.reset();
+        control_texture_ = nullptr;
         channel_texture_ = nullptr;
     }
 
@@ -554,26 +646,28 @@ class MountainsMeshRenderer::Impl {
         };
     }
 
-    void bake_height_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
-        const cubey::render::MaterialPassInfo pass = source_fullscreen_pass_info(
-            "terrain_shadertoy_ref.height_bake", sizeof(BakePushConstants));
+    void bake_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                    cubey::render::Texture2D& target_texture,
+                    const cubey::render::Texture2D& texture0,
+                    const cubey::render::Texture2D& texture1, const char* fragment_shader,
+                    const char* label) {
+        const cubey::render::MaterialPassInfo pass =
+            source_fullscreen_pass_info(label, sizeof(BakePushConstants));
         cubey::render::MaterialInstance material(device,
                                                  {.material_pass = pass, .descriptor_set = 0});
         cubey::render::MaterialDescriptorWriter(material.set())
-            .combined_image_sampler(0, channel_texture().sampler().handle(),
-                                    channel_texture().view())
-            .combined_image_sampler(1, channel_texture().sampler().handle(),
-                                    channel_texture().view())
+            .combined_image_sampler(0, texture0.sampler().handle(), texture0.view())
+            .combined_image_sampler(1, texture1.sampler().handle(), texture1.view())
             .update(device);
         const std::array<VkDescriptorSetLayout, 1> layouts{material.layout()};
         const std::array<cubey::render::ShaderStageFile, 2> shaders{
             cubey::render::vertex_shader_file(shader_path("fullscreen.vert.spv")),
-            cubey::render::fragment_shader_file(shader_path("mountains_height_bake.frag.spv")),
+            cubey::render::fragment_shader_file(shader_path(fragment_shader)),
         };
         cubey::render::GraphicsPipelineResource pipeline(
             device, cubey::render::GraphicsPipelineFileResourceConfig{
-                        .extent = height_atlas_->extent(),
-                        .color_format = height_atlas_->format(),
+                        .extent = target_texture.extent(),
+                        .color_format = target_texture.format(),
                         .shader_stage_files = shaders,
                         .descriptor_set_layouts = layouts,
                         .material_pass = pass,
@@ -589,23 +683,24 @@ class MountainsMeshRenderer::Impl {
             .mouse = {0.0F, 0.0F, 0.0F, 0.0F},
             .domain_center_extent =
                 {
-                    camera_.position.x,
-                    camera_.position.z,
-                    kMeshDomainExtent,
+                    runtime_.domain_center.x,
+                    runtime_.domain_center.y,
+                    runtime_.domain_extent,
                     0.0F,
                 },
         };
         static_cast<void>(gpu.submit_and_wait({
-            .label = "terrain ShaderToy height bake",
+            .label = label,
             .work =
-                [this, &pipeline, &material, constants](cubey::vulkan::GpuOwnerContext& context) {
+                [&target_texture, &pipeline, &material,
+                 constants](cubey::vulkan::GpuOwnerContext& context) {
                     cubey::vulkan::ImmediateCommands commands(context);
                     const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
                     recorder.transition_image_layout(
-                        cubey::vulkan::begin_color_attachment_transition(height_atlas_->handle()));
+                        cubey::vulkan::begin_color_attachment_transition(target_texture.handle()));
                     const cubey::render::ColorTargetView target = cubey::render::color_target_view(
-                        height_atlas_->extent(), height_atlas_->format(), height_atlas_->handle(),
-                        height_atlas_->view());
+                        target_texture.extent(), target_texture.format(), target_texture.handle(),
+                        target_texture.view());
                     cubey::render::record_render_target_pass(
                         recorder, cubey::render::render_target_view(target),
                         {.color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 0.0F)},
@@ -620,10 +715,28 @@ class MountainsMeshRenderer::Impl {
                                 VK_SHADER_STAGE_FRAGMENT_BIT, constants);
                         });
                     recorder.transition_image_layout(
-                        finish_bake_for_sampling(height_atlas_->handle()));
+                        finish_bake_for_sampling(target_texture.handle()));
                     commands.submit_and_wait();
                 },
         }));
+    }
+
+    void bake_height_atlas(cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu) {
+        if (!height_atlas_.has_value()) {
+            throw std::runtime_error("reference height atlas is not initialized");
+        }
+        if (!runtime_.erosion_filter) {
+            bake_atlas(device, gpu, height_atlas_.value(), channel_texture(), channel_texture(),
+                       runtime_.bake_shader, "terrain_shadertoy_ref.height_bake");
+            return;
+        }
+        if (!source_atlas_.has_value()) {
+            throw std::runtime_error("erosion source atlas is not initialized");
+        }
+        bake_atlas(device, gpu, source_atlas_.value(), channel_texture(), channel_texture(),
+                   "erosion_input_bake.frag.spv", "terrain_shadertoy_ref.erosion_input_bake");
+        bake_atlas(device, gpu, height_atlas_.value(), source_atlas_.value(), control_texture(),
+                   runtime_.bake_shader, "terrain_shadertoy_ref.erosion_filter_bake");
     }
 
     [[nodiscard]] ReferenceFrameUniforms frame_uniforms(VkExtent2D extent) const {
@@ -631,7 +744,7 @@ class MountainsMeshRenderer::Impl {
                                                  : static_cast<float>(extent.width) /
                                                        static_cast<float>(extent.height);
         return {
-            .view_projection = reference_view_projection(camera_, aspect),
+            .view_projection = reference_view_projection(camera_, runtime_, aspect),
             .camera_position_time =
                 {
                     camera_.position.x,
@@ -644,9 +757,9 @@ class MountainsMeshRenderer::Impl {
             .camera_forward = cubey::math::Vec4(camera_.forward, 0.0F),
             .domain_center_extent_surface =
                 {
-                    source_camera_.position.x,
-                    source_camera_.position.z,
-                    kMeshDomainExtent,
+                    runtime_.domain_center.x,
+                    runtime_.domain_center.y,
+                    runtime_.domain_extent,
                     config_.mesh_surface == ReferenceMeshSurface::Map ? 1.0F : 0.0F,
                 },
             .resolution_options =
@@ -659,9 +772,9 @@ class MountainsMeshRenderer::Impl {
             .diagnostic_options =
                 {
                     config_.diagnostic == ReferenceDiagnostic::Height ? 1.0F : 2.0F,
-                    -10.0F,
-                    180.0F,
-                    4.0F,
+                    runtime_.diagnostic_min_height,
+                    runtime_.diagnostic_max_height,
+                    runtime_.diagnostic_slope,
                 },
         };
     }
@@ -671,6 +784,13 @@ class MountainsMeshRenderer::Impl {
             throw std::runtime_error("reference channel texture is not assigned");
         }
         return *channel_texture_;
+    }
+
+    [[nodiscard]] const cubey::render::Texture2D& control_texture() const {
+        if (control_texture_ == nullptr) {
+            throw std::runtime_error("reference control texture is not assigned");
+        }
+        return *control_texture_;
     }
 
     [[nodiscard]] const cubey::render::FrameUniformMaterialInstance<ReferenceFrameUniforms>&
@@ -717,9 +837,12 @@ class MountainsMeshRenderer::Impl {
     }
 
     TerrainShadertoyRefConfig config_{};
+    ReferenceStudyRuntime runtime_{};
     ReferenceCamera source_camera_{};
     ReferenceCamera camera_{};
     const cubey::render::Texture2D* channel_texture_ = nullptr;
+    const cubey::render::Texture2D* control_texture_ = nullptr;
+    std::optional<cubey::render::Texture2D> source_atlas_{};
     std::optional<cubey::render::Texture2D> height_atlas_{};
     std::optional<cubey::render::Mesh> mesh_{};
     std::optional<cubey::vulkan::DepthAttachment> depth_attachment_{};
@@ -730,41 +853,43 @@ class MountainsMeshRenderer::Impl {
     std::optional<cubey::render::GraphicsPipelineResource> mesh_pipeline_{};
 };
 
-MountainsMeshRenderer::MountainsMeshRenderer() : impl_(std::make_unique<Impl>()) {}
+ReferenceMeshRenderer::ReferenceMeshRenderer() : impl_(std::make_unique<Impl>()) {}
 
-MountainsMeshRenderer::~MountainsMeshRenderer() = default;
+ReferenceMeshRenderer::~ReferenceMeshRenderer() = default;
 
-void MountainsMeshRenderer::create_global_resources(
+void ReferenceMeshRenderer::create_global_resources(
     cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const TerrainShadertoyRefConfig& config, VkExtent2D reference_extent,
-    const cubey::render::Texture2D& channel_texture) {
-    impl_->create_global_resources(device, gpu, config, reference_extent, channel_texture);
+    const cubey::render::Texture2D& channel_texture,
+    const cubey::render::Texture2D& control_texture) {
+    impl_->create_global_resources(device, gpu, config, reference_extent, channel_texture,
+                                   control_texture);
 }
 
-void MountainsMeshRenderer::create_frame_resources(cubey::vulkan::Device& device,
+void ReferenceMeshRenderer::create_frame_resources(cubey::vulkan::Device& device,
                                                    VkFormat color_format, VkExtent2D extent,
                                                    std::uint32_t frame_slot_count) {
     impl_->create_frame_resources(device, color_format, extent, frame_slot_count);
 }
 
-void MountainsMeshRenderer::destroy_frame_resources() {
+void ReferenceMeshRenderer::destroy_frame_resources() {
     impl_->destroy_frame_resources();
 }
 
-void MountainsMeshRenderer::destroy_global_resources() {
+void ReferenceMeshRenderer::destroy_global_resources() {
     impl_->destroy_global_resources();
 }
 
-float MountainsMeshRenderer::inspection_focus_distance() const {
+float ReferenceMeshRenderer::inspection_focus_distance() const {
     return impl_->inspection_focus_distance();
 }
 
-void MountainsMeshRenderer::set_inspection_orbit(float yaw_radians, float pitch_radians,
+void ReferenceMeshRenderer::set_inspection_orbit(float yaw_radians, float pitch_radians,
                                                  float distance) {
     impl_->set_inspection_orbit(yaw_radians, pitch_radians, distance);
 }
 
-void MountainsMeshRenderer::record(VkCommandBuffer command_buffer,
+void ReferenceMeshRenderer::record(VkCommandBuffer command_buffer,
                                    const cubey::render::ColorTargetView& color_target,
                                    cubey::render::FrameSlot frame_slot, bool present,
                                    cubey::vulkan::GpuTimestampProfiler* profiler) {
