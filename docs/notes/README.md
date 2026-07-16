@@ -148,6 +148,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Mountains-guided terrain source correction](terrain-mountains-guided-source-correction.md):
   bounded clean-room correction of the mountain scale hierarchy, external
   component diagnostics, and the measured rejection before any production v4.
+- [Terrain directional backdrop study](terrain-directional-backdrop-study.md):
+  placement-first comparison of continuous low terrain, directional mountain
+  arcs, and an optional one-sided relief composition for fixed-focus scenes.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.
