@@ -1,18 +1,12 @@
 # Terrain V1 Runtime
 
-Date: 2026-07-15
+Date: 2026-07-16
 
-Status: source v2.1 is frozen while terrain v1 pivots from direct runtime
-sampling to the fixed-focus cached backdrop defined in
-[`terrain-cached-backdrop-pivot.md`](../notes/terrain-cached-backdrop-pivot.md).
-The control clipmap and quality tessellation paths remain historical review
-controls, not the target product.
-
-The cached hard-cut renderer remains accepted production v1. The next
-composition target is the study-only radial v2 macro baseline in
-[`terrain-radial-backdrop-macro-baseline.md`](../notes/terrain-radial-backdrop-macro-baseline.md).
-It becomes production only after cached integration preserves the visual
-contract and sub-millisecond runtime gate.
+Status: radial-v1 is the default fixed-focus cached backdrop. It promotes the
+accepted radial v2 macro baseline and graduated mountain source with exact study
+parity. The previous hard-cut renderer, control clipmap, and quality
+tessellation path remain explicit historical review controls. Detail, cache
+persistence, and sub-millisecond runtime performance remain open.
 
 ## Goal
 
@@ -23,7 +17,8 @@ or process cost every frame.
 
 The first product is deliberately narrower than a terrain simulator:
 
-- one coherent source model with `mountain`, `upland`, and `plains` presets;
+- one graduated mountain source for the backdrop product and a retained
+  coherent parameter source with `mountain`, `upland`, and `plains` presets;
 - matching source evidence and CPU point queries;
 - optional bounded local weathering;
 - a setup-time baked field and cullable static backdrop mesh;
@@ -56,6 +51,13 @@ frequency, amplitude, persistence, elevation power, detail balance, and physical
 height scale. There are no centered masks, contours, hand-authored ridgelines,
 or patch-local composition templates.
 
+Radial-v1 uses the separate graduated mountain evaluator derived from the
+accepted source study. It composes broad range, massif, ridge, peak, and detail
+noise bands in world space, then applies the setup-time radial relief envelope.
+Its calibrated height range is frozen by source report tests. It contains no
+authored ridge line or patch-local feature placement and is not exposed as a
+generic preset parameter surface.
+
 `TerrainQuery` carries world `xz` and a sample footprint in meters. A zero
 footprint requests full detail; render LODs pass their geometric cell size so
 unresolved octaves fade smoothly. `TerrainSample` publishes base height, final
@@ -87,13 +89,13 @@ types are not promoted into the engine foundation until a second real consumer
 tests the boundary.
 
 The production renderer is the fixed-focus `backdrop` path. Selecting a
-`backdrop` or `backdrop-stage` camera defaults to this path and source v2.1 when
-neither is explicit. It samples one global polar field around the deterministic
-stage focus, with logarithmic radial spacing from the 300 m consumer boundary
-through the 3.2 km hidden band and out to 16.384 km. The high product uses 3,072
-angular intervals, 64 hidden radial intervals, 768 visible radial intervals,
-and 48 sectors. Neighboring sectors duplicate identical global boundary
-samples.
+`backdrop` or `backdrop-stage` camera defaults to `radial-v1`. The profile
+samples the graduated source once over a 32.768 km global polar field around a
+500 m stage focus. A setup-time radial wrapper retains 8 percent source relief
+inside a 6 km foreground footprint, restores broad structure over 1-24 km, and
+restores detail over 5-30 km. Stride-3 render indices reduce the baked high
+field to 607,232 render-triangle capacity across 48 sectors. Neighboring
+sectors duplicate identical global boundary samples.
 
 Height, geometry normals, rock/snow classification, and bounded ambient
 visibility are cached at setup. A reduced far-field index set retains the high
@@ -103,11 +105,13 @@ non-tessellated runtime shader performs environment lighting and aerial
 perspective only; it does not evaluate terrain source noise, weathering,
 terrain-shadow marches, or material tiles.
 
-The radial v2 follow-up does not replace this path in place. Its `32.768 km`
-domain, `1-24 km` broad transition, `5-30 km` detail transition, elevated focus,
-and `100-1000 m` orbit are targets for a new cached integration lane. Radial
-composition is evaluated only during the bake; it must not add per-frame source
-sampling or procedural shaping to the runtime shader.
+The default continuous center makes the standalone product complete. Explicit
+`consumer-owned` center mode omits that mesh so a scene can own its foreground.
+Both modes use the same outer sectors and source field. Radial composition is
+evaluated only during the bake; it adds no per-frame source sampling or
+procedural shaping to the runtime shader. The historical hard-cut product is
+available through explicit `hard-cut-v1` and retains its v2.1 source controls,
+16.384 km domain, and narrower stage contract.
 
 The `control` clipmap and `quality` tessellation renderers below are retained
 explicit experiments and regression controls. They are not terrain v1
@@ -212,7 +216,9 @@ The public run controls are:
   experimental mountain hierarchy `v3`;
 - `terrain.render_path`: production `backdrop`, legacy `control`, or
   mountain-only `quality`;
-- `terrain.backdrop_mesh_density`: `low`, `medium`, or default `high`;
+- `terrain.backdrop_profile`: default `radial-v1` or historical `hard-cut-v1`;
+- `terrain.backdrop_center`: default `continuous` or `consumer-owned`;
+- `terrain.backdrop_mesh_density`: hard-cut `low`, `medium`, or default `high`;
 - `terrain.surface_detail`: `tile` or quality-only `layered`;
 - `terrain.target_edge_px`: adaptive quality target from `2` through `16`;
 - `terrain.weathering`: `off` or `local`;
@@ -221,7 +227,7 @@ The public run controls are:
 - `terrain.backdrop_mode`: `detached` or `grounded`;
 - optional `terrain.backdrop_azimuth_degrees`,
   `terrain.backdrop_orbit_radius_m`, and `terrain.backdrop_elevation_degrees`;
-- `terrain.backdrop_minimum_visible_distance_m`, defaulting to `3200`;
+- `terrain.backdrop_minimum_visible_distance_m`, fixed to `6000` for radial-v1;
 - `terrain.presentation`: `standard` or opt-in `backdrop` material coverage.
 
 The terrain app supports final surface, base/final height, slope, weathering
@@ -242,7 +248,9 @@ forward speed while re-querying terrain clearance every frame. A headless
 backdrop video completes one full orbit over the requested capture duration;
 stills remain fixed at the selected or requested initial azimuth. Interactive
 backdrop control allows unrestricted yaw while clamping radius and elevation to
-the validated mode envelope. PNG behavior is unchanged.
+the selected profile envelope. Radial-v1 uses 100-1000 m and 0-30 degrees;
+hard-cut-v1 retains its narrower mode-specific bounds. PNG behavior is
+unchanged.
 
 ## Acceptance
 
@@ -257,14 +265,21 @@ Across seeds `0`, `9012`, and `12345`:
 - surface traversal keeps the camera above terrain and exposes no LOD cracks or
   discontinuities;
 - rendering requires no per-frame CPU field generation or bulk artifacts;
-- the `terrain surface` GPU pass remains below `1.0 ms` p95 at 2560 x 1440 on
-  the RTX 5070 Ti review machine after 30 warmup frames and at least 120
-  measured samples.
+- exact product/study parity holds over the maintained six-heading comparison;
+- the product records 1440p terrain-pass timing and retains `<1 ms` as an open
+  engine target rather than claiming the current radial renderer meets it.
 
-The accepted cached-backdrop pack records `0.876288 ms` terrain-surface p95
-over 146 measured samples. Setup plus first frame is `18,396 ms` and
-`342,728 KiB` peak process RSS, including stage search, bake, Vulkan startup,
-upload, and one frame. See
+The radial-v1 product pack records six exact product/study PNG pairs, stride 3,
+607,232 render-triangle capacity, 2,657,280 source samples, `10,509 ms`
+setup/first-frame, and `364,200 KiB` peak RSS. Its maintained 2560 x 1440
+active-clock profile measured `2.552 ms` terrain-surface p95. Identical profiles
+varied from about `1.35-3.7 ms` with GPU duty cycle, so the current desktop-GPU
+target is advisory until clock residency is controlled. See
+[`terrain-radial-backdrop-product-v1.md`](../notes/terrain-radial-backdrop-product-v1.md).
+
+The historical hard-cut pack recorded `0.876288 ms` terrain-surface p95 and
+remains useful as a performance/regression control. It is no longer the default
+composition. See
 [`terrain-cached-backdrop-v1-review.md`](../notes/terrain-cached-backdrop-v1-review.md).
 
 The fixed review pack compares the reboot against `terrain-engine-ref`, but the

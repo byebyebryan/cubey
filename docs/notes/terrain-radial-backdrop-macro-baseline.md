@@ -2,108 +2,89 @@
 
 Date: 2026-07-16
 
-Status: accepted macro-composition baseline; the first continuous-center cached
-integration failed the runtime gate; not yet a production renderer or final
-terrain source.
+Status: accepted macro composition and promoted radial-v1 backdrop source;
+detail, setup persistence, and `<1 ms` runtime performance remain open.
 
 ## Decision
 
-Freeze `expanded-radial` v2 as the terrain backdrop's macro-composition target.
-It is the first tested composition that keeps a useful foreground, restores
-distant mountains gradually, and remains useful through unrestricted yaw
-without exposing a hard cut or one-sided uplift shelf.
+The `expanded-radial` v2 study established the terrain backdrop's macro target:
+a useful foreground, gradual restoration of distant mountains, unrestricted
+yaw, and no exposed hard cutoff or one-sided uplift shelf. The accepted
+configuration is now frozen by `radial-v1`:
 
-The accepted study configuration is:
+- `32.768 km` outer radius;
+- source-derived 6 km low-relief footprint with 8 percent retained relief;
+- broad structure restored over `1-24 km`;
+- source detail restored over `5-30 km`;
+- 500 m focus height;
+- 100-1000 m orbit, defaulting to 400 m;
+- unrestricted yaw and 0-30 degree elevation.
 
-- a `32.768 km` outer radius around the selected stage focus;
-- a source-derived low-relief floor with a `6 km` sample footprint and 8
-  percent retained relief;
-- broad structure restored with smootherstep over `1-24 km` radial distance;
-- source detail restored over `5-30 km` radial distance;
-- a `500 m` focus height;
-- a `100-1000 m` orbit, defaulting to `400 m`;
-- unrestricted yaw and a `0-30` degree elevation envelope.
+The original review evidence remains under
+`outputs/terrain/radial-backdrop-expanded-v2/`. The production evidence is
+under `outputs/terrain/radial-backdrop-product-v1/`.
 
-The review evidence is under
-`outputs/terrain/radial-backdrop-expanded-v2/`. Preserve
-`outputs/terrain/radial-backdrop-expanded-v1/` as the large-core control.
+## Accepted Scope
 
-## What Is Accepted
+The radial envelope, expanded domain, and far-field camera composition are
+accepted. Across tested seeds and yaw headings, scene views hide the circular
+transition, preserve a quiet foreground, and retain useful terrain. The exact
+circular gates remain visible in top diagnostics. That is an explicit
+fixed-focus composition compromise, not a general terrain model.
 
-The radial envelope, expanded domain, and camera composition are accepted as a
-macro target. Scene views show no visible circular shelf, the foreground stays
-clear, and every tested seed and yaw retains useful terrain. Starting broad
-restoration at `1 km` reduces the dead center without pulling relief into the
-maximum camera orbit because the 23 km smootherstep band begins with zero
-slope and grows slowly.
+The graduated source is frozen as a scalable far-field source. It replaces the
+study-only duplicate and preserves exact source reports and baked study output.
+It is not accepted as a close-view mountain model.
 
-The exact circular gates remain visible in top diagnostics. That is an explicit
-composition compromise, not terrain truth. It is acceptable only for the
-fixed-focus far-field product while it stays hidden in supported scene views.
+## Productization
 
-## What Is Not Accepted
+The cached radial study proved stride 3 preserved the macro image. The promoted
+product now:
 
-The study does not promote:
+1. wraps the graduated source with radial relief during setup;
+2. bakes positions, normals, material classification, and ambient visibility;
+3. renders reduced stride-3 indices in culled polar sectors;
+4. supports continuous and consumer-owned centers;
+5. preserves the accepted camera envelope and unrestricted yaw.
 
-- the full-stride study mesh, which has already missed the `<1 ms` GPU target;
-- `mountains-hierarchy-v2` as a final terrain source or close-view model;
-- current smooth faces, sparse secondary ridges, or low material bandwidth as
-  sufficient terrain detail;
-- a traversable center, surface camera, foliage, water, hydrology, translation,
-  streaming, or planet-scale terrain;
-- radial attenuation as a general procedural-terrain contract.
+Exact product/study PNG parity is enforced by
+`projects/terrain/capture_radial_backdrop_product.sh`. Historical hard-cut
+behavior remains available only through explicit `hard-cut-v1`.
 
-The current cached hard-cut backdrop remains production v1 until the radial
-composition passes through that product architecture and meets its acceptance
-gates.
+## Remaining Gaps
 
-The first cached integration result is recorded in
+The promotion does not accept:
+
+- current smooth faces and sparse secondary silhouette detail as final;
+- the current procedural material bandwidth as sufficient for mid-field views;
+- setup-time cost and memory as a scalable streaming design;
+- the measured GPU pass as meeting the engine's `<1 ms` backdrop target;
+- a surface camera, foliage, water, hydrology, translation, or planet scale;
+- radial attenuation as an engine-level procedural-terrain primitive.
+
+The product pack measured `2.552 ms` terrain-surface p95 at 2560 x 1440 under
+its maintained active-clock profile, while an isolated identical profile
+measured `1.35 ms`. This power-state sensitivity is documented in
 [`terrain-cached-radial-integration.md`](terrain-cached-radial-integration.md).
-Stride 2 and stride 3 preserve this macro baseline, but measure `1.524 ms` and
-`1.338 ms` p95 respectively and are not promoted. The next bounded test removes
-the continuous diagnostic center from runtime ownership while leaving this
-composition unchanged.
-
-## Cached Integration Target
-
-Build the next lane through the existing cached backdrop ownership model:
-
-1. Wrap the selected height source with radial relief during setup only.
-2. Bake the resulting field into cached positions, geometry normals, material
-   classification, ambient visibility, sectors, and reduced far-field indices.
-3. Cover the `32.768 km` domain with logarithmic radial spacing and bounded
-   submitted geometry; do not evaluate procedural source or radial composition
-   per frame.
-4. Preserve unrestricted yaw and validate the `100-1000 m` orbit around the
-   elevated focus.
-5. Keep the foreground consumer-owned. Terrain need not provide close ground
-   merely because the composition has a continuous diagnostic source.
-
-The cached integration must remain below `1.0 ms` p95 for `terrain surface` at
-2560 x 1440 after 30 warmup frames and at least 120 measured samples. Record
-setup time, peak memory, triangle submission, sector culling, and the same
-three-seed/six-yaw visual matrix. Production defaults do not change on a visual
-pass alone.
+Performance remains debt, not a completed acceptance gate.
 
 ## Detail Follow-up
 
-Detail work begins only after a cached integration preserves the macro baseline
-and performance gate. Keep two concerns separate:
+Keep macro composition frozen while improving fidelity in two separate lanes:
 
-- Source/geometry detail: add filtered secondary ridges, face breakup, and
-  silhouette bandwidth without changing the radial envelope or turning the
-  mountains into high-frequency noise.
-- Rendering detail: add procedural albedo, roughness, normals, and restrained
-  atmospheric contrast with distance/footprint filtering. Material detail must
-  not disguise weak geometry or introduce shimmer.
+- Source/geometry detail: add footprint-filtered secondary ridges, face breakup,
+  and silhouette bandwidth without converting mountains into high-frequency
+  noise.
+- Rendering detail: improve procedural albedo, roughness, normals, and
+  restrained atmospheric contrast with distance-aware filtering.
 
-Review close debug views to expose defects, but accept terrain v1 against its
-far-field backdrop distance. A later mid-field or traversable terrain product
-needs a separate source, LOD, material, and content contract.
+Use close debug views to expose defects, but accept v1 against the far-field
+backdrop distance. A later mid-field or traversable product needs its own
+source, LOD, material, and content contract.
 
 ## Stop Condition
 
-Do not continue tuning the radial center or transition while integration and
-detail remain untouched. Reopen macro composition only if the cached renderer
-reveals a visible ring, foreground intersection, empty yaw sector, or framing
-failure that is absent from the accepted v2 evidence.
+Do not retune the radial center or transition unless a maintained product pack
+exposes a ring, foreground intersection, empty yaw sector, or framing failure.
+Do not mix detail work, performance optimization, hydrology, or streaming into
+the same corrective batch.

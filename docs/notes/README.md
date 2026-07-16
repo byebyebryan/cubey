@@ -135,6 +135,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain cached backdrop v1 review](terrain-cached-backdrop-v1-review.md):
   accepted multi-seed fixed-focus product, ownership envelope, setup cost, and
   1440p sub-millisecond terrain-pass evidence.
+- [Terrain radial backdrop product v1](terrain-radial-backdrop-product-v1.md):
+  promoted radial far-field profile, runtime ownership, exact study parity,
+  maintained capture pack, and explicit performance/detail debt.
 - [Terrain radial backdrop macro baseline](terrain-radial-backdrop-macro-baseline.md):
   accepted expanded-domain composition and camera target, with explicit cached
   integration, detail, performance, and stop boundaries.

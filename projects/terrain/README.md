@@ -1,8 +1,11 @@
 # Terrain
 
-`projects/terrain` now provides a cached, fixed-focus far-backdrop product. The
-control clipmap and opt-in adaptive tessellation path remain explicit review
-controls. Source v2.1 preserves v2 above a 64 m
+`projects/terrain` now provides a cached, fixed-focus far-backdrop product. Its
+default `radial-v1` profile bakes the graduated `mountains-hierarchy-v2` source
+over a 32.768 km domain, reserves a 6 km low-relief foreground footprint, and
+uses stride-3 render indices. The previous `hard-cut-v1` profile remains an
+explicit regression control. The control clipmap and opt-in adaptive
+tessellation path remain review tools. Source v2.1 preserves v2 above a 64 m
 footprint while moving sub-110 m detail into bounded additive relief. The
 opt-in `layered` surface-detail mode adds generated albedo-height and
 normal-roughness-cavity material layers for the retained live backdrop and
@@ -13,12 +16,13 @@ The matching GLSL evaluator consumes the packed resolved parameters and is
 checked against CPU samples through Vulkan readback. Optional local weathering
 is bounded, footprint-filtered, and explicitly non-hydraulic.
 
-The production `backdrop` path samples source v2.1 once into 48 static polar
-sectors spanning 3.2-16.384 km. Cached heights, normals, material
-classification, and ambient visibility feed a non-tessellated environment-lit
-shader. Conservative angular and frustum culling keep the terrain-only 1440p
-GPU pass below the v1 1 ms p95 budget. It performs no runtime source,
-weathering, terrain-shadow, tessellation, or material-tile evaluation.
+The production `backdrop` path samples its selected source once into 48 static
+polar sectors. Cached heights, normals, material classification, and ambient
+visibility feed a non-tessellated environment-lit shader. Conservative angular
+and frustum culling bound submitted geometry, and no procedural source,
+weathering, terrain-shadow, tessellation, or material-tile evaluation runs per
+frame. Radial-v1 currently misses the engine's eventual `<1 ms` terrain-pass
+target, so setup persistence and render optimization remain product debt.
 
 The retained control path uses a camera-centered eight-level clipmap with
 explicit single-owner LOD transitions. The opt-in quality path uses a camera-centered,
@@ -28,14 +32,13 @@ transport and sky irradiance, terrain-local heightfield shadows, linear-space
 procedural nonmetal materials, diagnostic views, and a surface controller whose
 clearance comes from the CPU query contract.
 
-The `backdrop` preset is a 360-degree orbit stage around a local mid-air
-foreground focus. Detached mode reserves the inner 300 m for a consuming scene,
-maps a deterministically selected source location under that local stage, and
-solves a vertical offset that keeps lower-frame terrain at least 3.2 km away.
-`backdrop-stage` adds a neutral foreground proxy for interactive validation
-without changing the clean backdrop product view. Grounded mode keeps terrain
-continuous as a placement diagnostic. `midground` retains the older directional
-surface stress view.
+The radial-v1 `backdrop` preset is an unrestricted-yaw orbit around a 500 m
+mid-air focus. It supports a 100-1000 m orbit and 0-30 degree elevation. The
+default `continuous` center keeps the standalone product view complete;
+`--terrain-backdrop-center consumer-owned` removes the center for a scene that
+provides its own foreground. `backdrop-stage` adds a neutral foreground proxy
+for interactive validation without changing terrain geometry. `midground`
+retains the older directional surface stress view.
 
 This project does not own regional hydrology. The active pivot adds a
 project-local baked backdrop product; it does not promote a general terrain
@@ -58,6 +61,16 @@ ctest --preset dev -R 'terrain_(source(_gpu_parity|_study)?|directional.*)_tests
 
 ./build/dev/projects/terrain/terrain \
   --terrain-seed 9012 \
+  --terrain-camera-preset backdrop-stage
+
+./build/dev/projects/terrain/terrain \
+  --terrain-seed 9012 \
+  --terrain-camera-preset backdrop-stage \
+  --terrain-backdrop-center consumer-owned
+
+./build/dev/projects/terrain/terrain \
+  --terrain-seed 9012 \
+  --terrain-backdrop-profile hard-cut-v1 \
   --terrain-preset mountain \
   --terrain-weathering local \
   --terrain-camera-preset backdrop \
@@ -96,6 +109,7 @@ projects/terrain/capture_mountains_source_decision.sh
 projects/terrain/capture_directional_backdrop_study.sh
 projects/terrain/capture_directional_backdrop_expanded.sh
 projects/terrain/capture_radial_backdrop_expanded.sh
+projects/terrain/capture_radial_backdrop_product.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -147,34 +161,35 @@ envelope but restores broad structure over `1-24 km` and source detail over
 `5-30 km` in every direction. Its current comparison pack is written to
 `outputs/terrain/radial-backdrop-expanded-v2/`. The broad band stays hidden in
 the tested scene views and fills the directional lane's empty headings, but its
-circular low-relief basin remains explicit in diagnostics. V2 is now the
-accepted macro-composition baseline, while the current cached hard-cut backdrop
-remains production until radial composition passes cached integration, detail,
-and the `<1 ms` runtime gate. See
+circular low-relief basin remains explicit in diagnostics. V2 became the
+accepted macro-composition baseline and now underpins the radial-v1 product.
+See
 [`docs/notes/terrain-radial-backdrop-macro-baseline.md`](../../docs/notes/terrain-radial-backdrop-macro-baseline.md).
 
-The opt-in `cached-radial` lane keeps that accepted macro composition and full
+The `cached-radial` study lane keeps that accepted macro composition and full
 baked source product while reducing only its render index topology to stride 2
 or 3. Run `projects/terrain/capture_cached_radial_backdrop.sh` to write the
 multi-seed visual, camera-envelope, diagnostic, setup-cost, workload, and 1440p
-GPU comparison to `outputs/terrain/cached-radial-v1/`. The script records a
-missed `<1 ms` candidate gate instead of aborting, and it does not change the
-current production hard-cut backdrop. The completed pack finds stride 3
-visually sufficient but measures `1.338 ms` p95, so the continuous-center lane
-remains study-only. See
+GPU comparison to `outputs/terrain/cached-radial-v1/`. The completed pack found
+stride 3 visually sufficient and measured `1.338 ms` p95 in that run. The
+follow-up product pack verifies exact study parity, both center ownership modes,
+three seeds, six headings, and the full camera envelope under
+`outputs/terrain/radial-backdrop-product-v1/`. Its active-clock profile measured
+`2.552 ms` p95 on the same RTX 5070 Ti; GPU power-state sensitivity makes the
+performance target advisory until the benchmark controls device residency.
+See
 [`docs/notes/terrain-cached-radial-integration.md`](../../docs/notes/terrain-cached-radial-integration.md).
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
-`ground`, `backdrop`, `backdrop-stage`, and `midground`. The deterministic
-source-aware backdrop planner evaluates 24 azimuth sectors and supports
-unrestricted yaw within a 50-250 m orbit. Detached elevation is limited to
-0-30 degrees and defaults to a 3.2 km lower-frame terrain exclusion. Grounded
-elevation is limited to 12-32 degrees. Initial azimuth, radius, elevation, and
-validation distance are optional controls. `midground` remains the directional
-1.6 km detail stress tier. Presentation modes are `standard` (default) and
-`backdrop`.
+`ground`, `backdrop`, `backdrop-stage`, and `midground`. The radial profile
+supports unrestricted yaw within a 100-1000 m orbit and 0-30 degree elevation.
+Hard-cut-v1 retains the source-aware 24-sector placement planner and its
+narrower detached/grounded diagnostic envelope. Initial azimuth, radius, and
+elevation remain optional controls. `midground` remains the directional 1.6 km
+detail stress tier. Presentation modes are `standard` (default outside
+radial-v1) and `backdrop`.
 
 Source versions are `v1` (default), mountain-only `v2` and `v2.1`, and the
 retained experimental `v3` hierarchy. V2.1 and v3 use dedicated shader bundles
@@ -192,9 +207,11 @@ The fixed v3 A/B pack remains under
 is under `outputs/terrain/source-v2-1/`.
 
 The general terrain default remains source v1 plus the control renderer. A
-backdrop camera defaults to source v2.1, the cached `backdrop` render path, and
-`high` backdrop mesh density unless those options are explicit. `low` and
-`medium` densities are diagnostic controls.
+backdrop camera defaults to the cached radial-v1 profile, continuous center,
+high mesh density, and backdrop presentation. Radial-v1 owns its source,
+weathering, domain, stage, and stride contract; generic source overrides are
+rejected. Select `hard-cut-v1` explicitly for historical v2.1 controls. `low`
+and `medium` densities remain hard-cut diagnostic controls.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and

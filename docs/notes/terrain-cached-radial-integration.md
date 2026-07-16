@@ -2,122 +2,99 @@
 
 Date: 2026-07-16
 
-Status: continuous-center cached integration rejected; radial v2 remains the
-accepted macro-composition baseline; production hard cut remains unchanged.
+Status: radial stride 3 promoted as the far-field backdrop default; the strict
+`<1 ms` performance target remains open.
 
-## Decision
+## Decision History
 
-Do not promote either tested `cached-radial` candidate. Reducing the accepted
-radial study to stride 2 or stride 3 preserves its far-field image, but neither
-candidate passes the `terrain surface < 1.0 ms` p95 gate at 2560 x 1440.
+The first cached-radial study reduced only render-index topology while keeping
+the accepted radial macro composition and full baked source product. Stride 3
+was visually sufficient across three seeds and six headings, but its measured
+`1.338 ms` terrain-surface p95 missed the original `<1 ms` promotion gate. That
+study therefore rejected automatic promotion at the time.
 
-This closes the index-only integration attempt. It does not reject the radial
-composition or justify another source-shape iteration. The next bounded test is
-an ownership correction: retain radial outer terrain and stride 3, but stop
-rendering the continuous diagnostic center that the foreground consumer does
-not need.
+The product decision was later narrowed: ship the accepted far-field macro as a
+usable terrain backdrop, preserve the performance miss as explicit debt, and
+defer mid-field detail and optimization until after integration. The promoted
+runtime is exact study code, not a visual reimplementation.
 
-## Evaluated Contract
+## Product Contract
 
-The opt-in lane preserves the accepted radial-v2 configuration exactly:
+`radial-v1` owns these settings:
 
-- `mountains-hierarchy-v2` source with seeds `0`, `9012`, and `12345`;
+- graduated `mountains-hierarchy-v2` source;
+- seeds remain consumer-selectable;
 - `32.768 km` outer radius;
-- `6 km` low-relief floor footprint;
+- `6 km` low-relief foreground footprint;
 - broad restoration over `1-24 km` and detail restoration over `5-30 km`;
-- continuous center and full baked positions, normals, and material channels;
-- `500 m` focus height and `100-1000 m` orbit;
-- unrestricted yaw and `0-30` degree elevation;
-- render stride 1 control against cached stride 2 and stride 3 candidates.
+- stride-3 render indices over the full baked source product;
+- 500 m focus height;
+- 100-1000 m orbit and 0-30 degree elevation;
+- unrestricted yaw;
+- continuous center by default, with explicit `consumer-owned` center support;
+- setup-time source evaluation only.
 
-The product test confirms exact equality of baked center/sector vertices and
-source topology across all three strides. Only `render_indices` and the derived
-render-triangle count change. Runtime profiles now publish submitted sectors,
-submitted triangles, product render capacity, and source sample count alongside
-the GPU spans.
+The runtime rejects generic source, weathering, density, and quality overrides
+that would make `radial-v1` cease to be a versioned product. Historical source
+controls remain available through explicit `hard-cut-v1`.
 
-Run the maintained pack with:
+## Evidence
+
+Run the maintained product pack with:
 
 ```sh
-projects/terrain/capture_cached_radial_backdrop.sh
+projects/terrain/capture_radial_backdrop_product.sh
 ```
 
-It writes `outputs/terrain/cached-radial-v1/`. `REVIEW.md` defines the review
-order and `review-metadata.json` contains the measured contract.
+It writes `outputs/terrain/radial-backdrop-product-v1/` and validates:
 
-## Visual Result
+- three seeds over six yaw headings;
+- six exact PNG matches between production and the cached-radial study lane;
+- 100 m / 0 degree, 400 m / 8 degree, and 1000 m / 30 degree camera cases at
+  opposing headings;
+- continuous and consumer-owned center modes;
+- clay, normal, projected-edge, material-weight, and stage-ownership views;
+- setup time, peak RSS, render capacity, source samples, and 1440p GPU timing.
 
-Stride 2 and stride 3 preserve the full radial silhouette at the intended
-far-field scale. Across three seeds and six headings there are no visible sector
-holes, boundary cracks, or transition rings. Clay, normals, projected edges,
-material weights, and stage ownership remain continuous.
+The product path and study path match exactly at every parity heading. Runtime
+telemetry confirms stride 3, 607,232 render-triangle capacity, 2,657,280 baked
+source samples, and a continuous default center.
 
-Stride 3 provides no material visual regression against stride 2 in this pack.
-As a supplemental pixel check, its normalized mean difference from stride 1 is
-`0.00089-0.00180` across the six seed-9012 headings. That small difference is
-not a substitute for review, but it agrees with the visual read.
+The 1000 m / 30 degree endpoint can look down onto the quiet foreground and
+move mountains out of frame. That is a legal controller endpoint, not a promise
+that every pitch/radius combination produces an ideal composition. Consumers
+may use a narrower pitch envelope without restricting yaw.
 
-The pack does not improve the source. Several headings still expose broad,
-smooth mountain faces and limited secondary silhouette detail. Those are known
-`mountains-hierarchy-v2` limitations, not reduced-index artifacts. At the
-`1000 m / 30 degree` camera extreme, the orbit looks down onto the quiet center
-and the distant relief leaves the frame. A real consumer must own that
-foreground view; adding terrain detail to the diagnostic floor is not the
-backdrop's responsibility.
+## Performance Caveat
 
-## Performance Result
+The original study measured `1.338 ms` p95 at 2560 x 1440. During productization,
+identical production and study submissions varied with GPU duty cycle:
 
-The RTX 5070 Ti profile uses 2560 x 1440, 30 warmup frames, and 146 measured
-terrain-surface samples:
+- 30 fps low-duty profiles measured about `3.7 ms` p95;
+- an isolated 120 fps active profile measured `1.35 ms` p95;
+- the maintained 300-frame, 60-warmup, 120 fps product pack measured
+  `2.552 ms` p95.
 
-| Lane | Render capacity | Average submitted | Median ms | p95 ms | Gate |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Full radial, stride 1 | 5,305,344 | 1,670,116 | 1.848 | 4.303 | Fail |
-| Cached radial, stride 2 | 1,328,640 | 419,833 | 1.407 | 1.524 | Fail |
-| Cached radial, stride 3 | 607,232 | 190,695 | 1.243 | 1.338 | Fail |
+Geometry counts and product/study pixels remained identical. The timing spread
+therefore does not indicate a productization regression, but it does mean a
+desktop-GPU p95 gate is not reproducible until clock residency is controlled.
+The pack records the `1.5 ms` provisional target as advisory and does not claim
+the engine's eventual `<1 ms` target has been met.
 
-Both candidates submit about 11 of 48 sectors on average. All radial lanes bake
-2,657,280 source samples. Stride 2 setup/first-frame measured `17,182 ms` and
-`373,648 KiB` peak RSS; stride 3 measured `16,933 ms` and `363,788 KiB`. That is
-comparable to the accepted workbench cache build, so it is retained persistence
-debt rather than the reason for rejection.
+Setup and first frame measured `10.509 s` and `364,200 KiB` peak RSS in the
+product pack. Cache persistence and asynchronous setup remain obvious future
+work; this batch does not optimize them.
 
-The current production control recorded a `0.724 ms` median but a `2.981 ms`
-p95 in this run because a small group of samples spiked around the warmup
-boundary and at isolated headings. Its accepted dedicated pack remains the
-production checkpoint. The radial candidates do not share that pattern: their
-medians and p95 values are consistently above one millisecond, so their failure
-does not depend on the noisy control.
+## Boundaries
 
-## Next Bounded Test
+This promotion is a far-field backdrop product, not general terrain:
 
-Keep the source, radial gates, outer domain, stage, materials, sector partition,
-and stride 3 fixed. Change only foreground ownership:
+- no mid-field or surface-scene fidelity claim;
+- no foliage, hydrology, water, or traversable center;
+- no terrain streaming or external engine-level terrain API;
+- no claim that radial attenuation represents terrain truth;
+- no source-detail work hidden inside productization.
 
-1. Do not submit the continuous center mesh in the production-shaped candidate.
-   The radial height source may remain continuous for diagnostics and outer
-   sampling.
-2. Preserve the consumer-owned foreground contract and test whether the outer
-   sectors meet the stage without a visible ring in representative scene views.
-3. Re-run seed 9012 over six headings, the camera-envelope endpoints, ownership
-   diagnostics, and the 1440p profile before paying for the full multi-seed pack.
-4. Require `<1.0 ms` p95 with at least 120 samples. A visual pass alone still
-   cannot promote the lane.
-
-At stride 3 the center contributes exactly 66,560 render triangles and is always
-visible. Removing it would reduce the measured average submission from about
-190,695 to 124,135 triangles and avoid shading the full-screen diagnostic floor.
-That is the highest-leverage untested correction consistent with the accepted
-ownership model.
-
-If that correction still misses the GPU gate, move to projected-size sector LOD
-or separately decimated center/outer index levels. Do not resume radial-gate
-tuning, change the terrain source, or add an unreviewed global stride 4 in the
-same experiment.
-
-## Stop Condition
-
-The current `cached-radial` lane remains study-only. Production defaults do not
-change. Reopen this decision only with evidence that a consumer-owned center or
-screen-space index policy preserves the radial-v2 visual baseline and satisfies
-the runtime gate.
+The next terrain batch can improve source/geometry and material detail against
+close diagnostic views, but acceptance remains anchored to the supported
+far-field envelope. Performance work should be a separate measured batch.
