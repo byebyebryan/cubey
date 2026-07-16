@@ -142,6 +142,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.
+- [ShaderToy terrain source-shape studies](terrain-shadertoy-source-shape-studies.md):
+  external Swiss Alps, Mountain Peak, and erosion-filter comparisons in the
+  shared mesh and orbit harness.
 - [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
   retained hierarchy diagnostics and measured rejection of the smooth massif
   composition as a promotion candidate.
