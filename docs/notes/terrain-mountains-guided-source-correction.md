@@ -60,12 +60,18 @@ is allowed.
 
 ## External Reference Diagnostics
 
-Extend `terrain_shadertoy_ref` with audit-only Mountains component views:
+Extend `terrain_shadertoy_ref` with audit-only Mountains scale-decomposition
+views derived from the baked exact height:
 
-- `envelope`: broad amplitude modulation;
-- `structure`: the five-octave alternating signed sum;
-- `uplift`: sparse low-frequency summit contribution;
+- `envelope`: a broad low-pass height proxy;
+- `structure`: signed height residual relative to that envelope;
+- `uplift`: positive broad residual relative to a wider low pass;
 - `height`: final terrain height.
+
+These are spatial diagnostics, not reconstructions of private terms inside the
+reference function. The adapter must not duplicate the reference coefficients
+or formulas. Their purpose is to measure where broad mass, intermediate form,
+and positive summit buildup live in the final field.
 
 Capture the same component set at reference times `0`, `20`, and `40`. Time is
 used only to select translated camera-centered windows from the stationary

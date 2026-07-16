@@ -26,7 +26,7 @@ The main local options are:
 --reference-mesh-surface terrain|map
 --reference-normal geometry|atlas|detailed
 --reference-shading original|clay
---reference-diagnostic final|height|slope
+--reference-diagnostic final|height|slope|envelope|structure|uplift
 ```
 
 Mountains retains the original defaults. The other studies default to mesh
@@ -48,6 +48,10 @@ geometry normals expose mesh topology. Nonzero yaw offsets rotate the probed
 source camera basis around world up while retaining its position, pitch,
 elevation, and roll. They require final mesh rendering. Height and slope
 diagnostics render the baked field from above and require the mesh path.
+Envelope, structure, and uplift are Mountains-only spatial decompositions of
+the exact baked height. They are broad low-pass, signed residual, and positive
+broad-residual views respectively; they do not duplicate or reconstruct the
+reference's internal formulas.
 
 The windowed mesh path supports a lightweight inspection orbit around the
 source camera target. Left-drag rotates, the mouse wheel zooms, and `R` restores

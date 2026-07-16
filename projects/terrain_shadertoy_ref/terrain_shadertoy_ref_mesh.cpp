@@ -351,6 +351,24 @@ source_fullscreen_pass_info(const char* label, std::uint32_t push_constant_size)
     throw std::runtime_error("unknown reference normal mode");
 }
 
+[[nodiscard]] float reference_diagnostic_mode(ReferenceDiagnostic diagnostic) {
+    switch (diagnostic) {
+    case ReferenceDiagnostic::Final:
+        return 0.0F;
+    case ReferenceDiagnostic::Height:
+        return 1.0F;
+    case ReferenceDiagnostic::Slope:
+        return 2.0F;
+    case ReferenceDiagnostic::Envelope:
+        return 3.0F;
+    case ReferenceDiagnostic::Structure:
+        return 4.0F;
+    case ReferenceDiagnostic::Uplift:
+        return 5.0F;
+    }
+    throw std::runtime_error("unknown reference diagnostic mode");
+}
+
 } // namespace
 
 class ReferenceMeshRenderer::Impl {
@@ -771,7 +789,7 @@ class ReferenceMeshRenderer::Impl {
                 },
             .diagnostic_options =
                 {
-                    config_.diagnostic == ReferenceDiagnostic::Height ? 1.0F : 2.0F,
+                    reference_diagnostic_mode(config_.diagnostic),
                     runtime_.diagnostic_min_height,
                     runtime_.diagnostic_max_height,
                     runtime_.diagnostic_slope,

@@ -160,8 +160,16 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
                 parsed.reference_config.diagnostic = ReferenceDiagnostic::Height;
             } else if (value == "slope") {
                 parsed.reference_config.diagnostic = ReferenceDiagnostic::Slope;
+            } else if (value == "envelope") {
+                parsed.reference_config.diagnostic = ReferenceDiagnostic::Envelope;
+            } else if (value == "structure") {
+                parsed.reference_config.diagnostic = ReferenceDiagnostic::Structure;
+            } else if (value == "uplift") {
+                parsed.reference_config.diagnostic = ReferenceDiagnostic::Uplift;
             } else {
-                throw std::runtime_error("--reference-diagnostic must be final, height, or slope");
+                throw std::runtime_error(
+                    "--reference-diagnostic must be final, height, slope, envelope, structure, "
+                    "or uplift");
             }
         } else {
             parsed.forwarded_arguments.emplace_back(argv[index]);
@@ -193,6 +201,12 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
         }
         if (parsed.reference_config.shading != ReferenceShading::Clay) {
             throw std::runtime_error("non-Mountains studies require --reference-shading clay");
+        }
+        if (parsed.reference_config.diagnostic == ReferenceDiagnostic::Envelope ||
+            parsed.reference_config.diagnostic == ReferenceDiagnostic::Structure ||
+            parsed.reference_config.diagnostic == ReferenceDiagnostic::Uplift) {
+            throw std::runtime_error(
+                "envelope, structure, and uplift diagnostics require Mountains");
         }
     }
     if (parsed.reference_config.yaw_offset_degrees != 0.0F &&

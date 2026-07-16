@@ -168,6 +168,35 @@ if (BUILD_TESTING)
         0.00005
     )
 
+    set(
+        CUBEY_TERRAIN_SHADERTOY_REF_ENVELOPE_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-shadertoy-ref-envelope-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_shadertoy_ref_envelope_writes_png
+        cubey_project_terrain_shadertoy_ref
+        "${CUBEY_TERRAIN_SHADERTOY_REF_ENVELOPE_SMOKE_OUTPUT}"
+        --headless
+        --width
+        256
+        --height
+        256
+        --reference-render
+        mesh
+        --reference-mesh-cells
+        256
+        --reference-mesh-surface
+        terrain
+        --reference-diagnostic
+        envelope
+    )
+    cubey_add_png_stats_test(
+        terrain_shadertoy_ref_envelope_writes_png
+        "${CUBEY_TERRAIN_SHADERTOY_REF_ENVELOPE_SMOKE_OUTPUT}"
+        0.00001
+        0.00005
+    )
+
     foreach(CUBEY_TERRAIN_SHADERTOY_REF_STUDY IN ITEMS swiss-alps mountain-peak erosion-filter)
         string(REPLACE "-" "_" CUBEY_TERRAIN_SHADERTOY_REF_STUDY_ID
                "${CUBEY_TERRAIN_SHADERTOY_REF_STUDY}")
@@ -219,6 +248,8 @@ if (BUILD_TESTING)
         terrain_shadertoy_ref_mesh_writes_png_stats
         terrain_shadertoy_ref_height_writes_png
         terrain_shadertoy_ref_height_writes_png_stats
+        terrain_shadertoy_ref_envelope_writes_png
+        terrain_shadertoy_ref_envelope_writes_png_stats
         terrain_shadertoy_ref_swiss_alps_writes_png
         terrain_shadertoy_ref_swiss_alps_writes_png_stats
         terrain_shadertoy_ref_mountain_peak_writes_png

@@ -113,6 +113,29 @@ void test_full_reference_configuration() {
             "reference arguments should be removed before host parsing");
 }
 
+void test_mountains_component_diagnostics() {
+    using namespace cubey::projects::terrain_shadertoy_ref;
+    const ParsedTerrainShadertoyRefArgs envelope =
+        parse({"terrain_shadertoy_ref", "--reference-render", "mesh",
+               "--reference-diagnostic", "envelope"});
+    const ParsedTerrainShadertoyRefArgs structure =
+        parse({"terrain_shadertoy_ref", "--reference-render", "mesh",
+               "--reference-diagnostic", "structure"});
+    const ParsedTerrainShadertoyRefArgs uplift =
+        parse({"terrain_shadertoy_ref", "--reference-render", "mesh",
+               "--reference-diagnostic", "uplift"});
+    require(envelope.reference_config.diagnostic == ReferenceDiagnostic::Envelope &&
+                structure.reference_config.diagnostic == ReferenceDiagnostic::Structure &&
+                uplift.reference_config.diagnostic == ReferenceDiagnostic::Uplift,
+            "Mountains component diagnostics should parse");
+    require_throws(
+        [] {
+            static_cast<void>(parse({"terrain_shadertoy_ref", "--reference-study",
+                                     "swiss-alps", "--reference-diagnostic", "envelope"}));
+        },
+        "non-Mountains component diagnostic should fail");
+}
+
 void test_non_mountains_study_defaults() {
     using namespace cubey::projects::terrain_shadertoy_ref;
     const ParsedTerrainShadertoyRefArgs swiss =
@@ -242,6 +265,7 @@ int main() {
         test_defaults_and_forwarding();
         test_full_reference_configuration();
         test_non_mountains_study_defaults();
+        test_mountains_component_diagnostics();
         test_invalid_reference_options();
         test_reference_camera_yaw();
         std::cout << "terrain_shadertoy_ref tests passed\n";

@@ -39,6 +39,9 @@ enum class ReferenceDiagnostic : std::uint8_t {
     Final,
     Height,
     Slope,
+    Envelope,
+    Structure,
+    Uplift,
 };
 
 struct TerrainShadertoyRefConfig {
