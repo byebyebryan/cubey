@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -153,6 +154,7 @@ void test_reference_camera_yaw() {
         .right = {1.0F, 0.0F, 0.0F},
         .up = {0.0F, 1.0F, 0.0F},
         .forward = {0.0F, 0.0F, -1.0F},
+        .focus_distance = 10.0F,
     };
     const ReferenceCamera identity = rotate_reference_camera_yaw(camera, 360.0F);
     require(identity.position == camera.position && identity.right == camera.right &&
@@ -171,6 +173,19 @@ void test_reference_camera_yaw() {
                  "yaw should preserve right basis length");
     require_near(glm::dot(rotated.right, rotated.up), 0.0F, 0.00001F,
                  "yaw should preserve an orthogonal camera basis");
+
+    const ReferenceCamera orbit_identity = orbit_reference_camera(camera, 0.0F, 0.0F, 10.0F);
+    require(orbit_identity.position == camera.position && orbit_identity.right == camera.right &&
+                orbit_identity.up == camera.up && orbit_identity.forward == camera.forward,
+            "zero inspection orbit should retain the exact source camera");
+
+    const ReferenceCamera orbit =
+        orbit_reference_camera(camera, std::numbers::pi_v<float> * 0.5F, 0.0F, 20.0F);
+    const cubey::math::Vec3 target = camera.position + camera.forward * camera.focus_distance;
+    require_near(glm::length(target - orbit.position), 20.0F, 0.0001F,
+                 "inspection orbit should honor its requested distance");
+    require_near(glm::dot(glm::normalize(target - orbit.position), orbit.forward), 1.0F, 0.0001F,
+                 "inspection orbit should keep looking at the source target");
 }
 
 } // namespace

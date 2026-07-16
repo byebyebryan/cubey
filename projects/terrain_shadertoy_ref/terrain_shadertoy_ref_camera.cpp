@@ -32,6 +32,32 @@ ReferenceCamera rotate_reference_camera_yaw(const ReferenceCamera& camera, float
         .right = rotate(camera.right),
         .up = rotate(camera.up),
         .forward = rotate(camera.forward),
+        .focus_distance = camera.focus_distance,
+    };
+}
+
+ReferenceCamera orbit_reference_camera(const ReferenceCamera& camera, float yaw_radians,
+                                       float pitch_radians, float distance) {
+    if (!std::isfinite(yaw_radians) || !std::isfinite(pitch_radians) || !std::isfinite(distance) ||
+        distance <= 0.0F || camera.focus_distance <= 0.0F) {
+        throw std::runtime_error("reference orbit values must be finite and positive");
+    }
+    if (yaw_radians == 0.0F && pitch_radians == 0.0F && distance == camera.focus_distance) {
+        return camera;
+    }
+
+    const cubey::math::Quat yaw = cubey::math::angle_axis_quat(yaw_radians, {0.0F, 1.0F, 0.0F});
+    const cubey::math::Vec3 yawed_right = glm::normalize(yaw * camera.right);
+    const cubey::math::Quat pitch = cubey::math::angle_axis_quat(pitch_radians, yawed_right);
+    const cubey::math::Quat rotation = pitch * yaw;
+    const cubey::math::Vec3 forward = glm::normalize(rotation * camera.forward);
+    const cubey::math::Vec3 target = camera.position + camera.forward * camera.focus_distance;
+    return {
+        .position = target - forward * distance,
+        .right = glm::normalize(rotation * camera.right),
+        .up = glm::normalize(rotation * camera.up),
+        .forward = forward,
+        .focus_distance = camera.focus_distance,
     };
 }
 

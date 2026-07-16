@@ -4,6 +4,7 @@
 #include <cubey/core/profiling.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/input/orbit_controller.h>
 #include <cubey/render/material.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
@@ -17,6 +18,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -135,6 +137,15 @@ class TerrainShadertoyRefApp {
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             destroy_swapchain_resources();
         };
+        callbacks.update = [this](cubey::host::WindowedAppContext& context,
+                                  const FrameTiming& timing) {
+            if (reference_config_.render != ReferenceRender::Mesh) {
+                return;
+            }
+            orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
+            mesh_renderer_.set_inspection_orbit(orbit_controller_.yaw(), orbit_controller_.pitch(),
+                                                orbit_controller_.distance());
+        };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
             record_windowed_frame(context, frame);
@@ -219,6 +230,12 @@ class TerrainShadertoyRefApp {
         if (reference_config_.render == ReferenceRender::Mesh) {
             mesh_renderer_.create_global_resources(device, gpu, reference_config_, reference_extent,
                                                    channel_texture());
+            const float focus_distance = mesh_renderer_.inspection_focus_distance();
+            orbit_controller_.set_distance_limits(std::max(focus_distance * 0.1F, 2.0F),
+                                                  std::max(focus_distance * 8.0F, 512.0F));
+            orbit_controller_.set_home_distance(focus_distance);
+            orbit_controller_.set_pitch_limits(-1.45F, 1.45F);
+            orbit_controller_.reset();
         }
     }
 
@@ -364,6 +381,7 @@ class TerrainShadertoyRefApp {
     std::optional<cubey::render::MaterialInstance> material_{};
     std::optional<cubey::render::GraphicsPipelineResource> pipeline_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
+    cubey::OrbitController orbit_controller_{};
     MountainsMeshRenderer mesh_renderer_{};
 };
 

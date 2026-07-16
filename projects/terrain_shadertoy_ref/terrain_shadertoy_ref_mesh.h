@@ -39,6 +39,9 @@ class MountainsMeshRenderer {
     void destroy_frame_resources();
     void destroy_global_resources();
 
+    [[nodiscard]] float inspection_focus_distance() const;
+    void set_inspection_orbit(float yaw_radians, float pitch_radians, float distance);
+
     void record(VkCommandBuffer command_buffer, const cubey::render::ColorTargetView& color_target,
                 cubey::render::FrameSlot frame_slot, bool present,
                 cubey::vulkan::GpuTimestampProfiler* profiler);

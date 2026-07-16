@@ -36,6 +36,11 @@ source camera basis around world up while retaining its position, pitch,
 elevation, and roll. They require final mesh rendering. Height and slope
 diagnostics render the baked field from above and require the mesh path.
 
+The windowed mesh path supports a lightweight inspection orbit around the
+source camera target. Left-drag rotates, the mouse wheel zooms, and `R` restores
+the exact configured reference view. Headless captures and the raymarch control
+remain fixed.
+
 Generate the fixed comparison pack with:
 
 ```sh

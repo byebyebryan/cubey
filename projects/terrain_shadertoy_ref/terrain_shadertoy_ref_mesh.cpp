@@ -270,8 +270,9 @@ class MountainsMeshRenderer::Impl {
                                  const cubey::render::Texture2D& channel_texture) {
         config_ = config;
         channel_texture_ = &channel_texture;
-        camera_ = rotate_reference_camera_yaw(
-            probe_camera(device, gpu, reference_extent), config_.yaw_offset_degrees);
+        source_camera_ = rotate_reference_camera_yaw(probe_camera(device, gpu, reference_extent),
+                                                     config_.yaw_offset_degrees);
+        camera_ = source_camera_;
         height_atlas_.emplace(device,
                               cubey::render::Texture2DConfig{
                                   .extent = {kHeightAtlasExtent, kHeightAtlasExtent},
@@ -462,6 +463,14 @@ class MountainsMeshRenderer::Impl {
         }
     }
 
+    [[nodiscard]] float inspection_focus_distance() const {
+        return source_camera_.focus_distance;
+    }
+
+    void set_inspection_orbit(float yaw_radians, float pitch_radians, float distance) {
+        camera_ = orbit_reference_camera(source_camera_, yaw_radians, pitch_radians, distance);
+    }
+
   private:
     [[nodiscard]] ReferenceCamera probe_camera(cubey::vulkan::Device& device,
                                                cubey::vulkan::GpuRuntime& gpu,
@@ -541,6 +550,7 @@ class MountainsMeshRenderer::Impl {
             .right = cubey::math::Vec3(values[1]),
             .up = cubey::math::Vec3(values[2]),
             .forward = cubey::math::Vec3(values[3]),
+            .focus_distance = values[3].w,
         };
     }
 
@@ -707,6 +717,7 @@ class MountainsMeshRenderer::Impl {
     }
 
     TerrainShadertoyRefConfig config_{};
+    ReferenceCamera source_camera_{};
     ReferenceCamera camera_{};
     const cubey::render::Texture2D* channel_texture_ = nullptr;
     std::optional<cubey::render::Texture2D> height_atlas_{};
@@ -742,6 +753,15 @@ void MountainsMeshRenderer::destroy_frame_resources() {
 
 void MountainsMeshRenderer::destroy_global_resources() {
     impl_->destroy_global_resources();
+}
+
+float MountainsMeshRenderer::inspection_focus_distance() const {
+    return impl_->inspection_focus_distance();
+}
+
+void MountainsMeshRenderer::set_inspection_orbit(float yaw_radians, float pitch_radians,
+                                                 float distance) {
+    impl_->set_inspection_orbit(yaw_radians, pitch_radians, distance);
 }
 
 void MountainsMeshRenderer::record(VkCommandBuffer command_buffer,

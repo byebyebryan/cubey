@@ -37,6 +37,6 @@ void main() {
     } else if (output_index == 2) {
         out_value = vec4(up, 0.0);
     } else {
-        out_value = vec4(forward, 0.0);
+        out_value = vec4(forward, length(camera_target - cameraPos));
     }
 }
