@@ -25,6 +25,8 @@ terrain_directional_backdrop_lane_name(TerrainDirectionalBackdropLane lane) noex
         return "expanded-shaped";
     case TerrainDirectionalBackdropLane::ExpandedRadial:
         return "expanded-radial";
+    case TerrainDirectionalBackdropLane::CachedRadial:
+        return "cached-radial";
     }
     return "placement";
 }
@@ -47,6 +49,9 @@ TerrainDirectionalBackdropLane terrain_directional_backdrop_lane_from_name(std::
     }
     if (name == "expanded-radial") {
         return TerrainDirectionalBackdropLane::ExpandedRadial;
+    }
+    if (name == "cached-radial") {
+        return TerrainDirectionalBackdropLane::CachedRadial;
     }
     throw std::runtime_error("unknown terrain directional backdrop lane: " + std::string(name));
 }
@@ -78,6 +83,15 @@ expanded_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan
     TerrainRadialReliefParameters parameters;
     parameters.focus_xz = placement.source_focus_xz;
     return parameters;
+}
+
+std::uint32_t cached_radial_backdrop_render_stride(
+    std::optional<std::uint32_t> requested_stride) {
+    const std::uint32_t stride = requested_stride.value_or(3U);
+    if (stride != 2U && stride != 3U) {
+        throw std::runtime_error("cached radial render stride must be 2 or 3");
+    }
+    return stride;
 }
 
 TerrainBackdropStagePlan make_directional_backdrop_stage_plan(

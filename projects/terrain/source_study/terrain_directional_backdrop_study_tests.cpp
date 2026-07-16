@@ -16,6 +16,16 @@ void require(bool condition, std::string_view message) {
     }
 }
 
+template <typename Function>
+void require_throws(Function&& function, std::string_view message) {
+    try {
+        function();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(std::string(message));
+}
+
 class DirectionalStageSource final : public cubey::projects::terrain::TerrainHeightSource {
   public:
     [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
@@ -39,11 +49,25 @@ void test_lane_names_round_trip() {
              TerrainDirectionalBackdropLane::Shaped,
              TerrainDirectionalBackdropLane::ExpandedShaped,
              TerrainDirectionalBackdropLane::ExpandedRadial,
+             TerrainDirectionalBackdropLane::CachedRadial,
          }) {
         require(terrain_directional_backdrop_lane_from_name(
                     terrain_directional_backdrop_lane_name(lane)) == lane,
                 "directional backdrop lane names should round trip");
     }
+}
+
+void test_cached_radial_stride_contract() {
+    using namespace cubey::projects::terrain;
+    require(cached_radial_backdrop_render_stride() == 3U,
+            "cached radial should default to production-style stride three");
+    require(cached_radial_backdrop_render_stride(2U) == 2U &&
+                cached_radial_backdrop_render_stride(3U) == 3U,
+            "cached radial should accept the fixed comparison strides");
+    require_throws([] { (void)cached_radial_backdrop_render_stride(1U); },
+                   "cached radial should reserve stride one for the expanded control");
+    require_throws([] { (void)cached_radial_backdrop_render_stride(4U); },
+                   "cached radial should reject unreviewed coarser strides");
 }
 
 void test_stage_is_grounded_and_camera_clear() {
@@ -109,6 +133,7 @@ void test_expanded_stage_uses_far_field_scale() {
 int main() {
     try {
         test_lane_names_round_trip();
+        test_cached_radial_stride_contract();
         test_stage_is_grounded_and_camera_clear();
         test_expanded_stage_uses_far_field_scale();
         std::cout << "terrain_directional_backdrop_study_tests: ok\n";

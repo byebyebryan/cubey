@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -41,7 +42,8 @@ apply_orbit_overrides(cubey::projects::terrain::TerrainBackdropStagePlan plan,
 }
 
 int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
-              float expanded_focus_height_m, std::optional<float> expanded_orbit_radius_m) {
+              float expanded_focus_height_m, std::optional<float> expanded_orbit_radius_m,
+              std::optional<std::uint32_t> radial_render_stride) {
     using namespace cubey::projects::terrain;
     if (!config.terrain.render_path.empty() && config.terrain.render_path != "backdrop") {
         throw std::runtime_error("directional backdrop study supports only the backdrop path");
@@ -84,7 +86,8 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
     const TerrainDirectionalPlacementPlan placement =
         plan_terrain_directional_placement(base_source, directional_backdrop_placement_request());
     const bool expanded = lane == TerrainDirectionalBackdropLane::ExpandedShaped ||
-                          lane == TerrainDirectionalBackdropLane::ExpandedRadial;
+                          lane == TerrainDirectionalBackdropLane::ExpandedRadial ||
+                          lane == TerrainDirectionalBackdropLane::CachedRadial;
 
     TerrainAppOptions options{
         .backdrop_source = &base_source,
@@ -113,7 +116,12 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
         options.backdrop_stage_plan = apply_orbit_overrides(
             make_directional_backdrop_stage_plan(base_source, placement, runtime.vertical_scale),
             runtime);
-    } else if (lane == TerrainDirectionalBackdropLane::ExpandedRadial) {
+    } else if (lane == TerrainDirectionalBackdropLane::ExpandedRadial ||
+               lane == TerrainDirectionalBackdropLane::CachedRadial) {
+        if (lane == TerrainDirectionalBackdropLane::CachedRadial) {
+            options.backdrop_render_stride =
+                cached_radial_backdrop_render_stride(radial_render_stride);
+        }
         radial_source = std::make_unique<TerrainRadialReliefSource>(
             base_source, expanded_radial_backdrop_relief_parameters(placement));
         options.backdrop_source = radial_source.get();
@@ -160,6 +168,7 @@ int main(int argc, char** argv) {
     TerrainDirectionalBackdropLane lane = TerrainDirectionalBackdropLane::Placement;
     float expanded_focus_height_m = 500.0F;
     std::optional<float> expanded_orbit_radius_m;
+    std::optional<std::uint32_t> radial_render_stride;
     std::vector<char*> forwarded;
     forwarded.reserve(static_cast<std::size_t>(argc));
     forwarded.push_back(argv[0]);
@@ -199,9 +208,39 @@ int main(int argc, char** argv) {
                     "terrain_directional_backdrop_study: orbit radius must be 100..1000 m\n");
                 return 1;
             }
+        } else if (option == "--radial-render-stride") {
+            if (index + 1 >= argc) {
+                std::fprintf(stderr,
+                             "terrain_directional_backdrop_study: missing radial render stride\n");
+                return 1;
+            }
+            const unsigned long parsed_stride = std::stoul(argv[++index]);
+            if (parsed_stride > std::numeric_limits<std::uint32_t>::max()) {
+                std::fprintf(stderr,
+                             "terrain_directional_backdrop_study: radial render stride is too "
+                             "large\n");
+                return 1;
+            }
+            radial_render_stride = static_cast<std::uint32_t>(parsed_stride);
         } else {
             forwarded.push_back(argv[index]);
         }
+    }
+    if (radial_render_stride.has_value() &&
+        lane != TerrainDirectionalBackdropLane::CachedRadial) {
+        std::fprintf(stderr,
+                     "terrain_directional_backdrop_study: radial render stride requires "
+                     "cached-radial lane\n");
+        return 1;
+    }
+    try {
+        if (lane == TerrainDirectionalBackdropLane::CachedRadial) {
+            (void)cubey::projects::terrain::cached_radial_backdrop_render_stride(
+                radial_render_stride);
+        }
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "terrain_directional_backdrop_study: %s\n", error.what());
+        return 1;
     }
     return cubey::run_cli_app(
         static_cast<int>(forwarded.size()), forwarded.data(),
@@ -209,8 +248,9 @@ int main(int argc, char** argv) {
             .app_name = "terrain_directional_backdrop_study",
             .default_title = "cubey terrain directional backdrop study",
         },
-        [lane, expanded_focus_height_m, expanded_orbit_radius_m](cubey::RunConfig config) {
+        [lane, expanded_focus_height_m, expanded_orbit_radius_m,
+         radial_render_stride](cubey::RunConfig config) {
             return run_study(std::move(config), lane, expanded_focus_height_m,
-                             expanded_orbit_radius_m);
+                             expanded_orbit_radius_m, radial_render_stride);
         });
 }
