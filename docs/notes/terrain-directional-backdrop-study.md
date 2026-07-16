@@ -147,3 +147,33 @@ viewpoint and transition scale rather than by directional composition itself:
 This follow-up does not overturn the completed verdict by implementation alone.
 It requires a new expanded-domain source/gate report and surface-first visual
 pack before either the composition or its cost can be judged.
+
+### Expanded Review
+
+The complete follow-up pack is under
+`outputs/terrain/directional-backdrop-expanded-v1/`. It includes `1024 x 1024`
+base, floor, shaped-height, slope, placement, and gate fields over a
+`65.536 km` square for all three hierarchy seeds and the v2.1 control. Surface
+orbits isolate seed, `100/500/1000 m` focus height, and `100/400/1000 m` orbit
+radius, with clay retained only as a silhouette check.
+
+The expanded scale materially improves scene composition. Mountains remain in
+the far field, the foreground no longer reads as the bottom of a tight valley,
+and the full orbit-radius range remains continuous without a center or sector
+seam. Changing focus altitude within `100-1000 m` mainly changes clearance and
+atmosphere; it has much less visual effect than orbit distance and terrain
+transition scale. A `500 m` default remains a reasonable midpoint for this
+study.
+
+The source maps prevent interpreting that improvement as a solved terrain
+model. Broad and detail gates are non-circular but remain clearly visible as a
+warped directional band. Shaped slope concentrates at that band, and several
+surface headings still expose a smooth uplift shelf before source mountains
+resume. Other headings are intentionally open but can become nearly empty.
+The broader transition hides the artifact better; it does not remove the
+authored composition boundary.
+
+At 2560 x 1440, the full-stride terrain pass measures `4.451 ms` p95 over `146`
+post-warmup samples and fails the `<1 ms` production gate. Retain
+`expanded-shaped` as a useful study/debug composition and do not promote it to
+the cached backdrop default.

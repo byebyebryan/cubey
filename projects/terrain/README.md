@@ -94,6 +94,7 @@ projects/terrain/capture_cached_backdrop_review.sh
 projects/terrain/capture_source_model_study.sh
 projects/terrain/capture_mountains_source_decision.sh
 projects/terrain/capture_directional_backdrop_study.sh
+projects/terrain/capture_directional_backdrop_expanded.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -132,6 +133,13 @@ Its multi-seed pack is under
 `outputs/terrain/directional-backdrop-study-v1/`; the completed decision in
 [`docs/notes/terrain-directional-backdrop-study.md`](../../docs/notes/terrain-directional-backdrop-study.md)
 rejects both directional lanes and leaves production defaults unchanged.
+
+The opt-in `expanded-shaped` follow-up extends only the study product to
+`32.768 km`, raises its focus `100-1000 m`, and allows a `100-1000 m` orbit.
+Its surface-first and expanded-domain source pack is under
+`outputs/terrain/directional-backdrop-expanded-v1/`. The pack improves
+far-field composition but still exposes a directional shaping band and misses
+the production GPU budget, so it remains diagnostic-only.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
