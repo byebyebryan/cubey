@@ -72,6 +72,7 @@ struct Candidate {
     TerrainDirectionalPlacementPlan result;
     result.source_focus_xz = focus;
     result.sector_count = request.sector_count;
+    result.sectors.resize(request.sector_count);
     result.center_height_m = sample_height(source, focus, 32.0F, request.vertical_scale);
 
     float local_minimum = result.center_height_m;
@@ -118,6 +119,18 @@ struct Candidate {
         const float prominence = peak - near;
         const bool mountain = prominence >= request.mountain_prominence_m;
         const bool open = std::max(middle, peak) - near <= request.open_prominence_m;
+        const bool gradual = mountain && middle >= near - 150.0F && peak >= middle - 150.0F;
+        result.sectors[sector] = {
+            .yaw_radians = yaw,
+            .near_height_m = near,
+            .middle_height_m = middle,
+            .far_height_m = far,
+            .remote_height_m = remote,
+            .prominence_m = prominence,
+            .mountain = mountain,
+            .open = open,
+            .gradual_rise = gradual,
+        };
         mountain_sectors[sector] = mountain;
         open_sectors[sector] = open;
         if (mountain) {
@@ -126,7 +139,7 @@ struct Candidate {
             const float weight = std::max(prominence, 0.0F);
             direction_x += direction.x * weight;
             direction_z += direction.y * weight;
-            if (middle >= near - 150.0F && peak >= middle - 150.0F) {
+            if (gradual) {
                 ++result.gradual_rise_sector_count;
             }
         }

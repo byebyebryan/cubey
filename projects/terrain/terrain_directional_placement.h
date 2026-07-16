@@ -3,6 +3,7 @@
 #include "terrain_height_source.h"
 
 #include <cstdint>
+#include <vector>
 
 namespace cubey::projects::terrain {
 
@@ -24,6 +25,18 @@ struct TerrainDirectionalPlacementRequest {
     float vertical_scale = 1.0F;
 };
 
+struct TerrainDirectionalSectorSample {
+    float yaw_radians = 0.0F;
+    float near_height_m = 0.0F;
+    float middle_height_m = 0.0F;
+    float far_height_m = 0.0F;
+    float remote_height_m = 0.0F;
+    float prominence_m = 0.0F;
+    bool mountain = false;
+    bool open = false;
+    bool gradual_rise = false;
+};
+
 struct TerrainDirectionalPlacementPlan {
     cubey::math::Vec2 source_focus_xz{0.0F, 0.0F};
     float mountain_yaw_radians = 0.0F;
@@ -42,6 +55,7 @@ struct TerrainDirectionalPlacementPlan {
     std::uint32_t full_candidate_count = 0U;
     bool contract_satisfied = false;
     float score = 0.0F;
+    std::vector<TerrainDirectionalSectorSample> sectors{};
 };
 
 void validate_terrain_directional_placement_request(

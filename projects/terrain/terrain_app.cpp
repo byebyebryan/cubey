@@ -364,6 +364,7 @@ class TerrainApp {
                                  : TerrainQualityTileMeshData{}),
           clipmap_config_(terrain_clipmap_config(runtime_config_)),
           scene_summary_(terrain_scene_summary(source_parameters_, clipmap_config_)),
+          backdrop_stage_plan_(options.backdrop_stage_plan),
           orbit_controller_(cubey::OrbitControllerConfig{
               .distance = clipmap_config_.outer_half_extent *
                           terrain_camera_frame(runtime_config_.camera).distance_scale,
