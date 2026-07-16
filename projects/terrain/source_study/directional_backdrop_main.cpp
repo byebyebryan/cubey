@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -40,7 +41,8 @@ using cubey::projects::terrain::TerrainDirectionalBackdropLane;
 }
 
 int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
-              float expanded_focus_height_m) {
+              float expanded_focus_height_m,
+              std::optional<float> expanded_orbit_radius_m) {
     using namespace cubey::projects::terrain;
     if (!config.terrain.render_path.empty() && config.terrain.render_path != "backdrop") {
         throw std::runtime_error("directional backdrop study supports only the backdrop path");
@@ -126,7 +128,7 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
             stage_parameters = {
                 .focus_height_m = expanded_focus_height_m,
                 .orbit_min_radius_m = 100.0F,
-                .orbit_default_radius_m = 400.0F,
+                .orbit_default_radius_m = expanded_orbit_radius_m.value_or(400.0F),
                 .orbit_max_radius_m = 1'000.0F,
             };
         }
@@ -143,6 +145,7 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
 int main(int argc, char** argv) {
     TerrainDirectionalBackdropLane lane = TerrainDirectionalBackdropLane::Placement;
     float expanded_focus_height_m = 500.0F;
+    std::optional<float> expanded_orbit_radius_m;
     std::vector<char*> forwarded;
     forwarded.reserve(static_cast<std::size_t>(argc));
     forwarded.push_back(argv[0]);
@@ -168,6 +171,20 @@ int main(int argc, char** argv) {
                              "terrain_directional_backdrop_study: focus height must be 100..1000 m\n");
                 return 1;
             }
+        } else if (option == "--directional-orbit-radius") {
+            if (index + 1 >= argc) {
+                std::fprintf(stderr,
+                             "terrain_directional_backdrop_study: missing orbit radius\n");
+                return 1;
+            }
+            expanded_orbit_radius_m = std::stof(argv[++index]);
+            if (!std::isfinite(expanded_orbit_radius_m.value()) ||
+                expanded_orbit_radius_m.value() < 100.0F ||
+                expanded_orbit_radius_m.value() > 1'000.0F) {
+                std::fprintf(stderr,
+                             "terrain_directional_backdrop_study: orbit radius must be 100..1000 m\n");
+                return 1;
+            }
         } else {
             forwarded.push_back(argv[index]);
         }
@@ -178,7 +195,9 @@ int main(int argc, char** argv) {
             .app_name = "terrain_directional_backdrop_study",
             .default_title = "cubey terrain directional backdrop study",
         },
-        [lane, expanded_focus_height_m](cubey::RunConfig config) {
-            return run_study(std::move(config), lane, expanded_focus_height_m);
+        [lane, expanded_focus_height_m,
+         expanded_orbit_radius_m](cubey::RunConfig config) {
+            return run_study(std::move(config), lane, expanded_focus_height_m,
+                             expanded_orbit_radius_m);
         });
 }

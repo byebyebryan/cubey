@@ -58,8 +58,9 @@ capture_orbit() {
     --width 1920 --height 1080 --output "${video}" \
     --terrain-recipe "${recipe}" --terrain-seed "${seed}" \
     --directional-lane expanded-shaped --directional-focus-height "${focus_height}" \
+    --directional-orbit-radius "${radius}" \
     --terrain-camera-preset backdrop-stage --terrain-presentation backdrop \
-    --terrain-backdrop-orbit-radius "${radius}" --terrain-backdrop-elevation 8 \
+    --terrain-backdrop-elevation 8 \
     --sun-elevation 30 --sun-azimuth -55 --debug-view "${view}"
   for index in "${!frames[@]}"; do
     ffmpeg -hide_banner -loglevel error -i "${video}" \
@@ -138,8 +139,9 @@ profile_video="${profile_prefix}.mp4"
   --width 2560 --height 1440 --output "${profile_video}" \
   --terrain-recipe "${hierarchy_recipe}" --terrain-seed 9012 \
   --directional-lane expanded-shaped --directional-focus-height 500 \
+  --directional-orbit-radius 400 \
   --terrain-camera-preset backdrop-stage --terrain-presentation backdrop \
-  --terrain-backdrop-orbit-radius 400 --terrain-backdrop-elevation 8 \
+  --terrain-backdrop-elevation 8 \
   --sun-elevation 30 --sun-azimuth -55 --debug-view surface \
   --profile-output "${profile_prefix}" --profile-warmup-frames 30
 rm "${profile_video}"
