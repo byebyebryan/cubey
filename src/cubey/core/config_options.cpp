@@ -114,6 +114,8 @@ constexpr std::array<std::string_view, 3> kTerrainBackdropMeshDensities{"low", "
 constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"tile", "layered"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
+constexpr std::array<std::string_view, 2> kTerrainBackdropProfiles{"radial-v1", "hard-cut-v1"};
+constexpr std::array<std::string_view, 2> kTerrainBackdropCenters{"continuous", "consumer-owned"};
 constexpr std::array<std::string_view, 2> kTerrainBackdropModes{"detached", "grounded"};
 constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
                                                                       "terrain-engine-ref"};
@@ -160,7 +162,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 282> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -532,6 +534,14 @@ constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
            "--terrain-camera-preset", "Camera Preset", "Terrain",
            "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainCameraPresets)),
+    option(RunConfigOptionId::TerrainBackdropProfile, "terrain.backdrop_profile",
+           "--terrain-backdrop-profile", "Backdrop Profile", "Terrain/Backdrop Stage",
+           "Cached terrain backdrop product profile.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kTerrainBackdropProfiles)),
+    option(RunConfigOptionId::TerrainBackdropCenter, "terrain.backdrop_center",
+           "--terrain-backdrop-center", "Backdrop Center", "Terrain/Backdrop Stage",
+           "Continuous terrain center or consumer-owned foreground.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kTerrainBackdropCenters)),
     option(RunConfigOptionId::TerrainBackdropMode, "terrain.backdrop_mode",
            "--terrain-backdrop-mode", "Backdrop Mode", "Terrain/Backdrop Stage",
            "Detached product stage or grounded placement diagnostic.", ConfigOptionType::Enum,
@@ -543,7 +553,7 @@ constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
     option(RunConfigOptionId::TerrainBackdropOrbitRadius, "terrain.backdrop_orbit_radius_m",
            "--terrain-backdrop-orbit-radius", "Orbit Radius", "Terrain/Backdrop Stage",
            "Optional initial backdrop orbit radius in meters.", ConfigOptionType::Float,
-           bounded_range(50.0, 250.0)),
+           bounded_range(50.0, 1000.0)),
     option(RunConfigOptionId::TerrainBackdropElevation, "terrain.backdrop_elevation_degrees",
            "--terrain-backdrop-elevation", "Orbit Elevation", "Terrain/Backdrop Stage",
            "Optional initial backdrop orbit elevation in degrees.", ConfigOptionType::Float,
@@ -1576,6 +1586,14 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainCameraPreset:
         return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.camera_preset);
+    case RunConfigOptionId::TerrainBackdropProfile:
+        return config.terrain.backdrop_profile.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.backdrop_profile);
+    case RunConfigOptionId::TerrainBackdropCenter:
+        return config.terrain.backdrop_center.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.backdrop_center);
     case RunConfigOptionId::TerrainBackdropMode:
         return config.terrain.backdrop_mode.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.backdrop_mode);
@@ -2163,6 +2181,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<float>("valleys", options.valleys);
     adapter.writeField<std::string>("recipe", options.recipe);
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
+    adapter.writeField<std::string>("backdrop_profile", options.backdrop_profile);
+    adapter.writeField<std::string>("backdrop_center", options.backdrop_center);
     adapter.writeField<std::string>("presentation", options.presentation);
     adapter.writeField<std::string>("preview_runtime", options.preview_runtime);
     adapter.writeField<std::string>("preview_color", options.preview_color);
@@ -2189,6 +2209,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<float>("valleys", options.valleys);
     adapter.readField<std::string>("recipe", options.recipe);
     adapter.readField<std::string>("camera_preset", options.camera_preset);
+    adapter.readField<std::string>("backdrop_profile", options.backdrop_profile);
+    adapter.readField<std::string>("backdrop_center", options.backdrop_center);
     adapter.readField<std::string>("presentation", options.presentation);
     adapter.readField<std::string>("preview_runtime", options.preview_runtime);
     adapter.readField<std::string>("preview_color", options.preview_color);
@@ -2944,6 +2966,12 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainCameraPreset:
         config.terrain.camera_preset = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainBackdropProfile:
+        config.terrain.backdrop_profile = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainBackdropCenter:
+        config.terrain.backdrop_center = std::string(value);
         break;
     case RunConfigOptionId::TerrainBackdropMode:
         config.terrain.backdrop_mode = std::string(value);

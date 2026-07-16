@@ -327,6 +327,8 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--planet-camera-mode",
         "--terrain-recipe",
         "--terrain-camera-preset",
+        "--terrain-backdrop-profile",
+        "--terrain-backdrop-center",
         "--terrain-backdrop-mode",
         "--terrain-backdrop-azimuth",
         "--terrain-backdrop-orbit-radius",
@@ -448,6 +450,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.cell_size",
         "terrain.recipe",
         "terrain.camera_preset",
+        "terrain.backdrop_profile",
+        "terrain.backdrop_center",
         "terrain.backdrop_mode",
         "terrain.backdrop_azimuth_degrees",
         "terrain.backdrop_orbit_radius_m",
@@ -630,6 +634,8 @@ void test_run_config_loads_json_config_file() {
     "weathering_strength": 0.65,
     "recipe": "temperate-mountain-range-stress",
     "camera_preset": "profile",
+    "backdrop_profile": "radial-v1",
+    "backdrop_center": "continuous",
     "backdrop_mode": "grounded",
     "backdrop_azimuth_degrees": -90.0,
     "backdrop_orbit_radius_m": 125.0,
@@ -748,7 +754,9 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain recipe");
     require(config.terrain.camera_preset == "profile",
             "config file should set terrain camera preset");
-    require(config.terrain.backdrop_mode == "grounded" &&
+    require(config.terrain.backdrop_profile == "radial-v1" &&
+                config.terrain.backdrop_center == "continuous" &&
+                config.terrain.backdrop_mode == "grounded" &&
                 config.terrain.backdrop_azimuth_degrees == -90.0F &&
                 config.terrain.backdrop_orbit_radius_m == 125.0F &&
                 config.terrain.backdrop_elevation_degrees == 24.0F &&
@@ -1806,6 +1814,10 @@ void test_run_config_parses_terrain_controls() {
     std::string recipe_value = "temperate-mountain-range-stress";
     std::string camera_flag = "--terrain-camera-preset";
     std::string camera_value = "surface";
+    std::string backdrop_profile_flag = "--terrain-backdrop-profile";
+    std::string backdrop_profile_value = "hard-cut-v1";
+    std::string backdrop_center_flag = "--terrain-backdrop-center";
+    std::string backdrop_center_value = "consumer-owned";
     std::string backdrop_mode_flag = "--terrain-backdrop-mode";
     std::string backdrop_mode_value = "grounded";
     std::string backdrop_azimuth_flag = "--terrain-backdrop-azimuth";
@@ -1827,7 +1839,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 56> argv{program.data(),
+    std::array<char*, 60> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1862,6 +1874,10 @@ void test_run_config_parses_terrain_controls() {
                                recipe_value.data(),
                                camera_flag.data(),
                                camera_value.data(),
+                               backdrop_profile_flag.data(),
+                               backdrop_profile_value.data(),
+                               backdrop_center_flag.data(),
+                               backdrop_center_value.data(),
                                backdrop_mode_flag.data(),
                                backdrop_mode_value.data(),
                                backdrop_azimuth_flag.data(),
@@ -1905,7 +1921,9 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain recipe");
     require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
-    require(config.terrain.backdrop_mode == "grounded" &&
+    require(config.terrain.backdrop_profile == "hard-cut-v1" &&
+                config.terrain.backdrop_center == "consumer-owned" &&
+                config.terrain.backdrop_mode == "grounded" &&
                 config.terrain.backdrop_azimuth_degrees == -90.0F &&
                 config.terrain.backdrop_orbit_radius_m == 125.0F &&
                 config.terrain.backdrop_elevation_degrees == 24.0F &&

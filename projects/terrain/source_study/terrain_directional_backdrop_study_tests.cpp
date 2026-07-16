@@ -89,6 +89,15 @@ void test_cached_radial_stride_contract() {
                    "cached radial should reserve stride one for the expanded control");
     require_throws([] { (void)cached_radial_backdrop_render_stride(4U); },
                    "cached radial should reject unreviewed coarser strides");
+
+    constexpr TerrainRadialBackdropProfile profile = terrain_radial_backdrop_profile();
+    require(profile.outer_radius_m == 32'768.0F &&
+                profile.visible_inner_radius_m == 6'000.0F && profile.render_stride == 3U &&
+                profile.stage.focus_height_m == 500.0F &&
+                profile.stage.orbit_min_radius_m == 100.0F &&
+                profile.stage.orbit_default_radius_m == 400.0F &&
+                profile.stage.orbit_max_radius_m == 1'000.0F,
+            "production radial profile should freeze the accepted study contract");
 }
 
 void test_stage_is_grounded_and_camera_clear() {

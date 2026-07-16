@@ -165,6 +165,69 @@ void test_backdrop_camera_defaults_to_the_cached_v2_1_product() {
             "explicit backdrop diagnostics should preserve legacy source and render controls");
 }
 
+void test_backdrop_product_profiles_parse_and_validate() {
+    using namespace cubey::projects::terrain;
+    require(terrain_backdrop_profile_from_name("radial-v1") == TerrainBackdropProfile::RadialV1 &&
+                terrain_backdrop_profile_name(TerrainBackdropProfile::HardCutV1) == "hard-cut-v1",
+            "terrain backdrop profile names should round trip");
+    require(terrain_backdrop_center_ownership_from_name("continuous") ==
+                    TerrainBackdropCenterOwnership::Continuous &&
+                terrain_backdrop_center_ownership_name(
+                    TerrainBackdropCenterOwnership::ConsumerOwned) == "consumer-owned",
+            "terrain backdrop center names should round trip");
+
+    cubey::RunConfig radial{};
+    radial.terrain.camera_preset = "backdrop";
+    radial.terrain.backdrop_profile = "radial-v1";
+    radial.terrain.backdrop_orbit_radius_m = 1'000.0F;
+    radial.terrain.backdrop_elevation_degrees = 30.0F;
+    const TerrainRuntimeConfig config = terrain_runtime_config_from_run_config(radial);
+    require(config.backdrop_profile == TerrainBackdropProfile::RadialV1 &&
+                config.backdrop_center == TerrainBackdropCenterOwnership::Continuous &&
+                config.backdrop_mode == TerrainBackdropStageMode::Grounded &&
+                config.backdrop_mesh_density == TerrainBackdropMeshDensity::High &&
+                config.backdrop_minimum_visible_distance_m == 6'000.0F &&
+                config.presentation == TerrainPresentationMode::Backdrop,
+            "radial-v1 should resolve its frozen product defaults");
+
+    radial.terrain.backdrop_center = "consumer-owned";
+    const TerrainRuntimeConfig consumer = terrain_runtime_config_from_run_config(radial);
+    require(consumer.backdrop_center == TerrainBackdropCenterOwnership::ConsumerOwned,
+            "radial-v1 should support a consumer-owned foreground");
+
+    bool rejected = false;
+    try {
+        cubey::RunConfig invalid = radial;
+        invalid.terrain.preset = "mountain";
+        (void)terrain_runtime_config_from_run_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "radial-v1 should reject generic terrain source controls");
+
+    rejected = false;
+    try {
+        cubey::RunConfig invalid{};
+        invalid.terrain.camera_preset = "backdrop";
+        invalid.terrain.backdrop_profile = "hard-cut-v1";
+        invalid.terrain.backdrop_center = "continuous";
+        (void)terrain_runtime_config_from_run_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "hard-cut-v1 should reject a continuous center");
+
+    rejected = false;
+    try {
+        cubey::RunConfig invalid{};
+        invalid.terrain.backdrop_profile = "radial-v1";
+        (void)terrain_runtime_config_from_run_config(invalid);
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "backdrop profiles should reject non-backdrop render paths");
+}
+
 void test_source_v2_extends_only_mountain_detail_band() {
     using namespace cubey::projects::terrain;
     const TerrainSourceParameters v1 = resolve_terrain_source_parameters({
@@ -828,6 +891,7 @@ int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
         test_backdrop_camera_defaults_to_the_cached_v2_1_product();
+        test_backdrop_product_profiles_parse_and_validate();
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();
         test_runtime_config_parses_source_v2_1();

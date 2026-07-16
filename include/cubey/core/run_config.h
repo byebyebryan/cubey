@@ -205,6 +205,8 @@ struct RunConfig {
         float vertical_scale = kRunConfigUnsetFloat;
         std::string recipe{};
         std::string camera_preset{};
+        std::string backdrop_profile{};
+        std::string backdrop_center{};
         std::string backdrop_mode{};
         float backdrop_azimuth_degrees = kRunConfigUnsetFloat;
         float backdrop_orbit_radius_m = kRunConfigUnsetFloat;

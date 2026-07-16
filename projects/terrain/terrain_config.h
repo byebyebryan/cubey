@@ -66,6 +66,16 @@ enum class TerrainRenderPath : std::uint8_t {
     Backdrop,
 };
 
+enum class TerrainBackdropProfile : std::uint8_t {
+    HardCutV1,
+    RadialV1,
+};
+
+enum class TerrainBackdropCenterOwnership : std::uint8_t {
+    ConsumerOwned,
+    Continuous,
+};
+
 enum class TerrainSurfaceDetail : std::uint8_t {
     Tile,
     Layered,
@@ -74,6 +84,9 @@ enum class TerrainSurfaceDetail : std::uint8_t {
 struct TerrainRuntimeConfig {
     TerrainSourceConfig source{};
     TerrainCameraPreset camera = TerrainCameraPreset::Oblique;
+    TerrainBackdropProfile backdrop_profile = TerrainBackdropProfile::HardCutV1;
+    TerrainBackdropCenterOwnership backdrop_center =
+        TerrainBackdropCenterOwnership::ConsumerOwned;
     TerrainBackdropStageMode backdrop_mode = TerrainBackdropStageMode::Detached;
     std::optional<float> backdrop_azimuth_radians{};
     std::optional<float> backdrop_orbit_radius_m{};
@@ -96,6 +109,12 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] bool terrain_camera_is_backdrop(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept;
+[[nodiscard]] std::string_view terrain_backdrop_profile_name(TerrainBackdropProfile profile) noexcept;
+[[nodiscard]] TerrainBackdropProfile terrain_backdrop_profile_from_name(std::string_view name);
+[[nodiscard]] std::string_view
+terrain_backdrop_center_ownership_name(TerrainBackdropCenterOwnership ownership) noexcept;
+[[nodiscard]] TerrainBackdropCenterOwnership
+terrain_backdrop_center_ownership_from_name(std::string_view name);
 [[nodiscard]] float terrain_camera_clearance_m(TerrainCameraPreset preset);
 [[nodiscard]] float terrain_camera_traversal_speed_mps(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] float terrain_camera_fovy_radians(TerrainCameraPreset preset) noexcept;

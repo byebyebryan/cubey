@@ -37,6 +37,7 @@ target_link_libraries(
 
 add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_camera.cpp
+    terrain_backdrop_profile.cpp
     terrain_backdrop_product.cpp
     terrain_backdrop_stage.cpp
     terrain_clipmap.cpp

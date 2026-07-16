@@ -1,6 +1,7 @@
 #pragma once
 
 #include "terrain_backdrop_stage.h"
+#include "terrain_backdrop_profile.h"
 #include "terrain_directional_placement.h"
 #include "terrain_directional_relief.h"
 #include "terrain_radial_relief.h"
@@ -20,15 +21,7 @@ enum class TerrainDirectionalBackdropLane : std::uint8_t {
     CachedRadial,
 };
 
-struct TerrainDirectionalBackdropStageParameters {
-    float focus_height_m = 20.0F;
-    float orbit_min_radius_m = 50.0F;
-    float orbit_default_radius_m = 100.0F;
-    float orbit_max_radius_m = 250.0F;
-    float orbit_min_elevation_radians = 0.0F;
-    float orbit_default_elevation_radians = 8.0F * 0.01745329251994329577F;
-    float orbit_max_elevation_radians = 30.0F * 0.01745329251994329577F;
-};
+using TerrainDirectionalBackdropStageParameters = TerrainFocusedBackdropStageParameters;
 
 [[nodiscard]] std::string_view
 terrain_directional_backdrop_lane_name(TerrainDirectionalBackdropLane lane) noexcept;
