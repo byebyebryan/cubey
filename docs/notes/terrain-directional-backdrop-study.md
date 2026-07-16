@@ -92,8 +92,8 @@ promotion remain separate work.
 The fixed pack is under
 `outputs/terrain/directional-backdrop-study-v1/`. It contains all four hierarchy
 lanes for seeds `0`, `9012`, and `12345`, six unrestricted yaw samples per lane,
-the v2.1 control, orbit-envelope checks, source/gate diagnostics, presentation
-captures, and GPU profiles.
+matching surface and clay matrices, the v2.1 control, orbit-envelope checks,
+source/gate diagnostics, presentation captures, and GPU profiles.
 
 The continuous-center topology passes its mechanical purpose. No center hole,
 sector seam, or detached ownership edge is visible, and the validation sphere

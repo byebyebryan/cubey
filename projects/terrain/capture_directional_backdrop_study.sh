@@ -31,7 +31,7 @@ azimuths=(0 60 120 180 240 300)
 frames=(0 15 30 45 60 75)
 
 rm -rf "${TMP_DIR}"
-mkdir -p "${TMP_DIR}/reports" "${TMP_DIR}/raw/orbits" \
+mkdir -p "${TMP_DIR}/reports" "${TMP_DIR}/raw/clay" "${TMP_DIR}/raw/surface" \
   "${TMP_DIR}/raw/envelope" "${TMP_DIR}/raw/presentation" "${TMP_DIR}/profile"
 
 common_args=(
@@ -54,14 +54,15 @@ capture_orbit() {
   local recipe="$1"
   local seed="$2"
   local lane="$3"
-  local lane_dir="${TMP_DIR}/raw/orbits/${recipe}/seed-${seed}/${lane}"
+  local view="$4"
+  local lane_dir="${TMP_DIR}/raw/${view}/${recipe}/seed-${seed}/${lane}"
   local video="${lane_dir}/orbit.mp4"
   mkdir -p "${lane_dir}"
 
   "${APP}" --headless --capture video --frames 90 --fps 30 \
     --width 1920 --height 1080 --output "${video}" \
     --terrain-recipe "${recipe}" --terrain-seed "${seed}" \
-    --directional-lane "${lane}" --debug-view clay "${common_args[@]}"
+    --directional-lane "${lane}" --debug-view "${view}" "${common_args[@]}"
 
   for index in "${!frames[@]}"; do
     ffmpeg -hide_banner -loglevel error -i "${video}" \
@@ -73,38 +74,46 @@ capture_orbit() {
 
 for seed in "${seeds[@]}"; do
   for lane in "${lanes[@]}"; do
-    capture_orbit "${hierarchy_recipe}" "${seed}" "${lane}"
+    for view in clay surface; do
+      capture_orbit "${hierarchy_recipe}" "${seed}" "${lane}" "${view}"
+    done
   done
 done
 for lane in "${control_lanes[@]}"; do
-  capture_orbit "${control_recipe}" 9012 "${lane}"
+  for view in clay surface; do
+    capture_orbit "${control_recipe}" 9012 "${lane}" "${view}"
+  done
 done
 
-for seed in "${seeds[@]}"; do
-  inputs=()
-  for lane in "${lanes[@]}"; do
+for view in clay surface; do
+  for seed in "${seeds[@]}"; do
+    inputs=()
+    for lane in "${lanes[@]}"; do
+      for azimuth in "${azimuths[@]}"; do
+        inputs+=(
+          -label "${lane} / ${azimuth} deg"
+          "${TMP_DIR}/raw/${view}/${hierarchy_recipe}/seed-${seed}/${lane}/azimuth-${azimuth}.png"
+        )
+      done
+    done
+    magick montage "${inputs[@]}" -tile 6x4 -geometry 480x270+8+24 \
+      "${TMP_DIR}/directional-backdrop-${view}-seed-${seed}.png"
+  done
+done
+
+for view in clay surface; do
+  control_inputs=()
+  for lane in "${control_lanes[@]}"; do
     for azimuth in "${azimuths[@]}"; do
-      inputs+=(
+      control_inputs+=(
         -label "${lane} / ${azimuth} deg"
-        "${TMP_DIR}/raw/orbits/${hierarchy_recipe}/seed-${seed}/${lane}/azimuth-${azimuth}.png"
+        "${TMP_DIR}/raw/${view}/${control_recipe}/seed-9012/${lane}/azimuth-${azimuth}.png"
       )
     done
   done
-  magick montage "${inputs[@]}" -tile 6x4 -geometry 480x270+8+24 \
-    "${TMP_DIR}/directional-backdrop-clay-seed-${seed}.png"
+  magick montage "${control_inputs[@]}" -tile 6x2 -geometry 480x270+8+24 \
+    "${TMP_DIR}/directional-backdrop-v2-1-${view}-control.png"
 done
-
-control_inputs=()
-for lane in "${control_lanes[@]}"; do
-  for azimuth in "${azimuths[@]}"; do
-    control_inputs+=(
-      -label "${lane} / ${azimuth} deg"
-      "${TMP_DIR}/raw/orbits/${control_recipe}/seed-9012/${lane}/azimuth-${azimuth}.png"
-    )
-  done
-done
-magick montage "${control_inputs[@]}" -tile 6x2 -geometry 480x270+8+24 \
-  "${TMP_DIR}/directional-backdrop-v2-1-control.png"
 
 for seed in "${seeds[@]}"; do
   report_dir="${TMP_DIR}/reports/${hierarchy_recipe}/seed-${seed}"
@@ -225,7 +234,12 @@ jq -n \
         {radius_m: 250, elevation_degrees: 30}
       ]
     },
-    render: {resolution: [1920, 1080], mesh_density: "high", render_stride: 1},
+    render: {
+      resolution: [1920, 1080],
+      views: ["surface", "clay"],
+      mesh_density: "high",
+      render_stride: 1
+    },
     performance: {
       resolution: [2560, 1440],
       warmup_frames: 30,
@@ -253,15 +267,18 @@ Review in this order:
 1. `directional-backdrop-diagnostics-seed-*.png`: the placement map marks
    measured mountain sectors red, open sectors blue, and the selected mountain
    direction yellow. The gate images must not expose a straight uplift front.
-2. `directional-backdrop-clay-seed-*.png`: rows are the hard cut, continuous
-   current focus, placement-only focus, and shaped terrain. Read across all six
-   yaw angles; no favorable heading is sufficient by itself.
-3. `directional-backdrop-v2-1-control.png`: checks whether the composition
-   depends specifically on hierarchy-v2 morphology.
-4. `directional-backdrop-orbit-envelope.png`: checks center continuity,
+2. `directional-backdrop-surface-seed-*.png`: rows are the hard cut, continuous
+   current focus, placement-only focus, and shaped terrain with final material,
+   lighting, and atmosphere. Read across all six yaw angles; no favorable
+   heading is sufficient by itself.
+3. `directional-backdrop-clay-seed-*.png`: use the same matrix only to isolate
+   silhouette and terrain occupancy when surface shading is ambiguous.
+4. `directional-backdrop-v2-1-{surface,clay}-control.png`: checks whether the
+   composition depends specifically on hierarchy-v2 morphology.
+5. `directional-backdrop-orbit-envelope.png`: checks center continuity,
    camera/terrain intersection, and whether the low side remains usable from
    the fixed 50/100/250 m orbit envelope.
-5. `directional-backdrop-presentation.png`: final material and atmosphere are
+6. `directional-backdrop-presentation.png`: final material and atmosphere are
    compatibility evidence only. Source silhouette and gate artifacts should be
    judged in clay and diagnostics first.
 
