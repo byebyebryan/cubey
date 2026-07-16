@@ -141,3 +141,17 @@ same source families across seeds without material camouflage. The final
 seed-`9012` presentation sheet tests compatibility with the common renderer;
 it is not source truth. `source-report.json` records calibration, field
 distributions, local relief, throughput, hashes, and stage plans.
+
+## Mountains-Guided Follow-Up
+
+The later `mountains-hierarchy-v2` recipe corrects the old Mountains study's
+scale mismatch by coupling a 7 km envelope, 3 km signed structure chain, and 14
+km sparse uplift inside the fixed domain. It is included in the current v2
+study registry; the original seven-recipe v1 evidence remains unchanged.
+
+The focused pack under `outputs/terrain/mountains-source-decision-v2/` confirms
+that the correction improves seed stability and useful relief relative to
+`mountains-signed`, but overcorrects into rounded range silhouettes. It does
+not displace v2.1 or qualify for production promotion. The implementation and
+verdict are recorded in
+[`terrain-mountains-guided-source-correction.md`](terrain-mountains-guided-source-correction.md).

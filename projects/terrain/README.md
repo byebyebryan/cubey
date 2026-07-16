@@ -89,6 +89,7 @@ projects/terrain/capture_midair_stage_review.sh
 projects/terrain/capture_quality_tile_review.sh
 projects/terrain/capture_cached_backdrop_review.sh
 projects/terrain/capture_source_model_study.sh
+projects/terrain/capture_mountains_source_decision.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -111,10 +112,15 @@ through the same cached-backdrop renderer without changing the production
 source. Its contract and provenance boundaries are recorded in
 [`docs/notes/terrain-source-model-study.md`](../../docs/notes/terrain-source-model-study.md).
 `projects/terrain_ref` remains frozen and is not linked by the study.
-The study pack writes fixed-range top-field, slope, clay, and common-material
-contact sheets under `outputs/terrain/source-model-study-v1/`. Run it headlessly
+The original study pack remains under `outputs/terrain/source-model-study-v1/`.
+The current script includes the corrected Mountains hierarchy candidate and
+writes fixed-range top-field, slope, clay, and common-material contact sheets
+under `outputs/terrain/source-model-study-v2/`. Run it headlessly
 with `projects/terrain/capture_source_model_study.sh`; top-level `REVIEW.txt`
 defines the review order and raw frames remain grouped by recipe and seed.
+The focused Mountains decision pack uses only v2.1, the old signed candidate,
+and the corrected hierarchy candidate, plus exact-reference scale diagnostics,
+under `outputs/terrain/mountains-source-decision-v2/`.
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.

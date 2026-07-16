@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP="${1:-./build/dev/projects/terrain/terrain_source_study}"
 REPORT="${2:-./build/dev/projects/terrain/terrain_source_study_report}"
-OUT_DIR="${3:-outputs/terrain/source-model-study-v1}"
+OUT_DIR="${3:-outputs/terrain/source-model-study-v2}"
 TMP_DIR="${OUT_DIR}.tmp.$$"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
@@ -26,6 +26,7 @@ recipes=(
   elevated-derivative
   swiss-derivative
   mountains-signed
+  mountains-hierarchy-v2
   rainforest-cliff
   mountain-peak-warp
 )
@@ -82,9 +83,9 @@ for recipe in "${recipes[@]}"; do
     )
   done
 done
-montage "${height_inputs[@]}" -tile 3x7 -geometry 384x384+8+24 \
+montage "${height_inputs[@]}" -tile 3x8 -geometry 384x384+8+24 \
   "${TMP_DIR}/terrain-source-study-height.png"
-montage "${slope_inputs[@]}" -tile 3x7 -geometry 384x384+8+24 \
+montage "${slope_inputs[@]}" -tile 3x8 -geometry 384x384+8+24 \
   "${TMP_DIR}/terrain-source-study-slope.png"
 
 for seed in "${seeds[@]}"; do
@@ -97,7 +98,7 @@ for seed in "${seeds[@]}"; do
       )
     done
   done
-  montage "${clay_inputs[@]}" -tile 3x7 -geometry 640x360+8+24 \
+  montage "${clay_inputs[@]}" -tile 3x8 -geometry 640x360+8+24 \
     "${TMP_DIR}/terrain-source-study-clay-seed-${seed}.png"
 done
 
@@ -110,11 +111,11 @@ for recipe in "${recipes[@]}"; do
     )
   done
 done
-montage "${presentation_inputs[@]}" -tile 3x7 -geometry 640x360+8+24 \
+montage "${presentation_inputs[@]}" -tile 3x8 -geometry 640x360+8+24 \
   "${TMP_DIR}/terrain-source-study-presentation-seed-9012.png"
 
 jq -n \
-  --arg schema "cubey.terrain.source-model-study-capture.v1" \
+  --arg schema "cubey.terrain.source-model-study-capture.v2" \
   --argjson recipes "$(printf '%s\n' "${recipes[@]}" | jq -R . | jq -s .)" \
   --argjson seeds "$(printf '%s\n' "${seeds[@]}" | jq -Rn '[inputs | tonumber]')" \
   --argjson azimuths "$(printf '%s\n' "${azimuths[@]}" | jq -Rn '[inputs | tonumber]')" \
@@ -146,7 +147,7 @@ jq -n \
   }' > "${TMP_DIR}/capture-metadata.json"
 
 printf '%s\n' \
-  'Terrain source model study v1' \
+  'Terrain source model study v2' \
   '' \
   'Review height first: broad buildup, range continuity, ridge body, summit hierarchy, and repetition.' \
   'Use slope to find thin fins, contour bands, grid directions, and high-frequency noise.' \
