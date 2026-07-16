@@ -1,0 +1,72 @@
+#include "terrain_directional_placement.h"
+
+#include <cmath>
+#include <iostream>
+#include <numbers>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+
+namespace {
+
+void require(bool condition, std::string_view message) {
+    if (!condition) {
+        throw std::runtime_error(std::string(message));
+    }
+}
+
+class DirectionalRiseSource final : public cubey::projects::terrain::TerrainHeightSource {
+  public:
+    [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
+    metadata() const noexcept override {
+        return {.id = "directional-rise-test", .seed = 7U, .relief_scale_m = 2'000.0F};
+    }
+
+    [[nodiscard]] float sample_height(
+        const cubey::projects::terrain::TerrainQuery& query) const override {
+        const float rise = std::max(query.world_xz.x - 2'000.0F, 0.0F) * 0.18F;
+        return std::min(rise, 1'800.0F);
+    }
+};
+
+void test_fixed_focus_finds_a_directional_mountain_arc() {
+    using namespace cubey::projects::terrain;
+    const TerrainDirectionalPlacementPlan plan = evaluate_terrain_directional_placement(
+        DirectionalRiseSource{}, TerrainDirectionalPlacementRequest{}, {0.0F, 0.0F});
+    require(plan.contract_satisfied,
+            "directional rise should satisfy the low-side placement contract");
+    require(plan.mountain_sector_count >= 4U && plan.mountain_sector_count <= 14U,
+            "directional rise should not become panoramic mountain coverage");
+    require(plan.largest_mountain_arc_sectors >= 3U && plan.largest_open_arc_sectors >= 4U,
+            "directional rise should retain both mountain and open arcs");
+    require(std::abs(plan.mountain_yaw_radians - std::numbers::pi_v<float> * 0.5F) < 0.35F,
+            "directional rise should face the positive x mountain side");
+}
+
+void test_search_is_deterministic() {
+    using namespace cubey::projects::terrain;
+    const DirectionalRiseSource source;
+    const TerrainDirectionalPlacementPlan first = plan_terrain_directional_placement(source);
+    const TerrainDirectionalPlacementPlan second = plan_terrain_directional_placement(source);
+    require(first.source_focus_xz.x == second.source_focus_xz.x &&
+                first.source_focus_xz.y == second.source_focus_xz.y &&
+                first.mountain_yaw_radians == second.mountain_yaw_radians &&
+                first.score == second.score,
+            "directional placement search should be deterministic");
+    require(first.coarse_candidate_count == 289U && first.full_candidate_count == 16U,
+            "directional placement should preserve its bounded search budget");
+}
+
+} // namespace
+
+int main() {
+    try {
+        test_fixed_focus_finds_a_directional_mountain_arc();
+        test_search_is_deterministic();
+        std::cout << "terrain_directional_placement_tests: ok\n";
+        return 0;
+    } catch (const std::exception& error) {
+        std::cerr << "terrain_directional_placement_tests: " << error.what() << '\n';
+        return 1;
+    }
+}
