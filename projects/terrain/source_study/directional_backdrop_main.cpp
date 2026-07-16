@@ -8,8 +8,10 @@
 #include <cubey/core/run_config.h>
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -37,7 +39,8 @@ using cubey::projects::terrain::TerrainDirectionalBackdropLane;
     return plan;
 }
 
-int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane) {
+int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
+              float expanded_focus_height_m) {
     using namespace cubey::projects::terrain;
     if (!config.terrain.render_path.empty() && config.terrain.render_path != "backdrop") {
         throw std::runtime_error("directional backdrop study supports only the backdrop path");
@@ -79,6 +82,7 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane) {
         plan_terrain_backdrop_stage(base_source, current_request);
     const TerrainDirectionalPlacementPlan placement =
         plan_terrain_directional_placement(base_source, directional_backdrop_placement_request());
+    const bool expanded = lane == TerrainDirectionalBackdropLane::ExpandedShaped;
 
     TerrainAppOptions options{
         .backdrop_source = &base_source,
@@ -87,6 +91,9 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane) {
                                     ? TerrainBackdropCenterMode::Cutout
                                     : TerrainBackdropCenterMode::Continuous,
     };
+    if (expanded) {
+        options.backdrop_outer_radius_m = expanded_directional_backdrop_outer_radius_m();
+    }
     std::unique_ptr<TerrainDirectionalReliefSource> shaped_source;
     if (lane == TerrainDirectionalBackdropLane::HardCut) {
         options.backdrop_stage_plan = current_stage;
@@ -105,15 +112,27 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane) {
                                                  runtime.vertical_scale),
             runtime);
     } else {
+        const TerrainDirectionalReliefParameters relief_parameters =
+            expanded ? expanded_directional_backdrop_relief_parameters(placement)
+                     : TerrainDirectionalReliefParameters{
+                           .focus_xz = placement.source_focus_xz,
+                           .mountain_yaw_radians = placement.mountain_yaw_radians,
+                       };
         shaped_source = std::make_unique<TerrainDirectionalReliefSource>(
-            base_source, TerrainDirectionalReliefParameters{
-                             .focus_xz = placement.source_focus_xz,
-                             .mountain_yaw_radians = placement.mountain_yaw_radians,
-                         });
+            base_source, relief_parameters);
         options.backdrop_source = shaped_source.get();
+        TerrainDirectionalBackdropStageParameters stage_parameters;
+        if (expanded) {
+            stage_parameters = {
+                .focus_height_m = expanded_focus_height_m,
+                .orbit_min_radius_m = 100.0F,
+                .orbit_default_radius_m = 400.0F,
+                .orbit_max_radius_m = 1'000.0F,
+            };
+        }
         options.backdrop_stage_plan = apply_orbit_overrides(
             make_directional_backdrop_stage_plan(*shaped_source, placement,
-                                                 runtime.vertical_scale),
+                                                 runtime.vertical_scale, stage_parameters),
             runtime);
     }
     return run_terrain_with_options(config, options);
@@ -123,6 +142,7 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane) {
 
 int main(int argc, char** argv) {
     TerrainDirectionalBackdropLane lane = TerrainDirectionalBackdropLane::Placement;
+    float expanded_focus_height_m = 500.0F;
     std::vector<char*> forwarded;
     forwarded.reserve(static_cast<std::size_t>(argc));
     forwarded.push_back(argv[0]);
@@ -135,6 +155,19 @@ int main(int argc, char** argv) {
             }
             lane = cubey::projects::terrain::terrain_directional_backdrop_lane_from_name(
                 argv[++index]);
+        } else if (option == "--directional-focus-height") {
+            if (index + 1 >= argc) {
+                std::fprintf(stderr,
+                             "terrain_directional_backdrop_study: missing focus height\n");
+                return 1;
+            }
+            expanded_focus_height_m = std::stof(argv[++index]);
+            if (!std::isfinite(expanded_focus_height_m) || expanded_focus_height_m < 100.0F ||
+                expanded_focus_height_m > 1'000.0F) {
+                std::fprintf(stderr,
+                             "terrain_directional_backdrop_study: focus height must be 100..1000 m\n");
+                return 1;
+            }
         } else {
             forwarded.push_back(argv[index]);
         }
@@ -145,5 +178,7 @@ int main(int argc, char** argv) {
             .app_name = "terrain_directional_backdrop_study",
             .default_title = "cubey terrain directional backdrop study",
         },
-        [lane](cubey::RunConfig config) { return run_study(std::move(config), lane); });
+        [lane, expanded_focus_height_m](cubey::RunConfig config) {
+            return run_study(std::move(config), lane, expanded_focus_height_m);
+        });
 }

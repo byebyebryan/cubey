@@ -21,6 +21,8 @@ terrain_directional_backdrop_lane_name(TerrainDirectionalBackdropLane lane) noex
         return "placement";
     case TerrainDirectionalBackdropLane::Shaped:
         return "shaped";
+    case TerrainDirectionalBackdropLane::ExpandedShaped:
+        return "expanded-shaped";
     }
     return "placement";
 }
@@ -38,6 +40,9 @@ TerrainDirectionalBackdropLane terrain_directional_backdrop_lane_from_name(std::
     if (name == "shaped") {
         return TerrainDirectionalBackdropLane::Shaped;
     }
+    if (name == "expanded-shaped") {
+        return TerrainDirectionalBackdropLane::ExpandedShaped;
+    }
     throw std::runtime_error("unknown terrain directional backdrop lane: " + std::string(name));
 }
 
@@ -45,28 +50,62 @@ TerrainDirectionalPlacementRequest directional_backdrop_placement_request() {
     return {};
 }
 
+TerrainDirectionalReliefParameters expanded_directional_backdrop_relief_parameters(
+    const TerrainDirectionalPlacementPlan& placement) {
+    return {
+        .focus_xz = placement.source_focus_xz,
+        .mountain_yaw_radians = placement.mountain_yaw_radians,
+        .floor_footprint_m = 8'000.0F,
+        .floor_relief_fraction = 0.08F,
+        .structure_footprint_m = 2'500.0F,
+        .broad_start_m = 6'000.0F,
+        .broad_full_m = 18'000.0F,
+        .detail_start_m = 10'000.0F,
+        .detail_full_m = 26'000.0F,
+        .warp_period_m = 28'000.0F,
+        .warp_amplitude_m = 2'500.0F,
+        .warp_octaves = 2U,
+    };
+}
+
 TerrainBackdropStagePlan make_directional_backdrop_stage_plan(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementPlan& placement,
-    float vertical_scale) {
-    if (!std::isfinite(vertical_scale) || vertical_scale <= 0.0F) {
-        throw std::runtime_error("invalid directional backdrop vertical scale");
+    float vertical_scale, TerrainDirectionalBackdropStageParameters parameters) {
+    const bool finite = std::isfinite(vertical_scale) && std::isfinite(parameters.focus_height_m) &&
+                        std::isfinite(parameters.orbit_min_radius_m) &&
+                        std::isfinite(parameters.orbit_default_radius_m) &&
+                        std::isfinite(parameters.orbit_max_radius_m) &&
+                        std::isfinite(parameters.orbit_min_elevation_radians) &&
+                        std::isfinite(parameters.orbit_default_elevation_radians) &&
+                        std::isfinite(parameters.orbit_max_elevation_radians);
+    if (!finite || vertical_scale <= 0.0F || parameters.focus_height_m <= 0.0F ||
+        parameters.orbit_min_radius_m <= 0.0F ||
+        parameters.orbit_default_radius_m < parameters.orbit_min_radius_m ||
+        parameters.orbit_max_radius_m < parameters.orbit_default_radius_m ||
+        parameters.orbit_min_elevation_radians < 0.0F ||
+        parameters.orbit_default_elevation_radians < parameters.orbit_min_elevation_radians ||
+        parameters.orbit_max_elevation_radians < parameters.orbit_default_elevation_radians ||
+        parameters.orbit_max_elevation_radians >= std::numbers::pi_v<float> * 0.5F) {
+        throw std::runtime_error("invalid directional backdrop stage parameters");
     }
     const TerrainDirectionalPlacementPlan displayed = evaluate_terrain_directional_placement(
         source, directional_backdrop_placement_request(), placement.source_focus_xz);
     const float center_height = source.sample_height(
                                     {.world_xz = placement.source_focus_xz, .footprint_m = 16.0F}) *
                                 vertical_scale;
-    constexpr float kSubjectCenterHeightM = 20.0F;
-    float target_height = center_height + kSubjectCenterHeightM;
+    float target_height = center_height + parameters.focus_height_m;
     float minimum_camera_clearance = std::numeric_limits<float>::infinity();
-    constexpr std::array<float, 3> kRadii{50.0F, 100.0F, 250.0F};
-    constexpr std::array<float, 3> kElevationsDegrees{0.0F, 8.0F, 30.0F};
+    const std::array<float, 3> radii{parameters.orbit_min_radius_m,
+                                     parameters.orbit_default_radius_m,
+                                     parameters.orbit_max_radius_m};
+    const std::array<float, 3> elevations{parameters.orbit_min_elevation_radians,
+                                          parameters.orbit_default_elevation_radians,
+                                          parameters.orbit_max_elevation_radians};
     for (std::uint32_t sector = 0U; sector < 24U; ++sector) {
         const float yaw = static_cast<float>(sector) * 2.0F * std::numbers::pi_v<float> / 24.0F;
         const cubey::math::Vec2 direction{std::sin(yaw), -std::cos(yaw)};
-        for (const float radius : kRadii) {
-            for (const float elevation_degrees : kElevationsDegrees) {
-                const float elevation = elevation_degrees * std::numbers::pi_v<float> / 180.0F;
+        for (const float radius : radii) {
+            for (const float elevation : elevations) {
                 const float horizontal_radius = std::cos(elevation) * radius;
                 const cubey::math::Vec2 camera_local = direction * -horizontal_radius;
                 const float camera_height = target_height + std::sin(elevation) * radius;
@@ -96,12 +135,12 @@ TerrainBackdropStagePlan make_directional_backdrop_stage_plan(
         .minimum_camera_clearance_m = minimum_camera_clearance,
         .showcase_yaw_radians = placement.mountain_yaw_radians,
         .stage_radius_m = 300.0F,
-        .orbit_min_radius_m = 50.0F,
-        .orbit_default_radius_m = 100.0F,
-        .orbit_max_radius_m = 250.0F,
-        .orbit_min_elevation_radians = 0.0F,
-        .orbit_default_elevation_radians = 8.0F * std::numbers::pi_v<float> / 180.0F,
-        .orbit_max_elevation_radians = 30.0F * std::numbers::pi_v<float> / 180.0F,
+        .orbit_min_radius_m = parameters.orbit_min_radius_m,
+        .orbit_default_radius_m = parameters.orbit_default_radius_m,
+        .orbit_max_radius_m = parameters.orbit_max_radius_m,
+        .orbit_min_elevation_radians = parameters.orbit_min_elevation_radians,
+        .orbit_default_elevation_radians = parameters.orbit_default_elevation_radians,
+        .orbit_max_elevation_radians = parameters.orbit_max_elevation_radians,
         .panorama_sector_count = displayed.sector_count,
         .lower_frame_clear_sector_count = displayed.open_sector_count,
         .relief_sector_count = displayed.mountain_sector_count,

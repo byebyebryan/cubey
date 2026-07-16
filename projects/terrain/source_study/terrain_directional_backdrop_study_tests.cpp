@@ -39,6 +39,7 @@ void test_lane_names_round_trip() {
              TerrainDirectionalBackdropLane::ContinuousCurrent,
              TerrainDirectionalBackdropLane::Placement,
              TerrainDirectionalBackdropLane::Shaped,
+             TerrainDirectionalBackdropLane::ExpandedShaped,
          }) {
         require(terrain_directional_backdrop_lane_from_name(
                     terrain_directional_backdrop_lane_name(lane)) == lane,
@@ -66,12 +67,43 @@ void test_stage_is_grounded_and_camera_clear() {
             "directional stage should face the measured mountain arc");
 }
 
+void test_expanded_stage_uses_far_field_scale() {
+    using namespace cubey::projects::terrain;
+    const DirectionalStageSource source;
+    const TerrainDirectionalPlacementPlan placement = evaluate_terrain_directional_placement(
+        source, directional_backdrop_placement_request(), {0.0F, 0.0F});
+    const TerrainDirectionalReliefParameters relief =
+        expanded_directional_backdrop_relief_parameters(placement);
+    require(relief.broad_start_m == 6'000.0F && relief.broad_full_m == 18'000.0F &&
+                relief.detail_start_m == 10'000.0F && relief.detail_full_m == 26'000.0F,
+            "expanded relief should restore structure and detail over far-field distances");
+    require(expanded_directional_backdrop_outer_radius_m() == 32'768.0F,
+            "expanded backdrop should provide room beyond the relief transition");
+
+    const TerrainBackdropStagePlan stage = make_directional_backdrop_stage_plan(
+        source, placement, 1.0F,
+        {
+            .focus_height_m = 500.0F,
+            .orbit_min_radius_m = 100.0F,
+            .orbit_default_radius_m = 400.0F,
+            .orbit_max_radius_m = 1'000.0F,
+        });
+    require(stage.target_height_m - stage.source_center_height_m >= 500.0F,
+            "expanded stage focus should remain at least 500 m above the valley floor");
+    require(stage.orbit_min_radius_m == 100.0F && stage.orbit_default_radius_m == 400.0F &&
+                stage.orbit_max_radius_m == 1'000.0F,
+            "expanded stage should allow a one-kilometer orbit");
+    require(stage.minimum_camera_clearance_m >= 10.0F,
+            "expanded orbit envelope should remain above terrain");
+}
+
 } // namespace
 
 int main() {
     try {
         test_lane_names_round_trip();
         test_stage_is_grounded_and_camera_clear();
+        test_expanded_stage_uses_far_field_scale();
         std::cout << "terrain_directional_backdrop_study_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

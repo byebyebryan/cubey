@@ -638,7 +638,8 @@ class TerrainApp {
                 .render_stride = options_.backdrop_render_stride,
                 .consumer_radius_m = plan.stage_radius_m,
                 .visible_inner_radius_m = runtime_config_.backdrop_minimum_visible_distance_m,
-                .outer_radius_m = clipmap_config_.outer_half_extent,
+                .outer_radius_m = options_.backdrop_outer_radius_m.value_or(
+                    clipmap_config_.outer_half_extent),
                 .vertical_scale = runtime_config_.vertical_scale,
                 .vertical_offset_m = plan.terrain_vertical_offset_m,
             },

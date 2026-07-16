@@ -129,3 +129,21 @@ geometry cost. Retain the planner, relief wrapper, continuous topology, report,
 and capture app as isolated evidence and reusable diagnostics. Do not add
 another shaping iteration in this batch; the accepted cached hard-cut backdrop
 remains the runtime default.
+
+## Expanded Follow-up
+
+After reviewing the surface pack interactively, add one explicitly isolated
+`expanded-shaped` lane. It tests whether the rejected result was dominated by
+viewpoint and transition scale rather than by directional composition itself:
+
+- expose a `100-1000 m` focus altitude and default to `500 m` above the local
+  filtered floor;
+- expand the debug orbit from `100 m` to `1 km`, defaulting to `400 m`;
+- extend the study-only terrain radius from `16.384 km` to `32.768 km` without
+  changing mesh topology or production extent;
+- restore broad structure over `6-18 km` and source detail over `10-26 km`;
+- scale the anchored domain warp to a `28 km` period and `2.5 km` amplitude.
+
+This follow-up does not overturn the completed verdict by implementation alone.
+It requires a new expanded-domain source/gate report and surface-first visual
+pack before either the composition or its cost can be judged.
