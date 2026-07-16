@@ -141,6 +141,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain radial backdrop macro baseline](terrain-radial-backdrop-macro-baseline.md):
   accepted expanded-domain composition and camera target, with explicit cached
   integration, detail, performance, and stop boundaries.
+- [Terrain radial fidelity ablation](terrain-radial-fidelity-ablation.md):
+  frozen-macro `2 x 2` study separating coherent radial source detail from
+  filtered backdrop material detail before either lane can be promoted.
 - [Terrain source model study](terrain-source-model-study.md): controlled
   clean-room comparison of scalable mountain source operators through the
   accepted cached-backdrop renderer, with fixed calibration and provenance
