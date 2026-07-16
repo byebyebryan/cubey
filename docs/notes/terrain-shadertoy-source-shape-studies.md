@@ -64,3 +64,31 @@ parameters, then blends 25 percent of the result back into the Mountains base.
 At full transfer strength the filter produces dense narrow fins and overwhelms
 the base hierarchy. The reduced blend is a bounded process comparison, not a
 claim that the parameters generalize unchanged.
+
+## Review Findings
+
+The generated pack is under
+`outputs/terrain_shadertoy_ref/source-shape-studies-v1/`. The shared clay pass
+is deliberately incomplete, so the top diagnostics are authoritative when
+lighting and height appear to disagree.
+
+- Mountains remains the strongest global source in this set. Its height field
+  has broad connected masses and survives the second view, although its slope
+  field is already dense and the mesh presentation still exposes faceting.
+- Swiss Alps is globally evaluable but forms a cellular network of uplift with
+  isolated steep peaks. Its attractive reference image depends substantially
+  on camera, fog, snow, and lighting; the extracted source is not an obvious
+  improvement over Mountains for Cubey's backdrop role.
+- Mountain Peak gives the clearest hero silhouette in the source view. The top
+  view and the near-empty 90-degree view also make the radial attenuation
+  explicit. It is a useful focused-shot construction, not a scalable global
+  terrain source.
+- The erosion filter changes slope much more than broad height at a 25 percent
+  blend. Even there it creates narrow, busy ridge detail; at full strength it
+  destroys the macro hierarchy. Keep it as a selective modifier study and do
+  not use it as the next production source pivot.
+
+No added lane displaces Mountains as the current direct reference. The useful
+carry-over is narrower: retain Mountains as the known-good shape baseline,
+study derivative damping as an operator, and treat radial focus and Phacelle
+erosion as explicitly masked/local tools rather than global generators.
