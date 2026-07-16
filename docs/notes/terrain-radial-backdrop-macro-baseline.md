@@ -2,8 +2,9 @@
 
 Date: 2026-07-16
 
-Status: accepted macro-composition baseline; not yet a production renderer or
-final terrain source.
+Status: accepted macro-composition baseline; the first continuous-center cached
+integration failed the runtime gate; not yet a production renderer or final
+terrain source.
 
 ## Decision
 
@@ -56,6 +57,13 @@ The current cached hard-cut backdrop remains production v1 until the radial
 composition passes through that product architecture and meets its acceptance
 gates.
 
+The first cached integration result is recorded in
+[`terrain-cached-radial-integration.md`](terrain-cached-radial-integration.md).
+Stride 2 and stride 3 preserve this macro baseline, but measure `1.524 ms` and
+`1.338 ms` p95 respectively and are not promoted. The next bounded test removes
+the continuous diagnostic center from runtime ownership while leaving this
+composition unchanged.
+
 ## Cached Integration Target
 
 Build the next lane through the existing cached backdrop ownership model:
@@ -79,7 +87,7 @@ pass alone.
 
 ## Detail Follow-up
 
-Detail work begins only after cached integration preserves the macro baseline
+Detail work begins only after a cached integration preserves the macro baseline
 and performance gate. Keep two concerns separate:
 
 - Source/geometry detail: add filtered secondary ridges, face breakup, and

@@ -159,7 +159,10 @@ or 3. Run `projects/terrain/capture_cached_radial_backdrop.sh` to write the
 multi-seed visual, camera-envelope, diagnostic, setup-cost, workload, and 1440p
 GPU comparison to `outputs/terrain/cached-radial-v1/`. The script records a
 missed `<1 ms` candidate gate instead of aborting, and it does not change the
-current production hard-cut backdrop.
+current production hard-cut backdrop. The completed pack finds stride 3
+visually sufficient but measures `1.338 ms` p95, so the continuous-center lane
+remains study-only. See
+[`docs/notes/terrain-cached-radial-integration.md`](../../docs/notes/terrain-cached-radial-integration.md).
 
 Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
