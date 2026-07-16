@@ -133,7 +133,7 @@ jq -n \
   }' > "${TMP_DIR}/capture-metadata.json"
 
 cat > "${TMP_DIR}/REVIEW.md" <<'EOF'
-# Expanded Radial Backdrop Study
+# Radial Backdrop Macro Baseline
 
 Review in this order:
 
@@ -148,8 +148,9 @@ Review in this order:
 4. `radial-clay-control.png`: isolate silhouette and occupancy from material
    and atmosphere only after the surface review.
 
-This is a study lane. It does not replace the cached production backdrop or
-promote radial shaping into the terrain source contract.
+This pack records the accepted macro-composition baseline. The lane remains a
+study source until the same composition is baked through the cached backdrop,
+passes its sub-millisecond GPU gate, and receives a separate detail review.
 EOF
 
 rm -rf "${OUT_DIR}"

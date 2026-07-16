@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
             shaped_source, placement, 1.0F, shaped_stage_parameters);
 
         const float extent_m =
-            options.expanded ? expanded_directional_backdrop_outer_radius_m() : kDefaultExtentM;
+            options.expanded ? expanded_backdrop_outer_radius_m() : kDefaultExtentM;
         const float spacing_m = 2.0F * extent_m / static_cast<float>(options.grid_size - 1U);
         const std::size_t sample_count =
             static_cast<std::size_t>(options.grid_size) * options.grid_size;

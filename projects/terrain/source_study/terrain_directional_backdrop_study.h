@@ -38,7 +38,7 @@ terrain_directional_backdrop_lane_from_name(std::string_view name);
 expanded_directional_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement);
 [[nodiscard]] TerrainRadialReliefParameters
 expanded_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement);
-[[nodiscard]] constexpr float expanded_directional_backdrop_outer_radius_m() noexcept {
+[[nodiscard]] constexpr float expanded_backdrop_outer_radius_m() noexcept {
     return 32'768.0F;
 }
 

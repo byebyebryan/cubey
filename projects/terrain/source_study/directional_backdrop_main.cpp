@@ -94,7 +94,7 @@ int run_study(cubey::RunConfig config, TerrainDirectionalBackdropLane lane,
                                     : TerrainBackdropCenterMode::Continuous,
     };
     if (expanded) {
-        options.backdrop_outer_radius_m = expanded_directional_backdrop_outer_radius_m();
+        options.backdrop_outer_radius_m = expanded_backdrop_outer_radius_m();
     }
     std::unique_ptr<TerrainDirectionalReliefSource> shaped_source;
     std::unique_ptr<TerrainRadialReliefSource> radial_source;

@@ -75,16 +75,9 @@ expanded_directional_backdrop_relief_parameters(const TerrainDirectionalPlacemen
 
 TerrainRadialReliefParameters
 expanded_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement) {
-    return {
-        .focus_xz = placement.source_focus_xz,
-        .floor_footprint_m = 6'000.0F,
-        .floor_relief_fraction = 0.08F,
-        .structure_footprint_m = 2'500.0F,
-        .broad_start_m = 1'000.0F,
-        .broad_full_m = 24'000.0F,
-        .detail_start_m = 5'000.0F,
-        .detail_full_m = 30'000.0F,
-    };
+    TerrainRadialReliefParameters parameters;
+    parameters.focus_xz = placement.source_focus_xz;
+    return parameters;
 }
 
 TerrainBackdropStagePlan make_directional_backdrop_stage_plan(

@@ -75,7 +75,7 @@ void test_expanded_stage_uses_far_field_scale() {
     require(relief.broad_start_m == 6'000.0F && relief.broad_full_m == 18'000.0F &&
                 relief.detail_start_m == 10'000.0F && relief.detail_full_m == 26'000.0F,
             "expanded relief should restore structure and detail over far-field distances");
-    require(expanded_directional_backdrop_outer_radius_m() == 32'768.0F,
+    require(expanded_backdrop_outer_radius_m() == 32'768.0F,
             "expanded backdrop should provide room beyond the relief transition");
     const TerrainRadialReliefParameters radial =
         expanded_radial_backdrop_relief_parameters(placement);
