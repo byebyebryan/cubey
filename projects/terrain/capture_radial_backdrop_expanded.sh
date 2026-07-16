@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP="${1:-${ROOT_DIR}/build/dev/projects/terrain/terrain_directional_backdrop_study}"
 REPORT="${2:-${ROOT_DIR}/build/dev/projects/terrain/terrain_directional_backdrop_report}"
-OUT_DIR="${3:-${ROOT_DIR}/outputs/terrain/radial-backdrop-expanded-v1}"
+OUT_DIR="${3:-${ROOT_DIR}/outputs/terrain/radial-backdrop-expanded-v2}"
 TMP_DIR="${OUT_DIR}.tmp.$$"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
@@ -109,17 +109,17 @@ jq -n \
   --argjson seeds "$(printf '%s\n' "${seeds[@]}" | jq -Rn '[inputs | tonumber]')" \
   --argjson azimuths "$(printf '%s\n' "${azimuths[@]}" | jq -Rn '[inputs | tonumber]')" \
   '{
-    schema: "cubey.terrain.radial-backdrop-expanded-capture.v1",
+    schema: "cubey.terrain.radial-backdrop-expanded-capture.v2",
     cubey_commit: $commit,
     lane: "expanded-radial",
     control_lane: "expanded-shaped",
     source: {recipe: "mountains-hierarchy-v2", seeds: $seeds},
     terrain: {
       outer_radius_m: 32768,
-      floor_footprint_m: 8000,
+      floor_footprint_m: 6000,
       structure_footprint_m: 2500,
-      broad_range_m: [6000, 24000],
-      detail_range_m: [12000, 29000],
+      broad_range_m: [1000, 24000],
+      detail_range_m: [5000, 30000],
       transition: "unwarped-radial"
     },
     camera: {
@@ -143,7 +143,7 @@ Review in this order:
 2. `radial-surface-seeds.png`: check whether the radial transition remains
    plausible across source morphology rather than only on seed 9012.
 3. `radial-diagnostics-seed-*.png`: the gates are intentionally circular.
-   Determine whether their broad 18 km and 17 km bands create a visible ring
+   Determine whether their broad 23 km and 25 km bands create a visible ring
    in shaped height or slope despite blending filtered versions of one source.
 4. `radial-clay-control.png`: isolate silhouette and occupancy from material
    and atmosphere only after the surface review.

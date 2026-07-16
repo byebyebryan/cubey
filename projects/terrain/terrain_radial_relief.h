@@ -6,13 +6,13 @@ namespace cubey::projects::terrain {
 
 struct TerrainRadialReliefParameters {
     cubey::math::Vec2 focus_xz{0.0F, 0.0F};
-    float floor_footprint_m = 8'000.0F;
+    float floor_footprint_m = 6'000.0F;
     float floor_relief_fraction = 0.08F;
     float structure_footprint_m = 2'500.0F;
-    float broad_start_m = 6'000.0F;
+    float broad_start_m = 1'000.0F;
     float broad_full_m = 24'000.0F;
-    float detail_start_m = 12'000.0F;
-    float detail_full_m = 29'000.0F;
+    float detail_start_m = 5'000.0F;
+    float detail_full_m = 30'000.0F;
 };
 
 struct TerrainRadialReliefSample {

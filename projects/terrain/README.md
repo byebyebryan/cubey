@@ -143,9 +143,9 @@ far-field composition but still exposes a directional shaping band and misses
 the production GPU budget, so it remains diagnostic-only.
 
 The companion `expanded-radial` lane uses the same expanded terrain and camera
-envelope but restores broad structure over `6-24 km` and source detail over
-`12-29 km` in every direction. Its comparison pack is written to
-`outputs/terrain/radial-backdrop-expanded-v1/`. The broad band stays hidden in
+envelope but restores broad structure over `1-24 km` and source detail over
+`5-30 km` in every direction. Its current comparison pack is written to
+`outputs/terrain/radial-backdrop-expanded-v2/`. The broad band stays hidden in
 the tested scene views and fills the directional lane's empty headings, but its
 circular low-relief basin remains explicit in diagnostics, so it stays isolated
 from the production backdrop source.

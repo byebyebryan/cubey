@@ -79,8 +79,9 @@ void test_expanded_stage_uses_far_field_scale() {
             "expanded backdrop should provide room beyond the relief transition");
     const TerrainRadialReliefParameters radial =
         expanded_radial_backdrop_relief_parameters(placement);
-    require(radial.broad_start_m == 6'000.0F && radial.broad_full_m == 24'000.0F &&
-                radial.detail_start_m == 12'000.0F && radial.detail_full_m == 29'000.0F,
+    require(radial.floor_footprint_m == 6'000.0F && radial.broad_start_m == 1'000.0F &&
+                radial.broad_full_m == 24'000.0F && radial.detail_start_m == 5'000.0F &&
+                radial.detail_full_m == 30'000.0F,
             "radial relief should use a broad far-field transition band");
     require(radial.focus_xz.x == placement.source_focus_xz.x &&
                 radial.focus_xz.y == placement.source_focus_xz.y,
