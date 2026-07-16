@@ -23,6 +23,8 @@ terrain_directional_backdrop_lane_name(TerrainDirectionalBackdropLane lane) noex
         return "shaped";
     case TerrainDirectionalBackdropLane::ExpandedShaped:
         return "expanded-shaped";
+    case TerrainDirectionalBackdropLane::ExpandedRadial:
+        return "expanded-radial";
     }
     return "placement";
 }
@@ -43,6 +45,9 @@ TerrainDirectionalBackdropLane terrain_directional_backdrop_lane_from_name(std::
     if (name == "expanded-shaped") {
         return TerrainDirectionalBackdropLane::ExpandedShaped;
     }
+    if (name == "expanded-radial") {
+        return TerrainDirectionalBackdropLane::ExpandedRadial;
+    }
     throw std::runtime_error("unknown terrain directional backdrop lane: " + std::string(name));
 }
 
@@ -50,8 +55,8 @@ TerrainDirectionalPlacementRequest directional_backdrop_placement_request() {
     return {};
 }
 
-TerrainDirectionalReliefParameters expanded_directional_backdrop_relief_parameters(
-    const TerrainDirectionalPlacementPlan& placement) {
+TerrainDirectionalReliefParameters
+expanded_directional_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement) {
     return {
         .focus_xz = placement.source_focus_xz,
         .mountain_yaw_radians = placement.mountain_yaw_radians,
@@ -65,6 +70,20 @@ TerrainDirectionalReliefParameters expanded_directional_backdrop_relief_paramete
         .warp_period_m = 28'000.0F,
         .warp_amplitude_m = 2'500.0F,
         .warp_octaves = 2U,
+    };
+}
+
+TerrainRadialReliefParameters
+expanded_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement) {
+    return {
+        .focus_xz = placement.source_focus_xz,
+        .floor_footprint_m = 8'000.0F,
+        .floor_relief_fraction = 0.08F,
+        .structure_footprint_m = 2'500.0F,
+        .broad_start_m = 6'000.0F,
+        .broad_full_m = 24'000.0F,
+        .detail_start_m = 12'000.0F,
+        .detail_full_m = 29'000.0F,
     };
 }
 
@@ -90,9 +109,9 @@ TerrainBackdropStagePlan make_directional_backdrop_stage_plan(
     }
     const TerrainDirectionalPlacementPlan displayed = evaluate_terrain_directional_placement(
         source, directional_backdrop_placement_request(), placement.source_focus_xz);
-    const float center_height = source.sample_height(
-                                    {.world_xz = placement.source_focus_xz, .footprint_m = 16.0F}) *
-                                vertical_scale;
+    const float center_height =
+        source.sample_height({.world_xz = placement.source_focus_xz, .footprint_m = 16.0F}) *
+        vertical_scale;
     float target_height = center_height + parameters.focus_height_m;
     float minimum_camera_clearance = std::numeric_limits<float>::infinity();
     const std::array<float, 3> radii{parameters.orbit_min_radius_m,

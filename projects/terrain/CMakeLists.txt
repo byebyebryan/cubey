@@ -41,6 +41,7 @@ add_library(cubey_project_terrain_render_support STATIC
     terrain_clipmap.cpp
     terrain_directional_placement.cpp
     terrain_directional_relief.cpp
+    terrain_radial_relief.cpp
     terrain_environment_gpu.cpp
     terrain_material_tiles.cpp
     terrain_surface_controller.cpp
@@ -410,6 +411,24 @@ if (BUILD_TESTING)
     )
     set_tests_properties(
         terrain_directional_relief_tests
+        PROPERTIES LABELS terrain TIMEOUT 120
+    )
+
+    add_executable(cubey_project_terrain_radial_relief_tests
+        terrain_radial_relief_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_terrain_radial_relief_tests
+        PRIVATE
+            cubey_project_terrain_render_support
+            cubey_project_warnings
+    )
+    add_test(
+        NAME terrain_radial_relief_tests
+        COMMAND cubey_project_terrain_radial_relief_tests
+    )
+    set_tests_properties(
+        terrain_radial_relief_tests
         PROPERTIES LABELS terrain TIMEOUT 120
     )
 

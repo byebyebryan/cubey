@@ -16,18 +16,16 @@ void require(bool condition, std::string_view message) {
     }
 }
 
-class DirectionalStageSource final
-    : public cubey::projects::terrain::TerrainHeightSource {
+class DirectionalStageSource final : public cubey::projects::terrain::TerrainHeightSource {
   public:
     [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
     metadata() const noexcept override {
         return {.id = "directional-stage-test", .seed = 11U, .relief_scale_m = 2'000.0F};
     }
 
-    [[nodiscard]] float sample_height(
-        const cubey::projects::terrain::TerrainQuery& query) const override {
-        const float broad_rise = std::clamp((query.world_xz.x - 2'000.0F) / 8'000.0F,
-                                            0.0F, 1.0F);
+    [[nodiscard]] float
+    sample_height(const cubey::projects::terrain::TerrainQuery& query) const override {
+        const float broad_rise = std::clamp((query.world_xz.x - 2'000.0F) / 8'000.0F, 0.0F, 1.0F);
         return 120.0F + 1'500.0F * broad_rise;
     }
 };
@@ -40,6 +38,7 @@ void test_lane_names_round_trip() {
              TerrainDirectionalBackdropLane::Placement,
              TerrainDirectionalBackdropLane::Shaped,
              TerrainDirectionalBackdropLane::ExpandedShaped,
+             TerrainDirectionalBackdropLane::ExpandedRadial,
          }) {
         require(terrain_directional_backdrop_lane_from_name(
                     terrain_directional_backdrop_lane_name(lane)) == lane,
@@ -52,8 +51,7 @@ void test_stage_is_grounded_and_camera_clear() {
     const DirectionalStageSource source;
     const TerrainDirectionalPlacementPlan placement = evaluate_terrain_directional_placement(
         source, directional_backdrop_placement_request(), {0.0F, 0.0F});
-    const TerrainBackdropStagePlan stage =
-        make_directional_backdrop_stage_plan(source, placement);
+    const TerrainBackdropStagePlan stage = make_directional_backdrop_stage_plan(source, placement);
     require(stage.mode == TerrainBackdropStageMode::Grounded,
             "directional stage should use grounded ownership");
     require(stage.source_focus_xz.x == 0.0F && stage.source_focus_xz.y == 0.0F,
@@ -79,15 +77,23 @@ void test_expanded_stage_uses_far_field_scale() {
             "expanded relief should restore structure and detail over far-field distances");
     require(expanded_directional_backdrop_outer_radius_m() == 32'768.0F,
             "expanded backdrop should provide room beyond the relief transition");
+    const TerrainRadialReliefParameters radial =
+        expanded_radial_backdrop_relief_parameters(placement);
+    require(radial.broad_start_m == 6'000.0F && radial.broad_full_m == 24'000.0F &&
+                radial.detail_start_m == 12'000.0F && radial.detail_full_m == 29'000.0F,
+            "radial relief should use a broad far-field transition band");
+    require(radial.focus_xz.x == placement.source_focus_xz.x &&
+                radial.focus_xz.y == placement.source_focus_xz.y,
+            "radial relief should remain centered on the selected stage focus");
 
-    const TerrainBackdropStagePlan stage = make_directional_backdrop_stage_plan(
-        source, placement, 1.0F,
-        {
-            .focus_height_m = 500.0F,
-            .orbit_min_radius_m = 100.0F,
-            .orbit_default_radius_m = 400.0F,
-            .orbit_max_radius_m = 1'000.0F,
-        });
+    const TerrainBackdropStagePlan stage =
+        make_directional_backdrop_stage_plan(source, placement, 1.0F,
+                                             {
+                                                 .focus_height_m = 500.0F,
+                                                 .orbit_min_radius_m = 100.0F,
+                                                 .orbit_default_radius_m = 400.0F,
+                                                 .orbit_max_radius_m = 1'000.0F,
+                                             });
     require(stage.target_height_m - stage.source_center_height_m >= 500.0F,
             "expanded stage focus should remain at least 500 m above the valley floor");
     require(stage.orbit_min_radius_m == 100.0F && stage.orbit_default_radius_m == 400.0F &&
