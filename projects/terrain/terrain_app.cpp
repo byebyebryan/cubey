@@ -927,8 +927,28 @@ class TerrainApp {
             return;
         }
         profiler->collect(frame_slot.index);
-        record_gpu_timings(profile_recorder, collected_profile_frame_index(frame_index, frame_slot),
-                           latest_gpu_timings());
+        const std::uint64_t collected_frame_index =
+            collected_profile_frame_index(frame_index, frame_slot);
+        record_gpu_timings(profile_recorder, collected_frame_index, latest_gpu_timings());
+        record_backdrop_metrics(profile_recorder, collected_frame_index);
+    }
+
+    void record_backdrop_metrics(cubey::profiling::ProfileRecorder* profile_recorder,
+                                 std::uint64_t frame_index) const {
+        if (profile_recorder == nullptr ||
+            runtime_config_.render_path != TerrainRenderPath::Backdrop ||
+            !backdrop_product_.has_value()) {
+            return;
+        }
+        const TerrainBackdropProductDiagnostics& diagnostics = backdrop_product().diagnostics;
+        profile_recorder->record_metric(frame_index, "terrain.backdrop", "submitted_sectors",
+                                        latest_backdrop_draw_plan_.submitted_sector_count);
+        profile_recorder->record_metric(frame_index, "terrain.backdrop", "submitted_triangles",
+                                        latest_backdrop_draw_plan_.submitted_triangle_count);
+        profile_recorder->record_metric(frame_index, "terrain.backdrop", "product_render_triangles",
+                                        static_cast<double>(diagnostics.render_triangle_count));
+        profile_recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
+                                        static_cast<double>(diagnostics.source_sample_count));
     }
 
     [[nodiscard]] std::uint32_t active_triangle_count() const {
