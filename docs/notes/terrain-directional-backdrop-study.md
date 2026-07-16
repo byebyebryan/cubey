@@ -214,3 +214,28 @@ Keep `expanded-radial` as the stronger unrestricted-yaw comparison lane, not as
 a production source contract. It demonstrates that a large transition band is
 viable for the backdrop framing problem, while confirming that circular
 composition and terrain-source quality remain separate decisions.
+
+### Narrow-Core Follow-up
+
+The initial radial parameters leave a `6 km` quiet radius, which is much larger
+than the `1 km` maximum camera orbit. Preserve that evidence under
+`outputs/terrain/radial-backdrop-expanded-v1/`, then retune the same isolated
+lane without changing its source or transition function:
+
+- reduce the filtered floor footprint from `8 km` to `6 km`;
+- start broad restoration at `1 km` and complete it at `24 km`;
+- restore detail over `5-30 km`;
+- retain smootherstep, exact radial distance, and the existing camera envelope.
+
+The resulting pack is under
+`outputs/terrain/radial-backdrop-expanded-v2/`. The scene-view difference is
+appropriately subtle: low-frequency terrain begins returning earlier, but the
+23 km smootherstep band keeps relief near the stage weak. All tested headings
+remain continuous and clear, with slightly fuller terrain before the far
+horizon and no visible circular shelf.
+
+Top diagnostics show the intended larger change. The fully quiet core is much
+smaller, gate gradients span more of the domain, and shaped slope transitions
+more gradually into the source. The center remains deliberately calm and the
+radial signature remains measurable, so this does not alter the study-only
+verdict. Prefer v2 over v1 for subsequent radial backdrop evaluation.
