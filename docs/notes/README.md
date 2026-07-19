@@ -154,9 +154,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain external generator bakeoff review](terrain-external-generator-bakeoff-review.md):
   completed Terrain Diffusion evidence, determinism corrections, measured
   source-quality gain, backdrop-composition failure, and reference verdict.
-- [Terrain raster backdrop v1](terrain-raster-backdrop-v1.md): opt-in product
-  contract for an external heightfield, deterministic natural staging,
-  continuous uniform center, and bounded far-field acceptance.
+- [Terrain raster backdrop v1](terrain-raster-backdrop-v1.md): completed opt-in
+  external-heightfield product, deterministic natural staging, seam-matched
+  continuous center, and measured far-field acceptance.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.

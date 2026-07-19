@@ -57,7 +57,7 @@ It writes `outputs/terrain/radial-backdrop-product-v1/` and validates:
 - setup time, peak RSS, render capacity, source samples, and 1440p GPU timing.
 
 The product path and study path match exactly at every parity heading. Runtime
-telemetry confirms stride 3, 607,232 render-triangle capacity, 2,657,280 baked
+telemetry now confirms stride 3, 607,200 render-triangle capacity, 2,657,280 baked
 source samples, and a continuous default center.
 
 The 1000 m / 30 degree endpoint can look down onto the quiet foreground and

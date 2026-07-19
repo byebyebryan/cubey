@@ -1,12 +1,13 @@
 # Terrain V1 Runtime
 
-Date: 2026-07-16
+Date: 2026-07-19
 
-Status: radial-v1 is the default fixed-focus cached backdrop. It promotes the
-accepted radial v2 macro baseline and graduated mountain source with exact study
-parity. The previous hard-cut renderer, control clipmap, and quality
-tessellation path remain explicit historical review controls. Detail, cache
-persistence, and sub-millisecond runtime performance remain open.
+Status: radial-v1 is the default asset-free fixed-focus cached backdrop.
+Raster-v1 is an opt-in product for explicit external heightfields and retains
+the stronger natural-raster morphology under the same cached renderer. The
+previous hard-cut renderer, control clipmap, and quality tessellation path
+remain explicit historical review controls. Close detail, cache persistence,
+streaming, and sub-millisecond runtime performance remain open.
 
 ## Goal
 
@@ -21,6 +22,7 @@ The first product is deliberately narrower than a terrain simulator:
   coherent parameter source with `mountain`, `upland`, and `plains` presets;
 - matching source evidence and CPU point queries;
 - optional bounded local weathering;
+- an opt-in regular-heightfield asset and deterministic natural-stage adapter;
 - a setup-time baked field and cullable static backdrop mesh;
 - neutral diagnostics and multi-seed visual review.
 
@@ -88,16 +90,19 @@ render library expose clean headers and shader includes, but terrain-specific
 types are not promoted into the engine foundation until a second real consumer
 tests the boundary.
 
-The external-generator bakeoff is a source study, not a runtime extension.
-Python and model weights produce ignored float fields before Cubey starts; a
-study-only raster adapter then supplies setup-time `TerrainHeightSource`
-queries. The production source, cached product, and per-frame renderer remain
-unchanged. See
+The external-generator bakeoff began as a source study. Its accepted regular
+field boundary is now available through explicit `raster-v1`: Cubey reads a
+`cubey.terrain.heightfield.v1` manifest plus one little-endian row-major float
+elevation file, validates finite coverage and seed identity, then loads the
+field and builds filtered mips at setup. Python, model weights, climate output,
+and generator execution are not runtime dependencies. Terrain Diffusion is one
+offline producer rather than part of the asset contract. See
 [`terrain-external-generator-bakeoff.md`](../notes/terrain-external-generator-bakeoff.md)
-for the contract and
+for the original study contract,
 [`terrain-external-generator-bakeoff-review.md`](../notes/terrain-external-generator-bakeoff-review.md)
-for the reference-only verdict. The external fields improve source morphology
-but do not satisfy the common backdrop-composition gate.
+for its initial reference-only verdict, and
+[`terrain-raster-backdrop-v1.md`](../notes/terrain-raster-backdrop-v1.md) for the
+completed promotion.
 
 The production renderer is the fixed-focus `backdrop` path. Selecting a
 `backdrop` or `backdrop-stage` camera defaults to `radial-v1`. The profile
@@ -105,7 +110,7 @@ samples the graduated source once over a 32.768 km global polar field around a
 500 m stage focus. A setup-time radial wrapper retains 8 percent source relief
 inside a 6 km foreground footprint, restores broad structure over 1-24 km, and
 restores detail over 5-30 km. Stride-3 render indices reduce the baked high
-field to 607,232 render-triangle capacity across 48 sectors. Neighboring
+field to 607,200 render-triangle capacity across 48 sectors. Neighboring
 sectors duplicate identical global boundary samples.
 
 Height, geometry normals, rock/snow classification, and bounded ambient
@@ -123,6 +128,14 @@ evaluated only during the bake; it adds no per-frame source sampling or
 procedural shaping to the runtime shader. The historical hard-cut product is
 available through explicit `hard-cut-v1` and retains its v2.1 source controls,
 16.384 km domain, and narrower stage contract.
+
+Raster-v1 reuses this cached renderer with deterministic natural placement over
+the unchanged external field. Its continuous center uses a seam-matched radial
+distribution through `3.2 km`, then the existing logarithmic outer field
+through `16.384 km`. One global decimated angular partition is shared by the
+center and 48 sectors, preventing stride-3 T-junctions. The profile samples
+`2,657,280` source points and submits a `607,200`-triangle capacity; it does not
+fall back to a procedural source when its explicit asset is missing or invalid.
 
 The `control` clipmap and `quality` tessellation renderers below are retained
 explicit experiments and regression controls. They are not terrain v1
@@ -227,7 +240,9 @@ The public run controls are:
   experimental mountain hierarchy `v3`;
 - `terrain.render_path`: production `backdrop`, legacy `control`, or
   mountain-only `quality`;
-- `terrain.backdrop_profile`: default `radial-v1` or historical `hard-cut-v1`;
+- `terrain.backdrop_profile`: default `radial-v1`, external `raster-v1`, or
+  historical `hard-cut-v1`;
+- `terrain.heightfield`: required manifest or asset directory for `raster-v1`;
 - `terrain.backdrop_center`: default `continuous` or `consumer-owned`;
 - `terrain.backdrop_mesh_density`: hard-cut `low`, `medium`, or default `high`;
 - `terrain.surface_detail`: `tile` or quality-only `layered`;
@@ -238,7 +253,8 @@ The public run controls are:
 - `terrain.backdrop_mode`: `detached` or `grounded`;
 - optional `terrain.backdrop_azimuth_degrees`,
   `terrain.backdrop_orbit_radius_m`, and `terrain.backdrop_elevation_degrees`;
-- `terrain.backdrop_minimum_visible_distance_m`, fixed to `6000` for radial-v1;
+- `terrain.backdrop_minimum_visible_distance_m`, fixed to `6000` for radial-v1
+  and `3200` for raster-v1;
 - `terrain.presentation`: `standard` or opt-in `backdrop` material coverage.
 
 The terrain app supports final surface, base/final height, slope, weathering
@@ -260,8 +276,8 @@ backdrop video completes one full orbit over the requested capture duration;
 stills remain fixed at the selected or requested initial azimuth. Interactive
 backdrop control allows unrestricted yaw while clamping radius and elevation to
 the selected profile envelope. Radial-v1 uses 100-1000 m and 0-30 degrees;
-hard-cut-v1 retains its narrower mode-specific bounds. PNG behavior is
-unchanged.
+raster-v1 uses 50-250 m and 0-30 degrees; hard-cut-v1 retains its narrower
+mode-specific bounds. PNG behavior is unchanged.
 
 ## Acceptance
 
@@ -281,14 +297,27 @@ Across seeds `0`, `9012`, and `12345`:
   checkpoint requires mean and p50 at or below `2 ms`, while `<1 ms` remains an
   open engine target.
 
-The radial-v1 product pack records six exact product/study PNG pairs, stride 3,
-607,232 render-triangle capacity, 2,657,280 source samples, `10,509 ms`
+The 2026-07-16 radial-v1 product pack recorded six exact product/study PNG
+pairs, stride 3, 607,232 render-triangle capacity, 2,657,280 source samples,
+`10,509 ms`
 setup/first-frame, and `364,200 KiB` peak RSS. Its maintained 2560 x 1440
 active-clock profile measured `1.677 ms` mean, `1.517 ms` p50, and `2.552 ms`
 p95 for the terrain surface pass. Mean and p50 pass the current `2 ms`
 checkpoint. Identical p95 profiles varied from about `1.35-3.7 ms` with GPU duty
 cycle, so p95 remains tail telemetry until clock residency is controlled. See
 [`terrain-radial-backdrop-product-v1.md`](../notes/terrain-radial-backdrop-product-v1.md).
+The shared seam-safe index revision found during raster-v1 acceptance now uses
+`607,200` render triangles for both profiles without changing source samples.
+
+The raster-v1 product pack records three external fields at six unrestricted
+headings, the complete camera envelope, stride-1 comparisons, and five
+diagnostic views. Its exact product has stride 3, `607,200` render triangles,
+and `2,657,280` source samples. At 2560 x 1440 it measured `1.073 ms` mean,
+`1.025 ms` p50, and `1.299 ms` p95 terrain GPU time; the same run measured
+radial-v1 at `1.418 ms` mean and `1.410 ms` p50, passing the relative 10 percent
+gate. Setup plus first frame at 640 x 360 took `9,851 ms` and `533,096 KiB` peak
+RSS. See
+[`terrain-raster-backdrop-v1.md`](../notes/terrain-raster-backdrop-v1.md).
 
 The subsequent fixed-control stride A/B compared the same cached source and
 camera with stride 1, 2, and 3. Increasing visible submissions from 190,464 to

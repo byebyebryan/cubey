@@ -68,6 +68,11 @@ telemetry because it varies with GPU power-state residency. The result still
 misses the eventual `<1 ms` engine target and must not be described as a
 completed backdrop performance budget.
 
+The later raster-v1 acceptance fixed a shared center/sector stride-partition
+defect. The current seam-safe radial topology has `607,200` render triangles;
+the `607,232` figure above remains the exact historical 2026-07-16 pack result.
+Source samples and the radial source contract did not change.
+
 ## Topology A/B Verdict
 
 The first GUI review made peak edges and broad faces read as low polygon count.

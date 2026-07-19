@@ -3,15 +3,16 @@
 `projects/terrain` now provides a cached, fixed-focus far-backdrop product. Its
 default `radial-v1` profile bakes the graduated `mountains-hierarchy-v2` source
 over a 32.768 km domain, reserves a 6 km low-relief foreground footprint, and
-uses stride-3 render indices. The previous `hard-cut-v1` profile remains an
-explicit regression control. The control clipmap and opt-in adaptive
-tessellation path remain review tools. Source v2.1 preserves v2 above a 64 m
-footprint while moving sub-110 m detail into bounded additive relief. The
-opt-in `layered` surface-detail mode adds generated albedo-height and
-normal-roughness-cavity material layers for the retained live backdrop and
-midground controls. The CPU source library currently provides deterministic
-world-space height and gradient queries for the shared
-`mountain`, `upland`, and `plains` parameterized source.
+uses stride-3 render indices. The opt-in `raster-v1` profile applies the same
+cached renderer to an explicit external regular heightfield after deterministic
+natural placement. The previous `hard-cut-v1` profile remains an explicit
+regression control. The control clipmap and opt-in adaptive tessellation path
+remain review tools. Source v2.1 preserves v2 above a 64 m footprint while
+moving sub-110 m detail into bounded additive relief. The opt-in `layered`
+surface-detail mode adds generated albedo-height and normal-roughness-cavity
+material layers for the retained live backdrop and midground controls. The CPU
+source library currently provides deterministic world-space height and gradient
+queries for the shared `mountain`, `upland`, and `plains` parameterized source.
 The matching GLSL evaluator consumes the packed resolved parameters and is
 checked against CPU samples through Vulkan readback. Optional local weathering
 is bounded, footprint-filtered, and explicitly non-hydraulic.
@@ -21,8 +22,9 @@ polar sectors. Cached heights, normals, material classification, and ambient
 visibility feed a non-tessellated environment-lit shader. Conservative angular
 and frustum culling bound submitted geometry, and no procedural source,
 weathering, terrain-shadow, tessellation, or material-tile evaluation runs per
-frame. Radial-v1 currently misses the engine's eventual `<1 ms` terrain-pass
-target, so setup persistence and render optimization remain product debt.
+frame. Raster-v1 loads its field and filtered mips during setup; neither profile
+yet guarantees the engine's eventual `<1 ms` terrain-pass target, so setup
+persistence and render optimization remain product debt.
 
 The retained control path uses a camera-centered eight-level clipmap with
 explicit single-owner LOD transitions. The opt-in quality path uses a camera-centered,
@@ -34,7 +36,9 @@ clearance comes from the CPU query contract.
 
 The radial-v1 `backdrop` preset is an unrestricted-yaw orbit around a 500 m
 mid-air focus. It supports a 100-1000 m orbit and 0-30 degree elevation. The
-default `continuous` center keeps the standalone product view complete;
+external raster-v1 profile uses the same focus height with a 50-250 m orbit,
+0-30 degree elevation, unrestricted yaw, and a seam-matched continuous center.
+The default `continuous` center keeps the standalone product view complete;
 `--terrain-backdrop-center consumer-owned` removes the center for a scene that
 provides its own foreground. `backdrop-stage` adds a neutral foreground proxy
 for interactive validation without changing terrain geometry. `midground`
@@ -56,14 +60,21 @@ cmake --build --preset dev --target \
   cubey_project_terrain_source_study_report \
   cubey_project_terrain_external_source_study \
   cubey_project_terrain_raster_height_source_tests \
+  cubey_project_terrain_backdrop_product_tests \
   cubey_project_terrain_directional_backdrop_study \
   cubey_project_terrain_directional_backdrop_report
-ctest --preset dev -R 'terrain_(source(_gpu_parity|_study)?|directional.*)_tests' \
+ctest --preset dev -R 'terrain_(source(_gpu_parity|_study)?|directional.*|raster_height_source|backdrop_product)_tests' \
   --output-on-failure
 
 ./build/dev/projects/terrain/terrain \
   --terrain-seed 9012 \
   --terrain-camera-preset backdrop-stage
+
+./build/dev/projects/terrain/terrain \
+  --terrain-seed 9012 \
+  --terrain-camera-preset backdrop-stage \
+  --terrain-backdrop-profile raster-v1 \
+  --terrain-heightfield outputs/terrain/.terrain-diffusion-bakeoff-v1-fields/fields/seed-9012
 
 ./build/dev/projects/terrain/terrain \
   --terrain-seed 9012 \
@@ -115,6 +126,7 @@ projects/terrain/capture_directional_backdrop_study.sh
 projects/terrain/capture_directional_backdrop_expanded.sh
 projects/terrain/capture_radial_backdrop_expanded.sh
 projects/terrain/capture_radial_backdrop_product.sh
+projects/terrain/capture_raster_backdrop_product.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
@@ -152,14 +164,14 @@ The focused Mountains decision pack uses only v2.1, the old signed candidate,
 and the corrected hierarchy candidate, plus exact-reference scale diagnostics,
 under `outputs/terrain/mountains-source-decision-v2/`.
 
-The separate external-generator bakeoff evaluates pinned Terrain Diffusion
-fields through a study-only raster adapter. It preserves elevation and climate
-artifacts but renders only elevation, and it cannot change the production
-source in the same batch. Its contract is recorded in
+The original external-generator bakeoff evaluates pinned Terrain Diffusion
+fields through the retained study lane. It preserves elevation and climate
+artifacts but renders only elevation, and it did not change the production
+source in that batch. Its contract is recorded in
 [`docs/notes/terrain-external-generator-bakeoff.md`](../../docs/notes/terrain-external-generator-bakeoff.md).
-The completed comparison remains reference-only because its stronger raw
-morphology did not survive the common backdrop placement and framing contract;
-see the
+The initial comparison remained reference-only because its stronger raw
+morphology did not survive the old common backdrop placement and framing
+contract; see the
 [`bakeoff review`](../../docs/notes/terrain-external-generator-bakeoff-review.md).
 
 The follow-up natural-raster staging study keeps those pinned fields unchanged
@@ -170,8 +182,15 @@ refinement pack is under
 coarse split center with a budget-neutral uniform radial allocation and retains
 the `500 m` focus. See
 [`terrain-natural-raster-staging.md`](../../docs/notes/terrain-natural-raster-staging.md)
-for the contract and verdict. This remains a source/renderer study and does not
-promote Terrain Diffusion into the runtime product.
+for the study contract and verdict.
+
+Raster-v1 promotes that accepted boundary behind an explicit
+`cubey.terrain.heightfield.v1` manifest. It keeps generated fields and generator
+dependencies outside the runtime, uses a product-only seam-matched center, and
+does not fall back to a procedural source. The maintained acceptance pack is
+`outputs/terrain/raster-backdrop-product-v1/`; run
+`projects/terrain/capture_raster_backdrop_product.sh` and see
+[`terrain-raster-backdrop-v1.md`](../../docs/notes/terrain-raster-backdrop-v1.md).
 
 The directional backdrop study compares the accepted hard cut against a
 continuous center, source-only placement, and one-sided relief composition.
@@ -228,8 +247,9 @@ Source presets are `mountain`, `upland`, and `plains`. Weathering is `off` or
 `local`. Surface detail is `tile` (default) or mountain-quality-only `layered`.
 Camera presets include `oblique`, `profile`, `top`, `surface`, `surface-low`,
 `ground`, `backdrop`, `backdrop-stage`, and `midground`. The radial profile
-supports unrestricted yaw within a 100-1000 m orbit and 0-30 degree elevation.
-Hard-cut-v1 retains the source-aware 24-sector placement planner and its
+supports unrestricted yaw within a 100-1000 m orbit and 0-30 degree elevation;
+raster-v1 supports 50-250 m and 0-30 degrees. Hard-cut-v1 retains the
+source-aware 24-sector placement planner and its
 narrower detached/grounded diagnostic envelope. Initial azimuth, radius, and
 elevation remain optional controls. `midground` remains the directional 1.6 km
 detail stress tier. Presentation modes are `standard` (default outside
@@ -254,8 +274,10 @@ The general terrain default remains source v1 plus the control renderer. A
 backdrop camera defaults to the cached radial-v1 profile, continuous center,
 high mesh density, and backdrop presentation. Radial-v1 owns its source,
 weathering, domain, stage, and stride contract; generic source overrides are
-rejected. Select `hard-cut-v1` explicitly for historical v2.1 controls. `low`
-and `medium` densities remain hard-cut diagnostic controls.
+rejected. Select raster-v1 explicitly with `--terrain-heightfield`; it owns its
+external asset, natural stage, continuous seam-matched center, domain, and
+stride contract. Select `hard-cut-v1` explicitly for historical v2.1 controls.
+`low` and `medium` densities remain hard-cut diagnostic controls.
 
 See [`docs/architecture/terrain-v1.md`](../../docs/architecture/terrain-v1.md)
 for the complete runtime boundary and

@@ -2,12 +2,12 @@
 
 Date: 2026-07-19
 
-Status: complete. Bounded directional staging with a uniform continuous center
-is accepted as the maintained raster-study lane. The `500 m` focus remains the
-default and Terrain Diffusion remains a reference-only source. The original
-consumer-owned-center verdict is retained below as decision history, but it is
-superseded for this isolated backdrop study: a visible circular cutout is not
-an acceptable final composition.
+Status: complete and promoted. Bounded directional staging with a continuous
+center is the basis of the opt-in `raster-v1` product. The `500 m` focus remains
+the default and Terrain Diffusion remains only an offline producer. The
+original consumer-owned-center verdict is retained below as decision history,
+but it is superseded for this isolated backdrop: a visible circular cutout is
+not an acceptable final composition.
 
 ## Problem
 
@@ -221,3 +221,21 @@ controls. The general backdrop product retains split linear/logarithmic
 sampling by default, so this study does not alter the shipped `radial-v1`
 product. A Cartesian inner patch is not justified by this evidence; revisit it
 only if a future consumer exposes polar structure that this pack does not.
+
+## Product Promotion
+
+The later raster-v1 product keeps the study's source, placement, `500 m` focus,
+continuous ownership, and fixed camera envelope. It adds an explicit
+`cubey.terrain.heightfield.v1` asset contract and a product-only seam-matched
+center distribution: the final center interval matches the first logarithmic
+outer interval while retaining the same sample budget. The study's uniform
+lane remains a useful control rather than the shipped raster profile.
+
+Acceptance also found that identical center/sector boundary vertices were not
+sufficient under stride 3. Independently restarted angular phases produced
+different rendered edge partitions and visible pinholes. Raster-v1 now derives
+one global decimated angular partition and tests the actual shared render edges.
+The completed product evidence is under
+`outputs/terrain/raster-backdrop-product-v1/`; see
+[`terrain-raster-backdrop-v1.md`](terrain-raster-backdrop-v1.md) for the exact
+runtime boundary and measurements.

@@ -2,9 +2,9 @@
 
 Date: 2026-07-19
 
-Status: implementation contract. Promote the accepted natural-raster study into
-an opt-in terrain product without adding a runtime terrain generator or changing
-the asset-free `radial-v1` default.
+Status: complete. The accepted natural-raster study is now an opt-in terrain
+product without a runtime terrain generator or a change to the asset-free
+`radial-v1` default.
 
 ## Product Goal
 
@@ -39,7 +39,7 @@ Selecting `terrain.backdrop_profile=raster-v1` requires an explicit
 
 - deterministic natural directional placement over the unchanged source;
 - a `500 m` focus above the selected terrain center;
-- a continuous center with uniform radial sampling from `0-3.2 km`;
+- a continuous center with seam-matched radial sampling from `0-3.2 km`;
 - the unchanged logarithmic outer field through `16.384 km`;
 - high-density source sampling with stride-3 render indices;
 - `50/100/250 m` minimum/default/maximum orbit radii;
@@ -50,6 +50,12 @@ The field must cover the complete centered placement search and selected render
 disk. Failure to find a passing placement or retain strict finite-field coverage
 is a load error. The manifest seed is authoritative; an explicit mismatched run
 seed is rejected.
+
+The seam-matched center redistributes the existing 96 center intervals so its
+last source interval matches the first logarithmic outer interval. Decimated
+angular vertices come from one global partition shared by the center and all
+48 culling sectors. This changes neither source height nor placement; it avoids
+an abrupt radial density step and stride-3 T-junctions at the `3.2 km` join.
 
 `radial-v1` remains the default when no external field is supplied. Raster-v1
 does not silently fall back to the procedural source.
@@ -70,3 +76,29 @@ remains deferred.
 The next gate after this product passes is one real external consumer. That work
 will determine whether renderer ownership should move from `projects/terrain`
 into an engine-level module.
+
+## Result
+
+The maintained pack is
+`outputs/terrain/raster-backdrop-product-v1/`. It covers seeds `0`, `9012`, and
+`12345` at six unrestricted headings, the complete `50-250 m` / `0-30` degree
+camera envelope, stride-1 comparisons, and clay, normal, projected-edge, LOD,
+and stage-ownership diagnostics. The exact product is stride 3 with `607,200`
+render triangles and `2,657,280` source samples.
+
+Acceptance review found one real topology defect before closure: each sector
+restarted its stride-3 angular phase while the center used a global phase. The
+meshes shared identical boundary vertices, so the old numeric seam check
+passed, but their rendered edge partitions differed and exposed pinholes. A
+rendered-edge regression test now covers that contract. The final clay and
+surface packs retain continuous coverage with no cutout, spokes, holes, or
+sector seams. Stride 3 preserves the intended far-field silhouette against the
+stride-1 reference.
+
+On the maintained machine at `2560 x 1440`, raster-v1 measured `1.073 ms` mean,
+`1.025 ms` p50, and `1.299 ms` p95 terrain GPU time. The same run measured
+radial-v1 at `1.418 ms` mean and `1.410 ms` p50, so the relative 10 percent gate
+passed. Setup plus first frame at `640 x 360` took `9,851 ms` with `533,096 KiB`
+peak process RSS. Setup persistence, streaming, translated coverage, and close
+terrain remain deferred; the next product step is integration into one real
+scene consumer.
