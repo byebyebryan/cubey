@@ -83,7 +83,8 @@ TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
         .local_relief_m = displayed.local_relief_m,
         .local_p95_slope = displayed.local_p95_slope,
         .minimum_camera_clearance_m = minimum_camera_clearance,
-        .showcase_yaw_radians = placement.mountain_yaw_radians,
+        .showcase_yaw_radians =
+            terrain_backdrop_camera_yaw_for_source_direction(placement.mountain_yaw_radians),
         .stage_radius_m = 300.0F,
         .orbit_min_radius_m = parameters.orbit_min_radius_m,
         .orbit_default_radius_m = parameters.orbit_default_radius_m,

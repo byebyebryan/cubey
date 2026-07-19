@@ -340,7 +340,7 @@ evaluate_full_candidate(const TerrainHeightSource& source,
         relief_sector_count += prominence >= kRequiredReliefM ? 1U : 0U;
         if (prominence > best_sector_score) {
             best_sector_score = prominence;
-            showcase_yaw = yaw;
+            showcase_yaw = terrain_backdrop_camera_yaw_for_source_direction(yaw);
         }
     }
 

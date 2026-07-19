@@ -16,6 +16,11 @@ enum class TerrainBackdropStageMode : std::uint8_t {
 terrain_backdrop_stage_mode_name(TerrainBackdropStageMode mode) noexcept;
 [[nodiscard]] TerrainBackdropStageMode terrain_backdrop_stage_mode_from_name(std::string_view name);
 
+[[nodiscard]] constexpr float
+terrain_backdrop_camera_yaw_for_source_direction(float source_yaw_radians) noexcept {
+    return -source_yaw_radians;
+}
+
 struct TerrainBackdropStageRequest {
     TerrainBackdropStageMode mode = TerrainBackdropStageMode::Detached;
     float stage_radius_m = 300.0F;

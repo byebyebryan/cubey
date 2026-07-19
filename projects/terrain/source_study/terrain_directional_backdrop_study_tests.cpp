@@ -135,7 +135,7 @@ void test_stage_is_grounded_and_camera_clear() {
     require(stage.orbit_min_radius_m == 50.0F && stage.orbit_default_radius_m == 100.0F &&
                 stage.orbit_max_radius_m == 250.0F,
             "directional stage should publish the fixed comparison orbit envelope");
-    require(std::abs(stage.showcase_yaw_radians - std::numbers::pi_v<float> * 0.5F) < 0.35F,
+    require(std::abs(stage.showcase_yaw_radians + std::numbers::pi_v<float> * 0.5F) < 0.35F,
             "directional stage should face the measured mountain arc");
 }
 

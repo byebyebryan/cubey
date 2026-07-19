@@ -49,6 +49,13 @@ void test_stage_requests_publish_the_medium_scene_contract() {
             "detached stage should preserve a shallower orbit than grounded diagnostics");
 }
 
+void test_camera_yaw_faces_a_source_direction() {
+    require_near(cubey::projects::terrain::terrain_backdrop_camera_yaw_for_source_direction(
+                     std::numbers::pi_v<float> * 0.5F),
+                 -std::numbers::pi_v<float> * 0.5F, 0.0F,
+                 "orbit camera yaw should mirror the source-space direction around local z");
+}
+
 void test_detached_stage_search_is_deterministic_and_panoramic() {
     constexpr std::array<std::uint64_t, 3> seeds{0U, 9012U, 12345U};
     for (const std::uint64_t seed : seeds) {
@@ -148,6 +155,7 @@ void test_detached_distance_solver_generalizes_across_presets() {
 int main() {
     try {
         test_stage_requests_publish_the_medium_scene_contract();
+        test_camera_yaw_faces_a_source_direction();
         test_detached_stage_search_is_deterministic_and_panoramic();
         test_stage_search_budget_can_fit_a_bounded_source();
         test_grounded_stage_returns_a_finite_natural_candidate();
