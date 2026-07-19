@@ -151,6 +151,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain external generator bakeoff](terrain-external-generator-bakeoff.md):
   pinned Terrain Diffusion offline-field comparison, deterministic mountain
   region selection, raster study boundary, and promotion gates.
+- [Terrain external generator bakeoff review](terrain-external-generator-bakeoff-review.md):
+  completed Terrain Diffusion evidence, determinism corrections, measured
+  source-quality gain, backdrop-composition failure, and reference verdict.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.

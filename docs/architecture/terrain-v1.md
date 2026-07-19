@@ -93,7 +93,11 @@ Python and model weights produce ignored float fields before Cubey starts; a
 study-only raster adapter then supplies setup-time `TerrainHeightSource`
 queries. The production source, cached product, and per-frame renderer remain
 unchanged. See
-[`terrain-external-generator-bakeoff.md`](../notes/terrain-external-generator-bakeoff.md).
+[`terrain-external-generator-bakeoff.md`](../notes/terrain-external-generator-bakeoff.md)
+for the contract and
+[`terrain-external-generator-bakeoff-review.md`](../notes/terrain-external-generator-bakeoff-review.md)
+for the reference-only verdict. The external fields improve source morphology
+but do not satisfy the common backdrop-composition gate.
 
 The production renderer is the fixed-focus `backdrop` path. Selecting a
 `backdrop` or `backdrop-stage` camera defaults to `radial-v1`. The profile

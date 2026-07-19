@@ -2,8 +2,10 @@
 
 Date: 2026-07-18
 
-Status: planned comparison. No external source is a terrain v1 runtime
-dependency or production default.
+Status: completed as a reference-only result. No external source is a terrain
+v1 runtime dependency or production default. See
+[`terrain-external-generator-bakeoff-review.md`](terrain-external-generator-bakeoff-review.md)
+for evidence and the final verdict.
 
 ## Decision
 

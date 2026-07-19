@@ -155,6 +155,10 @@ fields through a study-only raster adapter. It preserves elevation and climate
 artifacts but renders only elevation, and it cannot change the production
 source in the same batch. Its contract is recorded in
 [`docs/notes/terrain-external-generator-bakeoff.md`](../../docs/notes/terrain-external-generator-bakeoff.md).
+The completed comparison remains reference-only because its stronger raw
+morphology did not survive the common backdrop placement and framing contract;
+see the
+[`bakeoff review`](../../docs/notes/terrain-external-generator-bakeoff-review.md).
 
 The directional backdrop study compares the accepted hard cut against a
 continuous center, source-only placement, and one-sided relief composition.
