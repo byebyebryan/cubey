@@ -204,6 +204,7 @@ struct RunConfig {
         float valleys = kRunConfigUnsetFloat;
         float vertical_scale = kRunConfigUnsetFloat;
         std::string recipe{};
+        std::filesystem::path study_field_path{};
         std::string camera_preset{};
         std::string backdrop_profile{};
         std::string backdrop_center{};

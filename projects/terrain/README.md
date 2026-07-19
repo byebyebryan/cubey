@@ -54,6 +54,8 @@ cmake --build --preset dev --target \
   cubey_project_terrain_source_gpu_parity_tests \
   cubey_project_terrain_source_study \
   cubey_project_terrain_source_study_report \
+  cubey_project_terrain_external_source_study \
+  cubey_project_terrain_raster_height_source_tests \
   cubey_project_terrain_directional_backdrop_study \
   cubey_project_terrain_directional_backdrop_report
 ctest --preset dev -R 'terrain_(source(_gpu_parity|_study)?|directional.*)_tests' \

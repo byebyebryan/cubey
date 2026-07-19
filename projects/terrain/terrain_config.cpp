@@ -434,6 +434,10 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
 }
 
 TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& config) {
+    if (!config.terrain.study_field_path.empty()) {
+        throw std::runtime_error(
+            "terrain study field is supported only by terrain_external_source_study");
+    }
     TerrainRuntimeConfig result{};
     result.source.seed = config.terrain.seed_set ? config.terrain.seed : kTerrainDefaultSeed;
     result.source.preset = terrain_preset_from_name(config.terrain.preset);

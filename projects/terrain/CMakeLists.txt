@@ -65,6 +65,7 @@ target_link_libraries(
 )
 
 add_library(cubey_project_terrain_source_study_runtime STATIC
+    source_study/terrain_raster_height_source.cpp
     source_study/terrain_source_study.cpp
 )
 target_include_directories(
@@ -79,6 +80,7 @@ target_link_libraries(
         cubey_project_terrain_runtime
     PRIVATE
         cubey_project_warnings
+        nlohmann_json::nlohmann_json
 )
 
 add_executable(cubey_project_terrain_backdrop_report
@@ -266,6 +268,23 @@ target_link_libraries(
 add_dependencies(cubey_project_terrain_source_study cubey_project_terrain)
 
 cubey_add_app_target(
+    cubey_project_terrain_external_source_study
+    OUTPUT_NAME terrain_external_source_study
+    SHADER_DEFINE CUBEY_TERRAIN_SHADER_DIR
+    SOURCES
+        source_study/external_source_main.cpp
+        terrain_app.cpp
+)
+target_link_libraries(
+    cubey_project_terrain_external_source_study
+    PRIVATE
+        cubey_project_terrain_render_support
+        cubey_project_terrain_runtime
+        cubey_project_terrain_source_study_runtime
+)
+add_dependencies(cubey_project_terrain_external_source_study cubey_project_terrain)
+
+cubey_add_app_target(
     cubey_project_terrain_directional_backdrop_study
     OUTPUT_NAME terrain_directional_backdrop_study
     SHADER_DEFINE CUBEY_TERRAIN_SHADER_DIR
@@ -320,6 +339,22 @@ target_link_libraries(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_terrain_raster_height_source_tests
+        source_study/terrain_raster_height_source_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_terrain_raster_height_source_tests
+        PRIVATE
+            cubey_project_terrain_source_study_runtime
+            cubey_project_warnings
+            nlohmann_json::nlohmann_json
+    )
+    add_test(
+        NAME terrain_raster_height_source_tests
+        COMMAND cubey_project_terrain_raster_height_source_tests
+    )
+    set_tests_properties(terrain_raster_height_source_tests PROPERTIES LABELS terrain TIMEOUT 120)
+
     add_executable(cubey_project_terrain_source_study_tests
         source_study/terrain_source_study_tests.cpp
     )

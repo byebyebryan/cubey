@@ -137,6 +137,7 @@ enum class RunConfigOptionId {
     TerrainValleys,
     TerrainWaterSurface,
     TerrainRecipe,
+    TerrainStudyField,
     TerrainCameraPreset,
     TerrainBackdropProfile,
     TerrainBackdropCenter,

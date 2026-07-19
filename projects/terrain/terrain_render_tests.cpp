@@ -139,6 +139,19 @@ void test_runtime_config_defaults_to_the_v1_scene() {
             "terrain runtime should use the v1 clipmap dimensions");
 }
 
+void test_runtime_config_rejects_reference_study_field() {
+    cubey::RunConfig run_config{};
+    run_config.terrain.study_field_path = "/tmp/terrain-study-field";
+    bool rejected = false;
+    try {
+        static_cast<void>(
+            cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "production terrain runtime should reject the reference study field");
+}
+
 void test_backdrop_camera_defaults_to_the_cached_radial_product() {
     cubey::RunConfig run_config{};
     run_config.terrain.camera_preset = "backdrop-stage";
@@ -900,6 +913,7 @@ void test_ground_controller_uses_walking_scale_speed() {
 int main() {
     try {
         test_runtime_config_defaults_to_the_v1_scene();
+        test_runtime_config_rejects_reference_study_field();
         test_backdrop_camera_defaults_to_the_cached_radial_product();
         test_backdrop_product_profiles_parse_and_validate();
         test_source_v2_extends_only_mountain_detail_band();

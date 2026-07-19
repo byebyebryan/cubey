@@ -162,7 +162,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 282> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 283> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -530,6 +530,10 @@ constexpr std::array<ConfigOptionDescriptor, 282> kRunConfigOptions{
     option(RunConfigOptionId::TerrainRecipe, "terrain.recipe", "--terrain-recipe", "Recipe",
            "Terrain", "Named terrain recipe for terrain product consumers.",
            ConfigOptionType::String),
+    option(RunConfigOptionId::TerrainStudyField, "terrain.study_field", "--terrain-study-field",
+           "Study Field", "Terrain/Reference Studies",
+           "Raster field directory consumed by terrain reference studies.", ConfigOptionType::Path,
+           no_range(), {}, {}, ConfigOptionStability::Reference),
     option(RunConfigOptionId::TerrainCameraPreset, "terrain.camera_preset",
            "--terrain-camera-preset", "Camera Preset", "Terrain",
            "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
@@ -1583,6 +1587,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::TerrainRecipe:
         return config.terrain.recipe.empty() ? nlohmann::json(nullptr)
                                              : nlohmann::json(config.terrain.recipe);
+    case RunConfigOptionId::TerrainStudyField:
+        return config.terrain.study_field_path.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.study_field_path.string());
     case RunConfigOptionId::TerrainCameraPreset:
         return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.camera_preset);
@@ -2164,6 +2172,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::GltfOptions& options) {
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& options) {
+    const std::string study_field = options.study_field_path.string();
     adapter.writeField<std::uint64_t>("seed", options.seed);
     adapter.writeField<std::string>("preset", options.preset);
     adapter.writeField<std::string>("source_version", options.source_version);
@@ -2180,6 +2189,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<float>("ridges", options.ridges);
     adapter.writeField<float>("valleys", options.valleys);
     adapter.writeField<std::string>("recipe", options.recipe);
+    adapter.writeField<std::string>("study_field", study_field);
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
     adapter.writeField<std::string>("backdrop_profile", options.backdrop_profile);
     adapter.writeField<std::string>("backdrop_center", options.backdrop_center);
@@ -2192,6 +2202,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
 }
 
 inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options) {
+    std::string study_field;
     adapter.readField<std::uint64_t>("seed", options.seed);
     adapter.readField<std::string>("preset", options.preset);
     adapter.readField<std::string>("source_version", options.source_version);
@@ -2208,6 +2219,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<float>("ridges", options.ridges);
     adapter.readField<float>("valleys", options.valleys);
     adapter.readField<std::string>("recipe", options.recipe);
+    adapter.readField<std::string>("study_field", study_field);
     adapter.readField<std::string>("camera_preset", options.camera_preset);
     adapter.readField<std::string>("backdrop_profile", options.backdrop_profile);
     adapter.readField<std::string>("backdrop_center", options.backdrop_center);
@@ -2217,6 +2229,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("preview_surface", options.preview_surface);
     adapter.readField<float>("vertical_scale", options.vertical_scale);
     adapter.readField<int>("water_surface", options.water_surface);
+    if (!study_field.empty()) {
+        options.study_field_path = study_field;
+    }
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainLabOptions& options) {
@@ -2963,6 +2978,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainRecipe:
         config.terrain.recipe = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainStudyField:
+        config.terrain.study_field_path = std::string(value);
         break;
     case RunConfigOptionId::TerrainCameraPreset:
         config.terrain.camera_preset = std::string(value);

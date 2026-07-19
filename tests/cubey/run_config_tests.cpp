@@ -259,6 +259,8 @@ void test_run_config_descriptors_have_help_text() {
                              "cloud temporal reconstruction should be marked deferred");
     require_option_stability("clouds.horizon_layer", cubey::ConfigOptionStability::Stable,
                              "cloud horizon layer should be a stable Cloud V1 option");
+    require_option_stability("terrain.study_field", cubey::ConfigOptionStability::Reference,
+                             "terrain study field should remain reference-only");
     require(saw_profile, "config descriptors should include profiling controls");
     require(saw_smoke, "config descriptors should include smoke controls");
     require(saw_water3d, "config descriptors should include water 3D controls");
@@ -326,6 +328,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--planet-time-hours",
         "--planet-camera-mode",
         "--terrain-recipe",
+        "--terrain-study-field",
         "--terrain-camera-preset",
         "--terrain-backdrop-profile",
         "--terrain-backdrop-center",
@@ -449,6 +452,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.weathering_strength",
         "terrain.cell_size",
         "terrain.recipe",
+        "terrain.study_field",
         "terrain.camera_preset",
         "terrain.backdrop_profile",
         "terrain.backdrop_center",
@@ -633,6 +637,7 @@ void test_run_config_loads_json_config_file() {
     "weathering": "local",
     "weathering_strength": 0.65,
     "recipe": "temperate-mountain-range-stress",
+    "study_field": "/tmp/terrain-diffusion/seed-9012",
     "camera_preset": "profile",
     "backdrop_profile": "radial-v1",
     "backdrop_center": "continuous",
@@ -752,6 +757,8 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain quality detail controls");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
             "config file should set terrain recipe");
+    require(config.terrain.study_field_path == "/tmp/terrain-diffusion/seed-9012",
+            "config file should set terrain study field path");
     require(config.terrain.camera_preset == "profile",
             "config file should set terrain camera preset");
     require(config.terrain.backdrop_profile == "radial-v1" &&
@@ -1812,6 +1819,8 @@ void test_run_config_parses_terrain_controls() {
     std::string valleys_value = "1.15";
     std::string recipe_flag = "--terrain-recipe";
     std::string recipe_value = "temperate-mountain-range-stress";
+    std::string study_field_flag = "--terrain-study-field";
+    std::string study_field_value = "/tmp/terrain-diffusion/seed-9012";
     std::string camera_flag = "--terrain-camera-preset";
     std::string camera_value = "surface";
     std::string backdrop_profile_flag = "--terrain-backdrop-profile";
@@ -1839,7 +1848,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 60> argv{program.data(),
+    std::array<char*, 62> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1872,6 +1881,8 @@ void test_run_config_parses_terrain_controls() {
                                valleys_value.data(),
                                recipe_flag.data(),
                                recipe_value.data(),
+                               study_field_flag.data(),
+                               study_field_value.data(),
                                camera_flag.data(),
                                camera_value.data(),
                                backdrop_profile_flag.data(),
@@ -1919,6 +1930,8 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.valleys == 1.15F, "run config should parse terrain valleys");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
             "run config should parse terrain recipe");
+    require(config.terrain.study_field_path == "/tmp/terrain-diffusion/seed-9012",
+            "run config should parse terrain study field path");
     require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
     require(config.terrain.backdrop_profile == "hard-cut-v1" &&
