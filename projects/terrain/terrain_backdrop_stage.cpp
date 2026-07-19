@@ -13,8 +13,6 @@ namespace cubey::projects::terrain {
 namespace {
 
 constexpr float kDegreesToRadians = std::numbers::pi_v<float> / 180.0F;
-constexpr float kCoarseExtentM = 32'000.0F;
-constexpr float kCoarseStepM = 4'000.0F;
 constexpr std::uint32_t kPanoramaSectorCount = 24U;
 constexpr std::size_t kCoarseShortlistCount = 24U;
 constexpr std::size_t kFineShortlistCount = 8U;
@@ -438,6 +436,7 @@ void validate_request(const TerrainBackdropStageRequest& request) {
         !std::isfinite(request.orbit_max_elevation_radians) ||
         !std::isfinite(request.subject_center_height_m) ||
         !std::isfinite(request.minimum_visible_terrain_distance_m) ||
+        !std::isfinite(request.search_extent_m) || !std::isfinite(request.search_step_m) ||
         !std::isfinite(request.vertical_fov_radians) || !std::isfinite(request.aspect_ratio) ||
         !std::isfinite(request.vertical_scale) || request.stage_radius_m <= 0.0F ||
         request.guard_radius_m < request.stage_radius_m || request.orbit_min_radius_m <= 0.0F ||
@@ -449,6 +448,7 @@ void validate_request(const TerrainBackdropStageRequest& request) {
         request.orbit_max_elevation_radians >= std::numbers::pi_v<float> * 0.5F ||
         request.subject_center_height_m < 0.0F ||
         request.minimum_visible_terrain_distance_m <= request.stage_radius_m ||
+        request.search_extent_m < 0.0F || request.search_step_m <= 0.0F ||
         request.vertical_fov_radians <= 0.0F ||
         request.vertical_fov_radians >= std::numbers::pi_v<float> || request.aspect_ratio <= 0.0F ||
         request.vertical_scale <= 0.0F) {
@@ -495,8 +495,10 @@ TerrainBackdropStagePlan plan_terrain_backdrop_stage(const TerrainHeightSource& 
                                                      const TerrainBackdropStageRequest& request) {
     validate_request(request);
     std::vector<cubey::math::Vec2> coarse_focuses;
-    for (float z = -kCoarseExtentM; z <= kCoarseExtentM; z += kCoarseStepM) {
-        for (float x = -kCoarseExtentM; x <= kCoarseExtentM; x += kCoarseStepM) {
+    for (float z = -request.search_extent_m; z <= request.search_extent_m;
+         z += request.search_step_m) {
+        for (float x = -request.search_extent_m; x <= request.search_extent_m;
+             x += request.search_step_m) {
             coarse_focuses.push_back({x, z});
         }
     }

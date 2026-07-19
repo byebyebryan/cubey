@@ -7,6 +7,7 @@ REPORT_APP="${2:-${ROOT_DIR}/build/dev/projects/terrain/terrain_source_study_rep
 EXTERNAL_APP="${3:-${ROOT_DIR}/build/dev/projects/terrain/terrain_external_source_study}"
 OUT_DIR="${4:-${ROOT_DIR}/outputs/terrain/terrain-diffusion-bakeoff-v1}"
 FIELD_DIR="${CUBEY_TERRAIN_DIFFUSION_FIELDS:-${ROOT_DIR}/outputs/terrain/.terrain-diffusion-bakeoff-v1-fields}"
+REPEAT_FIELD_DIR="${CUBEY_TERRAIN_DIFFUSION_REPEAT_FIELDS:-${ROOT_DIR}/outputs/terrain/.terrain-diffusion-repeat-check}"
 GENERATOR="${ROOT_DIR}/projects/terrain/tools/run_terrain_diffusion_bake.sh"
 TMP_DIR="${OUT_DIR}.tmp.$$"
 EXPECTED_CODE_REVISION="82a0431281f21a6ec3d691a12ee61525de5b0790"
@@ -33,7 +34,8 @@ frames=(0 30 60)
 climate_channels=(temperature temperature_variability precipitation precipitation_variability)
 
 valid_generated_fields() {
-    local report="${FIELD_DIR}/generation-report.json"
+    local field_root="${1:-${FIELD_DIR}}"
+    local report="${field_root}/generation-report.json"
     [[ -f "${report}" ]] || return 1
     jq -e \
         --arg code "${EXPECTED_CODE_REVISION}" \
@@ -41,6 +43,9 @@ valid_generated_fields() {
         '.schema == "cubey.terrain.diffusion-bakeoff-generation.v1" and
          .source.code_revision == $code and
          .source.model_revision == $model and
+         .source.settings.latents_batch_size == 1 and
+         .source.settings.process_rng_seeding == "seed-value-v1" and
+         .export_contract_revision == 3 and
          .field_contract.seeds == [0, 9012, 12345] and
          .field_contract.size == [2048, 2048] and
          .field_contract.sample_spacing_m == 30 and
@@ -48,17 +53,18 @@ valid_generated_fields() {
 
     local manifest relative expected actual
     while IFS=$'\t' read -r relative expected; do
-        manifest="${FIELD_DIR}/${relative}"
+        manifest="${field_root}/${relative}"
         [[ -f "${manifest}" ]] || return 1
         actual="$(sha256sum "${manifest}" | awk '{print $1}')"
         [[ "${actual}" == "${expected}" ]] || return 1
     done < <(jq -r '.fields[] | [.manifest, .manifest_sha256] | @tsv' "${report}")
 }
 
-if [[ "${CUBEY_TERRAIN_DIFFUSION_REGENERATE:-0}" == "1" ]] || ! valid_generated_fields; then
+if [[ "${CUBEY_TERRAIN_DIFFUSION_REGENERATE:-0}" == "1" ]] || \
+    ! valid_generated_fields "${FIELD_DIR}"; then
     "${GENERATOR}" --output-dir "${FIELD_DIR}"
 fi
-if ! valid_generated_fields; then
+if ! valid_generated_fields "${FIELD_DIR}"; then
     printf 'terrain diffusion bakeoff: generated field validation failed: %s\n' \
         "${FIELD_DIR}" >&2
     exit 1
@@ -68,6 +74,34 @@ rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}/reports" "${TMP_DIR}/raw/clay" \
     "${TMP_DIR}/raw/presentation" "${TMP_DIR}/raw/seams"
 ln -s "$(realpath --relative-to "${TMP_DIR}" "${FIELD_DIR}")" "${TMP_DIR}/generated"
+
+if valid_generated_fields "${REPEAT_FIELD_DIR}"; then
+    repeat_hashes="${TMP_DIR}/repeat-hashes.tsv"
+    : > "${repeat_hashes}"
+    for seed in "${seeds[@]}"; do
+        for payload in elevation climate; do
+            first="$(sha256sum "${FIELD_DIR}/fields/seed-${seed}/${payload}.f32" | awk '{print $1}')"
+            second="$(sha256sum "${REPEAT_FIELD_DIR}/fields/seed-${seed}/${payload}.f32" | awk '{print $1}')"
+            if [[ "${first}" != "${second}" ]]; then
+                printf 'terrain diffusion bakeoff: repeat mismatch for seed %s %s\n' \
+                    "${seed}" "${payload}" >&2
+                exit 1
+            fi
+            printf '%s\t%s\t%s\n' "${seed}" "${payload}" "${first}" >> "${repeat_hashes}"
+        done
+    done
+    jq -Rn \
+        '[inputs | split("\t") | {seed: .[0] | tonumber, payload: .[1], sha256: .[2]}] |
+         {schema: "cubey.terrain.diffusion-repeat-validation.v1",
+          checked: true, passed: true, files: .}' \
+        < "${repeat_hashes}" > "${TMP_DIR}/repeat-validation.json"
+    rm "${repeat_hashes}"
+else
+    jq -n \
+        '{schema: "cubey.terrain.diffusion-repeat-validation.v1",
+          checked: false, passed: null, files: []}' \
+        > "${TMP_DIR}/repeat-validation.json"
+fi
 
 for recipe in control-v2-1 mountains-hierarchy-v2; do
     "${REPORT_APP}" --output-dir "${TMP_DIR}/reports/${recipe}" --grid-size 1024 \
@@ -222,6 +256,7 @@ jq -n \
       cubey_commit: $commit,
       generation_report: "generated/generation-report.json",
       generation_report_sha256: $generation_report_sha256,
+      repeat_validation: "repeat-validation.json",
       lanes: $lanes,
       seeds: $seeds,
       azimuth_degrees: $azimuths,
@@ -252,10 +287,12 @@ Review in this order:
    templates, shelves, and dominant grid or diagonal directions.
 4. `seam-contact-sheet.png` magnifies the two quadrant joins; confirm its
    evidence against `seam-validation.json`.
-5. The three clay sheets compare silhouettes through the common renderer at
+5. `repeat-validation.json` records byte-level cross-process repeat evidence
+   when a second generated field set is available.
+6. The three clay sheets compare silhouettes through the common renderer at
    three yaws. Material cannot hide source morphology here.
-6. `presentation-seed-9012.png` checks source/render compatibility last.
-7. `climate-contact-sheet.png` checks preservation only. Climate does not
+7. `presentation-seed-9012.png` checks source/render compatibility last.
+8. `climate-contact-sheet.png` checks preservation only. Climate does not
    influence this renderer.
 
 Rows in the comparison sheets are frozen v2.1, graduated Mountains, and the

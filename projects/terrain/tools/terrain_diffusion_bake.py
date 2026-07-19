@@ -26,17 +26,20 @@ CODE_REVISION = "82a0431281f21a6ec3d691a12ee61525de5b0790"
 MODEL_ID = "xandergos/terrain-diffusion-30m"
 MODEL_REVISION = "9ef8030cb805b433b98ec25c5dddefbac07a9e26"
 MODEL_NATIVE_RESOLUTION_M = 30.0
+LATENTS_BATCH_SIZE = 1
 SEEDS = (0, 9012, 12345)
 FIELD_SIZE = 2048
 CORE_TILE_SIZE = 1024
-TILE_HALO = 8
+TILE_CONTEXT_HALO = 64
+SEAM_VALIDATION_HALF_WIDTH = 8
 COARSE_CELL_NATIVE_SAMPLES = 256
 COARSE_WINDOW_CELLS = FIELD_SIZE // COARSE_CELL_NATIVE_SAMPLES
 CANDIDATE_OFFSETS = tuple(range(-24, 25, COARSE_WINDOW_CELLS))
 LAND_THRESHOLD = 0.8
-ORDER_CHECK_SEED = 9012
+ORDER_CHECK_SEED = 0
 ORDER_TOLERANCE_M = 1.0e-4
 COMPARISON_RELIEF_M = 3500.0
+EXPORT_CONTRACT_REVISION = 3
 WORLDCLIM_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip"
 WORLDCLIM_FILES = (
     "wc2.1_10m_bio_1.tif",
@@ -87,6 +90,18 @@ def git_revision(path: Path) -> str:
     return subprocess.check_output(
         ["git", "-C", str(path), "rev-parse", "HEAD"], text=True
     ).strip()
+
+
+def _seed_process_rngs(torch, seed: int) -> None:
+    import random
+
+    import numpy as np
+
+    random.seed(seed)
+    np.random.seed(seed & 0xFFFFFFFF)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 
 def select_mountain_region(coarse_elevation) -> tuple[RegionCandidate, list[RegionCandidate]]:
@@ -193,6 +208,40 @@ def overlapping_max_abs(first: QueriedTile, second: QueriedTile) -> tuple[int, f
     return int(difference.size), float(np.max(difference, initial=0.0))
 
 
+def seam_max_abs(first: QueriedTile, second: QueriedTile) -> tuple[int, float]:
+    ai1, aj1, ai2, aj2 = first.bounds
+    bi1, bj1, bi2, bj2 = second.bounds
+    oi1, oj1 = max(ai1, bi1), max(aj1, bj1)
+    oi2, oj2 = min(ai2, bi2), min(aj2, bj2)
+    if oi1 >= oi2 or oj1 >= oj2:
+        return 0, 0.0
+
+    if (ai1, ai2) != (bi1, bi2):
+        center_i = (oi1 + oi2) // 2
+        oi1 = center_i - SEAM_VALIDATION_HALF_WIDTH
+        oi2 = center_i + SEAM_VALIDATION_HALF_WIDTH
+    if (aj1, aj2) != (bj1, bj2):
+        center_j = (oj1 + oj2) // 2
+        oj1 = center_j - SEAM_VALIDATION_HALF_WIDTH
+        oj2 = center_j + SEAM_VALIDATION_HALF_WIDTH
+
+    first_view = QueriedTile(
+        first.name,
+        (oi1, oj1, oi2, oj2),
+        first.elevation[oi1 - ai1 : oi2 - ai1, oj1 - aj1 : oj2 - aj1],
+        None,
+        first.seconds,
+    )
+    second_view = QueriedTile(
+        second.name,
+        (oi1, oj1, oi2, oj2),
+        second.elevation[oi1 - bi1 : oi2 - bi1, oj1 - bj1 : oj2 - bj1],
+        None,
+        second.seconds,
+    )
+    return overlapping_max_abs(first_view, second_view)
+
+
 def write_f32(path: Path, values) -> dict[str, object]:
     import numpy as np
 
@@ -216,7 +265,34 @@ def _write_gray16(path: Path, values, low: float, high: float) -> None:
         high = low + 1.0
     normalized = np.clip((np.asarray(values, dtype=np.float64) - low) / (high - low), 0.0, 1.0)
     pixels = np.rint(normalized * 65535.0).astype(np.uint16)
-    Image.fromarray(pixels, mode="I;16").save(path)
+    Image.fromarray(pixels).save(path)
+
+
+def height_preview_rgb(values):
+    import numpy as np
+
+    t = np.clip(np.asarray(values, dtype=np.float64) / COMPARISON_RELIEF_M, 0.0, 1.0)
+    low = np.array([25.0, 31.0, 36.0])
+    high = np.array([242.0, 240.0, 235.0])
+    return np.rint(low + t[..., None] * (high - low)).astype(np.uint8)
+
+
+def slope_preview_rgb(values):
+    import numpy as np
+
+    t = np.clip(np.asarray(values, dtype=np.float64) / 1.5, 0.0, 1.0)
+    low = np.array([31.0, 87.0, 121.0])
+    middle = np.array([224.0, 198.0, 70.0])
+    high = np.array([170.0, 45.0, 45.0])
+    first = low + (t * 2.0)[..., None] * (middle - low)
+    second = middle + ((t - 0.5) * 2.0)[..., None] * (high - middle)
+    return np.where((t < 0.5)[..., None], first, second).astype(np.uint8)
+
+
+def _write_rgb8(path: Path, pixels) -> None:
+    from PIL import Image
+
+    Image.fromarray(pixels).save(path)
 
 
 def _write_selection_preview(path: Path, coarse_elevation, winner: RegionCandidate) -> None:
@@ -324,10 +400,10 @@ def _tile_requests(native_i: int, native_j: int) -> list[tuple[str, tuple[int, i
                 (
                     f"{row_name}-{column_name}",
                     (
-                        core_i - TILE_HALO,
-                        core_j - TILE_HALO,
-                        core_i + CORE_TILE_SIZE + TILE_HALO,
-                        core_j + CORE_TILE_SIZE + TILE_HALO,
+                        core_i - TILE_CONTEXT_HALO,
+                        core_j - TILE_CONTEXT_HALO,
+                        core_i + CORE_TILE_SIZE + TILE_CONTEXT_HALO,
+                        core_j + CORE_TILE_SIZE + TILE_CONTEXT_HALO,
                     ),
                 )
             )
@@ -341,7 +417,7 @@ def _stitch_tiles(tiles: list[QueriedTile]):
     climate = np.empty((4, FIELD_SIZE, FIELD_SIZE), dtype=np.float32)
     for index, tile in enumerate(tiles):
         row, column = divmod(index, 2)
-        core = slice(TILE_HALO, TILE_HALO + CORE_TILE_SIZE)
+        core = slice(TILE_CONTEXT_HALO, TILE_CONTEXT_HALO + CORE_TILE_SIZE)
         elevation[
             row * CORE_TILE_SIZE : (row + 1) * CORE_TILE_SIZE,
             column * CORE_TILE_SIZE : (column + 1) * CORE_TILE_SIZE,
@@ -386,7 +462,7 @@ def _generate_seed(world, torch, seed: int, verify_order: bool) -> dict[str, obj
     max_overlap_error = 0.0
     for first_index, first in enumerate(tiles):
         for second in tiles[first_index + 1 :]:
-            count, maximum = overlapping_max_abs(first, second)
+            count, maximum = seam_max_abs(first, second)
             if count:
                 overlap_records.append(
                     {
@@ -404,6 +480,7 @@ def _generate_seed(world, torch, seed: int, verify_order: bool) -> dict[str, obj
 
     order_check = None
     if verify_order:
+        _seed_process_rngs(torch, seed)
         world.rebuild()
         reverse_tiles_by_name: dict[str, QueriedTile] = {}
         for name, bounds in reversed(requests):
@@ -486,10 +563,10 @@ def _write_seed_artifacts(
     elevation_file = write_f32(seed_dir / "elevation.f32", elevation)
     climate_file = write_f32(seed_dir / "climate.f32", climate)
 
-    _write_gray16(seed_dir / "height.png", rendered, 0.0, COMPARISON_RELIEF_M)
+    _write_rgb8(seed_dir / "height.png", height_preview_rgb(rendered))
     gradient_z, gradient_x = np.gradient(rendered.astype(np.float64), MODEL_NATIVE_RESOLUTION_M)
     slope = np.sqrt(gradient_x * gradient_x + gradient_z * gradient_z)
-    _write_gray16(seed_dir / "slope.png", slope, 0.0, 1.5)
+    _write_rgb8(seed_dir / "slope.png", slope_preview_rgb(slope))
     _write_selection_preview(seed_dir / "selection.png", generated["coarse"], generated["winner"])
 
     climate_previews = []
@@ -539,6 +616,8 @@ def _write_seed_artifacts(
             "tiles": tile_records,
         },
         "validation": {
+            "tile_context_halo_samples": TILE_CONTEXT_HALO,
+            "seam_validation_half_width_samples": SEAM_VALIDATION_HALF_WIDTH,
             "overlap_tolerance_m": ORDER_TOLERANCE_M,
             "overlaps": generated["overlaps"],
             "reverse_order": generated["order_check"],
@@ -565,9 +644,15 @@ def _write_seed_artifacts(
     }
 
 
-def _pip_freeze() -> list[str]:
-    output = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
-    return [line for line in output.splitlines() if line]
+def _installed_packages() -> list[str]:
+    from importlib.metadata import distributions
+
+    packages = {
+        f"{name}=={distribution.version}"
+        for distribution in distributions()
+        if (name := distribution.metadata.get("Name"))
+    }
+    return sorted(packages, key=str.casefold)
 
 
 def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
@@ -601,10 +686,11 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
     torch.cuda.reset_peak_memory_stats()
     pipeline_start = time.perf_counter()
     with _working_directory(data_cache):
+        _seed_process_rngs(torch, SEEDS[0])
         world = WorldPipeline.from_pretrained(
             str(snapshot),
             seed=SEEDS[0],
-            latents_batch_size=4,
+            latents_batch_size=LATENTS_BATCH_SIZE,
             torch_compile=False,
             dtype=None,
             caching_strategy="direct",
@@ -623,6 +709,7 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
         try:
             for index, seed in enumerate(SEEDS):
                 if index:
+                    _seed_process_rngs(torch, seed)
                     world.change_seed(seed)
                 generated_fields.append(
                     _generate_seed(world, torch, seed, verify_order=seed == ORDER_CHECK_SEED)
@@ -644,7 +731,7 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
         "cuda_runtime": torch.version.cuda,
         "gpu": torch.cuda.get_device_name(0),
         "driver": torch.cuda.driver_version() if hasattr(torch.cuda, "driver_version") else None,
-        "pip_freeze": _pip_freeze(),
+        "installed_packages": _installed_packages(),
     }
     common_source = {
         "id": "terrain-diffusion-30m",
@@ -657,10 +744,11 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
         "settings": {
             "device": "cuda",
             "dtype": "fp32",
-            "latents_batch_size": 4,
+            "latents_batch_size": LATENTS_BATCH_SIZE,
             "torch_compile": False,
             "caching_strategy": "direct",
             "custom_conditioning": False,
+            "process_rng_seeding": "seed-value-v1",
         },
     }
 
@@ -673,6 +761,7 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
         ]
         report = {
             "schema": "cubey.terrain.diffusion-bakeoff-generation.v1",
+            "export_contract_revision": EXPORT_CONTRACT_REVISION,
             "source": common_source,
             "field_contract": {
                 "seeds": list(SEEDS),

@@ -81,6 +81,23 @@ void test_detached_stage_search_is_deterministic_and_panoramic() {
     }
 }
 
+void test_stage_search_budget_can_fit_a_bounded_source() {
+    const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
+        .seed = 9012U,
+        .preset = cubey::projects::terrain::TerrainPreset::Mountain,
+        .version = cubey::projects::terrain::TerrainSourceVersion::V2_1,
+    });
+    auto request = cubey::projects::terrain::terrain_backdrop_stage_request(
+        cubey::projects::terrain::TerrainBackdropStageMode::Detached);
+    request.search_extent_m = 12'000.0F;
+    request.search_step_m = 4'000.0F;
+
+    const auto plan = cubey::projects::terrain::plan_terrain_backdrop_stage(source, request);
+
+    require(plan.coarse_candidate_count == 49U,
+            "bounded terrain sources should be able to narrow the coarse search domain");
+}
+
 void test_grounded_stage_returns_a_finite_natural_candidate() {
     const auto source = cubey::projects::terrain::resolve_terrain_source_parameters({
         .seed = 9012U,
@@ -132,6 +149,7 @@ int main() {
     try {
         test_stage_requests_publish_the_medium_scene_contract();
         test_detached_stage_search_is_deterministic_and_panoramic();
+        test_stage_search_budget_can_fit_a_bounded_source();
         test_grounded_stage_returns_a_finite_natural_candidate();
         test_detached_distance_solver_generalizes_across_presets();
         std::cout << "terrain_backdrop_stage_tests: ok\n";

@@ -53,6 +53,8 @@ int run_external_source_study(cubey::RunConfig config) {
         runtime.backdrop_mode, static_cast<float>(config.width) / static_cast<float>(config.height),
         runtime.vertical_scale);
     request.minimum_visible_terrain_distance_m = runtime.backdrop_minimum_visible_distance_m;
+    request.search_extent_m = 12'000.0F;
+    request.search_step_m = 4'000.0F;
     if (runtime.backdrop_orbit_radius_m.has_value()) {
         request.orbit_default_radius_m = runtime.backdrop_orbit_radius_m.value();
     }
