@@ -88,6 +88,13 @@ render library expose clean headers and shader includes, but terrain-specific
 types are not promoted into the engine foundation until a second real consumer
 tests the boundary.
 
+The external-generator bakeoff is a source study, not a runtime extension.
+Python and model weights produce ignored float fields before Cubey starts; a
+study-only raster adapter then supplies setup-time `TerrainHeightSource`
+queries. The production source, cached product, and per-frame renderer remain
+unchanged. See
+[`terrain-external-generator-bakeoff.md`](../notes/terrain-external-generator-bakeoff.md).
+
 The production renderer is the fixed-focus `backdrop` path. Selecting a
 `backdrop` or `backdrop-stage` camera defaults to `radial-v1`. The profile
 samples the graduated source once over a 32.768 km global polar field around a

@@ -148,6 +148,9 @@ the detailed foundation notes under `docs/architecture/`.
   clean-room comparison of scalable mountain source operators through the
   accepted cached-backdrop renderer, with fixed calibration and provenance
   boundaries.
+- [Terrain external generator bakeoff](terrain-external-generator-bakeoff.md):
+  pinned Terrain Diffusion offline-field comparison, deterministic mountain
+  region selection, raster study boundary, and promotion gates.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.
