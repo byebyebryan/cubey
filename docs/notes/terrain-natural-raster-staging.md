@@ -2,10 +2,11 @@
 
 Date: 2026-07-19
 
-Status: closed. Bounded directional staging is accepted for continued
-integration study with a consumer-owned center. Terrain Diffusion remains a
-reference-only source; this does not promote an external generator or replace
-the terrain v1 source.
+Status: reopened for continuous-center refinement. Bounded directional staging
+remains accepted and Terrain Diffusion remains a reference-only source. The
+original consumer-owned-center verdict is retained below as decision history,
+but it is superseded for this isolated backdrop study: a visible circular
+cutout is not an acceptable final composition.
 
 ## Problem
 
@@ -86,6 +87,40 @@ before a higher-resolution bake can answer fidelity questions. Do not change
 resolution until the staging comparison establishes that the natural source
 can survive presentation.
 
+## Continuous Refinement Contract
+
+The continuous lane exposed a topology-allocation problem rather than a reason
+to restore the cutout. At high density, its center currently spends 32 radial
+intervals between `0-300 m`, then only 64 logarithmic intervals between
+`300-3200 m`. Spacing therefore grows from about `9.4 m` under the subject to
+about `116 m` in the visible foreground, even though the raster source has a
+uniform `30 m` sample spacing. The broad foreground shoulders in seed `12345`
+are consistent with that mismatch.
+
+Add a study-only uniform-center policy. It distributes the same 96 center
+intervals over `0-3200 m`, giving about `33.3 m` radial spacing, then joins the
+unchanged logarithmic outer annulus. This must not increase source samples,
+vertices, indices, render triangles, or the number of draw meshes. Existing
+procedural terrain products retain the split linear/logarithmic policy unless
+they explicitly request the candidate.
+
+Review three continuous lanes over the same source fields and unrestricted
+yaw:
+
+1. current split linear/logarithmic sampling at a `500 m` focus;
+2. uniform center sampling at a `500 m` focus;
+3. uniform center sampling at a `750 m` focus.
+
+The first two isolate geometry allocation. The third tests whether additional
+vertical separation makes the unchanged foreground less dominant without
+collapsing the mountain backdrop toward the horizon. `500 m` remains the
+default in this batch; the camera comparison is evidence only.
+
+No source filtering, resampling, masks, radial attenuation, flattened basin,
+material tuning, or higher framebuffer resolution belongs in this pass. If
+uniform radial sampling still exposes polar structure, the next experiment is
+a local Cartesian inner patch, not another heightfield edit.
+
 ## Evidence And Stop Condition
 
 Capture strict cutout, directional cutout, and directional continuous lanes
@@ -134,7 +169,7 @@ Clay and surface evidence establish three practical findings:
   makes this especially clear. It does not pass the continuous-center fidelity
   criterion.
 
-## Verdict
+## Superseded Verdict
 
 Carry the bounded directional placement and `500 m` focused stage forward.
 Keep `consumer-owned` cutout as the integration contract and require the host
@@ -147,3 +182,7 @@ be used as continuous close terrain. Runtime asset format, larger-area tiling,
 true higher-frequency detail, foreground terrain integration, and performance
 promotion are separate follow-ups. No further camera tuning or source shaping
 belongs in this batch.
+
+That ownership decision described the first staging pack. The current
+refinement keeps its source and placement conclusions but replaces the cutout
+direction with the continuous contract above.
