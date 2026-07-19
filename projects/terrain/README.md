@@ -108,6 +108,7 @@ projects/terrain/capture_quality_tile_review.sh
 projects/terrain/capture_cached_backdrop_review.sh
 projects/terrain/capture_source_model_study.sh
 projects/terrain/capture_mountains_source_decision.sh
+projects/terrain/capture_terrain_diffusion_bakeoff.sh
 projects/terrain/capture_directional_backdrop_study.sh
 projects/terrain/capture_directional_backdrop_expanded.sh
 projects/terrain/capture_radial_backdrop_expanded.sh
@@ -115,8 +116,13 @@ projects/terrain/capture_radial_backdrop_product.sh
 ```
 
 The source review pack includes multi-seed shape and presentation sheets. The
-rendering-refinement pack adds multi-sun clay, component diagnostics, one- and
-two-meter ground controls, a TerrainEngine control, and a deterministic
+Terrain Diffusion bakeoff generates or reuses the pinned external fields, then
+compares them with both internal controls through one renderer under
+`outputs/terrain/terrain-diffusion-bakeoff-v1/`. Generated fields and model
+weights remain ignored artifacts.
+
+The rendering-refinement pack adds multi-sun clay, component diagnostics,
+one- and two-meter ground controls, a TerrainEngine control, and a deterministic
 eye-level traversal video under `outputs/terrain/rendering-refinement/`.
 The backdrop pack adds a nine-case framing matrix, standard/coverage controls,
 distance controls, a 1920 x 1080 showcase, and a moving surface diagnostic under
