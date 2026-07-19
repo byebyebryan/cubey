@@ -109,6 +109,8 @@ projects/terrain/capture_cached_backdrop_review.sh
 projects/terrain/capture_source_model_study.sh
 projects/terrain/capture_mountains_source_decision.sh
 projects/terrain/capture_terrain_diffusion_bakeoff.sh
+projects/terrain/capture_natural_raster_stage.sh
+projects/terrain/capture_natural_raster_continuous_refinement.sh
 projects/terrain/capture_directional_backdrop_study.sh
 projects/terrain/capture_directional_backdrop_expanded.sh
 projects/terrain/capture_radial_backdrop_expanded.sh
@@ -159,6 +161,17 @@ The completed comparison remains reference-only because its stronger raw
 morphology did not survive the common backdrop placement and framing contract;
 see the
 [`bakeoff review`](../../docs/notes/terrain-external-generator-bakeoff-review.md).
+
+The follow-up natural-raster staging study keeps those pinned fields unchanged
+while selecting a lower directional stage. Its original cutout comparison is
+under `outputs/terrain/terrain-diffusion-stage-v1/`. The maintained continuous
+refinement pack is under
+`outputs/terrain/terrain-diffusion-continuous-refinement-v1/`; it replaces the
+coarse split center with a budget-neutral uniform radial allocation and retains
+the `500 m` focus. See
+[`terrain-natural-raster-staging.md`](../../docs/notes/terrain-natural-raster-staging.md)
+for the contract and verdict. This remains a source/renderer study and does not
+promote Terrain Diffusion into the runtime product.
 
 The directional backdrop study compares the accepted hard cut against a
 continuous center, source-only placement, and one-sided relief composition.

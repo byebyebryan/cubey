@@ -2,11 +2,12 @@
 
 Date: 2026-07-19
 
-Status: reopened for continuous-center refinement. Bounded directional staging
-remains accepted and Terrain Diffusion remains a reference-only source. The
-original consumer-owned-center verdict is retained below as decision history,
-but it is superseded for this isolated backdrop study: a visible circular
-cutout is not an acceptable final composition.
+Status: complete. Bounded directional staging with a uniform continuous center
+is accepted as the maintained raster-study lane. The `500 m` focus remains the
+default and Terrain Diffusion remains a reference-only source. The original
+consumer-owned-center verdict is retained below as decision history, but it is
+superseded for this isolated backdrop study: a visible circular cutout is not
+an acceptable final composition.
 
 ## Problem
 
@@ -186,3 +187,37 @@ belongs in this batch.
 That ownership decision described the first staging pack. The current
 refinement keeps its source and placement conclusions but replaces the cutout
 direction with the continuous contract above.
+
+## Continuous Refinement Result
+
+The maintained comparison is
+`outputs/terrain/terrain-diffusion-continuous-refinement-v1/`. All three seeds
+reuse the pinned `2048 x 2048`, `30 m` fields and the same selected focus,
+showcase direction, lighting, orbit, and full high-density topology.
+
+Uniform sampling replaces the split center's `9.375-116 m` radial spacing with
+96 intervals of about `33.333 m` over `0-3200 m`. Both lanes retain 2,657,280
+source samples, 2,694,289 vertices, and 5,305,344 stride-one render triangles.
+Unit coverage confirms identical counts and a zero center/outer boundary delta;
+cutout hashes and default split-profile hashes remain unchanged.
+
+The surface and normal sheets show a focused improvement rather than a new
+terrain model. Uniform sampling restores shape on the broad visible foreground,
+most clearly on seed `12345`, without changing the mountain silhouette or
+introducing a ring, spoke, or sector seam. Seed `0` and `9012` change more
+subtly. The normalized showcase-frame RMSE between split and uniform `500 m`
+lanes is `0.0027-0.0077`, consistent with a local sampling correction rather
+than source reshaping. Remaining softness belongs to the native field and flat
+study material, not the old center-ring allocation.
+
+The `750 m` lane increases minimum camera clearance by exactly `250 m` and
+reduces foreground dominance, but it also lowers the mountain mass in frame.
+That larger composition change is not a consistent improvement across seeds.
+Keep `500 m` as the default and retain `750 m` only as review evidence.
+
+The natural-raster executable now defaults to a continuous center with uniform
+sampling. `split-log` and consumer-owned cutout remain explicit regression
+controls. The general backdrop product retains split linear/logarithmic
+sampling by default, so this study does not alter the shipped `radial-v1`
+product. A Cartesian inner patch is not justified by this evidence; revisit it
+only if a future consumer exposes polar structure that this pack does not.
