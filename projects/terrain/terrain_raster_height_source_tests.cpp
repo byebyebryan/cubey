@@ -36,7 +36,7 @@ class Fixture {
     Fixture() {
         const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
         root = std::filesystem::temp_directory_path() /
-               ("cubey-terrain-raster-study-" + std::to_string(suffix));
+               ("cubey-terrain-heightfield-" + std::to_string(suffix));
         std::filesystem::create_directories(root);
         values.resize(16U);
         for (std::uint32_t z = 0U; z < 4U; ++z) {
@@ -45,7 +45,7 @@ class Fixture {
             }
         }
         manifest = {
-            {"schema", "cubey.terrain.raster-study.v1"},
+            {"schema", "cubey.terrain.heightfield.v1"},
             {"source", {{"id", "test-raster"}}},
             {"seed", 9012U},
             {"grid",
@@ -56,11 +56,11 @@ class Fixture {
                  {"sample_origin_x_m", 0.0F},
                  {"sample_origin_z_m", 0.0F},
              }},
-            {"comparison",
+            {"height",
              {
-                 {"height_offset_m", -1.0F},
-                 {"height_scale", 2.0F},
-                 {"target_relief_m", 3500.0F},
+                 {"offset_m", -1.0F},
+                 {"scale", 2.0F},
+                 {"relief_scale_m", 3500.0F},
              }},
             {"files",
              {
@@ -71,15 +71,6 @@ class Fixture {
                       {"layout", "row-major-zx"},
                       {"shape", {4U, 4U}},
                       {"byte_count", 16U * sizeof(float)},
-                      {"sha256", std::string(64U, '0')},
-                  }},
-                 {"climate",
-                  {
-                      {"path", "climate.f32"},
-                      {"dtype", "float32-le"},
-                      {"layout", "channel-major-zx"},
-                      {"shape", {4U, 4U, 4U}},
-                      {"byte_count", 64U * sizeof(float)},
                       {"sha256", std::string(64U, '0')},
                   }},
              }},
@@ -98,13 +89,7 @@ class Fixture {
             stream.write(reinterpret_cast<const char*>(values.data()),
                          static_cast<std::streamsize>(values.size() * sizeof(float)));
         }
-        {
-            const std::vector<float> climate(64U, 0.0F);
-            std::ofstream stream(root / "climate.f32", std::ios::binary);
-            stream.write(reinterpret_cast<const char*>(climate.data()),
-                         static_cast<std::streamsize>(climate.size() * sizeof(float)));
-        }
-        std::ofstream manifest_stream(root / "manifest.json");
+        std::ofstream manifest_stream(root / "heightfield.json");
         manifest_stream << manifest.dump(2) << '\n';
     }
 
@@ -120,7 +105,7 @@ void test_loads_and_samples_calibrated_field() {
                 source.width() == 4U && source.height() == 4U && source.sample_spacing_m() == 10.0F,
             "raster source should retain manifest metadata");
     require(source.sample_height({.world_xz = {10.0F, 20.0F}}) == 40.0F,
-            "raster source should apply the shared comparison calibration");
+            "raster source should apply the manifest height transform");
     require(source.sample_height({.world_xz = {5.0F, 5.0F}}) == 9.0F,
             "raster source should bilinearly interpolate raw samples");
     require(source.contains_disk({15.0F, 15.0F}, 15.0F) &&
@@ -138,8 +123,8 @@ void test_footprint_selects_filtered_mip() {
             fixture.values[z * 4U + x] = static_cast<float>((x + z) & 1U);
         }
     }
-    fixture.manifest["comparison"]["height_offset_m"] = 0.0F;
-    fixture.manifest["comparison"]["height_scale"] = 1.0F;
+    fixture.manifest["height"]["offset_m"] = 0.0F;
+    fixture.manifest["height"]["scale"] = 1.0F;
     fixture.write();
     const cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
     const float fine = source.sample_height({.world_xz = {0.0F, 0.0F}, .footprint_m = 0.0F});
@@ -188,6 +173,26 @@ void test_rejects_invalid_contracts() {
                 cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject paths outside the field directory");
+    }
+    {
+        Fixture fixture;
+        fixture.manifest["height"]["scale"] = 0.0F;
+        fixture.write();
+        require_throws(
+            [&fixture] {
+                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+            },
+            "raster source should reject an invalid height transform");
+    }
+    {
+        Fixture fixture;
+        fixture.manifest["files"]["elevation"]["shape"] = {2U, 8U};
+        fixture.write();
+        require_throws(
+            [&fixture] {
+                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+            },
+            "raster source should reject an elevation shape mismatch");
     }
 }
 

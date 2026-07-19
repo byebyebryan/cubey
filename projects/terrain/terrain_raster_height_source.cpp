@@ -15,7 +15,7 @@
 namespace cubey::projects::terrain {
 namespace {
 
-constexpr std::string_view kSchema = "cubey.terrain.raster-study.v1";
+constexpr std::string_view kSchema = "cubey.terrain.heightfield.v1";
 constexpr std::uint32_t kMaximumDimension = 16'384U;
 
 [[nodiscard]] bool safe_relative_path(const std::filesystem::path& path) {
@@ -31,7 +31,7 @@ constexpr std::uint32_t kMaximumDimension = 16'384U;
 }
 
 [[nodiscard]] std::filesystem::path manifest_path(const std::filesystem::path& field_path) {
-    return std::filesystem::is_directory(field_path) ? field_path / "manifest.json" : field_path;
+    return std::filesystem::is_directory(field_path) ? field_path / "heightfield.json" : field_path;
 }
 
 [[nodiscard]] nlohmann::json read_manifest(const std::filesystem::path& path) {
@@ -57,7 +57,7 @@ constexpr std::uint32_t kMaximumDimension = 16'384U;
                                                 std::size_t count,
                                                 std::uint64_t declared_byte_count) {
     if constexpr (std::endian::native != std::endian::little) {
-        throw std::runtime_error("terrain raster study requires a little-endian host");
+        throw std::runtime_error("terrain heightfield requires a little-endian host");
     }
     const std::uint64_t expected_bytes = static_cast<std::uint64_t>(count) * sizeof(float);
     std::error_code error;
@@ -101,13 +101,13 @@ TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path
             !std::isfinite(origin_x) || !std::isfinite(origin_z)) {
             throw std::runtime_error("invalid terrain raster grid metadata");
         }
-        const nlohmann::json& comparison = document.at("comparison");
-        height_offset_m_ = comparison.at("height_offset_m").get<float>();
-        height_scale_ = comparison.at("height_scale").get<float>();
-        relief_scale_m_ = comparison.at("target_relief_m").get<float>();
+        const nlohmann::json& height_contract = document.at("height");
+        height_offset_m_ = height_contract.at("offset_m").get<float>();
+        height_scale_ = height_contract.at("scale").get<float>();
+        relief_scale_m_ = height_contract.at("relief_scale_m").get<float>();
         if (!std::isfinite(height_offset_m_) || !std::isfinite(height_scale_) ||
             height_scale_ <= 0.0F || !std::isfinite(relief_scale_m_) || relief_scale_m_ <= 0.0F) {
-            throw std::runtime_error("invalid terrain raster comparison calibration");
+            throw std::runtime_error("invalid terrain heightfield transform");
         }
 
         const nlohmann::json& elevation = document.at("files").at("elevation");
@@ -122,24 +122,6 @@ TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path
             throw std::runtime_error("terrain raster elevation path must remain inside field");
         }
         const std::size_t count = static_cast<std::size_t>(width) * height;
-        const nlohmann::json& climate = document.at("files").at("climate");
-        const std::filesystem::path climate_relative_path = climate.at("path").get<std::string>();
-        if (!safe_relative_path(climate_relative_path)) {
-            throw std::runtime_error("terrain raster climate path must remain inside field");
-        }
-        const std::uint64_t expected_climate_bytes =
-            static_cast<std::uint64_t>(count) * 4U * sizeof(float);
-        std::error_code climate_error;
-        const std::uint64_t climate_bytes = std::filesystem::file_size(
-            manifest.parent_path() / climate_relative_path, climate_error);
-        if (climate.at("dtype").get<std::string_view>() != "float32-le" ||
-            climate.at("layout").get<std::string_view>() != "channel-major-zx" ||
-            climate.at("shape") != nlohmann::json::array({4U, height, width}) ||
-            !valid_sha256(climate.at("sha256").get<std::string_view>()) || climate_error ||
-            climate.at("byte_count").get<std::uint64_t>() != expected_climate_bytes ||
-            climate_bytes != expected_climate_bytes) {
-            throw std::runtime_error("invalid terrain raster climate contract");
-        }
         Level base{
             .width = width,
             .height = height,

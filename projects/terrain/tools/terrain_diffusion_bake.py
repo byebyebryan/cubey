@@ -21,6 +21,8 @@ import time
 import urllib.request
 import zipfile
 
+from export_heightfield_manifest import export_study_field
+
 
 CODE_REVISION = "82a0431281f21a6ec3d691a12ee61525de5b0790"
 MODEL_ID = "xandergos/terrain-diffusion-30m"
@@ -635,10 +637,13 @@ def _write_seed_artifacts(
     }
     manifest_path = seed_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n")
+    heightfield_manifest_path = export_study_field(seed_dir)
     return {
         "seed": seed,
         "manifest": str(manifest_path.relative_to(root)),
         "manifest_sha256": sha256_file(manifest_path),
+        "heightfield_manifest": str(heightfield_manifest_path.relative_to(root)),
+        "heightfield_manifest_sha256": sha256_file(heightfield_manifest_path),
         "total_seconds": generated["total_seconds"],
         "within_five_minute_gate": generated["total_seconds"] <= 300.0,
     }

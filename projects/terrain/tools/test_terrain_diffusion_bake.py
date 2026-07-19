@@ -13,6 +13,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import terrain_diffusion_bake as bake
+from export_heightfield_manifest import HEIGHTFIELD_SCHEMA, heightfield_manifest
 
 
 class TerrainDiffusionBakeTests(unittest.TestCase):
@@ -119,6 +120,36 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
             self.assertEqual(record["byte_count"], 8)
             self.assertEqual(record["sha256"], bake.sha256_file(path))
             self.assertEqual(np.fromfile(path, dtype="<f4").tolist(), [1.0, 2.0])
+
+    def test_runtime_heightfield_manifest_drops_climate_dependency(self) -> None:
+        study = {
+            "schema": "cubey.terrain.raster-study.v1",
+            "source": {"id": "test-source", "generator": "test"},
+            "seed": 9012,
+            "grid": {
+                "width": 4,
+                "height": 4,
+                "sample_spacing_m": 30.0,
+                "sample_origin_x_m": -45.0,
+                "sample_origin_z_m": -45.0,
+            },
+            "comparison": {
+                "height_offset_m": -100.0,
+                "height_scale": 2.0,
+                "target_relief_m": 3500.0,
+            },
+            "files": {
+                "elevation": {"path": "elevation.f32"},
+                "climate": {"path": "climate.f32"},
+            },
+        }
+
+        runtime = heightfield_manifest(study)
+
+        self.assertEqual(runtime["schema"], HEIGHTFIELD_SCHEMA)
+        self.assertEqual(runtime["source"], study["source"])
+        self.assertEqual(runtime["height"]["offset_m"], -100.0)
+        self.assertEqual(runtime["files"], {"elevation": {"path": "elevation.f32"}})
 
     def test_environment_package_inventory_does_not_require_pip(self) -> None:
         packages = bake._installed_packages()

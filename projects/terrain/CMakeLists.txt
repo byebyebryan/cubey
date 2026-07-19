@@ -3,6 +3,7 @@ add_library(cubey_project_terrain_runtime STATIC
     terrain_config.cpp
     terrain_height_source.cpp
     terrain_mountain_backdrop_source.cpp
+    terrain_raster_height_source.cpp
     terrain_source.cpp
     terrain_source_gpu.cpp
 )
@@ -17,6 +18,7 @@ target_link_libraries(
         cubey::core
     PRIVATE
         cubey_project_warnings
+        nlohmann_json::nlohmann_json
 )
 
 add_executable(cubey_project_terrain_source_report
@@ -66,7 +68,6 @@ target_link_libraries(
 )
 
 add_library(cubey_project_terrain_source_study_runtime STATIC
-    source_study/terrain_raster_height_source.cpp
     source_study/terrain_source_study.cpp
 )
 target_include_directories(
@@ -375,12 +376,12 @@ target_link_libraries(
 
 if (BUILD_TESTING)
     add_executable(cubey_project_terrain_raster_height_source_tests
-        source_study/terrain_raster_height_source_tests.cpp
+        terrain_raster_height_source_tests.cpp
     )
     target_link_libraries(
         cubey_project_terrain_raster_height_source_tests
         PRIVATE
-            cubey_project_terrain_source_study_runtime
+            cubey_project_terrain_runtime
             cubey_project_warnings
             nlohmann_json::nlohmann_json
     )
