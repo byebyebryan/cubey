@@ -2,9 +2,10 @@
 
 Date: 2026-07-19
 
-Status: implementation planned. This is a composition follow-up to the
-reference-only Terrain Diffusion bakeoff. It does not promote an external
-generator or replace the terrain v1 source.
+Status: closed. Bounded directional staging is accepted for continued
+integration study with a consumer-owned center. Terrain Diffusion remains a
+reference-only source; this does not promote an external generator or replace
+the terrain v1 source.
 
 ## Problem
 
@@ -31,8 +32,8 @@ found passing placements for all three seeds:
 | 9012 | `4500 / -8000` | 78.16 | 0.178 | `8 / 16` | `8 / 16` |
 | 12345 | `7750 / -7000` | 42.38 | 0.049 | `8 / 8` | `8 / 4` |
 
-These values are orientation evidence, not frozen selected coordinates. The
-implemented planner must reproduce its own deterministic result.
+These values were orientation evidence rather than hand-picked coordinates.
+The implemented planner reproduced them deterministically.
 
 ## Candidate Contract
 
@@ -96,3 +97,53 @@ Keep Terrain Diffusion as reference-only when neither directional lane restores
 recognizable mountain morphology. If both pass, prefer continuous only under
 the center criteria above. Product promotion, runtime asset formats, source
 generation, close detail, and performance optimization remain separate work.
+
+## Result
+
+The maintained pack is
+`outputs/terrain/terrain-diffusion-stage-v1/`. Its contract gate passed all
+three unchanged fields:
+
+| Seed | Strict focus height | Strict contract | Natural focus height | Minimum camera clearance | Natural contract |
+| --- | ---: | --- | ---: | ---: | --- |
+| 0 | 2752.74 m | no | 500 m | 490.76 m | yes |
+| 9012 | 3252.92 m | yes | 500 m | 486.76 m | yes |
+| 12345 | 3244.04 m | no | 500 m | 493.51 m | yes |
+
+Every centered search and selected `16.414 km` support disk remains inside the
+finite raster. Natural planning took about `42-45 ms` per field in this review;
+it is a setup operation, not frame work. The source stayed at `2048 x 2048`,
+`30 m`, with no filtering, mask, resampling, or height shaping.
+
+The first visual pass also exposed a coordinate-contract bug: source-space
+direction yaw and orbit-camera yaw have opposite signs. The stage previously
+placed the camera on the wrong side for most measured mountain directions.
+The shared stage conversion and its tests now make the showcase view face the
+selected relief arc. This correction applies equally to the strict and natural
+lanes; it does not change terrain morphology.
+
+Clay and surface evidence establish three practical findings:
+
+- Lower natural staging restores recognizable mountain scale across all three
+  seeds while preserving broad open directions.
+- The cutout lane exposes the absent inner `3.2 km` in the isolated sphere
+  study. That region is intentionally owned by the eventual foreground
+  consumer, not by the backdrop.
+- The continuous lane removes the annular gap, but exposes the native `30 m`
+  field and coarse center tessellation in the near foreground. Seed `12345`
+  makes this especially clear. It does not pass the continuous-center fidelity
+  criterion.
+
+## Verdict
+
+Carry the bounded directional placement and `500 m` focused stage forward.
+Keep `consumer-owned` cutout as the integration contract and require the host
+scene to provide terrain or other composition inside `3.2 km`. Do not clear,
+flatten, attenuate, or otherwise reshape the source around the subject.
+
+The external 2K raster is sufficient to validate one far-field stage and to
+stress the renderer. It is not a complete runtime terrain asset and should not
+be used as continuous close terrain. Runtime asset format, larger-area tiling,
+true higher-frequency detail, foreground terrain integration, and performance
+promotion are separate follow-ups. No further camera tuning or source shaping
+belongs in this batch.
