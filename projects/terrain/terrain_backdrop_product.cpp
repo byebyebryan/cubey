@@ -36,17 +36,27 @@ constexpr std::uint64_t kFnvPrime = 1'099'511'628'211ULL;
     radii.reserve((continuous ? static_cast<std::size_t>(density.center_radial_intervals) : 0U) +
                   static_cast<std::size_t>(density.hidden_radial_intervals) +
                   static_cast<std::size_t>(density.visible_radial_intervals) + 1U);
-    if (continuous) {
+    if (continuous && request.center_sampling == TerrainBackdropCenterSampling::Uniform) {
+        const std::uint32_t center_intervals =
+            density.center_radial_intervals + density.hidden_radial_intervals;
+        for (std::uint32_t index = 0U; index <= center_intervals; ++index) {
+            radii.push_back(request.visible_inner_radius_m * static_cast<float>(index) /
+                            static_cast<float>(center_intervals));
+        }
+    } else if (continuous) {
         for (std::uint32_t index = 0U; index <= density.center_radial_intervals; ++index) {
             radii.push_back(request.consumer_radius_m * static_cast<float>(index) /
                             static_cast<float>(density.center_radial_intervals));
         }
     }
-    const std::uint32_t hidden_begin = continuous ? 1U : 0U;
-    for (std::uint32_t index = hidden_begin; index <= density.hidden_radial_intervals; ++index) {
-        radii.push_back(logarithmic_radius(request.consumer_radius_m,
-                                           request.visible_inner_radius_m, index,
-                                           density.hidden_radial_intervals));
+    if (!continuous || request.center_sampling == TerrainBackdropCenterSampling::SplitLinearLog) {
+        const std::uint32_t hidden_begin = continuous ? 1U : 0U;
+        for (std::uint32_t index = hidden_begin; index <= density.hidden_radial_intervals;
+             ++index) {
+            radii.push_back(logarithmic_radius(request.consumer_radius_m,
+                                               request.visible_inner_radius_m, index,
+                                               density.hidden_radial_intervals));
+        }
     }
     for (std::uint32_t index = 1U; index <= density.visible_radial_intervals; ++index) {
         radii.push_back(logarithmic_radius(request.visible_inner_radius_m, request.outer_radius_m,
@@ -67,9 +77,11 @@ void validate_request(const TerrainBackdropProductRequest& request,
         request.visible_inner_radius_m <= request.consumer_radius_m ||
         request.outer_radius_m <= request.visible_inner_radius_m ||
         request.vertical_scale <= 0.0F || density.angular_intervals == 0U ||
-        density.center_radial_intervals == 0U ||
-        density.hidden_radial_intervals == 0U || density.visible_radial_intervals == 0U ||
-        density.sector_count == 0U || density.angular_intervals % density.sector_count != 0U ||
+        density.center_radial_intervals == 0U || density.hidden_radial_intervals == 0U ||
+        density.visible_radial_intervals == 0U || density.sector_count == 0U ||
+        density.angular_intervals % density.sector_count != 0U ||
+        (request.center_sampling != TerrainBackdropCenterSampling::SplitLinearLog &&
+         request.center_sampling != TerrainBackdropCenterSampling::Uniform) ||
         request.render_stride > density.angular_intervals ||
         request.render_stride > density.visible_radial_intervals) {
         throw std::runtime_error("invalid terrain backdrop product request");

@@ -157,6 +157,82 @@ void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
             "continuous backdrop draw budget should include the center mesh");
 }
 
+void test_uniform_center_sampling_redistributes_the_existing_budget() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest split_request = product_request();
+    split_request.center_mode = TerrainBackdropCenterMode::Continuous;
+    const TerrainBackdropProduct split =
+        make_terrain_backdrop_product(split_request, source_for_seed(9012U), 9012U);
+
+    TerrainBackdropProductRequest uniform_request = split_request;
+    uniform_request.center_sampling = TerrainBackdropCenterSampling::Uniform;
+    const TerrainBackdropProduct uniform =
+        make_terrain_backdrop_product(uniform_request, source_for_seed(9012U), 9012U);
+    const TerrainBackdropDensityProfile density = uniform.diagnostics.density;
+    const std::uint32_t center_intervals =
+        density.center_radial_intervals + density.hidden_radial_intervals;
+    const float expected_spacing =
+        uniform_request.visible_inner_radius_m / static_cast<float>(center_intervals);
+    const auto& center = uniform.center.value();
+    const std::uint32_t angular_vertex_count = density.angular_intervals + 1U;
+    float previous_radius = 0.0F;
+    for (std::uint32_t ring = 1U; ring <= center_intervals; ++ring) {
+        const auto& vertex = center.vertices[1U + (ring - 1U) * angular_vertex_count];
+        const float radius = std::sqrt(vertex.position[0] * vertex.position[0] +
+                                       vertex.position[2] * vertex.position[2]);
+        require(std::abs(radius - expected_spacing * static_cast<float>(ring)) < 0.01F,
+                "uniform center rings should use one source-scale interval");
+        require(radius > previous_radius, "uniform center rings should remain strictly monotonic");
+        previous_radius = radius;
+    }
+    require(std::abs(previous_radius - uniform_request.visible_inner_radius_m) < 0.01F,
+            "uniform center should terminate at the visible outer seam");
+    require(uniform.diagnostics.source_sample_count == split.diagnostics.source_sample_count &&
+                uniform.diagnostics.center_vertex_count == split.diagnostics.center_vertex_count &&
+                uniform.diagnostics.center_index_count == split.diagnostics.center_index_count &&
+                uniform.diagnostics.render_triangle_count ==
+                    split.diagnostics.render_triangle_count,
+            "uniform center sampling should only redistribute the existing product budget");
+    require(uniform.diagnostics.maximum_sector_boundary_delta_m == 0.0F,
+            "uniform center should preserve the exact outer seam");
+    require(uniform.diagnostics.content_hash != split.diagnostics.content_hash,
+            "uniform center sampling should produce distinct geometry");
+
+    const auto medium = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::Medium);
+    const auto high = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::High);
+    require(std::abs(3'200.0F / static_cast<float>(medium.center_radial_intervals +
+                                                   medium.hidden_radial_intervals) -
+                     44.4444F) < 0.001F &&
+                std::abs(3'200.0F / static_cast<float>(high.center_radial_intervals +
+                                                       high.hidden_radial_intervals) -
+                         33.3333F) < 0.001F,
+            "uniform spacing should scale with every published density budget");
+}
+
+void test_center_sampling_does_not_change_cutout_or_default_split_products() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest default_request = product_request();
+    const TerrainBackdropProduct default_product =
+        make_terrain_backdrop_product(default_request, source_for_seed(9012U), 9012U);
+    TerrainBackdropProductRequest uniform_cutout_request = default_request;
+    uniform_cutout_request.center_sampling = TerrainBackdropCenterSampling::Uniform;
+    const TerrainBackdropProduct uniform_cutout =
+        make_terrain_backdrop_product(uniform_cutout_request, source_for_seed(9012U), 9012U);
+    require(default_product.diagnostics.content_hash == uniform_cutout.diagnostics.content_hash,
+            "center sampling policy should have no effect without a center mesh");
+
+    TerrainBackdropProductRequest implicit_split_request = default_request;
+    implicit_split_request.center_mode = TerrainBackdropCenterMode::Continuous;
+    TerrainBackdropProductRequest explicit_split_request = implicit_split_request;
+    explicit_split_request.center_sampling = TerrainBackdropCenterSampling::SplitLinearLog;
+    const TerrainBackdropProduct implicit_split =
+        make_terrain_backdrop_product(implicit_split_request, source_for_seed(9012U), 9012U);
+    const TerrainBackdropProduct explicit_split =
+        make_terrain_backdrop_product(explicit_split_request, source_for_seed(9012U), 9012U);
+    require(implicit_split.diagnostics.content_hash == explicit_split.diagnostics.content_hash,
+            "the product default should preserve split linear-log sampling");
+}
+
 } // namespace
 
 int main() {
@@ -167,6 +243,8 @@ int main() {
         test_parameter_adapter_preserves_the_product();
         test_full_render_stride_retains_the_baked_topology();
         test_continuous_product_fills_the_center_and_preserves_the_outer_seam();
+        test_uniform_center_sampling_redistributes_the_existing_budget();
+        test_center_sampling_does_not_change_cutout_or_default_split_products();
         std::cout << "terrain_backdrop_product_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

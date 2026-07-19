@@ -17,6 +17,7 @@ namespace {
 
 struct Options {
     std::filesystem::path field{};
+    float focus_height_m = 500.0F;
 };
 
 [[nodiscard]] Options parse_options(int argc, char** argv) {
@@ -25,9 +26,16 @@ struct Options {
         const std::string_view option = argv[index];
         if (option == "--terrain-study-field" && index + 1 < argc) {
             result.field = argv[++index];
+        } else if (option == "--natural-focus-height" && index + 1 < argc) {
+            result.focus_height_m = std::stof(argv[++index]);
+            if (!std::isfinite(result.focus_height_m) || result.focus_height_m < 100.0F ||
+                result.focus_height_m > 1'000.0F) {
+                throw std::runtime_error("natural focus height must be 100..1000 m");
+            }
         } else {
             throw std::runtime_error(
-                "usage: terrain_natural_raster_report --terrain-study-field path");
+                "usage: terrain_natural_raster_report --terrain-study-field path "
+                "[--natural-focus-height meters]");
         }
     }
     if (result.field.empty()) {
@@ -114,7 +122,8 @@ int main(int argc, char** argv) {
             plan_terrain_backdrop_stage(source, strict_request);
         const auto strict_end = std::chrono::steady_clock::now();
 
-        const TerrainNaturalBackdropStageRequest natural_request;
+        TerrainNaturalBackdropStageRequest natural_request;
+        natural_request.stage.focus_height_m = options.focus_height_m;
         const float centered_support = terrain_natural_backdrop_centered_support_radius(
             natural_request, source.metadata().gradient_step_m);
         const bool centered_coverage = source.contains_disk({0.0F, 0.0F}, centered_support);

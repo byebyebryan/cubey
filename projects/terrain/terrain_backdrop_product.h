@@ -18,6 +18,11 @@ enum class TerrainBackdropCenterMode : std::uint8_t {
     Continuous,
 };
 
+enum class TerrainBackdropCenterSampling : std::uint8_t {
+    SplitLinearLog,
+    Uniform,
+};
+
 struct TerrainBackdropDensityProfile {
     std::uint32_t angular_intervals = 0U;
     std::uint32_t center_radial_intervals = 0U;
@@ -33,6 +38,7 @@ struct TerrainBackdropProductRequest {
     cubey::math::Vec2 source_focus_xz{0.0F, 0.0F};
     TerrainBackdropMeshDensity density = TerrainBackdropMeshDensity::High;
     TerrainBackdropCenterMode center_mode = TerrainBackdropCenterMode::Cutout;
+    TerrainBackdropCenterSampling center_sampling = TerrainBackdropCenterSampling::SplitLinearLog;
     std::uint32_t render_stride = 0U;
     float consumer_radius_m = 300.0F;
     float visible_inner_radius_m = 3'200.0F;

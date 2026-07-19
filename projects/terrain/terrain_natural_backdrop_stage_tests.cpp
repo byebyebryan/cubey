@@ -57,11 +57,31 @@ void test_natural_stage_uses_directional_placement_and_bounded_focus_height() {
                  "natural stage should include one gradient sample in selected support");
 }
 
+void test_natural_stage_accepts_the_review_focus_height_without_moving_placement() {
+    using namespace cubey::projects::terrain;
+    TerrainNaturalBackdropStageRequest baseline_request;
+    const TerrainNaturalBackdropStagePlan baseline =
+        plan_terrain_natural_backdrop_stage(NaturalRiseSource{}, baseline_request);
+    TerrainNaturalBackdropStageRequest raised_request = baseline_request;
+    raised_request.stage.focus_height_m = 750.0F;
+    const TerrainNaturalBackdropStagePlan raised =
+        plan_terrain_natural_backdrop_stage(NaturalRiseSource{}, raised_request);
+    require_near(raised.stage.target_height_m - raised.stage.source_center_height_m, 750.0F, 0.001F,
+                 "natural stage should retain the raised review focus height");
+    require_near(raised.stage.source_focus_xz.x, baseline.stage.source_focus_xz.x, 0.001F,
+                 "focus-height review should not move the selected source x coordinate");
+    require_near(raised.stage.source_focus_xz.y, baseline.stage.source_focus_xz.y, 0.001F,
+                 "focus-height review should not move the selected source z coordinate");
+    require(raised.stage.minimum_camera_clearance_m >= baseline.stage.minimum_camera_clearance_m,
+            "raising the focus should not reduce orbit clearance");
+}
+
 } // namespace
 
 int main() {
     try {
         test_natural_stage_uses_directional_placement_and_bounded_focus_height();
+        test_natural_stage_accepts_the_review_focus_height_without_moving_placement();
         std::cout << "terrain_natural_backdrop_stage_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

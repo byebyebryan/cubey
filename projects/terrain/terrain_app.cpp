@@ -691,6 +691,7 @@ class TerrainApp {
                 .source_focus_xz = plan.source_focus_xz,
                 .density = runtime_config_.backdrop_mesh_density,
                 .center_mode = options_.backdrop_center_mode,
+                .center_sampling = options_.backdrop_center_sampling,
                 .render_stride = options_.backdrop_render_stride,
                 .consumer_radius_m = plan.stage_radius_m,
                 .visible_inner_radius_m = runtime_config_.backdrop_minimum_visible_distance_m,
