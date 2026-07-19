@@ -43,6 +43,27 @@ constexpr std::uint64_t kFnvPrime = 1'099'511'628'211ULL;
             radii.push_back(request.visible_inner_radius_m * static_cast<float>(index) /
                             static_cast<float>(center_intervals));
         }
+    } else if (continuous &&
+               request.center_sampling == TerrainBackdropCenterSampling::SeamMatched) {
+        const std::uint32_t center_intervals =
+            density.center_radial_intervals + density.hidden_radial_intervals;
+        const float average_step =
+            request.visible_inner_radius_m / static_cast<float>(center_intervals);
+        const float outer_first_radius =
+            logarithmic_radius(request.visible_inner_radius_m, request.outer_radius_m, 1U,
+                               density.visible_radial_intervals);
+        const float final_step =
+            std::min(outer_first_radius - request.visible_inner_radius_m, average_step * 1.9F);
+        const float first_step = 2.0F * average_step - final_step;
+        const float step_delta =
+            (final_step - first_step) / static_cast<float>(center_intervals - 1U);
+        float radius = 0.0F;
+        radii.push_back(radius);
+        for (std::uint32_t index = 0U; index < center_intervals; ++index) {
+            radius += first_step + step_delta * static_cast<float>(index);
+            radii.push_back(index + 1U == center_intervals ? request.visible_inner_radius_m
+                                                           : radius);
+        }
     } else if (continuous) {
         for (std::uint32_t index = 0U; index <= density.center_radial_intervals; ++index) {
             radii.push_back(request.consumer_radius_m * static_cast<float>(index) /
@@ -81,7 +102,8 @@ void validate_request(const TerrainBackdropProductRequest& request,
         density.visible_radial_intervals == 0U || density.sector_count == 0U ||
         density.angular_intervals % density.sector_count != 0U ||
         (request.center_sampling != TerrainBackdropCenterSampling::SplitLinearLog &&
-         request.center_sampling != TerrainBackdropCenterSampling::Uniform) ||
+         request.center_sampling != TerrainBackdropCenterSampling::Uniform &&
+         request.center_sampling != TerrainBackdropCenterSampling::SeamMatched) ||
         request.render_stride > density.angular_intervals ||
         request.render_stride > density.visible_radial_intervals) {
         throw std::runtime_error("invalid terrain backdrop product request");
@@ -215,11 +237,26 @@ void include(TerrainBackdropSectorBounds& bounds, cubey::math::Vec3 position) {
     return result;
 }
 
+[[nodiscard]] std::vector<std::uint32_t>
+render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t stride) {
+    std::vector<std::uint32_t> result =
+        strided_vertices(0U, density.angular_intervals, stride);
+    const std::uint32_t intervals_per_sector =
+        density.angular_intervals / density.sector_count;
+    for (std::uint32_t boundary = intervals_per_sector;
+         boundary < density.angular_intervals; boundary += intervals_per_sector) {
+        result.push_back(boundary);
+    }
+    std::ranges::sort(result);
+    result.erase(std::unique(result.begin(), result.end()), result.end());
+    return result;
+}
+
 [[nodiscard]] TerrainBackdropSectorMesh make_center_mesh(
     const TerrainBackdropProductRequest& request, const std::vector<float>& heights,
     const std::vector<float>& radii, TerrainBackdropDensityProfile density,
     const TerrainHeightSourceMetadata& source, std::uint32_t radial_interval_count,
-    std::uint32_t angular_render_stride, std::uint32_t radial_render_stride) {
+    std::span<const std::uint32_t> render_angles, std::uint32_t radial_render_stride) {
     TerrainBackdropSectorMesh mesh;
     mesh.begin_azimuth_radians = 0.0F;
     mesh.end_azimuth_radians = kTwoPi;
@@ -280,10 +317,8 @@ void include(TerrainBackdropSectorBounds& bounds, cubey::math::Vec3 position) {
         }
     }
 
-    const std::vector<std::uint32_t> render_angles =
-        strided_vertices(0U, density.angular_intervals, angular_render_stride);
     const std::vector<std::uint32_t> render_radii =
-        strided_vertices(1U, radial_interval_count, radial_render_stride);
+        strided_vertices(radial_render_stride, radial_interval_count, radial_render_stride);
     mesh.render_indices.reserve((render_angles.size() - 1U) *
                                 (1U + (render_radii.size() - 1U) * 6U));
     for (std::size_t angular = 0U; angular + 1U < render_angles.size(); ++angular) {
@@ -441,10 +476,12 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
             ? 3U
             : (request.density == TerrainBackdropMeshDensity::Medium ? 2U : 1U);
     const std::uint32_t radial_render_stride = angular_render_stride;
+    const std::vector<std::uint32_t> global_render_angles =
+        render_angular_vertices(density, angular_render_stride);
 
     if (request.center_mode == TerrainBackdropCenterMode::Continuous) {
         product.center = make_center_mesh(request, heights, radii, density, source_metadata,
-                                          center_radial_intervals, angular_render_stride,
+                                          center_radial_intervals, global_render_angles,
                                           radial_render_stride);
     }
 
@@ -507,12 +544,11 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
             }
         }
         std::vector<std::uint32_t> render_angular_vertices;
-        for (std::uint32_t angular = 0U; angular < angular_intervals_per_sector;
-             angular += angular_render_stride) {
-            render_angular_vertices.push_back(angular);
-        }
-        if (render_angular_vertices.back() != angular_intervals_per_sector) {
-            render_angular_vertices.push_back(angular_intervals_per_sector);
+        const std::uint32_t angular_end = angular_begin + angular_intervals_per_sector;
+        for (const std::uint32_t angular : global_render_angles) {
+            if (angular >= angular_begin && angular <= angular_end) {
+                render_angular_vertices.push_back(angular - angular_begin);
+            }
         }
         std::vector<std::uint32_t> render_radial_vertices;
         for (std::uint32_t radial = 0U; radial < density.visible_radial_intervals;

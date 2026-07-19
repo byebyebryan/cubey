@@ -121,6 +121,8 @@ int main(int argc, char** argv) {
                     center_sampling = TerrainBackdropCenterSampling::SplitLinearLog;
                 } else if (name == "uniform") {
                     center_sampling = TerrainBackdropCenterSampling::Uniform;
+                } else if (name == "seam-matched") {
+                    center_sampling = TerrainBackdropCenterSampling::SeamMatched;
                 } else {
                     throw std::runtime_error("unknown natural center sampling: " +
                                              std::string(name));

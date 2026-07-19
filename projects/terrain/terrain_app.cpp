@@ -686,7 +686,7 @@ class TerrainApp {
             options_.backdrop_source = &source;
             options_.backdrop_render_stride = 3U;
             options_.backdrop_center_mode = TerrainBackdropCenterMode::Continuous;
-            options_.backdrop_center_sampling = TerrainBackdropCenterSampling::Uniform;
+            options_.backdrop_center_sampling = TerrainBackdropCenterSampling::SeamMatched;
             options_.backdrop_outer_radius_m = request.outer_radius_m;
             backdrop_stage_plan_ = natural.stage;
             return;

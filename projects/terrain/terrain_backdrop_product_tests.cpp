@@ -1,10 +1,13 @@
 #include "terrain_backdrop_product.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace {
 
@@ -30,6 +33,35 @@ source_for_seed(std::uint64_t seed) {
         .version = cubey::projects::terrain::TerrainSourceVersion::V2_1,
         .weathering = cubey::projects::terrain::TerrainWeatheringMode::Off,
     });
+}
+
+using BoundaryEdge = std::pair<std::uint32_t, std::uint32_t>;
+
+[[nodiscard]] std::set<BoundaryEdge>
+rendered_boundary_edges(const cubey::projects::terrain::TerrainBackdropSectorMesh& mesh,
+                        std::uint32_t first_vertex, std::uint32_t vertex_count,
+                        std::uint32_t angular_offset = 0U) {
+    std::set<BoundaryEdge> edges;
+    const std::uint32_t last_vertex = first_vertex + vertex_count;
+    for (std::size_t triangle = 0U; triangle < mesh.render_indices.size(); triangle += 3U) {
+        const std::uint32_t indices[] = {
+            mesh.render_indices[triangle],
+            mesh.render_indices[triangle + 1U],
+            mesh.render_indices[triangle + 2U],
+        };
+        for (std::size_t edge = 0U; edge < 3U; ++edge) {
+            const std::uint32_t first = indices[edge];
+            const std::uint32_t second = indices[(edge + 1U) % 3U];
+            if (first < first_vertex || first >= last_vertex || second < first_vertex ||
+                second >= last_vertex) {
+                continue;
+            }
+            const std::uint32_t local_first = first - first_vertex + angular_offset;
+            const std::uint32_t local_second = second - first_vertex + angular_offset;
+            edges.emplace(std::min(local_first, local_second), std::max(local_first, local_second));
+        }
+    }
+    return edges;
 }
 
 void test_density_profiles_publish_the_product_budget() {
@@ -209,6 +241,62 @@ void test_uniform_center_sampling_redistributes_the_existing_budget() {
             "uniform spacing should scale with every published density budget");
 }
 
+void test_decimated_center_and_sectors_share_the_same_rendered_seam_edges() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest request = product_request();
+    request.center_mode = TerrainBackdropCenterMode::Continuous;
+    request.render_stride = 3U;
+    const TerrainBackdropProduct product =
+        make_terrain_backdrop_product(request, source_for_seed(9012U), 9012U);
+    const TerrainBackdropDensityProfile density = product.diagnostics.density;
+    const std::uint32_t center_intervals =
+        density.center_radial_intervals + density.hidden_radial_intervals;
+    const std::uint32_t center_row_begin =
+        1U + (center_intervals - 1U) * (density.angular_intervals + 1U);
+    const std::set<BoundaryEdge> center_edges = rendered_boundary_edges(
+        product.center.value(), center_row_begin, density.angular_intervals + 1U);
+
+    const std::uint32_t intervals_per_sector = density.angular_intervals / density.sector_count;
+    std::set<BoundaryEdge> sector_edges;
+    for (std::uint32_t sector = 0U; sector < density.sector_count; ++sector) {
+        const std::set<BoundaryEdge> local_edges = rendered_boundary_edges(
+            product.sectors[sector], 0U, intervals_per_sector + 1U, sector * intervals_per_sector);
+        sector_edges.insert(local_edges.begin(), local_edges.end());
+    }
+    require(center_edges == sector_edges,
+            "decimated center and sectors should render identical seam partitions");
+}
+
+void test_seam_matched_center_sampling_matches_the_outer_radial_step() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest request = product_request();
+    request.center_mode = TerrainBackdropCenterMode::Continuous;
+    request.center_sampling = TerrainBackdropCenterSampling::SeamMatched;
+    const TerrainBackdropProduct product =
+        make_terrain_backdrop_product(request, source_for_seed(9012U), 9012U);
+    const TerrainBackdropDensityProfile density = product.diagnostics.density;
+    const std::uint32_t center_intervals =
+        density.center_radial_intervals + density.hidden_radial_intervals;
+    const std::uint32_t angular_vertex_count = density.angular_intervals + 1U;
+    const auto radius = [](const auto& vertex) {
+        return std::sqrt(vertex.position[0] * vertex.position[0] +
+                         vertex.position[2] * vertex.position[2]);
+    };
+    const auto& center = product.center.value();
+    const float center_previous_radius =
+        radius(center.vertices[1U + (center_intervals - 2U) * angular_vertex_count]);
+    const float center_seam_radius =
+        radius(center.vertices[1U + (center_intervals - 1U) * angular_vertex_count]);
+    const std::uint32_t sector_row_width = density.angular_intervals / density.sector_count + 1U;
+    const float outer_seam_radius = radius(product.sectors.front().vertices.front());
+    const float outer_next_radius = radius(product.sectors.front().vertices[sector_row_width]);
+    require(std::abs(center_seam_radius - outer_seam_radius) < 0.01F,
+            "seam-matched center should terminate on the outer sector boundary");
+    require(std::abs((center_seam_radius - center_previous_radius) -
+                     (outer_next_radius - outer_seam_radius)) < 0.01F,
+            "seam-matched center should match the first outer radial step");
+}
+
 void test_center_sampling_does_not_change_cutout_or_default_split_products() {
     using namespace cubey::projects::terrain;
     TerrainBackdropProductRequest default_request = product_request();
@@ -244,6 +332,8 @@ int main() {
         test_full_render_stride_retains_the_baked_topology();
         test_continuous_product_fills_the_center_and_preserves_the_outer_seam();
         test_uniform_center_sampling_redistributes_the_existing_budget();
+        test_decimated_center_and_sectors_share_the_same_rendered_seam_edges();
+        test_seam_matched_center_sampling_matches_the_outer_radial_step();
         test_center_sampling_does_not_change_cutout_or_default_split_products();
         std::cout << "terrain_backdrop_product_tests: ok\n";
         return 0;

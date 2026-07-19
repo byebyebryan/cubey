@@ -21,6 +21,7 @@ enum class TerrainBackdropCenterMode : std::uint8_t {
 enum class TerrainBackdropCenterSampling : std::uint8_t {
     SplitLinearLog,
     Uniform,
+    SeamMatched,
 };
 
 struct TerrainBackdropDensityProfile {
