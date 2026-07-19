@@ -7,6 +7,7 @@
 #include <cubey/core/run_config.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <string_view>
 
@@ -69,6 +70,7 @@ enum class TerrainRenderPath : std::uint8_t {
 enum class TerrainBackdropProfile : std::uint8_t {
     HardCutV1,
     RadialV1,
+    RasterV1,
 };
 
 enum class TerrainBackdropCenterOwnership : std::uint8_t {
@@ -83,10 +85,10 @@ enum class TerrainSurfaceDetail : std::uint8_t {
 
 struct TerrainRuntimeConfig {
     TerrainSourceConfig source{};
+    std::filesystem::path heightfield_path{};
     TerrainCameraPreset camera = TerrainCameraPreset::Oblique;
     TerrainBackdropProfile backdrop_profile = TerrainBackdropProfile::HardCutV1;
-    TerrainBackdropCenterOwnership backdrop_center =
-        TerrainBackdropCenterOwnership::ConsumerOwned;
+    TerrainBackdropCenterOwnership backdrop_center = TerrainBackdropCenterOwnership::ConsumerOwned;
     TerrainBackdropStageMode backdrop_mode = TerrainBackdropStageMode::Detached;
     std::optional<float> backdrop_azimuth_radians{};
     std::optional<float> backdrop_orbit_radius_m{};
@@ -109,7 +111,8 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] bool terrain_camera_is_surface(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] bool terrain_camera_is_backdrop(TerrainCameraPreset preset) noexcept;
 [[nodiscard]] bool terrain_camera_advances_headless(TerrainCameraPreset preset) noexcept;
-[[nodiscard]] std::string_view terrain_backdrop_profile_name(TerrainBackdropProfile profile) noexcept;
+[[nodiscard]] std::string_view
+terrain_backdrop_profile_name(TerrainBackdropProfile profile) noexcept;
 [[nodiscard]] TerrainBackdropProfile terrain_backdrop_profile_from_name(std::string_view name);
 [[nodiscard]] std::string_view
 terrain_backdrop_center_ownership_name(TerrainBackdropCenterOwnership ownership) noexcept;

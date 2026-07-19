@@ -161,13 +161,11 @@ void test_backdrop_camera_defaults_to_the_cached_radial_product() {
             "backdrop camera should default to the frozen v2.1 source");
     require(config.render_path == cubey::projects::terrain::TerrainRenderPath::Backdrop,
             "backdrop camera should default to the cached product renderer");
-    require(config.backdrop_profile ==
-                    cubey::projects::terrain::TerrainBackdropProfile::RadialV1 &&
+    require(config.backdrop_profile == cubey::projects::terrain::TerrainBackdropProfile::RadialV1 &&
                 config.backdrop_center ==
                     cubey::projects::terrain::TerrainBackdropCenterOwnership::Continuous &&
                 config.backdrop_minimum_visible_distance_m == 6'000.0F &&
-                config.presentation ==
-                    cubey::projects::terrain::TerrainPresentationMode::Backdrop,
+                config.presentation == cubey::projects::terrain::TerrainPresentationMode::Backdrop,
             "backdrop camera should default to the radial-v1 product contract");
     require(config.backdrop_mesh_density ==
                 cubey::projects::terrain::TerrainBackdropMeshDensity::High,
@@ -189,6 +187,8 @@ void test_backdrop_camera_defaults_to_the_cached_radial_product() {
 void test_backdrop_product_profiles_parse_and_validate() {
     using namespace cubey::projects::terrain;
     require(terrain_backdrop_profile_from_name("radial-v1") == TerrainBackdropProfile::RadialV1 &&
+                terrain_backdrop_profile_from_name("raster-v1") ==
+                    TerrainBackdropProfile::RasterV1 &&
                 terrain_backdrop_profile_name(TerrainBackdropProfile::HardCutV1) == "hard-cut-v1",
             "terrain backdrop profile names should round trip");
     require(terrain_backdrop_center_ownership_from_name("continuous") ==
@@ -247,6 +247,51 @@ void test_backdrop_product_profiles_parse_and_validate() {
         rejected = true;
     }
     require(rejected, "backdrop profiles should reject non-backdrop render paths");
+}
+
+void test_raster_backdrop_profile_owns_the_external_heightfield_contract() {
+    using namespace cubey::projects::terrain;
+    cubey::RunConfig raster{};
+    raster.terrain.camera_preset = "backdrop";
+    raster.terrain.backdrop_profile = "raster-v1";
+    raster.terrain.heightfield_path = "/tmp/heightfield.json";
+    raster.terrain.backdrop_orbit_radius_m = 250.0F;
+    raster.terrain.backdrop_elevation_degrees = 30.0F;
+    const TerrainRuntimeConfig config = terrain_runtime_config_from_run_config(raster);
+    require(config.backdrop_profile == TerrainBackdropProfile::RasterV1 &&
+                config.heightfield_path == raster.terrain.heightfield_path &&
+                config.backdrop_center == TerrainBackdropCenterOwnership::Continuous &&
+                config.backdrop_mode == TerrainBackdropStageMode::Grounded &&
+                config.backdrop_mesh_density == TerrainBackdropMeshDensity::High &&
+                config.backdrop_minimum_visible_distance_m == 3'200.0F &&
+                config.presentation == TerrainPresentationMode::Backdrop &&
+                config.source.weathering == TerrainWeatheringMode::Off &&
+                config.vertical_scale == 1.0F,
+            "raster-v1 should resolve its frozen heightfield product contract");
+
+    const auto rejected = [](cubey::RunConfig invalid) {
+        try {
+            (void)terrain_runtime_config_from_run_config(invalid);
+        } catch (const std::runtime_error&) {
+            return true;
+        }
+        return false;
+    };
+    cubey::RunConfig missing = raster;
+    missing.terrain.heightfield_path.clear();
+    require(rejected(missing), "raster-v1 should require an external heightfield");
+    cubey::RunConfig source_override = raster;
+    source_override.terrain.preset = "mountain";
+    require(rejected(source_override), "raster-v1 should reject procedural source controls");
+    cubey::RunConfig center_override = raster;
+    center_override.terrain.backdrop_center = "consumer-owned";
+    require(rejected(center_override), "raster-v1 should require its continuous center");
+    cubey::RunConfig wrong_profile = raster;
+    wrong_profile.terrain.backdrop_profile = "radial-v1";
+    require(rejected(wrong_profile), "non-raster profiles should reject a heightfield");
+    cubey::RunConfig outside_envelope = raster;
+    outside_envelope.terrain.backdrop_orbit_radius_m = 251.0F;
+    require(rejected(outside_envelope), "raster-v1 should enforce its orbit envelope");
 }
 
 void test_source_v2_extends_only_mountain_detail_band() {
@@ -449,8 +494,8 @@ void test_backdrop_camera_configuration() {
 
     cubey::RunConfig midground_run_config;
     midground_run_config.terrain.camera_preset = "midground";
-    const auto midground = cubey::projects::terrain::terrain_runtime_config_from_run_config(
-        midground_run_config);
+    const auto midground =
+        cubey::projects::terrain::terrain_runtime_config_from_run_config(midground_run_config);
     require(midground.camera == cubey::projects::terrain::TerrainCameraPreset::Midground,
             "terrain runtime should parse the midground camera");
     require(cubey::projects::terrain::terrain_camera_is_surface(midground.camera) &&
@@ -916,6 +961,7 @@ int main() {
         test_runtime_config_rejects_reference_study_field();
         test_backdrop_camera_defaults_to_the_cached_radial_product();
         test_backdrop_product_profiles_parse_and_validate();
+        test_raster_backdrop_profile_owns_the_external_heightfield_contract();
         test_source_v2_extends_only_mountain_detail_band();
         test_runtime_config_parses_source_v2();
         test_runtime_config_parses_source_v2_1();

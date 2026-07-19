@@ -10,7 +10,9 @@
 #include "terrain_environment_gpu.h"
 #include "terrain_material_tiles.h"
 #include "terrain_mountain_backdrop_source.h"
+#include "terrain_natural_backdrop_stage.h"
 #include "terrain_radial_relief.h"
+#include "terrain_raster_height_source.h"
 #include "terrain_source_gpu.h"
 #include "terrain_surface_controller.h"
 
@@ -646,8 +648,50 @@ class TerrainApp {
 
     void configure_backdrop_profile() {
         if (runtime_config_.render_path != TerrainRenderPath::Backdrop ||
-            runtime_config_.backdrop_profile != TerrainBackdropProfile::RadialV1 ||
             options_.backdrop_source != nullptr) {
+            return;
+        }
+        if (runtime_config_.backdrop_profile == TerrainBackdropProfile::RasterV1) {
+            raster_backdrop_source_.emplace(runtime_config_.heightfield_path);
+            const TerrainRasterHeightSource& source = raster_backdrop_source_.value();
+            if (run_config_.terrain.seed_set &&
+                run_config_.terrain.seed != source.metadata().seed) {
+                throw std::runtime_error("terrain seed does not match raster heightfield manifest");
+            }
+            TerrainNaturalBackdropStageRequest request;
+            if (runtime_config_.backdrop_orbit_radius_m.has_value()) {
+                request.stage.orbit_default_radius_m =
+                    runtime_config_.backdrop_orbit_radius_m.value();
+            }
+            if (runtime_config_.backdrop_elevation_radians.has_value()) {
+                request.stage.orbit_default_elevation_radians =
+                    runtime_config_.backdrop_elevation_radians.value();
+            }
+            const float centered_support = terrain_natural_backdrop_centered_support_radius(
+                request, source.metadata().gradient_step_m);
+            if (!source.contains_disk({0.0F, 0.0F}, centered_support)) {
+                throw std::runtime_error(
+                    "terrain heightfield does not cover the raster-v1 placement search");
+            }
+            const TerrainNaturalBackdropStagePlan natural =
+                plan_terrain_natural_backdrop_stage(source, request);
+            if (!natural.placement.contract_satisfied || !natural.stage.contract_satisfied) {
+                throw std::runtime_error("terrain heightfield has no passing raster-v1 stage");
+            }
+            if (!source.contains_disk(natural.stage.source_focus_xz,
+                                      natural.selected_support_radius_m)) {
+                throw std::runtime_error(
+                    "terrain heightfield does not cover the selected raster-v1 backdrop");
+            }
+            options_.backdrop_source = &source;
+            options_.backdrop_render_stride = 3U;
+            options_.backdrop_center_mode = TerrainBackdropCenterMode::Continuous;
+            options_.backdrop_center_sampling = TerrainBackdropCenterSampling::Uniform;
+            options_.backdrop_outer_radius_m = request.outer_radius_m;
+            backdrop_stage_plan_ = natural.stage;
+            return;
+        }
+        if (runtime_config_.backdrop_profile != TerrainBackdropProfile::RadialV1) {
             return;
         }
         radial_backdrop_base_source_.emplace(runtime_config_.source.seed);
@@ -1535,6 +1579,9 @@ class TerrainApp {
     }
 
     [[nodiscard]] std::string_view active_backdrop_profile_name() const noexcept {
+        if (raster_backdrop_source_.has_value()) {
+            return "raster-v1";
+        }
         if (options_.backdrop_source != nullptr && !radial_backdrop_source_.has_value()) {
             return "injected-study";
         }
@@ -1548,6 +1595,7 @@ class TerrainApp {
     ParameterTerrainHeightSource production_backdrop_source_;
     std::optional<TerrainMountainBackdropSource> radial_backdrop_base_source_{};
     std::optional<TerrainRadialReliefSource> radial_backdrop_source_{};
+    std::optional<TerrainRasterHeightSource> raster_backdrop_source_{};
     TerrainClipmapMeshData clipmap_data_{};
     TerrainQualityTileMeshData quality_tile_data_{};
     cubey::render::ClipmapGrid2DConfig clipmap_config_{};

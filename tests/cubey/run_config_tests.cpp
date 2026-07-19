@@ -329,6 +329,7 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--planet-camera-mode",
         "--terrain-recipe",
         "--terrain-study-field",
+        "--terrain-heightfield",
         "--terrain-camera-preset",
         "--terrain-backdrop-profile",
         "--terrain-backdrop-center",
@@ -453,6 +454,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.cell_size",
         "terrain.recipe",
         "terrain.study_field",
+        "terrain.heightfield",
         "terrain.camera_preset",
         "terrain.backdrop_profile",
         "terrain.backdrop_center",
@@ -638,6 +640,7 @@ void test_run_config_loads_json_config_file() {
     "weathering_strength": 0.65,
     "recipe": "temperate-mountain-range-stress",
     "study_field": "/tmp/terrain-diffusion/seed-9012",
+    "heightfield": "/tmp/terrain-heightfield/heightfield.json",
     "camera_preset": "profile",
     "backdrop_profile": "radial-v1",
     "backdrop_center": "continuous",
@@ -759,6 +762,8 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain recipe");
     require(config.terrain.study_field_path == "/tmp/terrain-diffusion/seed-9012",
             "config file should set terrain study field path");
+    require(config.terrain.heightfield_path == "/tmp/terrain-heightfield/heightfield.json",
+            "config file should set terrain runtime heightfield path");
     require(config.terrain.camera_preset == "profile",
             "config file should set terrain camera preset");
     require(config.terrain.backdrop_profile == "radial-v1" &&
@@ -1821,6 +1826,8 @@ void test_run_config_parses_terrain_controls() {
     std::string recipe_value = "temperate-mountain-range-stress";
     std::string study_field_flag = "--terrain-study-field";
     std::string study_field_value = "/tmp/terrain-diffusion/seed-9012";
+    std::string heightfield_flag = "--terrain-heightfield";
+    std::string heightfield_value = "/tmp/terrain-heightfield/heightfield.json";
     std::string camera_flag = "--terrain-camera-preset";
     std::string camera_value = "surface";
     std::string backdrop_profile_flag = "--terrain-backdrop-profile";
@@ -1848,7 +1855,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 62> argv{program.data(),
+    std::array<char*, 64> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1883,6 +1890,8 @@ void test_run_config_parses_terrain_controls() {
                                recipe_value.data(),
                                study_field_flag.data(),
                                study_field_value.data(),
+                               heightfield_flag.data(),
+                               heightfield_value.data(),
                                camera_flag.data(),
                                camera_value.data(),
                                backdrop_profile_flag.data(),
@@ -1932,6 +1941,8 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain recipe");
     require(config.terrain.study_field_path == "/tmp/terrain-diffusion/seed-9012",
             "run config should parse terrain study field path");
+    require(config.terrain.heightfield_path == "/tmp/terrain-heightfield/heightfield.json",
+            "run config should parse terrain runtime heightfield path");
     require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
     require(config.terrain.backdrop_profile == "hard-cut-v1" &&

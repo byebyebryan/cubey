@@ -82,6 +82,8 @@ std::string_view terrain_backdrop_profile_name(TerrainBackdropProfile profile) n
         return "hard-cut-v1";
     case TerrainBackdropProfile::RadialV1:
         return "radial-v1";
+    case TerrainBackdropProfile::RasterV1:
+        return "raster-v1";
     }
     return "hard-cut-v1";
 }
@@ -93,11 +95,14 @@ TerrainBackdropProfile terrain_backdrop_profile_from_name(std::string_view name)
     if (name == "hard-cut-v1") {
         return TerrainBackdropProfile::HardCutV1;
     }
+    if (name == "raster-v1") {
+        return TerrainBackdropProfile::RasterV1;
+    }
     throw std::runtime_error("unknown terrain backdrop profile: " + std::string(name));
 }
 
-std::string_view terrain_backdrop_center_ownership_name(
-    TerrainBackdropCenterOwnership ownership) noexcept {
+std::string_view
+terrain_backdrop_center_ownership_name(TerrainBackdropCenterOwnership ownership) noexcept {
     switch (ownership) {
     case TerrainBackdropCenterOwnership::ConsumerOwned:
         return "consumer-owned";
@@ -392,13 +397,18 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
     const bool radial = config.render_path == TerrainRenderPath::Backdrop &&
                         config.backdrop_profile == TerrainBackdropProfile::RadialV1;
+    const bool raster = config.render_path == TerrainRenderPath::Backdrop &&
+                        config.backdrop_profile == TerrainBackdropProfile::RasterV1;
+    const bool frozen_backdrop = radial || raster;
     const float minimum_elevation_radians =
-        radial ? 0.0F
-               : (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 0.0F : 12.0F) *
-                     degrees_to_radians;
+        frozen_backdrop
+            ? 0.0F
+            : (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 0.0F : 12.0F) *
+                  degrees_to_radians;
     const float maximum_elevation_radians =
-        (radial ? 30.0F
-                : (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 30.0F : 32.0F)) *
+        (frozen_backdrop
+             ? 30.0F
+             : (config.backdrop_mode == TerrainBackdropStageMode::Detached ? 30.0F : 32.0F)) *
         degrees_to_radians;
     const float minimum_orbit_radius_m = radial ? 100.0F : 50.0F;
     const float maximum_orbit_radius_m = radial ? 1'000.0F : 250.0F;
@@ -414,14 +424,24 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
           config.backdrop_elevation_radians.value() > maximum_elevation_radians)) ||
         !std::isfinite(config.backdrop_minimum_visible_distance_m) ||
         (radial ? config.backdrop_minimum_visible_distance_m != 6'000.0F
-                : config.backdrop_minimum_visible_distance_m < 750.0F ||
-                      config.backdrop_minimum_visible_distance_m > 6'000.0F)) {
+                : (raster ? config.backdrop_minimum_visible_distance_m != 3'200.0F
+                          : config.backdrop_minimum_visible_distance_m < 750.0F ||
+                                config.backdrop_minimum_visible_distance_m > 6'000.0F))) {
         throw std::runtime_error("invalid terrain backdrop orbit configuration");
     }
     if (config.render_path == TerrainRenderPath::Backdrop &&
         config.backdrop_profile == TerrainBackdropProfile::HardCutV1 &&
         config.backdrop_center == TerrainBackdropCenterOwnership::Continuous) {
         throw std::runtime_error("hard-cut-v1 requires a consumer-owned terrain center");
+    }
+    if (raster && config.backdrop_center != TerrainBackdropCenterOwnership::Continuous) {
+        throw std::runtime_error("raster-v1 requires a continuous terrain center");
+    }
+    if (raster && config.heightfield_path.empty()) {
+        throw std::runtime_error("raster-v1 requires a terrain heightfield");
+    }
+    if (!raster && !config.heightfield_path.empty()) {
+        throw std::runtime_error("terrain heightfield requires raster-v1");
     }
     const bool v3_component_view = config.debug_view == TerrainDebugView::SourceRange ||
                                    config.debug_view == TerrainDebugView::SourceMassif ||
@@ -439,6 +459,7 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
             "terrain study field is supported only by terrain_external_source_study");
     }
     TerrainRuntimeConfig result{};
+    result.heightfield_path = config.terrain.heightfield_path;
     result.source.seed = config.terrain.seed_set ? config.terrain.seed : kTerrainDefaultSeed;
     result.source.preset = terrain_preset_from_name(config.terrain.preset);
     result.source.weathering = config.terrain.weathering.empty()
@@ -456,14 +477,15 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     if (result.render_path == TerrainRenderPath::Backdrop) {
         result.backdrop_profile =
             terrain_backdrop_profile_from_name(config.terrain.backdrop_profile);
-        result.backdrop_center = config.terrain.backdrop_center.empty()
-                                     ? (result.backdrop_profile == TerrainBackdropProfile::RadialV1
-                                            ? TerrainBackdropCenterOwnership::Continuous
-                                            : TerrainBackdropCenterOwnership::ConsumerOwned)
-                                     : terrain_backdrop_center_ownership_from_name(
-                                           config.terrain.backdrop_center);
+        result.backdrop_center =
+            config.terrain.backdrop_center.empty()
+                ? (result.backdrop_profile != TerrainBackdropProfile::HardCutV1
+                       ? TerrainBackdropCenterOwnership::Continuous
+                       : TerrainBackdropCenterOwnership::ConsumerOwned)
+                : terrain_backdrop_center_ownership_from_name(config.terrain.backdrop_center);
     } else if (!config.terrain.backdrop_profile.empty() ||
-               !config.terrain.backdrop_center.empty()) {
+               !config.terrain.backdrop_center.empty() ||
+               !config.terrain.heightfield_path.empty()) {
         throw std::runtime_error(
             "terrain backdrop profile and center require the cached backdrop render path");
     }
@@ -471,8 +493,11 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
         config.terrain.source_version.empty() && terrain_camera_is_backdrop(result.camera)
             ? TerrainSourceVersion::V2_1
             : terrain_source_version_from_name(config.terrain.source_version);
-    if (result.backdrop_profile == TerrainBackdropProfile::RadialV1 &&
-        result.render_path == TerrainRenderPath::Backdrop) {
+    const bool frozen_backdrop = result.render_path == TerrainRenderPath::Backdrop &&
+                                 result.backdrop_profile != TerrainBackdropProfile::HardCutV1;
+    const bool raster_backdrop = result.render_path == TerrainRenderPath::Backdrop &&
+                                 result.backdrop_profile == TerrainBackdropProfile::RasterV1;
+    if (frozen_backdrop) {
         if (!config.terrain.preset.empty() || !config.terrain.source_version.empty() ||
             !config.terrain.surface_detail.empty() ||
             cubey::run_config_float_is_set(config.terrain.target_edge_px) ||
@@ -488,21 +513,33 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
             !config.terrain.preview_color.empty() || !config.terrain.preview_surface.empty() ||
             config.terrain.water_surface >= 0) {
             throw std::runtime_error(
-                "radial-v1 owns its terrain source and rejects source or quality overrides");
+                "frozen terrain backdrop owns its source and rejects source or quality overrides");
         }
+        const float required_minimum_distance_m = raster_backdrop ? 3'200.0F : 6'000.0F;
         if ((!config.terrain.weathering.empty() && config.terrain.weathering != "off") ||
             (!config.terrain.backdrop_mesh_density.empty() &&
              config.terrain.backdrop_mesh_density != "high") ||
             (!config.terrain.backdrop_mode.empty() && config.terrain.backdrop_mode != "grounded") ||
             (cubey::run_config_float_is_set(config.terrain.backdrop_minimum_visible_distance_m) &&
-             config.terrain.backdrop_minimum_visible_distance_m != 6'000.0F) ||
+             config.terrain.backdrop_minimum_visible_distance_m != required_minimum_distance_m) ||
             (cubey::run_config_float_is_set(config.terrain.vertical_scale) &&
-             config.terrain.vertical_scale != 1.0F)) {
-            throw std::runtime_error("radial-v1 rejects overrides of its frozen product contract");
+             config.terrain.vertical_scale != 1.0F) ||
+            (raster_backdrop && !config.terrain.backdrop_center.empty() &&
+             config.terrain.backdrop_center != "continuous") ||
+            (raster_backdrop && !config.terrain.presentation.empty() &&
+             config.terrain.presentation != "backdrop")) {
+            throw std::runtime_error(
+                "terrain backdrop profile rejects overrides of its frozen product contract");
+        }
+        if (raster_backdrop && config.terrain.heightfield_path.empty()) {
+            throw std::runtime_error("raster-v1 requires --terrain-heightfield");
+        }
+        if (!raster_backdrop && !config.terrain.heightfield_path.empty()) {
+            throw std::runtime_error("--terrain-heightfield requires raster-v1");
         }
         result.source.weathering = TerrainWeatheringMode::Off;
         result.backdrop_mode = TerrainBackdropStageMode::Grounded;
-        result.backdrop_minimum_visible_distance_m = 6'000.0F;
+        result.backdrop_minimum_visible_distance_m = required_minimum_distance_m;
         result.backdrop_mesh_density = TerrainBackdropMeshDensity::High;
         result.vertical_scale = 1.0F;
     } else if (config.terrain.backdrop_mode.empty() || config.terrain.backdrop_mode == "detached") {
@@ -532,11 +569,10 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     result.presentation = config.terrain.presentation.empty() &&
                                   result.render_path == TerrainRenderPath::Backdrop &&
-                                  result.backdrop_profile == TerrainBackdropProfile::RadialV1
+                                  result.backdrop_profile != TerrainBackdropProfile::HardCutV1
                               ? TerrainPresentationMode::Backdrop
                               : terrain_presentation_mode_from_name(config.terrain.presentation);
-    if (result.backdrop_profile != TerrainBackdropProfile::RadialV1 ||
-        result.render_path != TerrainRenderPath::Backdrop) {
+    if (!frozen_backdrop) {
         result.backdrop_mesh_density =
             terrain_backdrop_mesh_density_from_name(config.terrain.backdrop_mesh_density);
     }
@@ -546,8 +582,7 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
                                 : 4.0F;
     result.near_cell_size_m =
         cubey::run_config_float_is_set(config.terrain.cell_size) ? config.terrain.cell_size : 2.0F;
-    if (result.backdrop_profile != TerrainBackdropProfile::RadialV1 ||
-        result.render_path != TerrainRenderPath::Backdrop) {
+    if (!frozen_backdrop) {
         result.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)
                                     ? config.terrain.vertical_scale
                                     : 1.0F;
