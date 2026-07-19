@@ -39,6 +39,7 @@ terrain_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan&
 
 [[nodiscard]] TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementPlan& placement,
-    float vertical_scale = 1.0F, TerrainFocusedBackdropStageParameters parameters = {});
+    float vertical_scale = 1.0F, TerrainFocusedBackdropStageParameters parameters = {},
+    TerrainDirectionalPlacementRequest placement_request = {});
 
 } // namespace cubey::projects::terrain

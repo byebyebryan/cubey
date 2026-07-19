@@ -18,7 +18,8 @@ terrain_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan&
 
 TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementPlan& placement,
-    float vertical_scale, TerrainFocusedBackdropStageParameters parameters) {
+    float vertical_scale, TerrainFocusedBackdropStageParameters parameters,
+    TerrainDirectionalPlacementRequest placement_request) {
     const bool finite = std::isfinite(vertical_scale) && std::isfinite(parameters.focus_height_m) &&
                         std::isfinite(parameters.orbit_min_radius_m) &&
                         std::isfinite(parameters.orbit_default_radius_m) &&
@@ -36,8 +37,9 @@ TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
         parameters.orbit_max_elevation_radians >= std::numbers::pi_v<float> * 0.5F) {
         throw std::runtime_error("invalid focused backdrop stage parameters");
     }
-    const TerrainDirectionalPlacementPlan displayed =
-        evaluate_terrain_directional_placement(source, {}, placement.source_focus_xz);
+    placement_request.vertical_scale = vertical_scale;
+    const TerrainDirectionalPlacementPlan displayed = evaluate_terrain_directional_placement(
+        source, placement_request, placement.source_focus_xz);
     const float center_height =
         source.sample_height({.world_xz = placement.source_focus_xz, .footprint_m = 16.0F}) *
         vertical_scale;

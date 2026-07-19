@@ -57,12 +57,25 @@ void test_search_is_deterministic() {
             "directional placement should preserve its bounded search budget");
 }
 
+void test_search_budget_can_fit_a_bounded_source() {
+    using namespace cubey::projects::terrain;
+    const DirectionalRiseSource source;
+    TerrainDirectionalPlacementRequest request;
+    request.search_extent_m = 12'000.0F;
+    request.search_step_m = 4'000.0F;
+    const TerrainDirectionalPlacementPlan plan =
+        plan_terrain_directional_placement(source, request);
+    require(plan.coarse_candidate_count == 49U,
+            "directional placement should support a finite seven by seven search domain");
+}
+
 } // namespace
 
 int main() {
     try {
         test_fixed_focus_finds_a_directional_mountain_arc();
         test_search_is_deterministic();
+        test_search_budget_can_fit_a_bounded_source();
         std::cout << "terrain_directional_placement_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

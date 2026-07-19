@@ -11,14 +11,17 @@ namespace cubey::projects::terrain {
 namespace {
 
 constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;
-constexpr float kSearchExtentM = 32'000.0F;
-constexpr float kCoarseStepM = 4'000.0F;
+constexpr float kMediumRefinementOffsetM = 1'000.0F;
+constexpr float kFineRefinementOffsetM = 500.0F;
 constexpr std::size_t kCoarseShortlistCount = 24U;
 constexpr std::size_t kFineShortlistCount = 8U;
 constexpr std::size_t kFullCandidateCount = 16U;
+static_assert(kMediumRefinementOffsetM + kFineRefinementOffsetM ==
+              terrain_directional_placement_maximum_refinement_offset_m());
 
 struct Candidate {
     cubey::math::Vec2 focus{0.0F, 0.0F};
+    bool contract_satisfied = false;
     float score = -std::numeric_limits<float>::infinity();
 };
 
@@ -210,9 +213,18 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
     std::vector<Candidate> result;
     result.reserve(focuses.size());
     for (const cubey::math::Vec2 focus : focuses) {
-        result.push_back({.focus = focus, .score = evaluate(source, request, focus, false).score});
+        const TerrainDirectionalPlacementPlan plan =
+            evaluate(source, request, focus, request.detailed_search);
+        result.push_back({
+            .focus = focus,
+            .contract_satisfied = request.detailed_search && plan.contract_satisfied,
+            .score = plan.score,
+        });
     }
     std::sort(result.begin(), result.end(), [](const Candidate& lhs, const Candidate& rhs) {
+        if (lhs.contract_satisfied != rhs.contract_satisfied) {
+            return lhs.contract_satisfied;
+        }
         if (lhs.score != rhs.score) {
             return lhs.score > rhs.score;
         }
@@ -242,7 +254,9 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
 
 void validate_terrain_directional_placement_request(
     const TerrainDirectionalPlacementRequest& request) {
-    const bool finite = std::isfinite(request.local_radius_m) &&
+    const bool finite = std::isfinite(request.search_extent_m) &&
+                        std::isfinite(request.search_step_m) &&
+                        std::isfinite(request.local_radius_m) &&
                         std::isfinite(request.near_distance_m) &&
                         std::isfinite(request.middle_distance_m) &&
                         std::isfinite(request.far_distance_m) &&
@@ -252,7 +266,8 @@ void validate_terrain_directional_placement_request(
                         std::isfinite(request.maximum_local_relief_m) &&
                         std::isfinite(request.maximum_local_p95_slope) &&
                         std::isfinite(request.vertical_scale);
-    if (!finite || request.local_radius_m <= 0.0F || request.near_distance_m <= 0.0F ||
+    if (!finite || request.search_extent_m < 0.0F || request.search_step_m <= 0.0F ||
+        request.local_radius_m <= 0.0F || request.near_distance_m <= 0.0F ||
         request.middle_distance_m <= request.near_distance_m ||
         request.far_distance_m <= request.middle_distance_m ||
         request.remote_distance_m <= request.far_distance_m ||
@@ -279,8 +294,10 @@ TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request) {
     validate_terrain_directional_placement_request(request);
     std::vector<cubey::math::Vec2> coarse_focuses;
-    for (float z = -kSearchExtentM; z <= kSearchExtentM; z += kCoarseStepM) {
-        for (float x = -kSearchExtentM; x <= kSearchExtentM; x += kCoarseStepM) {
+    for (float z = -request.search_extent_m; z <= request.search_extent_m;
+         z += request.search_step_m) {
+        for (float x = -request.search_extent_m; x <= request.search_extent_m;
+             x += request.search_step_m) {
             coarse_focuses.push_back({x, z});
         }
     }
@@ -288,8 +305,8 @@ TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
 
     std::vector<cubey::math::Vec2> medium_focuses;
     for (std::size_t index = 0U; index < std::min(kCoarseShortlistCount, coarse.size()); ++index) {
-        for (float z : {-1'000.0F, 0.0F, 1'000.0F}) {
-            for (float x : {-1'000.0F, 0.0F, 1'000.0F}) {
+        for (float z : {-kMediumRefinementOffsetM, 0.0F, kMediumRefinementOffsetM}) {
+            for (float x : {-kMediumRefinementOffsetM, 0.0F, kMediumRefinementOffsetM}) {
                 append_unique(medium_focuses, coarse[index].focus + cubey::math::Vec2{x, z});
             }
         }
@@ -298,8 +315,10 @@ TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
 
     std::vector<cubey::math::Vec2> fine_focuses;
     for (std::size_t index = 0U; index < std::min(kFineShortlistCount, medium.size()); ++index) {
-        for (float z : {-500.0F, -250.0F, 0.0F, 250.0F, 500.0F}) {
-            for (float x : {-500.0F, -250.0F, 0.0F, 250.0F, 500.0F}) {
+        for (float z : {-kFineRefinementOffsetM, -kFineRefinementOffsetM * 0.5F, 0.0F,
+                        kFineRefinementOffsetM * 0.5F, kFineRefinementOffsetM}) {
+            for (float x : {-kFineRefinementOffsetM, -kFineRefinementOffsetM * 0.5F, 0.0F,
+                            kFineRefinementOffsetM * 0.5F, kFineRefinementOffsetM}) {
                 append_unique(fine_focuses, medium[index].focus + cubey::math::Vec2{x, z});
             }
         }
