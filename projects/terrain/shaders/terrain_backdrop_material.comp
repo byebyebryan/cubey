@@ -38,12 +38,15 @@ float backdrop_band(vec2 uv, int cycles, uint salt) {
 }
 
 vec4 backdrop_bands(vec2 uv) {
-    float band_512 = backdrop_band(uv, 4, 11U);
-    float band_186 = backdrop_band(uv, 11, 17U);
-    float band_71 = backdrop_band(uv, 29, 23U);
-    float band_29 = backdrop_band(uv, 71, 31U);
-    float band_11 = backdrop_band(uv, 186, 43U);
-    float band_4_4 = backdrop_band(uv, 465, 59U);
+    vec2 warp = vec2(backdrop_band(uv, 4, 73U),
+                     backdrop_band(fract(uv + vec2(0.37, 0.61)), 4, 89U));
+    vec2 warped_uv = fract(uv + warp * 0.035);
+    float band_512 = backdrop_band(warped_uv, 4, 11U);
+    float band_186 = backdrop_band(warped_uv, 11, 17U);
+    float band_71 = backdrop_band(warped_uv, 29, 23U);
+    float band_29 = backdrop_band(warped_uv, 71, 31U);
+    float band_11 = backdrop_band(warped_uv, 186, 43U);
+    float band_4_4 = backdrop_band(warped_uv, 465, 59U);
     float relief = 0.31 * band_512 + 0.24 * band_186 + 0.18 * band_71 +
         0.13 * band_29 + 0.09 * band_11 + 0.05 * band_4_4;
     float albedo = 0.38 * band_512 + 0.28 * band_186 + 0.19 * band_71 +

@@ -10,7 +10,8 @@ namespace cubey::projects::terrain {
 
 inline constexpr std::uint32_t kTerrainBackdropMaterialExtent = 1'024U;
 inline constexpr std::uint32_t kTerrainBackdropMaterialMipLevels = 11U;
-inline constexpr float kTerrainBackdropMaterialPeriodM = 2'048.0F;
+inline constexpr float kTerrainBackdropMaterialMacroPeriodM = 32'768.0F;
+inline constexpr float kTerrainBackdropMaterialLocalPeriodM = 2'048.0F;
 
 struct TerrainBackdropMaterialTexture {
     cubey::render::Texture2D detail;

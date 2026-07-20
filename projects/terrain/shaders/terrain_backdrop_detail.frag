@@ -20,7 +20,8 @@ layout(location = 2) in vec3 frag_normal;
 
 layout(location = 0) out vec4 out_color;
 
-const float backdrop_detail_period_m = 2048.0;
+const float backdrop_macro_period_m = 32768.0;
+const float backdrop_local_period_m = 2048.0;
 
 vec3 srgb_to_linear(vec3 value) {
     bvec3 cutoff = lessThanEqual(value, vec3(0.04045));
@@ -132,43 +133,79 @@ void main() {
     rock /= weight_sum;
     snow /= weight_sum;
 
-    vec3 triplanar_weight = pow(abs(classification_normal), vec3(4.0));
-    triplanar_weight /= max(dot(triplanar_weight, vec3(1.0)), 0.0001);
-    vec4 detail_x = vec4(0.5);
-    vec4 detail_y = vec4(0.5);
-    vec4 detail_z = vec4(0.5);
+    vec4 macro_detail = vec4(0.5);
+    vec4 local_planar_detail = vec4(0.5);
+    vec4 local_rock_detail = vec4(0.5);
+    vec3 planar_perturbation = vec3(0.0);
+    vec3 rock_perturbation = vec3(0.0);
     if (pc.material_options.x > 0.5) {
-        detail_x = texture(backdrop_detail_texture,
-                           frag_world_position.yz / backdrop_detail_period_m);
-        detail_y = texture(backdrop_detail_texture,
-                           frag_world_position.xz / backdrop_detail_period_m);
-        detail_z = texture(backdrop_detail_texture,
-                           frag_world_position.xy / backdrop_detail_period_m);
+        macro_detail = texture(backdrop_detail_texture,
+                               frag_world_position.xz / backdrop_macro_period_m);
+        vec2 planar_uv = frag_world_position.xz / backdrop_local_period_m;
+        local_planar_detail = texture(backdrop_detail_texture, planar_uv);
+        vec2 planar_tangent = local_planar_detail.rg * 2.0 - 1.0;
+        planar_perturbation = vec3(planar_tangent.x, 0.0, planar_tangent.y);
+
+        vec2 uv_x = frag_world_position.yz / backdrop_local_period_m;
+        vec2 uv_z = frag_world_position.xy / backdrop_local_period_m;
+        vec2 uv_x_dx = dFdx(uv_x);
+        vec2 uv_x_dy = dFdy(uv_x);
+        vec2 uv_z_dx = dFdx(uv_z);
+        vec2 uv_z_dy = dFdy(uv_z);
+        if (rock > 0.35) {
+            vec3 triplanar_weight = pow(abs(classification_normal), vec3(4.0));
+            triplanar_weight /= max(dot(triplanar_weight, vec3(1.0)), 0.0001);
+            vec4 detail_x = textureGrad(backdrop_detail_texture, uv_x, uv_x_dx, uv_x_dy);
+            vec4 detail_z = textureGrad(backdrop_detail_texture, uv_z, uv_z_dx, uv_z_dy);
+            local_rock_detail = detail_x * triplanar_weight.x +
+                local_planar_detail * triplanar_weight.y +
+                detail_z * triplanar_weight.z;
+            vec2 tangent_x = detail_x.rg * 2.0 - 1.0;
+            vec2 tangent_y = local_planar_detail.rg * 2.0 - 1.0;
+            vec2 tangent_z = detail_z.rg * 2.0 - 1.0;
+            rock_perturbation =
+                vec3(0.0, tangent_x.x, tangent_x.y) *
+                    (triplanar_weight.x * axis_sign(classification_normal.x)) +
+                vec3(tangent_y.x, 0.0, tangent_y.y) *
+                    (triplanar_weight.y * axis_sign(classification_normal.y)) +
+                vec3(tangent_z.x, tangent_z.y, 0.0) *
+                    (triplanar_weight.z * axis_sign(classification_normal.z));
+        } else {
+            local_rock_detail = local_planar_detail;
+            rock_perturbation = planar_perturbation;
+        }
     }
-    vec4 detail = detail_x * triplanar_weight.x + detail_y * triplanar_weight.y +
-        detail_z * triplanar_weight.z;
-    vec2 tangent_x = detail_x.rg * 2.0 - 1.0;
-    vec2 tangent_y = detail_y.rg * 2.0 - 1.0;
-    vec2 tangent_z = detail_z.rg * 2.0 - 1.0;
-    vec3 perturbation =
-        vec3(0.0, tangent_x.x, tangent_x.y) *
-            (triplanar_weight.x * axis_sign(classification_normal.x)) +
-        vec3(tangent_y.x, 0.0, tangent_y.y) *
-            (triplanar_weight.y * axis_sign(classification_normal.y)) +
-        vec3(tangent_z.x, tangent_z.y, 0.0) *
-            (triplanar_weight.z * axis_sign(classification_normal.z));
+    float rock_projection_blend = smoothstep(0.35, 0.65, rock);
+    vec3 perturbation = mix(planar_perturbation, rock_perturbation,
+                            rock_projection_blend);
     vec3 material_normal = normalize(classification_normal + perturbation);
     float normal_strength = 0.16 * ground + 0.42 * rock + 0.06 * snow;
     vec3 normal = normalize(classification_normal + normal_strength * perturbation);
 
-    vec3 base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * ground +
-                      srgb_to_linear(vec3(0.39, 0.385, 0.37)) * rock +
-                      srgb_to_linear(vec3(0.82, 0.845, 0.86)) * snow;
-    float albedo_strength = 0.10 * ground + 0.22 * rock + 0.035 * snow;
-    float albedo_variation = detail.b * 2.0 - 1.0;
-    base_color *= max(0.0, 1.0 + albedo_strength * albedo_variation);
-    float roughness = 0.94 * ground + 0.77 * rock + 0.84 * snow;
-    roughness = clamp(roughness + 0.08 * (detail.a * 2.0 - 1.0), 0.0, 1.0);
+    vec3 flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * ground +
+                           srgb_to_linear(vec3(0.39, 0.385, 0.37)) * rock +
+                           srgb_to_linear(vec3(0.82, 0.845, 0.86)) * snow;
+    vec3 refined_base_color = srgb_to_linear(vec3(0.32, 0.325, 0.31)) * ground +
+                              srgb_to_linear(vec3(0.37, 0.36, 0.345)) * rock +
+                              srgb_to_linear(vec3(0.80, 0.825, 0.84)) * snow;
+    float filtered_detail = step(0.5, pc.material_options.x);
+    vec3 base_color = mix(flat_base_color, refined_base_color, filtered_detail);
+    float macro_albedo = macro_detail.b * 2.0 - 1.0;
+    float planar_albedo = local_planar_detail.b * 2.0 - 1.0;
+    float rock_albedo = local_rock_detail.b * 2.0 - 1.0;
+    float albedo_variation =
+        ground * (0.065 * macro_albedo + 0.035 * planar_albedo) +
+        rock * (0.080 * macro_albedo + 0.140 * rock_albedo) +
+        snow * (0.025 * macro_albedo + 0.010 * planar_albedo);
+    base_color *= max(0.0, 1.0 + albedo_variation);
+    float flat_roughness = 0.94 * ground + 0.77 * rock + 0.84 * snow;
+    float refined_roughness = 0.93 * ground + 0.76 * rock + 0.85 * snow;
+    float roughness = mix(flat_roughness, refined_roughness, filtered_detail);
+    float macro_roughness = macro_detail.a * 2.0 - 1.0;
+    float local_roughness = mix(local_planar_detail.a, local_rock_detail.a,
+                                rock_projection_blend) * 2.0 - 1.0;
+    roughness = clamp(roughness + 0.05 * macro_roughness +
+                      0.03 * local_roughness, 0.0, 1.0);
 
     if (debug_view == 10) {
         out_color = vec4(normal * 0.5 + 0.5, 1.0);

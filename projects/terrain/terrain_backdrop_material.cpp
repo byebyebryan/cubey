@@ -21,7 +21,7 @@ TerrainBackdropMaterialTexture create_terrain_backdrop_material_texture(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const std::filesystem::path& compute_shader, std::uint64_t seed) {
     const std::uint64_t derived =
-        cubey::procedural::derive_seed(seed, "terrain.backdrop.filtered-detail.v1");
+        cubey::procedural::derive_seed(seed, "terrain.backdrop.filtered-detail.v2");
     const TerrainBackdropMaterialPushConstants push{
         .seed = static_cast<std::uint32_t>(derived ^ (derived >> 32U)),
     };
