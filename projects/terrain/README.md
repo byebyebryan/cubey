@@ -145,6 +145,18 @@ four material headings, diagnostics, camera controls, provenance, and steady
 plus forced-update GPU profiles. On NVIDIA hosts, a missed timing gate is
 retried when `nvidia-smi pmon` reports concurrent compute work.
 
+Generate the rendering-envelope and fixed-topology decision pack with:
+
+```sh
+projects/terrain/capture_rendering_envelope_review.sh
+```
+
+It writes `outputs/terrain/rendering-envelope-v1` with deterministic clear and
+fair-cloud macro views, qualified and stress camera envelopes, matched stride
+1/3 surface and topology diagnostics, and mean/p50/p95 GPU profiles. The pack
+is a decision gate for LOD versus source refinement; it does not expand the V1
+camera contract.
+
 ## Tests
 
 ```sh
