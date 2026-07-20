@@ -2,19 +2,30 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-REFERENCE_ROOT="${CUBEY_TERRAIN_DIFFUSION_ROOT:-${HOME}/code/ref/terrain-diffusion}"
+REFERENCE_OVERRIDE="${CUBEY_TERRAIN_DIFFUSION_ROOT:-}"
+REFERENCE_ROOT="${REFERENCE_OVERRIDE:-${CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT:-${HOME}/code/ref/terrain-diffusion}}"
 ENV_DIR="${CUBEY_TERRAIN_DIFFUSION_ENV:-${ROOT_DIR}/outputs/terrain/.terrain-diffusion-venv}"
 EXPECTED_REVISION="82a0431281f21a6ec3d691a12ee61525de5b0790"
+REFERENCE_URL="https://github.com/xandergos/terrain-diffusion.git"
 
 if [[ ! -d "${REFERENCE_ROOT}/.git" ]]; then
-  printf 'terrain diffusion bakeoff: reference checkout not found: %s\n' "${REFERENCE_ROOT}" >&2
-  exit 2
+  if [[ -n "${REFERENCE_OVERRIDE}" ]]; then
+    printf 'terrain diffusion bakeoff: reference checkout not found: %s\n' "${REFERENCE_ROOT}" >&2
+    exit 2
+  fi
+  mkdir -p "$(dirname "${REFERENCE_ROOT}")"
+  git clone "${REFERENCE_URL}" "${REFERENCE_ROOT}"
+  git -C "${REFERENCE_ROOT}" checkout --detach "${EXPECTED_REVISION}"
 fi
 actual_revision="$(git -C "${REFERENCE_ROOT}" rev-parse HEAD)"
 if [[ "${actual_revision}" != "${EXPECTED_REVISION}" ]]; then
-  printf 'terrain diffusion bakeoff: expected reference %s, got %s\n' \
-    "${EXPECTED_REVISION}" "${actual_revision}" >&2
-  exit 2
+  if [[ -n "${REFERENCE_OVERRIDE}" ]]; then
+    printf 'terrain diffusion bakeoff: expected reference %s, got %s\n' \
+      "${EXPECTED_REVISION}" "${actual_revision}" >&2
+    exit 2
+  fi
+  git -C "${REFERENCE_ROOT}" fetch origin "${EXPECTED_REVISION}"
+  git -C "${REFERENCE_ROOT}" checkout --detach "${EXPECTED_REVISION}"
 fi
 if ! command -v uv >/dev/null 2>&1; then
   printf 'terrain diffusion bakeoff: uv is required\n' >&2

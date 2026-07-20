@@ -38,6 +38,18 @@ manifest through an explicit path and otherwise uses the canonical build-tree
 location. Missing data is a startup error with the exact generation command;
 there is no fallback to a retired source.
 
+Generate the canonical field explicitly with:
+
+```sh
+cmake --build --preset dev --target cubey_terrain_generate_default_asset
+```
+
+The target uses a caller-provided `CUBEY_TERRAIN_DIFFUSION_ROOT` when set.
+Otherwise it creates a pinned checkout and Python environment under
+`build/dev/_deps`. The generated `heightfield.json` and `elevation.f32` live in
+`build/dev/assets/terrain/default`; normal builds and tests never invoke this
+target.
+
 ## Repository Boundary
 
 The retained visual-reference, external-ShaderToy, and hydrology programs move

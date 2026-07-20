@@ -41,6 +41,9 @@ LAND_THRESHOLD = 0.8
 ORDER_CHECK_SEED = 0
 ORDER_TOLERANCE_M = 1.0e-4
 COMPARISON_RELIEF_M = 3500.0
+DEFAULT_ASSET_HEIGHT_OFFSET_M = 39.367266654968255
+DEFAULT_ASSET_HEIGHT_SCALE = 0.8484453174300328
+DEFAULT_ASSET_ELEVATION_SHA256 = "27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df"
 EXPORT_CONTRACT_REVISION = 3
 WORLDCLIM_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip"
 WORLDCLIM_FILES = (
@@ -412,11 +415,11 @@ def _tile_requests(native_i: int, native_j: int) -> list[tuple[str, tuple[int, i
     return requests
 
 
-def _stitch_tiles(tiles: list[QueriedTile]):
+def _stitch_tiles(tiles: list[QueriedTile], with_climate: bool = True):
     import numpy as np
 
     elevation = np.empty((FIELD_SIZE, FIELD_SIZE), dtype=np.float32)
-    climate = np.empty((4, FIELD_SIZE, FIELD_SIZE), dtype=np.float32)
+    climate = np.empty((4, FIELD_SIZE, FIELD_SIZE), dtype=np.float32) if with_climate else None
     for index, tile in enumerate(tiles):
         row, column = divmod(index, 2)
         core = slice(TILE_CONTEXT_HALO, TILE_CONTEXT_HALO + CORE_TILE_SIZE)
@@ -424,13 +427,14 @@ def _stitch_tiles(tiles: list[QueriedTile]):
             row * CORE_TILE_SIZE : (row + 1) * CORE_TILE_SIZE,
             column * CORE_TILE_SIZE : (column + 1) * CORE_TILE_SIZE,
         ] = tile.elevation[core, core]
-        if tile.climate is None:
-            raise RuntimeError("climate output is missing from a primary tile")
-        climate[
-            :,
-            row * CORE_TILE_SIZE : (row + 1) * CORE_TILE_SIZE,
-            column * CORE_TILE_SIZE : (column + 1) * CORE_TILE_SIZE,
-        ] = tile.climate[:, core, core]
+        if with_climate:
+            if tile.climate is None:
+                raise RuntimeError("climate output is missing from a primary tile")
+            climate[
+                :,
+                row * CORE_TILE_SIZE : (row + 1) * CORE_TILE_SIZE,
+                column * CORE_TILE_SIZE : (column + 1) * CORE_TILE_SIZE,
+            ] = tile.climate[:, core, core]
     return elevation, climate
 
 
@@ -446,7 +450,9 @@ def _coarse_selection(world):
     return elevation, winner, candidates
 
 
-def _generate_seed(world, torch, seed: int, verify_order: bool) -> dict[str, object]:
+def _generate_seed(
+    world, torch, seed: int, verify_order: bool, with_climate: bool = True
+) -> dict[str, object]:
     import numpy as np
 
     seed_start = time.perf_counter()
@@ -457,8 +463,10 @@ def _generate_seed(world, torch, seed: int, verify_order: bool) -> dict[str, obj
     native_i = winner.coarse_i * COARSE_CELL_NATIVE_SAMPLES
     native_j = winner.coarse_j * COARSE_CELL_NATIVE_SAMPLES
     requests = _tile_requests(native_i, native_j)
-    tiles = [_query_tile(world, torch, name, bounds, True) for name, bounds in requests]
-    elevation, climate = _stitch_tiles(tiles)
+    tiles = [
+        _query_tile(world, torch, name, bounds, with_climate) for name, bounds in requests
+    ]
+    elevation, climate = _stitch_tiles(tiles, with_climate)
 
     overlap_records = []
     max_overlap_error = 0.0
@@ -812,6 +820,139 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
     print(f"terrain diffusion bakeoff: wrote {output_dir}")
 
 
+def bake_default_asset(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
+    """Generate the pinned elevation-only field used by the terrain product."""
+    import torch
+    from huggingface_hub import snapshot_download
+
+    reference_root = reference_root.resolve()
+    output_dir = output_dir.resolve()
+    data_cache = data_cache.resolve()
+    actual_revision = git_revision(reference_root)
+    if actual_revision != CODE_REVISION:
+        raise RuntimeError(
+            f"terrain-diffusion checkout must be {CODE_REVISION}, got {actual_revision}"
+        )
+    if not torch.cuda.is_available():
+        raise RuntimeError("Terrain Diffusion default asset generation requires CUDA")
+
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cudnn.benchmark = False
+    torch.set_float32_matmul_precision("highest")
+    torch.use_deterministic_algorithms(True, warn_only=True)
+
+    _prepare_data_cache(reference_root, data_cache)
+    snapshot = Path(
+        snapshot_download(repo_id=MODEL_ID, revision=MODEL_REVISION)
+    ).resolve()
+
+    sys.path.insert(0, str(reference_root))
+    from terrain_diffusion.inference.world_pipeline import WorldPipeline
+
+    generation_start = time.perf_counter()
+    with _working_directory(data_cache):
+        _seed_process_rngs(torch, ORDER_CHECK_SEED)
+        world = WorldPipeline.from_pretrained(
+            str(snapshot),
+            seed=ORDER_CHECK_SEED,
+            latents_batch_size=LATENTS_BATCH_SIZE,
+            torch_compile=False,
+            dtype=None,
+            caching_strategy="direct",
+            cache_limit=None,
+            log_mode="info",
+        )
+        world.to("cuda")
+        world.bind()
+        if float(world.native_resolution) != MODEL_NATIVE_RESOLUTION_M:
+            raise RuntimeError(
+                f"expected {MODEL_NATIVE_RESOLUTION_M:g} m model, got {world.native_resolution}"
+            )
+        try:
+            generated = _generate_seed(
+                world,
+                torch,
+                ORDER_CHECK_SEED,
+                verify_order=False,
+                with_climate=False,
+            )
+        finally:
+            world.close()
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent))
+    try:
+        elevation_file = write_f32(temporary / "elevation.f32", generated["elevation"])
+        if elevation_file["sha256"] != DEFAULT_ASSET_ELEVATION_SHA256:
+            raise RuntimeError(
+                "default terrain elevation changed: expected "
+                f"{DEFAULT_ASSET_ELEVATION_SHA256}, got {elevation_file['sha256']}"
+            )
+
+        half_span = (FIELD_SIZE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+        manifest = {
+            "schema": "cubey.terrain.heightfield.v1",
+            "source": {
+                "id": "terrain-diffusion-30m",
+                "generator": "terrain-diffusion",
+                "code_revision": CODE_REVISION,
+                "model_id": MODEL_ID,
+                "model_revision": MODEL_REVISION,
+                "native_resolution_m": MODEL_NATIVE_RESOLUTION_M,
+                "settings": {
+                    "device": "cuda",
+                    "dtype": "fp32",
+                    "latents_batch_size": LATENTS_BATCH_SIZE,
+                    "torch_compile": False,
+                    "caching_strategy": "direct",
+                    "custom_conditioning": False,
+                    "process_rng_seeding": "seed-value-v1",
+                    "climate_output": False,
+                },
+            },
+            "seed": ORDER_CHECK_SEED,
+            "grid": {
+                "width": FIELD_SIZE,
+                "height": FIELD_SIZE,
+                "sample_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+                "sample_origin_x_m": -half_span,
+                "sample_origin_z_m": -half_span,
+                "axis_mapping": {"world_x": "model_j", "world_z": "model_i"},
+            },
+            "height": {
+                "offset_m": DEFAULT_ASSET_HEIGHT_OFFSET_M,
+                "scale": DEFAULT_ASSET_HEIGHT_SCALE,
+                "relief_scale_m": COMPARISON_RELIEF_M,
+            },
+            "files": {
+                "elevation": {
+                    **elevation_file,
+                    "layout": "row-major-zx",
+                    "shape": [FIELD_SIZE, FIELD_SIZE],
+                    "unit": "m",
+                }
+            },
+            "provenance": {
+                "purpose": "cubey-terrain-default-backdrop-v1",
+                "selection": "fixed-grid-land-relief-v1",
+                "model_native_origin": generated["model_native_origin"],
+                "generation_seconds": time.perf_counter() - generation_start,
+            },
+        }
+        (temporary / "heightfield.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
+        )
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        os.replace(temporary, output_dir)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+
+    print(f"terrain default asset: wrote {output_dir}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -829,12 +970,20 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("outputs/terrain/.terrain-diffusion-data"),
     )
+    parser.add_argument(
+        "--default-asset",
+        action="store_true",
+        help="generate only the canonical seed-0 runtime heightfield",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    bake(args.reference_root, args.output_dir, args.data_cache)
+    if args.default_asset:
+        bake_default_asset(args.reference_root, args.output_dir, args.data_cache)
+    else:
+        bake(args.reference_root, args.output_dir, args.data_cache)
     return 0
 
 

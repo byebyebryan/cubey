@@ -112,6 +112,37 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
         self.assertEqual(count, size * 2 * bake.SEAM_VALIDATION_HALF_WIDTH)
         self.assertEqual(maximum, 0.0)
 
+    def test_product_stitch_does_not_require_climate(self) -> None:
+        original = (bake.FIELD_SIZE, bake.CORE_TILE_SIZE, bake.TILE_CONTEXT_HALO)
+        bake.FIELD_SIZE = 4
+        bake.CORE_TILE_SIZE = 2
+        bake.TILE_CONTEXT_HALO = 1
+        try:
+            tiles = [
+                bake.QueriedTile(
+                    str(index),
+                    (0, 0, 4, 4),
+                    np.full((4, 4), float(index + 1), dtype=np.float32),
+                    None,
+                    0.0,
+                )
+                for index in range(4)
+            ]
+            elevation, climate = bake._stitch_tiles(tiles, with_climate=False)
+        finally:
+            bake.FIELD_SIZE, bake.CORE_TILE_SIZE, bake.TILE_CONTEXT_HALO = original
+
+        self.assertIsNone(climate)
+        self.assertEqual(
+            elevation.tolist(),
+            [
+                [1.0, 1.0, 2.0, 2.0],
+                [1.0, 1.0, 2.0, 2.0],
+                [3.0, 3.0, 4.0, 4.0],
+                [3.0, 3.0, 4.0, 4.0],
+            ],
+        )
+
     def test_raw_writer_is_little_endian_and_hashed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "field.f32"
