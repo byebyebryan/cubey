@@ -29,14 +29,17 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
+#include <cubey/vulkan/vk_check.h>
 
 #include <imgui.h>
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <future>
 #include <numbers>
 #include <optional>
 #include <stdexcept>
@@ -83,6 +86,13 @@ struct TerrainBackdropDrawPlan {
     std::vector<bool> visible_sectors{};
     std::uint32_t submitted_sector_count = 0U;
     std::uint32_t submitted_triangle_count = 0U;
+};
+
+struct TerrainPlacementBuild {
+    TerrainPlacementMode mode = TerrainPlacementMode::Selected;
+    std::uint32_t sample_index = 0U;
+    TerrainBackdropPlacementPlan placement{};
+    TerrainBackdropProduct product{};
 };
 
 struct CompiledTerrainGraph {
@@ -293,15 +303,9 @@ class TerrainApp {
               .far_z = product_.request.outer_radius_m * 5.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)) {
-        const TerrainBackdropStagePlan& stage = placement_stage_.stage;
-        orbit_controller_.set_distance_limits(stage.orbit_min_radius_m, stage.orbit_max_radius_m);
-        orbit_controller_.set_home_distance(stage.orbit_default_radius_m);
-        orbit_controller_.set_pitch_limits(
-            stage.orbit_default_elevation_radians - stage.orbit_max_elevation_radians,
-            stage.orbit_default_elevation_radians - stage.orbit_min_elevation_radians);
-        baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
-        foreground_height_m_ = runtime_config_.initial_foreground_height_m;
-        orbit_controller_.reset();
+        edit_placement_mode_ = runtime_config_.placement;
+        edit_placement_index_ = runtime_config_.placement_index;
+        configure_camera_for_placement(true);
     }
 
     TerrainApp(const TerrainApp&) = delete;
@@ -327,6 +331,7 @@ class TerrainApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
+            maybe_install_placement_build(context);
             orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
             (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                              timing.delta_seconds);
@@ -447,11 +452,57 @@ class TerrainApp {
         ImGui::TextWrapped("Manifest: %s", manifest.c_str());
 
         ImGui::SeparatorText("Placement");
+        const bool placement_build_pending = placement_build_future_.valid();
+        ImGui::BeginDisabled(placement_build_pending);
+        if (ImGui::RadioButton("Selected",
+                               edit_placement_mode_ == TerrainPlacementMode::Selected)) {
+            edit_placement_mode_ = TerrainPlacementMode::Selected;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Raw center",
+                               edit_placement_mode_ == TerrainPlacementMode::RawCenter)) {
+            edit_placement_mode_ = TerrainPlacementMode::RawCenter;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Raw sample",
+                               edit_placement_mode_ == TerrainPlacementMode::RawSample)) {
+            edit_placement_mode_ = TerrainPlacementMode::RawSample;
+        }
+        if (edit_placement_mode_ == TerrainPlacementMode::RawSample) {
+            constexpr std::uint32_t step = 1U;
+            constexpr std::uint32_t fast_step = 10U;
+            ImGui::InputScalar("Sample index", ImGuiDataType_U32, &edit_placement_index_, &step,
+                               &fast_step);
+        }
+        ImGui::EndDisabled();
+
+        const bool placement_edit_dirty = edit_placement_mode_ != placement_stage_.mode ||
+                                          edit_placement_index_ != placement_stage_.sample_index;
+        ImGui::BeginDisabled(!placement_edit_dirty || placement_build_pending);
+        if (ImGui::Button("Apply placement")) {
+            start_placement_build();
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!placement_edit_dirty || placement_build_pending);
+        if (ImGui::Button("Revert")) {
+            edit_placement_mode_ = placement_stage_.mode;
+            edit_placement_index_ = placement_stage_.sample_index;
+        }
+        ImGui::EndDisabled();
+
+        if (placement_build_pending) {
+            ImGui::Text("Status: rebuilding cached terrain...");
+        }
+        if (!placement_rebuild_error_.empty()) {
+            ImGui::TextWrapped("Placement error: %s", placement_rebuild_error_.c_str());
+        }
+
         const TerrainDirectionalPlacementPlan& placement = placement_stage_.placement;
         const std::string_view placement_name = terrain_placement_mode_name(placement_stage_.mode);
-        ImGui::Text("Mode: %.*s", static_cast<int>(placement_name.size()), placement_name.data());
+        ImGui::Text("Active: %.*s", static_cast<int>(placement_name.size()), placement_name.data());
         if (placement_stage_.mode == TerrainPlacementMode::RawSample) {
-            ImGui::Text("Sample index: %u", placement_stage_.sample_index);
+            ImGui::Text("Active sample: %u", placement_stage_.sample_index);
         }
         ImGui::Text("Focus: %.3f, %.3f km", placement.source_focus_xz.x * 0.001F,
                     placement.source_focus_xz.y * 0.001F);
@@ -543,6 +594,92 @@ class TerrainApp {
         (void)cubey::host::draw_atmosphere_environment_controls(atmosphere_state_,
                                                                 {.default_open = true});
         ImGui::End();
+    }
+
+    void configure_camera_for_placement(bool reset_foreground_height) {
+        const TerrainBackdropStagePlan& stage = placement_stage_.stage;
+        orbit_controller_.set_distance_limits(stage.orbit_min_radius_m, stage.orbit_max_radius_m);
+        orbit_controller_.set_home_distance(stage.orbit_default_radius_m);
+        orbit_controller_.set_pitch_limits(
+            stage.orbit_default_elevation_radians - stage.orbit_max_elevation_radians,
+            stage.orbit_default_elevation_radians - stage.orbit_min_elevation_radians);
+        baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+        if (reset_foreground_height) {
+            foreground_height_m_ = runtime_config_.initial_foreground_height_m;
+        }
+        orbit_controller_.reset();
+    }
+
+    void start_placement_build() {
+        if (placement_build_future_.valid()) {
+            return;
+        }
+
+        TerrainRuntimeConfig config = runtime_config_;
+        config.placement = edit_placement_mode_;
+        config.placement_index = edit_placement_index_;
+        placement_rebuild_error_.clear();
+        try {
+            placement_build_future_ =
+                std::async(std::launch::async, [this, config = std::move(config)] {
+                    TerrainPlacementBuild build;
+                    build.mode = config.placement;
+                    build.sample_index = config.placement_index;
+                    build.placement = make_placement_stage(source_, config);
+                    build.product = make_product(source_, build.placement);
+                    return build;
+                });
+        } catch (const std::exception& error) {
+            placement_rebuild_error_ = error.what();
+        } catch (...) {
+            placement_rebuild_error_ = "unable to start terrain placement rebuild";
+        }
+    }
+
+    void install_placement_build(cubey::host::WindowedAppContext& context,
+                                 TerrainPlacementBuild build) {
+        if (!global_resources_created_) {
+            throw std::runtime_error("terrain resources are not ready for a placement rebuild");
+        }
+
+        std::optional<cubey::render::Mesh> next_center_mesh;
+        if (build.product.center.has_value()) {
+            next_center_mesh.emplace(context.gpu(), build.product.center->mesh_config());
+        }
+        std::vector<cubey::render::Mesh> next_sector_meshes;
+        next_sector_meshes.reserve(build.product.sectors.size());
+        for (const TerrainBackdropSectorMesh& sector : build.product.sectors) {
+            next_sector_meshes.emplace_back(context.gpu(), sector.mesh_config());
+        }
+        static_cast<void>(context.gpu().drain());
+        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
+                             "vkDeviceWaitIdle terrain placement rebuild");
+
+        center_mesh_ = std::move(next_center_mesh);
+        sector_meshes_ = std::move(next_sector_meshes);
+        placement_stage_ = std::move(build.placement);
+        product_ = std::move(build.product);
+        runtime_config_.placement = build.mode;
+        runtime_config_.placement_index = build.sample_index;
+        latest_draw_plan_ = {};
+        configure_camera_for_placement(false);
+    }
+
+    void maybe_install_placement_build(cubey::host::WindowedAppContext& context) {
+        if (!placement_build_future_.valid() ||
+            placement_build_future_.wait_for(std::chrono::seconds(0)) !=
+                std::future_status::ready) {
+            return;
+        }
+
+        try {
+            install_placement_build(context, placement_build_future_.get());
+            placement_rebuild_error_.clear();
+        } catch (const std::exception& error) {
+            placement_rebuild_error_ = error.what();
+        } catch (...) {
+            placement_rebuild_error_ = "unknown terrain placement rebuild error";
+        }
     }
 
     void create_global_resources_if_needed(const cubey::vulkan::Device& device,
@@ -1097,6 +1234,10 @@ class TerrainApp {
     TerrainRasterHeightSource source_;
     TerrainBackdropPlacementPlan placement_stage_{};
     TerrainBackdropProduct product_{};
+    TerrainPlacementMode edit_placement_mode_ = TerrainPlacementMode::Selected;
+    std::uint32_t edit_placement_index_ = 0U;
+    std::future<TerrainPlacementBuild> placement_build_future_{};
+    std::string placement_rebuild_error_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_;
     cubey::Transform3D frame_camera_transform_{};

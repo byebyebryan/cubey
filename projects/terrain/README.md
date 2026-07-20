@@ -3,7 +3,8 @@
 `projects/terrain` is Cubey's active fixed-focus far-field terrain backdrop and
 review application. It consumes an external `cubey.terrain.heightfield.v1`
 asset, selects a deterministic source placement, bakes one continuous cached
-mesh at startup, and renders it with shared atmosphere and HDR composition.
+mesh, and can replace that placement at runtime while rendering with shared
+atmosphere and HDR composition.
 
 This is deliberately not a general terrain engine. It does not provide close
 terrain, traversal, streaming, hydrology, water, vegetation, deformation,
@@ -58,10 +59,10 @@ cmake --build --preset dev --target cubey_project_terrain
 ./build/dev/projects/terrain/terrain
 ```
 
-The GUI exposes source provenance and dimensions, read-only placement metrics,
-orbit radius/elevation, foreground height and reset, foreground-sphere
-visibility, flat/detail presentation, supported diagnostics, atmosphere
-controls, submitted geometry, and GPU timings.
+The GUI exposes source provenance and dimensions, runtime placement mode and
+raw-sample index, placement metrics, orbit radius/elevation, foreground height
+and reset, foreground-sphere visibility, flat/detail presentation, supported
+diagnostics, atmosphere controls, submitted geometry, and GPU timings.
 
 Useful startup overrides:
 
@@ -78,10 +79,12 @@ Useful startup overrides:
   --terrain-backdrop-elevation 24
 ```
 
-Placement choices are `selected`, `raw-center`, and `raw-sample`. Placement is
-resolved before the cached mesh is built, so these are startup controls rather
-than live GUI modes. `raw-sample` uses the independent deterministic placement
-index and performs no quality rejection or retry.
+Placement choices are `selected`, `raw-center`, and `raw-sample`. CLI values set
+the startup placement; the GUI can stage another mode/index and apply it while
+the app remains open. CPU resampling runs asynchronously, then the completed
+cached product replaces the GPU meshes atomically and resets the orbit while
+preserving foreground height. `raw-sample` uses the independent deterministic
+placement index and performs no quality rejection or retry.
 
 `backdrop-stage` shows the foreground sphere; `backdrop` hides it. Material
 choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:

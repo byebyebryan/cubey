@@ -42,11 +42,12 @@ margin; the runtime must never hide a poor sample by selecting a replacement.
 
 ## Runtime Boundary
 
-Placement remains immutable after startup. Loading the raster, building its mip
-chain, choosing a focus, sampling the cached mesh, and uploading geometry are a
-single setup operation. The first implementation therefore exposes command-line
-and config selection plus read-only UI evidence. It does not present a live
-selector that appears cheap while synchronously rebuilding millions of samples.
+The control checkpoint initially kept placement immutable after startup because
+changing focus requires resampling and uploading the complete cached product.
+The follow-up runtime selector preserves that cost boundary: mode and raw index
+are staged explicitly, CPU resampling runs asynchronously, and only a completed
+replacement is uploaded and swapped into the renderer. The current product
+remains visible while the replacement builds and remains active after a failure.
 
 Raw modes default to source-space heading zero. The selected mode retains its
 current showcase heading, while an explicit backdrop azimuth overrides either
@@ -96,9 +97,10 @@ never retried when relief, slope, or directional composition fails.
 The focused-stage camera contract is separate from the directional placement
 contract. Selected mode requires both; raw modes require source coverage and
 baked camera clearance while retaining a failed directional result for UI and
-profile reporting. Placement remains immutable after startup and the GUI shows
-its mode, coordinate, score, relief, slope, arcs, and clearance as read-only
-evidence.
+profile reporting. The GUI edits mode and raw index, reports rebuild status or
+failure, and shows the active coordinate, score, relief, slope, arcs, and
+clearance. A successful swap resets the orbit for the new stage while preserving
+the current foreground height.
 
 ## Review Evidence
 
