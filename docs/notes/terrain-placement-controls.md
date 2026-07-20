@@ -19,7 +19,7 @@ before considering any synthetic source shaping.
 
 ## Placement Modes
 
-The runtime exposes three startup-only modes:
+The runtime exposes three placement modes at startup and through the review UI:
 
 - `selected`: retain the current bounded directional search and require its
   composition contract;
@@ -82,7 +82,7 @@ four matched headings, followed by 100 m and 500 m foreground checks.
 
 ## Implementation
 
-The public startup controls are:
+The public configuration controls are:
 
 - `terrain.placement` / `--terrain-placement`;
 - `terrain.placement_index` / `--terrain-placement-index`;
@@ -101,6 +101,11 @@ profile reporting. The GUI edits mode and raw index, reports rebuild status or
 failure, and shows the active coordinate, score, relief, slope, arcs, and
 clearance. A successful swap resets the orbit for the new stage while preserving
 the current foreground height.
+
+The renderer keeps the current cached CPU/GPU product active while a replacement
+is built. Only the latest requested generation may install, and a failed or
+superseded build leaves the active terrain untouched. This is intentionally a
+coarse review operation rather than incremental streaming.
 
 ## Review Evidence
 

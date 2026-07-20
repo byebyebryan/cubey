@@ -67,12 +67,14 @@ clearance-qualified reference height to local zero. The review app may move the
 foreground and orbit target below that reference without rebuilding or moving
 the terrain; low views intentionally do not retain the clearance guarantee.
 
-The product also exposes startup-only `selected`, `raw-center`, and indexed
+The product exposes runtime-selectable `selected`, `raw-center`, and indexed
 `raw-sample` controls. Raw modes choose one coverage-safe coordinate without
 scoring, retry, or rejection and retain the same directional metrics for
-comparison. They are diagnostics, not alternate product defaults. Placement
-cannot change live because the cached mesh is sampled and uploaded around the
-chosen coordinate during setup.
+comparison. They are diagnostics, not alternate product defaults. A placement
+change stages a complete cached-product rebuild on the job system, keeps the
+active product visible, then uploads and atomically swaps only a successful
+replacement. Source loading remains a startup operation; runtime placement
+reuses the validated source and filtered mip chain.
 
 The V1 camera contract is:
 
@@ -142,7 +144,9 @@ The product keeps diagnostics that directly inspect its supported contracts:
 
 The review UI and profile output also publish placement mode/index, source
 coordinate, directional contract and score, local relief, p95 slope, mountain
-and open arcs, and baked clearance.
+and open arcs, and baked clearance. The UI separates staged placement controls
+and rebuild status from the active product metadata so an in-flight or failed
+replacement cannot be mistaken for the rendered terrain.
 
 Retired procedural source bands, weathering, tessellation factors, clipmap LOD,
 vegetation, and shadow placeholders are not product diagnostics.

@@ -30,11 +30,12 @@ Post-promotion review makes 100 m the default foreground height and exposes a
 heights are deliberate stress views rather than a new close-terrain claim.
 
 A later placement-control checkpoint retains selected placement as the default
-and adds startup-only raw center and deterministic indexed raw samples. These
-controls never modify the source or retry failed composition. The canonical
-comparison shows the selected low-relief focus is materially more stable across
-unrestricted yaw, so no synthetic clearing or prepared-stage transition is
-promoted.
+and adds runtime-selectable raw center and deterministic indexed raw samples.
+These controls never modify the source or retry failed composition. Runtime
+changes rebuild a cached product asynchronously and replace the rendered
+product only after a successful upload. The canonical comparison shows the
+selected low-relief focus is materially more stable across unrestricted yaw,
+so no synthetic clearing or prepared-stage transition is promoted.
 
 ## Asset Boundary
 
@@ -80,8 +81,8 @@ The windowed terrain app is a product review surface rather than a capture-only
 harness. Its control panel exposes:
 
 - source identity, dimensions, spacing, and provenance;
-- read-only placement mode, source coordinate, score, relief, slope, arcs, and
-  camera-clearance evidence;
+- staged placement mode/index controls and active source coordinate, score,
+  relief, slope, arcs, camera-clearance evidence, and rebuild status;
 - orbit radius, elevation, reset, and foreground-sphere visibility;
 - flat versus filtered-detail material presentation;
 - raster-supported diagnostic views;
@@ -90,7 +91,8 @@ harness. Its control panel exposes:
 
 Retired source, profile, weathering, LOD, and tessellation controls must not
 remain disabled in the product UI. Expensive source loading stays a startup
-operation; this batch does not add asynchronous terrain streaming.
+operation. Runtime placement resamples the already-loaded source through the
+job system; it is cached-product replacement, not terrain streaming.
 
 ## Closure Gate
 

@@ -53,7 +53,8 @@ Current stable foundation pieces:
   explicit terrain/water-body handoff boundary;
 - Terrain V1 promoted to one external-heightfield far-backdrop product with
   deterministic natural placement, continuous cached geometry, shared
-  atmosphere/HDR lighting, a product review UI, and opt-in historical studies;
+  atmosphere/HDR lighting, runtime cached-placement replacement, a product
+  review UI, and opt-in historical studies;
 - renderer foundation pieces for target views, render graph declaration,
   material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
   planning, and primitive mesh/draw helpers;
