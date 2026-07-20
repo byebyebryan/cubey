@@ -65,7 +65,7 @@ TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
         target_height += 10.0F - minimum_camera_clearance;
         minimum_camera_clearance = 10.0F;
     }
-    const bool contract = displayed.contract_satisfied && minimum_camera_clearance >= 10.0F;
+    const bool contract = minimum_camera_clearance >= 10.0F;
     return {
         .mode = TerrainBackdropStageMode::Grounded,
         .source_focus_xz = placement.source_focus_xz,

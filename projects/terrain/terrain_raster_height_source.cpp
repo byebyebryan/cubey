@@ -231,17 +231,22 @@ float TerrainRasterHeightSource::sample_height(const TerrainQuery& query) const 
     return (raw + height_offset_m_) * height_scale_;
 }
 
+TerrainHeightSourceBounds TerrainRasterHeightSource::bounds() const noexcept {
+    const Level& base = levels_.front();
+    return {
+        .minimum_xz = {base.origin_x_m, base.origin_z_m},
+        .maximum_xz =
+            {
+                base.origin_x_m + static_cast<float>(base.width - 1U) * base.spacing_m,
+                base.origin_z_m + static_cast<float>(base.height - 1U) * base.spacing_m,
+            },
+    };
+}
+
 bool TerrainRasterHeightSource::contains_disk(cubey::math::Vec2 center_xz,
                                               float radius_m) const noexcept {
-    if (levels_.empty() || !std::isfinite(center_xz.x) || !std::isfinite(center_xz.y) ||
-        !std::isfinite(radius_m) || radius_m < 0.0F) {
-        return false;
-    }
-    const Level& base = levels_.front();
-    const float maximum_x = base.origin_x_m + static_cast<float>(base.width - 1U) * base.spacing_m;
-    const float maximum_z = base.origin_z_m + static_cast<float>(base.height - 1U) * base.spacing_m;
-    return center_xz.x - radius_m >= base.origin_x_m && center_xz.x + radius_m <= maximum_x &&
-           center_xz.y - radius_m >= base.origin_z_m && center_xz.y + radius_m <= maximum_z;
+    return !levels_.empty() &&
+           terrain_height_source_bounds_contains_disk(bounds(), center_xz, radius_m);
 }
 
 std::uint32_t TerrainRasterHeightSource::width() const noexcept {

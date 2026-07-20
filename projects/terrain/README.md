@@ -107,8 +107,8 @@ cmake --build --preset dev --target \
   cubey_project_terrain_config_tests \
   cubey_project_terrain_raster_height_source_tests \
   cubey_project_terrain_backdrop_product_tests \
-  cubey_project_terrain_directional_placement_tests \
-  cubey_project_terrain_natural_backdrop_stage_tests
+  cubey_project_terrain_backdrop_placement_tests \
+  cubey_project_terrain_directional_placement_tests
 
 ctest --preset dev -R '^terrain_.*_tests$' --output-on-failure
 ```

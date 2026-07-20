@@ -27,6 +27,7 @@ class TerrainRasterHeightSource final : public TerrainHeightSource {
     [[nodiscard]] TerrainHeightSourceMetadata metadata() const noexcept override;
     [[nodiscard]] float sample_height(const TerrainQuery& query) const override;
 
+    [[nodiscard]] TerrainHeightSourceBounds bounds() const noexcept;
     [[nodiscard]] bool contains_disk(cubey::math::Vec2 center_xz, float radius_m) const noexcept;
     [[nodiscard]] std::uint32_t width() const noexcept;
     [[nodiscard]] std::uint32_t height() const noexcept;

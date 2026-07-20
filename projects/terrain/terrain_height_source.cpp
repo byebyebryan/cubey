@@ -14,6 +14,36 @@ void validate_terrain_height_source_metadata(const TerrainHeightSourceMetadata& 
     }
 }
 
+void validate_terrain_height_source_bounds(const TerrainHeightSourceBounds& bounds) {
+    if (!std::isfinite(bounds.minimum_xz.x) || !std::isfinite(bounds.minimum_xz.y) ||
+        !std::isfinite(bounds.maximum_xz.x) || !std::isfinite(bounds.maximum_xz.y) ||
+        bounds.minimum_xz.x > bounds.maximum_xz.x || bounds.minimum_xz.y > bounds.maximum_xz.y) {
+        throw std::runtime_error("invalid terrain height source bounds");
+    }
+}
+
+cubey::math::Vec2 terrain_height_source_bounds_center(const TerrainHeightSourceBounds& bounds) {
+    validate_terrain_height_source_bounds(bounds);
+    return {(bounds.minimum_xz.x + bounds.maximum_xz.x) * 0.5F,
+            (bounds.minimum_xz.y + bounds.maximum_xz.y) * 0.5F};
+}
+
+bool terrain_height_source_bounds_contains_disk(const TerrainHeightSourceBounds& bounds,
+                                                cubey::math::Vec2 center_xz,
+                                                float radius_m) noexcept {
+    if (!std::isfinite(bounds.minimum_xz.x) || !std::isfinite(bounds.minimum_xz.y) ||
+        !std::isfinite(bounds.maximum_xz.x) || !std::isfinite(bounds.maximum_xz.y) ||
+        bounds.minimum_xz.x > bounds.maximum_xz.x || bounds.minimum_xz.y > bounds.maximum_xz.y ||
+        !std::isfinite(center_xz.x) || !std::isfinite(center_xz.y) || !std::isfinite(radius_m) ||
+        radius_m < 0.0F) {
+        return false;
+    }
+    return center_xz.x - radius_m >= bounds.minimum_xz.x &&
+           center_xz.x + radius_m <= bounds.maximum_xz.x &&
+           center_xz.y - radius_m >= bounds.minimum_xz.y &&
+           center_xz.y + radius_m <= bounds.maximum_xz.y;
+}
+
 TerrainSample TerrainHeightSource::sample(const TerrainQuery& query) const {
     const TerrainHeightSourceMetadata source_metadata = metadata();
     validate_terrain_height_source_metadata(source_metadata);

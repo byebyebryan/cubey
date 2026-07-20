@@ -1,10 +1,10 @@
 #include "terrain_app.h"
 
 #include "terrain_backdrop_material.h"
+#include "terrain_backdrop_placement.h"
 #include "terrain_backdrop_product.h"
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
-#include "terrain_natural_backdrop_stage.h"
 #include "terrain_raster_height_source.h"
 
 #include <cubey/engine/atmosphere_environment_config.h>
@@ -131,49 +131,36 @@ require_heightfield(const std::filesystem::path& heightfield_path) {
     return heightfield_path;
 }
 
-[[nodiscard]] TerrainNaturalBackdropStagePlan
-make_natural_stage(const TerrainRasterHeightSource& source, const TerrainRuntimeConfig& config) {
+[[nodiscard]] TerrainBackdropPlacementPlan
+make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRuntimeConfig& config) {
     if (config.expected_seed.has_value() &&
         config.expected_seed.value() != source.metadata().seed) {
         throw std::runtime_error("terrain seed does not match the heightfield manifest");
     }
-    TerrainNaturalBackdropStageRequest request;
+    TerrainBackdropPlacementRequest request;
     if (config.initial_orbit_radius_m.has_value()) {
         request.stage.orbit_default_radius_m = config.initial_orbit_radius_m.value();
     }
     if (config.initial_elevation_radians.has_value()) {
         request.stage.orbit_default_elevation_radians = config.initial_elevation_radians.value();
     }
-    const float centered_support = terrain_natural_backdrop_centered_support_radius(
-        request, source.metadata().gradient_step_m);
-    if (!source.contains_disk({0.0F, 0.0F}, centered_support)) {
-        throw std::runtime_error("terrain heightfield does not cover the natural placement search");
-    }
-    TerrainNaturalBackdropStagePlan result = plan_terrain_natural_backdrop_stage(source, request);
-    if (!result.placement.contract_satisfied || !result.stage.contract_satisfied) {
-        throw std::runtime_error("terrain heightfield has no passing natural backdrop stage");
-    }
-    if (!source.contains_disk(result.stage.source_focus_xz, result.selected_support_radius_m)) {
-        throw std::runtime_error(
-            "terrain heightfield does not cover the selected natural backdrop");
-    }
-    return result;
+    return plan_terrain_backdrop_placement(source, source.bounds(), request);
 }
 
 [[nodiscard]] TerrainBackdropProduct make_product(const TerrainRasterHeightSource& source,
-                                                  const TerrainNaturalBackdropStagePlan& natural) {
+                                                  const TerrainBackdropPlacementPlan& placement) {
     return make_terrain_backdrop_product(
         {
-            .source_focus_xz = natural.stage.source_focus_xz,
+            .source_focus_xz = placement.stage.source_focus_xz,
             .density = TerrainBackdropMeshDensity::High,
             .center_mode = TerrainBackdropCenterMode::Continuous,
             .center_sampling = TerrainBackdropCenterSampling::SeamMatched,
             .render_stride = 3U,
-            .consumer_radius_m = natural.stage.stage_radius_m,
+            .consumer_radius_m = placement.stage.stage_radius_m,
             .visible_inner_radius_m = 3'200.0F,
             .outer_radius_m = 16'384.0F,
             .vertical_scale = 1.0F,
-            .vertical_offset_m = natural.stage.terrain_vertical_offset_m,
+            .vertical_offset_m = placement.stage.terrain_vertical_offset_m,
         },
         source);
 }
@@ -295,8 +282,8 @@ class TerrainApp {
           runtime_config_(terrain_runtime_config_from_run_config(
               run_config_, std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD))),
           source_(require_heightfield(runtime_config_.heightfield_path)),
-          natural_stage_(make_natural_stage(source_, runtime_config_)),
-          product_(make_product(source_, natural_stage_)),
+          placement_stage_(make_placement_stage(source_, runtime_config_)),
+          product_(make_product(source_, placement_stage_)),
           orbit_controller_(cubey::OrbitControllerConfig{}),
           camera_(cubey::Camera3DConfig{
               .fovy_radians = 40.0F * kDegreesToRadians,
@@ -304,7 +291,7 @@ class TerrainApp {
               .far_z = product_.request.outer_radius_m * 5.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)) {
-        const TerrainBackdropStagePlan& stage = natural_stage_.stage;
+        const TerrainBackdropStagePlan& stage = placement_stage_.stage;
         orbit_controller_.set_distance_limits(stage.orbit_min_radius_m, stage.orbit_max_radius_m);
         orbit_controller_.set_home_distance(stage.orbit_default_radius_m);
         orbit_controller_.set_pitch_limits(
@@ -459,7 +446,7 @@ class TerrainApp {
 
         ImGui::SeparatorText("Camera");
         float radius = orbit_controller_.distance();
-        const TerrainBackdropStagePlan& stage = natural_stage_.stage;
+        const TerrainBackdropStagePlan& stage = placement_stage_.stage;
         if (ImGui::SliderFloat("Orbit radius", &radius, stage.orbit_min_radius_m,
                                stage.orbit_max_radius_m, "%.0f m")) {
             orbit_controller_.set_distance(radius);
@@ -771,7 +758,7 @@ class TerrainApp {
     }
 
     [[nodiscard]] cubey::Transform3D current_camera_transform() const {
-        const TerrainBackdropStagePlan& stage = natural_stage_.stage;
+        const TerrainBackdropStagePlan& stage = placement_stage_.stage;
         const float initial_yaw =
             runtime_config_.initial_azimuth_radians.value_or(stage.showcase_yaw_radians);
         return cubey::orbit_camera_transform({
@@ -814,7 +801,7 @@ class TerrainApp {
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_uniforms(VkExtent2D extent) const {
         const float physical_camera_height_m =
-            frame_camera_transform_.translation.y + natural_stage_.stage.target_height_m;
+            frame_camera_transform_.translation.y + placement_stage_.stage.target_height_m;
         return cubey::render::atmosphere_environment_frame_uniforms(
             atmosphere_state_.environment,
             {
@@ -1067,7 +1054,7 @@ class TerrainApp {
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainRasterHeightSource source_;
-    TerrainNaturalBackdropStagePlan natural_stage_{};
+    TerrainBackdropPlacementPlan placement_stage_{};
     TerrainBackdropProduct product_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_;

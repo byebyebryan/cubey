@@ -49,11 +49,11 @@ target_link_libraries(
 add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_density.cpp
     terrain_backdrop_material.cpp
+    terrain_backdrop_placement.cpp
     terrain_backdrop_product.cpp
     terrain_backdrop_profile.cpp
     terrain_directional_placement.cpp
     terrain_environment_gpu.cpp
-    terrain_natural_backdrop_stage.cpp
 )
 target_include_directories(
     cubey_project_terrain_render_support
@@ -164,24 +164,24 @@ if (BUILD_TESTING)
     )
 
     add_executable(
-        cubey_project_terrain_natural_backdrop_stage_tests
-        terrain_natural_backdrop_stage_tests.cpp
+        cubey_project_terrain_backdrop_placement_tests
+        terrain_backdrop_placement_tests.cpp
     )
     target_link_libraries(
-        cubey_project_terrain_natural_backdrop_stage_tests
+        cubey_project_terrain_backdrop_placement_tests
         PRIVATE cubey_project_terrain_render_support cubey_project_warnings
     )
     add_test(
-        NAME terrain_natural_backdrop_stage_tests
-        COMMAND cubey_project_terrain_natural_backdrop_stage_tests
+        NAME terrain_backdrop_placement_tests
+        COMMAND cubey_project_terrain_backdrop_placement_tests
     )
 
     set_tests_properties(
         terrain_config_tests
         terrain_raster_height_source_tests
         terrain_backdrop_product_tests
+        terrain_backdrop_placement_tests
         terrain_directional_placement_tests
-        terrain_natural_backdrop_stage_tests
         PROPERTIES LABELS terrain TIMEOUT 120
     )
 endif()

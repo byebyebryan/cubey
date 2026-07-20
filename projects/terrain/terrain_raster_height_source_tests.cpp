@@ -115,6 +115,11 @@ void test_loads_and_samples_calibrated_field() {
     require(source.contains_disk({15.0F, 15.0F}, 15.0F) &&
                 !source.contains_disk({15.0F, 15.0F}, 16.0F),
             "raster source should expose strict field coverage");
+    const cubey::projects::terrain::TerrainHeightSourceBounds bounds = source.bounds();
+    require(bounds.minimum_xz.x == 0.0F && bounds.minimum_xz.y == 0.0F &&
+                bounds.maximum_xz.x == 30.0F && bounds.maximum_xz.y == 30.0F &&
+                cubey::projects::terrain::terrain_height_source_bounds_center(bounds).x == 15.0F,
+            "raster source should expose its complete world-space sample bounds");
     require_throws(
         [&source] { static_cast<void>(source.sample_height({.world_xz = {31.0F, 0.0F}})); },
         "raster source should reject out-of-domain queries");
