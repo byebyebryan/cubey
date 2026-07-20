@@ -2,7 +2,7 @@
 
 Date: 2026-07-20
 
-Status: decision gate in progress.
+Status: closed; retain stride 3 and proceed to Material V2.
 
 ## Goal
 
@@ -69,6 +69,47 @@ itself.
 - If stride 3 is acceptable throughout the qualified envelope and only stress
   views fail, keep the V1 boundary and proceed to Material V2.
 
-The final section of this note will record the measured costs, visual result,
-and one selected next direction. Until then, no geometry or material response
-is promoted from this diagnostic.
+## Result
+
+The retained pack under `outputs/terrain/rendering-envelope-v1` was captured
+from revision `05199bfa` and contains 46 matched frames. It preserves the
+canonical elevation hash, selected focus, stride-3 product hash
+`0xcf2100b0763a8211`, and `2,657,280` cached source samples.
+
+Stride 1 raises the complete render product from `607,200` to `5,305,344`
+triangles, or `8.737x`. It does not materially change the visible silhouette in
+either qualified heading or in the 1 km stress comparison. The normalized
+surface-frame pixel RMSE is only `0.0022-0.0029` across the three pairs, and
+the surface and clay contact sheets retain the same broad outline and source
+character. The projected-edge diagnostic shows the denser topology, but that
+difference does not translate into a meaningful product-view improvement.
+
+The qualified stride-3 views do not show a topology failure severe enough to
+justify LOD. The remaining weaknesses are the pale and nearly uniform material
+response, atmospheric contrast loss, heading-dependent sparse mountain
+coverage, and limited close-view character. The fair-cloud lane composes
+correctly and improves scene context, but does not hide those terrain limits.
+
+| Lane | Triangles | Terrain mean / p50 | Clear mean / p50 | Full mean / p50 |
+|---|---:|---:|---:|---:|
+| clear stride 3 | 607,200 | 0.543 / 0.486 ms | 0.996 / 0.921 ms | 0.996 / 0.921 ms |
+| clear stride 1 | 5,305,344 | 1.296 / 0.720 ms | 1.847 / 1.147 ms | 1.847 / 1.147 ms |
+| cloud stride 3 | 607,200 | 0.727 / 0.705 ms | 1.222 / 1.180 ms | 3.218 / 2.991 ms |
+
+The stride-3 clear lane meets the `1.0 ms` mean and p50 gate, narrowly on mean.
+P95 remains diagnostic: `1.481 ms` for clear stride 3, `4.845 ms` for clear
+stride 1, and `4.249 ms` for the full cloud composition.
+
+## Decision
+
+Retain fixed stride 3 and the existing V1 support boundary. Do not implement
+adaptive LOD or full-resolution cached meshes for the current backdrop. The
+100 m foreground and 500-1000 m orbit remain stress views, not a close-terrain
+claim.
+
+The next terrain rendering batch is Material V2: improve broad and mesoscopic
+surface separation, terrain-light contrast, and geological scale cues without
+changing silhouette or adding high-frequency noise. Source sampling/filtering
+returns only if that material pass leaves a shape defect visible in the
+qualified views. LOD returns only when a real consumer requires a closer or
+wider camera envelope.

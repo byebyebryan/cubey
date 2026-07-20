@@ -2,7 +2,7 @@
 
 Date: 2026-07-20
 
-Status: mechanically complete candidate; keep isolated until visual acceptance.
+Status: accepted V1 baseline; Material V2 remains the visual-fidelity follow-up.
 
 ## Goal
 
@@ -156,3 +156,9 @@ clearest mountain separation. Material albedo is intentionally quiet and its
 normal diagnostic is substantially more active than the bounded final surface.
 The candidate remains a far-field treatment: uneven mountain coverage by
 heading, source silhouettes, and close-range fidelity are not solved here.
+
+The later rendering-envelope gate retained this lighting/material path as the
+V1 baseline. A matched stride-1 product did not materially improve qualified
+silhouettes despite using `8.737x` the render triangles, so the next visual
+batch stays in material and terrain-light response rather than geometry LOD.
+See [`terrain-rendering-envelope-v1.md`](terrain-rendering-envelope-v1.md).

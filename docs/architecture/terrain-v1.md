@@ -198,6 +198,14 @@ terrain-light response are the next isolated refinement batch. Performance is
 tracked by mean and p50 for the accepted view; p95 remains diagnostic until
 capture and startup noise are separated from steady-state rendering.
 
+The rendering-envelope gate compared the default stride-3 product with the
+same cached source rendered at stride 1. Full topology increased the complete
+draw product from `607,200` to `5,305,344` triangles without materially
+changing qualified silhouettes. Stride 3 therefore remains the V1 topology;
+Material V2 precedes LOD or further source work. The fixed clear composition
+measured `0.996 ms` mean and `0.921 ms` p50 at `1600 x 900`.
+
 See [Terrain Product Promotion](../notes/terrain-product-promotion.md),
+[Terrain Rendering Envelope V1](../notes/terrain-rendering-envelope-v1.md),
 [Terrain Project Map](../notes/terrain-project-map.md), and the project
 [README](../../projects/terrain/README.md).
