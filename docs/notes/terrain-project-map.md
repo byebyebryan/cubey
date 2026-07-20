@@ -1,93 +1,85 @@
 # Terrain Project Map
 
-Date: 2026-07-11
+Date: 2026-07-19
 
-This map records the terrain reboot boundaries. Older river, mountain-driver,
-and landscape-evolution notes remain historical evidence rather than an active
-queue.
+This map records the terrain product-promotion boundary. Older river,
+mountain-driver, source-model, and landscape-evolution notes are historical
+evidence rather than an active queue.
 
-## Active Projects
+## Product And Studies
 
-| Project | Role | Change policy |
+| Location | Role | Change policy |
 | --- | --- | --- |
-| `projects/terrain` | Terrain v1 source runtime, clipmap renderer, traversal, and review. | Active. Keep one parameterized source model and a small public contract. |
-| `projects/terrain_ref` | TerrainEngine and curated ShaderToy visual controls. | Frozen. Maintenance and reproducibility fixes only. |
-| `projects/terrain_shadertoy_ref` | Optional external-source fidelity study for direct raymarch versus Cubey mesh transfer. | Experimental. Keep restricted source external; do not promote code directly. |
-| `projects/terrain_hydrology_lab` | Previous CPU patch, drainage diagnostics, graph routing, and analytical landscape evolution. | Paused. Preserve build/tests; do not feed terrain v1. |
-| `projects/terrain_workbench_legacy` | First river/mountain driver workbench. | Legacy. |
-| `projects/procedural_terrain_legacy` | Earlier coast/island terrain project. | Legacy. |
-| `projects/terrain_lab_legacy` | Earlier biome/noise lab. | Legacy. |
+| `projects/terrain` | Fixed-focus external-heightfield backdrop, shared atmosphere, material review, diagnostics, and capture. | Active product. One runtime path and one asset contract. |
+| `studies/terrain/reference` | TerrainEngine and curated clean-room ShaderToy visual controls. | Optional frozen study. Maintenance and reproducibility fixes only. |
+| `studies/terrain/shadertoy` | External-source fidelity comparison between original raymarches and Cubey mesh transfer. | Optional restricted-source study. Do not promote source code directly. |
+| `studies/terrain/hydrology` | Regional drainage, graph routing, and analytical landscape-evolution experiments. | Optional paused study. Not a terrain-product dependency. |
 
-## V1 Spine
+The failed workbench, terrain-lab, and coastal procedural-terrain
+implementations are removed after their conclusions are archived. Git history
+is the implementation record. `projects/planet` remains a distinct
+planet-scale renderer whose local terrain field does not define this product.
+
+## Product Spine
 
 ```text
-shared coherent noise
-    -> project-local parameterized source
-    -> CPU point query + matching GLSL sample
-    -> optional local weathering
-    -> single-owner camera-centered clipmap
-    -> procedural material + shared atmosphere
-    -> fixed still and traversal review
+offline generator
+    -> cubey.terrain.heightfield.v1 asset
+    -> deterministic natural placement
+    -> cached continuous sector mesh
+    -> filtered procedural material + shared atmosphere
+    -> fixed-focus backdrop and review UI
 ```
 
-This is intentionally not the old source/process/product field spine. Terrain
-v1 is a random-access heightfield runtime. Regional simulation products can be
-added later through explicit adapters; they do not define this source contract.
+The generator is replaceable and does not run in the renderer. Regional
+simulation products can be added later through explicit adapters; they do not
+define this asset or rendering contract.
 
-## Source And Presets
+## Source And Asset
 
-`mountain`, `upland`, and `plains` are parameter sets over the same
-macro/structure/detail evaluator. The TerrainEngine reference is the visual
-anchor because it reached readable mountain shapes with a compact octave stack
-and elevation power. Cubey keeps that hierarchy while using the shared noise
-foundation and explicit physical scales.
-
-The model must remain coherent at every stage. Do not add local ridgeline,
-valley, coast, lake, or river masks to force a target composition. Additional
-terrain categories come later only if they can be expressed as parameters or a
-well-defined new source/operator class.
+The canonical development field is generated locally from the pinned
+Terrain Diffusion 30 m model at seed 0. It is one accepted test asset, not the
+terrain API. Any producer may supply the same manifest and regular elevation
+contract. Terrain shape stays unchanged during rendering and material work.
 
 ## Process Boundary
 
-V1 local weathering is a bounded stateless modifier. It can sharpen or soften
-resolved surface detail and publish its signed delta, but it cannot provide
-drainage topology. D8, D-infinity, graph rivers, priority filling, stream-power
-evolution, and particle hydrology belong in `terrain_hydrology_lab` or a future
-hydrology reboot.
+The product has no terrain process pass. D8, D-infinity, graph rivers, priority
+filling, stream-power evolution, and particle hydrology belong in the optional
+hydrology study or a future hydrology reboot.
 
 ## Consumer Boundary
 
-The standalone app is the only v1 integration target. Its project-local runtime
-is structured for reuse, but glTF, fluid, ocean, and planet adapters are deferred
-until the terrain contract and traversal evidence are stable. A second consumer
-is the gate for considering promotion into `include/cubey` and `src/cubey`.
+The standalone app is the only current integration target. glTF, fluid, ocean,
+and planet adapters remain deferred until the isolated backdrop has convincing
+material fidelity. A second consumer remains the gate for promotion into
+`include/cubey` and `src/cubey`.
 
 ## Review Contract
 
 Review always includes:
 
-- neutral top views across three seeds;
-- clean versus weathered height comparisons;
-- oblique and near-surface presentation views;
-- LOD diagnostics and moving-camera inspection;
-- a side-by-side TerrainEngine reference control;
-- bounded source statistics and capture metadata.
+- canonical source height and slope views;
+- unrestricted headings and camera-envelope endpoints;
+- flat and filtered-detail material comparisons;
+- clay, normal, material, edge, and stage diagnostics;
+- neutral and raking shared-atmosphere lighting;
+- topology, performance, provenance, and capture metadata.
 
 Material shading cannot be the only evidence. The height and slope views must
 show the same macro hierarchy, and outputs must be grouped by checkpoint rather
 than accumulated as an undifferentiated image dump.
 
-The external-source fidelity lane is a narrower exception to the clean-room
-production boundary. It exists only to determine why a complete reference scene
-works and where fidelity is lost during mesh transfer. Its source remains
-outside Cubey and its findings must be re-expressed independently before they
-can influence production code.
+The external-source fidelity lane remains a narrower exception to the
+clean-room product boundary. Restricted source remains outside Cubey and its
+findings must be re-expressed independently before they influence product code.
 
 ## Deferred Work
 
+- material and terrain-light-response refinement beyond the current candidate;
 - hydrology, rivers, lakes, wetlands, and coastlines;
-- biome/climate/material products and foliage placement;
-- terrain deformation, persistence, colliders, and offline baking;
+- biome/climate products and foliage placement;
+- terrain deformation, persistence, colliders, and streaming;
 - cross-project adapters;
 - spherical planet mapping, floating origin, and planet-scale streaming;
-- terrain cast shadows and final production material systems.
+- close or hero terrain rendering.
