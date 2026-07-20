@@ -215,17 +215,10 @@ struct RunConfig {
         float backdrop_elevation_degrees = kRunConfigUnsetFloat;
         float backdrop_minimum_visible_distance_m = kRunConfigUnsetFloat;
         std::string presentation{};
-        std::string preview_runtime{};
         std::string preview_color{};
         std::string preview_surface{};
         int water_surface = -1;
         bool seed_set = false;
-    };
-
-    struct TerrainLabOptions {
-        std::string slice_preset{};
-        std::string camera_preset{};
-        std::string noise_source{};
     };
 
     struct AtmosphereOptions {
@@ -349,7 +342,6 @@ struct RunConfig {
     PbrOptions pbr{};
     GltfOptions gltf{};
     TerrainOptions terrain{};
-    TerrainLabOptions terrain_lab{};
     AtmosphereOptions atmosphere{};
     CloudOptions clouds{};
     std::uint32_t frames = 0;

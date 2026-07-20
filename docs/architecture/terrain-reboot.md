@@ -2,14 +2,15 @@
 
 Date: 2026-06-21
 
-Status: directional context. The reference lane is frozen and the active
-fixed-focus cached runtime contract is defined in [`terrain-v1.md`](terrain-v1.md)
-and [`terrain-cached-backdrop-pivot.md`](../notes/terrain-cached-backdrop-pivot.md).
+Status: archived directional context. The promoted raster product boundary is
+defined in [`terrain-product-promotion.md`](../notes/terrain-product-promotion.md).
+The failed implementation record is summarized in
+[`legacy-attempts.md`](../archive/terrain/legacy-attempts.md).
 
 This document captures the terrain reboot direction. It promotes the useful
-lessons from `terrain_lab_legacy`, `procedural_terrain_legacy`, the terrain
-workbench, `planet`, the shared procedural foundation, and local reference
-projects into one design checkpoint.
+lessons from the removed terrain lab, coastal demo, terrain workbench,
+`planet`, the shared procedural foundation, and local reference projects into
+one design checkpoint.
 
 ## Decision
 
@@ -38,15 +39,14 @@ The existing terrain-adjacent projects keep distinct roles:
 
 | Project | Reboot role |
 | --- | --- |
-| `terrain_lab_legacy` | Preserved R&D evidence for local terrain fields, diagnostics, river hierarchy, and failure modes. Do not extend its contract. |
-| `procedural_terrain_legacy` | Preserved coastal terrain and bathymetry experiment. Keep its shoreline/ocean field contract as a later adapter target. |
+| Removed terrain lab | Historical R&D evidence for local terrain fields, diagnostics, river hierarchy, and failure modes. |
+| Removed coastal demo | Historical coastal terrain and bathymetry experiment. Its archived shoreline/ocean field contract remains an adapter target. |
 | `planet` | Current scale, cube-sphere LOD, tile identity, local-detail host, and eventual integration target. Do not start the local terrain reboot inside it. |
 | `ocean` | Future consumer of shoreline, bathymetry, wetness, and water-depth products. It should not own terrain generation. |
 | `atmosphere` / `cloud` | Environment and lighting consumers/producers that pressure terrain material, weather, climate, and capture integration later. |
 
-The current terrain workbench should be preserved as
-`projects/terrain_workbench_legacy`. It is useful evidence, but no longer the
-active reboot lane.
+The former terrain workbench was removed after its conclusions were archived.
+Git history remains the implementation record.
 
 `studies/terrain/reference` is now a frozen visual benchmark over known-good terrain
 models and rendering techniques. The canonical `projects/terrain` name is the
@@ -224,10 +224,10 @@ Visual tests should follow:
 - capture directories that clearly separate current reboot outputs from legacy
   terrain outputs.
 
-## Current Implementation Checkpoint
+## Archived Implementation Checkpoint
 
-The preserved workbench now lives as `projects/terrain_workbench_legacy`. It has
-a CPU/reference terrain product generator and headless PNG review path. The
+The removed workbench had a CPU/reference terrain product generator and
+headless PNG review path. The
 current slice is `temperate-mountain-river` over a local region. Generator
 revision `26` emits deterministic source fields,
 explicit mountain support/ridge/peak/uplift fields, height/slope analysis,

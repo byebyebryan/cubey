@@ -340,12 +340,8 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--terrain-backdrop-min-distance",
         "--terrain-presentation",
         "--terrain-vertical-scale",
-        "--terrain-preview-runtime",
         "--terrain-preview-color",
         "--terrain-preview-surface",
-        "--terrain-lab-slice",
-        "--terrain-lab-camera-preset",
-        "--terrain-lab-noise-source",
         "--cloud-camera-mode",
         "--cloud-quality",
         "--cloud-coverage",
@@ -465,14 +461,10 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.backdrop_minimum_visible_distance_m",
         "terrain.presentation",
         "terrain.vertical_scale",
-        "terrain.preview_runtime",
         "terrain.preview_color",
         "terrain.preview_surface",
         "terrain.sea_level",
         "terrain.water_surface",
-        "terrain_lab.slice_preset",
-        "terrain_lab.camera_preset",
-        "terrain_lab.noise_source",
         "atmosphere.time_of_day_mode",
         "atmosphere.ground_mode",
         "atmosphere.sun_elevation_degrees",
@@ -650,16 +642,10 @@ void test_run_config_loads_json_config_file() {
     "backdrop_elevation_degrees": 24.0,
     "backdrop_minimum_visible_distance_m": 1750.0,
     "presentation": "backdrop",
-    "preview_runtime": "terrain-engine-ref",
     "preview_color": "height",
     "preview_surface": "post-erosion",
     "vertical_scale": 0.75,
     "water_surface": false
-  },
-  "terrain_lab": {
-    "slice_preset": "arid-mesa-canyon",
-    "camera_preset": "profile",
-    "noise_source": "fastnoise-lite"
   },
   "smoke": {
     "pressure_solver": "red-black-gauss-seidel",
@@ -776,8 +762,6 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain backdrop stage controls");
     require(config.terrain.presentation == "backdrop",
             "config file should set terrain presentation");
-    require(config.terrain.preview_runtime == "terrain-engine-ref",
-            "config file should set terrain preview runtime");
     require(config.terrain.preview_color == "height",
             "config file should set terrain preview color");
     require(config.terrain.preview_surface == "post-erosion",
@@ -785,12 +769,6 @@ void test_run_config_loads_json_config_file() {
     require(config.terrain.vertical_scale == 0.75F,
             "config file should set terrain vertical scale");
     require(config.terrain.water_surface == 0, "config file should set terrain booleans");
-    require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
-            "config file should set Terrain Lab slice preset");
-    require(config.terrain_lab.camera_preset == "profile",
-            "config file should set Terrain Lab camera preset");
-    require(config.terrain_lab.noise_source == "fastnoise-lite",
-            "config file should set Terrain Lab noise source");
     require(config.smoke.pressure_solver == "red-black-gauss-seidel" &&
                 config.smoke.dye_decay == 0.98F && config.smoke.injector_radius == 0.05F,
             "config file should set smoke controls");
@@ -837,11 +815,6 @@ void test_run_config_cli_and_set_override_config_file() {
   "ocean": {
     "terrain_fields": false
   },
-  "terrain_lab": {
-    "slice_preset": "temperate-mountain-watershed",
-    "camera_preset": "profile",
-    "noise_source": "legacy-value"
-  },
   "water3d": {
     "whitewater": false
   }
@@ -856,19 +829,12 @@ void test_run_config_cli_and_set_override_config_file() {
     std::string set_height = "height=720";
     std::string set_env = "pbr.environment_source=atmosphere";
     std::string set_terrain = "ocean.terrain_fields=true";
-    std::string slice_flag = "--terrain-lab-slice";
-    std::string slice_value = "arid-mesa-canyon";
-    std::string camera_flag = "--terrain-lab-camera-preset";
-    std::string camera_value = "orbit";
-    std::string noise_flag = "--terrain-lab-noise-source";
-    std::string noise_value = "fastnoise-lite";
     std::string set_whitewater = "water3d.whitewater=true";
-    std::array<char*, 19> argv{
-        program.data(),      width_flag.data(), width_value.data(),   config_flag.data(),
-        config_path.data(),  slice_flag.data(), slice_value.data(),   camera_flag.data(),
-        camera_value.data(), noise_flag.data(), noise_value.data(),   set_flag.data(),
-        set_height.data(),   set_flag.data(),   set_env.data(),       set_flag.data(),
-        set_terrain.data(),  set_flag.data(),   set_whitewater.data()};
+    std::array<char*, 13> argv{program.data(),     width_flag.data(), width_value.data(),
+                               config_flag.data(), config_path.data(), set_flag.data(),
+                               set_height.data(),  set_flag.data(),    set_env.data(),
+                               set_flag.data(),    set_terrain.data(), set_flag.data(),
+                               set_whitewater.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -877,12 +843,6 @@ void test_run_config_cli_and_set_override_config_file() {
     require(config.pbr.environment_source == "atmosphere",
             "--set should override nested config values");
     require(config.ocean.terrain_fields == 1, "--set should parse bool overrides");
-    require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
-            "named CLI flags should override config-backed Terrain Lab slice");
-    require(config.terrain_lab.camera_preset == "orbit",
-            "named CLI flags should override config-backed Terrain Lab camera preset");
-    require(config.terrain_lab.noise_source == "fastnoise-lite",
-            "named CLI flags should override config-backed Terrain Lab noise source");
     require(config.water3d.whitewater == 1,
             "--set should override descriptor-backed water controls");
 }
@@ -896,24 +856,11 @@ void test_run_config_descriptor_cli_and_set_precedence() {
     std::string set_auto_exposure = "atmosphere.auto_exposure=true";
     std::string water_wave_flag = "--water3d-wave";
     std::string set_water_wave = "water3d.wave=false";
-    std::string slice_flag = "--terrain-lab-slice";
-    std::string slice_value = "temperate-mountain-watershed";
-    std::string set_slice = "terrain_lab.slice_preset=arid-mesa-canyon";
-    std::string camera_flag = "--terrain-lab-camera-preset";
-    std::string camera_value = "profile";
-    std::string set_camera = "terrain_lab.camera_preset=orbit";
-    std::string noise_flag = "--terrain-lab-noise-source";
-    std::string noise_value = "fastnoise-lite";
-    std::string set_noise = "terrain_lab.noise_source=legacy-value";
-    std::array<char*, 22> argv{
-        program.data(),           terrain_flag.data(),       set_flag.data(),
-        set_terrain.data(),       auto_exposure_flag.data(), set_flag.data(),
-        set_auto_exposure.data(), water_wave_flag.data(),    set_flag.data(),
-        set_water_wave.data(),    slice_flag.data(),         slice_value.data(),
-        set_flag.data(),          set_slice.data(),          camera_flag.data(),
-        camera_value.data(),      set_flag.data(),           set_camera.data(),
-        noise_flag.data(),        noise_value.data(),        set_flag.data(),
-        set_noise.data()};
+    std::array<char*, 10> argv{program.data(),           terrain_flag.data(),
+                               set_flag.data(),          set_terrain.data(),
+                               auto_exposure_flag.data(), set_flag.data(),
+                               set_auto_exposure.data(), water_wave_flag.data(),
+                               set_flag.data(),          set_water_wave.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -923,12 +870,6 @@ void test_run_config_descriptor_cli_and_set_precedence() {
             "--set should override descriptor-backed negative bool CLI flags");
     require(config.water3d.wave == 0,
             "--set should override newly descriptor-backed project bool CLI flags");
-    require(config.terrain_lab.slice_preset == "arid-mesa-canyon",
-            "--set should override descriptor-backed Terrain Lab enum CLI flags");
-    require(config.terrain_lab.camera_preset == "orbit",
-            "--set should override descriptor-backed Terrain Lab camera preset CLI flags");
-    require(config.terrain_lab.noise_source == "legacy-value",
-            "--set should override descriptor-backed Terrain Lab noise source CLI flags");
 }
 
 void test_run_config_rejects_invalid_json_config_file() {
@@ -993,8 +934,6 @@ void test_run_config_writes_json_template() {
             "config template should include water 3D options");
     require(text.find("\"clouds\"") != std::string::npos,
             "config template should include cloud options");
-    require(text.find("\"noise_source\"") != std::string::npos,
-            "config template should include Terrain Lab noise source options");
 }
 
 void test_run_config_parses_input_path() {
@@ -1848,14 +1787,12 @@ void test_run_config_parses_terrain_controls() {
     std::string presentation_value = "backdrop";
     std::string vertical_scale_flag = "--terrain-vertical-scale";
     std::string vertical_scale_value = "0.75";
-    std::string preview_runtime_flag = "--terrain-preview-runtime";
-    std::string preview_runtime_value = "terrain-engine-ref";
     std::string preview_color_flag = "--terrain-preview-color";
     std::string preview_color_value = "erosion";
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 64> argv{program.data(),
+    std::array<char*, 62> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1912,8 +1849,6 @@ void test_run_config_parses_terrain_controls() {
                                presentation_value.data(),
                                vertical_scale_flag.data(),
                                vertical_scale_value.data(),
-                               preview_runtime_flag.data(),
-                               preview_runtime_value.data(),
                                preview_color_flag.data(),
                                preview_color_value.data(),
                                preview_surface_flag.data(),
@@ -1957,8 +1892,6 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain presentation");
     require(config.terrain.vertical_scale == 0.75F,
             "run config should parse terrain vertical scale");
-    require(config.terrain.preview_runtime == "terrain-engine-ref",
-            "run config should parse terrain preview runtime");
     require(config.terrain.preview_color == "erosion",
             "run config should parse terrain preview color");
     require(config.terrain.preview_surface == "post-erosion",
@@ -1983,71 +1916,6 @@ void test_run_config_rejects_invalid_ocean_controls() {
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
         "run config should reject unsupported ocean cascade selection");
 
-    std::string terrain_lab_slice_flag = "--terrain-lab-slice";
-    std::string terrain_lab_slice_value = "wetland";
-    std::array<char*, 3> terrain_lab_argv{program.data(), terrain_lab_slice_flag.data(),
-                                          terrain_lab_slice_value.data()};
-    require_throws(
-        [&terrain_lab_argv]() {
-            cubey::parse_run_config(static_cast<int>(terrain_lab_argv.size()),
-                                    terrain_lab_argv.data());
-        },
-        "run config should reject unsupported Terrain Lab slice selection");
-
-    std::string terrain_lab_dunes_value = "desert-dunes";
-    std::array<char*, 3> terrain_lab_dunes_argv{program.data(), terrain_lab_slice_flag.data(),
-                                                terrain_lab_dunes_value.data()};
-    const cubey::RunConfig terrain_lab_dunes_config = cubey::parse_run_config(
-        static_cast<int>(terrain_lab_dunes_argv.size()), terrain_lab_dunes_argv.data());
-    require(terrain_lab_dunes_config.terrain_lab.slice_preset == "desert-dunes",
-            "run config should parse desert dunes Terrain Lab slice");
-
-    std::string terrain_lab_glacial_value = "alpine-glacial-valley";
-    std::array<char*, 3> terrain_lab_glacial_argv{program.data(), terrain_lab_slice_flag.data(),
-                                                  terrain_lab_glacial_value.data()};
-    const cubey::RunConfig terrain_lab_glacial_config = cubey::parse_run_config(
-        static_cast<int>(terrain_lab_glacial_argv.size()), terrain_lab_glacial_argv.data());
-    require(terrain_lab_glacial_config.terrain_lab.slice_preset == "alpine-glacial-valley",
-            "run config should parse alpine glacial Terrain Lab slice");
-
-    std::string terrain_lab_camera_flag = "--terrain-lab-camera-preset";
-    std::string terrain_lab_camera_value = "telephoto";
-    std::array<char*, 3> terrain_lab_camera_argv{program.data(), terrain_lab_camera_flag.data(),
-                                                 terrain_lab_camera_value.data()};
-    require_throws(
-        [&terrain_lab_camera_argv]() {
-            cubey::parse_run_config(static_cast<int>(terrain_lab_camera_argv.size()),
-                                    terrain_lab_camera_argv.data());
-        },
-        "run config should reject unsupported Terrain Lab camera preset");
-
-    std::string terrain_lab_noise_flag = "--terrain-lab-noise-source";
-    std::string terrain_lab_noise_value = "shader-noise";
-    std::array<char*, 3> terrain_lab_noise_argv{program.data(), terrain_lab_noise_flag.data(),
-                                                terrain_lab_noise_value.data()};
-    require_throws(
-        [&terrain_lab_noise_argv]() {
-            cubey::parse_run_config(static_cast<int>(terrain_lab_noise_argv.size()),
-                                    terrain_lab_noise_argv.data());
-        },
-        "run config should reject unsupported Terrain Lab noise source");
-
-    std::string terrain_lab_fastnoise_value = "fastnoise-lite";
-    std::array<char*, 3> terrain_lab_fastnoise_argv{program.data(), terrain_lab_noise_flag.data(),
-                                                    terrain_lab_fastnoise_value.data()};
-    const cubey::RunConfig terrain_lab_fastnoise_config = cubey::parse_run_config(
-        static_cast<int>(terrain_lab_fastnoise_argv.size()), terrain_lab_fastnoise_argv.data());
-    require(terrain_lab_fastnoise_config.terrain_lab.noise_source == "fastnoise-lite",
-            "run config should parse FastNoiseLite Terrain Lab noise source");
-
-    std::string terrain_lab_warped_fastnoise_value = "fastnoise-lite-warped";
-    std::array<char*, 3> terrain_lab_warped_fastnoise_argv{
-        program.data(), terrain_lab_noise_flag.data(), terrain_lab_warped_fastnoise_value.data()};
-    const cubey::RunConfig terrain_lab_warped_fastnoise_config =
-        cubey::parse_run_config(static_cast<int>(terrain_lab_warped_fastnoise_argv.size()),
-                                terrain_lab_warped_fastnoise_argv.data());
-    require(terrain_lab_warped_fastnoise_config.terrain_lab.noise_source == "fastnoise-lite-warped",
-            "run config should parse warped FastNoiseLite Terrain Lab noise source");
 }
 
 void test_run_config_parses_planet_controls() {

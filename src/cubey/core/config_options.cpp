@@ -118,25 +118,10 @@ constexpr std::array<std::string_view, 3> kTerrainBackdropProfiles{"radial-v1", 
                                                                    "hard-cut-v1"};
 constexpr std::array<std::string_view, 2> kTerrainBackdropCenters{"continuous", "consumer-owned"};
 constexpr std::array<std::string_view, 2> kTerrainBackdropModes{"detached", "grounded"};
-constexpr std::array<std::string_view, 2> kTerrainPreviewRuntimeModes{"cpu-product",
-                                                                      "terrain-engine-ref"};
 constexpr std::array<std::string_view, 5> kTerrainPreviewColors{"material", "height", "river",
                                                                 "channel", "erosion"};
 constexpr std::array<std::string_view, 3> kTerrainPreviewSurfaces{"height", "post-erosion",
                                                                   "pre-process"};
-constexpr std::array<std::string_view, 6> kTerrainLabSlicePresets{
-    "arid-mesa-canyon",      "temperate-mountain-rivers", "desert-dunes",
-    "alpine-glacial-valley", "mountain-ridges-peaks",     "temperate-mountain-watershed",
-};
-constexpr std::array<std::string_view, 2> kTerrainLabCameraPresets{
-    "orbit",
-    "profile",
-};
-constexpr std::array<std::string_view, 3> kTerrainLabNoiseSources{
-    "legacy-value",
-    "fastnoise-lite",
-    "fastnoise-lite-warped",
-};
 constexpr double kPlanetMaxPatchResolution = 128.0;
 constexpr double kPlanetMaxLiveLodLevel = 12.0;
 constexpr double kPlanetMaxLocalDetailLodLevels = 8.0;
@@ -163,7 +148,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -579,10 +564,6 @@ constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
            "--terrain-vertical-scale", "Vertical Scale", "Terrain",
            "Display scale applied to terrain height in renderer-backed preview consumers.",
            ConfigOptionType::Float, min_range(0.000001)),
-    option(RunConfigOptionId::TerrainPreviewRuntime, "terrain.preview_runtime",
-           "--terrain-preview-runtime", "Preview Runtime", "Terrain",
-           "Terrain preview geometry path: cpu-product or terrain-engine-ref.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainPreviewRuntimeModes)),
     option(RunConfigOptionId::TerrainPreviewColor, "terrain.preview_color",
            "--terrain-preview-color", "Preview Color", "Terrain",
            "Terrain preview diagnostic color mode.", ConfigOptionType::Enum, no_range(),
@@ -591,17 +572,6 @@ constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
            "--terrain-preview-surface", "Preview Surface", "Terrain",
            "Terrain product height field used as preview mesh geometry.", ConfigOptionType::Enum,
            no_range(), enum_choices(kTerrainPreviewSurfaces)),
-    option(RunConfigOptionId::TerrainLabSlicePreset, "terrain_lab.slice_preset",
-           "--terrain-lab-slice", "Slice Preset", "Terrain Lab", "Terrain Lab biome slice preset.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainLabSlicePresets)),
-    option(RunConfigOptionId::TerrainLabCameraPreset, "terrain_lab.camera_preset",
-           "--terrain-lab-camera-preset", "Camera Preset", "Terrain Lab",
-           "Initial Terrain Lab review camera framing.", ConfigOptionType::Enum, no_range(),
-           enum_choices(kTerrainLabCameraPresets)),
-    option(RunConfigOptionId::TerrainLabNoiseSource, "terrain_lab.noise_source",
-           "--terrain-lab-noise-source", "Noise Source", "Terrain Lab",
-           "Terrain Lab CPU source-field noise backend.", ConfigOptionType::Enum, no_range(),
-           enum_choices(kTerrainLabNoiseSources)),
     option(RunConfigOptionId::AtmospherePreset, "atmosphere.preset", "--atmosphere-preset",
            "Preset", "Atmosphere", "Atmosphere preset name.", ConfigOptionType::String),
     option(RunConfigOptionId::AtmosphereTimeOfDayMode, "atmosphere.time_of_day_mode",
@@ -1626,10 +1596,6 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
                                                    : nlohmann::json(config.terrain.presentation);
     case RunConfigOptionId::TerrainVerticalScale:
         return optional_float(config.terrain.vertical_scale);
-    case RunConfigOptionId::TerrainPreviewRuntime:
-        return config.terrain.preview_runtime.empty()
-                   ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.terrain.preview_runtime);
     case RunConfigOptionId::TerrainPreviewColor:
         return config.terrain.preview_color.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.preview_color);
@@ -1637,18 +1603,6 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.preview_surface.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.preview_surface);
-    case RunConfigOptionId::TerrainLabSlicePreset:
-        return config.terrain_lab.slice_preset.empty()
-                   ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.terrain_lab.slice_preset);
-    case RunConfigOptionId::TerrainLabCameraPreset:
-        return config.terrain_lab.camera_preset.empty()
-                   ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.terrain_lab.camera_preset);
-    case RunConfigOptionId::TerrainLabNoiseSource:
-        return config.terrain_lab.noise_source.empty()
-                   ? nlohmann::json(nullptr)
-                   : nlohmann::json(config.terrain_lab.noise_source);
     case RunConfigOptionId::AtmospherePreset:
         return config.atmosphere.preset;
     case RunConfigOptionId::AtmosphereTimeOfDayMode:
@@ -2204,7 +2158,6 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<std::string>("backdrop_profile", options.backdrop_profile);
     adapter.writeField<std::string>("backdrop_center", options.backdrop_center);
     adapter.writeField<std::string>("presentation", options.presentation);
-    adapter.writeField<std::string>("preview_runtime", options.preview_runtime);
     adapter.writeField<std::string>("preview_color", options.preview_color);
     adapter.writeField<std::string>("preview_surface", options.preview_surface);
     adapter.writeField<float>("vertical_scale", options.vertical_scale);
@@ -2236,7 +2189,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("backdrop_profile", options.backdrop_profile);
     adapter.readField<std::string>("backdrop_center", options.backdrop_center);
     adapter.readField<std::string>("presentation", options.presentation);
-    adapter.readField<std::string>("preview_runtime", options.preview_runtime);
     adapter.readField<std::string>("preview_color", options.preview_color);
     adapter.readField<std::string>("preview_surface", options.preview_surface);
     adapter.readField<float>("vertical_scale", options.vertical_scale);
@@ -2247,18 +2199,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     if (!heightfield.empty()) {
         options.heightfield_path = heightfield;
     }
-}
-
-inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainLabOptions& options) {
-    adapter.writeField<std::string>("slice_preset", options.slice_preset);
-    adapter.writeField<std::string>("camera_preset", options.camera_preset);
-    adapter.writeField<std::string>("noise_source", options.noise_source);
-}
-
-inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainLabOptions& options) {
-    adapter.readField<std::string>("slice_preset", options.slice_preset);
-    adapter.readField<std::string>("camera_preset", options.camera_preset);
-    adapter.readField<std::string>("noise_source", options.noise_source);
 }
 
 inline void serialize(JsonAdapter& adapter, const RunConfig::AtmosphereOptions& options) {
@@ -2497,7 +2437,6 @@ inline void serialize(JsonAdapter& adapter, const RunConfig& config) {
     adapter.writeField<RunConfig::OceanOptions>("ocean", config.ocean);
     adapter.writeField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.writeField<RunConfig::TerrainOptions>("terrain", config.terrain);
-    adapter.writeField<RunConfig::TerrainLabOptions>("terrain_lab", config.terrain_lab);
     adapter.writeField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
     adapter.writeField<RunConfig::CloudOptions>("clouds", config.clouds);
 }
@@ -2522,7 +2461,6 @@ inline void deserialize(JsonAdapter& adapter, RunConfig& config) {
     adapter.readField<RunConfig::OceanOptions>("ocean", config.ocean);
     adapter.readField<RunConfig::PlanetOptions>("planet", config.planet);
     adapter.readField<RunConfig::TerrainOptions>("terrain", config.terrain);
-    adapter.readField<RunConfig::TerrainLabOptions>("terrain_lab", config.terrain_lab);
     adapter.readField<RunConfig::AtmosphereOptions>("atmosphere", config.atmosphere);
     adapter.readField<RunConfig::CloudOptions>("clouds", config.clouds);
 
@@ -3035,23 +2973,11 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.terrain.vertical_scale = parse_config_float(value, option);
         validate_range(config.terrain.vertical_scale, option);
         break;
-    case RunConfigOptionId::TerrainPreviewRuntime:
-        config.terrain.preview_runtime = std::string(value);
-        break;
     case RunConfigOptionId::TerrainPreviewColor:
         config.terrain.preview_color = std::string(value);
         break;
     case RunConfigOptionId::TerrainPreviewSurface:
         config.terrain.preview_surface = std::string(value);
-        break;
-    case RunConfigOptionId::TerrainLabSlicePreset:
-        config.terrain_lab.slice_preset = std::string(value);
-        break;
-    case RunConfigOptionId::TerrainLabCameraPreset:
-        config.terrain_lab.camera_preset = std::string(value);
-        break;
-    case RunConfigOptionId::TerrainLabNoiseSource:
-        config.terrain_lab.noise_source = std::string(value);
         break;
     case RunConfigOptionId::AtmospherePreset:
         config.atmosphere.preset = std::string(value);

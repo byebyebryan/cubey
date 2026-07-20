@@ -606,10 +606,7 @@ cubey/
           ocean.vert      -- camera-relative clipmap and cascaded displacement
           ocean.frag      -- water, foam, shared environment lighting, diagnostics
       planet/             -- planet frame, surface LOD, terrain field, and sky foundation
-      terrain/            -- directly sampled terrain source and clipmap runtime
-      terrain_hydrology_lab/ -- paused regional hydrology/product experiment
-      terrain_ref/        -- frozen visual/source reference lane
-      procedural_terrain_legacy/ -- preserved coastal terrain/bathymetry demo
+      terrain/            -- raster heightfield backdrop product and review app
       pbr_furnace/
         CMakeLists.txt
         main.cpp
@@ -618,6 +615,8 @@ cubey/
         pbr_furnace_scene_runtime.* -- scene entities and frame plans
         pbr_furnace_render.* -- render request assembly and headless target path
         pbr_furnace_scene.* -- material grid definition and tests
+
+    studies/terrain/      -- opt-in visual reference, ShaderToy, and hydrology studies
       fluid_25d/
   tools/
   tests/

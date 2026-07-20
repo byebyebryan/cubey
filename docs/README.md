@@ -92,18 +92,18 @@ Reference projects:
 - [Cloud Ref](../projects/cloud_ref/README.md)
 - [Cloud Ref 2](../projects/cloud_ref_2/README.md)
 - [Terrain Ref](../studies/terrain/reference/README.md)
+- [Terrain ShaderToy Study](../studies/terrain/shadertoy/README.md)
 
 Paused labs and design-only projects:
 
 - [Terrain Hydrology Lab](../studies/terrain/hydrology/README.md)
 - [Fluid 2.5D design](../projects/fluid_25d/README.md)
 
-Legacy snapshots:
+Legacy material:
 
 - [Clouds Legacy](../projects/clouds_legacy/README.md)
-- [Terrain Workbench Legacy](../projects/terrain_workbench_legacy/README.md)
-- [Terrain Lab Legacy](../projects/terrain_lab_legacy/README.md)
-- [Procedural Terrain Legacy](../projects/procedural_terrain_legacy/README.md)
+- [Archived terrain attempts](archive/terrain/legacy-attempts.md)
+- [Terrain-ocean field contract](archive/terrain/terrain-ocean-field-contract.md)
 
 ## Notes
 

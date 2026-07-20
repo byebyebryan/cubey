@@ -85,7 +85,7 @@ the detailed foundation notes under `docs/architecture/`.
   `terrain-diffusion`, with lessons for code-centric terrain recipes, field
   sets, tile contracts, diagnostics, and ML non-goals.
 - [Terrain reboot current captures](terrain-reboot-current-captures.md):
-  archived `projects/terrain_workbench_legacy` PNG review set, what to
+  archived terrain-workbench PNG review set, what to
   inspect, and river driver limitations.
 - [Terrain project map](terrain-project-map.md): current active, frozen, paused,
   and legacy lanes plus the directly sampled terrain v1 spine.
@@ -208,8 +208,8 @@ the detailed foundation notes under `docs/architecture/`.
   model into the terrain product contract, plus capability review notes for
   tessellation, water, materials, hydrology gaps, and foliage gaps.
 - [Terrain ref split plan](terrain-ref-split-plan.md): split the current
-  terrain workbench into `terrain_workbench_legacy` and start a clean
-  `terrain_ref` visual reference lane before more TerrainEngine or ShaderToy
+  terrain workbench into an archived implementation and start a clean
+  terrain visual-reference lane before more TerrainEngine or ShaderToy
   rendering work.
 - [Terrain ref presentation port plan](terrain-ref-presentation-port-plan.md):
   first rendering pass for the clean reference lane: TerrainEngine-style

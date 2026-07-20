@@ -1,8 +1,10 @@
 # Terrain-Ocean Field Contract
 
-`procedural_terrain_legacy` owns static terrain fields that downstream shoreline and
-ocean rendering can consume. Ocean systems own time-varying wave motion, foam,
-surface shading, and water simulation state.
+Terrain producers own static fields that downstream shoreline and ocean
+rendering can consume. Ocean systems own time-varying wave motion, foam,
+surface shading, and water simulation state. The removed coastal terrain demo
+first proved this contract; the contract itself remains independent of that
+implementation.
 
 The shared C++ boundary is `cubey::render::TerrainOceanFieldView`. It can be
 packed with `cubey::render::pack_terrain_ocean_fields` and uploaded as an
@@ -48,7 +50,7 @@ packed with `cubey::render::pack_terrain_ocean_fields` and uploaded as an
 - `B`: `shore_sdf_m`
 - `A`: `slope`
 
-`projects/ocean` currently binds a diagnostic texture through this layout for
+`projects/ocean` can bind a diagnostic texture through this layout for
 `terrain-depth`, `terrain-shore`, and `terrain-slope` debug views. Real
 terrain-to-ocean integration should replace that diagnostic source with terrain
 or shallow-water output without changing the channel contract.

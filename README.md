@@ -86,32 +86,30 @@ Current active projects:
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
 
-Paused and design-only projects:
+Paused studies and design-only projects:
 
-- `terrain_hydrology_lab`: buildable snapshot of the previous regional terrain
+- `studies/terrain/hydrology`: opt-in snapshot of the previous regional terrain
   product, routing, and analytical landscape-evolution work; paused while the
   active terrain path establishes its direct-sampling runtime.
 - `fluid_25d`: design-only shallow-water direction for terrain-bound rivers,
   flooding, sources, and sinks.
 
-Reference and legacy projects:
+Reference studies and legacy projects:
 
 - `cloud_ref`: TerrainEngine-style local surface cloud reference used to check
   density, sampling, and lighting before promotion into the shared cloud layer.
 - `cloud_ref_2`: Godot-v2-style cached-sky architecture reference used to
   inspect octahedral cache behavior, not a visual target.
-- `terrain_ref`: frozen terrain reference renderer used to compare
+- `studies/terrain/reference`: frozen terrain reference renderer used to compare
   TerrainEngine and ShaderToy-derived terrain cues.
+- `studies/terrain/shadertoy`: restricted-source fidelity study used to compare
+  original raymarched references with mesh transfer.
 - `clouds_legacy`: frozen first-pass planet-aware cloud/weather prototype kept
   as evidence for scale, horizon, UI, and integration failure modes.
-- `terrain_workbench_legacy`: frozen terrain reboot workbench and preview kept
-  as product-generation evidence, not the active terrain contract.
-- `terrain_lab_legacy`: preserved local terrain generation R&D snapshot with
-  deterministic CPU fields, hydrology-oriented diagnostics, biome slices, and
-  headless visual smoke coverage.
-- `procedural_terrain_legacy`: preserved deterministic coastal terrain and
-  bathymetry demo with shoreline/material debug views and headless capture
-  output.
+
+The retired terrain workbench, terrain lab, and coastal demo are summarized in
+[Archived terrain attempts](docs/archive/terrain/legacy-attempts.md); Git history
+remains their implementation archive.
 
 ## Documentation
 
@@ -158,10 +156,9 @@ Project-local docs:
 - [Terrain](projects/terrain/README.md)
 - [Terrain Hydrology Lab](studies/terrain/hydrology/README.md)
 - [Terrain Ref](studies/terrain/reference/README.md)
-- [Terrain Workbench Legacy](projects/terrain_workbench_legacy/README.md)
-- [Terrain Lab Legacy](projects/terrain_lab_legacy/README.md)
+- [Terrain ShaderToy Study](studies/terrain/shadertoy/README.md)
+- [Archived Terrain Attempts](docs/archive/terrain/legacy-attempts.md)
 - [Ocean](projects/ocean/README.md)
-- [Procedural Terrain Legacy](projects/procedural_terrain_legacy/README.md)
 
 ## Development Setup
 
@@ -246,7 +243,6 @@ Useful windowed smokes:
 ./build/dev/projects/atmosphere/atmosphere --frames 300 --width 1280 --height 720
 ./build/dev/projects/planet/planet --frames 300 --width 1280 --height 720
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
-./build/dev/projects/procedural_terrain_legacy/procedural_terrain_legacy --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
@@ -329,11 +325,9 @@ clear-sky path. The canonical visual matrix is
 The old `ocean_ref` and `ocean_legacy` projects were retired after their useful
 comparison and donor work landed in `ocean`; use git history if a deleted
 implementation detail is needed for archaeology.
-`procedural_terrain_legacy` generates deterministic island/coast/shelf/seabed fields
-and renders an oblique heightfield mesh. It exposes
-`--debug-view final|height|water-depth|shoreline|material|slope`, plus
-`--grid-width` and `--grid-height` for lower-cost checks or denser captures.
-Underscore spellings such as `water_depth` remain accepted for older scripts.
+The removed coastal terrain demo established the terrain-ocean field vocabulary
+preserved in
+[Terrain-ocean field contract](docs/archive/terrain/terrain-ocean-field-contract.md).
 
 Useful headless PNG smokes:
 
@@ -348,7 +342,6 @@ Useful headless PNG smokes:
 ./build/dev/projects/atmosphere/atmosphere --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-atmosphere.png
 ./build/dev/projects/planet/planet --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-planet.png
 ./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
-./build/dev/projects/procedural_terrain_legacy/procedural_terrain_legacy --headless --width 640 --height 360 --output /tmp/cubey-procedural-terrain.png
 ./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
 ```
 

@@ -509,7 +509,7 @@ TerrainRuntimeConfig terrain_runtime_config_from_run_config(const RunConfig& con
             cubey::run_config_float_is_set(config.terrain.relief) ||
             cubey::run_config_float_is_set(config.terrain.ridges) ||
             cubey::run_config_float_is_set(config.terrain.valleys) ||
-            !config.terrain.recipe.empty() || !config.terrain.preview_runtime.empty() ||
+            !config.terrain.recipe.empty() ||
             !config.terrain.preview_color.empty() || !config.terrain.preview_surface.empty() ||
             config.terrain.water_surface >= 0) {
             throw std::runtime_error(

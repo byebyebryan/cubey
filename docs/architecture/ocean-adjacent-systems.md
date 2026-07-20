@@ -126,8 +126,9 @@ Ocean integration target:
 products such as drainage, shoreline distance, and exported bathymetry belong
 in a resumed product-generation track based on the paused
 `studies/terrain/hydrology`; dynamic gameplay water belongs in
-`projects/fluid_25d`. `projects/procedural_terrain_legacy` remains evidence for
-the earlier coastal field contract, not the target for new implementation.
+`projects/fluid_25d`. The earlier coastal field contract is preserved in
+[`terrain-ocean-field-contract.md`](../archive/terrain/terrain-ocean-field-contract.md),
+not as an implementation target.
 
 Current foundation checkpoint:
 
@@ -136,8 +137,8 @@ Current foundation checkpoint:
   material masks;
 - the shared packer uploads that contract as one `RGBA32F` texture with
   `height_m`, `water_depth_m`, `shore_sdf_m`, and `slope` in `R/G/B/A`;
-- `projects/procedural_terrain_legacy` proves an adapter from analytical coastal
-  fields into this shared view, while `projects/ocean` can bind and inspect a
+- the removed coastal demo proved an adapter from analytical coastal fields
+  into this shared view, while `projects/ocean` can bind and inspect a
   generated diagnostic field texture through `terrain-depth`, `terrain-shore`,
   and `terrain-slope` debug views;
 - the current ocean terrain field influence is intentionally opt-in and minimal:

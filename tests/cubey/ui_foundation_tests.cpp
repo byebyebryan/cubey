@@ -61,7 +61,6 @@ void test_active_project_ui_uses_shared_common_controls() {
     constexpr std::array active_ui_files{
         "projects/atmosphere/atmosphere_ui.cpp",
         "projects/ocean/ocean_ui.cpp",
-        "projects/procedural_terrain_legacy/procedural_terrain_ui.cpp",
         "projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp",
         "projects/fluid/sim/water_2d/water_2d_ui.cpp",
         "projects/fluid/sim/water_3d/water_3d_ui.cpp",
@@ -87,17 +86,10 @@ void test_active_project_ui_uses_shared_common_controls() {
 void test_active_project_ui_raw_combo_exceptions_are_explicit() {
     const std::string ocean =
         cubey::tests::read_source_file(source_root() / "projects/ocean/ocean_ui.cpp");
-    const std::string terrain = cubey::tests::read_source_file(
-        source_root() / "projects/procedural_terrain_legacy/procedural_terrain_ui.cpp");
-
     require(count_occurrences(ocean, "ImGui::BeginCombo") == 1U,
             "active ocean UI should only keep the custom cascade selector raw combo");
     require(count_occurrences(ocean, "ImGui::Selectable") == 2U,
             "active ocean UI raw selectable use should stay limited to five-cascade inspection");
-    require(count_occurrences(terrain, "ImGui::BeginCombo") == 1U,
-            "terrain UI should only keep the custom grid-preserving preset combo");
-    require(count_occurrences(terrain, "ImGui::Selectable") == 1U,
-            "terrain UI raw selectable use should stay limited to grid presets");
 }
 
 void test_retired_ocean_ui_exceptions_are_removed() {
@@ -128,7 +120,6 @@ void test_active_project_ui_uses_shared_performance_panel() {
     constexpr std::array active_ui_files{
         "projects/atmosphere/atmosphere_ui.cpp",
         "projects/ocean/ocean_ui.cpp",
-        "projects/procedural_terrain_legacy/procedural_terrain_ui.cpp",
         "projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp",
         "projects/fluid/sim/water_2d/water_2d_ui.cpp",
         "projects/fluid/sim/water_3d/water_3d_ui.cpp",
@@ -156,9 +147,6 @@ void test_active_project_ui_starts_low_noise_sections_collapsed() {
                                       "atmosphere night controls should start collapsed");
     require_section_default_collapsed("projects/atmosphere/atmosphere_ui.cpp", "Diagnostics",
                                       "atmosphere diagnostics should start collapsed");
-
-    require_section_default_collapsed("projects/procedural_terrain_legacy/procedural_terrain_ui.cpp",
-                                      "Diagnostics", "terrain diagnostics should start collapsed");
 
     require_section_default_collapsed("projects/fluid/sim/smoke_2d/smoke_2d_ui.cpp", "Injectors",
                                       "smoke injector tuning should start collapsed");

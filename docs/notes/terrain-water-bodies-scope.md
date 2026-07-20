@@ -37,8 +37,8 @@ before other terrain sources exist.
 
 - `docs/architecture/terrain-reboot.md`: terrain product vocabulary, including
   future lake/wetland masks and shoreline/bathymetry adapters.
-- `projects/procedural_terrain_legacy/terrain_ocean_contract.md`: legacy
-  shoreline/ocean handoff vocabulary that should remain an adapter target.
+- `docs/archive/terrain/terrain-ocean-field-contract.md`: shoreline/ocean
+  handoff vocabulary that should remain an adapter target.
 - `docs/architecture/planet-rendering.md`: planet-scale terrain/ocean handoff
   and water-datum vocabulary.
 - `docs/notes/ocean-surface-v1.md`: accepted local open-water renderer scope,
