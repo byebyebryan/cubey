@@ -192,6 +192,7 @@ struct RunConfig {
         std::string render_path{};
         std::string backdrop_mesh_density{};
         std::string surface_detail{};
+        int shadows = -1;
         float target_edge_px = kRunConfigUnsetFloat;
         std::string weathering{};
         float weathering_strength = kRunConfigUnsetFloat;

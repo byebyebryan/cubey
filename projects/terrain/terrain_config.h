@@ -23,6 +23,7 @@ enum class TerrainDebugView : std::uint8_t {
     MaterialAlbedo = 15,
     MaterialNormal = 16,
     MaterialRoughness = 18,
+    SunVisibility = 19,
     ClassificationNormal = 21,
     StageOwnership = 27,
 };
@@ -43,6 +44,7 @@ struct TerrainRuntimeConfig {
     std::optional<float> initial_elevation_radians{};
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainMaterialMode material = TerrainMaterialMode::FilteredDetail;
+    bool shadows = true;
     bool foreground_sphere = true;
 };
 

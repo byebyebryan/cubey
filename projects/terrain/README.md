@@ -74,6 +74,7 @@ Useful startup overrides:
   --terrain-foreground-height 500 \
   --terrain-camera-preset backdrop \
   --terrain-surface-detail filtered-detail \
+  --terrain-shadows \
   --terrain-backdrop-azimuth 90 \
   --terrain-backdrop-orbit-radius 200 \
   --terrain-backdrop-elevation 24
@@ -92,7 +93,7 @@ choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
 ```text
 surface height slope clay normal classification-normal material-weights
 ambient-visibility material-albedo material-normal material-roughness
-projected-edge stage-ownership
+sun-visibility projected-edge stage-ownership
 ```
 
 Retired source versions, profiles, weathering, LOD, tessellation, and local
@@ -130,15 +131,17 @@ cmake --build --preset dev --target \
   cubey_project_terrain_raster_height_source_tests \
   cubey_project_terrain_backdrop_product_tests \
   cubey_project_terrain_backdrop_placement_tests \
-  cubey_project_terrain_directional_placement_tests
+  cubey_project_terrain_directional_placement_tests \
+  cubey_project_terrain_shadow_tests
 
 ctest --preset dev -R '^terrain_.*_tests$' --output-on-failure
 ```
 
 The focused suite verifies the narrow runtime config, raster contract and
 filtering, deterministic topology and seams, selected/raw placement, and the
-placement-stage camera/coverage contract. Product captures use the canonical
-asset deliberately; ordinary tests use small analytical or temporary fixtures.
+placement-stage camera/coverage contract. It also checks directional-shadow
+coverage and cache invalidation. Product captures use the canonical asset
+deliberately; ordinary tests use small analytical or temporary fixtures.
 
 ## Studies And Boundaries
 

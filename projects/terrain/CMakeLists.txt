@@ -54,6 +54,7 @@ add_library(cubey_project_terrain_render_support STATIC
     terrain_backdrop_profile.cpp
     terrain_directional_placement.cpp
     terrain_environment_gpu.cpp
+    terrain_shadow.cpp
 )
 target_include_directories(
     cubey_project_terrain_render_support
@@ -83,6 +84,7 @@ cubey_add_app_target(
         shaders/terrain_backdrop.vert
         shaders/terrain_backdrop_detail.frag
         shaders/terrain_backdrop_material.comp
+        shaders/terrain_shadow_depth.vert
         shaders/terrain_stage_proxy.vert
         shaders/terrain_stage_proxy.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
@@ -176,12 +178,20 @@ if (BUILD_TESTING)
         COMMAND cubey_project_terrain_backdrop_placement_tests
     )
 
+    add_executable(cubey_project_terrain_shadow_tests terrain_shadow_tests.cpp)
+    target_link_libraries(
+        cubey_project_terrain_shadow_tests
+        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
+    )
+    add_test(NAME terrain_shadow_tests COMMAND cubey_project_terrain_shadow_tests)
+
     set_tests_properties(
         terrain_config_tests
         terrain_raster_height_source_tests
         terrain_backdrop_product_tests
         terrain_backdrop_placement_tests
         terrain_directional_placement_tests
+        terrain_shadow_tests
         PROPERTIES LABELS terrain TIMEOUT 120
     )
 endif()

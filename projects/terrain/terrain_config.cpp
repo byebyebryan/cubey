@@ -54,6 +54,8 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) noexcept {
         return "material-normal";
     case TerrainDebugView::MaterialRoughness:
         return "material-roughness";
+    case TerrainDebugView::SunVisibility:
+        return "sun-visibility";
     case TerrainDebugView::ClassificationNormal:
         return "classification-normal";
     case TerrainDebugView::StageOwnership:
@@ -95,6 +97,9 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "material-roughness" || name == "roughness") {
         return TerrainDebugView::MaterialRoughness;
+    }
+    if (name == "sun-visibility" || name == "shadow") {
+        return TerrainDebugView::SunVisibility;
     }
     if (name == "classification-normal" || name == "macro-normal") {
         return TerrainDebugView::ClassificationNormal;
@@ -198,6 +203,7 @@ terrain_runtime_config_from_run_config(const RunConfig& config,
     }
     result.foreground_sphere = config.terrain.camera_preset != "backdrop";
     result.material = terrain_material_mode_from_name(config.terrain.surface_detail);
+    result.shadows = config.terrain.shadows < 0 || config.terrain.shadows != 0;
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
     if (cubey::run_config_float_is_set(config.terrain.backdrop_azimuth_degrees)) {

@@ -12,6 +12,7 @@ layout(push_constant) uniform TerrainBackdropPushConstants {
 } pc;
 
 layout(set = 1, binding = 0) uniform sampler2D backdrop_detail_texture;
+layout(set = 1, binding = 1) uniform sampler2D terrain_shadow_map;
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_material_channels;
@@ -29,7 +30,7 @@ vec3 srgb_to_linear(vec3 value) {
 }
 
 vec3 debug_color(int debug_view, vec3 normal, float rock, float snow,
-                 float ambient_visibility) {
+                 float ambient_visibility, float sun_visibility) {
     if (debug_view == 1) {
         float normalized_height = clamp(
             (frag_world_position.y - pc.render_options.y) /
@@ -57,6 +58,9 @@ vec3 debug_color(int debug_view, vec3 normal, float rock, float snow,
         return mix(vec3(0.10, 0.28, 0.72), vec3(0.95, 0.32, 0.08),
                    smoothstep(8.0, 80.0, projected_span));
     }
+    if (debug_view == 19) {
+        return vec3(sun_visibility);
+    }
     if (debug_view == 27) {
         float boundary = 1.0 - smoothstep(
             0.0, 20.0, abs(length(frag_world_position.xz) - pc.render_options.w));
@@ -69,14 +73,54 @@ float axis_sign(float value) {
     return value < 0.0 ? -1.0 : 1.0;
 }
 
+float terrain_sun_visibility(vec3 world_position, vec3 normal,
+                             vec3 light_direction) {
+    if (atmosphere.shadow_options.x < 0.5) {
+        return 1.0;
+    }
+    vec4 light_clip = atmosphere.light_view_projection * vec4(world_position, 1.0);
+    if (light_clip.w <= 0.0) {
+        return 1.0;
+    }
+    vec3 light_ndc = light_clip.xyz / light_clip.w;
+    vec2 shadow_uv = light_ndc.xy * 0.5 + 0.5;
+    if (light_ndc.z <= 0.0 || light_ndc.z >= 1.0 ||
+        any(lessThanEqual(shadow_uv, vec2(0.0))) ||
+        any(greaterThanEqual(shadow_uv, vec2(1.0)))) {
+        return 1.0;
+    }
+
+    float ndotl = clamp(dot(normal, light_direction), 0.0, 1.0);
+    float slope_tangent = sqrt(max(1.0 - ndotl * ndotl, 0.0)) /
+        max(ndotl, 0.2);
+    float texel_world_m = max(atmosphere.shadow_options.w, 0.0);
+    float bias_m = max(
+        1.25, texel_world_m * (0.75 + 0.90 * min(slope_tangent, 2.0)));
+    float receiver_depth = light_ndc.z -
+        bias_m / max(atmosphere.shadow_options.z, 1.0);
+    float texel = atmosphere.shadow_options.y;
+    float visibility = 0.0;
+    for (int y = 0; y < 2; ++y) {
+        for (int x = 0; x < 2; ++x) {
+            vec2 offset = (vec2(float(x), float(y)) - vec2(0.5)) * texel;
+            float blocker_depth = texture(terrain_shadow_map, shadow_uv + offset).r;
+            visibility += receiver_depth <= blocker_depth ? 0.25 : 0.0;
+        }
+    }
+    return visibility;
+}
+
 void main() {
     vec3 classification_normal = normalize(frag_normal);
     float rock = clamp(frag_material_channels.x, 0.0, 1.0);
     float snow = clamp(frag_material_channels.y, 0.0, 1.0);
     float ambient_visibility = clamp(frag_material_channels.z, 0.65, 1.0);
     int debug_view = int(round(pc.render_options.x));
+    vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
+    float sun_visibility = terrain_sun_visibility(
+        frag_world_position, classification_normal, light_direction);
     vec3 diagnostic = debug_color(debug_view, classification_normal, rock, snow,
-                                  ambient_visibility);
+                                  ambient_visibility, sun_visibility);
     if (diagnostic.x >= 0.0) {
         out_color = vec4(diagnostic, 1.0);
         return;
@@ -148,13 +192,12 @@ void main() {
     }
 
     vec3 view_direction = normalize(pc.camera_position.xyz - frag_world_position);
-    vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
         atmosphere.primary_light_direction_intensity.w;
     vec3 color = terrain_lighting_ambient(
         base_color, terrain_diffuse_irradiance(normal), ambient_visibility);
     color += terrain_lighting_direct(base_color, roughness, normal, view_direction,
-                                     light_direction, light_radiance, 1.0);
+                                     light_direction, light_radiance, sun_visibility);
     CubeyAtmosphereSample aerial = terrain_aerial_perspective(
         pc.camera_position.xyz, frag_world_position);
     out_color = vec4(color * aerial.transmittance + aerial.color, 1.0);

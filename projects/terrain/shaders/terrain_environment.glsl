@@ -27,6 +27,8 @@ layout(set = 0, binding = 0, std140) uniform TerrainEnvironmentUniforms {
     vec4 diffuse_irradiance_sh[9];
     vec4 primary_light_direction_intensity;
     vec4 primary_light_color_angular_radius;
+    mat4 light_view_projection;
+    vec4 shadow_options;
 } atmosphere;
 
 #include "cubey/atmosphere/atmosphere_common.glsl"

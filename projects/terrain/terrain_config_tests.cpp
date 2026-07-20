@@ -34,6 +34,7 @@ void test_defaults_publish_the_product_contract() {
                 config.placement == cubey::projects::terrain::TerrainPlacementMode::Selected &&
                 config.placement_index == 0U && config.initial_foreground_height_m == 100.0F &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::FilteredDetail &&
+                config.shadows &&
                 config.debug_view == cubey::projects::terrain::TerrainDebugView::Surface,
             "terrain defaults should select the canonical review product");
 }
@@ -48,6 +49,7 @@ void test_supported_overrides_remain_narrow() {
     run_config.terrain.foreground_height_m = 500.0F;
     run_config.terrain.camera_preset = "backdrop";
     run_config.terrain.surface_detail = "flat";
+    run_config.terrain.shadows = 0;
     run_config.terrain.backdrop_azimuth_degrees = -90.0F;
     run_config.terrain.backdrop_orbit_radius_m = 200.0F;
     run_config.terrain.backdrop_elevation_degrees = 24.0F;
@@ -59,6 +61,7 @@ void test_supported_overrides_remain_narrow() {
                 config.placement == cubey::projects::terrain::TerrainPlacementMode::RawSample &&
                 config.placement_index == 9U && config.initial_foreground_height_m == 500.0F &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::Flat &&
+                !config.shadows &&
                 config.debug_view == cubey::projects::terrain::TerrainDebugView::Slope,
             "terrain should retain only product review overrides");
     require(std::abs(config.initial_azimuth_radians.value() + std::numbers::pi_v<float> * 0.5F) <

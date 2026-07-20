@@ -447,6 +447,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.render_path",
         "terrain.backdrop_mesh_density",
         "terrain.surface_detail",
+        "terrain.shadows",
         "terrain.target_edge_px",
         "terrain.weathering",
         "terrain.weathering_strength",
@@ -633,6 +634,7 @@ void test_run_config_loads_json_config_file() {
     "source_version": "v2",
     "render_path": "quality",
     "surface_detail": "filtered-detail",
+    "shadows": false,
     "target_edge_px": 5.0,
     "weathering": "local",
     "weathering_strength": 0.65,
@@ -752,6 +754,7 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain v1 source controls");
     require(config.terrain.source_version == "v2" && config.terrain.render_path == "quality" &&
                 config.terrain.surface_detail == "filtered-detail" &&
+                config.terrain.shadows == 0 &&
                 config.terrain.target_edge_px == 5.0F,
             "config file should set terrain material presentation");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
@@ -1753,6 +1756,7 @@ void test_run_config_parses_terrain_controls() {
     std::string render_path_value = "quality";
     std::string surface_detail_flag = "--terrain-surface-detail";
     std::string surface_detail_value = "filtered-detail";
+    std::string shadows_flag = "--no-terrain-shadows";
     std::string target_edge_flag = "--terrain-target-edge-px";
     std::string target_edge_value = "5.0";
     std::string weathering_flag = "--terrain-weathering";
@@ -1810,7 +1814,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 68> argv{program.data(),
+    std::array<char*, 69> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1821,6 +1825,7 @@ void test_run_config_parses_terrain_controls() {
                                render_path_value.data(),
                                surface_detail_flag.data(),
                                surface_detail_value.data(),
+                               shadows_flag.data(),
                                target_edge_flag.data(),
                                target_edge_value.data(),
                                weathering_flag.data(),
@@ -1888,6 +1893,7 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain v1 source controls");
     require(config.terrain.source_version == "v2.1" && config.terrain.render_path == "quality" &&
                 config.terrain.surface_detail == "filtered-detail" &&
+                config.terrain.shadows == 0 &&
                 config.terrain.target_edge_px == 5.0F,
             "run config should parse terrain material presentation");
     require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");

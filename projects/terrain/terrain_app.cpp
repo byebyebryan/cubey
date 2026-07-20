@@ -6,6 +6,7 @@
 #include "terrain_config.h"
 #include "terrain_environment_gpu.h"
 #include "terrain_raster_height_source.h"
+#include "terrain_shadow.h"
 
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/host/atmosphere_environment_ui.h>
@@ -23,6 +24,7 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
+#include <cubey/render/shadow_map.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/view_3d.h>
@@ -42,6 +44,7 @@
 #include <future>
 #include <numbers>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -81,6 +84,10 @@ struct TerrainBackdropPushConstants {
     cubey::math::Vec4 material_options{1.0F, 0.0F, 0.0F, 0.0F};
 };
 
+struct TerrainShadowPushConstants {
+    cubey::math::Mat4 light_view_projection{1.0F};
+};
+
 struct TerrainBackdropDrawPlan {
     bool center_visible = false;
     std::vector<bool> visible_sectors{};
@@ -102,6 +109,7 @@ struct CompiledTerrainGraph {
 
 static_assert(sizeof(TerrainStageProxyPushConstants) <= 128U);
 static_assert(sizeof(TerrainBackdropPushConstants) <= 128U);
+static_assert(sizeof(TerrainShadowPushConstants) <= 128U);
 
 [[nodiscard]] std::uint64_t profile_frame_index(std::uint64_t frame_index) {
     return frame_index == 0U ? 0U : frame_index - 1U;
@@ -215,7 +223,7 @@ terrain_atmosphere_state(const RunConfig& config) {
                             },
                         },
                 },
-                cubey::render::sampled_texture_descriptor_set_layout(1, 1U),
+                cubey::render::sampled_texture_descriptor_set_layout(1, 2U),
             },
         .push_constants =
             {
@@ -553,6 +561,7 @@ class TerrainApp {
                                material == static_cast<int>(TerrainMaterialMode::FilteredDetail))) {
             runtime_config_.material = TerrainMaterialMode::FilteredDetail;
         }
+        ImGui::Checkbox("Directional shadows", &runtime_config_.shadows);
 
         constexpr std::array diagnostics{
             TerrainDebugView::Surface,
@@ -566,6 +575,7 @@ class TerrainApp {
             TerrainDebugView::MaterialAlbedo,
             TerrainDebugView::MaterialNormal,
             TerrainDebugView::MaterialRoughness,
+            TerrainDebugView::SunVisibility,
             TerrainDebugView::ProjectedEdge,
             TerrainDebugView::StageOwnership,
         };
@@ -589,6 +599,13 @@ class TerrainApp {
         ImGui::Text("Submitted triangles: %u", latest_draw_plan_.submitted_triangle_count);
         ImGui::Text("Cached source samples: %llu",
                     static_cast<unsigned long long>(product_.diagnostics.source_sample_count));
+        ImGui::Text("Shadow map: %u x %u, %s", kTerrainShadowMapExtent,
+                    kTerrainShadowMapExtent, shadow_cache_.valid ? "valid" : "pending");
+        ImGui::Text("Shadow updates: %llu",
+                    static_cast<unsigned long long>(shadow_cache_.update_count));
+        if (!frame_primary_light_above_horizon_) {
+            ImGui::Text("Shadow update suspended below horizon");
+        }
         cubey::host::draw_gpu_timings(latest_gpu_timings());
 
         (void)cubey::host::draw_atmosphere_environment_controls(atmosphere_state_,
@@ -662,6 +679,7 @@ class TerrainApp {
         runtime_config_.placement = build.mode;
         runtime_config_.placement_index = build.sample_index;
         latest_draw_plan_ = {};
+        invalidate_terrain_shadow_cache(shadow_cache_);
         configure_camera_for_placement(false);
     }
 
@@ -699,6 +717,37 @@ class TerrainApp {
         const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
         stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
 
+        const VkPushConstantRange shadow_push_constants{
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .offset = 0U,
+            .size = sizeof(TerrainShadowPushConstants),
+        };
+        const std::array shadow_shaders{
+            cubey::render::vertex_shader_file(shader_path("terrain_shadow_depth.vert.spv")),
+        };
+        const cubey::render::VertexInputLayout shadow_vertex_input =
+            cubey::render::vertex_position_only_input_layout(
+                sizeof(cubey::render::VertexPositionColorNormal));
+        shadow_pass_.emplace(
+            device,
+            cubey::render::ShadowMapPass3DConfig{
+                .extent = {kTerrainShadowMapExtent, kTerrainShadowMapExtent},
+                .pipeline =
+                    {
+                        .shader_stage_files = shadow_shaders,
+                        .vertex_bindings = shadow_vertex_input.bindings(),
+                        .vertex_attributes = shadow_vertex_input.attribute_descriptions(),
+                        .material_pass = cubey::render::shadow_depth_pass_info({
+                            .label = "terrain.shadow",
+                            .push_constants = std::span<const VkPushConstantRange>{
+                                &shadow_push_constants, 1U},
+                            .cull_mode = VK_CULL_MODE_NONE,
+                        }),
+                    },
+            });
+        invalidate_terrain_shadow_cache(shadow_cache_);
+        shadow_depth_is_sampled_ = false;
+
         material_texture_.emplace(create_terrain_backdrop_material_texture(
             device, gpu, shader_path("terrain_backdrop_material.comp.spv"),
             source_.metadata().seed));
@@ -709,6 +758,9 @@ class TerrainApp {
         cubey::render::MaterialDescriptorWriter detail_writer(detail_material_->set());
         const cubey::render::Texture2D& detail = material_texture_->detail;
         detail_writer.combined_image_sampler(0U, detail.sampler().handle(), detail.view());
+        const cubey::render::DepthTexture& shadow = shadow_pass().depth_texture();
+        detail_writer.combined_image_sampler(1U, shadow.sampler().handle(), shadow.view(),
+                                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
         detail_writer.update(device);
 
         environment_material_.emplace(device, cubey::render::FrameUniformMaterialInstanceConfig{
@@ -810,11 +862,14 @@ class TerrainApp {
         atmosphere_atlases_.reset();
         detail_material_.reset();
         material_texture_.reset();
+        shadow_pass_.reset();
         environment_material_.reset();
         stage_proxy_mesh_.reset();
         center_mesh_.reset();
         sector_meshes_.clear();
         gpu_profiler_.reset();
+        invalidate_terrain_shadow_cache(shadow_cache_);
+        shadow_depth_is_sampled_ = false;
         global_resources_created_ = false;
     }
 
@@ -856,6 +911,13 @@ class TerrainApp {
                                 static_cast<double>(product_.diagnostics.render_triangle_count));
         recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
                                 static_cast<double>(product_.diagnostics.source_sample_count));
+        recorder->record_metric(
+            frame_index, "terrain.backdrop", "content_hash_low32",
+            static_cast<double>(static_cast<std::uint32_t>(product_.diagnostics.content_hash)));
+        recorder->record_metric(
+            frame_index, "terrain.backdrop", "content_hash_high32",
+            static_cast<double>(static_cast<std::uint32_t>(product_.diagnostics.content_hash >>
+                                                           32U)));
         recorder->record_metric(frame_index, "terrain.backdrop", "render_stride", 3.0);
         recorder->record_metric(frame_index, "terrain.backdrop", "outer_radius_m",
                                 product_.request.outer_radius_m);
@@ -884,6 +946,16 @@ class TerrainApp {
             runtime_config_.material == TerrainMaterialMode::FilteredDetail ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.backdrop", "material_texture_bytes",
                                 static_cast<double>(terrain_backdrop_material_texture_bytes()));
+        recorder->record_metric(frame_index, "terrain.shadow", "enabled",
+                                runtime_config_.shadows ? 1.0 : 0.0);
+        recorder->record_metric(frame_index, "terrain.shadow", "map_extent",
+                                static_cast<double>(kTerrainShadowMapExtent));
+        recorder->record_metric(frame_index, "terrain.shadow", "cache_valid",
+                                shadow_cache_.valid ? 1.0 : 0.0);
+        recorder->record_metric(frame_index, "terrain.shadow", "update_count",
+                                static_cast<double>(shadow_cache_.update_count));
+        recorder->record_metric(frame_index, "terrain.shadow", "updated",
+                                shadow_updated_last_frame_ ? 1.0 : 0.0);
     }
 
     [[nodiscard]] TerrainBackdropDrawPlan draw_plan(VkExtent2D extent) const {
@@ -999,6 +1071,29 @@ class TerrainApp {
                                                  : atmosphere_state_.resolved_exposure;
     }
 
+    void record_shadow_pass(const cubey::vulkan::CommandRecorder& recorder) const {
+        shadow_pass().record(
+            recorder, cubey::render::depth_clear_value(),
+            [this](const cubey::vulkan::CommandRecorder& pass_recorder) {
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            shadow_pass().pipeline().pipeline());
+                pass_recorder.push_constants(
+                    shadow_pass().pipeline().layout(), VK_SHADER_STAGE_VERTEX_BIT, 0U,
+                    TerrainShadowPushConstants{
+                        .light_view_projection =
+                            frame_shadow_projection_.light_view_projection,
+                    });
+                if (product_.center.has_value()) {
+                    cubey::render::record_draw_item(
+                        pass_recorder.handle(), cubey::render::DrawItem{.mesh = &center_mesh()});
+                }
+                for (const cubey::render::Mesh& mesh : sector_meshes_) {
+                    cubey::render::record_draw_item(
+                        pass_recorder.handle(), cubey::render::DrawItem{.mesh = &mesh});
+                }
+            });
+    }
+
     void record_terrain_pass(const cubey::vulkan::CommandRecorder& recorder,
                              cubey::render::ColorTargetView color,
                              cubey::render::DepthTargetView depth,
@@ -1082,6 +1177,21 @@ class TerrainApp {
         const cubey::render::RenderGraphTextureHandle depth =
             graph.import_depth_target("terrain depth", terrain_forward_pass().depth_target(),
                                       cubey::render::render_graph_undefined_texture_state());
+        const std::optional<cubey::render::RenderGraphTextureState> shadow_initial_state =
+            shadow_depth_is_sampled_
+                ? cubey::render::render_graph_sampled_depth_texture_state()
+                : cubey::render::render_graph_undefined_texture_state();
+        const cubey::render::RenderGraphTextureHandle shadow_depth = graph.import_depth_target(
+            "terrain shadow depth", shadow_pass().depth_target(), shadow_initial_state);
+
+        if (shadow_update_this_frame_) {
+            graph.add_pass("terrain shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_depth(shadow_depth)
+                .material_pass(shadow_pass().material_pass())
+                .execute([this](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_shadow_pass(context.recorder());
+                });
+        }
 
         graph.add_pass("terrain atmosphere", cubey::render::RenderGraphQueueDomain::Graphics)
             .write_color(scene_color)
@@ -1093,6 +1203,7 @@ class TerrainApp {
                     cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
             });
         graph.add_pass("terrain surface", cubey::render::RenderGraphQueueDomain::Graphics)
+            .read_texture(shadow_depth)
             .write_color(scene_color)
             .write_depth(depth)
             .material_pass(terrain_backdrop_pass_info())
@@ -1127,6 +1238,15 @@ class TerrainApp {
         return {.graph = graph.compile(), .scene_color = scene_color};
     }
 
+    void complete_shadow_frame_recording() {
+        shadow_updated_last_frame_ = shadow_update_this_frame_;
+        if (shadow_update_this_frame_) {
+            update_terrain_shadow_cache(shadow_cache_, product_.diagnostics.content_hash,
+                                        frame_shadow_projection_);
+        }
+        shadow_depth_is_sampled_ = true;
+    }
+
     void record_target(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
                        cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
                        cubey::render::RenderGraphTextureState target_initial_state,
@@ -1137,8 +1257,27 @@ class TerrainApp {
             atmosphere_uniforms(target.extent);
         const cubey::render::AtmosphereEnvironmentLighting lighting =
             cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
+        const TerrainShadowProjection candidate_shadow = terrain_shadow_projection(
+            {
+                .outer_radius_m = product_.request.outer_radius_m,
+                .minimum_height_m = product_.diagnostics.minimum_height_m,
+                .maximum_height_m = product_.diagnostics.maximum_height_m,
+            },
+            lighting.primary_light_direction);
+        frame_primary_light_above_horizon_ = candidate_shadow.light_above_horizon;
+        shadow_update_this_frame_ = terrain_shadow_update_required(
+            shadow_cache_, runtime_config_.shadows, product_.diagnostics.content_hash,
+            lighting.primary_light_direction);
+        frame_shadow_projection_ = shadow_update_this_frame_ || !shadow_cache_.valid
+                                       ? candidate_shadow
+                                       : shadow_cache_.projection;
+        const bool sample_shadows = runtime_config_.shadows &&
+                                    frame_primary_light_above_horizon_ &&
+                                    (shadow_cache_.valid || shadow_update_this_frame_);
         environment_material().upload(
-            frame_slot, terrain_environment_gpu_parameters(atmosphere_frame, lighting));
+            frame_slot, terrain_environment_gpu_parameters(atmosphere_frame, lighting,
+                                                           frame_shadow_projection_,
+                                                           sample_shadows));
         atmosphere_background_.upload(frame_slot, atmosphere_frame);
         hdr_post_frame_.upload(frame_slot,
                                cubey::render::hdr_post_uniforms(target.format, display_exposure()));
@@ -1167,6 +1306,7 @@ class TerrainApp {
                     .profiler = profiler,
                 },
                 render_graph.graph, prepare_resources);
+            complete_shadow_frame_recording();
             recorder.end("vkEndCommandBuffer terrain");
             return;
         }
@@ -1183,6 +1323,7 @@ class TerrainApp {
                 .profiler = profiler,
             },
             render_graph.graph, prepare_resources);
+        complete_shadow_frame_recording();
     }
 
     [[nodiscard]] const cubey::render::Mesh& center_mesh() const {
@@ -1204,6 +1345,13 @@ class TerrainApp {
             throw std::runtime_error("terrain forward pass is not initialized");
         }
         return terrain_pass_.value();
+    }
+
+    [[nodiscard]] const cubey::render::ShadowMapPass3D& shadow_pass() const {
+        if (!shadow_pass_.has_value()) {
+            throw std::runtime_error("terrain shadow pass is not initialized");
+        }
+        return shadow_pass_.value();
     }
 
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& stage_proxy_pipeline() const {
@@ -1249,6 +1397,13 @@ class TerrainApp {
     std::vector<cubey::render::Mesh> sector_meshes_{};
     mutable TerrainBackdropDrawPlan latest_draw_plan_{};
     std::optional<cubey::render::Mesh> stage_proxy_mesh_{};
+    std::optional<cubey::render::ShadowMapPass3D> shadow_pass_{};
+    TerrainShadowCacheState shadow_cache_{};
+    TerrainShadowProjection frame_shadow_projection_{};
+    bool shadow_update_this_frame_ = false;
+    bool shadow_updated_last_frame_ = false;
+    bool shadow_depth_is_sampled_ = false;
+    bool frame_primary_light_above_horizon_ = false;
     std::optional<TerrainBackdropMaterialTexture> material_texture_{};
     std::optional<cubey::render::MaterialInstance> detail_material_{};
     std::optional<cubey::render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>>

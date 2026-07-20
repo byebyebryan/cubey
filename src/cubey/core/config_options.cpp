@@ -150,7 +150,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 283> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -482,6 +482,9 @@ constexpr std::array<ConfigOptionDescriptor, 283> kRunConfigOptions{
            "--terrain-surface-detail", "Surface Detail", "Terrain",
            "Terrain backdrop material presentation.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainSurfaceDetails)),
+    option(RunConfigOptionId::TerrainShadows, "terrain.shadows", "--terrain-shadows", "Shadows",
+           "Terrain", "Enable cached directional terrain shadows.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-terrain-shadows"),
     option(RunConfigOptionId::TerrainTargetEdgePx, "terrain.target_edge_px",
            "--terrain-target-edge-px", "Target Edge Pixels", "Terrain",
            "Target projected terrain edge length for adaptive tessellation.",
@@ -1547,6 +1550,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.surface_detail.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.surface_detail);
+    case RunConfigOptionId::TerrainShadows:
+        return optional_bool(config.terrain.shadows);
     case RunConfigOptionId::TerrainTargetEdgePx:
         return optional_float(config.terrain.target_edge_px);
     case RunConfigOptionId::TerrainWeathering:
@@ -2160,6 +2165,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<std::string>("source_version", options.source_version);
     adapter.writeField<std::string>("render_path", options.render_path);
     adapter.writeField<std::string>("surface_detail", options.surface_detail);
+    adapter.writeField<int>("shadows", options.shadows);
     adapter.writeField<float>("target_edge_px", options.target_edge_px);
     adapter.writeField<std::string>("weathering", options.weathering);
     adapter.writeField<float>("weathering_strength", options.weathering_strength);
@@ -2194,6 +2200,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("source_version", options.source_version);
     adapter.readField<std::string>("render_path", options.render_path);
     adapter.readField<std::string>("surface_detail", options.surface_detail);
+    adapter.readField<int>("shadows", options.shadows);
     adapter.readField<float>("target_edge_px", options.target_edge_px);
     adapter.readField<std::string>("weathering", options.weathering);
     adapter.readField<float>("weathering_strength", options.weathering_strength);
@@ -2913,6 +2920,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainSurfaceDetail:
         config.terrain.surface_detail = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainShadows:
+        config.terrain.shadows = parse_config_bool(value, option) ? 1 : 0;
         break;
     case RunConfigOptionId::TerrainTargetEdgePx:
         config.terrain.target_edge_px = parse_config_float(value, option);
