@@ -51,6 +51,9 @@ Current stable foundation pieces:
 - Surface Ocean V1 closed around a fixed-cost C0/C1 spectral core, independent
   Calm/Windy/Stormy look presets, shared atmosphere/cloud lighting, and an
   explicit terrain/water-body handoff boundary;
+- Terrain V1 promoted to one external-heightfield far-backdrop product with
+  deterministic natural placement, continuous cached geometry, shared
+  atmosphere/HDR lighting, a product review UI, and opt-in historical studies;
 - renderer foundation pieces for target views, render graph declaration,
   material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
   planning, and primitive mesh/draw helpers;
@@ -64,8 +67,12 @@ Recommended next feature streams:
   ready; near-field interaction and spray remain later feature work.
 - renderer foundation: use the shared dynamic environment handoff for future
   atmosphere/PBR consumers instead of adding project-local probe descriptors.
-- `projects/planet` and terrain worktrees: local/global terrain morphing,
-  streaming/residency contracts, and eventual ocean-as-local-water handoff.
+- `projects/terrain`: material and terrain-light-response refinement against
+  the accepted far-field source; defer consumer integration until the isolated
+  result is convincing.
+- `projects/planet`: local/global terrain morphing, streaming/residency
+  contracts, and eventual ocean-as-local-water handoff remain a separate
+  planet-scale track.
 - `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
   directly improves current surface/ocean views; high/aerial/orbit cloud
   products should stay deferred until a dedicated batch.

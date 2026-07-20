@@ -2,7 +2,7 @@
 
 Date: 2026-07-19
 
-Status: accepted implementation direction.
+Status: implemented and validated.
 
 ## Decision
 
@@ -89,3 +89,28 @@ as a promotion blocker.
 
 After promotion, the next terrain batch is material and terrain-light-response
 refinement. Consumer integration remains a later foundation-promotion gate.
+
+## Closure Evidence
+
+The promoted application was validated on the canonical seed-0 field with
+elevation SHA-256
+`27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df`.
+The curated `outputs/terrain/product-v1` pack contains 19 captures at 1600 x
+900: final and foreground composition, flat/detail, raking light, four
+headings, three camera-envelope endpoints, and eight diagnostics. The previous
+ignored terrain output dump was removed.
+
+Focused terrain tests and the shared core suite pass in both default and
+studies-enabled configurations. The complete studies-enabled CTest matrix
+reported 100% across 176 tests; 22 windowed smoke tests were expected skips
+under SSH. A separate one-frame Wayland windowed smoke reached the ready state
+and closed cleanly, but remote execution prevented hands-on GUI input inspection
+in this batch.
+
+On the NVIDIA GeForce RTX 5070 Ti, a 90-frame 1600 x 900 filtered-detail run
+with the foreground sphere measured these steady GPU pass medians: atmosphere
+0.402 ms, terrain 0.448 ms, sphere 0.080 ms, and post 0.013 ms. Their sum is
+0.943 ms; the sum of pass means is 0.941 ms. Startup remains approximately 7.6
+seconds because raster loading, mip construction, placement, and the 2.66
+million source-sample mesh bake are synchronous. Startup persistence and
+asynchrony remain explicit later work rather than V1 blockers.

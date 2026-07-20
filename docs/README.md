@@ -54,9 +54,9 @@ Detailed current foundation notes live under
 - [Terrain reboot direction](architecture/terrain-reboot.md): local terrain
   product generator strategy, previous terrain lessons, reference takeaways,
   product contract, and first vertical slice.
-- [Terrain v1 patch product](architecture/terrain-v1.md): active directly
-  sampled terrain source, clipmap runtime, bounded weathering, and consumer
-  boundary.
+- [Terrain v1 runtime](architecture/terrain-v1.md): active external-heightfield
+  far-backdrop product, natural placement, cached geometry, material review,
+  and consumer boundary.
 - [Ocean adjacent systems](architecture/ocean-adjacent-systems.md): atmosphere,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [Cloud rendering](architecture/cloud-rendering.md): surface-only Cloud V1
