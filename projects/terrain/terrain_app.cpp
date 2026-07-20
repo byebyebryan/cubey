@@ -195,12 +195,6 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
     TerrainBackdropPlacementRequest request;
     request.mode = config.placement;
     request.sample_index = config.placement_index;
-    if (config.initial_orbit_radius_m.has_value()) {
-        request.stage.orbit_default_radius_m = config.initial_orbit_radius_m.value();
-    }
-    if (config.initial_elevation_radians.has_value()) {
-        request.stage.orbit_default_elevation_radians = config.initial_elevation_radians.value();
-    }
     return plan_terrain_backdrop_placement(source, source.bounds(), request);
 }
 
@@ -603,7 +597,7 @@ class TerrainApp {
                            ImGuiSliderFlags_Logarithmic);
         if (ImGui::Button("Reset Camera")) {
             foreground_height_m_ = runtime_config_.initial_foreground_height_m;
-            orbit_controller_.reset();
+            reset_inspection_camera();
         }
         ImGui::SameLine();
         ImGui::Checkbox("Foreground sphere", &runtime_config_.foreground_sphere);
@@ -691,12 +685,22 @@ class TerrainApp {
         const TerrainBackdropStagePlan& stage = placement_stage_.stage;
         orbit_controller_.set_distance_limits(stage.orbit_min_radius_m,
                                               kTerrainInspectionMaximumOrbitRadiusM);
-        orbit_controller_.set_home_distance(stage.orbit_default_radius_m);
+        orbit_controller_.set_home_distance(
+            runtime_config_.initial_orbit_radius_m.value_or(stage.orbit_default_radius_m));
         baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
         if (reset_foreground_height) {
             foreground_height_m_ = runtime_config_.initial_foreground_height_m;
         }
+        reset_inspection_camera();
+    }
+
+    void reset_inspection_camera() {
+        const TerrainBackdropStagePlan& stage = placement_stage_.stage;
         orbit_controller_.reset();
+        if (runtime_config_.initial_elevation_radians.has_value()) {
+            orbit_controller_.set_pitch(stage.orbit_default_elevation_radians -
+                                        runtime_config_.initial_elevation_radians.value());
+        }
     }
 
     void start_placement_build() {

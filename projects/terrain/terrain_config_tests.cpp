@@ -51,8 +51,8 @@ void test_supported_overrides_remain_narrow() {
     run_config.terrain.surface_detail = "flat";
     run_config.terrain.shadows = 0;
     run_config.terrain.backdrop_azimuth_degrees = -90.0F;
-    run_config.terrain.backdrop_orbit_radius_m = 200.0F;
-    run_config.terrain.backdrop_elevation_degrees = 24.0F;
+    run_config.terrain.backdrop_orbit_radius_m = 1'000.0F;
+    run_config.terrain.backdrop_elevation_degrees = 30.0F;
     run_config.debug_view = "slope";
     const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(
         run_config, "/tmp/default");
@@ -66,9 +66,9 @@ void test_supported_overrides_remain_narrow() {
             "terrain should retain only product review overrides");
     require(std::abs(config.initial_azimuth_radians.value() + std::numbers::pi_v<float> * 0.5F) <
                     0.0001F &&
-                config.initial_orbit_radius_m == 200.0F &&
+                config.initial_orbit_radius_m == 1'000.0F &&
                 std::abs(config.initial_elevation_radians.value() -
-                         24.0F * std::numbers::pi_v<float> / 180.0F) < 0.0001F,
+                         30.0F * std::numbers::pi_v<float> / 180.0F) < 0.0001F,
             "terrain should convert supported camera overrides");
 }
 
@@ -117,6 +117,24 @@ void test_retired_modes_fail_explicitly() {
                 invalid_foreground, "/tmp/default"));
         },
         "unsupported terrain foreground height should be rejected");
+
+    cubey::RunConfig invalid_orbit;
+    invalid_orbit.terrain.backdrop_orbit_radius_m = 1'001.0F;
+    require_throws(
+        [&invalid_orbit] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                invalid_orbit, "/tmp/default"));
+        },
+        "unsupported terrain orbit radius should be rejected");
+
+    cubey::RunConfig invalid_elevation;
+    invalid_elevation.terrain.backdrop_elevation_degrees = 30.1F;
+    require_throws(
+        [&invalid_elevation] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                invalid_elevation, "/tmp/default"));
+        },
+        "unsupported terrain startup elevation should be rejected");
 }
 
 } // namespace

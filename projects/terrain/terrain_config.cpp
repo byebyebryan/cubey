@@ -165,8 +165,8 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     if (config.initial_orbit_radius_m.has_value() &&
         (!std::isfinite(config.initial_orbit_radius_m.value()) ||
          config.initial_orbit_radius_m.value() < 50.0F ||
-         config.initial_orbit_radius_m.value() > 250.0F)) {
-        throw std::runtime_error("terrain orbit radius must be within [50, 250] meters");
+         config.initial_orbit_radius_m.value() > 1'000.0F)) {
+        throw std::runtime_error("terrain orbit radius must be within [50, 1000] meters");
     }
     constexpr float maximum_elevation = 30.0F * std::numbers::pi_v<float> / 180.0F;
     if (config.initial_elevation_radians.has_value() &&

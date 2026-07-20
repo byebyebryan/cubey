@@ -565,7 +565,7 @@ constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
     option(RunConfigOptionId::TerrainBackdropElevation, "terrain.backdrop_elevation_degrees",
            "--terrain-backdrop-elevation", "Orbit Elevation", "Terrain/Backdrop Stage",
            "Optional initial backdrop orbit elevation in degrees.", ConfigOptionType::Float,
-           bounded_range(0.0, 32.0)),
+           bounded_range(0.0, 30.0)),
     option(RunConfigOptionId::TerrainBackdropMinimumDistance,
            "terrain.backdrop_minimum_visible_distance_m", "--terrain-backdrop-min-distance",
            "Minimum Terrain Distance", "Terrain/Backdrop Stage",
