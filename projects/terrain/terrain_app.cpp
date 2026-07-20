@@ -9,7 +9,9 @@
 #include "terrain_shadow.h"
 
 #include <cubey/engine/atmosphere_environment_config.h>
+#include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/imgui_helpers.h>
@@ -17,6 +19,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/cloud_layer.h>
 #include <cubey/render/forward_pass.h>
 #include <cubey/render/hdr_post_frame.h>
 #include <cubey/render/material_instance.h>
@@ -64,12 +67,21 @@ namespace {
 
 constexpr VkFormat kTerrainSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr float kTerrainHeadlessOrbitSpeed = 0.18F;
-constexpr std::uint32_t kTerrainGpuProfilerPassCapacity = 8U;
+constexpr std::uint32_t kTerrainGpuProfilerPassCapacity = 16U;
 constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
 constexpr float kDegreesToRadians = std::numbers::pi_v<float> / 180.0F;
 constexpr float kTerrainMinimumForegroundHeightM = 2.0F;
 constexpr float kTerrainDefaultForegroundHeightM = 100.0F;
 constexpr float kTerrainMaximumForegroundHeightM = 1'000.0F;
+constexpr float kTerrainDefaultTimeHours = 9.0F;
+constexpr float kTerrainCloudSceneDepthFadeM = 500.0F;
+constexpr float kTerrainInspectionPitchLimitRadians = 1'000.0F;
+constexpr float kTerrainInspectionMaximumOrbitRadiusM = 1'000.0F;
+
+constexpr std::array<std::string_view, 8U> kTerrainGpuTimingLabels{
+    "terrain shadow", "terrain atmosphere", "terrain surface", "terrain stage proxy",
+    "cloud march",    "cloud temporal",     "cloud composite", "terrain post",
+};
 
 struct TerrainStageProxyPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
@@ -105,6 +117,10 @@ struct TerrainPlacementBuild {
 struct CompiledTerrainGraph {
     cubey::render::CompiledRenderGraph graph{};
     cubey::render::RenderGraphTextureHandle scene_color{};
+    cubey::render::RenderGraphTextureHandle post_scene_color{};
+    cubey::render::RenderGraphTextureHandle scene_depth{};
+    cubey::render::CloudLayerRuntimeFrame cloud{};
+    bool clouds_enabled = false;
 };
 
 static_assert(sizeof(TerrainStageProxyPushConstants) <= 128U);
@@ -133,8 +149,29 @@ void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64
     }
 }
 
+void draw_terrain_gpu_timings(std::span<const cubey::vulkan::GpuPassTiming> timings) {
+    ImGui::SeparatorText("GPU timings");
+    for (const std::string_view label : kTerrainGpuTimingLabels) {
+        const auto timing = std::find_if(timings.begin(), timings.end(),
+                                         [label](const cubey::vulkan::GpuPassTiming& candidate) {
+                                             return candidate.label == label;
+                                         });
+        if (timing == timings.end()) {
+            ImGui::Text("%.*s: --", static_cast<int>(label.size()), label.data());
+        } else {
+            ImGui::Text("%s: %.3f ms", timing->label.c_str(), timing->milliseconds);
+        }
+    }
+}
+
 [[nodiscard]] std::filesystem::path shader_path(std::filesystem::path filename) {
     return std::filesystem::path(CUBEY_TERRAIN_SHADER_DIR) / std::move(filename);
+}
+
+[[nodiscard]] cubey::render::CloudLayerRuntimeShaderFiles cloud_runtime_shader_files() {
+    return cubey::render::cloud_layer_runtime_shader_files(
+        CUBEY_TERRAIN_SHADER_DIR,
+        cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
 }
 
 [[nodiscard]] std::filesystem::path
@@ -194,7 +231,8 @@ terrain_atmosphere_state(const RunConfig& config) {
     const bool explicit_sun = cubey::run_config_float_is_set(atmosphere.sun_elevation_degrees) ||
                               cubey::run_config_float_is_set(atmosphere.sun_azimuth_degrees);
     if (atmosphere.time_of_day_mode.empty() && !explicit_clock && !explicit_sun) {
-        atmosphere.time_of_day_mode = "manual";
+        atmosphere.time_of_day_mode = "solar";
+        atmosphere.time_hours = kTerrainDefaultTimeHours;
     }
     return cubey::atmosphere_environment_run_state_from_config(
         atmosphere,
@@ -204,6 +242,20 @@ terrain_atmosphere_state(const RunConfig& config) {
             .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
+}
+
+[[nodiscard]] cubey::CloudEnvironmentConfig
+terrain_cloud_config(const RunConfig& config,
+                     const cubey::render::AtmosphereEnvironmentConfig& atmosphere) {
+    cubey::CloudEnvironmentConfig clouds{};
+    cubey::apply_cloud_environment_weather_preset(
+        clouds, cubey::CloudEnvironmentWeatherPreset::FairWeather);
+    cubey::apply_cloud_environment_run_config(clouds, config.clouds);
+    cubey::apply_cloud_environment_surface_v1_policy(clouds);
+    clouds.layer.planet_radius_m = atmosphere.bottom_radius_km * 1000.0F;
+    clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    return clouds;
 }
 
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_backdrop_pass_info() {
@@ -304,13 +356,17 @@ class TerrainApp {
           source_(require_heightfield(runtime_config_.heightfield_path)),
           placement_stage_(make_placement_stage(source_, runtime_config_)),
           product_(make_product(source_, placement_stage_)),
-          orbit_controller_(cubey::OrbitControllerConfig{}),
+          orbit_controller_(cubey::OrbitControllerConfig{
+              .min_pitch = -kTerrainInspectionPitchLimitRadians,
+              .max_pitch = kTerrainInspectionPitchLimitRadians,
+          }),
           camera_(cubey::Camera3DConfig{
               .fovy_radians = 40.0F * kDegreesToRadians,
               .near_z = 0.1F,
               .far_z = product_.request.outer_radius_m * 5.0F,
           }),
-          atmosphere_state_(terrain_atmosphere_state(run_config_)) {
+          atmosphere_state_(terrain_atmosphere_state(run_config_)),
+          clouds_config_(terrain_cloud_config(run_config_, atmosphere_state_.environment)) {
         edit_placement_mode_ = runtime_config_.placement;
         edit_placement_index_ = runtime_config_.placement_index;
         configure_camera_for_placement(true);
@@ -343,8 +399,9 @@ class TerrainApp {
             orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
             (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                              timing.delta_seconds);
+            cloud_runtime_.advance(timing.delta_seconds);
         };
-        callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) { draw_ui(context); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
             collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index,
@@ -371,7 +428,7 @@ class TerrainApp {
                 .run_config = run_config_,
                 .app_name = "terrain",
                 .ready_status = "rendering raster terrain backdrop",
-                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
                 .close_on_escape = true,
@@ -382,7 +439,7 @@ class TerrainApp {
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = run_config_;
-        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
+        host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
 
@@ -407,6 +464,7 @@ class TerrainApp {
                 orbit_controller_.update(frame.timing.delta_seconds);
                 (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                                  frame.timing.delta_seconds);
+                cloud_runtime_.advance(frame.timing.delta_seconds);
             };
         }
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
@@ -426,7 +484,7 @@ class TerrainApp {
         return host.run();
     }
 
-    void draw_ui() {
+    void draw_ui(cubey::host::WindowedAppContext& context) {
         if (!cubey::host::begin_control_panel("Terrain", {.width = 410.0F})) {
             ImGui::End();
             return;
@@ -528,14 +586,13 @@ class TerrainApp {
         float radius = orbit_controller_.distance();
         const TerrainBackdropStagePlan& stage = placement_stage_.stage;
         if (ImGui::SliderFloat("Orbit radius", &radius, stage.orbit_min_radius_m,
-                               stage.orbit_max_radius_m, "%.0f m")) {
+                               kTerrainInspectionMaximumOrbitRadiusM, "%.0f m",
+                               ImGuiSliderFlags_Logarithmic)) {
             orbit_controller_.set_distance(radius);
         }
         float elevation_degrees =
             (stage.orbit_default_elevation_radians - orbit_controller_.pitch()) * kRadiansToDegrees;
-        if (ImGui::SliderFloat("Elevation", &elevation_degrees,
-                               stage.orbit_min_elevation_radians * kRadiansToDegrees,
-                               stage.orbit_max_elevation_radians * kRadiansToDegrees, "%.1f deg")) {
+        if (ImGui::DragFloat("Elevation", &elevation_degrees, 0.25F, 0.0F, 0.0F, "%.1f deg")) {
             orbit_controller_.set_pitch(stage.orbit_default_elevation_radians -
                                         elevation_degrees * kDegreesToRadians);
         }
@@ -608,20 +665,33 @@ class TerrainApp {
         if (!frame_primary_light_above_horizon_) {
             ImGui::Text("Shadow update suspended below horizon");
         }
-        cubey::host::draw_gpu_timings(latest_gpu_timings());
+        draw_terrain_gpu_timings(latest_gpu_timings());
 
-        (void)cubey::host::draw_atmosphere_environment_controls(atmosphere_state_,
-                                                                {.default_open = true});
+        if (cubey::host::draw_atmosphere_environment_controls(atmosphere_state_,
+                                                              {.default_open = true})) {
+            cubey::atmosphere_environment_resolve_run_state(atmosphere_state_);
+        }
+        if (cubey::host::draw_cloud_environment_controls(
+                clouds_config_,
+                {.default_open = false,
+                 .help = "Shared Cloud V1 layer composited behind the terrain and foreground.",
+                 .enabled_help = "Composite clouds into the terrain environment.",
+                 .scene_depth_occlusion_enabled = true,
+                 .scene_depth_fade_m = kTerrainCloudSceneDepthFadeM})) {
+            clouds_config_.layer.planet_radius_m =
+                atmosphere_state_.environment.bottom_radius_km * 1000.0F;
+            cloud_runtime_.set_config(clouds_config_);
+            cloud_runtime_.update_weather_texture(context.device(), context.gpu(),
+                                                  cloud_runtime_shader_files().generated.weather);
+        }
         ImGui::End();
     }
 
     void configure_camera_for_placement(bool reset_foreground_height) {
         const TerrainBackdropStagePlan& stage = placement_stage_.stage;
-        orbit_controller_.set_distance_limits(stage.orbit_min_radius_m, stage.orbit_max_radius_m);
+        orbit_controller_.set_distance_limits(stage.orbit_min_radius_m,
+                                              kTerrainInspectionMaximumOrbitRadiusM);
         orbit_controller_.set_home_distance(stage.orbit_default_radius_m);
-        orbit_controller_.set_pitch_limits(
-            stage.orbit_default_elevation_radians - stage.orbit_max_elevation_radians,
-            stage.orbit_default_elevation_radians - stage.orbit_min_elevation_radians);
         baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
         if (reset_foreground_height) {
             foreground_height_m_ = runtime_config_.initial_foreground_height_m;
@@ -776,6 +846,8 @@ class TerrainApp {
         atmosphere_background_.create_materials(
             device,
             {.frame_slot_count = frame_slot_count, .textures = atmosphere_atlases_->bindings()});
+        cloud_runtime_.create_surface_resources(device, gpu, cloud_runtime_shader_files().generated,
+                                                clouds_config_);
         hdr_post_frame_.create_materials(device, {.frame_slot_count = frame_slot_count});
         global_resources_created_ = true;
     }
@@ -812,6 +884,7 @@ class TerrainApp {
                         .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
                         .depth = cubey::render::depth_clear_value(),
                     },
+                .sampled_depth = true,
             });
 
         const std::array stage_proxy_shaders{
@@ -838,6 +911,10 @@ class TerrainApp {
         atmosphere_background_.create_pipeline(device, {.extent = extent,
                                                         .color_format = kTerrainSceneColorFormat,
                                                         .shader_stage_files = atmosphere_shaders});
+        cloud_runtime_.create_surface_target_resources(
+            device, cloud_runtime_shader_files(),
+            cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
+            kTerrainSceneColorFormat, extent, frame_slot_count);
         const std::array post_shaders{
             cubey::render::vertex_shader_file(shader_path("forward_pbr_post.vert.spv")),
             cubey::render::fragment_shader_file(shader_path("forward_pbr_post.frag.spv")),
@@ -852,6 +929,7 @@ class TerrainApp {
     void destroy_swapchain_resources() {
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
+        cloud_runtime_.destroy_surface_target_resources();
         atmosphere_background_.destroy_pipeline();
         stage_proxy_pipeline_.reset();
         terrain_pass_.reset();
@@ -860,6 +938,7 @@ class TerrainApp {
     void destroy_all_resources() {
         destroy_swapchain_resources();
         hdr_post_frame_.destroy();
+        cloud_runtime_.destroy();
         atmosphere_background_.destroy();
         atmosphere_atlases_.reset();
         detail_material_.reset();
@@ -1075,6 +1154,36 @@ class TerrainApp {
             });
     }
 
+    [[nodiscard]] bool cloud_layer_enabled() const noexcept {
+        return runtime_config_.debug_view == TerrainDebugView::Surface && clouds_config_.enabled;
+    }
+
+    [[nodiscard]] cubey::CloudEnvironmentRuntimeFrame
+    current_cloud_frame(VkExtent2D extent,
+                        const cubey::render::AtmosphereEnvironmentLighting& lighting) const {
+        const cubey::render::ViewRayBasis3D view_rays = cubey::render::view_ray_basis_3d(
+            frame_camera_transform_.rotation, aspect(extent), camera_.fovy_radians());
+        const float physical_camera_height_m =
+            frame_camera_transform_.translation.y + placement_stage_.stage.target_height_m;
+        return cloud_runtime_.frame(
+            cubey::CloudEnvironmentSurfaceViewInfo{
+                .camera_position = {frame_camera_transform_.translation.x,
+                                    std::max(physical_camera_height_m, 0.0F),
+                                    frame_camera_transform_.translation.z},
+                .camera_right = cubey::math::Vec3{view_rays.right_aspect},
+                .camera_up = cubey::math::Vec3{view_rays.up_tan_half_fovy},
+                .camera_forward = cubey::math::Vec3{view_rays.forward},
+                .tan_half_fovy = view_rays.up_tan_half_fovy.w,
+                .target_extent = extent,
+                .near_plane_m = camera_.near_z(),
+                .far_plane_m = camera_.far_z(),
+                .external_background = true,
+                .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
+                .scene_depth_fade_m = kTerrainCloudSceneDepthFadeM,
+            },
+            lighting);
+    }
+
     [[nodiscard]] float display_exposure() const {
         return run_config_.pbr.exposure_explicit ? run_config_.pbr.exposure
                                                  : atmosphere_state_.resolved_exposure;
@@ -1170,16 +1279,19 @@ class TerrainApp {
         recorder.end_rendering();
     }
 
-    [[nodiscard]] CompiledTerrainGraph
-    current_render_graph(cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
-                         cubey::render::RenderGraphTextureState target_initial_state,
-                         cubey::render::RenderGraphTextureState target_final_state) const {
+    [[nodiscard]] CompiledTerrainGraph current_render_graph(
+        cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
+        cubey::render::RenderGraphTextureState target_initial_state,
+        cubey::render::RenderGraphTextureState target_final_state,
+        const std::optional<cubey::CloudEnvironmentRuntimeFrame>& cloud_runtime_frame) const {
         cubey::render::RenderGraphBuilder graph;
         const cubey::render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
             "terrain backbuffer", target, target_initial_state, target_final_state);
         const cubey::render::RenderGraphTextureHandle scene_color =
             graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
                 "terrain scene color", target.extent, kTerrainSceneColorFormat));
+        cubey::render::RenderGraphTextureHandle post_scene_color = scene_color;
+        cubey::render::CloudLayerRuntimeFrame cloud_frame{};
         const cubey::render::RenderGraphTextureHandle depth =
             graph.import_depth_target("terrain depth", terrain_forward_pass().depth_target(),
                                       cubey::render::render_graph_undefined_texture_state());
@@ -1233,15 +1345,33 @@ class TerrainApp {
                         cubey::render::resolved_depth_target_view(context, depth), frame_slot);
                 });
         }
+        const bool clouds_enabled = cloud_runtime_frame.has_value() && cloud_runtime_frame->enabled;
+        if (clouds_enabled) {
+            const cubey::render::RenderGraphTextureHandle cloud_scene_color =
+                graph.create_texture(cubey::render::hdr_scene_color_texture_desc(
+                    "terrain cloud scene color", target.extent, kTerrainSceneColorFormat));
+            cloud_frame = cloud_runtime_.declare_surface_product(graph, frame_slot,
+                                                                 cloud_runtime_frame.value());
+            cloud_runtime_.declare_surface_composite(graph, cloud_scene_color, cloud_frame,
+                                                     frame_slot, scene_color, depth);
+            post_scene_color = cloud_scene_color;
+        }
         graph.add_pass("terrain post", cubey::render::RenderGraphQueueDomain::Graphics)
-            .read_texture(scene_color)
+            .read_texture(post_scene_color)
             .write_color(backbuffer)
             .material_pass(cubey::render::pbr_post_pass_info())
             .execute([this, target,
                       frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
                 hdr_post_frame_.record_pass(context.recorder(), target, frame_slot);
             });
-        return {.graph = graph.compile(), .scene_color = scene_color};
+        return {
+            .graph = graph.compile(),
+            .scene_color = scene_color,
+            .post_scene_color = post_scene_color,
+            .scene_depth = depth,
+            .cloud = cloud_frame,
+            .clouds_enabled = clouds_enabled,
+        };
     }
 
     void complete_shadow_frame_recording() {
@@ -1285,15 +1415,24 @@ class TerrainApp {
                                                            frame_shadow_projection_,
                                                            sample_shadows));
         atmosphere_background_.upload(frame_slot, atmosphere_frame);
+        std::optional<cubey::CloudEnvironmentRuntimeFrame> cloud_frame;
+        if (cloud_layer_enabled()) {
+            cloud_frame = current_cloud_frame(target.extent, lighting);
+        }
         hdr_post_frame_.upload(frame_slot,
                                cubey::render::hdr_post_uniforms(target.format, display_exposure()));
 
-        const CompiledTerrainGraph render_graph =
-            current_render_graph(target, frame_slot, target_initial_state, target_final_state);
+        const CompiledTerrainGraph render_graph = current_render_graph(
+            target, frame_slot, target_initial_state, target_final_state, cloud_frame);
         const auto prepare_resources = [this, &device, frame_slot, &render_graph](
                                            const cubey::render::RenderGraphResourceSet& resources) {
             hdr_post_frame_.update_scene_color_descriptor(device, frame_slot, render_graph.graph,
-                                                          resources, render_graph.scene_color);
+                                                          resources, render_graph.post_scene_color);
+            if (render_graph.clouds_enabled) {
+                cloud_runtime_.update_surface_descriptors(
+                    device, frame_slot, render_graph.graph, resources, render_graph.cloud,
+                    render_graph.scene_color, render_graph.scene_depth);
+            }
         };
         cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
         if (profiler != nullptr &&
@@ -1313,6 +1452,9 @@ class TerrainApp {
                 },
                 render_graph.graph, prepare_resources);
             complete_shadow_frame_recording();
+            if (render_graph.clouds_enabled) {
+                cloud_runtime_.complete_surface_frame(frame_slot, render_graph.cloud);
+            }
             recorder.end("vkEndCommandBuffer terrain");
             return;
         }
@@ -1330,6 +1472,9 @@ class TerrainApp {
             },
             render_graph.graph, prepare_resources);
         complete_shadow_frame_recording();
+        if (render_graph.clouds_enabled) {
+            cloud_runtime_.complete_surface_frame(frame_slot, render_graph.cloud);
+        }
     }
 
     [[nodiscard]] const cubey::render::Mesh& center_mesh() const {
@@ -1396,6 +1541,8 @@ class TerrainApp {
     cubey::Camera3D camera_;
     cubey::Transform3D frame_camera_transform_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
+    cubey::CloudEnvironmentConfig clouds_config_{};
+    cubey::CloudEnvironmentRuntime cloud_runtime_{};
     float baked_foreground_height_m_ = 500.0F;
     float foreground_height_m_ = kTerrainDefaultForegroundHeightM;
 

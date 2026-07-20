@@ -4,7 +4,7 @@
 review application. It consumes an external `cubey.terrain.heightfield.v1`
 asset, selects a deterministic source placement, bakes one continuous cached
 mesh, and can replace that placement at runtime while rendering with shared
-atmosphere and HDR composition.
+atmosphere, clouds, and HDR composition.
 
 This is deliberately not a general terrain engine. It does not provide close
 terrain, traversal, streaming, hydrology, water, vegetation, deformation,
@@ -19,13 +19,15 @@ The active path is fixed:
   unfiltered center and indexed-sample comparison controls;
 - 100 m default foreground height, adjustable from 2-1000 m in the UI, and
   unrestricted orbit yaw;
-- 50-250 m orbit radius and 0-30 degree elevation envelope;
+- 50-1000 m live inspection orbit radius and unrestricted elevation; the baked
+  clearance contract remains qualified only through 250 m;
 - continuous seam-matched center, 16.384 km outer radius, and render stride 3;
 - cullable static sectors plus an optional foreground review sphere;
 - flat and filtered procedural-detail material presentations;
 - cached directional shadows from the outer backdrop sectors, with the
   continuous inner stage retained as a receiver only;
-- shared physical atmosphere, environment lighting, and HDR post;
+- shared physical atmosphere, a running daytime solar clock, depth-aware
+  Cloud V1 composition, environment lighting, and HDR post;
 - height, slope, material, normal, edge, and ownership diagnostics.
 
 The renderer does not modify the source shape. The center is regular terrain,
@@ -65,7 +67,7 @@ The GUI exposes source provenance and dimensions, runtime placement mode and
 raw-sample index, placement metrics, orbit radius/elevation, foreground height
 and reset, foreground-sphere visibility, flat/detail presentation, supported
 diagnostics, directional-shadow state, atmosphere controls, submitted geometry,
-and GPU timings.
+stable GPU timings, and shared cloud controls.
 
 Useful startup overrides:
 

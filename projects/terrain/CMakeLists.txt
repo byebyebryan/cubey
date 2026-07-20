@@ -71,6 +71,8 @@ target_link_libraries(
 )
 
 cubey_atmosphere_shader_depends(CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS)
+cubey_cloud_layer_shader_sources(CUBEY_TERRAIN_CLOUD_SHADERS COMPOSITE background-depth)
+cubey_cloud_layer_shader_depends(CUBEY_TERRAIN_CLOUD_SHADER_DEPENDS)
 cubey_forward_pbr_shader_depends(CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS)
 
 cubey_add_app_target(
@@ -89,6 +91,7 @@ cubey_add_app_target(
         shaders/terrain_stage_proxy.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
+        ${CUBEY_TERRAIN_CLOUD_SHADERS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
     SHADER_INCLUDE_DIRS
@@ -102,6 +105,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
         ${CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS}
+        ${CUBEY_TERRAIN_CLOUD_SHADER_DEPENDS}
         ${CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS}
 )
 target_compile_definitions(

@@ -24,7 +24,7 @@ offline producer
     -> deterministic directional placement
     -> focused natural-stage plan
     -> cached continuous sector mesh
-    -> procedural detail material + shared atmosphere
+    -> procedural detail material + shared atmosphere/cloud environment
     -> standalone review app
 ```
 
@@ -82,8 +82,9 @@ The V1 camera contract is:
   selectable at startup and adjustable from 2-1000 m on a logarithmic review
   slider;
 - unrestricted yaw;
-- orbit radius from 50 m through 250 m;
-- elevation from 0 through 30 degrees;
+- live inspection orbit radius from 50 m through 1000 m, with baked clearance
+  qualified through 250 m;
+- unrestricted inspection elevation;
 - 40 degree vertical field of view;
 - optional 20 m foreground sphere for composition review.
 
@@ -127,7 +128,9 @@ Both presentations use:
 - classification normals from the cached source mesh;
 - shared atmosphere-derived direct light and diffuse irradiance;
 - physical aerial perspective between camera and terrain;
-- the shared atmosphere background and HDR post path.
+- the shared atmosphere background with a running daytime solar clock;
+- depth-aware shared Cloud V1 composition in the final surface view;
+- the shared HDR post path.
 
 The detail texture improves material frequency but does not add geometry or
 claim grass, trees, scree, exposed strata, or close-surface fidelity.
