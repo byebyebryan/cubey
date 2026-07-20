@@ -160,6 +160,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain placement controls](terrain-placement-controls.md): selected,
   raw-center, and deterministic raw-sample controls for separating unchanged
   source quality from placement before considering synthetic stage shaping.
+- [Terrain lighting and material v1](terrain-lighting-material-v1.md): frozen
+  geometry control, cached directional-shadow contract, bounded procedural
+  material refinement, and candidate acceptance gates.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.
