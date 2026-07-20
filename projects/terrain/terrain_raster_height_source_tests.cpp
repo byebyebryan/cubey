@@ -104,6 +104,10 @@ void test_loads_and_samples_calibrated_field() {
     require(source.metadata().id == "test-raster" && source.metadata().seed == 9012U &&
                 source.width() == 4U && source.height() == 4U && source.sample_spacing_m() == 10.0F,
             "raster source should retain manifest metadata");
+    require(source.provenance().manifest_path == fixture.root / "heightfield.json" &&
+                source.provenance().generator == "test-raster" &&
+                source.provenance().elevation_sha256 == std::string(64U, '0'),
+            "raster source should expose manifest provenance");
     require(source.sample_height({.world_xz = {10.0F, 20.0F}}) == 40.0F,
             "raster source should apply the manifest height transform");
     require(source.sample_height({.world_xz = {5.0F, 5.0F}}) == 9.0F,

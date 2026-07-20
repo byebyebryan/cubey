@@ -1,11 +1,21 @@
 #pragma once
 
-#include "terrain_source.h"
+#include <cubey/core/math.h>
 
 #include <cstdint>
 #include <string_view>
 
 namespace cubey::projects::terrain {
+
+struct TerrainQuery {
+    cubey::math::Vec2 world_xz{0.0F, 0.0F};
+    float footprint_m = 0.0F;
+};
+
+struct TerrainSample {
+    float height_m = 0.0F;
+    cubey::math::Vec2 gradient_xz{0.0F, 0.0F};
+};
 
 struct TerrainHeightSourceMetadata {
     std::string_view id{};
@@ -24,20 +34,6 @@ class TerrainHeightSource {
     [[nodiscard]] virtual TerrainHeightSourceMetadata metadata() const noexcept = 0;
     [[nodiscard]] virtual float sample_height(const TerrainQuery& query) const = 0;
     [[nodiscard]] virtual TerrainSample sample(const TerrainQuery& query) const;
-};
-
-class ParameterTerrainHeightSource final : public TerrainHeightSource {
-  public:
-    ParameterTerrainHeightSource(TerrainSourceParameters parameters, std::uint64_t seed);
-
-    [[nodiscard]] TerrainHeightSourceMetadata metadata() const noexcept override;
-    [[nodiscard]] float sample_height(const TerrainQuery& query) const override;
-    [[nodiscard]] TerrainSample sample(const TerrainQuery& query) const override;
-    [[nodiscard]] const TerrainSourceParameters& parameters() const noexcept;
-
-  private:
-    TerrainSourceParameters parameters_{};
-    TerrainHeightSourceMetadata metadata_{};
 };
 
 } // namespace cubey::projects::terrain

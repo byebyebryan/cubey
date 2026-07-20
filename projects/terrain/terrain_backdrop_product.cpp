@@ -224,8 +224,7 @@ void include(TerrainBackdropSectorBounds& bounds, cubey::math::Vec3 position) {
     return bounds;
 }
 
-[[nodiscard]] std::vector<std::uint32_t> strided_vertices(std::uint32_t first,
-                                                          std::uint32_t last,
+[[nodiscard]] std::vector<std::uint32_t> strided_vertices(std::uint32_t first, std::uint32_t last,
                                                           std::uint32_t stride) {
     std::vector<std::uint32_t> result;
     for (std::uint32_t value = first; value < last; value += stride) {
@@ -239,12 +238,10 @@ void include(TerrainBackdropSectorBounds& bounds, cubey::math::Vec3 position) {
 
 [[nodiscard]] std::vector<std::uint32_t>
 render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t stride) {
-    std::vector<std::uint32_t> result =
-        strided_vertices(0U, density.angular_intervals, stride);
-    const std::uint32_t intervals_per_sector =
-        density.angular_intervals / density.sector_count;
-    for (std::uint32_t boundary = intervals_per_sector;
-         boundary < density.angular_intervals; boundary += intervals_per_sector) {
+    std::vector<std::uint32_t> result = strided_vertices(0U, density.angular_intervals, stride);
+    const std::uint32_t intervals_per_sector = density.angular_intervals / density.sector_count;
+    for (std::uint32_t boundary = intervals_per_sector; boundary < density.angular_intervals;
+         boundary += intervals_per_sector) {
         result.push_back(boundary);
     }
     std::ranges::sort(result);
@@ -252,20 +249,19 @@ render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t str
     return result;
 }
 
-[[nodiscard]] TerrainBackdropSectorMesh make_center_mesh(
-    const TerrainBackdropProductRequest& request, const std::vector<float>& heights,
-    const std::vector<float>& radii, TerrainBackdropDensityProfile density,
-    const TerrainHeightSourceMetadata& source, std::uint32_t radial_interval_count,
-    std::span<const std::uint32_t> render_angles, std::uint32_t radial_render_stride) {
+[[nodiscard]] TerrainBackdropSectorMesh
+make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector<float>& heights,
+                 const std::vector<float>& radii, TerrainBackdropDensityProfile density,
+                 const TerrainHeightSourceMetadata& source, std::uint32_t radial_interval_count,
+                 std::span<const std::uint32_t> render_angles, std::uint32_t radial_render_stride) {
     TerrainBackdropSectorMesh mesh;
     mesh.begin_azimuth_radians = 0.0F;
     mesh.end_azimuth_radians = kTwoPi;
     const std::uint32_t angular_vertex_count = density.angular_intervals + 1U;
-    mesh.vertices.reserve(1U + static_cast<std::size_t>(radial_interval_count) *
-                                   angular_vertex_count);
+    mesh.vertices.reserve(1U +
+                          static_cast<std::size_t>(radial_interval_count) * angular_vertex_count);
     TerrainBackdropSectorBounds bounds{
-        .minimum = {std::numeric_limits<float>::infinity(),
-                    std::numeric_limits<float>::infinity(),
+        .minimum = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(),
                     std::numeric_limits<float>::infinity()},
         .maximum = {-std::numeric_limits<float>::infinity(),
                     -std::numeric_limits<float>::infinity(),
@@ -274,8 +270,8 @@ render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t str
 
     const cubey::math::Vec3 center_position = position_at(heights, radii, 0U, 0U, density);
     const cubey::math::Vec3 center_normal = normal_at(heights, radii, 0U, 0U, density);
-    const cubey::math::Vec3 center_channels = material_channels(
-        request, heights, radii, 0U, 0U, density, center_normal, source);
+    const cubey::math::Vec3 center_channels =
+        material_channels(request, heights, radii, 0U, 0U, density, center_normal, source);
     mesh.vertices.push_back({
         .position = {center_position.x, center_position.y, center_position.z},
         .color = {center_channels.x, center_channels.y, center_channels.z},
@@ -288,8 +284,8 @@ render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t str
             const cubey::math::Vec3 position =
                 position_at(heights, radii, wrapped, radial, density);
             const cubey::math::Vec3 normal = normal_at(heights, radii, wrapped, radial, density);
-            const cubey::math::Vec3 channels = material_channels(
-                request, heights, radii, wrapped, radial, density, normal, source);
+            const cubey::math::Vec3 channels = material_channels(request, heights, radii, wrapped,
+                                                                 radial, density, normal, source);
             mesh.vertices.push_back({
                 .position = {position.x, position.y, position.z},
                 .color = {channels.x, channels.y, channels.z},
@@ -322,14 +318,12 @@ render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t str
     mesh.render_indices.reserve((render_angles.size() - 1U) *
                                 (1U + (render_radii.size() - 1U) * 6U));
     for (std::size_t angular = 0U; angular + 1U < render_angles.size(); ++angular) {
-        mesh.render_indices.insert(mesh.render_indices.end(),
-                                   {0U, 1U + render_angles[angular + 1U],
-                                    1U + render_angles[angular]});
+        mesh.render_indices.insert(mesh.render_indices.end(), {0U, 1U + render_angles[angular + 1U],
+                                                               1U + render_angles[angular]});
     }
     for (std::size_t radial = 0U; radial + 1U < render_radii.size(); ++radial) {
         const std::uint32_t inner = 1U + (render_radii[radial] - 1U) * angular_vertex_count;
-        const std::uint32_t outer =
-            1U + (render_radii[radial + 1U] - 1U) * angular_vertex_count;
+        const std::uint32_t outer = 1U + (render_radii[radial + 1U] - 1U) * angular_vertex_count;
         for (std::size_t angular = 0U; angular + 1U < render_angles.size(); ++angular) {
             const std::uint32_t inner0 = inner + render_angles[angular];
             const std::uint32_t inner1 = inner + render_angles[angular + 1U];
@@ -480,9 +474,9 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         render_angular_vertices(density, angular_render_stride);
 
     if (request.center_mode == TerrainBackdropCenterMode::Continuous) {
-        product.center = make_center_mesh(request, heights, radii, density, source_metadata,
-                                          center_radial_intervals, global_render_angles,
-                                          radial_render_stride);
+        product.center =
+            make_center_mesh(request, heights, radii, density, source_metadata,
+                             center_radial_intervals, global_render_angles, radial_render_stride);
     }
 
     float minimum_height = std::numeric_limits<float>::infinity();
@@ -643,15 +637,15 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         .center_index_count = center_index_count,
         .center_triangle_count = center_triangle_count,
         .center_render_triangle_count = center_render_triangle_count,
-        .visible_vertex_count = center_vertex_count +
-                                static_cast<std::uint64_t>(density.sector_count) *
-                                    visible_radial_rows * (angular_intervals_per_sector + 1U),
-        .visible_index_count = center_index_count +
-                               static_cast<std::uint64_t>(density.angular_intervals) *
-                                   density.visible_radial_intervals * 6U,
-        .visible_triangle_count = center_triangle_count +
-                                  static_cast<std::uint64_t>(density.angular_intervals) *
-                                      density.visible_radial_intervals * 2U,
+        .visible_vertex_count =
+            center_vertex_count + static_cast<std::uint64_t>(density.sector_count) *
+                                      visible_radial_rows * (angular_intervals_per_sector + 1U),
+        .visible_index_count =
+            center_index_count + static_cast<std::uint64_t>(density.angular_intervals) *
+                                     density.visible_radial_intervals * 6U,
+        .visible_triangle_count =
+            center_triangle_count + static_cast<std::uint64_t>(density.angular_intervals) *
+                                        density.visible_radial_intervals * 2U,
         .minimum_height_m = minimum_height,
         .maximum_height_m = maximum_height,
         .maximum_sector_boundary_delta_m = maximum_boundary_delta,
@@ -662,13 +656,6 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
     }
     product.diagnostics.content_hash = content_hash(product);
     return product;
-}
-
-TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
-                                                     const TerrainSourceParameters& source,
-                                                     std::uint64_t seed) {
-    const ParameterTerrainHeightSource adapter(source, seed);
-    return make_terrain_backdrop_product(request, adapter);
 }
 
 } // namespace cubey::projects::terrain

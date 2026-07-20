@@ -6,7 +6,7 @@
 const float ATMOSPHERE_SUN_INTENSITY = 22.0;
 const float ATMOSPHERE_MIN_TWILIGHT_SOFTNESS = 0.022;
 
-layout(set = 1, binding = 0, std140) uniform TerrainEnvironmentUniforms {
+layout(set = 0, binding = 0, std140) uniform TerrainEnvironmentUniforms {
     vec4 camera_right_aspect;
     vec4 camera_up_tan_half_fovy;
     vec4 camera_forward_debug_view;

@@ -8,9 +8,10 @@ layout(push_constant) uniform TerrainBackdropPushConstants {
     mat4 view_projection;
     vec4 camera_position;
     vec4 render_options;
+    vec4 material_options;
 } pc;
 
-layout(set = 2, binding = 0) uniform sampler2D backdrop_detail_texture;
+layout(set = 1, binding = 0) uniform sampler2D backdrop_detail_texture;
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_material_channels;
@@ -89,12 +90,17 @@ void main() {
 
     vec3 triplanar_weight = pow(abs(classification_normal), vec3(4.0));
     triplanar_weight /= max(dot(triplanar_weight, vec3(1.0)), 0.0001);
-    vec4 detail_x = texture(backdrop_detail_texture,
-                            frag_world_position.yz / backdrop_detail_period_m);
-    vec4 detail_y = texture(backdrop_detail_texture,
-                            frag_world_position.xz / backdrop_detail_period_m);
-    vec4 detail_z = texture(backdrop_detail_texture,
-                            frag_world_position.xy / backdrop_detail_period_m);
+    vec4 detail_x = vec4(0.5);
+    vec4 detail_y = vec4(0.5);
+    vec4 detail_z = vec4(0.5);
+    if (pc.material_options.x > 0.5) {
+        detail_x = texture(backdrop_detail_texture,
+                           frag_world_position.yz / backdrop_detail_period_m);
+        detail_y = texture(backdrop_detail_texture,
+                           frag_world_position.xz / backdrop_detail_period_m);
+        detail_z = texture(backdrop_detail_texture,
+                           frag_world_position.xy / backdrop_detail_period_m);
+    }
     vec4 detail = detail_x * triplanar_weight.x + detail_y * triplanar_weight.y +
         detail_z * triplanar_weight.z;
     vec2 tangent_x = detail_x.rg * 2.0 - 1.0;

@@ -127,6 +127,10 @@ void test_orbit_controller_supports_configurable_pitch_limits() {
 
     controller.set_pitch_limits(-0.05F, 0.05F);
     require_close(controller.pitch(), -0.05F, "pitch should reclamp when limits shrink");
+    controller.set_pitch(0.025F);
+    require_close(controller.pitch(), 0.025F, "pitch should support direct UI positioning");
+    controller.set_pitch(1.0F);
+    require_close(controller.pitch(), 0.05F, "direct pitch should clamp to configured limits");
     controller.reset();
     require_close(controller.pitch(), 0.0F, "reset should return to zero inside pitch limits");
 }

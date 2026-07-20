@@ -626,7 +626,7 @@ void test_run_config_loads_json_config_file() {
     "preset": "mountain",
     "source_version": "v2",
     "render_path": "quality",
-    "surface_detail": "layered",
+    "surface_detail": "filtered-detail",
     "target_edge_px": 5.0,
     "weathering": "local",
     "weathering_strength": 0.65,
@@ -742,8 +742,9 @@ void test_run_config_loads_json_config_file() {
                 config.terrain.weathering_strength == 0.65F,
             "config file should set terrain v1 source controls");
     require(config.terrain.source_version == "v2" && config.terrain.render_path == "quality" &&
-                config.terrain.surface_detail == "layered" && config.terrain.target_edge_px == 5.0F,
-            "config file should set terrain quality detail controls");
+                config.terrain.surface_detail == "filtered-detail" &&
+                config.terrain.target_edge_px == 5.0F,
+            "config file should set terrain material presentation");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
             "config file should set terrain recipe");
     require(config.terrain.study_field_path == "/tmp/terrain-diffusion/seed-9012",
@@ -1740,7 +1741,7 @@ void test_run_config_parses_terrain_controls() {
     std::string render_path_flag = "--terrain-render-path";
     std::string render_path_value = "quality";
     std::string surface_detail_flag = "--terrain-surface-detail";
-    std::string surface_detail_value = "layered";
+    std::string surface_detail_value = "filtered-detail";
     std::string target_edge_flag = "--terrain-target-edge-px";
     std::string target_edge_value = "5.0";
     std::string weathering_flag = "--terrain-weathering";
@@ -1863,8 +1864,9 @@ void test_run_config_parses_terrain_controls() {
                 config.terrain.weathering_strength == 0.7F,
             "run config should parse terrain v1 source controls");
     require(config.terrain.source_version == "v2.1" && config.terrain.render_path == "quality" &&
-                config.terrain.surface_detail == "layered" && config.terrain.target_edge_px == 5.0F,
-            "run config should parse terrain quality detail controls");
+                config.terrain.surface_detail == "filtered-detail" &&
+                config.terrain.target_edge_px == 5.0F,
+            "run config should parse terrain material presentation");
     require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");
     require(config.terrain.sea_level == -3.25F, "run config should parse terrain sea level");
     require(config.terrain.land_extent == 0.64F, "run config should parse terrain land extent");

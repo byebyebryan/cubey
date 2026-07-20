@@ -9,6 +9,17 @@
 
 namespace cubey::projects::terrain {
 
+struct TerrainRasterProvenance {
+    std::filesystem::path manifest_path{};
+    std::string generator{};
+    std::string code_revision{};
+    std::string model_id{};
+    std::string model_revision{};
+    std::string purpose{};
+    std::string selection{};
+    std::string elevation_sha256{};
+};
+
 class TerrainRasterHeightSource final : public TerrainHeightSource {
   public:
     explicit TerrainRasterHeightSource(const std::filesystem::path& field_path);
@@ -20,6 +31,7 @@ class TerrainRasterHeightSource final : public TerrainHeightSource {
     [[nodiscard]] std::uint32_t width() const noexcept;
     [[nodiscard]] std::uint32_t height() const noexcept;
     [[nodiscard]] float sample_spacing_m() const noexcept;
+    [[nodiscard]] const TerrainRasterProvenance& provenance() const noexcept;
 
   private:
     struct Level {
@@ -38,6 +50,7 @@ class TerrainRasterHeightSource final : public TerrainHeightSource {
     float height_offset_m_ = 0.0F;
     float height_scale_ = 1.0F;
     float relief_scale_m_ = 1.0F;
+    TerrainRasterProvenance provenance_{};
     std::vector<Level> levels_{};
 };
 

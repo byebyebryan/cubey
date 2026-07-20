@@ -82,6 +82,7 @@ constexpr std::uint32_t kMaximumDimension = 16'384U;
 
 TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path& field_path) {
     const std::filesystem::path manifest = manifest_path(field_path);
+    provenance_.manifest_path = std::filesystem::absolute(manifest).lexically_normal();
     const nlohmann::json document = read_manifest(manifest);
     try {
         if (document.at("schema").get<std::string_view>() != kSchema) {
@@ -89,6 +90,14 @@ TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path
         }
         const nlohmann::json& source = document.at("source");
         source_id_ = source.at("id").get<std::string>();
+        provenance_.generator = source.value("generator", source_id_);
+        provenance_.code_revision = source.value("code_revision", std::string{});
+        provenance_.model_id = source.value("model_id", std::string{});
+        provenance_.model_revision = source.value("model_revision", std::string{});
+        if (const auto provenance = document.find("provenance"); provenance != document.end()) {
+            provenance_.purpose = provenance->value("purpose", std::string{});
+            provenance_.selection = provenance->value("selection", std::string{});
+        }
         seed_ = document.at("seed").get<std::uint64_t>();
         const nlohmann::json& grid = document.at("grid");
         const std::uint32_t width = grid.at("width").get<std::uint32_t>();
@@ -111,6 +120,7 @@ TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path
         }
 
         const nlohmann::json& elevation = document.at("files").at("elevation");
+        provenance_.elevation_sha256 = elevation.at("sha256").get<std::string>();
         if (elevation.at("dtype").get<std::string_view>() != "float32-le" ||
             elevation.at("layout").get<std::string_view>() != "row-major-zx" ||
             elevation.at("shape") != nlohmann::json::array({height, width}) ||
@@ -244,6 +254,10 @@ std::uint32_t TerrainRasterHeightSource::height() const noexcept {
 
 float TerrainRasterHeightSource::sample_spacing_m() const noexcept {
     return levels_.front().spacing_m;
+}
+
+const TerrainRasterProvenance& TerrainRasterHeightSource::provenance() const noexcept {
+    return provenance_;
 }
 
 } // namespace cubey::projects::terrain

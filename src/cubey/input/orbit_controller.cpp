@@ -80,6 +80,10 @@ void OrbitController::set_distance(float distance) {
     distance_ = std::clamp(distance, config_.min_distance, config_.max_distance);
 }
 
+void OrbitController::set_pitch(float pitch) {
+    pitch_ = std::clamp(pitch, config_.min_pitch, config_.max_pitch);
+}
+
 void OrbitController::update(double delta_seconds) {
     if (!paused_ && !dragging_) {
         yaw_ += auto_rotation_speed_ * static_cast<float>(delta_seconds);

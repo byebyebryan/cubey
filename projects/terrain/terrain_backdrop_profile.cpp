@@ -9,13 +9,6 @@
 
 namespace cubey::projects::terrain {
 
-TerrainRadialReliefParameters
-terrain_radial_backdrop_relief_parameters(const TerrainDirectionalPlacementPlan& placement) {
-    TerrainRadialReliefParameters parameters;
-    parameters.focus_xz = placement.source_focus_xz;
-    return parameters;
-}
-
 TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementPlan& placement,
     float vertical_scale, TerrainFocusedBackdropStageParameters parameters,

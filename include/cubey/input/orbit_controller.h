@@ -22,6 +22,7 @@ class OrbitController {
     void set_pitch_limits(float min_pitch, float max_pitch);
     void set_home_distance(float distance);
     void set_distance(float distance);
+    void set_pitch(float pitch);
 
     void update(double delta_seconds);
     void reset();

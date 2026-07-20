@@ -111,7 +111,7 @@ constexpr std::array<std::string_view, 3> kTerrainPresets{"mountain", "upland", 
 constexpr std::array<std::string_view, 4> kTerrainSourceVersions{"v1", "v2", "v2.1", "v3"};
 constexpr std::array<std::string_view, 3> kTerrainRenderPaths{"control", "quality", "backdrop"};
 constexpr std::array<std::string_view, 3> kTerrainBackdropMeshDensities{"low", "medium", "high"};
-constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"tile", "layered"};
+constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"flat", "filtered-detail"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
 constexpr std::array<std::string_view, 3> kTerrainBackdropProfiles{"radial-v1", "raster-v1",
@@ -478,7 +478,7 @@ constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
            enum_choices(kTerrainBackdropMeshDensities)),
     option(RunConfigOptionId::TerrainSurfaceDetail, "terrain.surface_detail",
            "--terrain-surface-detail", "Surface Detail", "Terrain",
-           "Terrain quality material detail path.", ConfigOptionType::Enum, no_range(),
+           "Terrain backdrop material presentation.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainSurfaceDetails)),
     option(RunConfigOptionId::TerrainTargetEdgePx, "terrain.target_edge_px",
            "--terrain-target-edge-px", "Target Edge Pixels", "Terrain",

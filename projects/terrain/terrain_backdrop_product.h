@@ -96,8 +96,4 @@ struct TerrainBackdropProduct {
 make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
                               const TerrainHeightSource& source);
 
-[[nodiscard]] TerrainBackdropProduct
-make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
-                              const TerrainSourceParameters& source, std::uint64_t seed = 0U);
-
 } // namespace cubey::projects::terrain
