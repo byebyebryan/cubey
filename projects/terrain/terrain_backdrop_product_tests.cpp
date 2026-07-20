@@ -281,6 +281,23 @@ void test_decimated_center_and_sectors_share_the_same_rendered_seam_edges() {
             "decimated center and sectors should render identical seam partitions");
 }
 
+void test_decimated_center_fan_reaches_the_first_retained_ring() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest request = product_request();
+    request.center_mode = TerrainBackdropCenterMode::Continuous;
+    request.render_stride = 3U;
+    const TerrainBackdropProduct product =
+        make_terrain_backdrop_product(request, source_for_seed(9012U));
+    const TerrainBackdropDensityProfile density = product.diagnostics.density;
+    const std::uint32_t angular_vertex_count = density.angular_intervals + 1U;
+    const std::uint32_t first_retained_ring =
+        1U + (request.render_stride - 1U) * angular_vertex_count;
+    const auto& render_indices = product.center->render_indices;
+    require(render_indices.size() >= 3U && render_indices[0] == 0U &&
+                render_indices[2] == first_retained_ring,
+            "decimated center fan should connect directly to its first rendered radial ring");
+}
+
 void test_seam_matched_center_sampling_matches_the_outer_radial_step() {
     using namespace cubey::projects::terrain;
     TerrainBackdropProductRequest request = product_request();
@@ -347,6 +364,7 @@ int main() {
         test_continuous_product_fills_the_center_and_preserves_the_outer_seam();
         test_uniform_center_sampling_redistributes_the_existing_budget();
         test_decimated_center_and_sectors_share_the_same_rendered_seam_edges();
+        test_decimated_center_fan_reaches_the_first_retained_ring();
         test_seam_matched_center_sampling_matches_the_outer_radial_step();
         test_center_sampling_does_not_change_cutout_or_default_split_products();
         std::cout << "terrain_backdrop_product_tests: ok\n";

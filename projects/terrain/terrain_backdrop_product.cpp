@@ -317,9 +317,11 @@ make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector
         strided_vertices(radial_render_stride, radial_interval_count, radial_render_stride);
     mesh.render_indices.reserve((render_angles.size() - 1U) *
                                 (1U + (render_radii.size() - 1U) * 6U));
+    const std::uint32_t first_render_ring = 1U + (render_radii.front() - 1U) * angular_vertex_count;
     for (std::size_t angular = 0U; angular + 1U < render_angles.size(); ++angular) {
-        mesh.render_indices.insert(mesh.render_indices.end(), {0U, 1U + render_angles[angular + 1U],
-                                                               1U + render_angles[angular]});
+        mesh.render_indices.insert(mesh.render_indices.end(),
+                                   {0U, first_render_ring + render_angles[angular + 1U],
+                                    first_render_ring + render_angles[angular]});
     }
     for (std::size_t radial = 0U; radial + 1U < render_radii.size(); ++radial) {
         const std::uint32_t inner = 1U + (render_radii[radial] - 1U) * angular_vertex_count;
