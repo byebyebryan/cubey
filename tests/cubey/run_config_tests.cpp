@@ -446,6 +446,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.source_version",
         "terrain.render_path",
         "terrain.backdrop_mesh_density",
+        "terrain.render_stride",
         "terrain.surface_detail",
         "terrain.shadows",
         "terrain.target_edge_px",
@@ -633,6 +634,7 @@ void test_run_config_loads_json_config_file() {
     "preset": "mountain",
     "source_version": "v2",
     "render_path": "quality",
+    "render_stride": 1,
     "surface_detail": "filtered-detail",
     "shadows": false,
     "target_edge_px": 5.0,
@@ -753,6 +755,7 @@ void test_run_config_loads_json_config_file() {
                 config.terrain.weathering_strength == 0.65F,
             "config file should set terrain v1 source controls");
     require(config.terrain.source_version == "v2" && config.terrain.render_path == "quality" &&
+                config.terrain.render_stride == 1U &&
                 config.terrain.surface_detail == "filtered-detail" &&
                 config.terrain.shadows == 0 &&
                 config.terrain.target_edge_px == 5.0F,
@@ -1754,6 +1757,8 @@ void test_run_config_parses_terrain_controls() {
     std::string source_version_value = "v2.1";
     std::string render_path_flag = "--terrain-render-path";
     std::string render_path_value = "quality";
+    std::string render_stride_flag = "--terrain-render-stride";
+    std::string render_stride_value = "1";
     std::string surface_detail_flag = "--terrain-surface-detail";
     std::string surface_detail_value = "filtered-detail";
     std::string shadows_flag = "--no-terrain-shadows";
@@ -1814,7 +1819,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 69> argv{program.data(),
+    std::array<char*, 71> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1823,6 +1828,8 @@ void test_run_config_parses_terrain_controls() {
                                source_version_value.data(),
                                render_path_flag.data(),
                                render_path_value.data(),
+                               render_stride_flag.data(),
+                               render_stride_value.data(),
                                surface_detail_flag.data(),
                                surface_detail_value.data(),
                                shadows_flag.data(),
@@ -1892,6 +1899,7 @@ void test_run_config_parses_terrain_controls() {
                 config.terrain.weathering_strength == 0.7F,
             "run config should parse terrain v1 source controls");
     require(config.terrain.source_version == "v2.1" && config.terrain.render_path == "quality" &&
+                config.terrain.render_stride == 1U &&
                 config.terrain.surface_detail == "filtered-detail" &&
                 config.terrain.shadows == 0 &&
                 config.terrain.target_edge_px == 5.0F,
@@ -1939,6 +1947,16 @@ void test_run_config_parses_terrain_controls() {
         cubey::parse_run_config(static_cast<int>(enabled_argv.size()), enabled_argv.data());
     require(enabled_config.terrain.water_surface == 1,
             "run config should parse enabled terrain water surface");
+
+    std::string invalid_stride_value = "4";
+    std::array<char*, 3> invalid_stride_argv{
+        program.data(), render_stride_flag.data(), invalid_stride_value.data()};
+    require_throws(
+        [&invalid_stride_argv] {
+            cubey::parse_run_config(static_cast<int>(invalid_stride_argv.size()),
+                                    invalid_stride_argv.data());
+        },
+        "run config should reject unsupported terrain render stride");
 }
 
 void test_run_config_rejects_invalid_ocean_controls() {

@@ -175,6 +175,9 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
          config.initial_elevation_radians.value() > maximum_elevation)) {
         throw std::runtime_error("terrain orbit elevation must be within [0, 30] degrees");
     }
+    if (config.render_stride < 1U || config.render_stride > 3U) {
+        throw std::runtime_error("terrain render stride must be 1, 2, or 3");
+    }
 }
 
 TerrainRuntimeConfig
@@ -216,6 +219,9 @@ terrain_runtime_config_from_run_config(const RunConfig& config,
     if (cubey::run_config_float_is_set(config.terrain.backdrop_elevation_degrees)) {
         result.initial_elevation_radians =
             config.terrain.backdrop_elevation_degrees * degrees_to_radians;
+    }
+    if (config.terrain.render_stride != 0U) {
+        result.render_stride = config.terrain.render_stride;
     }
     validate_terrain_runtime_config(result);
     return result;

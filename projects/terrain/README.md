@@ -101,6 +101,12 @@ ambient-visibility material-albedo material-normal material-roughness
 sun-visibility projected-edge stage-ownership
 ```
 
+`--terrain-render-stride 1|2|3` is a reference-only startup diagnostic. It
+rebuilds the same cached source product with a different fixed topology so
+captures can distinguish source-shape defects from draw-mesh faceting. The
+product default remains stride 3; this option is not adaptive LOD and is not an
+interactive quality setting.
+
 Retired source versions, profiles, weathering, LOD, tessellation, and local
 terrain camera modes are rejected by the product app.
 

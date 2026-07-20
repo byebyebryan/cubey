@@ -106,6 +106,11 @@ mesh:
 - exact shared samples at sector and center boundaries;
 - CPU frustum and azimuth culling before draw submission.
 
+A reference-only startup diagnostic can rebuild this same product at render
+stride 1, 2, or 3 for matched topology captures. It does not change source
+sampling, add runtime selection, or constitute an LOD contract; stride 3
+remains the product default.
+
 The cached mesh avoids per-frame source evaluation, tessellation, clipmap
 updates, and LOD planning. Startup currently includes source loading, mip
 construction, placement, sampling, normal/material classification, and GPU mesh

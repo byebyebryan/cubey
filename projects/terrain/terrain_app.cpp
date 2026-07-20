@@ -199,14 +199,15 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
 }
 
 [[nodiscard]] TerrainBackdropProduct make_product(const TerrainRasterHeightSource& source,
-                                                  const TerrainBackdropPlacementPlan& placement) {
+                                                  const TerrainBackdropPlacementPlan& placement,
+                                                  std::uint32_t render_stride) {
     return make_terrain_backdrop_product(
         {
             .source_focus_xz = placement.stage.source_focus_xz,
             .density = TerrainBackdropMeshDensity::High,
             .center_mode = TerrainBackdropCenterMode::Continuous,
             .center_sampling = TerrainBackdropCenterSampling::SeamMatched,
-            .render_stride = 3U,
+            .render_stride = render_stride,
             .consumer_radius_m = placement.stage.stage_radius_m,
             .visible_inner_radius_m = 3'200.0F,
             .outer_radius_m = 16'384.0F,
@@ -349,7 +350,7 @@ class TerrainApp {
               run_config_, std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD))),
           source_(require_heightfield(runtime_config_.heightfield_path)),
           placement_stage_(make_placement_stage(source_, runtime_config_)),
-          product_(make_product(source_, placement_stage_)),
+          product_(make_product(source_, placement_stage_, runtime_config_.render_stride)),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -646,6 +647,7 @@ class TerrainApp {
         }
 
         ImGui::SeparatorText("Renderer");
+        ImGui::Text("Render stride: %u", product_.request.render_stride);
         ImGui::Text("Submitted sectors: %u", latest_draw_plan_.submitted_sector_count);
         ImGui::Text("Submitted triangles: %u", latest_draw_plan_.submitted_triangle_count);
         ImGui::Text("Cached source samples: %llu",
@@ -719,7 +721,8 @@ class TerrainApp {
                     build.mode = config.placement;
                     build.sample_index = config.placement_index;
                     build.placement = make_placement_stage(source_, config);
-                    build.product = make_product(source_, build.placement);
+                    build.product =
+                        make_product(source_, build.placement, config.render_stride);
                     return build;
                 });
         } catch (const std::exception& error) {
@@ -1008,7 +1011,8 @@ class TerrainApp {
             frame_index, "terrain.backdrop", "content_hash_high32",
             static_cast<double>(static_cast<std::uint32_t>(product_.diagnostics.content_hash >>
                                                            32U)));
-        recorder->record_metric(frame_index, "terrain.backdrop", "render_stride", 3.0);
+        recorder->record_metric(frame_index, "terrain.backdrop", "render_stride",
+                                static_cast<double>(product_.request.render_stride));
         recorder->record_metric(frame_index, "terrain.backdrop", "outer_radius_m",
                                 product_.request.outer_radius_m);
         recorder->record_metric(frame_index, "terrain.placement", "mode",

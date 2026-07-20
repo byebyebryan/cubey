@@ -150,7 +150,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 285> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -478,6 +478,11 @@ constexpr std::array<ConfigOptionDescriptor, 284> kRunConfigOptions{
            "--terrain-backdrop-mesh-density", "Backdrop Mesh Density", "Terrain/Backdrop Stage",
            "Cached fixed-focus terrain backdrop mesh density.", ConfigOptionType::Enum, no_range(),
            enum_choices(kTerrainBackdropMeshDensities)),
+    option(RunConfigOptionId::TerrainRenderStride, "terrain.render_stride",
+           "--terrain-render-stride", "Render Stride", "Terrain/Reference Diagnostics",
+           "Cached topology stride used for terrain geometry comparison captures.",
+           ConfigOptionType::UInt32, bounded_range(1.0, 3.0), {}, {},
+           ConfigOptionStability::Reference),
     option(RunConfigOptionId::TerrainSurfaceDetail, "terrain.surface_detail",
            "--terrain-surface-detail", "Surface Detail", "Terrain",
            "Terrain backdrop material presentation.", ConfigOptionType::Enum, no_range(),
@@ -1546,6 +1551,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.backdrop_mesh_density.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.backdrop_mesh_density);
+    case RunConfigOptionId::TerrainRenderStride:
+        return optional_uint32(config.terrain.render_stride);
     case RunConfigOptionId::TerrainSurfaceDetail:
         return config.terrain.surface_detail.empty()
                    ? nlohmann::json(nullptr)
@@ -2164,6 +2171,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<std::string>("preset", options.preset);
     adapter.writeField<std::string>("source_version", options.source_version);
     adapter.writeField<std::string>("render_path", options.render_path);
+    adapter.writeField<std::uint32_t>("render_stride", options.render_stride);
     adapter.writeField<std::string>("surface_detail", options.surface_detail);
     adapter.writeField<int>("shadows", options.shadows);
     adapter.writeField<float>("target_edge_px", options.target_edge_px);
@@ -2199,6 +2207,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("preset", options.preset);
     adapter.readField<std::string>("source_version", options.source_version);
     adapter.readField<std::string>("render_path", options.render_path);
+    adapter.readField<std::uint32_t>("render_stride", options.render_stride);
     adapter.readField<std::string>("surface_detail", options.surface_detail);
     adapter.readField<int>("shadows", options.shadows);
     adapter.readField<float>("target_edge_px", options.target_edge_px);
@@ -2917,6 +2926,11 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainBackdropMeshDensity:
         config.terrain.backdrop_mesh_density = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainRenderStride:
+        config.terrain.render_stride =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.terrain.render_stride, option);
         break;
     case RunConfigOptionId::TerrainSurfaceDetail:
         config.terrain.surface_detail = std::string(value);

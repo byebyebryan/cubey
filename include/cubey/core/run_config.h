@@ -191,6 +191,7 @@ struct RunConfig {
         std::string source_version{};
         std::string render_path{};
         std::string backdrop_mesh_density{};
+        std::uint32_t render_stride = 0U;
         std::string surface_detail{};
         int shadows = -1;
         float target_edge_px = kRunConfigUnsetFloat;

@@ -42,6 +42,7 @@ struct TerrainRuntimeConfig {
     std::optional<float> initial_azimuth_radians{};
     std::optional<float> initial_orbit_radius_m{};
     std::optional<float> initial_elevation_radians{};
+    std::uint32_t render_stride = 3U;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainMaterialMode material = TerrainMaterialMode::FilteredDetail;
     bool shadows = true;
