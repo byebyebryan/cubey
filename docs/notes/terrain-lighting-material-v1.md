@@ -2,7 +2,7 @@
 
 Date: 2026-07-20
 
-Status: implementation candidate; keep isolated until visual review.
+Status: mechanically complete candidate; keep isolated until visual acceptance.
 
 ## Goal
 
@@ -126,3 +126,33 @@ Required mechanical validation includes focused shadow/config tests, default
 and terrain-studies builds/tests, a headless PNG, one-frame Wayland smoke,
 shader lint, `git diff --check`, and a clean candidate branch. The branch stays
 unmerged until the generated evidence receives visual review.
+
+## Candidate Result
+
+The retained review pack was rendered from runtime revision `768cd17d` at
+`1600 x 900`. It preserves the frozen elevation hash, product hash, `607,200`
+render triangles, `2,657,280` source samples, and `5,592,404` material bytes.
+The `1024 x 1024` shadow map draws `540,672` outer-backdrop triangles per
+refresh. A no-shadow flat control is pixel-identical to the accepted product-v1
+flat frame (`0` differing pixels by ImageMagick AE).
+
+| Lane | Atmosphere | Shadow | Terrain | Post | Combined |
+|---|---:|---:|---:|---:|---:|
+| shadow off, flat | 0.410 ms | 0.000 ms | 0.440 ms | 0.014 ms | 0.864 ms |
+| shadow on, flat | 0.410 ms | 0.000 ms | 0.445 ms | 0.014 ms | 0.869 ms |
+| shadow on, filtered | 0.411 ms | 0.000 ms | 0.465 ms | 0.016 ms | 0.893 ms |
+| forced shadow update | 0.401 ms | 0.047 ms | 0.437 ms | 0.010 ms | 0.895 ms |
+
+The candidate is `0.029 ms` above the matched shadow-off flat control, stays
+below the `1.10 ms` combined gate, and keeps a forced refresh below the
+`0.50 ms` gate. An earlier forced lane was discarded after `nvidia-smi pmon`
+showed an unrelated `llama-server` consuming more than 80 percent of the GPU;
+the capture tool now retries a budget miss when concurrent compute is present.
+
+Visual review of the contact sheets found no radial stage bands, sector seams,
+camera-relative swimming, periodic material tiles, or visible shadow-map
+boundary. Neutral-light shadowing remains restrained; raking light adds the
+clearest mountain separation. Material albedo is intentionally quiet and its
+normal diagnostic is substantially more active than the bounded final surface.
+The candidate remains a far-field treatment: uneven mountain coverage by
+heading, source silhouettes, and close-range fidelity are not solved here.

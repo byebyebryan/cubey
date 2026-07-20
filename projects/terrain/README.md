@@ -23,6 +23,8 @@ The active path is fixed:
 - continuous seam-matched center, 16.384 km outer radius, and render stride 3;
 - cullable static sectors plus an optional foreground review sphere;
 - flat and filtered procedural-detail material presentations;
+- cached directional shadows from the outer backdrop sectors, with the
+  continuous inner stage retained as a receiver only;
 - shared physical atmosphere, environment lighting, and HDR post;
 - height, slope, material, normal, edge, and ownership diagnostics.
 
@@ -62,7 +64,8 @@ cmake --build --preset dev --target cubey_project_terrain
 The GUI exposes source provenance and dimensions, runtime placement mode and
 raw-sample index, placement metrics, orbit radius/elevation, foreground height
 and reset, foreground-sphere visibility, flat/detail presentation, supported
-diagnostics, atmosphere controls, submitted geometry, and GPU timings.
+diagnostics, directional-shadow state, atmosphere controls, submitted geometry,
+and GPU timings.
 
 Useful startup overrides:
 
@@ -122,6 +125,17 @@ projects/terrain/capture_placement_control_review.sh
 That separate pack compares selected placement, the raw source center, and raw
 sample indexes 0-2 at matched headings and foreground heights. It also records
 the exact placement metrics used by the review.
+
+Generate the isolated lighting and material candidate pack with:
+
+```sh
+projects/terrain/capture_lighting_material_review.sh
+```
+
+It writes `outputs/terrain/lighting-material-v1` with matched shadow controls,
+four material headings, diagnostics, camera controls, provenance, and steady
+plus forced-update GPU profiles. On NVIDIA hosts, a missed timing gate is
+retried when `nvidia-smi pmon` reports concurrent compute work.
 
 ## Tests
 
