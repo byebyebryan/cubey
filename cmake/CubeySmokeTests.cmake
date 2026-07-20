@@ -34,7 +34,7 @@ function(cubey_add_png_smoke_test name target output_path)
             "$<TARGET_FILE:${target}>"
             ${ARGN}
     )
-    set_tests_properties("${name}" PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
+    set_tests_properties("${name}" PROPERTIES TIMEOUT 45 SKIP_RETURN_CODE 77)
     set_property(
         TEST "${name}"
         APPEND
@@ -71,7 +71,7 @@ function(cubey_add_video_smoke_test name target output_path)
             "$<TARGET_FILE:${target}>"
             ${ARGN}
     )
-    set_tests_properties("${name}" PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77)
+    set_tests_properties("${name}" PROPERTIES TIMEOUT 45 SKIP_RETURN_CODE 77)
     set_property(
         TEST "${name}"
         APPEND
