@@ -67,10 +67,18 @@ clearance-qualified reference height to local zero. The review app may move the
 foreground and orbit target below that reference without rebuilding or moving
 the terrain; low views intentionally do not retain the clearance guarantee.
 
+The product also exposes startup-only `selected`, `raw-center`, and indexed
+`raw-sample` controls. Raw modes choose one coverage-safe coordinate without
+scoring, retry, or rejection and retain the same directional metrics for
+comparison. They are diagnostics, not alternate product defaults. Placement
+cannot change live because the cached mesh is sampled and uploaded around the
+chosen coordinate during setup.
+
 The V1 camera contract is:
 
-- foreground and orbit focus 100 m above the selected terrain center by
-  default, adjustable from 2-1000 m on a logarithmic review slider;
+- foreground and orbit focus 100 m above the placed terrain center by default,
+  selectable at startup and adjustable from 2-1000 m on a logarithmic review
+  slider;
 - unrestricted yaw;
 - orbit radius from 50 m through 250 m;
 - elevation from 0 through 30 degrees;
@@ -132,6 +140,10 @@ The product keeps diagnostics that directly inspect its supported contracts:
 - projected triangle span;
 - stage ownership boundary.
 
+The review UI and profile output also publish placement mode/index, source
+coordinate, directional contract and score, local relief, p95 slope, mountain
+and open arcs, and baked clearance.
+
 Retired procedural source bands, weathering, tessellation factors, clipmap LOD,
 vegetation, and shadow placeholders are not product diagnostics.
 
@@ -164,7 +176,9 @@ consumer.
 Terrain V1 review includes the canonical source hash and provenance, four
 headings, camera-envelope endpoints, clean and foreground composition, flat and
 filtered-detail comparison, neutral and raking lighting, and the retained
-diagnostics. The shape and placement contract must remain identical across
+diagnostics. A separate placement-control pack compares the selected result
+against raw center and raw indexed locations at matched headings and 100/500 m
+focus heights. The shape and placement contract must remain identical across
 material modes.
 
 The current macro shape is accepted for far-field use. Material fidelity and

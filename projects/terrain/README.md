@@ -109,6 +109,16 @@ ImageMagick is available. It covers clean and foreground views, flat/detail,
 four headings, camera-envelope endpoints, neutral/raking light, and the
 supported source/material/topology diagnostics.
 
+Generate the selected-versus-unfiltered placement control with:
+
+```sh
+projects/terrain/capture_placement_control_review.sh
+```
+
+That separate pack compares selected placement, the raw source center, and raw
+sample indexes 0-2 at matched headings and foreground heights. It also records
+the exact placement metrics used by the review.
+
 ## Tests
 
 ```sh

@@ -29,6 +29,13 @@ Post-promotion review makes 100 m the default foreground height and exposes a
 2-1000 m logarithmic UI range. The 500 m reference remains available; lower
 heights are deliberate stress views rather than a new close-terrain claim.
 
+A later placement-control checkpoint retains selected placement as the default
+and adds startup-only raw center and deterministic indexed raw samples. These
+controls never modify the source or retry failed composition. The canonical
+comparison shows the selected low-relief focus is materially more stable across
+unrestricted yaw, so no synthetic clearing or prepared-stage transition is
+promoted.
+
 ## Asset Boundary
 
 Generated terrain data and model weights remain outside Git. A deliberate
@@ -73,6 +80,8 @@ The windowed terrain app is a product review surface rather than a capture-only
 harness. Its control panel exposes:
 
 - source identity, dimensions, spacing, and provenance;
+- read-only placement mode, source coordinate, score, relief, slope, arcs, and
+  camera-clearance evidence;
 - orbit radius, elevation, reset, and foreground-sphere visibility;
 - flat versus filtered-detail material presentation;
 - raster-supported diagnostic views;

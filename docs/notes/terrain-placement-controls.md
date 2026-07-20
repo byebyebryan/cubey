@@ -2,7 +2,7 @@
 
 Date: 2026-07-19
 
-Status: planned product-control and comparison batch.
+Status: implemented and accepted product-control checkpoint.
 
 ## Context
 
@@ -12,14 +12,14 @@ mask. The runtime searches the source for a coordinate with low local relief, a
 coherent mountain arc, and an open arc, then bakes the same source around that
 coordinate into the cached backdrop mesh.
 
-That selected coordinate is useful for product composition, but it also makes
-it difficult to tell how much of the result comes from the source and how much
-comes from placement. The next checkpoint therefore adds unfiltered placement
-controls before considering any synthetic source shaping.
+That selected coordinate is useful for product composition, but it previously
+made it difficult to tell how much of the result came from the source and how
+much came from placement. This checkpoint adds unfiltered placement controls
+before considering any synthetic source shaping.
 
 ## Placement Modes
 
-The runtime will expose three startup-only modes:
+The runtime exposes three startup-only modes:
 
 - `selected`: retain the current bounded directional search and require its
   composition contract;
@@ -52,7 +52,7 @@ Raw modes default to source-space heading zero. The selected mode retains its
 current showcase heading, while an explicit backdrop azimuth overrides either
 behavior. Controlled captures always pass explicit matched headings.
 
-Foreground height becomes a reproducible startup option matching the existing
+Foreground height is a reproducible startup option matching the existing
 2-1000 m review slider. The 100 m default remains a deliberate stress view; the
 500 m baked reference remains the clearance-qualified comparison.
 
@@ -77,6 +77,76 @@ failed composition, and preserve the same geometry topology, material,
 atmosphere, camera, and per-frame cost as the selected product.
 
 A focused review pack compares selected, raw center, and three raw samples at
-four matched headings, followed by 100 m and 500 m foreground checks. The
-result decides whether natural selection is sufficient or whether a separate
-prepared-stage study should be planned.
+four matched headings, followed by 100 m and 500 m foreground checks.
+
+## Implementation
+
+The public startup controls are:
+
+- `terrain.placement` / `--terrain-placement`;
+- `terrain.placement_index` / `--terrain-placement-index`;
+- `terrain.foreground_height_m` / `--terrain-foreground-height`.
+
+The raster source publishes its exact world-space bounds. Raw samples use a
+fixed indexed pseudo-random sequence over source sample coordinates inset by
+the complete `16.384 km` render radius and one gradient step. The sequence is
+independent of the heightfield seed. Raw locations are evaluated once and are
+never retried when relief, slope, or directional composition fails.
+
+The focused-stage camera contract is separate from the directional placement
+contract. Selected mode requires both; raw modes require source coverage and
+baked camera clearance while retaining a failed directional result for UI and
+profile reporting. Placement remains immutable after startup and the GUI shows
+its mode, coordinate, score, relief, slope, arcs, and clearance as read-only
+evidence.
+
+## Review Evidence
+
+The canonical review used runtime revision `cb882355`, the seed-0 2048 x 2048
+field with elevation SHA-256
+`27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df`, and
+the 30 captures under `outputs/terrain/placement-control-v1`.
+
+| Placement | Focus x/z (m) | Directional | Score | Local relief (m) | P95 slope | Baked clearance (m) |
+|---|---:|---:|---:|---:|---:|---:|
+| selected | 8500 / -2500 | pass | 5.571 | 29.75 | 0.081 | 490.76 |
+| raw center | 0 / 0 | fail | -1.622 | 298.05 | 0.910 | 385.20 |
+| raw sample 0 | 3105 / -13725 | fail | -0.997 | 189.85 | 0.555 | 473.40 |
+| raw sample 1 | 135 / -3585 | fail | -3.083 | 285.72 | 0.864 | 421.63 |
+| raw sample 2 | 9075 / 8025 | fail | -0.333 | 145.75 | 0.527 | 416.96 |
+
+The four-heading sheet makes the placement benefit unambiguous. Selected mode
+retains a quiet continuous foreground at every heading while preserving a
+useful mountain arc in some directions and open terrain in others. Raw center
+and raw sample 1 place large slopes directly into the foreground; samples 0 and
+2 occasionally compose well but are not stable across yaw. The 100 m versus
+500 m sheet shows that raising the focus improves clearance but does not turn a
+poor raw location into a consistently useful stage.
+
+The quiet selected foreground has no circular boundary in either sheet. Every
+lane samples the unchanged source, so the comparison directly rejects the idea
+that the accepted composition depends on hidden flattening or a radial clear.
+
+Two 120-frame, 1600 x 900 video profiles retained 90 post-warmup frames:
+
+| Placement | Terrain surface p50 | Atmosphere + terrain + post p50 | Product triangles | Source samples |
+|---|---:|---:|---:|---:|
+| selected | 0.432 ms | 0.855 ms | 607200 | 2657280 |
+| raw sample 0 | 0.425 ms | 0.846 ms | 607200 | 2657280 |
+
+The small timing difference is noise-level variation from the same renderer.
+Placement changes startup source coordinates, not steady-state topology or
+material work.
+
+## Verdict
+
+Keep `selected` as the V1 product default and retain raw center/sample as
+explicit diagnostics. Natural coordinate selection is sufficient for the
+current fixed-focus far-backdrop contract. Do not add a prepared stage,
+clearing radius, transition band, or shaping strength now.
+
+Synthetic preparation should be reconsidered only if a future consumer needs a
+larger owned foreground footprint, multiple source assets repeatedly fail the
+selection contract, or scene composition requires a guaranteed floor that
+cannot be supplied by placement. Material frequency and close-view source
+fidelity remain separate terrain-quality work rather than placement failures.
