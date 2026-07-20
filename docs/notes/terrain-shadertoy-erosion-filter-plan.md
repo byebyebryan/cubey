@@ -30,7 +30,7 @@ TerrainEngine references useful.
   and the advanced filter is MPL-2.0.
 - Port the terrain and erosion model, not the raymarch renderer, atmosphere,
   water, materials, keyboard state, or comparison animation.
-- Keep all formulas in `projects/terrain_ref`. Do not promote an experimental
+- Keep all formulas in `studies/terrain/reference`. Do not promote an experimental
   terrain process into `cubey::procedural`.
 - Use world meters for horizontal position, height, gradients, and erosion
   scale. The broad mountain wavelength should establish the gully scale.

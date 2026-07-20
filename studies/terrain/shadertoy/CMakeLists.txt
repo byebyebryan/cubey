@@ -22,14 +22,14 @@ set(
 )
 foreach(CUBEY_SHADERTOY_STUDY_SOURCE IN LISTS CUBEY_SHADERTOY_STUDY_SOURCES)
     if (NOT EXISTS "${CUBEY_SHADERTOY_STUDY_SOURCE}")
-        message(STATUS "Skipping terrain_shadertoy_ref: ${CUBEY_SHADERTOY_STUDY_SOURCE} was not found")
+        message(STATUS "Skipping terrain ShaderToy study: ${CUBEY_SHADERTOY_STUDY_SOURCE} was not found")
         return()
     endif()
 endforeach()
 
 cubey_add_app_target(
-    cubey_project_terrain_shadertoy_ref
-    OUTPUT_NAME terrain_shadertoy_ref
+    cubey_study_terrain_shadertoy
+    OUTPUT_NAME terrain_shadertoy
     SHADER_DEFINE CUBEY_TERRAIN_SHADERTOY_REF_SHADER_DIR
     SOURCES
         main.cpp
@@ -60,25 +60,25 @@ cubey_add_app_target(
 
 if (BUILD_TESTING)
     add_executable(
-        cubey_project_terrain_shadertoy_ref_tests
+        cubey_study_terrain_shadertoy_tests
         terrain_shadertoy_ref_camera.cpp
         terrain_shadertoy_ref_config.cpp
         terrain_shadertoy_ref_tests.cpp
     )
     target_include_directories(
-        cubey_project_terrain_shadertoy_ref_tests
+        cubey_study_terrain_shadertoy_tests
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
-        cubey_project_terrain_shadertoy_ref_tests
+        cubey_study_terrain_shadertoy_tests
         PRIVATE
             cubey::core
             cubey_project_warnings
     )
     add_test(
         NAME terrain_shadertoy_ref_tests
-        COMMAND cubey_project_terrain_shadertoy_ref_tests
+        COMMAND cubey_study_terrain_shadertoy_tests
     )
 
     set(
@@ -87,7 +87,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         terrain_shadertoy_ref_raymarch_writes_png
-        cubey_project_terrain_shadertoy_ref
+        cubey_study_terrain_shadertoy
         "${CUBEY_TERRAIN_SHADERTOY_REF_RAYMARCH_SMOKE_OUTPUT}"
         --headless
         --width
@@ -112,7 +112,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         terrain_shadertoy_ref_mesh_writes_png
-        cubey_project_terrain_shadertoy_ref
+        cubey_study_terrain_shadertoy
         "${CUBEY_TERRAIN_SHADERTOY_REF_MESH_SMOKE_OUTPUT}"
         --headless
         --width
@@ -143,7 +143,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         terrain_shadertoy_ref_height_writes_png
-        cubey_project_terrain_shadertoy_ref
+        cubey_study_terrain_shadertoy
         "${CUBEY_TERRAIN_SHADERTOY_REF_HEIGHT_SMOKE_OUTPUT}"
         --headless
         --width
@@ -174,7 +174,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         terrain_shadertoy_ref_envelope_writes_png
-        cubey_project_terrain_shadertoy_ref
+        cubey_study_terrain_shadertoy
         "${CUBEY_TERRAIN_SHADERTOY_REF_ENVELOPE_SMOKE_OUTPUT}"
         --headless
         --width
@@ -206,7 +206,7 @@ if (BUILD_TESTING)
         )
         cubey_add_png_smoke_test(
             terrain_shadertoy_ref_${CUBEY_TERRAIN_SHADERTOY_REF_STUDY_ID}_writes_png
-            cubey_project_terrain_shadertoy_ref
+            cubey_study_terrain_shadertoy
             "${CUBEY_TERRAIN_SHADERTOY_REF_STUDY_OUTPUT}"
             --headless
             --width
@@ -231,7 +231,7 @@ if (BUILD_TESTING)
             NAME terrain_shadertoy_ref_profile_writes_gpu_spans
             COMMAND
                 "${CMAKE_COMMAND}"
-                "-DAPP=$<TARGET_FILE:cubey_project_terrain_shadertoy_ref>"
+                "-DAPP=$<TARGET_FILE:cubey_study_terrain_shadertoy>"
                 "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/terrain-shadertoy-ref-profile.mp4"
                 "-DPROFILE=${CMAKE_CURRENT_BINARY_DIR}/terrain-shadertoy-ref-profile"
                 -P

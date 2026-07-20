@@ -13,6 +13,11 @@ option(CUBEY_ENABLE_CLANG_TIDY "Run clang-tidy during builds" OFF)
 option(CUBEY_BUILD_HOST "Build Cubey concrete host layer" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ${CUBEY_BUILD_HOST})
 option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ${CUBEY_BUILD_HOST})
+option(
+    CUBEY_BUILD_TERRAIN_STUDIES
+    "Build optional terrain reference and hydrology studies"
+    OFF
+)
 set(
     CUBEY_VIDEO_CAPTURE
     "AUTO"
@@ -243,6 +248,10 @@ if (CUBEY_BUILD_PROJECTS AND NOT CUBEY_BUILD_HOST)
     message(FATAL_ERROR "CUBEY_BUILD_PROJECTS requires CUBEY_BUILD_HOST")
 endif()
 
+if (CUBEY_BUILD_TERRAIN_STUDIES AND NOT CUBEY_BUILD_HOST)
+    message(FATAL_ERROR "CUBEY_BUILD_TERRAIN_STUDIES requires CUBEY_BUILD_HOST")
+endif()
+
 if (BUILD_TESTING AND NOT CUBEY_BUILD_HOST)
     message(FATAL_ERROR "BUILD_TESTING requires CUBEY_BUILD_HOST")
 endif()
@@ -351,9 +360,17 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
                 "${CMAKE_SOURCE_DIR}/projects/planet"
                 "${CMAKE_SOURCE_DIR}/projects/terrain"
                 "${CMAKE_SOURCE_DIR}/projects/procedural_terrain_legacy"
-                "${CMAKE_SOURCE_DIR}/projects/terrain_ref"
                 "${CMAKE_SOURCE_DIR}/projects/terrain_lab_legacy"
                 "${CMAKE_SOURCE_DIR}/projects/terrain_workbench_legacy"
+        )
+    endif()
+    if (CUBEY_BUILD_TERRAIN_STUDIES)
+        list(
+            APPEND
+            CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
+                "${CMAKE_SOURCE_DIR}/studies/terrain/reference"
+                "${CMAKE_SOURCE_DIR}/studies/terrain/shadertoy"
+                "${CMAKE_SOURCE_DIR}/studies/terrain/hydrology"
         )
     endif()
     add_test(
@@ -383,4 +400,7 @@ endif()
 
 if (CUBEY_BUILD_PROJECTS)
     add_subdirectory(projects)
+endif()
+if (CUBEY_BUILD_TERRAIN_STUDIES)
+    add_subdirectory(studies/terrain)
 endif()

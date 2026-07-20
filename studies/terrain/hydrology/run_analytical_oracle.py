@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
         "--generator",
         type=Path,
         default=Path(
-            "build/dev/projects/terrain_hydrology_lab/terrain_hydrology_generate"
+            "build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology_generate"
         ),
     )
     parser.add_argument(

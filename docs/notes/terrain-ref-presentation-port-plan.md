@@ -2,7 +2,7 @@
 
 Date: 2026-07-06
 
-`projects/terrain_ref` now has a clean TerrainEngine-inspired height source.
+`studies/terrain/reference` now has a clean TerrainEngine-inspired height source.
 The first presentation pass tried copied TerrainEngine material textures, but
 that is not the right default for Cubey: the images are not strong enough to
 justify a vendored asset path, and this repo generally benefits more from

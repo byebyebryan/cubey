@@ -48,7 +48,7 @@ This project does not own regional hydrology. The active pivot adds a
 project-local baked backdrop product; it does not promote a general terrain
 cache or streaming interface into engine foundation. The
 previous patch, exporter, routing, and analytical landscape code lives in
-`projects/terrain_hydrology_lab`.
+`studies/terrain/hydrology`.
 
 Build and test the source contract with:
 
@@ -153,7 +153,7 @@ The isolated source-model study compares clean-room mountain operator families
 through the same cached-backdrop renderer without changing the production
 source. Its contract and provenance boundaries are recorded in
 [`docs/notes/terrain-source-model-study.md`](../../docs/notes/terrain-source-model-study.md).
-`projects/terrain_ref` remains frozen and is not linked by the study.
+`studies/terrain/reference` remains frozen and is not linked by the study.
 The original study pack remains under `outputs/terrain/source-model-study-v1/`.
 The current script includes the corrected Mountains hierarchy candidate and
 writes fixed-range top-field, slope, clay, and common-material contact sheets

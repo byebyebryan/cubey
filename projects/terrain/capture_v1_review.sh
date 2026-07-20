@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP="${1:-./build/dev/projects/terrain/terrain}"
-REF_APP="${2:-./build/dev/projects/terrain_ref/terrain_ref}"
+REF_APP="${2:-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference}"
 OUT_DIR="${3:-outputs/terrain/v1-reboot}"
 REPORT_APP="${4:-./build/dev/projects/terrain/terrain_source_report}"
 

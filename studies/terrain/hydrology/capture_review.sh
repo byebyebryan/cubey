@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP="${1:-./build/dev/projects/terrain_hydrology_lab/terrain_hydrology_lab}"
-GENERATOR="${2:-./build/dev/projects/terrain_hydrology_lab/terrain_hydrology_generate}"
+APP="${1:-./build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology}"
+GENERATOR="${2:-./build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology_generate}"
 OUT_DIR="${3:-outputs/terrain_hydrology_lab/source-bakeoff-v1}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"

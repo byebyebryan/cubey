@@ -26,7 +26,7 @@ for traversal, tests, and future consumers. Start with mountain, upland, and
 plains parameter sets over one source model.
 
 Archive the existing `projects/terrain` wholesale as
-`projects/terrain_hydrology_lab`. This keeps the patch products, exports,
+`studies/terrain/hydrology`. This keeps the patch products, exports,
 regional routing, analytical oracle, and accumulated tests available without
 binding the new runtime to their contracts.
 

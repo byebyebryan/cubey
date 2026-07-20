@@ -23,7 +23,7 @@ The canonical region is `513x513` at `100 m` with a hidden 64-sample guard.
 The review command is:
 
 ```sh
-projects/terrain_hydrology_lab/capture_landscape_evolution_v1.sh
+studies/terrain/hydrology/capture_landscape_evolution_v1.sh
 ```
 
 Ignored evidence is written to

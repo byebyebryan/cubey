@@ -1,9 +1,9 @@
 cubey_add_app_target(
-    cubey_project_terrain_ref
-    OUTPUT_NAME terrain_ref
+    cubey_study_terrain_reference
+    OUTPUT_NAME terrain_reference
     SHADER_DEFINE CUBEY_TERRAIN_REF_SHADER_DIR
-    WINDOWED_SMOKE_TEST terrain_ref_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "terrain_ref: .*rendering terrain reference"
+    WINDOWED_SMOKE_TEST terrain_reference_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "terrain_reference: .*rendering terrain reference"
     SOURCES
         main.cpp
         shadertoy_biome_reference.cpp
@@ -26,7 +26,7 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
-    add_executable(cubey_project_terrain_ref_tests
+    add_executable(cubey_study_terrain_reference_tests
         terrain_engine_reference.cpp
         shadertoy_biome_reference.cpp
         shadertoy_erosion_reference.cpp
@@ -36,25 +36,25 @@ if (BUILD_TESTING)
         terrain_ref_tests.cpp
     )
     target_include_directories(
-        cubey_project_terrain_ref_tests
+        cubey_study_terrain_reference_tests
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
-        cubey_project_terrain_ref_tests
+        cubey_study_terrain_reference_tests
         PRIVATE
             cubey::core
             cubey::render
             cubey_project_warnings
     )
-    add_test(NAME terrain_ref_tests COMMAND cubey_project_terrain_ref_tests)
+    add_test(NAME terrain_ref_tests COMMAND cubey_study_terrain_reference_tests)
 
     set(CUBEY_TERRAIN_REF_HEADLESS_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-headless.png"
     )
     cubey_add_png_smoke_test(
         terrain_ref_headless_writes_png
-        cubey_project_terrain_ref
+        cubey_study_terrain_reference
         "${CUBEY_TERRAIN_REF_HEADLESS_OUTPUT}"
         --headless
         --width
@@ -76,7 +76,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         terrain_ref_erosion_headless_writes_png
-        cubey_project_terrain_ref
+        cubey_study_terrain_reference
         "${CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT}"
         --headless
         --width
@@ -105,7 +105,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         terrain_ref_erosion_generalization_headless_writes_png
-        cubey_project_terrain_ref
+        cubey_study_terrain_reference
         "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
         --headless
         --width
@@ -133,7 +133,7 @@ if (BUILD_TESTING)
 
     cubey_label_tests(
         reference
-        terrain_ref_reaches_glfw
+        terrain_reference_reaches_glfw
         terrain_ref_tests
         terrain_ref_headless_writes_png
         terrain_ref_headless_writes_png_stats

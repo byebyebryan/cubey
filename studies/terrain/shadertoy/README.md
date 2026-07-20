@@ -1,6 +1,6 @@
-# Terrain ShaderToy Reference
+# Terrain ShaderToy Study
 
-`terrain_shadertoy_ref` is an optional, local-only fidelity study. It compiles
+The ShaderToy terrain study is an optional, local-only fidelity tool. It compiles
 selected external ShaderToy terrain sources without copying them into Cubey,
 then transfers their height fields to one Cubey mesh and diagnostic harness for
 controlled comparison. Mountains also retains its original raymarch control.
@@ -8,8 +8,8 @@ controlled comparison. Mountains also retains its original raymarch control.
 Configure with the default sibling reference checkout:
 
 ```sh
-cmake --preset dev
-cmake --build --preset dev --target cubey_project_terrain_shadertoy_ref
+cmake --preset dev-terrain-studies
+cmake --build --preset dev-terrain-studies --target cubey_study_terrain_shadertoy
 ```
 
 Override the source directory with `-DCUBEY_SHADERTOY_REF_DIR=/path/to/ShaderToy`.
@@ -61,22 +61,22 @@ remain fixed.
 Generate the fixed comparison pack with:
 
 ```sh
-projects/terrain_shadertoy_ref/capture_mountains_fidelity.sh
+studies/terrain/shadertoy/capture_mountains_fidelity.sh
 ```
 
 Generate the arbitrary-view, simplification, and GPU timing pack with:
 
 ```sh
-projects/terrain_shadertoy_ref/capture_mountains_generalization.sh
+studies/terrain/shadertoy/capture_mountains_generalization.sh
 ```
 
 Generate the multi-source morphology pack with:
 
 ```sh
-projects/terrain_shadertoy_ref/capture_source_shape_studies.sh
+studies/terrain/shadertoy/capture_source_shape_studies.sh
 ```
 
 The design, licensing boundary, and acceptance criteria are recorded in
-[`docs/notes/terrain-shadertoy-mountains-fidelity.md`](../../docs/notes/terrain-shadertoy-mountains-fidelity.md).
+[`docs/notes/terrain-shadertoy-mountains-fidelity.md`](../../../docs/notes/terrain-shadertoy-mountains-fidelity.md).
 The multi-source scope and licensing boundary are recorded in
-[`docs/notes/terrain-shadertoy-source-shape-studies.md`](../../docs/notes/terrain-shadertoy-source-shape-studies.md).
+[`docs/notes/terrain-shadertoy-source-shape-studies.md`](../../../docs/notes/terrain-shadertoy-source-shape-studies.md).

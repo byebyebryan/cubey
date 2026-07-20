@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 STUDY_APP="${1:-${ROOT_DIR}/build/dev/projects/terrain/terrain_source_study}"
 REPORT_APP="${2:-${ROOT_DIR}/build/dev/projects/terrain/terrain_source_study_report}"
-REFERENCE_APP="${3:-${ROOT_DIR}/build/dev/projects/terrain_shadertoy_ref/terrain_shadertoy_ref}"
+REFERENCE_APP="${3:-${ROOT_DIR}/build/dev-terrain-studies/studies/terrain/shadertoy/terrain_shadertoy}"
 OUT_DIR="${4:-${ROOT_DIR}/outputs/terrain/mountains-source-decision-v2}"
 REFERENCE_SOURCE="${CUBEY_SHADERTOY_MOUNTAINS_SOURCE:-${ROOT_DIR}/../ref/ShaderToy/mountains.glsl}"
 TMP_DIR="${OUT_DIR}.tmp.$$"

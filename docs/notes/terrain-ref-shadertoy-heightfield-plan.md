@@ -3,7 +3,7 @@
 Date: 2026-07-06
 
 This note captures the first ShaderToy-inspired terrain reference slice in
-`projects/terrain_ref`. The goal is not to import a ShaderToy renderer. The goal
+`studies/terrain/reference`. The goal is not to import a ShaderToy renderer. The goal
 is to test whether a compact heightfield recipe with ShaderToy-style noise,
 warping, ridge shaping, and material response gives Cubey a better known-good
 mountain baseline than the previous process-heavy workbench experiments.

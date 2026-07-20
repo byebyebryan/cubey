@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP="${1:-${ROOT_DIR}/build/dev/projects/terrain_shadertoy_ref/terrain_shadertoy_ref}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+APP="${1:-${ROOT_DIR}/build/dev-terrain-studies/studies/terrain/shadertoy/terrain_shadertoy}"
 OUT_DIR="${2:-${ROOT_DIR}/outputs/terrain_shadertoy_ref/mountains-generalization-v1}"
 SOURCE="${CUBEY_SHADERTOY_MOUNTAINS_SOURCE:-${ROOT_DIR}/../ref/ShaderToy/mountains.glsl}"
 TMP_DIR="${OUT_DIR}.tmp.$$"
@@ -209,7 +209,7 @@ jq -n \
         },
         cubey_commit: $cubey_commit,
         executable: $app,
-        capture_script: "projects/terrain_shadertoy_ref/capture_mountains_generalization.sh",
+        capture_script: "studies/terrain/shadertoy/capture_mountains_generalization.sh",
         input_substitutions: {
             iChannel0: "deterministic generated RGBA8 hash texture",
             iChannel1: "deterministic generated RGBA8 hash texture",

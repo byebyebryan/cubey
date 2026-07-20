@@ -9,14 +9,14 @@ worth promoting. Its candidates isolated useful operators, but none reproduced
 the composition that makes the reference renders convincing. The next step is
 therefore a fidelity study rather than another generalized recipe.
 
-Add an optional `projects/terrain_shadertoy_ref` application with two paths:
+Add an optional `studies/terrain/shadertoy` application with two paths:
 
 - an unchanged external `mountains.glsl` raymarch wrapped for Cubey/Vulkan;
 - the same external height functions transferred to a dense Cubey mesh.
 
 This creates a direct control for separating terrain source, geometric sampling,
 fine normal evaluation, material, atmosphere, and camera composition. It does
-not change `projects/terrain`, and `projects/terrain_ref` remains frozen.
+not change `projects/terrain`, and `studies/terrain/reference` remains frozen.
 
 ## Source And License Boundary
 
@@ -111,7 +111,7 @@ cached backdrop and its sub-millisecond runtime budget.
 
 The fidelity result does not establish that Mountains survives arbitrary views
 or fits the production backdrop budget. Run a second, bounded study in
-`projects/terrain_shadertoy_ref`; do not change `projects/terrain` in this pass.
+`studies/terrain/shadertoy`; do not change `projects/terrain` in this pass.
 
 Use the probed source camera position, elevation, pitch, and roll as the control.
 Rotate its complete camera basis around world up in 45-degree increments while

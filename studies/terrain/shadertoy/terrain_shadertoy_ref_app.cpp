@@ -168,7 +168,7 @@ class TerrainShadertoyRefApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = run_config_,
-                .app_name = "terrain_shadertoy_ref",
+                .app_name = "terrain_shadertoy",
                 .ready_status = ready_status.c_str(),
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,

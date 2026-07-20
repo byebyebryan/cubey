@@ -11,7 +11,7 @@ process fields.
 
 `projects/terrain_workbench_legacy` preserves this roadmap and the old reboot
 workbench evidence. New visual terrain rendering work should happen in
-`projects/terrain_ref` unless this note is intentionally revived for product
+`studies/terrain/reference` unless this note is intentionally revived for product
 field work. The data-first direction remains:
 
 ```text

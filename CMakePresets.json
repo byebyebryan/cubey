@@ -51,6 +51,15 @@
       "cacheVariables": {
         "CUBEY_ENABLE_CLANG_TIDY": "ON"
       }
+    },
+    {
+      "name": "dev-terrain-studies",
+      "displayName": "Dev Debug + Terrain Studies",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/dev-terrain-studies",
+      "cacheVariables": {
+        "CUBEY_BUILD_TERRAIN_STUDIES": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -69,6 +78,10 @@
     {
       "name": "tidy",
       "configurePreset": "tidy"
+    },
+    {
+      "name": "dev-terrain-studies",
+      "configurePreset": "dev-terrain-studies"
     }
   ],
   "testPresets": [
@@ -82,6 +95,13 @@
     {
       "name": "asan",
       "configurePreset": "asan",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-terrain-studies",
+      "configurePreset": "dev-terrain-studies",
       "output": {
         "outputOnFailure": true
       }

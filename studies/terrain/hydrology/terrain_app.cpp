@@ -227,7 +227,7 @@ class TerrainApp {
         return cubey::host::run_windowed_app(
             {
                 .run_config = config_,
-                .app_name = "terrain_hydrology_lab",
+                .app_name = "terrain_hydrology",
                 .ready_status = "rendering archived terrain hydrology product",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,

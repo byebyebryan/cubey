@@ -29,7 +29,7 @@ original high surface camera.
 Optional `local` weathering is a bounded finite-neighborhood detail transform.
 It deliberately has no drainage, flow, sediment, or regional state. The old
 analytical patch and hydrology work remains available as the separate paused
-`projects/terrain_hydrology_lab` experiment.
+`studies/terrain/hydrology` experiment.
 
 ## Fixed Review Pack
 

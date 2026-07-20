@@ -3,7 +3,7 @@
 Date: 2026-07-08
 
 This note maps the local ShaderToy terrain examples into reference lanes for
-`projects/terrain_ref`. The goal is to add more terrain and biome source-shape
+`studies/terrain/reference`. The goal is to add more terrain and biome source-shape
 targets without turning ShaderToy snippets into production terrain architecture.
 
 ## Decision

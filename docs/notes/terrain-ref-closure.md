@@ -4,7 +4,7 @@ Date: 2026-07-10
 
 ## Decision
 
-`projects/terrain_ref` is frozen as a buildable visual benchmark. It is no
+`studies/terrain/reference` is frozen as a buildable visual benchmark. It is no
 longer the active terrain implementation lane. Accept maintenance fixes that
 preserve its captures and command line, but do not add recipes, generalize its
 shader model, or promote its recipe switch into the new terrain product.
@@ -12,14 +12,14 @@ shader model, or promote its recipe switch into the new terrain product.
 The next active lane is `projects/terrain`: a directly sampled noise-field
 runtime with matching CPU/GPU queries and a camera-centered renderer. The
 intervening CPU patch and analytical landscape work is preserved in
-`projects/terrain_hydrology_lab`; it no longer defines terrain v1.
+`studies/terrain/hydrology`; it no longer defines terrain v1.
 
 ## Closure Review
 
 Run the fixed review matrix with:
 
 ```sh
-projects/terrain_ref/capture_closure_review.sh
+studies/terrain/reference/capture_closure_review.sh
 ```
 
 The ignored output under `outputs/terrain_ref/closure/` contains:

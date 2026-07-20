@@ -91,11 +91,11 @@ Reference projects:
 
 - [Cloud Ref](../projects/cloud_ref/README.md)
 - [Cloud Ref 2](../projects/cloud_ref_2/README.md)
-- [Terrain Ref](../projects/terrain_ref/README.md)
+- [Terrain Ref](../studies/terrain/reference/README.md)
 
 Paused labs and design-only projects:
 
-- [Terrain Hydrology Lab](../projects/terrain_hydrology_lab/README.md)
+- [Terrain Hydrology Lab](../studies/terrain/hydrology/README.md)
 - [Fluid 2.5D design](../projects/fluid_25d/README.md)
 
 Legacy snapshots:

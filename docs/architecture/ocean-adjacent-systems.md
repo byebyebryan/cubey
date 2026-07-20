@@ -19,7 +19,7 @@ ocean renderer through small data and shader contracts:
   through the shared cloud runtime.
 - `projects/terrain`: active directly sampled heightfield terrain and clipmap
   rendering. It does not yet own bathymetry or shoreline products.
-- `projects/terrain_hydrology_lab`: paused regional terrain-product evidence for
+- `studies/terrain/hydrology`: paused regional terrain-product evidence for
   exported fields, routing, and future shoreline/bathymetry work.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
@@ -125,7 +125,7 @@ Ocean integration target:
 `projects/terrain` should remain a directly sampled terrain renderer. Regional
 products such as drainage, shoreline distance, and exported bathymetry belong
 in a resumed product-generation track based on the paused
-`projects/terrain_hydrology_lab`; dynamic gameplay water belongs in
+`studies/terrain/hydrology`; dynamic gameplay water belongs in
 `projects/fluid_25d`. `projects/procedural_terrain_legacy` remains evidence for
 the earlier coastal field contract, not the target for new implementation.
 

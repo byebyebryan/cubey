@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BIN="${1:-./build/dev/projects/terrain_ref/terrain_ref}"
+BIN="${1:-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference}"
 OUT_DIR="${2:-outputs/terrain_ref/shadertoy-erosion-filter}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"

@@ -5,8 +5,8 @@
 int main(int argc, char** argv) {
     return cubey::run_cli_app(argc, argv,
                               {
-                                  .app_name = "terrain_hydrology_lab",
-                                  .default_title = "cubey terrain hydrology lab",
+                                  .app_name = "terrain_hydrology",
+                                  .default_title = "cubey terrain hydrology study",
                               },
                               cubey::projects::terrain_hydrology_lab::run_terrain);
 }

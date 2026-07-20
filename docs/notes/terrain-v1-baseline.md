@@ -29,7 +29,7 @@ colors.
 Run:
 
 ```sh
-projects/terrain_hydrology_lab/capture_review.sh
+studies/terrain/hydrology/capture_review.sh
 ```
 
 The ignored output under `outputs/terrain_hydrology_lab/v1-upland-catchment/` contains three

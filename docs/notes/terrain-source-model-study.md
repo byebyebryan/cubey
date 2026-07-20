@@ -5,7 +5,7 @@ Date: 2026-07-15
 ## Decision
 
 Run the next mountain-source comparison inside `projects/terrain`, through the
-accepted cached-backdrop renderer. Keep `projects/terrain_ref` frozen: it is a
+accepted cached-backdrop renderer. Keep `studies/terrain/reference` frozen: it is a
 visual benchmark and provenance record, not a library or an active recipe lane.
 
 The study isolates source shape from the two other known weaknesses in the

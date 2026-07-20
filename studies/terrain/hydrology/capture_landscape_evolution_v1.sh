@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP="${1:-./build/dev/projects/terrain_hydrology_lab/terrain_hydrology_lab}"
-GENERATOR="${2:-./build/dev/projects/terrain_hydrology_lab/terrain_hydrology_generate}"
+APP="${1:-./build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology}"
+GENERATOR="${2:-./build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology_generate}"
 OUT_DIR="${3:-outputs/terrain_hydrology_lab/landscape-evolution-v1/review}"
 GRID_SIZE="${GRID_SIZE:-513}"
 RENDER_GRID_SIZE="${RENDER_GRID_SIZE:-257}"
@@ -99,7 +99,7 @@ review_args=(--review-dir "${OUT_DIR}" --seeds "${seeds[@]}")
 if [[ -f "${ORACLE_SUMMARY}" ]]; then
     review_args+=(--oracle-summary "${ORACLE_SUMMARY}")
 fi
-python3 projects/terrain_hydrology_lab/review_landscape_evolution.py "${review_args[@]}"
+python3 studies/terrain/hydrology/review_landscape_evolution.py "${review_args[@]}"
 
 printf 'status=landscape-evolution-v1\ngrid_size=%s\nrender_grid_size=%s\ncell_size_m=%s\nseeds=%s\nelapsed_seconds=%s\n' \
     "${GRID_SIZE}" "${RENDER_GRID_SIZE}" "${CELL_SIZE}" "${seeds[*]}" "${SECONDS}" \

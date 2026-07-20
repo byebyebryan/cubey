@@ -48,7 +48,7 @@ The current terrain workbench should be preserved as
 `projects/terrain_workbench_legacy`. It is useful evidence, but no longer the
 active reboot lane.
 
-`projects/terrain_ref` is now a frozen visual benchmark over known-good terrain
+`studies/terrain/reference` is now a frozen visual benchmark over known-good terrain
 models and rendering techniques. The canonical `projects/terrain` name is the
 active reboot lane and owns the CPU terrain product described in
 [`terrain-v1.md`](terrain-v1.md).

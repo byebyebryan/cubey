@@ -14,7 +14,7 @@ The next split should make the roles explicit:
   workbench, including river, mountain, scalar export, process-field, and
   capture history. Keep it buildable for comparison and regression checks, but
   stop treating it as the active terrain reboot path.
-- `projects/terrain_ref`: a clean renderer-focused reference lane. Start with
+- `studies/terrain/reference`: a clean renderer-focused reference lane. Start with
   the TerrainEngine-inspired runtime height/material model, then use this lane
   for TerrainEngine rendering work and selected ShaderToy terrain references.
 - future `projects/terrain`: reserve the canonical name for a later production

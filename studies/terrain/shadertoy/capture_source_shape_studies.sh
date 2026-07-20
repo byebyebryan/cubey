@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP="${1:-${ROOT_DIR}/build/dev/projects/terrain_shadertoy_ref/terrain_shadertoy_ref}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+APP="${1:-${ROOT_DIR}/build/dev-terrain-studies/studies/terrain/shadertoy/terrain_shadertoy}"
 OUT_DIR="${2:-${ROOT_DIR}/outputs/terrain_shadertoy_ref/source-shape-studies-v1}"
 SOURCE_DIR="${CUBEY_SHADERTOY_REF_DIR:-${ROOT_DIR}/../ref/ShaderToy}"
 TMP_DIR="${OUT_DIR}.tmp.$$"
@@ -113,7 +113,7 @@ jq -n \
         schema: "cubey.terrain.shadertoy-source-shape-studies.v1",
         cubey_commit: $cubey_commit,
         executable: $executable,
-        capture_script: "projects/terrain_shadertoy_ref/capture_source_shape_studies.sh",
+        capture_script: "studies/terrain/shadertoy/capture_source_shape_studies.sh",
         sources: $sources,
         capture: {
             time_seconds: 20,

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP="${1:-./build/dev/projects/terrain/terrain}"
-REF_APP="${2:-./build/dev/projects/terrain_ref/terrain_ref}"
+REF_APP="${2:-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference}"
 OUT_DIR="${3:-outputs/terrain/rendering-refinement}"
 REPORT_APP="${4:-./build/dev/projects/terrain/terrain_source_report}"
 EXPECTED_SOURCE_SHA256="5687ba3d63ec477a813cd0fefd5b268affc128f84bfce01224d049fff34e9edb"
