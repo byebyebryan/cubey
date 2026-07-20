@@ -15,7 +15,8 @@ The active path is fixed:
 
 - regular external float heightfield with validated metadata and coverage;
 - deterministic natural placement over the unchanged source field;
-- 500 m physical focus height and unrestricted orbit yaw;
+- 500 m default foreground height, adjustable from 100-1000 m in the UI, and
+  unrestricted orbit yaw;
 - 50-250 m orbit radius and 0-30 degree elevation envelope;
 - continuous seam-matched center, 16.384 km outer radius, and render stride 3;
 - cullable static sectors plus an optional foreground review sphere;
@@ -52,9 +53,10 @@ cmake --build --preset dev --target cubey_project_terrain
 ./build/dev/projects/terrain/terrain
 ```
 
-The GUI exposes source provenance and dimensions, orbit radius/elevation and
-reset, foreground-sphere visibility, flat/detail presentation, supported
-diagnostics, atmosphere controls, submitted geometry, and GPU timings.
+The GUI exposes source provenance and dimensions, orbit radius/elevation,
+foreground height and reset, foreground-sphere visibility, flat/detail
+presentation, supported diagnostics, atmosphere controls, submitted geometry,
+and GPU timings.
 
 Useful startup overrides:
 

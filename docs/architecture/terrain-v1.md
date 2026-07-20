@@ -68,7 +68,8 @@ over the complete accepted orbit envelope.
 
 The V1 camera contract is:
 
-- focus 500 m above the selected terrain center;
+- foreground and orbit focus 500 m above the selected terrain center by
+  default, adjustable from 100-1000 m in the review UI;
 - unrestricted yaw;
 - orbit radius from 50 m through 250 m;
 - elevation from 0 through 30 degrees;

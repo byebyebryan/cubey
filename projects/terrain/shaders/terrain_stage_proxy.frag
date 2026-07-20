@@ -7,6 +7,7 @@
 layout(push_constant) uniform TerrainStageProxyPushConstants {
     mat4 view_projection;
     vec4 camera_position;
+    vec4 object_translation;
 } pc;
 
 layout(location = 0) in vec3 frag_world_position;

@@ -61,10 +61,13 @@ constexpr float kTerrainHeadlessOrbitSpeed = 0.18F;
 constexpr std::uint32_t kTerrainGpuProfilerPassCapacity = 8U;
 constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
 constexpr float kDegreesToRadians = std::numbers::pi_v<float> / 180.0F;
+constexpr float kTerrainMinimumForegroundHeightM = 100.0F;
+constexpr float kTerrainMaximumForegroundHeightM = 1'000.0F;
 
 struct TerrainStageProxyPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 camera_position{0.0F, 0.0F, 0.0F, 0.0F};
+    cubey::math::Vec4 object_translation{0.0F, 0.0F, 0.0F, 0.0F};
 };
 
 struct TerrainBackdropPushConstants {
@@ -306,6 +309,8 @@ class TerrainApp {
         orbit_controller_.set_pitch_limits(
             stage.orbit_default_elevation_radians - stage.orbit_max_elevation_radians,
             stage.orbit_default_elevation_radians - stage.orbit_min_elevation_radians);
+        default_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+        foreground_height_m_ = default_foreground_height_m_;
         orbit_controller_.reset();
     }
 
@@ -466,7 +471,12 @@ class TerrainApp {
             orbit_controller_.set_pitch(stage.orbit_default_elevation_radians -
                                         elevation_degrees * kDegreesToRadians);
         }
+        const float maximum_foreground_height_m =
+            std::max(kTerrainMaximumForegroundHeightM, default_foreground_height_m_);
+        ImGui::SliderFloat("Foreground height", &foreground_height_m_,
+                           kTerrainMinimumForegroundHeightM, maximum_foreground_height_m, "%.0f m");
         if (ImGui::Button("Reset Camera")) {
+            foreground_height_m_ = default_foreground_height_m_;
             orbit_controller_.reset();
         }
         ImGui::SameLine();
@@ -763,11 +773,15 @@ class TerrainApp {
         const float initial_yaw =
             runtime_config_.initial_azimuth_radians.value_or(stage.showcase_yaw_radians);
         return cubey::orbit_camera_transform({
-            .target = {0.0F, 0.0F, 0.0F},
+            .target = {0.0F, foreground_vertical_offset_m(), 0.0F},
             .distance = orbit_controller_.distance(),
             .yaw = orbit_controller_.yaw() + initial_yaw,
             .pitch = orbit_controller_.pitch() - stage.orbit_default_elevation_radians,
         });
+    }
+
+    [[nodiscard]] float foreground_vertical_offset_m() const noexcept {
+        return foreground_height_m_ - default_foreground_height_m_;
     }
 
     [[nodiscard]] static float aspect(VkExtent2D extent) {
@@ -881,6 +895,7 @@ class TerrainApp {
                 .camera_position = {frame_camera_transform_.translation.x,
                                     frame_camera_transform_.translation.y,
                                     frame_camera_transform_.translation.z, 0.0F},
+                .object_translation = {0.0F, foreground_vertical_offset_m(), 0.0F, 0.0F},
             });
         cubey::render::record_draw_item(recorder.handle(),
                                         cubey::render::DrawItem{.mesh = &stage_proxy_mesh()});
@@ -1056,6 +1071,8 @@ class TerrainApp {
     cubey::Camera3D camera_;
     cubey::Transform3D frame_camera_transform_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
+    float default_foreground_height_m_ = 500.0F;
+    float foreground_height_m_ = 500.0F;
 
     std::optional<cubey::render::Mesh> center_mesh_{};
     std::vector<cubey::render::Mesh> sector_meshes_{};
