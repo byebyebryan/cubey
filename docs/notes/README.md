@@ -157,6 +157,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain raster backdrop v1](terrain-raster-backdrop-v1.md): completed opt-in
   external-heightfield product, deterministic natural staging, seam-matched
   continuous center, and measured far-field acceptance.
+- [Terrain placement controls](terrain-placement-controls.md): selected,
+  raw-center, and deterministic raw-sample controls for separating unchanged
+  source quality from placement before considering synthetic stage shaping.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.
