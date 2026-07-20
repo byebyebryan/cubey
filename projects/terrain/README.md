@@ -15,7 +15,7 @@ The active path is fixed:
 
 - regular external float heightfield with validated metadata and coverage;
 - deterministic natural placement over the unchanged source field;
-- 500 m default foreground height, adjustable from 100-1000 m in the UI, and
+- 100 m default foreground height, adjustable from 2-1000 m in the UI, and
   unrestricted orbit yaw;
 - 50-250 m orbit radius and 0-30 degree elevation envelope;
 - continuous seam-matched center, 16.384 km outer radius, and render stride 3;
@@ -26,6 +26,10 @@ The active path is fixed:
 
 The renderer does not modify the source shape. The center is regular terrain,
 not a cutout, flattened stage, or radial source mask.
+
+The 500 m baked stage remains the clearance-qualified far-field reference.
+Lower review heights intentionally relax that clearance guarantee so hero and
+surface-level views can expose topology, source, and material limitations.
 
 ## Generate The Asset
 

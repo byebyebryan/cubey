@@ -16,13 +16,18 @@ The product keeps:
 
 - deterministic natural placement over an unchanged regular heightfield;
 - the continuous seam-matched center and cached sector renderer;
-- the 500 m mid-air focus, unrestricted yaw, and accepted camera envelope;
+- the clearance-qualified 500 m stage reference, unrestricted yaw, and accepted
+  camera envelope;
 - shared atmosphere, HDR composition, diagnostics, and the foreground sphere;
 - flat and filtered-detail material presentations for controlled comparison.
 
 The product does not claim close terrain, traversal, streaming, hydrology,
 vegetation, water, planet projection, or external-consumer integration. Those
 boundaries remain explicit while material fidelity is improved in isolation.
+
+Post-promotion review makes 100 m the default foreground height and exposes a
+2-1000 m logarithmic UI range. The 500 m reference remains available; lower
+heights are deliberate stress views rather than a new close-terrain claim.
 
 ## Asset Boundary
 

@@ -33,7 +33,7 @@ printf 'file\ttitle\tgroup\targs\n' >"${MANIFEST}"
     printf -- '- Resolution: %sx%s\n' "${WIDTH}" "${HEIGHT}"
     printf -- '- Heightfield: `%s`\n' "${HEIGHTFIELD}"
     printf -- '- Product: continuous seam-matched center, high density, stride 3\n'
-    printf -- '- Camera: fixed focus at 500 m, unrestricted yaw, 50-250 m orbit\n\n'
+    printf -- '- Camera: 100 m foreground focus, unrestricted yaw, 50-250 m orbit\n\n'
     printf 'The final views judge far-field composition. Diagnostics verify that the '
     printf 'same source geometry drives height, slope, classification, topology, and material.\n\n'
     printf '| Capture | Group | Arguments |\n'

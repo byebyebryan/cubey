@@ -62,21 +62,25 @@ The runtime searches a bounded regular grid for a focus with:
 - gradual rise rather than a circular wall.
 
 The selected source coordinate is only a translation into the heightfield. The
-source remains continuous and unchanged. The focused stage maps the selected
-physical target height to local zero and enforces at least 10 m camera clearance
-over the complete accepted orbit envelope.
+source remains continuous and unchanged. The focused stage maps a 500 m
+clearance-qualified reference height to local zero. The review app may move the
+foreground and orbit target below that reference without rebuilding or moving
+the terrain; low views intentionally do not retain the clearance guarantee.
 
 The V1 camera contract is:
 
-- foreground and orbit focus 500 m above the selected terrain center by
-  default, adjustable from 100-1000 m in the review UI;
+- foreground and orbit focus 100 m above the selected terrain center by
+  default, adjustable from 2-1000 m on a logarithmic review slider;
 - unrestricted yaw;
 - orbit radius from 50 m through 250 m;
 - elevation from 0 through 30 degrees;
 - 40 degree vertical field of view;
 - optional 20 m foreground sphere for composition review.
 
-This camera is a product constraint, not a terrain LOD or traversal system.
+The 500 m setting remains the safe far-field comparison. Heights from 2-100 m
+are hero and surface stress views intended to expose intersections, topology,
+source, and material weaknesses. This camera is a product constraint, not a
+terrain LOD or traversal system.
 
 ## Geometry
 
