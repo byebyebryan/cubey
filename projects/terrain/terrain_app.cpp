@@ -601,6 +601,8 @@ class TerrainApp {
                     static_cast<unsigned long long>(product_.diagnostics.source_sample_count));
         ImGui::Text("Shadow map: %u x %u, %s", kTerrainShadowMapExtent,
                     kTerrainShadowMapExtent, shadow_cache_.valid ? "valid" : "pending");
+        ImGui::Text("Shadow casters: %llu triangles (outer backdrop)",
+                    static_cast<unsigned long long>(shadow_caster_triangle_count()));
         ImGui::Text("Shadow updates: %llu",
                     static_cast<unsigned long long>(shadow_cache_.update_count));
         if (!frame_primary_light_above_horizon_) {
@@ -898,6 +900,11 @@ class TerrainApp {
         record_metrics(profile_recorder, collected_frame);
     }
 
+    [[nodiscard]] std::uint64_t shadow_caster_triangle_count() const noexcept {
+        return product_.diagnostics.render_triangle_count -
+               product_.diagnostics.center_render_triangle_count;
+    }
+
     void record_metrics(cubey::profiling::ProfileRecorder* recorder,
                         std::uint64_t frame_index) const {
         if (recorder == nullptr) {
@@ -950,6 +957,8 @@ class TerrainApp {
                                 runtime_config_.shadows ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.shadow", "map_extent",
                                 static_cast<double>(kTerrainShadowMapExtent));
+        recorder->record_metric(frame_index, "terrain.shadow", "triangle_count",
+                                static_cast<double>(shadow_caster_triangle_count()));
         recorder->record_metric(frame_index, "terrain.shadow", "cache_valid",
                                 shadow_cache_.valid ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.shadow", "update_count",
@@ -1083,10 +1092,7 @@ class TerrainApp {
                         .light_view_projection =
                             frame_shadow_projection_.light_view_projection,
                     });
-                if (product_.center.has_value()) {
-                    cubey::render::record_draw_item(
-                        pass_recorder.handle(), cubey::render::DrawItem{.mesh = &center_mesh()});
-                }
+                // The inner stage is a continuity receiver; its polar LOD rings are not casters.
                 for (const cubey::render::Mesh& mesh : sector_meshes_) {
                     cubey::render::record_draw_item(
                         pass_recorder.handle(), cubey::render::DrawItem{.mesh = &mesh});

@@ -48,6 +48,13 @@ resource recreation, successful placement-product replacement, and when the
 primary-light direction changes by at least `0.25` degrees. Ordinary camera
 orbit, yaw, zoom, and foreground changes do not update it.
 
+Only the outer backdrop sectors cast into the map. The continuous inner stage
+mesh still receives their shadows, but does not cast: its polar topology exists
+to maintain ground beneath the consumer and produced radial low-angle shadow
+bands when treated as backdrop geometry. This boundary retains the complete
+visible mountain ring while avoiding both the artifact and unnecessary center
+overdraw.
+
 When the primary light is below the terrain horizon, shadow rendering is
 suspended and direct visibility is one. This avoids spending work on a light
 whose direct terrain contribution is already absent. The terrain shader uses a
