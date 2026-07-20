@@ -31,6 +31,8 @@ void test_defaults_publish_the_product_contract() {
     const auto config =
         cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config, default_path);
     require(config.heightfield_path == default_path && config.foreground_sphere &&
+                config.placement == cubey::projects::terrain::TerrainPlacementMode::Selected &&
+                config.placement_index == 0U && config.initial_foreground_height_m == 100.0F &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::FilteredDetail &&
                 config.debug_view == cubey::projects::terrain::TerrainDebugView::Surface,
             "terrain defaults should select the canonical review product");
@@ -41,6 +43,9 @@ void test_supported_overrides_remain_narrow() {
     run_config.terrain.heightfield_path = "/tmp/custom-heightfield.json";
     run_config.terrain.seed = 9012U;
     run_config.terrain.seed_set = true;
+    run_config.terrain.placement = "raw-sample";
+    run_config.terrain.placement_index = 9U;
+    run_config.terrain.foreground_height_m = 500.0F;
     run_config.terrain.camera_preset = "backdrop";
     run_config.terrain.surface_detail = "flat";
     run_config.terrain.backdrop_azimuth_degrees = -90.0F;
@@ -51,6 +56,8 @@ void test_supported_overrides_remain_narrow() {
         run_config, "/tmp/default");
     require(config.heightfield_path == run_config.terrain.heightfield_path &&
                 config.expected_seed == 9012U && !config.foreground_sphere &&
+                config.placement == cubey::projects::terrain::TerrainPlacementMode::RawSample &&
+                config.placement_index == 9U && config.initial_foreground_height_m == 500.0F &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::Flat &&
                 config.debug_view == cubey::projects::terrain::TerrainDebugView::Slope,
             "terrain should retain only product review overrides");
@@ -89,6 +96,24 @@ void test_retired_modes_fail_explicitly() {
                 invalid_material, "/tmp/default"));
         },
         "retired terrain materials should be rejected");
+
+    cubey::RunConfig invalid_placement;
+    invalid_placement.terrain.placement = "curated";
+    require_throws(
+        [&invalid_placement] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                invalid_placement, "/tmp/default"));
+        },
+        "unsupported terrain placement should be rejected");
+
+    cubey::RunConfig invalid_foreground;
+    invalid_foreground.terrain.foreground_height_m = 1.0F;
+    require_throws(
+        [&invalid_foreground] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                invalid_foreground, "/tmp/default"));
+        },
+        "unsupported terrain foreground height should be rejected");
 }
 
 } // namespace

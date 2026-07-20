@@ -75,8 +75,8 @@ void test_selected_mode_preserves_directional_placement_and_focus_height() {
     const TerrainBackdropPlacementRequest request;
     const TerrainBackdropPlacementPlan plan =
         plan_terrain_backdrop_placement(NaturalRiseSource{}, kLargeBounds, request);
-    require(plan.mode == TerrainBackdropPlacementMode::Selected &&
-                plan.placement.contract_satisfied && plan.stage.contract_satisfied,
+    require(plan.mode == TerrainPlacementMode::Selected && plan.placement.contract_satisfied &&
+                plan.stage.contract_satisfied,
             "selected stage should preserve placement and camera contracts");
     require(plan.placement.coarse_candidate_count == 49U,
             "selected stage should retain the finite seven by seven search domain");
@@ -91,7 +91,7 @@ void test_selected_mode_preserves_directional_placement_and_focus_height() {
 void test_raw_center_reports_failed_composition_without_rejecting_the_stage() {
     using namespace cubey::projects::terrain;
     TerrainBackdropPlacementRequest request;
-    request.mode = TerrainBackdropPlacementMode::RawCenter;
+    request.mode = TerrainPlacementMode::RawCenter;
     const TerrainHeightSourceBounds asymmetric_bounds{
         .minimum_xz = {-45'000.0F, -38'000.0F},
         .maximum_xz = {35'000.0F, 42'000.0F},
@@ -111,7 +111,7 @@ void test_raw_center_reports_failed_composition_without_rejecting_the_stage() {
 void test_raw_sample_is_indexed_deterministic_and_coverage_safe() {
     using namespace cubey::projects::terrain;
     TerrainBackdropPlacementRequest request;
-    request.mode = TerrainBackdropPlacementMode::RawSample;
+    request.mode = TerrainPlacementMode::RawSample;
     const float support = terrain_backdrop_selected_support_radius(request, 16.0F);
     cubey::math::Vec2 previous{};
     for (std::uint32_t index = 0U; index < 3U; ++index) {
@@ -148,7 +148,7 @@ void test_raw_sample_is_indexed_deterministic_and_coverage_safe() {
 void test_placement_rejects_insufficient_source_coverage() {
     using namespace cubey::projects::terrain;
     TerrainBackdropPlacementRequest request;
-    request.mode = TerrainBackdropPlacementMode::RawSample;
+    request.mode = TerrainPlacementMode::RawSample;
     const TerrainHeightSourceBounds small_bounds{
         .minimum_xz = {-10'000.0F, -10'000.0F},
         .maximum_xz = {10'000.0F, 10'000.0F},

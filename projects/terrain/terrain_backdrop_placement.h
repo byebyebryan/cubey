@@ -1,23 +1,14 @@
 #pragma once
 
 #include "terrain_backdrop_profile.h"
+#include "terrain_placement_mode.h"
 
 #include <cstdint>
-#include <string_view>
 
 namespace cubey::projects::terrain {
 
-enum class TerrainBackdropPlacementMode : std::uint8_t {
-    Selected,
-    RawCenter,
-    RawSample,
-};
-
-[[nodiscard]] std::string_view
-terrain_backdrop_placement_mode_name(TerrainBackdropPlacementMode mode) noexcept;
-
 struct TerrainBackdropPlacementRequest {
-    TerrainBackdropPlacementMode mode = TerrainBackdropPlacementMode::Selected;
+    TerrainPlacementMode mode = TerrainPlacementMode::Selected;
     std::uint32_t sample_index = 0U;
     TerrainDirectionalPlacementRequest placement{
         .search_extent_m = 12'000.0F,
@@ -32,7 +23,7 @@ struct TerrainBackdropPlacementRequest {
 };
 
 struct TerrainBackdropPlacementPlan {
-    TerrainBackdropPlacementMode mode = TerrainBackdropPlacementMode::Selected;
+    TerrainPlacementMode mode = TerrainPlacementMode::Selected;
     std::uint32_t sample_index = 0U;
     TerrainDirectionalPlacementPlan placement{};
     TerrainBackdropStagePlan stage{};

@@ -105,6 +105,31 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     throw std::runtime_error("unsupported terrain diagnostic: " + std::string(name));
 }
 
+std::string_view terrain_placement_mode_name(TerrainPlacementMode mode) noexcept {
+    switch (mode) {
+    case TerrainPlacementMode::Selected:
+        return "selected";
+    case TerrainPlacementMode::RawCenter:
+        return "raw-center";
+    case TerrainPlacementMode::RawSample:
+        return "raw-sample";
+    }
+    return "selected";
+}
+
+TerrainPlacementMode terrain_placement_mode_from_name(std::string_view name) {
+    if (name.empty() || name == "selected") {
+        return TerrainPlacementMode::Selected;
+    }
+    if (name == "raw-center") {
+        return TerrainPlacementMode::RawCenter;
+    }
+    if (name == "raw-sample") {
+        return TerrainPlacementMode::RawSample;
+    }
+    throw std::runtime_error("unsupported terrain placement: " + std::string(name));
+}
+
 std::string_view terrain_material_mode_name(TerrainMaterialMode mode) noexcept {
     return mode == TerrainMaterialMode::Flat ? "flat" : "filtered-detail";
 }
@@ -122,6 +147,11 @@ TerrainMaterialMode terrain_material_mode_from_name(std::string_view name) {
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     if (config.heightfield_path.empty()) {
         throw std::runtime_error("terrain heightfield path must not be empty");
+    }
+    if (!std::isfinite(config.initial_foreground_height_m) ||
+        config.initial_foreground_height_m < 2.0F ||
+        config.initial_foreground_height_m > 1'000.0F) {
+        throw std::runtime_error("terrain foreground height must be within [2, 1000] meters");
     }
     if (config.initial_azimuth_radians.has_value() &&
         !std::isfinite(config.initial_azimuth_radians.value())) {
@@ -156,6 +186,11 @@ terrain_runtime_config_from_run_config(const RunConfig& config,
                                   : config.terrain.heightfield_path;
     if (config.terrain.seed_set) {
         result.expected_seed = config.terrain.seed;
+    }
+    result.placement = terrain_placement_mode_from_name(config.terrain.placement);
+    result.placement_index = config.terrain.placement_index;
+    if (cubey::run_config_float_is_set(config.terrain.foreground_height_m)) {
+        result.initial_foreground_height_m = config.terrain.foreground_height_m;
     }
     if (!config.terrain.camera_preset.empty() && config.terrain.camera_preset != "backdrop" &&
         config.terrain.camera_preset != "backdrop-stage") {

@@ -42,18 +42,6 @@ void validate_request(const TerrainBackdropPlacementRequest& request) {
 
 } // namespace
 
-std::string_view terrain_backdrop_placement_mode_name(TerrainBackdropPlacementMode mode) noexcept {
-    switch (mode) {
-    case TerrainBackdropPlacementMode::Selected:
-        return "selected";
-    case TerrainBackdropPlacementMode::RawCenter:
-        return "raw-center";
-    case TerrainBackdropPlacementMode::RawSample:
-        return "raw-sample";
-    }
-    return "selected";
-}
-
 float terrain_backdrop_selected_support_radius(const TerrainBackdropPlacementRequest& request,
                                                float gradient_step_m) {
     validate_request(request);
@@ -114,7 +102,7 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
     TerrainDirectionalPlacementRequest placement_request = request.placement;
     placement_request.vertical_scale = request.vertical_scale;
     switch (request.mode) {
-    case TerrainBackdropPlacementMode::Selected:
+    case TerrainPlacementMode::Selected:
         if (!terrain_height_source_bounds_contains_disk(bounds, {0.0F, 0.0F},
                                                         result.centered_search_support_radius_m)) {
             throw std::runtime_error(
@@ -125,11 +113,11 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
             throw std::runtime_error("terrain heightfield has no passing selected backdrop stage");
         }
         break;
-    case TerrainBackdropPlacementMode::RawCenter:
+    case TerrainPlacementMode::RawCenter:
         result.placement = evaluate_terrain_directional_placement(
             source, placement_request, terrain_height_source_bounds_center(bounds));
         break;
-    case TerrainBackdropPlacementMode::RawSample:
+    case TerrainPlacementMode::RawSample:
         result.placement = evaluate_terrain_directional_placement(
             source, placement_request,
             terrain_backdrop_raw_sample_focus(bounds, metadata.gradient_step_m,
@@ -148,7 +136,7 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
     if (!result.stage.contract_satisfied) {
         throw std::runtime_error("terrain backdrop placement does not satisfy camera clearance");
     }
-    if (request.mode != TerrainBackdropPlacementMode::Selected) {
+    if (request.mode != TerrainPlacementMode::Selected) {
         result.stage.showcase_yaw_radians = 0.0F;
     }
     return result;

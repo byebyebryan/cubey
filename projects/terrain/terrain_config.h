@@ -1,5 +1,7 @@
 #pragma once
 
+#include "terrain_placement_mode.h"
+
 #include <cubey/core/run_config.h>
 
 #include <cstdint>
@@ -33,6 +35,9 @@ enum class TerrainMaterialMode : std::uint8_t {
 struct TerrainRuntimeConfig {
     std::filesystem::path heightfield_path{};
     std::optional<std::uint64_t> expected_seed{};
+    TerrainPlacementMode placement = TerrainPlacementMode::Selected;
+    std::uint32_t placement_index = 0U;
+    float initial_foreground_height_m = 100.0F;
     std::optional<float> initial_azimuth_radians{};
     std::optional<float> initial_orbit_radius_m{};
     std::optional<float> initial_elevation_radians{};
@@ -43,6 +48,8 @@ struct TerrainRuntimeConfig {
 
 [[nodiscard]] std::string_view terrain_debug_view_name(TerrainDebugView view) noexcept;
 [[nodiscard]] TerrainDebugView terrain_debug_view_from_name(std::string_view name);
+[[nodiscard]] std::string_view terrain_placement_mode_name(TerrainPlacementMode mode) noexcept;
+[[nodiscard]] TerrainPlacementMode terrain_placement_mode_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_material_mode_name(TerrainMaterialMode mode) noexcept;
 [[nodiscard]] TerrainMaterialMode terrain_material_mode_from_name(std::string_view name);
 

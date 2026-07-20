@@ -2,7 +2,7 @@
 
 `projects/terrain` is Cubey's active fixed-focus far-field terrain backdrop and
 review application. It consumes an external `cubey.terrain.heightfield.v1`
-asset, selects a deterministic natural placement, bakes one continuous cached
+asset, selects a deterministic source placement, bakes one continuous cached
 mesh at startup, and renders it with shared atmosphere and HDR composition.
 
 This is deliberately not a general terrain engine. It does not provide close
@@ -14,7 +14,8 @@ collision, or planet projection.
 The active path is fixed:
 
 - regular external float heightfield with validated metadata and coverage;
-- deterministic natural placement over the unchanged source field;
+- deterministic selected placement over the unchanged source field, with
+  unfiltered center and indexed-sample comparison controls;
 - 100 m default foreground height, adjustable from 2-1000 m in the UI, and
   unrestricted orbit yaw;
 - 50-250 m orbit radius and 0-30 degree elevation envelope;
@@ -57,22 +58,30 @@ cmake --build --preset dev --target cubey_project_terrain
 ./build/dev/projects/terrain/terrain
 ```
 
-The GUI exposes source provenance and dimensions, orbit radius/elevation,
-foreground height and reset, foreground-sphere visibility, flat/detail
-presentation, supported diagnostics, atmosphere controls, submitted geometry,
-and GPU timings.
+The GUI exposes source provenance and dimensions, read-only placement metrics,
+orbit radius/elevation, foreground height and reset, foreground-sphere
+visibility, flat/detail presentation, supported diagnostics, atmosphere
+controls, submitted geometry, and GPU timings.
 
 Useful startup overrides:
 
 ```sh
 ./build/dev/projects/terrain/terrain \
   --terrain-heightfield /path/to/field-or-heightfield.json \
+  --terrain-placement raw-sample \
+  --terrain-placement-index 2 \
+  --terrain-foreground-height 500 \
   --terrain-camera-preset backdrop \
   --terrain-surface-detail filtered-detail \
   --terrain-backdrop-azimuth 90 \
   --terrain-backdrop-orbit-radius 200 \
   --terrain-backdrop-elevation 24
 ```
+
+Placement choices are `selected`, `raw-center`, and `raw-sample`. Placement is
+resolved before the cached mesh is built, so these are startup controls rather
+than live GUI modes. `raw-sample` uses the independent deterministic placement
+index and performs no quality rejection or retry.
 
 `backdrop-stage` shows the foreground sphere; `backdrop` hides it. Material
 choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
@@ -114,8 +123,8 @@ ctest --preset dev -R '^terrain_.*_tests$' --output-on-failure
 ```
 
 The focused suite verifies the narrow runtime config, raster contract and
-filtering, deterministic topology and seams, directional placement, and the
-natural-stage camera/coverage contract. Product captures use the canonical
+filtering, deterministic topology and seams, selected/raw placement, and the
+placement-stage camera/coverage contract. Product captures use the canonical
 asset deliberately; ordinary tests use small analytical or temporary fixtures.
 
 ## Studies And Boundaries

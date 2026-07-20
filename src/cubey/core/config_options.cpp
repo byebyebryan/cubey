@@ -112,6 +112,8 @@ constexpr std::array<std::string_view, 4> kTerrainSourceVersions{"v1", "v2", "v2
 constexpr std::array<std::string_view, 3> kTerrainRenderPaths{"control", "quality", "backdrop"};
 constexpr std::array<std::string_view, 3> kTerrainBackdropMeshDensities{"low", "medium", "high"};
 constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"flat", "filtered-detail"};
+constexpr std::array<std::string_view, 3> kTerrainPlacements{"selected", "raw-center",
+                                                             "raw-sample"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
 constexpr std::array<std::string_view, 3> kTerrainBackdropProfiles{"radial-v1", "raster-v1",
@@ -148,7 +150,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 283> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -523,6 +525,16 @@ constexpr std::array<ConfigOptionDescriptor, 280> kRunConfigOptions{
     option(RunConfigOptionId::TerrainHeightfield, "terrain.heightfield", "--terrain-heightfield",
            "Heightfield", "Terrain/Backdrop Stage",
            "Runtime heightfield manifest or directory for raster-v1.", ConfigOptionType::Path),
+    option(RunConfigOptionId::TerrainPlacement, "terrain.placement", "--terrain-placement",
+           "Placement", "Terrain/Backdrop Stage", "Startup terrain backdrop source placement.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainPlacements)),
+    option(RunConfigOptionId::TerrainPlacementIndex, "terrain.placement_index",
+           "--terrain-placement-index", "Placement Index", "Terrain/Backdrop Stage",
+           "Deterministic raw-sample placement index.", ConfigOptionType::UInt32),
+    option(RunConfigOptionId::TerrainForegroundHeight, "terrain.foreground_height_m",
+           "--terrain-foreground-height", "Foreground Height", "Terrain/Backdrop Stage",
+           "Initial foreground and orbit focus height above the selected terrain center.",
+           ConfigOptionType::Float, bounded_range(2.0, 1000.0)),
     option(RunConfigOptionId::TerrainCameraPreset, "terrain.camera_preset",
            "--terrain-camera-preset", "Camera Preset", "Terrain",
            "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),
@@ -1569,6 +1581,13 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.heightfield_path.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.heightfield_path.string());
+    case RunConfigOptionId::TerrainPlacement:
+        return config.terrain.placement.empty() ? nlohmann::json(nullptr)
+                                                : nlohmann::json(config.terrain.placement);
+    case RunConfigOptionId::TerrainPlacementIndex:
+        return config.terrain.placement_index;
+    case RunConfigOptionId::TerrainForegroundHeight:
+        return optional_float(config.terrain.foreground_height_m);
     case RunConfigOptionId::TerrainCameraPreset:
         return config.terrain.camera_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.terrain.camera_preset);
@@ -2154,6 +2173,9 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<std::string>("recipe", options.recipe);
     adapter.writeField<std::string>("study_field", study_field);
     adapter.writeField<std::string>("heightfield", heightfield);
+    adapter.writeField<std::string>("placement", options.placement);
+    adapter.writeField<std::uint32_t>("placement_index", options.placement_index);
+    adapter.writeField<float>("foreground_height_m", options.foreground_height_m);
     adapter.writeField<std::string>("camera_preset", options.camera_preset);
     adapter.writeField<std::string>("backdrop_profile", options.backdrop_profile);
     adapter.writeField<std::string>("backdrop_center", options.backdrop_center);
@@ -2185,6 +2207,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("recipe", options.recipe);
     adapter.readField<std::string>("study_field", study_field);
     adapter.readField<std::string>("heightfield", heightfield);
+    adapter.readField<std::string>("placement", options.placement);
+    adapter.readField<std::uint32_t>("placement_index", options.placement_index);
+    adapter.readField<float>("foreground_height_m", options.foreground_height_m);
     adapter.readField<std::string>("camera_preset", options.camera_preset);
     adapter.readField<std::string>("backdrop_profile", options.backdrop_profile);
     adapter.readField<std::string>("backdrop_center", options.backdrop_center);
@@ -2937,6 +2962,17 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainHeightfield:
         config.terrain.heightfield_path = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainPlacement:
+        config.terrain.placement = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainPlacementIndex:
+        config.terrain.placement_index =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        break;
+    case RunConfigOptionId::TerrainForegroundHeight:
+        config.terrain.foreground_height_m = parse_config_float(value, option);
+        validate_range(config.terrain.foreground_height_m, option);
         break;
     case RunConfigOptionId::TerrainCameraPreset:
         config.terrain.camera_preset = std::string(value);

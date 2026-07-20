@@ -206,6 +206,9 @@ struct RunConfig {
         std::string recipe{};
         std::filesystem::path study_field_path{};
         std::filesystem::path heightfield_path{};
+        std::string placement{};
+        std::uint32_t placement_index = 0U;
+        float foreground_height_m = kRunConfigUnsetFloat;
         std::string camera_preset{};
         std::string backdrop_profile{};
         std::string backdrop_center{};

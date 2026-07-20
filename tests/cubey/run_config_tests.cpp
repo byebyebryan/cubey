@@ -330,6 +330,9 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--terrain-recipe",
         "--terrain-study-field",
         "--terrain-heightfield",
+        "--terrain-placement",
+        "--terrain-placement-index",
+        "--terrain-foreground-height",
         "--terrain-camera-preset",
         "--terrain-backdrop-profile",
         "--terrain-backdrop-center",
@@ -451,6 +454,9 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.recipe",
         "terrain.study_field",
         "terrain.heightfield",
+        "terrain.placement",
+        "terrain.placement_index",
+        "terrain.foreground_height_m",
         "terrain.camera_preset",
         "terrain.backdrop_profile",
         "terrain.backdrop_center",
@@ -633,6 +639,9 @@ void test_run_config_loads_json_config_file() {
     "recipe": "temperate-mountain-range-stress",
     "study_field": "/tmp/terrain-diffusion/seed-9012",
     "heightfield": "/tmp/terrain-heightfield/heightfield.json",
+    "placement": "raw-sample",
+    "placement_index": 7,
+    "foreground_height_m": 250.0,
     "camera_preset": "profile",
     "backdrop_profile": "radial-v1",
     "backdrop_center": "continuous",
@@ -751,6 +760,9 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain study field path");
     require(config.terrain.heightfield_path == "/tmp/terrain-heightfield/heightfield.json",
             "config file should set terrain runtime heightfield path");
+    require(config.terrain.placement == "raw-sample" && config.terrain.placement_index == 7U &&
+                config.terrain.foreground_height_m == 250.0F,
+            "config file should set terrain placement controls");
     require(config.terrain.camera_preset == "profile",
             "config file should set terrain camera preset");
     require(config.terrain.backdrop_profile == "radial-v1" &&
@@ -831,10 +843,10 @@ void test_run_config_cli_and_set_override_config_file() {
     std::string set_env = "pbr.environment_source=atmosphere";
     std::string set_terrain = "ocean.terrain_fields=true";
     std::string set_whitewater = "water3d.whitewater=true";
-    std::array<char*, 13> argv{program.data(),     width_flag.data(), width_value.data(),
-                               config_flag.data(), config_path.data(), set_flag.data(),
-                               set_height.data(),  set_flag.data(),    set_env.data(),
-                               set_flag.data(),    set_terrain.data(), set_flag.data(),
+    std::array<char*, 13> argv{program.data(),       width_flag.data(),  width_value.data(),
+                               config_flag.data(),   config_path.data(), set_flag.data(),
+                               set_height.data(),    set_flag.data(),    set_env.data(),
+                               set_flag.data(),      set_terrain.data(), set_flag.data(),
                                set_whitewater.data()};
 
     const cubey::RunConfig config =
@@ -857,11 +869,10 @@ void test_run_config_descriptor_cli_and_set_precedence() {
     std::string set_auto_exposure = "atmosphere.auto_exposure=true";
     std::string water_wave_flag = "--water3d-wave";
     std::string set_water_wave = "water3d.wave=false";
-    std::array<char*, 10> argv{program.data(),           terrain_flag.data(),
-                               set_flag.data(),          set_terrain.data(),
-                               auto_exposure_flag.data(), set_flag.data(),
-                               set_auto_exposure.data(), water_wave_flag.data(),
-                               set_flag.data(),          set_water_wave.data()};
+    std::array<char*, 10> argv{program.data(),           terrain_flag.data(),       set_flag.data(),
+                               set_terrain.data(),       auto_exposure_flag.data(), set_flag.data(),
+                               set_auto_exposure.data(), water_wave_flag.data(),    set_flag.data(),
+                               set_water_wave.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -1768,6 +1779,12 @@ void test_run_config_parses_terrain_controls() {
     std::string study_field_value = "/tmp/terrain-diffusion/seed-9012";
     std::string heightfield_flag = "--terrain-heightfield";
     std::string heightfield_value = "/tmp/terrain-heightfield/heightfield.json";
+    std::string placement_flag = "--terrain-placement";
+    std::string placement_value = "raw-sample";
+    std::string placement_index_flag = "--terrain-placement-index";
+    std::string placement_index_value = "9";
+    std::string foreground_height_flag = "--terrain-foreground-height";
+    std::string foreground_height_value = "500";
     std::string camera_flag = "--terrain-camera-preset";
     std::string camera_value = "surface";
     std::string backdrop_profile_flag = "--terrain-backdrop-profile";
@@ -1793,7 +1810,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 62> argv{program.data(),
+    std::array<char*, 68> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1830,6 +1847,12 @@ void test_run_config_parses_terrain_controls() {
                                study_field_value.data(),
                                heightfield_flag.data(),
                                heightfield_value.data(),
+                               placement_flag.data(),
+                               placement_value.data(),
+                               placement_index_flag.data(),
+                               placement_index_value.data(),
+                               foreground_height_flag.data(),
+                               foreground_height_value.data(),
                                camera_flag.data(),
                                camera_value.data(),
                                backdrop_profile_flag.data(),
@@ -1880,6 +1903,9 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain study field path");
     require(config.terrain.heightfield_path == "/tmp/terrain-heightfield/heightfield.json",
             "run config should parse terrain runtime heightfield path");
+    require(config.terrain.placement == "raw-sample" && config.terrain.placement_index == 9U &&
+                config.terrain.foreground_height_m == 500.0F,
+            "run config should parse terrain placement controls");
     require(config.terrain.camera_preset == "surface",
             "run config should parse terrain camera preset");
     require(config.terrain.backdrop_profile == "hard-cut-v1" &&
@@ -1917,7 +1943,6 @@ void test_run_config_rejects_invalid_ocean_controls() {
     require_throws(
         [&argv]() { cubey::parse_run_config(static_cast<int>(argv.size()), argv.data()); },
         "run config should reject unsupported ocean cascade selection");
-
 }
 
 void test_run_config_parses_planet_controls() {

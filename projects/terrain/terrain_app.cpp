@@ -138,6 +138,8 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
         throw std::runtime_error("terrain seed does not match the heightfield manifest");
     }
     TerrainBackdropPlacementRequest request;
+    request.mode = config.placement;
+    request.sample_index = config.placement_index;
     if (config.initial_orbit_radius_m.has_value()) {
         request.stage.orbit_default_radius_m = config.initial_orbit_radius_m.value();
     }
@@ -298,7 +300,7 @@ class TerrainApp {
             stage.orbit_default_elevation_radians - stage.orbit_max_elevation_radians,
             stage.orbit_default_elevation_radians - stage.orbit_min_elevation_radians);
         baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
-        foreground_height_m_ = kTerrainDefaultForegroundHeightM;
+        foreground_height_m_ = runtime_config_.initial_foreground_height_m;
         orbit_controller_.reset();
     }
 
@@ -444,6 +446,25 @@ class TerrainApp {
         const std::string manifest = provenance.manifest_path.string();
         ImGui::TextWrapped("Manifest: %s", manifest.c_str());
 
+        ImGui::SeparatorText("Placement");
+        const TerrainDirectionalPlacementPlan& placement = placement_stage_.placement;
+        const std::string_view placement_name = terrain_placement_mode_name(placement_stage_.mode);
+        ImGui::Text("Mode: %.*s", static_cast<int>(placement_name.size()), placement_name.data());
+        if (placement_stage_.mode == TerrainPlacementMode::RawSample) {
+            ImGui::Text("Sample index: %u", placement_stage_.sample_index);
+        }
+        ImGui::Text("Focus: %.3f, %.3f km", placement.source_focus_xz.x * 0.001F,
+                    placement.source_focus_xz.y * 0.001F);
+        ImGui::Text("Directional contract: %s", placement.contract_satisfied ? "pass" : "fail");
+        ImGui::Text("Score: %.3f", placement.score);
+        ImGui::Text("Local relief: %.1f m", placement.local_relief_m);
+        ImGui::Text("P95 slope: %.3f", placement.local_p95_slope);
+        ImGui::Text("Mountain/open sectors: %u / %u", placement.mountain_sector_count,
+                    placement.open_sector_count);
+        ImGui::Text("Mountain/open arcs: %u / %u", placement.largest_mountain_arc_sectors,
+                    placement.largest_open_arc_sectors);
+        ImGui::Text("Baked clearance: %.1f m", placement_stage_.stage.minimum_camera_clearance_m);
+
         ImGui::SeparatorText("Camera");
         float radius = orbit_controller_.distance();
         const TerrainBackdropStagePlan& stage = placement_stage_.stage;
@@ -465,7 +486,7 @@ class TerrainApp {
                            kTerrainMinimumForegroundHeightM, maximum_foreground_height_m, "%.0f m",
                            ImGuiSliderFlags_Logarithmic);
         if (ImGui::Button("Reset Camera")) {
-            foreground_height_m_ = kTerrainDefaultForegroundHeightM;
+            foreground_height_m_ = runtime_config_.initial_foreground_height_m;
             orbit_controller_.reset();
         }
         ImGui::SameLine();
@@ -701,6 +722,26 @@ class TerrainApp {
         recorder->record_metric(frame_index, "terrain.backdrop", "render_stride", 3.0);
         recorder->record_metric(frame_index, "terrain.backdrop", "outer_radius_m",
                                 product_.request.outer_radius_m);
+        recorder->record_metric(frame_index, "terrain.placement", "mode",
+                                static_cast<double>(placement_stage_.mode));
+        recorder->record_metric(frame_index, "terrain.placement", "sample_index",
+                                static_cast<double>(placement_stage_.sample_index));
+        recorder->record_metric(frame_index, "terrain.placement", "source_focus_x_m",
+                                placement_stage_.placement.source_focus_xz.x);
+        recorder->record_metric(frame_index, "terrain.placement", "source_focus_z_m",
+                                placement_stage_.placement.source_focus_xz.y);
+        recorder->record_metric(frame_index, "terrain.placement", "directional_contract",
+                                placement_stage_.placement.contract_satisfied ? 1.0 : 0.0);
+        recorder->record_metric(frame_index, "terrain.placement", "score",
+                                placement_stage_.placement.score);
+        recorder->record_metric(frame_index, "terrain.placement", "local_relief_m",
+                                placement_stage_.placement.local_relief_m);
+        recorder->record_metric(frame_index, "terrain.placement", "local_p95_slope",
+                                placement_stage_.placement.local_p95_slope);
+        recorder->record_metric(frame_index, "terrain.placement", "baked_clearance_m",
+                                placement_stage_.stage.minimum_camera_clearance_m);
+        recorder->record_metric(frame_index, "terrain.placement", "foreground_height_m",
+                                foreground_height_m_);
         recorder->record_metric(
             frame_index, "terrain.backdrop", "filtered_detail",
             runtime_config_.material == TerrainMaterialMode::FilteredDetail ? 1.0 : 0.0);
