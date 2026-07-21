@@ -17,6 +17,33 @@ from export_heightfield_manifest import HEIGHTFIELD_SCHEMA, heightfield_manifest
 
 
 class TerrainDiffusionBakeTests(unittest.TestCase):
+    @staticmethod
+    def climate_scan_fixture() -> np.ndarray:
+        size = bake.CLIMATE_SCAN_END - bake.CLIMATE_SCAN_BEGIN
+        coarse = np.zeros((6, size, size), dtype=np.float32)
+        elevation = np.sqrt(np.linspace(100.0, 3_000.0, 64, dtype=np.float32)).reshape(
+            8, 8
+        )
+        coarse[0] = np.tile(elevation, (size // 8, size // 8))
+        coarse[2] = 30.0
+        coarse[3] = 800.0
+        coarse[4] = 100.0
+        coarse[5] = 50.0
+        climates = {
+            "hot-dry": (22.0, 150.0),
+            "hot-wet": (22.0, 2_000.0),
+            "cool-wet": (10.0, 800.0),
+            "cold-dry": (-8.0, 50.0),
+            "cold-wet": (-5.0, 300.0),
+        }
+        for name, (temperature, precipitation) in climates.items():
+            coarse_i, coarse_j = bake.CLIMATE_EXPECTED_ORIGINS[name]
+            i0 = coarse_i - bake.CLIMATE_SCAN_BEGIN
+            j0 = coarse_j - bake.CLIMATE_SCAN_BEGIN
+            coarse[2, i0 : i0 + 8, j0 : j0 + 8] = temperature
+            coarse[4, i0 : i0 + 8, j0 : j0 + 8] = precipitation
+        return coarse
+
     def test_process_rng_seeding_handles_zero_deterministically(self) -> None:
         class FakeCuda:
             @staticmethod
@@ -161,6 +188,47 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
         self.assertAlmostEqual(float(normalized[3, 0, 0]), 0.45)
         self.assertEqual(native[:, 0, 0].tolist(), [12.0, 850.0, 640.0, 45.0])
 
+    def test_climate_calibration_selects_five_distinct_regimes(self) -> None:
+        selections, candidates = bake.select_climate_calibration_regions(
+            self.climate_scan_fixture(), require_expected=True
+        )
+
+        self.assertEqual(
+            {
+                selection.regime.name: (
+                    selection.candidate.coarse_i,
+                    selection.candidate.coarse_j,
+                )
+                for selection in selections
+            },
+            bake.CLIMATE_EXPECTED_ORIGINS,
+        )
+        self.assertEqual(len(selections), len(bake.CLIMATE_REGIMES))
+        self.assertEqual(len(candidates), (264 // 8) ** 2)
+        self.assertEqual(
+            len(
+                {
+                    (selection.candidate.coarse_i, selection.candidate.coarse_j)
+                    for selection in selections
+                }
+            ),
+            len(selections),
+        )
+        for selection in selections:
+            self.assertTrue(
+                selection.regime.accepts(
+                    selection.candidate.temperature_median_c,
+                    selection.candidate.precipitation_median_mm,
+                )
+            )
+
+    def test_climate_calibration_rejects_insufficient_relief(self) -> None:
+        coarse = self.climate_scan_fixture()
+        coarse[0] = np.sqrt(100.0)
+
+        with self.assertRaisesRegex(RuntimeError, "canonical hot-dry control"):
+            bake.select_climate_calibration_regions(coarse)
+
     def test_area_average_field_uses_disjoint_source_blocks(self) -> None:
         source = np.arange(4 * 4, dtype=np.float32).reshape(1, 4, 4)
 
@@ -191,6 +259,48 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
             [channel["unit"] for channel in manifest["files"]["climate"]["channels"]],
             ["deg_c", "deg_c", "mm_per_year", "fraction"],
         )
+
+    def test_calibration_manifests_bind_matching_region_fields(self) -> None:
+        selection = bake.ClimateRegimeSelection(
+            bake.CLIMATE_REGIMES[1],
+            bake.ClimateRegionCandidate(
+                -56, 24, 1.0, 100.0, 1_500.0, 1_400.0, 22.0, 8.0, 2_000.0, 0.5, 3_712
+            ),
+            0.0,
+        )
+        generated = {
+            "selection": selection,
+            "model_native_origin": {"i": -14_336, "j": 6_144},
+            "total_seconds": 3.5,
+        }
+        source = {"id": "test", "generator": "terrain-diffusion"}
+        elevation_file = {
+            "path": "elevation.f32",
+            "dtype": "float32-le",
+            "byte_count": 16,
+            "sha256": "e" * 64,
+        }
+        climate_file = {
+            "path": "climate.f32",
+            "dtype": "float32-le",
+            "byte_count": 16,
+            "sha256": "c" * 64,
+        }
+
+        heightfield = bake.climate_calibration_heightfield_manifest(
+            elevation_file, generated, source
+        )
+        surface = bake.climate_calibration_surface_manifest(
+            climate_file, elevation_file["sha256"], generated, source
+        )
+
+        self.assertEqual(heightfield["provenance"]["regime"], "hot-wet")
+        self.assertEqual(
+            surface["heightfield"]["elevation_sha256"],
+            heightfield["files"]["elevation"]["sha256"],
+        )
+        self.assertEqual(surface["grid"]["sample_spacing_m"], 240.0)
+        self.assertEqual(surface["provenance"]["regime"], "hot-wet")
 
     def test_float_hash_matches_written_payload(self) -> None:
         values = np.array([[1.0, 2.0]], dtype=np.float32)

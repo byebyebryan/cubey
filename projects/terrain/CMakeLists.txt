@@ -13,6 +13,11 @@ set(
     "${CMAKE_BINARY_DIR}/assets/terrain/surface-study"
     CACHE PATH "Generated terrain surface-semantics climate companion directory"
 )
+set(
+    CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR
+    "${CMAKE_BINARY_DIR}/assets/terrain/climate-calibration"
+    CACHE PATH "Generated cross-climate terrain calibration asset directory"
+)
 
 add_custom_target(cubey_terrain_generate_default_asset
     COMMAND
@@ -46,6 +51,23 @@ add_custom_target(cubey_terrain_generate_surface_study_asset
         "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/climate.f32"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Generating the pinned terrain surface-semantics climate companion"
+    USES_TERMINAL
+    VERBATIM
+)
+
+add_custom_target(cubey_terrain_generate_climate_calibration_assets
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-venv"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
+        --climate-calibration-assets
+        --output-dir "${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}"
+        --data-cache "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-data"
+    BYPRODUCTS
+        "${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}/calibration-index.json"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating five pinned terrain climate calibration regions"
     USES_TERMINAL
     VERBATIM
 )

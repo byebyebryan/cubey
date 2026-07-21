@@ -44,10 +44,27 @@ COMPARISON_RELIEF_M = 3500.0
 DEFAULT_ASSET_HEIGHT_OFFSET_M = 39.367266654968255
 DEFAULT_ASSET_HEIGHT_SCALE = 0.8484453174300328
 DEFAULT_ASSET_ELEVATION_SHA256 = "27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df"
+DEFAULT_ASSET_CLIMATE_SHA256 = "cf56ae54e93ab45a10d0e93c2c39ab2a95b1593bf89639eeda3e3b7080497fea"
 EXPORT_CONTRACT_REVISION = 4
 SURFACE_STUDY_SCHEMA = "cubey.terrain.surface-fields.study.v1"
 SURFACE_STUDY_DOWNSAMPLE = 8
 SURFACE_STUDY_SIZE = FIELD_SIZE // SURFACE_STUDY_DOWNSAMPLE
+CLIMATE_CALIBRATION_SCHEMA = "cubey.terrain.climate-calibration.v1"
+CLIMATE_CALIBRATION_REGION_SCHEMA = "cubey.terrain.climate-calibration-region.v1"
+CLIMATE_MACRO_SPACING_M = MODEL_NATIVE_RESOLUTION_M * COARSE_CELL_NATIVE_SAMPLES
+CLIMATE_SCAN_BEGIN = -128
+CLIMATE_SCAN_END = 136
+CLIMATE_MIN_RELIEF_M = 1_000.0
+CLIMATE_CALIBRATION_PACKAGE_LIMIT_BYTES = 128 * 1024 * 1024
+CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS = 300.0
+CLIMATE_CONTROL_ORIGIN = (-8, -24)
+CLIMATE_EXPECTED_ORIGINS = {
+    "hot-dry": CLIMATE_CONTROL_ORIGIN,
+    "hot-wet": (-56, 24),
+    "cool-wet": (120, -112),
+    "cold-dry": (-16, -32),
+    "cold-wet": (-8, -88),
+}
 WORLDCLIM_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip"
 WORLDCLIM_FILES = (
     "wc2.1_10m_bio_1.tif",
@@ -75,6 +92,107 @@ class RegionCandidate:
 
     def as_json(self) -> dict[str, object]:
         return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass(frozen=True)
+class ClimateRegimeSpec:
+    name: str
+    target_temperature_c: float
+    target_precipitation_mm: float
+    minimum_temperature_c: float | None = None
+    maximum_temperature_c: float | None = None
+    minimum_precipitation_mm: float | None = None
+    maximum_precipitation_mm: float | None = None
+
+    def accepts(self, temperature_c: float, precipitation_mm: float) -> bool:
+        return (
+            (self.minimum_temperature_c is None or temperature_c >= self.minimum_temperature_c)
+            and (self.maximum_temperature_c is None or temperature_c <= self.maximum_temperature_c)
+            and (
+                self.minimum_precipitation_mm is None
+                or precipitation_mm >= self.minimum_precipitation_mm
+            )
+            and (
+                self.maximum_precipitation_mm is None
+                or precipitation_mm <= self.maximum_precipitation_mm
+            )
+        )
+
+
+CLIMATE_REGIMES = (
+    ClimateRegimeSpec(
+        "hot-dry",
+        22.0,
+        150.0,
+        minimum_temperature_c=18.0,
+        maximum_precipitation_mm=300.0,
+    ),
+    ClimateRegimeSpec(
+        "hot-wet",
+        22.0,
+        2_000.0,
+        minimum_temperature_c=18.0,
+        minimum_precipitation_mm=1_000.0,
+    ),
+    ClimateRegimeSpec(
+        "cool-wet",
+        10.0,
+        800.0,
+        minimum_temperature_c=5.0,
+        maximum_temperature_c=15.0,
+        minimum_precipitation_mm=500.0,
+    ),
+    ClimateRegimeSpec(
+        "cold-dry",
+        -8.0,
+        50.0,
+        maximum_temperature_c=2.0,
+        maximum_precipitation_mm=150.0,
+    ),
+    ClimateRegimeSpec(
+        "cold-wet",
+        -5.0,
+        300.0,
+        maximum_temperature_c=2.0,
+        minimum_precipitation_mm=200.0,
+    ),
+)
+
+
+@dataclasses.dataclass(frozen=True)
+class ClimateRegionCandidate:
+    coarse_i: int
+    coarse_j: int
+    land_fraction: float
+    land_p25_m: float
+    land_p90_m: float
+    relief_m: float
+    temperature_median_c: float
+    temperature_stddev_median_c: float
+    precipitation_median_mm: float
+    precipitation_cv_median: float
+    distance_squared: int
+
+    def as_json(self) -> dict[str, object]:
+        return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass(frozen=True)
+class ClimateRegimeSelection:
+    regime: ClimateRegimeSpec
+    candidate: ClimateRegionCandidate
+    score: float
+
+    def as_json(self) -> dict[str, object]:
+        return {
+            "regime": self.regime.name,
+            "target": {
+                "temperature_mean_c": self.regime.target_temperature_c,
+                "precipitation_annual_mm": self.regime.target_precipitation_mm,
+            },
+            "score": self.score,
+            "candidate": self.candidate.as_json(),
+        }
 
 
 @dataclasses.dataclass
@@ -174,6 +292,143 @@ def select_mountain_region(coarse_elevation) -> tuple[RegionCandidate, list[Regi
     else:
         winner = max(candidates, key=lambda candidate: (candidate.land_fraction, *common_rank(candidate)))
     return winner, candidates
+
+
+def climate_region_candidates(coarse_values) -> list[ClimateRegionCandidate]:
+    """Summarize non-overlapping product windows from normalized coarse output."""
+    import numpy as np
+
+    coarse = np.asarray(coarse_values, dtype=np.float32)
+    expected_size = CLIMATE_SCAN_END - CLIMATE_SCAN_BEGIN
+    if coarse.shape != (6, expected_size, expected_size):
+        raise ValueError(
+            f"climate scan must be 6x{expected_size}x{expected_size}, got {coarse.shape}"
+        )
+    if not np.isfinite(coarse).all():
+        raise ValueError("climate scan contains non-finite values")
+
+    elevation = np.sign(coarse[0]) * np.square(np.abs(coarse[0]))
+    temperature = coarse[2]
+    temperature_stddev = np.maximum(coarse[3] * 0.01, 0.0)
+    precipitation = np.maximum(coarse[4], 0.0)
+    precipitation_cv = np.clip(coarse[5] * 0.01, 0.0, 1.0)
+    candidates = []
+    for coarse_i in range(CLIMATE_SCAN_BEGIN, CLIMATE_SCAN_END, COARSE_WINDOW_CELLS):
+        for coarse_j in range(CLIMATE_SCAN_BEGIN, CLIMATE_SCAN_END, COARSE_WINDOW_CELLS):
+            i0 = coarse_i - CLIMATE_SCAN_BEGIN
+            j0 = coarse_j - CLIMATE_SCAN_BEGIN
+            rows = slice(i0, i0 + COARSE_WINDOW_CELLS)
+            columns = slice(j0, j0 + COARSE_WINDOW_CELLS)
+            elevation_window = elevation[rows, columns]
+            land = elevation_window > 0.0
+            land_fraction = float(np.mean(land))
+            if land_fraction < LAND_THRESHOLD:
+                continue
+            land_elevation = elevation_window[land]
+            land_p25, land_p90 = np.percentile(land_elevation, (25.0, 90.0))
+            relief = float(land_p90 - land_p25)
+            if relief < CLIMATE_MIN_RELIEF_M:
+                continue
+
+            def land_median(values) -> float:
+                return float(np.median(values[rows, columns][land]))
+
+            candidates.append(
+                ClimateRegionCandidate(
+                    coarse_i=coarse_i,
+                    coarse_j=coarse_j,
+                    land_fraction=land_fraction,
+                    land_p25_m=float(land_p25),
+                    land_p90_m=float(land_p90),
+                    relief_m=relief,
+                    temperature_median_c=land_median(temperature),
+                    temperature_stddev_median_c=land_median(temperature_stddev),
+                    precipitation_median_mm=land_median(precipitation),
+                    precipitation_cv_median=land_median(precipitation_cv),
+                    distance_squared=coarse_i * coarse_i + coarse_j * coarse_j,
+                )
+            )
+    return candidates
+
+
+def climate_regime_score(
+    regime: ClimateRegimeSpec, candidate: ClimateRegionCandidate
+) -> float:
+    temperature_distance = (
+        (candidate.temperature_median_c - regime.target_temperature_c) / 8.0
+    )
+    precipitation_distance = (
+        math.log10(max(candidate.precipitation_median_mm, 1.0))
+        - math.log10(regime.target_precipitation_mm)
+    ) / 0.45
+    return (
+        temperature_distance * temperature_distance
+        + precipitation_distance * precipitation_distance
+    )
+
+
+def select_climate_calibration_regions(
+    coarse_values, *, require_expected: bool = False
+) -> tuple[list[ClimateRegimeSelection], list[ClimateRegionCandidate]]:
+    candidates = climate_region_candidates(coarse_values)
+    by_origin = {
+        (candidate.coarse_i, candidate.coarse_j): candidate for candidate in candidates
+    }
+    selections = []
+    used_origins = set()
+    for regime in CLIMATE_REGIMES:
+        if regime.name == "hot-dry":
+            candidate = by_origin.get(CLIMATE_CONTROL_ORIGIN)
+            if candidate is None or not regime.accepts(
+                candidate.temperature_median_c, candidate.precipitation_median_mm
+            ):
+                raise RuntimeError(
+                    "canonical hot-dry control does not satisfy its climate contract"
+                )
+            score = climate_regime_score(regime, candidate)
+        else:
+            eligible = [
+                candidate
+                for candidate in candidates
+                if (candidate.coarse_i, candidate.coarse_j) not in used_origins
+                and regime.accepts(
+                    candidate.temperature_median_c, candidate.precipitation_median_mm
+                )
+            ]
+            if not eligible:
+                raise RuntimeError(f"no qualified coarse window for climate regime {regime.name}")
+            candidate = min(
+                eligible,
+                key=lambda value: (
+                    climate_regime_score(regime, value),
+                    -value.relief_m,
+                    -value.land_fraction,
+                    value.distance_squared,
+                    value.coarse_i,
+                    value.coarse_j,
+                ),
+            )
+            score = climate_regime_score(regime, candidate)
+        origin = (candidate.coarse_i, candidate.coarse_j)
+        if origin in used_origins:
+            raise RuntimeError(f"climate calibration selected duplicate window {origin}")
+        used_origins.add(origin)
+        selections.append(ClimateRegimeSelection(regime, candidate, score))
+
+    if require_expected:
+        actual = {
+            selection.regime.name: (
+                selection.candidate.coarse_i,
+                selection.candidate.coarse_j,
+            )
+            for selection in selections
+        }
+        if actual != CLIMATE_EXPECTED_ORIGINS:
+            raise RuntimeError(
+                f"climate calibration selection changed: expected {CLIMATE_EXPECTED_ORIGINS}, "
+                f"got {actual}"
+            )
+    return selections, candidates
 
 
 def comparison_calibration(fields) -> dict[str, float]:
@@ -365,6 +620,106 @@ def surface_study_manifest(
     }
 
 
+def climate_calibration_heightfield_manifest(
+    elevation_file: dict[str, object],
+    generated: dict[str, object],
+    common_source: dict[str, object],
+) -> dict[str, object]:
+    half_span = (FIELD_SIZE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    selection: ClimateRegimeSelection = generated["selection"]
+    return {
+        "schema": "cubey.terrain.heightfield.v1",
+        "source": common_source,
+        "seed": ORDER_CHECK_SEED,
+        "grid": {
+            "width": FIELD_SIZE,
+            "height": FIELD_SIZE,
+            "sample_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+            "sample_origin_x_m": -half_span,
+            "sample_origin_z_m": -half_span,
+            "axis_mapping": {"world_x": "model_j", "world_z": "model_i"},
+        },
+        "height": {
+            "offset_m": DEFAULT_ASSET_HEIGHT_OFFSET_M,
+            "scale": DEFAULT_ASSET_HEIGHT_SCALE,
+            "relief_scale_m": COMPARISON_RELIEF_M,
+        },
+        "files": {
+            "elevation": {
+                **elevation_file,
+                "layout": "row-major-zx",
+                "shape": [FIELD_SIZE, FIELD_SIZE],
+                "unit": "m",
+            }
+        },
+        "provenance": {
+            "purpose": "cubey-terrain-climate-calibration-v1",
+            "selection": "fixed-seed-climate-regime-v1",
+            "regime": selection.regime.name,
+            "model_native_origin": generated["model_native_origin"],
+            "generation_seconds": generated["total_seconds"],
+        },
+    }
+
+
+def climate_calibration_surface_manifest(
+    climate_file: dict[str, object],
+    elevation_sha256: str,
+    generated: dict[str, object],
+    common_source: dict[str, object],
+) -> dict[str, object]:
+    half_span = (FIELD_SIZE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    block_center_offset = (
+        (SURFACE_STUDY_DOWNSAMPLE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    )
+    selection: ClimateRegimeSelection = generated["selection"]
+    return {
+        "schema": SURFACE_STUDY_SCHEMA,
+        "source": common_source,
+        "seed": ORDER_CHECK_SEED,
+        "heightfield": {
+            "schema": "cubey.terrain.heightfield.v1",
+            "elevation_sha256": elevation_sha256,
+        },
+        "grid": {
+            "width": SURFACE_STUDY_SIZE,
+            "height": SURFACE_STUDY_SIZE,
+            "sample_spacing_m": MODEL_NATIVE_RESOLUTION_M
+            * SURFACE_STUDY_DOWNSAMPLE,
+            "sample_origin_x_m": -half_span + block_center_offset,
+            "sample_origin_z_m": -half_span + block_center_offset,
+            "axis_mapping": {"world_x": "model_j", "world_z": "model_i"},
+        },
+        "files": {
+            "climate": {
+                **climate_file,
+                "layout": "channel-major-zx",
+                "shape": [
+                    len(CLIMATE_CHANNELS),
+                    SURFACE_STUDY_SIZE,
+                    SURFACE_STUDY_SIZE,
+                ],
+                "channels": [
+                    {"name": name, "unit": unit}
+                    for name, unit in CLIMATE_CHANNELS
+                ],
+            }
+        },
+        "processing": {
+            "method": "area-average",
+            "factor": SURFACE_STUDY_DOWNSAMPLE,
+            "source_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+        },
+        "provenance": {
+            "purpose": "cubey-terrain-climate-calibration-v1",
+            "selection": "fixed-seed-climate-regime-v1",
+            "regime": selection.regime.name,
+            "model_native_origin": generated["model_native_origin"],
+            "generation_seconds": generated["total_seconds"],
+        },
+    }
+
+
 def _write_gray16(path: Path, values, low: float, high: float) -> None:
     import numpy as np
     from PIL import Image
@@ -401,6 +756,50 @@ def _write_rgb8(path: Path, pixels) -> None:
     from PIL import Image
 
     Image.fromarray(pixels).save(path)
+
+
+def _write_calibration_climate_previews(root: Path, climate) -> dict[str, object]:
+    import numpy as np
+
+    previews = {
+        "temperature_mean": {
+            "path": "climate-temperature-mean.png",
+            "scale": {"minimum": -20.0, "maximum": 35.0, "unit": "deg_c"},
+        },
+        "temperature_stddev": {
+            "path": "climate-temperature-stddev.png",
+            "scale": {"minimum": 0.0, "maximum": 20.0, "unit": "deg_c"},
+        },
+        "precipitation_annual": {
+            "path": "climate-precipitation-annual.png",
+            "scale": {
+                "minimum": 0.0,
+                "maximum": 3_000.0,
+                "unit": "mm_per_year",
+                "transfer": "log1p",
+            },
+        },
+        "precipitation_cv": {
+            "path": "climate-precipitation-cv.png",
+            "scale": {"minimum": 0.0, "maximum": 1.0, "unit": "fraction"},
+        },
+    }
+    _write_gray16(
+        root / previews["temperature_mean"]["path"], climate[0], -20.0, 35.0
+    )
+    _write_gray16(
+        root / previews["temperature_stddev"]["path"], climate[1], 0.0, 20.0
+    )
+    _write_gray16(
+        root / previews["precipitation_annual"]["path"],
+        np.log1p(climate[2]),
+        0.0,
+        math.log1p(3_000.0),
+    )
+    _write_gray16(
+        root / previews["precipitation_cv"]["path"], climate[3], 0.0, 1.0
+    )
+    return previews
 
 
 def _write_selection_preview(path: Path, coarse_elevation, winner: RegionCandidate) -> None:
@@ -553,6 +952,75 @@ def _coarse_selection(world):
     return elevation, winner, candidates
 
 
+def _coarse_climate_scan(world):
+    begin = CLIMATE_SCAN_BEGIN
+    end = CLIMATE_SCAN_END
+    coarse_weighted = world.coarse[:, begin:end, begin:end]
+    coarse = (
+        (coarse_weighted[:-1] / coarse_weighted[-1:])
+        .detach()
+        .cpu()
+        .numpy()
+        .astype("float32", copy=True)
+    )
+    selections, candidates = select_climate_calibration_regions(
+        coarse, require_expected=True
+    )
+    return coarse, selections, candidates
+
+
+def _tile_overlap_validation(
+    tiles: list[QueriedTile], label: str
+) -> tuple[list[dict[str, object]], float]:
+    overlap_records = []
+    max_overlap_error = 0.0
+    for first_index, first in enumerate(tiles):
+        for second in tiles[first_index + 1 :]:
+            count, maximum = seam_max_abs(first, second)
+            if count:
+                overlap_records.append(
+                    {
+                        "first": first.name,
+                        "second": second.name,
+                        "sample_count": count,
+                        "max_abs_m": maximum,
+                    }
+                )
+                max_overlap_error = max(max_overlap_error, maximum)
+    if max_overlap_error > ORDER_TOLERANCE_M:
+        raise RuntimeError(
+            f"{label} tile overlaps differ by {max_overlap_error:.9g} m"
+        )
+    return overlap_records, max_overlap_error
+
+
+def _generate_climate_region(
+    world,
+    torch,
+    selection: ClimateRegimeSelection,
+) -> dict[str, object]:
+    generation_start = time.perf_counter()
+    candidate = selection.candidate
+    native_i = candidate.coarse_i * COARSE_CELL_NATIVE_SAMPLES
+    native_j = candidate.coarse_j * COARSE_CELL_NATIVE_SAMPLES
+    requests = _tile_requests(native_i, native_j)
+    tiles = [
+        _query_tile(world, torch, name, bounds, True) for name, bounds in requests
+    ]
+    elevation, climate = _stitch_tiles(tiles, with_climate=True)
+    overlaps, _ = _tile_overlap_validation(tiles, selection.regime.name)
+    return {
+        "seed": ORDER_CHECK_SEED,
+        "selection": selection,
+        "model_native_origin": {"i": native_i, "j": native_j},
+        "elevation": elevation,
+        "climate": climate,
+        "tiles": tiles,
+        "overlaps": overlaps,
+        "total_seconds": time.perf_counter() - generation_start,
+    }
+
+
 def _generate_seed(
     world, torch, seed: int, verify_order: bool, with_climate: bool = True
 ) -> dict[str, object]:
@@ -571,25 +1039,7 @@ def _generate_seed(
     ]
     elevation, climate = _stitch_tiles(tiles, with_climate)
 
-    overlap_records = []
-    max_overlap_error = 0.0
-    for first_index, first in enumerate(tiles):
-        for second in tiles[first_index + 1 :]:
-            count, maximum = seam_max_abs(first, second)
-            if count:
-                overlap_records.append(
-                    {
-                        "first": first.name,
-                        "second": second.name,
-                        "sample_count": count,
-                        "max_abs_m": maximum,
-                    }
-                )
-                max_overlap_error = max(max_overlap_error, maximum)
-    if max_overlap_error > ORDER_TOLERANCE_M:
-        raise RuntimeError(
-            f"seed {seed} tile overlaps differ by {max_overlap_error:.9g} m"
-        )
+    overlap_records, _ = _tile_overlap_validation(tiles, f"seed {seed}")
 
     order_check = None
     if verify_order:
@@ -657,6 +1107,153 @@ def _field_stats(values) -> dict[str, float]:
         "mean": float(np.mean(array)),
         "stddev": float(np.std(array)),
     }
+
+
+def _write_climate_calibration_region(
+    root: Path,
+    generated: dict[str, object],
+    common_source: dict[str, object],
+) -> dict[str, object]:
+    import numpy as np
+
+    selection: ClimateRegimeSelection = generated["selection"]
+    region_dir = root / selection.regime.name
+    region_dir.mkdir(parents=True, exist_ok=True)
+
+    elevation = np.asarray(generated["elevation"], dtype=np.float32)
+    climate = area_average_field(
+        normalize_climate_channels(generated["climate"]),
+        SURFACE_STUDY_DOWNSAMPLE,
+    )
+    rendered = (
+        (elevation + DEFAULT_ASSET_HEIGHT_OFFSET_M) * DEFAULT_ASSET_HEIGHT_SCALE
+    ).astype(np.float32)
+    elevation_file = write_f32(region_dir / "elevation.f32", elevation)
+    climate_file = write_f32(region_dir / "climate.f32", climate)
+
+    if selection.regime.name == "hot-dry":
+        if elevation_file["sha256"] != DEFAULT_ASSET_ELEVATION_SHA256:
+            raise RuntimeError(
+                "hot-dry control elevation changed: expected "
+                f"{DEFAULT_ASSET_ELEVATION_SHA256}, got {elevation_file['sha256']}"
+            )
+        if climate_file["sha256"] != DEFAULT_ASSET_CLIMATE_SHA256:
+            raise RuntimeError(
+                "hot-dry control climate changed: expected "
+                f"{DEFAULT_ASSET_CLIMATE_SHA256}, got {climate_file['sha256']}"
+            )
+
+    heightfield = climate_calibration_heightfield_manifest(
+        elevation_file, generated, common_source
+    )
+    surface_fields = climate_calibration_surface_manifest(
+        climate_file, elevation_file["sha256"], generated, common_source
+    )
+    heightfield_path = region_dir / "heightfield.json"
+    surface_fields_path = region_dir / "surface-fields.json"
+    heightfield_path.write_text(
+        json.dumps(heightfield, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    surface_fields_path.write_text(
+        json.dumps(surface_fields, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+
+    preview_step = 4
+    _write_rgb8(
+        region_dir / "height.png", height_preview_rgb(rendered[::preview_step, ::preview_step])
+    )
+    gradient_z, gradient_x = np.gradient(
+        rendered.astype(np.float64), MODEL_NATIVE_RESOLUTION_M
+    )
+    slope = np.sqrt(gradient_x * gradient_x + gradient_z * gradient_z)
+    _write_rgb8(
+        region_dir / "slope.png", slope_preview_rgb(slope[::preview_step, ::preview_step])
+    )
+    climate_previews = _write_calibration_climate_previews(region_dir, climate)
+
+    tile_records = [
+        {
+            "name": tile.name,
+            "bounds_native": list(tile.bounds),
+            "seconds": tile.seconds,
+        }
+        for tile in generated["tiles"]
+    ]
+    summary = {
+        "schema": CLIMATE_CALIBRATION_REGION_SCHEMA,
+        "regime": selection.as_json(),
+        "seed": ORDER_CHECK_SEED,
+        "model_native_origin": generated["model_native_origin"],
+        "files": {
+            "heightfield": {
+                "path": heightfield_path.name,
+                "sha256": sha256_file(heightfield_path),
+            },
+            "surface_fields": {
+                "path": surface_fields_path.name,
+                "sha256": sha256_file(surface_fields_path),
+            },
+            "elevation": elevation_file,
+            "climate": climate_file,
+        },
+        "previews": {
+            "height": {
+                "path": "height.png",
+                "scale": {
+                    "minimum": 0.0,
+                    "maximum": COMPARISON_RELIEF_M,
+                    "unit": "m",
+                },
+            },
+            "slope": {
+                "path": "slope.png",
+                "scale": {"minimum": 0.0, "maximum": 1.5},
+            },
+            "climate": climate_previews,
+        },
+        "statistics": {
+            "elevation_raw_m": _field_stats(elevation),
+            "elevation_product_m": _field_stats(rendered),
+            "slope": _field_stats(slope),
+            "climate": {
+                name: {"unit": unit, **_field_stats(climate[index])}
+                for index, (name, unit) in enumerate(CLIMATE_CHANNELS)
+            },
+        },
+        "generation": {
+            "seconds": generated["total_seconds"],
+            "tiles": tile_records,
+        },
+        "validation": {
+            "tile_context_halo_samples": TILE_CONTEXT_HALO,
+            "seam_validation_half_width_samples": SEAM_VALIDATION_HALF_WIDTH,
+            "overlap_tolerance_m": ORDER_TOLERANCE_M,
+            "overlaps": generated["overlaps"],
+            "canonical_control": selection.regime.name == "hot-dry",
+        },
+    }
+    summary_path = region_dir / "region-summary.json"
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    return {
+        "name": selection.regime.name,
+        "directory": selection.regime.name,
+        "selection": selection.as_json(),
+        "heightfield": str(heightfield_path.relative_to(root)),
+        "heightfield_sha256": sha256_file(heightfield_path),
+        "surface_fields": str(surface_fields_path.relative_to(root)),
+        "surface_fields_sha256": sha256_file(surface_fields_path),
+        "summary": str(summary_path.relative_to(root)),
+        "summary_sha256": sha256_file(summary_path),
+        "elevation_sha256": elevation_file["sha256"],
+        "climate_sha256": climate_file["sha256"],
+        "generation_seconds": generated["total_seconds"],
+    }
+
+
+def _directory_size(path: Path) -> int:
+    return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
 
 
 def _write_seed_artifacts(
@@ -1142,6 +1739,191 @@ def bake_surface_study_asset(reference_root: Path, output_dir: Path, data_cache:
     print(f"terrain surface study asset: wrote {output_dir}")
 
 
+def bake_climate_calibration_assets(
+    reference_root: Path, output_dir: Path, data_cache: Path
+) -> None:
+    """Generate deterministic cross-climate terrain calibration regions."""
+    import torch
+    from huggingface_hub import snapshot_download
+
+    reference_root = reference_root.resolve()
+    output_dir = output_dir.resolve()
+    data_cache = data_cache.resolve()
+    actual_revision = git_revision(reference_root)
+    if actual_revision != CODE_REVISION:
+        raise RuntimeError(
+            f"terrain-diffusion checkout must be {CODE_REVISION}, got {actual_revision}"
+        )
+    if not torch.cuda.is_available():
+        raise RuntimeError("Terrain climate calibration generation requires CUDA")
+
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cudnn.benchmark = False
+    torch.set_float32_matmul_precision("highest")
+    torch.use_deterministic_algorithms(True, warn_only=True)
+
+    _prepare_data_cache(reference_root, data_cache)
+    snapshot = Path(
+        snapshot_download(repo_id=MODEL_ID, revision=MODEL_REVISION)
+    ).resolve()
+
+    sys.path.insert(0, str(reference_root))
+    from terrain_diffusion.inference.world_pipeline import WorldPipeline
+
+    with _working_directory(data_cache):
+        _seed_process_rngs(torch, ORDER_CHECK_SEED)
+        world = WorldPipeline.from_pretrained(
+            str(snapshot),
+            seed=ORDER_CHECK_SEED,
+            latents_batch_size=LATENTS_BATCH_SIZE,
+            torch_compile=False,
+            dtype=None,
+            caching_strategy="direct",
+            cache_limit=None,
+            log_mode="info",
+        )
+        world.to("cuda")
+        world.bind()
+        if float(world.native_resolution) != MODEL_NATIVE_RESOLUTION_M:
+            raise RuntimeError(
+                f"expected {MODEL_NATIVE_RESOLUTION_M:g} m model, got {world.native_resolution}"
+            )
+
+        generation_start = time.perf_counter()
+        scan_start = time.perf_counter()
+        coarse, selections, candidates = _coarse_climate_scan(world)
+        _cuda_sync(torch)
+        scan_seconds = time.perf_counter() - scan_start
+        try:
+            generated_regions = [
+                _generate_climate_region(world, torch, selection)
+                for selection in selections
+            ]
+        finally:
+            world.close()
+
+    common_source = {
+        "id": "terrain-diffusion-30m",
+        "generator": "terrain-diffusion",
+        "code_revision": CODE_REVISION,
+        "model_id": MODEL_ID,
+        "model_revision": MODEL_REVISION,
+        "model_snapshot": str(snapshot),
+        "native_resolution_m": MODEL_NATIVE_RESOLUTION_M,
+        "settings": {
+            "device": "cuda",
+            "dtype": "fp32",
+            "latents_batch_size": LATENTS_BATCH_SIZE,
+            "torch_compile": False,
+            "caching_strategy": "direct",
+            "custom_conditioning": False,
+            "process_rng_seeding": "seed-value-v1",
+            "climate_output": True,
+        },
+    }
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(
+        tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent)
+    )
+    try:
+        region_summaries = [
+            _write_climate_calibration_region(
+                temporary, generated, common_source
+            )
+            for generated in generated_regions
+        ]
+        generation_seconds = time.perf_counter() - generation_start
+        index = {
+            "schema": CLIMATE_CALIBRATION_SCHEMA,
+            "source": common_source,
+            "seed": ORDER_CHECK_SEED,
+            "scan": {
+                "coarse_bounds": {
+                    "begin_i": CLIMATE_SCAN_BEGIN,
+                    "begin_j": CLIMATE_SCAN_BEGIN,
+                    "end_i": CLIMATE_SCAN_END,
+                    "end_j": CLIMATE_SCAN_END,
+                },
+                "shape": list(coarse.shape),
+                "sample_spacing_m": CLIMATE_MACRO_SPACING_M,
+                "window_cells": COARSE_WINDOW_CELLS,
+                "window_extent_m": FIELD_SIZE * MODEL_NATIVE_RESOLUTION_M,
+                "minimum_land_fraction": LAND_THRESHOLD,
+                "minimum_relief_m": CLIMATE_MIN_RELIEF_M,
+                "selection_seconds": scan_seconds,
+                "candidate_count": len(candidates),
+                "candidates": [candidate.as_json() for candidate in candidates],
+            },
+            "selection": {
+                "method": "fixed-seed-climate-regime-v1",
+                "temperature_distance_scale_c": 8.0,
+                "precipitation_distance_scale_log10": 0.45,
+                "canonical_control": "hot-dry",
+                "expected_origins": {
+                    name: {"coarse_i": origin[0], "coarse_j": origin[1]}
+                    for name, origin in CLIMATE_EXPECTED_ORIGINS.items()
+                },
+                "regions": [selection.as_json() for selection in selections],
+            },
+            "field_contract": {
+                "elevation_size": [FIELD_SIZE, FIELD_SIZE],
+                "elevation_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+                "climate_size": [SURFACE_STUDY_SIZE, SURFACE_STUDY_SIZE],
+                "climate_spacing_m": MODEL_NATIVE_RESOLUTION_M
+                * SURFACE_STUDY_DOWNSAMPLE,
+                "height_offset_m": DEFAULT_ASSET_HEIGHT_OFFSET_M,
+                "height_scale": DEFAULT_ASSET_HEIGHT_SCALE,
+                "target_relief_m": COMPARISON_RELIEF_M,
+            },
+            "regions": region_summaries,
+            "validation": {
+                "canonical_elevation_sha256": DEFAULT_ASSET_ELEVATION_SHA256,
+                "canonical_climate_sha256": DEFAULT_ASSET_CLIMATE_SHA256,
+                "all_expected_origins_selected": True,
+                "generation_seconds": generation_seconds,
+                "generation_limit_seconds": CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS,
+                "within_generation_limit": generation_seconds
+                <= CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS,
+                "package_limit_bytes": CLIMATE_CALIBRATION_PACKAGE_LIMIT_BYTES,
+                "package_bytes": 0,
+                "within_package_limit": True,
+            },
+        }
+        index_path = temporary / "calibration-index.json"
+        for _ in range(8):
+            index_path.write_text(
+                json.dumps(index, indent=2, sort_keys=True, allow_nan=False) + "\n"
+            )
+            package_bytes = _directory_size(temporary)
+            if index["validation"]["package_bytes"] == package_bytes:
+                break
+            index["validation"]["package_bytes"] = package_bytes
+        else:
+            raise RuntimeError("climate calibration package size did not stabilize")
+
+        package_bytes = _directory_size(temporary)
+        if package_bytes > CLIMATE_CALIBRATION_PACKAGE_LIMIT_BYTES:
+            raise RuntimeError(
+                f"climate calibration package is {package_bytes} bytes, over the "
+                f"{CLIMATE_CALIBRATION_PACKAGE_LIMIT_BYTES}-byte limit"
+            )
+        if generation_seconds > CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS:
+            raise RuntimeError(
+                f"climate calibration generation took {generation_seconds:.3f} seconds, "
+                f"over the {CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS:.0f}-second limit"
+            )
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        os.replace(temporary, output_dir)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+
+    print(f"terrain climate calibration assets: wrote {output_dir}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1170,6 +1952,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="generate the seed-0 climate companion for the surface semantics study",
     )
+    mode.add_argument(
+        "--climate-calibration-assets",
+        action="store_true",
+        help="generate five deterministic cross-climate calibration regions",
+    )
     return parser.parse_args()
 
 
@@ -1179,6 +1966,10 @@ def main() -> int:
         bake_default_asset(args.reference_root, args.output_dir, args.data_cache)
     elif args.surface_study_asset:
         bake_surface_study_asset(args.reference_root, args.output_dir, args.data_cache)
+    elif args.climate_calibration_assets:
+        bake_climate_calibration_assets(
+            args.reference_root, args.output_dir, args.data_cache
+        )
     else:
         bake(args.reference_root, args.output_dir, args.data_cache)
     return 0
