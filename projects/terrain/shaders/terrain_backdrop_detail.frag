@@ -185,18 +185,26 @@ void main() {
     vec3 flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * ground +
                            srgb_to_linear(vec3(0.39, 0.385, 0.37)) * rock +
                            srgb_to_linear(vec3(0.82, 0.845, 0.86)) * snow;
-    vec3 refined_base_color = srgb_to_linear(vec3(0.32, 0.325, 0.31)) * ground +
-                              srgb_to_linear(vec3(0.37, 0.36, 0.345)) * rock +
-                              srgb_to_linear(vec3(0.80, 0.825, 0.84)) * snow;
     float filtered_detail = step(0.5, pc.material_options.x);
+    float macro_mineral = smoothstep(0.18, 0.82, macro_detail.b);
+    float rock_mineral = smoothstep(
+        0.16, 0.84, 0.72 * macro_detail.b + 0.28 * macro_detail.a);
+    vec3 refined_ground = mix(
+        srgb_to_linear(vec3(0.285, 0.305, 0.310)),
+        srgb_to_linear(vec3(0.390, 0.350, 0.300)), macro_mineral);
+    vec3 refined_rock = mix(
+        srgb_to_linear(vec3(0.255, 0.275, 0.300)),
+        srgb_to_linear(vec3(0.425, 0.375, 0.325)), rock_mineral);
+    vec3 refined_base_color = refined_ground * ground + refined_rock * rock +
+                              srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
     vec3 base_color = mix(flat_base_color, refined_base_color, filtered_detail);
     float macro_albedo = macro_detail.b * 2.0 - 1.0;
     float planar_albedo = local_planar_detail.b * 2.0 - 1.0;
     float rock_albedo = local_rock_detail.b * 2.0 - 1.0;
     float albedo_variation =
-        ground * (0.065 * macro_albedo + 0.035 * planar_albedo) +
-        rock * (0.080 * macro_albedo + 0.140 * rock_albedo) +
-        snow * (0.025 * macro_albedo + 0.010 * planar_albedo);
+        ground * (0.040 * macro_albedo + 0.018 * planar_albedo) +
+        rock * (0.055 * macro_albedo + 0.045 * rock_albedo) +
+        snow * (0.018 * macro_albedo + 0.008 * planar_albedo);
     base_color *= max(0.0, 1.0 + albedo_variation);
     float flat_roughness = 0.94 * ground + 0.77 * rock + 0.84 * snow;
     float refined_roughness = 0.93 * ground + 0.76 * rock + 0.85 * snow;

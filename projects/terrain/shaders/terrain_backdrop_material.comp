@@ -49,10 +49,10 @@ vec4 backdrop_bands(vec2 uv) {
     float band_4_4 = backdrop_band(warped_uv, 465, 59U);
     float relief = 0.31 * band_512 + 0.24 * band_186 + 0.18 * band_71 +
         0.13 * band_29 + 0.09 * band_11 + 0.05 * band_4_4;
-    float albedo = 0.38 * band_512 + 0.28 * band_186 + 0.19 * band_71 +
-        0.10 * band_29 + 0.05 * band_11;
-    float roughness = 0.24 * band_186 - 0.27 * band_71 + 0.24 * band_29 -
-        0.16 * band_11 + 0.09 * band_4_4;
+    float albedo = 0.46 * band_512 + 0.30 * band_186 + 0.16 * band_71 +
+        0.08 * band_29;
+    float roughness = 0.38 * band_186 - 0.28 * band_71 + 0.20 * band_29 -
+        0.10 * band_11 + 0.04 * band_4_4;
     return vec4(relief, albedo, roughness, 0.0);
 }
 
