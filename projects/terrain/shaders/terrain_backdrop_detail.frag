@@ -178,8 +178,8 @@ void main() {
     float rock_projection_blend = smoothstep(0.35, 0.65, rock);
     vec3 perturbation = mix(planar_perturbation, rock_perturbation,
                             rock_projection_blend);
-    vec3 material_normal = normalize(classification_normal + perturbation);
-    float normal_strength = 0.16 * ground + 0.42 * rock + 0.06 * snow;
+    vec3 material_normal = normalize(classification_normal + 0.55 * perturbation);
+    float normal_strength = 0.14 * ground + 0.38 * rock + 0.05 * snow;
     vec3 normal = normalize(classification_normal + normal_strength * perturbation);
 
     vec3 flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * ground +
@@ -207,13 +207,14 @@ void main() {
         snow * (0.018 * macro_albedo + 0.008 * planar_albedo);
     base_color *= max(0.0, 1.0 + albedo_variation);
     float flat_roughness = 0.94 * ground + 0.77 * rock + 0.84 * snow;
-    float refined_roughness = 0.93 * ground + 0.76 * rock + 0.85 * snow;
+    float refined_roughness = 0.91 * ground + 0.70 * rock + 0.84 * snow;
     float roughness = mix(flat_roughness, refined_roughness, filtered_detail);
     float macro_roughness = macro_detail.a * 2.0 - 1.0;
     float local_roughness = mix(local_planar_detail.a, local_rock_detail.a,
                                 rock_projection_blend) * 2.0 - 1.0;
-    roughness = clamp(roughness + 0.05 * macro_roughness +
-                      0.03 * local_roughness, 0.0, 1.0);
+    roughness = clamp(roughness + filtered_detail *
+                      (0.07 * macro_roughness + 0.02 * local_roughness),
+                      0.0, 1.0);
 
     if (debug_view == 10) {
         out_color = vec4(normal * 0.5 + 0.5, 1.0);
@@ -239,8 +240,13 @@ void main() {
     vec3 view_direction = normalize(pc.camera_position.xyz - frag_world_position);
     vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
         atmosphere.primary_light_direction_intensity.w;
+    float occlusion_strength = 0.90 * ground + 1.20 * rock + 0.45 * snow;
+    float refined_ambient_visibility = clamp(
+        1.0 - (1.0 - ambient_visibility) * occlusion_strength, 0.55, 1.0);
+    float material_ambient_visibility = mix(
+        ambient_visibility, refined_ambient_visibility, filtered_detail);
     vec3 color = terrain_lighting_ambient(
-        base_color, terrain_diffuse_irradiance(normal), ambient_visibility);
+        base_color, terrain_diffuse_irradiance(normal), material_ambient_visibility);
     color += terrain_lighting_direct(base_color, roughness, normal, view_direction,
                                      light_direction, light_radiance, sun_visibility);
     CubeyAtmosphereSample aerial = terrain_aerial_perspective(
