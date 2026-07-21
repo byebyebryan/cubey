@@ -256,8 +256,7 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
             .vertical_offset_m = placement.stage.terrain_vertical_offset_m,
             .surface_model = config.surface_model,
         },
-        source, config.surface_model == TerrainSurfaceModel::ClimateTransition ? climate
-                                                                               : nullptr);
+        source, climate);
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
