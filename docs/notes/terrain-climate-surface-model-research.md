@@ -2,8 +2,9 @@
 
 Date: 2026-07-21
 
-Status: research complete; implementation direction proposed; production default
-unchanged.
+Status: research and cross-climate calibration complete; production default
+unchanged. See [Terrain Climate Calibration V1](terrain-climate-calibration-v1.md)
+for the generated five-region evidence and resulting decision.
 
 ## Question
 
@@ -233,7 +234,7 @@ Revise before promotion:
 - validate multiple climate regimes instead of calibrating only the hot, dry
   selected patch.
 
-## Next Evidence Batch
+## Proposed Evidence Batch
 
 Before changing the production default, build a climate calibration study with
 at least five Terrain Diffusion regions:
@@ -269,6 +270,11 @@ reasonable hot/dry response. Its formulas should be treated as rendering
 proxies and validated across multiple climates before promotion. The next
 highest-value work is a cross-climate calibration pack, not another tuning pass
 on the current seed.
+
+That calibration pack is now complete. It validates broad hot/dry, hot/wet,
+cool/wet, cold/dry, and cold/wet ordering while exposing moisture saturation,
+annual-mean cold limitations, and coarse-field boundaries. The formulas and
+production default remain unchanged pending a focused follow-up.
 
 ## Sources
 

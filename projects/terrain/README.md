@@ -55,6 +55,19 @@ Normal configure, build, and test never download or generate this data. If the
 default or selected asset is missing, both GUI and headless startup fail with
 the generation command. There is no procedural fallback.
 
+The optional climate companion for the canonical field and the five-region
+cross-climate calibration pack are also explicit targets:
+
+```sh
+cmake --build --preset dev --target cubey_terrain_generate_surface_study_asset
+cmake --build --preset dev \
+  --target cubey_terrain_generate_climate_calibration_assets
+```
+
+The calibration pack is written under
+`build/dev/assets/terrain/climate-calibration`. It is evidence for the
+experimental surface model, not a production asset or biome contract.
+
 ## Build And Run
 
 ```sh
@@ -98,7 +111,7 @@ choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
 ```text
 surface height slope clay normal classification-normal material-weights
 ambient-visibility material-albedo material-normal material-roughness
-sun-visibility projected-edge stage-ownership
+vegetation moisture sun-visibility projected-edge stage-ownership
 ```
 
 `--terrain-render-stride 1|2|3` is a reference-only startup diagnostic. It
@@ -157,6 +170,17 @@ fair-cloud macro views, qualified and stress camera envelopes, matched stride
 is a decision gate for LOD versus source refinement; it does not expand the V1
 camera contract.
 
+Generate the cross-climate surface evidence with:
+
+```sh
+projects/terrain/capture_climate_calibration_study.sh
+```
+
+It writes `outputs/terrain/climate-calibration-v1` with five generated climate
+regimes, three matched surface models, fixed-scale source previews, final
+surface diagnostics, profile metrics, invariant checks, and contact sheets. It
+does not tune the model or change the production default.
+
 Generate the matched Material V2 review in three steps:
 
 ```sh
@@ -175,11 +199,13 @@ diagnostic sheets under `outputs/terrain/material-v2`.
 ```sh
 cmake --build --preset dev --target \
   cubey_project_terrain_config_tests \
+  cubey_project_terrain_raster_climate_source_tests \
   cubey_project_terrain_raster_height_source_tests \
   cubey_project_terrain_backdrop_product_tests \
   cubey_project_terrain_backdrop_placement_tests \
   cubey_project_terrain_directional_placement_tests \
-  cubey_project_terrain_shadow_tests
+  cubey_project_terrain_shadow_tests \
+  cubey_project_terrain_surface_model_tests
 
 ctest --preset dev -R '^terrain_.*_tests$' --output-on-failure
 ```
@@ -206,4 +232,8 @@ backdrop API moves from this project into `include/cubey` and `src/cubey`.
 
 See [Terrain V1 Runtime](../../docs/architecture/terrain-v1.md),
 [Terrain Product Promotion](../../docs/notes/terrain-product-promotion.md), and
-[Terrain Project Map](../../docs/notes/terrain-project-map.md).
+[Terrain Project Map](../../docs/notes/terrain-project-map.md). The experimental
+climate path is documented in
+[Terrain Climate Surface Model Research](../../docs/notes/terrain-climate-surface-model-research.md)
+and
+[Terrain Climate Calibration V1](../../docs/notes/terrain-climate-calibration-v1.md).

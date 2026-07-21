@@ -188,8 +188,9 @@ The reference-only
 may evaluate an optional climate companion and continuous surface masks without
 changing this product contract or its default presentation. The follow-up
 [Terrain Climate Surface Model Research](../notes/terrain-climate-surface-model-research.md)
-defines the narrower climate-potential contract and the cross-climate evidence
-required before promotion.
+defines the narrower climate-potential contract. The completed
+[Terrain Climate Calibration V1](../notes/terrain-climate-calibration-v1.md)
+records the five-region evidence and keeps the production default unchanged.
 
 ## Acceptance
 
