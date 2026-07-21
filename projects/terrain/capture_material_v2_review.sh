@@ -137,7 +137,8 @@ if [[ "${MODE}" == "finalize" ]]; then
         diagnostic-weights-90 diagnostic-weights-180 flat-control; do
         control_image="${CONTROL_DIR}/${image_name}.png"
         candidate_image="${CANDIDATE_DIR}/${image_name}.png"
-        ae="$(magick compare -metric AE "${control_image}" "${candidate_image}" null: 2>&1 || true)"
+        ae_output="$(magick compare -metric AE "${control_image}" "${candidate_image}" null: 2>&1 || true)"
+        ae="${ae_output%% *}"
         rmse_output="$(magick compare -metric RMSE "${control_image}" "${candidate_image}" null: 2>&1 || true)"
         rmse="$(sed -n 's/.*(\([^)]*\)).*/\1/p' <<<"${rmse_output}")"
         printf '%s.png\t%s\t%s\n' "${image_name}" "${ae}" "${rmse:-0}" \
