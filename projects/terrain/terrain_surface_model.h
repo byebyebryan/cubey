@@ -30,6 +30,22 @@ struct TerrainSurfaceWeights {
     float moisture = 0.0F;
 };
 
+struct TerrainClimatePotential {
+    float growing_season_days = 0.0F;
+    float thermal_growth = 0.0F;
+    float thermal_water_demand_proxy_mm = 0.0F;
+    float climate_moisture_ratio = 0.0F;
+    float seasonality_factor = 0.0F;
+    float effective_moisture = 0.0F;
+    float moisture_weight = 0.0F;
+    float cover_weight = 0.0F;
+    float annual_cold_potential = 0.0F;
+    float wet_snow_potential = 0.0F;
+};
+
+[[nodiscard]] TerrainClimatePotential
+terrain_climate_potential(const TerrainClimateSample& climate);
+
 [[nodiscard]] TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
                                                             const TerrainSurfaceInputs& inputs);
 

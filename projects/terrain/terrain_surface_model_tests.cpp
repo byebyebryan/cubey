@@ -71,6 +71,35 @@ void test_climate_modulates_landform_capacity_continuously() {
             "climate transition should suppress arid and cold vegetation");
 }
 
+void test_climate_potential_exposes_existing_empirical_proxies() {
+    using namespace cubey::projects::terrain;
+    const TerrainClimateSample climate{
+        .temperature_mean_c = 12.0F,
+        .temperature_stddev_c = 7.0F,
+        .precipitation_annual_mm = 1'000.0F,
+        .precipitation_cv = 0.2F,
+    };
+    const TerrainClimatePotential potential = terrain_climate_potential(climate);
+    auto inputs = low_plain();
+    inputs.climate = climate;
+    const TerrainSurfaceWeights weights =
+        terrain_surface_weights(TerrainSurfaceModel::ClimateTransition, inputs);
+
+    require(potential.growing_season_days > 150.0F && potential.growing_season_days <= 365.0F,
+            "temperate climate should expose a substantial growing season");
+    require(potential.thermal_growth > 0.0F &&
+                potential.thermal_water_demand_proxy_mm > 250.0F &&
+                potential.climate_moisture_ratio > 0.0F,
+            "climate diagnostics should expose the existing thermal and moisture proxies");
+    require(std::abs(potential.seasonality_factor - 0.93F) < 1.0e-6F &&
+                std::abs(potential.effective_moisture -
+                         potential.climate_moisture_ratio * potential.seasonality_factor) <
+                    1.0e-6F,
+            "effective moisture should retain the existing seasonality penalty");
+    require(weights.moisture == potential.moisture_weight,
+            "surface output should consume the exposed moisture proxy without retuning");
+}
+
 void test_weights_remain_bounded() {
     auto inputs = low_plain();
     inputs.climate = cubey::projects::terrain::TerrainClimateSample{
@@ -99,6 +128,7 @@ int main() {
         test_mineral_control_preserves_existing_channels();
         test_landform_capacity_prefers_low_flat_terrain();
         test_climate_modulates_landform_capacity_continuously();
+        test_climate_potential_exposes_existing_empirical_proxies();
         test_weights_remain_bounded();
         std::cout << "terrain surface model tests passed\n";
         return 0;

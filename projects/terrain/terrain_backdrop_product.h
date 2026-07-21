@@ -69,6 +69,24 @@ struct TerrainBackdropSectorMesh {
     [[nodiscard]] std::uint32_t triangle_count() const noexcept;
 };
 
+struct TerrainBackdropClimateDiagnostics {
+    std::uint64_t sample_count = 0U;
+    float mean_temperature_c = 0.0F;
+    float mean_temperature_stddev_c = 0.0F;
+    float mean_precipitation_annual_mm = 0.0F;
+    float mean_precipitation_cv = 0.0F;
+    float mean_growing_season_days = 0.0F;
+    float mean_thermal_growth = 0.0F;
+    float mean_thermal_water_demand_proxy_mm = 0.0F;
+    float mean_climate_moisture_ratio = 0.0F;
+    float mean_seasonality_factor = 0.0F;
+    float mean_effective_moisture = 0.0F;
+    float mean_moisture_weight = 0.0F;
+    float mean_cover_weight = 0.0F;
+    float mean_annual_cold_potential = 0.0F;
+    float mean_wet_snow_potential = 0.0F;
+};
+
 struct TerrainBackdropProductDiagnostics {
     TerrainBackdropDensityProfile density{};
     std::uint64_t source_sample_count = 0U;
@@ -85,8 +103,11 @@ struct TerrainBackdropProductDiagnostics {
     float maximum_sector_boundary_delta_m = 0.0F;
     std::uint64_t content_hash = 0U;
     std::uint64_t geometry_hash = 0U;
+    float mean_rock = 0.0F;
+    float mean_snow = 0.0F;
     float mean_vegetation = 0.0F;
     float mean_moisture = 0.0F;
+    TerrainBackdropClimateDiagnostics climate{};
 };
 
 struct TerrainBackdropProduct {

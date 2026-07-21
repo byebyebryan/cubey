@@ -1115,6 +1115,10 @@ class TerrainApp {
                                                            32U)));
         recorder->record_metric(frame_index, "terrain.surface", "model",
                                 static_cast<double>(runtime_config_.surface_model));
+        recorder->record_metric(frame_index, "terrain.surface", "mean_rock",
+                                product_.diagnostics.mean_rock);
+        recorder->record_metric(frame_index, "terrain.surface", "mean_snow",
+                                product_.diagnostics.mean_snow);
         recorder->record_metric(frame_index, "terrain.surface", "mean_vegetation",
                                 product_.diagnostics.mean_vegetation);
         recorder->record_metric(frame_index, "terrain.surface", "mean_moisture",
@@ -1128,6 +1132,38 @@ class TerrainApp {
             recorder->record_metric(frame_index, "terrain.surface", "climate_hash_last32",
                                     static_cast<double>(sha256_word(hash, hash.size() - 8U)));
         }
+        const TerrainBackdropClimateDiagnostics& climate = product_.diagnostics.climate;
+        recorder->record_metric(frame_index, "terrain.climate", "sample_count",
+                                static_cast<double>(climate.sample_count));
+        recorder->record_metric(frame_index, "terrain.climate", "mean_temperature_c",
+                                climate.mean_temperature_c);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_temperature_stddev_c",
+                                climate.mean_temperature_stddev_c);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_precipitation_annual_mm",
+                                climate.mean_precipitation_annual_mm);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_precipitation_cv",
+                                climate.mean_precipitation_cv);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_growing_season_days",
+                                climate.mean_growing_season_days);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_thermal_growth",
+                                climate.mean_thermal_growth);
+        recorder->record_metric(frame_index, "terrain.climate",
+                                "mean_thermal_water_demand_proxy_mm",
+                                climate.mean_thermal_water_demand_proxy_mm);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_climate_moisture_ratio",
+                                climate.mean_climate_moisture_ratio);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_seasonality_factor",
+                                climate.mean_seasonality_factor);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_effective_moisture",
+                                climate.mean_effective_moisture);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_moisture_weight",
+                                climate.mean_moisture_weight);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_cover_weight",
+                                climate.mean_cover_weight);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_annual_cold_potential",
+                                climate.mean_annual_cold_potential);
+        recorder->record_metric(frame_index, "terrain.climate", "mean_wet_snow_potential",
+                                climate.mean_wet_snow_potential);
         recorder->record_metric(frame_index, "terrain.backdrop", "render_stride",
                                 static_cast<double>(product_.request.render_stride));
         recorder->record_metric(frame_index, "terrain.backdrop", "outer_radius_m",

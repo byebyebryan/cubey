@@ -424,6 +424,75 @@ void hash_float(std::uint64_t& hash, float value) {
     return hash;
 }
 
+[[nodiscard]] TerrainBackdropClimateDiagnostics
+climate_diagnostics(const std::vector<TerrainClimateSample>& samples) {
+    TerrainBackdropClimateDiagnostics diagnostics{
+        .sample_count = static_cast<std::uint64_t>(samples.size()),
+    };
+    if (samples.empty()) {
+        return diagnostics;
+    }
+
+    double temperature_sum = 0.0;
+    double temperature_stddev_sum = 0.0;
+    double precipitation_sum = 0.0;
+    double precipitation_cv_sum = 0.0;
+    double growing_season_sum = 0.0;
+    double thermal_growth_sum = 0.0;
+    double thermal_water_demand_sum = 0.0;
+    double climate_moisture_ratio_sum = 0.0;
+    double seasonality_factor_sum = 0.0;
+    double effective_moisture_sum = 0.0;
+    double moisture_weight_sum = 0.0;
+    double cover_weight_sum = 0.0;
+    double annual_cold_sum = 0.0;
+    double wet_snow_sum = 0.0;
+    for (const TerrainClimateSample& sample : samples) {
+        const TerrainClimatePotential potential = terrain_climate_potential(sample);
+        temperature_sum += sample.temperature_mean_c;
+        temperature_stddev_sum += sample.temperature_stddev_c;
+        precipitation_sum += sample.precipitation_annual_mm;
+        precipitation_cv_sum += sample.precipitation_cv;
+        growing_season_sum += potential.growing_season_days;
+        thermal_growth_sum += potential.thermal_growth;
+        thermal_water_demand_sum += potential.thermal_water_demand_proxy_mm;
+        climate_moisture_ratio_sum += potential.climate_moisture_ratio;
+        seasonality_factor_sum += potential.seasonality_factor;
+        effective_moisture_sum += potential.effective_moisture;
+        moisture_weight_sum += potential.moisture_weight;
+        cover_weight_sum += potential.cover_weight;
+        annual_cold_sum += potential.annual_cold_potential;
+        wet_snow_sum += potential.wet_snow_potential;
+    }
+    const double inverse_count = 1.0 / static_cast<double>(samples.size());
+    diagnostics.mean_temperature_c = static_cast<float>(temperature_sum * inverse_count);
+    diagnostics.mean_temperature_stddev_c =
+        static_cast<float>(temperature_stddev_sum * inverse_count);
+    diagnostics.mean_precipitation_annual_mm =
+        static_cast<float>(precipitation_sum * inverse_count);
+    diagnostics.mean_precipitation_cv =
+        static_cast<float>(precipitation_cv_sum * inverse_count);
+    diagnostics.mean_growing_season_days =
+        static_cast<float>(growing_season_sum * inverse_count);
+    diagnostics.mean_thermal_growth =
+        static_cast<float>(thermal_growth_sum * inverse_count);
+    diagnostics.mean_thermal_water_demand_proxy_mm =
+        static_cast<float>(thermal_water_demand_sum * inverse_count);
+    diagnostics.mean_climate_moisture_ratio =
+        static_cast<float>(climate_moisture_ratio_sum * inverse_count);
+    diagnostics.mean_seasonality_factor =
+        static_cast<float>(seasonality_factor_sum * inverse_count);
+    diagnostics.mean_effective_moisture =
+        static_cast<float>(effective_moisture_sum * inverse_count);
+    diagnostics.mean_moisture_weight =
+        static_cast<float>(moisture_weight_sum * inverse_count);
+    diagnostics.mean_cover_weight = static_cast<float>(cover_weight_sum * inverse_count);
+    diagnostics.mean_annual_cold_potential =
+        static_cast<float>(annual_cold_sum * inverse_count);
+    diagnostics.mean_wet_snow_potential = static_cast<float>(wet_snow_sum * inverse_count);
+    return diagnostics;
+}
+
 } // namespace
 
 TerrainBackdropDensityProfile
@@ -718,13 +787,18 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         .minimum_height_m = minimum_height,
         .maximum_height_m = maximum_height,
         .maximum_sector_boundary_delta_m = maximum_boundary_delta,
+        .climate = climate_diagnostics(climate_samples),
     };
     product.diagnostics.render_triangle_count = center_render_triangle_count;
+    double rock_sum = 0.0;
+    double snow_sum = 0.0;
     double vegetation_sum = 0.0;
     double moisture_sum = 0.0;
     std::uint64_t surface_sample_count = 0U;
     const auto include_surface = [&](const TerrainBackdropSectorMesh& mesh) {
         for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
+            rock_sum += vertex.color[0];
+            snow_sum += vertex.color[1];
             vegetation_sum += vertex.uv[0];
             moisture_sum += vertex.uv[1];
             ++surface_sample_count;
@@ -740,6 +814,10 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
     product.diagnostics.content_hash = content_hash(product);
     product.diagnostics.geometry_hash = geometry_hash(product);
     if (surface_sample_count != 0U) {
+        product.diagnostics.mean_rock =
+            static_cast<float>(rock_sum / static_cast<double>(surface_sample_count));
+        product.diagnostics.mean_snow =
+            static_cast<float>(snow_sum / static_cast<double>(surface_sample_count));
         product.diagnostics.mean_vegetation =
             static_cast<float>(vegetation_sum / static_cast<double>(surface_sample_count));
         product.diagnostics.mean_moisture =

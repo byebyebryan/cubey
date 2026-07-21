@@ -27,7 +27,50 @@ namespace {
                        std::numbers::pi_v<float>);
 }
 
+void validate_climate_sample(const TerrainClimateSample& climate) {
+    if (!std::isfinite(climate.temperature_mean_c) ||
+        !std::isfinite(climate.temperature_stddev_c) ||
+        !std::isfinite(climate.precipitation_annual_mm) ||
+        !std::isfinite(climate.precipitation_cv) || climate.temperature_stddev_c < 0.0F ||
+        climate.precipitation_annual_mm < 0.0F || climate.precipitation_cv < 0.0F ||
+        climate.precipitation_cv > 1.0F) {
+        throw std::runtime_error("terrain climate sample violates its physical contract");
+    }
+}
+
 } // namespace
+
+TerrainClimatePotential terrain_climate_potential(const TerrainClimateSample& climate) {
+    validate_climate_sample(climate);
+    const float growing_days =
+        growing_season_days(climate.temperature_mean_c, climate.temperature_stddev_c);
+    const float thermal_growth = smoothstep(60.0F, 150.0F, growing_days);
+    const float effective_temperature =
+        std::max(climate.temperature_mean_c + 0.5F * climate.temperature_stddev_c, 0.0F);
+    const float thermal_water_demand_proxy =
+        std::max(250.0F + 25.0F * effective_temperature +
+                     0.7F * effective_temperature * effective_temperature,
+                 250.0F);
+    const float climate_moisture_ratio =
+        climate.precipitation_annual_mm / thermal_water_demand_proxy;
+    const float seasonality_factor =
+        1.0F - 0.35F * std::clamp(climate.precipitation_cv, 0.0F, 1.0F);
+    const float effective_moisture = climate_moisture_ratio * seasonality_factor;
+    return {
+        .growing_season_days = growing_days,
+        .thermal_growth = thermal_growth,
+        .thermal_water_demand_proxy_mm = thermal_water_demand_proxy,
+        .climate_moisture_ratio = climate_moisture_ratio,
+        .seasonality_factor = seasonality_factor,
+        .effective_moisture = effective_moisture,
+        .moisture_weight = smoothstep(0.03F, 0.50F, effective_moisture),
+        .cover_weight = smoothstep(0.02F, 0.28F, effective_moisture),
+        .annual_cold_potential =
+            1.0F - smoothstep(-1.0F, 3.0F, climate.temperature_mean_c),
+        .wet_snow_potential =
+            smoothstep(150.0F, 400.0F, climate.precipitation_annual_mm),
+    };
+}
 
 TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
                                               const TerrainSurfaceInputs& inputs) {
@@ -73,40 +116,18 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
         throw std::runtime_error("climate transition requires a climate sample");
     }
     const TerrainClimateSample climate = inputs.climate.value();
-    if (!std::isfinite(climate.temperature_mean_c) ||
-        !std::isfinite(climate.temperature_stddev_c) ||
-        !std::isfinite(climate.precipitation_annual_mm) ||
-        !std::isfinite(climate.precipitation_cv) || climate.temperature_stddev_c < 0.0F ||
-        climate.precipitation_annual_mm < 0.0F || climate.precipitation_cv < 0.0F ||
-        climate.precipitation_cv > 1.0F) {
-        throw std::runtime_error("terrain climate sample violates its physical contract");
-    }
+    const TerrainClimatePotential potential = terrain_climate_potential(climate);
 
-    const float effective_temperature =
-        std::max(climate.temperature_mean_c + 0.5F * climate.temperature_stddev_c, 0.0F);
-    const float potential_evapotranspiration =
-        std::max(250.0F + 25.0F * effective_temperature +
-                     0.7F * effective_temperature * effective_temperature,
-                 250.0F);
-    const float aridity = climate.precipitation_annual_mm / potential_evapotranspiration;
-    const float effective_moisture =
-        aridity * (1.0F - 0.35F * std::clamp(climate.precipitation_cv, 0.0F, 1.0F));
-    const float moisture = smoothstep(0.03F, 0.50F, effective_moisture);
-    const float aridity_cover = smoothstep(0.02F, 0.28F, effective_moisture);
-    const float growth = smoothstep(
-        60.0F, 150.0F,
-        growing_season_days(climate.temperature_mean_c, climate.temperature_stddev_c));
-
-    const float cold = 1.0F - smoothstep(-1.0F, 3.0F, climate.temperature_mean_c);
-    const float wet_snow = smoothstep(150.0F, 400.0F, climate.precipitation_annual_mm);
-    snow = std::clamp(mountain_factor * smoothstep(0.18F, 0.45F, height) * cold * wet_snow *
+    snow = std::clamp(mountain_factor * smoothstep(0.18F, 0.45F, height) *
+                          potential.annual_cold_potential * potential.wet_snow_potential *
                           smoothstep(0.30F, 0.82F, normal_y),
                       0.0F, 1.0F);
     rock = std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);
     const float climate_ground = std::max(0.0F, 1.0F - rock - snow);
     const float vegetation =
-        std::min(landform_capacity * aridity_cover * growth, climate_ground);
-    return {rock, snow, ambient_visibility, vegetation, moisture};
+        std::min(landform_capacity * potential.cover_weight * potential.thermal_growth,
+                 climate_ground);
+    return {rock, snow, ambient_visibility, vegetation, potential.moisture_weight};
 }
 
 } // namespace cubey::projects::terrain
