@@ -163,6 +163,12 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain lighting and material v1](terrain-lighting-material-v1.md): frozen
   geometry control, cached directional-shadow contract, bounded procedural
   material refinement, and candidate acceptance gates.
+- [Terrain rendering envelope v1](terrain-rendering-envelope-v1.md): retained
+  stride-3 far-backdrop boundary and evidence that denser fixed geometry does
+  not materially improve the accepted views.
+- [Terrain material v2](terrain-material-v2.md): frozen-source refinement gate
+  for broad mineral identity, mesoscopic light response, matched captures, and
+  explicit performance and visual acceptance criteria.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.
