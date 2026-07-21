@@ -56,16 +56,17 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
         return {rock, snow, ambient_visibility, 0.0F, 0.0F};
     }
 
-    const float flatness = 1.0F - smoothstep(0.08F, 0.30F, slope);
-    const float lowland = 1.0F - smoothstep(0.22F, 0.55F, height);
-    const float valley = smoothstep(0.0F, 240.0F, inputs.concavity_m);
+    const float flatness = 1.0F - smoothstep(0.055F, 0.22F, slope);
+    const float lowland = 1.0F - smoothstep(0.16F, 0.48F, height);
+    const float valley = smoothstep(10.0F, 180.0F, inputs.concavity_m);
     const float available_ground = std::max(0.0F, 1.0F - rock - snow);
     const float landform_capacity =
-        std::clamp((0.72F * lowland + 0.28F * valley) * flatness * available_ground, 0.0F, 1.0F);
+        std::clamp((0.62F * lowland + 0.38F * valley) * flatness * available_ground, 0.0F, 1.0F);
 
     if (model == TerrainSurfaceModel::LandformTransition) {
-        const float moisture = std::clamp(0.30F + 0.35F * valley + 0.20F * lowland, 0.0F, 1.0F);
-        return {rock, snow, ambient_visibility, 0.78F * landform_capacity, moisture};
+        const float moisture =
+            std::clamp(0.18F + 0.45F * valley + 0.12F * lowland, 0.0F, 1.0F);
+        return {rock, snow, ambient_visibility, 0.58F * landform_capacity, moisture};
     }
 
     if (!inputs.climate.has_value()) {
@@ -90,7 +91,8 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
     const float aridity = climate.precipitation_annual_mm / potential_evapotranspiration;
     const float effective_moisture =
         aridity * (1.0F - 0.35F * std::clamp(climate.precipitation_cv, 0.0F, 1.0F));
-    const float moisture = smoothstep(0.15F, 0.65F, effective_moisture);
+    const float moisture = smoothstep(0.03F, 0.50F, effective_moisture);
+    const float aridity_cover = smoothstep(0.02F, 0.28F, effective_moisture);
     const float growth = smoothstep(
         60.0F, 150.0F,
         growing_season_days(climate.temperature_mean_c, climate.temperature_stddev_c));
@@ -102,7 +104,8 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
                       0.0F, 1.0F);
     rock = std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);
     const float climate_ground = std::max(0.0F, 1.0F - rock - snow);
-    const float vegetation = std::min(landform_capacity * moisture * growth, climate_ground);
+    const float vegetation =
+        std::min(landform_capacity * aridity_cover * growth, climate_ground);
     return {rock, snow, ambient_visibility, vegetation, moisture};
 }
 

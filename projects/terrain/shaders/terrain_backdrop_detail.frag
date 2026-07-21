@@ -212,8 +212,8 @@ void main() {
                               srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
     if (vegetation > 0.0001) {
         vec3 vegetation_color = mix(
-            srgb_to_linear(vec3(0.245, 0.260, 0.165)),
-            srgb_to_linear(vec3(0.145, 0.225, 0.145)), moisture);
+            srgb_to_linear(vec3(0.300, 0.305, 0.220)),
+            srgb_to_linear(vec3(0.160, 0.240, 0.160)), moisture);
         flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * soil +
                           vegetation_color * vegetation +
                           srgb_to_linear(vec3(0.39, 0.385, 0.37)) * rock +
