@@ -2,7 +2,7 @@
 
 Date: 2026-07-20
 
-Status: active reference study; no product-default change.
+Status: complete reference study; product default unchanged.
 
 ## Context
 
@@ -109,3 +109,74 @@ One bounded calibration pass may adjust continuous thresholds, strengths, and
 palette balance. It may not change source selection, height, placement,
 topology, or camera support. The final result is a documented recommendation,
 not a production promotion.
+
+## Final Evidence
+
+The final pack is in `outputs/terrain/surface-model-study-v1/`. Start with:
+
+- `qualified-comparison.png` for the four accepted 500 m headings;
+- `raking-comparison.png` for shape and palette separation under low sun;
+- `stress-comparison.png` for the unsupported 100 m diagnostic envelope;
+- `placement-comparison.png` for raw-center and three raw-sample controls;
+- `diagnostic-comparison.png` for vegetation, moisture, material weights, and
+  material albedo;
+- `review-summary.json` and `profile-summary.tsv` for frozen identity and cost.
+
+The final capture used elevation SHA-256
+`27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df` and
+climate SHA-256
+`cf56ae54e93ab45a10d0e93c2c39ab2a95b1593bf89639eeda3e3b7080497fea`.
+Every lane retained geometry hash `0x2feef138f1fa5070`, 607,200 rendered
+triangles, 2,657,280 source samples, render stride 3, and the same selected
+focus at `(8500, -2500)` meters.
+
+| Model | Mean vegetation | Mean moisture | Mean GPU | P50 GPU | P95 GPU |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| mineral control | 0.000 | 0.000 | 1.036 ms | 0.962 ms | 0.995 ms |
+| landform transition | 0.322 | 0.300 | 0.973 ms | 0.961 ms | 1.001 ms |
+| climate transition | 0.068 | 0.040 | 0.972 ms | 0.961 ms | 1.002 ms |
+
+Mean differences at this scale are measurement noise; the relevant result is
+that all lanes pass the 1.10 ms mean/P50 gate and remain within 0.10 ms of the
+control. The added surface channels do not increase steady-state topology or
+sampling work.
+
+The first landform pass covered too much low terrain and read as a dark green
+blanket. The one allowed calibration narrowed flat/low capacity, increased the
+valley contribution, reduced cover strength, and moved the palette toward a
+lighter dry olive. The final lane retains continuous exposed ridges and gives a
+clearer plain/foothill-to-mountain transition in all four qualified headings
+without a hard elevation band.
+
+The first climate pass was nearly identical to mineral control. This was not a
+loader or coordinate defect. Grid samples inside the selected 16.384 km radius
+average approximately 23.9 C, 121.5 mm annual precipitation, and a 0.075
+effective aridity ratio. The source window is hot and arid, not temperate. The
+calibration therefore maps hyper-arid through semi-arid cover continuously; it
+does not reinterpret the source as grassland. The final climate diagnostics
+show coherent sparse variation, and raw placements differ according to the
+companion field without seams or categorical bands.
+
+## Verdict
+
+The surface-semantics layer is mechanically viable. A separate, SHA-bound
+climate companion can enrich an elevation-only product without changing its
+geometry contract, and the runtime can compare models without making richer
+data mandatory.
+
+`landform-transition` is the best candidate when the product intent is an
+art-directed temperate valley/plain-to-mountain backdrop. It provides the most
+direct visual uplift from this fixed source, but remains a reference option in
+this batch. `climate-transition` is useful evidence for data-driven regional
+variation, not a temperate candidate for this particular source window.
+
+Keep `mineral-control` as the production default. A later promotion decision
+should choose one of two explicit directions:
+
+1. validate the landform candidate in a consumer scene and promote it as an
+   optional backdrop surface style; or
+2. generate or select a genuinely temperate climate/elevation pair before
+   evaluating a climate-driven temperate biome.
+
+Do not tune the current arid climate companion until it appears temperate. That
+would erase the semantic value purchased by importing richer source data.
