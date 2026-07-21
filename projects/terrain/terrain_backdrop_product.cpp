@@ -18,11 +18,6 @@ constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;
 constexpr std::uint64_t kFnvOffset = 14'695'981'039'346'656'037ULL;
 constexpr std::uint64_t kFnvPrime = 1'099'511'628'211ULL;
 
-[[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
-    const float t = std::clamp((value - edge0) / (edge1 - edge0), 0.0F, 1.0F);
-    return t * t * (3.0F - 2.0F * t);
-}
-
 [[nodiscard]] float logarithmic_radius(float inner, float outer, std::uint32_t index,
                                        std::uint32_t interval_count) {
     const float t = static_cast<float>(index) / static_cast<float>(interval_count);
@@ -171,8 +166,14 @@ void validate_request(const TerrainBackdropProductRequest& request,
     return normalized(cross(angular_tangent, radial_tangent));
 }
 
-[[nodiscard]] cubey::math::Vec3
+struct TerrainVertexChannels {
+    cubey::math::Vec3 material{};
+    cubey::math::Vec2 surface{};
+};
+
+[[nodiscard]] TerrainVertexChannels
 material_channels(const TerrainBackdropProductRequest& request, const std::vector<float>& heights,
+                  const std::vector<TerrainClimateSample>& climate_samples,
                   const std::vector<float>& radii, std::uint32_t angular_index,
                   std::uint32_t radial_index, TerrainBackdropDensityProfile density,
                   cubey::math::Vec3 normal, const TerrainHeightSourceMetadata& source) {
@@ -192,18 +193,26 @@ material_channels(const TerrainBackdropProductRequest& request, const std::vecto
     const float source_height = (height - request.vertical_offset_m) / request.vertical_scale;
     const float normalized_height = std::clamp(
         (source_height - source.base_height_m) / std::max(source.relief_scale_m, 1.0F), 0.0F, 1.0F);
-    const float slope = 1.0F - std::clamp(normal.y, 0.0F, 1.0F);
-    const float mountain_factor = smoothstep(1'300.0F, 2'800.0F, source.relief_scale_m);
-    const float exposed_rock = smoothstep(0.17F, 0.54F, slope);
-    const float alpine_rock = mountain_factor * smoothstep(0.42F, 0.72F, normalized_height) *
-                              smoothstep(0.035F, 0.30F, slope);
-    float snow = mountain_factor * smoothstep(0.25F, 0.39F, normalized_height) *
-                 smoothstep(0.30F, 0.82F, normal.y);
-    snow = std::clamp(snow, 0.0F, 1.0F);
-    const float rock = std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);
     const float concavity_m = neighbor_mean - height;
-    const float ambient_visibility = 1.0F - 0.35F * smoothstep(20.0F, 240.0F, concavity_m);
-    return {rock, snow, ambient_visibility};
+    std::optional<TerrainClimateSample> climate;
+    if (!climate_samples.empty()) {
+        climate = climate_samples[field_index(angular_index, radial_index,
+                                              static_cast<std::uint32_t>(radii.size()))];
+    }
+    const TerrainSurfaceWeights weights = terrain_surface_weights(
+        request.surface_model,
+        {
+            .normalized_height = normalized_height,
+            .slope = 1.0F - std::clamp(normal.y, 0.0F, 1.0F),
+            .normal_y = normal.y,
+            .concavity_m = concavity_m,
+            .relief_scale_m = source.relief_scale_m,
+            .climate = climate,
+        });
+    return {
+        .material = {weights.rock, weights.snow, weights.ambient_visibility},
+        .surface = {weights.vegetation, weights.moisture},
+    };
 }
 
 void include(TerrainBackdropSectorBounds& bounds, cubey::math::Vec3 position) {
@@ -251,6 +260,7 @@ render_angular_vertices(TerrainBackdropDensityProfile density, std::uint32_t str
 
 [[nodiscard]] TerrainBackdropSectorMesh
 make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector<float>& heights,
+                 const std::vector<TerrainClimateSample>& climate_samples,
                  const std::vector<float>& radii, TerrainBackdropDensityProfile density,
                  const TerrainHeightSourceMetadata& source, std::uint32_t radial_interval_count,
                  std::span<const std::uint32_t> render_angles, std::uint32_t radial_render_stride) {
@@ -270,12 +280,14 @@ make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector
 
     const cubey::math::Vec3 center_position = position_at(heights, radii, 0U, 0U, density);
     const cubey::math::Vec3 center_normal = normal_at(heights, radii, 0U, 0U, density);
-    const cubey::math::Vec3 center_channels =
-        material_channels(request, heights, radii, 0U, 0U, density, center_normal, source);
+    const TerrainVertexChannels center_channels = material_channels(
+        request, heights, climate_samples, radii, 0U, 0U, density, center_normal, source);
     mesh.vertices.push_back({
         .position = {center_position.x, center_position.y, center_position.z},
-        .color = {center_channels.x, center_channels.y, center_channels.z},
+        .color = {center_channels.material.x, center_channels.material.y,
+                  center_channels.material.z},
         .normal = {center_normal.x, center_normal.y, center_normal.z},
+        .uv = {center_channels.surface.x, center_channels.surface.y},
     });
     include(bounds, center_position);
     for (std::uint32_t radial = 1U; radial <= radial_interval_count; ++radial) {
@@ -284,12 +296,14 @@ make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector
             const cubey::math::Vec3 position =
                 position_at(heights, radii, wrapped, radial, density);
             const cubey::math::Vec3 normal = normal_at(heights, radii, wrapped, radial, density);
-            const cubey::math::Vec3 channels = material_channels(request, heights, radii, wrapped,
-                                                                 radial, density, normal, source);
+            const TerrainVertexChannels channels =
+                material_channels(request, heights, climate_samples, radii, wrapped, radial,
+                                  density, normal, source);
             mesh.vertices.push_back({
                 .position = {position.x, position.y, position.z},
-                .color = {channels.x, channels.y, channels.z},
+                .color = {channels.material.x, channels.material.y, channels.material.z},
                 .normal = {normal.x, normal.y, normal.z},
+                .uv = {channels.surface.x, channels.surface.y},
             });
             include(bounds, position);
         }
@@ -353,11 +367,41 @@ void hash_float(std::uint64_t& hash, float value) {
 [[nodiscard]] std::uint64_t content_hash(const TerrainBackdropProduct& product) {
     std::uint64_t hash = kFnvOffset;
     const auto hash_mesh = [&hash](const TerrainBackdropSectorMesh& mesh) {
-        for (const cubey::render::VertexPositionColorNormal& vertex : mesh.vertices) {
+        for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
             for (const float value : vertex.position) {
                 hash_float(hash, value);
             }
             for (const float value : vertex.color) {
+                hash_float(hash, value);
+            }
+            for (const float value : vertex.normal) {
+                hash_float(hash, value);
+            }
+            for (const float value : vertex.uv) {
+                hash_float(hash, value);
+            }
+        }
+        for (const std::uint32_t index : mesh.indices) {
+            hash_u32(hash, index);
+        }
+        for (const std::uint32_t index : mesh.render_indices) {
+            hash_u32(hash, index);
+        }
+    };
+    if (product.center.has_value()) {
+        hash_mesh(product.center.value());
+    }
+    for (const TerrainBackdropSectorMesh& sector : product.sectors) {
+        hash_mesh(sector);
+    }
+    return hash;
+}
+
+[[nodiscard]] std::uint64_t geometry_hash(const TerrainBackdropProduct& product) {
+    std::uint64_t hash = kFnvOffset;
+    const auto hash_mesh = [&hash](const TerrainBackdropSectorMesh& mesh) {
+        for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
+            for (const float value : vertex.position) {
                 hash_float(hash, value);
             }
             for (const float value : vertex.normal) {
@@ -397,7 +441,7 @@ terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept {
 
 cubey::render::MeshConfig TerrainBackdropSectorMesh::mesh_config() const {
     return cubey::render::indexed_mesh_config(
-        std::span<const cubey::render::VertexPositionColorNormal>(vertices),
+        std::span<const cubey::render::VertexPositionColorNormalUv>(vertices),
         std::span<const std::uint32_t>(render_indices));
 }
 
@@ -406,15 +450,24 @@ std::uint32_t TerrainBackdropSectorMesh::triangle_count() const noexcept {
 }
 
 TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
-                                                     const TerrainHeightSource& source) {
+                                                     const TerrainHeightSource& source,
+                                                     const TerrainRasterClimateSource* climate_source) {
     const TerrainBackdropDensityProfile density = terrain_backdrop_density_profile(request.density);
     const TerrainHeightSourceMetadata source_metadata = source.metadata();
     validate_request(request, density, source_metadata);
+    if (request.surface_model == TerrainSurfaceModel::ClimateTransition &&
+        climate_source == nullptr) {
+        throw std::runtime_error("climate surface model requires a climate source");
+    }
     const std::vector<float> radii = radial_samples(request, density);
     const std::uint32_t radial_count = static_cast<std::uint32_t>(radii.size());
     const std::size_t sample_count =
         static_cast<std::size_t>(density.angular_intervals) * radial_count;
     std::vector<float> heights(sample_count);
+    std::vector<TerrainClimateSample> climate_samples;
+    if (climate_source != nullptr) {
+        climate_samples.resize(sample_count);
+    }
 
     const std::uint32_t rows_per_job = 16U;
     const std::uint32_t job_count = (density.angular_intervals + rows_per_job - 1U) / rows_per_job;
@@ -437,10 +490,14 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                         radii[radial] * kTwoPi / static_cast<float>(density.angular_intervals));
                     const cubey::math::Vec2 source_xz =
                         request.source_focus_xz + direction * radii[radial];
-                    heights[field_index(angular, radial, radial_count)] =
+                    const std::size_t index = field_index(angular, radial, radial_count);
+                    heights[index] =
                         source.sample_height({.world_xz = source_xz, .footprint_m = footprint}) *
                             request.vertical_scale +
                         request.vertical_offset_m;
+                    if (climate_source != nullptr) {
+                        climate_samples[index] = climate_source->sample(source_xz);
+                    }
                 }
             }
         }));
@@ -477,7 +534,7 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
 
     if (request.center_mode == TerrainBackdropCenterMode::Continuous) {
         product.center =
-            make_center_mesh(request, heights, radii, density, source_metadata,
+            make_center_mesh(request, heights, climate_samples, radii, density, source_metadata,
                              center_radial_intervals, global_render_angles, radial_render_stride);
     }
 
@@ -519,12 +576,14 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                     position_at(heights, radii, angular, radial, density);
                 const cubey::math::Vec3 normal =
                     normal_at(heights, radii, angular, radial, density);
-                const cubey::math::Vec3 channels = material_channels(
-                    request, heights, radii, angular, radial, density, normal, source_metadata);
+                const TerrainVertexChannels channels =
+                    material_channels(request, heights, climate_samples, radii, angular, radial,
+                                      density, normal, source_metadata);
                 sector.vertices.push_back({
                     .position = {position.x, position.y, position.z},
-                    .color = {channels.x, channels.y, channels.z},
+                    .color = {channels.material.x, channels.material.y, channels.material.z},
                     .normal = {normal.x, normal.y, normal.z},
+                    .uv = {channels.surface.x, channels.surface.y},
                 });
                 include(bounds, position);
             }
@@ -597,6 +656,10 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                 maximum_boundary_delta = std::max(
                     maximum_boundary_delta, std::abs(lhs.color[component] - rhs.color[component]));
             }
+            for (std::size_t component = 0U; component < 2U; ++component) {
+                maximum_boundary_delta = std::max(
+                    maximum_boundary_delta, std::abs(lhs.uv[component] - rhs.uv[component]));
+            }
         }
     }
 
@@ -620,6 +683,10 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                     maximum_boundary_delta =
                         std::max(maximum_boundary_delta,
                                  std::abs(lhs.color[component] - rhs.color[component]));
+                }
+                for (std::size_t component = 0U; component < 2U; ++component) {
+                    maximum_boundary_delta = std::max(
+                        maximum_boundary_delta, std::abs(lhs.uv[component] - rhs.uv[component]));
                 }
             }
         }
@@ -653,10 +720,31 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         .maximum_sector_boundary_delta_m = maximum_boundary_delta,
     };
     product.diagnostics.render_triangle_count = center_render_triangle_count;
+    double vegetation_sum = 0.0;
+    double moisture_sum = 0.0;
+    std::uint64_t surface_sample_count = 0U;
+    const auto include_surface = [&](const TerrainBackdropSectorMesh& mesh) {
+        for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
+            vegetation_sum += vertex.uv[0];
+            moisture_sum += vertex.uv[1];
+            ++surface_sample_count;
+        }
+    };
+    if (product.center.has_value()) {
+        include_surface(product.center.value());
+    }
     for (const TerrainBackdropSectorMesh& sector : product.sectors) {
         product.diagnostics.render_triangle_count += sector.triangle_count();
+        include_surface(sector);
     }
     product.diagnostics.content_hash = content_hash(product);
+    product.diagnostics.geometry_hash = geometry_hash(product);
+    if (surface_sample_count != 0U) {
+        product.diagnostics.mean_vegetation =
+            static_cast<float>(vegetation_sum / static_cast<double>(surface_sample_count));
+        product.diagnostics.mean_moisture =
+            static_cast<float>(moisture_sum / static_cast<double>(surface_sample_count));
+    }
     return product;
 }
 

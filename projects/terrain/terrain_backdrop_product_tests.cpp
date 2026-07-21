@@ -142,8 +142,48 @@ void test_product_is_deterministic_connected_and_outside_the_stage() {
                         vertex.color[1] <= 1.0F && vertex.color[2] >= 0.65F &&
                         vertex.color[2] <= 1.0F,
                     "cached material channels should remain bounded");
+            require(vertex.uv[0] >= 0.0F && vertex.uv[0] <= 1.0F && vertex.uv[1] >= 0.0F &&
+                        vertex.uv[1] <= 1.0F,
+                    "cached surface channels should remain bounded");
         }
     }
+}
+
+void test_surface_models_preserve_geometry_and_change_only_surface_channels() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest mineral_request = product_request();
+    mineral_request.surface_model = TerrainSurfaceModel::MineralControl;
+    TerrainBackdropProductRequest landform_request = mineral_request;
+    landform_request.surface_model = TerrainSurfaceModel::LandformTransition;
+
+    const AnalyticSource source = source_for_seed(9012U);
+    const TerrainBackdropProduct mineral = make_terrain_backdrop_product(mineral_request, source);
+    const TerrainBackdropProduct landform = make_terrain_backdrop_product(landform_request, source);
+
+    require(mineral.diagnostics.geometry_hash == landform.diagnostics.geometry_hash,
+            "surface studies must preserve identical terrain geometry");
+    require(mineral.diagnostics.content_hash != landform.diagnostics.content_hash,
+            "surface studies should produce distinct semantic products");
+    require(mineral.diagnostics.source_sample_count == landform.diagnostics.source_sample_count &&
+                mineral.diagnostics.render_triangle_count ==
+                    landform.diagnostics.render_triangle_count,
+            "surface studies must preserve source and topology budgets");
+    require(mineral.diagnostics.mean_vegetation == 0.0F &&
+                landform.diagnostics.mean_vegetation > 0.0F,
+            "landform transition should populate vegetation without changing geometry");
+}
+
+void test_climate_surface_requires_a_bound_climate_source() {
+    using namespace cubey::projects::terrain;
+    TerrainBackdropProductRequest request = product_request();
+    request.surface_model = TerrainSurfaceModel::ClimateTransition;
+    bool rejected = false;
+    try {
+        static_cast<void>(make_terrain_backdrop_product(request, source_for_seed(9012U)));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "climate transition should reject an unbound climate source");
 }
 
 void test_product_hash_changes_with_the_source_seed() {
@@ -358,6 +398,8 @@ int main() {
     try {
         test_density_profiles_publish_the_product_budget();
         test_product_is_deterministic_connected_and_outside_the_stage();
+        test_surface_models_preserve_geometry_and_change_only_surface_channels();
+        test_climate_surface_requires_a_bound_climate_source();
         test_product_hash_changes_with_the_source_seed();
         test_product_retains_source_metadata();
         test_full_render_stride_retains_the_baked_topology();

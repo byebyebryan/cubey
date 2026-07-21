@@ -2,6 +2,7 @@
 
 #include "terrain_backdrop_density.h"
 #include "terrain_height_source.h"
+#include "terrain_surface_model.h"
 
 #include <cubey/render/mesh.h>
 #include <cubey/render/primitive_mesh.h>
@@ -46,6 +47,7 @@ struct TerrainBackdropProductRequest {
     float outer_radius_m = 16'384.0F;
     float vertical_scale = 1.0F;
     float vertical_offset_m = 0.0F;
+    TerrainSurfaceModel surface_model = TerrainSurfaceModel::MineralControl;
 };
 
 struct TerrainBackdropSectorBounds {
@@ -56,7 +58,7 @@ struct TerrainBackdropSectorBounds {
 };
 
 struct TerrainBackdropSectorMesh {
-    std::vector<cubey::render::VertexPositionColorNormal> vertices{};
+    std::vector<cubey::render::VertexPositionColorNormalUv> vertices{};
     std::vector<std::uint32_t> indices{};
     std::vector<std::uint32_t> render_indices{};
     TerrainBackdropSectorBounds bounds{};
@@ -82,6 +84,9 @@ struct TerrainBackdropProductDiagnostics {
     float maximum_height_m = 0.0F;
     float maximum_sector_boundary_delta_m = 0.0F;
     std::uint64_t content_hash = 0U;
+    std::uint64_t geometry_hash = 0U;
+    float mean_vegetation = 0.0F;
+    float mean_moisture = 0.0F;
 };
 
 struct TerrainBackdropProduct {
@@ -94,6 +99,7 @@ struct TerrainBackdropProduct {
 
 [[nodiscard]] TerrainBackdropProduct
 make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
-                              const TerrainHeightSource& source);
+                              const TerrainHeightSource& source,
+                              const TerrainRasterClimateSource* climate_source = nullptr);
 
 } // namespace cubey::projects::terrain

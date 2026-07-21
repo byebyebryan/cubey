@@ -317,25 +317,14 @@ terrain_cloud_config(const RunConfig& config,
     };
 }
 
-[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal>
+[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv>
 terrain_stage_proxy_mesh_data() {
-    const auto sphere = cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
+    return cubey::render::make_uv_sphere_position_color_normal_uv_mesh({
         .radius = 20.0F,
         .latitude_segments = 24U,
         .longitude_segments = 48U,
         .color = {0.52F, 0.55F, 0.58F},
     });
-    cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormal> result;
-    result.vertices.reserve(sphere.vertices.size());
-    for (const cubey::render::VertexPositionColorNormalUv& vertex : sphere.vertices) {
-        result.vertices.push_back({
-            .position = vertex.position,
-            .color = vertex.color,
-            .normal = vertex.normal,
-        });
-    }
-    result.indices = sphere.indices;
-    return result;
 }
 
 [[nodiscard]] std::string_view short_revision(std::string_view revision) {
@@ -806,7 +795,7 @@ class TerrainApp {
         };
         const cubey::render::VertexInputLayout shadow_vertex_input =
             cubey::render::vertex_position_only_input_layout(
-                sizeof(cubey::render::VertexPositionColorNormal));
+                sizeof(cubey::render::VertexPositionColorNormalUv));
         shadow_pass_.emplace(
             device,
             cubey::render::ShadowMapPass3DConfig{
@@ -866,7 +855,7 @@ class TerrainApp {
             cubey::render::fragment_shader_file(shader_path("terrain_backdrop_detail.frag.spv")),
         };
         const cubey::render::VertexInputLayout vertex_input =
-            cubey::render::vertex_position_color_normal_input_layout();
+            cubey::render::vertex_position_color_normal_uv_input_layout();
         const std::array terrain_descriptor_set_layouts{
             environment_material().layout(),
             detail_material().layout(),

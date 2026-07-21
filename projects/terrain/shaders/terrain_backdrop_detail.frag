@@ -17,6 +17,7 @@ layout(set = 1, binding = 1) uniform sampler2D terrain_shadow_map;
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_material_channels;
 layout(location = 2) in vec3 frag_normal;
+layout(location = 3) in vec2 frag_surface_channels;
 
 layout(location = 0) out vec4 out_color;
 
@@ -31,7 +32,8 @@ vec3 srgb_to_linear(vec3 value) {
 }
 
 vec3 debug_color(int debug_view, vec3 normal, float rock, float snow,
-                 float ambient_visibility, float sun_visibility) {
+                 float vegetation, float moisture, float ambient_visibility,
+                 float sun_visibility) {
     if (debug_view == 1) {
         float normalized_height = clamp(
             (frag_world_position.y - pc.render_options.y) /
@@ -61,6 +63,12 @@ vec3 debug_color(int debug_view, vec3 normal, float rock, float snow,
     }
     if (debug_view == 19) {
         return vec3(sun_visibility);
+    }
+    if (debug_view == 22) {
+        return vec3(vegetation);
+    }
+    if (debug_view == 23) {
+        return mix(vec3(0.36, 0.22, 0.10), vec3(0.10, 0.36, 0.72), moisture);
     }
     if (debug_view == 27) {
         float boundary = 1.0 - smoothstep(
@@ -116,12 +124,14 @@ void main() {
     float rock = clamp(frag_material_channels.x, 0.0, 1.0);
     float snow = clamp(frag_material_channels.y, 0.0, 1.0);
     float ambient_visibility = clamp(frag_material_channels.z, 0.65, 1.0);
+    float vegetation = clamp(frag_surface_channels.x, 0.0, 1.0);
+    float moisture = clamp(frag_surface_channels.y, 0.0, 1.0);
     int debug_view = int(round(pc.render_options.x));
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     float sun_visibility = terrain_sun_visibility(
         frag_world_position, classification_normal, light_direction);
-    vec3 diagnostic = debug_color(debug_view, classification_normal, rock, snow,
-                                  ambient_visibility, sun_visibility);
+    vec3 diagnostic = debug_color(debug_view, classification_normal, rock, snow, vegetation,
+                                  moisture, ambient_visibility, sun_visibility);
     if (diagnostic.x >= 0.0) {
         out_color = vec4(diagnostic, 1.0);
         return;
@@ -132,6 +142,8 @@ void main() {
     ground /= weight_sum;
     rock /= weight_sum;
     snow /= weight_sum;
+    vegetation = min(vegetation / weight_sum, ground);
+    float soil = ground - vegetation;
 
     vec4 macro_detail = vec4(0.5);
     vec4 local_planar_detail = vec4(0.5);
@@ -179,7 +191,8 @@ void main() {
     vec3 perturbation = mix(planar_perturbation, rock_perturbation,
                             rock_projection_blend);
     vec3 material_normal = normalize(classification_normal + 0.55 * perturbation);
-    float normal_strength = 0.14 * ground + 0.38 * rock + 0.05 * snow;
+    float normal_strength = 0.14 * soil + 0.10 * vegetation +
+                            0.38 * rock + 0.05 * snow;
     vec3 normal = normalize(classification_normal + normal_strength * perturbation);
 
     vec3 flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * ground +
@@ -197,17 +210,32 @@ void main() {
         srgb_to_linear(vec3(0.430, 0.385, 0.335)), rock_mineral);
     vec3 refined_base_color = refined_ground * ground + refined_rock * rock +
                               srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
+    if (vegetation > 0.0001) {
+        vec3 vegetation_color = mix(
+            srgb_to_linear(vec3(0.245, 0.260, 0.165)),
+            srgb_to_linear(vec3(0.145, 0.225, 0.145)), moisture);
+        flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * soil +
+                          vegetation_color * vegetation +
+                          srgb_to_linear(vec3(0.39, 0.385, 0.37)) * rock +
+                          srgb_to_linear(vec3(0.82, 0.845, 0.86)) * snow;
+        refined_base_color = refined_ground * soil + vegetation_color * vegetation +
+                             refined_rock * rock +
+                             srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
+    }
     vec3 base_color = mix(flat_base_color, refined_base_color, filtered_detail);
     float macro_albedo = macro_detail.b * 2.0 - 1.0;
     float planar_albedo = local_planar_detail.b * 2.0 - 1.0;
     float rock_albedo = local_rock_detail.b * 2.0 - 1.0;
     float albedo_variation =
-        ground * (0.040 * macro_albedo + 0.018 * planar_albedo) +
+        soil * (0.040 * macro_albedo + 0.018 * planar_albedo) +
+        vegetation * (0.022 * macro_albedo + 0.008 * planar_albedo) +
         rock * (0.055 * macro_albedo + 0.045 * rock_albedo) +
         snow * (0.018 * macro_albedo + 0.008 * planar_albedo);
     base_color *= max(0.0, 1.0 + albedo_variation);
-    float flat_roughness = 0.94 * ground + 0.77 * rock + 0.84 * snow;
-    float refined_roughness = 0.91 * ground + 0.70 * rock + 0.84 * snow;
+    float flat_roughness =
+        0.94 * soil + 0.93 * vegetation + 0.77 * rock + 0.84 * snow;
+    float refined_roughness =
+        0.91 * soil + 0.90 * vegetation + 0.70 * rock + 0.84 * snow;
     float roughness = mix(flat_roughness, refined_roughness, filtered_detail);
     float macro_roughness = macro_detail.a * 2.0 - 1.0;
     float local_roughness = mix(local_planar_detail.a, local_rock_detail.a,
@@ -240,7 +268,8 @@ void main() {
     vec3 view_direction = normalize(pc.camera_position.xyz - frag_world_position);
     vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
         atmosphere.primary_light_direction_intensity.w;
-    float occlusion_strength = 0.90 * ground + 1.20 * rock + 0.45 * snow;
+    float occlusion_strength =
+        0.90 * soil + 0.95 * vegetation + 1.20 * rock + 0.45 * snow;
     float refined_ambient_visibility = clamp(
         1.0 - (1.0 - ambient_visibility) * occlusion_strength, 0.55, 1.0);
     float material_ambient_visibility = mix(

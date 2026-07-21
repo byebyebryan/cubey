@@ -79,6 +79,7 @@ add_library(cubey_project_terrain_render_support STATIC
     terrain_directional_placement.cpp
     terrain_environment_gpu.cpp
     terrain_shadow.cpp
+    terrain_surface_model.cpp
 )
 target_include_directories(
     cubey_project_terrain_render_support
@@ -229,6 +230,13 @@ if (BUILD_TESTING)
     )
     add_test(NAME terrain_shadow_tests COMMAND cubey_project_terrain_shadow_tests)
 
+    add_executable(cubey_project_terrain_surface_model_tests terrain_surface_model_tests.cpp)
+    target_link_libraries(
+        cubey_project_terrain_surface_model_tests
+        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
+    )
+    add_test(NAME terrain_surface_model_tests COMMAND cubey_project_terrain_surface_model_tests)
+
     set_tests_properties(
         terrain_config_tests
         terrain_raster_climate_source_tests
@@ -237,6 +245,7 @@ if (BUILD_TESTING)
         terrain_backdrop_placement_tests
         terrain_directional_placement_tests
         terrain_shadow_tests
+        terrain_surface_model_tests
         PROPERTIES LABELS terrain TIMEOUT 120
     )
 endif()
