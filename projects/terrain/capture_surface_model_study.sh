@@ -263,6 +263,12 @@ done
 
 control_mean="$(jq -r '.profile.mean_ms' "${OUT_DIR}/mineral-control/review-metadata.json")"
 control_p50="$(jq -r '.profile.p50_ms' "${OUT_DIR}/mineral-control/review-metadata.json")"
+if ! awk -v mean="${control_mean}" -v p50="${control_p50}" \
+    'BEGIN { exit mean <= 1.10 && p50 <= 1.10 ? 0 : 1 }'; then
+    printf 'mineral-control profile gate failed: %.6f / %.6f ms\n' \
+        "${control_mean}" "${control_p50}" >&2
+    exit 1
+fi
 for model in landform-transition climate-transition; do
     candidate_mean="$(jq -r '.profile.mean_ms' "${OUT_DIR}/${model}/review-metadata.json")"
     candidate_p50="$(jq -r '.profile.p50_ms' "${OUT_DIR}/${model}/review-metadata.json")"
@@ -300,5 +306,31 @@ if command -v magick >/dev/null 2>&1; then
     montage_group diagnostic-comparison.png diagnostic-vegetation diagnostic-moisture \
         diagnostic-material-weights diagnostic-material-albedo
 fi
+
+printf 'model\tmean_ms\tp50_ms\tp95_ms\tmean_vegetation\tmean_moisture\n' \
+    >"${OUT_DIR}/profile-summary.tsv"
+for model in "${MODELS[@]}"; do
+    jq -r '[.model, .profile.mean_ms, .profile.p50_ms, .profile.p95_ms,
+            .product.mean_vegetation, .product.mean_moisture] | @tsv' \
+        "${OUT_DIR}/${model}/review-metadata.json" >>"${OUT_DIR}/profile-summary.tsv"
+done
+jq -s '{
+    schema: "cubey.terrain.surface-model-study-summary.v1",
+    invariant_gate: "pass",
+    performance_gate: "pass",
+    geometry_hash: .[0].product.geometry_hash,
+    elevation_sha256: .[0].source.elevation_sha256,
+    climate_sha256: .[0].source.climate_sha256,
+    models: map({
+        model,
+        content_hash: .product.content_hash,
+        mean_vegetation: .product.mean_vegetation,
+        mean_moisture: .product.mean_moisture,
+        mean_ms: .profile.mean_ms,
+        p50_ms: .profile.p50_ms,
+        p95_ms: .profile.p95_ms
+    })
+}' "${OUT_DIR}"/{mineral-control,landform-transition,climate-transition}/review-metadata.json \
+    >"${OUT_DIR}/review-summary.json"
 
 printf 'surface-model study: wrote %s\n' "${OUT_DIR}"
