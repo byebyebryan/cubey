@@ -284,8 +284,9 @@ def normalize_climate_channels(values):
     if not np.isfinite(climate).all():
         raise ValueError("climate field contains non-finite values")
     normalized = climate.copy()
-    normalized[1] *= 0.01
-    normalized[3] *= 0.01
+    normalized[1] = np.maximum(normalized[1] * 0.01, 0.0)
+    normalized[2] = np.maximum(normalized[2], 0.0)
+    normalized[3] = np.clip(normalized[3] * 0.01, 0.0, 1.0)
     return normalized
 
 
