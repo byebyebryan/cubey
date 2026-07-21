@@ -137,6 +137,7 @@ target_compile_definitions(
     cubey_project_terrain
     PRIVATE
         CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD="${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}"
+        CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS="${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}"
 )
 target_link_libraries(
     cubey_project_terrain

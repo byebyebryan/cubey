@@ -114,6 +114,8 @@ constexpr std::array<std::string_view, 3> kTerrainBackdropMeshDensities{"low", "
 constexpr std::array<std::string_view, 2> kTerrainSurfaceDetails{"flat", "filtered-detail"};
 constexpr std::array<std::string_view, 3> kTerrainPlacements{"selected", "raw-center",
                                                              "raw-sample"};
+constexpr std::array<std::string_view, 3> kTerrainSurfaceModels{
+    "mineral-control", "landform-transition", "climate-transition"};
 constexpr std::array<std::string_view, 2> kTerrainWeatheringModes{"off", "local"};
 constexpr std::array<std::string_view, 2> kTerrainPresentationModes{"standard", "backdrop"};
 constexpr std::array<std::string_view, 3> kTerrainBackdropProfiles{"radial-v1", "raster-v1",
@@ -150,7 +152,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 285> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 287> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -533,6 +535,15 @@ constexpr std::array<ConfigOptionDescriptor, 285> kRunConfigOptions{
     option(RunConfigOptionId::TerrainHeightfield, "terrain.heightfield", "--terrain-heightfield",
            "Heightfield", "Terrain/Backdrop Stage",
            "Runtime heightfield manifest or directory for raster-v1.", ConfigOptionType::Path),
+    option(RunConfigOptionId::TerrainSurfaceFields, "terrain.surface_fields",
+           "--terrain-surface-fields", "Surface Fields", "Terrain/Reference Studies",
+           "Optional climate companion manifest or directory for surface studies.",
+           ConfigOptionType::Path, no_range(), {}, {}, ConfigOptionStability::Reference),
+    option(RunConfigOptionId::TerrainSurfaceModel, "terrain.surface_model",
+           "--terrain-surface-model", "Surface Model", "Terrain/Reference Studies",
+           "Reference surface-semantics model; production defaults remain mineral-control.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kTerrainSurfaceModels), {},
+           ConfigOptionStability::Reference),
     option(RunConfigOptionId::TerrainPlacement, "terrain.placement", "--terrain-placement",
            "Placement", "Terrain/Backdrop Stage", "Startup terrain backdrop source placement.",
            ConfigOptionType::Enum, no_range(), enum_choices(kTerrainPlacements)),
@@ -1593,6 +1604,13 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.terrain.heightfield_path.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.terrain.heightfield_path.string());
+    case RunConfigOptionId::TerrainSurfaceFields:
+        return config.terrain.surface_fields_path.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.terrain.surface_fields_path.string());
+    case RunConfigOptionId::TerrainSurfaceModel:
+        return config.terrain.surface_model.empty() ? nlohmann::json(nullptr)
+                                                    : nlohmann::json(config.terrain.surface_model);
     case RunConfigOptionId::TerrainPlacement:
         return config.terrain.placement.empty() ? nlohmann::json(nullptr)
                                                 : nlohmann::json(config.terrain.placement);
@@ -2167,6 +2185,7 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::GltfOptions& options) {
 inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& options) {
     const std::string study_field = options.study_field_path.string();
     const std::string heightfield = options.heightfield_path.string();
+    const std::string surface_fields = options.surface_fields_path.string();
     adapter.writeField<std::uint64_t>("seed", options.seed);
     adapter.writeField<std::string>("preset", options.preset);
     adapter.writeField<std::string>("source_version", options.source_version);
@@ -2187,6 +2206,8 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
     adapter.writeField<std::string>("recipe", options.recipe);
     adapter.writeField<std::string>("study_field", study_field);
     adapter.writeField<std::string>("heightfield", heightfield);
+    adapter.writeField<std::string>("surface_fields", surface_fields);
+    adapter.writeField<std::string>("surface_model", options.surface_model);
     adapter.writeField<std::string>("placement", options.placement);
     adapter.writeField<std::uint32_t>("placement_index", options.placement_index);
     adapter.writeField<float>("foreground_height_m", options.foreground_height_m);
@@ -2203,6 +2224,7 @@ inline void serialize(JsonAdapter& adapter, const RunConfig::TerrainOptions& opt
 inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options) {
     std::string study_field;
     std::string heightfield;
+    std::string surface_fields;
     adapter.readField<std::uint64_t>("seed", options.seed);
     adapter.readField<std::string>("preset", options.preset);
     adapter.readField<std::string>("source_version", options.source_version);
@@ -2223,6 +2245,8 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     adapter.readField<std::string>("recipe", options.recipe);
     adapter.readField<std::string>("study_field", study_field);
     adapter.readField<std::string>("heightfield", heightfield);
+    adapter.readField<std::string>("surface_fields", surface_fields);
+    adapter.readField<std::string>("surface_model", options.surface_model);
     adapter.readField<std::string>("placement", options.placement);
     adapter.readField<std::uint32_t>("placement_index", options.placement_index);
     adapter.readField<float>("foreground_height_m", options.foreground_height_m);
@@ -2239,6 +2263,9 @@ inline void deserialize(JsonAdapter& adapter, RunConfig::TerrainOptions& options
     }
     if (!heightfield.empty()) {
         options.heightfield_path = heightfield;
+    }
+    if (!surface_fields.empty()) {
+        options.surface_fields_path = surface_fields;
     }
 }
 
@@ -2986,6 +3013,12 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::TerrainHeightfield:
         config.terrain.heightfield_path = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainSurfaceFields:
+        config.terrain.surface_fields_path = std::string(value);
+        break;
+    case RunConfigOptionId::TerrainSurfaceModel:
+        config.terrain.surface_model = std::string(value);
         break;
     case RunConfigOptionId::TerrainPlacement:
         config.terrain.placement = std::string(value);

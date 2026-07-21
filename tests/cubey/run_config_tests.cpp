@@ -330,6 +330,8 @@ void test_run_config_promoted_flags_are_not_explicit_parser_branches() {
         "--terrain-recipe",
         "--terrain-study-field",
         "--terrain-heightfield",
+        "--terrain-surface-fields",
+        "--terrain-surface-model",
         "--terrain-placement",
         "--terrain-placement-index",
         "--terrain-foreground-height",
@@ -456,6 +458,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.recipe",
         "terrain.study_field",
         "terrain.heightfield",
+        "terrain.surface_fields",
+        "terrain.surface_model",
         "terrain.placement",
         "terrain.placement_index",
         "terrain.foreground_height_m",
@@ -643,6 +647,8 @@ void test_run_config_loads_json_config_file() {
     "recipe": "temperate-mountain-range-stress",
     "study_field": "/tmp/terrain-diffusion/seed-9012",
     "heightfield": "/tmp/terrain-heightfield/heightfield.json",
+    "surface_fields": "/tmp/terrain-surface/surface-fields.json",
+    "surface_model": "climate-transition",
     "placement": "raw-sample",
     "placement_index": 7,
     "foreground_height_m": 250.0,
@@ -766,6 +772,9 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain study field path");
     require(config.terrain.heightfield_path == "/tmp/terrain-heightfield/heightfield.json",
             "config file should set terrain runtime heightfield path");
+    require(config.terrain.surface_fields_path == "/tmp/terrain-surface/surface-fields.json" &&
+                config.terrain.surface_model == "climate-transition",
+            "config file should set terrain reference surface inputs");
     require(config.terrain.placement == "raw-sample" && config.terrain.placement_index == 7U &&
                 config.terrain.foreground_height_m == 250.0F,
             "config file should set terrain placement controls");
@@ -1788,6 +1797,10 @@ void test_run_config_parses_terrain_controls() {
     std::string study_field_value = "/tmp/terrain-diffusion/seed-9012";
     std::string heightfield_flag = "--terrain-heightfield";
     std::string heightfield_value = "/tmp/terrain-heightfield/heightfield.json";
+    std::string surface_fields_flag = "--terrain-surface-fields";
+    std::string surface_fields_value = "/tmp/terrain-surface/surface-fields.json";
+    std::string surface_model_flag = "--terrain-surface-model";
+    std::string surface_model_value = "climate-transition";
     std::string placement_flag = "--terrain-placement";
     std::string placement_value = "raw-sample";
     std::string placement_index_flag = "--terrain-placement-index";
@@ -1819,7 +1832,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 71> argv{program.data(),
+    std::array<char*, 75> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1859,6 +1872,10 @@ void test_run_config_parses_terrain_controls() {
                                study_field_value.data(),
                                heightfield_flag.data(),
                                heightfield_value.data(),
+                               surface_fields_flag.data(),
+                               surface_fields_value.data(),
+                               surface_model_flag.data(),
+                               surface_model_value.data(),
                                placement_flag.data(),
                                placement_value.data(),
                                placement_index_flag.data(),
@@ -1917,6 +1934,9 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain study field path");
     require(config.terrain.heightfield_path == "/tmp/terrain-heightfield/heightfield.json",
             "run config should parse terrain runtime heightfield path");
+    require(config.terrain.surface_fields_path == "/tmp/terrain-surface/surface-fields.json" &&
+                config.terrain.surface_model == "climate-transition",
+            "run config should parse terrain reference surface inputs");
     require(config.terrain.placement == "raw-sample" && config.terrain.placement_index == 9U &&
                 config.terrain.foreground_height_m == 500.0F,
             "run config should parse terrain placement controls");

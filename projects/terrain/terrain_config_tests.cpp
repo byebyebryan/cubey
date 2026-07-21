@@ -28,9 +28,13 @@ template <typename Function> void require_throws(Function&& function, std::strin
 void test_defaults_publish_the_product_contract() {
     const cubey::RunConfig run_config;
     const std::filesystem::path default_path = "/tmp/cubey-terrain-default";
-    const auto config =
-        cubey::projects::terrain::terrain_runtime_config_from_run_config(run_config, default_path);
-    require(config.heightfield_path == default_path && config.foreground_sphere &&
+    const std::filesystem::path default_surface = "/tmp/cubey-terrain-surface";
+    const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(
+        run_config, default_path, default_surface);
+    require(config.heightfield_path == default_path &&
+                config.surface_fields_path == default_surface && config.foreground_sphere &&
+                config.surface_model ==
+                    cubey::projects::terrain::TerrainSurfaceModel::MineralControl &&
                 config.placement == cubey::projects::terrain::TerrainPlacementMode::Selected &&
                 config.placement_index == 0U && config.initial_foreground_height_m == 100.0F &&
                 config.render_stride == 3U &&
@@ -43,6 +47,8 @@ void test_defaults_publish_the_product_contract() {
 void test_supported_overrides_remain_narrow() {
     cubey::RunConfig run_config;
     run_config.terrain.heightfield_path = "/tmp/custom-heightfield.json";
+    run_config.terrain.surface_fields_path = "/tmp/custom-surface-fields.json";
+    run_config.terrain.surface_model = "climate-transition";
     run_config.terrain.seed = 9012U;
     run_config.terrain.seed_set = true;
     run_config.terrain.placement = "raw-sample";
@@ -59,6 +65,9 @@ void test_supported_overrides_remain_narrow() {
     const auto config = cubey::projects::terrain::terrain_runtime_config_from_run_config(
         run_config, "/tmp/default");
     require(config.heightfield_path == run_config.terrain.heightfield_path &&
+                config.surface_fields_path == run_config.terrain.surface_fields_path &&
+                config.surface_model ==
+                    cubey::projects::terrain::TerrainSurfaceModel::ClimateTransition &&
                 config.expected_seed == 9012U && !config.foreground_sphere &&
                 config.placement == cubey::projects::terrain::TerrainPlacementMode::RawSample &&
                 config.placement_index == 9U && config.initial_foreground_height_m == 500.0F &&
@@ -147,6 +156,24 @@ void test_retired_modes_fail_explicitly() {
                 invalid_stride, "/tmp/default"));
         },
         "unsupported terrain render stride should be rejected");
+
+    cubey::RunConfig missing_climate;
+    missing_climate.terrain.surface_model = "climate-transition";
+    require_throws(
+        [&missing_climate] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                missing_climate, "/tmp/default"));
+        },
+        "climate terrain should require an explicit or default companion field");
+
+    cubey::RunConfig invalid_surface;
+    invalid_surface.terrain.surface_model = "painted-biomes";
+    require_throws(
+        [&invalid_surface] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                invalid_surface, "/tmp/default", "/tmp/climate"));
+        },
+        "unsupported terrain surface models should be rejected");
 }
 
 } // namespace

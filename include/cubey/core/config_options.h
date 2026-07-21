@@ -141,6 +141,8 @@ enum class RunConfigOptionId {
     TerrainRecipe,
     TerrainStudyField,
     TerrainHeightfield,
+    TerrainSurfaceFields,
+    TerrainSurfaceModel,
     TerrainPlacement,
     TerrainPlacementIndex,
     TerrainForegroundHeight,

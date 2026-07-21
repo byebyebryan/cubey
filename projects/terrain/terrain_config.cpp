@@ -58,6 +58,10 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) noexcept {
         return "sun-visibility";
     case TerrainDebugView::ClassificationNormal:
         return "classification-normal";
+    case TerrainDebugView::Vegetation:
+        return "vegetation";
+    case TerrainDebugView::Moisture:
+        return "moisture";
     case TerrainDebugView::StageOwnership:
         return "stage-ownership";
     }
@@ -104,6 +108,12 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     if (name == "classification-normal" || name == "macro-normal") {
         return TerrainDebugView::ClassificationNormal;
     }
+    if (name == "vegetation") {
+        return TerrainDebugView::Vegetation;
+    }
+    if (name == "moisture") {
+        return TerrainDebugView::Moisture;
+    }
     if (name == "stage-ownership" || name == "ownership") {
         return TerrainDebugView::StageOwnership;
     }
@@ -149,9 +159,38 @@ TerrainMaterialMode terrain_material_mode_from_name(std::string_view name) {
     throw std::runtime_error("unsupported terrain material: " + std::string(name));
 }
 
+std::string_view terrain_surface_model_name(TerrainSurfaceModel model) noexcept {
+    switch (model) {
+    case TerrainSurfaceModel::MineralControl:
+        return "mineral-control";
+    case TerrainSurfaceModel::LandformTransition:
+        return "landform-transition";
+    case TerrainSurfaceModel::ClimateTransition:
+        return "climate-transition";
+    }
+    return "mineral-control";
+}
+
+TerrainSurfaceModel terrain_surface_model_from_name(std::string_view name) {
+    if (name.empty() || name == "mineral-control") {
+        return TerrainSurfaceModel::MineralControl;
+    }
+    if (name == "landform-transition") {
+        return TerrainSurfaceModel::LandformTransition;
+    }
+    if (name == "climate-transition") {
+        return TerrainSurfaceModel::ClimateTransition;
+    }
+    throw std::runtime_error("unsupported terrain surface model: " + std::string(name));
+}
+
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     if (config.heightfield_path.empty()) {
         throw std::runtime_error("terrain heightfield path must not be empty");
+    }
+    if (config.surface_model == TerrainSurfaceModel::ClimateTransition &&
+        config.surface_fields_path.empty()) {
+        throw std::runtime_error("climate terrain surface model requires surface fields");
     }
     if (!std::isfinite(config.initial_foreground_height_m) ||
         config.initial_foreground_height_m < 2.0F ||
@@ -182,7 +221,8 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
 
 TerrainRuntimeConfig
 terrain_runtime_config_from_run_config(const RunConfig& config,
-                                       const std::filesystem::path& default_heightfield_path) {
+                                       const std::filesystem::path& default_heightfield_path,
+                                       const std::filesystem::path& default_surface_fields_path) {
     if (has_retired_product_options(config.terrain)) {
         throw std::runtime_error(
             "retired procedural, profile, weathering, LOD, or study options are not supported by "
@@ -192,6 +232,12 @@ terrain_runtime_config_from_run_config(const RunConfig& config,
     result.heightfield_path = config.terrain.heightfield_path.empty()
                                   ? default_heightfield_path
                                   : config.terrain.heightfield_path;
+    if (!config.terrain.surface_fields_path.empty()) {
+        result.surface_fields_path = config.terrain.surface_fields_path;
+    } else if (config.terrain.heightfield_path.empty()) {
+        result.surface_fields_path = default_surface_fields_path;
+    }
+    result.surface_model = terrain_surface_model_from_name(config.terrain.surface_model);
     if (config.terrain.seed_set) {
         result.expected_seed = config.terrain.seed;
     }

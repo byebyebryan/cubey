@@ -208,6 +208,8 @@ struct RunConfig {
         std::string recipe{};
         std::filesystem::path study_field_path{};
         std::filesystem::path heightfield_path{};
+        std::filesystem::path surface_fields_path{};
+        std::string surface_model{};
         std::string placement{};
         std::uint32_t placement_index = 0U;
         float foreground_height_m = kRunConfigUnsetFloat;
