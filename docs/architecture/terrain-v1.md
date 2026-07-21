@@ -183,6 +183,11 @@ consumer.
 - planet projection and ocean composition;
 - engine/foundation promotion.
 
+The reference-only
+[Terrain Surface Semantics Study](../notes/terrain-surface-semantics-study.md)
+may evaluate an optional climate companion and continuous surface masks without
+changing this product contract or its default presentation.
+
 ## Acceptance
 
 Terrain V1 review includes the canonical source hash and provenance, four
