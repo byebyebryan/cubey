@@ -44,7 +44,10 @@ COMPARISON_RELIEF_M = 3500.0
 DEFAULT_ASSET_HEIGHT_OFFSET_M = 39.367266654968255
 DEFAULT_ASSET_HEIGHT_SCALE = 0.8484453174300328
 DEFAULT_ASSET_ELEVATION_SHA256 = "27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df"
-EXPORT_CONTRACT_REVISION = 3
+EXPORT_CONTRACT_REVISION = 4
+SURFACE_STUDY_SCHEMA = "cubey.terrain.surface-fields.study.v1"
+SURFACE_STUDY_DOWNSAMPLE = 8
+SURFACE_STUDY_SIZE = FIELD_SIZE // SURFACE_STUDY_DOWNSAMPLE
 WORLDCLIM_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip"
 WORLDCLIM_FILES = (
     "wc2.1_10m_bio_1.tif",
@@ -53,10 +56,10 @@ WORLDCLIM_FILES = (
     "wc2.1_10m_bio_15.tif",
 )
 CLIMATE_CHANNELS = (
-    ("temperature", "deg_c"),
-    ("temperature_variability", "deg_c"),
-    ("precipitation", "mm_per_year"),
-    ("precipitation_variability", "coefficient"),
+    ("temperature_mean", "deg_c"),
+    ("temperature_stddev", "deg_c"),
+    ("precipitation_annual", "mm_per_year"),
+    ("precipitation_cv", "fraction"),
 )
 
 
@@ -259,6 +262,105 @@ def write_f32(path: Path, values) -> dict[str, object]:
         "dtype": "float32-le",
         "byte_count": path.stat().st_size,
         "sha256": sha256_file(path),
+    }
+
+
+def sha256_f32(values) -> str:
+    import numpy as np
+
+    array = np.ascontiguousarray(values, dtype="<f4")
+    if not np.isfinite(array).all():
+        raise ValueError("refusing to hash non-finite float field")
+    return hashlib.sha256(array.tobytes()).hexdigest()
+
+
+def normalize_climate_channels(values):
+    """Convert Terrain Diffusion's native climate scaling to explicit units."""
+    import numpy as np
+
+    climate = np.asarray(values, dtype=np.float32)
+    if climate.ndim != 3 or climate.shape[0] != len(CLIMATE_CHANNELS):
+        raise ValueError(f"expected four climate channels, got {climate.shape}")
+    if not np.isfinite(climate).all():
+        raise ValueError("climate field contains non-finite values")
+    normalized = climate.copy()
+    normalized[1] *= 0.01
+    normalized[3] *= 0.01
+    return normalized
+
+
+def area_average_field(values, factor: int):
+    import numpy as np
+
+    field = np.asarray(values, dtype=np.float32)
+    if field.ndim != 3 or factor <= 0 or field.shape[1] % factor or field.shape[2] % factor:
+        raise ValueError(f"field shape {field.shape} is not divisible by factor {factor}")
+    channels, height, width = field.shape
+    averaged = field.reshape(
+        channels, height // factor, factor, width // factor, factor
+    ).mean(axis=(2, 4), dtype=np.float64)
+    return averaged.astype(np.float32)
+
+
+def surface_study_manifest(
+    climate_file: dict[str, object], generated: dict[str, object], generation_seconds: float
+) -> dict[str, object]:
+    half_span = (FIELD_SIZE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    block_center_offset = (SURFACE_STUDY_DOWNSAMPLE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    return {
+        "schema": SURFACE_STUDY_SCHEMA,
+        "source": {
+            "id": "terrain-diffusion-30m",
+            "generator": "terrain-diffusion",
+            "code_revision": CODE_REVISION,
+            "model_id": MODEL_ID,
+            "model_revision": MODEL_REVISION,
+            "native_resolution_m": MODEL_NATIVE_RESOLUTION_M,
+            "settings": {
+                "climate_output": True,
+                "custom_conditioning": False,
+                "device": "cuda",
+                "dtype": "fp32",
+                "latents_batch_size": LATENTS_BATCH_SIZE,
+                "caching_strategy": "direct",
+                "process_rng_seeding": "seed-value-v1",
+                "torch_compile": False,
+            },
+        },
+        "seed": ORDER_CHECK_SEED,
+        "heightfield": {
+            "schema": "cubey.terrain.heightfield.v1",
+            "elevation_sha256": DEFAULT_ASSET_ELEVATION_SHA256,
+        },
+        "grid": {
+            "width": SURFACE_STUDY_SIZE,
+            "height": SURFACE_STUDY_SIZE,
+            "sample_spacing_m": MODEL_NATIVE_RESOLUTION_M * SURFACE_STUDY_DOWNSAMPLE,
+            "sample_origin_x_m": -half_span + block_center_offset,
+            "sample_origin_z_m": -half_span + block_center_offset,
+            "axis_mapping": {"world_x": "model_j", "world_z": "model_i"},
+        },
+        "files": {
+            "climate": {
+                **climate_file,
+                "layout": "channel-major-zx",
+                "shape": [len(CLIMATE_CHANNELS), SURFACE_STUDY_SIZE, SURFACE_STUDY_SIZE],
+                "channels": [
+                    {"name": name, "unit": unit} for name, unit in CLIMATE_CHANNELS
+                ],
+            }
+        },
+        "processing": {
+            "method": "area-average",
+            "factor": SURFACE_STUDY_DOWNSAMPLE,
+            "source_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+        },
+        "provenance": {
+            "purpose": "cubey-terrain-surface-semantics-study-v1",
+            "selection": "fixed-grid-land-relief-v1",
+            "model_native_origin": generated["model_native_origin"],
+            "generation_seconds": generation_seconds,
+        },
     }
 
 
@@ -568,7 +670,7 @@ def _write_seed_artifacts(
     seed_dir = root / "fields" / f"seed-{seed}"
     seed_dir.mkdir(parents=True, exist_ok=True)
     elevation = generated["elevation"]
-    climate = generated["climate"]
+    climate = normalize_climate_channels(generated["climate"])
     rendered = apply_calibration(elevation, calibration)
     elevation_file = write_f32(seed_dir / "elevation.f32", elevation)
     climate_file = write_f32(seed_dir / "climate.f32", climate)
@@ -953,6 +1055,92 @@ def bake_default_asset(reference_root: Path, output_dir: Path, data_cache: Path)
     print(f"terrain default asset: wrote {output_dir}")
 
 
+def bake_surface_study_asset(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
+    """Generate the climate companion bound to the canonical terrain heightfield."""
+    import torch
+    from huggingface_hub import snapshot_download
+
+    reference_root = reference_root.resolve()
+    output_dir = output_dir.resolve()
+    data_cache = data_cache.resolve()
+    actual_revision = git_revision(reference_root)
+    if actual_revision != CODE_REVISION:
+        raise RuntimeError(
+            f"terrain-diffusion checkout must be {CODE_REVISION}, got {actual_revision}"
+        )
+    if not torch.cuda.is_available():
+        raise RuntimeError("Terrain Diffusion surface study generation requires CUDA")
+
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cudnn.benchmark = False
+    torch.set_float32_matmul_precision("highest")
+    torch.use_deterministic_algorithms(True, warn_only=True)
+
+    _prepare_data_cache(reference_root, data_cache)
+    snapshot = Path(
+        snapshot_download(repo_id=MODEL_ID, revision=MODEL_REVISION)
+    ).resolve()
+
+    sys.path.insert(0, str(reference_root))
+    from terrain_diffusion.inference.world_pipeline import WorldPipeline
+
+    generation_start = time.perf_counter()
+    with _working_directory(data_cache):
+        _seed_process_rngs(torch, ORDER_CHECK_SEED)
+        world = WorldPipeline.from_pretrained(
+            str(snapshot),
+            seed=ORDER_CHECK_SEED,
+            latents_batch_size=LATENTS_BATCH_SIZE,
+            torch_compile=False,
+            dtype=None,
+            caching_strategy="direct",
+            cache_limit=None,
+            log_mode="info",
+        )
+        world.to("cuda")
+        world.bind()
+        if float(world.native_resolution) != MODEL_NATIVE_RESOLUTION_M:
+            raise RuntimeError(
+                f"expected {MODEL_NATIVE_RESOLUTION_M:g} m model, got {world.native_resolution}"
+            )
+        try:
+            generated = _generate_seed(
+                world,
+                torch,
+                ORDER_CHECK_SEED,
+                verify_order=False,
+                with_climate=True,
+            )
+        finally:
+            world.close()
+
+    if sha256_f32(generated["elevation"]) != DEFAULT_ASSET_ELEVATION_SHA256:
+        raise RuntimeError("surface study elevation does not match the canonical terrain asset")
+    climate = area_average_field(
+        normalize_climate_channels(generated["climate"]), SURFACE_STUDY_DOWNSAMPLE
+    )
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent))
+    try:
+        climate_file = write_f32(temporary / "climate.f32", climate)
+        manifest = surface_study_manifest(
+            climate_file, generated, time.perf_counter() - generation_start
+        )
+        (temporary / "surface-fields.json").write_text(
+            json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
+        )
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        os.replace(temporary, output_dir)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+
+    print(f"terrain surface study asset: wrote {output_dir}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -970,10 +1158,16 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("outputs/terrain/.terrain-diffusion-data"),
     )
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--default-asset",
         action="store_true",
         help="generate only the canonical seed-0 runtime heightfield",
+    )
+    mode.add_argument(
+        "--surface-study-asset",
+        action="store_true",
+        help="generate the seed-0 climate companion for the surface semantics study",
     )
     return parser.parse_args()
 
@@ -982,6 +1176,8 @@ def main() -> int:
     args = parse_args()
     if args.default_asset:
         bake_default_asset(args.reference_root, args.output_dir, args.data_cache)
+    elif args.surface_study_asset:
+        bake_surface_study_asset(args.reference_root, args.output_dir, args.data_cache)
     else:
         bake(args.reference_root, args.output_dir, args.data_cache)
     return 0

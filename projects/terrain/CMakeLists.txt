@@ -8,6 +8,11 @@ set(
     "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-src"
     CACHE PATH "Build-local pinned terrain-diffusion checkout"
 )
+set(
+    CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR
+    "${CMAKE_BINARY_DIR}/assets/terrain/surface-study"
+    CACHE PATH "Generated terrain surface-semantics climate companion directory"
+)
 
 add_custom_target(cubey_terrain_generate_default_asset
     COMMAND
@@ -23,6 +28,24 @@ add_custom_target(cubey_terrain_generate_default_asset
         "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}/elevation.f32"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Generating the pinned seed-0 terrain heightfield"
+    USES_TERMINAL
+    VERBATIM
+)
+
+add_custom_target(cubey_terrain_generate_surface_study_asset
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-venv"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
+        --surface-study-asset
+        --output-dir "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}"
+        --data-cache "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-data"
+    BYPRODUCTS
+        "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/surface-fields.json"
+        "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/climate.f32"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating the pinned terrain surface-semantics climate companion"
     USES_TERMINAL
     VERBATIM
 )

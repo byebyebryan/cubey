@@ -152,6 +152,53 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
             self.assertEqual(record["sha256"], bake.sha256_file(path))
             self.assertEqual(np.fromfile(path, dtype="<f4").tolist(), [1.0, 2.0])
 
+    def test_climate_channels_are_normalized_to_physical_units(self) -> None:
+        native = np.array([12.0, 850.0, 640.0, 45.0], dtype=np.float32).reshape(4, 1, 1)
+
+        normalized = bake.normalize_climate_channels(native)
+
+        self.assertEqual(normalized[:3, 0, 0].tolist(), [12.0, 8.5, 640.0])
+        self.assertAlmostEqual(float(normalized[3, 0, 0]), 0.45)
+        self.assertEqual(native[:, 0, 0].tolist(), [12.0, 850.0, 640.0, 45.0])
+
+    def test_area_average_field_uses_disjoint_source_blocks(self) -> None:
+        source = np.arange(4 * 4, dtype=np.float32).reshape(1, 4, 4)
+
+        averaged = bake.area_average_field(source, 2)
+
+        self.assertEqual(averaged.shape, (1, 2, 2))
+        self.assertEqual(averaged[0].tolist(), [[2.5, 4.5], [10.5, 12.5]])
+
+    def test_surface_manifest_binds_canonical_heightfield_and_units(self) -> None:
+        manifest = bake.surface_study_manifest(
+            {
+                "path": "climate.f32",
+                "dtype": "float32-le",
+                "byte_count": 16,
+                "sha256": "a" * 64,
+            },
+            {"model_native_origin": {"i": -2048, "j": -6144}},
+            3.5,
+        )
+
+        self.assertEqual(manifest["schema"], bake.SURFACE_STUDY_SCHEMA)
+        self.assertEqual(
+            manifest["heightfield"]["elevation_sha256"], bake.DEFAULT_ASSET_ELEVATION_SHA256
+        )
+        self.assertEqual(manifest["grid"]["width"], bake.SURFACE_STUDY_SIZE)
+        self.assertEqual(manifest["grid"]["sample_spacing_m"], 240.0)
+        self.assertEqual(
+            [channel["unit"] for channel in manifest["files"]["climate"]["channels"]],
+            ["deg_c", "deg_c", "mm_per_year", "fraction"],
+        )
+
+    def test_float_hash_matches_written_payload(self) -> None:
+        values = np.array([[1.0, 2.0]], dtype=np.float32)
+        with tempfile.TemporaryDirectory() as temporary:
+            record = bake.write_f32(Path(temporary) / "field.f32", values)
+
+        self.assertEqual(bake.sha256_f32(values), record["sha256"])
+
     def test_runtime_heightfield_manifest_drops_climate_dependency(self) -> None:
         study = {
             "schema": "cubey.terrain.raster-study.v1",
