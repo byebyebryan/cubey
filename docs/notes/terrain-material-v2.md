@@ -2,7 +2,7 @@
 
 Date: 2026-07-20
 
-Status: implementation candidate; visual verdict pending.
+Status: candidate complete; recommended for acceptance, visual review pending.
 
 ## Goal
 
@@ -127,3 +127,57 @@ Required mechanical validation is the terrain build, focused terrain and run
 config tests, the complete default test suite, shader compilation, matched
 headless captures, `git diff --check`, and a clean candidate worktree. The
 candidate remains unmerged until visual review.
+
+## Candidate Result
+
+The retained matched pack was captured at `1600 x 900` under
+`outputs/terrain/material-v2/`. The control uses revision `bf91478e`; the final
+candidate uses revision `24e008f3`. Finalization confirms identical frozen
+inputs and products:
+
+- elevation SHA-256:
+  `27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df`;
+- product content hash: `0xcf2100b0763a8211`;
+- `2,657,280` cached source samples;
+- render stride 3 and `607,200` triangles;
+- one `5,592,404` byte generated material texture;
+- zero difference in the matched `flat` control.
+
+| Lane | Clear mean | Clear p50 | Clear p95 |
+|---|---:|---:|---:|
+| control | 0.931 ms | 0.920 ms | 0.943 ms |
+| candidate | 0.942 ms | 0.911 ms | 0.936 ms |
+
+The candidate stays below the `1.10 ms` mean and p50 gate. Mean increases by
+`0.011 ms`, while p50 and p95 are slightly lower; this is measurement-scale
+variation rather than a material cost regression. The shader still performs
+two planar samples and, for rock-dominant fragments only, two additional
+triplanar samples.
+
+The qualified comparison shows broader warm/cool mineral identity and clearer
+soil-versus-rock separation without changing terrain shape. The gain is
+strongest in the mountain-heavy 0 and 90 degree headings and remains restrained
+in the sparse 180 and 270 degree headings. The normal diagnostic replaces the
+uniform fine-grain field with wider terrain-scale variation. Raking light no
+longer relies on dense micro-noise to reveal the surface, and the fair-cloud
+frames retain the same environment composition.
+
+No periodic tile, material seam, grass implication, snow blanket, or glossy
+response is visible in the retained pack. The 100 m stress views are less noisy
+but still too bare for a close-terrain claim. Raking light continues to expose
+terraced shoulders and stepped source transitions; those are unchanged source
+or cached-product limitations and should not be hidden with stronger material
+noise.
+
+The candidate is recommended as the bounded Material V2 far-backdrop baseline.
+It does not justify another immediate material-tuning loop. After visual review,
+either merge it and exercise the accepted backdrop in one real consumer, or
+return explicitly to source filtering if the remaining terracing fails the
+qualified far-field use case.
+
+## Validation Result
+
+The complete default build, including all maintained shaders and projects,
+passes. All six focused terrain tests pass, followed by all `141 / 141` default
+CTest cases in `798.47 s`. The branch also passes the matched capture
+invariants, profile budget, shader compilation, and `git diff --check`.
