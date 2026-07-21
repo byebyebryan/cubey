@@ -186,7 +186,10 @@ consumer.
 The reference-only
 [Terrain Surface Semantics Study](../notes/terrain-surface-semantics-study.md)
 may evaluate an optional climate companion and continuous surface masks without
-changing this product contract or its default presentation.
+changing this product contract or its default presentation. The follow-up
+[Terrain Climate Surface Model Research](../notes/terrain-climate-surface-model-research.md)
+defines the narrower climate-potential contract and the cross-climate evidence
+required before promotion.
 
 ## Acceptance
 
