@@ -157,6 +157,19 @@ fair-cloud macro views, qualified and stress camera envelopes, matched stride
 is a decision gate for LOD versus source refinement; it does not expand the V1
 camera contract.
 
+Generate the matched Material V2 review in three steps:
+
+```sh
+projects/terrain/capture_material_v2_review.sh control
+projects/terrain/capture_material_v2_review.sh candidate
+projects/terrain/capture_material_v2_review.sh finalize
+```
+
+The control must be captured before changing the material shaders. Finalization
+checks the frozen heightfield, cached product, topology, stride, and material
+allocation; it then writes paired qualified, raking-light, stress, cloud, and
+diagnostic sheets under `outputs/terrain/material-v2`.
+
 ## Tests
 
 ```sh
