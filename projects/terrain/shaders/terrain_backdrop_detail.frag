@@ -190,11 +190,11 @@ void main() {
     float rock_mineral = smoothstep(
         0.16, 0.84, 0.72 * macro_detail.b + 0.28 * macro_detail.a);
     vec3 refined_ground = mix(
-        srgb_to_linear(vec3(0.285, 0.305, 0.310)),
-        srgb_to_linear(vec3(0.390, 0.350, 0.300)), macro_mineral);
+        srgb_to_linear(vec3(0.260, 0.275, 0.280)),
+        srgb_to_linear(vec3(0.335, 0.300, 0.255)), macro_mineral);
     vec3 refined_rock = mix(
-        srgb_to_linear(vec3(0.255, 0.275, 0.300)),
-        srgb_to_linear(vec3(0.425, 0.375, 0.325)), rock_mineral);
+        srgb_to_linear(vec3(0.340, 0.355, 0.370)),
+        srgb_to_linear(vec3(0.430, 0.385, 0.335)), rock_mineral);
     vec3 refined_base_color = refined_ground * ground + refined_rock * rock +
                               srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
     vec3 base_color = mix(flat_base_color, refined_base_color, filtered_detail);
