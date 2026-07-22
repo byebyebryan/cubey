@@ -32,9 +32,12 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 mkdir -p "${OUT_DIR}"
+PROFILE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/cubey-terrain-foundation.XXXXXX")"
+trap 'rm -rf "${PROFILE_DIR}"' EXIT
 
 TERRAIN_OUTPUT="${OUT_DIR}/terrain.png"
 GLTF_OUTPUT="${OUT_DIR}/gltf-viewer.png"
+TERRAIN_PROFILE="${PROFILE_DIR}/terrain"
 COMMON_ENVIRONMENT_ARGS=(
     --time-of-day-mode manual
     --sun-elevation 38
@@ -52,6 +55,8 @@ COMMON_ENVIRONMENT_ARGS=(
     --terrain-foreground-height 200 \
     --terrain-surface-detail filtered-detail \
     --terrain-shadows \
+    --profile-output "${TERRAIN_PROFILE}" \
+    --profile-warmup-frames 0 \
     "${COMMON_ENVIRONMENT_ARGS[@]}" \
     --output "${TERRAIN_OUTPUT}"
 
@@ -75,9 +80,26 @@ GIT_REVISION="$(git -C "${ROOT_DIR}" rev-parse HEAD)"
 ELEVATION_SHA256="$(jq -r '.files.elevation.sha256' "${HEIGHTFIELD}")"
 TERRAIN_SHA256="$(sha256sum "${TERRAIN_OUTPUT}" | awk '{print $1}')"
 GLTF_SHA256="$(sha256sum "${GLTF_OUTPUT}" | awk '{print $1}')"
+PROFILE_METRICS="${TERRAIN_PROFILE}.metrics.csv"
+
+metric_last() {
+    local category="$1"
+    local name="$2"
+    awk -F, -v category="${category}" -v name="${name}" \
+        '$2 == category && $3 == name { value = $4 }
+         END { if (value == "") exit 1; print value }' "${PROFILE_METRICS}"
+}
+
+SOURCE_SAMPLES="$(metric_last terrain.backdrop source_samples)"
+SAMPLED_VERTICES="$(metric_last terrain.backdrop sampled_vertices)"
+RENDER_VERTICES="$(metric_last terrain.backdrop render_vertices)"
+RENDER_TRIANGLES="$(metric_last terrain.backdrop product_render_triangles)"
+VERTEX_RETENTION_RATIO="$(metric_last terrain.backdrop vertex_compaction_ratio)"
+MESH_UPLOAD_BYTES="$(metric_last terrain.backdrop mesh_upload_bytes)"
+MESH_UPLOAD_SUBMISSIONS="$(metric_last terrain.backdrop mesh_upload_transfer_submissions)"
 
 jq -n \
-    --arg schema "cubey.terrain.backdrop-foundation-evidence.v1" \
+    --arg schema "cubey.terrain.backdrop-foundation-evidence.v2" \
     --arg git_revision "${GIT_REVISION}" \
     --arg heightfield "${HEIGHTFIELD#"${ROOT_DIR}/"}" \
     --arg elevation_sha256 "${ELEVATION_SHA256}" \
@@ -87,6 +109,13 @@ jq -n \
     --arg gltf_stats "${GLTF_STATS}" \
     --argjson width "${WIDTH}" \
     --argjson height "${HEIGHT}" \
+    --argjson source_samples "${SOURCE_SAMPLES%%.*}" \
+    --argjson sampled_vertices "${SAMPLED_VERTICES%%.*}" \
+    --argjson render_vertices "${RENDER_VERTICES%%.*}" \
+    --argjson render_triangles "${RENDER_TRIANGLES%%.*}" \
+    --argjson vertex_retention_ratio "${VERTEX_RETENTION_RATIO}" \
+    --argjson mesh_upload_bytes "${MESH_UPLOAD_BYTES%%.*}" \
+    --argjson mesh_upload_submissions "${MESH_UPLOAD_SUBMISSIONS%%.*}" \
     '{
         schema: $schema,
         captured_revision: $git_revision,
@@ -109,6 +138,18 @@ jq -n \
                 validation: $gltf_stats
             }
         ],
+        product: {
+            source_samples: $source_samples,
+            sampled_vertices: $sampled_vertices,
+            render_vertices: $render_vertices,
+            render_triangles: $render_triangles,
+            vertex_retention_ratio: $vertex_retention_ratio
+        },
+        mesh_upload: {
+            byte_count: $mesh_upload_bytes,
+            transfer_submission_count: $mesh_upload_submissions,
+            staging_chunk_cap_bytes: 33554432
+        },
         fixed_contract: {
             placement: "selected",
             foreground_height_m: 200,

@@ -305,6 +305,12 @@ clock measured `1.012 ms` mean and `0.925 ms` p50.
 The cached product retains only that selected draw topology. Full-resolution
 sample and triangle budgets remain diagnostic values; they are not materialized
 as a second unused index buffer in either CPU or GPU product state.
+The canonical stride-3 product compacts `2,694,289` sampled vertices to
+`385,201` referenced render vertices while preserving `742,368` rendered
+triangles. Its center and sector meshes total `25,857,260` bytes and upload as
+one renderer mesh batch and one Vulkan transfer submission. The transfer path
+uses bounded staging chunks, so larger products retain the same API without an
+unbounded staging allocation.
 
 The glTF proof consumer keeps terrain explicitly opt-in and preserves its
 no-terrain control path. At `1600 x 900`, terrain adds `0.423 ms` mean and

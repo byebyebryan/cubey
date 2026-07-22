@@ -1,6 +1,6 @@
 {
-  "schema": "cubey.terrain.backdrop-foundation-evidence.v1",
-  "captured_revision": "d8c350f454566fa765112527f372c671e83bc309",
+  "schema": "cubey.terrain.backdrop-foundation-evidence.v2",
+  "captured_revision": "f0f30d954428a1a9e4883bbaf9f2323fa611cd2a",
   "resolution": {
     "width": 640,
     "height": 360
@@ -23,6 +23,18 @@
       "validation": "png_stats: gltf-viewer.png mean=0.680714 min=0.450827 max=0.920751 range=0.469923"
     }
   ],
+  "product": {
+    "source_samples": 2657280,
+    "sampled_vertices": 2694289,
+    "render_vertices": 385201,
+    "render_triangles": 742368,
+    "vertex_retention_ratio": 0.142969
+  },
+  "mesh_upload": {
+    "byte_count": 25857260,
+    "transfer_submission_count": 1,
+    "staging_chunk_cap_bytes": 33554432
+  },
   "fixed_contract": {
     "placement": "selected",
     "foreground_height_m": 200,

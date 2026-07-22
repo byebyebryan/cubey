@@ -132,6 +132,12 @@ select placement relative to its translated source bounds, create the shared
 runtime, render each real consumer, and apply nonblank PNG statistics. This
 closes the normal-test gap left by the generated canonical asset.
 
+The foundation cleanup retains the same product and pixels while compacting
+the canonical CPU/GPU mesh from `2,694,289` sampled vertices to `385,201`
+referenced vertices. The resulting `25,857,260`-byte center/sector payload is
+validated and uploaded transactionally in one transfer submission. glTF source
+meshes use the same renderer batch contract for their primitive payloads.
+
 The compact tracked
 [foundation evidence pack](../evidence/terrain-backdrop-foundation/README.md)
 retains reviewable terrain and glTF frames from the canonical source together
