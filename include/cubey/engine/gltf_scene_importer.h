@@ -100,6 +100,8 @@ struct GltfSceneImportResult {
     std::vector<Entity> node_entities{};
     Bounds3D bounds{};
     std::uint32_t triangle_count = 0;
+    std::uint64_t mesh_upload_byte_count = 0;
+    std::uint32_t mesh_upload_transfer_submission_count = 0;
     std::vector<render::MeshHandle> mesh_handles{};
     std::vector<render::MaterialHandle> material_handles{};
     render::MaterialHandle first_material_handle{};

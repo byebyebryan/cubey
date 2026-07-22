@@ -101,17 +101,28 @@ void create_mesh_resources(Engine& engine, vulkan::GpuRuntime& gpu,
         const asset::GltfMesh& mesh = asset.meshes[mesh_index];
         std::vector<GltfImportedPrimitive3D>& primitives = resources.mesh_primitives[mesh_index];
         primitives.reserve(mesh.primitives.size());
+        std::vector<std::vector<render::PbrVertex>> converted_vertices;
+        converted_vertices.reserve(mesh.primitives.size());
+        std::vector<render::MeshConfig> mesh_configs;
+        mesh_configs.reserve(mesh.primitives.size());
+        for (const asset::GltfMeshPrimitive& primitive : mesh.primitives) {
+            converted_vertices.push_back(to_pbr_vertices(primitive.vertices));
+            mesh_configs.push_back(render::indexed_mesh_config(
+                std::span<const render::PbrVertex>{converted_vertices.back()},
+                std::span<const std::uint32_t>{primitive.indices}));
+        }
+        render::MeshUploadBatch mesh_batch = render::upload_meshes(
+            gpu, mesh_configs, config.label_prefix + ".mesh." + std::to_string(mesh_index));
+        result.mesh_upload_byte_count += mesh_batch.uploaded_byte_count;
+        result.mesh_upload_transfer_submission_count += mesh_batch.transfer_submission_count;
+
         for (std::size_t primitive_index = 0; primitive_index < mesh.primitives.size();
              ++primitive_index) {
             const asset::GltfMeshPrimitive& primitive = mesh.primitives[primitive_index];
-            std::vector<render::PbrVertex> vertices = to_pbr_vertices(primitive.vertices);
             const render::MeshHandle mesh_handle = engine.render_resources().create_mesh(
                 config.label_prefix + ".mesh." + std::to_string(mesh_index) + "." +
                 std::to_string(primitive_index));
-            resources.meshes.emplace(
-                mesh_handle, gpu,
-                render::indexed_mesh_config(std::span<const render::PbrVertex>{vertices},
-                                            std::span<const std::uint32_t>{primitive.indices}));
+            resources.meshes.emplace(mesh_handle, std::move(mesh_batch.meshes[primitive_index]));
             result.mesh_handles.push_back(mesh_handle);
             result.triangle_count += static_cast<std::uint32_t>(primitive.indices.size() / 3U);
             primitives.push_back({
