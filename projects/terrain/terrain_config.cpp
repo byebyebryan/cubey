@@ -62,6 +62,10 @@ std::string_view terrain_debug_view_name(TerrainDebugView view) noexcept {
         return "vegetation";
     case TerrainDebugView::Moisture:
         return "moisture";
+    case TerrainDebugView::AmbientLighting:
+        return "ambient-light";
+    case TerrainDebugView::DirectLighting:
+        return "direct-light";
     case TerrainDebugView::StageOwnership:
         return "stage-ownership";
     }
@@ -113,6 +117,12 @@ TerrainDebugView terrain_debug_view_from_name(std::string_view name) {
     }
     if (name == "moisture") {
         return TerrainDebugView::Moisture;
+    }
+    if (name == "ambient-light") {
+        return TerrainDebugView::AmbientLighting;
+    }
+    if (name == "direct-light") {
+        return TerrainDebugView::DirectLighting;
     }
     if (name == "stage-ownership" || name == "ownership") {
         return TerrainDebugView::StageOwnership;

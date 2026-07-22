@@ -835,6 +835,8 @@ class TerrainApp {
             TerrainDebugView::Vegetation,
             TerrainDebugView::Moisture,
             TerrainDebugView::AmbientVisibility,
+            TerrainDebugView::AmbientLighting,
+            TerrainDebugView::DirectLighting,
             TerrainDebugView::MaterialAlbedo,
             TerrainDebugView::MaterialNormal,
             TerrainDebugView::MaterialRoughness,

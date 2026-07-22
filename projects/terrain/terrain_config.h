@@ -28,6 +28,8 @@ enum class TerrainDebugView : std::uint8_t {
     ClassificationNormal = 21,
     Vegetation = 22,
     Moisture = 23,
+    AmbientLighting = 24,
+    DirectLighting = 25,
     StageOwnership = 27,
 };
 

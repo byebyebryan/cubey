@@ -209,8 +209,12 @@ void main() {
     vec3 refined_rock = mix(
         srgb_to_linear(vec3(0.340, 0.355, 0.370)),
         srgb_to_linear(vec3(0.430, 0.385, 0.335)), rock_mineral);
+    vec3 refined_snow = mix(
+        srgb_to_linear(vec3(0.68, 0.72, 0.75)),
+        srgb_to_linear(vec3(0.77, 0.80, 0.82)),
+        smoothstep(0.20, 0.80, macro_detail.b));
     vec3 refined_base_color = refined_ground * ground + refined_rock * rock +
-                              srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
+                              refined_snow * snow;
     if (vegetation > 0.0001) {
         vec3 vegetation_color = mix(
             srgb_to_linear(vec3(0.300, 0.305, 0.220)),
@@ -220,8 +224,7 @@ void main() {
                           srgb_to_linear(vec3(0.39, 0.385, 0.37)) * rock +
                           srgb_to_linear(vec3(0.82, 0.845, 0.86)) * snow;
         refined_base_color = refined_ground * soil + vegetation_color * vegetation +
-                             refined_rock * rock +
-                             srgb_to_linear(vec3(0.79, 0.82, 0.84)) * snow;
+                             refined_rock * rock + refined_snow * snow;
     }
     vec3 base_color = mix(flat_base_color, refined_base_color, filtered_detail);
     float macro_albedo = macro_detail.b * 2.0 - 1.0;
@@ -231,7 +234,7 @@ void main() {
         soil * (0.040 * macro_albedo + 0.018 * planar_albedo) +
         vegetation * (0.022 * macro_albedo + 0.008 * planar_albedo) +
         rock * (0.055 * macro_albedo + 0.045 * rock_albedo) +
-        snow * (0.018 * macro_albedo + 0.008 * planar_albedo);
+        snow * (0.035 * macro_albedo + 0.012 * planar_albedo);
     base_color *= max(0.0, 1.0 + albedo_variation);
     float flat_roughness =
         0.94 * soil + 0.93 * vegetation + 0.77 * rock + 0.84 * snow;
@@ -270,15 +273,25 @@ void main() {
     vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
         atmosphere.primary_light_direction_intensity.w;
     float occlusion_strength =
-        0.90 * soil + 0.95 * vegetation + 1.20 * rock + 0.45 * snow;
+        0.90 * soil + 0.95 * vegetation + 1.20 * rock + 0.75 * snow;
     float refined_ambient_visibility = clamp(
         1.0 - (1.0 - ambient_visibility) * occlusion_strength, 0.55, 1.0);
     float material_ambient_visibility = mix(
         ambient_visibility, refined_ambient_visibility, filtered_detail);
-    vec3 color = terrain_lighting_ambient(
+    vec3 ambient_light = terrain_lighting_ambient(
         base_color, terrain_diffuse_irradiance(normal), material_ambient_visibility);
-    color += terrain_lighting_direct(base_color, roughness, normal, view_direction,
-                                     light_direction, light_radiance, sun_visibility);
+    vec3 direct_light = terrain_lighting_direct(
+        base_color, roughness, normal, view_direction, light_direction,
+        light_radiance, sun_visibility);
+    if (debug_view == 24) {
+        out_color = vec4(ambient_light, 1.0);
+        return;
+    }
+    if (debug_view == 25) {
+        out_color = vec4(direct_light, 1.0);
+        return;
+    }
+    vec3 color = ambient_light + direct_light;
     CubeyAtmosphereSample aerial = terrain_aerial_perspective(
         pc.camera_position.xyz, frag_world_position);
     out_color = vec4(color * aerial.transmittance + aerial.color, 1.0);

@@ -84,6 +84,18 @@ void test_supported_overrides_remain_narrow() {
             "terrain should convert supported camera overrides");
 }
 
+void test_lighting_diagnostics_round_trip() {
+    using namespace cubey::projects::terrain;
+    require(terrain_debug_view_from_name("ambient-light") ==
+                TerrainDebugView::AmbientLighting &&
+                terrain_debug_view_name(TerrainDebugView::AmbientLighting) ==
+                    "ambient-light" &&
+                terrain_debug_view_from_name("direct-light") ==
+                    TerrainDebugView::DirectLighting &&
+                terrain_debug_view_name(TerrainDebugView::DirectLighting) == "direct-light",
+            "terrain lighting diagnostics should retain stable runtime names");
+}
+
 void test_retired_modes_fail_explicitly() {
     cubey::RunConfig retired;
     retired.terrain.render_path = "quality";
@@ -182,6 +194,7 @@ int main() {
     try {
         test_defaults_publish_the_product_contract();
         test_supported_overrides_remain_narrow();
+        test_lighting_diagnostics_round_trip();
         test_retired_modes_fail_explicitly();
         std::cout << "terrain config tests passed\n";
         return 0;
