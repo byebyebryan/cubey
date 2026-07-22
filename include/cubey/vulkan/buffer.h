@@ -5,12 +5,23 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+#include <span>
+#include <string>
+#include <vector>
+
 namespace cubey::vulkan {
 
 struct BufferConfig {
     VkDeviceSize size = 0;
     VkBufferUsageFlags usage = 0;
     VkMemoryPropertyFlags memory_properties = 0;
+};
+
+struct DeviceBufferUpload {
+    const void* data = nullptr;
+    VkDeviceSize byte_size = 0;
+    VkBufferUsageFlags usage = 0;
 };
 
 class Buffer {
@@ -46,6 +57,12 @@ class Buffer {
     VkMemoryPropertyFlags memory_properties_ = 0;
 };
 
+struct DeviceBufferUploadBatch {
+    std::vector<Buffer> buffers;
+    VkDeviceSize uploaded_byte_count = 0;
+    std::uint32_t transfer_submission_count = 0;
+};
+
 [[nodiscard]] BufferConfig staging_buffer_config(VkDeviceSize byte_size);
 [[nodiscard]] BufferConfig readback_buffer_config(VkDeviceSize byte_size);
 [[nodiscard]] BufferConfig device_local_buffer_config(VkDeviceSize byte_size,
@@ -56,5 +73,10 @@ void copy_buffer(GpuOwnerContext& context, VkBuffer source, VkBuffer destination
                                           VkDeviceSize byte_size, VkBufferUsageFlags usage);
 [[nodiscard]] Buffer upload_device_buffer(GpuRuntime& gpu, const void* data, VkDeviceSize byte_size,
                                           VkBufferUsageFlags usage);
+[[nodiscard]] DeviceBufferUploadBatch
+upload_device_buffers(GpuOwnerContext& context, std::span<const DeviceBufferUpload> uploads);
+[[nodiscard]] DeviceBufferUploadBatch
+upload_device_buffers(GpuRuntime& gpu, std::span<const DeviceBufferUpload> uploads,
+                      std::string label = "upload device buffers");
 
 } // namespace cubey::vulkan

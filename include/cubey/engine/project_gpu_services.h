@@ -23,13 +23,6 @@ struct ProjectGpuUploadDrainResult {
     std::vector<vulkan::GpuWorkTicket> work_tickets;
 };
 
-struct ProjectDeviceBufferUpload {
-    std::string label;
-    const void* data = nullptr;
-    VkDeviceSize byte_size = 0;
-    VkBufferUsageFlags usage = 0;
-};
-
 using ProjectGpuUploadHandler = std::function<void(const QueuedUpload&, vulkan::GpuOwnerContext&)>;
 
 enum class ProjectGpuReadbackState {
@@ -74,9 +67,8 @@ class ProjectGpuServices {
     [[nodiscard]] vulkan::GpuWorkTicket submit_and_wait(vulkan::GpuWorkRequest request);
     [[nodiscard]] vulkan::Buffer upload_device_buffer(const void* data, VkDeviceSize byte_size,
                                                       VkBufferUsageFlags usage, std::string label);
-    [[nodiscard]] vulkan::Buffer upload_device_buffer(const ProjectDeviceBufferUpload& upload);
-    [[nodiscard]] std::vector<vulkan::Buffer>
-    upload_device_buffers(std::span<const ProjectDeviceBufferUpload> uploads, std::string label);
+    [[nodiscard]] vulkan::DeviceBufferUploadBatch
+    upload_device_buffers(std::span<const vulkan::DeviceBufferUpload> uploads, std::string label);
     template <typename Value>
     [[nodiscard]] vulkan::Buffer upload_device_buffer(std::span<const Value> values,
                                                       VkBufferUsageFlags usage, std::string label) {

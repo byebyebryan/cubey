@@ -57,6 +57,8 @@ void test_swapchain_present_mode_falls_back_from_mailbox_to_immediate();
 void test_swapchain_present_mode_prefers_requested_mode();
 void test_swapchain_present_mode_rejects_unsupported_explicit_mode();
 void test_transfer_helpers_describe_texture_and_readback_paths();
+void test_device_buffer_upload_batch_empty_is_a_noop();
+void test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work();
 
 namespace cubey::tests {
 
@@ -119,6 +121,8 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_swapchain_present_mode_falls_back_from_mailbox_to_fifo),
         CUBEY_TEST(test_swapchain_present_mode_rejects_unsupported_explicit_mode),
         CUBEY_TEST(test_transfer_helpers_describe_texture_and_readback_paths),
+        CUBEY_TEST(test_device_buffer_upload_batch_empty_is_a_noop),
+        CUBEY_TEST(test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work),
     };
     return tests;
 }

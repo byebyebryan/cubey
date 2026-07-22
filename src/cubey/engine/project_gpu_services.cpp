@@ -103,40 +103,20 @@ vulkan::GpuWorkTicket ProjectGpuServices::submit_and_wait(vulkan::GpuWorkRequest
 vulkan::Buffer ProjectGpuServices::upload_device_buffer(const void* data, VkDeviceSize byte_size,
                                                         VkBufferUsageFlags usage,
                                                         std::string label) {
-    return upload_device_buffer(ProjectDeviceBufferUpload{
-        .label = std::move(label),
+    const vulkan::DeviceBufferUpload upload{
         .data = data,
         .byte_size = byte_size,
         .usage = usage,
-    });
+    };
+    vulkan::DeviceBufferUploadBatch batch =
+        upload_device_buffers(std::span{&upload, 1U}, std::move(label));
+    return std::move(batch.buffers.front());
 }
 
-vulkan::Buffer ProjectGpuServices::upload_device_buffer(const ProjectDeviceBufferUpload& upload) {
-    std::vector<vulkan::Buffer> uploaded =
-        upload_device_buffers(std::span{&upload, 1U}, upload.label);
-    return std::move(uploaded.front());
-}
-
-std::vector<vulkan::Buffer>
-ProjectGpuServices::upload_device_buffers(std::span<const ProjectDeviceBufferUpload> uploads,
+vulkan::DeviceBufferUploadBatch
+ProjectGpuServices::upload_device_buffers(std::span<const vulkan::DeviceBufferUpload> uploads,
                                           std::string label) {
-    if (uploads.empty()) {
-        return {};
-    }
-
-    std::vector<vulkan::Buffer> uploaded;
-    uploaded.reserve(uploads.size());
-    static_cast<void>(impl_->gpu->submit_and_wait({
-        .label = std::move(label),
-        .work =
-            [&uploaded, uploads](vulkan::GpuOwnerContext& owner) {
-                for (const ProjectDeviceBufferUpload& upload : uploads) {
-                    uploaded.emplace_back(vulkan::upload_device_buffer(
-                        owner, upload.data, upload.byte_size, upload.usage));
-                }
-            },
-    }));
-    return uploaded;
+    return vulkan::upload_device_buffers(*impl_->gpu, uploads, std::move(label));
 }
 
 void ProjectGpuServices::wait_queue_idle(std::string label) {

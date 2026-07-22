@@ -95,6 +95,7 @@ add_executable(cubey_core_tests
     test_registry_scene.cpp
     test_registry_vulkan.cpp
     upload_queue_tests.cpp
+    vulkan_buffer_tests.cpp
     windowed_host_tests.cpp
 )
 
