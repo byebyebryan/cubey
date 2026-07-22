@@ -74,9 +74,7 @@ add_custom_target(cubey_terrain_generate_climate_calibration_assets
 
 add_library(cubey_project_terrain_runtime STATIC
     terrain_config.cpp
-    terrain_height_source.cpp
     terrain_raster_climate_source.cpp
-    terrain_raster_height_source.cpp
 )
 target_include_directories(
     cubey_project_terrain_runtime
@@ -87,6 +85,7 @@ target_link_libraries(
     cubey_project_terrain_runtime
     PUBLIC
         cubey::core
+        cubey::asset
     PRIVATE
         cubey_project_warnings
         nlohmann_json::nlohmann_json
@@ -177,22 +176,6 @@ if (BUILD_TESTING)
     add_test(NAME terrain_config_tests COMMAND cubey_project_terrain_config_tests)
 
     add_executable(
-        cubey_project_terrain_raster_height_source_tests
-        terrain_raster_height_source_tests.cpp
-    )
-    target_link_libraries(
-        cubey_project_terrain_raster_height_source_tests
-        PRIVATE
-            cubey_project_terrain_runtime
-            cubey_project_warnings
-            nlohmann_json::nlohmann_json
-    )
-    add_test(
-        NAME terrain_raster_height_source_tests
-        COMMAND cubey_project_terrain_raster_height_source_tests
-    )
-
-    add_executable(
         cubey_project_terrain_raster_climate_source_tests
         terrain_raster_climate_source_tests.cpp
     )
@@ -264,7 +247,6 @@ if (BUILD_TESTING)
     set_tests_properties(
         terrain_config_tests
         terrain_raster_climate_source_tests
-        terrain_raster_height_source_tests
         terrain_backdrop_product_tests
         terrain_backdrop_placement_tests
         terrain_directional_placement_tests

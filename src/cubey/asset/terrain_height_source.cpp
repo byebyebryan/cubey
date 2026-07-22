@@ -1,10 +1,10 @@
-#include "terrain_height_source.h"
+#include <cubey/asset/terrain_height_source.h>
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
-namespace cubey::projects::terrain {
+namespace cubey::asset {
 
 void validate_terrain_height_source_metadata(const TerrainHeightSourceMetadata& metadata) {
     if (metadata.id.empty() || !std::isfinite(metadata.base_height_m) ||
@@ -65,4 +65,4 @@ TerrainSample TerrainHeightSource::sample(const TerrainQuery& query) const {
     };
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::asset

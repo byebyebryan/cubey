@@ -17,6 +17,7 @@ add_executable(cubey_core_tests
     file_io_tests.cpp
     frame_clock_tests.cpp
     gltf_asset_tests.cpp
+    terrain_raster_height_source_tests.cpp
     gltf_scene_importer_animation_tests.cpp
     frame_resources_tests.cpp
     host_headless_png_host_tests.cpp
@@ -103,6 +104,7 @@ target_link_libraries(
         cubey::cubey
         cubey::host
         cubey_project_warnings
+        nlohmann_json::nlohmann_json
 )
 
 target_compile_definitions(

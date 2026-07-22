@@ -1,4 +1,4 @@
-#include "terrain_raster_height_source.h"
+#include <cubey/asset/terrain_raster_height_source.h>
 
 #include <nlohmann/json.hpp>
 
@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace cubey::projects::terrain {
+namespace cubey::asset {
 namespace {
 
 constexpr std::string_view kSchema = "cubey.terrain.heightfield.v1";
@@ -265,4 +265,4 @@ const TerrainRasterProvenance& TerrainRasterHeightSource::provenance() const noe
     return provenance_;
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::asset

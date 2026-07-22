@@ -25,11 +25,14 @@ void test_gltf_asset_loads_sparse_mesh_accessors();
 void test_gltf_asset_loads_sparse_animation_output();
 void test_hdr_image_loads_radiance_rgba32f_pixels();
 void test_hdr_image_rejects_non_hdr_input();
+void test_terrain_raster_height_source_loads_and_samples_calibrated_field();
+void test_terrain_raster_height_source_footprint_selects_filtered_mip();
+void test_terrain_raster_height_source_rejects_invalid_contracts();
 
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 23> tests{
+    static constexpr std::array<TestCase, 26> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
         CUBEY_TEST(test_gltf_asset_marks_nodes_authored_with_matrix),
         CUBEY_TEST(test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs),
@@ -53,6 +56,9 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_loads_sparse_animation_output),
         CUBEY_TEST(test_hdr_image_loads_radiance_rgba32f_pixels),
         CUBEY_TEST(test_hdr_image_rejects_non_hdr_input),
+        CUBEY_TEST(test_terrain_raster_height_source_loads_and_samples_calibrated_field),
+        CUBEY_TEST(test_terrain_raster_height_source_footprint_selects_filtered_mip),
+        CUBEY_TEST(test_terrain_raster_height_source_rejects_invalid_contracts),
     };
     return tests;
 }

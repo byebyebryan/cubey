@@ -1,4 +1,4 @@
-#include "terrain_raster_height_source.h"
+#include <cubey/asset/terrain_raster_height_source.h>
 
 #include <nlohmann/json.hpp>
 
@@ -7,14 +7,11 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
-
-namespace {
 
 void require(bool condition, std::string_view message) {
     if (!condition) {
@@ -98,9 +95,9 @@ class Fixture {
     nlohmann::json manifest{};
 };
 
-void test_loads_and_samples_calibrated_field() {
+void test_terrain_raster_height_source_loads_and_samples_calibrated_field() {
     Fixture fixture;
-    const cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
     require(source.metadata().id == "test-raster" && source.metadata().seed == 9012U &&
                 source.width() == 4U && source.height() == 4U && source.sample_spacing_m() == 10.0F,
             "raster source should retain manifest metadata");
@@ -115,17 +112,17 @@ void test_loads_and_samples_calibrated_field() {
     require(source.contains_disk({15.0F, 15.0F}, 15.0F) &&
                 !source.contains_disk({15.0F, 15.0F}, 16.0F),
             "raster source should expose strict field coverage");
-    const cubey::projects::terrain::TerrainHeightSourceBounds bounds = source.bounds();
+    const cubey::asset::TerrainHeightSourceBounds bounds = source.bounds();
     require(bounds.minimum_xz.x == 0.0F && bounds.minimum_xz.y == 0.0F &&
                 bounds.maximum_xz.x == 30.0F && bounds.maximum_xz.y == 30.0F &&
-                cubey::projects::terrain::terrain_height_source_bounds_center(bounds).x == 15.0F,
+                cubey::asset::terrain_height_source_bounds_center(bounds).x == 15.0F,
             "raster source should expose its complete world-space sample bounds");
     require_throws(
         [&source] { static_cast<void>(source.sample_height({.world_xz = {31.0F, 0.0F}})); },
         "raster source should reject out-of-domain queries");
 }
 
-void test_footprint_selects_filtered_mip() {
+void test_terrain_raster_height_source_footprint_selects_filtered_mip() {
     Fixture fixture;
     for (std::uint32_t z = 0U; z < 4U; ++z) {
         for (std::uint32_t x = 0U; x < 4U; ++x) {
@@ -135,21 +132,21 @@ void test_footprint_selects_filtered_mip() {
     fixture.manifest["height"]["offset_m"] = 0.0F;
     fixture.manifest["height"]["scale"] = 1.0F;
     fixture.write();
-    const cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
     const float fine = source.sample_height({.world_xz = {0.0F, 0.0F}, .footprint_m = 0.0F});
     const float filtered = source.sample_height({.world_xz = {0.0F, 0.0F}, .footprint_m = 20.0F});
     require(fine == 0.0F && std::abs(filtered - 0.5F) < 1.0e-6F,
             "raster source should filter unresolved checkerboard detail");
 }
 
-void test_rejects_invalid_contracts() {
+void test_terrain_raster_height_source_rejects_invalid_contracts() {
     {
         Fixture fixture;
         fixture.manifest["schema"] = "unknown";
         fixture.write();
         require_throws(
             [&fixture] {
-                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+                cubey::asset::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject unknown schemas");
     }
@@ -159,7 +156,7 @@ void test_rejects_invalid_contracts() {
         fixture.write();
         require_throws(
             [&fixture] {
-                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+                cubey::asset::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject mismatched byte counts");
     }
@@ -169,7 +166,7 @@ void test_rejects_invalid_contracts() {
         fixture.write();
         require_throws(
             [&fixture] {
-                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+                cubey::asset::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject non-finite heights");
     }
@@ -179,7 +176,7 @@ void test_rejects_invalid_contracts() {
         fixture.write();
         require_throws(
             [&fixture] {
-                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+                cubey::asset::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject paths outside the field directory");
     }
@@ -189,7 +186,7 @@ void test_rejects_invalid_contracts() {
         fixture.write();
         require_throws(
             [&fixture] {
-                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+                cubey::asset::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject an invalid height transform");
     }
@@ -199,23 +196,8 @@ void test_rejects_invalid_contracts() {
         fixture.write();
         require_throws(
             [&fixture] {
-                cubey::projects::terrain::TerrainRasterHeightSource source(fixture.root);
+                cubey::asset::TerrainRasterHeightSource source(fixture.root);
             },
             "raster source should reject an elevation shape mismatch");
-    }
-}
-
-} // namespace
-
-int main() {
-    try {
-        test_loads_and_samples_calibrated_field();
-        test_footprint_selects_filtered_mip();
-        test_rejects_invalid_contracts();
-        std::cout << "terrain raster height source tests passed\n";
-        return 0;
-    } catch (const std::exception& error) {
-        std::cerr << "terrain raster height source tests failed: " << error.what() << '\n';
-        return 1;
     }
 }

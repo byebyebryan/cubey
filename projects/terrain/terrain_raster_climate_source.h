@@ -1,6 +1,7 @@
 #pragma once
 
 #include "terrain_height_source.h"
+#include "terrain_raster_height_source.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -8,8 +9,6 @@
 #include <vector>
 
 namespace cubey::projects::terrain {
-
-class TerrainRasterHeightSource;
 
 struct TerrainClimateSample {
     float temperature_mean_c = 0.0F;
