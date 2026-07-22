@@ -1,8 +1,8 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
-#include "terrain_environment.glsl"
-#include "terrain_lighting.glsl"
+#include "cubey/terrain/terrain_environment.glsl"
+#include "cubey/terrain/terrain_lighting.glsl"
 
 layout(push_constant) uniform TerrainStageProxyPushConstants {
     mat4 view_projection;
