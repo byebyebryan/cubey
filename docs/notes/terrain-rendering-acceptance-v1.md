@@ -2,7 +2,7 @@
 
 Date: 2026-07-21
 
-Status: implementation plan and acceptance contract.
+Status: accepted rendering baseline.
 
 ## Goal
 
@@ -48,14 +48,16 @@ topology, and material allocation must remain unchanged.
 ## Shadow Contract
 
 The terrain keeps one fixed `2048 x 2048` full-product directional shadow map.
-It uses a `3 x 3` tent PCF kernel with separable `1 / 2 / 1` weights and the
-receiver bias:
+Four hardware comparison samples at half-texel offsets reproduce a `3 x 3`
+tent footprint with separable `1 / 2 / 1` weights. The receiver bias is:
 
 `max(0.75 m, texel_world * (0.25 + 0.35 * min(slope_tangent, 2)))`.
 
 Retain the full cached-product projection, outer-sector caster ownership,
-receiver-only center terrain, below-horizon suspension, and `0.25` degree
-light-direction cache threshold. Do not add a public shadow-quality control.
+receiver-only center terrain, and below-horizon suspension. The accepted
+implementation uses a `0.5` degree light-direction cache threshold so the
+default accelerated solar clock does not rewrite the shared depth map on
+adjacent frames. Do not add a public shadow-quality control.
 The review rejects acne, detached shadows, block stepping, sector seams,
 camera-relative swimming, and a visible map boundary.
 
@@ -91,3 +93,24 @@ the accepted running clock uses the default `0.5` hour-per-second cadence.
 Required validation is the complete terrain test set, shader compilation and
 lint, the applicable default project tests, a headless capture, a runtime smoke
 test, `git diff --check`, and a clean branch.
+
+## Accepted Result
+
+The 100 m stress capture no longer exposes radial fan lighting from the polar
+center. The 200 m default and 500 m comparison remain continuous, with no
+source mask or flattened stage. Matched low-sun captures show attached,
+filtered shadows without a sector or map boundary. Below-horizon shadow work
+suspends, while the ambient/direct diagnostics confirm that night snow remains
+non-emissive.
+
+The accepted `1600 x 900` profile measured `0.906 ms` mean and `0.902 ms` p50
+for a steady shadowed frame. The default moving clock measured `0.918 ms` mean,
+`0.904 ms` p50, and `0.994 ms` p95 with 24 map updates over the capture. A
+cached update measured `0.084 ms` p50 in that lane. The every-frame
+shadow-saturation control remains outside the product gate because rewriting
+and sampling the same map on adjacent frames serializes the shared resource.
+
+The evidence pack is written to
+`outputs/terrain/rendering-acceptance-v1`. It records the source provenance,
+geometry/content hashes, center and total triangle counts, shadow-map scale,
+capture manifest, contact sheets, raw profile CSV, trace, and summary files.

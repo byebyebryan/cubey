@@ -238,8 +238,9 @@ draw product from the earlier `607,200` to `5,305,344` triangles without
 materially changing qualified silhouettes. Stride 3 therefore remains the V1
 outer topology; the center-topology correction later raises the default to
 `742,368` triangles without changing outer-terrain stride. Material refinement
-still precedes LOD or further source work. The fixed clear composition measured
-`0.996 ms` mean and `0.921 ms` p50 at `1600 x 900`.
+still precedes LOD or further source work. The accepted shadowed composition
+measured `0.906 ms` mean and `0.902 ms` p50 at `1600 x 900`; the default moving
+clock measured `0.918 ms` mean and `0.904 ms` p50.
 
 See [Terrain Product Promotion](../notes/terrain-product-promotion.md),
 [Terrain Rendering Envelope V1](../notes/terrain-rendering-envelope-v1.md),
