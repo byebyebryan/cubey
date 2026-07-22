@@ -1,4 +1,4 @@
-#include <cubey/render/terrain_backdrop_profile.h>
+#include <cubey/terrain/terrain_backdrop_profile.h>
 
 #include <algorithm>
 #include <array>
@@ -7,7 +7,7 @@
 #include <numbers>
 #include <stdexcept>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementPlan& placement,
@@ -94,4 +94,4 @@ TerrainBackdropStagePlan plan_terrain_focused_backdrop_stage(
     };
 }
 
-} // namespace cubey::render
+} // namespace cubey::terrain

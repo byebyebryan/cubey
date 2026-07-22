@@ -1,18 +1,17 @@
 #pragma once
 
 #include <cubey/asset/terrain_height_source.h>
-#include <cubey/render/mesh.h>
-#include <cubey/render/primitive_mesh.h>
-#include <cubey/render/terrain_backdrop_density.h>
-#include <cubey/render/terrain_backdrop_stage.h>
+#include <cubey/terrain/terrain_backdrop_density.h>
+#include <cubey/terrain/terrain_backdrop_stage.h>
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 using cubey::asset::TerrainHeightSource;
 using cubey::asset::TerrainHeightSourceMetadata;
@@ -93,14 +92,20 @@ struct TerrainBackdropSectorBounds {
     cubey::math::Vec3 center{0.0F, 0.0F, 0.0F};
 };
 
+struct TerrainBackdropVertex {
+    std::array<float, 3> position{};
+    std::array<float, 3> material{};
+    std::array<float, 3> normal{};
+    std::array<float, 2> surface{};
+};
+
 struct TerrainBackdropSectorMesh {
-    std::vector<cubey::render::VertexPositionColorNormalUv> vertices{};
+    std::vector<TerrainBackdropVertex> vertices{};
     std::vector<std::uint32_t> indices{};
     TerrainBackdropSectorBounds bounds{};
     float begin_azimuth_radians = 0.0F;
     float end_azimuth_radians = 0.0F;
 
-    [[nodiscard]] cubey::render::MeshConfig mesh_config() const;
     [[nodiscard]] std::uint32_t triangle_count() const noexcept;
 };
 
@@ -160,4 +165,4 @@ make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
 make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
                               const TerrainHeightSource& source);
 
-} // namespace cubey::render
+} // namespace cubey::terrain

@@ -69,14 +69,14 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
                                  config_.terrain.heightfield_path.string());
     }
     const cubey::asset::TerrainRasterHeightSource terrain_source(config_.terrain.heightfield_path);
-    cubey::render::TerrainBackdropPlacementRequest placement_request;
-    const cubey::render::TerrainBackdropPlacementPlan placement =
-        cubey::render::plan_terrain_backdrop_placement(terrain_source, terrain_source.bounds(),
-                                                       placement_request);
-    const cubey::render::TerrainBackdropStagePlan& stage = placement.stage;
-    const cubey::render::TerrainBackdropProduct product =
-        cubey::render::make_terrain_backdrop_product(
-            cubey::render::terrain_backdrop_v1_product_request(
+    cubey::terrain::TerrainBackdropPlacementRequest placement_request;
+    const cubey::terrain::TerrainBackdropPlacementPlan placement =
+        cubey::terrain::plan_terrain_backdrop_placement(terrain_source, terrain_source.bounds(),
+                                                        placement_request);
+    const cubey::terrain::TerrainBackdropStagePlan& stage = placement.stage;
+    const cubey::terrain::TerrainBackdropProduct product =
+        cubey::terrain::make_terrain_backdrop_product(
+            cubey::terrain::terrain_backdrop_v1_product_request(
                 stage, config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride),
             terrain_source);
     terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;

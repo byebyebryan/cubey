@@ -243,9 +243,10 @@ cmake --build --preset dev --target \
   cubey_project_terrain \
   cubey_project_terrain_config_tests \
   cubey_project_terrain_raster_climate_source_tests \
-  cubey_project_terrain_backdrop_product_tests \
-  cubey_project_terrain_backdrop_placement_tests \
-  cubey_project_terrain_directional_placement_tests \
+  cubey_terrain_backdrop_product_tests \
+  cubey_terrain_backdrop_placement_tests \
+  cubey_terrain_directional_placement_tests \
+  cubey_project_terrain_product_adapter_tests \
   cubey_project_terrain_shadow_tests \
   cubey_project_terrain_surface_model_tests
 

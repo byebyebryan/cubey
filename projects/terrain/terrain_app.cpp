@@ -1,7 +1,7 @@
 #include "terrain_app.h"
 
-#include "terrain_backdrop_product.h"
 #include "terrain_config.h"
+#include "terrain_product_adapter.h"
 
 #include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/engine/atmosphere_environment_config.h>
@@ -25,10 +25,10 @@
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/shadow_map.h>
-#include <cubey/render/terrain_backdrop_placement.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/view_3d.h>
+#include <cubey/terrain/terrain_backdrop_placement.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
@@ -70,12 +70,14 @@
 namespace cubey::projects::terrain {
 namespace {
 
-using cubey::render::TerrainBackdropPlacementPlan;
-using cubey::render::TerrainBackdropPlacementRequest;
-using cubey::render::TerrainBackdropStagePlan;
-using cubey::render::TerrainDirectionalPlacementPlan;
-using cubey::render::plan_terrain_backdrop_placement;
 using cubey::asset::TerrainRasterProvenance;
+using cubey::terrain::plan_terrain_backdrop_placement;
+using cubey::terrain::TerrainBackdropPlacementPlan;
+using cubey::terrain::TerrainBackdropPlacementRequest;
+using cubey::terrain::TerrainBackdropProduct;
+using cubey::terrain::TerrainBackdropProductInfo;
+using cubey::terrain::TerrainBackdropStagePlan;
+using cubey::terrain::TerrainDirectionalPlacementPlan;
 
 constexpr VkFormat kTerrainSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr float kTerrainHeadlessOrbitSpeed = 0.18F;
@@ -323,7 +325,7 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
                                                   const TerrainRasterClimateSource* climate,
                                                   TerrainBackdropClimateDiagnostics* diagnostics) {
     return make_project_terrain_backdrop_product(
-        cubey::render::terrain_backdrop_v1_product_request(placement.stage, config.render_stride),
+        cubey::terrain::terrain_backdrop_v1_product_request(placement.stage, config.render_stride),
         source, config.surface_model, climate, diagnostics);
 }
 
@@ -433,7 +435,7 @@ class TerrainApp {
           startup_product_(make_product(source_, placement_stage_, runtime_config_,
                                         climate_source_ ? &climate_source_.value() : nullptr,
                                         &climate_diagnostics_)),
-          product_info_(cubey::render::terrain_backdrop_product_info(*startup_product_)),
+          product_info_(cubey::terrain::terrain_backdrop_product_info(*startup_product_)),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -808,8 +810,7 @@ class TerrainApp {
         ImGui::Text("Submitted triangles: %u",
                     terrain_runtime_.draw_plan().submitted_triangle_count);
         ImGui::Text("Cached source samples: %llu",
-                    static_cast<unsigned long long>(
-                        product_info_.diagnostics.source_sample_count));
+                    static_cast<unsigned long long>(product_info_.diagnostics.source_sample_count));
         ImGui::Text("Mean vegetation / moisture: %.3f / %.3f",
                     product_info_.diagnostics.mean_vegetation,
                     product_info_.diagnostics.mean_moisture);
@@ -938,7 +939,7 @@ class TerrainApp {
             source_changed || build.config.placement != placement_stage_.mode ||
             build.config.placement_index != placement_stage_.sample_index;
         TerrainBackdropProductInfo next_product_info =
-            cubey::render::terrain_backdrop_product_info(build.product);
+            cubey::terrain::terrain_backdrop_product_info(build.product);
         terrain_runtime_.replace_product(context.gpu(), build.product,
                                          context.frame_resources().latest_submitted_ticket());
         if (source_changed) {
@@ -1109,26 +1110,23 @@ class TerrainApp {
                                 terrain_runtime_.draw_plan().submitted_sector_count);
         recorder->record_metric(frame_index, "terrain.backdrop", "submitted_triangles",
                                 terrain_runtime_.draw_plan().submitted_triangle_count);
-        recorder->record_metric(frame_index, "terrain.backdrop", "product_render_triangles",
-                                static_cast<double>(
-                                    product_info_.diagnostics.render_triangle_count));
+        recorder->record_metric(
+            frame_index, "terrain.backdrop", "product_render_triangles",
+            static_cast<double>(product_info_.diagnostics.render_triangle_count));
         recorder->record_metric(
             frame_index, "terrain.backdrop", "center_render_triangles",
             static_cast<double>(product_info_.diagnostics.center_render_triangle_count));
         recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
-                                static_cast<double>(
-                                    product_info_.diagnostics.source_sample_count));
-        recorder->record_metric(
-            frame_index, "terrain.backdrop", "content_hash_low32",
-            static_cast<double>(
-                static_cast<std::uint32_t>(product_info_.diagnostics.content_hash)));
+                                static_cast<double>(product_info_.diagnostics.source_sample_count));
+        recorder->record_metric(frame_index, "terrain.backdrop", "content_hash_low32",
+                                static_cast<double>(static_cast<std::uint32_t>(
+                                    product_info_.diagnostics.content_hash)));
         recorder->record_metric(frame_index, "terrain.backdrop", "content_hash_high32",
                                 static_cast<double>(static_cast<std::uint32_t>(
                                     product_info_.diagnostics.content_hash >> 32U)));
-        recorder->record_metric(
-            frame_index, "terrain.backdrop", "geometry_hash_low32",
-            static_cast<double>(
-                static_cast<std::uint32_t>(product_info_.diagnostics.geometry_hash)));
+        recorder->record_metric(frame_index, "terrain.backdrop", "geometry_hash_low32",
+                                static_cast<double>(static_cast<std::uint32_t>(
+                                    product_info_.diagnostics.geometry_hash)));
         recorder->record_metric(frame_index, "terrain.backdrop", "geometry_hash_high32",
                                 static_cast<double>(static_cast<std::uint32_t>(
                                     product_info_.diagnostics.geometry_hash >> 32U)));

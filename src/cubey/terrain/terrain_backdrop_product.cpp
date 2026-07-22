@@ -1,4 +1,4 @@
-#include <cubey/render/terrain_backdrop_product.h>
+#include <cubey/terrain/terrain_backdrop_product.h>
 
 #include <cubey/core/jobs.h>
 
@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <thread>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 TerrainBackdropProductRequest
 terrain_backdrop_v1_product_request(const TerrainBackdropStagePlan& stage,
@@ -188,29 +188,23 @@ void validate_request(const TerrainBackdropProductRequest& request,
         const std::uint32_t positive_z = density.angular_intervals / 2U;
         const std::uint32_t negative_x = positive_x * 3U;
         const float diameter = std::max(radii[1U] * 2.0F, 0.001F);
-        const float gradient_x =
-            (heights[field_index(positive_x, 1U, radial_count)] -
-             heights[field_index(negative_x, 1U, radial_count)]) /
-            diameter;
-        const float gradient_z =
-            (heights[field_index(positive_z, 1U, radial_count)] -
-             heights[field_index(0U, 1U, radial_count)]) /
-            diameter;
+        const float gradient_x = (heights[field_index(positive_x, 1U, radial_count)] -
+                                  heights[field_index(negative_x, 1U, radial_count)]) /
+                                 diameter;
+        const float gradient_z = (heights[field_index(positive_z, 1U, radial_count)] -
+                                  heights[field_index(0U, 1U, radial_count)]) /
+                                 diameter;
         return normalized({-gradient_x, 1.0F, -gradient_z});
     }
-    const float angular_sample_span_m =
-        std::max(radii[radial_index] * kTwoPi /
-                     static_cast<float>(density.angular_intervals),
-                 0.001F);
-    const std::uint32_t angular_offset = std::clamp(
-        static_cast<std::uint32_t>(
-            std::lround(radial_footprint(radii, radial_index) / angular_sample_span_m)),
-        1U, density.angular_intervals / 4U);
+    const float angular_sample_span_m = std::max(
+        radii[radial_index] * kTwoPi / static_cast<float>(density.angular_intervals), 0.001F);
+    const std::uint32_t angular_offset =
+        std::clamp(static_cast<std::uint32_t>(
+                       std::lround(radial_footprint(radii, radial_index) / angular_sample_span_m)),
+                   1U, density.angular_intervals / 4U);
     const std::uint32_t previous_angle =
-        (angular_index + density.angular_intervals - angular_offset) %
-        density.angular_intervals;
-    const std::uint32_t next_angle =
-        (angular_index + angular_offset) % density.angular_intervals;
+        (angular_index + density.angular_intervals - angular_offset) % density.angular_intervals;
+    const std::uint32_t next_angle = (angular_index + angular_offset) % density.angular_intervals;
     const std::uint32_t previous_radius = radial_index == 0U ? 0U : radial_index - 1U;
     const std::uint32_t next_radius =
         std::min(radial_index + 1U, static_cast<std::uint32_t>(radii.size() - 1U));
@@ -251,8 +245,8 @@ material_channels(const TerrainBackdropProductRequest& request, const std::vecto
     const float normalized_height = std::clamp(
         (source_height - source.base_height_m) / std::max(source.relief_scale_m, 1.0F), 0.0F, 1.0F);
     const float concavity_m = neighbor_mean - height;
-    const float angle = static_cast<float>(angular_index) * kTwoPi /
-                        static_cast<float>(density.angular_intervals);
+    const float angle =
+        static_cast<float>(angular_index) * kTwoPi / static_cast<float>(density.angular_intervals);
     const TerrainBackdropSurfaceChannels weights = classifier.classify({
         .source_xz = request.source_focus_xz +
                      cubey::math::Vec2{std::sin(angle), -std::cos(angle)} * radii[radial_index],
@@ -335,10 +329,10 @@ make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector
         request, heights, radii, 0U, 0U, density, center_normal, source, classifier);
     mesh.vertices.push_back({
         .position = {center_position.x, center_position.y, center_position.z},
-        .color = {center_channels.material.x, center_channels.material.y,
-                  center_channels.material.z},
+        .material = {center_channels.material.x, center_channels.material.y,
+                     center_channels.material.z},
         .normal = {center_normal.x, center_normal.y, center_normal.z},
-        .uv = {center_channels.surface.x, center_channels.surface.y},
+        .surface = {center_channels.surface.x, center_channels.surface.y},
     });
     include(bounds, center_position);
     for (std::uint32_t radial = 1U; radial <= radial_interval_count; ++radial) {
@@ -347,14 +341,13 @@ make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector
             const cubey::math::Vec3 position =
                 position_at(heights, radii, wrapped, radial, density);
             const cubey::math::Vec3 normal = normal_at(heights, radii, wrapped, radial, density);
-            const TerrainVertexChannels channels =
-                material_channels(request, heights, radii, wrapped, radial, density, normal,
-                                  source, classifier);
+            const TerrainVertexChannels channels = material_channels(
+                request, heights, radii, wrapped, radial, density, normal, source, classifier);
             mesh.vertices.push_back({
                 .position = {position.x, position.y, position.z},
-                .color = {channels.material.x, channels.material.y, channels.material.z},
+                .material = {channels.material.x, channels.material.y, channels.material.z},
                 .normal = {normal.x, normal.y, normal.z},
-                .uv = {channels.surface.x, channels.surface.y},
+                .surface = {channels.surface.x, channels.surface.y},
             });
             include(bounds, position);
         }
@@ -362,8 +355,7 @@ make_center_mesh(const TerrainBackdropProductRequest& request, const std::vector
 
     const std::vector<std::uint32_t> render_radii =
         strided_vertices(radial_render_stride, radial_interval_count, radial_render_stride);
-    mesh.indices.reserve((render_angles.size() - 1U) *
-                         (3U + (render_radii.size() - 1U) * 6U));
+    mesh.indices.reserve((render_angles.size() - 1U) * (3U + (render_radii.size() - 1U) * 6U));
     const std::uint32_t first_render_ring = 1U + (render_radii.front() - 1U) * angular_vertex_count;
     for (std::size_t angular = 0U; angular + 1U < render_angles.size(); ++angular) {
         mesh.indices.insert(mesh.indices.end(),
@@ -400,17 +392,17 @@ void hash_float(std::uint64_t& hash, float value) {
 [[nodiscard]] std::uint64_t content_hash(const TerrainBackdropProduct& product) {
     std::uint64_t hash = kFnvOffset;
     const auto hash_mesh = [&hash](const TerrainBackdropSectorMesh& mesh) {
-        for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
+        for (const TerrainBackdropVertex& vertex : mesh.vertices) {
             for (const float value : vertex.position) {
                 hash_float(hash, value);
             }
-            for (const float value : vertex.color) {
+            for (const float value : vertex.material) {
                 hash_float(hash, value);
             }
             for (const float value : vertex.normal) {
                 hash_float(hash, value);
             }
-            for (const float value : vertex.uv) {
+            for (const float value : vertex.surface) {
                 hash_float(hash, value);
             }
         }
@@ -430,7 +422,7 @@ void hash_float(std::uint64_t& hash, float value) {
 [[nodiscard]] std::uint64_t geometry_hash(const TerrainBackdropProduct& product) {
     std::uint64_t hash = kFnvOffset;
     const auto hash_mesh = [&hash](const TerrainBackdropSectorMesh& mesh) {
-        for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
+        for (const TerrainBackdropVertex& vertex : mesh.vertices) {
             for (const float value : vertex.position) {
                 hash_float(hash, value);
             }
@@ -466,19 +458,14 @@ terrain_backdrop_density_profile(TerrainBackdropMeshDensity density) noexcept {
     return {3'072U, 32U, 64U, 768U, 48U};
 }
 
-cubey::render::MeshConfig TerrainBackdropSectorMesh::mesh_config() const {
-    return cubey::render::indexed_mesh_config(
-        std::span<const cubey::render::VertexPositionColorNormalUv>(vertices),
-        std::span<const std::uint32_t>(indices));
-}
-
 std::uint32_t TerrainBackdropSectorMesh::triangle_count() const noexcept {
     return static_cast<std::uint32_t>(indices.size() / 3U);
 }
 
-TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
-                                                     const TerrainHeightSource& source,
-                                                     const TerrainBackdropSurfaceClassifier& classifier) {
+TerrainBackdropProduct
+make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
+                              const TerrainHeightSource& source,
+                              const TerrainBackdropSurfaceClassifier& classifier) {
     const TerrainBackdropDensityProfile density = terrain_backdrop_density_profile(request.density);
     const TerrainHeightSourceMetadata source_metadata = source.metadata();
     validate_request(request, density, source_metadata);
@@ -556,10 +543,9 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
         render_angular_vertices(density, angular_render_stride);
 
     if (request.center_mode == TerrainBackdropCenterMode::Continuous) {
-        product.center =
-            make_center_mesh(request, heights, radii, density, source_metadata,
-                             center_radial_intervals, global_render_angles,
-                             center_radial_render_stride, classifier);
+        product.center = make_center_mesh(request, heights, radii, density, source_metadata,
+                                          center_radial_intervals, global_render_angles,
+                                          center_radial_render_stride, classifier);
     }
 
     float minimum_height = std::numeric_limits<float>::infinity();
@@ -603,9 +589,9 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                                       source_metadata, classifier);
                 sector.vertices.push_back({
                     .position = {position.x, position.y, position.z},
-                    .color = {channels.material.x, channels.material.y, channels.material.z},
+                    .material = {channels.material.x, channels.material.y, channels.material.z},
                     .normal = {normal.x, normal.y, normal.z},
-                    .uv = {channels.surface.x, channels.surface.y},
+                    .surface = {channels.surface.x, channels.surface.y},
                 });
                 include(bounds, position);
             }
@@ -665,12 +651,14 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                 maximum_boundary_delta =
                     std::max(maximum_boundary_delta,
                              std::abs(lhs.normal[component] - rhs.normal[component]));
-                maximum_boundary_delta = std::max(
-                    maximum_boundary_delta, std::abs(lhs.color[component] - rhs.color[component]));
+                maximum_boundary_delta =
+                    std::max(maximum_boundary_delta,
+                             std::abs(lhs.material[component] - rhs.material[component]));
             }
             for (std::size_t component = 0U; component < 2U; ++component) {
-                maximum_boundary_delta = std::max(
-                    maximum_boundary_delta, std::abs(lhs.uv[component] - rhs.uv[component]));
+                maximum_boundary_delta =
+                    std::max(maximum_boundary_delta,
+                             std::abs(lhs.surface[component] - rhs.surface[component]));
             }
         }
     }
@@ -694,11 +682,12 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
                                  std::abs(lhs.normal[component] - rhs.normal[component]));
                     maximum_boundary_delta =
                         std::max(maximum_boundary_delta,
-                                 std::abs(lhs.color[component] - rhs.color[component]));
+                                 std::abs(lhs.material[component] - rhs.material[component]));
                 }
                 for (std::size_t component = 0U; component < 2U; ++component) {
-                    maximum_boundary_delta = std::max(
-                        maximum_boundary_delta, std::abs(lhs.uv[component] - rhs.uv[component]));
+                    maximum_boundary_delta =
+                        std::max(maximum_boundary_delta,
+                                 std::abs(lhs.surface[component] - rhs.surface[component]));
                 }
             }
         }
@@ -707,10 +696,9 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
     const std::uint64_t center_vertex_count =
         product.center.has_value() ? product.center->vertices.size() : 0U;
     const std::uint64_t center_triangle_count =
-        center_radial_intervals == 0U
-            ? 0U
-            : static_cast<std::uint64_t>(density.angular_intervals) *
-                  (1U + 2U * (center_radial_intervals - 1U));
+        center_radial_intervals == 0U ? 0U
+                                      : static_cast<std::uint64_t>(density.angular_intervals) *
+                                            (1U + 2U * (center_radial_intervals - 1U));
     const std::uint64_t center_index_count = center_triangle_count * 3U;
     const std::uint64_t center_render_triangle_count =
         product.center.has_value() ? product.center->triangle_count() : 0U;
@@ -741,11 +729,11 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
     double moisture_sum = 0.0;
     std::uint64_t surface_sample_count = 0U;
     const auto include_surface = [&](const TerrainBackdropSectorMesh& mesh) {
-        for (const cubey::render::VertexPositionColorNormalUv& vertex : mesh.vertices) {
-            rock_sum += vertex.color[0];
-            snow_sum += vertex.color[1];
-            vegetation_sum += vertex.uv[0];
-            moisture_sum += vertex.uv[1];
+        for (const TerrainBackdropVertex& vertex : mesh.vertices) {
+            rock_sum += vertex.material[0];
+            snow_sum += vertex.material[1];
+            vegetation_sum += vertex.surface[0];
+            moisture_sum += vertex.surface[1];
             ++surface_sample_count;
         }
     };
@@ -771,23 +759,22 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
     return product;
 }
 
-TerrainBackdropSurfaceChannels TerrainBackdropMineralSurfaceClassifier::classify(
-    const TerrainBackdropSurfaceQuery& query) const {
+TerrainBackdropSurfaceChannels
+TerrainBackdropMineralSurfaceClassifier::classify(const TerrainBackdropSurfaceQuery& query) const {
     const float smooth_height = std::clamp(query.normalized_height, 0.0F, 1.0F);
     const float slope = std::clamp(query.slope, 0.0F, 1.0F);
     const float normal_y = std::clamp(query.normal_y, 0.0F, 1.0F);
     const float mountain = smoothstep(1'300.0F, 2'800.0F, query.relief_scale_m);
     const float exposed_rock = smoothstep(0.17F, 0.54F, slope);
-    const float alpine_rock = mountain * smoothstep(0.42F, 0.72F, smooth_height) *
-                              smoothstep(0.035F, 0.30F, slope);
+    const float alpine_rock =
+        mountain * smoothstep(0.42F, 0.72F, smooth_height) * smoothstep(0.035F, 0.30F, slope);
     const float snow = std::clamp(mountain * smoothstep(0.25F, 0.39F, smooth_height) *
                                       smoothstep(0.30F, 0.82F, normal_y),
                                   0.0F, 1.0F);
     return {
         .rock = std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F),
         .snow = snow,
-        .ambient_visibility =
-            1.0F - 0.35F * smoothstep(20.0F, 240.0F, query.concavity_m),
+        .ambient_visibility = 1.0F - 0.35F * smoothstep(20.0F, 240.0F, query.concavity_m),
     };
 }
 
@@ -797,4 +784,4 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
     return make_terrain_backdrop_product(request, source, classifier);
 }
 
-} // namespace cubey::render
+} // namespace cubey::terrain

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 enum class TerrainPlacementMode : std::uint8_t {
     Selected,
@@ -10,4 +10,4 @@ enum class TerrainPlacementMode : std::uint8_t {
     RawSample,
 };
 
-} // namespace cubey::render
+} // namespace cubey::terrain

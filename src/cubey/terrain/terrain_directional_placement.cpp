@@ -1,4 +1,4 @@
-#include <cubey/render/terrain_directional_placement.h>
+#include <cubey/terrain/terrain_directional_placement.h>
 
 #include <algorithm>
 #include <cmath>
@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cubey::render {
+namespace cubey::terrain {
 namespace {
 
 constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;
@@ -40,9 +40,8 @@ struct Candidate {
 }
 
 [[nodiscard]] std::uint32_t largest_circular_arc(const std::vector<bool>& sectors) {
-    if (sectors.empty() || std::none_of(sectors.begin(), sectors.end(), [](bool value) {
-            return value;
-        })) {
+    if (sectors.empty() ||
+        std::none_of(sectors.begin(), sectors.end(), [](bool value) { return value; })) {
         return 0U;
     }
     if (std::all_of(sectors.begin(), sectors.end(), [](bool value) { return value; })) {
@@ -69,9 +68,9 @@ struct Candidate {
     return std::lerp(values[lower], values[upper], position - static_cast<float>(lower));
 }
 
-[[nodiscard]] TerrainDirectionalPlacementPlan evaluate(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
-    cubey::math::Vec2 focus, bool detailed_local) {
+[[nodiscard]] TerrainDirectionalPlacementPlan
+evaluate(const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
+         cubey::math::Vec2 focus, bool detailed_local) {
     TerrainDirectionalPlacementPlan result;
     result.source_focus_xz = focus;
     result.local_radius_m = request.local_radius_m;
@@ -110,11 +109,11 @@ struct Candidate {
     float direction_x = 0.0F;
     float direction_z = 0.0F;
     for (std::uint32_t sector = 0U; sector < request.sector_count; ++sector) {
-        const float yaw = static_cast<float>(sector) * kTwoPi /
-                          static_cast<float>(request.sector_count);
+        const float yaw =
+            static_cast<float>(sector) * kTwoPi / static_cast<float>(request.sector_count);
         const cubey::math::Vec2 direction = direction_from_yaw(yaw);
-        const float near = sample_height(source, focus + direction * request.near_distance_m,
-                                         96.0F, request.vertical_scale);
+        const float near = sample_height(source, focus + direction * request.near_distance_m, 96.0F,
+                                         request.vertical_scale);
         const float middle = sample_height(source, focus + direction * request.middle_distance_m,
                                            128.0F, request.vertical_scale);
         const float far = sample_height(source, focus + direction * request.far_distance_m, 160.0F,
@@ -168,16 +167,15 @@ struct Candidate {
         result.mountain_sector_count <= request.maximum_mountain_sectors &&
         result.largest_mountain_arc_sectors >= request.minimum_mountain_arc_sectors &&
         result.largest_open_arc_sectors >= request.minimum_open_arc_sectors;
-    const bool rise_contract = result.gradual_rise_sector_count * 2U >=
-                               std::max(result.mountain_sector_count, 1U);
+    const bool rise_contract =
+        result.gradual_rise_sector_count * 2U >= std::max(result.mountain_sector_count, 1U);
     result.contract_satisfied = local_contract && coverage_contract && rise_contract;
 
     const float local_score =
-        2.0F * (1.0F - std::clamp(result.local_relief_m / request.maximum_local_relief_m, 0.0F,
-                                  2.0F)) +
-        2.0F * (1.0F - std::clamp(result.local_p95_slope /
-                                      request.maximum_local_p95_slope,
-                                  0.0F, 2.0F));
+        2.0F * (1.0F -
+                std::clamp(result.local_relief_m / request.maximum_local_relief_m, 0.0F, 2.0F)) +
+        2.0F * (1.0F -
+                std::clamp(result.local_p95_slope / request.maximum_local_p95_slope, 0.0F, 2.0F));
     const float desired_coverage = 8.0F;
     const float coverage_score =
         1.5F * (1.0F - std::clamp(std::abs(static_cast<float>(result.mountain_sector_count) -
@@ -185,14 +183,12 @@ struct Candidate {
                                       desired_coverage,
                                   0.0F, 1.0F));
     const float arc_score =
-        static_cast<float>(result.largest_mountain_arc_sectors +
-                           result.largest_open_arc_sectors) /
+        static_cast<float>(result.largest_mountain_arc_sectors + result.largest_open_arc_sectors) /
         static_cast<float>(request.sector_count);
-    const float rise_score =
-        result.mountain_sector_count > 0U
-            ? static_cast<float>(result.gradual_rise_sector_count) /
-                  static_cast<float>(result.mountain_sector_count)
-            : 0.0F;
+    const float rise_score = result.mountain_sector_count > 0U
+                                 ? static_cast<float>(result.gradual_rise_sector_count) /
+                                       static_cast<float>(result.mountain_sector_count)
+                                 : 0.0F;
     const float prominence_score =
         std::clamp(result.mean_mountain_prominence_m / 1'500.0F, 0.0F, 2.0F);
     result.score = local_score + coverage_score + arc_score + rise_score + prominence_score;
@@ -210,9 +206,10 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
     }
 }
 
-[[nodiscard]] std::vector<Candidate> score_candidates(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
-    const std::vector<cubey::math::Vec2>& focuses) {
+[[nodiscard]] std::vector<Candidate>
+score_candidates(const TerrainHeightSource& source,
+                 const TerrainDirectionalPlacementRequest& request,
+                 const std::vector<cubey::math::Vec2>& focuses) {
     std::vector<Candidate> result;
     result.reserve(focuses.size());
     for (const cubey::math::Vec2 focus : focuses) {
@@ -257,18 +254,13 @@ void append_unique(std::vector<cubey::math::Vec2>& values, cubey::math::Vec2 val
 
 void validate_terrain_directional_placement_request(
     const TerrainDirectionalPlacementRequest& request) {
-    const bool finite = std::isfinite(request.search_extent_m) &&
-                        std::isfinite(request.search_step_m) &&
-                        std::isfinite(request.local_radius_m) &&
-                        std::isfinite(request.near_distance_m) &&
-                        std::isfinite(request.middle_distance_m) &&
-                        std::isfinite(request.far_distance_m) &&
-                        std::isfinite(request.remote_distance_m) &&
-                        std::isfinite(request.mountain_prominence_m) &&
-                        std::isfinite(request.open_prominence_m) &&
-                        std::isfinite(request.maximum_local_relief_m) &&
-                        std::isfinite(request.maximum_local_p95_slope) &&
-                        std::isfinite(request.vertical_scale);
+    const bool finite =
+        std::isfinite(request.search_extent_m) && std::isfinite(request.search_step_m) &&
+        std::isfinite(request.local_radius_m) && std::isfinite(request.near_distance_m) &&
+        std::isfinite(request.middle_distance_m) && std::isfinite(request.far_distance_m) &&
+        std::isfinite(request.remote_distance_m) && std::isfinite(request.mountain_prominence_m) &&
+        std::isfinite(request.open_prominence_m) && std::isfinite(request.maximum_local_relief_m) &&
+        std::isfinite(request.maximum_local_p95_slope) && std::isfinite(request.vertical_scale);
     if (!finite || request.search_extent_m < 0.0F || request.search_step_m <= 0.0F ||
         request.local_radius_m <= 0.0F || request.near_distance_m <= 0.0F ||
         request.middle_distance_m <= request.near_distance_m ||
@@ -286,21 +278,24 @@ void validate_terrain_directional_placement_request(
     }
 }
 
-TerrainDirectionalPlacementPlan evaluate_terrain_directional_placement(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
-    cubey::math::Vec2 focus) {
+TerrainDirectionalPlacementPlan
+evaluate_terrain_directional_placement(const TerrainHeightSource& source,
+                                       const TerrainDirectionalPlacementRequest& request,
+                                       cubey::math::Vec2 focus) {
     validate_terrain_directional_placement_request(request);
     return evaluate(source, request, focus, true);
 }
 
-TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request) {
+TerrainDirectionalPlacementPlan
+plan_terrain_directional_placement(const TerrainHeightSource& source,
+                                   const TerrainDirectionalPlacementRequest& request) {
     return plan_terrain_directional_placement(source, request, {0.0F, 0.0F});
 }
 
-TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
-    cubey::math::Vec2 search_center) {
+TerrainDirectionalPlacementPlan
+plan_terrain_directional_placement(const TerrainHeightSource& source,
+                                   const TerrainDirectionalPlacementRequest& request,
+                                   cubey::math::Vec2 search_center) {
     validate_terrain_directional_placement_request(request);
     if (!std::isfinite(search_center.x) || !std::isfinite(search_center.y)) {
         throw std::runtime_error("invalid terrain directional placement search center");
@@ -354,4 +349,4 @@ TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
     return plans.front();
 }
 
-} // namespace cubey::render
+} // namespace cubey::terrain

@@ -86,25 +86,26 @@ target_link_libraries(
     PUBLIC
         cubey::core
         cubey::asset
+        cubey::terrain
     PRIVATE
         cubey_project_warnings
         nlohmann_json::nlohmann_json
 )
 
-add_library(cubey_project_terrain_render_support STATIC
-    terrain_backdrop_product.cpp
+add_library(cubey_project_terrain_surface_support STATIC
+    terrain_product_adapter.cpp
     terrain_surface_model.cpp
 )
 target_include_directories(
-    cubey_project_terrain_render_support
+    cubey_project_terrain_surface_support
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_link_libraries(
-    cubey_project_terrain_render_support
+    cubey_project_terrain_surface_support
     PUBLIC
         cubey_project_terrain_runtime
-        cubey::render
+        cubey::terrain
     PRIVATE
         cubey_project_warnings
 )
@@ -155,7 +156,7 @@ target_compile_definitions(
 target_link_libraries(
     cubey_project_terrain
     PRIVATE
-        cubey_project_terrain_render_support
+        cubey_project_terrain_surface_support
 )
 
 if (BUILD_TESTING)
@@ -187,56 +188,30 @@ if (BUILD_TESTING)
         COMMAND cubey_project_terrain_raster_climate_source_tests
     )
 
-    add_executable(
-        cubey_project_terrain_backdrop_product_tests
-        terrain_backdrop_product_tests.cpp
-    )
+    add_executable(cubey_project_terrain_product_adapter_tests terrain_product_adapter_tests.cpp)
     target_link_libraries(
-        cubey_project_terrain_backdrop_product_tests
-        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
+        cubey_project_terrain_product_adapter_tests
+        PRIVATE cubey_project_terrain_surface_support cubey_project_warnings
     )
     add_test(
-        NAME terrain_backdrop_product_tests
-        COMMAND cubey_project_terrain_backdrop_product_tests
-    )
-
-    add_executable(
-        cubey_project_terrain_directional_placement_tests
-        terrain_directional_placement_tests.cpp
-    )
-    target_link_libraries(
-        cubey_project_terrain_directional_placement_tests
-        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
-    )
-    add_test(
-        NAME terrain_directional_placement_tests
-        COMMAND cubey_project_terrain_directional_placement_tests
-    )
-
-    add_executable(
-        cubey_project_terrain_backdrop_placement_tests
-        terrain_backdrop_placement_tests.cpp
-    )
-    target_link_libraries(
-        cubey_project_terrain_backdrop_placement_tests
-        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
-    )
-    add_test(
-        NAME terrain_backdrop_placement_tests
-        COMMAND cubey_project_terrain_backdrop_placement_tests
+        NAME terrain_product_adapter_tests
+        COMMAND cubey_project_terrain_product_adapter_tests
     )
 
     add_executable(cubey_project_terrain_shadow_tests terrain_shadow_tests.cpp)
     target_link_libraries(
         cubey_project_terrain_shadow_tests
-        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
+        PRIVATE
+            cubey_project_terrain_surface_support
+            cubey::render
+            cubey_project_warnings
     )
     add_test(NAME terrain_shadow_tests COMMAND cubey_project_terrain_shadow_tests)
 
     add_executable(cubey_project_terrain_surface_model_tests terrain_surface_model_tests.cpp)
     target_link_libraries(
         cubey_project_terrain_surface_model_tests
-        PRIVATE cubey_project_terrain_render_support cubey_project_warnings
+        PRIVATE cubey_project_terrain_surface_support cubey_project_warnings
     )
     add_test(NAME terrain_surface_model_tests COMMAND cubey_project_terrain_surface_model_tests)
 
@@ -266,9 +241,7 @@ if (BUILD_TESTING)
     set_tests_properties(
         terrain_config_tests
         terrain_raster_climate_source_tests
-        terrain_backdrop_product_tests
-        terrain_backdrop_placement_tests
-        terrain_directional_placement_tests
+        terrain_product_adapter_tests
         terrain_shadow_tests
         terrain_surface_model_tests
         terrain_backdrop_headless_writes_png

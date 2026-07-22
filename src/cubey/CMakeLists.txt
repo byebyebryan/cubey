@@ -136,6 +136,30 @@ target_link_libraries(
         OpenSSL::Crypto
 )
 
+add_library(cubey_terrain STATIC
+    terrain/terrain_backdrop_density.cpp
+    terrain/terrain_backdrop_placement.cpp
+    terrain/terrain_backdrop_product.cpp
+    terrain/terrain_backdrop_profile.cpp
+    terrain/terrain_directional_placement.cpp
+)
+add_library(cubey::terrain ALIAS cubey_terrain)
+
+target_include_directories(
+    cubey_terrain
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/include"
+)
+
+target_link_libraries(
+    cubey_terrain
+    PUBLIC
+        cubey::asset
+        cubey::core
+    PRIVATE
+        cubey_project_warnings
+)
+
 add_library(cubey_animation STATIC
     animation/gltf_animation.cpp
 )
@@ -194,11 +218,6 @@ add_library(cubey_render STATIC
     render/render_item.cpp
     render/shadow_map.cpp
     render/target.cpp
-    render/terrain_backdrop_density.cpp
-    render/terrain_backdrop_placement.cpp
-    render/terrain_backdrop_product.cpp
-    render/terrain_backdrop_profile.cpp
-    render/terrain_directional_placement.cpp
     render/terrain_ocean_fields.cpp
     render/terrain_shadow.cpp
     render/texture.cpp
@@ -215,7 +234,6 @@ target_include_directories(
 target_link_libraries(
     cubey_render
     PUBLIC
-        cubey::asset
         cubey::core
         cubey::vulkan
     PRIVATE
@@ -285,7 +303,9 @@ target_link_libraries(
     cubey_engine
     PUBLIC
         cubey::core
+        cubey::asset
         cubey::animation
+        cubey::terrain
         cubey::vulkan
         cubey::render
         cubey::scene
@@ -335,6 +355,7 @@ target_link_libraries(
     INTERFACE
         cubey::core
         cubey::asset
+        cubey::terrain
         cubey::animation
         cubey::vulkan
         cubey::render

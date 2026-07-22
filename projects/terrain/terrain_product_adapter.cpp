@@ -1,4 +1,4 @@
-#include "terrain_backdrop_product.h"
+#include "terrain_product_adapter.h"
 
 #include <algorithm>
 #include <optional>
@@ -7,7 +7,7 @@
 namespace cubey::projects::terrain {
 namespace {
 
-class ProjectSurfaceClassifier final : public TerrainBackdropSurfaceClassifier {
+class ProjectSurfaceClassifier final : public cubey::terrain::TerrainBackdropSurfaceClassifier {
   public:
     ProjectSurfaceClassifier(TerrainSurfaceModel model, const TerrainRasterClimateSource* climate)
         : model_(model), climate_(climate) {
@@ -16,23 +16,22 @@ class ProjectSurfaceClassifier final : public TerrainBackdropSurfaceClassifier {
         }
     }
 
-    [[nodiscard]] TerrainBackdropSurfaceChannels
-    classify(const TerrainBackdropSurfaceQuery& query) const override {
+    [[nodiscard]] cubey::terrain::TerrainBackdropSurfaceChannels
+    classify(const cubey::terrain::TerrainBackdropSurfaceQuery& query) const override {
         std::optional<TerrainClimateSample> climate;
         if (climate_ != nullptr) {
             climate = climate_->sample(query.source_xz);
             include_climate(climate.value());
         }
-        const TerrainSurfaceWeights weights = terrain_surface_weights(
-            model_,
-            {
-                .normalized_height = query.normalized_height,
-                .slope = query.slope,
-                .normal_y = query.normal_y,
-                .concavity_m = query.concavity_m,
-                .relief_scale_m = query.relief_scale_m,
-                .climate = climate,
-            });
+        const TerrainSurfaceWeights weights =
+            terrain_surface_weights(model_, {
+                                                .normalized_height = query.normalized_height,
+                                                .slope = query.slope,
+                                                .normal_y = query.normal_y,
+                                                .concavity_m = query.concavity_m,
+                                                .relief_scale_m = query.relief_scale_m,
+                                                .climate = climate,
+                                            });
         return {
             .rock = weights.rock,
             .snow = weights.snow,
@@ -92,14 +91,15 @@ class ProjectSurfaceClassifier final : public TerrainBackdropSurfaceClassifier {
 
 } // namespace
 
-TerrainBackdropProduct make_project_terrain_backdrop_product(
-    const TerrainBackdropProductRequest& request, const TerrainHeightSource& source,
-    TerrainSurfaceModel surface_model,
-    const TerrainRasterClimateSource* climate_source,
-    TerrainBackdropClimateDiagnostics* climate_diagnostics) {
+cubey::terrain::TerrainBackdropProduct
+make_project_terrain_backdrop_product(const cubey::terrain::TerrainBackdropProductRequest& request,
+                                      const cubey::asset::TerrainHeightSource& source,
+                                      TerrainSurfaceModel surface_model,
+                                      const TerrainRasterClimateSource* climate_source,
+                                      TerrainBackdropClimateDiagnostics* climate_diagnostics) {
     ProjectSurfaceClassifier classifier(surface_model, climate_source);
-    TerrainBackdropProduct result =
-        cubey::render::make_terrain_backdrop_product(request, source, classifier);
+    cubey::terrain::TerrainBackdropProduct result =
+        cubey::terrain::make_terrain_backdrop_product(request, source, classifier);
     if (climate_diagnostics != nullptr) {
         *climate_diagnostics = classifier.diagnostics();
     }

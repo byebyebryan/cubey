@@ -130,6 +130,28 @@ add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
 
+foreach(test_name IN ITEMS
+    terrain_backdrop_product
+    terrain_backdrop_placement
+    terrain_directional_placement
+)
+    add_executable(
+        cubey_${test_name}_tests
+        "terrain/${test_name}_tests.cpp"
+    )
+    target_link_libraries(
+        cubey_${test_name}_tests
+        PRIVATE
+            cubey::terrain
+            cubey_project_warnings
+    )
+    add_test(NAME ${test_name}_tests COMMAND cubey_${test_name}_tests)
+    set_tests_properties(
+        ${test_name}_tests
+        PROPERTIES LABELS terrain TIMEOUT 120
+    )
+endforeach()
+
 add_executable(cubey_procedural_gpu_parity_tests
     procedural_gpu_parity_main.cpp
 )

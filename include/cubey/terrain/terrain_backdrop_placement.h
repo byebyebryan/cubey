@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cubey/render/terrain_backdrop_profile.h>
-#include <cubey/render/terrain_placement_mode.h>
+#include <cubey/terrain/terrain_backdrop_profile.h>
+#include <cubey/terrain/terrain_placement_mode.h>
 
 #include <cstdint>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 using cubey::asset::TerrainHeightSource;
 using cubey::asset::TerrainHeightSourceBounds;
@@ -52,4 +52,4 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
                                 const TerrainHeightSourceBounds& bounds,
                                 const TerrainBackdropPlacementRequest& request = {});
 
-} // namespace cubey::render
+} // namespace cubey::terrain

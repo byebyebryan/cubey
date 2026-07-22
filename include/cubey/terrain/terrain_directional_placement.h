@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 using cubey::asset::TerrainHeightSource;
 
@@ -30,8 +30,7 @@ struct TerrainDirectionalPlacementRequest {
     float vertical_scale = 1.0F;
 };
 
-[[nodiscard]] constexpr float
-terrain_directional_placement_maximum_refinement_offset_m() noexcept {
+[[nodiscard]] constexpr float terrain_directional_placement_maximum_refinement_offset_m() noexcept {
     return 1'500.0F;
 }
 
@@ -74,15 +73,18 @@ struct TerrainDirectionalPlacementPlan {
 void validate_terrain_directional_placement_request(
     const TerrainDirectionalPlacementRequest& request);
 
-[[nodiscard]] TerrainDirectionalPlacementPlan evaluate_terrain_directional_placement(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
-    cubey::math::Vec2 focus);
+[[nodiscard]] TerrainDirectionalPlacementPlan
+evaluate_terrain_directional_placement(const TerrainHeightSource& source,
+                                       const TerrainDirectionalPlacementRequest& request,
+                                       cubey::math::Vec2 focus);
 
-[[nodiscard]] TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request = {});
+[[nodiscard]] TerrainDirectionalPlacementPlan
+plan_terrain_directional_placement(const TerrainHeightSource& source,
+                                   const TerrainDirectionalPlacementRequest& request = {});
 
-[[nodiscard]] TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
-    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
-    cubey::math::Vec2 search_center);
+[[nodiscard]] TerrainDirectionalPlacementPlan
+plan_terrain_directional_placement(const TerrainHeightSource& source,
+                                   const TerrainDirectionalPlacementRequest& request,
+                                   cubey::math::Vec2 search_center);
 
-} // namespace cubey::render
+} // namespace cubey::terrain

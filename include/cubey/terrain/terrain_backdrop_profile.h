@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/render/terrain_backdrop_stage.h>
-#include <cubey/render/terrain_directional_placement.h>
+#include <cubey/terrain/terrain_backdrop_stage.h>
+#include <cubey/terrain/terrain_directional_placement.h>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 struct TerrainFocusedBackdropStageParameters {
     float focus_height_m = 20.0F;
@@ -20,4 +20,4 @@ struct TerrainFocusedBackdropStageParameters {
     float vertical_scale = 1.0F, TerrainFocusedBackdropStageParameters parameters = {},
     TerrainDirectionalPlacementRequest placement_request = {});
 
-} // namespace cubey::render
+} // namespace cubey::terrain

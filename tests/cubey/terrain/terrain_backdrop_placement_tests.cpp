@@ -1,5 +1,5 @@
 #include <cubey/asset/terrain_height_source.h>
-#include <cubey/render/terrain_backdrop_placement.h>
+#include <cubey/terrain/terrain_backdrop_placement.h>
 
 #include <algorithm>
 #include <cmath>
@@ -33,8 +33,7 @@ class NaturalRiseSource final : public cubey::asset::TerrainHeightSource {
   public:
     explicit NaturalRiseSource(cubey::math::Vec2 origin = {}) : origin_(origin) {}
 
-    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata
-    metadata() const noexcept override {
+    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata metadata() const noexcept override {
         return {
             .id = "natural-stage-test",
             .seed = 9012U,
@@ -43,8 +42,7 @@ class NaturalRiseSource final : public cubey::asset::TerrainHeightSource {
         };
     }
 
-    [[nodiscard]] float
-    sample_height(const cubey::asset::TerrainQuery& query) const override {
+    [[nodiscard]] float sample_height(const cubey::asset::TerrainQuery& query) const override {
         const float rise = std::max(query.world_xz.x - origin_.x - 2'000.0F, 0.0F) * 0.18F;
         return std::min(rise, 1'800.0F);
     }
@@ -55,8 +53,7 @@ class NaturalRiseSource final : public cubey::asset::TerrainHeightSource {
 
 class FlatSource final : public cubey::asset::TerrainHeightSource {
   public:
-    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata
-    metadata() const noexcept override {
+    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata metadata() const noexcept override {
         return {
             .id = "flat-stage-test",
             .seed = 0U,
@@ -65,8 +62,7 @@ class FlatSource final : public cubey::asset::TerrainHeightSource {
         };
     }
 
-    [[nodiscard]] float
-    sample_height(const cubey::asset::TerrainQuery&) const override {
+    [[nodiscard]] float sample_height(const cubey::asset::TerrainQuery&) const override {
         return 0.0F;
     }
 };
@@ -77,7 +73,7 @@ constexpr cubey::asset::TerrainHeightSourceBounds kLargeBounds{
 };
 
 void test_selected_mode_preserves_directional_placement_and_focus_height() {
-    using namespace cubey::render;
+    using namespace cubey::terrain;
     const TerrainBackdropPlacementRequest request;
     const TerrainBackdropPlacementPlan plan =
         plan_terrain_backdrop_placement(NaturalRiseSource{}, kLargeBounds, request);
@@ -101,7 +97,7 @@ void test_selected_mode_preserves_directional_placement_and_focus_height() {
 }
 
 void test_raw_center_reports_failed_composition_without_rejecting_the_stage() {
-    using namespace cubey::render;
+    using namespace cubey::terrain;
     TerrainBackdropPlacementRequest request;
     request.mode = TerrainPlacementMode::RawCenter;
     const TerrainHeightSourceBounds asymmetric_bounds{
@@ -121,7 +117,7 @@ void test_raw_center_reports_failed_composition_without_rejecting_the_stage() {
 }
 
 void test_selected_failure_reports_the_failed_contract() {
-    using namespace cubey::render;
+    using namespace cubey::terrain;
     try {
         static_cast<void>(plan_terrain_backdrop_placement(FlatSource{}, kLargeBounds,
                                                           TerrainBackdropPlacementRequest{}));
@@ -137,7 +133,7 @@ void test_selected_failure_reports_the_failed_contract() {
 }
 
 void test_selected_mode_centers_search_on_translated_source_bounds() {
-    using namespace cubey::render;
+    using namespace cubey::terrain;
     const cubey::math::Vec2 translation{120'000.0F, -75'000.0F};
     const TerrainHeightSourceBounds translated_bounds{
         .minimum_xz = kLargeBounds.minimum_xz + translation,
@@ -158,7 +154,7 @@ void test_selected_mode_centers_search_on_translated_source_bounds() {
 }
 
 void test_raw_sample_is_indexed_deterministic_and_coverage_safe() {
-    using namespace cubey::render;
+    using namespace cubey::terrain;
     TerrainBackdropPlacementRequest request;
     request.mode = TerrainPlacementMode::RawSample;
     const float support = terrain_backdrop_selected_support_radius(request, 16.0F);
@@ -195,7 +191,7 @@ void test_raw_sample_is_indexed_deterministic_and_coverage_safe() {
 }
 
 void test_placement_rejects_insufficient_source_coverage() {
-    using namespace cubey::render;
+    using namespace cubey::terrain;
     TerrainBackdropPlacementRequest request;
     request.mode = TerrainPlacementMode::RawSample;
     const TerrainHeightSourceBounds small_bounds{

@@ -732,7 +732,7 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
 }
 
 void test_terrain_backdrop_reflection_uses_product_materials_lighting_and_horizon() {
-    cubey::render::TerrainBackdropProduct product;
+    cubey::terrain::TerrainBackdropProduct product;
     product.request.visible_inner_radius_m = 3'200.0F;
     product.diagnostics.minimum_height_m = 0.0F;
     product.diagnostics.maximum_height_m = 1'000.0F;

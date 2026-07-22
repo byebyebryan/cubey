@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace cubey::render {
+namespace cubey::terrain {
 
 enum class TerrainBackdropStageMode : std::uint8_t {
     Detached,
@@ -45,4 +45,4 @@ struct TerrainBackdropStagePlan {
     float score = 0.0F;
 };
 
-} // namespace cubey::render
+} // namespace cubey::terrain

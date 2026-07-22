@@ -5,8 +5,8 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/target.h>
 #include <cubey/render/terrain_backdrop_presentation.h>
-#include <cubey/render/terrain_backdrop_product.h>
 #include <cubey/render/terrain_shadow.h>
+#include <cubey/terrain/terrain_backdrop_product.h>
 #include <cubey/vulkan/submission_tickets.h>
 
 #include <vulkan/vulkan.h>
@@ -75,7 +75,7 @@ struct TerrainBackdropReflection {
 };
 
 [[nodiscard]] TerrainBackdropReflection
-terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
+terrain_backdrop_reflection(const terrain::TerrainBackdropProduct& product,
                             const TerrainBackdropRuntimeFrameInfo& frame);
 
 class TerrainBackdropRuntime {
@@ -89,14 +89,14 @@ class TerrainBackdropRuntime {
     TerrainBackdropRuntime& operator=(TerrainBackdropRuntime&&) = delete;
 
     void create(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                const render::TerrainBackdropProduct& product,
+                const terrain::TerrainBackdropProduct& product,
                 const TerrainBackdropRuntimeCreateInfo& info);
     void create_target_resources(const vulkan::Device& device,
                                  const TerrainBackdropRuntimeTargetInfo& target);
     void destroy_target_resources();
     void destroy();
 
-    void replace_product(vulkan::GpuRuntime& gpu, const render::TerrainBackdropProduct& product,
+    void replace_product(vulkan::GpuRuntime& gpu, const terrain::TerrainBackdropProduct& product,
                          vulkan::GpuSubmissionTicket retire_after);
     void prepare_frame(render::FrameSlot frame_slot, const TerrainBackdropRuntimeFrameInfo& info);
     void complete_frame();

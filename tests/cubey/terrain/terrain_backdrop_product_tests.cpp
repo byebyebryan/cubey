@@ -1,4 +1,4 @@
-#include "terrain_backdrop_product.h"
+#include <cubey/terrain/terrain_backdrop_product.h>
 
 #include <algorithm>
 #include <cmath>
@@ -17,15 +17,15 @@ void require(bool condition, std::string_view message) {
     }
 }
 
-[[nodiscard]] cubey::projects::terrain::TerrainBackdropProductRequest product_request() {
+[[nodiscard]] cubey::terrain::TerrainBackdropProductRequest product_request() {
     return {
         .source_focus_xz = {4'000.0F, -8'000.0F},
-        .density = cubey::projects::terrain::TerrainBackdropMeshDensity::Low,
+        .density = cubey::terrain::TerrainBackdropMeshDensity::Low,
         .vertical_offset_m = -1'200.0F,
     };
 }
 
-class AnalyticSource final : public cubey::projects::terrain::TerrainHeightSource {
+class AnalyticSource final : public cubey::asset::TerrainHeightSource {
   public:
     explicit AnalyticSource(std::uint64_t seed) : seed_(seed) {}
 
@@ -33,8 +33,7 @@ class AnalyticSource final : public cubey::projects::terrain::TerrainHeightSourc
         id_ = std::move(id);
     }
 
-    [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
-    metadata() const noexcept override {
+    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata metadata() const noexcept override {
         return {
             .id = id_,
             .seed = seed_,
@@ -44,8 +43,7 @@ class AnalyticSource final : public cubey::projects::terrain::TerrainHeightSourc
         };
     }
 
-    [[nodiscard]] float
-    sample_height(const cubey::projects::terrain::TerrainQuery& query) const override {
+    [[nodiscard]] float sample_height(const cubey::asset::TerrainQuery& query) const override {
         const float phase = static_cast<float>(seed_ % 10'000U) * 0.001F;
         return 1'200.0F + 520.0F * std::sin(query.world_xz.x / 5'200.0F + phase) +
                340.0F * std::cos(query.world_xz.y / 3'800.0F - phase * 0.7F) +
@@ -64,7 +62,7 @@ class AnalyticSource final : public cubey::projects::terrain::TerrainHeightSourc
 using BoundaryEdge = std::pair<std::uint32_t, std::uint32_t>;
 
 [[nodiscard]] std::set<BoundaryEdge>
-rendered_boundary_edges(const cubey::projects::terrain::TerrainBackdropSectorMesh& mesh,
+rendered_boundary_edges(const cubey::terrain::TerrainBackdropSectorMesh& mesh,
                         std::uint32_t first_vertex, std::uint32_t vertex_count,
                         std::uint32_t angular_offset = 0U) {
     std::set<BoundaryEdge> edges;
@@ -91,7 +89,7 @@ rendered_boundary_edges(const cubey::projects::terrain::TerrainBackdropSectorMes
 }
 
 void test_density_profiles_publish_the_product_budget() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     const auto low = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::Low);
     const auto medium = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::Medium);
     const auto high = terrain_backdrop_density_profile(TerrainBackdropMeshDensity::High);
@@ -114,29 +112,29 @@ void test_density_profiles_publish_the_product_budget() {
 }
 
 void test_v1_product_request_publishes_the_accepted_backdrop_contract() {
-    const cubey::render::TerrainBackdropStagePlan stage{
+    const cubey::terrain::TerrainBackdropStagePlan stage{
         .source_focus_xz = {1'250.0F, -2'500.0F},
         .terrain_vertical_offset_m = -720.0F,
         .stage_radius_m = 450.0F,
     };
-    const cubey::render::TerrainBackdropProductRequest request =
-        cubey::render::terrain_backdrop_v1_product_request(stage, 2U);
+    const cubey::terrain::TerrainBackdropProductRequest request =
+        cubey::terrain::terrain_backdrop_v1_product_request(stage, 2U);
 
     require(request.source_focus_xz == stage.source_focus_xz &&
-                request.density == cubey::render::TerrainBackdropMeshDensity::High &&
-                request.center_mode == cubey::render::TerrainBackdropCenterMode::Continuous &&
+                request.density == cubey::terrain::TerrainBackdropMeshDensity::High &&
+                request.center_mode == cubey::terrain::TerrainBackdropCenterMode::Continuous &&
                 request.center_sampling ==
-                    cubey::render::TerrainBackdropCenterSampling::SeamMatched,
+                    cubey::terrain::TerrainBackdropCenterSampling::SeamMatched,
             "v1 request should publish the accepted source and topology contract");
     require(request.render_stride == 2U && request.consumer_radius_m == stage.stage_radius_m &&
-                request.visible_inner_radius_m == 3'200.0F &&
-                request.outer_radius_m == 16'384.0F && request.vertical_scale == 1.0F &&
+                request.visible_inner_radius_m == 3'200.0F && request.outer_radius_m == 16'384.0F &&
+                request.vertical_scale == 1.0F &&
                 request.vertical_offset_m == stage.terrain_vertical_offset_m,
             "v1 request should publish the accepted sampling envelope");
 }
 
 void test_product_is_deterministic_connected_and_outside_the_stage() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     const AnalyticSource source = source_for_seed(9012U);
     const TerrainBackdropProduct first = make_terrain_backdrop_product(product_request(), source);
     const TerrainBackdropProduct second = make_terrain_backdrop_product(product_request(), source);
@@ -165,56 +163,19 @@ void test_product_is_deterministic_connected_and_outside_the_stage() {
                     "visible cached backdrop geometry should remain outside the stage floor");
             require(vertex.normal[1] >= -0.001F,
                     "cached backdrop normals should retain an upward orientation");
-            require(vertex.color[0] >= 0.0F && vertex.color[0] <= 1.0F && vertex.color[1] >= 0.0F &&
-                        vertex.color[1] <= 1.0F && vertex.color[2] >= 0.65F &&
-                        vertex.color[2] <= 1.0F,
+            require(vertex.material[0] >= 0.0F && vertex.material[0] <= 1.0F &&
+                        vertex.material[1] >= 0.0F && vertex.material[1] <= 1.0F &&
+                        vertex.material[2] >= 0.65F && vertex.material[2] <= 1.0F,
                     "cached material channels should remain bounded");
-            require(vertex.uv[0] >= 0.0F && vertex.uv[0] <= 1.0F && vertex.uv[1] >= 0.0F &&
-                        vertex.uv[1] <= 1.0F,
+            require(vertex.surface[0] >= 0.0F && vertex.surface[0] <= 1.0F &&
+                        vertex.surface[1] >= 0.0F && vertex.surface[1] <= 1.0F,
                     "cached surface channels should remain bounded");
         }
     }
 }
 
-void test_surface_models_preserve_geometry_and_change_only_surface_channels() {
-    using namespace cubey::projects::terrain;
-    TerrainBackdropProductRequest mineral_request = product_request();
-    TerrainBackdropProductRequest landform_request = mineral_request;
-
-    const AnalyticSource source = source_for_seed(9012U);
-    const TerrainBackdropProduct mineral = make_project_terrain_backdrop_product(
-        mineral_request, source, TerrainSurfaceModel::MineralControl);
-    const TerrainBackdropProduct landform = make_project_terrain_backdrop_product(
-        landform_request, source, TerrainSurfaceModel::LandformTransition);
-
-    require(mineral.diagnostics.geometry_hash == landform.diagnostics.geometry_hash,
-            "surface studies must preserve identical terrain geometry");
-    require(mineral.diagnostics.content_hash != landform.diagnostics.content_hash,
-            "surface studies should produce distinct semantic products");
-    require(mineral.diagnostics.source_sample_count == landform.diagnostics.source_sample_count &&
-                mineral.diagnostics.render_triangle_count ==
-                    landform.diagnostics.render_triangle_count,
-            "surface studies must preserve source and topology budgets");
-    require(mineral.diagnostics.mean_vegetation == 0.0F &&
-                landform.diagnostics.mean_vegetation > 0.0F,
-            "landform transition should populate vegetation without changing geometry");
-}
-
-void test_climate_surface_requires_a_bound_climate_source() {
-    using namespace cubey::projects::terrain;
-    TerrainBackdropProductRequest request = product_request();
-    bool rejected = false;
-    try {
-        static_cast<void>(make_project_terrain_backdrop_product(
-            request, source_for_seed(9012U), TerrainSurfaceModel::ClimateTransition));
-    } catch (const std::runtime_error&) {
-        rejected = true;
-    }
-    require(rejected, "climate transition should reject an unbound climate source");
-}
-
 void test_product_hash_changes_with_the_source_seed() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     const TerrainBackdropProduct first =
         make_terrain_backdrop_product(product_request(), source_for_seed(0U));
     const TerrainBackdropProduct second =
@@ -224,7 +185,7 @@ void test_product_hash_changes_with_the_source_seed() {
 }
 
 void test_product_retains_source_metadata() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     AnalyticSource source = source_for_seed(9012U);
     const TerrainBackdropProduct product = make_terrain_backdrop_product(product_request(), source);
     source.rename("mutated-source-id");
@@ -233,7 +194,7 @@ void test_product_retains_source_metadata() {
 }
 
 void test_full_render_stride_retains_the_baked_topology() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest request = product_request();
     request.density = TerrainBackdropMeshDensity::Medium;
     request.render_stride = 1U;
@@ -244,7 +205,7 @@ void test_full_render_stride_retains_the_baked_topology() {
 }
 
 void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest request = product_request();
     request.center_mode = TerrainBackdropCenterMode::Continuous;
     const TerrainBackdropProduct product =
@@ -261,8 +222,8 @@ void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
                 std::abs(center.vertices.front().position[2]) < 0.001F,
             "continuous backdrop center fan should begin at the focus");
     require(std::abs(center.vertices.front().normal[0]) +
-                    std::abs(center.vertices.front().normal[2]) >
-                0.01F &&
+                        std::abs(center.vertices.front().normal[2]) >
+                    0.01F &&
                 center.vertices.front().normal[1] < 0.9999F,
             "continuous backdrop center should retain the source gradient");
     require(product.diagnostics.center_vertex_count == center.vertices.size() &&
@@ -278,7 +239,7 @@ void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
 }
 
 void test_uniform_center_sampling_redistributes_the_existing_budget() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest split_request = product_request();
     split_request.center_mode = TerrainBackdropCenterMode::Continuous;
     const TerrainBackdropProduct split =
@@ -330,7 +291,7 @@ void test_uniform_center_sampling_redistributes_the_existing_budget() {
 }
 
 void test_decimated_center_and_sectors_share_the_same_rendered_seam_edges() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest request = product_request();
     request.center_mode = TerrainBackdropCenterMode::Continuous;
     request.render_stride = 3U;
@@ -356,7 +317,7 @@ void test_decimated_center_and_sectors_share_the_same_rendered_seam_edges() {
 }
 
 void test_decimated_center_fan_reaches_the_first_sampled_ring() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest request = product_request();
     request.center_mode = TerrainBackdropCenterMode::Continuous;
     request.render_stride = 3U;
@@ -368,7 +329,7 @@ void test_decimated_center_fan_reaches_the_first_sampled_ring() {
 }
 
 void test_high_product_publishes_the_center_acceptance_budget() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest request = product_request();
     request.center_mode = TerrainBackdropCenterMode::Continuous;
     request.center_sampling = TerrainBackdropCenterSampling::SeamMatched;
@@ -389,7 +350,7 @@ void test_high_product_publishes_the_center_acceptance_budget() {
 }
 
 void test_seam_matched_center_sampling_matches_the_outer_radial_step() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest request = product_request();
     request.center_mode = TerrainBackdropCenterMode::Continuous;
     request.center_sampling = TerrainBackdropCenterSampling::SeamMatched;
@@ -419,7 +380,7 @@ void test_seam_matched_center_sampling_matches_the_outer_radial_step() {
 }
 
 void test_center_sampling_does_not_change_cutout_or_default_split_products() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::terrain;
     TerrainBackdropProductRequest default_request = product_request();
     const TerrainBackdropProduct default_product =
         make_terrain_backdrop_product(default_request, source_for_seed(9012U));
@@ -449,8 +410,6 @@ int main() {
         test_density_profiles_publish_the_product_budget();
         test_v1_product_request_publishes_the_accepted_backdrop_contract();
         test_product_is_deterministic_connected_and_outside_the_stage();
-        test_surface_models_preserve_geometry_and_change_only_surface_channels();
-        test_climate_surface_requires_a_bound_climate_source();
         test_product_hash_changes_with_the_source_seed();
         test_product_retains_source_metadata();
         test_full_render_stride_retains_the_baked_topology();
