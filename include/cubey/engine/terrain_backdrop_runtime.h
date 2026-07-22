@@ -83,6 +83,7 @@ struct TerrainBackdropRuntimeFrameInfo {
     TerrainBackdropDebugView debug_view = TerrainBackdropDebugView::Surface;
     TerrainBackdropMaterialMode material = TerrainBackdropMaterialMode::FilteredDetail;
     bool shadows_enabled = true;
+    bool reflections_enabled = true;
 };
 
 struct TerrainBackdropRuntimeDrawPlan {
@@ -90,6 +91,17 @@ struct TerrainBackdropRuntimeDrawPlan {
     std::uint32_t submitted_sector_count = 0U;
     std::uint32_t submitted_triangle_count = 0U;
 };
+
+struct TerrainBackdropReflection {
+    cubey::math::Vec3 radiance{0.0F, 0.0F, 0.0F};
+    float strength = 0.0F;
+    float horizon_elevation_sine = 0.0F;
+    float horizon_softness = 0.12F;
+};
+
+[[nodiscard]] TerrainBackdropReflection
+terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
+                            const TerrainBackdropRuntimeFrameInfo& frame);
 
 class TerrainBackdropRuntime {
   public:
@@ -130,6 +142,7 @@ class TerrainBackdropRuntime {
     [[nodiscard]] const render::TerrainShadowProjection& shadow_projection() const noexcept;
     [[nodiscard]] const render::TerrainShadowCacheState& shadow_cache() const noexcept;
     [[nodiscard]] const TerrainBackdropRuntimeDrawPlan& draw_plan() const noexcept;
+    [[nodiscard]] TerrainBackdropReflection reflection() const;
     [[nodiscard]] std::uint64_t material_texture_bytes() const noexcept;
     [[nodiscard]] std::uint64_t shadow_caster_triangle_count() const noexcept;
 

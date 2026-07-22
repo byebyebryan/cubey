@@ -133,7 +133,68 @@ environment_parameters(const render::AtmosphereEnvironmentFrameUniforms& atmosph
     return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
 }
 
+[[nodiscard]] float srgb_channel_to_linear(float value) {
+    return value <= 0.04045F ? value / 12.92F : std::pow((value + 0.055F) / 1.055F, 2.4F);
+}
+
+[[nodiscard]] cubey::math::Vec3 srgb_to_linear(cubey::math::Vec3 value) {
+    return {srgb_channel_to_linear(value.x), srgb_channel_to_linear(value.y),
+            srgb_channel_to_linear(value.z)};
+}
+
 } // namespace
+
+TerrainBackdropReflection
+terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
+                            const TerrainBackdropRuntimeFrameInfo& frame) {
+    if (!frame.reflections_enabled) {
+        return {};
+    }
+    float rock = std::clamp(product.diagnostics.mean_rock, 0.0F, 1.0F);
+    float snow = std::clamp(product.diagnostics.mean_snow, 0.0F, 1.0F);
+    float ground = std::max(0.0F, 1.0F - rock - snow);
+    const float weight_sum = std::max(ground + rock + snow, 0.0001F);
+    ground /= weight_sum;
+    rock /= weight_sum;
+    snow /= weight_sum;
+    const float vegetation =
+        std::min(std::clamp(product.diagnostics.mean_vegetation / weight_sum, 0.0F, 1.0F), ground);
+    const float soil = ground - vegetation;
+    const float moisture = std::clamp(product.diagnostics.mean_moisture, 0.0F, 1.0F);
+
+    const math::Vec3 vegetation_color =
+        glm::mix(srgb_to_linear({0.300F, 0.305F, 0.220F}), srgb_to_linear({0.160F, 0.240F, 0.160F}),
+                 moisture);
+    const float daylight = glm::smoothstep(-0.10F, 0.08F, frame.atmosphere.sun_direction_radius.y);
+    const float snow_response = glm::mix(0.58F, 1.0F, daylight);
+    const math::Vec3 base_color = srgb_to_linear({0.295F, 0.285F, 0.265F}) * soil +
+                                  vegetation_color * vegetation +
+                                  srgb_to_linear({0.385F, 0.370F, 0.350F}) * rock +
+                                  srgb_to_linear({0.725F, 0.760F, 0.785F}) * snow * snow_response;
+
+    const math::Vec3 diffuse_irradiance = render::atmosphere_environment_evaluate_sh(
+        frame.lighting.diffuse_irradiance_sh, {0.0F, 1.0F, 0.0F});
+    const float ndotl = std::max(frame.lighting.primary_light_direction.y, 0.0F);
+    const math::Vec3 direct_radiance =
+        frame.lighting.primary_light_color * frame.lighting.primary_light_intensity * ndotl;
+    const math::Vec3 radiance =
+        base_color *
+        (glm::max(diffuse_irradiance, math::Vec3{0.0F}) * 0.88F + direct_radiance * 0.318309886F);
+
+    const float representative_height = glm::mix(product.diagnostics.minimum_height_m,
+                                                 product.diagnostics.maximum_height_m, 0.72F) +
+                                        frame.world_translation.y;
+    const float horizon_distance = std::max(product.request.visible_inner_radius_m, 1'200.0F);
+    const float horizon_delta = representative_height - frame.camera_position.y;
+    const float horizon_sine = horizon_delta / std::sqrt(horizon_delta * horizon_delta +
+                                                         horizon_distance * horizon_distance);
+    return {
+        .radiance = glm::max(radiance, math::Vec3{0.0F}),
+        .strength = 0.78F,
+        .horizon_elevation_sine = std::clamp(horizon_sine, -0.08F, 0.28F),
+        .horizon_softness = 0.12F,
+    };
+}
 
 struct TerrainBackdropRuntime::Impl {
     const render::TerrainBackdropProduct* product = nullptr;
@@ -155,6 +216,7 @@ struct TerrainBackdropRuntime::Impl {
     bool shadow_update = false;
     bool shadow_sampled = false;
     bool have_translation = false;
+    bool frame_prepared = false;
     cubey::math::Vec3 previous_translation{};
 
     void upload_meshes(vulkan::GpuRuntime& gpu, const render::TerrainBackdropProduct& next) {
@@ -323,6 +385,7 @@ void TerrainBackdropRuntime::destroy() {
     impl_->shadow_update = false;
     impl_->shadow_sampled = false;
     impl_->have_translation = false;
+    impl_->frame_prepared = false;
     render::invalidate_terrain_shadow_cache(impl_->shadow_cache);
 }
 
@@ -346,6 +409,7 @@ void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
     impl_->have_translation = true;
     impl_->previous_translation = info.world_translation;
     impl_->frame = info;
+    impl_->frame_prepared = true;
 
     const render::TerrainBackdropProduct& product = *impl_->product;
     const render::TerrainShadowProjection candidate = render::terrain_shadow_projection(
@@ -501,6 +565,12 @@ const render::TerrainShadowCacheState& TerrainBackdropRuntime::shadow_cache() co
 }
 const TerrainBackdropRuntimeDrawPlan& TerrainBackdropRuntime::draw_plan() const noexcept {
     return impl_->draw_plan;
+}
+TerrainBackdropReflection TerrainBackdropRuntime::reflection() const {
+    if (impl_->product == nullptr || !impl_->frame_prepared || !impl_->frame.reflections_enabled) {
+        return {};
+    }
+    return terrain_backdrop_reflection(*impl_->product, impl_->frame);
 }
 std::uint64_t TerrainBackdropRuntime::material_texture_bytes() const noexcept {
     return ::cubey::material_texture_bytes();

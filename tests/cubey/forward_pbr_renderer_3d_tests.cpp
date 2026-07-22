@@ -682,6 +682,13 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
         .environment_blend = 0.35F,
         .environment_rotation_degrees = 90.0F,
         .debug_view = cubey::render::PbrDebugView::Shadow,
+        .terrain_reflection =
+            {
+                .radiance = {0.21F, 0.18F, 0.15F},
+                .strength = 0.72F,
+                .horizon_elevation_sine = 0.16F,
+                .horizon_softness = 0.10F,
+            },
     });
 
     require(uniforms.view_projection == cubey::math::Mat4{2.0F},
@@ -717,6 +724,58 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             "forward PBR scene uniforms should enable diffuse SH only when requested");
     require(uniforms.environment_options.y == 0.35F,
             "forward PBR scene uniforms should pack the environment crossfade");
+    require(uniforms.terrain_reflection_radiance_strength ==
+                cubey::math::Vec4{0.21F, 0.18F, 0.15F, 0.72F},
+            "forward PBR scene uniforms should pack terrain reflection radiance and strength");
+    require(uniforms.terrain_reflection_horizon == cubey::math::Vec4{0.16F, 0.10F, 0.0F, 0.0F},
+            "forward PBR scene uniforms should pack terrain reflection horizon controls");
+}
+
+void test_terrain_backdrop_reflection_uses_product_materials_lighting_and_horizon() {
+    cubey::render::TerrainBackdropProduct product;
+    product.request.visible_inner_radius_m = 3'200.0F;
+    product.diagnostics.minimum_height_m = 0.0F;
+    product.diagnostics.maximum_height_m = 1'000.0F;
+    product.diagnostics.mean_rock = 0.35F;
+    product.diagnostics.mean_snow = 0.25F;
+    product.diagnostics.mean_vegetation = 0.10F;
+    product.diagnostics.mean_moisture = 0.60F;
+
+    cubey::TerrainBackdropRuntimeFrameInfo day;
+    day.camera_position = {0.0F, 200.0F, 0.0F};
+    day.atmosphere.sun_direction_radius = {0.0F, 1.0F, 0.0F, 0.004F};
+    day.lighting.diffuse_irradiance_sh[0] = {0.8F, 0.9F, 1.0F};
+    day.lighting.primary_light_direction = {0.0F, 1.0F, 0.0F};
+    day.lighting.primary_light_color = {1.0F, 0.95F, 0.85F};
+    day.lighting.primary_light_intensity = 2.0F;
+
+    cubey::TerrainBackdropRuntimeFrameInfo night = day;
+    night.atmosphere.sun_direction_radius.y = -1.0F;
+    night.lighting.diffuse_irradiance_sh[0] = {0.05F, 0.07F, 0.12F};
+    night.lighting.primary_light_direction = {0.0F, 0.5F, 0.5F};
+    night.lighting.primary_light_color = {0.45F, 0.55F, 0.80F};
+    night.lighting.primary_light_intensity = 0.08F;
+
+    const cubey::TerrainBackdropReflection day_reflection =
+        cubey::terrain_backdrop_reflection(product, day);
+    const cubey::TerrainBackdropReflection night_reflection =
+        cubey::terrain_backdrop_reflection(product, night);
+
+    require(day_reflection.strength > 0.0F && day_reflection.strength <= 1.0F,
+            "terrain reflection strength should remain normalized");
+    require(day_reflection.horizon_elevation_sine > 0.0F &&
+                day_reflection.horizon_elevation_sine <= 0.28F,
+            "terrain reflection should derive a bounded raised horizon from product relief");
+    require(day_reflection.radiance.x > night_reflection.radiance.x &&
+                day_reflection.radiance.y > night_reflection.radiance.y &&
+                day_reflection.radiance.z > night_reflection.radiance.z,
+            "terrain reflection radiance should follow current environment lighting");
+
+    day.reflections_enabled = false;
+    const cubey::TerrainBackdropReflection disabled =
+        cubey::terrain_backdrop_reflection(product, day);
+    require(disabled.strength == 0.0F && disabled.radiance == cubey::math::Vec3{0.0F},
+            "disabled terrain reflections should contribute no foreground radiance");
 }
 
 void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass() {
@@ -756,6 +815,10 @@ void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass(
                      "forward PBR fragment shader should receive diffuse SH coefficients");
     require_contains(fragment_shader, "environment_options.x > 0.5",
                      "forward PBR fragment shader should switch diffuse lighting to SH by flag");
+    require_contains(fragment_shader, "terrain_reflection_radiance_strength",
+                     "forward PBR fragment shader should receive terrain reflection radiance");
+    require_contains(fragment_shader, "terrain_coverage",
+                     "forward PBR environment sampling should apply terrain horizon coverage");
     require_contains(fragment_shader, "CUBEY_PBR_DEBUG_ROUGHNESS",
                      "forward PBR fragment shader should expose named debug view constants");
     require_contains(fragment_shader, "cubey_pbr_debug_output",

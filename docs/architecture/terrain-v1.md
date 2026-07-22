@@ -153,6 +153,19 @@ Both presentations use:
 - depth-aware shared Cloud V1 composition in the final surface view;
 - the shared HDR post path.
 
+When composed through Forward PBR, the terrain product also contributes a
+bounded specular reflection proxy for foreground objects. Product material
+averages, current atmosphere lighting, and a relief-derived horizon produce a
+lower-hemisphere radiance contribution without rendering the full terrain six
+times into a reflection cube. Consumers may disable the contribution for A/B
+review. It grounds reflective backdrop scenes, but does not claim reflected
+peak silhouettes or local parallax.
+
+Snow retains its daytime response and receives a smooth nocturnal damping as
+the sun crosses below the horizon. This preserves snow/rock separation under
+moonlight without letting high-albedo caps read as emissive under automatic
+night exposure.
+
 Directional terrain shadows use one cached `2048 x 2048` full-product depth
 map. A comparison sampler evaluates four bilinear taps at half-texel offsets,
 which preserves the separable `1 / 2 / 1` tent footprint while avoiding nine

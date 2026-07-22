@@ -286,6 +286,7 @@ cubey::ForwardPbrRenderer3DTerrainBackdrop GltfViewerApp::terrain_backdrop_frame
                 .lighting = atmosphere_runtime_.lighting(),
                 .material = terrain_material_,
                 .shadows_enabled = terrain_shadows_,
+                .reflections_enabled = terrain_reflections_,
             },
     };
 }

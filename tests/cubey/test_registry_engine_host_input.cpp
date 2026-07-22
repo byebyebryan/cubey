@@ -58,6 +58,7 @@ void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fie
 void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_background_uniforms();
 void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_clouds();
 void test_forward_pbr_renderer_3d_render_request_validates_terrain_backdrop();
+void test_terrain_backdrop_reflection_uses_product_materials_lighting_and_horizon();
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields();
 void test_forward_pbr_renderer_3d_render_request_validates_required_view_fields();
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display();
@@ -150,6 +151,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
             test_forward_pbr_renderer_3d_render_request_validates_atmosphere_background_uniforms),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_atmosphere_clouds),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_terrain_backdrop),
+        CUBEY_TEST(test_terrain_backdrop_reflection_uses_product_materials_lighting_and_horizon),
         CUBEY_TEST(test_forward_pbr_renderer_3d_frame_plan_selects_required_passes),
         CUBEY_TEST(test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform),
         CUBEY_TEST(test_forward_pbr_renderer_3d_selects_requested_light_or_fallback),

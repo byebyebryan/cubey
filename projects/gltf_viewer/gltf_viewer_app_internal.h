@@ -186,6 +186,7 @@ class GltfViewerApp {
     float terrain_baked_foreground_height_m_ = 500.0F;
     bool terrain_visible_ = true;
     bool terrain_shadows_ = true;
+    bool terrain_reflections_ = true;
     cubey::TerrainBackdropMaterialMode terrain_material_ =
         cubey::TerrainBackdropMaterialMode::FilteredDetail;
 };

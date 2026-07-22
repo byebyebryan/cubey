@@ -222,6 +222,10 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
                 0.0F,
                 0.0F,
             },
+        .terrain_reflection_radiance_strength = {info.terrain_reflection.radiance,
+                                                 info.terrain_reflection.strength},
+        .terrain_reflection_horizon = {info.terrain_reflection.horizon_elevation_sine,
+                                       info.terrain_reflection.horizon_softness, 0.0F, 0.0F},
     };
 }
 

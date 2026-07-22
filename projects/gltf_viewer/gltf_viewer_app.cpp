@@ -202,6 +202,7 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
         ImGui::SliderFloat("Foreground height", &terrain_foreground_height_m_, 2.0F, 1'000.0F,
                            "%.0f m");
         ImGui::Checkbox("Terrain shadows", &terrain_shadows_);
+        ImGui::Checkbox("Foreground reflections", &terrain_reflections_);
         int material =
             terrain_material_ == cubey::TerrainBackdropMaterialMode::FilteredDetail ? 1 : 0;
         if (ImGui::RadioButton("Flat", material == 0)) {

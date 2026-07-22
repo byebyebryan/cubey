@@ -79,6 +79,7 @@ struct ForwardPbrRenderer3DSceneUniformInfo {
     float environment_blend = 1.0F;
     float environment_rotation_degrees = 0.0F;
     render::PbrDebugView debug_view = render::PbrDebugView::Final;
+    TerrainBackdropReflection terrain_reflection{};
 };
 
 struct ForwardPbrRenderer3DSkyboxUniformInfo {

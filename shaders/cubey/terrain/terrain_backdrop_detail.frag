@@ -245,6 +245,11 @@ void main() {
     vec3 direct_light = terrain_lighting_direct(
         base_color, roughness, normal, view_direction, light_direction,
         light_radiance, sun_visibility);
+    float daylight = smoothstep(-0.10, 0.08, atmosphere.sun_direction_radius.y);
+    float snow_night_response = mix(0.58, 1.0, daylight);
+    float snow_lighting_response = mix(1.0, snow_night_response, snow);
+    ambient_light *= snow_lighting_response;
+    direct_light *= snow_lighting_response;
     if (debug_view == 24) {
         out_color = vec4(ambient_light, 1.0);
         return;

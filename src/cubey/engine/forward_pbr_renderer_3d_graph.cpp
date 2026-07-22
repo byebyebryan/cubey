@@ -83,6 +83,14 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     const LightPacket3D light = forward_pbr_renderer_3d_selected_light(
         scene_plan.light_packets, view.light_entity, view.fallback_light);
 
+    const bool uses_final_display_transform = settings.debug_view == render::PbrDebugView::Final;
+    std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain;
+    if (uses_final_display_transform && settings.terrain_backdrop.has_value()) {
+        terrain = settings.terrain_backdrop;
+        terrain->frame.atmosphere = settings.atmosphere_background.value();
+        terrain->runtime->prepare_frame(target.frame_slot, terrain->frame);
+    }
+
     scene_material().upload(
         target.frame_slot,
         forward_pbr_renderer_3d_scene_uniforms({
@@ -96,6 +104,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment_blend = global_.environment.prefiltered_blend,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
             .debug_view = settings.debug_view,
+            .terrain_reflection =
+                terrain.has_value() ? terrain->runtime->reflection() : TerrainBackdropReflection{},
         }));
     skybox_material().upload(
         target.frame_slot,
@@ -109,13 +119,6 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
         global_.atmosphere_background.upload(target.frame_slot,
                                              settings.atmosphere_background.value());
-    }
-    const bool uses_final_display_transform = settings.debug_view == render::PbrDebugView::Final;
-    std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain;
-    if (uses_final_display_transform && settings.terrain_backdrop.has_value()) {
-        terrain = settings.terrain_backdrop;
-        terrain->frame.atmosphere = settings.atmosphere_background.value();
-        terrain->runtime->prepare_frame(target.frame_slot, terrain->frame);
     }
     post_material().upload(
         target.frame_slot,
