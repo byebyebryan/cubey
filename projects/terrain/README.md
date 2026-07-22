@@ -24,9 +24,9 @@ The active path is fixed:
 - continuous seam-matched center with full radial rings, 16.384 km outer
   radius, and angular/outer render stride 3;
 - cullable static sectors plus an optional foreground review sphere;
-- flat and filtered procedural-detail material presentations;
-- cached directional shadows from the outer backdrop sectors, with the
-  continuous inner stage retained as a receiver only;
+- flat and filtered planar procedural-detail material presentations;
+- cached hardware-filtered directional shadows from the outer backdrop
+  sectors, with the continuous inner stage retained as a receiver only;
 - shared physical atmosphere, a running daytime solar clock, depth-aware
   Cloud V1 composition, environment lighting, and HDR post;
 - height, slope, material, normal, edge, and ownership diagnostics.
@@ -185,7 +185,8 @@ projects/terrain/capture_rendering_acceptance_review.sh
 It uses the cool/wet selected source for 100/200/500 m framing, five sun
 elevations, shadow controls, topology/material/lighting diagnostics, all five
 climate sources, and steady plus moving-clock profiles. It writes
-`outputs/terrain/rendering-acceptance-v1`.
+`outputs/terrain/rendering-acceptance-v1`. Profile lanes wait for external GPU
+compute to become idle and retry when overlap is detected.
 
 Generate the rendering-envelope and fixed-topology decision pack with:
 

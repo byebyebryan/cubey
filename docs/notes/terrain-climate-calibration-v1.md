@@ -111,10 +111,11 @@ envelope instead: a 500 m radius, 120 m relief limit, and 0.275 P95 slope limit.
 Cool/wet now passes at source focus `(-11.5, -11.5) km`, with 91.433 m local
 relief, 0.260455 P95 slope, and 484.231 m baked clearance. This admits the useful
 alpine/snowline composition without changing the source. The selected hot/dry
-control now has product hashes:
+control retains its source and placement while the rendering-acceptance
+center-normal correction updates its product hashes to:
 
-- geometry `0xfc903e7f97c4447a`;
-- climate content `0xfb9e4e791c3019a0`.
+- geometry `0x0e3762ad8af185aa`;
+- climate content `0x84ba91da263d7164`.
 
 Within each regime, geometry hash, raw-center focus, and raw/derived climate
 metrics are identical across all three surface models.

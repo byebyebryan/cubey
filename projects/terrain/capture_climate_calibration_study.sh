@@ -13,8 +13,8 @@ MODELS=(mineral-control landform-transition climate-transition)
 HEADINGS=(90 270)
 DIAGNOSTICS=(vegetation moisture material-weights material-albedo)
 
-EXPECTED_GEOMETRY_HASH="0xfc903e7f97c4447a"
-EXPECTED_CLIMATE_CONTENT_HASH="0xfb9e4e791c3019a0"
+EXPECTED_GEOMETRY_HASH="0x0e3762ad8af185aa"
+EXPECTED_CLIMATE_CONTENT_HASH="0x84ba91da263d7164"
 
 if [[ ! -x "${APP}" ]]; then
     printf 'terrain executable not found: %s\n' "${APP}" >&2

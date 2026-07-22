@@ -138,9 +138,11 @@ failure; framebuffer resolution alone is not a fix.
 
 Vertex material channels classify ground, rock, snow, and ambient visibility
 from source height and geometric normal. The filtered-detail presentation adds
-one compute-generated periodic texture sampled triplanarly for bounded albedo,
-roughness, and normal variation. The flat presentation bypasses those texture
-samples in the same shader and serves as the geometry/lighting control.
+one compute-generated periodic texture sampled in terrain-planar space for
+bounded albedo, roughness, and normal variation. The flat presentation bypasses
+those texture samples in the same shader and serves as the geometry/lighting
+control. Triplanar rock projection was rejected because it added three texture
+projections without a visible benefit inside the accepted camera envelope.
 
 Both presentations use:
 
@@ -150,6 +152,12 @@ Both presentations use:
 - the shared atmosphere background with a running daytime solar clock;
 - depth-aware shared Cloud V1 composition in the final surface view;
 - the shared HDR post path.
+
+Directional terrain shadows use one cached `2048 x 2048` full-product depth
+map. A comparison sampler evaluates four bilinear taps at half-texel offsets,
+which preserves the separable `1 / 2 / 1` tent footprint while avoiding nine
+explicit depth fetches. The map refreshes when the light direction changes by
+`0.5` degree; below-horizon light suspends updates.
 
 The detail texture improves material frequency but does not add geometry or
 claim grass, trees, scree, exposed strata, or close-surface fidelity.
