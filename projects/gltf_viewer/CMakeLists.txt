@@ -2,6 +2,8 @@ cubey_forward_pbr_shader_sources(CUBEY_FORWARD_PBR_SHADERS)
 cubey_forward_pbr_shader_depends(CUBEY_FORWARD_PBR_SHADER_DEPENDS)
 cubey_cloud_layer_shader_sources(CUBEY_GLTF_VIEWER_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS)
+cubey_terrain_backdrop_shader_sources(CUBEY_GLTF_VIEWER_TERRAIN_SHADERS)
+cubey_terrain_backdrop_shader_depends(CUBEY_GLTF_VIEWER_TERRAIN_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_gltf_viewer
@@ -18,12 +20,14 @@ cubey_add_app_target(
     SHADERS
         ${CUBEY_FORWARD_PBR_SHADERS}
         ${CUBEY_GLTF_VIEWER_CLOUD_SHADERS}
+        ${CUBEY_GLTF_VIEWER_TERRAIN_SHADERS}
         shaders/gltf_deform.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         ${CUBEY_FORWARD_PBR_SHADER_DEPENDS}
         ${CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS}
+        ${CUBEY_GLTF_VIEWER_TERRAIN_SHADER_DEPENDS}
 )
 
 if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
@@ -60,6 +64,18 @@ if (BUILD_TESTING)
             /bin/sh -c
             "grep -R --include='*.cpp' --include='*.h' -q 'advance_gltf_animation_playback' \"$1\" && grep -R --include='*.cpp' --include='*.h' -q 'sample_gltf_animation' \"$1\" && grep -R --include='*.cpp' --include='*.h' -q 'apply_gltf_rigid_animation_sample' \"$1\" && grep -R --include='*.cpp' --include='*.h' -q 'update_gltf_deformation_frame' \"$1\""
             gltf_viewer_autoplays_first_gltf_animation
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+    add_test(
+        NAME gltf_viewer_terrain_backdrop_is_explicit_and_shared
+        COMMAND
+            /bin/sh -c
+            "grep -q 'config_\.terrain\.heightfield_path' \"$1\" && grep -q 'terrain backdrop requires --pbr-environment-source atmosphere' \"$1\" && grep -q 'TerrainBackdropRuntime' \"$2\" && grep -q 'terrain_backdrop' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q 'projects/terrain' \"$4\""
+            gltf_viewer_terrain_backdrop_is_explicit_and_shared
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app_internal.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_render.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 

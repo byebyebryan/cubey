@@ -4,6 +4,7 @@
 
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
+#include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
@@ -25,6 +26,8 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/render/resource_table.h>
 #include <cubey/render/target.h>
+#include <cubey/render/terrain_backdrop_placement.h>
+#include <cubey/render/terrain_backdrop_product.h>
 #include <cubey/render/texture.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/light_manager.h>
@@ -98,6 +101,14 @@ class GltfViewerApp {
     fallback_material_sampled_images() const;
     void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu);
     void create_ibl_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
+    void create_terrain_backdrop_resources(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count);
+    [[nodiscard]] bool terrain_backdrop_enabled() const noexcept;
+    [[nodiscard]] cubey::ForwardPbrRenderer3DTerrainBackdrop
+    terrain_backdrop_frame(const cubey::SceneReadView& view,
+                           const cubey::scene::FrameRenderPlan3D& frame_plan,
+                           const cubey::render::AtmosphereEnvironmentFrameUniforms& atmosphere);
 
     void create_fallback_scene();
     void create_camera_and_light(cubey::SceneTransaction& setup);
@@ -163,6 +174,16 @@ class GltfViewerApp {
     cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
+    std::optional<cubey::asset::TerrainRasterHeightSource> terrain_source_{};
+    std::optional<cubey::render::TerrainBackdropPlacementPlan> terrain_placement_{};
+    std::optional<cubey::render::TerrainBackdropProduct> terrain_product_{};
+    cubey::TerrainBackdropRuntime terrain_runtime_{};
+    float terrain_foreground_height_m_ = 200.0F;
+    float terrain_baked_foreground_height_m_ = 500.0F;
+    bool terrain_visible_ = true;
+    bool terrain_shadows_ = true;
+    cubey::TerrainBackdropMaterialMode terrain_material_ =
+        cubey::TerrainBackdropMaterialMode::FilteredDetail;
 };
 
 } // namespace cubey::projects::gltf_viewer

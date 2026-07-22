@@ -13,6 +13,15 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
                     .color_format = color_format,
                     .materials = &import_resources_.materials,
                 });
+    if (terrain_backdrop_enabled()) {
+        const cubey::ForwardPbrRenderer3DSceneTargetInfo target =
+            forward_pbr_renderer().scene_target_info();
+        terrain_runtime_.create_target_resources(device, {
+                                                             .extent = target.extent,
+                                                             .color_format = target.color_format,
+                                                             .depth_format = target.depth_format,
+                                                         });
+    }
     if (use_atmosphere_environment_source()) {
         atmosphere_runtime_.clouds().create_surface_target_resources(
             device,
@@ -25,11 +34,13 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
 }
 
 void GltfViewerApp::destroy_swapchain_resources() {
+    terrain_runtime_.destroy_target_resources();
     atmosphere_runtime_.clouds().destroy_surface_target_resources();
     engine_.renderers().destroy_swapchain_resources();
 }
 
 void GltfViewerApp::destroy_all_resources() {
+    terrain_runtime_.destroy();
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
     atmosphere_runtime_.destroy();
@@ -41,6 +52,9 @@ void GltfViewerApp::destroy_all_resources() {
     animation_sample_.reset();
     triangle_count_ = 0;
     asset_.reset();
+    terrain_product_.reset();
+    terrain_placement_.reset();
+    terrain_source_.reset();
 }
 
 void GltfViewerApp::record_viewer_target(
@@ -92,6 +106,12 @@ void GltfViewerApp::record_viewer_target(
             .frame = cloud_frame.value(),
         };
     }
+    const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere_background =
+        atmosphere_background_uniforms(scene_view, color_target.extent);
+    std::optional<cubey::ForwardPbrRenderer3DTerrainBackdrop> terrain_backdrop;
+    if (terrain_backdrop_enabled() && terrain_visible_) {
+        terrain_backdrop = terrain_backdrop_frame(scene_view, frame_plan, atmosphere_background);
+    }
     forward_pbr_renderer().record({
         .device = &device,
         .command_buffer = command_buffer,
@@ -119,9 +139,9 @@ void GltfViewerApp::record_viewer_target(
                 .exposure = display_exposure(),
                 .debug_view = debug_view_,
                 .background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere,
-                .atmosphere_background =
-                    atmosphere_background_uniforms(scene_view, color_target.extent),
+                .atmosphere_background = atmosphere_background,
                 .atmosphere_clouds = atmosphere_clouds,
+                .terrain_backdrop = terrain_backdrop,
             },
     });
     if (owns_command_buffer) {

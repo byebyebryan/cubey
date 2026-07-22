@@ -49,6 +49,55 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_background_textures = atmosphere_background_textures(),
                 });
+    create_terrain_backdrop_resources(device, gpu, frame_slot_count);
+}
+
+void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Device& device,
+                                                      cubey::vulkan::GpuRuntime& gpu,
+                                                      std::uint32_t frame_slot_count) {
+    if (!terrain_backdrop_enabled()) {
+        return;
+    }
+    if (!use_atmosphere_environment_source()) {
+        throw std::runtime_error("terrain backdrop requires --pbr-environment-source atmosphere");
+    }
+    if (!std::filesystem::exists(config_.terrain.heightfield_path)) {
+        throw std::runtime_error("terrain heightfield does not exist: " +
+                                 config_.terrain.heightfield_path.string());
+    }
+    terrain_source_.emplace(config_.terrain.heightfield_path);
+    cubey::render::TerrainBackdropPlacementRequest placement_request;
+    terrain_placement_ = cubey::render::plan_terrain_backdrop_placement(
+        *terrain_source_, terrain_source_->bounds(), placement_request);
+    const cubey::render::TerrainBackdropStagePlan& stage = terrain_placement_->stage;
+    terrain_product_ = cubey::render::make_terrain_backdrop_product(
+        {
+            .source_focus_xz = stage.source_focus_xz,
+            .density = cubey::render::TerrainBackdropMeshDensity::High,
+            .center_mode = cubey::render::TerrainBackdropCenterMode::Continuous,
+            .center_sampling = cubey::render::TerrainBackdropCenterSampling::SeamMatched,
+            .render_stride =
+                config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+            .consumer_radius_m = stage.stage_radius_m,
+            .visible_inner_radius_m = 3'200.0F,
+            .outer_radius_m = 16'384.0F,
+            .vertical_scale = 1.0F,
+            .vertical_offset_m = stage.terrain_vertical_offset_m,
+        },
+        *terrain_source_);
+    terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+    terrain_runtime_.create(
+        device, gpu,
+        {
+            .product = &*terrain_product_,
+            .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_GLTF_VIEWER_SHADER_DIR),
+            .material_seed = terrain_source_->metadata().seed,
+            .frame_slot_count = frame_slot_count,
+        });
+}
+
+bool GltfViewerApp::terrain_backdrop_enabled() const noexcept {
+    return !config_.terrain.heightfield_path.empty();
 }
 
 void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& device,

@@ -54,8 +54,9 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
             .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         }),
         cubey::Camera3D({
-            .near_z = std::max(radius * 0.001F, 0.01F),
-            .far_z = std::max(radius * 12.0F, 100.0F),
+            .near_z = terrain_backdrop_enabled() ? 0.1F : std::max(radius * 0.001F, 0.01F),
+            .far_z = terrain_backdrop_enabled() ? std::max(radius * 12.0F, 16'384.0F * 5.0F)
+                                                : std::max(radius * 12.0F, 100.0F),
         }));
 
     const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
@@ -193,6 +194,24 @@ GltfViewerApp::atmosphere_background_uniforms(const cubey::SceneReadView& view,
             },
         .forward = {forward.x, forward.y, forward.z, 0.0F},
     };
+    if (terrain_backdrop_enabled()) {
+        const cubey::math::Vec3 camera_position{world[3]};
+        const float terrain_reference_height =
+            scene_bounds_.center.y - terrain_foreground_height_m_;
+        return cubey::render::atmosphere_environment_frame_uniforms(
+            atmosphere_state_.environment,
+            {
+                .view_rays = view_rays,
+                .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
+                .camera_position_km = {0.0F,
+                                       atmosphere_state_.environment.bottom_radius_km +
+                                           std::max(camera_position.y - terrain_reference_height,
+                                                    0.0F) *
+                                               0.001F,
+                                       0.0F},
+                .camera_position_km_explicit = true,
+            });
+    }
     return atmosphere_runtime_
         .frame({
             .view_rays = view_rays,
@@ -222,8 +241,17 @@ GltfViewerApp::cloud_environment_frame(const cubey::SceneReadView& view,
     const cubey::math::Vec3 forward = glm::normalize(-cubey::math::Vec3{world[2]});
     return atmosphere_runtime_.clouds().frame(
         cubey::CloudEnvironmentSurfaceViewInfo{
-            .camera_position = {0.0F, atmosphere_state_.environment.camera_altitude_km * 1000.0F,
-                                0.0F},
+            .camera_position =
+                terrain_backdrop_enabled()
+                    ? cubey::math::Vec3{
+                          cubey::math::Vec3{world[3]}.x,
+                          std::max(cubey::math::Vec3{world[3]}.y -
+                                       (scene_bounds_.center.y - terrain_foreground_height_m_),
+                                   0.0F),
+                          cubey::math::Vec3{world[3]}.z,
+                      }
+                    : cubey::math::Vec3{
+                          0.0F, atmosphere_state_.environment.camera_altitude_km * 1000.0F, 0.0F},
             .camera_right = right,
             .camera_up = up,
             .camera_forward = forward,
@@ -235,6 +263,31 @@ GltfViewerApp::cloud_environment_frame(const cubey::SceneReadView& view,
             .scene_depth_mode = cubey::render::CloudLayerSceneDepthMode::OpaqueForeground,
         },
         atmosphere_runtime_.lighting());
+}
+
+cubey::ForwardPbrRenderer3DTerrainBackdrop GltfViewerApp::terrain_backdrop_frame(
+    const cubey::SceneReadView& view, const cubey::scene::FrameRenderPlan3D& frame_plan,
+    const cubey::render::AtmosphereEnvironmentFrameUniforms& atmosphere) {
+    const cubey::ForwardPbrRenderer3DFramePlans plans =
+        cubey::forward_pbr_renderer_3d_frame_plans(frame_plan);
+    const cubey::math::Mat4& camera_world =
+        view.transforms3d().world_affine_matrix(view.transforms3d().instance(camera_entity_));
+    return {
+        .runtime = &terrain_runtime_,
+        .frame =
+            {
+                .view_projection = plans.scene->view_projection_matrix,
+                .camera_position = cubey::math::Vec3{camera_world[3]},
+                .world_translation = {scene_bounds_.center.x,
+                                      scene_bounds_.center.y + terrain_baked_foreground_height_m_ -
+                                          terrain_foreground_height_m_,
+                                      scene_bounds_.center.z},
+                .atmosphere = atmosphere,
+                .lighting = atmosphere_runtime_.lighting(),
+                .material = terrain_material_,
+                .shadows_enabled = terrain_shadows_,
+            },
+    };
 }
 
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {

@@ -137,6 +137,13 @@ GltfViewerApp::GltfViewerApp(RunConfig config)
       atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)),
       clouds_config_(gltf_viewer_cloud_config(config_)) {
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
+        terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
+    }
+    terrain_shadows_ = config_.terrain.shadows != 0;
+    if (config_.terrain.surface_detail == "flat") {
+        terrain_material_ = cubey::TerrainBackdropMaterialMode::Flat;
+    }
 }
 
 bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
@@ -189,6 +196,21 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
              .enabled_help = "Render direct clouds with scene-depth occlusion and include them in "
                              "PBR environment reflections."})) {
         refresh_cloud_controls(context);
+    }
+    if (terrain_backdrop_enabled() && ImGui::CollapsingHeader("Terrain Backdrop")) {
+        ImGui::Checkbox("Visible", &terrain_visible_);
+        ImGui::SliderFloat("Foreground height", &terrain_foreground_height_m_, 2.0F, 1'000.0F,
+                           "%.0f m");
+        ImGui::Checkbox("Terrain shadows", &terrain_shadows_);
+        int material =
+            terrain_material_ == cubey::TerrainBackdropMaterialMode::FilteredDetail ? 1 : 0;
+        if (ImGui::RadioButton("Flat", material == 0)) {
+            terrain_material_ = cubey::TerrainBackdropMaterialMode::Flat;
+        }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Filtered detail", material == 1)) {
+            terrain_material_ = cubey::TerrainBackdropMaterialMode::FilteredDetail;
+        }
     }
 
     ImGui::End();
