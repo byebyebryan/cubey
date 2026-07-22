@@ -1,4 +1,5 @@
-#include "terrain_directional_placement.h"
+#include <cubey/asset/terrain_height_source.h>
+#include <cubey/render/terrain_directional_placement.h>
 
 #include <cmath>
 #include <iostream>
@@ -15,17 +16,17 @@ void require(bool condition, std::string_view message) {
     }
 }
 
-class DirectionalRiseSource final : public cubey::projects::terrain::TerrainHeightSource {
+class DirectionalRiseSource final : public cubey::asset::TerrainHeightSource {
   public:
     explicit DirectionalRiseSource(cubey::math::Vec2 origin = {}) : origin_(origin) {}
 
-    [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
+    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata
     metadata() const noexcept override {
         return {.id = "directional-rise-test", .seed = 7U, .relief_scale_m = 2'000.0F};
     }
 
     [[nodiscard]] float sample_height(
-        const cubey::projects::terrain::TerrainQuery& query) const override {
+        const cubey::asset::TerrainQuery& query) const override {
         const float rise = std::max(query.world_xz.x - origin_.x - 2'000.0F, 0.0F) * 0.18F;
         return std::min(rise, 1'800.0F);
     }
@@ -35,7 +36,7 @@ class DirectionalRiseSource final : public cubey::projects::terrain::TerrainHeig
 };
 
 void test_fixed_focus_finds_a_directional_mountain_arc() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::render;
     const TerrainDirectionalPlacementPlan plan = evaluate_terrain_directional_placement(
         DirectionalRiseSource{}, TerrainDirectionalPlacementRequest{}, {0.0F, 0.0F});
     require(plan.contract_satisfied,
@@ -49,7 +50,7 @@ void test_fixed_focus_finds_a_directional_mountain_arc() {
 }
 
 void test_search_is_deterministic() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::render;
     const DirectionalRiseSource source;
     const TerrainDirectionalPlacementPlan first = plan_terrain_directional_placement(source);
     const TerrainDirectionalPlacementPlan second = plan_terrain_directional_placement(source);
@@ -63,7 +64,7 @@ void test_search_is_deterministic() {
 }
 
 void test_search_budget_can_fit_a_bounded_source() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::render;
     const DirectionalRiseSource source;
     TerrainDirectionalPlacementRequest request;
     request.search_extent_m = 12'000.0F;
@@ -75,7 +76,7 @@ void test_search_budget_can_fit_a_bounded_source() {
 }
 
 void test_search_can_be_centered_on_a_translated_source() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::render;
     const cubey::math::Vec2 translation{120'000.0F, -75'000.0F};
     const TerrainDirectionalPlacementRequest request;
     const TerrainDirectionalPlacementPlan origin =

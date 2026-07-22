@@ -4,6 +4,7 @@
 #include <cubey/render/frame_data.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/target.h>
+#include <cubey/render/terrain_backdrop_presentation.h>
 #include <cubey/render/terrain_backdrop_product.h>
 #include <cubey/render/terrain_shadow.h>
 #include <cubey/vulkan/submission_tickets.h>
@@ -25,32 +26,6 @@ class GraphicsPipelineResource;
 }
 
 namespace cubey {
-
-enum class TerrainBackdropDebugView : std::uint8_t {
-    Surface = 0,
-    Height = 1,
-    Slope = 3,
-    Clay = 6,
-    Normal = 10,
-    MaterialWeights = 11,
-    AmbientVisibility = 12,
-    ProjectedEdge = 14,
-    MaterialAlbedo = 15,
-    MaterialNormal = 16,
-    MaterialRoughness = 18,
-    SunVisibility = 19,
-    ClassificationNormal = 21,
-    Vegetation = 22,
-    Moisture = 23,
-    AmbientLighting = 24,
-    DirectLighting = 25,
-    StageOwnership = 27,
-};
-
-enum class TerrainBackdropMaterialMode : std::uint8_t {
-    Flat,
-    FilteredDetail,
-};
 
 struct TerrainBackdropRuntimeShaderFiles {
     std::filesystem::path vertex{};
@@ -79,8 +54,9 @@ struct TerrainBackdropRuntimeFrameInfo {
     cubey::math::Vec3 world_translation{0.0F, 0.0F, 0.0F};
     render::AtmosphereEnvironmentFrameUniforms atmosphere{};
     render::AtmosphereEnvironmentLighting lighting{};
-    TerrainBackdropDebugView debug_view = TerrainBackdropDebugView::Surface;
-    TerrainBackdropMaterialMode material = TerrainBackdropMaterialMode::FilteredDetail;
+    render::TerrainBackdropDebugView debug_view = render::TerrainBackdropDebugView::Surface;
+    render::TerrainBackdropMaterialMode material =
+        render::TerrainBackdropMaterialMode::FilteredDetail;
     bool shadows_enabled = true;
     bool reflections_enabled = true;
 };

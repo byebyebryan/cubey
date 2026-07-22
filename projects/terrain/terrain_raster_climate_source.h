@@ -1,7 +1,7 @@
 #pragma once
 
-#include "terrain_height_source.h"
-#include "terrain_raster_height_source.h"
+#include <cubey/asset/terrain_height_source.h>
+#include <cubey/asset/terrain_raster_height_source.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -9,6 +9,12 @@
 #include <vector>
 
 namespace cubey::projects::terrain {
+
+using TerrainHeightSource = cubey::asset::TerrainHeightSource;
+using TerrainHeightSourceBounds = cubey::asset::TerrainHeightSourceBounds;
+using TerrainHeightSourceMetadata = cubey::asset::TerrainHeightSourceMetadata;
+using TerrainQuery = cubey::asset::TerrainQuery;
+using TerrainRasterHeightSource = cubey::asset::TerrainRasterHeightSource;
 
 struct TerrainClimateSample {
     float temperature_mean_c = 0.0F;

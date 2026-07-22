@@ -184,8 +184,8 @@ class GltfViewerApp {
     bool terrain_visible_ = true;
     bool terrain_shadows_ = true;
     bool terrain_reflections_ = true;
-    cubey::TerrainBackdropMaterialMode terrain_material_ =
-        cubey::TerrainBackdropMaterialMode::FilteredDetail;
+    cubey::render::TerrainBackdropMaterialMode terrain_material_ =
+        cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
 };
 
 } // namespace cubey::projects::gltf_viewer

@@ -1,4 +1,4 @@
-#include "terrain_shadow.h"
+#include <cubey/render/terrain_shadow.h>
 
 #include <glm/geometric.hpp>
 
@@ -29,14 +29,14 @@ void require(bool condition, std::string_view message) {
 }
 
 void test_projection_covers_product_bounds() {
-    require(cubey::projects::terrain::kTerrainShadowMapExtent == 2048U,
+    require(cubey::render::kTerrainShadowMapExtent == 2048U,
             "terrain shadow acceptance map should retain its fixed extent");
-    constexpr cubey::projects::terrain::TerrainShadowProductBounds bounds{
+    constexpr cubey::render::TerrainShadowProductBounds bounds{
         .outer_radius_m = 16'384.0F,
         .minimum_height_m = -380.0F,
         .maximum_height_m = 3'120.0F,
     };
-    const auto projection = cubey::projects::terrain::terrain_shadow_projection(
+    const auto projection = cubey::render::terrain_shadow_projection(
         bounds, glm::normalize(cubey::math::Vec3{-0.4F, 0.7F, 0.55F}));
     require(finite(projection.light_view_projection),
             "terrain shadow projection should be finite");
@@ -63,7 +63,7 @@ void test_projection_covers_product_bounds() {
 }
 
 void test_cache_invalidation_contract() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::render;
     TerrainShadowCacheState cache;
     const cubey::math::Vec3 light =
         glm::normalize(cubey::math::Vec3{-0.4F, 0.7F, 0.55F});
@@ -98,7 +98,7 @@ void test_cache_invalidation_contract() {
 }
 
 void test_disabled_and_below_horizon_shadows_do_not_update() {
-    using namespace cubey::projects::terrain;
+    using namespace cubey::render;
     TerrainShadowCacheState cache;
     require(!terrain_shadow_update_required(cache, false, 1U, {0.0F, 1.0F, 0.0F}),
             "disabled shadows should not update");

@@ -1,10 +1,9 @@
 #include "terrain_app.h"
 
-#include "terrain_backdrop_placement.h"
 #include "terrain_backdrop_product.h"
 #include "terrain_config.h"
-#include "terrain_raster_height_source.h"
 
+#include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/engine/terrain_backdrop_runtime.h>
@@ -26,6 +25,7 @@
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/render/shadow_map.h>
+#include <cubey/render/terrain_backdrop_placement.h>
 #include <cubey/render/view_ray_basis_3d.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/view_3d.h>
@@ -69,6 +69,13 @@
 
 namespace cubey::projects::terrain {
 namespace {
+
+using cubey::render::TerrainBackdropPlacementPlan;
+using cubey::render::TerrainBackdropPlacementRequest;
+using cubey::render::TerrainBackdropStagePlan;
+using cubey::render::TerrainDirectionalPlacementPlan;
+using cubey::render::plan_terrain_backdrop_placement;
+using cubey::asset::TerrainRasterProvenance;
 
 constexpr VkFormat kTerrainSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr float kTerrainHeadlessOrbitSpeed = 0.18F;

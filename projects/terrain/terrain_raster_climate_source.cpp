@@ -1,7 +1,5 @@
 #include "terrain_raster_climate_source.h"
 
-#include "terrain_raster_height_source.h"
-
 #include <nlohmann/json.hpp>
 
 #include <algorithm>

@@ -142,7 +142,7 @@ GltfViewerApp::GltfViewerApp(RunConfig config)
     }
     terrain_shadows_ = config_.terrain.shadows != 0;
     if (config_.terrain.surface_detail == "flat") {
-        terrain_material_ = cubey::TerrainBackdropMaterialMode::Flat;
+        terrain_material_ = cubey::render::TerrainBackdropMaterialMode::Flat;
     }
 }
 
@@ -204,13 +204,14 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
         ImGui::Checkbox("Terrain shadows", &terrain_shadows_);
         ImGui::Checkbox("Foreground reflections", &terrain_reflections_);
         int material =
-            terrain_material_ == cubey::TerrainBackdropMaterialMode::FilteredDetail ? 1 : 0;
+            terrain_material_ == cubey::render::TerrainBackdropMaterialMode::FilteredDetail ? 1
+                                                                                             : 0;
         if (ImGui::RadioButton("Flat", material == 0)) {
-            terrain_material_ = cubey::TerrainBackdropMaterialMode::Flat;
+            terrain_material_ = cubey::render::TerrainBackdropMaterialMode::Flat;
         }
         ImGui::SameLine();
         if (ImGui::RadioButton("Filtered detail", material == 1)) {
-            terrain_material_ = cubey::TerrainBackdropMaterialMode::FilteredDetail;
+            terrain_material_ = cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
         }
     }
 

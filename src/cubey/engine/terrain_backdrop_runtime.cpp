@@ -610,7 +610,9 @@ void TerrainBackdropRuntime::record_surface_draws(const vulkan::CommandRecorder&
                  product.diagnostics.maximum_height_m + impl_->frame.world_translation.y,
                  product.request.visible_inner_radius_m},
             .material_options =
-                {impl_->frame.material == TerrainBackdropMaterialMode::FilteredDetail ? 1.0F : 0.0F,
+                {impl_->frame.material == render::TerrainBackdropMaterialMode::FilteredDetail
+                     ? 1.0F
+                     : 0.0F,
                  0.0F, 0.0F, 0.0F},
             .world_translation = {impl_->frame.world_translation, 0.0F},
         });

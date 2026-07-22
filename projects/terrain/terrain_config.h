@@ -1,10 +1,10 @@
 #pragma once
 
-#include "terrain_placement_mode.h"
 #include "terrain_surface_model.h"
 
 #include <cubey/core/run_config.h>
-#include <cubey/engine/terrain_backdrop_runtime.h>
+#include <cubey/render/terrain_backdrop_presentation.h>
+#include <cubey/render/terrain_placement_mode.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -13,8 +13,9 @@
 
 namespace cubey::projects::terrain {
 
-using TerrainDebugView = cubey::TerrainBackdropDebugView;
-using TerrainMaterialMode = cubey::TerrainBackdropMaterialMode;
+using TerrainDebugView = cubey::render::TerrainBackdropDebugView;
+using TerrainMaterialMode = cubey::render::TerrainBackdropMaterialMode;
+using cubey::render::TerrainPlacementMode;
 
 struct TerrainRuntimeConfig {
     std::filesystem::path heightfield_path{};
