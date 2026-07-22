@@ -188,6 +188,14 @@ climate sources, and steady plus moving-clock profiles. It writes
 `outputs/terrain/rendering-acceptance-v1`. Profile lanes wait for external GPU
 compute to become idle and retry when overlap is detected.
 
+To rebuild contact sheets and metadata from a complete retained profile set
+without running the GPU lanes again, use:
+
+```sh
+PROFILE_ONLY=1 SUMMARIZE_ONLY=1 \
+  projects/terrain/capture_rendering_acceptance_review.sh
+```
+
 Generate the rendering-envelope and fixed-topology decision pack with:
 
 ```sh

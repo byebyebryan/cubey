@@ -11,6 +11,7 @@ FRAMES="${FRAMES:-120}"
 WARMUP_FRAMES="${WARMUP_FRAMES:-30}"
 FPS="${FPS:-60}"
 PROFILE_ONLY="${PROFILE_ONLY:-0}"
+SUMMARIZE_ONLY="${SUMMARIZE_ONLY:-0}"
 
 REGIMES=(hot-dry hot-wet cool-wet cold-dry cold-wet)
 COOL_WET="${ASSET_ROOT}/cool-wet"
@@ -29,7 +30,13 @@ if [[ ! -f "${ASSET_ROOT}/calibration-index.json" ]]; then
 fi
 
 mkdir -p "${OUT_DIR}/captures" "${OUT_DIR}/profiles"
-find "${OUT_DIR}/profiles" -mindepth 1 -delete
+if [[ "${SUMMARIZE_ONLY}" == "1" && "${PROFILE_ONLY}" != "1" ]]; then
+    printf 'SUMMARIZE_ONLY=1 requires PROFILE_ONLY=1\n' >&2
+    exit 1
+fi
+if [[ "${SUMMARIZE_ONLY}" != "1" ]]; then
+    find "${OUT_DIR}/profiles" -mindepth 1 -delete
+fi
 if [[ "${PROFILE_ONLY}" != "1" ]]; then
     find "${OUT_DIR}/captures" -mindepth 1 -delete
     find "${OUT_DIR}" -mindepth 1 -maxdepth 1 ! -name captures ! -name profiles -delete
@@ -272,16 +279,18 @@ profile_lane() {
     return 1
 }
 
-profile_lane steady-control --no-terrain-shadows --time-of-day-mode manual \
-    --sun-elevation 38 --sun-azimuth -42 --pause-time
-profile_lane steady-candidate --terrain-shadows --time-of-day-mode manual \
-    --sun-elevation 38 --sun-azimuth -42 --pause-time
-profile_lane moving-clock --terrain-shadows --time-of-day-mode solar \
-    --time-hours 10 --day-of-year 172 --latitude-degrees 35 \
-    --time-speed-hours-per-second 0.5
-profile_lane shadow-saturation --terrain-shadows --time-of-day-mode solar \
-    --time-hours 10 --day-of-year 172 --latitude-degrees 35 \
-    --time-speed-hours-per-second 2
+if [[ "${SUMMARIZE_ONLY}" != "1" ]]; then
+    profile_lane steady-control --no-terrain-shadows --time-of-day-mode manual \
+        --sun-elevation 38 --sun-azimuth -42 --pause-time
+    profile_lane steady-candidate --terrain-shadows --time-of-day-mode manual \
+        --sun-elevation 38 --sun-azimuth -42 --pause-time
+    profile_lane moving-clock --terrain-shadows --time-of-day-mode solar \
+        --time-hours 10 --day-of-year 172 --latitude-degrees 35 \
+        --time-speed-hours-per-second 0.5
+    profile_lane shadow-saturation --terrain-shadows --time-of-day-mode solar \
+        --time-hours 10 --day-of-year 172 --latitude-degrees 35 \
+        --time-speed-hours-per-second 2
+fi
 
 span_stat() {
     local summary="$1"
@@ -315,6 +324,13 @@ printf 'lane\tcombined_mean_ms\tcombined_p50_ms\tcombined_p95_ms\tshadow_p50_ms\
 for lane in steady-control steady-candidate moving-clock shadow-saturation; do
     summary="${OUT_DIR}/profiles/${lane}.summary.txt"
     metrics="${OUT_DIR}/profiles/${lane}.metrics.csv"
+    for suffix in frames.csv passes.csv metrics.csv trace.json summary.txt; do
+        if [[ ! -f "${OUT_DIR}/profiles/${lane}.${suffix}" ]]; then
+            printf 'missing profile artifact: %s\n' \
+                "${OUT_DIR}/profiles/${lane}.${suffix}" >&2
+            exit 1
+        fi
+    done
     read -r combined_mean combined_p50 combined_p95 \
         <<<"$(combined_frame_stats "${OUT_DIR}/profiles/${lane}.passes.csv")"
     shadow_p50="$(span_stat "${summary}" "terrain shadow" 6)"
