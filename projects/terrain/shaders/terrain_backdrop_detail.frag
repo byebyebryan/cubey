@@ -104,16 +104,17 @@ float terrain_sun_visibility(vec3 world_position, vec3 normal,
         max(ndotl, 0.2);
     float texel_world_m = max(atmosphere.shadow_options.w, 0.0);
     float bias_m = max(
-        1.25, texel_world_m * (0.75 + 0.90 * min(slope_tangent, 2.0)));
+        0.75, texel_world_m * (0.25 + 0.35 * min(slope_tangent, 2.0)));
     float receiver_depth = light_ndc.z -
         bias_m / max(atmosphere.shadow_options.z, 1.0);
     float texel = atmosphere.shadow_options.y;
     float visibility = 0.0;
-    for (int y = 0; y < 2; ++y) {
-        for (int x = 0; x < 2; ++x) {
-            vec2 offset = (vec2(float(x), float(y)) - vec2(0.5)) * texel;
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            vec2 offset = vec2(float(x), float(y)) * texel;
             float blocker_depth = texture(terrain_shadow_map, shadow_uv + offset).r;
-            visibility += receiver_depth <= blocker_depth ? 0.25 : 0.0;
+            float weight = float((2 - abs(x)) * (2 - abs(y))) / 16.0;
+            visibility += receiver_depth <= blocker_depth ? weight : 0.0;
         }
     }
     return visibility;

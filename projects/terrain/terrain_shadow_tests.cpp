@@ -29,6 +29,8 @@ void require(bool condition, std::string_view message) {
 }
 
 void test_projection_covers_product_bounds() {
+    require(cubey::projects::terrain::kTerrainShadowMapExtent == 2048U,
+            "terrain shadow acceptance map should retain its fixed extent");
     constexpr cubey::projects::terrain::TerrainShadowProductBounds bounds{
         .outer_radius_m = 16'384.0F,
         .minimum_height_m = -380.0F,
@@ -39,7 +41,8 @@ void test_projection_covers_product_bounds() {
     require(finite(projection.light_view_projection),
             "terrain shadow projection should be finite");
     require(projection.light_above_horizon && projection.depth_span_m > 0.0F &&
-                projection.texel_world_size_m > 0.0F,
+                projection.texel_world_size_m > 0.0F &&
+                projection.texel_world_size_m < 17.0F,
             "terrain shadow projection should publish usable dimensions");
 
     for (int elevation = 0; elevation < 2; ++elevation) {

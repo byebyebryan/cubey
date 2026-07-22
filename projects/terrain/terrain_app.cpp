@@ -871,6 +871,9 @@ class TerrainApp {
                     product_.diagnostics.mean_vegetation, product_.diagnostics.mean_moisture);
         ImGui::Text("Shadow map: %u x %u, %s", kTerrainShadowMapExtent,
                     kTerrainShadowMapExtent, shadow_cache_.valid ? "valid" : "pending");
+        ImGui::Text("Shadow texel / depth span: %.1f m / %.0f m",
+                    frame_shadow_projection_.texel_world_size_m,
+                    frame_shadow_projection_.depth_span_m);
         ImGui::Text("Shadow casters: %llu triangles (outer backdrop)",
                     static_cast<unsigned long long>(shadow_caster_triangle_count()));
         ImGui::Text("Shadow updates: %llu",
@@ -1368,6 +1371,10 @@ class TerrainApp {
                                 runtime_config_.shadows ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.shadow", "map_extent",
                                 static_cast<double>(kTerrainShadowMapExtent));
+        recorder->record_metric(frame_index, "terrain.shadow", "texel_world_m",
+                                frame_shadow_projection_.texel_world_size_m);
+        recorder->record_metric(frame_index, "terrain.shadow", "depth_span_m",
+                                frame_shadow_projection_.depth_span_m);
         recorder->record_metric(frame_index, "terrain.shadow", "triangle_count",
                                 static_cast<double>(shadow_caster_triangle_count()));
         recorder->record_metric(frame_index, "terrain.shadow", "cache_valid",

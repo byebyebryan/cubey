@@ -6,7 +6,7 @@
 
 namespace cubey::projects::terrain {
 
-constexpr std::uint32_t kTerrainShadowMapExtent = 1024U;
+constexpr std::uint32_t kTerrainShadowMapExtent = 2048U;
 constexpr float kTerrainShadowDirectionThresholdRadians =
     0.25F * 0.01745329251994329577F;
 
