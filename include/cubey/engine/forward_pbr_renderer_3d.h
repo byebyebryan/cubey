@@ -2,6 +2,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/engine/cloud_environment_runtime.h>
+#include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/deformation.h>
@@ -127,6 +128,11 @@ struct ForwardPbrRenderer3DAtmosphereClouds {
     CloudEnvironmentRuntimeFrame frame{};
 };
 
+struct ForwardPbrRenderer3DTerrainBackdrop {
+    TerrainBackdropRuntime* runtime = nullptr;
+    TerrainBackdropRuntimeFrameInfo frame{};
+};
+
 struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
@@ -136,6 +142,13 @@ struct ForwardPbrRenderer3DSettings {
         ForwardPbrRenderer3DBackgroundMode::IblSkybox;
     std::optional<render::AtmosphereEnvironmentFrameUniforms> atmosphere_background{};
     std::optional<ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds{};
+    std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain_backdrop{};
+};
+
+struct ForwardPbrRenderer3DSceneTargetInfo {
+    VkExtent2D extent{};
+    VkFormat color_format = VK_FORMAT_UNDEFINED;
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
 };
 
 struct ForwardPbrRenderer3DRenderRequest {
@@ -211,6 +224,7 @@ class ForwardPbrRenderer3D {
                             const render::PbrEnvironmentTextureBindings& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
+    [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;
     void record(const ForwardPbrRenderer3DFrameRequestInfo& info);
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 

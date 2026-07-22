@@ -76,6 +76,7 @@ struct ForwardPbrRenderer3D::Impl {
                             const render::PbrEnvironmentTextureBindings& environment);
     void destroy_swapchain_resources();
     void destroy_all_resources();
+    [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 
     [[nodiscard]] bool has_global_resources() const;
@@ -117,7 +118,8 @@ struct ForwardPbrRenderer3D::Impl {
                          std::span<const render::GpuDeformationCommand> deformation_commands,
                          const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
                          ForwardPbrRenderer3DBackgroundMode background_mode,
-                         const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds);
+                         const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
+                         const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -128,7 +130,8 @@ struct ForwardPbrRenderer3D::Impl {
                            const render::MeshResolver& mesh_resolver,
                            const render::PbrMaterialTable& materials,
                            render::PbrDebugView debug_view,
-                           ForwardPbrRenderer3DBackgroundMode background_mode) const;
+                           ForwardPbrRenderer3DBackgroundMode background_mode,
+                           TerrainBackdropRuntime* terrain) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,

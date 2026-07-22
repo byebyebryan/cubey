@@ -119,6 +119,16 @@ void validate_forward_pbr_renderer_3d_render_request(
             throw std::runtime_error("forward PBR atmosphere clouds require a runtime");
         }
     }
+    if (request.settings.terrain_backdrop.has_value()) {
+        if (request.settings.background_mode != ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
+            throw std::runtime_error(
+                "forward PBR terrain backdrop requires the atmosphere background");
+        }
+        const TerrainBackdropRuntime* runtime = request.settings.terrain_backdrop->runtime;
+        if (runtime == nullptr || !runtime->created() || !runtime->target_resources_created()) {
+            throw std::runtime_error("forward PBR terrain backdrop requires a complete runtime");
+        }
+    }
 }
 
 ForwardPbrRenderer3DFramePlans

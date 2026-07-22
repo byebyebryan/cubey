@@ -80,21 +80,18 @@ void ForwardPbrRenderer3D::Impl::record_shadow_pass(
         });
 }
 
-void ForwardPbrRenderer3D::Impl::record_scene_pass(const vulkan::CommandRecorder& recorder,
-                                                   render::ColorTargetView color_target,
-                                                   const scene::RenderFramePlan3D& scene_plan,
-                                                   render::FrameSlot frame_slot,
-                                                   const render::MeshResolver& mesh_resolver,
-                                                   const render::PbrMaterialTable& materials,
-                                                   render::PbrDebugView debug_view,
-                                                   ForwardPbrRenderer3DBackgroundMode
-                                                       background_mode) const {
+void ForwardPbrRenderer3D::Impl::record_scene_pass(
+    const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
+    const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
+    const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials,
+    render::PbrDebugView debug_view, ForwardPbrRenderer3DBackgroundMode background_mode,
+    TerrainBackdropRuntime* terrain) const {
     render::record_render_target_pass(
         recorder,
         render::render_target_view(color_target, render::depth_target_view(depth_attachment())),
         config_.scene_clear,
-        [this, &scene_plan, mesh_resolver, &materials, debug_view,
-         frame_slot, background_mode](const vulkan::CommandRecorder& pass_recorder) {
+        [this, &scene_plan, mesh_resolver, &materials, debug_view, frame_slot, background_mode,
+         terrain](const vulkan::CommandRecorder& pass_recorder) {
             if (debug_view == render::PbrDebugView::Final &&
                 background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
                 render::record_fullscreen_pipeline_draw(
@@ -111,6 +108,9 @@ void ForwardPbrRenderer3D::Impl::record_scene_pass(const vulkan::CommandRecorder
                                        .descriptor_set = skybox_material().set(frame_slot),
                                        .descriptor_set_index = 0,
                                    });
+            }
+            if (terrain != nullptr) {
+                terrain->record_surface_draws(pass_recorder, frame_slot);
             }
             const auto record_blend = [this, &pass_recorder, &scene_plan, mesh_resolver, &materials,
                                        frame_slot](const render::GraphicsPipelineResource& pipeline,

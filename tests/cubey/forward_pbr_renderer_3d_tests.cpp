@@ -434,6 +434,18 @@ void test_forward_pbr_renderer_3d_render_request_validates_atmosphere_clouds() {
                    "forward PBR atmosphere clouds should require a runtime");
 }
 
+void test_forward_pbr_renderer_3d_render_request_validates_terrain_backdrop() {
+    cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
+    request.settings.terrain_backdrop.emplace();
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR terrain should require the atmosphere background");
+
+    request.settings.background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere;
+    request.settings.atmosphere_background.emplace();
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR terrain should require a complete runtime");
+}
+
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
     const cubey::scene::FrameRenderPlan3D valid({
         cubey::scene::RenderPassPlan3D{

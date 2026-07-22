@@ -434,6 +434,20 @@ void ForwardPbrRenderer3D::destroy_all_resources() {
     impl_->destroy_all_resources();
 }
 
+ForwardPbrRenderer3DSceneTargetInfo ForwardPbrRenderer3D::scene_target_info() const {
+    return impl_->scene_target_info();
+}
+
+ForwardPbrRenderer3DSceneTargetInfo ForwardPbrRenderer3D::Impl::scene_target_info() const {
+    require_swapchain_resources();
+    const VkExtent3D depth_extent = depth_attachment().extent();
+    return {
+        .extent = {depth_extent.width, depth_extent.height},
+        .color_format = config_.scene_color_format,
+        .depth_format = depth_attachment().format(),
+    };
+}
+
 void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     destroy_swapchain_resources();
     global_.graph_executor.clear();
