@@ -1,4 +1,4 @@
-#include "terrain_directional_placement.h"
+#include <cubey/render/terrain_directional_placement.h>
 
 #include <algorithm>
 #include <cmath>
@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace cubey::projects::terrain {
+namespace cubey::render {
 namespace {
 
 constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;
@@ -93,7 +93,7 @@ struct Candidate {
             if (length(offset) > request.local_radius_m) {
                 continue;
             }
-            const TerrainSample sample = source.sample(
+            const cubey::asset::TerrainSample sample = source.sample(
                 {.world_xz = focus + offset, .footprint_m = detailed_local ? 32.0F : 96.0F});
             const float height = sample.height_m * request.vertical_scale;
             local_minimum = std::min(local_minimum, height);
@@ -345,4 +345,4 @@ TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
     return plans.front();
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::render

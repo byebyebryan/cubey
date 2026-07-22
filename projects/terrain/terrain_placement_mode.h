@@ -1,13 +1,9 @@
 #pragma once
 
-#include <cstdint>
+#include <cubey/render/terrain_placement_mode.h>
 
 namespace cubey::projects::terrain {
 
-enum class TerrainPlacementMode : std::uint8_t {
-    Selected,
-    RawCenter,
-    RawSample,
-};
+using cubey::render::TerrainPlacementMode;
 
 } // namespace cubey::projects::terrain

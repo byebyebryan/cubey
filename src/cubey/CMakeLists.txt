@@ -193,7 +193,13 @@ add_library(cubey_render STATIC
     render/render_item.cpp
     render/shadow_map.cpp
     render/target.cpp
+    render/terrain_backdrop_density.cpp
+    render/terrain_backdrop_placement.cpp
+    render/terrain_backdrop_product.cpp
+    render/terrain_backdrop_profile.cpp
+    render/terrain_directional_placement.cpp
     render/terrain_ocean_fields.cpp
+    render/terrain_shadow.cpp
     render/texture.cpp
     render/uniform_buffer.cpp
 )
@@ -208,6 +214,7 @@ target_include_directories(
 target_link_libraries(
     cubey_render
     PUBLIC
+        cubey::asset
         cubey::core
         cubey::vulkan
     PRIVATE

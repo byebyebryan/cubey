@@ -1,9 +1,9 @@
-#include "terrain_backdrop_density.h"
+#include <cubey/render/terrain_backdrop_density.h>
 
 #include <stdexcept>
 #include <string>
 
-namespace cubey::projects::terrain {
+namespace cubey::render {
 
 std::string_view terrain_backdrop_mesh_density_name(TerrainBackdropMeshDensity density) noexcept {
     switch (density) {
@@ -30,4 +30,4 @@ TerrainBackdropMeshDensity terrain_backdrop_mesh_density_from_name(std::string_v
     throw std::runtime_error("unknown terrain backdrop mesh density: " + std::string(name));
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::render

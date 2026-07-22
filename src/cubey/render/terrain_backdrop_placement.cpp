@@ -1,4 +1,4 @@
-#include "terrain_backdrop_placement.h"
+#include <cubey/render/terrain_backdrop_placement.h>
 
 #include <cubey/procedural/seed.h>
 
@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace cubey::projects::terrain {
+namespace cubey::render {
 namespace {
 
 constexpr std::uint64_t kRawPlacementSequenceSeed = 0x4355'4245'5954'5250ULL;
@@ -180,4 +180,4 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
     return result;
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::render

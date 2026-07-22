@@ -1,19 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <string_view>
+#include <cubey/render/terrain_backdrop_density.h>
 
 namespace cubey::projects::terrain {
 
-enum class TerrainBackdropMeshDensity : std::uint8_t {
-    Low,
-    Medium,
-    High,
-};
-
-[[nodiscard]] std::string_view
-terrain_backdrop_mesh_density_name(TerrainBackdropMeshDensity density) noexcept;
-[[nodiscard]] TerrainBackdropMeshDensity
-terrain_backdrop_mesh_density_from_name(std::string_view name);
+using cubey::render::TerrainBackdropMeshDensity;
+using cubey::render::terrain_backdrop_mesh_density_from_name;
+using cubey::render::terrain_backdrop_mesh_density_name;
 
 } // namespace cubey::projects::terrain

@@ -211,6 +211,7 @@ struct TerrainProductBuild {
     std::optional<TerrainRasterHeightSource> replacement_source{};
     std::optional<TerrainRasterClimateSource> replacement_climate_source{};
     TerrainBackdropPlacementPlan placement{};
+    TerrainBackdropClimateDiagnostics climate_diagnostics{};
     TerrainBackdropProduct product{};
 };
 
@@ -336,7 +337,8 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
 [[nodiscard]] TerrainBackdropProduct make_product(const TerrainRasterHeightSource& source,
                                                   const TerrainBackdropPlacementPlan& placement,
                                                   const TerrainRuntimeConfig& config,
-                                                  const TerrainRasterClimateSource* climate) {
+                                                  const TerrainRasterClimateSource* climate,
+                                                  TerrainBackdropClimateDiagnostics* diagnostics) {
     return make_terrain_backdrop_product(
         {
             .source_focus_xz = placement.stage.source_focus_xz,
@@ -351,7 +353,7 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
             .vertical_offset_m = placement.stage.terrain_vertical_offset_m,
             .surface_model = config.surface_model,
         },
-        source, climate);
+        source, climate, diagnostics);
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
@@ -490,8 +492,10 @@ class TerrainApp {
           source_(require_heightfield(runtime_config_.heightfield_path)),
           climate_source_(load_climate_source(runtime_config_, source_)),
           placement_stage_(make_placement_stage(source_, runtime_config_)),
+          climate_diagnostics_(),
           product_(make_product(source_, placement_stage_, runtime_config_,
-                                climate_source_ ? &climate_source_.value() : nullptr)),
+                                climate_source_ ? &climate_source_.value() : nullptr,
+                                &climate_diagnostics_)),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -966,12 +970,14 @@ class TerrainApp {
                             make_product(build.replacement_source.value(), build.placement, config,
                                          build.replacement_climate_source
                                              ? &build.replacement_climate_source.value()
-                                             : nullptr);
+                                             : nullptr,
+                                         &build.climate_diagnostics);
                     } else {
                         build.placement = make_placement_stage(source_, config);
                         build.product =
                             make_product(source_, build.placement, config,
-                                         climate_source_ ? &climate_source_.value() : nullptr);
+                                         climate_source_ ? &climate_source_.value() : nullptr,
+                                         &build.climate_diagnostics);
                     }
                     return build;
                 });
@@ -1013,6 +1019,7 @@ class TerrainApp {
             source_choice_ = build.source_choice;
         }
         placement_stage_ = std::move(build.placement);
+        climate_diagnostics_ = build.climate_diagnostics;
         product_ = std::move(build.product);
         runtime_config_ = std::move(build.config);
         latest_draw_plan_ = {};
@@ -1311,7 +1318,7 @@ class TerrainApp {
             recorder->record_metric(frame_index, "terrain.surface", "climate_hash_last32",
                                     static_cast<double>(sha256_word(hash, hash.size() - 8U)));
         }
-        const TerrainBackdropClimateDiagnostics& climate = product_.diagnostics.climate;
+        const TerrainBackdropClimateDiagnostics& climate = climate_diagnostics_;
         recorder->record_metric(frame_index, "terrain.climate", "sample_count",
                                 static_cast<double>(climate.sample_count));
         recorder->record_metric(frame_index, "terrain.climate", "mean_temperature_c",
@@ -1884,6 +1891,7 @@ class TerrainApp {
     TerrainRasterHeightSource source_;
     std::optional<TerrainRasterClimateSource> climate_source_{};
     TerrainBackdropPlacementPlan placement_stage_{};
+    TerrainBackdropClimateDiagnostics climate_diagnostics_{};
     TerrainBackdropProduct product_{};
     TerrainSourceChoice source_choice_ = TerrainSourceChoice::Startup;
     TerrainSourceChoice edit_source_choice_ = TerrainSourceChoice::Startup;

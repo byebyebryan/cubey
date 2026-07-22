@@ -92,14 +92,9 @@ target_link_libraries(
 )
 
 add_library(cubey_project_terrain_render_support STATIC
-    terrain_backdrop_density.cpp
     terrain_backdrop_material.cpp
-    terrain_backdrop_placement.cpp
     terrain_backdrop_product.cpp
-    terrain_backdrop_profile.cpp
-    terrain_directional_placement.cpp
     terrain_environment_gpu.cpp
-    terrain_shadow.cpp
     terrain_surface_model.cpp
 )
 target_include_directories(

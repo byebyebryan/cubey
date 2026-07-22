@@ -1,4 +1,4 @@
-#include "terrain_shadow.h"
+#include <cubey/render/terrain_shadow.h>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/geometric.hpp>
@@ -7,7 +7,7 @@
 #include <cmath>
 #include <stdexcept>
 
-namespace cubey::projects::terrain {
+namespace cubey::render {
 namespace {
 
 constexpr float kMinimumDirectionLengthSquared = 1.0e-8F;
@@ -109,4 +109,4 @@ void invalidate_terrain_shadow_cache(TerrainShadowCacheState& cache) noexcept {
     cache.valid = false;
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::render
