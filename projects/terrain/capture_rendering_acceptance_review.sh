@@ -189,36 +189,27 @@ profile_lane() {
     local prefix="${OUT_DIR}/profiles/${lane}"
     local video="${OUT_DIR}/profiles/${lane}.mp4"
 
-    for attempt in 1 2 3; do
-        if ! wait_for_gpu_idle; then
-            printf 'GPU remained busy before profile lane %s\n' "${lane}" >&2
-            return 1
-        fi
-        "${APP}" --headless --capture video --frames "${FRAMES}" --fps "${FPS}" \
-            --width "${WIDTH}" --height "${HEIGHT}" \
-            --terrain-heightfield "${COOL_WET}" \
-            --terrain-surface-fields "${COOL_WET}" \
-            --terrain-surface-model climate-transition \
-            --terrain-placement selected \
-            --terrain-camera-preset backdrop \
-            --terrain-render-stride 3 \
-            --terrain-foreground-height 200 \
-            --terrain-backdrop-orbit-radius 100 \
-            --terrain-backdrop-elevation 8 \
-            --terrain-surface-detail filtered-detail \
-            --no-clouds \
-            --profile-output "${prefix}" \
-            --profile-warmup-frames "${WARMUP_FRAMES}" \
-            "$@" --output "${video}"
-        rm -f "${video}"
-        if ! external_gpu_busy; then
-            return 0
-        fi
-        printf 'External GPU compute overlapped profile lane %s; retrying (%u/3)\n' \
-            "${lane}" "${attempt}" >&2
-    done
-    printf 'Unable to capture uncontended profile lane %s\n' "${lane}" >&2
-    return 1
+    if ! wait_for_gpu_idle; then
+        printf 'GPU remained busy before profile lane %s\n' "${lane}" >&2
+        return 1
+    fi
+    "${APP}" --headless --capture video --frames "${FRAMES}" --fps "${FPS}" \
+        --width "${WIDTH}" --height "${HEIGHT}" \
+        --terrain-heightfield "${COOL_WET}" \
+        --terrain-surface-fields "${COOL_WET}" \
+        --terrain-surface-model climate-transition \
+        --terrain-placement selected \
+        --terrain-camera-preset backdrop \
+        --terrain-render-stride 3 \
+        --terrain-foreground-height 200 \
+        --terrain-backdrop-orbit-radius 100 \
+        --terrain-backdrop-elevation 8 \
+        --terrain-surface-detail filtered-detail \
+        --no-clouds \
+        --profile-output "${prefix}" \
+        --profile-warmup-frames "${WARMUP_FRAMES}" \
+        "$@" --output "${video}"
+    rm -f "${video}"
 }
 
 profile_lane steady-control --no-terrain-shadows --time-of-day-mode manual \
