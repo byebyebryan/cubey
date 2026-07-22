@@ -131,3 +131,8 @@ The executable integration smokes load and hash-check the tracked raster,
 select placement relative to its translated source bounds, create the shared
 runtime, render each real consumer, and apply nonblank PNG statistics. This
 closes the normal-test gap left by the generated canonical asset.
+
+The compact tracked
+[foundation evidence pack](../evidence/terrain-backdrop-foundation/README.md)
+retains reviewable terrain and glTF frames from the canonical source together
+with source, revision, output-hash, and image-stat metadata.

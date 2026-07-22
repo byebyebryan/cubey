@@ -1,0 +1,35 @@
+{
+  "schema": "cubey.terrain.backdrop-foundation-evidence.v1",
+  "captured_revision": "d8c350f454566fa765112527f372c671e83bc309",
+  "resolution": {
+    "width": 640,
+    "height": 360
+  },
+  "source": {
+    "manifest": "build/dev/assets/terrain/default/heightfield.json",
+    "elevation_sha256": "27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df"
+  },
+  "captures": [
+    {
+      "file": "terrain.png",
+      "consumer": "projects/terrain",
+      "sha256": "108db4833e18f2dc9a1dedc4aa310970acb80fef025abd60743a523d62263e32",
+      "validation": "png_stats: terrain.png mean=0.624009 min=0.114674 max=0.928311 range=0.813637"
+    },
+    {
+      "file": "gltf-viewer.png",
+      "consumer": "projects/gltf_viewer",
+      "sha256": "b5e94b979ee9664b6e8c9dfae543d9b379627c63456adf97b7f0b8ba5d92af8c",
+      "validation": "png_stats: gltf-viewer.png mean=0.680714 min=0.450827 max=0.920751 range=0.469923"
+    }
+  ],
+  "fixed_contract": {
+    "placement": "selected",
+    "foreground_height_m": 200,
+    "surface_detail": "filtered-detail",
+    "terrain_shadows": true,
+    "environment": "atmosphere",
+    "sun_elevation_degrees": 38,
+    "sun_azimuth_degrees": -42
+  }
+}

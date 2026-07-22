@@ -116,6 +116,11 @@ Legacy material:
   and context that has not been promoted into current design docs. Treat it as
   useful context, not current authority.
 
+## Evidence
+
+- [Evidence index](evidence/README.md): compact tracked acceptance artifacts
+  for promoted foundation milestones.
+
 ## Archive
 
 - [Spike findings](archive/spike-findings.md): historical WebGPU/Vulkan spike
