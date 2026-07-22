@@ -30,6 +30,14 @@ terrain_backdrop_v1_product_request(const TerrainBackdropStagePlan& stage,
     };
 }
 
+TerrainBackdropProductInfo terrain_backdrop_product_info(const TerrainBackdropProduct& product) {
+    return {
+        .request = product.request,
+        .source = product.source,
+        .diagnostics = product.diagnostics,
+    };
+}
+
 namespace {
 
 constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;

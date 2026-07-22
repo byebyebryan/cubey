@@ -423,9 +423,10 @@ class TerrainApp {
           source_(require_heightfield(runtime_config_.heightfield_path)),
           climate_source_(load_climate_source(runtime_config_, source_)),
           placement_stage_(make_placement_stage(source_, runtime_config_)), climate_diagnostics_(),
-          product_(make_product(source_, placement_stage_, runtime_config_,
-                                climate_source_ ? &climate_source_.value() : nullptr,
-                                &climate_diagnostics_)),
+          startup_product_(make_product(source_, placement_stage_, runtime_config_,
+                                        climate_source_ ? &climate_source_.value() : nullptr,
+                                        &climate_diagnostics_)),
+          product_info_(cubey::render::terrain_backdrop_product_info(*startup_product_)),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -433,7 +434,7 @@ class TerrainApp {
           camera_(cubey::Camera3DConfig{
               .fovy_radians = 40.0F * kDegreesToRadians,
               .near_z = 0.1F,
-              .far_z = product_.request.outer_radius_m * 5.0F,
+              .far_z = product_info_.request.outer_radius_m * 5.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)),
           clouds_config_(terrain_cloud_config(run_config_, atmosphere_state_.environment)) {
@@ -790,18 +791,21 @@ class TerrainApp {
         }
 
         ImGui::SeparatorText("Renderer");
-        ImGui::Text("Render stride: %u", product_.request.render_stride);
+        ImGui::Text("Render stride: %u", product_info_.request.render_stride);
         ImGui::Text(
             "Product / center triangles: %llu / %llu",
-            static_cast<unsigned long long>(product_.diagnostics.render_triangle_count),
-            static_cast<unsigned long long>(product_.diagnostics.center_render_triangle_count));
+            static_cast<unsigned long long>(product_info_.diagnostics.render_triangle_count),
+            static_cast<unsigned long long>(
+                product_info_.diagnostics.center_render_triangle_count));
         ImGui::Text("Submitted sectors: %u", terrain_runtime_.draw_plan().submitted_sector_count);
         ImGui::Text("Submitted triangles: %u",
                     terrain_runtime_.draw_plan().submitted_triangle_count);
         ImGui::Text("Cached source samples: %llu",
-                    static_cast<unsigned long long>(product_.diagnostics.source_sample_count));
-        ImGui::Text("Mean vegetation / moisture: %.3f / %.3f", product_.diagnostics.mean_vegetation,
-                    product_.diagnostics.mean_moisture);
+                    static_cast<unsigned long long>(
+                        product_info_.diagnostics.source_sample_count));
+        ImGui::Text("Mean vegetation / moisture: %.3f / %.3f",
+                    product_info_.diagnostics.mean_vegetation,
+                    product_info_.diagnostics.mean_moisture);
         ImGui::Text("Shadow map: %u x %u, %s", cubey::render::kTerrainShadowMapExtent,
                     cubey::render::kTerrainShadowMapExtent,
                     terrain_runtime_.shadow_cache().valid ? "valid" : "pending");
@@ -926,6 +930,10 @@ class TerrainApp {
         const bool placement_changed =
             source_changed || build.config.placement != placement_stage_.mode ||
             build.config.placement_index != placement_stage_.sample_index;
+        TerrainBackdropProductInfo next_product_info =
+            cubey::render::terrain_backdrop_product_info(build.product);
+        terrain_runtime_.replace_product(context.gpu(), build.product,
+                                         context.frame_resources().latest_submitted_ticket());
         if (source_changed) {
             source_ = std::move(build.replacement_source.value());
             climate_source_ = std::move(build.replacement_climate_source);
@@ -933,9 +941,7 @@ class TerrainApp {
         }
         placement_stage_ = std::move(build.placement);
         climate_diagnostics_ = build.climate_diagnostics;
-        product_ = std::move(build.product);
-        terrain_runtime_.replace_product(context.gpu(), product_,
-                                         context.frame_resources().latest_submitted_ticket());
+        product_info_ = std::move(next_product_info);
         runtime_config_ = std::move(build.config);
         if (placement_changed) {
             configure_camera_for_placement(false);
@@ -968,12 +974,12 @@ class TerrainApp {
         const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
         stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
         terrain_runtime_.create(
-            device, gpu, product_,
+            device, gpu, *startup_product_,
             {
                 .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_TERRAIN_SHADER_DIR),
-                .material_seed = source_.metadata().seed,
                 .frame_slot_count = frame_slot_count,
             });
+        startup_product_.reset();
         atmosphere_atlases_.emplace(cubey::render::create_atmosphere_background_generated_textures(
             device, gpu, {.night_sky_extent = 64U}));
         atmosphere_background_.create_materials(
@@ -1097,34 +1103,38 @@ class TerrainApp {
         recorder->record_metric(frame_index, "terrain.backdrop", "submitted_triangles",
                                 terrain_runtime_.draw_plan().submitted_triangle_count);
         recorder->record_metric(frame_index, "terrain.backdrop", "product_render_triangles",
-                                static_cast<double>(product_.diagnostics.render_triangle_count));
+                                static_cast<double>(
+                                    product_info_.diagnostics.render_triangle_count));
         recorder->record_metric(
             frame_index, "terrain.backdrop", "center_render_triangles",
-            static_cast<double>(product_.diagnostics.center_render_triangle_count));
+            static_cast<double>(product_info_.diagnostics.center_render_triangle_count));
         recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
-                                static_cast<double>(product_.diagnostics.source_sample_count));
+                                static_cast<double>(
+                                    product_info_.diagnostics.source_sample_count));
         recorder->record_metric(
             frame_index, "terrain.backdrop", "content_hash_low32",
-            static_cast<double>(static_cast<std::uint32_t>(product_.diagnostics.content_hash)));
+            static_cast<double>(
+                static_cast<std::uint32_t>(product_info_.diagnostics.content_hash)));
         recorder->record_metric(frame_index, "terrain.backdrop", "content_hash_high32",
                                 static_cast<double>(static_cast<std::uint32_t>(
-                                    product_.diagnostics.content_hash >> 32U)));
+                                    product_info_.diagnostics.content_hash >> 32U)));
         recorder->record_metric(
             frame_index, "terrain.backdrop", "geometry_hash_low32",
-            static_cast<double>(static_cast<std::uint32_t>(product_.diagnostics.geometry_hash)));
+            static_cast<double>(
+                static_cast<std::uint32_t>(product_info_.diagnostics.geometry_hash)));
         recorder->record_metric(frame_index, "terrain.backdrop", "geometry_hash_high32",
                                 static_cast<double>(static_cast<std::uint32_t>(
-                                    product_.diagnostics.geometry_hash >> 32U)));
+                                    product_info_.diagnostics.geometry_hash >> 32U)));
         recorder->record_metric(frame_index, "terrain.surface", "model",
                                 static_cast<double>(runtime_config_.surface_model));
         recorder->record_metric(frame_index, "terrain.surface", "mean_rock",
-                                product_.diagnostics.mean_rock);
+                                product_info_.diagnostics.mean_rock);
         recorder->record_metric(frame_index, "terrain.surface", "mean_snow",
-                                product_.diagnostics.mean_snow);
+                                product_info_.diagnostics.mean_snow);
         recorder->record_metric(frame_index, "terrain.surface", "mean_vegetation",
-                                product_.diagnostics.mean_vegetation);
+                                product_info_.diagnostics.mean_vegetation);
         recorder->record_metric(frame_index, "terrain.surface", "mean_moisture",
-                                product_.diagnostics.mean_moisture);
+                                product_info_.diagnostics.mean_moisture);
         recorder->record_metric(frame_index, "terrain.surface", "climate_bound",
                                 climate_source_.has_value() ? 1.0 : 0.0);
         if (climate_source_.has_value()) {
@@ -1167,9 +1177,9 @@ class TerrainApp {
         recorder->record_metric(frame_index, "terrain.climate", "mean_wet_snow_potential",
                                 climate.mean_wet_snow_potential);
         recorder->record_metric(frame_index, "terrain.backdrop", "render_stride",
-                                static_cast<double>(product_.request.render_stride));
+                                static_cast<double>(product_info_.request.render_stride));
         recorder->record_metric(frame_index, "terrain.backdrop", "outer_radius_m",
-                                product_.request.outer_radius_m);
+                                product_info_.request.outer_radius_m);
         recorder->record_metric(frame_index, "terrain.placement", "mode",
                                 static_cast<double>(placement_stage_.mode));
         recorder->record_metric(frame_index, "terrain.placement", "sample_index",
@@ -1560,7 +1570,8 @@ class TerrainApp {
     std::optional<TerrainRasterClimateSource> climate_source_{};
     TerrainBackdropPlacementPlan placement_stage_{};
     TerrainBackdropClimateDiagnostics climate_diagnostics_{};
-    TerrainBackdropProduct product_{};
+    std::optional<TerrainBackdropProduct> startup_product_{};
+    TerrainBackdropProductInfo product_info_{};
     TerrainSourceChoice source_choice_ = TerrainSourceChoice::Startup;
     TerrainSourceChoice edit_source_choice_ = TerrainSourceChoice::Startup;
     std::array<bool, kTerrainSourceChoices.size()> source_choice_available_{};

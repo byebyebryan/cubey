@@ -64,7 +64,6 @@ terrain_backdrop_runtime_shader_files(const std::filesystem::path& shader_direct
 
 struct TerrainBackdropRuntimeCreateInfo {
     TerrainBackdropRuntimeShaderFiles shaders{};
-    std::uint64_t material_seed = 0U;
     std::uint32_t frame_slot_count = 1U;
 };
 
@@ -110,8 +109,8 @@ class TerrainBackdropRuntime {
 
     TerrainBackdropRuntime(const TerrainBackdropRuntime&) = delete;
     TerrainBackdropRuntime& operator=(const TerrainBackdropRuntime&) = delete;
-    TerrainBackdropRuntime(TerrainBackdropRuntime&&) noexcept;
-    TerrainBackdropRuntime& operator=(TerrainBackdropRuntime&&) noexcept;
+    TerrainBackdropRuntime(TerrainBackdropRuntime&&) = delete;
+    TerrainBackdropRuntime& operator=(TerrainBackdropRuntime&&) = delete;
 
     void create(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                 const render::TerrainBackdropProduct& product,

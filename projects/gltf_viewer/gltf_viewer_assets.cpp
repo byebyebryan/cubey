@@ -84,7 +84,6 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
         device, gpu, product,
         {
             .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_GLTF_VIEWER_SHADER_DIR),
-            .material_seed = terrain_source.metadata().seed,
             .frame_slot_count = frame_slot_count,
         });
 }

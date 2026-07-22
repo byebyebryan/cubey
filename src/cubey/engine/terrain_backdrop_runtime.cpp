@@ -150,6 +150,7 @@ struct TerrainBackdropRuntimeSection {
 
 struct TerrainBackdropRuntimeProductState {
     render::TerrainBackdropProductRequest request{};
+    render::TerrainBackdropSourceInfo source{};
     render::TerrainBackdropProductDiagnostics diagnostics{};
     std::optional<TerrainBackdropRuntimeSection> center{};
     std::vector<TerrainBackdropRuntimeSection> sectors{};
@@ -160,10 +161,18 @@ struct TerrainBackdropRuntimeMeshSet {
     std::vector<render::Mesh> sectors{};
 };
 
+struct TerrainBackdropRuntimeGeneration {
+    TerrainBackdropRuntimeProductState product{};
+    TerrainBackdropRuntimeMeshSet meshes{};
+    std::optional<render::Texture2D> material_texture{};
+    std::optional<render::MaterialInstance> detail_material{};
+};
+
 [[nodiscard]] TerrainBackdropRuntimeProductState
 runtime_product_state(const render::TerrainBackdropProduct& product) {
     TerrainBackdropRuntimeProductState result{
         .request = product.request,
+        .source = product.source,
         .diagnostics = product.diagnostics,
     };
     if (product.center.has_value()) {
@@ -192,6 +201,51 @@ upload_mesh_set(vulkan::GpuRuntime& gpu, const render::TerrainBackdropProduct& p
     for (const render::TerrainBackdropSectorMesh& sector : product.sectors) {
         result.sectors.emplace_back(gpu, sector.mesh_config());
     }
+    return result;
+}
+
+[[nodiscard]] std::shared_ptr<TerrainBackdropRuntimeGeneration> build_runtime_generation(
+    const vulkan::Device& device, vulkan::GpuRuntime& gpu,
+    const render::TerrainBackdropProduct& product,
+    const TerrainBackdropRuntimeShaderFiles& shaders, const render::MaterialPassInfo& surface_pass,
+    const render::ShadowMapPass3D& shadow_pass) {
+    auto result = std::make_shared<TerrainBackdropRuntimeGeneration>();
+    result->product = runtime_product_state(product);
+    result->meshes = upload_mesh_set(gpu, product);
+
+    const std::uint64_t derived =
+        procedural::derive_seed(product.source.seed, "terrain.backdrop.filtered-detail.v3");
+    const TerrainMaterialPushConstants material_push{
+        .seed = static_cast<std::uint32_t>(derived ^ (derived >> 32U)),
+    };
+    result->material_texture.emplace(render::create_compute_generated_texture_2d(
+        device, gpu,
+        {
+            .label = "terrain backdrop filtered detail",
+            .extent = {kMaterialExtent, kMaterialExtent},
+            .format = VK_FORMAT_R8G8B8A8_UNORM,
+            .mip_levels = kMaterialMipLevels,
+            .shader = render::compute_shader_file(shaders.material_compute),
+            .group_size_x = 8U,
+            .group_size_y = 8U,
+            .push_constants = std::as_bytes(std::span{&material_push, 1U}),
+            .sampler =
+                {
+                    .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                    .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                    .max_lod = static_cast<float>(kMaterialMipLevels - 1U),
+                    .max_anisotropy = 8.0F,
+                },
+        }));
+    result->detail_material.emplace(
+        device, render::MaterialInstanceConfig{.material_pass = surface_pass, .descriptor_set = 1U});
+    render::MaterialDescriptorWriter detail_writer(result->detail_material->set());
+    detail_writer.combined_image_sampler(0U, result->material_texture->sampler().handle(),
+                                         result->material_texture->view());
+    const render::DepthTexture& shadow = shadow_pass.depth_texture();
+    detail_writer.combined_image_sampler(1U, shadow.sampler().handle(), shadow.view(),
+                                         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+    detail_writer.update(device);
     return result;
 }
 
@@ -257,13 +311,10 @@ terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
 }
 
 struct TerrainBackdropRuntime::Impl {
-    std::optional<TerrainBackdropRuntimeProductState> product{};
+    const vulkan::Device* device = nullptr;
+    std::shared_ptr<TerrainBackdropRuntimeGeneration> generation{};
     TerrainBackdropRuntimeShaderFiles shaders{};
     render::MaterialPassInfo surface_pass = surface_pass_info();
-    std::optional<render::Mesh> center_mesh{};
-    std::vector<render::Mesh> sector_meshes{};
-    std::optional<render::Texture2D> material_texture{};
-    std::optional<render::MaterialInstance> detail_material{};
     std::optional<render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>>
         environment_material{};
     std::optional<render::ShadowMapPass3D> shadow_pass{};
@@ -272,6 +323,7 @@ struct TerrainBackdropRuntime::Impl {
     render::TerrainShadowProjection frame_shadow{};
     TerrainBackdropRuntimeFrameInfo frame{};
     TerrainBackdropRuntimeDrawPlan draw_plan{};
+    std::vector<std::uint32_t> visible_sector_indices{};
     bool resources_created = false;
     bool shadow_update = false;
     bool shadow_sampled = false;
@@ -279,13 +331,14 @@ struct TerrainBackdropRuntime::Impl {
     bool frame_prepared = false;
     cubey::math::Vec3 previous_translation{};
 
-    void install(TerrainBackdropRuntimeProductState next_product,
-                 TerrainBackdropRuntimeMeshSet next_meshes) {
-        product = std::move(next_product);
-        center_mesh = std::move(next_meshes.center);
-        sector_meshes = std::move(next_meshes.sectors);
+    void install(std::shared_ptr<TerrainBackdropRuntimeGeneration> next_generation) noexcept {
+        generation = std::move(next_generation);
         render::invalidate_terrain_shadow_cache(shadow_cache);
+        draw_plan = {};
+        visible_sector_indices.clear();
+        shadow_update = false;
         shadow_sampled = false;
+        frame_prepared = false;
     }
 };
 
@@ -301,9 +354,6 @@ terrain_backdrop_runtime_shader_files(const std::filesystem::path& shader_direct
 
 TerrainBackdropRuntime::TerrainBackdropRuntime() : impl_(std::make_unique<Impl>()) {}
 TerrainBackdropRuntime::~TerrainBackdropRuntime() = default;
-TerrainBackdropRuntime::TerrainBackdropRuntime(TerrainBackdropRuntime&&) noexcept = default;
-TerrainBackdropRuntime&
-TerrainBackdropRuntime::operator=(TerrainBackdropRuntime&&) noexcept = default;
 
 void TerrainBackdropRuntime::create(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                                     const render::TerrainBackdropProduct& product,
@@ -311,9 +361,12 @@ void TerrainBackdropRuntime::create(const vulkan::Device& device, vulkan::GpuRun
     if (info.frame_slot_count == 0U) {
         throw std::runtime_error("terrain backdrop runtime requires frame slots");
     }
-    destroy();
-    impl_->shaders = info.shaders;
-    impl_->install(runtime_product_state(product), upload_mesh_set(gpu, product));
+    if (created()) {
+        throw std::runtime_error("terrain backdrop runtime is already created");
+    }
+    auto next = std::make_unique<Impl>();
+    next->device = &device;
+    next->shaders = info.shaders;
 
     const VkPushConstantRange shadow_push{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
@@ -323,7 +376,7 @@ void TerrainBackdropRuntime::create(const vulkan::Device& device, vulkan::GpuRun
     const std::array shadow_shaders{render::vertex_shader_file(info.shaders.shadow_vertex)};
     const render::VertexInputLayout shadow_input =
         render::vertex_position_only_input_layout(sizeof(render::VertexPositionColorNormalUv));
-    impl_->shadow_pass.emplace(
+    next->shadow_pass.emplace(
         device,
         render::ShadowMapPass3DConfig{
             .extent = {render::kTerrainShadowMapExtent, render::kTerrainShadowMapExtent},
@@ -350,47 +403,16 @@ void TerrainBackdropRuntime::create(const vulkan::Device& device, vulkan::GpuRun
                 },
         });
 
-    const std::uint64_t derived =
-        procedural::derive_seed(info.material_seed, "terrain.backdrop.filtered-detail.v3");
-    const TerrainMaterialPushConstants material_push{
-        .seed = static_cast<std::uint32_t>(derived ^ (derived >> 32U)),
-    };
-    impl_->material_texture.emplace(render::create_compute_generated_texture_2d(
-        device, gpu,
-        {
-            .label = "terrain backdrop filtered detail",
-            .extent = {kMaterialExtent, kMaterialExtent},
-            .format = VK_FORMAT_R8G8B8A8_UNORM,
-            .mip_levels = kMaterialMipLevels,
-            .shader = render::compute_shader_file(info.shaders.material_compute),
-            .group_size_x = 8U,
-            .group_size_y = 8U,
-            .push_constants = std::as_bytes(std::span{&material_push, 1U}),
-            .sampler =
-                {
-                    .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                    .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-                    .max_lod = static_cast<float>(kMaterialMipLevels - 1U),
-                    .max_anisotropy = 8.0F,
-                },
-        }));
-    impl_->detail_material.emplace(
-        device,
-        render::MaterialInstanceConfig{.material_pass = impl_->surface_pass, .descriptor_set = 1U});
-    render::MaterialDescriptorWriter detail_writer(impl_->detail_material->set());
-    detail_writer.combined_image_sampler(0U, impl_->material_texture->sampler().handle(),
-                                         impl_->material_texture->view());
-    const render::DepthTexture& shadow = impl_->shadow_pass->depth_texture();
-    detail_writer.combined_image_sampler(1U, shadow.sampler().handle(), shadow.view(),
-                                         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-    detail_writer.update(device);
-    impl_->environment_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
-                                                    .material_pass = impl_->surface_pass,
-                                                    .descriptor_set = 0U,
-                                                    .frame_slot_count = info.frame_slot_count,
-                                                    .uniform_binding = 0U,
-                                                });
-    impl_->resources_created = true;
+    next->generation = build_runtime_generation(device, gpu, product, info.shaders,
+                                                next->surface_pass, *next->shadow_pass);
+    next->environment_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
+                                                   .material_pass = next->surface_pass,
+                                                   .descriptor_set = 0U,
+                                                   .frame_slot_count = info.frame_slot_count,
+                                                   .uniform_binding = 0U,
+                                               });
+    next->resources_created = true;
+    impl_ = std::move(next);
 }
 
 void TerrainBackdropRuntime::create_target_resources(
@@ -400,6 +422,9 @@ void TerrainBackdropRuntime::create_target_resources(
         target.extent.height == 0U) {
         throw std::runtime_error("invalid terrain backdrop runtime target");
     }
+    if (target_resources_created()) {
+        throw std::runtime_error("terrain backdrop runtime target is already created");
+    }
     const std::array shaders{
         render::vertex_shader_file(impl_->shaders.vertex),
         render::fragment_shader_file(impl_->shaders.fragment),
@@ -408,19 +433,19 @@ void TerrainBackdropRuntime::create_target_resources(
         render::vertex_position_color_normal_uv_input_layout();
     const std::array layouts{
         impl_->environment_material->layout(),
-        impl_->detail_material->layout(),
+        impl_->generation->detail_material->layout(),
     };
-    impl_->surface_pipeline.emplace(device,
-                                    render::GraphicsPipelineFileResourceConfig{
-                                        .extent = target.extent,
-                                        .color_format = target.color_format,
-                                        .depth_format = target.depth_format,
-                                        .shader_stage_files = shaders,
-                                        .vertex_bindings = vertex_input.bindings(),
-                                        .vertex_attributes = vertex_input.attribute_descriptions(),
-                                        .descriptor_set_layouts = layouts,
-                                        .material_pass = impl_->surface_pass,
-                                    });
+    impl_->surface_pipeline.emplace(device, render::GraphicsPipelineFileResourceConfig{
+                                                .extent = target.extent,
+                                                .color_format = target.color_format,
+                                                .depth_format = target.depth_format,
+                                                .shader_stage_files = shaders,
+                                                .vertex_bindings = vertex_input.bindings(),
+                                                .vertex_attributes =
+                                                    vertex_input.attribute_descriptions(),
+                                                .descriptor_set_layouts = layouts,
+                                                .material_pass = impl_->surface_pass,
+                                            });
 }
 
 void TerrainBackdropRuntime::destroy_target_resources() {
@@ -430,17 +455,15 @@ void TerrainBackdropRuntime::destroy_target_resources() {
 void TerrainBackdropRuntime::destroy() {
     destroy_target_resources();
     impl_->environment_material.reset();
-    impl_->detail_material.reset();
-    impl_->material_texture.reset();
     impl_->shadow_pass.reset();
-    impl_->center_mesh.reset();
-    impl_->sector_meshes.clear();
-    impl_->product.reset();
+    impl_->generation.reset();
+    impl_->device = nullptr;
     impl_->resources_created = false;
     impl_->shadow_update = false;
     impl_->shadow_sampled = false;
     impl_->have_translation = false;
     impl_->frame_prepared = false;
+    impl_->visible_sector_indices.clear();
     render::invalidate_terrain_shadow_cache(impl_->shadow_cache);
 }
 
@@ -450,21 +473,22 @@ void TerrainBackdropRuntime::replace_product(vulkan::GpuRuntime& gpu,
     if (!created()) {
         throw std::runtime_error("terrain backdrop runtime is not created");
     }
-    TerrainBackdropRuntimeProductState next_product = runtime_product_state(product);
-    TerrainBackdropRuntimeMeshSet next_meshes = upload_mesh_set(gpu, product);
-    auto retired_meshes =
-        std::make_shared<TerrainBackdropRuntimeMeshSet>(TerrainBackdropRuntimeMeshSet{
-            .center = std::move(impl_->center_mesh),
-            .sectors = std::move(impl_->sector_meshes),
-        });
+    if (impl_->frame_prepared) {
+        throw std::runtime_error("terrain backdrop product cannot change during a prepared frame");
+    }
+    std::shared_ptr<TerrainBackdropRuntimeGeneration> next_generation = build_runtime_generation(
+        *impl_->device, gpu, product, impl_->shaders, impl_->surface_pass, *impl_->shadow_pass);
+    auto retired_generation =
+        std::make_shared<std::shared_ptr<TerrainBackdropRuntimeGeneration>>();
+    *retired_generation = std::move(impl_->generation);
     try {
-        gpu.defer_destruction_after(retire_after, [retired_meshes] {});
+        gpu.defer_destruction_after(retire_after,
+                                    [retired_generation] { retired_generation->reset(); });
     } catch (...) {
-        impl_->center_mesh = std::move(retired_meshes->center);
-        impl_->sector_meshes = std::move(retired_meshes->sectors);
+        impl_->generation = std::move(*retired_generation);
         throw;
     }
-    impl_->install(std::move(next_product), std::move(next_meshes));
+    impl_->install(std::move(next_generation));
 }
 
 void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
@@ -479,9 +503,8 @@ void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
     impl_->have_translation = true;
     impl_->previous_translation = info.world_translation;
     impl_->frame = info;
-    impl_->frame_prepared = true;
 
-    const TerrainBackdropRuntimeProductState& product = *impl_->product;
+    const TerrainBackdropRuntimeProductState& product = impl_->generation->product;
     const render::TerrainShadowProjection candidate = render::terrain_shadow_projection(
         {
             .outer_radius_m = product.request.outer_radius_m,
@@ -503,6 +526,8 @@ void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
                                            sample_shadows));
 
     impl_->draw_plan = {};
+    impl_->visible_sector_indices.clear();
+    impl_->visible_sector_indices.reserve(product.sectors.size());
     const scene::Frustum3D frustum = scene::frustum_from_view_projection(info.view_projection);
     const auto visible = [&](const render::TerrainBackdropSectorBounds& bounds) {
         return scene::intersects(frustum,
@@ -519,21 +544,31 @@ void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
     }
     for (std::size_t index = 0U; index < product.sectors.size(); ++index) {
         if (visible(product.sectors[index].bounds)) {
+            impl_->visible_sector_indices.push_back(static_cast<std::uint32_t>(index));
             ++impl_->draw_plan.submitted_sector_count;
             impl_->draw_plan.submitted_triangle_count += product.sectors[index].triangle_count;
         }
     }
+    impl_->frame_prepared = true;
 }
 
 void TerrainBackdropRuntime::complete_frame() {
+    if (!impl_->frame_prepared) {
+        throw std::runtime_error("terrain backdrop frame is not prepared");
+    }
     if (impl_->shadow_update) {
         render::update_terrain_shadow_cache(
-            impl_->shadow_cache, impl_->product->diagnostics.content_hash, impl_->frame_shadow);
+            impl_->shadow_cache, impl_->generation->product.diagnostics.content_hash,
+            impl_->frame_shadow);
     }
     impl_->shadow_sampled = true;
+    impl_->frame_prepared = false;
 }
 
 void TerrainBackdropRuntime::record_shadow_pass(const vulkan::CommandRecorder& recorder) const {
+    if (!impl_->frame_prepared) {
+        throw std::runtime_error("terrain backdrop frame is not prepared");
+    }
     const render::ShadowMapPass3D& shadow = *impl_->shadow_pass;
     shadow.record(
         recorder, render::depth_clear_value(),
@@ -547,7 +582,7 @@ void TerrainBackdropRuntime::record_shadow_pass(const vulkan::CommandRecorder& r
                 TerrainShadowPushConstants{
                     .light_view_projection = impl_->frame_shadow.light_view_projection * model,
                 });
-            for (const render::Mesh& mesh : impl_->sector_meshes) {
+            for (const render::Mesh& mesh : impl_->generation->meshes.sectors) {
                 render::record_draw_item(pass_recorder.handle(), render::DrawItem{.mesh = &mesh});
             }
         });
@@ -555,12 +590,15 @@ void TerrainBackdropRuntime::record_shadow_pass(const vulkan::CommandRecorder& r
 
 void TerrainBackdropRuntime::record_surface_draws(const vulkan::CommandRecorder& recorder,
                                                   render::FrameSlot frame_slot) const {
+    if (!impl_->frame_prepared) {
+        throw std::runtime_error("terrain backdrop frame is not prepared");
+    }
     const render::GraphicsPipelineResource& pipeline = *impl_->surface_pipeline;
     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
     render::bind_material_instance(recorder, pipeline, impl_->environment_material->material(),
                                    frame_slot);
-    render::bind_material_instance(recorder, pipeline, *impl_->detail_material);
-    const TerrainBackdropRuntimeProductState& product = *impl_->product;
+    render::bind_material_instance(recorder, pipeline, *impl_->generation->detail_material);
+    const TerrainBackdropRuntimeProductState& product = impl_->generation->product;
     recorder.push_constants(
         pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0U,
         TerrainBackdropPushConstants{
@@ -576,23 +614,14 @@ void TerrainBackdropRuntime::record_surface_draws(const vulkan::CommandRecorder&
                  0.0F, 0.0F, 0.0F},
             .world_translation = {impl_->frame.world_translation, 0.0F},
         });
-    if (impl_->draw_plan.center_visible && impl_->center_mesh.has_value()) {
-        render::record_draw_item(recorder.handle(), render::DrawItem{.mesh = &*impl_->center_mesh});
+    if (impl_->draw_plan.center_visible && impl_->generation->meshes.center.has_value()) {
+        render::record_draw_item(
+            recorder.handle(), render::DrawItem{.mesh = &*impl_->generation->meshes.center});
     }
-    for (std::size_t index = 0U; index < impl_->sector_meshes.size(); ++index) {
-        const render::TerrainBackdropSectorBounds& bounds = product.sectors[index].bounds;
-        const scene::Frustum3D frustum =
-            scene::frustum_from_view_projection(impl_->frame.view_projection);
-        if (scene::intersects(frustum,
-                              Bounds3D{
-                                  .center = bounds.center + impl_->frame.world_translation,
-                                  .half_extent = {(bounds.maximum.x - bounds.minimum.x) * 0.5F,
-                                                  (bounds.maximum.y - bounds.minimum.y) * 0.5F,
-                                                  (bounds.maximum.z - bounds.minimum.z) * 0.5F},
-                              })) {
-            render::record_draw_item(recorder.handle(),
-                                     render::DrawItem{.mesh = &impl_->sector_meshes[index]});
-        }
+    for (const std::uint32_t index : impl_->visible_sector_indices) {
+        render::record_draw_item(
+            recorder.handle(),
+            render::DrawItem{.mesh = &impl_->generation->meshes.sectors[index]});
     }
 }
 
@@ -637,22 +666,23 @@ const TerrainBackdropRuntimeDrawPlan& TerrainBackdropRuntime::draw_plan() const 
     return impl_->draw_plan;
 }
 TerrainBackdropReflection TerrainBackdropRuntime::reflection() const {
-    if (!impl_->product.has_value() || !impl_->frame_prepared ||
+    if (impl_->generation == nullptr || !impl_->frame_prepared ||
         !impl_->frame.reflections_enabled) {
         return {};
     }
-    return terrain_backdrop_reflection_from_state(impl_->product->request,
-                                                  impl_->product->diagnostics, impl_->frame);
+    return terrain_backdrop_reflection_from_state(impl_->generation->product.request,
+                                                  impl_->generation->product.diagnostics,
+                                                  impl_->frame);
 }
 std::uint64_t TerrainBackdropRuntime::material_texture_bytes() const noexcept {
     return ::cubey::material_texture_bytes();
 }
 std::uint64_t TerrainBackdropRuntime::shadow_caster_triangle_count() const noexcept {
-    if (!impl_->product.has_value()) {
+    if (impl_->generation == nullptr) {
         return 0U;
     }
-    return impl_->product->diagnostics.render_triangle_count -
-           impl_->product->diagnostics.center_render_triangle_count;
+    return impl_->generation->product.diagnostics.render_triangle_count -
+           impl_->generation->product.diagnostics.center_render_triangle_count;
 }
 
 } // namespace cubey

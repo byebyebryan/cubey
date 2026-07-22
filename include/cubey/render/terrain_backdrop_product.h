@@ -144,6 +144,15 @@ struct TerrainBackdropProduct {
     TerrainBackdropProductDiagnostics diagnostics{};
 };
 
+struct TerrainBackdropProductInfo {
+    TerrainBackdropProductRequest request{};
+    TerrainBackdropSourceInfo source{};
+    TerrainBackdropProductDiagnostics diagnostics{};
+};
+
+[[nodiscard]] TerrainBackdropProductInfo
+terrain_backdrop_product_info(const TerrainBackdropProduct& product);
+
 [[nodiscard]] TerrainBackdropProduct
 make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
                               const TerrainHeightSource& source,

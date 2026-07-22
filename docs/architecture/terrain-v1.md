@@ -83,8 +83,10 @@ scoring, retry, or rejection and retain the same directional metrics for
 comparison. They are diagnostics, not alternate product defaults. A placement
 change stages a complete cached-product rebuild on the job system, keeps the
 active product visible, then uploads and atomically swaps only a successful
-replacement. Retired GPU meshes remain alive through the latest submitted frame
-ticket instead of forcing a queue- or device-idle stall.
+replacement. A runtime generation groups compact product metadata, meshes, the
+seed-derived detail texture, and its material descriptors. The prior generation
+remains alive through the latest actual GPU submission ticket instead of forcing
+a queue- or device-idle stall.
 
 The standalone review app can also stage a source change between its startup
 field and any available generated climate-calibration region. Height and
@@ -206,10 +208,12 @@ The accepted backdrop is promoted through glTF Viewer as its first real
 external consumer. Shared asset code validates and owns the height source while
 building. Shared render code builds placement and the cached CPU product. The
 engine runtime copies the request, diagnostics, source metadata, and section
-bounds it needs, then owns the GPU meshes, material resources, culling, terrain
+bounds it needs, then owns one complete GPU generation, culling, terrain
 self-shadowing, and optional Forward PBR composition. The producer, source, and
 full CPU product may be discarded after runtime creation. Product replacement
-retires prior GPU resources after their last submission ticket completes.
+builds a complete next generation before changing active state, rejects
+mid-frame swaps, and retires the prior generation after its last actual GPU
+submission completes.
 Consumers keep stage composition, camera, world translation,
 atmosphere/cloud/HDR policy, UI, and source-build scheduling.
 

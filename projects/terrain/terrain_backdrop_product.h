@@ -14,6 +14,7 @@ using cubey::render::TerrainBackdropCenterSampling;
 using cubey::render::TerrainBackdropDensityProfile;
 using cubey::render::TerrainBackdropMeshDensity;
 using cubey::render::TerrainBackdropProduct;
+using cubey::render::TerrainBackdropProductInfo;
 using cubey::render::TerrainBackdropProductRequest;
 using cubey::render::TerrainBackdropProductDiagnostics;
 using cubey::render::TerrainBackdropSectorBounds;
