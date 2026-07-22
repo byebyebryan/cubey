@@ -101,9 +101,12 @@ view per regime, four surface diagnostics, fixed-scale source previews, profile
 metrics, a JSON report, and five contact sheets.
 
 The main comparison uses `raw-center` placement. The cool/wet field has no
-location that passes the current selected backdrop-stage clearance contract;
-using raw center keeps source selection independent from this climate/material
-study without modifying terrain or relaxing the selector. A separate selected
+location that passes the current selected local-stage contract: its best
+candidate has 129.589 m of local relief against the 120 m limit and 0.337648
+P95 slope against the 0.25 limit. Its directional mountain, open-arc, and
+gradual-rise checks pass; camera clearance is not the rejected condition. Using
+raw center keeps source selection independent from this climate/material study
+without modifying terrain or relaxing the selector. A separate selected
 hot/dry control retained the prior product hashes:
 
 - geometry `0x2feef138f1fa5070`;

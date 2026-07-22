@@ -108,6 +108,21 @@ void test_raw_center_reports_failed_composition_without_rejecting_the_stage() {
                  "raw center should not curate its initial heading");
 }
 
+void test_selected_failure_reports_the_failed_contract() {
+    using namespace cubey::projects::terrain;
+    try {
+        static_cast<void>(plan_terrain_backdrop_placement(FlatSource{}, kLargeBounds,
+                                                          TerrainBackdropPlacementRequest{}));
+    } catch (const std::exception& error) {
+        const std::string message = error.what();
+        require(message.find("mountain sectors 0 outside [4, 14]") != std::string::npos &&
+                    message.find("mountain arc 0 < 3") != std::string::npos,
+                "selected rejection should identify its failed directional thresholds");
+        return;
+    }
+    throw std::runtime_error("flat terrain should fail selected placement");
+}
+
 void test_raw_sample_is_indexed_deterministic_and_coverage_safe() {
     using namespace cubey::projects::terrain;
     TerrainBackdropPlacementRequest request;
@@ -166,6 +181,7 @@ int main() {
     try {
         test_selected_mode_preserves_directional_placement_and_focus_height();
         test_raw_center_reports_failed_composition_without_rejecting_the_stage();
+        test_selected_failure_reports_the_failed_contract();
         test_raw_sample_is_indexed_deterministic_and_coverage_safe();
         test_placement_rejects_insufficient_source_coverage();
         std::cout << "terrain_backdrop_placement_tests: ok\n";
