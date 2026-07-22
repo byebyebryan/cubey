@@ -64,6 +64,7 @@ add_library(cubey_project_warnings INTERFACE)
 cubey_configure_warnings(cubey_project_warnings)
 
 include(FetchContent)
+find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 find_package(Vulkan REQUIRED)
 
 string(TOUPPER "${CUBEY_VIDEO_CAPTURE}" CUBEY_VIDEO_CAPTURE_MODE)

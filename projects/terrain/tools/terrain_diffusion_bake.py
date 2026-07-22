@@ -66,6 +66,7 @@ CLIMATE_EXPECTED_ORIGINS = {
     "cold-wet": (-8, -88),
 }
 WORLDCLIM_URL = "https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_10m_bio.zip"
+WORLDCLIM_ARCHIVE_SHA256 = "00513224583665ec0f2f955a4ec252730c4deb2004cce9e793492a3f26df4dcf"
 WORLDCLIM_FILES = (
     "wc2.1_10m_bio_1.tif",
     "wc2.1_10m_bio_4.tif",
@@ -210,6 +211,13 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def verify_sha256_file(path: Path, expected: str, label: str) -> str:
+    actual = sha256_file(path)
+    if actual != expected:
+        raise RuntimeError(f"{label} SHA-256 mismatch: expected {expected}, got {actual}")
+    return actual
 
 
 def git_revision(path: Path) -> str:
@@ -845,9 +853,14 @@ def _prepare_data_cache(reference_root: Path, data_cache: Path) -> dict[str, obj
         if not archive.is_file():
             temporary = archive.with_suffix(".zip.part")
             start = time.perf_counter()
-            urllib.request.urlretrieve(WORLDCLIM_URL, temporary)
-            download_seconds = time.perf_counter() - start
-            os.replace(temporary, archive)
+            try:
+                urllib.request.urlretrieve(WORLDCLIM_URL, temporary)
+                download_seconds = time.perf_counter() - start
+                verify_sha256_file(temporary, WORLDCLIM_ARCHIVE_SHA256, "WorldClim archive")
+                os.replace(temporary, archive)
+            finally:
+                temporary.unlink(missing_ok=True)
+        verify_sha256_file(archive, WORLDCLIM_ARCHIVE_SHA256, "WorldClim archive")
         with zipfile.ZipFile(archive) as bundle:
             by_name = {Path(member).name: member for member in bundle.namelist()}
             for name in missing:
@@ -860,7 +873,9 @@ def _prepare_data_cache(reference_root: Path, data_cache: Path) -> dict[str, obj
 
     return {
         "worldclim_url": WORLDCLIM_URL,
-        "worldclim_archive_sha256": sha256_file(archive),
+        "worldclim_archive_sha256": verify_sha256_file(
+            archive, WORLDCLIM_ARCHIVE_SHA256, "WorldClim archive"
+        ),
         "worldclim_download_seconds": download_seconds,
         "etopo_sha256": sha256_file(runtime_etopo),
         "runtime_root": str(data_cache.resolve()),

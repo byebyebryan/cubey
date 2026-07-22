@@ -133,6 +133,7 @@ target_link_libraries(
         cubey_external_stb_image
         cubey_project_warnings
         nlohmann_json::nlohmann_json
+        OpenSSL::Crypto
 )
 
 add_library(cubey_animation STATIC

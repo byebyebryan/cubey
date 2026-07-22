@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import random
 import sys
 from pathlib import Path
@@ -178,6 +179,29 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
             self.assertEqual(record["byte_count"], 8)
             self.assertEqual(record["sha256"], bake.sha256_file(path))
             self.assertEqual(np.fromfile(path, dtype="<f4").tolist(), [1.0, 2.0])
+
+    def test_sha256_verification_rejects_mismatched_payloads(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "payload.bin"
+            path.write_bytes(b"pinned payload")
+            expected = hashlib.sha256(path.read_bytes()).hexdigest()
+
+            self.assertEqual(bake.verify_sha256_file(path, expected, "fixture"), expected)
+            with self.assertRaisesRegex(RuntimeError, "fixture SHA-256 mismatch"):
+                bake.verify_sha256_file(path, "0" * 64, "fixture")
+
+    def test_data_cache_rejects_bad_worldclim_archive_before_extraction(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            reference = root / "reference"
+            (reference / "data" / "global").mkdir(parents=True)
+            (reference / "data" / "global" / "etopo_10m.tif").write_bytes(b"etopo")
+            cache = root / "cache"
+            cache.mkdir()
+            (cache / "wc2.1_10m_bio.zip").write_bytes(b"not the pinned archive")
+
+            with self.assertRaisesRegex(RuntimeError, "WorldClim archive SHA-256 mismatch"):
+                bake._prepare_data_cache(reference, cache)
 
     def test_climate_channels_are_normalized_to_physical_units(self) -> None:
         native = np.array([12.0, 850.0, 640.0, 45.0], dtype=np.float32).reshape(4, 1, 1)

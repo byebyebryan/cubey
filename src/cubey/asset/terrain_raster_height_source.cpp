@@ -1,14 +1,18 @@
 #include <cubey/asset/terrain_raster_height_source.h>
 
 #include <nlohmann/json.hpp>
+#include <openssl/evp.h>
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <limits>
+#include <memory>
+#include <span>
 #include <stdexcept>
 #include <string>
 
@@ -53,9 +57,34 @@ constexpr std::uint32_t kMaximumDimension = 16'384U;
            });
 }
 
+[[nodiscard]] std::string sha256(std::span<const std::byte> bytes) {
+    const std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(EVP_MD_CTX_new(),
+                                                                          EVP_MD_CTX_free);
+    if (!context) {
+        throw std::runtime_error("failed to allocate terrain raster SHA-256 context");
+    }
+    std::array<unsigned char, EVP_MAX_MD_SIZE> digest{};
+    unsigned int digest_size = 0U;
+    if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1 ||
+        EVP_DigestUpdate(context.get(), bytes.data(), bytes.size()) != 1 ||
+        EVP_DigestFinal_ex(context.get(), digest.data(), &digest_size) != 1) {
+        throw std::runtime_error("failed to compute terrain raster SHA-256");
+    }
+    constexpr char kHexDigits[] = "0123456789abcdef";
+    std::string result;
+    result.reserve(static_cast<std::size_t>(digest_size) * 2U);
+    for (unsigned int index = 0U; index < digest_size; ++index) {
+        const unsigned char value = digest[index];
+        result.push_back(kHexDigits[value >> 4U]);
+        result.push_back(kHexDigits[value & 0x0FU]);
+    }
+    return result;
+}
+
 [[nodiscard]] std::vector<float> read_elevation(const std::filesystem::path& path,
                                                 std::size_t count,
-                                                std::uint64_t declared_byte_count) {
+                                                std::uint64_t declared_byte_count,
+                                                std::string_view declared_sha256) {
     if constexpr (std::endian::native != std::endian::little) {
         throw std::runtime_error("terrain heightfield requires a little-endian host");
     }
@@ -70,6 +99,9 @@ constexpr std::uint32_t kMaximumDimension = 16'384U;
     if (!stream || !stream.read(reinterpret_cast<char*>(values.data()),
                                 static_cast<std::streamsize>(expected_bytes))) {
         throw std::runtime_error("failed to read terrain raster elevation: " + path.string());
+    }
+    if (sha256(std::as_bytes(std::span{values})) != declared_sha256) {
+        throw std::runtime_error("terrain raster elevation SHA-256 does not match manifest");
     }
     if (!std::all_of(values.begin(), values.end(),
                      [](float value) { return std::isfinite(value); })) {
@@ -139,7 +171,8 @@ TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path
             .origin_x_m = origin_x,
             .origin_z_m = origin_z,
             .values = read_elevation(manifest.parent_path() / relative_path, count,
-                                     elevation.at("byte_count").get<std::uint64_t>()),
+                                     elevation.at("byte_count").get<std::uint64_t>(),
+                                     provenance_.elevation_sha256),
         };
         levels_.push_back(std::move(base));
     } catch (const nlohmann::json::exception& error) {
