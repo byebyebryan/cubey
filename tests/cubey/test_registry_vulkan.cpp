@@ -5,6 +5,7 @@ void test_command_recorder_exposes_non_owning_command_buffer_contract();
 void test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls();
 void test_compute_helpers_describe_pipeline_and_layout_setup();
 void test_deferred_gpu_destruction_queue_retires_completed_tickets();
+void test_deferred_gpu_destruction_queue_runs_all_ready_actions_after_failure();
 void test_descriptor_helpers_describe_layout_pool_and_writes();
 void test_descriptor_set_allocate_info_describes_multiple_sets();
 void test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes();
@@ -16,9 +17,13 @@ void test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drai
 void test_gpu_runtime_defaults_to_threaded_execution();
 void test_gpu_runtime_drains_inline_on_owner_thread();
 void test_gpu_runtime_defers_destruction_until_submission_completion();
+void test_gpu_runtime_collects_retirement_after_owner_work_advances_completion();
 void test_gpu_runtime_mark_submission_completed_updates_completed_ticket();
 void test_gpu_runtime_preserves_pending_work_after_callback_failure();
 void test_gpu_runtime_shutdown_rejects_new_work();
+void test_gpu_runtime_shutdown_closes_admission_before_queue_idle();
+void test_gpu_runtime_shutdown_joins_owner_after_wait_failure();
+void test_gpu_runtime_rejects_shutdown_from_owner_thread();
 void test_gpu_runtime_rejects_unsubmitted_destruction_ticket();
 void test_gpu_runtime_retires_completed_and_queue_idle_destruction();
 void test_gpu_runtime_submit_and_wait_propagates_threaded_failures();
@@ -62,6 +67,7 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_command_recorder_rejects_invalid_recording_inputs_before_vulkan_calls),
         CUBEY_TEST(test_compute_helpers_describe_pipeline_and_layout_setup),
         CUBEY_TEST(test_deferred_gpu_destruction_queue_retires_completed_tickets),
+        CUBEY_TEST(test_deferred_gpu_destruction_queue_runs_all_ready_actions_after_failure),
         CUBEY_TEST(test_descriptor_helpers_describe_layout_pool_and_writes),
         CUBEY_TEST(test_descriptor_write_batch_owns_write_storage_and_preserves_order),
         CUBEY_TEST(test_descriptor_set_info_copies_bindings_and_aggregates_pool_sizes),
@@ -77,9 +83,13 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_gpu_runtime_wait_queue_idle_runs_on_owner_thread),
         CUBEY_TEST(test_gpu_runtime_mark_submission_completed_updates_completed_ticket),
         CUBEY_TEST(test_gpu_runtime_defers_destruction_until_submission_completion),
+        CUBEY_TEST(test_gpu_runtime_collects_retirement_after_owner_work_advances_completion),
         CUBEY_TEST(test_gpu_runtime_retires_completed_and_queue_idle_destruction),
         CUBEY_TEST(test_gpu_runtime_rejects_unsubmitted_destruction_ticket),
         CUBEY_TEST(test_gpu_runtime_shutdown_rejects_new_work),
+        CUBEY_TEST(test_gpu_runtime_shutdown_closes_admission_before_queue_idle),
+        CUBEY_TEST(test_gpu_runtime_shutdown_joins_owner_after_wait_failure),
+        CUBEY_TEST(test_gpu_runtime_rejects_shutdown_from_owner_thread),
         CUBEY_TEST(test_gpu_runtime_drains_inline_on_owner_thread),
         CUBEY_TEST(test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drain),
         CUBEY_TEST(test_gpu_runtime_preserves_pending_work_after_callback_failure),

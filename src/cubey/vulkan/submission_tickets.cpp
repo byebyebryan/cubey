@@ -1,5 +1,6 @@
 #include <cubey/vulkan/submission_tickets.h>
 
+#include <exception>
 #include <stdexcept>
 #include <utility>
 
@@ -50,8 +51,18 @@ std::size_t DeferredGpuDestructionQueue::retire_completed(GpuSubmissionTicket co
         pending_ = std::move(still_pending);
     }
 
+    std::exception_ptr first_failure;
     for (const std::function<void()>& action : ready_actions) {
-        action();
+        try {
+            action();
+        } catch (...) {
+            if (first_failure == nullptr) {
+                first_failure = std::current_exception();
+            }
+        }
+    }
+    if (first_failure != nullptr) {
+        std::rethrow_exception(first_failure);
     }
     return ready_actions.size();
 }

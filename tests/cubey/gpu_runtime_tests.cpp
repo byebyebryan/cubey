@@ -5,7 +5,9 @@
 #include <vulkan/vulkan.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <filesystem>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -324,6 +326,30 @@ void test_gpu_runtime_defers_destruction_until_submission_completion() {
     require(retired == 1, "repeated completion should not repeat a retired action");
 }
 
+void test_gpu_runtime_collects_retirement_after_owner_work_advances_completion() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "submit frame");
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    bool retired = false;
+    runtime.defer_destruction_after(submitted, [&retired] { retired = true; });
+    static_cast<void>(runtime.enqueue({
+        .label = "complete submission",
+        .work = [submitted](cubey::vulkan::GpuOwnerContext& owner) {
+            owner.submission().mark_completed(submitted);
+        },
+    }));
+    static_cast<void>(runtime.drain_inline());
+
+    require(retired && runtime.deferred_destruction_count() == 0,
+            "owner work should collect destruction after advancing submission completion");
+}
+
 void test_gpu_runtime_retires_completed_and_queue_idle_destruction() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
@@ -392,4 +418,102 @@ void test_gpu_runtime_shutdown_rejects_new_work() {
     }
 
     require(rejected, "GPU runtime should reject enqueue after shutdown");
+}
+
+void test_gpu_runtime_shutdown_closes_admission_before_queue_idle() {
+    std::mutex mutex;
+    std::condition_variable wait_started;
+    std::condition_variable release_wait;
+    bool waiting = false;
+    bool released = false;
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x56),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [&](VkQueue, const char*) {
+            std::unique_lock lock(mutex);
+            waiting = true;
+            wait_started.notify_one();
+            release_wait.wait(lock, [&] { return released; });
+        });
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    std::exception_ptr shutdown_failure;
+    std::thread shutdown_thread([&] {
+        try {
+            runtime.shutdown();
+        } catch (...) {
+            shutdown_failure = std::current_exception();
+        }
+    });
+    {
+        std::unique_lock lock(mutex);
+        wait_started.wait(lock, [&] { return waiting; });
+    }
+
+    bool rejected = false;
+    try {
+        static_cast<void>(runtime.enqueue({
+            .label = "racing shutdown",
+            .work = [](cubey::vulkan::GpuOwnerContext&) {},
+        }));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    {
+        std::scoped_lock lock(mutex);
+        released = true;
+    }
+    release_wait.notify_one();
+    shutdown_thread.join();
+
+    require(shutdown_failure == nullptr, "GPU runtime shutdown should complete successfully");
+    require(rejected, "GPU runtime should reject work while its final idle barrier is pending");
+}
+
+void test_gpu_runtime_shutdown_joins_owner_after_wait_failure() {
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x56),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [](VkQueue, const char*) { throw std::runtime_error("queue idle failed"); });
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    bool propagated = false;
+    try {
+        runtime.shutdown();
+    } catch (const std::runtime_error& error) {
+        propagated = std::string(error.what()) == "queue idle failed";
+    }
+
+    require(propagated, "GPU runtime shutdown should propagate queue-idle failure after joining");
+    runtime.shutdown();
+}
+
+void test_gpu_runtime_rejects_shutdown_from_owner_thread() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+
+    bool rejected = false;
+    static_cast<void>(runtime.submit_and_wait({
+        .label = "owner shutdown",
+        .work = [&runtime, &rejected](cubey::vulkan::GpuOwnerContext&) {
+            try {
+                runtime.shutdown();
+            } catch (const std::runtime_error& error) {
+                rejected =
+                    std::string(error.what()) == "GPU runtime owner thread cannot shut itself down";
+            }
+        },
+    }));
+
+    require(rejected, "GPU runtime should reject owner-thread shutdown instead of deadlocking");
+    runtime.shutdown();
 }

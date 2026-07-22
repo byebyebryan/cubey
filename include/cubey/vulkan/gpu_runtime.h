@@ -120,9 +120,17 @@ class GpuRuntime {
     void require_owner_thread(const char* label) const;
 
   private:
+    enum class State {
+        Running,
+        Closing,
+        Stopping,
+        Stopped,
+    };
+
     void start_threaded_owner();
     void run_threaded_owner();
     [[nodiscard]] GpuDrainResult drain_on_owner_thread();
+    [[nodiscard]] std::size_t collect_retired_on_owner_thread();
     void record_threaded_failure(std::exception_ptr failure);
     void rethrow_threaded_failure_if_any();
 
@@ -139,11 +147,9 @@ class GpuRuntime {
     std::condition_variable owner_ready_;
     GpuDrainResult last_drain_result_{};
     std::exception_ptr threaded_failure_;
-    bool accepting_work_ = true;
-    bool stopping_ = false;
+    State state_ = State::Running;
     bool active_work_ = false;
     bool owner_ready_flag_ = false;
-    bool shutdown_complete_ = false;
 };
 
 } // namespace cubey::vulkan

@@ -1,6 +1,7 @@
 #include <cubey/vulkan/submission_tickets.h>
 
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace {
@@ -46,4 +47,26 @@ void test_deferred_gpu_destruction_queue_retires_completed_tickets() {
             "retire at second ticket should run later action");
     require(retired == std::vector<int>({2, 4}), "actions should run in enqueue order");
     require(queue.empty(), "queue should be empty after all actions retire");
+}
+
+void test_deferred_gpu_destruction_queue_runs_all_ready_actions_after_failure() {
+    cubey::vulkan::DeferredGpuDestructionQueue queue;
+    std::vector<int> retired;
+    queue.defer_after({.value = 1}, [&retired] {
+        retired.push_back(1);
+        throw std::runtime_error("retirement failed");
+    });
+    queue.defer_after({.value = 1}, [&retired] { retired.push_back(2); });
+
+    bool propagated = false;
+    try {
+        static_cast<void>(queue.retire_completed({.value = 1}));
+    } catch (const std::runtime_error& error) {
+        propagated = std::string(error.what()) == "retirement failed";
+    }
+
+    require(propagated, "retirement queue should propagate its first callback failure");
+    require(retired == std::vector<int>({1, 2}),
+            "retirement queue should run every ready action after a callback failure");
+    require(queue.empty(), "failed ready actions should not remain queued");
 }
