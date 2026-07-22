@@ -398,15 +398,16 @@ Current state:
   and thin host bridge.
 - `ProjectGpuServices` provides the optional project-facing GPU bridge for
   upload draining, upload ticket status, RGBA8 image readback tickets, and
-  deferred retirement by completed GPU submission ticket.
+  queue-idle waits. `GpuRuntime` owns deferred retirement by completed GPU
+  submission ticket.
 - `ImmediateCommands`, readback helpers, and PNG output are still synchronous
   where they wait for immediate GPU work or process completed pixels.
 
 Needed next:
 
 - GPU readback/capture polling APIs beyond explicit drain/take handoff.
-- Broader project-runtime integration between GPU submission tickets,
-  readback/capture readiness, and deferred destruction.
+- Broader fence/timeline integration between GPU submission tickets and
+  asynchronous readback/capture readiness.
 - Vulkan timeline-semaphore integration if binary fences stop being enough.
 
 Defer:

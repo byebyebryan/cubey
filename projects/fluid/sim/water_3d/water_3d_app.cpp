@@ -169,7 +169,6 @@ class Water3DApp {
         callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
             (void)context;
             destroy_all_resources();
-            retire_project_gpu_work();
             detach_project_gpu();
         };
 
@@ -634,10 +633,6 @@ class Water3DApp {
         runtime_.detach_gpu_if_attached();
     }
 
-    void retire_project_gpu_work() {
-        static_cast<void>(runtime_.retire_completed_gpu_work());
-    }
-
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkExtent2D extent, std::uint32_t frame_slot_count) {
         resources_.create_render_pipeline(device, color_format, extent,
@@ -850,7 +845,6 @@ class Water3DApp {
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();
-            retire_project_gpu_work();
             detach_project_gpu();
         };
 

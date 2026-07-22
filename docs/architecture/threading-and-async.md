@@ -102,10 +102,9 @@ one.
   GPU owner to stage, copy, transition, and publish.
 - **Capture request:** a request to copy GPU output into a readback buffer,
   later poll completion, then optionally encode on a worker.
-- **Frame ticket:** a monotonically increasing frame or submission identifier.
-  Project frames and GPU submissions currently issue separate tickets; a later
-  project-host pass should decide how deferred destruction and readback
-  readiness consume GPU completion.
+- **GPU submission ticket:** a monotonically increasing identifier issued only
+  after actual queue submission. `ProjectFrame` carries host timing and does not
+  imply GPU progress; deferred destruction consumes only GPU completion.
 
 ## Ownership Model
 
@@ -242,11 +241,11 @@ Vulkan staging/copy work is introduced.
 are the first Vulkan submission lifetime primitives.
 `cubey::vulkan::SubmissionCoordinator` now issues monotonic GPU submission
 tickets and marks frame-slot tickets completed after their fence wait.
-`cubey::ProjectGpuServices` now owns the project-facing bridge from upload
-tickets and deferred destruction to GPU submission completion. It drains
-pending uploads into owner-thread GPU work, marks upload tickets completed or
-failed, tracks RGBA8 image readback tickets, and retires deferred destruction
-using the completed GPU submission ticket reported by `GpuRuntime`.
+`cubey::ProjectGpuServices` owns the project-facing bridge from upload and
+readback requests to owner-thread GPU work. It drains pending uploads, marks
+upload tickets completed or failed, and tracks RGBA8 image readback tickets.
+`GpuRuntime` is the sole deferred-destruction owner and retires resources from
+the completion watermark of its `SubmissionCoordinator`.
 
 `cubey::vulkan::GpuRuntime` is now the first host-owned GPU work queue. It
 accepts labeled `GpuWorkRequest` callbacks from any thread, exposes a
@@ -282,8 +281,7 @@ Future queue work should proceed in this order:
 1. Represent queue families explicitly in `Device`.
 2. Add timeline-semaphore or broader fence-backed completion if binary
    frame-slot fences become too limiting.
-3. Connect GPU submission tickets to project-runtime deferred destruction and
-   readback/capture readiness.
+3. Connect GPU submission completion to asynchronous readback/capture readiness.
 4. Add transfer/compute queues only when an upload-heavy or compute-heavy
    project has evidence that a separate queue helps.
 
@@ -301,7 +299,6 @@ struct ProjectFrame {
     double delta_seconds;
     double elapsed_seconds;
     std::uint64_t frame_index;
-    GpuSubmissionTicket submission_ticket;
 };
 
 struct RenderPacket {
@@ -324,12 +321,10 @@ submission as a casual escape hatch.
 
 Examples can stay explicit. Projects should use this boundary once it exists.
 
-Initial implementation: `ProjectContext` exposes jobs, uploads, captures, frame
-tickets, deferred destruction, and optionally `ProjectGpuServices` as services.
-`ProjectRuntimeServices` owns the CPU-side services and issues `ProjectFrame`
-values from `FrameTiming`. `ProjectRuntimeAdapter` adds the thin host bridge for
-same-frame project-frame reuse, project context access, and CPU-side deferred
-destruction retirement.
+Current implementation: `ProjectContext` exposes jobs, uploads, captures, and
+optionally `ProjectGpuServices`. `ProjectRuntimeServices` owns those CPU-side
+services and creates timing-only `ProjectFrame` values from `FrameTiming`.
+`ProjectRuntimeAdapter` adds same-frame reuse and project-context access.
 `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept
 define the first compile-time checked lifecycle shape for future `projects/`
 code. `smoke_2d` now consumes `ProjectFrame` for simulation timing, but
@@ -405,10 +400,8 @@ Status: initial pass complete.
 
 - Added a small project runtime vocabulary for `projects/`, not existing
   examples.
-- Added `ProjectContext` service access to jobs, uploads, captures, GPU
-  submission tickets, and deferred destruction.
-- Added `ProjectRuntimeServices` as the first project-owned service bundle and
-  GPU submission-ticket issuer.
+- Added `ProjectContext` service access to jobs, uploads, and captures.
+- Added `ProjectRuntimeServices` as the first project-owned CPU service bundle.
 - Added `ProjectRuntimeAdapter` as the first thin host bridge over those
   services without owning project lifecycle callbacks.
 - Added a `ProjectLike` concept for setup/update/render-packet/resize/shutdown
@@ -443,9 +436,9 @@ Status: threaded default plus inline test mode complete.
   `cubey::host::HeadlessCaptureHost` capture recording now route through the
   runtime while still preserving a synchronous setup/capture shape at the call
   site. `HeadlessPngHost` remains as the older source-compatible name.
-- Added `ProjectGpuServices` for project-facing upload draining, upload
-  completion/failure status, RGBA8 image readback tickets, and deferred
-  destruction retirement from completed GPU submission tickets.
+- Added `ProjectGpuServices` for project-facing upload draining,
+  upload-completion/failure status, RGBA8 image readback tickets, and queue-idle
+  waits. Deferred destruction is owned by `GpuRuntime`.
 - `smoke_2d` now attaches its `ProjectRuntimeAdapter` to the host GPU runtime
   and routes project-owned field uploads plus headless simulation work through
   `ProjectGpuServices`.

@@ -39,22 +39,19 @@ std::size_t rgba8_readback_byte_count(VkExtent2D extent) {
 } // namespace
 
 struct ProjectGpuServices::Impl {
-    Impl(vulkan::GpuRuntime& gpu_runtime, UploadQueue& upload_queue,
-         vulkan::DeferredGpuDestructionQueue& deferred_queue)
-        : gpu(&gpu_runtime), uploads(&upload_queue), deferred_destruction(&deferred_queue) {}
+    Impl(vulkan::GpuRuntime& gpu_runtime, UploadQueue& upload_queue)
+        : gpu(&gpu_runtime), uploads(&upload_queue) {}
 
     vulkan::GpuRuntime* gpu = nullptr;
     UploadQueue* uploads = nullptr;
-    vulkan::DeferredGpuDestructionQueue* deferred_destruction = nullptr;
     mutable std::mutex readback_mutex;
     std::uint64_t next_readback_id = 1;
     std::unordered_map<std::uint64_t, ProjectGpuReadbackStatus> readback_statuses;
     std::unordered_map<std::uint64_t, ProjectGpuReadbackResult> readback_results;
 };
 
-ProjectGpuServices::ProjectGpuServices(vulkan::GpuRuntime& gpu, UploadQueue& uploads,
-                                       vulkan::DeferredGpuDestructionQueue& deferred_destruction)
-    : impl_(std::make_unique<Impl>(gpu, uploads, deferred_destruction)) {}
+ProjectGpuServices::ProjectGpuServices(vulkan::GpuRuntime& gpu, UploadQueue& uploads)
+    : impl_(std::make_unique<Impl>(gpu, uploads)) {}
 
 ProjectGpuServices::~ProjectGpuServices() = default;
 
@@ -148,11 +145,6 @@ void ProjectGpuServices::wait_queue_idle(std::string label) {
 
 vulkan::GpuDrainResult ProjectGpuServices::drain() {
     return impl_->gpu->drain();
-}
-
-std::size_t ProjectGpuServices::retire_deferred_destruction() {
-    const vulkan::GpuDrainResult result = impl_->gpu->drain();
-    return impl_->deferred_destruction->retire_completed(result.completed_submission);
 }
 
 ProjectGpuReadbackTicket ProjectGpuServices::enqueue_rgba8_image_readback(VkImage source,

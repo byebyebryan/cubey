@@ -138,7 +138,7 @@ setup before swapchain setup, and callback forwarding.
 12. Add project runtime services and move `smoke_2d` simulation timing onto
     `ProjectFrame` in both windowed and headless modes. Status: complete.
 13. Extract `ProjectRuntimeAdapter` for the repeated host bridge: one project
-    frame per host frame, context access, and deferred destruction retirement.
+    frame per host frame and context access.
     Status: complete.
 14. Attach host GPU runtimes to `ProjectRuntimeAdapter`, add
     `ProjectGpuServices` readback tickets, and migrate `smoke_2d` project-owned
@@ -250,18 +250,18 @@ setup before swapchain setup, and callback forwarding.
   Engine registry. Current cube examples use Engine-owned scenes, mutate scene
   transforms during `update()`, build CPU render frame plans during render, and
   keep Vulkan command recording sequence local.
-- `cubey::ProjectRuntimeServices` now owns project-facing jobs, uploads,
-  captures, GPU submission tickets, and deferred destruction.
+- `cubey::ProjectRuntimeServices` owns project-facing jobs, uploads, and
+  captures. `ProjectFrame` carries host timing only.
 - `cubey::ProjectRuntimeAdapter` wraps those services with the repeated
   host-bridge behavior: convert `FrameTiming` to one `ProjectFrame` per host
-  frame, expose `ProjectContext`, and retire deferred destruction on shutdown.
+  frame and expose `ProjectContext`.
   `smoke_2d` uses the adapter in both windowed and headless modes.
 - `cubey::ProjectGpuServices` is the optional GPU-facing project bridge for
   draining queued uploads into owner-thread GPU work, marking upload completion
-  or failure, routing queue-idle waits through `GpuRuntime`, and retiring
-  deferred work by completed GPU submission tickets. It also owns project-level
-  RGBA8 image readback tickets with pending/completed/failed status and
-  completed pixel payload handoff.
+  or failure, and routing queue-idle waits through `GpuRuntime`. It also owns
+  project-level RGBA8 image readback tickets with pending/completed/failed
+  status and completed pixel payload handoff. Deferred GPU retirement belongs
+  to `GpuRuntime` and uses only real submission tickets.
 - `cubey::ConfigOptionDescriptor` currently drives JSON config templates,
   descriptor-backed named CLI parsing, bool negative aliases, and generic
   `--set path=value` overrides. Shared host, capture, profiling, grid,

@@ -223,8 +223,10 @@ submission and resource lifetime decisions. Today that GPU owner is
 `cubey::vulkan::GpuRuntime`, backed by `SubmissionCoordinator` for actual queue
 submission and threaded by default in hosts. `cubey::ProjectGpuServices` is the
 project-facing bridge for queued uploads, upload completion status, RGBA8 image
-readback tickets, owner-thread queue-idle waits, and deferred GPU retirement
-without handing project code the raw submission coordinator.
+readback tickets, and owner-thread queue-idle waits without handing project
+code the raw submission coordinator. Actual submission completion and deferred
+GPU retirement remain owned by `GpuRuntime`, so project timing cannot be
+mistaken for GPU progress.
 
 ```cpp
 struct App {
@@ -407,7 +409,7 @@ cubey/
         forward_pbr_renderer_3d.h -- reusable shadow/skybox/PBR forward renderer
                              -- and its explicit render request contract
         renderer_service.h -- engine-owned renderer instance lifetime
-        project_gpu_services.h -- project-facing GPU uploads/readbacks/retirement
+        project_gpu_services.h -- project-facing GPU uploads/readbacks
         project_runtime.h  -- async-ready project vocabulary
         upload_queue.h     -- CPU-owned upload request queue
         video_encoder.h    -- optional libav-backed MP4 video encoder

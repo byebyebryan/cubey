@@ -569,9 +569,9 @@ building a full threaded renderer too early.
   `ProjectFrame` while keeping command recording sequence project-local.
 - Added `ProjectRuntimeAdapter` and moved `smoke_2d` onto it while keeping host
   callbacks and command recording sequence project-local.
-- Added `ProjectGpuServices` for project-facing upload draining, upload
-  completion/failure status, and deferred destruction retirement from completed
-  GPU submission tickets.
+- Added `ProjectGpuServices` for project-facing upload draining,
+  upload-completion/failure status, queue-idle waits, and readback tickets.
+  `GpuRuntime` alone owns deferred destruction against actual GPU submissions.
 - Shape GPU readbacks and deeper capture polling as queued work.
 - Keep GPU ownership and `VkQueue` submission serialized through one owner.
 - Keep examples direct; require longer-lived `projects/` to use the
@@ -664,10 +664,10 @@ has proven useful.
 - Initial windowed host outside `cubey::vulkan`. Status: complete for current
   windowed examples.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
-- Project runtime services for jobs, uploads, captures, GPU submission tickets,
-  deferred destruction, and `ProjectFrame` creation. Status: complete.
-- Thin project runtime adapter for one project frame per host frame, context
-  access, and deferred destruction retirement. Status: complete.
+- Project runtime services for jobs, uploads, captures, and `ProjectFrame`
+  creation. Status: complete.
+- Thin project runtime adapter for one project frame per host frame and context
+  access. Status: complete.
 - Strict GPU runtime exposed through windowed/headless host contexts, with
   setup-time GPU work entering through a queue and running on the runtime owner.
   Status: complete for current headless capture and textured-cube setup work.

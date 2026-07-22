@@ -89,9 +89,8 @@ void test_engine_exposes_project_runtime_services() {
         .elapsed_seconds = 0.25,
         .frame_index = 2,
     });
-    context.deferred_destruction().defer_after(frame.submission_ticket, [] {});
-    require(engine.retire_deferred_destruction() == 1,
-            "engine should retire project deferred destruction through runtime adapter");
+    require(frame.frame_index == 2 && frame.elapsed_seconds == 0.25,
+            "engine should expose host timing through its project frame");
 }
 
 void test_engine_attaches_gpu_services_to_project_context() {
@@ -136,17 +135,15 @@ void test_engine_reuses_project_frame_for_same_timing() {
     };
     const cubey::ProjectFrame& first = engine.frame_for_timing(timing);
     const cubey::ProjectFrame& repeated = engine.frame_for_timing(timing);
-    require(first.submission_ticket.value == repeated.submission_ticket.value,
-            "engine should reuse runtime frame for the same host timing");
-    const std::uint64_t first_ticket = first.submission_ticket.value;
+    require(&first == &repeated, "engine should reuse runtime frame for the same host timing");
 
     const cubey::ProjectFrame& next = engine.frame_for_timing({
         .delta_seconds = 0.02,
         .elapsed_seconds = 1.02,
         .frame_index = 11,
     });
-    require(next.submission_ticket.value == first_ticket + 1,
-            "engine should issue a new runtime frame for a new host timing");
+    require(next.frame_index == 11 && next.elapsed_seconds == 1.02,
+            "engine should update its runtime frame for new host timing");
 }
 
 void test_engine_creates_independent_scenes() {

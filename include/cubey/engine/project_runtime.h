@@ -4,7 +4,6 @@
 #include <cubey/core/jobs.h>
 #include <cubey/engine/capture_queue.h>
 #include <cubey/engine/upload_queue.h>
-#include <cubey/vulkan/submission_tickets.h>
 
 #include <concepts>
 #include <cstddef>
@@ -29,7 +28,6 @@ struct ProjectFrame {
     double delta_seconds = 0.0;
     double elapsed_seconds = 0.0;
     std::uint64_t frame_index = 0;
-    vulkan::GpuSubmissionTicket submission_ticket;
 };
 
 struct RenderPacket {
@@ -42,8 +40,6 @@ struct RenderPacket {
 class ProjectContext {
   public:
     ProjectContext(jobs::JobSystem& jobs, UploadQueue& uploads, CaptureQueue& captures,
-                   vulkan::GpuSubmissionTicketIssuer& submission_tickets,
-                   vulkan::DeferredGpuDestructionQueue& deferred_destruction,
                    ProjectGpuServices* gpu = nullptr);
 
     ProjectContext(const ProjectContext&) = delete;
@@ -54,8 +50,6 @@ class ProjectContext {
     [[nodiscard]] jobs::JobSystem& jobs() const;
     [[nodiscard]] UploadQueue& upload_queue() const;
     [[nodiscard]] CaptureQueue& capture_queue() const;
-    [[nodiscard]] vulkan::GpuSubmissionTicketIssuer& submission_tickets() const;
-    [[nodiscard]] vulkan::DeferredGpuDestructionQueue& deferred_destruction() const;
     [[nodiscard]] bool has_gpu() const noexcept;
     [[nodiscard]] ProjectGpuServices& gpu() const;
 
@@ -63,8 +57,6 @@ class ProjectContext {
     jobs::JobSystem* jobs_;
     UploadQueue* uploads_;
     CaptureQueue* captures_;
-    vulkan::GpuSubmissionTicketIssuer* submission_tickets_;
-    vulkan::DeferredGpuDestructionQueue* deferred_destruction_;
     ProjectGpuServices* gpu_;
 };
 
@@ -84,8 +76,6 @@ class ProjectRuntimeServices {
     jobs::JobSystem jobs_;
     UploadQueue uploads_;
     CaptureQueue captures_;
-    vulkan::GpuSubmissionTicketIssuer submission_tickets_;
-    vulkan::DeferredGpuDestructionQueue deferred_destruction_;
 };
 
 class ProjectRuntimeAdapter {
@@ -100,8 +90,6 @@ class ProjectRuntimeAdapter {
 
     [[nodiscard]] ProjectContext context();
     [[nodiscard]] const ProjectFrame& frame_for_timing(const FrameTiming& timing);
-    [[nodiscard]] std::size_t retire_deferred_destruction();
-    [[nodiscard]] std::size_t retire_completed_gpu_work();
     void attach_gpu(vulkan::GpuRuntime& gpu);
     void attach_gpu_if_needed(vulkan::GpuRuntime& gpu);
     void detach_gpu();

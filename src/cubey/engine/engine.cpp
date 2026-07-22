@@ -33,10 +33,6 @@ const ProjectFrame& Engine::frame_for_timing(const FrameTiming& timing) {
     return runtime_.frame_for_timing(timing);
 }
 
-std::size_t Engine::retire_deferred_destruction() {
-    return runtime_.retire_deferred_destruction();
-}
-
 void Engine::attach_gpu(vulkan::GpuRuntime& gpu) {
     runtime_.attach_gpu(gpu);
 }

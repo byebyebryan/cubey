@@ -354,7 +354,7 @@ void HeadlessPngHost::create_gpu_runtime() {
 }
 
 void HeadlessPngHost::create_project_gpu_services() {
-    project_gpu_.emplace(gpu(), uploads_, deferred_destruction_);
+    project_gpu_.emplace(gpu(), uploads_);
 }
 
 void HeadlessPngHost::create_profile_recorder() {

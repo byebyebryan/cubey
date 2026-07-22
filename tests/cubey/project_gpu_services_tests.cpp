@@ -33,17 +33,15 @@ void test_project_context_exposes_optional_gpu_services() {
     cubey::jobs::JobSystem jobs(0);
     cubey::UploadQueue uploads;
     cubey::CaptureQueue captures(jobs);
-    cubey::vulkan::GpuSubmissionTicketIssuer tickets;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
         .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
 
-    cubey::ProjectContext context(jobs, uploads, captures, tickets, deferred, &gpu);
+    cubey::ProjectContext context(jobs, uploads, captures, &gpu);
 
     require(context.has_gpu(), "project context should report attached GPU services");
     require(&context.gpu() == &gpu, "project context should expose attached GPU services");
@@ -51,13 +49,12 @@ void test_project_context_exposes_optional_gpu_services() {
 
 void test_project_gpu_services_submit_and_wait_runs_on_owner_thread() {
     cubey::UploadQueue uploads;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
     std::thread::id caller_thread = std::this_thread::get_id();
     std::thread::id work_thread{};
 
@@ -78,7 +75,6 @@ void test_project_gpu_services_submit_and_wait_runs_on_owner_thread() {
 
 void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread() {
     cubey::UploadQueue uploads;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     std::thread::id caller_thread = std::this_thread::get_id();
     std::thread::id wait_thread{};
     cubey::vulkan::SubmissionCoordinator submission(
@@ -89,7 +85,7 @@ void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread() {
         .device = fake_device(),
         .submission = &submission,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
 
     gpu.wait_queue_idle("project queue idle");
 
@@ -98,16 +94,15 @@ void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread() {
             "project GPU queue idle should execute on the owner thread by default");
 }
 
-void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work() {
+void test_project_gpu_services_enqueue_uploads_and_track_completion() {
     cubey::UploadQueue uploads;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
         .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
     cubey::UploadTicket upload = uploads.enqueue({
         .label = "vertex upload",
         .bytes = {1, 2, 3, 4},
@@ -144,23 +139,17 @@ void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work() {
     require(completed.completed_submission == submitted,
             "completed upload should record completed submission ticket");
 
-    bool retired = false;
-    deferred.defer_after(submitted, [&retired] { retired = true; });
-    require(gpu.retire_deferred_destruction() == 1,
-            "GPU services should retire work completed by the GPU runtime");
-    require(retired, "GPU services should run retired deferred actions");
 }
 
 void test_project_gpu_services_mark_failed_uploads() {
     cubey::UploadQueue uploads;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
         .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
     cubey::UploadTicket upload = uploads.enqueue({.label = "broken", .bytes = {9}});
 
     static_cast<void>(gpu.enqueue_pending_uploads(
@@ -184,14 +173,13 @@ void test_project_gpu_services_mark_failed_uploads() {
 
 void test_project_gpu_services_tracks_failed_rgba8_readbacks() {
     cubey::UploadQueue uploads;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
         .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
 
     cubey::ProjectGpuReadbackTicket ticket =
         gpu.enqueue_rgba8_image_readback(VK_NULL_HANDLE, {2, 3}, "broken readback");
@@ -220,14 +208,13 @@ void test_project_gpu_services_tracks_failed_rgba8_readbacks() {
 
 void test_project_gpu_services_rejects_invalid_rgba8_readback_requests() {
     cubey::UploadQueue uploads;
-    cubey::vulkan::DeferredGpuDestructionQueue deferred;
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
         .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
     });
-    cubey::ProjectGpuServices gpu(runtime, uploads, deferred);
+    cubey::ProjectGpuServices gpu(runtime, uploads);
 
     bool rejected_extent = false;
     try {

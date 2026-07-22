@@ -75,14 +75,14 @@ void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy();
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta();
 void test_project_context_exposes_async_runtime_services();
 void test_project_context_exposes_optional_gpu_services();
-void test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work();
+void test_project_gpu_services_enqueue_uploads_and_track_completion();
 void test_project_gpu_services_mark_failed_uploads();
 void test_project_gpu_services_rejects_invalid_rgba8_readback_requests();
 void test_project_gpu_services_submit_and_wait_runs_on_owner_thread();
 void test_project_gpu_services_tracks_failed_rgba8_readbacks();
 void test_project_gpu_services_wait_queue_idle_runs_on_owner_thread();
 void test_project_runtime_adapter_attaches_gpu_services_to_context();
-void test_project_runtime_adapter_exposes_context_and_retirement();
+void test_project_runtime_adapter_exposes_context();
 void test_project_runtime_adapter_reuses_frame_for_same_timing();
 void test_project_runtime_contract_supports_lifecycle_shape();
 void test_project_runtime_services_create_project_frames_and_context();
@@ -185,13 +185,13 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_project_context_exposes_optional_gpu_services),
         CUBEY_TEST(test_project_gpu_services_submit_and_wait_runs_on_owner_thread),
         CUBEY_TEST(test_project_gpu_services_wait_queue_idle_runs_on_owner_thread),
-        CUBEY_TEST(test_project_gpu_services_enqueue_uploads_and_retire_completed_gpu_work),
+        CUBEY_TEST(test_project_gpu_services_enqueue_uploads_and_track_completion),
         CUBEY_TEST(test_project_gpu_services_mark_failed_uploads),
         CUBEY_TEST(test_project_gpu_services_tracks_failed_rgba8_readbacks),
         CUBEY_TEST(test_project_gpu_services_rejects_invalid_rgba8_readback_requests),
         CUBEY_TEST(test_project_runtime_contract_supports_lifecycle_shape),
         CUBEY_TEST(test_project_runtime_adapter_reuses_frame_for_same_timing),
-        CUBEY_TEST(test_project_runtime_adapter_exposes_context_and_retirement),
+        CUBEY_TEST(test_project_runtime_adapter_exposes_context),
         CUBEY_TEST(test_project_runtime_adapter_attaches_gpu_services_to_context),
         CUBEY_TEST(test_project_runtime_services_create_project_frames_and_context),
         CUBEY_TEST(test_upload_queue_owns_payload_until_drain),

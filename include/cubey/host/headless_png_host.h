@@ -155,7 +155,6 @@ class HeadlessPngHost {
     jobs::JobSystem encoding_jobs_;
     CaptureQueue captures_;
     UploadQueue uploads_;
-    vulkan::DeferredGpuDestructionQueue deferred_destruction_;
     std::optional<cubey::vulkan::Instance> instance_;
     std::optional<cubey::vulkan::Device> device_;
     std::optional<cubey::vulkan::SubmissionCoordinator> submission_;
