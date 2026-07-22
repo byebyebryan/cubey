@@ -1083,6 +1083,15 @@ class TerrainApp {
                             .cull_mode = VK_CULL_MODE_NONE,
                         }),
                     },
+                .sampler = cubey::vulkan::SamplerConfig{
+                    .min_filter = VK_FILTER_LINEAR,
+                    .mag_filter = VK_FILTER_LINEAR,
+                    .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                    .border_color = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+                    .compare_enable = VK_TRUE,
+                    .compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
+                    .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                },
             });
         invalidate_terrain_shadow_cache(shadow_cache_);
         shadow_depth_is_sampled_ = false;

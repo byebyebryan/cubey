@@ -12,7 +12,7 @@ layout(push_constant) uniform TerrainBackdropPushConstants {
 } pc;
 
 layout(set = 1, binding = 0) uniform sampler2D backdrop_detail_texture;
-layout(set = 1, binding = 1) uniform sampler2D terrain_shadow_map;
+layout(set = 1, binding = 1) uniform sampler2DShadow terrain_shadow_map;
 
 layout(location = 0) in vec3 frag_world_position;
 layout(location = 1) in vec3 frag_material_channels;
@@ -104,16 +104,16 @@ float terrain_sun_visibility(vec3 world_position, vec3 normal,
     float receiver_depth = light_ndc.z -
         bias_m / max(atmosphere.shadow_options.z, 1.0);
     float texel = atmosphere.shadow_options.y;
+    const vec2 tap_offsets[4] = vec2[4](
+        vec2(-0.5, -0.5), vec2(0.5, -0.5),
+        vec2(-0.5, 0.5), vec2(0.5, 0.5));
     float visibility = 0.0;
-    for (int y = -1; y <= 1; ++y) {
-        for (int x = -1; x <= 1; ++x) {
-            vec2 offset = vec2(float(x), float(y)) * texel;
-            float blocker_depth = texture(terrain_shadow_map, shadow_uv + offset).r;
-            float weight = float((2 - abs(x)) * (2 - abs(y))) / 16.0;
-            visibility += receiver_depth <= blocker_depth ? weight : 0.0;
-        }
+    for (int tap = 0; tap < 4; ++tap) {
+        visibility += texture(
+            terrain_shadow_map,
+            vec3(shadow_uv + tap_offsets[tap] * texel, receiver_depth));
     }
-    return visibility;
+    return visibility * 0.25;
 }
 
 void main() {
