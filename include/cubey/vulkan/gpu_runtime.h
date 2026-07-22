@@ -106,6 +106,8 @@ class GpuRuntime {
     [[nodiscard]] GpuDrainResult drain_inline();
     [[nodiscard]] std::size_t pending_count() const;
     [[nodiscard]] bool empty() const;
+    void defer_destruction_after(GpuSubmissionTicket ticket, std::function<void()> action);
+    [[nodiscard]] std::size_t deferred_destruction_count() const;
     void mark_submission_completed(GpuSubmissionTicket ticket);
     void wait_queue_idle(std::string label);
     void wait_until_idle();
@@ -129,6 +131,7 @@ class GpuRuntime {
     GpuRuntimeExecutionMode execution_mode_ = GpuRuntimeExecutionMode::Threaded;
     std::thread::id owner_thread_{};
     GpuWorkQueue queue_;
+    DeferredGpuDestructionQueue deferred_destruction_;
     std::thread owner_thread_handle_;
     mutable std::mutex state_mutex_;
     std::condition_variable work_available_;

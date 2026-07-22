@@ -6,6 +6,17 @@
 
 namespace cubey::vulkan {
 
+GpuSubmissionTicket
+latest_submitted_ticket(std::span<const FrameResourceSlot> frame_slots) noexcept {
+    GpuSubmissionTicket latest{};
+    for (const FrameResourceSlot& frame_slot : frame_slots) {
+        if (latest < frame_slot.submitted_ticket) {
+            latest = frame_slot.submitted_ticket;
+        }
+    }
+    return latest;
+}
+
 FrameResources::FrameResources(const Device& device, std::size_t present_ready_count)
     : FrameResources(device, FrameResourcesConfig{
                                  .present_ready_count = present_ready_count,
@@ -54,6 +65,10 @@ void FrameResources::mark_image_in_flight(std::size_t image_index, VkFence fence
 
 GpuSubmissionTicket FrameResources::submitted_ticket(std::uint32_t frame_slot_index) const {
     return slot(frame_slot_index).submitted_ticket;
+}
+
+GpuSubmissionTicket FrameResources::latest_submitted_ticket() const noexcept {
+    return cubey::vulkan::latest_submitted_ticket(frame_slots_);
 }
 
 void FrameResources::mark_submitted(std::uint32_t frame_slot_index, GpuSubmissionTicket ticket) {

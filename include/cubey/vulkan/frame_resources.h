@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace cubey::vulkan {
@@ -23,6 +24,9 @@ struct FrameResourceSlot {
     VkFence fence = VK_NULL_HANDLE;
     GpuSubmissionTicket submitted_ticket;
 };
+
+[[nodiscard]] GpuSubmissionTicket
+latest_submitted_ticket(std::span<const FrameResourceSlot> frame_slots) noexcept;
 
 class FrameResources {
   public:
@@ -58,6 +62,7 @@ class FrameResources {
     VkFence image_in_flight(std::size_t image_index) const;
     void mark_image_in_flight(std::size_t image_index, VkFence fence);
     GpuSubmissionTicket submitted_ticket(std::uint32_t frame_slot_index) const;
+    GpuSubmissionTicket latest_submitted_ticket() const noexcept;
     void mark_submitted(std::uint32_t frame_slot_index, GpuSubmissionTicket ticket);
 
     void wait_for_frame(std::uint32_t frame_slot_index) const;

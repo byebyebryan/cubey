@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -33,6 +34,14 @@ void test_frame_resources_expose_slot_based_contract() {
     require(slot.submitted_ticket.value == 0,
             "frame resource slot should default submitted ticket to zero");
 
+    const std::array slots{
+        cubey::vulkan::FrameResourceSlot{.submitted_ticket = {.value = 4}},
+        cubey::vulkan::FrameResourceSlot{.submitted_ticket = {.value = 9}},
+        cubey::vulkan::FrameResourceSlot{.submitted_ticket = {.value = 7}},
+    };
+    require(cubey::vulkan::latest_submitted_ticket(slots).value == 9,
+            "frame resources should report the newest submitted slot ticket");
+
     static_assert(
         std::is_constructible_v<cubey::vulkan::FrameResources, const cubey::vulkan::Device&,
                                 const cubey::vulkan::FrameResourcesConfig&>);
@@ -57,6 +66,9 @@ void test_frame_resources_expose_slot_based_contract() {
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::submitted_ticket),
                                  cubey::vulkan::GpuSubmissionTicket (
                                      cubey::vulkan::FrameResources::*)(std::uint32_t) const>);
+    static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::latest_submitted_ticket),
+                                 cubey::vulkan::GpuSubmissionTicket (
+                                     cubey::vulkan::FrameResources::*)() const noexcept>);
     static_assert(std::is_same_v<decltype(&cubey::vulkan::FrameResources::mark_submitted),
                                  void (cubey::vulkan::FrameResources::*)(
                                      std::uint32_t, cubey::vulkan::GpuSubmissionTicket)>);

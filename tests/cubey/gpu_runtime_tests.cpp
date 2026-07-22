@@ -302,14 +302,84 @@ void test_gpu_runtime_mark_submission_completed_updates_completed_ticket() {
             "mark_submission_completed should not regress completed tickets");
 }
 
+void test_gpu_runtime_defers_destruction_until_submission_completion() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "submit frame");
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    std::size_t retired = 0;
+    runtime.defer_destruction_after(submitted, [&retired] { ++retired; });
+    require(retired == 0 && runtime.deferred_destruction_count() == 1,
+            "deferred destruction should remain pending while its submission is in flight");
+
+    runtime.mark_submission_completed(submitted);
+    require(retired == 1 && runtime.deferred_destruction_count() == 0,
+            "submission completion should retire the deferred action exactly once");
+    runtime.mark_submission_completed(submitted);
+    require(retired == 1, "repeated completion should not repeat a retired action");
+}
+
+void test_gpu_runtime_retires_completed_and_queue_idle_destruction() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "submit frame");
+    submission.mark_completed(submitted);
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    std::size_t retired = 0;
+    runtime.defer_destruction_after(submitted, [&retired] { ++retired; });
+    require(retired == 1 && runtime.deferred_destruction_count() == 0,
+            "already-completed submission should retire destruction immediately");
+
+    const cubey::vulkan::GpuSubmissionTicket next = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x58)}}, "submit next frame");
+    runtime.defer_destruction_after(next, [&retired] { ++retired; });
+    runtime.wait_queue_idle("test retirement queue idle");
+    require(retired == 2 && submission.completed() == next,
+            "queue idle should complete submissions and retire their resources");
+}
+
+void test_gpu_runtime_rejects_unsubmitted_destruction_ticket() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    bool rejected = false;
+    try {
+        runtime.defer_destruction_after({.value = 1}, [] {});
+    } catch (const std::runtime_error& error) {
+        rejected =
+            std::string(error.what()) == "deferred GPU destruction ticket has not been submitted";
+    }
+    require(rejected, "GPU runtime should reject destruction for a future submission");
+}
+
 void test_gpu_runtime_shutdown_rejects_new_work() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "submit frame");
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
     });
 
+    bool retired = false;
+    runtime.defer_destruction_after(submitted, [&retired] { retired = true; });
     runtime.shutdown();
+    require(retired && runtime.deferred_destruction_count() == 0,
+            "GPU runtime shutdown should retire submitted GPU resources");
 
     bool rejected = false;
     try {

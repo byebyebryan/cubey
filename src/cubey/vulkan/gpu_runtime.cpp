@@ -176,10 +176,37 @@ bool GpuRuntime::empty() const {
     return queue_.empty();
 }
 
+void GpuRuntime::defer_destruction_after(GpuSubmissionTicket ticket, std::function<void()> action) {
+    if (!action) {
+        throw std::runtime_error("deferred GPU destruction action must be callable");
+    }
+    static_cast<void>(submit_and_wait({
+        .label = "defer GPU resource destruction",
+        .work =
+            [this, ticket, action = std::move(action)](GpuOwnerContext& context) mutable {
+                if (context.submission().last_submitted() < ticket) {
+                    throw std::runtime_error(
+                        "deferred GPU destruction ticket has not been submitted");
+                }
+                deferred_destruction_.defer_after(ticket, std::move(action));
+                static_cast<void>(
+                    deferred_destruction_.retire_completed(context.completed_submission()));
+            },
+    }));
+}
+
+std::size_t GpuRuntime::deferred_destruction_count() const {
+    return deferred_destruction_.pending_count();
+}
+
 void GpuRuntime::mark_submission_completed(GpuSubmissionTicket ticket) {
     static_cast<void>(submit_and_wait({
         .label = "mark GPU submission completed",
-        .work = [ticket](GpuOwnerContext& context) { context.submission().mark_completed(ticket); },
+        .work =
+            [this, ticket](GpuOwnerContext& context) {
+                context.submission().mark_completed(ticket);
+                static_cast<void>(deferred_destruction_.retire_completed(ticket));
+            },
     }));
 }
 
@@ -190,8 +217,11 @@ void GpuRuntime::wait_queue_idle(std::string label) {
     static_cast<void>(submit_and_wait({
         .label = label,
         .work =
-            [wait_label = std::move(label)](GpuOwnerContext& context) {
+            [this, wait_label = std::move(label)](GpuOwnerContext& context) {
                 context.submission().wait_idle(wait_label.c_str());
+                const GpuSubmissionTicket latest = context.submission().last_submitted();
+                context.submission().mark_completed(latest);
+                static_cast<void>(deferred_destruction_.retire_completed(latest));
             },
     }));
 }
@@ -210,12 +240,17 @@ void GpuRuntime::wait_until_idle() {
 }
 
 void GpuRuntime::shutdown() {
+    {
+        std::scoped_lock lock(state_mutex_);
+        if (shutdown_complete_) {
+            return;
+        }
+    }
+    wait_queue_idle("GPU runtime shutdown");
+
     if (execution_mode_ == GpuRuntimeExecutionMode::Inline) {
         {
             std::scoped_lock lock(state_mutex_);
-            if (shutdown_complete_) {
-                return;
-            }
             accepting_work_ = false;
         }
         static_cast<void>(drain_inline());
@@ -228,9 +263,6 @@ void GpuRuntime::shutdown() {
     std::exception_ptr failure;
     {
         std::scoped_lock lock(state_mutex_);
-        if (shutdown_complete_) {
-            return;
-        }
         accepting_work_ = false;
     }
 
