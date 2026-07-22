@@ -598,13 +598,15 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
             ? 3U
             : (request.density == TerrainBackdropMeshDensity::Medium ? 2U : 1U);
     const std::uint32_t radial_render_stride = angular_render_stride;
+    constexpr std::uint32_t center_radial_render_stride = 1U;
     const std::vector<std::uint32_t> global_render_angles =
         render_angular_vertices(density, angular_render_stride);
 
     if (request.center_mode == TerrainBackdropCenterMode::Continuous) {
         product.center =
             make_center_mesh(request, heights, climate_samples, radii, density, source_metadata,
-                             center_radial_intervals, global_render_angles, radial_render_stride);
+                             center_radial_intervals, global_render_angles,
+                             center_radial_render_stride);
     }
 
     float minimum_height = std::numeric_limits<float>::infinity();

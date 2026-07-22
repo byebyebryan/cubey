@@ -79,7 +79,7 @@ constexpr std::uint32_t kTerrainGpuProfilerPassCapacity = 16U;
 constexpr float kRadiansToDegrees = 180.0F / std::numbers::pi_v<float>;
 constexpr float kDegreesToRadians = std::numbers::pi_v<float> / 180.0F;
 constexpr float kTerrainMinimumForegroundHeightM = 2.0F;
-constexpr float kTerrainDefaultForegroundHeightM = 100.0F;
+constexpr float kTerrainDefaultForegroundHeightM = 200.0F;
 constexpr float kTerrainMaximumForegroundHeightM = 1'000.0F;
 constexpr float kTerrainDefaultTimeHours = 9.0F;
 constexpr float kTerrainCloudSceneDepthFadeM = 500.0F;
@@ -859,6 +859,10 @@ class TerrainApp {
 
         ImGui::SeparatorText("Renderer");
         ImGui::Text("Render stride: %u", product_.request.render_stride);
+        ImGui::Text("Product / center triangles: %llu / %llu",
+                    static_cast<unsigned long long>(product_.diagnostics.render_triangle_count),
+                    static_cast<unsigned long long>(
+                        product_.diagnostics.center_render_triangle_count));
         ImGui::Text("Submitted sectors: %u", latest_draw_plan_.submitted_sector_count);
         ImGui::Text("Submitted triangles: %u", latest_draw_plan_.submitted_triangle_count);
         ImGui::Text("Cached source samples: %llu",
@@ -1255,6 +1259,9 @@ class TerrainApp {
                                 latest_draw_plan_.submitted_triangle_count);
         recorder->record_metric(frame_index, "terrain.backdrop", "product_render_triangles",
                                 static_cast<double>(product_.diagnostics.render_triangle_count));
+        recorder->record_metric(
+            frame_index, "terrain.backdrop", "center_render_triangles",
+            static_cast<double>(product_.diagnostics.center_render_triangle_count));
         recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
                                 static_cast<double>(product_.diagnostics.source_sample_count));
         recorder->record_metric(

@@ -36,7 +36,7 @@ void test_defaults_publish_the_product_contract() {
                 config.surface_model ==
                     cubey::projects::terrain::TerrainSurfaceModel::MineralControl &&
                 config.placement == cubey::projects::terrain::TerrainPlacementMode::Selected &&
-                config.placement_index == 0U && config.initial_foreground_height_m == 100.0F &&
+                config.placement_index == 0U && config.initial_foreground_height_m == 200.0F &&
                 config.render_stride == 3U &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::FilteredDetail &&
                 config.shadows &&

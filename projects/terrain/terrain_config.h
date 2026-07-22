@@ -43,7 +43,7 @@ struct TerrainRuntimeConfig {
     TerrainSurfaceModel surface_model = TerrainSurfaceModel::MineralControl;
     TerrainPlacementMode placement = TerrainPlacementMode::Selected;
     std::uint32_t placement_index = 0U;
-    float initial_foreground_height_m = 100.0F;
+    float initial_foreground_height_m = 200.0F;
     std::optional<float> initial_azimuth_radians{};
     std::optional<float> initial_orbit_radius_m{};
     std::optional<float> initial_elevation_radians{};
