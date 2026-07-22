@@ -23,9 +23,9 @@ than the root design and roadmap.
 - [Terrain reboot direction](terrain-reboot.md): local terrain product
   generator strategy, previous terrain lessons, reference takeaways, product
   contract, and first vertical slice.
-- [Terrain v1 patch product](terrain-v1.md): concrete first terrain request,
-  field contract, bounded hydrology policy, consumer boundary, and acceptance
-  criteria after closing the reference lane.
+- [Terrain v1 runtime](terrain-v1.md): active external-heightfield backdrop,
+  CPU terrain ownership, cached product contract, consumer boundary, and
+  acceptance criteria after closing the reference lane.
 - [Cloud rendering](cloud-rendering.md): production cloud direction promoted
   from `clouds_legacy`, `cloud_ref`, and `cloud_ref_2` lessons.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,

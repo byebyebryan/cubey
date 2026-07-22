@@ -140,8 +140,13 @@ Current state:
   points. It is the public boundary for host/project setup-time GPU work;
   `ImmediateCommands` remains the low-level one-shot command helper used inside
   owner-context callbacks and transfer helpers.
-- `copy_buffer` and `upload_device_buffer` cover current setup-time transfers
-  into device-local buffers.
+- `copy_buffer`, `upload_device_buffer`, and bounded device-buffer batches cover
+  current setup-time transfers into device-local buffers. A batch validates all
+  requests before allocation, creates destination buffers transactionally, and
+  packs source bytes into staging chunks capped at 32 MiB. Each chunk records
+  all of its buffer copies into one immediate command buffer and performs one
+  synchronous transfer submission. Empty batches are no-ops and the single
+  upload helper delegates to a one-request batch.
 - `copy_buffer_to_image` and `copy_image_to_buffer` cover current one-shot
   image transfer/readback copies.
 - Command recording is single-threaded. Examples and projects own pass order,
@@ -193,8 +198,11 @@ Current state:
   sampling policy can be explicit.
 - Examples still own some resource policy, including when transfers and
   readback are used.
-- Low-level upload/readback helpers remain synchronous building blocks. The
-  host-visible capture-record path now goes through `GpuRuntime`, and
+- Low-level upload/readback helpers remain synchronous building blocks.
+  Batching reduces owner-thread round trips and queue submissions; it does not
+  introduce background transfer lifetime, staging persistence, or a split
+  transfer queue. The host-visible capture-record path now goes through
+  `GpuRuntime`, and
   project-facing RGBA8 image readback goes through `ProjectGpuServices`
   tickets.
 
@@ -210,6 +218,8 @@ Defer:
 
 - VMA or another allocator until manual memory allocation becomes the limiting
   cost.
+- Persistent staging arenas, transfer overlap, and buffer suballocation until
+  measured setup-time allocation or copy cost justifies their lifetime model.
 - Prefiltered KTX/KTX2 environment import and offline filtering until direct
   HDR IBL resources expose enough quality and runtime-pressure evidence.
 

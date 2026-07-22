@@ -41,6 +41,9 @@ The current renderer stack is intentionally split by ownership:
   wrappers, material/pass metadata, graph declaration/execution, PBR shader
   contracts, primitive meshes, shared surface LOD planning helpers, and small
   command helpers.
+- `cubey::terrain` owns renderer-independent placement, stage planning, surface
+  classification, and cached CPU terrain products. It may depend on
+  `cubey::asset` and `cubey::core`, but not on render or Vulkan.
 - `cubey::scene` owns entity/component data, scene snapshots, view planning,
   renderable/light packets, and CPU draw plans.
 - `cubey::engine` owns reusable renderer policy and service lifetime:
@@ -142,9 +145,12 @@ full engine architecture.
   graphics pipeline shape for directional shadow-map passes. Callers still
   choose the shadow view, shader, push constants, graph pass order, and packet
   filtering.
-- `Mesh`, `DrawItem`, and `record_draw_item` own uploaded indexed geometry and
-  record the minimal bind/draw sequence. Vertex layout, pipeline state,
-  descriptors, materials, transforms, and push constants remain caller-owned.
+- `Mesh`, batched mesh upload, `DrawItem`, and `record_draw_item` own uploaded
+  indexed geometry and record the minimal bind/draw sequence. Mesh batches
+  validate all configurations before transfer, preserve input order, and expose
+  bytes and transfer-submission counts while retaining the one-mesh constructor.
+  Vertex layout, pipeline state, descriptors, materials, transforms, and push
+  constants remain caller-owned.
 - `InstanceBuffer<T>` owns device-local instance-rate vertex data for the same
   mesh draw path. `VertexInputLayout` now supports multiple bindings so examples
   can model real per-instance attributes instead of shader-only shortcuts.

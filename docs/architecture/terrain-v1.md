@@ -32,6 +32,32 @@ offline producer
 Terrain Diffusion is the canonical development producer, not the API. Any tool
 may provide a compatible manifest and elevation payload.
 
+## Foundation Ownership
+
+Terrain V1 separates CPU terrain modeling from renderer and GPU ownership:
+
+```text
+cubey::asset
+    -> validated terrain height sources
+cubey::terrain
+    -> placement, stage planning, surface classification, cached CPU products
+cubey::engine
+    -> terrain GPU generations, replacement, culling, shadows, composition
+cubey::render + cubey::vulkan
+    -> mesh resources, draw vocabulary, transfer and command ownership
+```
+
+`cubey::terrain` has no Vulkan dependency and does not publish renderer mesh
+configuration. Its cached meshes use a semantic terrain vertex contract with
+position, material channels, normal, and surface channels. The engine maps that
+contract to the terrain shader input layout and owns all GPU resources.
+
+The product fingerprint, source/material statistics, seam checks, and bounds
+describe the fully sampled terrain field. A deterministic storage compaction may
+discard vertices not referenced by the selected draw topology after those
+contracts are evaluated. Compaction must not change placement, topology, bounds,
+material statistics, fingerprints, camera behavior, or pixels.
+
 ## Asset Contract
 
 `cubey.terrain.heightfield.v1` contains:
@@ -134,8 +160,9 @@ remains the product default.
 
 The cached mesh avoids per-frame source evaluation, tessellation, clipmap
 updates, and LOD planning. Startup currently includes source loading, mip
-construction, placement, sampling, normal/material classification, and GPU mesh
-upload. Persistence and asynchronous streaming are deferred.
+construction, placement, sampling, normal/material classification, compact
+product retention, and a bounded synchronous GPU mesh upload. Persistence and
+asynchronous streaming are deferred.
 
 The fixed topology is accepted for this narrow camera envelope. Low-poly shape
 or insufficient silhouette at the envelope endpoints is a source/topology
@@ -206,7 +233,7 @@ vegetation, and shadow placeholders are not product diagnostics.
 
 The accepted backdrop is promoted through glTF Viewer as its first real
 external consumer. Shared asset code validates and owns the height source while
-building. Shared render code builds placement and the cached CPU product. The
+building. Shared terrain code builds placement and the cached CPU product. The
 engine runtime copies the request, diagnostics, source metadata, and section
 bounds it needs, then owns one complete GPU generation, culling, terrain
 self-shadowing, and optional Forward PBR composition. The producer, source, and
@@ -233,6 +260,9 @@ problem.
 - deformation, collision, and gameplay queries;
 - planet projection and ocean composition;
 - cross-shadowing between backdrop terrain and foreground scene geometry.
+- direct generation into compact storage, mesh streaming, and upload overlap;
+- GPU buffer suballocation, persistent staging arenas, and asynchronous transfer
+  queues.
 
 The reference-only
 [Terrain Surface Semantics Study](../notes/terrain-surface-semantics-study.md)
