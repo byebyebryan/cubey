@@ -2,7 +2,7 @@
 
 Date: 2026-07-21
 
-Status: implementation plan.
+Status: implemented and validated on 2026-07-21.
 
 ## Decision
 
@@ -84,3 +84,38 @@ no-terrain control path, share scene depth correctly, remain continuous across
 unrestricted headings, and add no more than 0.75 ms mean or p50 steady GPU time
 against a matched viewer control. P95 and forced shadow updates remain
 diagnostic.
+
+## Implementation
+
+- The raster height-source API and loader live in `cubey::asset`.
+- Placement, stage planning, mesh products, material classification, culling,
+  and shadow planning live in `cubey::render`.
+- `TerrainBackdropRuntime` owns the shared GPU resources and recording path.
+- `ForwardPbrRenderer3D` composes an optional terrain backdrop into its HDR
+  scene target before foreground PBR geometry.
+- Terrain uses the shared runtime; glTF Viewer proves the second-consumer path
+  only when `--terrain-heightfield` is present.
+
+The glTF integration deliberately requires an externally supplied validated
+heightfield. Normal builds and portable smoke tests do not fetch or generate
+terrain data. The no-terrain viewer path remains the default.
+
+## Validation
+
+The default glTF atmosphere and static-environment PNG smokes pass without a
+terrain asset. An explicit terrain run at `1600 x 900` composes the fallback
+cube over continuous selected-placement terrain with shared scene depth. A
+static PBR environment plus terrain is rejected with the documented error.
+
+A matched 180-frame, 30-frame-warmup, cloud-disabled video profile on the RTX
+5070 Ti measured the Forward PBR `scene` pass as follows:
+
+| Case | Mean | P50 | P95 |
+| --- | ---: | ---: | ---: |
+| Viewer control | 0.411 ms | 0.411 ms | 0.417 ms |
+| Viewer + terrain | 0.835 ms | 0.836 ms | 0.853 ms |
+| Increment | 0.423 ms | 0.425 ms | 0.436 ms |
+
+The steady-state mean and p50 increments pass the `0.75 ms` integration gate.
+The cached terrain shadow update occurs before the measured steady-state
+window; forced updates remain diagnostic as planned.

@@ -82,7 +82,8 @@ Current active projects:
   headless output.
 - `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
   upload, rigid/morph/skinned animation, generated or HDR-backed IBL, shared
-  atmosphere/cloud composition, shadow maps, and headless capture.
+  atmosphere/cloud composition, optional raster terrain backdrop, shadow maps,
+  and headless capture.
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
   behavior under uniform generated IBL.
 
@@ -245,6 +246,7 @@ Useful windowed smokes:
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --terrain-heightfield path/to/heightfield --terrain-foreground-height-m 200 --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
 

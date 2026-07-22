@@ -184,12 +184,12 @@ vegetation, and shadow placeholders are not product diagnostics.
 
 ## Runtime Boundary
 
-The accepted backdrop is being promoted through glTF Viewer as its first real
+The accepted backdrop is promoted through glTF Viewer as its first real
 external consumer. Shared asset code owns the immutable height source; shared
 render code owns placement and the cached product; the engine runtime owns GPU
-meshes, material resources, culling, and terrain self-shadowing. Consumers keep
-stage composition, camera, world translation, atmosphere/cloud/HDR policy, UI,
-and source-build scheduling.
+meshes, material resources, culling, terrain self-shadowing, and optional
+Forward PBR composition. Consumers keep stage composition, camera, world
+translation, atmosphere/cloud/HDR policy, UI, and source-build scheduling.
 
 The shared surface boundary bakes generic material channels. Mineral control is
 the production default. Climate rasters, climate-response formulas, calibration
@@ -243,6 +243,12 @@ outer topology; the center-topology correction later raises the default to
 still precedes LOD or further source work. The accepted shadowed composition
 measured `0.897 ms` mean and `0.893 ms` p50 at `1600 x 900`; the default moving
 clock measured `1.012 ms` mean and `0.925 ms` p50.
+
+The glTF proof consumer keeps terrain explicitly opt-in and preserves its
+no-terrain control path. At `1600 x 900`, terrain adds `0.423 ms` mean and
+`0.425 ms` p50 to the shared Forward PBR scene pass, below the `0.75 ms`
+promotion gate. This establishes a reusable far-backdrop product, not close
+terrain, streaming LOD, or a general terrain engine.
 
 See [Terrain Product Promotion](../notes/terrain-product-promotion.md),
 [Terrain Rendering Envelope V1](../notes/terrain-rendering-envelope-v1.md),
