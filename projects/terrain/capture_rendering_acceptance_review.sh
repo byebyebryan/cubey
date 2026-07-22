@@ -86,6 +86,12 @@ capture_source() {
 
 FRAMING_FILES=()
 FRAMING_LABELS=()
+LIGHTING_FILES=()
+LIGHTING_LABELS=()
+DIAGNOSTIC_FILES=()
+DIAGNOSTIC_LABELS=()
+CLIMATE_FILES=()
+CLIMATE_LABELS=()
 if [[ "${PROFILE_ONLY}" != "1" ]]; then
 for foreground_height in 100 200 500; do
     name="framing-${foreground_height}m"
@@ -95,8 +101,6 @@ for foreground_height in 100 200 500; do
     FRAMING_LABELS+=("Cool/wet: ${foreground_height} m")
 done
 
-LIGHTING_FILES=()
-LIGHTING_LABELS=()
 for sun_elevation in 38 12 2 -6 -18; do
     for lane in off on visibility; do
         name="lighting-${sun_elevation}-${lane}"
@@ -119,8 +123,6 @@ for sun_elevation in 38 12 2 -6 -18; do
     done
 done
 
-DIAGNOSTIC_FILES=()
-DIAGNOSTIC_LABELS=()
 for diagnostic in classification-normal projected-edge material-albedo material-normal \
     ambient-light direct-light; do
     name="diagnostic-${diagnostic}"
@@ -130,8 +132,6 @@ for diagnostic in classification-normal projected-edge material-albedo material-
     DIAGNOSTIC_LABELS+=("Diagnostic: ${diagnostic}")
 done
 
-CLIMATE_FILES=()
-CLIMATE_LABELS=()
 for regime in "${REGIMES[@]}"; do
     source_dir="${ASSET_ROOT}/${regime}"
     for manifest in heightfield.json surface-fields.json; do
@@ -146,6 +146,28 @@ for regime in "${REGIMES[@]}"; do
     CLIMATE_FILES+=("${OUT_DIR}/captures/${name}.png")
     CLIMATE_LABELS+=("Climate: ${regime}")
 done
+else
+    for foreground_height in 100 200 500; do
+        FRAMING_FILES+=("${OUT_DIR}/captures/framing-${foreground_height}m.png")
+        FRAMING_LABELS+=("Cool/wet: ${foreground_height} m")
+    done
+    for sun_elevation in 38 12 2 -6 -18; do
+        for lane in off on visibility; do
+            LIGHTING_FILES+=(
+                "${OUT_DIR}/captures/lighting-${sun_elevation}-${lane}.png"
+            )
+            LIGHTING_LABELS+=("Sun ${sun_elevation} deg: ${lane}")
+        done
+    done
+    for diagnostic in classification-normal projected-edge material-albedo material-normal \
+        ambient-light direct-light; do
+        DIAGNOSTIC_FILES+=("${OUT_DIR}/captures/diagnostic-${diagnostic}.png")
+        DIAGNOSTIC_LABELS+=("Diagnostic: ${diagnostic}")
+    done
+    for regime in "${REGIMES[@]}"; do
+        CLIMATE_FILES+=("${OUT_DIR}/captures/climate-${regime}.png")
+        CLIMATE_LABELS+=("Climate: ${regime}")
+    done
 fi
 
 external_gpu_busy() {
@@ -232,6 +254,25 @@ span_stat() {
          END { if (!found) printf "0.000000" }' "${summary}"
 }
 
+combined_frame_stats() {
+    local passes="$1"
+    awk -F, '
+        $2 == "gpu" && ($3 == "terrain atmosphere" || $3 == "terrain shadow" ||
+                         $3 == "terrain surface" || $3 == "terrain post") {
+            total[$1] += $5
+        }
+        END { for (frame in total) print total[frame] }
+    ' "${passes}" | sort -n | awk '
+        { values[NR] = $1; sum += $1 }
+        END {
+            if (NR == 0) exit 1
+            p50_index = int((NR - 1) * 0.50) + 1
+            p95_index = int((NR - 1) * 0.95) + 1
+            printf "%.6f %.6f %.6f", sum / NR, values[p50_index], values[p95_index]
+        }
+    '
+}
+
 metric_last() {
     local metrics="$1"
     local category="$2"
@@ -255,19 +296,12 @@ printf 'lane\tcombined_mean_ms\tcombined_p50_ms\tcombined_p95_ms\tshadow_p50_ms\
 for lane in steady-control steady-candidate moving-clock shadow-saturation; do
     summary="${OUT_DIR}/profiles/${lane}.summary.txt"
     metrics="${OUT_DIR}/profiles/${lane}.metrics.csv"
-    totals=()
-    for column in 4 6 7; do
-        atmosphere="$(span_stat "${summary}" "terrain atmosphere" "${column}")"
-        shadow="$(span_stat "${summary}" "terrain shadow" "${column}")"
-        terrain="$(span_stat "${summary}" "terrain surface" "${column}")"
-        post="$(span_stat "${summary}" "terrain post" "${column}")"
-        totals+=("$(awk -v a="${atmosphere}" -v s="${shadow}" -v t="${terrain}" \
-            -v p="${post}" 'BEGIN { printf "%.6f", a + s + t + p }')")
-    done
+    read -r combined_mean combined_p50 combined_p95 \
+        <<<"$(combined_frame_stats "${OUT_DIR}/profiles/${lane}.passes.csv")"
     shadow_p50="$(span_stat "${summary}" "terrain shadow" 6)"
     updates="$(metric_last "${metrics}" terrain.shadow update_count)"
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "${lane}" "${totals[0]}" "${totals[1]}" "${totals[2]}" \
+        "${lane}" "${combined_mean}" "${combined_p50}" "${combined_p95}" \
         "${shadow_p50}" "${updates}" >>"${PROFILE_SUMMARY}"
 done
 
@@ -304,7 +338,7 @@ montage_group() {
     magick montage "${inputs[@]}" -geometry "${geometry}" -tile "${tile}" "${output}"
 }
 
-if [[ "${PROFILE_ONLY}" != "1" ]] && command -v magick >/dev/null 2>&1; then
+if command -v magick >/dev/null 2>&1; then
     montage_group "${OUT_DIR}/framing-contact-sheet.png" 3x1 480x270+8+26 \
         FRAMING_FILES FRAMING_LABELS
     montage_group "${OUT_DIR}/lighting-contact-sheet.png" 3x5 400x225+8+26 \
