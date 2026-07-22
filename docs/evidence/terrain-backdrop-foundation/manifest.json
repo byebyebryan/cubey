@@ -1,6 +1,6 @@
 {
   "schema": "cubey.terrain.backdrop-foundation-evidence.v2",
-  "captured_revision": "f0f30d954428a1a9e4883bbaf9f2323fa611cd2a",
+  "captured_revision": "3eed8e194d636d027753eec83354d045f0596445",
   "resolution": {
     "width": 640,
     "height": 360
@@ -32,8 +32,7 @@
   },
   "mesh_upload": {
     "byte_count": 25857260,
-    "transfer_submission_count": 1,
-    "staging_chunk_cap_bytes": 33554432
+    "transfer_submission_count": 1
   },
   "fixed_contract": {
     "placement": "selected",

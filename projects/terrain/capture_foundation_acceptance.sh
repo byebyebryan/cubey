@@ -147,8 +147,7 @@ jq -n \
         },
         mesh_upload: {
             byte_count: $mesh_upload_bytes,
-            transfer_submission_count: $mesh_upload_submissions,
-            staging_chunk_cap_bytes: 33554432
+            transfer_submission_count: $mesh_upload_submissions
         },
         fixed_contract: {
             placement: "selected",
