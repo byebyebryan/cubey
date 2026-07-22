@@ -133,6 +133,31 @@ function(cubey_forward_pbr_shader_depends out_var)
     set(${out_var} ${forward_pbr_shader_depends} PARENT_SCOPE)
 endfunction()
 
+function(cubey_terrain_backdrop_shader_sources out_var)
+    set(
+        terrain_backdrop_shaders
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_detail.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_shadow_depth.vert"
+    )
+    set(${out_var} ${terrain_backdrop_shaders} PARENT_SCOPE)
+endfunction()
+
+function(cubey_terrain_backdrop_shader_depends out_var)
+    cubey_shared_shader_depends(terrain_backdrop_shared_shader_depends)
+    cubey_atmosphere_shader_depends(terrain_backdrop_atmosphere_shader_depends)
+    set(
+        terrain_backdrop_shader_depends
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_environment.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
+        ${terrain_backdrop_shared_shader_depends}
+        ${terrain_backdrop_atmosphere_shader_depends}
+    )
+    list(REMOVE_DUPLICATES terrain_backdrop_shader_depends)
+    set(${out_var} ${terrain_backdrop_shader_depends} PARENT_SCOPE)
+endfunction()
+
 function(cubey_cloud_layer_shader_sources out_var)
     set(options)
     set(one_value_args COMPOSITE)

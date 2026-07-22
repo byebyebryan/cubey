@@ -7,8 +7,7 @@
 namespace cubey::render {
 
 constexpr std::uint32_t kTerrainShadowMapExtent = 2048U;
-constexpr float kTerrainShadowDirectionThresholdRadians =
-    0.5F * 0.01745329251994329577F;
+constexpr float kTerrainShadowDirectionThresholdRadians = 0.5F * 0.01745329251994329577F;
 
 struct TerrainShadowProductBounds {
     float outer_radius_m = 0.0F;
@@ -32,20 +31,19 @@ struct TerrainShadowCacheState {
     bool valid = false;
 };
 
-[[nodiscard]] bool
-terrain_shadow_light_above_horizon(cubey::math::Vec3 light_direction) noexcept;
+[[nodiscard]] bool terrain_shadow_light_above_horizon(cubey::math::Vec3 light_direction) noexcept;
 
 [[nodiscard]] TerrainShadowProjection
 terrain_shadow_projection(const TerrainShadowProductBounds& bounds,
-                          cubey::math::Vec3 light_direction);
+                          cubey::math::Vec3 light_direction,
+                          cubey::math::Vec2 center_xz = {0.0F, 0.0F});
 
 [[nodiscard]] bool terrain_shadow_update_required(
-    const TerrainShadowCacheState& cache, bool shadows_enabled,
-    std::uint64_t product_content_hash, cubey::math::Vec3 light_direction,
+    const TerrainShadowCacheState& cache, bool shadows_enabled, std::uint64_t product_content_hash,
+    cubey::math::Vec3 light_direction,
     float angular_threshold_radians = kTerrainShadowDirectionThresholdRadians) noexcept;
 
-void update_terrain_shadow_cache(TerrainShadowCacheState& cache,
-                                 std::uint64_t product_content_hash,
+void update_terrain_shadow_cache(TerrainShadowCacheState& cache, std::uint64_t product_content_hash,
                                  const TerrainShadowProjection& projection) noexcept;
 
 void invalidate_terrain_shadow_cache(TerrainShadowCacheState& cache) noexcept;

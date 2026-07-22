@@ -1,14 +1,15 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 
-#include "terrain_environment.glsl"
-#include "terrain_lighting.glsl"
+#include "cubey/terrain/terrain_environment.glsl"
+#include "cubey/terrain/terrain_lighting.glsl"
 
 layout(push_constant) uniform TerrainBackdropPushConstants {
     mat4 view_projection;
     vec4 camera_position;
     vec4 render_options;
     vec4 material_options;
+    vec4 world_translation;
 } pc;
 
 layout(set = 1, binding = 0) uniform sampler2D backdrop_detail_texture;

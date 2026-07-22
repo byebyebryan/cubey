@@ -32,11 +32,12 @@ bool terrain_shadow_light_above_horizon(cubey::math::Vec3 light_direction) noexc
 }
 
 TerrainShadowProjection terrain_shadow_projection(const TerrainShadowProductBounds& bounds,
-                                                  cubey::math::Vec3 light_direction) {
+                                                  cubey::math::Vec3 light_direction,
+                                                  cubey::math::Vec2 center_xz) {
     if (!std::isfinite(bounds.outer_radius_m) || bounds.outer_radius_m <= 0.0F ||
-        !std::isfinite(bounds.minimum_height_m) ||
-        !std::isfinite(bounds.maximum_height_m) ||
-        bounds.maximum_height_m < bounds.minimum_height_m) {
+        !std::isfinite(bounds.minimum_height_m) || !std::isfinite(bounds.maximum_height_m) ||
+        bounds.maximum_height_m < bounds.minimum_height_m || !std::isfinite(center_xz.x) ||
+        !std::isfinite(center_xz.y)) {
         throw std::runtime_error("terrain shadow bounds must be finite and ordered");
     }
 
@@ -45,16 +46,14 @@ TerrainShadowProjection terrain_shadow_projection(const TerrainShadowProductBoun
         throw std::runtime_error("terrain shadow light direction must be finite and nonzero");
     }
 
-    const float center_height_m =
-        (bounds.minimum_height_m + bounds.maximum_height_m) * 0.5F;
-    const float half_height_m =
-        (bounds.maximum_height_m - bounds.minimum_height_m) * 0.5F;
+    const float center_height_m = (bounds.minimum_height_m + bounds.maximum_height_m) * 0.5F;
+    const float half_height_m = (bounds.maximum_height_m - bounds.minimum_height_m) * 0.5F;
     const float bounding_radius_m =
         std::hypot(bounds.outer_radius_m, half_height_m) + kShadowBoundsGuardM;
     const float eye_distance_m = bounding_radius_m + kShadowDepthGuardM;
     const float near_z = 1.0F;
     const float far_z = eye_distance_m + bounding_radius_m + kShadowDepthGuardM;
-    const cubey::math::Vec3 center{0.0F, center_height_m, 0.0F};
+    const cubey::math::Vec3 center{center_xz.x, center_height_m, center_xz.y};
     const cubey::math::Vec3 eye = center + normalized_light * eye_distance_m;
     cubey::math::Vec3 up{0.0F, 1.0F, 0.0F};
     const cubey::math::Vec3 forward = glm::normalize(center - eye);
@@ -63,9 +62,9 @@ TerrainShadowProjection terrain_shadow_projection(const TerrainShadowProductBoun
     }
 
     const cubey::math::Mat4 view = glm::lookAtRH(eye, center, up);
-    const cubey::math::Mat4 projection = cubey::math::orthographic(
-        -bounding_radius_m, bounding_radius_m, -bounding_radius_m,
-        bounding_radius_m, near_z, far_z);
+    const cubey::math::Mat4 projection =
+        cubey::math::orthographic(-bounding_radius_m, bounding_radius_m, -bounding_radius_m,
+                                  bounding_radius_m, near_z, far_z);
     return {
         .light_view_projection = projection * view,
         .light_direction = normalized_light,
@@ -77,8 +76,7 @@ TerrainShadowProjection terrain_shadow_projection(const TerrainShadowProductBoun
     };
 }
 
-bool terrain_shadow_update_required(const TerrainShadowCacheState& cache,
-                                    bool shadows_enabled,
+bool terrain_shadow_update_required(const TerrainShadowCacheState& cache, bool shadows_enabled,
                                     std::uint64_t product_content_hash,
                                     cubey::math::Vec3 light_direction,
                                     float angular_threshold_radians) noexcept {
@@ -96,8 +94,7 @@ bool terrain_shadow_update_required(const TerrainShadowCacheState& cache,
     return direction_dot <= std::cos(angular_threshold_radians);
 }
 
-void update_terrain_shadow_cache(TerrainShadowCacheState& cache,
-                                 std::uint64_t product_content_hash,
+void update_terrain_shadow_cache(TerrainShadowCacheState& cache, std::uint64_t product_content_hash,
                                  const TerrainShadowProjection& projection) noexcept {
     cache.projection = projection;
     cache.product_content_hash = product_content_hash;

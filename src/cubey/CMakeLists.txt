@@ -264,6 +264,7 @@ add_library(cubey_engine STATIC
     engine/project_gpu_services.cpp
     engine/project_runtime.cpp
     engine/renderer_service.cpp
+    engine/terrain_backdrop_runtime.cpp
     engine/upload_queue.cpp
     engine/video_encoder.cpp
 )

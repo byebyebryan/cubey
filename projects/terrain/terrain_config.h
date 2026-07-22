@@ -4,6 +4,7 @@
 #include "terrain_surface_model.h"
 
 #include <cubey/core/run_config.h>
+#include <cubey/engine/terrain_backdrop_runtime.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -12,31 +13,8 @@
 
 namespace cubey::projects::terrain {
 
-enum class TerrainDebugView : std::uint8_t {
-    Surface = 0,
-    Height = 1,
-    Slope = 3,
-    Clay = 6,
-    Normal = 10,
-    MaterialWeights = 11,
-    AmbientVisibility = 12,
-    ProjectedEdge = 14,
-    MaterialAlbedo = 15,
-    MaterialNormal = 16,
-    MaterialRoughness = 18,
-    SunVisibility = 19,
-    ClassificationNormal = 21,
-    Vegetation = 22,
-    Moisture = 23,
-    AmbientLighting = 24,
-    DirectLighting = 25,
-    StageOwnership = 27,
-};
-
-enum class TerrainMaterialMode : std::uint8_t {
-    Flat,
-    FilteredDetail,
-};
+using TerrainDebugView = cubey::TerrainBackdropDebugView;
+using TerrainMaterialMode = cubey::TerrainBackdropMaterialMode;
 
 struct TerrainRuntimeConfig {
     std::filesystem::path heightfield_path{};
@@ -66,9 +44,8 @@ struct TerrainRuntimeConfig {
 [[nodiscard]] TerrainSurfaceModel terrain_surface_model_from_name(std::string_view name);
 
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config);
-[[nodiscard]] TerrainRuntimeConfig
-terrain_runtime_config_from_run_config(const RunConfig& config,
-                                       const std::filesystem::path& default_heightfield_path,
-                                       const std::filesystem::path& default_surface_fields_path = {});
+[[nodiscard]] TerrainRuntimeConfig terrain_runtime_config_from_run_config(
+    const RunConfig& config, const std::filesystem::path& default_heightfield_path,
+    const std::filesystem::path& default_surface_fields_path = {});
 
 } // namespace cubey::projects::terrain

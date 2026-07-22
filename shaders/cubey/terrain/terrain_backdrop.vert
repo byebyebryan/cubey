@@ -5,6 +5,7 @@ layout(push_constant) uniform TerrainBackdropPushConstants {
     vec4 camera_position;
     vec4 render_options;
     vec4 material_options;
+    vec4 world_translation;
 } pc;
 
 layout(location = 0) in vec3 in_position;
@@ -18,8 +19,9 @@ layout(location = 2) out vec3 frag_normal;
 layout(location = 3) out vec2 frag_surface_channels;
 
 void main() {
-    gl_Position = pc.view_projection * vec4(in_position, 1.0);
-    frag_world_position = in_position;
+    vec3 world_position = in_position + pc.world_translation.xyz;
+    gl_Position = pc.view_projection * vec4(world_position, 1.0);
+    frag_world_position = world_position;
     frag_material_channels = in_color;
     frag_normal = in_normal;
     frag_surface_channels = in_surface_channels;

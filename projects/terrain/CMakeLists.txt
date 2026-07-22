@@ -92,9 +92,7 @@ target_link_libraries(
 )
 
 add_library(cubey_project_terrain_render_support STATIC
-    terrain_backdrop_material.cpp
     terrain_backdrop_product.cpp
-    terrain_environment_gpu.cpp
     terrain_surface_model.cpp
 )
 target_include_directories(
@@ -115,6 +113,8 @@ cubey_atmosphere_shader_depends(CUBEY_TERRAIN_ATMOSPHERE_SHADER_DEPENDS)
 cubey_cloud_layer_shader_sources(CUBEY_TERRAIN_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_TERRAIN_CLOUD_SHADER_DEPENDS)
 cubey_forward_pbr_shader_depends(CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS)
+cubey_terrain_backdrop_shader_sources(CUBEY_TERRAIN_BACKDROP_SHADERS)
+cubey_terrain_backdrop_shader_depends(CUBEY_TERRAIN_BACKDROP_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_terrain
@@ -124,10 +124,7 @@ cubey_add_app_target(
         main.cpp
         terrain_app.cpp
     SHADERS
-        shaders/terrain_backdrop.vert
-        shaders/terrain_backdrop_detail.frag
-        shaders/terrain_backdrop_material.comp
-        shaders/terrain_shadow_depth.vert
+        ${CUBEY_TERRAIN_BACKDROP_SHADERS}
         shaders/terrain_stage_proxy.vert
         shaders/terrain_stage_proxy.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
@@ -139,8 +136,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        shaders/terrain_environment.glsl
-        shaders/terrain_lighting.glsl
+        ${CUBEY_TERRAIN_BACKDROP_SHADER_DEPENDS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
