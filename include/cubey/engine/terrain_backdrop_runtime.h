@@ -120,6 +120,8 @@ class TerrainBackdropRuntime {
     [[nodiscard]] const render::TerrainShadowCacheState& shadow_cache() const noexcept;
     [[nodiscard]] const TerrainBackdropRuntimeDrawPlan& draw_plan() const noexcept;
     [[nodiscard]] TerrainBackdropReflection reflection() const;
+    [[nodiscard]] std::uint64_t mesh_upload_bytes() const noexcept;
+    [[nodiscard]] std::uint32_t mesh_upload_transfer_submissions() const noexcept;
     [[nodiscard]] std::uint64_t material_texture_bytes() const noexcept;
     [[nodiscard]] std::uint64_t shadow_caster_triangle_count() const noexcept;
 

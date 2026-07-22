@@ -159,6 +159,8 @@ struct TerrainBackdropRuntimeProductState {
 struct TerrainBackdropRuntimeMeshSet {
     std::optional<render::Mesh> center{};
     std::vector<render::Mesh> sectors{};
+    std::uint64_t uploaded_byte_count = 0U;
+    std::uint32_t transfer_submission_count = 0U;
 };
 
 struct TerrainBackdropRuntimeGeneration {
@@ -223,12 +225,26 @@ runtime_product_state(const terrain::TerrainBackdropProduct& product) {
 [[nodiscard]] TerrainBackdropRuntimeMeshSet
 upload_mesh_set(vulkan::GpuRuntime& gpu, const terrain::TerrainBackdropProduct& product) {
     TerrainBackdropRuntimeMeshSet result;
+    std::vector<render::MeshConfig> configs;
+    configs.reserve(product.sectors.size() + (product.center.has_value() ? 1U : 0U));
     if (product.center.has_value()) {
-        result.center.emplace(gpu, terrain_mesh_config(product.center.value()));
+        configs.push_back(terrain_mesh_config(product.center.value()));
+    }
+    for (const terrain::TerrainBackdropSectorMesh& sector : product.sectors) {
+        configs.push_back(terrain_mesh_config(sector));
+    }
+
+    render::MeshUploadBatch batch = render::upload_meshes(gpu, configs, "terrain backdrop meshes");
+    result.uploaded_byte_count = batch.uploaded_byte_count;
+    result.transfer_submission_count = batch.transfer_submission_count;
+
+    std::size_t mesh_index = 0U;
+    if (product.center.has_value()) {
+        result.center.emplace(std::move(batch.meshes[mesh_index++]));
     }
     result.sectors.reserve(product.sectors.size());
-    for (const terrain::TerrainBackdropSectorMesh& sector : product.sectors) {
-        result.sectors.emplace_back(gpu, terrain_mesh_config(sector));
+    while (mesh_index < batch.meshes.size()) {
+        result.sectors.push_back(std::move(batch.meshes[mesh_index++]));
     }
     return result;
 }
@@ -702,6 +718,12 @@ TerrainBackdropReflection TerrainBackdropRuntime::reflection() const {
     }
     return terrain_backdrop_reflection_from_state(
         impl_->generation->product.request, impl_->generation->product.diagnostics, impl_->frame);
+}
+std::uint64_t TerrainBackdropRuntime::mesh_upload_bytes() const noexcept {
+    return impl_->generation == nullptr ? 0U : impl_->generation->meshes.uploaded_byte_count;
+}
+std::uint32_t TerrainBackdropRuntime::mesh_upload_transfer_submissions() const noexcept {
+    return impl_->generation == nullptr ? 0U : impl_->generation->meshes.transfer_submission_count;
 }
 std::uint64_t TerrainBackdropRuntime::material_texture_bytes() const noexcept {
     return ::cubey::material_texture_bytes();

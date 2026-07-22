@@ -820,6 +820,10 @@ class TerrainApp {
                 : static_cast<double>(product_info_.diagnostics.render_vertex_count) /
                       static_cast<double>(product_info_.diagnostics.sampled_vertex_count);
         ImGui::Text("Vertex compaction: %.1f%% removed", (1.0 - retained_vertex_ratio) * 100.0);
+        ImGui::Text("Mesh upload: %.2f MiB / %u transfer%s",
+                    static_cast<double>(terrain_runtime_.mesh_upload_bytes()) / (1024.0 * 1024.0),
+                    terrain_runtime_.mesh_upload_transfer_submissions(),
+                    terrain_runtime_.mesh_upload_transfer_submissions() == 1U ? "" : "s");
         ImGui::Text("Mean vegetation / moisture: %.3f / %.3f",
                     product_info_.diagnostics.mean_vegetation,
                     product_info_.diagnostics.mean_moisture);
@@ -1139,6 +1143,10 @@ class TerrainApp {
                       static_cast<double>(product_info_.diagnostics.sampled_vertex_count);
         recorder->record_metric(frame_index, "terrain.backdrop", "vertex_compaction_ratio",
                                 retained_vertex_ratio);
+        recorder->record_metric(frame_index, "terrain.backdrop", "mesh_upload_bytes",
+                                static_cast<double>(terrain_runtime_.mesh_upload_bytes()));
+        recorder->record_metric(frame_index, "terrain.backdrop", "mesh_upload_transfer_submissions",
+                                terrain_runtime_.mesh_upload_transfer_submissions());
         recorder->record_metric(frame_index, "terrain.backdrop", "content_hash_low32",
                                 static_cast<double>(static_cast<std::uint32_t>(
                                     product_info_.diagnostics.content_hash)));
