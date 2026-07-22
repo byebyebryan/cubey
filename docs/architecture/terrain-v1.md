@@ -73,8 +73,16 @@ scoring, retry, or rejection and retain the same directional metrics for
 comparison. They are diagnostics, not alternate product defaults. A placement
 change stages a complete cached-product rebuild on the job system, keeps the
 active product visible, then uploads and atomically swaps only a successful
-replacement. Source loading remains a startup operation; runtime placement
-reuses the validated source and filtered mip chain.
+replacement.
+
+The standalone review app can also stage a source change between its startup
+field and any available generated climate-calibration region. Height and
+climate manifests are loaded and binding-validated together on the background
+build. The validated source, filtered mip chain, placement, cached product, and
+GPU meshes become active as one successful replacement; a failed source or
+placement contract leaves the previous product untouched. This is a review
+control over explicit generated evidence, not a runtime biome generator or a
+terrain consumer API.
 
 The V1 camera contract is:
 

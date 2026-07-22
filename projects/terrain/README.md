@@ -76,11 +76,13 @@ cmake --build --preset dev --target cubey_project_terrain
 ./build/dev/projects/terrain/terrain
 ```
 
-The GUI exposes source provenance and dimensions, runtime placement mode and
-raw-sample index, placement metrics, orbit radius/elevation, foreground height
-and reset, foreground-sphere visibility, flat/detail presentation, supported
-diagnostics, directional-shadow state, atmosphere controls, submitted geometry,
-stable GPU timings, and shared cloud controls.
+The GUI exposes runtime source selection across the startup field and available
+generated climate-calibration regions, source provenance and dimensions,
+runtime placement mode and raw-sample index, placement metrics,
+orbit radius/elevation, foreground height and reset, foreground-sphere
+visibility, flat/detail presentation, supported diagnostics, directional-shadow
+state, atmosphere controls, submitted geometry, stable GPU timings, and shared
+cloud controls.
 
 Useful startup overrides:
 
@@ -104,6 +106,14 @@ the app remains open. CPU resampling runs asynchronously, then the completed
 cached product replaces the GPU meshes atomically and resets the orbit while
 preserving foreground height. `raw-sample` uses the independent deterministic
 placement index and performs no quality rejection or retry.
+
+The source selector stages the same complete replacement for the startup source
+or any available `hot-dry`, `hot-wet`, `cool-wet`, `cold-dry`, and `cold-wet`
+calibration region. It loads the paired height and climate manifests rather than
+recoloring the active geometry. Missing generated regions are disabled. If a
+region cannot satisfy the requested placement, the current source remains
+active and the UI reports the contract error. These regions remain calibration
+evidence rather than named production biome presets.
 
 `backdrop-stage` shows the foreground sphere; `backdrop` hides it. Material
 choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
