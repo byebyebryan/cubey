@@ -10,6 +10,7 @@ HEIGHT="${HEIGHT:-900}"
 FRAMES="${FRAMES:-120}"
 WARMUP_FRAMES="${WARMUP_FRAMES:-30}"
 FPS="${FPS:-60}"
+PROFILE_ONLY="${PROFILE_ONLY:-0}"
 
 REGIMES=(hot-dry hot-wet cool-wet cold-dry cold-wet)
 COOL_WET="${ASSET_ROOT}/cool-wet"
@@ -28,15 +29,23 @@ if [[ ! -f "${ASSET_ROOT}/calibration-index.json" ]]; then
 fi
 
 mkdir -p "${OUT_DIR}/captures" "${OUT_DIR}/profiles"
-find "${OUT_DIR}/captures" -mindepth 1 -delete
 find "${OUT_DIR}/profiles" -mindepth 1 -delete
-find "${OUT_DIR}" -mindepth 1 -maxdepth 1 ! -name captures ! -name profiles -delete
+if [[ "${PROFILE_ONLY}" != "1" ]]; then
+    find "${OUT_DIR}/captures" -mindepth 1 -delete
+    find "${OUT_DIR}" -mindepth 1 -maxdepth 1 ! -name captures ! -name profiles -delete
+fi
 
 CAPTURE_MANIFEST="${OUT_DIR}/capture-manifest.tsv"
 PROFILE_SUMMARY="${OUT_DIR}/profile-summary.tsv"
 INDEX="${OUT_DIR}/index.md"
 
-printf 'file\ttitle\tgroup\tsource\targs\n' >"${CAPTURE_MANIFEST}"
+if [[ "${PROFILE_ONLY}" != "1" ]]; then
+    printf 'file\ttitle\tgroup\tsource\targs\n' >"${CAPTURE_MANIFEST}"
+elif [[ ! -f "${CAPTURE_MANIFEST}" ]]; then
+    printf 'profile-only review requires an existing capture manifest: %s\n' \
+        "${CAPTURE_MANIFEST}" >&2
+    exit 1
+fi
 
 COMMON_ARGS=(
     --terrain-surface-model climate-transition
@@ -77,6 +86,7 @@ capture_source() {
 
 FRAMING_FILES=()
 FRAMING_LABELS=()
+if [[ "${PROFILE_ONLY}" != "1" ]]; then
 for foreground_height in 100 200 500; do
     name="framing-${foreground_height}m"
     capture_source "${COOL_WET}" "${name}" "Cool/wet: ${foreground_height} m" framing \
@@ -136,11 +146,21 @@ for regime in "${REGIMES[@]}"; do
     CLIMATE_FILES+=("${OUT_DIR}/captures/${name}.png")
     CLIMATE_LABELS+=("Climate: ${regime}")
 done
+fi
 
 external_gpu_busy() {
     command -v nvidia-smi >/dev/null 2>&1 || return 1
-    nvidia-smi pmon -c 1 -s u 2>/dev/null | awk '
+    if nvidia-smi pmon -c 1 -s u 2>/dev/null | awk '
         $1 ~ /^[0-9]+$/ && $3 ~ /C/ && $4 ~ /^[0-9]+$/ && $4 + 0 >= 10 {
+            busy = 1
+        }
+        END { exit busy ? 0 : 1 }
+    '; then
+        return 0
+    fi
+    nvidia-smi dmon -c 1 -s u 2>/dev/null | awk '
+        $1 ~ /^[0-9]+$/ && (($2 ~ /^[0-9]+$/ && $2 + 0 >= 10) ||
+                            ($3 ~ /^[0-9]+$/ && $3 + 0 >= 10)) {
             busy = 1
         }
         END { exit busy ? 0 : 1 }
@@ -169,27 +189,36 @@ profile_lane() {
     local prefix="${OUT_DIR}/profiles/${lane}"
     local video="${OUT_DIR}/profiles/${lane}.mp4"
 
-    if ! wait_for_gpu_idle; then
-        printf 'GPU remained busy before profile lane %s\n' "${lane}" >&2
-        return 1
-    fi
-    "${APP}" --headless --capture video --frames "${FRAMES}" --fps "${FPS}" \
-        --width "${WIDTH}" --height "${HEIGHT}" \
-        --terrain-heightfield "${COOL_WET}" \
-        --terrain-surface-fields "${COOL_WET}" \
-        --terrain-surface-model climate-transition \
-        --terrain-placement selected \
-        --terrain-camera-preset backdrop \
-        --terrain-render-stride 3 \
-        --terrain-foreground-height 200 \
-        --terrain-backdrop-orbit-radius 100 \
-        --terrain-backdrop-elevation 8 \
-        --terrain-surface-detail filtered-detail \
-        --no-clouds \
-        --profile-output "${prefix}" \
-        --profile-warmup-frames "${WARMUP_FRAMES}" \
-        "$@" --output "${video}"
-    rm -f "${video}"
+    for attempt in 1 2 3; do
+        if ! wait_for_gpu_idle; then
+            printf 'GPU remained busy before profile lane %s\n' "${lane}" >&2
+            return 1
+        fi
+        "${APP}" --headless --capture video --frames "${FRAMES}" --fps "${FPS}" \
+            --width "${WIDTH}" --height "${HEIGHT}" \
+            --terrain-heightfield "${COOL_WET}" \
+            --terrain-surface-fields "${COOL_WET}" \
+            --terrain-surface-model climate-transition \
+            --terrain-placement selected \
+            --terrain-camera-preset backdrop \
+            --terrain-render-stride 3 \
+            --terrain-foreground-height 200 \
+            --terrain-backdrop-orbit-radius 100 \
+            --terrain-backdrop-elevation 8 \
+            --terrain-surface-detail filtered-detail \
+            --no-clouds \
+            --profile-output "${prefix}" \
+            --profile-warmup-frames "${WARMUP_FRAMES}" \
+            "$@" --output "${video}"
+        rm -f "${video}"
+        if ! external_gpu_busy; then
+            return 0
+        fi
+        printf 'External GPU compute overlapped profile lane %s; retrying (%u/3)\n' \
+            "${lane}" "${attempt}" >&2
+    done
+    printf 'Unable to capture uncontended profile lane %s\n' "${lane}" >&2
+    return 1
 }
 
 profile_lane steady-control --no-terrain-shadows --time-of-day-mode manual \
@@ -284,7 +313,7 @@ montage_group() {
     magick montage "${inputs[@]}" -geometry "${geometry}" -tile "${tile}" "${output}"
 }
 
-if command -v magick >/dev/null 2>&1; then
+if [[ "${PROFILE_ONLY}" != "1" ]] && command -v magick >/dev/null 2>&1; then
     montage_group "${OUT_DIR}/framing-contact-sheet.png" 3x1 480x270+8+26 \
         FRAMING_FILES FRAMING_LABELS
     montage_group "${OUT_DIR}/lighting-contact-sheet.png" 3x5 400x225+8+26 \
