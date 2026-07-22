@@ -184,16 +184,18 @@ vegetation, and shadow placeholders are not product diagnostics.
 
 ## Runtime Boundary
 
-The implementation remains project-local. This avoids promoting a one-consumer
-API before its ownership and packaging are tested. The eventual reusable
-backdrop would likely own an immutable height source, cached geometry product,
-draw plan, material resources, and scene-facing placement metadata, while a
-consumer would own stage composition and camera.
+The accepted backdrop is being promoted through glTF Viewer as its first real
+external consumer. Shared asset code owns the immutable height source; shared
+render code owns placement and the cached product; the engine runtime owns GPU
+meshes, material resources, culling, and terrain self-shadowing. Consumers keep
+stage composition, camera, world translation, atmosphere/cloud/HDR policy, UI,
+and source-build scheduling.
 
-glTF Viewer is a plausible second consumer, but integration is deferred until
-the isolated material and terrain-light response are convincing. Planet terrain
-is a separate spherical scale/LOD problem and is not this product's second
-consumer.
+The shared surface boundary bakes generic material channels. Mineral control is
+the production default. Climate rasters, climate-response formulas, calibration
+labels, and their diagnostics remain terrain-project experiments rather than
+foundation semantics. Planet terrain remains a separate spherical scale/LOD
+problem.
 
 ## Explicit Deferrals
 
@@ -204,7 +206,7 @@ consumer.
 - biome/climate products and foliage placement;
 - deformation, collision, and gameplay queries;
 - planet projection and ocean composition;
-- engine/foundation promotion.
+- cross-shadowing between backdrop terrain and foreground scene geometry.
 
 The reference-only
 [Terrain Surface Semantics Study](../notes/terrain-surface-semantics-study.md)

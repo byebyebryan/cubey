@@ -89,6 +89,9 @@ the detailed foundation notes under `docs/architecture/`.
   inspect, and river driver limitations.
 - [Terrain project map](terrain-project-map.md): current active, frozen, paused,
   and legacy lanes plus the directly sampled terrain v1 spine.
+- [Terrain backdrop foundation promotion](terrain-backdrop-foundation-promotion.md):
+  ownership, second-consumer composition, climate boundary, and acceptance
+  gates for promoting the fixed-focus backdrop.
 - [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
   hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
 - [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): completed
