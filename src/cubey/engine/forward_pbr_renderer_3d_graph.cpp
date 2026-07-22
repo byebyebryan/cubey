@@ -139,6 +139,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .frame_slot = target.frame_slot,
             .label = target.command_buffer_label,
             .command_buffer_mode = target.command_buffer_mode,
+            .profiler = target.profiler,
         },
         render_graph.graph,
         [this, device = target.device, frame_slot = target.frame_slot, cloud_runtime,

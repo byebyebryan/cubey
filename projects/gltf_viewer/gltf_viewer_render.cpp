@@ -4,6 +4,18 @@
 #include <vector>
 
 namespace cubey::projects::gltf_viewer {
+namespace {
+
+[[nodiscard]] std::uint64_t
+collected_profile_frame_index(std::uint64_t frame_index,
+                              cubey::render::FrameSlot frame_slot) noexcept {
+    if (frame_index > frame_slot.count) {
+        return frame_index - static_cast<std::uint64_t>(frame_slot.count) - 1U;
+    }
+    return frame_index == 0U ? 0U : frame_index - 1U;
+}
+
+} // namespace
 
 void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                            VkFormat color_format, std::uint32_t frame_slot_count) {
@@ -43,6 +55,7 @@ void GltfViewerApp::destroy_all_resources() {
     terrain_runtime_.destroy();
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
+    gpu_profiler_.reset();
     atmosphere_runtime_.destroy();
     ibl_environment_.reset();
     atmosphere_background_atlases_.reset();
@@ -76,6 +89,9 @@ void GltfViewerApp::record_viewer_target(
         break;
     default:
         throw std::runtime_error("glTF viewer command buffer mode is invalid");
+    }
+    if (gpu_profiler_.has_value()) {
+        gpu_profiler_->begin_frame(command_buffer, frame_slot.index);
     }
 
     cubey::SceneReadView scene_view = scene().read();
@@ -121,6 +137,7 @@ void GltfViewerApp::record_viewer_target(
         .color_final_state = color_final_state,
         .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
         .command_buffer_mode = pbr_command_buffer_mode,
+        .profiler = gpu_profiler_.has_value() ? &*gpu_profiler_ : nullptr,
         .scene = &scene_view,
         .frame_plan = &frame_plan,
         .camera_entity = camera_entity_,
@@ -146,6 +163,22 @@ void GltfViewerApp::record_viewer_target(
     });
     if (owns_command_buffer) {
         recorder.end("vkEndCommandBuffer gltf_viewer");
+    }
+}
+
+void GltfViewerApp::collect_gpu_timings(cubey::profiling::ProfileRecorder* recorder,
+                                        std::uint64_t frame_index,
+                                        cubey::render::FrameSlot frame_slot) {
+    if (!gpu_profiler_.has_value()) {
+        return;
+    }
+    gpu_profiler_->collect(frame_slot.index);
+    if (recorder == nullptr) {
+        return;
+    }
+    const std::uint64_t collected_frame = collected_profile_frame_index(frame_index, frame_slot);
+    for (const cubey::vulkan::GpuPassTiming& timing : gpu_profiler_->latest_timings()) {
+        recorder->record_gpu_span(collected_frame, timing.label, timing.milliseconds);
     }
 }
 
@@ -180,6 +213,7 @@ void GltfViewerApp::record_cloud_environment_if_needed(
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
+    collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index, frame.frame_slot);
     record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
                          frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
                          cubey::render::render_graph_present_texture_state(),
@@ -190,6 +224,7 @@ void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& conte
                                           const cubey::host::HeadlessCaptureFrame& frame,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
+    collect_gpu_timings(context.profile_recorder(), frame.index, frame.frame_slot);
     record_viewer_target(context.device(), command_buffer, target, frame.frame_slot,
                          cubey::render::render_graph_color_attachment_texture_state(),
                          cubey::render::render_graph_color_attachment_texture_state(),

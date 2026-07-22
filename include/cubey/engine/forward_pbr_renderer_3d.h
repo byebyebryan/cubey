@@ -30,6 +30,10 @@
 #include <optional>
 #include <span>
 
+namespace cubey::vulkan {
+class GpuTimestampProfiler;
+}
+
 namespace cubey {
 
 struct ForwardPbrRenderer3DConfig {
@@ -101,6 +105,7 @@ struct ForwardPbrRenderer3DTargetInfo {
     const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
     render::RenderGraphCommandBufferMode command_buffer_mode =
         render::RenderGraphCommandBufferMode::BeginAndEnd;
+    vulkan::GpuTimestampProfiler* profiler = nullptr;
 };
 
 struct ForwardPbrRenderer3DViewInfo {
@@ -168,6 +173,7 @@ struct ForwardPbrRenderer3DFrameRequestInfo {
     const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
     render::RenderGraphCommandBufferMode command_buffer_mode =
         render::RenderGraphCommandBufferMode::BeginAndEnd;
+    vulkan::GpuTimestampProfiler* profiler = nullptr;
     const SceneReadView* scene = nullptr;
     const scene::FrameRenderPlan3D* frame_plan = nullptr;
     Entity camera_entity{};

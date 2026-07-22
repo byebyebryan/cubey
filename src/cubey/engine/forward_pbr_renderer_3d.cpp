@@ -79,6 +79,7 @@ forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInf
                 .color_final_state = info.color_final_state,
                 .command_buffer_label = info.command_buffer_label,
                 .command_buffer_mode = info.command_buffer_mode,
+                .profiler = info.profiler,
             },
         .view =
             {

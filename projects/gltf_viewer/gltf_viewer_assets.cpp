@@ -49,6 +49,9 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_background_textures = atmosphere_background_textures(),
                 });
+    if (!config_.profile_output_prefix.empty()) {
+        gpu_profiler_.emplace(device, frame_slot_count, 16U);
+    }
     create_terrain_backdrop_resources(device, gpu, frame_slot_count);
 }
 

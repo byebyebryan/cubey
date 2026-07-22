@@ -33,6 +33,7 @@
 #include <cubey/scene/light_manager.h>
 #include <cubey/scene/scene.h>
 #include <cubey/scene/view_3d.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
@@ -105,6 +106,8 @@ class GltfViewerApp {
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count);
     [[nodiscard]] bool terrain_backdrop_enabled() const noexcept;
+    void collect_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
+                             cubey::render::FrameSlot frame_slot);
     [[nodiscard]] cubey::ForwardPbrRenderer3DTerrainBackdrop
     terrain_backdrop_frame(const cubey::SceneReadView& view,
                            const cubey::scene::FrameRenderPlan3D& frame_plan,
@@ -178,6 +181,7 @@ class GltfViewerApp {
     std::optional<cubey::render::TerrainBackdropPlacementPlan> terrain_placement_{};
     std::optional<cubey::render::TerrainBackdropProduct> terrain_product_{};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
+    std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;
     float terrain_baked_foreground_height_m_ = 500.0F;
     bool terrain_visible_ = true;

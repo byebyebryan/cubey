@@ -283,6 +283,7 @@ void test_forward_pbr_renderer_3d_target_resources_use_material_table() {
 void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
     cubey::ForwardPbrRenderer3DFrameRequestInfo info = valid_frame_request_info();
     info.command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording;
+    info.profiler = reinterpret_cast<cubey::vulkan::GpuTimestampProfiler*>(0x14);
     const cubey::ForwardPbrRenderer3DRenderRequest request =
         cubey::forward_pbr_renderer_3d_render_request(info);
 
@@ -310,6 +311,8 @@ void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
             "forward PBR request helper should copy the command buffer label");
     require(request.target.command_buffer_mode == info.command_buffer_mode,
             "forward PBR request helper should copy the command buffer mode");
+    require(request.target.profiler == info.profiler,
+            "forward PBR request helper should copy the GPU profiler");
     require(request.view.scene == info.scene, "forward PBR request helper should copy scene view");
     require(request.view.frame_plan == info.frame_plan,
             "forward PBR request helper should copy frame plan");
