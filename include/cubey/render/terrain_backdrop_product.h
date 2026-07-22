@@ -4,6 +4,7 @@
 #include <cubey/render/mesh.h>
 #include <cubey/render/primitive_mesh.h>
 #include <cubey/render/terrain_backdrop_density.h>
+#include <cubey/render/terrain_backdrop_stage.h>
 
 #include <cstdint>
 #include <optional>
@@ -50,6 +51,10 @@ struct TerrainBackdropProductRequest {
     float vertical_scale = 1.0F;
     float vertical_offset_m = 0.0F;
 };
+
+[[nodiscard]] TerrainBackdropProductRequest
+terrain_backdrop_v1_product_request(const TerrainBackdropStagePlan& stage,
+                                    std::uint32_t render_stride = 3U) noexcept;
 
 struct TerrainBackdropSurfaceQuery {
     cubey::math::Vec2 source_xz{0.0F, 0.0F};

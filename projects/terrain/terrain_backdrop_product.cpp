@@ -92,25 +92,14 @@ class ProjectSurfaceClassifier final : public TerrainBackdropSurfaceClassifier {
 
 } // namespace
 
-TerrainBackdropProduct make_terrain_backdrop_product(
+TerrainBackdropProduct make_project_terrain_backdrop_product(
     const TerrainBackdropProductRequest& request, const TerrainHeightSource& source,
+    TerrainSurfaceModel surface_model,
     const TerrainRasterClimateSource* climate_source,
     TerrainBackdropClimateDiagnostics* climate_diagnostics) {
-    ProjectSurfaceClassifier classifier(request.surface_model, climate_source);
-    const cubey::render::TerrainBackdropProductRequest shared_request{
-        .source_focus_xz = request.source_focus_xz,
-        .density = request.density,
-        .center_mode = request.center_mode,
-        .center_sampling = request.center_sampling,
-        .render_stride = request.render_stride,
-        .consumer_radius_m = request.consumer_radius_m,
-        .visible_inner_radius_m = request.visible_inner_radius_m,
-        .outer_radius_m = request.outer_radius_m,
-        .vertical_scale = request.vertical_scale,
-        .vertical_offset_m = request.vertical_offset_m,
-    };
+    ProjectSurfaceClassifier classifier(surface_model, climate_source);
     TerrainBackdropProduct result =
-        cubey::render::make_terrain_backdrop_product(shared_request, source, classifier);
+        cubey::render::make_terrain_backdrop_product(request, source, classifier);
     if (climate_diagnostics != nullptr) {
         *climate_diagnostics = classifier.diagnostics();
     }

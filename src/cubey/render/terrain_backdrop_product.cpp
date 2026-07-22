@@ -12,6 +12,24 @@
 #include <thread>
 
 namespace cubey::render {
+
+TerrainBackdropProductRequest
+terrain_backdrop_v1_product_request(const TerrainBackdropStagePlan& stage,
+                                    std::uint32_t render_stride) noexcept {
+    return {
+        .source_focus_xz = stage.source_focus_xz,
+        .density = TerrainBackdropMeshDensity::High,
+        .center_mode = TerrainBackdropCenterMode::Continuous,
+        .center_sampling = TerrainBackdropCenterSampling::SeamMatched,
+        .render_stride = render_stride,
+        .consumer_radius_m = stage.stage_radius_m,
+        .visible_inner_radius_m = 3'200.0F,
+        .outer_radius_m = 16'384.0F,
+        .vertical_scale = 1.0F,
+        .vertical_offset_m = stage.terrain_vertical_offset_m,
+    };
+}
+
 namespace {
 
 constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;

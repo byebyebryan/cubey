@@ -76,19 +76,8 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
     const cubey::render::TerrainBackdropStagePlan& stage = placement.stage;
     const cubey::render::TerrainBackdropProduct product =
         cubey::render::make_terrain_backdrop_product(
-            {
-                .source_focus_xz = stage.source_focus_xz,
-                .density = cubey::render::TerrainBackdropMeshDensity::High,
-                .center_mode = cubey::render::TerrainBackdropCenterMode::Continuous,
-                .center_sampling = cubey::render::TerrainBackdropCenterSampling::SeamMatched,
-                .render_stride =
-                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
-                .consumer_radius_m = stage.stage_radius_m,
-                .visible_inner_radius_m = 3'200.0F,
-                .outer_radius_m = 16'384.0F,
-                .vertical_scale = 1.0F,
-                .vertical_offset_m = stage.terrain_vertical_offset_m,
-            },
+            cubey::render::terrain_backdrop_v1_product_request(
+                stage, config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride),
             terrain_source);
     terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
     terrain_runtime_.create(

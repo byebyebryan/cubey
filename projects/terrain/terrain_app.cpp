@@ -315,21 +315,9 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
                                                   const TerrainRuntimeConfig& config,
                                                   const TerrainRasterClimateSource* climate,
                                                   TerrainBackdropClimateDiagnostics* diagnostics) {
-    return make_terrain_backdrop_product(
-        {
-            .source_focus_xz = placement.stage.source_focus_xz,
-            .density = TerrainBackdropMeshDensity::High,
-            .center_mode = TerrainBackdropCenterMode::Continuous,
-            .center_sampling = TerrainBackdropCenterSampling::SeamMatched,
-            .render_stride = config.render_stride,
-            .consumer_radius_m = placement.stage.stage_radius_m,
-            .visible_inner_radius_m = 3'200.0F,
-            .outer_radius_m = 16'384.0F,
-            .vertical_scale = 1.0F,
-            .vertical_offset_m = placement.stage.terrain_vertical_offset_m,
-            .surface_model = config.surface_model,
-        },
-        source, climate, diagnostics);
+    return make_project_terrain_backdrop_product(
+        cubey::render::terrain_backdrop_v1_product_request(placement.stage, config.render_stride),
+        source, config.surface_model, climate, diagnostics);
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState

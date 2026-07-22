@@ -113,6 +113,28 @@ void test_density_profiles_publish_the_product_budget() {
             "backdrop density names should preserve the high default");
 }
 
+void test_v1_product_request_publishes_the_accepted_backdrop_contract() {
+    const cubey::render::TerrainBackdropStagePlan stage{
+        .source_focus_xz = {1'250.0F, -2'500.0F},
+        .terrain_vertical_offset_m = -720.0F,
+        .stage_radius_m = 450.0F,
+    };
+    const cubey::render::TerrainBackdropProductRequest request =
+        cubey::render::terrain_backdrop_v1_product_request(stage, 2U);
+
+    require(request.source_focus_xz == stage.source_focus_xz &&
+                request.density == cubey::render::TerrainBackdropMeshDensity::High &&
+                request.center_mode == cubey::render::TerrainBackdropCenterMode::Continuous &&
+                request.center_sampling ==
+                    cubey::render::TerrainBackdropCenterSampling::SeamMatched,
+            "v1 request should publish the accepted source and topology contract");
+    require(request.render_stride == 2U && request.consumer_radius_m == stage.stage_radius_m &&
+                request.visible_inner_radius_m == 3'200.0F &&
+                request.outer_radius_m == 16'384.0F && request.vertical_scale == 1.0F &&
+                request.vertical_offset_m == stage.terrain_vertical_offset_m,
+            "v1 request should publish the accepted sampling envelope");
+}
+
 void test_product_is_deterministic_connected_and_outside_the_stage() {
     using namespace cubey::projects::terrain;
     const AnalyticSource source = source_for_seed(9012U);
@@ -157,13 +179,13 @@ void test_product_is_deterministic_connected_and_outside_the_stage() {
 void test_surface_models_preserve_geometry_and_change_only_surface_channels() {
     using namespace cubey::projects::terrain;
     TerrainBackdropProductRequest mineral_request = product_request();
-    mineral_request.surface_model = TerrainSurfaceModel::MineralControl;
     TerrainBackdropProductRequest landform_request = mineral_request;
-    landform_request.surface_model = TerrainSurfaceModel::LandformTransition;
 
     const AnalyticSource source = source_for_seed(9012U);
-    const TerrainBackdropProduct mineral = make_terrain_backdrop_product(mineral_request, source);
-    const TerrainBackdropProduct landform = make_terrain_backdrop_product(landform_request, source);
+    const TerrainBackdropProduct mineral = make_project_terrain_backdrop_product(
+        mineral_request, source, TerrainSurfaceModel::MineralControl);
+    const TerrainBackdropProduct landform = make_project_terrain_backdrop_product(
+        landform_request, source, TerrainSurfaceModel::LandformTransition);
 
     require(mineral.diagnostics.geometry_hash == landform.diagnostics.geometry_hash,
             "surface studies must preserve identical terrain geometry");
@@ -181,10 +203,10 @@ void test_surface_models_preserve_geometry_and_change_only_surface_channels() {
 void test_climate_surface_requires_a_bound_climate_source() {
     using namespace cubey::projects::terrain;
     TerrainBackdropProductRequest request = product_request();
-    request.surface_model = TerrainSurfaceModel::ClimateTransition;
     bool rejected = false;
     try {
-        static_cast<void>(make_terrain_backdrop_product(request, source_for_seed(9012U)));
+        static_cast<void>(make_project_terrain_backdrop_product(
+            request, source_for_seed(9012U), TerrainSurfaceModel::ClimateTransition));
     } catch (const std::runtime_error&) {
         rejected = true;
     }
@@ -418,6 +440,7 @@ void test_center_sampling_does_not_change_cutout_or_default_split_products() {
 int main() {
     try {
         test_density_profiles_publish_the_product_budget();
+        test_v1_product_request_publishes_the_accepted_backdrop_contract();
         test_product_is_deterministic_connected_and_outside_the_stage();
         test_surface_models_preserve_geometry_and_change_only_surface_channels();
         test_climate_surface_requires_a_bound_climate_source();
