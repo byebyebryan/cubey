@@ -295,13 +295,22 @@ TerrainDirectionalPlacementPlan evaluate_terrain_directional_placement(
 
 TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request) {
+    return plan_terrain_directional_placement(source, request, {0.0F, 0.0F});
+}
+
+TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
+    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
+    cubey::math::Vec2 search_center) {
     validate_terrain_directional_placement_request(request);
+    if (!std::isfinite(search_center.x) || !std::isfinite(search_center.y)) {
+        throw std::runtime_error("invalid terrain directional placement search center");
+    }
     std::vector<cubey::math::Vec2> coarse_focuses;
     for (float z = -request.search_extent_m; z <= request.search_extent_m;
          z += request.search_step_m) {
         for (float x = -request.search_extent_m; x <= request.search_extent_m;
              x += request.search_step_m) {
-            coarse_focuses.push_back({x, z});
+            coarse_focuses.push_back(search_center + cubey::math::Vec2{x, z});
         }
     }
     const std::vector<Candidate> coarse = score_candidates(source, request, coarse_focuses);

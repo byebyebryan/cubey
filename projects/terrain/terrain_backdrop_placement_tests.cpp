@@ -30,6 +30,8 @@ template <typename Function> void require_throws(Function&& function, std::strin
 
 class NaturalRiseSource final : public cubey::projects::terrain::TerrainHeightSource {
   public:
+    explicit NaturalRiseSource(cubey::math::Vec2 origin = {}) : origin_(origin) {}
+
     [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
     metadata() const noexcept override {
         return {
@@ -42,9 +44,12 @@ class NaturalRiseSource final : public cubey::projects::terrain::TerrainHeightSo
 
     [[nodiscard]] float
     sample_height(const cubey::projects::terrain::TerrainQuery& query) const override {
-        const float rise = std::max(query.world_xz.x - 2'000.0F, 0.0F) * 0.18F;
+        const float rise = std::max(query.world_xz.x - origin_.x - 2'000.0F, 0.0F) * 0.18F;
         return std::min(rise, 1'800.0F);
     }
+
+  private:
+    cubey::math::Vec2 origin_{};
 };
 
 class FlatSource final : public cubey::projects::terrain::TerrainHeightSource {
@@ -130,6 +135,27 @@ void test_selected_failure_reports_the_failed_contract() {
     throw std::runtime_error("flat terrain should fail selected placement");
 }
 
+void test_selected_mode_centers_search_on_translated_source_bounds() {
+    using namespace cubey::projects::terrain;
+    const cubey::math::Vec2 translation{120'000.0F, -75'000.0F};
+    const TerrainHeightSourceBounds translated_bounds{
+        .minimum_xz = kLargeBounds.minimum_xz + translation,
+        .maximum_xz = kLargeBounds.maximum_xz + translation,
+    };
+    const TerrainBackdropPlacementPlan origin = plan_terrain_backdrop_placement(
+        NaturalRiseSource{}, kLargeBounds, TerrainBackdropPlacementRequest{});
+    const TerrainBackdropPlacementPlan translated = plan_terrain_backdrop_placement(
+        NaturalRiseSource{translation}, translated_bounds, TerrainBackdropPlacementRequest{});
+    require_near(translated.placement.source_focus_xz.x - origin.placement.source_focus_xz.x,
+                 translation.x, 0.001F,
+                 "selected placement x should translate with the source bounds center");
+    require_near(translated.placement.source_focus_xz.y - origin.placement.source_focus_xz.y,
+                 translation.y, 0.001F,
+                 "selected placement z should translate with the source bounds center");
+    require(translated.placement.contract_satisfied && translated.stage.contract_satisfied,
+            "translated selected placement should retain both placement contracts");
+}
+
 void test_raw_sample_is_indexed_deterministic_and_coverage_safe() {
     using namespace cubey::projects::terrain;
     TerrainBackdropPlacementRequest request;
@@ -189,6 +215,7 @@ int main() {
         test_selected_mode_preserves_directional_placement_and_focus_height();
         test_raw_center_reports_failed_composition_without_rejecting_the_stage();
         test_selected_failure_reports_the_failed_contract();
+        test_selected_mode_centers_search_on_translated_source_bounds();
         test_raw_sample_is_indexed_deterministic_and_coverage_safe();
         test_placement_rejects_insufficient_source_coverage();
         std::cout << "terrain_backdrop_placement_tests: ok\n";

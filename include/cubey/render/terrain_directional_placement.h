@@ -81,4 +81,8 @@ void validate_terrain_directional_placement_request(
 [[nodiscard]] TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
     const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request = {});
 
+[[nodiscard]] TerrainDirectionalPlacementPlan plan_terrain_directional_placement(
+    const TerrainHeightSource& source, const TerrainDirectionalPlacementRequest& request,
+    cubey::math::Vec2 search_center);
+
 } // namespace cubey::render

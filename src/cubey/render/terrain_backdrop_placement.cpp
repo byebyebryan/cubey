@@ -138,22 +138,24 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
 
     TerrainDirectionalPlacementRequest placement_request = request.placement;
     placement_request.vertical_scale = request.vertical_scale;
+    const cubey::math::Vec2 source_center = terrain_height_source_bounds_center(bounds);
     switch (request.mode) {
     case TerrainPlacementMode::Selected:
-        if (!terrain_height_source_bounds_contains_disk(bounds, {0.0F, 0.0F},
+        if (!terrain_height_source_bounds_contains_disk(bounds, source_center,
                                                         result.centered_search_support_radius_m)) {
             throw std::runtime_error(
                 "terrain heightfield does not cover the selected placement search");
         }
-        result.placement = plan_terrain_directional_placement(source, placement_request);
+        result.placement =
+            plan_terrain_directional_placement(source, placement_request, source_center);
         if (!result.placement.contract_satisfied) {
             throw std::runtime_error(
                 selected_placement_failure(result.placement, placement_request));
         }
         break;
     case TerrainPlacementMode::RawCenter:
-        result.placement = evaluate_terrain_directional_placement(
-            source, placement_request, terrain_height_source_bounds_center(bounds));
+        result.placement =
+            evaluate_terrain_directional_placement(source, placement_request, source_center);
         break;
     case TerrainPlacementMode::RawSample:
         result.placement = evaluate_terrain_directional_placement(

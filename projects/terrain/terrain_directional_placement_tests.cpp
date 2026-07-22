@@ -17,6 +17,8 @@ void require(bool condition, std::string_view message) {
 
 class DirectionalRiseSource final : public cubey::projects::terrain::TerrainHeightSource {
   public:
+    explicit DirectionalRiseSource(cubey::math::Vec2 origin = {}) : origin_(origin) {}
+
     [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
     metadata() const noexcept override {
         return {.id = "directional-rise-test", .seed = 7U, .relief_scale_m = 2'000.0F};
@@ -24,9 +26,12 @@ class DirectionalRiseSource final : public cubey::projects::terrain::TerrainHeig
 
     [[nodiscard]] float sample_height(
         const cubey::projects::terrain::TerrainQuery& query) const override {
-        const float rise = std::max(query.world_xz.x - 2'000.0F, 0.0F) * 0.18F;
+        const float rise = std::max(query.world_xz.x - origin_.x - 2'000.0F, 0.0F) * 0.18F;
         return std::min(rise, 1'800.0F);
     }
+
+  private:
+    cubey::math::Vec2 origin_{};
 };
 
 void test_fixed_focus_finds_a_directional_mountain_arc() {
@@ -69,6 +74,23 @@ void test_search_budget_can_fit_a_bounded_source() {
             "directional placement should support a finite seven by seven search domain");
 }
 
+void test_search_can_be_centered_on_a_translated_source() {
+    using namespace cubey::projects::terrain;
+    const cubey::math::Vec2 translation{120'000.0F, -75'000.0F};
+    const TerrainDirectionalPlacementRequest request;
+    const TerrainDirectionalPlacementPlan origin =
+        plan_terrain_directional_placement(DirectionalRiseSource{}, request);
+    const TerrainDirectionalPlacementPlan translated = plan_terrain_directional_placement(
+        DirectionalRiseSource{translation}, request, translation);
+    require(std::abs(translated.source_focus_xz.x - origin.source_focus_xz.x - translation.x) <
+                    0.001F &&
+                std::abs(translated.source_focus_xz.y - origin.source_focus_xz.y - translation.y) <
+                    0.001F &&
+                translated.contract_satisfied == origin.contract_satisfied &&
+                translated.score == origin.score,
+            "directional placement should translate with its explicit search center");
+}
+
 } // namespace
 
 int main() {
@@ -76,6 +98,7 @@ int main() {
         test_fixed_focus_finds_a_directional_mountain_arc();
         test_search_is_deterministic();
         test_search_budget_can_fit_a_bounded_source();
+        test_search_can_be_centered_on_a_translated_source();
         std::cout << "terrain_directional_placement_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {
