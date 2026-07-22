@@ -70,6 +70,7 @@ target_compile_definitions(
 
 add_library(cubey_vulkan STATIC
     vulkan/buffer.cpp
+    vulkan/buffer_upload_plan.cpp
     vulkan/command_pool.cpp
     vulkan/command_recorder.cpp
     vulkan/descriptors.cpp

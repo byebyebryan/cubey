@@ -59,6 +59,7 @@ void test_swapchain_present_mode_rejects_unsupported_explicit_mode();
 void test_transfer_helpers_describe_texture_and_readback_paths();
 void test_device_buffer_upload_batch_empty_is_a_noop();
 void test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work();
+void test_device_buffer_upload_plan_splits_large_unaligned_requests();
 
 namespace cubey::tests {
 
@@ -123,6 +124,7 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_transfer_helpers_describe_texture_and_readback_paths),
         CUBEY_TEST(test_device_buffer_upload_batch_empty_is_a_noop),
         CUBEY_TEST(test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work),
+        CUBEY_TEST(test_device_buffer_upload_plan_splits_large_unaligned_requests),
     };
     return tests;
 }

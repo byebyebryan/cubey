@@ -1,4 +1,5 @@
 #include <cubey/vulkan/buffer.h>
+#include <cubey/vulkan/detail/buffer_upload_plan.h>
 
 #include <vulkan/vulkan.h>
 
@@ -111,4 +112,46 @@ void test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work() 
         "device buffer upload batch is too large");
 
     require(runtime.empty(), "invalid upload batches should not enqueue GPU work");
+}
+
+void test_device_buffer_upload_plan_splits_large_unaligned_requests() {
+    constexpr VkDeviceSize chunk_size =
+        cubey::vulkan::detail::kDeviceBufferUploadStagingChunkByteSize;
+    const std::array<VkDeviceSize, 3> upload_sizes{
+        chunk_size + 12,
+        7,
+        chunk_size - 3,
+    };
+
+    const cubey::vulkan::detail::DeviceBufferUploadPlan plan =
+        cubey::vulkan::detail::plan_device_buffer_uploads(upload_sizes);
+
+    require(plan.uploaded_byte_count == chunk_size * 2 + 16,
+            "upload plan should preserve the exact source byte count");
+    require(plan.chunks.size() == 3,
+            "upload plan should split payloads across the bounded staging capacity");
+    require(plan.chunks[0].staging_byte_size == chunk_size &&
+                plan.chunks[1].staging_byte_size == chunk_size &&
+                plan.chunks[2].staging_byte_size == 17,
+            "upload plan should size each staging chunk to its packed copy range");
+
+    std::array<VkDeviceSize, 3> copied_bytes{};
+    std::array<VkDeviceSize, 3> next_destination_offsets{};
+    for (const cubey::vulkan::detail::DeviceBufferUploadChunk& chunk : plan.chunks) {
+        require(!chunk.pieces.empty(), "each upload chunk should make progress");
+        require(chunk.staging_byte_size <= chunk_size,
+                "upload chunk should stay within the staging cap");
+        for (const cubey::vulkan::detail::DeviceBufferUploadCopyPiece& piece : chunk.pieces) {
+            require(piece.source_offset % 4 == 0,
+                    "upload copy source offsets should satisfy Vulkan alignment");
+            require(piece.destination_offset == next_destination_offsets[piece.upload_index],
+                    "split upload copies should remain contiguous in destination order");
+            require(piece.source_offset + piece.byte_size <= chunk.staging_byte_size,
+                    "upload copy should remain inside its staging chunk");
+            copied_bytes[piece.upload_index] += piece.byte_size;
+            next_destination_offsets[piece.upload_index] += piece.byte_size;
+        }
+    }
+    require(copied_bytes == upload_sizes,
+            "upload plan should cover every request exactly once without gaps");
 }
