@@ -173,7 +173,7 @@ fi
 external_gpu_busy() {
     command -v nvidia-smi >/dev/null 2>&1 || return 1
     if nvidia-smi pmon -c 1 -s u 2>/dev/null | awk '
-        $1 ~ /^[0-9]+$/ && $3 ~ /C/ && $4 ~ /^[0-9]+$/ && $4 + 0 >= 10 {
+        $1 ~ /^[0-9]+$/ && $3 ~ /C/ && $4 ~ /^[0-9]+$/ && $4 + 0 >= 1 {
             busy = 1
         }
         END { exit busy ? 0 : 1 }
