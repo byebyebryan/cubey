@@ -91,13 +91,11 @@ struct TerrainBackdropSectorBounds {
     cubey::math::Vec3 minimum{0.0F, 0.0F, 0.0F};
     cubey::math::Vec3 maximum{0.0F, 0.0F, 0.0F};
     cubey::math::Vec3 center{0.0F, 0.0F, 0.0F};
-    float radius_m = 0.0F;
 };
 
 struct TerrainBackdropSectorMesh {
     std::vector<cubey::render::VertexPositionColorNormalUv> vertices{};
     std::vector<std::uint32_t> indices{};
-    std::vector<std::uint32_t> render_indices{};
     TerrainBackdropSectorBounds bounds{};
     float begin_azimuth_radians = 0.0F;
     float end_azimuth_radians = 0.0F;

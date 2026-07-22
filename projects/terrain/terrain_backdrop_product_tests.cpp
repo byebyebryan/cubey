@@ -69,11 +69,11 @@ rendered_boundary_edges(const cubey::projects::terrain::TerrainBackdropSectorMes
                         std::uint32_t angular_offset = 0U) {
     std::set<BoundaryEdge> edges;
     const std::uint32_t last_vertex = first_vertex + vertex_count;
-    for (std::size_t triangle = 0U; triangle < mesh.render_indices.size(); triangle += 3U) {
+    for (std::size_t triangle = 0U; triangle < mesh.indices.size(); triangle += 3U) {
         const std::uint32_t indices[] = {
-            mesh.render_indices[triangle],
-            mesh.render_indices[triangle + 1U],
-            mesh.render_indices[triangle + 2U],
+            mesh.indices[triangle],
+            mesh.indices[triangle + 1U],
+            mesh.indices[triangle + 2U],
         };
         for (std::size_t edge = 0U; edge < 3U; ++edge) {
             const std::uint32_t first = indices[edge];
@@ -266,7 +266,8 @@ void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
                 center.vertices.front().normal[1] < 0.9999F,
             "continuous backdrop center should retain the source gradient");
     require(product.diagnostics.center_vertex_count == center.vertices.size() &&
-                product.diagnostics.center_triangle_count == center.indices.size() / 3U &&
+                product.diagnostics.center_index_count ==
+                    product.diagnostics.center_triangle_count * 3U &&
                 product.diagnostics.center_render_triangle_count == center.triangle_count(),
             "continuous backdrop should report its center topology exactly");
     require(product.diagnostics.maximum_sector_boundary_delta_m == 0.0F,
@@ -361,9 +362,8 @@ void test_decimated_center_fan_reaches_the_first_sampled_ring() {
     request.render_stride = 3U;
     const TerrainBackdropProduct product =
         make_terrain_backdrop_product(request, source_for_seed(9012U));
-    const auto& render_indices = product.center->render_indices;
-    require(render_indices.size() >= 3U && render_indices[0] == 0U &&
-                render_indices[2] == 1U,
+    const auto& indices = product.center->indices;
+    require(indices.size() >= 3U && indices[0] == 0U && indices[2] == 1U,
             "continuous center fan should connect to its first sampled radial ring");
 }
 
@@ -376,9 +376,16 @@ void test_high_product_publishes_the_center_acceptance_budget() {
     request.render_stride = 3U;
     const TerrainBackdropProduct product =
         make_terrain_backdrop_product(request, source_for_seed(9012U));
+    std::uint64_t retained_index_count = product.center->indices.size();
+    for (const TerrainBackdropSectorMesh& sector : product.sectors) {
+        retained_index_count += sector.indices.size();
+    }
     require(product.diagnostics.center_render_triangle_count == 201'696U &&
                 product.diagnostics.render_triangle_count == 742'368U,
             "high backdrop should retain the center acceptance triangle budget");
+    require(retained_index_count == product.diagnostics.render_triangle_count * 3U &&
+                retained_index_count < product.diagnostics.visible_index_count,
+            "decimated products should retain only their draw topology");
 }
 
 void test_seam_matched_center_sampling_matches_the_outer_radial_step() {

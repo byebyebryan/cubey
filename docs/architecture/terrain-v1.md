@@ -272,6 +272,10 @@ still precedes LOD or further source work. The accepted shadowed composition
 measured `0.897 ms` mean and `0.893 ms` p50 at `1600 x 900`; the default moving
 clock measured `1.012 ms` mean and `0.925 ms` p50.
 
+The cached product retains only that selected draw topology. Full-resolution
+sample and triangle budgets remain diagnostic values; they are not materialized
+as a second unused index buffer in either CPU or GPU product state.
+
 The glTF proof consumer keeps terrain explicitly opt-in and preserves its
 no-terrain control path. At `1600 x 900`, terrain adds `0.423 ms` mean and
 `0.425 ms` p50 to the shared Forward PBR scene pass, below the `0.75 ms`
