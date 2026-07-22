@@ -69,10 +69,19 @@ varies between weathered `(0.68, 0.72, 0.75)` and clean
 local albedo variation use `0.035` and `0.012`; snow ambient-occlusion strength
 is `0.75`.
 
-Snow remains non-emissive and highly rough. There is no time-of-day material
-branch or night clamp. New `ambient-light` and `direct-light` diagnostics expose
-the actual pre-aerial lighting contributions so night brightness can be
-distinguished from emissive behavior.
+Snow remains non-emissive and highly rough. Filtered detail applies a smooth
+daylight response as the sun crosses the horizon rather than a binary night
+clamp. `ambient-light` and `direct-light` diagnostics expose the actual
+pre-aerial contributions so night brightness can be distinguished from emissive
+behavior.
+
+## Foreground Reflection Contract
+
+Forward PBR consumers may add the bounded terrain reflection proxy to their
+lower hemisphere. The proxy combines product-average material values, current
+atmosphere lighting, and a relief-derived horizon; it does not render the full
+terrain into a cubemap or claim peak silhouettes and parallax. The contribution
+is optional so a consumer can retain a matched atmosphere-only control.
 
 ## Evidence And Gates
 
@@ -101,7 +110,7 @@ center. The 200 m default and 500 m comparison remain continuous, with no
 source mask or flattened stage. Matched low-sun captures show attached,
 filtered shadows without a sector or map boundary. Below-horizon shadow work
 suspends, while the ambient/direct diagnostics confirm that night snow remains
-non-emissive.
+non-emissive and the filtered presentation damps its daylight response smoothly.
 
 The accepted `1600 x 900` profile measured `0.897 ms` mean and `0.893 ms` p50
 for a steady shadowed frame. The default moving clock measured `1.012 ms` mean,

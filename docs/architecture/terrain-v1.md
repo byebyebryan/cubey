@@ -1,13 +1,13 @@
 # Terrain V1 Runtime
 
-Date: 2026-07-19
+Date: 2026-07-22
 
 Status: active raster heightfield far-backdrop product.
 
 ## Goal
 
 Terrain V1 provides convincing far-field terrain for isolated rendering review
-and eventual scene composition. The product prioritizes stable macro shape,
+and scene composition. The product prioritizes stable macro shape,
 bounded per-frame cost, deterministic evidence, and a narrow consumer contract.
 It does not attempt close or hero terrain.
 
@@ -25,7 +25,8 @@ offline producer
     -> focused natural-stage plan
     -> cached continuous sector mesh
     -> procedural detail material + shared atmosphere/cloud environment
-    -> standalone review app
+    -> shared GPU runtime
+    -> terrain review app + opt-in glTF Viewer consumer
 ```
 
 Terrain Diffusion is the canonical development producer, not the API. Any tool
@@ -42,10 +43,12 @@ may provide a compatible manifest and elevation payload.
 - byte count, shape, layout, and SHA-256 metadata.
 
 Loading validates schema, finite dimensions/transforms, safe relative paths,
-declared and actual byte counts, finite elevation values, and field coverage.
-The runtime builds a filtered CPU mip chain so geometric sample footprint can
-select an appropriate source level. Generated assets, Python dependencies, and
-model weights remain outside Git and outside the renderer process.
+declared and actual byte counts, finite elevation values, field coverage, and
+the exact SHA-256 of the loaded elevation bytes. The runtime builds a filtered
+CPU mip chain so geometric sample footprint can select an appropriate source
+level. Production assets, Python dependencies, and model weights remain outside
+Git and outside the renderer process. One small deterministic raster fixture is
+tracked under `tests/assets/terrain` for executable integration smokes.
 
 The default build-tree asset is generated only by the explicit
 `cubey_terrain_generate_default_asset` target. Ordinary configure, build, and
@@ -54,7 +57,8 @@ a reason to switch source models.
 
 ## Placement And Camera
 
-The runtime searches a bounded regular grid for a focus with:
+The runtime searches a bounded regular grid around the geometric center of the
+source bounds for a focus with:
 
 - low local relief and slope around the subject;
 - a coherent mountain arc in some directions;
@@ -79,7 +83,8 @@ scoring, retry, or rejection and retain the same directional metrics for
 comparison. They are diagnostics, not alternate product defaults. A placement
 change stages a complete cached-product rebuild on the job system, keeps the
 active product visible, then uploads and atomically swaps only a successful
-replacement.
+replacement. Retired GPU meshes remain alive through the latest submitted frame
+ticket instead of forcing a queue- or device-idle stall.
 
 The standalone review app can also stage a source change between its startup
 field and any available generated climate-calibration region. Height and
@@ -198,11 +203,15 @@ vegetation, and shadow placeholders are not product diagnostics.
 ## Runtime Boundary
 
 The accepted backdrop is promoted through glTF Viewer as its first real
-external consumer. Shared asset code owns the immutable height source; shared
-render code owns placement and the cached product; the engine runtime owns GPU
-meshes, material resources, culling, terrain self-shadowing, and optional
-Forward PBR composition. Consumers keep stage composition, camera, world
-translation, atmosphere/cloud/HDR policy, UI, and source-build scheduling.
+external consumer. Shared asset code validates and owns the height source while
+building. Shared render code builds placement and the cached CPU product. The
+engine runtime copies the request, diagnostics, source metadata, and section
+bounds it needs, then owns the GPU meshes, material resources, culling, terrain
+self-shadowing, and optional Forward PBR composition. The producer, source, and
+full CPU product may be discarded after runtime creation. Product replacement
+retires prior GPU resources after their last submission ticket completes.
+Consumers keep stage composition, camera, world translation,
+atmosphere/cloud/HDR policy, UI, and source-build scheduling.
 
 The shared surface boundary bakes generic material channels. Mineral control is
 the production default. Climate rasters, climate-response formulas, calibration
@@ -229,6 +238,8 @@ changing this product contract or its default presentation. The follow-up
 defines the narrower climate-potential contract. The completed
 [Terrain Climate Calibration V1](../notes/terrain-climate-calibration-v1.md)
 records the five-region evidence and keeps the production default unchanged.
+The broader climate-response candidate was rejected and retained only as
+[archived evidence](../archive/terrain/climate-response-v1-1-rejected.md).
 
 ## Acceptance
 
@@ -262,6 +273,11 @@ no-terrain control path. At `1600 x 900`, terrain adds `0.423 ms` mean and
 `0.425 ms` p50 to the shared Forward PBR scene pass, below the `0.75 ms`
 promotion gate. This establishes a reusable far-backdrop product, not close
 terrain, streaming LOD, or a general terrain engine.
+
+Normal test runs exercise both real consumers with the tracked deterministic
+raster fixture. Each headless smoke must load and validate the payload, select
+placement, create the shared runtime, render a PNG, and pass nonblank image
+statistics; no network or model generation is involved.
 
 See [Terrain Product Promotion](../notes/terrain-product-promotion.md),
 [Terrain Rendering Envelope V1](../notes/terrain-rendering-envelope-v1.md),

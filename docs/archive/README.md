@@ -10,3 +10,5 @@ notes under `docs/architecture/`.
 
 - [Spike findings](spike-findings.md): historical WebGPU/Vulkan spike notes and
   decision record.
+- [Rejected terrain climate response V1.1](terrain/climate-response-v1-1-rejected.md):
+  compact verdict and retained findings from the unmerged climate experiment.

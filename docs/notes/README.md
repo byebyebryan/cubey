@@ -88,15 +88,15 @@ the detailed foundation notes under `docs/architecture/`.
   archived terrain-workbench PNG review set, what to
   inspect, and river driver limitations.
 - [Terrain project map](terrain-project-map.md): current active, frozen, paused,
-  and legacy lanes plus the directly sampled terrain v1 spine.
+  and legacy lanes plus the external-raster terrain v1 spine.
 - [Terrain backdrop foundation promotion](terrain-backdrop-foundation-promotion.md):
   ownership, second-consumer composition, climate boundary, and acceptance
   gates for promoting the fixed-focus backdrop.
 - [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
   hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
-- [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): completed
-  CPU/GPU source, traversable clipmap renderer, fixed review pack, measured
-  preset baseline, and the boundary before external-consumer integration.
+- [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): superseded
+  historical CPU/GPU source and traversable clipmap checkpoint retained for
+  provenance.
 - [Terrain rendering refinement](terrain-rendering-refinement.md): completed
   ground-level rendering checkpoint with heightfield shadows, atmosphere
   composition, procedural materials, LOD handoff fixes, and a frozen source.
@@ -172,6 +172,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain material v2](terrain-material-v2.md): frozen-source refinement gate
   for broad mineral identity, mesoscopic light response, matched captures, and
   explicit performance and visual acceptance criteria.
+- [Rejected terrain climate response V1.1](../archive/terrain/climate-response-v1-1-rejected.md):
+  compact evidence from the unmerged climate branch and the snow-allocation
+  failure that kept mineral control as the production default.
 - [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
   optional external-source control that compares the unchanged Mountains
   raymarch against an exact-source Cubey mesh transfer and staged ablations.

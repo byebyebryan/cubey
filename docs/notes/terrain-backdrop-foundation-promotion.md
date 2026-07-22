@@ -1,6 +1,6 @@
 # Terrain Backdrop Foundation Promotion
 
-Date: 2026-07-21
+Date: 2026-07-22
 
 Status: implemented and validated on 2026-07-21.
 
@@ -22,7 +22,7 @@ unchanged.
 ## Foundation Boundary
 
 - `cubey::asset` owns the immutable height-source interface and validated
-  `cubey.terrain.heightfield.v1` raster loader with provenance.
+  `cubey.terrain.heightfield.v1` raster loader with exact payload provenance.
 - `cubey::render` owns placement and stage plans, cached mesh products, the
   default mineral surface classifier, culling plans, and terrain-shadow math.
 - `cubey::engine` owns the GPU backdrop runtime and its composition hook in the
@@ -30,6 +30,12 @@ unchanged.
 - Consumers own cameras, scene entities, source selection policy, async build
   scheduling, world translation, atmosphere/cloud/HDR composition, UI, and
   capture policy.
+
+The runtime copies the compact request, diagnostics, metadata, and section
+bounds required after upload; it does not borrow the source or full CPU product.
+A caller may discard those producer objects after runtime creation. Successful
+replacement retires prior GPU meshes through the latest frame submission ticket
+instead of stalling the queue or device.
 
 The shared product accepts a narrow surface-classification interface and bakes
 the returned channels into vertices. The default classifier is the accepted
@@ -98,7 +104,8 @@ diagnostic.
 
 The glTF integration deliberately requires an externally supplied validated
 heightfield. Normal builds and portable smoke tests do not fetch or generate
-terrain data. The no-terrain viewer path remains the default.
+terrain data. A small deterministic tracked fixture drives real terrain and
+glTF headless smokes; the no-terrain viewer path remains the default.
 
 ## Validation
 
@@ -119,3 +126,8 @@ A matched 180-frame, 30-frame-warmup, cloud-disabled video profile on the RTX
 The steady-state mean and p50 increments pass the `0.75 ms` integration gate.
 The cached terrain shadow update occurs before the measured steady-state
 window; forced updates remain diagnostic as planned.
+
+The executable integration smokes load and hash-check the tracked raster,
+select placement relative to its translated source bounds, create the shared
+runtime, render each real consumer, and apply nonblank PNG statistics. This
+closes the normal-test gap left by the generated canonical asset.

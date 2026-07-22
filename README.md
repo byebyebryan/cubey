@@ -51,9 +51,10 @@ Current active projects:
   cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
   shared sky/celestial state, physical atmosphere preview, HDR post, and
   headless visual smoke coverage.
-- `terrain`: active directly sampled CPU/GLSL terrain source with shared
-  mountain/upland/plains presets, bounded local weathering, CPU/GPU parity
-  checks, a camera-relative clipmap renderer, and fixed visual review packs.
+- `terrain`: external-raster far-backdrop product with deterministic selected
+  and raw placement, continuous cached sector geometry, shared
+  atmosphere/cloud lighting, terrain self-shadowing, procedural material
+  detail, runtime replacement, and headless review coverage.
 - `ocean`: active ocean renderer derived from the GodotOceanWaves
   spectrum/FFT/unpack core, with Calm/Windy/Stormy presets, configurable
   cascade slots, persistent whitecaps, camera-relative clipmap LOD, curved
@@ -91,7 +92,7 @@ Paused studies and design-only projects:
 
 - `studies/terrain/hydrology`: opt-in snapshot of the previous regional terrain
   product, routing, and analytical landscape-evolution work; paused while the
-  active terrain path establishes its direct-sampling runtime.
+  active raster backdrop remains focused on rendering and composition.
 - `fluid_25d`: design-only shallow-water direction for terrain-bound rivers,
   flooding, sources, and sinks.
 
@@ -246,7 +247,7 @@ Useful windowed smokes:
 ./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --terrain-heightfield path/to/heightfield --terrain-foreground-height-m 200 --frames 300 --width 1280 --height 720
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --terrain-heightfield path/to/heightfield --terrain-foreground-height 200 --pbr-environment-source atmosphere --frames 300 --width 1280 --height 720
 ./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
 ```
 

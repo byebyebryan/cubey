@@ -22,8 +22,9 @@ The product keeps:
 - flat and filtered-detail material presentations for controlled comparison.
 
 The product does not claim close terrain, traversal, streaming, hydrology,
-vegetation, water, planet projection, or external-consumer integration. Those
-boundaries remain explicit while material fidelity is improved in isolation.
+vegetation, water, or planet projection. Those boundaries remain explicit while
+material fidelity is improved. External-consumer integration later landed
+through the opt-in glTF Viewer path without broadening those claims.
 
 The rendering-acceptance follow-up makes 200 m the default foreground height
 within the existing 2-1000 m logarithmic UI range. The 100 m and 500 m controls
@@ -105,8 +106,8 @@ checkpoint, while filtered-detail cost is reported separately rather than used
 as a promotion blocker.
 
 After promotion, material and terrain-light-response refinement remains local
-to the terrain project. Consumer integration remains a later
-foundation-promotion gate.
+to the terrain project. The later foundation-promotion gate was satisfied by
+glTF Viewer; additional consumers remain need-driven.
 
 ## Closure Evidence
 

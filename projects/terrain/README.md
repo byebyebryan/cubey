@@ -14,7 +14,8 @@ collision, or planet projection.
 
 The active path is fixed:
 
-- regular external float heightfield with validated metadata and coverage;
+- regular external float heightfield with validated metadata, coverage, and
+  exact payload SHA-256;
 - deterministic selected placement over the unchanged source field, with
   unfiltered center and indexed-sample comparison controls;
 - 200 m default foreground height, adjustable from 2-1000 m in the UI, and
@@ -106,8 +107,10 @@ Placement choices are `selected`, `raw-center`, and `raw-sample`. CLI values set
 the startup placement; the GUI can stage another mode/index and apply it while
 the app remains open. CPU resampling runs asynchronously, then the completed
 cached product replaces the GPU meshes atomically and resets the orbit while
-preserving foreground height. `raw-sample` uses the independent deterministic
-placement index and performs no quality rejection or retry.
+preserving foreground height. Prior GPU meshes retire after the latest submitted
+frame completes, without a queue- or device-idle stall. `raw-sample` uses the
+independent deterministic placement index and performs no quality rejection or
+retry.
 
 The source selector stages the same complete replacement for the startup source
 or any available `hot-dry`, `hot-wet`, `cool-wet`, `cold-dry`, and `cold-wet`
@@ -236,23 +239,28 @@ diagnostic sheets under `outputs/terrain/material-v2`.
 
 ```sh
 cmake --build --preset dev --target \
+  cubey_core_tests \
+  cubey_project_terrain \
   cubey_project_terrain_config_tests \
   cubey_project_terrain_raster_climate_source_tests \
-  cubey_project_terrain_raster_height_source_tests \
   cubey_project_terrain_backdrop_product_tests \
   cubey_project_terrain_backdrop_placement_tests \
   cubey_project_terrain_directional_placement_tests \
   cubey_project_terrain_shadow_tests \
   cubey_project_terrain_surface_model_tests
 
-ctest --preset dev -R '^terrain_.*_tests$' --output-on-failure
+ctest --preset dev --output-on-failure \
+  -R '^(cubey_core_tests|terrain_.*_tests|terrain_backdrop_headless_writes_png(_stats)?)$'
 ```
 
 The focused suite verifies the narrow runtime config, raster contract and
 filtering, deterministic topology and seams, selected/raw placement, and the
 placement-stage camera/coverage contract. It also checks directional-shadow
 coverage and cache invalidation. Product captures use the canonical asset
-deliberately; ordinary tests use small analytical or temporary fixtures.
+deliberately; ordinary unit tests use small analytical or temporary fixtures.
+The real headless terrain smoke uses the deterministic tracked raster under
+`tests/assets/terrain/backdrop-smoke` and verifies a nonblank PNG without a
+network or generation dependency.
 
 ## Studies And Boundaries
 
@@ -265,8 +273,9 @@ cmake --build --preset dev-terrain-studies
 ```
 
 `projects/planet` owns planet-scale terrain. The paused hydrology study owns
-regional drainage experiments. A second real consumer is required before the
-backdrop API moves from this project into `include/cubey` and `src/cubey`.
+regional drainage experiments. glTF Viewer is the first external consumer, and
+the backdrop API now lives in `include/cubey` and `src/cubey`. Additional
+adapters remain deferred until a concrete scene requires one.
 
 See [Terrain V1 Runtime](../../docs/architecture/terrain-v1.md),
 [Terrain Product Promotion](../../docs/notes/terrain-product-promotion.md), and
@@ -275,3 +284,5 @@ climate path is documented in
 [Terrain Climate Surface Model Research](../../docs/notes/terrain-climate-surface-model-research.md)
 and
 [Terrain Climate Calibration V1](../../docs/notes/terrain-climate-calibration-v1.md).
+The rejected broader climate response is retained only in
+[the terrain archive](../../docs/archive/terrain/climate-response-v1-1-rejected.md).

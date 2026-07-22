@@ -51,10 +51,11 @@ Current stable foundation pieces:
 - Surface Ocean V1 closed around a fixed-cost C0/C1 spectral core, independent
   Calm/Windy/Stormy look presets, shared atmosphere/cloud lighting, and an
   explicit terrain/water-body handoff boundary;
-- Terrain V1 promoted to one external-heightfield far-backdrop product with
-  deterministic natural placement, continuous cached geometry, shared
-  atmosphere/HDR lighting, runtime cached-placement replacement, a product
-  review UI, and opt-in historical studies;
+- Terrain V1 promoted to one validated external-heightfield far-backdrop
+  product with source-bounds-centered deterministic placement, continuous
+  cached geometry, shared atmosphere/cloud/HDR lighting, submission-safe
+  runtime replacement, terrain and glTF consumers, executable headless smokes,
+  a product review UI, and opt-in historical studies;
 - renderer foundation pieces for target views, render graph declaration,
   material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
   planning, and primitive mesh/draw helpers;
@@ -69,8 +70,8 @@ Recommended next feature streams:
 - renderer foundation: use the shared dynamic environment handoff for future
   atmosphere/PBR consumers instead of adding project-local probe descriptors.
 - `projects/terrain`: material and terrain-light-response refinement against
-  the accepted far-field source; defer consumer integration until the isolated
-  result is convincing.
+  the accepted far-field source. glTF Viewer proves the shared consumer path;
+  add further adapters only for concrete scene needs.
 - `projects/planet`: local/global terrain morphing, streaming/residency
   contracts, and eventual ocean-as-local-water handoff remain a separate
   planet-scale track.
@@ -281,8 +282,9 @@ Current checkpoint:
   environment lighting, shared celestial mechanics plus fullscreen sky/body
   frame helpers, a shared lightweight environment-lighting uniform/GLSL include
   consumed by water and volumetric pyro, terrain-ocean field packing, and shared
-  surface LOD planning: 2D clipmap grids for ocean/procedural-terrain diagnostics
-  and adaptive quadtree patch planning for planet-scale surface LOD.
+  surface LOD planning: 2D clipmap grids for ocean and archived procedural
+  terrain diagnostics, and adaptive quadtree patch planning for planet-scale
+  surface LOD. The active Terrain V1 backdrop uses fixed cached sectors instead.
 - Reusable `cubey::render::ResourceTable`,
   `cubey::render::RenderItem`,
   `cubey::render::MaterialPassInfo`,

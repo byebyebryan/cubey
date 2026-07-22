@@ -1,6 +1,6 @@
 # Terrain Project Map
 
-Date: 2026-07-19
+Date: 2026-07-22
 
 This map records the terrain product-promotion boundary. Older river,
 mountain-driver, source-model, and landscape-evolution notes are historical
@@ -10,7 +10,7 @@ evidence rather than an active queue.
 
 | Location | Role | Change policy |
 | --- | --- | --- |
-| `projects/terrain` | Fixed-focus external-heightfield backdrop, shared atmosphere, material review, diagnostics, and capture. | Active product. One runtime path and one asset contract. |
+| `projects/terrain` | Fixed-focus external-heightfield backdrop, shared runtime, atmosphere, material review, diagnostics, and capture. | Active product and review host. One runtime path and one asset contract. |
 | `studies/terrain/reference` | TerrainEngine and curated clean-room ShaderToy visual controls. | Optional frozen study. Maintenance and reproducibility fixes only. |
 | `studies/terrain/shadertoy` | External-source fidelity comparison between original raymarches and Cubey mesh transfer. | Optional restricted-source study. Do not promote source code directly. |
 | `studies/terrain/hydrology` | Regional drainage, graph routing, and analytical landscape-evolution experiments. | Optional paused study. Not a terrain-product dependency. |
@@ -28,7 +28,8 @@ offline generator
     -> deterministic natural placement
     -> cached continuous sector mesh
     -> filtered procedural material + shared atmosphere
-    -> fixed-focus backdrop and review UI
+    -> shared GPU runtime
+    -> terrain review UI + opt-in glTF Viewer consumer
 ```
 
 The generator is replaceable and does not run in the renderer. Regional
@@ -37,10 +38,12 @@ define this asset or rendering contract.
 
 ## Source And Asset
 
-The canonical development field is generated locally from the pinned
-Terrain Diffusion 30 m model at seed 0. It is one accepted test asset, not the
-terrain API. Any producer may supply the same manifest and regular elevation
-contract. Terrain shape stays unchanged during rendering and material work.
+The canonical development field is generated locally from the pinned Terrain
+Diffusion 30 m model at seed 0. It is one accepted product asset, not the terrain
+API. Any producer may supply the same manifest and regular elevation contract.
+Terrain shape stays unchanged during rendering and material work. Production
+fields remain outside Git; one small deterministic tracked raster exists only
+to exercise both real consumers in normal headless tests.
 
 ## Process Boundary
 
@@ -50,10 +53,11 @@ hydrology study or a future hydrology reboot.
 
 ## Consumer Boundary
 
-The standalone app is the only current integration target. glTF, fluid, ocean,
-and planet adapters remain deferred until the isolated backdrop has convincing
-material fidelity. A second consumer remains the gate for promotion into
-`include/cubey` and `src/cubey`.
+The terrain app and glTF Viewer are the current consumers. The shared asset,
+product, and runtime APIs have moved into `include/cubey` and `src/cubey`; glTF
+keeps terrain explicitly opt-in and preserves its no-terrain path. Fluid,
+ocean, planet, and other adapters remain deferred until a concrete composition
+needs the backdrop contract.
 
 ## Review Contract
 
@@ -80,6 +84,6 @@ findings must be re-expressed independently before they influence product code.
 - hydrology, rivers, lakes, wetlands, and coastlines;
 - biome/climate products and foliage placement;
 - terrain deformation, persistence, colliders, and streaming;
-- cross-project adapters;
+- additional cross-project adapters beyond glTF Viewer;
 - spherical planet mapping, floating origin, and planet-scale streaming;
 - close or hero terrain rendering.

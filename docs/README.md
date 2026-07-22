@@ -104,6 +104,7 @@ Legacy material:
 - [Clouds Legacy](../projects/clouds_legacy/README.md)
 - [Archived terrain attempts](archive/terrain/legacy-attempts.md)
 - [Terrain-ocean field contract](archive/terrain/terrain-ocean-field-contract.md)
+- [Rejected terrain climate response V1.1](archive/terrain/climate-response-v1-1-rejected.md)
 
 ## Notes
 

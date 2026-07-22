@@ -17,8 +17,9 @@ ocean renderer through small data and shader contracts:
 - `projects/atmosphere`: clear-sky scattering, atmosphere debug disks, and
   horizon aerial perspective, now also hosting the surface-only Cloud V1 layer
   through the shared cloud runtime.
-- `projects/terrain`: active directly sampled heightfield terrain and clipmap
-  rendering. It does not yet own bathymetry or shoreline products.
+- `projects/terrain`: active external-raster fixed-focus far-backdrop product
+  with cached sector geometry and a shared consumer runtime. It does not own
+  bathymetry or shoreline products.
 - `studies/terrain/hydrology`: paused regional terrain-product evidence for
   exported fields, routing, and future shoreline/bathymetry work.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
@@ -100,9 +101,10 @@ Current foundation checkpoint:
 
 The ocean renderer needs land and underwater shape before shoreline water can
 look convincing. That does not require a shallow-water solver on day one. The
-active directly sampled terrain runtime establishes the height-query and clipmap
-baseline, but a separate static bathymetry/shoreline product is still needed to
-unlock shallow color, beach edges, and surf masks.
+active raster terrain runtime establishes a validated heightfield and shared
+backdrop-rendering boundary, but it is not an ocean-space height query or LOD
+system. A separate static bathymetry/shoreline product is still needed to unlock
+shallow color, beach edges, and surf masks.
 
 First useful scope:
 

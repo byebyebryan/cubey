@@ -2,7 +2,12 @@
 
 Date: 2026-07-11
 
-Status: first complete directly sampled terrain product checkpoint.
+Status: superseded historical checkpoint.
+
+This note describes the removed directly sampled clipmap runtime. It is retained
+for provenance and is not current terrain direction. The active product is the
+external-raster fixed-focus backdrop documented in
+[Terrain V1 Runtime](../architecture/terrain-v1.md).
 
 ## What Landed
 
