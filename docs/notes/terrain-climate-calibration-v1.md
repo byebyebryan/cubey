@@ -100,17 +100,21 @@ matched 500 m views at headings 90 and 270 degrees, one raking-light climate
 view per regime, four surface diagnostics, fixed-scale source previews, profile
 metrics, a JSON report, and five contact sheets.
 
-The main comparison uses `raw-center` placement. The cool/wet field has no
-location that passes the current selected local-stage contract: its best
-candidate has 129.589 m of local relief against the 120 m limit and 0.337648
-P95 slope against the 0.25 limit. Its directional mountain, open-arc, and
-gradual-rise checks pass; camera clearance is not the rejected condition. Using
-raw center keeps source selection independent from this climate/material study
-without modifying terrain or relaxing the selector. A separate selected
-hot/dry control retained the prior product hashes:
+The main comparison uses `raw-center` placement so source selection remains
+independent from the climate/material study. Under the original 1 km local gate,
+the cool/wet field's best selected candidate had 129.589 m of relief against the
+120 m limit and 0.337648 P95 slope against the 0.25 limit. Its directional and
+camera-clearance checks passed.
 
-- geometry `0x2feef138f1fa5070`;
-- climate content `0x9c4519f1148450a3`.
+The follow-up selected-stage contract evaluates the actual supported product
+envelope instead: a 500 m radius, 120 m relief limit, and 0.275 P95 slope limit.
+Cool/wet now passes at source focus `(-11.5, -11.5) km`, with 91.433 m local
+relief, 0.260455 P95 slope, and 484.231 m baked clearance. This admits the useful
+alpine/snowline composition without changing the source. The selected hot/dry
+control now has product hashes:
+
+- geometry `0xfc903e7f97c4447a`;
+- climate content `0xfb9e4e791c3019a0`.
 
 Within each regime, geometry hash, raw-center focus, and raw/derived climate
 metrics are identical across all three surface models.

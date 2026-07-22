@@ -41,7 +41,7 @@ PLACEMENTS=(
 )
 
 printf 'file\ttitle\tgroup\tplacement\tplacement_index\targs\n' >"${MANIFEST}"
-printf 'placement\tmode\tindex\tfocus_x_m\tfocus_z_m\tdirectional_contract\tscore\tlocal_relief_m\tlocal_p95_slope\tbaked_clearance_m\n' >"${METRICS}"
+printf 'placement\tmode\tindex\tfocus_x_m\tfocus_z_m\tdirectional_contract\tscore\tlocal_radius_m\tlocal_relief_m\tmaximum_local_relief_m\tlocal_p95_slope\tmaximum_local_p95_slope\tbaked_clearance_m\n' >"${METRICS}"
 {
     printf '# Terrain Placement Control V1\n\n'
     printf -- '- Resolution: %sx%s\n' "${WIDTH}" "${HEIGHT}"
@@ -112,14 +112,17 @@ for placement in "${PLACEMENTS[@]}"; do
     done
 
     metrics_file="${profile_prefix}.metrics.csv"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${id}" "${mode}" "${placement_index}" \
         "$(metric_value "${metrics_file}" source_focus_x_m)" \
         "$(metric_value "${metrics_file}" source_focus_z_m)" \
         "$(metric_value "${metrics_file}" directional_contract)" \
         "$(metric_value "${metrics_file}" score)" \
+        "$(metric_value "${metrics_file}" local_radius_m)" \
         "$(metric_value "${metrics_file}" local_relief_m)" \
+        "$(metric_value "${metrics_file}" maximum_local_relief_m)" \
         "$(metric_value "${metrics_file}" local_p95_slope)" \
+        "$(metric_value "${metrics_file}" maximum_local_p95_slope)" \
         "$(metric_value "${metrics_file}" baked_clearance_m)" >>"${METRICS}"
 
     for foreground_height in 100 500; do
@@ -140,6 +143,7 @@ if [[ -d "${HEIGHTFIELD}" ]]; then
     MANIFEST_PATH="${HEIGHTFIELD}/heightfield.json"
 fi
 GIT_REVISION="$(git -C "${ROOT_DIR}" rev-parse HEAD)"
+SELECTED_METRICS="${OUT_DIR}/profiles/selected.metrics.csv"
 jq -n \
     --arg schema "cubey.terrain.placement-control.v1" \
     --arg git_revision "${GIT_REVISION}" \
@@ -148,6 +152,12 @@ jq -n \
     --arg elevation_sha256 "$(jq -r '.files.elevation.sha256' "${MANIFEST_PATH}")" \
     --argjson width "${WIDTH}" \
     --argjson height "${HEIGHT}" \
+    --argjson selected_local_radius_m \
+        "$(metric_value "${SELECTED_METRICS}" local_radius_m)" \
+    --argjson selected_maximum_local_relief_m \
+        "$(metric_value "${SELECTED_METRICS}" maximum_local_relief_m)" \
+    --argjson selected_maximum_local_p95_slope \
+        "$(metric_value "${SELECTED_METRICS}" maximum_local_p95_slope)" \
     --argjson capture_count "${#ALL_FILES[@]}" \
     '{
         schema: $schema,
@@ -159,6 +169,11 @@ jq -n \
         placements: ["selected", "raw-center", "raw-sample:0", "raw-sample:1", "raw-sample:2"],
         headings_degrees: [0, 90, 180, 270],
         foreground_heights_m: [100, 500],
+        selected_local_contract: {
+            radius_m: $selected_local_radius_m,
+            maximum_relief_m: $selected_maximum_local_relief_m,
+            maximum_p95_slope: $selected_maximum_local_p95_slope
+        },
         capture_count: $capture_count
     }' >"${OUT_DIR}/review-metadata.json"
 

@@ -157,6 +157,11 @@ That separate pack compares selected placement, the raw source center, and raw
 sample indexes 0-2 at matched headings and foreground heights. It also records
 the exact placement metrics used by the review.
 
+Selected placement evaluates a 500 m radius around the subject, with limits of
+120 m local relief and 0.275 P95 slope. This covers the 300 m stage and the
+clearance-qualified 250 m orbit with margin. Wider review-app orbits are stress
+views and do not expand the accepted placement contract.
+
 Generate the isolated lighting and material candidate pack with:
 
 ```sh

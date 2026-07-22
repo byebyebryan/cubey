@@ -61,6 +61,12 @@ The runtime searches a bounded regular grid for a focus with:
 - an open arc in other directions;
 - gradual rise rather than a circular wall.
 
+The local gate evaluates a 500 m radius around the subject and accepts at most
+120 m of relief and a 0.275 P95 height gradient. That radius covers the 300 m
+stage and clearance-qualified 250 m orbit with margin. The review app's wider
+orbit remains an inspection stress control, not a reason to reject an otherwise
+usable backdrop placement.
+
 The selected source coordinate is only a translation into the heightfield. The
 source remains continuous and unchanged. The focused stage maps a 500 m
 clearance-qualified reference height to local zero. The review app may move the
@@ -159,10 +165,11 @@ The product keeps diagnostics that directly inspect its supported contracts:
 - stage ownership boundary.
 
 The review UI and profile output also publish placement mode/index, source
-coordinate, directional contract and score, local relief, p95 slope, mountain
-and open arcs, and baked clearance. The UI separates staged placement controls
-and rebuild status from the active product metadata so an in-flight or failed
-replacement cannot be mistaken for the rendered terrain.
+coordinate, directional contract and score, local evaluation radius and limits,
+measured relief and P95 slope, mountain and open arcs, and baked clearance. The
+UI separates staged placement controls and rebuild status from the active
+product metadata so an in-flight or failed replacement cannot be mistaken for
+the rendered terrain.
 
 Retired procedural source bands, weathering, tessellation factors, clipmap LOD,
 vegetation, and shadow placeholders are not product diagnostics.

@@ -18,7 +18,8 @@ constexpr std::string_view kRawPlacementDomain = "terrain.backdrop.raw-placement
 selected_placement_failure(const TerrainDirectionalPlacementPlan& placement,
                            const TerrainDirectionalPlacementRequest& request) {
     std::ostringstream message;
-    message << "terrain heightfield has no passing selected backdrop stage; best candidate fails:";
+    message << "terrain heightfield has no passing selected backdrop stage; best candidate at "
+            << request.local_radius_m << " m local radius fails:";
     if (placement.local_relief_m > request.maximum_local_relief_m) {
         message << " local relief " << placement.local_relief_m << " m > "
                 << request.maximum_local_relief_m << " m;";

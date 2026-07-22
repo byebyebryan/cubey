@@ -82,6 +82,12 @@ void test_selected_mode_preserves_directional_placement_and_focus_height() {
             "selected stage should retain the finite seven by seven search domain");
     require_near(plan.stage.target_height_m - plan.stage.source_center_height_m, 500.0F, 0.001F,
                  "selected stage should retain the requested focus height when already clear");
+    require_near(plan.placement.local_radius_m, 500.0F, 0.001F,
+                 "selected stage should evaluate the supported local envelope");
+    require_near(plan.placement.maximum_local_relief_m, 120.0F, 0.001F,
+                 "selected stage should publish its local relief limit");
+    require_near(plan.placement.maximum_local_p95_slope, 0.275F, 0.0001F,
+                 "selected stage should publish its local slope limit");
     require_near(plan.centered_search_support_radius_m, 29'900.0F, 0.001F,
                  "selected stage should publish search, refinement, and render support");
     require_near(plan.selected_support_radius_m, 16'400.0F, 0.001F,
@@ -115,9 +121,10 @@ void test_selected_failure_reports_the_failed_contract() {
                                                           TerrainBackdropPlacementRequest{}));
     } catch (const std::exception& error) {
         const std::string message = error.what();
-        require(message.find("mountain sectors 0 outside [4, 14]") != std::string::npos &&
+        require(message.find("best candidate at 500 m local radius fails") != std::string::npos &&
+                    message.find("mountain sectors 0 outside [4, 14]") != std::string::npos &&
                     message.find("mountain arc 0 < 3") != std::string::npos,
-                "selected rejection should identify its failed directional thresholds");
+                "selected rejection should identify its local gate and directional thresholds");
         return;
     }
     throw std::runtime_error("flat terrain should fail selected placement");

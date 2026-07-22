@@ -11,7 +11,7 @@ struct TerrainDirectionalPlacementRequest {
     float search_extent_m = 32'000.0F;
     float search_step_m = 4'000.0F;
     bool detailed_search = false;
-    float local_radius_m = 1'000.0F;
+    float local_radius_m = 500.0F;
     float near_distance_m = 2'000.0F;
     float middle_distance_m = 6'000.0F;
     float far_distance_m = 9'000.0F;
@@ -19,7 +19,7 @@ struct TerrainDirectionalPlacementRequest {
     float mountain_prominence_m = 500.0F;
     float open_prominence_m = 200.0F;
     float maximum_local_relief_m = 120.0F;
-    float maximum_local_p95_slope = 0.25F;
+    float maximum_local_p95_slope = 0.275F;
     std::uint32_t sector_count = 24U;
     std::uint32_t minimum_mountain_sectors = 4U;
     std::uint32_t maximum_mountain_sectors = 14U;
@@ -49,8 +49,11 @@ struct TerrainDirectionalPlacementPlan {
     cubey::math::Vec2 source_focus_xz{0.0F, 0.0F};
     float mountain_yaw_radians = 0.0F;
     float center_height_m = 0.0F;
+    float local_radius_m = 0.0F;
     float local_relief_m = 0.0F;
+    float maximum_local_relief_m = 0.0F;
     float local_p95_slope = 0.0F;
+    float maximum_local_p95_slope = 0.0F;
     float mean_mountain_prominence_m = 0.0F;
     std::uint32_t sector_count = 0U;
     std::uint32_t mountain_sector_count = 0U;

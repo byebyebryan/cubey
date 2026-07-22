@@ -74,6 +74,9 @@ struct Candidate {
     cubey::math::Vec2 focus, bool detailed_local) {
     TerrainDirectionalPlacementPlan result;
     result.source_focus_xz = focus;
+    result.local_radius_m = request.local_radius_m;
+    result.maximum_local_relief_m = request.maximum_local_relief_m;
+    result.maximum_local_p95_slope = request.maximum_local_p95_slope;
     result.sector_count = request.sector_count;
     result.sectors.resize(request.sector_count);
     result.center_height_m = sample_height(source, focus, 32.0F, request.vertical_scale);

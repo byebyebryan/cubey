@@ -13,8 +13,8 @@ MODELS=(mineral-control landform-transition climate-transition)
 HEADINGS=(90 270)
 DIAGNOSTICS=(vegetation moisture material-weights material-albedo)
 
-EXPECTED_GEOMETRY_HASH="0x2feef138f1fa5070"
-EXPECTED_CLIMATE_CONTENT_HASH="0x9c4519f1148450a3"
+EXPECTED_GEOMETRY_HASH="0xfc903e7f97c4447a"
+EXPECTED_CLIMATE_CONTENT_HASH="0xfb9e4e791c3019a0"
 
 if [[ ! -x "${APP}" ]]; then
     printf 'terrain executable not found: %s\n' "${APP}" >&2
@@ -323,9 +323,9 @@ fi
     printf 'and material albedo for the climate model.\n\n'
     printf 'The report is evidence-only: it preserves all existing formulas and thresholds, '
     printf 'does not promote a new biome contract, and applies no new performance gate.\n\n'
-    printf 'Comparison lanes use deterministic `raw-center` placement so regions without a '
-    printf 'qualifying product stage remain observable. A separate selected hot/dry capture '
-    printf 'retains the frozen canonical geometry and content hashes.\n\n'
+    printf 'Comparison lanes use deterministic `raw-center` placement so source selection stays '
+    printf 'independent from the material study. A separate selected hot/dry capture checks the '
+    printf 'current selected-stage geometry and content hashes.\n\n'
     printf -- '- Assets: `%s`\n' "${ASSET_ROOT}"
     printf -- '- Resolution: %sx%s\n' "${WIDTH}" "${HEIGHT}"
     printf -- '- Foreground height: 500 m\n'

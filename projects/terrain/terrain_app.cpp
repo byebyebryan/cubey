@@ -776,8 +776,10 @@ class TerrainApp {
                     placement.source_focus_xz.y * 0.001F);
         ImGui::Text("Directional contract: %s", placement.contract_satisfied ? "pass" : "fail");
         ImGui::Text("Score: %.3f", placement.score);
-        ImGui::Text("Local relief: %.1f m", placement.local_relief_m);
-        ImGui::Text("P95 slope: %.3f", placement.local_p95_slope);
+        ImGui::Text("Local relief (%.0f m): %.1f / %.1f m", placement.local_radius_m,
+                    placement.local_relief_m, placement.maximum_local_relief_m);
+        ImGui::Text("P95 slope: %.3f / %.3f", placement.local_p95_slope,
+                    placement.maximum_local_p95_slope);
         ImGui::Text("Mountain/open sectors: %u / %u", placement.mountain_sector_count,
                     placement.open_sector_count);
         ImGui::Text("Mountain/open arcs: %u / %u", placement.largest_mountain_arc_sectors,
@@ -1336,10 +1338,16 @@ class TerrainApp {
                                 placement_stage_.placement.contract_satisfied ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.placement", "score",
                                 placement_stage_.placement.score);
+        recorder->record_metric(frame_index, "terrain.placement", "local_radius_m",
+                                placement_stage_.placement.local_radius_m);
         recorder->record_metric(frame_index, "terrain.placement", "local_relief_m",
                                 placement_stage_.placement.local_relief_m);
+        recorder->record_metric(frame_index, "terrain.placement", "maximum_local_relief_m",
+                                placement_stage_.placement.maximum_local_relief_m);
         recorder->record_metric(frame_index, "terrain.placement", "local_p95_slope",
                                 placement_stage_.placement.local_p95_slope);
+        recorder->record_metric(frame_index, "terrain.placement", "maximum_local_p95_slope",
+                                placement_stage_.placement.maximum_local_p95_slope);
         recorder->record_metric(frame_index, "terrain.placement", "baked_clearance_m",
                                 placement_stage_.stage.minimum_camera_clearance_m);
         recorder->record_metric(frame_index, "terrain.placement", "foreground_height_m",
