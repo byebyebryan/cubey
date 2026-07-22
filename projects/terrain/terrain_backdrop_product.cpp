@@ -151,9 +151,35 @@ void validate_request(const TerrainBackdropProductRequest& request,
                                           const std::vector<float>& radii,
                                           std::uint32_t angular_index, std::uint32_t radial_index,
                                           TerrainBackdropDensityProfile density) {
+    if (radial_index == 0U) {
+        const std::uint32_t radial_count = static_cast<std::uint32_t>(radii.size());
+        const std::uint32_t positive_x = density.angular_intervals / 4U;
+        const std::uint32_t positive_z = density.angular_intervals / 2U;
+        const std::uint32_t negative_x = positive_x * 3U;
+        const float diameter = std::max(radii[1U] * 2.0F, 0.001F);
+        const float gradient_x =
+            (heights[field_index(positive_x, 1U, radial_count)] -
+             heights[field_index(negative_x, 1U, radial_count)]) /
+            diameter;
+        const float gradient_z =
+            (heights[field_index(positive_z, 1U, radial_count)] -
+             heights[field_index(0U, 1U, radial_count)]) /
+            diameter;
+        return normalized({-gradient_x, 1.0F, -gradient_z});
+    }
+    const float angular_sample_span_m =
+        std::max(radii[radial_index] * kTwoPi /
+                     static_cast<float>(density.angular_intervals),
+                 0.001F);
+    const std::uint32_t angular_offset = std::clamp(
+        static_cast<std::uint32_t>(
+            std::lround(radial_footprint(radii, radial_index) / angular_sample_span_m)),
+        1U, density.angular_intervals / 4U);
     const std::uint32_t previous_angle =
-        (angular_index + density.angular_intervals - 1U) % density.angular_intervals;
-    const std::uint32_t next_angle = (angular_index + 1U) % density.angular_intervals;
+        (angular_index + density.angular_intervals - angular_offset) %
+        density.angular_intervals;
+    const std::uint32_t next_angle =
+        (angular_index + angular_offset) % density.angular_intervals;
     const std::uint32_t previous_radius = radial_index == 0U ? 0U : radial_index - 1U;
     const std::uint32_t next_radius =
         std::min(radial_index + 1U, static_cast<std::uint32_t>(radii.size() - 1U));

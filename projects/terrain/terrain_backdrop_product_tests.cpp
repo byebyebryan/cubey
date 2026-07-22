@@ -232,6 +232,11 @@ void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
     require(std::abs(center.vertices.front().position[0]) < 0.001F &&
                 std::abs(center.vertices.front().position[2]) < 0.001F,
             "continuous backdrop center fan should begin at the focus");
+    require(std::abs(center.vertices.front().normal[0]) +
+                    std::abs(center.vertices.front().normal[2]) >
+                0.01F &&
+                center.vertices.front().normal[1] < 0.9999F,
+            "continuous backdrop center should retain the source gradient");
     require(product.diagnostics.center_vertex_count == center.vertices.size() &&
                 product.diagnostics.center_triangle_count == center.indices.size() / 3U &&
                 product.diagnostics.center_render_triangle_count == center.triangle_count(),
