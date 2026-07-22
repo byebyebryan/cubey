@@ -9,7 +9,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 namespace cubey::render {
 
@@ -43,10 +45,9 @@ template <typename Index> [[nodiscard]] constexpr VkIndexType mesh_index_type() 
 } // namespace detail
 
 template <typename Vertex, typename Index>
-[[nodiscard]] MeshConfig indexed_mesh_config(std::span<const Vertex> vertices,
-                                             std::span<const Index> indices,
-                                             VkBufferUsageFlags vertex_usage =
-                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+[[nodiscard]] MeshConfig
+indexed_mesh_config(std::span<const Vertex> vertices, std::span<const Index> indices,
+                    VkBufferUsageFlags vertex_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
     return {
         .vertex_data = vertices.data(),
         .vertex_bytes = mesh_byte_size(vertices.size(), sizeof(Vertex)),
@@ -59,13 +60,20 @@ template <typename Vertex, typename Index>
 }
 
 template <typename Vertex, std::size_t VertexCount, typename Index, std::size_t IndexCount>
-[[nodiscard]] MeshConfig indexed_mesh_config(const std::array<Vertex, VertexCount>& vertices,
-                                             const std::array<Index, IndexCount>& indices,
-                                             VkBufferUsageFlags vertex_usage =
-                                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
+[[nodiscard]] MeshConfig
+indexed_mesh_config(const std::array<Vertex, VertexCount>& vertices,
+                    const std::array<Index, IndexCount>& indices,
+                    VkBufferUsageFlags vertex_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) {
     return indexed_mesh_config(std::span<const Vertex>(vertices), std::span<const Index>(indices),
                                vertex_usage);
 }
+
+class Mesh;
+struct MeshUploadBatch;
+
+[[nodiscard]] MeshUploadBatch upload_meshes(cubey::vulkan::GpuRuntime& gpu,
+                                            std::span<const MeshConfig> configs,
+                                            std::string label = "upload meshes");
 
 class Mesh {
   public:
@@ -91,10 +99,22 @@ class Mesh {
     }
 
   private:
+    friend MeshUploadBatch upload_meshes(cubey::vulkan::GpuRuntime& gpu,
+                                         std::span<const MeshConfig> configs, std::string label);
+
+    Mesh(cubey::vulkan::Buffer vertex_buffer, cubey::vulkan::Buffer index_buffer,
+         VkIndexType index_type, std::uint32_t index_count);
+
     cubey::vulkan::Buffer vertex_buffer_;
     cubey::vulkan::Buffer index_buffer_;
     VkIndexType index_type_ = VK_INDEX_TYPE_UINT16;
     std::uint32_t index_count_ = 0;
+};
+
+struct MeshUploadBatch {
+    std::vector<Mesh> meshes;
+    VkDeviceSize uploaded_byte_count = 0;
+    std::uint32_t transfer_submission_count = 0;
 };
 
 struct DrawItem {

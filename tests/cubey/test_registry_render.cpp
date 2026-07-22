@@ -28,6 +28,8 @@ void test_pbr_equirectangular_sampling_maps_cardinal_directions();
 void test_indexed_mesh_config_describes_u16_geometry();
 void test_indexed_mesh_config_describes_u32_geometry();
 void test_indexed_mesh_config_allows_storage_capable_vertex_buffers();
+void test_mesh_upload_batch_empty_is_a_noop();
+void test_mesh_upload_batch_validates_all_configs_before_gpu_work();
 void test_instance_buffer_helpers_describe_instance_vertex_data();
 void test_material_descriptor_writer_preserves_set_and_write_order();
 void test_material_alpha_modes_map_to_blend_and_pass_policy();
@@ -276,6 +278,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_indexed_mesh_config_describes_u16_geometry),
         CUBEY_TEST(test_indexed_mesh_config_describes_u32_geometry),
         CUBEY_TEST(test_indexed_mesh_config_allows_storage_capable_vertex_buffers),
+        CUBEY_TEST(test_mesh_upload_batch_empty_is_a_noop),
+        CUBEY_TEST(test_mesh_upload_batch_validates_all_configs_before_gpu_work),
         CUBEY_TEST(test_primitive_vertex_layouts_match_shader_contracts),
         CUBEY_TEST(test_instance_buffer_helpers_describe_instance_vertex_data),
         CUBEY_TEST(test_color_space_converts_srgb_authored_values_to_linear),
