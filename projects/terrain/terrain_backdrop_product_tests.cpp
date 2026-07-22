@@ -29,10 +29,14 @@ class AnalyticSource final : public cubey::projects::terrain::TerrainHeightSourc
   public:
     explicit AnalyticSource(std::uint64_t seed) : seed_(seed) {}
 
+    void rename(std::string id) {
+        id_ = std::move(id);
+    }
+
     [[nodiscard]] cubey::projects::terrain::TerrainHeightSourceMetadata
     metadata() const noexcept override {
         return {
-            .id = "analytic-product-test",
+            .id = id_,
             .seed = seed_,
             .base_height_m = 600.0F,
             .relief_scale_m = 1'600.0F,
@@ -49,6 +53,7 @@ class AnalyticSource final : public cubey::projects::terrain::TerrainHeightSourc
     }
 
   private:
+    std::string id_ = "analytic-product-test";
     std::uint64_t seed_ = 0U;
 };
 
@@ -198,10 +203,11 @@ void test_product_hash_changes_with_the_source_seed() {
 
 void test_product_retains_source_metadata() {
     using namespace cubey::projects::terrain;
-    const TerrainBackdropProduct product =
-        make_terrain_backdrop_product(product_request(), source_for_seed(9012U));
+    AnalyticSource source = source_for_seed(9012U);
+    const TerrainBackdropProduct product = make_terrain_backdrop_product(product_request(), source);
+    source.rename("mutated-source-id");
     require(product.source.seed == 9012U && product.source.id == "analytic-product-test",
-            "cached backdrop should retain a source metadata snapshot");
+            "cached backdrop should own its source metadata snapshot");
 }
 
 void test_full_render_stride_retains_the_baked_topology() {

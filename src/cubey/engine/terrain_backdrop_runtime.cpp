@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -142,25 +143,76 @@ environment_parameters(const render::AtmosphereEnvironmentFrameUniforms& atmosph
             srgb_channel_to_linear(value.z)};
 }
 
-} // namespace
+struct TerrainBackdropRuntimeSection {
+    render::TerrainBackdropSectorBounds bounds{};
+    std::uint32_t triangle_count = 0U;
+};
 
-TerrainBackdropReflection
-terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
-                            const TerrainBackdropRuntimeFrameInfo& frame) {
+struct TerrainBackdropRuntimeProductState {
+    render::TerrainBackdropProductRequest request{};
+    render::TerrainBackdropProductDiagnostics diagnostics{};
+    std::optional<TerrainBackdropRuntimeSection> center{};
+    std::vector<TerrainBackdropRuntimeSection> sectors{};
+};
+
+struct TerrainBackdropRuntimeMeshSet {
+    std::optional<render::Mesh> center{};
+    std::vector<render::Mesh> sectors{};
+};
+
+[[nodiscard]] TerrainBackdropRuntimeProductState
+runtime_product_state(const render::TerrainBackdropProduct& product) {
+    TerrainBackdropRuntimeProductState result{
+        .request = product.request,
+        .diagnostics = product.diagnostics,
+    };
+    if (product.center.has_value()) {
+        result.center = TerrainBackdropRuntimeSection{
+            .bounds = product.center->bounds,
+            .triangle_count = product.center->triangle_count(),
+        };
+    }
+    result.sectors.reserve(product.sectors.size());
+    for (const render::TerrainBackdropSectorMesh& sector : product.sectors) {
+        result.sectors.push_back({
+            .bounds = sector.bounds,
+            .triangle_count = sector.triangle_count(),
+        });
+    }
+    return result;
+}
+
+[[nodiscard]] TerrainBackdropRuntimeMeshSet
+upload_mesh_set(vulkan::GpuRuntime& gpu, const render::TerrainBackdropProduct& product) {
+    TerrainBackdropRuntimeMeshSet result;
+    if (product.center.has_value()) {
+        result.center.emplace(gpu, product.center->mesh_config());
+    }
+    result.sectors.reserve(product.sectors.size());
+    for (const render::TerrainBackdropSectorMesh& sector : product.sectors) {
+        result.sectors.emplace_back(gpu, sector.mesh_config());
+    }
+    return result;
+}
+
+[[nodiscard]] TerrainBackdropReflection
+terrain_backdrop_reflection_from_state(const render::TerrainBackdropProductRequest& request,
+                                       const render::TerrainBackdropProductDiagnostics& diagnostics,
+                                       const TerrainBackdropRuntimeFrameInfo& frame) {
     if (!frame.reflections_enabled) {
         return {};
     }
-    float rock = std::clamp(product.diagnostics.mean_rock, 0.0F, 1.0F);
-    float snow = std::clamp(product.diagnostics.mean_snow, 0.0F, 1.0F);
+    float rock = std::clamp(diagnostics.mean_rock, 0.0F, 1.0F);
+    float snow = std::clamp(diagnostics.mean_snow, 0.0F, 1.0F);
     float ground = std::max(0.0F, 1.0F - rock - snow);
     const float weight_sum = std::max(ground + rock + snow, 0.0001F);
     ground /= weight_sum;
     rock /= weight_sum;
     snow /= weight_sum;
     const float vegetation =
-        std::min(std::clamp(product.diagnostics.mean_vegetation / weight_sum, 0.0F, 1.0F), ground);
+        std::min(std::clamp(diagnostics.mean_vegetation / weight_sum, 0.0F, 1.0F), ground);
     const float soil = ground - vegetation;
-    const float moisture = std::clamp(product.diagnostics.mean_moisture, 0.0F, 1.0F);
+    const float moisture = std::clamp(diagnostics.mean_moisture, 0.0F, 1.0F);
 
     const math::Vec3 vegetation_color =
         glm::mix(srgb_to_linear({0.300F, 0.305F, 0.220F}), srgb_to_linear({0.160F, 0.240F, 0.160F}),
@@ -181,10 +233,10 @@ terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
         base_color *
         (glm::max(diffuse_irradiance, math::Vec3{0.0F}) * 0.88F + direct_radiance * 0.318309886F);
 
-    const float representative_height = glm::mix(product.diagnostics.minimum_height_m,
-                                                 product.diagnostics.maximum_height_m, 0.72F) +
-                                        frame.world_translation.y;
-    const float horizon_distance = std::max(product.request.visible_inner_radius_m, 1'200.0F);
+    const float representative_height =
+        glm::mix(diagnostics.minimum_height_m, diagnostics.maximum_height_m, 0.72F) +
+        frame.world_translation.y;
+    const float horizon_distance = std::max(request.visible_inner_radius_m, 1'200.0F);
     const float horizon_delta = representative_height - frame.camera_position.y;
     const float horizon_sine = horizon_delta / std::sqrt(horizon_delta * horizon_delta +
                                                          horizon_distance * horizon_distance);
@@ -196,8 +248,16 @@ terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
     };
 }
 
+} // namespace
+
+TerrainBackdropReflection
+terrain_backdrop_reflection(const render::TerrainBackdropProduct& product,
+                            const TerrainBackdropRuntimeFrameInfo& frame) {
+    return terrain_backdrop_reflection_from_state(product.request, product.diagnostics, frame);
+}
+
 struct TerrainBackdropRuntime::Impl {
-    const render::TerrainBackdropProduct* product = nullptr;
+    std::optional<TerrainBackdropRuntimeProductState> product{};
     TerrainBackdropRuntimeShaderFiles shaders{};
     render::MaterialPassInfo surface_pass = surface_pass_info();
     std::optional<render::Mesh> center_mesh{};
@@ -219,17 +279,11 @@ struct TerrainBackdropRuntime::Impl {
     bool frame_prepared = false;
     cubey::math::Vec3 previous_translation{};
 
-    void upload_meshes(vulkan::GpuRuntime& gpu, const render::TerrainBackdropProduct& next) {
-        center_mesh.reset();
-        sector_meshes.clear();
-        if (next.center.has_value()) {
-            center_mesh.emplace(gpu, next.center->mesh_config());
-        }
-        sector_meshes.reserve(next.sectors.size());
-        for (const render::TerrainBackdropSectorMesh& sector : next.sectors) {
-            sector_meshes.emplace_back(gpu, sector.mesh_config());
-        }
-        product = &next;
+    void install(TerrainBackdropRuntimeProductState next_product,
+                 TerrainBackdropRuntimeMeshSet next_meshes) {
+        product = std::move(next_product);
+        center_mesh = std::move(next_meshes.center);
+        sector_meshes = std::move(next_meshes.sectors);
         render::invalidate_terrain_shadow_cache(shadow_cache);
         shadow_sampled = false;
     }
@@ -252,13 +306,14 @@ TerrainBackdropRuntime&
 TerrainBackdropRuntime::operator=(TerrainBackdropRuntime&&) noexcept = default;
 
 void TerrainBackdropRuntime::create(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
+                                    const render::TerrainBackdropProduct& product,
                                     const TerrainBackdropRuntimeCreateInfo& info) {
-    if (info.product == nullptr || info.frame_slot_count == 0U) {
-        throw std::runtime_error("terrain backdrop runtime requires a product and frame slots");
+    if (info.frame_slot_count == 0U) {
+        throw std::runtime_error("terrain backdrop runtime requires frame slots");
     }
     destroy();
     impl_->shaders = info.shaders;
-    impl_->upload_meshes(gpu, *info.product);
+    impl_->install(runtime_product_state(product), upload_mesh_set(gpu, product));
 
     const VkPushConstantRange shadow_push{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
@@ -380,7 +435,7 @@ void TerrainBackdropRuntime::destroy() {
     impl_->shadow_pass.reset();
     impl_->center_mesh.reset();
     impl_->sector_meshes.clear();
-    impl_->product = nullptr;
+    impl_->product.reset();
     impl_->resources_created = false;
     impl_->shadow_update = false;
     impl_->shadow_sampled = false;
@@ -390,11 +445,26 @@ void TerrainBackdropRuntime::destroy() {
 }
 
 void TerrainBackdropRuntime::replace_product(vulkan::GpuRuntime& gpu,
-                                             const render::TerrainBackdropProduct& product) {
+                                             const render::TerrainBackdropProduct& product,
+                                             vulkan::GpuSubmissionTicket retire_after) {
     if (!created()) {
         throw std::runtime_error("terrain backdrop runtime is not created");
     }
-    impl_->upload_meshes(gpu, product);
+    TerrainBackdropRuntimeProductState next_product = runtime_product_state(product);
+    TerrainBackdropRuntimeMeshSet next_meshes = upload_mesh_set(gpu, product);
+    auto retired_meshes =
+        std::make_shared<TerrainBackdropRuntimeMeshSet>(TerrainBackdropRuntimeMeshSet{
+            .center = std::move(impl_->center_mesh),
+            .sectors = std::move(impl_->sector_meshes),
+        });
+    try {
+        gpu.defer_destruction_after(retire_after, [retired_meshes] {});
+    } catch (...) {
+        impl_->center_mesh = std::move(retired_meshes->center);
+        impl_->sector_meshes = std::move(retired_meshes->sectors);
+        throw;
+    }
+    impl_->install(std::move(next_product), std::move(next_meshes));
 }
 
 void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
@@ -411,7 +481,7 @@ void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
     impl_->frame = info;
     impl_->frame_prepared = true;
 
-    const render::TerrainBackdropProduct& product = *impl_->product;
+    const TerrainBackdropRuntimeProductState& product = *impl_->product;
     const render::TerrainShadowProjection candidate = render::terrain_shadow_projection(
         {
             .outer_radius_m = product.request.outer_radius_m,
@@ -445,12 +515,12 @@ void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
     };
     if (product.center.has_value() && visible(product.center->bounds)) {
         impl_->draw_plan.center_visible = true;
-        impl_->draw_plan.submitted_triangle_count += product.center->triangle_count();
+        impl_->draw_plan.submitted_triangle_count += product.center->triangle_count;
     }
     for (std::size_t index = 0U; index < product.sectors.size(); ++index) {
         if (visible(product.sectors[index].bounds)) {
             ++impl_->draw_plan.submitted_sector_count;
-            impl_->draw_plan.submitted_triangle_count += product.sectors[index].triangle_count();
+            impl_->draw_plan.submitted_triangle_count += product.sectors[index].triangle_count;
         }
     }
 }
@@ -490,7 +560,7 @@ void TerrainBackdropRuntime::record_surface_draws(const vulkan::CommandRecorder&
     render::bind_material_instance(recorder, pipeline, impl_->environment_material->material(),
                                    frame_slot);
     render::bind_material_instance(recorder, pipeline, *impl_->detail_material);
-    const render::TerrainBackdropProduct& product = *impl_->product;
+    const TerrainBackdropRuntimeProductState& product = *impl_->product;
     recorder.push_constants(
         pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0U,
         TerrainBackdropPushConstants{
@@ -567,16 +637,18 @@ const TerrainBackdropRuntimeDrawPlan& TerrainBackdropRuntime::draw_plan() const 
     return impl_->draw_plan;
 }
 TerrainBackdropReflection TerrainBackdropRuntime::reflection() const {
-    if (impl_->product == nullptr || !impl_->frame_prepared || !impl_->frame.reflections_enabled) {
+    if (!impl_->product.has_value() || !impl_->frame_prepared ||
+        !impl_->frame.reflections_enabled) {
         return {};
     }
-    return terrain_backdrop_reflection(*impl_->product, impl_->frame);
+    return terrain_backdrop_reflection_from_state(impl_->product->request,
+                                                  impl_->product->diagnostics, impl_->frame);
 }
 std::uint64_t TerrainBackdropRuntime::material_texture_bytes() const noexcept {
     return ::cubey::material_texture_bytes();
 }
 std::uint64_t TerrainBackdropRuntime::shadow_caster_triangle_count() const noexcept {
-    if (impl_->product == nullptr) {
+    if (!impl_->product.has_value()) {
         return 0U;
     }
     return impl_->product->diagnostics.render_triangle_count -

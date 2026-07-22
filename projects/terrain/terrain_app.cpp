@@ -32,7 +32,6 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
-#include <cubey/vulkan/vk_check.h>
 
 #include <imgui.h>
 #include <vulkan/vulkan.h>
@@ -935,10 +934,6 @@ class TerrainApp {
             throw std::runtime_error("terrain resources are not ready for a product rebuild");
         }
 
-        static_cast<void>(context.gpu().drain());
-        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                             "vkDeviceWaitIdle terrain product rebuild");
-
         const bool source_changed = build.replacement_source.has_value();
         const bool placement_changed =
             source_changed || build.config.placement != placement_stage_.mode ||
@@ -951,7 +946,8 @@ class TerrainApp {
         placement_stage_ = std::move(build.placement);
         climate_diagnostics_ = build.climate_diagnostics;
         product_ = std::move(build.product);
-        terrain_runtime_.replace_product(context.gpu(), product_);
+        terrain_runtime_.replace_product(context.gpu(), product_,
+                                         context.frame_resources().latest_submitted_ticket());
         runtime_config_ = std::move(build.config);
         if (placement_changed) {
             configure_camera_for_placement(false);
@@ -984,9 +980,8 @@ class TerrainApp {
         const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
         stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
         terrain_runtime_.create(
-            device, gpu,
+            device, gpu, product_,
             {
-                .product = &product_,
                 .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_TERRAIN_SHADER_DIR),
                 .material_seed = source_.metadata().seed,
                 .frame_slot_count = frame_slot_count,

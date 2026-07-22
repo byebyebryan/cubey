@@ -1,12 +1,13 @@
 #pragma once
 
 #include <cubey/asset/terrain_height_source.h>
-#include <cubey/render/terrain_backdrop_density.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/primitive_mesh.h>
+#include <cubey/render/terrain_backdrop_density.h>
 
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -122,9 +123,17 @@ struct TerrainBackdropProductDiagnostics {
     float mean_moisture = 0.0F;
 };
 
+struct TerrainBackdropSourceInfo {
+    std::string id{};
+    std::uint64_t seed = 0U;
+    float base_height_m = 0.0F;
+    float relief_scale_m = 1.0F;
+    float gradient_step_m = 2.0F;
+};
+
 struct TerrainBackdropProduct {
     TerrainBackdropProductRequest request{};
-    TerrainHeightSourceMetadata source{};
+    TerrainBackdropSourceInfo source{};
     std::optional<TerrainBackdropSectorMesh> center{};
     std::vector<TerrainBackdropSectorMesh> sectors{};
     TerrainBackdropProductDiagnostics diagnostics{};

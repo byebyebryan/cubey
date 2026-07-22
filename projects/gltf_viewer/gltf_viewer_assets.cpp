@@ -68,33 +68,34 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
         throw std::runtime_error("terrain heightfield does not exist: " +
                                  config_.terrain.heightfield_path.string());
     }
-    terrain_source_.emplace(config_.terrain.heightfield_path);
+    const cubey::asset::TerrainRasterHeightSource terrain_source(config_.terrain.heightfield_path);
     cubey::render::TerrainBackdropPlacementRequest placement_request;
-    terrain_placement_ = cubey::render::plan_terrain_backdrop_placement(
-        *terrain_source_, terrain_source_->bounds(), placement_request);
-    const cubey::render::TerrainBackdropStagePlan& stage = terrain_placement_->stage;
-    terrain_product_ = cubey::render::make_terrain_backdrop_product(
-        {
-            .source_focus_xz = stage.source_focus_xz,
-            .density = cubey::render::TerrainBackdropMeshDensity::High,
-            .center_mode = cubey::render::TerrainBackdropCenterMode::Continuous,
-            .center_sampling = cubey::render::TerrainBackdropCenterSampling::SeamMatched,
-            .render_stride =
-                config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
-            .consumer_radius_m = stage.stage_radius_m,
-            .visible_inner_radius_m = 3'200.0F,
-            .outer_radius_m = 16'384.0F,
-            .vertical_scale = 1.0F,
-            .vertical_offset_m = stage.terrain_vertical_offset_m,
-        },
-        *terrain_source_);
+    const cubey::render::TerrainBackdropPlacementPlan placement =
+        cubey::render::plan_terrain_backdrop_placement(terrain_source, terrain_source.bounds(),
+                                                       placement_request);
+    const cubey::render::TerrainBackdropStagePlan& stage = placement.stage;
+    const cubey::render::TerrainBackdropProduct product =
+        cubey::render::make_terrain_backdrop_product(
+            {
+                .source_focus_xz = stage.source_focus_xz,
+                .density = cubey::render::TerrainBackdropMeshDensity::High,
+                .center_mode = cubey::render::TerrainBackdropCenterMode::Continuous,
+                .center_sampling = cubey::render::TerrainBackdropCenterSampling::SeamMatched,
+                .render_stride =
+                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+                .consumer_radius_m = stage.stage_radius_m,
+                .visible_inner_radius_m = 3'200.0F,
+                .outer_radius_m = 16'384.0F,
+                .vertical_scale = 1.0F,
+                .vertical_offset_m = stage.terrain_vertical_offset_m,
+            },
+            terrain_source);
     terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
     terrain_runtime_.create(
-        device, gpu,
+        device, gpu, product,
         {
-            .product = &*terrain_product_,
             .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_GLTF_VIEWER_SHADER_DIR),
-            .material_seed = terrain_source_->metadata().seed,
+            .material_seed = terrain_source.metadata().seed,
             .frame_slot_count = frame_slot_count,
         });
 }

@@ -525,7 +525,13 @@ TerrainBackdropProduct make_terrain_backdrop_product(const TerrainBackdropProduc
 
     TerrainBackdropProduct product;
     product.request = request;
-    product.source = source_metadata;
+    product.source = {
+        .id = std::string(source_metadata.id),
+        .seed = source_metadata.seed,
+        .base_height_m = source_metadata.base_height_m,
+        .relief_scale_m = source_metadata.relief_scale_m,
+        .gradient_step_m = source_metadata.gradient_step_m,
+    };
     product.sectors.resize(density.sector_count);
     const std::uint32_t angular_intervals_per_sector =
         density.angular_intervals / density.sector_count;

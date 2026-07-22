@@ -177,9 +177,6 @@ class GltfViewerApp {
     cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
-    std::optional<cubey::asset::TerrainRasterHeightSource> terrain_source_{};
-    std::optional<cubey::render::TerrainBackdropPlacementPlan> terrain_placement_{};
-    std::optional<cubey::render::TerrainBackdropProduct> terrain_product_{};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;

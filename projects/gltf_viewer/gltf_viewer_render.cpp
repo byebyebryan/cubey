@@ -65,9 +65,6 @@ void GltfViewerApp::destroy_all_resources() {
     animation_sample_.reset();
     triangle_count_ = 0;
     asset_.reset();
-    terrain_product_.reset();
-    terrain_placement_.reset();
-    terrain_source_.reset();
 }
 
 void GltfViewerApp::record_viewer_target(
