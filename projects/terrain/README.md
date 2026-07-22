@@ -17,11 +17,12 @@ The active path is fixed:
 - regular external float heightfield with validated metadata and coverage;
 - deterministic selected placement over the unchanged source field, with
   unfiltered center and indexed-sample comparison controls;
-- 100 m default foreground height, adjustable from 2-1000 m in the UI, and
+- 200 m default foreground height, adjustable from 2-1000 m in the UI, and
   unrestricted orbit yaw;
 - 50-1000 m live inspection orbit radius and unrestricted elevation; the baked
   clearance contract remains qualified only through 250 m;
-- continuous seam-matched center, 16.384 km outer radius, and render stride 3;
+- continuous seam-matched center with full radial rings, 16.384 km outer
+  radius, and angular/outer render stride 3;
 - cullable static sectors plus an optional foreground review sphere;
 - flat and filtered procedural-detail material presentations;
 - cached directional shadows from the outer backdrop sectors, with the
@@ -34,8 +35,9 @@ The renderer does not modify the source shape. The center is regular terrain,
 not a cutout, flattened stage, or radial source mask.
 
 The 500 m baked stage remains the clearance-qualified far-field reference.
-Lower review heights intentionally relax that clearance guarantee so hero and
-surface-level views can expose topology, source, and material limitations.
+The 100 m lane is the explicit close stress view. Lower review heights
+intentionally relax the clearance guarantee so hero and surface-level views can
+expose topology, source, and material limitations.
 
 ## Generate The Asset
 
@@ -121,7 +123,8 @@ choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
 ```text
 surface height slope clay normal classification-normal material-weights
 ambient-visibility material-albedo material-normal material-roughness
-vegetation moisture sun-visibility projected-edge stage-ownership
+vegetation moisture ambient-light direct-light sun-visibility projected-edge
+stage-ownership
 ```
 
 `--terrain-render-stride 1|2|3` is a reference-only startup diagnostic. It
@@ -172,6 +175,17 @@ It writes `outputs/terrain/lighting-material-v1` with matched shadow controls,
 four material headings, diagnostics, camera controls, provenance, and steady
 plus forced-update GPU profiles. On NVIDIA hosts, a missed timing gate is
 retried when `nvidia-smi pmon` reports concurrent compute work.
+
+Generate the current rendering-acceptance pack with:
+
+```sh
+projects/terrain/capture_rendering_acceptance_review.sh
+```
+
+It uses the cool/wet selected source for 100/200/500 m framing, five sun
+elevations, shadow controls, topology/material/lighting diagnostics, all five
+climate sources, and steady plus moving-clock profiles. It writes
+`outputs/terrain/rendering-acceptance-v1`.
 
 Generate the rendering-envelope and fixed-topology decision pack with:
 

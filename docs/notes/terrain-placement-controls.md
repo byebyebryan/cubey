@@ -54,8 +54,9 @@ current showcase heading, while an explicit backdrop azimuth overrides either
 behavior. Controlled captures always pass explicit matched headings.
 
 Foreground height is a reproducible startup option matching the existing
-2-1000 m review slider. The 100 m default remains a deliberate stress view; the
-500 m baked reference remains the clearance-qualified comparison.
+2-1000 m review slider. The later rendering-acceptance pass uses 200 m as the
+product default; 100 m remains the deliberate close stress view and 500 m the
+clearance-qualified comparison.
 
 ## Deferred Prepared Stage
 

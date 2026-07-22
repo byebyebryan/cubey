@@ -25,9 +25,10 @@ The product does not claim close terrain, traversal, streaming, hydrology,
 vegetation, water, planet projection, or external-consumer integration. Those
 boundaries remain explicit while material fidelity is improved in isolation.
 
-Post-promotion review makes 100 m the default foreground height and exposes a
-2-1000 m logarithmic UI range. The 500 m reference remains available; lower
-heights are deliberate stress views rather than a new close-terrain claim.
+The rendering-acceptance follow-up makes 200 m the default foreground height
+within the existing 2-1000 m logarithmic UI range. The 100 m and 500 m controls
+remain the explicit close stress and clearance-qualified far-field views;
+neither extends the product into close terrain.
 
 A later placement-control checkpoint retains selected placement as the default
 and adds runtime-selectable raw center and deterministic indexed raw samples.
@@ -103,8 +104,9 @@ from raster-v1. Flat material performance is compared with the existing raster
 checkpoint, while filtered-detail cost is reported separately rather than used
 as a promotion blocker.
 
-After promotion, the next terrain batch is material and terrain-light-response
-refinement. Consumer integration remains a later foundation-promotion gate.
+After promotion, material and terrain-light-response refinement remains local
+to the terrain project. Consumer integration remains a later
+foundation-promotion gate.
 
 ## Closure Evidence
 

@@ -92,7 +92,7 @@ terrain consumer API.
 
 The V1 camera contract is:
 
-- foreground and orbit focus 100 m above the placed terrain center by default,
+- foreground and orbit focus 200 m above the placed terrain center by default,
   selectable at startup and adjustable from 2-1000 m on a logarithmic review
   slider;
 - unrestricted yaw;
@@ -102,10 +102,10 @@ The V1 camera contract is:
 - 40 degree vertical field of view;
 - optional 20 m foreground sphere for composition review.
 
-The 500 m setting remains the safe far-field comparison. Heights from 2-100 m
-are hero and surface stress views intended to expose intersections, topology,
-source, and material weaknesses. This camera is a product constraint, not a
-terrain LOD or traversal system.
+The 500 m setting remains the safe far-field comparison. The 100 m lane is the
+explicit close stress view; lower heights remain hero and surface diagnostics
+intended to expose intersections, topology, source, and material weaknesses.
+This camera is a product constraint, not a terrain LOD or traversal system.
 
 ## Geometry
 
@@ -116,7 +116,7 @@ mesh:
 - continuous seam-matched center;
 - visible far-field transition beginning at 3.2 km;
 - outer radius 16.384 km;
-- fixed render stride 3;
+- full center radial rings with angular and outer-terrain render stride 3;
 - exact shared samples at sector and center boundaries;
 - CPU frustum and azimuth culling before draw submission.
 
@@ -214,22 +214,27 @@ headings, camera-envelope endpoints, clean and foreground composition, flat and
 filtered-detail comparison, neutral and raking lighting, and the retained
 diagnostics. A separate placement-control pack compares the selected result
 against raw center and raw indexed locations at matched headings and 100/500 m
-focus heights. The shape and placement contract must remain identical across
-material modes.
+focus heights. The current rendering acceptance adds the 200 m product default
+between those controls. The shape and placement contract must remain identical
+across material modes.
 
-The current macro shape is accepted for far-field use. Material fidelity and
-terrain-light response are the next isolated refinement batch. Performance is
+The current macro shape is accepted for far-field use. The rendering-acceptance
+batch refines center topology, directional-shadow sampling, and filtered snow
+response without reopening the source or placement model. Performance is
 tracked by mean and p50 for the accepted view; p95 remains diagnostic until
 capture and startup noise are separated from steady-state rendering.
 
 The rendering-envelope gate compared the default stride-3 product with the
 same cached source rendered at stride 1. Full topology increased the complete
-draw product from `607,200` to `5,305,344` triangles without materially
-changing qualified silhouettes. Stride 3 therefore remains the V1 topology;
-Material V2 precedes LOD or further source work. The fixed clear composition
-measured `0.996 ms` mean and `0.921 ms` p50 at `1600 x 900`.
+draw product from the earlier `607,200` to `5,305,344` triangles without
+materially changing qualified silhouettes. Stride 3 therefore remains the V1
+outer topology; the center-topology correction later raises the default to
+`742,368` triangles without changing outer-terrain stride. Material refinement
+still precedes LOD or further source work. The fixed clear composition measured
+`0.996 ms` mean and `0.921 ms` p50 at `1600 x 900`.
 
 See [Terrain Product Promotion](../notes/terrain-product-promotion.md),
 [Terrain Rendering Envelope V1](../notes/terrain-rendering-envelope-v1.md),
+[Terrain Rendering Acceptance V1](../notes/terrain-rendering-acceptance-v1.md),
 [Terrain Project Map](../notes/terrain-project-map.md), and the project
 [README](../../projects/terrain/README.md).
