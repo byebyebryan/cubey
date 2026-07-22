@@ -47,6 +47,10 @@ if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
 endif()
 
 if (BUILD_TESTING)
+    set(
+        CUBEY_GLTF_VIEWER_TERRAIN_SMOKE_ASSET
+        "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
+    )
     add_test(
         NAME gltf_viewer_uses_forward_pbr_renderer_3d
         COMMAND
@@ -98,6 +102,28 @@ if (BUILD_TESTING)
         --headless
         --pbr-environment-source
         static
+    )
+    set(
+        CUBEY_GLTF_VIEWER_TERRAIN_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-terrain-backdrop-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        gltf_viewer_terrain_backdrop_headless_writes_png
+        cubey_project_gltf_viewer
+        "${CUBEY_GLTF_VIEWER_TERRAIN_HEADLESS_SMOKE_OUTPUT}"
+        --headless
+        --terrain-heightfield
+        "${CUBEY_GLTF_VIEWER_TERRAIN_SMOKE_ASSET}"
+        --terrain-foreground-height
+        200
+        --pbr-environment-source
+        atmosphere
+    )
+    cubey_add_png_stats_test(
+        gltf_viewer_terrain_backdrop_headless_writes_png
+        "${CUBEY_GLTF_VIEWER_TERRAIN_HEADLESS_SMOKE_OUTPUT}"
+        0.02
+        0.05
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_GLTF_VIEWER_HEADLESS_VIDEO_SMOKE_OUTPUT

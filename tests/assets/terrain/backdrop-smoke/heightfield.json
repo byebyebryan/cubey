@@ -1,0 +1,37 @@
+{
+  "files": {
+    "elevation": {
+      "byte_count": 264196,
+      "dtype": "float32-le",
+      "layout": "row-major-zx",
+      "path": "elevation.f32",
+      "sha256": "652bbec8ed22930300d382530a5f3e4ec81e4de3bdfb1a513f84fdcc64f69d0b",
+      "shape": [
+        257,
+        257
+      ]
+    }
+  },
+  "grid": {
+    "height": 257,
+    "sample_origin_x_m": -32768.0,
+    "sample_origin_z_m": -32768.0,
+    "sample_spacing_m": 256.0,
+    "width": 257
+  },
+  "height": {
+    "offset_m": 0.0,
+    "relief_scale_m": 1800.0,
+    "scale": 1.0
+  },
+  "provenance": {
+    "purpose": "deterministic terrain and glTF backdrop integration smoke",
+    "selection": "broad one-sided rise around the source bounds center"
+  },
+  "schema": "cubey.terrain.heightfield.v1",
+  "seed": 7,
+  "source": {
+    "generator": "tests/assets/terrain/generate_backdrop_smoke.py",
+    "id": "cubey-backdrop-smoke-directional-rise"
+  }
+}

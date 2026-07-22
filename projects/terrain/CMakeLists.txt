@@ -159,6 +159,11 @@ target_link_libraries(
 )
 
 if (BUILD_TESTING)
+    set(
+        CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET
+        "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
+    )
+
     add_executable(cubey_project_terrain_config_tests terrain_config_tests.cpp)
     target_link_libraries(
         cubey_project_terrain_config_tests
@@ -235,6 +240,29 @@ if (BUILD_TESTING)
     )
     add_test(NAME terrain_surface_model_tests COMMAND cubey_project_terrain_surface_model_tests)
 
+    set(
+        CUBEY_TERRAIN_BACKDROP_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/terrain-backdrop-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        terrain_backdrop_headless_writes_png
+        cubey_project_terrain
+        "${CUBEY_TERRAIN_BACKDROP_SMOKE_OUTPUT}"
+        --headless
+        --terrain-heightfield
+        "${CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET}"
+        --terrain-placement
+        selected
+        --terrain-foreground-height
+        200
+    )
+    cubey_add_png_stats_test(
+        terrain_backdrop_headless_writes_png
+        "${CUBEY_TERRAIN_BACKDROP_SMOKE_OUTPUT}"
+        0.02
+        0.05
+    )
+
     set_tests_properties(
         terrain_config_tests
         terrain_raster_climate_source_tests
@@ -243,6 +271,8 @@ if (BUILD_TESTING)
         terrain_directional_placement_tests
         terrain_shadow_tests
         terrain_surface_model_tests
+        terrain_backdrop_headless_writes_png
+        terrain_backdrop_headless_writes_png_stats
         PROPERTIES LABELS terrain TIMEOUT 120
     )
 endif()
