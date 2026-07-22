@@ -182,6 +182,32 @@ void test_terrain_raster_height_source_footprint_selects_filtered_mip() {
             "raster source should filter unresolved checkerboard detail");
 }
 
+void test_terrain_raster_height_source_odd_mips_preserve_world_endpoints() {
+    Fixture fixture;
+    constexpr std::uint32_t width = 5U;
+    constexpr std::uint32_t height = 3U;
+    fixture.values.resize(width * height);
+    for (std::uint32_t z = 0U; z < height; ++z) {
+        for (std::uint32_t x = 0U; x < width; ++x) {
+            fixture.values[static_cast<std::size_t>(z) * width + x] =
+                static_cast<float>(z * 10U + x);
+        }
+    }
+    fixture.manifest["grid"]["width"] = width;
+    fixture.manifest["grid"]["height"] = height;
+    fixture.manifest["height"]["offset_m"] = 0.0F;
+    fixture.manifest["height"]["scale"] = 1.0F;
+    fixture.manifest["files"]["elevation"]["shape"] = {height, width};
+    fixture.manifest["files"]["elevation"]["byte_count"] = width * height * sizeof(float);
+    fixture.write();
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
+
+    const float lower = source.sample_height({.world_xz = {0.0F, 0.0F}, .footprint_m = 20.0F});
+    const float upper = source.sample_height({.world_xz = {40.0F, 20.0F}, .footprint_m = 20.0F});
+    require(lower == 0.0F && upper == 24.0F,
+            "odd raster mips should preserve both world-space endpoints");
+}
+
 void test_terrain_raster_height_source_rejects_invalid_contracts() {
     {
         Fixture fixture;

@@ -51,7 +51,8 @@ class Fixture {
                 climate[48U + index] = 0.35F;
             }
         }
-        const std::string hash(64U, '0');
+        const std::string hash =
+            "23015f39ba82da95f7dfb69f3977b8f3276868515c27f5d02870829f7a05b862";
         height_manifest = {
             {"schema", "cubey.terrain.heightfield.v1"},
             {"source", {{"id", "test-raster"}}},

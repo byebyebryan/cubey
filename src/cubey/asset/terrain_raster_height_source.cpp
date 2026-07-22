@@ -180,36 +180,66 @@ TerrainRasterHeightSource::TerrainRasterHeightSource(const std::filesystem::path
                                  std::string(error.what()));
     }
 
+    struct AxisKernel {
+        std::array<std::uint32_t, 3> indices{};
+        std::array<float, 3> weights{};
+        std::uint32_t count = 0U;
+    };
+    const auto axis_kernel = [](std::uint32_t extent, std::uint32_t target) {
+        AxisKernel result;
+        if (extent == 1U) {
+            result.indices[0] = 0U;
+            result.weights[0] = 1.0F;
+            result.count = 1U;
+        } else if ((extent & 1U) == 0U) {
+            result.indices = {target * 2U, target * 2U + 1U, 0U};
+            result.weights = {0.5F, 0.5F, 0.0F};
+            result.count = 2U;
+        } else {
+            const std::uint32_t center = target * 2U;
+            if (center == 0U || center == extent - 1U) {
+                result.indices[0] = center;
+                result.weights[0] = 1.0F;
+                result.count = 1U;
+            } else {
+                result.indices = {center - 1U, center, center + 1U};
+                result.weights = {0.25F, 0.5F, 0.25F};
+                result.count = 3U;
+            }
+        }
+        return result;
+    };
+
     while (levels_.back().width > 1U || levels_.back().height > 1U) {
         const Level& previous = levels_.back();
         Level next{
             .width = (previous.width + 1U) / 2U,
             .height = (previous.height + 1U) / 2U,
             .spacing_m = previous.spacing_m * 2.0F,
-            .origin_x_m =
-                previous.origin_x_m + (previous.width > 1U ? previous.spacing_m * 0.5F : 0.0F),
-            .origin_z_m =
-                previous.origin_z_m + (previous.height > 1U ? previous.spacing_m * 0.5F : 0.0F),
+            .origin_x_m = previous.origin_x_m +
+                          (previous.width > 1U && (previous.width & 1U) == 0U
+                               ? previous.spacing_m * 0.5F
+                               : 0.0F),
+            .origin_z_m = previous.origin_z_m +
+                          (previous.height > 1U && (previous.height & 1U) == 0U
+                               ? previous.spacing_m * 0.5F
+                               : 0.0F),
         };
         next.values.resize(static_cast<std::size_t>(next.width) * next.height);
         for (std::uint32_t z = 0U; z < next.height; ++z) {
             for (std::uint32_t x = 0U; x < next.width; ++x) {
+                const AxisKernel x_kernel = axis_kernel(previous.width, x);
+                const AxisKernel z_kernel = axis_kernel(previous.height, z);
                 float sum = 0.0F;
-                std::uint32_t sample_count = 0U;
-                for (std::uint32_t dz = 0U; dz < 2U; ++dz) {
-                    for (std::uint32_t dx = 0U; dx < 2U; ++dx) {
-                        const std::uint32_t source_x = x * 2U + dx;
-                        const std::uint32_t source_z = z * 2U + dz;
-                        if (source_x < previous.width && source_z < previous.height) {
-                            sum += previous
-                                       .values[static_cast<std::size_t>(source_z) * previous.width +
-                                               source_x];
-                            ++sample_count;
-                        }
+                for (std::uint32_t dz = 0U; dz < z_kernel.count; ++dz) {
+                    for (std::uint32_t dx = 0U; dx < x_kernel.count; ++dx) {
+                        sum += previous.values[static_cast<std::size_t>(z_kernel.indices[dz]) *
+                                                   previous.width +
+                                               x_kernel.indices[dx]] *
+                               z_kernel.weights[dz] * x_kernel.weights[dx];
                     }
                 }
-                next.values[static_cast<std::size_t>(z) * next.width + x] =
-                    sum / static_cast<float>(sample_count);
+                next.values[static_cast<std::size_t>(z) * next.width + x] = sum;
             }
         }
         levels_.push_back(std::move(next));
