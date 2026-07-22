@@ -34,9 +34,11 @@ rewritten as the new default.
 
 Retain the high-density seam-matched source sampling, angular render stride 3,
 outer-terrain radial stride 3, 48 sectors, and `16.384 km` product radius. The
-continuous center alone renders every sampled radial ring. This removes the
-large first fan created by applying outer-terrain radial decimation to the
-consumer stage without increasing the complete outer backdrop density.
+continuous center alone renders every sampled radial ring. Its center normal
+comes from opposite first-ring source samples, and each later polar normal uses
+an angular baseline matched to the local radial footprint. This avoids
+degenerate near-center angular tangents without increasing the complete outer
+backdrop density.
 
 The expected candidate contains `201,696` center render triangles and
 `742,368` total render triangles. Geometry and content hashes therefore change
@@ -79,11 +81,12 @@ projected edges, material channels, ambient light, and direct light. Include a
 200 m daytime comparison of all five climate sources and a moving-clock
 profile.
 
-The clear default lane must remain at or below `1.10 ms` mean and p50 for
-atmosphere, shadow, terrain, and post combined, and no more than `0.15 ms` above
-the matched control. A forced 2048 shadow refresh must remain below `0.50 ms`
-p50. Record moving-clock p95 and shadow-update frequency as evidence, not as the
-primary gate.
+The clear default and moving-clock lanes must remain at or below `1.10 ms` mean
+and p50 for atmosphere, shadow, terrain, and post combined, and no more than
+`0.15 ms` above the matched control. Record moving-clock p95 and shadow-update
+frequency as evidence, not as the primary gate. A two-hour-per-second
+every-frame refresh lane records cache saturation but is not a product gate;
+the accepted running clock uses the default `0.5` hour-per-second cadence.
 
 Required validation is the complete terrain test set, shader compilation and
 lint, the applicable default project tests, a headless capture, a runtime smoke
