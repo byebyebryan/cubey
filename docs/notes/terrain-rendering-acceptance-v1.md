@@ -103,10 +103,10 @@ filtered shadows without a sector or map boundary. Below-horizon shadow work
 suspends, while the ambient/direct diagnostics confirm that night snow remains
 non-emissive.
 
-The accepted `1600 x 900` profile measured `0.906 ms` mean and `0.902 ms` p50
-for a steady shadowed frame. The default moving clock measured `0.918 ms` mean,
-`0.904 ms` p50, and `0.994 ms` p95 with 24 map updates over the capture. A
-cached update measured `0.084 ms` p50 in that lane. The every-frame
+The accepted `1600 x 900` profile measured `0.897 ms` mean and `0.893 ms` p50
+for a steady shadowed frame. The default moving clock measured `1.012 ms` mean,
+`0.925 ms` p50, and `1.015 ms` p95 with 24 map updates over the capture. A
+cached update measured `0.086 ms` p50 in that lane. The every-frame
 shadow-saturation control remains outside the product gate because rewriting
 and sampling the same map on adjacent frames serializes the shared resource.
 
