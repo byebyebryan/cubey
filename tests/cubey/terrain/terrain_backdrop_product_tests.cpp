@@ -3,11 +3,12 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <numbers>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <utility>
+#include <vector>
 
 namespace {
 
@@ -59,33 +60,55 @@ class AnalyticSource final : public cubey::asset::TerrainHeightSource {
     return AnalyticSource(seed);
 }
 
-using BoundaryEdge = std::pair<std::uint32_t, std::uint32_t>;
+[[nodiscard]] float radius(const cubey::terrain::TerrainBackdropVertex& vertex) {
+    return std::sqrt(vertex.position[0] * vertex.position[0] +
+                     vertex.position[2] * vertex.position[2]);
+}
 
-[[nodiscard]] std::set<BoundaryEdge>
-rendered_boundary_edges(const cubey::terrain::TerrainBackdropSectorMesh& mesh,
-                        std::uint32_t first_vertex, std::uint32_t vertex_count,
-                        std::uint32_t angular_offset = 0U) {
-    std::set<BoundaryEdge> edges;
-    const std::uint32_t last_vertex = first_vertex + vertex_count;
-    for (std::size_t triangle = 0U; triangle < mesh.indices.size(); triangle += 3U) {
-        const std::uint32_t indices[] = {
-            mesh.indices[triangle],
-            mesh.indices[triangle + 1U],
-            mesh.indices[triangle + 2U],
-        };
-        for (std::size_t edge = 0U; edge < 3U; ++edge) {
-            const std::uint32_t first = indices[edge];
-            const std::uint32_t second = indices[(edge + 1U) % 3U];
-            if (first < first_vertex || first >= last_vertex || second < first_vertex ||
-                second >= last_vertex) {
-                continue;
-            }
-            const std::uint32_t local_first = first - first_vertex + angular_offset;
-            const std::uint32_t local_second = second - first_vertex + angular_offset;
-            edges.emplace(std::min(local_first, local_second), std::max(local_first, local_second));
-        }
+[[nodiscard]] std::vector<float>
+unique_radii(const cubey::terrain::TerrainBackdropSectorMesh& mesh) {
+    std::vector<float> radii;
+    radii.reserve(mesh.vertices.size());
+    for (const cubey::terrain::TerrainBackdropVertex& vertex : mesh.vertices) {
+        radii.push_back(radius(vertex));
     }
-    return edges;
+    std::ranges::sort(radii);
+    radii.erase(std::unique(radii.begin(), radii.end(),
+                            [](float lhs, float rhs) { return std::abs(lhs - rhs) < 0.01F; }),
+                radii.end());
+    return radii;
+}
+
+[[nodiscard]] std::set<std::uint32_t>
+boundary_angles(const cubey::terrain::TerrainBackdropSectorMesh& mesh, float boundary_radius,
+                std::uint32_t angular_intervals) {
+    std::set<std::uint32_t> result;
+    constexpr float kTwoPi = 2.0F * std::numbers::pi_v<float>;
+    for (const cubey::terrain::TerrainBackdropVertex& vertex : mesh.vertices) {
+        if (std::abs(radius(vertex) - boundary_radius) >= 0.01F) {
+            continue;
+        }
+        float angle = std::atan2(vertex.position[2], vertex.position[0]);
+        if (angle < 0.0F) {
+            angle += kTwoPi;
+        }
+        const auto sample = static_cast<std::uint32_t>(
+            std::lround(angle * static_cast<float>(angular_intervals) / kTwoPi));
+        result.insert(sample % angular_intervals);
+    }
+    return result;
+}
+
+[[nodiscard]] bool
+all_vertices_are_referenced(const cubey::terrain::TerrainBackdropSectorMesh& mesh) {
+    std::vector<bool> referenced(mesh.vertices.size(), false);
+    for (const std::uint32_t index : mesh.indices) {
+        if (index >= referenced.size()) {
+            return false;
+        }
+        referenced[index] = true;
+    }
+    return std::ranges::all_of(referenced, [](bool value) { return value; });
 }
 
 void test_density_profiles_publish_the_product_budget() {
@@ -149,11 +172,11 @@ void test_product_is_deterministic_connected_and_outside_the_stage() {
                 static_cast<std::uint64_t>(density.angular_intervals) *
                     (density.hidden_radial_intervals + density.visible_radial_intervals + 1U),
             "cached backdrop should sample the global polar field exactly once");
-    require(first.diagnostics.visible_triangle_count ==
+    require(first.diagnostics.full_triangle_count ==
                 static_cast<std::uint64_t>(density.angular_intervals) *
                     density.visible_radial_intervals * 2U,
             "cached backdrop should publish its exact triangle budget");
-    require(first.diagnostics.render_triangle_count == first.diagnostics.visible_triangle_count,
+    require(first.diagnostics.render_triangle_count == first.diagnostics.full_triangle_count,
             "low backdrop product should retain every generated triangle for rendering");
     for (const TerrainBackdropSectorMesh& sector : first.sectors) {
         for (const auto& vertex : sector.vertices) {
@@ -200,7 +223,7 @@ void test_full_render_stride_retains_the_baked_topology() {
     request.render_stride = 1U;
     const TerrainBackdropProduct product =
         make_terrain_backdrop_product(request, source_for_seed(9012U));
-    require(product.diagnostics.render_triangle_count == product.diagnostics.visible_triangle_count,
+    require(product.diagnostics.render_triangle_count == product.diagnostics.full_triangle_count,
             "explicit stride one should retain the full baked topology for source studies");
 }
 
@@ -226,9 +249,9 @@ void test_continuous_product_fills_the_center_and_preserves_the_outer_seam() {
                     0.01F &&
                 center.vertices.front().normal[1] < 0.9999F,
             "continuous backdrop center should retain the source gradient");
-    require(product.diagnostics.center_vertex_count == center.vertices.size() &&
-                product.diagnostics.center_index_count ==
-                    product.diagnostics.center_triangle_count * 3U &&
+    require(product.diagnostics.center_sampled_vertex_count == center.vertices.size() &&
+                product.diagnostics.center_render_vertex_count == center.vertices.size() &&
+                center.indices.size() == product.diagnostics.center_full_triangle_count * 3U &&
                 product.diagnostics.center_render_triangle_count == center.triangle_count(),
             "continuous backdrop should report its center topology exactly");
     require(product.diagnostics.maximum_sector_boundary_delta_m == 0.0F,
@@ -254,23 +277,25 @@ void test_uniform_center_sampling_redistributes_the_existing_budget() {
         density.center_radial_intervals + density.hidden_radial_intervals;
     const float expected_spacing =
         uniform_request.visible_inner_radius_m / static_cast<float>(center_intervals);
-    const auto& center = uniform.center.value();
-    const std::uint32_t angular_vertex_count = density.angular_intervals + 1U;
+    const std::vector<float> radii = unique_radii(uniform.center.value());
+    require(radii.size() == center_intervals + 1U,
+            "uniform center should retain one compact vertex radius per sampled ring");
     float previous_radius = 0.0F;
     for (std::uint32_t ring = 1U; ring <= center_intervals; ++ring) {
-        const auto& vertex = center.vertices[1U + (ring - 1U) * angular_vertex_count];
-        const float radius = std::sqrt(vertex.position[0] * vertex.position[0] +
-                                       vertex.position[2] * vertex.position[2]);
-        require(std::abs(radius - expected_spacing * static_cast<float>(ring)) < 0.01F,
+        const float ring_radius = radii[ring];
+        require(std::abs(ring_radius - expected_spacing * static_cast<float>(ring)) < 0.01F,
                 "uniform center rings should use one source-scale interval");
-        require(radius > previous_radius, "uniform center rings should remain strictly monotonic");
-        previous_radius = radius;
+        require(ring_radius > previous_radius,
+                "uniform center rings should remain strictly monotonic");
+        previous_radius = ring_radius;
     }
     require(std::abs(previous_radius - uniform_request.visible_inner_radius_m) < 0.01F,
             "uniform center should terminate at the visible outer seam");
     require(uniform.diagnostics.source_sample_count == split.diagnostics.source_sample_count &&
-                uniform.diagnostics.center_vertex_count == split.diagnostics.center_vertex_count &&
-                uniform.diagnostics.center_index_count == split.diagnostics.center_index_count &&
+                uniform.diagnostics.center_sampled_vertex_count ==
+                    split.diagnostics.center_sampled_vertex_count &&
+                uniform.diagnostics.center_full_triangle_count ==
+                    split.diagnostics.center_full_triangle_count &&
                 uniform.diagnostics.render_triangle_count ==
                     split.diagnostics.render_triangle_count,
             "uniform center sampling should only redistribute the existing product budget");
@@ -298,21 +323,16 @@ void test_decimated_center_and_sectors_share_the_same_rendered_seam_edges() {
     const TerrainBackdropProduct product =
         make_terrain_backdrop_product(request, source_for_seed(9012U));
     const TerrainBackdropDensityProfile density = product.diagnostics.density;
-    const std::uint32_t center_intervals =
-        density.center_radial_intervals + density.hidden_radial_intervals;
-    const std::uint32_t center_row_begin =
-        1U + (center_intervals - 1U) * (density.angular_intervals + 1U);
-    const std::set<BoundaryEdge> center_edges = rendered_boundary_edges(
-        product.center.value(), center_row_begin, density.angular_intervals + 1U);
+    const std::set<std::uint32_t> center_angles = boundary_angles(
+        product.center.value(), request.visible_inner_radius_m, density.angular_intervals);
 
-    const std::uint32_t intervals_per_sector = density.angular_intervals / density.sector_count;
-    std::set<BoundaryEdge> sector_edges;
-    for (std::uint32_t sector = 0U; sector < density.sector_count; ++sector) {
-        const std::set<BoundaryEdge> local_edges = rendered_boundary_edges(
-            product.sectors[sector], 0U, intervals_per_sector + 1U, sector * intervals_per_sector);
-        sector_edges.insert(local_edges.begin(), local_edges.end());
+    std::set<std::uint32_t> sector_angles;
+    for (const TerrainBackdropSectorMesh& sector : product.sectors) {
+        const std::set<std::uint32_t> local =
+            boundary_angles(sector, request.visible_inner_radius_m, density.angular_intervals);
+        sector_angles.insert(local.begin(), local.end());
     }
-    require(center_edges == sector_edges,
+    require(center_angles == sector_angles,
             "decimated center and sectors should render identical seam partitions");
 }
 
@@ -324,7 +344,9 @@ void test_decimated_center_fan_reaches_the_first_sampled_ring() {
     const TerrainBackdropProduct product =
         make_terrain_backdrop_product(request, source_for_seed(9012U));
     const auto& indices = product.center->indices;
-    require(indices.size() >= 3U && indices[0] == 0U && indices[2] == 1U,
+    require(indices.size() >= 3U && radius(product.center->vertices[indices[0]]) < 0.01F &&
+                radius(product.center->vertices[indices[1]]) > 0.0F &&
+                radius(product.center->vertices[indices[2]]) > 0.0F,
             "continuous center fan should connect to its first sampled radial ring");
 }
 
@@ -344,9 +366,23 @@ void test_high_product_publishes_the_center_acceptance_budget() {
     require(product.diagnostics.center_render_triangle_count == 201'696U &&
                 product.diagnostics.render_triangle_count == 742'368U,
             "high backdrop should retain the center acceptance triangle budget");
+    require(product.diagnostics.center_sampled_vertex_count == 295'009U &&
+                product.diagnostics.sampled_vertex_count == 2'694'289U &&
+                product.diagnostics.center_render_vertex_count == 101'473U &&
+                product.diagnostics.render_vertex_count == 385'201U,
+            "high backdrop should compact its accepted draw vertices deterministically");
+    require(product.diagnostics.center_full_triangle_count == 586'752U &&
+                product.diagnostics.full_triangle_count == 5'305'344U,
+            "high backdrop should retain full-field topology diagnostics");
     require(retained_index_count == product.diagnostics.render_triangle_count * 3U &&
-                retained_index_count < product.diagnostics.visible_index_count,
+                retained_index_count < product.diagnostics.full_triangle_count * 3U,
             "decimated products should retain only their draw topology");
+    require(all_vertices_are_referenced(product.center.value()),
+            "compacted center should retain only referenced vertices");
+    for (const TerrainBackdropSectorMesh& sector : product.sectors) {
+        require(all_vertices_are_referenced(sector),
+                "compacted sectors should retain only referenced vertices");
+    }
 }
 
 void test_seam_matched_center_sampling_matches_the_outer_radial_step() {
@@ -356,22 +392,14 @@ void test_seam_matched_center_sampling_matches_the_outer_radial_step() {
     request.center_sampling = TerrainBackdropCenterSampling::SeamMatched;
     const TerrainBackdropProduct product =
         make_terrain_backdrop_product(request, source_for_seed(9012U));
-    const TerrainBackdropDensityProfile density = product.diagnostics.density;
-    const std::uint32_t center_intervals =
-        density.center_radial_intervals + density.hidden_radial_intervals;
-    const std::uint32_t angular_vertex_count = density.angular_intervals + 1U;
-    const auto radius = [](const auto& vertex) {
-        return std::sqrt(vertex.position[0] * vertex.position[0] +
-                         vertex.position[2] * vertex.position[2]);
-    };
-    const auto& center = product.center.value();
-    const float center_previous_radius =
-        radius(center.vertices[1U + (center_intervals - 2U) * angular_vertex_count]);
-    const float center_seam_radius =
-        radius(center.vertices[1U + (center_intervals - 1U) * angular_vertex_count]);
-    const std::uint32_t sector_row_width = density.angular_intervals / density.sector_count + 1U;
-    const float outer_seam_radius = radius(product.sectors.front().vertices.front());
-    const float outer_next_radius = radius(product.sectors.front().vertices[sector_row_width]);
+    const std::vector<float> center_radii = unique_radii(product.center.value());
+    const std::vector<float> outer_radii = unique_radii(product.sectors.front());
+    require(center_radii.size() >= 2U && outer_radii.size() >= 2U,
+            "seam check requires adjacent retained radial rings");
+    const float center_previous_radius = center_radii[center_radii.size() - 2U];
+    const float center_seam_radius = center_radii.back();
+    const float outer_seam_radius = outer_radii.front();
+    const float outer_next_radius = outer_radii[1U];
     require(std::abs(center_seam_radius - outer_seam_radius) < 0.01F,
             "seam-matched center should terminate on the outer sector boundary");
     require(std::abs((center_seam_radius - center_previous_radius) -

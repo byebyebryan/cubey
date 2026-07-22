@@ -112,14 +112,14 @@ struct TerrainBackdropSectorMesh {
 struct TerrainBackdropProductDiagnostics {
     TerrainBackdropDensityProfile density{};
     std::uint64_t source_sample_count = 0U;
-    std::uint64_t center_vertex_count = 0U;
-    std::uint64_t center_index_count = 0U;
-    std::uint64_t center_triangle_count = 0U;
-    std::uint64_t center_render_triangle_count = 0U;
-    std::uint64_t visible_vertex_count = 0U;
-    std::uint64_t visible_index_count = 0U;
-    std::uint64_t visible_triangle_count = 0U;
+    std::uint64_t sampled_vertex_count = 0U;
+    std::uint64_t full_triangle_count = 0U;
+    std::uint64_t render_vertex_count = 0U;
     std::uint64_t render_triangle_count = 0U;
+    std::uint64_t center_sampled_vertex_count = 0U;
+    std::uint64_t center_full_triangle_count = 0U;
+    std::uint64_t center_render_vertex_count = 0U;
+    std::uint64_t center_render_triangle_count = 0U;
     float minimum_height_m = 0.0F;
     float maximum_height_m = 0.0F;
     float maximum_sector_boundary_delta_m = 0.0F;

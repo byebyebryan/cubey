@@ -811,6 +811,15 @@ class TerrainApp {
                     terrain_runtime_.draw_plan().submitted_triangle_count);
         ImGui::Text("Cached source samples: %llu",
                     static_cast<unsigned long long>(product_info_.diagnostics.source_sample_count));
+        ImGui::Text("Sampled / render vertices: %llu / %llu",
+                    static_cast<unsigned long long>(product_info_.diagnostics.sampled_vertex_count),
+                    static_cast<unsigned long long>(product_info_.diagnostics.render_vertex_count));
+        const double retained_vertex_ratio =
+            product_info_.diagnostics.sampled_vertex_count == 0U
+                ? 0.0
+                : static_cast<double>(product_info_.diagnostics.render_vertex_count) /
+                      static_cast<double>(product_info_.diagnostics.sampled_vertex_count);
+        ImGui::Text("Vertex compaction: %.1f%% removed", (1.0 - retained_vertex_ratio) * 100.0);
         ImGui::Text("Mean vegetation / moisture: %.3f / %.3f",
                     product_info_.diagnostics.mean_vegetation,
                     product_info_.diagnostics.mean_moisture);
@@ -1118,6 +1127,18 @@ class TerrainApp {
             static_cast<double>(product_info_.diagnostics.center_render_triangle_count));
         recorder->record_metric(frame_index, "terrain.backdrop", "source_samples",
                                 static_cast<double>(product_info_.diagnostics.source_sample_count));
+        recorder->record_metric(
+            frame_index, "terrain.backdrop", "sampled_vertices",
+            static_cast<double>(product_info_.diagnostics.sampled_vertex_count));
+        recorder->record_metric(frame_index, "terrain.backdrop", "render_vertices",
+                                static_cast<double>(product_info_.diagnostics.render_vertex_count));
+        const double retained_vertex_ratio =
+            product_info_.diagnostics.sampled_vertex_count == 0U
+                ? 0.0
+                : static_cast<double>(product_info_.diagnostics.render_vertex_count) /
+                      static_cast<double>(product_info_.diagnostics.sampled_vertex_count);
+        recorder->record_metric(frame_index, "terrain.backdrop", "vertex_compaction_ratio",
+                                retained_vertex_ratio);
         recorder->record_metric(frame_index, "terrain.backdrop", "content_hash_low32",
                                 static_cast<double>(static_cast<std::uint32_t>(
                                     product_info_.diagnostics.content_hash)));

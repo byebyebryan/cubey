@@ -443,6 +443,33 @@ void hash_float(std::uint64_t& hash, float value) {
     return hash;
 }
 
+void compact_mesh_vertices(TerrainBackdropSectorMesh& mesh) {
+    if (mesh.vertices.empty() || mesh.indices.empty()) {
+        throw std::runtime_error("terrain mesh compaction requires geometry");
+    }
+    if (mesh.vertices.size() > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error("terrain mesh has too many vertices to compact");
+    }
+
+    constexpr std::uint32_t kUnreferenced = std::numeric_limits<std::uint32_t>::max();
+    std::vector<std::uint32_t> remap(mesh.vertices.size(), kUnreferenced);
+    std::vector<TerrainBackdropVertex> compact;
+    compact.reserve(std::min(mesh.vertices.size(), mesh.indices.size()));
+
+    for (std::uint32_t& index : mesh.indices) {
+        if (index >= mesh.vertices.size()) {
+            throw std::runtime_error("terrain mesh index is outside sampled vertices");
+        }
+        std::uint32_t& remapped = remap[index];
+        if (remapped == kUnreferenced) {
+            remapped = static_cast<std::uint32_t>(compact.size());
+            compact.push_back(mesh.vertices[index]);
+        }
+        index = remapped;
+    }
+    mesh.vertices = std::move(compact);
+}
+
 } // namespace
 
 TerrainBackdropDensityProfile
@@ -693,31 +720,28 @@ make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
         }
     }
 
-    const std::uint64_t center_vertex_count =
+    const std::uint64_t center_sampled_vertex_count =
         product.center.has_value() ? product.center->vertices.size() : 0U;
-    const std::uint64_t center_triangle_count =
+    const std::uint64_t center_full_triangle_count =
         center_radial_intervals == 0U ? 0U
                                       : static_cast<std::uint64_t>(density.angular_intervals) *
                                             (1U + 2U * (center_radial_intervals - 1U));
-    const std::uint64_t center_index_count = center_triangle_count * 3U;
     const std::uint64_t center_render_triangle_count =
         product.center.has_value() ? product.center->triangle_count() : 0U;
+    const std::uint64_t sector_sampled_vertex_count =
+        static_cast<std::uint64_t>(density.sector_count) * visible_radial_rows *
+        (angular_intervals_per_sector + 1U);
+    const std::uint64_t sector_full_triangle_count =
+        static_cast<std::uint64_t>(density.angular_intervals) * density.visible_radial_intervals *
+        2U;
     product.diagnostics = {
         .density = density,
         .source_sample_count = sample_count,
-        .center_vertex_count = center_vertex_count,
-        .center_index_count = center_index_count,
-        .center_triangle_count = center_triangle_count,
+        .sampled_vertex_count = center_sampled_vertex_count + sector_sampled_vertex_count,
+        .full_triangle_count = center_full_triangle_count + sector_full_triangle_count,
+        .center_sampled_vertex_count = center_sampled_vertex_count,
+        .center_full_triangle_count = center_full_triangle_count,
         .center_render_triangle_count = center_render_triangle_count,
-        .visible_vertex_count =
-            center_vertex_count + static_cast<std::uint64_t>(density.sector_count) *
-                                      visible_radial_rows * (angular_intervals_per_sector + 1U),
-        .visible_index_count =
-            center_index_count + static_cast<std::uint64_t>(density.angular_intervals) *
-                                     density.visible_radial_intervals * 6U,
-        .visible_triangle_count =
-            center_triangle_count + static_cast<std::uint64_t>(density.angular_intervals) *
-                                        density.visible_radial_intervals * 2U,
         .minimum_height_m = minimum_height,
         .maximum_height_m = maximum_height,
         .maximum_sector_boundary_delta_m = maximum_boundary_delta,
@@ -755,6 +779,16 @@ make_terrain_backdrop_product(const TerrainBackdropProductRequest& request,
             static_cast<float>(vegetation_sum / static_cast<double>(surface_sample_count));
         product.diagnostics.mean_moisture =
             static_cast<float>(moisture_sum / static_cast<double>(surface_sample_count));
+    }
+
+    if (product.center.has_value()) {
+        compact_mesh_vertices(product.center.value());
+        product.diagnostics.center_render_vertex_count = product.center->vertices.size();
+        product.diagnostics.render_vertex_count = product.center->vertices.size();
+    }
+    for (TerrainBackdropSectorMesh& sector : product.sectors) {
+        compact_mesh_vertices(sector);
+        product.diagnostics.render_vertex_count += sector.vertices.size();
     }
     return product;
 }
