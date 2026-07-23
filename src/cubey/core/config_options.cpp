@@ -49,6 +49,7 @@ constexpr std::array<std::string_view, 3> kOceanSeaStates{"calm", "windy", "stor
 constexpr std::array<std::string_view, 6> kOceanCascades{"all", "0", "1", "2", "3", "4"};
 constexpr std::array<std::string_view, 2> kOceanFieldPrecisions{"full", "half"};
 constexpr std::array<std::string_view, 2> kOceanSurfaceModes{"flat", "curved-far"};
+constexpr std::array<std::string_view, 2> kOceanSurfaceShadingPolicies{"fixed", "footprint"};
 constexpr std::array<std::string_view, 3> kOceanDetailFilters{"adaptive", "bilinear", "bicubic"};
 constexpr std::array<std::string_view, 2> kOceanCloudReflectionSources{"cached", "planar"};
 constexpr std::array<std::string_view, 7> kOceanCameraPresets{
@@ -153,7 +154,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 296> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 300> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -259,6 +260,10 @@ constexpr std::array<ConfigOptionDescriptor, 296> kRunConfigOptions{
            "--ocean-horizon-target-near-cell-m", "Horizon Near Cell", "Ocean",
            "Preferred near-field cell size for automatic horizon coverage.",
            ConfigOptionType::Float, bounded_range(0.25, 16.0)),
+    option(RunConfigOptionId::OceanSurfaceShadingPolicy, "ocean.surface_shading_policy",
+           "--ocean-surface-shading-policy", "Surface Shading Policy", "Ocean",
+           "Surface shading work policy: fixed or footprint adaptive.", ConfigOptionType::Enum,
+           no_range(), enum_choices(kOceanSurfaceShadingPolicies)),
     option(RunConfigOptionId::OceanSelfShadowStrength, "ocean.self_shadow_strength",
            "--ocean-self-shadow-strength", "Self Shadow Strength", "Ocean",
            "Strength of heightfield ray-marched wave self-shadowing.", ConfigOptionType::Float,
@@ -267,6 +272,10 @@ constexpr std::array<ConfigOptionDescriptor, 296> kRunConfigOptions{
            "--ocean-self-shadow-steps", "Self Shadow Steps", "Ocean",
            "Heightfield samples used by wave self-shadowing.", ConfigOptionType::UInt32,
            bounded_range(1.0, 24.0)),
+    option(RunConfigOptionId::OceanSelfShadowFarSteps, "ocean.self_shadow_far_steps",
+           "--ocean-self-shadow-far-steps", "Far Self Shadow Steps", "Ocean",
+           "Heightfield samples used when footprint-adaptive wave shadows are unresolved.",
+           ConfigOptionType::UInt32, bounded_range(1.0, 24.0)),
     option(RunConfigOptionId::OceanShapeAntiRepeatStrength,
            "ocean.shape_anti_repeat_strength", "--ocean-shape-anti-repeat-strength",
            "Shape Anti Repeat", "Ocean",
@@ -281,6 +290,11 @@ constexpr std::array<ConfigOptionDescriptor, 296> kRunConfigOptions{
            "--ocean-detail-filter", "Detail Filter", "Ocean",
            "Normal and foam filtering mode: adaptive, bilinear, or bicubic.",
            ConfigOptionType::Enum, no_range(), enum_choices(kOceanDetailFilters)),
+    option(RunConfigOptionId::OceanCameraOrbitSpin,
+           "ocean.camera_orbit_spin_degrees_per_second",
+           "--ocean-camera-orbit-spin-deg-per-sec", "Camera Orbit Spin", "Ocean",
+           "Headless capture orbit-camera yaw spin rate in degrees per second.",
+           ConfigOptionType::Float, bounded_range(-360.0, 360.0)),
     option(RunConfigOptionId::OceanSizeReference, "ocean.size_reference",
            "--ocean-size-reference", "Size Reference", "Ocean",
            "Draw the diagnostic ocean scale pillar and its analytical shadow.",
@@ -1459,12 +1473,20 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
                    : nlohmann::json(config.ocean.mesh_lod_levels);
     case RunConfigOptionId::OceanHorizonTargetNearCell:
         return optional_float(config.ocean.horizon_target_near_cell_m);
+    case RunConfigOptionId::OceanSurfaceShadingPolicy:
+        return config.ocean.surface_shading_policy.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.surface_shading_policy);
     case RunConfigOptionId::OceanSelfShadowStrength:
         return optional_float(config.ocean.self_shadow_strength);
     case RunConfigOptionId::OceanSelfShadowSteps:
         return config.ocean.self_shadow_steps == 0U
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.ocean.self_shadow_steps);
+    case RunConfigOptionId::OceanSelfShadowFarSteps:
+        return config.ocean.self_shadow_far_steps == 0U
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.ocean.self_shadow_far_steps);
     case RunConfigOptionId::OceanShapeAntiRepeatStrength:
         return optional_float(config.ocean.shape_anti_repeat_strength);
     case RunConfigOptionId::OceanDetailAntiRepeatStrength:
@@ -1472,6 +1494,8 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::OceanDetailFilter:
         return config.ocean.detail_filter.empty() ? nlohmann::json(nullptr)
                                                   : nlohmann::json(config.ocean.detail_filter);
+    case RunConfigOptionId::OceanCameraOrbitSpin:
+        return optional_float(config.ocean.camera_orbit_spin_degrees_per_second);
     case RunConfigOptionId::OceanSizeReference:
         return optional_bool(config.ocean.size_reference);
     case RunConfigOptionId::OceanPlanetRadiusScale:
@@ -2784,6 +2808,9 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.ocean.horizon_target_near_cell_m = parse_config_float(value, option);
         validate_range(config.ocean.horizon_target_near_cell_m, option);
         break;
+    case RunConfigOptionId::OceanSurfaceShadingPolicy:
+        config.ocean.surface_shading_policy = std::string(value);
+        break;
     case RunConfigOptionId::OceanSelfShadowStrength:
         config.ocean.self_shadow_strength = parse_config_float(value, option);
         validate_range(config.ocean.self_shadow_strength, option);
@@ -2792,6 +2819,11 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.ocean.self_shadow_steps =
             parse_number<std::uint32_t>(value, option, "unsigned integer");
         validate_range(config.ocean.self_shadow_steps, option);
+        break;
+    case RunConfigOptionId::OceanSelfShadowFarSteps:
+        config.ocean.self_shadow_far_steps =
+            parse_number<std::uint32_t>(value, option, "unsigned integer");
+        validate_range(config.ocean.self_shadow_far_steps, option);
         break;
     case RunConfigOptionId::OceanShapeAntiRepeatStrength:
         config.ocean.shape_anti_repeat_strength = parse_config_float(value, option);
@@ -2803,6 +2835,10 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::OceanDetailFilter:
         config.ocean.detail_filter = std::string(value);
+        break;
+    case RunConfigOptionId::OceanCameraOrbitSpin:
+        config.ocean.camera_orbit_spin_degrees_per_second = parse_config_float(value, option);
+        validate_range(config.ocean.camera_orbit_spin_degrees_per_second, option);
         break;
     case RunConfigOptionId::OceanSizeReference:
         config.ocean.size_reference = parse_config_bool(value, option);

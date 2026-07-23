@@ -63,6 +63,11 @@ enum class OceanDetailFilter : std::uint32_t {
     Bicubic = 2,
 };
 
+enum class OceanSurfaceShadingPolicy : std::uint32_t {
+    Fixed = 0,
+    FootprintAdaptive = 1,
+};
+
 enum class OceanCloudReflectionSource : std::uint32_t {
     CachedEnvironment = 0,
     Planar = 1,
@@ -93,6 +98,10 @@ inline constexpr std::array<OceanDetailFilter, 3> kOceanDetailFilters{
     OceanDetailFilter::Adaptive,
     OceanDetailFilter::Bilinear,
     OceanDetailFilter::Bicubic,
+};
+inline constexpr std::array<OceanSurfaceShadingPolicy, 2> kOceanSurfaceShadingPolicies{
+    OceanSurfaceShadingPolicy::Fixed,
+    OceanSurfaceShadingPolicy::FootprintAdaptive,
 };
 inline constexpr std::array<OceanCloudReflectionSource, 2> kOceanCloudReflectionSources{
     OceanCloudReflectionSource::CachedEnvironment,
@@ -144,6 +153,7 @@ struct OceanConfig {
     float horizon_extent_margin = 1.25F;
     float horizon_target_near_cell_m = 2.0F;
     float horizon_altitude_cell_ratio = 0.04F;
+    OceanSurfaceShadingPolicy surface_shading_policy = OceanSurfaceShadingPolicy::Fixed;
     OceanSurfaceMode surface_mode = OceanSurfaceMode::CurvedFar;
     float planet_radius_scale = 1.0F;
     float curvature_start_ratio = 0.25F;
@@ -174,6 +184,7 @@ struct OceanConfig {
     float self_shadow_distance = 44.0F;
     float self_shadow_bias = 0.18F;
     std::uint32_t self_shadow_steps = 8U;
+    std::uint32_t self_shadow_far_steps = 4U;
     float terrain_foam_strength = 1.0F;
     float shape_fade_distance_scale = 1.10F;
     float normal_fade_distance_scale = 1.05F;
@@ -412,6 +423,17 @@ struct OceanCascadeLodBand {
 }
 
 [[nodiscard]] inline const char*
+ocean_surface_shading_policy_name(OceanSurfaceShadingPolicy policy) {
+    switch (policy) {
+    case OceanSurfaceShadingPolicy::Fixed:
+        return "fixed";
+    case OceanSurfaceShadingPolicy::FootprintAdaptive:
+        return "footprint";
+    }
+    return "fixed";
+}
+
+[[nodiscard]] inline const char*
 ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
     switch (source) {
     case OceanCloudReflectionSource::CachedEnvironment:
@@ -458,6 +480,17 @@ ocean_cloud_reflection_source_ui_name(OceanCloudReflectionSource source) {
         return OceanDetailFilter::Bicubic;
     }
     throw std::runtime_error("unknown ocean detail filter: " + std::string(name));
+}
+
+[[nodiscard]] inline OceanSurfaceShadingPolicy
+ocean_surface_shading_policy_from_name(std::string_view name) {
+    if (name.empty() || name == "fixed") {
+        return OceanSurfaceShadingPolicy::Fixed;
+    }
+    if (name == "footprint" || name == "adaptive") {
+        return OceanSurfaceShadingPolicy::FootprintAdaptive;
+    }
+    throw std::runtime_error("unknown ocean surface shading policy: " + std::string(name));
 }
 
 [[nodiscard]] inline OceanCloudReflectionSource
@@ -688,7 +721,8 @@ inline void validate_ocean_config(const OceanConfig& config) {
         config.self_shadow_strength < 0.0F ||
         config.self_shadow_strength > 1.0F || config.self_shadow_distance <= 0.0F ||
         config.self_shadow_bias < 0.0F || config.self_shadow_steps == 0U ||
-        config.self_shadow_steps > 24U || config.terrain_foam_strength < 0.0F ||
+        config.self_shadow_steps > 24U || config.self_shadow_far_steps == 0U ||
+        config.self_shadow_far_steps > 24U || config.terrain_foam_strength < 0.0F ||
         config.shape_fade_distance_scale <= 0.0F || config.normal_fade_distance_scale <= 0.0F ||
         config.foam_fade_distance_scale <= 0.0F || config.far_field_start_m < 0.0F ||
         config.far_field_end_m <= config.far_field_start_m ||
@@ -740,11 +774,16 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (run_config_float_is_set(config.ocean.horizon_target_near_cell_m)) {
         ocean.horizon_target_near_cell_m = config.ocean.horizon_target_near_cell_m;
     }
+    ocean.surface_shading_policy =
+        ocean_surface_shading_policy_from_name(config.ocean.surface_shading_policy);
     if (run_config_float_is_set(config.ocean.self_shadow_strength)) {
         ocean.self_shadow_strength = config.ocean.self_shadow_strength;
     }
     if (config.ocean.self_shadow_steps != 0U) {
         ocean.self_shadow_steps = config.ocean.self_shadow_steps;
+    }
+    if (config.ocean.self_shadow_far_steps != 0U) {
+        ocean.self_shadow_far_steps = config.ocean.self_shadow_far_steps;
     }
     if (run_config_float_is_set(config.ocean.shape_anti_repeat_strength)) {
         ocean.shape_anti_repeat_strength = config.ocean.shape_anti_repeat_strength;

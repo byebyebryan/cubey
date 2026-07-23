@@ -4,6 +4,8 @@
 
 #include <cubey/render/clipmap_grid_2d.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 
@@ -65,6 +67,19 @@ ocean_mesh_clipmap_config(const OceanConfig& config) {
 
 [[nodiscard]] inline std::uint32_t ocean_mesh_patch_triangle_count(const OceanMeshPatch& patch) {
     return cubey::render::clipmap_grid_2d_patch_triangle_count(patch);
+}
+
+[[nodiscard]] inline float ocean_mesh_patch_cell_size(const OceanMeshPatch& patch) {
+    const float span_x = patch.bounds.max_x - patch.bounds.min_x;
+    const float span_z = patch.bounds.max_z - patch.bounds.min_z;
+    return std::max(span_x / static_cast<float>(std::max(patch.cells_x, 1U)),
+                    span_z / static_cast<float>(std::max(patch.cells_z, 1U)));
+}
+
+[[nodiscard]] inline float ocean_mesh_patch_snap_size(const OceanMeshPatch& patch) {
+    return std::max(ocean_mesh_patch_cell_size(patch) /
+                        static_cast<float>(1U << std::min(patch.level, 30U)),
+                    0.001F);
 }
 
 inline void ocean_mesh_add_patch(OceanMeshPatchList& list, std::uint32_t level,

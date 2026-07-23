@@ -3,6 +3,7 @@
 #include "ocean_mesh.h"
 #include "ocean_spectrum_diagnostics.h"
 #include "ocean_surface_frame.h"
+#include "ocean_surface_quality.h"
 #include "ocean_ui.h"
 
 #include <cubey/core/run_config.h>
@@ -12,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 
@@ -164,6 +166,11 @@ int main() {
                 "ocean should default to half precision fields");
         require(defaults.detail_filter == ocean::OceanDetailFilter::Adaptive,
                 "ocean should preserve the current adaptive detail filter by default");
+        require(defaults.surface_shading_policy == ocean::OceanSurfaceShadingPolicy::Fixed,
+                "ocean should keep fixed shading until adaptive validation is accepted");
+        require(ocean::ocean_surface_shading_policy_from_name("footprint") ==
+                    ocean::OceanSurfaceShadingPolicy::FootprintAdaptive,
+                "ocean should parse footprint-adaptive surface shading");
         require(ocean::ocean_detail_filter_from_name("bilinear") ==
                         ocean::OceanDetailFilter::Bilinear &&
                     ocean::ocean_detail_filter_from_name("bicubic") ==
@@ -183,6 +190,53 @@ int main() {
         require(ocean::ocean_is_supported_map_size(1024), "ocean should support 1024 maps");
         require(!ocean::ocean_is_supported_map_size(192),
                 "ocean should reject non-reference map sizes");
+
+        const ocean::OceanMeshPatch near_quality_patch{
+            .level = 0U,
+            .cells_x = 100U,
+            .cells_z = 100U,
+            .bounds = {-50.0F, 50.0F, -50.0F, 50.0F},
+        };
+        const ocean::OceanMeshPatch far_quality_patch{
+            .level = 3U,
+            .cells_x = 100U,
+            .cells_z = 100U,
+            .bounds = {1000.0F, 2000.0F, -500.0F, 500.0F},
+        };
+        const ocean::OceanPatchShadingPlan fixed_far_quality =
+            ocean::ocean_patch_shading_plan(defaults, far_quality_patch, 0.0F, 0.0F, 10.0F,
+                                             std::numbers::pi_v<float> / 3.0F, 900U);
+        require(fixed_far_quality.detail_filter == ocean::OceanDetailFilter::Adaptive &&
+                    fixed_far_quality.self_shadow_steps == 8U,
+                "fixed ocean shading should preserve one filter and shadow count");
+
+        ocean::OceanConfig footprint_quality = defaults;
+        footprint_quality.surface_shading_policy =
+            ocean::OceanSurfaceShadingPolicy::FootprintAdaptive;
+        const ocean::OceanPatchShadingPlan near_quality =
+            ocean::ocean_patch_shading_plan(footprint_quality, near_quality_patch, 0.0F, 0.0F,
+                                             10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
+        require(near_quality.detail_filter == ocean::OceanDetailFilter::Adaptive &&
+                    near_quality.self_shadow_steps == 8U &&
+                    !near_quality.detail_filter_reduced && !near_quality.self_shadow_reduced,
+                "footprint shading should preserve near-field quality");
+        const ocean::OceanPatchShadingPlan far_quality =
+            ocean::ocean_patch_shading_plan(footprint_quality, far_quality_patch, 0.0F, 0.0F,
+                                             10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
+        require(far_quality.detail_filter == ocean::OceanDetailFilter::Bilinear &&
+                    far_quality.self_shadow_steps == 4U && far_quality.detail_filter_reduced &&
+                    far_quality.self_shadow_reduced,
+                "footprint shading should reduce unresolved filter and shadow work");
+        footprint_quality.detail_filter = ocean::OceanDetailFilter::Bicubic;
+        footprint_quality.self_shadow_steps = 2U;
+        const ocean::OceanPatchShadingPlan explicit_far_quality =
+            ocean::ocean_patch_shading_plan(footprint_quality, far_quality_patch, 0.0F, 0.0F,
+                                             10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
+        require(explicit_far_quality.detail_filter == ocean::OceanDetailFilter::Bicubic &&
+                    explicit_far_quality.self_shadow_steps == 2U &&
+                    !explicit_far_quality.detail_filter_reduced,
+                "explicit detail filters and lower shadow counts should remain authoritative");
+
         require(defaults.mesh_cells >= ocean::kOceanMinMeshCells &&
                     defaults.mesh_cells <= ocean::kOceanMaxMeshCells,
                 "default mesh resolution should be in supported range");
@@ -625,6 +679,8 @@ int main() {
                      "ocean should default wave self-shadow height bias");
         require(defaults.self_shadow_steps == 8U,
                 "ocean should default wave self-shadow sample count");
+        require(defaults.self_shadow_far_steps == 4U,
+                "ocean should default unresolved wave shadows to four samples");
         require_near(defaults.terrain_foam_strength, 1.0F, 0.001F,
                      "ocean should default terrain foam contribution on");
         require_near(defaults.shape_fade_distance_scale, 1.10F, 0.001F,
@@ -858,8 +914,10 @@ int main() {
         run_config.ocean.mesh_cells = 256U;
         run_config.ocean.mesh_lod_levels = 4U;
         run_config.ocean.horizon_target_near_cell_m = 3.5F;
+        run_config.ocean.surface_shading_policy = "footprint";
         run_config.ocean.self_shadow_strength = 0.2F;
         run_config.ocean.self_shadow_steps = 4U;
+        run_config.ocean.self_shadow_far_steps = 2U;
         run_config.ocean.shape_anti_repeat_strength = 0.25F;
         run_config.ocean.detail_anti_repeat_strength = 0.5F;
         run_config.ocean.detail_filter = "bilinear";
@@ -893,10 +951,15 @@ int main() {
                 "run config should initialize ocean mesh ablation controls");
         require_near(from_run_config.horizon_target_near_cell_m, 3.5F, 0.001F,
                      "run config should initialize the ocean near-cell target");
+        require(from_run_config.surface_shading_policy ==
+                    ocean::OceanSurfaceShadingPolicy::FootprintAdaptive,
+                "run config should initialize the ocean surface shading policy");
         require_near(from_run_config.self_shadow_strength, 0.2F, 0.001F,
                      "run config should initialize ocean self-shadow strength");
         require(from_run_config.self_shadow_steps == 4U,
                 "run config should initialize ocean self-shadow steps");
+        require(from_run_config.self_shadow_far_steps == 2U,
+                "run config should initialize far ocean self-shadow steps");
         require_near(from_run_config.shape_anti_repeat_strength, 0.25F, 0.001F,
                      "run config should initialize shape anti-repeat strength");
         require_near(from_run_config.detail_anti_repeat_strength, 0.5F, 0.001F,
@@ -1031,12 +1094,18 @@ int main() {
             "0.0",
             "--ocean-self-shadow-steps",
             "2",
+            "--ocean-self-shadow-far-steps",
+            "1",
+            "--ocean-surface-shading-policy",
+            "footprint",
             "--ocean-shape-anti-repeat-strength",
             "0.5",
             "--ocean-detail-anti-repeat-strength",
             "0.25",
             "--ocean-detail-filter",
             "bicubic",
+            "--ocean-camera-orbit-spin-deg-per-sec",
+            "3",
             "--no-ocean-size-reference",
         };
         parsed = cubey::parse_run_config(static_cast<int>(std::size(ablation_argv)),
@@ -1049,12 +1118,18 @@ int main() {
                      "CLI parser should accept disabled ocean self-shadowing");
         require(parsed.ocean.self_shadow_steps == 2U,
                 "CLI parser should accept ocean self-shadow steps");
+        require(parsed.ocean.self_shadow_far_steps == 1U,
+                "CLI parser should accept far ocean self-shadow steps");
+        require(parsed.ocean.surface_shading_policy == "footprint",
+                "CLI parser should accept ocean surface shading policy");
         require_near(parsed.ocean.shape_anti_repeat_strength, 0.5F, 0.001F,
                      "CLI parser should accept shape anti-repeat strength");
         require_near(parsed.ocean.detail_anti_repeat_strength, 0.25F, 0.001F,
                      "CLI parser should accept detail anti-repeat strength");
         require(parsed.ocean.detail_filter == "bicubic",
                 "CLI parser should accept an ocean detail filter");
+        require_near(parsed.ocean.camera_orbit_spin_degrees_per_second, 3.0F, 0.001F,
+                     "CLI parser should accept ocean capture orbit spin");
         require(parsed.ocean.size_reference == 0,
                 "CLI parser should accept a disabled ocean size reference");
 

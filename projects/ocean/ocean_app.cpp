@@ -5,6 +5,7 @@
 #include "ocean_mesh.h"
 #include "ocean_spectrum_diagnostics.h"
 #include "ocean_surface_frame.h"
+#include "ocean_surface_quality.h"
 #include "ocean_ui.h"
 
 #include <cubey/core/math.h>
@@ -195,19 +196,6 @@ struct OceanCameraPresetConfig {
     return 0;
 }
 
-[[nodiscard]] float ocean_patch_mesh_cell_size(const OceanMeshPatch& patch) {
-    const float span_x = patch.bounds.max_x - patch.bounds.min_x;
-    const float span_z = patch.bounds.max_z - patch.bounds.min_z;
-    return std::max(span_x / static_cast<float>(std::max(patch.cells_x, 1U)),
-                    span_z / static_cast<float>(std::max(patch.cells_z, 1U)));
-}
-
-[[nodiscard]] float ocean_patch_snap_size(const OceanMeshPatch& patch) {
-    return std::max(ocean_patch_mesh_cell_size(patch) /
-                        static_cast<float>(1U << std::min(patch.level, 30U)),
-                    0.001F);
-}
-
 [[nodiscard]] float ocean_patch_wave_cull_margin_m(const OceanConfig& config) {
     float scale_sum = 0.0F;
     for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
@@ -222,7 +210,7 @@ struct OceanCameraPresetConfig {
                                                             const OceanSurfaceFrame& surface_frame,
                                                             const OceanMeshPatch& patch,
                                                             cubey::math::Vec3 camera_position_m) {
-    const float snap = ocean_patch_snap_size(patch);
+    const float snap = ocean_mesh_patch_snap_size(patch);
     const float snapped_x = std::floor(camera_position_m.x / snap) * snap;
     const float snapped_z = std::floor(camera_position_m.z / snap) * snap;
 
@@ -717,7 +705,12 @@ class OceanApp {
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, kCameraMaxDistance);
-        orbit_controller_.set_auto_rotation_speed(0.0F);
+        const float orbit_degrees_per_second =
+            cubey::run_config_float_is_set(config_.ocean.camera_orbit_spin_degrees_per_second)
+                ? config_.ocean.camera_orbit_spin_degrees_per_second
+                : 0.0F;
+        orbit_controller_.set_auto_rotation_speed(
+            orbit_degrees_per_second * std::numbers::pi_v<float> / 180.0F);
         apply_camera_preset(camera_preset_);
     }
 
@@ -835,6 +828,7 @@ class OceanApp {
             time_seconds_ = frame.timing.elapsed_seconds;
             last_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
+            orbit_controller_.update(frame.timing.delta_seconds);
             update_atmosphere_time(frame.timing.delta_seconds);
             atmosphere_runtime_.advance(frame.timing.delta_seconds);
             collect_gpu_timings(context.profile_recorder(), frame.index, frame.frame_slot,

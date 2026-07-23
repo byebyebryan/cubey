@@ -90,6 +90,11 @@ RunConfig parse_run_config(int argc, char** argv) {
         (config.ocean.wire_opacity < 0.0F || config.ocean.wire_opacity > 1.0F)) {
         throw std::runtime_error("ocean wire opacity must be in [0, 1]");
     }
+    if (run_config_float_is_set(config.ocean.camera_orbit_spin_degrees_per_second) &&
+        (config.ocean.camera_orbit_spin_degrees_per_second < -360.0F ||
+         config.ocean.camera_orbit_spin_degrees_per_second > 360.0F)) {
+        throw std::runtime_error("ocean camera orbit spin must be in [-360, 360]");
+    }
     if (config.planet.radius_m <= 0.0F) {
         throw std::runtime_error("planet radius must be positive");
     }

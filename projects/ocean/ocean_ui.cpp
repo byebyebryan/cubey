@@ -339,6 +339,11 @@ void draw_ocean_ui(OceanUiContext ui) {
             "Detail filter", ui.config.detail_filter, kOceanDetailFilters,
             ocean_detail_filter_name,
             "Sampling filter for normal and foam fields. Adaptive preserves the current look.");
+        cubey::host::imgui_enum_combo(
+            "Surface shading", ui.config.surface_shading_policy, kOceanSurfaceShadingPolicies,
+            ocean_surface_shading_policy_name,
+            "Fixed applies one filter and shadow count everywhere. Footprint reduces work only "
+            "after detail is unresolved.");
         cubey::host::imgui_slider_float("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m",
                                         "Water depth used by the dispersion model.");
         if (const cubey::host::ScopedImGuiGroup presentation{
@@ -596,6 +601,16 @@ void draw_ocean_ui(OceanUiContext ui) {
                                               "Heightfield samples used by wave shadows.")) {
                 ui.config.self_shadow_steps =
                     static_cast<std::uint32_t>(std::clamp(self_shadow_steps, 1, 24));
+            }
+            if (ui.config.surface_shading_policy ==
+                OceanSurfaceShadingPolicy::FootprintAdaptive) {
+                int far_steps = static_cast<int>(ui.config.self_shadow_far_steps);
+                if (cubey::host::imgui_slider_int(
+                        "Far steps", &far_steps, 1, 24,
+                        "Wave-shadow samples used after the surface footprint is unresolved.")) {
+                    ui.config.self_shadow_far_steps =
+                        static_cast<std::uint32_t>(std::clamp(far_steps, 1, 24));
+                }
             }
         }
     }
