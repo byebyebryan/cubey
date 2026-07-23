@@ -60,6 +60,13 @@ endif()
 add_library(cubey_project_options INTERFACE)
 target_compile_features(cubey_project_options INTERFACE cxx_std_20)
 
+set(
+    CUBEY_PROCEDURAL_CACHE_ROOT
+    "${CMAKE_SOURCE_DIR}/cache/procedural/v1"
+    CACHE PATH
+    "Default worktree-local procedural artifact cache root"
+)
+
 add_library(cubey_project_warnings INTERFACE)
 cubey_configure_warnings(cubey_project_warnings)
 

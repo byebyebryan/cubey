@@ -23,6 +23,7 @@ add_library(cubey_core STATIC
     core/image_io.cpp
     core/jobs.cpp
     core/profiling.cpp
+    procedural/artifact_cache.cpp
     procedural/artifact_metadata.cpp
     procedural/field_2d.cpp
     procedural/field_metadata.cpp
@@ -66,6 +67,8 @@ target_compile_definitions(
     PUBLIC
         GLM_FORCE_DEPTH_ZERO_TO_ONE
         GLM_FORCE_RADIANS
+    PRIVATE
+        CUBEY_PROCEDURAL_CACHE_ROOT="${CUBEY_PROCEDURAL_CACHE_ROOT}"
 )
 
 add_library(cubey_vulkan STATIC

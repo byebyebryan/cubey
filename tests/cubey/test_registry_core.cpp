@@ -20,6 +20,11 @@ void test_math_quaternion_helpers_match_rotation_matrices();
 void test_profile_recorder_skips_warmup_and_records_spans();
 void test_profile_recorder_writes_csv_summary_and_trace_outputs();
 void test_procedural_3d_noise_is_deterministic_and_stable();
+void test_procedural_artifact_cache_failures_remain_nonfatal();
+void test_procedural_artifact_cache_hashes_complete_recipes();
+void test_procedural_artifact_cache_prunes_oldest_entries();
+void test_procedural_artifact_cache_rejects_corrupt_entries();
+void test_procedural_artifact_cache_round_trips_and_invalidates_entries();
 void test_procedural_artifact_metadata_builders_fill_identity_and_validate();
 void test_procedural_artifact_metadata_counts_mipped_samples();
 void test_procedural_artifact_metadata_validates_identity_and_layout();
@@ -173,6 +178,11 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),
         CUBEY_TEST(test_process_resource_stats_sampler_reports_memory),
         CUBEY_TEST(test_process_resource_stats_sampler_reports_cpu_after_second_sample),
+        CUBEY_TEST(test_procedural_artifact_cache_failures_remain_nonfatal),
+        CUBEY_TEST(test_procedural_artifact_cache_hashes_complete_recipes),
+        CUBEY_TEST(test_procedural_artifact_cache_prunes_oldest_entries),
+        CUBEY_TEST(test_procedural_artifact_cache_rejects_corrupt_entries),
+        CUBEY_TEST(test_procedural_artifact_cache_round_trips_and_invalidates_entries),
         CUBEY_TEST(test_procedural_scalar_field_indexes_centered_samples),
         CUBEY_TEST(test_procedural_sample_domains_wrap_2d_grids),
         CUBEY_TEST(test_procedural_sample_domains_index_3d_samples),
