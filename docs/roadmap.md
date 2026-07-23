@@ -42,7 +42,8 @@ Current stable foundation pieces:
   atmosphere atlases with placeholder-first windowed presentation,
   deterministic headless completion, atomic activation, and deferred
   retirement, plus a bounded worktree-local generated-artifact cache that
-  removes repeat night-sky and lunar atlas generation;
+  removes repeat night-sky, lunar atlas, and terrain backdrop-product
+  generation;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
 - shared procedural/noise helpers on CPU and GLSL for project-local terrain,
@@ -59,9 +60,10 @@ Current stable foundation pieces:
   explicit terrain/water-body handoff boundary;
 - Terrain V1 promoted to one validated external-heightfield far-backdrop
   product with source-bounds-centered deterministic placement, continuous
-  cached geometry, shared atmosphere/cloud/HDR lighting, submission-safe
-  runtime replacement, terrain and glTF consumers, executable headless smokes,
-  a product review UI, and opt-in historical studies;
+  cached geometry, a persistent recipe-keyed CPU product, shared
+  atmosphere/cloud/HDR lighting, submission-safe runtime replacement, terrain
+  and glTF consumers, executable headless smokes, a product review UI, and
+  opt-in historical studies;
 - renderer foundation pieces for target views, render graph declaration,
   material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
   planning, and primitive mesh/draw helpers;

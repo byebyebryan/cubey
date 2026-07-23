@@ -64,6 +64,25 @@ Normal configure, build, and test never download or generate this data. If the
 default or selected asset is missing, both GUI and headless startup fail with
 the generation command. There is no procedural fallback.
 
+The loaded source bundle is separate from the derived backdrop-product cache.
+The runtime stores versioned compact CPU mesh/material products under
+`cache/procedural/v1/terrain.backdrop.product`. Cache identity includes source
+and optional climate SHA-256, placement, surface model, topology, stride, and
+codec versions. A hit still validates and loads the source manifest and plans
+placement, then decodes the product before following the normal GPU install
+path. A miss or rejected entry regenerates and atomically republishes without
+making cache IO a runtime requirement.
+
+Force only the derived product to rebuild with:
+
+```sh
+rm -rf cache/procedural/v1/terrain.backdrop.product
+```
+
+This preserves the Terrain Diffusion source, checkout, environment, and model
+data. Use `cubey_terrain_regenerate_default_asset` only when the external source
+itself must be regenerated.
+
 The optional climate companion for the canonical field and the five-region
 cross-climate calibration pack are also explicit targets:
 
@@ -91,7 +110,9 @@ runtime placement mode and raw-sample index, placement metrics,
 orbit radius/elevation, foreground height and reset, foreground-sphere
 visibility, flat/detail presentation, supported diagnostics, directional-shadow
 state, atmosphere controls, submitted geometry, stable GPU timings, and shared
-cloud controls.
+cloud controls. Preparation diagnostics identify cache hit/miss/rejection and
+report source, climate, placement, load/decode, generation, encode, and store
+times independently.
 
 Useful startup overrides:
 
@@ -250,6 +271,7 @@ cmake --build --preset dev --target \
   cubey_project_terrain_config_tests \
   cubey_project_terrain_raster_climate_source_tests \
   cubey_terrain_backdrop_product_tests \
+  cubey_terrain_backdrop_product_cache_tests \
   cubey_terrain_backdrop_placement_tests \
   cubey_terrain_directional_placement_tests \
   cubey_project_terrain_product_adapter_tests \

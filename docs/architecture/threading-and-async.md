@@ -536,6 +536,18 @@ Status: initial terrain and atmosphere adoption complete.
   preparation fell from 18.174 seconds cold to 304 ms warm. GPU installation
   remained about 16-21 ms, so partial-atlas transfer and split-queue work are
   still not justified. Cold and warm captures were byte-identical.
+- Terrain's CPU preparation now uses the same cache boundary for its compact
+  backdrop product. Source manifest loading and placement still run in the CPU
+  preparation job; a hit replaces source resampling, surface classification,
+  mesh construction, and product hashing with validated load/decode. The
+  canonical Release CPU phases measured 494 ms cold and 62 ms warm, with a
+  25 MiB cache entry and byte-identical captures. Debug measured 3.23 seconds
+  cold and 519 ms warm.
+- Terrain publishes source-load, climate-load, placement, cache load/decode,
+  generation, encode, and store metrics separately. `StagedResource`
+  `prepare_ms` remains request-to-observation latency: during startup it can
+  include time while host/GPU initialization delays polling an already-finished
+  CPU job, so it is not a generator benchmark.
 - glTF asset adoption remains a separate consumer batch. This slice does not
   add general streaming, partial terrain sectors, partial atlas tiles, or a
   resource dependency graph. Cache eviction is deliberately limited to the

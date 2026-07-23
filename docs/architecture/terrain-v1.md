@@ -100,19 +100,37 @@ or inference.
 
 ### Derived Product Cache
 
-The validated source is an input to a distinct, recipe-keyed derived cache. A
-terrain backdrop recipe includes the elevation SHA-256, optional climate
-SHA-256, source seed, placement request and resolved focus, topology/profile and
-render stride, surface-model formula, and product codec version. A hit restores
-the compact CPU terrain product and its diagnostics; a miss follows the normal
-source sampling and product build, then publishes atomically through the shared
-worktree procedural-artifact cache.
+The validated source is an input to a distinct, implemented recipe-keyed
+derived cache under `cache/procedural/v1/terrain.backdrop.product/`. A terrain
+backdrop recipe includes the elevation SHA-256, optional climate SHA-256,
+source seed, placement request and resolved focus, topology/profile and render
+stride, surface-model formula, and product codec version. A hit restores the
+compact CPU terrain product plus project climate diagnostics; a miss follows
+the normal source sampling and product build, then publishes atomically through
+the shared worktree procedural-artifact cache.
 
 Only deterministic CPU products are persistent. Vulkan buffers, descriptors,
 shadow state, transfer submissions, and retirement tickets remain owned by the
 runtime and are rebuilt through the existing GPU installation and frame-boundary
 activation path. Cache rejection or IO failure is nonfatal and falls back to
-the uncached builder.
+the uncached builder. The typed codec validates request enums and ranges,
+source identity, density/topology, mesh indices and finite values, diagnostics,
+auxiliary climate data, and the reconstructed recipe before activation.
+
+Deleting `cache/procedural/v1/terrain.backdrop.product/` forces only derived
+terrain-product rebuilding. It does not delete or rerun the Terrain Diffusion
+producer. Deleting source bundles remains a separate deliberate operation under
+`cache/terrain/sources/v1/`.
+
+The canonical 2048 x 2048 seed-0 source produced a 25 MiB stride-3 product cache
+entry on the validation workstation. Release product preparation fell from
+406 ms generation plus 60 ms encode/store to 26 ms load plus 10 ms decode.
+Including source loading and placement, the measured CPU phases fell from
+494 ms cold to 62 ms warm. Debug CPU phases fell from 3.23 seconds cold to
+519 ms warm. Cold and warm captures were byte-identical. The broader staged
+`prepare_ms` value starts when the request is queued and is observed only after
+host/GPU startup, so the per-phase metrics are the authoritative cache
+measurement.
 
 ## Placement And Camera
 

@@ -200,7 +200,8 @@ through shared primitives where the formulas already matched:
 
 ## Generated Artifact Cache V1
 
-Status: implemented and adopted by the atmosphere atlas producers.
+Status: implemented and adopted by the atmosphere atlas and terrain backdrop
+product producers.
 
 CPU-generated atmosphere atlases are deterministic derived products, but the
 default night-sky cubemap is expensive enough that rebuilding it for every
@@ -256,6 +257,13 @@ fell from 2.421 seconds cold to 250 ms warm, with process wall time falling from
 2.588 seconds to 414 ms. Debug preparation fell from 18.174 seconds to 304 ms.
 Cold and warm captures were byte-identical in both configurations. These are
 development baselines rather than portable performance guarantees.
+
+The first structured consumer is the Terrain V1 compact backdrop product.
+Terrain Diffusion height/climate bundles retain their terrain-specific
+manifests under `cache/terrain`; the generic cache stores only the derived
+versioned CPU product and climate diagnostics. The canonical stride-3 entry is
+25 MiB. Release product load/decode measured 36 ms warm versus 466 ms for cold
+generation/encode/store, while all cold/warm captures remained byte-identical.
 
 ## Migration Tiers
 
