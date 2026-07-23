@@ -11,7 +11,7 @@ namespace {
 [[nodiscard]] bool has_loading_status(const AtmosphereLoadingStatus& status) {
     return status.moon_pending || status.night_sky_pending || status.moon_placeholder ||
            status.night_sky_placeholder || !status.moon_error.empty() ||
-           !status.night_sky_error.empty();
+           !status.night_sky_error.empty() || !status.phase.empty();
 }
 
 void draw_loading_overlay(const AtmosphereLoadingStatus& status) {
@@ -36,6 +36,14 @@ void draw_loading_overlay(const AtmosphereLoadingStatus& status) {
     }
 
     ImGui::TextUnformatted("Atmosphere assets");
+    if (!status.phase.empty()) {
+        ImGui::Text("Generation %llu: %s", static_cast<unsigned long long>(status.generation),
+                    status.phase.c_str());
+    }
+    if (status.prepare_milliseconds > 0.0 || status.install_milliseconds > 0.0) {
+        ImGui::Text("Prepare / install: %.1f / %.1f ms", status.prepare_milliseconds,
+                    status.install_milliseconds);
+    }
     if (status.moon_pending) {
         ImGui::BulletText("Generating moon surface");
     } else if (status.moon_placeholder) {
@@ -49,7 +57,7 @@ void draw_loading_overlay(const AtmosphereLoadingStatus& status) {
     if (!status.moon_error.empty()) {
         ImGui::TextColored(ImVec4{1.0F, 0.42F, 0.32F, 1.0F}, "%s", status.moon_error.c_str());
     }
-    if (!status.night_sky_error.empty()) {
+    if (!status.night_sky_error.empty() && status.night_sky_error != status.moon_error) {
         ImGui::TextColored(ImVec4{1.0F, 0.42F, 0.32F, 1.0F}, "%s", status.night_sky_error.c_str());
     }
     ImGui::End();
