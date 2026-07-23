@@ -37,6 +37,11 @@ Current stable foundation pieces:
 - shared windowed/headless host flow, queued capture/video encoding,
   GPU-owner submission, deferred destruction vocabulary, and project runtime
   services;
+- progressive whole-generation initialization over shared CPU jobs and typed
+  GPU-owner results, now exercised by terrain products and generated
+  atmosphere atlases with placeholder-first windowed presentation,
+  deterministic headless completion, atomic activation, and deferred
+  retirement;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
 - shared procedural/noise helpers on CPU and GLSL for project-local terrain,
@@ -63,11 +68,12 @@ Current stable foundation pieces:
   shaders are split, shared shader packages expose include dependencies, and
   tests audit those package dependencies.
 
-The next bounded foundation slice is progressive resource initialization for
-generated atmosphere atlases and terrain products. It targets responsive first
-presentation, worker-side preparation, queued GPU installation, and atomic
-generation activation. It does not reopen general asset streaming, partial
-terrain residency, or split-queue scheduling.
+The bounded progressive-initialization slice is complete for generated
+atmosphere atlases and terrain products. Further adoption should be driven by a
+concrete consumer such as glTF asset loading. General asset streaming, partial
+terrain residency, split-queue scheduling, and per-frame upload budgets remain
+deferred until profiling shows that whole-generation installation is the real
+bottleneck.
 
 Recommended next feature streams:
 

@@ -512,15 +512,30 @@ Status: threaded default plus inline test mode complete.
 
 ### Slice 7: Progressive Resource Initialization
 
-Status: contract captured; implementation in progress.
+Status: initial terrain and atmosphere adoption complete.
 
-- Add typed result handles for GPU-owner work without changing raw queued-work
+- Added typed `GpuJobHandle<T>` results without changing raw queued-work
   failure behavior.
-- Add the shared two-stage generation lifecycle over `cubey::jobs` and
-  `GpuRuntime`.
-- Prove atomic whole-generation replacement in terrain and generated
-  atmosphere atlases before adopting the contract in glTF Viewer.
-- Keep headless output deterministic through explicit completion.
+- Added `StagedResource<Prepared, Resident>` with monotonic generations, one
+  active request plus one latest pending request, phase/error reporting, and
+  explicit `poll`, `finish`, and `shutdown` boundaries.
+- Split terrain's static runtime shell from move-only resident products.
+  Windowed terrain can present atmosphere and its optional stage proxy before
+  terrain is resident; headless terrain calls `finish()` before frame zero.
+- Terrain startup and UI rebuilds now share one CPU-prepare/GPU-install path.
+  Complete products activate at the frame boundary and old GPU generations
+  retire through submission tickets.
+- Generated lunar/night-sky atlases now install as complete texture and
+  descriptor generations. Atmosphere keeps its placeholder generation live,
+  swaps fresh per-frame descriptor sets atomically, and no longer calls
+  `vkDeviceWaitIdle` for atlas updates.
+- A validation run measured the default atmosphere atlas at about 18.2 seconds
+  of CPU preparation and 19.1 milliseconds of GPU installation. The long CPU
+  phase continued behind live frames; the install figure is evidence to watch,
+  not yet justification for transfer-queue or partial-atlas complexity.
+- glTF asset adoption remains a separate consumer batch. This slice does not
+  add general streaming, partial terrain sectors, partial atlas tiles, cache
+  eviction, or a resource dependency graph.
 
 ## Open Questions
 

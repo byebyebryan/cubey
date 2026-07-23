@@ -199,8 +199,7 @@ int main() {
     require(next_atmosphere_render_view(AtmosphereRenderView::MoonSurface) ==
                 AtmosphereRenderView::Stars,
             "atmosphere render view cycle should include stars after moon surface");
-    require(next_atmosphere_render_view(AtmosphereRenderView::Stars) ==
-                AtmosphereRenderView::Final,
+    require(next_atmosphere_render_view(AtmosphereRenderView::Stars) == AtmosphereRenderView::Final,
             "atmosphere render view cycle should wrap");
     require_throws([] { static_cast<void>(atmosphere_render_view_from_name("density")); },
                    "atmosphere render view parser should reject unknown views");
@@ -1281,10 +1280,10 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_ground.glsl");
     const std::string atmosphere_debug_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_debug.glsl");
-    const std::string shader_source =
-        shader_entry_source + atmosphere_common_source + atmosphere_night_sky_source +
-        atmosphere_stars_source + atmosphere_sun_source + atmosphere_ground_source +
-        atmosphere_debug_source;
+    const std::string shader_source = shader_entry_source + atmosphere_common_source +
+                                      atmosphere_night_sky_source + atmosphere_stars_source +
+                                      atmosphere_sun_source + atmosphere_ground_source +
+                                      atmosphere_debug_source;
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
     const std::string cloud_march_source =
@@ -1387,10 +1386,14 @@ int main() {
                      "atmosphere app should consume the environment uniform packer");
     require_contains(app_source, "AtmosphereBackgroundFrame",
                      "atmosphere app should use the shared atmosphere background helper");
-    require_contains(app_source, "atmosphere_background_.create_materials",
-                     "atmosphere app should create background descriptors through shared render");
-    require_contains(app_source, "atmosphere_background_.update_texture_bindings",
-                     "atmosphere app should refresh atlas descriptors through shared render");
+    require_contains(app_source, "create_atmosphere_background_frame_material",
+                     "atmosphere app should create resident background descriptor generations");
+    require_contains(app_source, "atmosphere_background_.install_materials",
+                     "atmosphere app should activate complete background descriptor generations");
+    require_contains(app_source, "StagedResource<PreparedAtmosphereAtlases",
+                     "atmosphere app should use the shared staged resource lifecycle");
+    require_not_contains(app_source, "vkDeviceWaitIdle",
+                         "atmosphere atlas activation should not idle the device");
     require_contains(app_source, "atmosphere_background_.create_pipeline",
                      "atmosphere app should create the background pipeline through shared render");
     require_contains(app_source, "atmosphere_background_.record_pass",
@@ -1470,8 +1473,8 @@ int main() {
                      "water 3D build should track shared atmosphere shader dependencies");
     require_contains(app_source, "CelestialBodyFrame",
                      "atmosphere app should use the shared geometry moon frame");
-    require_contains(app_source, "pending_lunar_surface_map_",
-                     "atmosphere app should generate the visible moon surface separately");
+    require_contains(app_source, "prepared.lunar_surface.emplace(generate_lunar_surface_map())",
+                     "atmosphere app should prepare the visible moon surface off thread");
     require_contains(app_source, "textures.lunar_surface_sampler",
                      "atmosphere visible moon geometry should bind the surface map");
     require_contains(app_source, "record_moon_body_frame",
@@ -1490,9 +1493,10 @@ int main() {
                      "atmosphere moon debug view should use the geometry moon");
     require_contains(app_source, "const bool framed_moon_debug = moon_debug || surface_debug",
                      "atmosphere moon debug views should frame the moon toward camera");
-    require_contains(app_source,
-                     "-camera_forward * std::cos(phase_angle) + camera_right * std::sin(phase_angle)",
-                     "atmosphere moon debug view should derive readable lighting from phase");
+    require_contains(
+        app_source,
+        "-camera_forward * std::cos(phase_angle) + camera_right * std::sin(phase_angle)",
+        "atmosphere moon debug view should derive readable lighting from phase");
     require_contains(app_source, "CelestialBodyShadingMode::SurfaceDebug",
                      "atmosphere moon surface debug view should use sphere surface diagnostics");
     require_contains(app_source,
@@ -1617,15 +1621,17 @@ int main() {
                      "atmosphere shader should guard vertical twilight vectors");
     require_contains(atmosphere_common_source, "sky_background_sample_direction",
                      "common atmosphere helpers should clamp sky-only no-ground background rays");
-    require_contains(shader_entry_source,
-                     "? sky_background_sample_direction(ray_direction, ray_origin, planet_center)",
-                     "atmosphere shader should remap no-ground sky-background rays near the horizon");
+    require_contains(
+        shader_entry_source,
+        "? sky_background_sample_direction(ray_direction, ray_origin, planet_center)",
+        "atmosphere shader should remap no-ground sky-background rays near the horizon");
     require_contains(shader_entry_source,
                      "cubey_atmosphere_classify_sky_background_ray(\n"
                      "                  medium, ray_origin, atmosphere_ray_direction, -1.0)",
                      "atmosphere shader should classify the remapped sky-background ray");
-    require_contains(shader_entry_source, "celestial_horizon_visibility",
-                     "atmosphere shader should keep no-ground celestial content above the real horizon");
+    require_contains(
+        shader_entry_source, "celestial_horizon_visibility",
+        "atmosphere shader should keep no-ground celestial content above the real horizon");
     require_contains(shader_entry_source, "vec3 celestial_ray_direction = ray_direction",
                      "celestial content should retain the physical camera ray when atmosphere "
                      "background repair is active");
