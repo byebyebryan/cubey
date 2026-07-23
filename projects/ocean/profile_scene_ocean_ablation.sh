@@ -116,6 +116,25 @@ subtract_nonnegative() {
         'BEGIN { difference = first - second; printf "%.6f", (difference > 0 ? difference : 0) }'
 }
 
+profile_wave_is_stable() {
+    local passes="$1"
+    local _ wave_p50 wave_p95 samples
+    read -r _ wave_p50 wave_p95 samples <<<"$(span_stats "${passes}" wave)"
+    if ! awk -v p50="${wave_p50}" -v p95="${wave_p95}" -v samples="${samples}" \
+        'BEGIN { exit !(samples > 0 && p50 > 0 && p95 <= p50 * 1.20) }'; then
+        return 1
+    fi
+
+    local reference="${OUT_DIR}/profiles/control-close.passes.csv"
+    if [[ ! -f "${reference}" || "${passes}" == "${reference}" ]]; then
+        return 0
+    fi
+    local reference_p50
+    read -r _ reference_p50 _ _ <<<"$(span_stats "${reference}" wave)"
+    awk -v value="${wave_p50}" -v reference="${reference_p50}" \
+        'BEGIN { ratio = value / reference; exit !(ratio >= 0.80 && ratio <= 1.25) }'
+}
+
 metric_last() {
     local metrics="$1"
     local name="$2"
@@ -183,13 +202,19 @@ run_lane() {
             "$@" \
             --output "${clip}"
 
-        if ! external_compute_busy; then
+        if ! profile_wave_is_stable "${prefix}.passes.csv"; then
+            printf 'unstable wave timings followed lane %s; retrying (%d/%d)\n' \
+                "${lane}" "${attempt}" "${PROFILE_ATTEMPTS}" >&2
+            continue
+        fi
+        sleep 2
+        if ! gpu_busy; then
             return 0
         fi
-        printf 'external GPU work followed lane %s; retrying (%d/%d)\n' \
+        printf 'GPU work followed lane %s; retrying (%d/%d)\n' \
             "${lane}" "${attempt}" "${PROFILE_ATTEMPTS}" >&2
     done
-    printf 'external GPU work repeatedly overlapped lane %s\n' "${lane}" >&2
+    printf 'unstable or external GPU work repeatedly overlapped lane %s\n' "${lane}" >&2
     return 1
 }
 

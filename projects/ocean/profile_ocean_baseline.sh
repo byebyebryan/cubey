@@ -112,6 +112,14 @@ subtract_nonnegative() {
         'BEGIN { difference = first - second; printf "%.6f", (difference > 0 ? difference : 0) }'
 }
 
+profile_wave_is_stable() {
+    local passes="$1"
+    local _ wave_p50 wave_p95 samples
+    read -r _ wave_p50 wave_p95 samples <<<"$(frame_stats "${passes}" wave)"
+    awk -v p50="${wave_p50}" -v p95="${wave_p95}" -v samples="${samples}" \
+        'BEGIN { exit !(samples > 0 && p50 > 0 && p95 <= p50 * 1.20) }'
+}
+
 run_lane() {
     local lane="$1"
     local map_size="$2"
@@ -160,13 +168,19 @@ run_lane() {
             --output "${video}"
         rm -f "${video}"
 
-        if ! external_compute_busy; then
+        if ! profile_wave_is_stable "${prefix}.passes.csv"; then
+            printf 'unstable wave timings followed ocean lane %s; retrying (%d/%d)\n' \
+                "${lane}" "${attempt}" "${PROFILE_ATTEMPTS}" >&2
+            continue
+        fi
+        sleep 2
+        if ! gpu_busy; then
             return 0
         fi
-        printf 'external GPU work followed ocean profile lane %s; retrying (%d/%d)\n' \
+        printf 'GPU work followed ocean profile lane %s; retrying (%d/%d)\n' \
             "${lane}" "${attempt}" "${PROFILE_ATTEMPTS}" >&2
     done
-    printf 'external GPU work repeatedly overlapped ocean profile lane %s\n' "${lane}" >&2
+    printf 'unstable or external GPU work repeatedly overlapped ocean lane %s\n' "${lane}" >&2
     return 1
 }
 
