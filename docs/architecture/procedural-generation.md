@@ -200,7 +200,7 @@ through shared primitives where the formulas already matched:
 
 ## Generated Artifact Cache V1
 
-Status: design contract; implementation is the next bounded foundation slice.
+Status: implemented and adopted by the atmosphere atlas producers.
 
 CPU-generated atmosphere atlases are deterministic derived products, but the
 default night-sky cubemap is expensive enough that rebuilding it for every
@@ -235,6 +235,20 @@ controls. Deleting `cache/procedural/` is the explicit developer force-rebuild
 operation. A configured build may override the default root, but normal local
 builds always resolve it against their own source worktree rather than the
 process working directory.
+
+The implementation lives in `cubey::procedural::ProceduralArtifactCache` with
+typed atmosphere adapters in `cubey::render`. The night-sky cubemap and lunar
+surface map retain independent recipes, reconstruct their exact mip layouts on
+hits, validate the decoded payload hash, and fall back to their existing
+generators on any cache rejection or IO failure. The atmosphere Diagnostics UI
+and profile metrics report hit source plus load, generation, and store time.
+
+The closure measurement on the default 512-pixel night cubemap and 1024x512 moon
+map produced a 35 MiB cache. On the validation workstation, Release preparation
+fell from 2.421 seconds cold to 250 ms warm, with process wall time falling from
+2.588 seconds to 414 ms. Debug preparation fell from 18.174 seconds to 304 ms.
+Cold and warm captures were byte-identical in both configurations. These are
+development baselines rather than portable performance guarantees.
 
 ## Migration Tiers
 

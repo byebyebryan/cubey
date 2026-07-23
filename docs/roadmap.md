@@ -41,7 +41,8 @@ Current stable foundation pieces:
   GPU-owner results, now exercised by terrain products and generated
   atmosphere atlases with placeholder-first windowed presentation,
   deterministic headless completion, atomic activation, and deferred
-  retirement;
+  retirement, plus a bounded worktree-local generated-artifact cache that
+  removes repeat night-sky and lunar atlas generation;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
 - shared procedural/noise helpers on CPU and GLSL for project-local terrain,

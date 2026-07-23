@@ -25,10 +25,13 @@ moonlight, star masking, and sky washout. The Milky Way generator is tuned in
 local layers for stellar emission, dust lanes, star clouds, H II regions, and
 speckles instead of consuming a source panorama.
 
-Windowed runs create the lunar surface map and night-sky atlas in background
-jobs and show placeholder textures until uploads complete. Headless runs
-generate the same assets synchronously for deterministic capture output. Presets
-resolve through the same solar-clock path used at runtime so
+Windowed runs load or create the lunar surface map and night-sky atlas in
+background jobs and show placeholder textures until uploads complete. Headless
+runs finish the same preparation path before frame zero for deterministic
+capture output. The derived payloads live under the Git-ignored worktree path
+`cache/procedural/v1/`; delete `cache/procedural/` to force regeneration. Cache
+hits and load/generation/store timings are visible in Diagnostics and profile
+metrics. Presets resolve through the same solar-clock path used at runtime so
 their reported sun and exposure values match what is rendered. This project
 still owns presets, UI, debug view selection, generated sky assets, and
 render-graph wiring; the render helpers are intended to be reusable by ocean and
