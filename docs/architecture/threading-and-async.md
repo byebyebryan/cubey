@@ -362,6 +362,65 @@ Runtime smoke strategy:
 - Avoid performance claims until release builds without validation layers are
   measured.
 
+## Progressive Resource Initialization V1
+
+Generated sky atlases, terrain rasters, decoded assets, and procedural volumes
+all have the same broad lifecycle even though their payloads differ:
+
+```text
+request
+  -> CPU prepare
+  -> queued GPU install
+  -> completed resident generation
+  -> frame-boundary activation
+  -> deferred retirement of the previous generation
+```
+
+Windowed applications should reach their first present with a placeholder, an
+older resident generation, or an intentionally absent optional feature. File
+IO, validation, decoding, mip construction, and procedural generation belong
+on `cubey::jobs`. The resulting payload must own every byte referenced by the
+GPU install step. A resource becomes visible only after its complete resident
+generation is available; projects must not mutate active resource ownership
+from a worker or GPU-owner callback.
+
+The shared lifecycle uses monotonic generation identifiers and the phases
+`Preparing`, `QueuedForGpu`, `Installing`, `Ready`, `Failed`, and
+`Superseded`. A newer request makes older results ineligible for activation.
+V1 bounds memory by allowing one active generation and one latest pending
+request instead of launching every intermediate UI edit. Arbitrary CPU kernels
+are not cooperatively cancellable yet, so stale work may finish before being
+discarded.
+
+Activation is an app/frame-boundary operation. The active generation remains
+usable until a complete replacement is taken from the lifecycle. GPU-backed
+consumers retain the old generation through the latest frame submission that
+could reference it, then retire it through `GpuRuntime` deferred destruction.
+Descriptor-bearing resources should publish a replacement binding generation
+instead of updating descriptor sets that may still be in flight.
+
+Headless required-output runs use the same preparation and installation code,
+but call an explicit blocking `finish()` before recording frame zero. This
+keeps deterministic captures without maintaining a second synchronous asset
+path. Shutdown stops accepting requests, waits for accepted work, discards
+superseded results, and releases resident payloads only after their owner is
+safe to do so.
+
+V1 reports honest phase-level progress and errors rather than inventing a
+percentage for arbitrary work. Profiling distinguishes:
+
+- time to first present;
+- CPU preparation duration;
+- GPU installation duration; and
+- time to full-quality activation.
+
+The first implementation does not add partial atlas tiles, partial terrain
+sectors, persistent asset caching, residency eviction, a dedicated transfer
+queue, or a general dependency graph. GPU installation remains bounded work on
+the current owner and universal queue. Measured install stalls, rather than the
+existence of large CPU products alone, are the trigger for asynchronous
+transfer submissions or per-frame upload budgets.
+
 ## Implementation Slices
 
 ### Slice 0: Documentation
@@ -450,6 +509,18 @@ Status: threaded default plus inline test mode complete.
 - Start with per-thread command pools and secondary command buffers.
 - Split queue families and timeline semaphores once the benefit and ownership
   model are concrete enough to test.
+
+### Slice 7: Progressive Resource Initialization
+
+Status: contract captured; implementation in progress.
+
+- Add typed result handles for GPU-owner work without changing raw queued-work
+  failure behavior.
+- Add the shared two-stage generation lifecycle over `cubey::jobs` and
+  `GpuRuntime`.
+- Prove atomic whole-generation replacement in terrain and generated
+  atmosphere atlases before adopting the contract in glTF Viewer.
+- Keep headless output deterministic through explicit completion.
 
 ## Open Questions
 

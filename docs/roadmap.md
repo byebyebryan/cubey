@@ -63,6 +63,12 @@ Current stable foundation pieces:
   shaders are split, shared shader packages expose include dependencies, and
   tests audit those package dependencies.
 
+The next bounded foundation slice is progressive resource initialization for
+generated atmosphere atlases and terrain products. It targets responsive first
+presentation, worker-side preparation, queued GPU installation, and atomic
+generation activation. It does not reopen general asset streaming, partial
+terrain residency, or split-queue scheduling.
+
 Recommended next feature streams:
 
 - `projects/ocean`: shoreline/bathymetry composition after terrain products are
