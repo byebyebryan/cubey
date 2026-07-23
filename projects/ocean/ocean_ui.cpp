@@ -335,6 +335,10 @@ void draw_ocean_ui(OceanUiContext ui) {
         cubey::host::imgui_slider_float("Detail anti-repeat",
                                         &ui.config.detail_anti_repeat_strength, 0.0F, 1.0F, "%.2f",
                                         "Strength of far-field normal/foam domain perturbation.");
+        cubey::host::imgui_enum_combo(
+            "Detail filter", ui.config.detail_filter, kOceanDetailFilters,
+            ocean_detail_filter_name,
+            "Sampling filter for normal and foam fields. Adaptive preserves the current look.");
         cubey::host::imgui_slider_float("Depth", &ui.config.depth, 2.0F, 80.0F, "%.1f m",
                                         "Water depth used by the dispersion model.");
         if (const cubey::host::ScopedImGuiGroup presentation{

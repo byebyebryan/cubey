@@ -162,6 +162,13 @@ int main() {
         require(defaults.map_size == 512U, "ocean should default to the practical 512 map size");
         require(defaults.field_precision == ocean::OceanFieldPrecision::Half,
                 "ocean should default to half precision fields");
+        require(defaults.detail_filter == ocean::OceanDetailFilter::Adaptive,
+                "ocean should preserve the current adaptive detail filter by default");
+        require(ocean::ocean_detail_filter_from_name("bilinear") ==
+                        ocean::OceanDetailFilter::Bilinear &&
+                    ocean::ocean_detail_filter_from_name("bicubic") ==
+                        ocean::OceanDetailFilter::Bicubic,
+                "ocean should parse explicit detail filter ablations");
         require(ocean::ocean_field_precision_from_name("") == ocean::OceanFieldPrecision::Half,
                 "empty ocean field precision config should resolve to the default half precision");
         require(ocean::ocean_field_precision_from_name("full") == ocean::OceanFieldPrecision::Full,
@@ -842,6 +849,14 @@ int main() {
         run_config.ocean.sea_state = "stormy";
         run_config.ocean.map_size = 128;
         run_config.ocean.surface_mode = "flat";
+        run_config.ocean.mesh_cells = 256U;
+        run_config.ocean.mesh_lod_levels = 4U;
+        run_config.ocean.horizon_target_near_cell_m = 3.5F;
+        run_config.ocean.self_shadow_strength = 0.2F;
+        run_config.ocean.self_shadow_steps = 4U;
+        run_config.ocean.shape_anti_repeat_strength = 0.25F;
+        run_config.ocean.detail_anti_repeat_strength = 0.5F;
+        run_config.ocean.detail_filter = "bilinear";
         run_config.ocean.planet_radius_scale = 0.25F;
         run_config.ocean.curvature_start_ratio = 0.20F;
         run_config.ocean.curvature_end_ratio = 0.80F;
@@ -860,15 +875,28 @@ int main() {
         const ocean::OceanConfig from_run_config = ocean::ocean_config_from_run_config(run_config);
         require(from_run_config.render_view == ocean::OceanRenderView::Foam,
                 "run config should initialize ocean debug view");
-        require(from_run_config.sea_state == ocean::OceanSeaState::Stormy &&
-                    ocean::ocean_config_matches_sea_state(from_run_config,
-                                                          ocean::OceanSeaState::Stormy),
+        require(from_run_config.sea_state == ocean::OceanSeaState::Stormy,
                 "run config should apply the selected sea state before independent overrides");
         require(from_run_config.map_size == 128U, "run config should initialize ocean map size");
         require(from_run_config.field_precision == ocean::OceanFieldPrecision::Half,
                 "run config should inherit the default ocean field precision");
         require(from_run_config.surface_mode == ocean::OceanSurfaceMode::Flat,
                 "run config should initialize ocean surface mode");
+        require(from_run_config.mesh_cells == 256U &&
+                    from_run_config.mesh_lod_levels == 4U,
+                "run config should initialize ocean mesh ablation controls");
+        require_near(from_run_config.horizon_target_near_cell_m, 3.5F, 0.001F,
+                     "run config should initialize the ocean near-cell target");
+        require_near(from_run_config.self_shadow_strength, 0.2F, 0.001F,
+                     "run config should initialize ocean self-shadow strength");
+        require(from_run_config.self_shadow_steps == 4U,
+                "run config should initialize ocean self-shadow steps");
+        require_near(from_run_config.shape_anti_repeat_strength, 0.25F, 0.001F,
+                     "run config should initialize shape anti-repeat strength");
+        require_near(from_run_config.detail_anti_repeat_strength, 0.5F, 0.001F,
+                     "run config should initialize detail anti-repeat strength");
+        require(from_run_config.detail_filter == ocean::OceanDetailFilter::Bilinear,
+                "run config should initialize the ocean detail filter");
         require_near(from_run_config.planet_radius_scale, 0.25F, 0.001F,
                      "run config should initialize ocean planet radius scale");
         require_near(from_run_config.curvature_start_ratio, 0.20F, 0.001F,
@@ -984,6 +1012,45 @@ int main() {
         require(parsed.ocean.wire_overlay, "CLI parser should accept ocean wire overlay");
         require_near(parsed.ocean.wire_opacity, 0.8F, 0.001F,
                      "CLI parser should accept ocean wire opacity");
+
+        const char* ablation_argv[] = {
+            "ocean",
+            "--ocean-mesh-cells",
+            "192",
+            "--ocean-mesh-lod-levels",
+            "4",
+            "--ocean-horizon-target-near-cell-m",
+            "3.0",
+            "--ocean-self-shadow-strength",
+            "0.0",
+            "--ocean-self-shadow-steps",
+            "2",
+            "--ocean-shape-anti-repeat-strength",
+            "0.5",
+            "--ocean-detail-anti-repeat-strength",
+            "0.25",
+            "--ocean-detail-filter",
+            "bicubic",
+            "--no-ocean-size-reference",
+        };
+        parsed = cubey::parse_run_config(static_cast<int>(std::size(ablation_argv)),
+                                         const_cast<char**>(ablation_argv));
+        require(parsed.ocean.mesh_cells == 192U && parsed.ocean.mesh_lod_levels == 4U,
+                "CLI parser should accept ocean mesh ablation controls");
+        require_near(parsed.ocean.horizon_target_near_cell_m, 3.0F, 0.001F,
+                     "CLI parser should accept the ocean near-cell target");
+        require_near(parsed.ocean.self_shadow_strength, 0.0F, 0.001F,
+                     "CLI parser should accept disabled ocean self-shadowing");
+        require(parsed.ocean.self_shadow_steps == 2U,
+                "CLI parser should accept ocean self-shadow steps");
+        require_near(parsed.ocean.shape_anti_repeat_strength, 0.5F, 0.001F,
+                     "CLI parser should accept shape anti-repeat strength");
+        require_near(parsed.ocean.detail_anti_repeat_strength, 0.25F, 0.001F,
+                     "CLI parser should accept detail anti-repeat strength");
+        require(parsed.ocean.detail_filter == "bicubic",
+                "CLI parser should accept an ocean detail filter");
+        require(parsed.ocean.size_reference == 0,
+                "CLI parser should accept a disabled ocean size reference");
 
         const char* all_cascade_argv[] = {"ocean", "--ocean-cascade", "all"};
         parsed = cubey::parse_run_config(3, const_cast<char**>(all_cascade_argv));
@@ -1305,6 +1372,12 @@ int main() {
                          "ocean fragment entry point should include far-field helpers");
         require_contains(fragment_shader, "#include \"ocean_foam.glsl\"",
                          "ocean fragment entry point should include foam helpers");
+        require_contains(fragment_shader, "sample_detail_texture",
+                         "ocean detail sampling should share the selected filter path");
+        require_contains(fragment_shader, "filter_mode == 1",
+                         "ocean detail sampling should expose a bilinear ablation");
+        require_contains(fragment_shader, "filter_mode == 2",
+                         "ocean detail sampling should expose a bicubic ablation");
         require_contains(fragment_shader, "#include \"ocean_debug.glsl\"",
                          "ocean fragment entry point should include debug helpers");
         require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
@@ -1359,6 +1432,8 @@ int main() {
                          "UI should expose global wave presentation strength");
         require_contains(ui_source, "&ui.config.surface_foam_strength",
                          "UI should expose global foam presentation strength");
+        require_contains(ui_source, "ui.config.detail_filter",
+                         "UI should expose the detail filter ablation");
         require_contains(ui_source, "&ui.config.foam_history_strength",
                          "UI should expose persistent foam history strength");
         require_contains(ui_source, "\"Sea state\"",

@@ -27,46 +27,48 @@ vec4 texture_bicubic(in sampler2D source_texture, in vec2 uv) {
                mix(texture(source_texture, h.yz), texture(source_texture, h.xz), w.x), w.y);
 }
 
+vec4 sample_detail_texture(sampler2D source_texture, vec2 uv, float pixels_per_meter) {
+    int filter_mode = ocean_detail_filter_mode();
+    if (filter_mode == 1) {
+        return texture(source_texture, uv);
+    }
+    if (filter_mode == 2) {
+        return texture_bicubic(source_texture, uv);
+    }
+    return mix(texture_bicubic(source_texture, uv), texture(source_texture, uv),
+               min(1.0, pixels_per_meter * 0.1));
+}
+
 vec4 sample_normal(uint cascade, vec2 uv, float pixels_per_meter) {
     if (cascade == 0u) {
-        return mix(texture_bicubic(normal_cascade0_texture, uv),
-                   texture(normal_cascade0_texture, uv), min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(normal_cascade0_texture, uv, pixels_per_meter);
     }
     if (cascade == 1u) {
-        return mix(texture_bicubic(normal_cascade1_texture, uv),
-                   texture(normal_cascade1_texture, uv), min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(normal_cascade1_texture, uv, pixels_per_meter);
     }
     if (cascade == 2u) {
-        return mix(texture_bicubic(normal_cascade2_texture, uv),
-                   texture(normal_cascade2_texture, uv), min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(normal_cascade2_texture, uv, pixels_per_meter);
     }
     if (cascade == 3u) {
-        return mix(texture_bicubic(normal_cascade3_texture, uv),
-                   texture(normal_cascade3_texture, uv), min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(normal_cascade3_texture, uv, pixels_per_meter);
     }
-    return mix(texture_bicubic(normal_cascade4_texture, uv),
-               texture(normal_cascade4_texture, uv), min(1.0, pixels_per_meter * 0.1));
+    return sample_detail_texture(normal_cascade4_texture, uv, pixels_per_meter);
 }
 
 vec4 sample_foam(uint cascade, vec2 uv, float pixels_per_meter) {
     if (cascade == 0u) {
-        return mix(texture_bicubic(foam_cascade0_texture, uv), texture(foam_cascade0_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(foam_cascade0_texture, uv, pixels_per_meter);
     }
     if (cascade == 1u) {
-        return mix(texture_bicubic(foam_cascade1_texture, uv), texture(foam_cascade1_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(foam_cascade1_texture, uv, pixels_per_meter);
     }
     if (cascade == 2u) {
-        return mix(texture_bicubic(foam_cascade2_texture, uv), texture(foam_cascade2_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(foam_cascade2_texture, uv, pixels_per_meter);
     }
     if (cascade == 3u) {
-        return mix(texture_bicubic(foam_cascade3_texture, uv), texture(foam_cascade3_texture, uv),
-                   min(1.0, pixels_per_meter * 0.1));
+        return sample_detail_texture(foam_cascade3_texture, uv, pixels_per_meter);
     }
-    return mix(texture_bicubic(foam_cascade4_texture, uv), texture(foam_cascade4_texture, uv),
-               min(1.0, pixels_per_meter * 0.1));
+    return sample_detail_texture(foam_cascade4_texture, uv, pixels_per_meter);
 }
 
 bool ocean_detail_anti_repeat_enabled(float factor) {

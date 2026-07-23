@@ -707,6 +707,9 @@ class OceanApp {
           render_view_(ocean_config_.render_view) {
         diagnostics_.selected_cascade = config_.ocean.cascade;
         diagnostics_.wire_overlay = config_.ocean.wire_overlay;
+        if (config_.ocean.size_reference >= 0) {
+            diagnostics_.size_reference_enabled = config_.ocean.size_reference != 0;
+        }
         if (cubey::run_config_float_is_set(config_.ocean.wire_opacity)) {
             diagnostics_.wire_opacity = config_.ocean.wire_opacity;
         }
@@ -1613,7 +1616,7 @@ class OceanApp {
                 },
             .fade_options =
                 {
-                    0.0F,
+                    static_cast<float>(ocean_config_.detail_filter),
                     diagnostics_.size_reference_enabled ? 1.0F : 0.0F,
                     0.72F,
                     static_cast<float>(ocean_cascade_map_size(ocean_config_, 3U)),

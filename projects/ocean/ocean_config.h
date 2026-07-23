@@ -56,6 +56,12 @@ enum class OceanSurfaceMode : std::uint32_t {
     CurvedFar = 1,
 };
 
+enum class OceanDetailFilter : std::uint32_t {
+    Adaptive = 0,
+    Bilinear = 1,
+    Bicubic = 2,
+};
+
 enum class OceanCloudReflectionSource : std::uint32_t {
     CachedEnvironment = 0,
     Planar = 1,
@@ -80,6 +86,11 @@ inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
 inline constexpr std::array<OceanSurfaceMode, 2> kOceanSurfaceModes{
     OceanSurfaceMode::Flat,
     OceanSurfaceMode::CurvedFar,
+};
+inline constexpr std::array<OceanDetailFilter, 3> kOceanDetailFilters{
+    OceanDetailFilter::Adaptive,
+    OceanDetailFilter::Bilinear,
+    OceanDetailFilter::Bicubic,
 };
 inline constexpr std::array<OceanCloudReflectionSource, 2> kOceanCloudReflectionSources{
     OceanCloudReflectionSource::CachedEnvironment,
@@ -142,6 +153,7 @@ struct OceanConfig {
     float depth = 20.0F;
     float shape_anti_repeat_strength = 1.0F;
     float detail_anti_repeat_strength = 1.0F;
+    OceanDetailFilter detail_filter = OceanDetailFilter::Adaptive;
     float roughness = 0.34F;
     float normal_strength = 0.82F;
     float exposure = 0.0F;
@@ -383,6 +395,18 @@ struct OceanCascadeLodBand {
     return "curved-far";
 }
 
+[[nodiscard]] inline const char* ocean_detail_filter_name(OceanDetailFilter filter) {
+    switch (filter) {
+    case OceanDetailFilter::Adaptive:
+        return "adaptive";
+    case OceanDetailFilter::Bilinear:
+        return "bilinear";
+    case OceanDetailFilter::Bicubic:
+        return "bicubic";
+    }
+    return "adaptive";
+}
+
 [[nodiscard]] inline const char*
 ocean_cloud_reflection_source_name(OceanCloudReflectionSource source) {
     switch (source) {
@@ -417,6 +441,19 @@ ocean_cloud_reflection_source_ui_name(OceanCloudReflectionSource source) {
         return OceanSurfaceMode::Flat;
     }
     throw std::runtime_error("unknown ocean surface mode: " + std::string(name));
+}
+
+[[nodiscard]] inline OceanDetailFilter ocean_detail_filter_from_name(std::string_view name) {
+    if (name.empty() || name == "adaptive") {
+        return OceanDetailFilter::Adaptive;
+    }
+    if (name == "bilinear") {
+        return OceanDetailFilter::Bilinear;
+    }
+    if (name == "bicubic") {
+        return OceanDetailFilter::Bicubic;
+    }
+    throw std::runtime_error("unknown ocean detail filter: " + std::string(name));
 }
 
 [[nodiscard]] inline OceanCloudReflectionSource
@@ -690,6 +727,28 @@ inline void validate_ocean_config(const OceanConfig& config) {
     if (config.ocean.map_size != 0U) {
         ocean.map_size = config.ocean.map_size;
     }
+    if (config.ocean.mesh_cells != 0U) {
+        ocean.mesh_cells = config.ocean.mesh_cells;
+    }
+    if (config.ocean.mesh_lod_levels != 0U) {
+        ocean.mesh_lod_levels = config.ocean.mesh_lod_levels;
+    }
+    if (run_config_float_is_set(config.ocean.horizon_target_near_cell_m)) {
+        ocean.horizon_target_near_cell_m = config.ocean.horizon_target_near_cell_m;
+    }
+    if (run_config_float_is_set(config.ocean.self_shadow_strength)) {
+        ocean.self_shadow_strength = config.ocean.self_shadow_strength;
+    }
+    if (config.ocean.self_shadow_steps != 0U) {
+        ocean.self_shadow_steps = config.ocean.self_shadow_steps;
+    }
+    if (run_config_float_is_set(config.ocean.shape_anti_repeat_strength)) {
+        ocean.shape_anti_repeat_strength = config.ocean.shape_anti_repeat_strength;
+    }
+    if (run_config_float_is_set(config.ocean.detail_anti_repeat_strength)) {
+        ocean.detail_anti_repeat_strength = config.ocean.detail_anti_repeat_strength;
+    }
+    ocean.detail_filter = ocean_detail_filter_from_name(config.ocean.detail_filter);
     if (config.ocean.spectral_domains >= 0) {
         ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
     }

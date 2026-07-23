@@ -145,6 +145,7 @@ run_lane() {
             --ocean-field-precision "${precision}" \
             --ocean-sea-state windy \
             --ocean-camera-preset "${camera}" \
+            --no-ocean-size-reference \
             --ocean-cloud-reflection-source "${reflection}" \
             --time-of-day-mode manual \
             --sun-elevation 42 \

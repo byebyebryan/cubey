@@ -60,6 +60,15 @@ overrides include:
 --ocean-map-size 128|256|512|1024
 --ocean-field-precision half|full
 --ocean-camera-preset default|low|mid|high|close|overhead|wide
+--ocean-mesh-cells 32..512
+--ocean-mesh-lod-levels 1..6
+--ocean-horizon-target-near-cell-m 0.25..16
+--ocean-self-shadow-strength 0..1
+--ocean-self-shadow-steps 1..24
+--ocean-shape-anti-repeat-strength 0..1
+--ocean-detail-anti-repeat-strength 0..1
+--ocean-detail-filter adaptive|bilinear|bicubic
+--ocean-size-reference | --no-ocean-size-reference
 --ocean-cascade all|0|1|2|3|4
 --ocean-surface-mode flat|curved-far
 --ocean-cloud-reflection-source cached|planar

@@ -103,6 +103,15 @@ struct RunConfig {
         std::string field_precision{};
         std::string surface_mode{};
         std::string camera_preset{};
+        std::uint32_t mesh_cells = 0;
+        std::uint32_t mesh_lod_levels = 0;
+        float horizon_target_near_cell_m = kRunConfigUnsetFloat;
+        float self_shadow_strength = kRunConfigUnsetFloat;
+        std::uint32_t self_shadow_steps = 0;
+        float shape_anti_repeat_strength = kRunConfigUnsetFloat;
+        float detail_anti_repeat_strength = kRunConfigUnsetFloat;
+        std::string detail_filter{};
+        int size_reference = -1;
         int cascade = -1;
         int spectral_domains = -1;
         int terrain_fields = -1;
