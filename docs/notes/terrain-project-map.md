@@ -25,8 +25,9 @@ planet-scale renderer whose local terrain field does not define this product.
 ```text
 offline generator
     -> cubey.terrain.heightfield.v1 asset
+    -> worktree source validation/cache
     -> deterministic natural placement
-    -> cached continuous sector mesh
+    -> persistent derived continuous sector mesh
     -> filtered procedural material + shared atmosphere
     -> shared GPU runtime
     -> terrain review UI + opt-in glTF Viewer consumer

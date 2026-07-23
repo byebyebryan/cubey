@@ -172,13 +172,11 @@ does not migrate the removed terrain experiments, planet terrain
 detail formulas, or reference cloud snapshots; those remain legacy evidence or
 domain-owned formulas until a terrain reboot or focused parity pass needs them.
 
-Terrain Lab consumes this shared layer for its scalar helpers and deterministic
-FBM source. It also exposes opt-in FastNoiseLite and warped FastNoiseLite
-backends for the desert dune source driver. That adoption is now a preserved
-experiment rather than a migration template: default captures keep the legacy
-backend, the coherent noise paths can still be inspected explicitly, and the
-diagnostic adapter from `TerrainLabFieldData` into `FieldSet2D` remains useful
-evidence without freezing Terrain Lab's field layout.
+The removed Terrain Lab consumed this shared layer for scalar helpers,
+deterministic FBM, opt-in FastNoiseLite, and warped FastNoiseLite dune sources.
+That implementation is preserved only as archived evidence and Git history.
+Its field layout and `TerrainLabFieldData` adapter are not active contracts or
+migration templates.
 
 The first preserve-output migration wave also routes existing duplicate helpers
 through shared primitives where the formulas already matched:
@@ -244,6 +242,15 @@ hits, validate the decoded payload hash, and fall back to their existing
 generators on any cache rejection or IO failure. The atmosphere Diagnostics UI
 and profile metrics report hit source plus load, generation, and store time.
 
+`cubey::AtmosphereBackgroundAtlasRuntime` is the shared placeholder-first
+consumer boundary. Terrain and glTF Viewer present with placeholder textures,
+prepare cached atlas payloads on a CPU job, upload a complete GPU generation,
+activate it at an app boundary, and defer retirement of the old generation.
+Headless paths finish the same request before frame zero. Ocean, planet,
+water-3D, and pyro-3D retain their existing synchronous resource lifecycle but
+now load through the same cache adapter, so repeat launches no longer regenerate
+the atlas pair.
+
 The cache also permits an opaque structured payload when a typed adapter owns a
 versioned codec and validates the reconstructed product. This is intended for
 derived CPU products such as compact terrain mesh sets, not for replacing rich
@@ -280,32 +287,27 @@ through one noise API:
   the formulas match their current behavior.
 
 The first migration wave is mostly a preserve-output refactor. It removes
-duplicated helper formulas where they already match, but it does not silently
-change default Terrain Lab noise sources, active cloud volume generation, or
-planet terrain shaping constants.
+duplicated helper formulas where they already match, but it does not resurrect
+removed Terrain Lab sources or silently change active cloud-volume generation
+or planet terrain shaping constants.
 
 The first promoted field-analysis operators are reusable slope/curvature and
-local-relief scans for `ScalarField2D`. Terrain Lab now consumes those operators
-for terrain derivatives and for mountain/glacial local relief analysis. The
-mountain slice uses that shared analysis as the proof case for broad uplift,
-ridge, peak, cliff, and scree source fields; the glacial slice keeps a separate
-valley/process source shape and uses the shared operators only for wall and
-process cues.
+local-relief scans for `ScalarField2D`. The removed Terrain Lab used those
+operators for terrain derivatives and mountain/glacial local-relief analysis.
+That experiment remains evidence for the operators, not an active consumer.
 
 The source-field construction batches add scalar-field composition,
 deterministic 2D noise-source sampling, optional coherent source warping, and
 common unit-field shaping. The goal is not a node graph; it is a small C++
-reference layer that can sample deterministic 2D noise fields, remap/blend/shape
-them, and make Terrain Lab's source formulas easier to inspect and later share.
-The first proof consumer is the desert dune source selection, preserving the
-legacy default while making FastNoiseLite and warped FastNoiseLite explicit
-opt-ins.
+reference layer that can sample deterministic 2D noise fields and
+remap/blend/shape them. The removed Terrain Lab dune selection was the proof
+consumer; its legacy, FastNoiseLite, and warped FastNoiseLite variants remain
+archived comparisons rather than active defaults.
 
 The first broader foundation batch promotes generic named field sets,
 distribution/percentile operators, and layered `SourceRecipe2D` composition.
-These are intentionally domain-neutral: Terrain Lab can adapt its current height
-and driver fields into them, but terrain-specific landform drivers, hydrology,
-materials, and foliage remain outside core.
+These are intentionally domain-neutral. Terrain-specific landform drivers,
+hydrology, materials, and foliage remain outside core.
 
 The non-terrain foundation batches promote named seed domains, semantic sample
 domains, generated artifact metadata, field output metadata, and deterministic
@@ -354,11 +356,10 @@ Remaining candidates after that closure batch are:
 - explicit source-field recipes for mountain range, river, and dune drivers.
 
 The ShaderToy terrain/hydro review reinforces this boundary. Gully/erosion,
-shallow-water relaxation, shoreline composition, and scenic terrain debug
-shading should start as `projects/terrain` process diagnostics or consumer
-visual cues. They should move into `cubey::procedural` only after the operator
-is deterministic, meter-aware, documented with physical limits, and needed
-outside the terrain workbench.
+shallow-water relaxation, and shoreline composition belong in an isolated
+terrain study before they affect the active backdrop product. They should move
+into `cubey::procedural` only after the operator is deterministic, meter-aware,
+documented with physical limits, and needed by more than one real consumer.
 
 Near-term non-goals:
 
@@ -373,7 +374,7 @@ Near-term non-goals:
   more than the atmosphere atlas consumer needs persistent metadata;
 - no tile streaming, quadtree, or planet LOD policy in the deterministic patch
   descriptor layer;
-- no default switch from legacy Terrain Lab value noise to FastNoiseLite;
+- no resurrection of the removed Terrain Lab as a foundation consumer;
 - no FastNoiseLite GLSL migration before a dedicated GPU or shader-side parity
   pass;
 - no CPU migration of generated atmosphere lunar/night-sky atlas noise until it

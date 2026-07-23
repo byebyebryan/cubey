@@ -76,6 +76,13 @@ level. Production assets, Python dependencies, and model weights remain outside
 Git and outside the renderer process. One small deterministic raster fixture is
 tracked under `tests/assets/terrain` for executable integration smokes.
 
+An optional `cubey.terrain.surface-fields.study.v1` companion carries the
+heightfield SHA-256 binding and ordered temperature/precipitation channels.
+Loading verifies the declared climate digest against the actual bytes before
+that verified identity can enter a derived-product recipe. Finite-value and
+physical-range checks reject corrupt companions without weakening the elevation
+contract.
+
 The default worktree source bundle is generated only by the explicit
 `cubey_terrain_generate_default_asset` target. Ordinary configure, build, and
 test have no network or generation side effects. Missing data is an error, not
@@ -93,8 +100,15 @@ also live under `cache/terrain/tooling/v1/` so deleting a build directory does
 not discard them or duplicate them between Debug and Release.
 
 The generation targets remain deliberate operations. A complete matching
-bundle is reused after manifest and payload validation; missing, mismatched, or
-explicitly forced output regenerates through the pinned producer. Normal
+bundle is reused only after schema, provenance, grid, transform, channel,
+shape/layout, byte-count, finite-value, physical-range, and payload-digest
+validation. The dependency-free reuse tests run through CTest; the larger
+NumPy-backed producer tests remain available through the pinned tool
+environment. Missing, mismatched, or explicitly forced output regenerates
+through the pinned producer.
+
+These source directories are intentionally not CMake byproducts. `clean`
+targets own build outputs, not persistent worktree source assets. Normal
 configure, build, test, and application startup still perform no model download
 or inference.
 
@@ -210,11 +224,11 @@ sampling, add runtime selection, or constitute an LOD contract; stride 3
 remains the product default.
 
 The cached mesh avoids per-frame source evaluation, tessellation, clipmap
-updates, and LOD planning. Startup currently includes source loading, mip
-construction, placement, sampling, normal/material classification, compact
-product retention, and a bounded synchronous GPU mesh upload. The compact CPU
-product is eligible for worktree persistence; source loading, placement, GPU
-upload, and general asynchronous streaming remain separately measured stages.
+updates, and LOD planning. CPU source loading, mip construction, placement,
+sampling, normal/material classification, and product-cache IO run in the
+staged preparation job. A complete product then receives a bounded GPU mesh
+upload and frame-boundary activation. General source streaming, partial
+residency, and upload overlap remain separately deferred.
 
 The fixed topology is accepted for this narrow camera envelope. Low-poly shape
 or insufficient silhouette at the envelope endpoints is a source/topology
@@ -295,6 +309,14 @@ mid-frame swaps, and retires the prior generation after its last actual GPU
 submission completes.
 Consumers keep stage composition, camera, world translation,
 atmosphere/cloud/HDR policy, UI, and source-build scheduling.
+
+The standalone terrain app also uses the shared
+`AtmosphereBackgroundAtlasRuntime`. Windowed startup publishes placeholder
+textures before cached lunar/night-sky preparation and activates the complete
+GPU pair at an update boundary. Headless capture finishes that same request
+before frame zero. This removes atmosphere generation from terrain's
+first-present critical path without moving atmosphere policy into the terrain
+runtime.
 
 The shared surface boundary bakes generic material channels. Mineral control is
 the production default. Climate rasters, climate-response formulas, calibration

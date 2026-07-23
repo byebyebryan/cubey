@@ -53,8 +53,9 @@ The target uses `CUBEY_TERRAIN_DIFFUSION_ROOT` when provided. Otherwise it
 creates a pinned source checkout, Python environment, and data cache under the
 Git-ignored worktree path `cache/terrain/tooling/v1`. Generated runtime files
 are written to `cache/terrain/sources/v1/default`, shared by Debug and Release,
-and are not committed. A complete bundle is SHA-256 validated and reused;
-explicitly rebuild it with:
+and are not committed. Build-clean targets do not own these paths. A complete
+bundle is reused only after its manifest contract, finite values, and actual
+payload SHA-256 pass validation; explicitly rebuild it with:
 
 ```sh
 cmake --build --preset dev --target cubey_terrain_regenerate_default_asset
@@ -63,6 +64,11 @@ cmake --build --preset dev --target cubey_terrain_regenerate_default_asset
 Normal configure, build, and test never download or generate this data. If the
 default or selected asset is missing, both GUI and headless startup fail with
 the generation command. There is no procedural fallback.
+
+The dependency-free source-cache validator is part of normal CTest. The pinned
+NumPy/Torch producer suite remains available through the explicit tool wrapper
+when changing generation code; ordinary terrain runtime changes do not need to
+initialize that environment.
 
 The loaded source bundle is separate from the derived backdrop-product cache.
 The runtime stores versioned compact CPU mesh/material products under
@@ -113,6 +119,12 @@ state, atmosphere controls, submitted geometry, stable GPU timings, and shared
 cloud controls. Preparation diagnostics identify cache hit/miss/rejection and
 report source, climate, placement, load/decode, generation, encode, and store
 times independently.
+
+Windowed startup also publishes placeholder lunar/night-sky textures while the
+shared atlas runtime prepares cached payloads and uploads a complete
+replacement. Headless capture waits for the same request before frame zero.
+Atmosphere generation is therefore outside the first-present path without
+introducing a second capture-only implementation.
 
 Useful startup overrides:
 

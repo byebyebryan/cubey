@@ -46,12 +46,13 @@ build target generates the canonical seed-0 field locally from pinned Terrain
 Diffusion source and model revisions. Normal configure, build, and test do not
 download or generate terrain data.
 
-The canonical setup emits only a 2048 x 2048 float elevation field and its
-runtime manifest. Climate data, preview images, multi-seed bakeoff products,
-and research reports are not runtime assets. The app accepts any compatible
-manifest through an explicit path and otherwise uses the canonical build-tree
-location. Missing data is a startup error with the exact generation command;
-there is no fallback to a retired source.
+The canonical default setup emits a 2048 x 2048 float elevation field and its
+runtime manifest. Separate explicit study targets may emit a bound climate
+companion or five climate-calibration regions. Preview images, multi-seed
+bakeoff products, and research reports are not runtime dependencies. The app
+accepts any compatible manifest through an explicit path and otherwise uses the
+canonical worktree source cache. Missing data is a startup error with the exact
+generation command; there is no fallback to a retired source.
 
 Generate the canonical field explicitly with:
 
@@ -61,9 +62,10 @@ cmake --build --preset dev --target cubey_terrain_generate_default_asset
 
 The target uses a caller-provided `CUBEY_TERRAIN_DIFFUSION_ROOT` when set.
 Otherwise it creates a pinned checkout and Python environment under
-`build/dev/_deps`. The generated `heightfield.json` and `elevation.f32` live in
+`cache/terrain/tooling/v1/`, alongside its downloaded data cache. The generated
+`heightfield.json` and `elevation.f32` live in
 `cache/terrain/sources/v1/default`; normal builds and tests never invoke this
-target.
+target, and build-clean targets do not own or remove the generated source.
 
 ## Repository Boundary
 
@@ -92,9 +94,10 @@ harness. Its control panel exposes:
 - submitted geometry and GPU timings.
 
 Retired source, profile, weathering, LOD, and tessellation controls must not
-remain disabled in the product UI. Expensive source loading stays a startup
-operation. Runtime placement resamples the already-loaded source through the
-job system; it is cached-product replacement, not terrain streaming.
+remain disabled in the product UI. Source loading, validation, placement, and
+product-cache lookup run in the staged CPU preparation job. Runtime placement
+still rebuilds a complete cached product; it is replacement, not terrain
+streaming.
 
 ## Closure Gate
 
@@ -129,7 +132,8 @@ in this batch.
 On the NVIDIA GeForce RTX 5070 Ti, a 90-frame 1600 x 900 filtered-detail run
 with the foreground sphere measured these steady GPU pass medians: atmosphere
 0.402 ms, terrain 0.448 ms, sphere 0.080 ms, and post 0.013 ms. Their sum is
-0.943 ms; the sum of pass means is 0.941 ms. Startup remains approximately 7.6
-seconds because raster loading, mip construction, placement, and the 2.66
-million source-sample mesh bake are synchronous. Startup persistence and
-asynchrony remain explicit later work rather than V1 blockers.
+0.943 ms; the sum of pass means is 0.941 ms. The approximately 7.6-second
+startup measurement was the pre-staging, pre-persistent-cache baseline. Current
+startup prepares terrain products and atmosphere atlases through worktree
+caches; see
+[Terrain and foundation closure](terrain-foundation-closure-2026-07-22.md).

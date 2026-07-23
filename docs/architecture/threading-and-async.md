@@ -415,9 +415,10 @@ percentage for arbitrary work. Profiling distinguishes:
 - time to full-quality activation.
 
 The first implementation does not add partial atlas tiles, partial terrain
-sectors, persistent asset caching, residency eviction, a dedicated transfer
-queue, or a general dependency graph. GPU installation remains bounded work on
-the current owner and universal queue. Measured install stalls, rather than the
+sectors, source-asset streaming, residency eviction, a dedicated transfer
+queue, or a general dependency graph. Deterministic derived-product caching is
+a separate completed layer. GPU installation remains bounded work on the
+current owner and universal queue. Measured install stalls, rather than the
 existence of large CPU products alone, are the trigger for asynchronous
 transfer submissions or per-frame upload budgets.
 
@@ -512,7 +513,7 @@ Status: threaded default plus inline test mode complete.
 
 ### Slice 7: Progressive Resource Initialization
 
-Status: initial terrain and atmosphere adoption complete.
+Status: terrain, atmosphere, and glTF adoption complete.
 
 - Added typed `GpuJobHandle<T>` results without changing raw queued-work
   failure behavior.
@@ -526,9 +527,12 @@ Status: initial terrain and atmosphere adoption complete.
   Complete products activate at the frame boundary and old GPU generations
   retire through submission tickets.
 - Generated lunar/night-sky atlases now install as complete texture and
-  descriptor generations. Atmosphere keeps its placeholder generation live,
-  swaps fresh per-frame descriptor sets atomically, and no longer calls
-  `vkDeviceWaitIdle` for atlas updates.
+  descriptor generations. Atmosphere keeps its own dynamic placeholder
+  generation live. The shared `AtmosphereBackgroundAtlasRuntime` gives terrain
+  and glTF Viewer the same placeholder-first CPU-prepare/GPU-install lifecycle;
+  glTF updates both its visible background and atmosphere reflection-probe
+  bindings after activation. None of these paths calls `vkDeviceWaitIdle` for
+  atlas updates.
 - The worktree-local generated-artifact cache now closes the dominant repeat
   startup cost without changing staged activation. On the validation
   workstation, the default Release atlas pair prepared in 2.421 seconds cold
@@ -548,10 +552,12 @@ Status: initial terrain and atmosphere adoption complete.
   `prepare_ms` remains request-to-observation latency: during startup it can
   include time while host/GPU initialization delays polling an already-finished
   CPU job, so it is not a generator benchmark.
-- glTF asset adoption remains a separate consumer batch. This slice does not
-  add general streaming, partial terrain sectors, partial atlas tiles, or a
-  resource dependency graph. Cache eviction is deliberately limited to the
-  generated-artifact cache's coarse worktree budget.
+- Ocean, planet, water-3D, and pyro-3D retain synchronous resource setup for
+  now, but use the same persistent atlas cache instead of regenerating on every
+  launch. This slice does not add general streaming, partial terrain sectors,
+  partial atlas tiles, or a resource dependency graph. Cache eviction is
+  deliberately limited to the generated-artifact cache's coarse worktree
+  budget.
 
 ## Open Questions
 

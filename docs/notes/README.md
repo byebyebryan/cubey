@@ -89,6 +89,9 @@ the detailed foundation notes under `docs/architecture/`.
   inspect, and river driver limitations.
 - [Terrain project map](terrain-project-map.md): current active, frozen, paused,
   and legacy lanes plus the external-raster terrain v1 spine.
+- [Terrain and foundation closure](terrain-foundation-closure-2026-07-22.md):
+  worktree source/tool caches, verified payload identity, persistent derived
+  products, and atmosphere-atlas startup adoption.
 - [Terrain backdrop foundation promotion](terrain-backdrop-foundation-promotion.md):
   ownership, second-consumer composition, climate boundary, and acceptance
   gates for promoting the fixed-focus backdrop.
