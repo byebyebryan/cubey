@@ -243,6 +243,13 @@ hits, validate the decoded payload hash, and fall back to their existing
 generators on any cache rejection or IO failure. The atmosphere Diagnostics UI
 and profile metrics report hit source plus load, generation, and store time.
 
+The cache also permits an opaque structured payload when a typed adapter owns a
+versioned codec and validates the reconstructed product. This is intended for
+derived CPU products such as compact terrain mesh sets, not for replacing rich
+external source manifests or serializing runtime/GPU ownership. Structured
+recipes remain fully deterministic and cache-addressable even though their
+encoded byte length is output-dependent.
+
 The closure measurement on the default 512-pixel night cubemap and 1024x512 moon
 map produced a 35 MiB cache. On the validation workstation, Release preparation
 fell from 2.421 seconds cold to 250 ms warm, with process wall time falling from

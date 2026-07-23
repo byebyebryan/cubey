@@ -81,6 +81,39 @@ The default build-tree asset is generated only by the explicit
 test have no network or generation side effects. Missing data is an error, not
 a reason to switch source models.
 
+### Worktree Source Cache
+
+Terrain Diffusion outputs remain source assets rather than procedural-cache
+entries. Their JSON manifests carry terrain-specific grid transforms, model and
+code provenance, channel semantics, and SHA-256 binding that the generic
+artifact header does not replace. Explicit generation stores these bundles
+under the Git-ignored worktree path `cache/terrain/sources/v1/`, shared by all
+build presets. Terrain Diffusion checkout, environment, and downloaded data
+also live under `cache/terrain/tooling/v1/` so deleting a build directory does
+not discard them or duplicate them between Debug and Release.
+
+The generation targets remain deliberate operations. A complete matching
+bundle is reused after manifest and payload validation; missing, mismatched, or
+explicitly forced output regenerates through the pinned producer. Normal
+configure, build, test, and application startup still perform no model download
+or inference.
+
+### Derived Product Cache
+
+The validated source is an input to a distinct, recipe-keyed derived cache. A
+terrain backdrop recipe includes the elevation SHA-256, optional climate
+SHA-256, source seed, placement request and resolved focus, topology/profile and
+render stride, surface-model formula, and product codec version. A hit restores
+the compact CPU terrain product and its diagnostics; a miss follows the normal
+source sampling and product build, then publishes atomically through the shared
+worktree procedural-artifact cache.
+
+Only deterministic CPU products are persistent. Vulkan buffers, descriptors,
+shadow state, transfer submissions, and retirement tickets remain owned by the
+runtime and are rebuilt through the existing GPU installation and frame-boundary
+activation path. Cache rejection or IO failure is nonfatal and falls back to
+the uncached builder.
+
 ## Placement And Camera
 
 The runtime searches a bounded regular grid around the geometric center of the
@@ -161,8 +194,9 @@ remains the product default.
 The cached mesh avoids per-frame source evaluation, tessellation, clipmap
 updates, and LOD planning. Startup currently includes source loading, mip
 construction, placement, sampling, normal/material classification, compact
-product retention, and a bounded synchronous GPU mesh upload. Persistence and
-asynchronous streaming are deferred.
+product retention, and a bounded synchronous GPU mesh upload. The compact CPU
+product is eligible for worktree persistence; source loading, placement, GPU
+upload, and general asynchronous streaming remain separately measured stages.
 
 The fixed topology is accepted for this narrow camera envelope. Low-poly shape
 or insufficient silhouette at the envelope endpoints is a source/topology
@@ -254,7 +288,7 @@ problem.
 
 - close terrain and free traversal;
 - clipmaps, adaptive tessellation, and projected-error LOD;
-- streaming, residency, floating origin, and cache persistence;
+- streaming, partial residency, and floating origin;
 - hydrology, erosion simulation, rivers, lakes, and coasts;
 - biome/climate products and foliage placement;
 - deformation, collision, and gameplay queries;
