@@ -75,7 +75,20 @@ frame_stats() {
              $3 == "ocean.cloud_planar_reflection") {
             total[$1] += $5
         }
-        group == "scene" && $3 == "ocean scene" {
+        group == "background" && $3 == "ocean background" {
+            total[$1] += $5
+        }
+        group == "surface" && $3 == "ocean surface" {
+            total[$1] += $5
+        }
+        group == "core" &&
+            ($3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ || $3 == "ocean surface") {
+            total[$1] += $5
+        }
+        group == "adapter" &&
+            ($3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ || $3 == "ocean surface" ||
+             $3 == "cloud shadow" || $3 == "ocean.cloud_environment" ||
+             $3 == "ocean.cloud_planar_reflection") {
             total[$1] += $5
         }
         group == "post" && $3 == "ocean post" {
@@ -164,7 +177,7 @@ if [[ "${SUMMARIZE_ONLY}" != "1" ]]; then
     run_lane composed-512-half-planar 512 half mid on planar
 fi
 
-printf 'lane\tmap_size\tprecision\tcamera\tclouds\treflection\ttotal_mean_ms\ttotal_p50_ms\ttotal_p95_ms\twave_p50_ms\tscene_p50_ms\tcloud_p50_ms\tpost_p50_ms\tsamples\n' \
+printf 'lane\tmap_size\tprecision\tcamera\tclouds\treflection\ttotal_mean_ms\ttotal_p50_ms\ttotal_p95_ms\twave_p50_ms\tbackground_p50_ms\tsurface_p50_ms\tcore_owned_p50_ms\tadapter_p50_ms\tcloud_p50_ms\tpost_p50_ms\tsamples\n' \
     >"${SUMMARY}"
 
 summarize_lane() {
@@ -186,17 +199,21 @@ summarize_lane() {
     done
 
     local total_mean total_p50 total_p95 samples
-    local _ wave_p50 scene_p50 cloud_p50 post_p50
+    local _ wave_p50 background_p50 surface_p50 core_p50 adapter_p50 cloud_p50 post_p50
     read -r total_mean total_p50 total_p95 samples <<<"$(frame_stats "${passes}" total)"
     read -r _ wave_p50 _ _ <<<"$(frame_stats "${passes}" wave)"
-    read -r _ scene_p50 _ _ <<<"$(frame_stats "${passes}" scene)"
+    read -r _ background_p50 _ _ <<<"$(frame_stats "${passes}" background)"
+    read -r _ surface_p50 _ _ <<<"$(frame_stats "${passes}" surface)"
+    read -r _ core_p50 _ _ <<<"$(frame_stats "${passes}" core)"
+    read -r _ adapter_p50 _ _ <<<"$(frame_stats "${passes}" adapter)"
     read -r _ cloud_p50 _ _ <<<"$(frame_stats "${passes}" cloud)"
     read -r _ post_p50 _ _ <<<"$(frame_stats "${passes}" post)"
 
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${lane}" "${map_size}" "${precision}" "${camera}" "${clouds}" "${reflection}" \
-        "${total_mean}" "${total_p50}" "${total_p95}" "${wave_p50}" "${scene_p50}" \
-        "${cloud_p50}" "${post_p50}" "${samples}" >>"${SUMMARY}"
+        "${total_mean}" "${total_p50}" "${total_p95}" "${wave_p50}" "${background_p50}" \
+        "${surface_p50}" "${core_p50}" "${adapter_p50}" "${cloud_p50}" "${post_p50}" \
+        "${samples}" >>"${SUMMARY}"
 }
 
 summarize_lane surface-256-half-mid 256 half mid off cached
@@ -214,7 +231,9 @@ summarize_lane composed-512-half-planar 512 half mid on planar
     printf -- '- Resolution: %sx%s\n' "${WIDTH}" "${HEIGHT}"
     printf -- '- Frames: %s; warmup: %s\n' "${FRAMES}" "${WARMUP_FRAMES}"
     printf -- '- Sea state: Windy\n'
-    printf -- '- GPU samples are per-frame sums of all recorded GPU spans.\n'
+    printf -- '- GPU samples are per-frame sums of non-overlapping leaf spans.\n'
+    printf -- '- Core-owned time is wave compute plus the ocean surface pass.\n'
+    printf -- '- Adapter time adds ocean-requested cloud shadow and reflection products.\n'
     printf -- '- Runs reject concurrent external GPU compute work.\n\n'
     printf '```tsv\n'
     cat "${SUMMARY}"

@@ -1904,8 +1904,17 @@ int main() {
         require_contains(app_source, "ocean_cloud_shadow_half_extent_m",
                          "ocean cloud shadows should use a camera-scale local projection");
         require_before(app_source, "clouds.declare_shadow_product",
-                       "graph.add_pass(\"ocean scene\"",
+                       "graph.add_pass(\"ocean surface\"",
                        "ocean should generate cloud transmittance before drawing water");
+        require_before(app_source, "graph.add_pass(\"ocean background\"",
+                       "graph.add_pass(\"ocean surface\"",
+                       "ocean should draw the atmosphere before loading it under the surface");
+        require_contains(app_source, "cubey::vulkan::load_store_attachment_ops()",
+                         "ocean surface should preserve the attributed background pass");
+        require_contains(app_source, "record_ocean_profile_metrics",
+                         "ocean should export headless mesh metrics alongside GPU spans");
+        require_contains(app_source, "\"submitted_triangles\"",
+                         "ocean profile metrics should include post-cull triangle cost");
         require_contains(app_source, "ocean_config_.cloud_reflection_strength > 0.0F",
                          "ocean should skip cloud reflection work when coupling is disabled");
         require_contains(app_source, "cloud_planar_reflection_.record",
