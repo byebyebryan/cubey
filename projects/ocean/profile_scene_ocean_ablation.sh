@@ -150,10 +150,54 @@ common_args() {
         --ocean-field-precision half \
         --ocean-sea-state windy \
         --ocean-surface-mode curved-far \
+        --ocean-surface-shading-policy fixed \
         --no-ocean-size-reference \
         --no-ocean-terrain-fields \
         --time-of-day-mode manual \
         --pause-time
+}
+
+motion_common_args() {
+    printf '%s\n' \
+        --ocean-map-size 512 \
+        --ocean-field-precision half \
+        --ocean-sea-state windy \
+        --ocean-surface-mode curved-far \
+        --no-ocean-size-reference \
+        --no-ocean-terrain-fields \
+        --time-of-day-mode manual
+}
+
+capture_motion_lane() {
+    local lane="$1"
+    local camera="$2"
+    local policy="$3"
+    local output="${OUT_DIR}/clips/${lane}.mp4"
+    local base_args=()
+    mapfile -t base_args < <(motion_common_args)
+
+    if [[ -n "${LANE_FILTER}" && "${lane}" != *"${LANE_FILTER}"* ]]; then
+        return
+    fi
+    if [[ "${SUMMARIZE_ONLY}" == "1" ]]; then
+        return
+    fi
+    "${APP}" \
+        --headless \
+        --capture video \
+        --frames 300 \
+        --fps "${FPS}" \
+        --width "${WIDTH}" \
+        --height "${HEIGHT}" \
+        --ocean-camera-preset "${camera}" \
+        --ocean-camera-orbit-spin-deg-per-sec 3 \
+        --ocean-surface-shading-policy "${policy}" \
+        --ocean-cloud-reflection-source cached \
+        --sun-elevation 8 \
+        --sun-azimuth -20 \
+        --no-clouds \
+        "${base_args[@]}" \
+        --output "${output}"
 }
 
 run_lane() {
@@ -325,14 +369,18 @@ summarize_lane() {
     read -r _ cloud_p50 _ _ <<<"$(span_stats "${passes}" cloud)"
     read -r _ post_p50 _ _ <<<"$(span_stats "${passes}" post)"
 
-    printf '%s\t%s\t%s\t%sx%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%sx%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${lane}" "${family}" "${camera}" "${width}" "${height}" "${sun_elevation}" "${setting}" \
         "${clouds}" "${reflection}" "${total_mean}" "${total_p50}" "${total_p95}" "${wave_p50}" \
         "${background_p50}" "${surface_p50}" "${core_p50}" "${adapter_p50}" "${cloud_p50}" \
         "${post_p50}" "$(metric_last "${metrics}" effective_cells)" \
         "$(metric_last "${metrics}" effective_lod_levels)" \
         "$(metric_last "${metrics}" generated_triangles)" \
-        "$(metric_last "${metrics}" submitted_triangles)" "${samples}" >>"${SUMMARY}"
+        "$(metric_last "${metrics}" submitted_triangles)" \
+        "$(metric_last "${metrics}" reduced_filter_patches)" \
+        "$(metric_last "${metrics}" reduced_filter_triangles)" \
+        "$(metric_last "${metrics}" reduced_shadow_patches)" \
+        "$(metric_last "${metrics}" reduced_shadow_triangles)" "${samples}" >>"${SUMMARY}"
 }
 
 study_lane() {
@@ -387,12 +435,46 @@ write_contact_sheet() {
     magick montage "${montage_inputs[@]}" -geometry 400x225+8+26 -tile "${tile}" "${output}"
 }
 
-printf 'lane\tfamily\tcamera\tresolution\tsun_elevation\tsetting\tclouds\treflection\ttotal_mean_ms\ttotal_p50_ms\ttotal_p95_ms\twave_p50_ms\tbackground_p50_ms\tsurface_p50_ms\tcore_owned_p50_ms\tadapter_p50_ms\tcloud_p50_ms\tpost_p50_ms\teffective_cells\teffective_lod_levels\tgenerated_triangles\tsubmitted_triangles\tsamples\n' \
+printf 'lane\tfamily\tcamera\tresolution\tsun_elevation\tsetting\tclouds\treflection\ttotal_mean_ms\ttotal_p50_ms\ttotal_p95_ms\twave_p50_ms\tbackground_p50_ms\tsurface_p50_ms\tcore_owned_p50_ms\tadapter_p50_ms\tcloud_p50_ms\tpost_p50_ms\teffective_cells\teffective_lod_levels\tgenerated_triangles\tsubmitted_triangles\treduced_filter_patches\treduced_filter_triangles\treduced_shadow_patches\treduced_shadow_triangles\tsamples\n' \
     >"${SUMMARY}"
 
 study_lane control-close control close "${WIDTH}" "${HEIGHT}" 42 default off cached
 study_lane control-low control low "${WIDTH}" "${HEIGHT}" 42 default off cached
 study_lane control-mid control mid "${WIDTH}" "${HEIGHT}" 42 default off cached
+
+for camera in close low mid; do
+    study_lane "adaptive-fixed-${camera}" adaptive "${camera}" "${WIDTH}" "${HEIGHT}" 42 \
+        "fixed shading" off cached --ocean-surface-shading-policy fixed
+    study_lane "adaptive-footprint-${camera}" adaptive "${camera}" "${WIDTH}" "${HEIGHT}" 42 \
+        "footprint shading" off cached --ocean-surface-shading-policy footprint
+done
+
+for camera in low mid; do
+    study_lane "adaptive-low-sun-fixed-${camera}" adaptive "${camera}" "${WIDTH}" "${HEIGHT}" 8 \
+        "fixed shading / low sun" off cached --ocean-surface-shading-policy fixed
+    study_lane "adaptive-low-sun-footprint-${camera}" adaptive "${camera}" "${WIDTH}" "${HEIGHT}" 8 \
+        "footprint shading / low sun" off cached --ocean-surface-shading-policy footprint
+    study_lane "adaptive-mesh256-${camera}" adaptive "${camera}" "${WIDTH}" "${HEIGHT}" 42 \
+        "footprint shading / mesh 256" off cached --ocean-surface-shading-policy footprint \
+        --ocean-mesh-cells 256
+done
+
+study_lane adaptive-composed-cached-low adaptive low "${WIDTH}" "${HEIGHT}" 42 \
+    "footprint / cached cloud reflection" on cached --ocean-surface-shading-policy footprint
+study_lane adaptive-composed-planar-low adaptive low "${WIDTH}" "${HEIGHT}" 42 \
+    "footprint / planar cloud reflection" on planar --ocean-surface-shading-policy footprint
+
+for camera in low mid; do
+    study_lane "adaptive-1440-fixed-${camera}" adaptive "${camera}" 2560 1440 42 \
+        "2560x1440 fixed shading" off cached --ocean-surface-shading-policy fixed
+    study_lane "adaptive-1440-footprint-${camera}" adaptive "${camera}" 2560 1440 42 \
+        "2560x1440 footprint shading" off cached --ocean-surface-shading-policy footprint
+done
+
+for camera in close low mid; do
+    capture_motion_lane "adaptive-motion-fixed-${camera}" "${camera}" fixed
+    capture_motion_lane "adaptive-motion-footprint-${camera}" "${camera}" footprint
+done
 
 for camera in low mid; do
     study_lane "mesh384-${camera}" geometry "${camera}" "${WIDTH}" "${HEIGHT}" 42 \
@@ -469,6 +551,24 @@ if [[ -z "${LANE_FILTER}" ]]; then
         control-low scaling-low control-mid scaling-mid
 fi
 
+if [[ -z "${LANE_FILTER}" || "${LANE_FILTER}" == "adaptive" ]]; then
+    write_contact_sheet "${OUT_DIR}/adaptive-contact-sheet.png" 3x2 \
+        adaptive-fixed-close adaptive-footprint-close \
+        adaptive-fixed-low adaptive-footprint-low \
+        adaptive-fixed-mid adaptive-footprint-mid
+    write_contact_sheet "${OUT_DIR}/adaptive-low-sun-contact-sheet.png" 2x2 \
+        adaptive-low-sun-fixed-low adaptive-low-sun-footprint-low \
+        adaptive-low-sun-fixed-mid adaptive-low-sun-footprint-mid
+    write_contact_sheet "${OUT_DIR}/adaptive-geometry-contact-sheet.png" 2x2 \
+        adaptive-footprint-low adaptive-mesh256-low \
+        adaptive-footprint-mid adaptive-mesh256-mid
+    write_contact_sheet "${OUT_DIR}/adaptive-composed-contact-sheet.png" 2x1 \
+        adaptive-composed-cached-low adaptive-composed-planar-low
+    write_contact_sheet "${OUT_DIR}/adaptive-1440-contact-sheet.png" 2x2 \
+        adaptive-1440-fixed-low adaptive-1440-footprint-low \
+        adaptive-1440-fixed-mid adaptive-1440-footprint-mid
+fi
+
 {
     printf '# Scene Ocean Ablation Study\n\n'
     printf -- '- Source: `%s`\n' "${SOURCE_COMMIT}"
@@ -482,6 +582,9 @@ fi
     printf -- '- Adapter time: core plus ocean-requested cloud shadow/reflection products.\n'
     printf -- '- Shared atmosphere background, cloud march/composite, and post remain separate.\n'
     printf -- '- Runs reject concurrent external GPU compute work.\n\n'
+    printf -- '- Adaptive motion clips use a 3 deg/s orbit with live waves at low sun.\n'
+    printf -- '- Fixed adaptive-study lanes preserve the pre-policy path for matched comparison.\n'
+    printf -- '- Mesh-256 lanes remain diagnostic and do not imply a default geometry change.\n\n'
     if [[ -n "${LANE_FILTER}" ]]; then
         printf -- '- Lane filter: `%s`\n\n' "${LANE_FILTER}"
     fi
