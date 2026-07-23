@@ -18,6 +18,7 @@
 namespace cubey::vulkan {
 class CommandRecorder;
 class Device;
+class GpuOwnerContext;
 class GpuRuntime;
 } // namespace cubey::vulkan
 
@@ -78,6 +79,26 @@ struct TerrainBackdropReflection {
 terrain_backdrop_reflection(const terrain::TerrainBackdropProduct& product,
                             const TerrainBackdropRuntimeFrameInfo& frame);
 
+class TerrainBackdropResidentProduct {
+  public:
+    TerrainBackdropResidentProduct() = default;
+    ~TerrainBackdropResidentProduct() = default;
+
+    TerrainBackdropResidentProduct(const TerrainBackdropResidentProduct&) = delete;
+    TerrainBackdropResidentProduct& operator=(const TerrainBackdropResidentProduct&) = delete;
+    TerrainBackdropResidentProduct(TerrainBackdropResidentProduct&&) noexcept = default;
+    TerrainBackdropResidentProduct& operator=(TerrainBackdropResidentProduct&&) noexcept = default;
+
+    [[nodiscard]] bool valid() const noexcept;
+
+  private:
+    friend class TerrainBackdropRuntime;
+
+    explicit TerrainBackdropResidentProduct(std::shared_ptr<void> state);
+
+    std::shared_ptr<void> state_{};
+};
+
 class TerrainBackdropRuntime {
   public:
     TerrainBackdropRuntime();
@@ -88,6 +109,7 @@ class TerrainBackdropRuntime {
     TerrainBackdropRuntime(TerrainBackdropRuntime&&) = delete;
     TerrainBackdropRuntime& operator=(TerrainBackdropRuntime&&) = delete;
 
+    void create(const vulkan::Device& device, const TerrainBackdropRuntimeCreateInfo& info);
     void create(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                 const terrain::TerrainBackdropProduct& product,
                 const TerrainBackdropRuntimeCreateInfo& info);
@@ -96,6 +118,11 @@ class TerrainBackdropRuntime {
     void destroy_target_resources();
     void destroy();
 
+    [[nodiscard]] TerrainBackdropResidentProduct
+    build_resident_product(vulkan::GpuOwnerContext& context,
+                           const terrain::TerrainBackdropProduct& product) const;
+    void install_resident_product(vulkan::GpuRuntime& gpu, TerrainBackdropResidentProduct product,
+                                  vulkan::GpuSubmissionTicket retire_after);
     void replace_product(vulkan::GpuRuntime& gpu, const terrain::TerrainBackdropProduct& product,
                          vulkan::GpuSubmissionTicket retire_after);
     void prepare_frame(render::FrameSlot frame_slot, const TerrainBackdropRuntimeFrameInfo& info);
@@ -109,6 +136,7 @@ class TerrainBackdropRuntime {
                           render::FrameSlot frame_slot) const;
 
     [[nodiscard]] bool created() const noexcept;
+    [[nodiscard]] bool product_ready() const noexcept;
     [[nodiscard]] bool target_resources_created() const noexcept;
     [[nodiscard]] bool shadow_update_this_frame() const noexcept;
     [[nodiscard]] bool shadow_depth_is_sampled() const noexcept;

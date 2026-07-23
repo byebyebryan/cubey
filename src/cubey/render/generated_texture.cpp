@@ -6,6 +6,7 @@
 #include <cubey/vulkan/immediate_commands.h>
 
 #include <array>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -63,7 +64,7 @@ void validate_compute_generated_texture_format(const cubey::vulkan::Device& devi
 }
 
 Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& device,
-                                              cubey::vulkan::GpuRuntime& gpu,
+                                              cubey::vulkan::GpuOwnerContext& context,
                                               const ComputeGeneratedTexture2DConfig& config) {
     validate_compute_generated_texture_format(device, config);
 
@@ -119,37 +120,43 @@ Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& devic
 
     const std::vector<std::byte> push_constants(config.push_constants.begin(),
                                                 config.push_constants.end());
+    cubey::vulkan::ImmediateCommands commands(context);
+    const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
+    recorder.transition_image_layout(
+        cubey::vulkan::begin_storage_image_write_transition(texture.handle()));
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
+                                 descriptors.set());
+    if (!push_constants.empty()) {
+        recorder.push_constants_bytes(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                      static_cast<std::uint32_t>(push_constants.size()),
+                                      push_constants.data());
+    }
+    recorder.dispatch(group_count_x, group_count_y, 1U);
+    if (texture.mip_levels() > 1) {
+        record_generate_texture_2d_mips(commands.command_buffer(), texture,
+                                        VK_IMAGE_LAYOUT_GENERAL);
+    } else {
+        recorder.transition_image_layout(
+            cubey::vulkan::finish_storage_image_write_for_sampling_transition(texture.handle()));
+    }
+    commands.submit_and_wait();
+
+    return texture;
+}
+
+Texture2D create_compute_generated_texture_2d(const cubey::vulkan::Device& device,
+                                              cubey::vulkan::GpuRuntime& gpu,
+                                              const ComputeGeneratedTexture2DConfig& config) {
+    std::optional<Texture2D> texture;
     static_cast<void>(gpu.submit_and_wait(cubey::vulkan::GpuWorkRequest{
         .label = config.label,
         .work =
-            [&texture, &pipeline, descriptor_set = descriptors.set(), group_count_x, group_count_y,
-             push_constants](cubey::vulkan::GpuOwnerContext& context) {
-                cubey::vulkan::ImmediateCommands commands(context);
-                const cubey::vulkan::CommandRecorder recorder(commands.command_buffer());
-                recorder.transition_image_layout(
-                    cubey::vulkan::begin_storage_image_write_transition(texture.handle()));
-                recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
-                recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
-                                             descriptor_set);
-                if (!push_constants.empty()) {
-                    recorder.push_constants_bytes(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                                                  static_cast<std::uint32_t>(push_constants.size()),
-                                                  push_constants.data());
-                }
-                recorder.dispatch(group_count_x, group_count_y, 1U);
-                if (texture.mip_levels() > 1) {
-                    record_generate_texture_2d_mips(commands.command_buffer(), texture,
-                                                    VK_IMAGE_LAYOUT_GENERAL);
-                } else {
-                    recorder.transition_image_layout(
-                        cubey::vulkan::finish_storage_image_write_for_sampling_transition(
-                            texture.handle()));
-                }
-                commands.submit_and_wait();
+            [&device, &config, &texture](cubey::vulkan::GpuOwnerContext& context) {
+                texture.emplace(create_compute_generated_texture_2d(device, context, config));
             },
     }));
-
-    return texture;
+    return std::move(texture).value();
 }
 
 } // namespace cubey::render

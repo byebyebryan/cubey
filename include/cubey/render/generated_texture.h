@@ -39,5 +39,9 @@ void validate_compute_generated_texture_format(const cubey::vulkan::Device& devi
 create_compute_generated_texture_2d(const cubey::vulkan::Device& device,
                                     cubey::vulkan::GpuRuntime& gpu,
                                     const ComputeGeneratedTexture2DConfig& config);
+[[nodiscard]] Texture2D
+create_compute_generated_texture_2d(const cubey::vulkan::Device& device,
+                                    cubey::vulkan::GpuOwnerContext& context,
+                                    const ComputeGeneratedTexture2DConfig& config);
 
 } // namespace cubey::render

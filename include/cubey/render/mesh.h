@@ -74,6 +74,8 @@ struct MeshUploadBatch;
 [[nodiscard]] MeshUploadBatch upload_meshes(cubey::vulkan::GpuRuntime& gpu,
                                             std::span<const MeshConfig> configs,
                                             std::string label = "upload meshes");
+[[nodiscard]] MeshUploadBatch upload_meshes(cubey::vulkan::GpuOwnerContext& context,
+                                            std::span<const MeshConfig> configs);
 
 class Mesh {
   public:
@@ -101,6 +103,8 @@ class Mesh {
   private:
     friend MeshUploadBatch upload_meshes(cubey::vulkan::GpuRuntime& gpu,
                                          std::span<const MeshConfig> configs, std::string label);
+    friend MeshUploadBatch upload_meshes(cubey::vulkan::GpuOwnerContext& context,
+                                         std::span<const MeshConfig> configs);
 
     Mesh(cubey::vulkan::Buffer vertex_buffer, cubey::vulkan::Buffer index_buffer,
          VkIndexType index_type, std::uint32_t index_count);
