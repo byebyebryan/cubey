@@ -25,6 +25,7 @@ void test_procedural_artifact_cache_hashes_complete_recipes();
 void test_procedural_artifact_cache_prunes_oldest_entries();
 void test_procedural_artifact_cache_rejects_corrupt_entries();
 void test_procedural_artifact_cache_round_trips_and_invalidates_entries();
+void test_procedural_artifact_cache_round_trips_structured_payloads();
 void test_procedural_artifact_metadata_builders_fill_identity_and_validate();
 void test_procedural_artifact_metadata_counts_mipped_samples();
 void test_procedural_artifact_metadata_validates_identity_and_layout();
@@ -183,6 +184,7 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_procedural_artifact_cache_prunes_oldest_entries),
         CUBEY_TEST(test_procedural_artifact_cache_rejects_corrupt_entries),
         CUBEY_TEST(test_procedural_artifact_cache_round_trips_and_invalidates_entries),
+        CUBEY_TEST(test_procedural_artifact_cache_round_trips_structured_payloads),
         CUBEY_TEST(test_procedural_scalar_field_indexes_centered_samples),
         CUBEY_TEST(test_procedural_sample_domains_wrap_2d_grids),
         CUBEY_TEST(test_procedural_sample_domains_index_3d_samples),

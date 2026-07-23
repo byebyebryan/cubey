@@ -32,6 +32,9 @@ constexpr std::string_view kEntryExtension = ".cubey-artifact";
         return sizeof(float);
     case ProceduralArtifactValueFormat::ScalarUInt8:
         return sizeof(std::uint8_t);
+    case ProceduralArtifactValueFormat::OpaqueBytes:
+        throw std::runtime_error(
+            "opaque procedural artifacts do not have an extent-derived payload size");
     case ProceduralArtifactValueFormat::Unknown:
         break;
     }
@@ -160,7 +163,7 @@ void validate_metadata_matches_recipe(const ProceduralArtifactRecipe& recipe,
                                                      const ProceduralArtifactMetadata& metadata,
                                                      std::span<const std::uint8_t> payload) {
     validate_metadata_matches_recipe(recipe, metadata);
-    if (payload.size() != procedural_artifact_payload_byte_count(recipe)) {
+    if (!procedural_artifact_payload_size_matches(recipe, payload.size())) {
         throw std::runtime_error("procedural artifact cache payload size does not match recipe");
     }
 
@@ -264,7 +267,7 @@ void validate_metadata_matches_recipe(const ProceduralArtifactRecipe& recipe,
 
     const std::span<const std::uint8_t> payload = bytes.subspan(
         static_cast<std::size_t>(header_bytes), static_cast<std::size_t>(payload_bytes));
-    if (payload.size() != procedural_artifact_payload_byte_count(expected_recipe) ||
+    if (!procedural_artifact_payload_size_matches(expected_recipe, payload.size()) ||
         procedural_hash_bytes(payload) != payload_hash) {
         throw std::runtime_error("procedural artifact cache payload is corrupt");
     }
@@ -303,7 +306,9 @@ void validate_procedural_artifact_recipe(const ProceduralArtifactRecipe& recipe)
         .format = recipe.format,
         .extent = recipe.extent,
     });
-    static_cast<void>(procedural_artifact_payload_byte_count(recipe));
+    if (recipe.format != ProceduralArtifactValueFormat::OpaqueBytes) {
+        static_cast<void>(procedural_artifact_payload_byte_count(recipe));
+    }
 }
 
 std::uint64_t procedural_artifact_recipe_hash(const ProceduralArtifactRecipe& recipe) {
@@ -334,6 +339,14 @@ std::size_t procedural_artifact_payload_byte_count(const ProceduralArtifactRecip
         throw std::runtime_error("procedural artifact cache payload size overflows");
     }
     return samples * bytes_per_sample;
+}
+
+bool procedural_artifact_payload_size_matches(const ProceduralArtifactRecipe& recipe,
+                                              std::size_t payload_bytes) {
+    if (recipe.format == ProceduralArtifactValueFormat::OpaqueBytes) {
+        return payload_bytes != 0U;
+    }
+    return payload_bytes == procedural_artifact_payload_byte_count(recipe);
 }
 
 ProceduralArtifactCache::ProceduralArtifactCache(ProceduralArtifactCacheConfig config)
@@ -375,9 +388,16 @@ ProceduralArtifactCache::load(const ProceduralArtifactRecipe& recipe) {
 
     try {
         const std::uintmax_t file_bytes = std::filesystem::file_size(result.path);
-        const std::uintmax_t expected_payload = procedural_artifact_payload_byte_count(recipe);
-        if (file_bytes > expected_payload + kMaximumHeaderBytes) {
-            throw std::runtime_error("procedural artifact cache entry is larger than expected");
+        if (recipe.format == ProceduralArtifactValueFormat::OpaqueBytes) {
+            if (file_bytes > config_.max_bytes) {
+                throw std::runtime_error("procedural artifact cache entry exceeds cache budget");
+            }
+        } else {
+            const std::uintmax_t expected_payload =
+                procedural_artifact_payload_byte_count(recipe);
+            if (file_bytes > expected_payload + kMaximumHeaderBytes) {
+                throw std::runtime_error("procedural artifact cache entry is larger than expected");
+            }
         }
         const std::vector<std::uint8_t> bytes = cubey::read_binary_file(result.path);
         result.artifact.emplace(decode_entry(recipe, bytes));

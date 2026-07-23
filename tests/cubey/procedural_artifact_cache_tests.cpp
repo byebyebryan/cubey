@@ -54,6 +54,21 @@ test_recipe(std::string formula_version = "cache-test-v1", std::uint64_t paramet
     };
 }
 
+[[nodiscard]] cubey::procedural::ProceduralArtifactRecipe structured_recipe() {
+    return {
+        .name = "cache structured product",
+        .generator = "cubey::tests::structured_product",
+        .formula_version = "cache-structured-v1",
+        .domain = "tests.procedural.structured",
+        .seed = 7U,
+        .parameter_hash = 23U,
+        .space = cubey::procedural::ProceduralDomainSpace::Local,
+        .kind = cubey::procedural::ProceduralArtifactKind::StructuredProduct,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::OpaqueBytes,
+        .extent = {.width = 1U, .height = 1U, .depth = 1U, .faces = 1U, .mip_levels = 1U},
+    };
+}
+
 [[nodiscard]] cubey::procedural::ProceduralArtifactMetadata
 test_metadata(const cubey::procedural::ProceduralArtifactRecipe& recipe,
               std::uint64_t content_hash) {
@@ -117,6 +132,22 @@ void test_procedural_artifact_cache_round_trips_and_invalidates_entries() {
     const auto changed = cache.load(test_recipe("cache-test-v2"));
     require(changed.outcome == cubey::procedural::ProceduralArtifactCacheLoadOutcome::Miss,
             "changed artifact recipes should address a different cache entry");
+}
+
+void test_procedural_artifact_cache_round_trips_structured_payloads() {
+    CacheFixture fixture;
+    cubey::procedural::ProceduralArtifactCache cache({.root = fixture.root});
+    const cubey::procedural::ProceduralArtifactRecipe recipe = structured_recipe();
+    const std::vector<std::uint8_t> payload{1U, 2U, 3U, 4U, 5U, 6U, 7U};
+    require(cubey::procedural::procedural_artifact_payload_size_matches(recipe, payload.size()) &&
+                !cubey::procedural::procedural_artifact_payload_size_matches(recipe, 0U),
+            "structured artifact recipes should accept non-empty variable payloads");
+    const auto stored = cache.store(recipe, test_metadata(recipe, 0x1234U), payload);
+    require(stored.stored, "structured artifact cache should store opaque payloads");
+    const auto loaded = cache.load(recipe);
+    require(loaded.outcome == cubey::procedural::ProceduralArtifactCacheLoadOutcome::Hit &&
+                loaded.artifact.has_value() && loaded.artifact->payload == payload,
+            "structured artifact cache should preserve opaque payload bytes");
 }
 
 void test_procedural_artifact_cache_rejects_corrupt_entries() {

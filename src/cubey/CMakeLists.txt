@@ -144,6 +144,7 @@ add_library(cubey_terrain STATIC
     terrain/terrain_backdrop_density.cpp
     terrain/terrain_backdrop_placement.cpp
     terrain/terrain_backdrop_product.cpp
+    terrain/terrain_backdrop_product_cache.cpp
     terrain/terrain_backdrop_profile.cpp
     terrain/terrain_directional_placement.cpp
 )

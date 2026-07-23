@@ -14,6 +14,7 @@ enum class ProceduralArtifactKind {
     Texture2D,
     TextureCube,
     Volume3D,
+    StructuredProduct,
 };
 
 enum class ProceduralArtifactValueFormat {
@@ -22,6 +23,7 @@ enum class ProceduralArtifactValueFormat {
     Rgba32Float,
     ScalarFloat32,
     ScalarUInt8,
+    OpaqueBytes,
 };
 
 struct ProceduralArtifactExtent {

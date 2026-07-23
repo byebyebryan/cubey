@@ -135,6 +135,7 @@ add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
 
 foreach(test_name IN ITEMS
     terrain_backdrop_product
+    terrain_backdrop_product_cache
     terrain_backdrop_placement
     terrain_directional_placement
 )

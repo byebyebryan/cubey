@@ -31,6 +31,8 @@ struct ProceduralArtifactRecipe {
 [[nodiscard]] std::uint64_t procedural_artifact_recipe_hash(const ProceduralArtifactRecipe& recipe);
 [[nodiscard]] std::size_t
 procedural_artifact_payload_byte_count(const ProceduralArtifactRecipe& recipe);
+[[nodiscard]] bool procedural_artifact_payload_size_matches(
+    const ProceduralArtifactRecipe& recipe, std::size_t payload_bytes);
 void validate_procedural_artifact_recipe(const ProceduralArtifactRecipe& recipe);
 
 enum class ProceduralArtifactCacheLoadOutcome {
