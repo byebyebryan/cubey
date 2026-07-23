@@ -77,6 +77,9 @@ The active ocean renderer defaults to:
   two RGBA images;
 - lazy allocation for enabled cascades only, with inactive surface descriptors
   bound to a tiny fallback field;
+- footprint-adaptive surface shading, preserving resolved patches while using
+  static bilinear filtering and four self-shadow steps beyond the far-detail
+  footprint boundary;
 - per-cascade map-size overrides and per-cascade update intervals exposed in
   the UI.
 
@@ -85,9 +88,10 @@ required default target. `256` remains useful for smoke tests and very fast
 checks, but currently loses too much wave, normal, and foam detail for the main
 presentation path.
 
-The current user-visible readout on the NVIDIA RTX A2000 8GB Laptop GPU is
-that the renderer is compute-bound: changing debug views does not materially
-change frame rate because the wave compute path still runs before drawing.
+The current RTX 5070 Ti scene study supersedes the older A2000 whole-renderer
+readout for optimization priority. At the default 512-half source, fixed wave
+generation is about `0.318 ms`; camera-dependent surface rendering is the
+larger cost and now uses footprint-adaptive shading.
 
 ## Why FFT Is Used
 

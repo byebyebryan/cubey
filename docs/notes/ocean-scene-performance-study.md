@@ -2,7 +2,8 @@
 
 Date: 2026-07-23
 
-Status: completed attribution and ablation study; no production quality defaults changed.
+Status: completed attribution, ablation, and adaptive-policy validation;
+footprint-adaptive surface shading promoted.
 
 ## Goal
 
@@ -115,24 +116,55 @@ The harness now rejects broad wave timing distributions and, for the fixed
 512-half study, wave medians that drift materially from the control. Resolution
 scaling remains an open measurement rather than evidence used in this verdict.
 
-## Next Batch
+## Adaptive Shading Follow-up
 
-The next optimization batch should remain inside the isolated ocean project:
+The accepted follow-up used commit `08f1e615` with the same `1600 x 900`,
+Windy, 512-half source and 147 steady samples per lane:
 
-1. Add footprint/distance policy for the static bilinear filter variant and
-   validate it in motion at low, close, and mid cameras.
-2. Reduce far-field self-shadow work, starting from four steps, while preserving
-   the current near-field eight-step path.
-3. Branch anti-repeat domains out only when footprint/distance makes repetition
-   unresolvable. Strength tuning alone does not reduce work.
-4. Evaluate a 256-cell or near-cell-planned low-camera geometry tier with motion,
-   wire, LOD, and silhouette captures.
-5. Rerun clean 1440p scaling before setting any resolution policy.
+```text
+outputs/ocean/adaptive-quality-20260723-v1/
+```
+
+The footprint policy measures the conservative maximum of patch cell size and
+projected meters per pixel. It preserves the configured adaptive filter and
+eight self-shadow steps while the patch remains resolved. At the existing 5 m
+far-detail boundary it selects the static bilinear shader and four shadow
+steps. Pipeline choice is patch-local and does not add a render pass or a
+dynamic fragment branch.
+
+| Camera | Fixed core p50 | Footprint core p50 | Change | Reduced submitted triangles |
+| --- | ---: | ---: | ---: | ---: |
+| close | 1.296 ms | 1.271 ms | -1.9% | 0.872 M |
+| low | 1.222 ms | 1.193 ms | -2.3% | 0.885 M |
+| mid | 1.842 ms | 1.238 ms | -32.8% | 1.638 M |
+
+The close lane remains `0.021 ms` above the provisional `1.25 ms` target, but
+it preserves the near-field path and is already within the practical
+approximately `1.2 ms` range accepted for this scene background. Low passes.
+Mid changes from the dominant failure to a pass because every submitted patch
+is beyond the far-detail footprint boundary.
+
+Static close/low/mid, low-sun, mesh-256, and composed-cloud contact sheets show
+no material discontinuity. Five-second fixed/footprint orbit pairs also show
+no patch-boundary pop; encoded-video mean SSIM is `0.987` close, `0.990` low,
+and `0.984` mid. The footprint policy is therefore the production default.
+`fixed` remains the exact legacy/control path.
+
+The mesh-256 lanes reach `0.905 ms` low and `1.076 ms` mid, but geometry density
+is not part of this promotion. The stills do not establish close-wave
+silhouette and temporal quality strongly enough for a global mesh change.
+Anti-repeat and FFT defaults are also unchanged.
+
+## Next Work
+
+The ocean now has an explicit owned-cost policy suitable for close scene
+background use. Further optimization should be driven by an integration
+profile rather than another isolated tuning loop. Clean 1440p scaling remains
+the first unresolved measurement. Mesh-256 and footprint-gated anti-repeat
+work remain diagnostics, not queued default changes.
 
 Do not optimize FFT first: it is stable, camera-independent, and much smaller
-than the surface path at the accepted 512-half setting. Do not begin
-terrain/coast integration until the ocean quality tiers and owned-cost policy
-are explicit.
+than the surface path at the accepted 512-half setting.
 
 Reproduce the full study with:
 
@@ -142,4 +174,5 @@ projects/ocean/profile_scene_ocean_ablation.sh \
 ```
 
 Use `LANE_FILTER` for focused runs and `SUMMARIZE_ONLY=1` to rebuild reports from
-retained artifacts.
+retained artifacts. Set `INCLUDE_SCALING=1` only for a clean, dedicated
+resolution-scaling run.

@@ -153,7 +153,8 @@ struct OceanConfig {
     float horizon_extent_margin = 1.25F;
     float horizon_target_near_cell_m = 2.0F;
     float horizon_altitude_cell_ratio = 0.04F;
-    OceanSurfaceShadingPolicy surface_shading_policy = OceanSurfaceShadingPolicy::Fixed;
+    OceanSurfaceShadingPolicy surface_shading_policy =
+        OceanSurfaceShadingPolicy::FootprintAdaptive;
     OceanSurfaceMode surface_mode = OceanSurfaceMode::CurvedFar;
     float planet_radius_scale = 1.0F;
     float curvature_start_ratio = 0.25F;
@@ -484,10 +485,10 @@ ocean_cloud_reflection_source_ui_name(OceanCloudReflectionSource source) {
 
 [[nodiscard]] inline OceanSurfaceShadingPolicy
 ocean_surface_shading_policy_from_name(std::string_view name) {
-    if (name.empty() || name == "fixed") {
+    if (name == "fixed") {
         return OceanSurfaceShadingPolicy::Fixed;
     }
-    if (name == "footprint" || name == "adaptive") {
+    if (name.empty() || name == "footprint" || name == "adaptive") {
         return OceanSurfaceShadingPolicy::FootprintAdaptive;
     }
     throw std::runtime_error("unknown ocean surface shading policy: " + std::string(name));

@@ -166,8 +166,12 @@ int main() {
                 "ocean should default to half precision fields");
         require(defaults.detail_filter == ocean::OceanDetailFilter::Adaptive,
                 "ocean should preserve the current adaptive detail filter by default");
-        require(defaults.surface_shading_policy == ocean::OceanSurfaceShadingPolicy::Fixed,
-                "ocean should keep fixed shading until adaptive validation is accepted");
+        require(defaults.surface_shading_policy ==
+                    ocean::OceanSurfaceShadingPolicy::FootprintAdaptive,
+                "ocean should default to validated footprint-adaptive shading");
+        require(ocean::ocean_surface_shading_policy_from_name("") ==
+                    ocean::OceanSurfaceShadingPolicy::FootprintAdaptive,
+                "empty ocean shading policy should resolve to the adaptive default");
         require(ocean::ocean_surface_shading_policy_from_name("footprint") ==
                     ocean::OceanSurfaceShadingPolicy::FootprintAdaptive,
                 "ocean should parse footprint-adaptive surface shading");
@@ -203,16 +207,16 @@ int main() {
             .cells_z = 100U,
             .bounds = {1000.0F, 2000.0F, -500.0F, 500.0F},
         };
+        ocean::OceanConfig fixed_quality = defaults;
+        fixed_quality.surface_shading_policy = ocean::OceanSurfaceShadingPolicy::Fixed;
         const ocean::OceanPatchShadingPlan fixed_far_quality =
-            ocean::ocean_patch_shading_plan(defaults, far_quality_patch, 0.0F, 0.0F, 10.0F,
+            ocean::ocean_patch_shading_plan(fixed_quality, far_quality_patch, 0.0F, 0.0F, 10.0F,
                                              std::numbers::pi_v<float> / 3.0F, 900U);
         require(fixed_far_quality.detail_filter == ocean::OceanDetailFilter::Adaptive &&
                     fixed_far_quality.self_shadow_steps == 8U,
                 "fixed ocean shading should preserve one filter and shadow count");
 
         ocean::OceanConfig footprint_quality = defaults;
-        footprint_quality.surface_shading_policy =
-            ocean::OceanSurfaceShadingPolicy::FootprintAdaptive;
         const ocean::OceanPatchShadingPlan near_quality =
             ocean::ocean_patch_shading_plan(footprint_quality, near_quality_patch, 0.0F, 0.0F,
                                              10.0F, std::numbers::pi_v<float> / 3.0F, 900U);

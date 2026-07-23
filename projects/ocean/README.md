@@ -21,8 +21,8 @@ GodotOceanWaves is MIT licensed; its notice is in
 ```
 
 The default is the `Windy` sea state with a 512 map, half-precision wave fields,
-two active cascade slots, shared atmosphere/clouds, planar cloud reflection, and
-cached environment fallback.
+two active cascade slots, footprint-adaptive surface shading, shared
+atmosphere/clouds, planar cloud reflection, and cached environment fallback.
 
 ```sh
 ./build/dev/projects/ocean/ocean --ocean-sea-state calm
@@ -63,11 +63,14 @@ overrides include:
 --ocean-mesh-cells 32..512
 --ocean-mesh-lod-levels 1..6
 --ocean-horizon-target-near-cell-m 0.25..16
+--ocean-surface-shading-policy fixed|footprint
 --ocean-self-shadow-strength 0..1
 --ocean-self-shadow-steps 1..24
+--ocean-self-shadow-far-steps 1..24
 --ocean-shape-anti-repeat-strength 0..1
 --ocean-detail-anti-repeat-strength 0..1
 --ocean-detail-filter adaptive|bilinear|bicubic
+--ocean-camera-orbit-spin-deg-per-sec -360..360
 --ocean-size-reference | --no-ocean-size-reference
 --ocean-cascade all|0|1|2|3|4
 --ocean-surface-mode flat|curved-far
@@ -101,6 +104,14 @@ detail fade when distance and mesh footprint can no longer represent them;
 unresolved energy feeds roughness, broad reflection variation, and a bounded sun
 glitter corridor. Removed moment-pyramid, synthetic far-normal, and filtered
 far-whitecap experiments are available only through git history.
+
+The default footprint shading policy preserves the configured adaptive detail
+filter and eight-step self-shadowing on resolved patches. Once a patch's
+conservative mesh/projected footprint reaches the existing 5 m far-detail
+boundary, it selects the static bilinear pipeline and four shadow steps.
+`fixed` preserves one filter and shadow count across every patch for exact
+comparison. Explicit `bilinear` and `bicubic` filter selections remain
+authoritative.
 
 The mesh remains a camera-relative `ClipmapGrid2D`. Automatic horizon extent and
 altitude-aware cell sizing reduce near-grid cost in high views, while patch
@@ -154,6 +165,7 @@ filtering, anti-repeat, composed-cloud, and resolution comparisons. Set
 `LANE_FILTER` for a focused rerun or `SUMMARIZE_ONLY=1` to rebuild summaries from
 retained artifacts. It keeps the production scene pass intact, uses matched
 background-only runs for surface attribution, and rejects unstable wave timings.
+Resolution-scaling lanes are opt-in with `INCLUDE_SCALING=1`.
 `profile_cloud_reflections.sh` remains the focused cached-versus-planar
 reflection harness.
 
