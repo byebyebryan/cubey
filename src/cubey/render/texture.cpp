@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <vector>
 
@@ -93,19 +94,19 @@ void transition_color_mip(VkCommandBuffer command_buffer, VkImage image, std::ui
                           VkImageLayout old_layout, VkImageLayout new_layout,
                           VkAccessFlags src_access, VkAccessFlags dst_access,
                           VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage) {
-    cubey::vulkan::transition_image_layout(
-        command_buffer, cubey::vulkan::ImageLayoutTransition{
-                            .image = image,
-                            .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
-                            .old_layout = old_layout,
-                            .new_layout = new_layout,
-                            .src_access_mask = src_access,
-                            .dst_access_mask = dst_access,
-                            .src_stage_mask = src_stage,
-                            .dst_stage_mask = dst_stage,
-                            .base_mip_level = mip_level,
-                            .level_count = 1,
-                        });
+    cubey::vulkan::transition_image_layout(command_buffer,
+                                           cubey::vulkan::ImageLayoutTransition{
+                                               .image = image,
+                                               .aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                               .old_layout = old_layout,
+                                               .new_layout = new_layout,
+                                               .src_access_mask = src_access,
+                                               .dst_access_mask = dst_access,
+                                               .src_stage_mask = src_stage,
+                                               .dst_stage_mask = dst_stage,
+                                               .base_mip_level = mip_level,
+                                               .level_count = 1,
+                                           });
 }
 
 [[nodiscard]] VkAccessFlags access_for_generated_mip_base_layout(VkImageLayout layout) {
@@ -137,8 +138,8 @@ cubey::vulkan::ImageConfig texture_2d_image_config(const Texture2DConfig& config
     cubey::vulkan::ImageConfig image_config{};
     switch (config.usage) {
     case Texture2DUsage::ColorAttachmentSampled:
-        image_config = cubey::vulkan::color_attachment_sampled_image_config(config.extent,
-                                                                            config.format);
+        image_config =
+            cubey::vulkan::color_attachment_sampled_image_config(config.extent, config.format);
         break;
     case Texture2DUsage::StorageSampled:
         image_config = cubey::vulkan::storage_sampled_image_config(config.extent, config.format);
@@ -352,18 +353,15 @@ void record_generate_texture_2d_mips(VkCommandBuffer command_buffer, const Textu
     }
 
     const VkImage image = texture.handle();
-    transition_color_mip(command_buffer, image, 0, level_zero_layout,
-                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                         access_for_generated_mip_base_layout(level_zero_layout),
-                         VK_ACCESS_TRANSFER_READ_BIT,
-                         stage_for_generated_mip_base_layout(level_zero_layout),
-                         VK_PIPELINE_STAGE_TRANSFER_BIT);
+    transition_color_mip(
+        command_buffer, image, 0, level_zero_layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        access_for_generated_mip_base_layout(level_zero_layout), VK_ACCESS_TRANSFER_READ_BIT,
+        stage_for_generated_mip_base_layout(level_zero_layout), VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     for (std::uint32_t mip = 1; mip < mip_levels; ++mip) {
         transition_color_mip(command_buffer, image, mip, VK_IMAGE_LAYOUT_UNDEFINED,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0,
-                             VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT);
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         const VkExtent2D source_extent = texture_2d_mip_extent(texture.extent(), mip - 1U);
         const VkExtent2D target_extent = texture_2d_mip_extent(texture.extent(), mip);
@@ -382,25 +380,22 @@ void record_generate_texture_2d_mips(VkCommandBuffer command_buffer, const Textu
         vkCmdBlitImage(command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image,
                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
-        transition_color_mip(command_buffer, image, mip - 1U,
-                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+        transition_color_mip(command_buffer, image, mip - 1U, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT,
+                             VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
         const bool last_mip = mip + 1U == mip_levels;
-        transition_color_mip(
-            command_buffer, image, mip, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            last_mip ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                     : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            VK_ACCESS_TRANSFER_WRITE_BIT,
-            last_mip ? VK_ACCESS_SHADER_READ_BIT : VK_ACCESS_TRANSFER_READ_BIT,
-            VK_PIPELINE_STAGE_TRANSFER_BIT,
-            last_mip ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                     : VK_PIPELINE_STAGE_TRANSFER_BIT);
+        transition_color_mip(command_buffer, image, mip, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             last_mip ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                      : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             VK_ACCESS_TRANSFER_WRITE_BIT,
+                             last_mip ? VK_ACCESS_SHADER_READ_BIT : VK_ACCESS_TRANSFER_READ_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             last_mip ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                      : VK_PIPELINE_STAGE_TRANSFER_BIT);
     }
 }
 
@@ -429,18 +424,15 @@ void record_generate_texture_3d_mips(VkCommandBuffer command_buffer, const Textu
     }
 
     const VkImage image = texture.handle();
-    transition_color_mip(command_buffer, image, 0, level_zero_layout,
-                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                         access_for_generated_mip_base_layout(level_zero_layout),
-                         VK_ACCESS_TRANSFER_READ_BIT,
-                         stage_for_generated_mip_base_layout(level_zero_layout),
-                         VK_PIPELINE_STAGE_TRANSFER_BIT);
+    transition_color_mip(
+        command_buffer, image, 0, level_zero_layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        access_for_generated_mip_base_layout(level_zero_layout), VK_ACCESS_TRANSFER_READ_BIT,
+        stage_for_generated_mip_base_layout(level_zero_layout), VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     for (std::uint32_t mip = 1; mip < mip_levels; ++mip) {
         transition_color_mip(command_buffer, image, mip, VK_IMAGE_LAYOUT_UNDEFINED,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0,
-                             VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT);
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         const VkExtent3D source_extent = texture_3d_mip_extent(texture.extent(), mip - 1U);
         const VkExtent3D target_extent = texture_3d_mip_extent(texture.extent(), mip);
@@ -465,28 +457,23 @@ void record_generate_texture_3d_mips(VkCommandBuffer command_buffer, const Textu
         vkCmdBlitImage(command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image,
                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
-        transition_color_mip(command_buffer, image, mip - 1U,
-                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+        transition_color_mip(command_buffer, image, mip - 1U, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_READ_BIT,
+                             VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
         if (mip + 1U < mip_levels) {
-            transition_color_mip(command_buffer, image, mip,
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+            transition_color_mip(command_buffer, image, mip, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                 VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                 VK_PIPELINE_STAGE_TRANSFER_BIT);
         } else {
-            transition_color_mip(command_buffer, image, mip,
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                 VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
-                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            transition_color_mip(
+                command_buffer, image, mip, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
         }
     }
 }
@@ -525,7 +512,7 @@ const cubey::vulkan::Sampler& DepthTexture::sampler() const {
 }
 
 Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
-                                     cubey::vulkan::GpuRuntime& gpu,
+                                     cubey::vulkan::GpuOwnerContext& context,
                                      const UploadedTexture2DConfig& config) {
     validate_config(Texture2DConfig{
         .extent = config.extent,
@@ -611,30 +598,36 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
         }));
     }
 
-    static_cast<void>(gpu.submit_and_wait({
-        .label = "upload texture 2D",
-        .work =
-            [source = staging.handle(), destination = texture.handle(),
-             mip_levels = config.mip_levels, copies](cubey::vulkan::GpuOwnerContext& context) {
-                cubey::vulkan::ImmediateCommands commands(context);
-                cubey::vulkan::transition_image_layout(
-                    commands.command_buffer(),
-                    cubey::vulkan::begin_transfer_dst_transition(destination, mip_levels, 1));
-                vkCmdCopyBufferToImage(commands.command_buffer(), source, destination,
-                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                       static_cast<std::uint32_t>(copies.size()), copies.data());
-                cubey::vulkan::transition_image_layout(
-                    commands.command_buffer(),
-                    cubey::vulkan::finish_transfer_dst_for_sampling_transition(destination,
-                                                                               mip_levels, 1));
-                commands.submit_and_wait();
-            },
-    }));
+    cubey::vulkan::ImmediateCommands commands(context);
+    cubey::vulkan::transition_image_layout(
+        commands.command_buffer(),
+        cubey::vulkan::begin_transfer_dst_transition(texture.handle(), config.mip_levels, 1));
+    vkCmdCopyBufferToImage(commands.command_buffer(), staging.handle(), texture.handle(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           static_cast<std::uint32_t>(copies.size()), copies.data());
+    cubey::vulkan::transition_image_layout(
+        commands.command_buffer(), cubey::vulkan::finish_transfer_dst_for_sampling_transition(
+                                       texture.handle(), config.mip_levels, 1));
+    commands.submit_and_wait();
     return texture;
 }
 
+Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
+                                     cubey::vulkan::GpuRuntime& gpu,
+                                     const UploadedTexture2DConfig& config) {
+    std::optional<Texture2D> texture;
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "upload texture 2D",
+        .work =
+            [&device, &config, &texture](cubey::vulkan::GpuOwnerContext& context) {
+                texture.emplace(create_uploaded_texture_2d(device, context, config));
+            },
+    }));
+    return std::move(texture).value();
+}
+
 TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
-                                         cubey::vulkan::GpuRuntime& gpu,
+                                         cubey::vulkan::GpuOwnerContext& context,
                                          const UploadedTextureCubeConfig& config) {
     validate_config(TextureCubeConfig{
         .extent = config.extent,
@@ -682,26 +675,32 @@ TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
         }
     }
 
+    cubey::vulkan::ImmediateCommands commands(context);
+    cubey::vulkan::transition_image_layout(
+        commands.command_buffer(),
+        cubey::vulkan::begin_transfer_dst_transition(texture.handle(), config.mip_levels, 6));
+    vkCmdCopyBufferToImage(commands.command_buffer(), staging.handle(), texture.handle(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           static_cast<std::uint32_t>(copies.size()), copies.data());
+    cubey::vulkan::transition_image_layout(
+        commands.command_buffer(), cubey::vulkan::finish_transfer_dst_for_sampling_transition(
+                                       texture.handle(), config.mip_levels, 6));
+    commands.submit_and_wait();
+    return texture;
+}
+
+TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
+                                         cubey::vulkan::GpuRuntime& gpu,
+                                         const UploadedTextureCubeConfig& config) {
+    std::optional<TextureCube> texture;
     static_cast<void>(gpu.submit_and_wait({
         .label = "upload texture cube",
         .work =
-            [source = staging.handle(), destination = texture.handle(),
-             mip_levels = config.mip_levels, copies](cubey::vulkan::GpuOwnerContext& context) {
-                cubey::vulkan::ImmediateCommands commands(context);
-                cubey::vulkan::transition_image_layout(
-                    commands.command_buffer(),
-                    cubey::vulkan::begin_transfer_dst_transition(destination, mip_levels, 6));
-                vkCmdCopyBufferToImage(commands.command_buffer(), source, destination,
-                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                       static_cast<std::uint32_t>(copies.size()), copies.data());
-                cubey::vulkan::transition_image_layout(
-                    commands.command_buffer(),
-                    cubey::vulkan::finish_transfer_dst_for_sampling_transition(destination,
-                                                                               mip_levels, 6));
-                commands.submit_and_wait();
+            [&device, &config, &texture](cubey::vulkan::GpuOwnerContext& context) {
+                texture.emplace(create_uploaded_texture_cube(device, context, config));
             },
     }));
-    return texture;
+    return std::move(texture).value();
 }
 
 cubey::vulkan::ImageView create_texture_cube_face_view(const cubey::vulkan::Device& device,
@@ -714,17 +713,16 @@ cubey::vulkan::ImageView create_texture_cube_face_view(const cubey::vulkan::Devi
     if (face_index >= 6U) {
         throw std::runtime_error("texture cube face view face index is out of range");
     }
-    return cubey::vulkan::ImageView(
-        device, cubey::vulkan::ImageViewConfig{
-                    .image = texture.handle(),
-                    .format = texture.format(),
-                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .view_type = VK_IMAGE_VIEW_TYPE_2D,
-                    .base_mip_level = mip_level,
-                    .level_count = 1,
-                    .base_array_layer = face_index,
-                    .layer_count = 1,
-                });
+    return cubey::vulkan::ImageView(device, cubey::vulkan::ImageViewConfig{
+                                                .image = texture.handle(),
+                                                .format = texture.format(),
+                                                .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                .view_type = VK_IMAGE_VIEW_TYPE_2D,
+                                                .base_mip_level = mip_level,
+                                                .level_count = 1,
+                                                .base_array_layer = face_index,
+                                                .layer_count = 1,
+                                            });
 }
 
 cubey::vulkan::ImageView create_texture_2d_mip_view(const cubey::vulkan::Device& device,
@@ -733,17 +731,16 @@ cubey::vulkan::ImageView create_texture_2d_mip_view(const cubey::vulkan::Device&
     if (mip_level >= texture.mip_levels()) {
         throw std::runtime_error("texture 2D mip view level is out of range");
     }
-    return cubey::vulkan::ImageView(
-        device, cubey::vulkan::ImageViewConfig{
-                    .image = texture.handle(),
-                    .format = texture.format(),
-                    .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-                    .view_type = VK_IMAGE_VIEW_TYPE_2D,
-                    .base_mip_level = mip_level,
-                    .level_count = 1,
-                    .base_array_layer = 0,
-                    .layer_count = 1,
-                });
+    return cubey::vulkan::ImageView(device, cubey::vulkan::ImageViewConfig{
+                                                .image = texture.handle(),
+                                                .format = texture.format(),
+                                                .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                .view_type = VK_IMAGE_VIEW_TYPE_2D,
+                                                .base_mip_level = mip_level,
+                                                .level_count = 1,
+                                                .base_array_layer = 0,
+                                                .layer_count = 1,
+                                            });
 }
 
 } // namespace cubey::render

@@ -35,7 +35,7 @@ AtmosphereBackgroundTextureBindings AtmosphereBackgroundAtlasResources::bindings
 }
 
 Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
-                                           cubey::vulkan::GpuRuntime& gpu,
+                                           cubey::vulkan::GpuOwnerContext& context,
                                            const LunarSurfaceMap& map) {
     std::vector<UploadedTexture2DMip> upload_mips;
     upload_mips.reserve(map.mips.size());
@@ -56,7 +56,7 @@ Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
         .max_lod = static_cast<float>(map.mip_levels - 1U),
     };
     return create_uploaded_texture_2d(
-        device, gpu,
+        device, context,
         {
             .extent = {map.width, map.height},
             .mip_levels = map.mip_levels,
@@ -68,8 +68,22 @@ Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
         });
 }
 
+Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           const LunarSurfaceMap& map) {
+    std::optional<Texture2D> texture;
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "upload lunar surface map",
+        .work =
+            [&device, &map, &texture](cubey::vulkan::GpuOwnerContext& context) {
+                texture.emplace(create_lunar_surface_map_texture(device, context, map));
+            },
+    }));
+    return std::move(texture).value();
+}
+
 TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
-                                                      cubey::vulkan::GpuRuntime& gpu,
+                                                      cubey::vulkan::GpuOwnerContext& context,
                                                       const NightSkyAtlas& atlas) {
     const std::span<const std::uint8_t> bytes{
         reinterpret_cast<const std::uint8_t*>(atlas.rgba32f.data()),
@@ -82,7 +96,7 @@ TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Devic
         .mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
         .max_lod = static_cast<float>(atlas.mip_levels - 1U),
     };
-    return create_uploaded_texture_cube(device, gpu,
+    return create_uploaded_texture_cube(device, context,
                                         {
                                             .extent = atlas.extent,
                                             .mip_levels = atlas.mip_levels,
@@ -91,6 +105,20 @@ TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Devic
                                             .create_sampler = true,
                                             .sampler = sampler,
                                         });
+}
+
+TextureCube create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
+                                                      cubey::vulkan::GpuRuntime& gpu,
+                                                      const NightSkyAtlas& atlas) {
+    std::optional<TextureCube> texture;
+    static_cast<void>(gpu.submit_and_wait({
+        .label = "upload atmosphere night sky atlas",
+        .work =
+            [&device, &atlas, &texture](cubey::vulkan::GpuOwnerContext& context) {
+                texture.emplace(create_atmosphere_night_sky_atlas_texture(device, context, atlas));
+            },
+    }));
+    return std::move(texture).value();
 }
 
 AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
@@ -106,8 +134,8 @@ AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textur
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const AtmosphereBackgroundGeneratedAtlasConfig& config) {
     return create_atmosphere_background_atlas_resources(
-        device, gpu, generate_lunar_surface_map(config.lunar_surface_width,
-                                                config.lunar_surface_height),
+        device, gpu,
+        generate_lunar_surface_map(config.lunar_surface_width, config.lunar_surface_height),
         generate_night_sky_atlas(config.night_sky, config.night_sky_extent));
 }
 
@@ -183,10 +211,11 @@ MaterialPassInfo atmosphere_background_pass_info() {
     };
 }
 
-void AtmosphereBackgroundFrame::create_materials(
-    const cubey::vulkan::Device& device, const AtmosphereBackgroundFrameMaterialConfig& config) {
+std::shared_ptr<AtmosphereBackgroundFrameMaterial>
+create_atmosphere_background_frame_material(const cubey::vulkan::Device& device,
+                                            const AtmosphereBackgroundFrameMaterialConfig& config) {
     validate_atmosphere_background_texture_bindings(config.textures);
-    material_.emplace(
+    return std::make_shared<AtmosphereBackgroundFrameMaterial>(
         device, FrameUniformMaterialInstanceConfig{
                     .material_pass = atmosphere_background_pass_info(),
                     .descriptor_set = 0,
@@ -204,9 +233,21 @@ void AtmosphereBackgroundFrame::create_materials(
                 });
 }
 
+void AtmosphereBackgroundFrame::create_materials(
+    const cubey::vulkan::Device& device, const AtmosphereBackgroundFrameMaterialConfig& config) {
+    install_materials(create_atmosphere_background_frame_material(device, config));
+}
+
+void AtmosphereBackgroundFrame::install_materials(
+    std::shared_ptr<AtmosphereBackgroundFrameMaterial> material) {
+    if (material == nullptr) {
+        throw std::runtime_error("atmosphere background material generation is invalid");
+    }
+    material_ = std::move(material);
+}
+
 void update_atmosphere_background_frame_material_texture_bindings(
-    const cubey::vulkan::Device& device,
-    const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& material,
+    const cubey::vulkan::Device& device, const AtmosphereBackgroundFrameMaterial& material,
     const AtmosphereBackgroundTextureBindings& textures) {
     validate_atmosphere_background_texture_bindings(textures);
     for (std::uint32_t slot_index = 0U; slot_index < material.material_instance().set_count();
@@ -281,15 +322,14 @@ void AtmosphereBackgroundFrame::record_pass(const cubey::vulkan::CommandRecorder
 }
 
 bool AtmosphereBackgroundFrame::materials_created() const noexcept {
-    return material_.has_value();
+    return material_ != nullptr;
 }
 
-const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&
-AtmosphereBackgroundFrame::material() const {
-    if (!material_.has_value()) {
+const AtmosphereBackgroundFrameMaterial& AtmosphereBackgroundFrame::material() const {
+    if (material_ == nullptr) {
         throw std::runtime_error("atmosphere background material is not initialized");
     }
-    return material_.value();
+    return *material_;
 }
 
 const GraphicsPipelineResource& AtmosphereBackgroundFrame::pipeline() const {

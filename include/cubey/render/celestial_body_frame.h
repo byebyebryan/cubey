@@ -14,6 +14,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 
@@ -77,6 +78,8 @@ struct CelestialBodyFramePipelineConfig {
     CelestialBodyDepthMode depth_mode = CelestialBodyDepthMode::TestNoWrite;
 };
 
+using CelestialBodyFrameMaterial = FrameUniformMaterialInstance<CelestialBodyFrameUniforms>;
+
 [[nodiscard]] CelestialBodyFrameUniforms celestial_body_frame_uniforms(
     const CelestialBody& body, const CelestialBodyRenderPlacement& placement,
     const CelestialLighting& lighting, const cubey::math::Mat4& view_projection,
@@ -86,9 +89,11 @@ celestial_body_pass_info(CelestialBodyDepthMode depth_mode = CelestialBodyDepthM
 void validate_celestial_body_frame_texture_bindings(
     const CelestialBodyFrameTextureBindings& textures);
 void update_celestial_body_frame_material_texture_bindings(
-    const cubey::vulkan::Device& device,
-    const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& material,
+    const cubey::vulkan::Device& device, const CelestialBodyFrameMaterial& material,
     const CelestialBodyFrameTextureBindings& textures);
+[[nodiscard]] std::shared_ptr<CelestialBodyFrameMaterial>
+create_celestial_body_frame_material(const cubey::vulkan::Device& device,
+                                     const CelestialBodyFrameMaterialConfig& config);
 
 class CelestialBodyFrame {
   public:
@@ -101,6 +106,7 @@ class CelestialBodyFrame {
 
     void create_materials(const cubey::vulkan::Device& device,
                           const CelestialBodyFrameMaterialConfig& config);
+    void install_materials(std::shared_ptr<CelestialBodyFrameMaterial> material);
     void update_texture_bindings(const cubey::vulkan::Device& device,
                                  const CelestialBodyFrameTextureBindings& textures) const;
     void create_pipeline(const cubey::vulkan::Device& device,
@@ -115,11 +121,11 @@ class CelestialBodyFrame {
                      FrameSlot frame_slot, const Mesh& mesh) const;
 
     [[nodiscard]] bool materials_created() const noexcept;
-    [[nodiscard]] const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& material() const;
+    [[nodiscard]] const CelestialBodyFrameMaterial& material() const;
     [[nodiscard]] const GraphicsPipelineResource& pipeline() const;
 
   private:
-    std::optional<FrameUniformMaterialInstance<CelestialBodyFrameUniforms>> material_;
+    std::shared_ptr<CelestialBodyFrameMaterial> material_{};
     std::optional<GraphicsPipelineResource> pipeline_;
 };
 

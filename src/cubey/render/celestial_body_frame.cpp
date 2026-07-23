@@ -214,8 +214,7 @@ void validate_celestial_body_frame_texture_bindings(
 }
 
 void update_celestial_body_frame_material_texture_bindings(
-    const cubey::vulkan::Device& device,
-    const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>& material,
+    const cubey::vulkan::Device& device, const CelestialBodyFrameMaterial& material,
     const CelestialBodyFrameTextureBindings& textures) {
     validate_celestial_body_frame_texture_bindings(textures);
     for (std::uint32_t slot_index = 0U; slot_index < material.material_instance().set_count();
@@ -235,24 +234,38 @@ void update_celestial_body_frame_material_texture_bindings(
     }
 }
 
+std::shared_ptr<CelestialBodyFrameMaterial>
+create_celestial_body_frame_material(const cubey::vulkan::Device& device,
+                                     const CelestialBodyFrameMaterialConfig& config) {
+    validate_celestial_body_frame_texture_bindings(config.textures);
+    return std::make_shared<CelestialBodyFrameMaterial>(
+        device, FrameUniformMaterialInstanceConfig{
+                    .material_pass = celestial_body_pass_info(),
+                    .descriptor_set = 0,
+                    .frame_slot_count = config.frame_slot_count,
+                    .uniform_binding = binding(CelestialBodyBinding::FrameUniforms),
+                    .sampled_images =
+                        {
+                            SampledImageMaterialBinding{
+                                .binding = binding(CelestialBodyBinding::SurfaceMap),
+                                .sampler = config.textures.surface_sampler,
+                                .image_view = config.textures.surface_view,
+                                .layout = config.textures.surface_layout,
+                            },
+                        },
+                });
+}
+
 void CelestialBodyFrame::create_materials(const cubey::vulkan::Device& device,
                                           const CelestialBodyFrameMaterialConfig& config) {
-    validate_celestial_body_frame_texture_bindings(config.textures);
-    material_.emplace(device, FrameUniformMaterialInstanceConfig{
-                                  .material_pass = celestial_body_pass_info(),
-                                  .descriptor_set = 0,
-                                  .frame_slot_count = config.frame_slot_count,
-                                  .uniform_binding = binding(CelestialBodyBinding::FrameUniforms),
-                                  .sampled_images =
-                                      {
-                                          SampledImageMaterialBinding{
-                                              .binding = binding(CelestialBodyBinding::SurfaceMap),
-                                              .sampler = config.textures.surface_sampler,
-                                              .image_view = config.textures.surface_view,
-                                              .layout = config.textures.surface_layout,
-                                          },
-                                      },
-                              });
+    install_materials(create_celestial_body_frame_material(device, config));
+}
+
+void CelestialBodyFrame::install_materials(std::shared_ptr<CelestialBodyFrameMaterial> material) {
+    if (material == nullptr) {
+        throw std::runtime_error("celestial body frame material generation is invalid");
+    }
+    material_ = std::move(material);
 }
 
 void CelestialBodyFrame::update_texture_bindings(
@@ -316,15 +329,14 @@ void CelestialBodyFrame::record_pass(const cubey::vulkan::CommandRecorder& recor
 }
 
 bool CelestialBodyFrame::materials_created() const noexcept {
-    return material_.has_value();
+    return material_ != nullptr;
 }
 
-const FrameUniformMaterialInstance<CelestialBodyFrameUniforms>&
-CelestialBodyFrame::material() const {
-    if (!material_.has_value()) {
+const CelestialBodyFrameMaterial& CelestialBodyFrame::material() const {
+    if (material_ == nullptr) {
         throw std::runtime_error("celestial body frame material is not initialized");
     }
-    return material_.value();
+    return *material_;
 }
 
 const GraphicsPipelineResource& CelestialBodyFrame::pipeline() const {

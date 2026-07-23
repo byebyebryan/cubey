@@ -262,12 +262,18 @@ class DepthTexture {
 [[nodiscard]] Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
                                                    cubey::vulkan::GpuRuntime& gpu,
                                                    const UploadedTexture2DConfig& config);
+[[nodiscard]] Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
+                                                   cubey::vulkan::GpuOwnerContext& context,
+                                                   const UploadedTexture2DConfig& config);
 [[nodiscard]] TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
                                                        cubey::vulkan::GpuRuntime& gpu,
                                                        const UploadedTextureCubeConfig& config);
-[[nodiscard]] cubey::vulkan::ImageView create_texture_cube_face_view(
-    const cubey::vulkan::Device& device, const TextureCube& texture, std::uint32_t mip_level,
-    std::uint32_t face_index);
+[[nodiscard]] TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
+                                                       cubey::vulkan::GpuOwnerContext& context,
+                                                       const UploadedTextureCubeConfig& config);
+[[nodiscard]] cubey::vulkan::ImageView
+create_texture_cube_face_view(const cubey::vulkan::Device& device, const TextureCube& texture,
+                              std::uint32_t mip_level, std::uint32_t face_index);
 [[nodiscard]] cubey::vulkan::ImageView
 create_texture_2d_mip_view(const cubey::vulkan::Device& device, const Texture2D& texture,
                            std::uint32_t mip_level);

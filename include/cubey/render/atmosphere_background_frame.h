@@ -16,6 +16,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 
@@ -56,9 +57,16 @@ struct AtmosphereBackgroundGeneratedAtlasConfig {
 [[nodiscard]] Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
                                                          cubey::vulkan::GpuRuntime& gpu,
                                                          const LunarSurfaceMap& map);
+[[nodiscard]] Texture2D create_lunar_surface_map_texture(const cubey::vulkan::Device& device,
+                                                         cubey::vulkan::GpuOwnerContext& context,
+                                                         const LunarSurfaceMap& map);
 [[nodiscard]] TextureCube
 create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
                                           cubey::vulkan::GpuRuntime& gpu,
+                                          const NightSkyAtlas& atlas);
+[[nodiscard]] TextureCube
+create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
+                                          cubey::vulkan::GpuOwnerContext& context,
                                           const NightSkyAtlas& atlas);
 
 [[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_atlas_resources(
@@ -83,13 +91,18 @@ struct AtmosphereBackgroundFramePipelineConfig {
     std::span<const ShaderStageFile> shader_stage_files{};
 };
 
+using AtmosphereBackgroundFrameMaterial =
+    FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>;
+
 [[nodiscard]] MaterialPassInfo atmosphere_background_pass_info();
 void validate_atmosphere_background_texture_bindings(
     const AtmosphereBackgroundTextureBindings& textures);
 void update_atmosphere_background_frame_material_texture_bindings(
-    const cubey::vulkan::Device& device,
-    const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& material,
+    const cubey::vulkan::Device& device, const AtmosphereBackgroundFrameMaterial& material,
     const AtmosphereBackgroundTextureBindings& textures);
+[[nodiscard]] std::shared_ptr<AtmosphereBackgroundFrameMaterial>
+create_atmosphere_background_frame_material(const cubey::vulkan::Device& device,
+                                            const AtmosphereBackgroundFrameMaterialConfig& config);
 
 class AtmosphereBackgroundFrame {
   public:
@@ -102,6 +115,7 @@ class AtmosphereBackgroundFrame {
 
     void create_materials(const cubey::vulkan::Device& device,
                           const AtmosphereBackgroundFrameMaterialConfig& config);
+    void install_materials(std::shared_ptr<AtmosphereBackgroundFrameMaterial> material);
     void update_texture_bindings(const cubey::vulkan::Device& device,
                                  const AtmosphereBackgroundTextureBindings& textures) const;
     void create_pipeline(const cubey::vulkan::Device& device,
@@ -116,12 +130,11 @@ class AtmosphereBackgroundFrame {
                      VkDescriptorSet descriptor_set) const;
 
     [[nodiscard]] bool materials_created() const noexcept;
-    [[nodiscard]] const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>&
-    material() const;
+    [[nodiscard]] const AtmosphereBackgroundFrameMaterial& material() const;
     [[nodiscard]] const GraphicsPipelineResource& pipeline() const;
 
   private:
-    std::optional<FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>> material_;
+    std::shared_ptr<AtmosphereBackgroundFrameMaterial> material_{};
     std::optional<GraphicsPipelineResource> pipeline_;
 };
 
