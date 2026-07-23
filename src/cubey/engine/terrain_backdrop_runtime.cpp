@@ -260,7 +260,7 @@ build_runtime_generation(const vulkan::Device& device, vulkan::GpuOwnerContext& 
     result->meshes = upload_mesh_set(context, product);
 
     const std::uint64_t derived =
-        procedural::derive_seed(product.source.seed, "terrain.backdrop.filtered-detail.v3");
+        procedural::derive_seed(product.source.seed, "terrain.backdrop.filtered-detail.v4");
     const TerrainMaterialPushConstants material_push{
         .seed = static_cast<std::uint32_t>(derived ^ (derived >> 32U)),
     };

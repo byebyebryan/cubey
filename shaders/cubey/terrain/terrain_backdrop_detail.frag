@@ -124,6 +124,12 @@ void main() {
     float ambient_visibility = clamp(frag_material_channels.z, 0.65, 1.0);
     float vegetation = clamp(frag_surface_channels.x, 0.0, 1.0);
     float moisture = clamp(frag_surface_channels.y, 0.0, 1.0);
+    float normalized_height = clamp(
+        (frag_world_position.y - pc.render_options.y) /
+            max(pc.render_options.z - pc.render_options.y, 1.0),
+        0.0, 1.0);
+    float slope = 1.0 - clamp(classification_normal.y, 0.0, 1.0);
+    float projected_span_m = length(fwidth(frag_world_position));
     int debug_view = int(round(pc.render_options.x));
     vec3 light_direction = normalize(atmosphere.primary_light_direction_intensity.xyz);
     float sun_visibility = terrain_sun_visibility(
@@ -154,10 +160,12 @@ void main() {
         vec2 planar_tangent = local_planar_detail.rg * 2.0 - 1.0;
         planar_perturbation = vec3(planar_tangent.x, 0.0, planar_tangent.y);
     }
-    vec3 perturbation = planar_perturbation;
-    vec3 material_normal = normalize(classification_normal + 0.55 * perturbation);
-    float normal_strength = 0.14 * soil + 0.10 * vegetation +
-                            0.38 * rock + 0.05 * snow;
+    float footprint_detail = 1.0 - smoothstep(18.0, 72.0, projected_span_m);
+    float planar_suitability = smoothstep(0.22, 0.62, classification_normal.y);
+    vec3 perturbation = planar_perturbation * footprint_detail * planar_suitability;
+    vec3 material_normal = normalize(classification_normal + 0.45 * perturbation);
+    float normal_strength = 0.20 * soil + 0.12 * vegetation +
+                            0.34 * rock + 0.04 * snow;
     vec3 normal = normalize(classification_normal + normal_strength * perturbation);
 
     vec3 flat_base_color = srgb_to_linear(vec3(0.27, 0.255, 0.205)) * ground +
@@ -165,14 +173,22 @@ void main() {
                            srgb_to_linear(vec3(0.82, 0.845, 0.86)) * snow;
     float filtered_detail = step(0.5, pc.material_options.x);
     float macro_mineral = smoothstep(0.18, 0.82, macro_detail.b);
+    float meso_mineral = smoothstep(0.20, 0.80, local_planar_detail.b);
     float rock_mineral = smoothstep(
-        0.16, 0.84, 0.72 * macro_detail.b + 0.28 * macro_detail.a);
+        0.16, 0.84, 0.57 * macro_detail.b + 0.20 * macro_detail.a +
+            0.13 * normalized_height +
+            0.10 * smoothstep(0.08, 0.58, slope));
+    float upland_weathering = clamp(
+        0.45 * macro_mineral + 0.24 * meso_mineral +
+            0.21 * smoothstep(0.16, 0.74, normalized_height) +
+            0.10 * smoothstep(0.08, 0.48, slope),
+        0.0, 1.0);
     vec3 refined_ground = mix(
         srgb_to_linear(vec3(0.260, 0.275, 0.280)),
-        srgb_to_linear(vec3(0.335, 0.300, 0.255)), macro_mineral);
+        srgb_to_linear(vec3(0.380, 0.325, 0.265)), upland_weathering);
     vec3 refined_rock = mix(
-        srgb_to_linear(vec3(0.340, 0.355, 0.370)),
-        srgb_to_linear(vec3(0.430, 0.385, 0.335)), rock_mineral);
+        srgb_to_linear(vec3(0.325, 0.350, 0.370)),
+        srgb_to_linear(vec3(0.465, 0.400, 0.325)), rock_mineral);
     vec3 refined_snow = mix(
         srgb_to_linear(vec3(0.68, 0.72, 0.75)),
         srgb_to_linear(vec3(0.77, 0.80, 0.82)),
@@ -194,10 +210,14 @@ void main() {
     float macro_albedo = macro_detail.b * 2.0 - 1.0;
     float planar_albedo = local_planar_detail.b * 2.0 - 1.0;
     float albedo_variation =
-        soil * (0.040 * macro_albedo + 0.018 * planar_albedo) +
-        vegetation * (0.022 * macro_albedo + 0.008 * planar_albedo) +
-        rock * (0.055 * macro_albedo + 0.045 * planar_albedo) +
-        snow * (0.035 * macro_albedo + 0.012 * planar_albedo);
+        soil * (0.065 * macro_albedo +
+                0.035 * planar_albedo * footprint_detail) +
+        vegetation * (0.030 * macro_albedo +
+                      0.010 * planar_albedo * footprint_detail) +
+        rock * (0.080 * macro_albedo +
+                0.040 * planar_albedo * footprint_detail * planar_suitability) +
+        snow * (0.035 * macro_albedo +
+                0.010 * planar_albedo * footprint_detail);
     base_color *= max(0.0, 1.0 + albedo_variation);
     float flat_roughness =
         0.94 * soil + 0.93 * vegetation + 0.77 * rock + 0.84 * snow;
@@ -207,7 +227,8 @@ void main() {
     float macro_roughness = macro_detail.a * 2.0 - 1.0;
     float local_roughness = local_planar_detail.a * 2.0 - 1.0;
     roughness = clamp(roughness + filtered_detail *
-                      (0.07 * macro_roughness + 0.02 * local_roughness),
+                      (0.10 * macro_roughness +
+                       0.03 * local_roughness * footprint_detail),
                       0.0, 1.0);
 
     if (debug_view == 10) {
