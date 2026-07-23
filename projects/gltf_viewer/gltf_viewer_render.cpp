@@ -51,14 +51,14 @@ void GltfViewerApp::destroy_swapchain_resources() {
     engine_.renderers().destroy_swapchain_resources();
 }
 
-void GltfViewerApp::destroy_all_resources() {
+void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
     terrain_runtime_.destroy();
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
     gpu_profiler_.reset();
     atmosphere_runtime_.destroy();
     ibl_environment_.reset();
-    atmosphere_background_atlases_.reset();
+    atmosphere_background_atlases_.shutdown(gpu);
     destroy_scene_if_needed();
     cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
     animation_playback_ = {};

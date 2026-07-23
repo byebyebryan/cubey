@@ -274,6 +274,7 @@ target_link_libraries(
 )
 
 add_library(cubey_engine STATIC
+    engine/atmosphere_background_atlas_runtime.cpp
     engine/atmosphere_environment_config.cpp
     engine/atmosphere_environment_runtime.cpp
     engine/capture_queue.cpp

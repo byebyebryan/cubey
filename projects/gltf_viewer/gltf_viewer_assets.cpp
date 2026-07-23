@@ -172,23 +172,46 @@ void GltfViewerApp::create_default_textures(const cubey::vulkan::Device& device,
 
 void GltfViewerApp::create_atmosphere_background_atlases(const cubey::vulkan::Device& device,
                                                          cubey::vulkan::GpuRuntime& gpu) {
-    if (atmosphere_background_atlases_.has_value()) {
+    if (atmosphere_background_atlases_.created()) {
         return;
     }
 
-    atmosphere_background_atlases_.emplace(
-        cubey::render::create_atmosphere_background_generated_textures(device, gpu,
-                                                                       {
-                                                                           .night_sky_extent = 128,
-                                                                       }));
+    atmosphere_background_atlases_.create(device, gpu, {.night_sky_extent = 128U});
+}
+
+void GltfViewerApp::poll_atmosphere_background_atlases(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    cubey::vulkan::GpuSubmissionTicket retire_after) {
+    if (!atmosphere_background_atlases_.poll(gpu, retire_after)) {
+        return;
+    }
+    const cubey::render::AtmosphereBackgroundTextureBindings textures =
+        atmosphere_background_textures();
+    forward_pbr_renderer().update_atmosphere_background_texture_bindings(device, textures);
+    if (atmosphere_runtime_.resources_created()) {
+        atmosphere_runtime_.update_atmosphere_texture_bindings(device, textures);
+    }
+}
+
+void GltfViewerApp::finish_atmosphere_background_atlases(const cubey::vulkan::Device& device,
+                                                         cubey::vulkan::GpuRuntime& gpu) {
+    if (!atmosphere_background_atlases_.finish(gpu)) {
+        return;
+    }
+    const cubey::render::AtmosphereBackgroundTextureBindings textures =
+        atmosphere_background_textures();
+    forward_pbr_renderer().update_atmosphere_background_texture_bindings(device, textures);
+    if (atmosphere_runtime_.resources_created()) {
+        atmosphere_runtime_.update_atmosphere_texture_bindings(device, textures);
+    }
 }
 
 cubey::render::AtmosphereBackgroundTextureBindings
 GltfViewerApp::atmosphere_background_textures() const {
-    if (!atmosphere_background_atlases_.has_value()) {
+    if (!atmosphere_background_atlases_.created()) {
         throw std::runtime_error("glTF viewer atmosphere background atlases are not initialized");
     }
-    return atmosphere_background_atlases_->bindings();
+    return atmosphere_background_atlases_.bindings();
 }
 
 bool GltfViewerApp::use_atmosphere_environment_source() const {

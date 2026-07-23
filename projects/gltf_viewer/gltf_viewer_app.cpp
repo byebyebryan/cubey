@@ -238,6 +238,8 @@ int GltfViewerApp::run_windowed() {
         destroy_swapchain_resources();
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        poll_atmosphere_background_atlases(context.device(), context.gpu(),
+                                           context.frame_resources().latest_submitted_ticket());
         update_animation(static_cast<float>(timing.delta_seconds));
         if (update_atmosphere_time(timing.delta_seconds)) {
             refresh_atmosphere_lighting_scene();
@@ -267,8 +269,7 @@ int GltfViewerApp::run_windowed() {
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
-        (void)context;
-        destroy_all_resources();
+        destroy_all_resources(context.gpu());
     };
 
     return cubey::host::run_windowed_app(
@@ -295,6 +296,7 @@ int GltfViewerApp::run_headless() {
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
         create_global_resources_if_needed(context.device(), context.gpu(),
                                           cubey::host::headless_capture_frame_slot_count(config_));
+        finish_atmosphere_background_atlases(context.device(), context.gpu());
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format,
                                cubey::host::headless_capture_frame_slot_count(config_));
@@ -318,7 +320,9 @@ int GltfViewerApp::run_headless() {
                                     const cubey::host::HeadlessRenderTarget& target) {
         record_viewer_capture(context, frame, command_buffer, target);
     };
-    callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
+    callbacks.shutdown = [this](cubey::host::HeadlessPngContext& context) {
+        destroy_all_resources(context.gpu());
+    };
 
     cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
     return host.run();

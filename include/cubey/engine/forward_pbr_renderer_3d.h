@@ -229,6 +229,8 @@ class ForwardPbrRenderer3D {
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
     void update_environment(const vulkan::Device& device, render::FrameSlot frame_slot,
                             const render::PbrEnvironmentTextureBindings& environment);
+    void update_atmosphere_background_texture_bindings(
+        const vulkan::Device& device, const render::AtmosphereBackgroundTextureBindings& textures);
     void destroy_swapchain_resources();
     void destroy_all_resources();
     [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;

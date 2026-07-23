@@ -908,8 +908,10 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
     require_not_contains(
         cmake, "atmosphere_reflection_irradiance.frag",
         "forward PBR shader package should not compile removed atmosphere irradiance shader");
-    require_contains(gltf_assets, "create_atmosphere_background_generated_textures",
-                     "glTF viewer should create generated atmosphere atlas textures");
+    require_contains(gltf_assets, "atmosphere_background_atlases_.create",
+                     "glTF viewer should create the progressive atmosphere atlas runtime");
+    require_contains(gltf_assets, "poll_atmosphere_background_atlases",
+                     "glTF viewer should activate prepared atmosphere atlases");
     require_contains(gltf_assets, "create_atmosphere_environment_runtime",
                      "glTF viewer should create the shared atmosphere environment runtime");
     require_contains(gltf_assets, "pbr_environment_bindings",

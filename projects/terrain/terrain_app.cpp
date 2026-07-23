@@ -5,6 +5,7 @@
 
 #include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/jobs.h>
+#include <cubey/engine/atmosphere_background_atlas_runtime.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/engine/staged_resource.h>
@@ -536,8 +537,10 @@ class TerrainApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
-            poll_product_build(context.device(), context.gpu(),
-                               context.frame_resources().latest_submitted_ticket());
+            const cubey::vulkan::GpuSubmissionTicket retire_after =
+                context.frame_resources().latest_submitted_ticket();
+            poll_product_build(context.device(), context.gpu(), retire_after);
+            poll_atmosphere_atlases(context.device(), context.gpu(), retire_after);
             orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
             (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                              timing.delta_seconds);
@@ -592,6 +595,7 @@ class TerrainApp {
             const std::uint32_t frame_slot_count =
                 cubey::host::headless_capture_frame_slot_count(run_config_);
             create_global_resources_if_needed(context.device(), context.gpu(), frame_slot_count);
+            finish_atmosphere_atlases(context.device(), context.gpu());
             product_builds_.finish(context.gpu());
             install_ready_product_build(context.device(), context.gpu(), {});
             create_swapchain_resources(context.device(), context.render_target().extent,
@@ -1117,6 +1121,21 @@ class TerrainApp {
         }
     }
 
+    void poll_atmosphere_atlases(const cubey::vulkan::Device& device,
+                                 cubey::vulkan::GpuRuntime& gpu,
+                                 cubey::vulkan::GpuSubmissionTicket retire_after) {
+        if (atmosphere_atlases_.poll(gpu, retire_after)) {
+            atmosphere_background_.update_texture_bindings(device, atmosphere_atlases_.bindings());
+        }
+    }
+
+    void finish_atmosphere_atlases(const cubey::vulkan::Device& device,
+                                   cubey::vulkan::GpuRuntime& gpu) {
+        if (atmosphere_atlases_.finish(gpu)) {
+            atmosphere_background_.update_texture_bindings(device, atmosphere_atlases_.bindings());
+        }
+    }
+
     void create_global_resources_if_needed(const cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count) {
@@ -1131,11 +1150,10 @@ class TerrainApp {
                                                 CUBEY_TERRAIN_SHADER_DIR),
                                             .frame_slot_count = frame_slot_count,
                                         });
-        atmosphere_atlases_.emplace(cubey::render::create_atmosphere_background_generated_textures(
-            device, gpu, {.night_sky_extent = 64U}));
+        atmosphere_atlases_.create(device, gpu, {.night_sky_extent = 64U});
         atmosphere_background_.create_materials(
             device,
-            {.frame_slot_count = frame_slot_count, .textures = atmosphere_atlases_->bindings()});
+            {.frame_slot_count = frame_slot_count, .textures = atmosphere_atlases_.bindings()});
         cloud_runtime_.create_surface_resources(device, gpu, cloud_runtime_shader_files().generated,
                                                 clouds_config_);
         hdr_post_frame_.create_materials(device, {.frame_slot_count = frame_slot_count});
@@ -1212,7 +1230,7 @@ class TerrainApp {
         hdr_post_frame_.destroy();
         cloud_runtime_.destroy();
         atmosphere_background_.destroy();
-        atmosphere_atlases_.reset();
+        atmosphere_atlases_.shutdown(gpu);
         terrain_runtime_.destroy();
         stage_proxy_mesh_.reset();
         gpu_profiler_.reset();
@@ -1850,7 +1868,7 @@ class TerrainApp {
     std::optional<cubey::render::Mesh> stage_proxy_mesh_{};
     std::optional<cubey::vulkan::DepthAttachment> scene_depth_{};
     std::optional<cubey::TerrainBackdropRuntimeTargetInfo> terrain_target_info_{};
-    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_atlases_{};
+    cubey::AtmosphereBackgroundAtlasRuntime atmosphere_atlases_{};
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};
     std::optional<cubey::render::GraphicsPipelineResource> stage_proxy_pipeline_{};

@@ -6,6 +6,7 @@
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/math.h>
+#include <cubey/engine/atmosphere_background_atlas_runtime.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/engine/cloud_environment_config.h>
@@ -75,7 +76,7 @@ class GltfViewerApp {
     void create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                 VkFormat color_format, std::uint32_t frame_slot_count);
     void destroy_swapchain_resources();
-    void destroy_all_resources();
+    void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu);
 
     void create_imported_asset_scene(const cubey::vulkan::Device& device,
                                      cubey::vulkan::GpuRuntime& gpu,
@@ -86,6 +87,11 @@ class GltfViewerApp {
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu);
     void create_atmosphere_background_atlases(const cubey::vulkan::Device& device,
+                                              cubey::vulkan::GpuRuntime& gpu);
+    void poll_atmosphere_background_atlases(const cubey::vulkan::Device& device,
+                                            cubey::vulkan::GpuRuntime& gpu,
+                                            cubey::vulkan::GpuSubmissionTicket retire_after);
+    void finish_atmosphere_background_atlases(const cubey::vulkan::Device& device,
                                               cubey::vulkan::GpuRuntime& gpu);
     [[nodiscard]] cubey::render::AtmosphereBackgroundTextureBindings
     atmosphere_background_textures() const;
@@ -176,7 +182,7 @@ class GltfViewerApp {
     cubey::GltfSceneImportResources import_resources_{};
     cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
-    std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
+    cubey::AtmosphereBackgroundAtlasRuntime atmosphere_background_atlases_{};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;

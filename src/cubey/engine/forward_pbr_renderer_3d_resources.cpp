@@ -230,6 +230,19 @@ void ForwardPbrRenderer3D::Impl::update_environment(
         .update(device);
 }
 
+void ForwardPbrRenderer3D::update_atmosphere_background_texture_bindings(
+    const vulkan::Device& device, const render::AtmosphereBackgroundTextureBindings& textures) {
+    impl_->update_atmosphere_background_texture_bindings(device, textures);
+}
+
+void ForwardPbrRenderer3D::Impl::update_atmosphere_background_texture_bindings(
+    const vulkan::Device& device, const render::AtmosphereBackgroundTextureBindings& textures) {
+    if (!global_.atmosphere_background.materials_created()) {
+        throw std::runtime_error("forward PBR atmosphere background materials are not initialized");
+    }
+    global_.atmosphere_background.update_texture_bindings(device, textures);
+}
+
 void ForwardPbrRenderer3D::create_swapchain_resources(
     const vulkan::Device& device, const ForwardPbrRenderer3DTargetResourcesInfo& info) {
     impl_->create_swapchain_resources(device, info);
