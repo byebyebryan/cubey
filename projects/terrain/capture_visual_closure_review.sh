@@ -82,15 +82,15 @@ comparison_sheet() {
     local output="$1"
     local tile="$2"
     shift 2
-    local files=()
-    local labels=()
+    local comparison_files=()
+    local comparison_labels=()
     local name
     for name in "$@"; do
-        files+=("${OUT_ROOT}/control/${name}.png"
-                "${OUT_ROOT}/candidate/${name}.png")
-        labels+=("Control: ${name}" "Candidate: ${name}")
+        comparison_files+=("${OUT_ROOT}/control/${name}.png"
+                           "${OUT_ROOT}/candidate/${name}.png")
+        comparison_labels+=("Control: ${name}" "Candidate: ${name}")
     done
-    montage_group "${output}" "${tile}" files labels
+    montage_group "${output}" "${tile}" comparison_files comparison_labels
 }
 
 if [[ "${MODE}" == "finalize" ]]; then
