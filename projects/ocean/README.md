@@ -126,6 +126,7 @@ Common debug views:
 ./build/dev/projects/ocean/ocean --debug-view cloud-reflection-validity
 ./build/dev/projects/ocean/ocean --debug-view reflection
 ./build/dev/projects/ocean/ocean --debug-view specular
+./build/dev/projects/ocean/ocean --debug-view background
 ```
 
 The Diagnostics panel reports effective horizon coverage, clipmap and submitted
@@ -151,7 +152,8 @@ half/full, camera-scale, and cloud-composition GPU matrix.
 Use `profile_scene_ocean_ablation.sh` for attributed surface, mesh, shadow,
 filtering, anti-repeat, composed-cloud, and resolution comparisons. Set
 `LANE_FILTER` for a focused rerun or `SUMMARIZE_ONLY=1` to rebuild summaries from
-retained artifacts.
+retained artifacts. It keeps the production scene pass intact, uses matched
+background-only runs for surface attribution, and rejects unstable wave timings.
 `profile_cloud_reflections.sh` remains the focused cached-versus-planar
 reflection harness.
 

@@ -62,6 +62,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Ocean performance notes](ocean-performance.md): measured whole-renderer GPU
   baseline, spectral FFT cost model, map-size tradeoffs, and optimization
   guardrails.
+- [Scene ocean performance study](ocean-scene-performance-study.md):
+  non-invasive surface attribution, close/low/mid budgets, controlled
+  ablations, cloud-product costs, and the next optimization order.
 - [Surface Ocean V1](ocean-surface-v1.md): accepted local-ocean runtime,
   sea-state, lighting, LOD, removal, review, and terrain/planet boundaries.
 - [Ocean cloud lighting v1](ocean-cloud-lighting-v1.md): projected cloud shadow,

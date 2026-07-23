@@ -1,6 +1,7 @@
 # Ocean Performance Notes
 
 Date: 2026-06-03
+Updated: 2026-07-23
 
 These notes capture the current spectral-ocean cost model for
 `projects/ocean`. They are working notes, not final architecture guidance.
@@ -55,10 +56,15 @@ Reproduce the matrix with:
 projects/ocean/profile_ocean_baseline.sh outputs/ocean/performance-baseline
 ```
 
-Raw captures and profiler artifacts remain ignored under `outputs/`. The
-headless profile currently reports zero submitted triangles, and wave
-self-shadow is included inside `ocean scene` rather than exposed as its own
-span. Both are instrumentation gaps, not zero-cost findings.
+Raw captures and profiler artifacts remain ignored under `outputs/`. Headless
+profiles now report configured/effective mesh cells, horizon planning, generated
+patches/triangles, and submitted patches/triangles.
+
+The follow-up [scene ocean performance study](ocean-scene-performance-study.md)
+keeps the original scene pass intact and attributes surface cost through matched
+background-only runs. It records the close/low/mid budget verdict, controlled
+mesh and material ablations, cloud-product cost, and the ranked optimization
+order.
 
 ## Current Defaults
 
@@ -229,9 +235,11 @@ The current direction is a hybrid model:
 
 Before changing the algorithm again, keep measurements that include:
 
-- per-pass GPU timings for spectrum, modulate, FFT, unpack, draw, self-shadow,
-  atmosphere, and post; the current baseline still needs separate draw and
-  self-shadow spans;
+- non-overlapping GPU timings for spectrum, modulate, FFT, unpack, the combined
+  scene, cloud products, and post;
+- matched background-only and feature-ablation runs for surface and
+  self-shadow attribution; do not split the production scene pass or insert
+  serializing nested timestamps;
 - active cascade count, per-cascade map sizes, per-cascade update intervals,
   field precision, and enabled feature flags;
 - memory usage for all ocean wave resources;
