@@ -605,6 +605,17 @@ void TerrainBackdropRuntime::replace_product(vulkan::GpuRuntime& gpu,
                              retire_after);
 }
 
+void TerrainBackdropRuntime::prepare_environment(
+    render::FrameSlot frame_slot, const render::AtmosphereEnvironmentFrameUniforms& atmosphere,
+    const render::AtmosphereEnvironmentLighting& lighting) {
+    if (!created()) {
+        throw std::runtime_error("terrain backdrop runtime is not created");
+    }
+    impl_->frame_shadow = {};
+    impl_->environment_material->upload(
+        frame_slot, environment_parameters(atmosphere, lighting, impl_->frame_shadow, false));
+}
+
 void TerrainBackdropRuntime::prepare_frame(render::FrameSlot frame_slot,
                                            const TerrainBackdropRuntimeFrameInfo& info) {
     if (!created() || !target_resources_created()) {

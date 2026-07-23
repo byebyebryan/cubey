@@ -125,6 +125,9 @@ class TerrainBackdropRuntime {
                                   vulkan::GpuSubmissionTicket retire_after);
     void replace_product(vulkan::GpuRuntime& gpu, const terrain::TerrainBackdropProduct& product,
                          vulkan::GpuSubmissionTicket retire_after);
+    void prepare_environment(render::FrameSlot frame_slot,
+                             const render::AtmosphereEnvironmentFrameUniforms& atmosphere,
+                             const render::AtmosphereEnvironmentLighting& lighting);
     void prepare_frame(render::FrameSlot frame_slot, const TerrainBackdropRuntimeFrameInfo& info);
     void complete_frame();
 

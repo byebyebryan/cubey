@@ -4,8 +4,10 @@
 #include "terrain_product_adapter.h"
 
 #include <cubey/asset/terrain_raster_height_source.h>
+#include <cubey/core/jobs.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/cloud_environment_runtime.h>
+#include <cubey/engine/staged_resource.h>
 #include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/cloud_environment_ui.h>
@@ -38,10 +40,8 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cmath>
 #include <filesystem>
-#include <future>
 #include <numbers>
 #include <optional>
 #include <span>
@@ -200,6 +200,12 @@ struct TerrainProductBuild {
     TerrainBackdropPlacementPlan placement{};
     TerrainBackdropClimateDiagnostics climate_diagnostics{};
     TerrainBackdropProduct product{};
+};
+
+struct TerrainResidentBuild {
+    TerrainProductBuild prepared{};
+    TerrainBackdropProductInfo product_info{};
+    cubey::TerrainBackdropResidentProduct resident{};
 };
 
 struct CompiledTerrainGraph {
@@ -421,6 +427,18 @@ terrain_stage_proxy_mesh_data() {
     return revision.substr(0U, std::min<std::size_t>(revision.size(), 12U));
 }
 
+[[nodiscard]] TerrainBackdropPlacementPlan loading_placement_stage() {
+    TerrainBackdropPlacementPlan placement;
+    placement.stage.source_center_height_m = 0.0F;
+    placement.stage.target_height_m = 500.0F;
+    placement.stage.minimum_camera_clearance_m = kTerrainDefaultForegroundHeightM;
+    placement.stage.orbit_min_radius_m = 25.0F;
+    placement.stage.orbit_default_radius_m = 350.0F;
+    placement.stage.orbit_max_radius_m = kTerrainInspectionMaximumOrbitRadiusM;
+    placement.stage.orbit_default_elevation_radians = 0.12F;
+    return placement;
+}
+
 class TerrainApp {
   public:
     explicit TerrainApp(RunConfig config)
@@ -428,14 +446,8 @@ class TerrainApp {
           runtime_config_(terrain_runtime_config_from_run_config(
               run_config_, std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
               std::filesystem::path(CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS))),
-          startup_runtime_config_(runtime_config_),
-          source_(require_heightfield(runtime_config_.heightfield_path)),
-          climate_source_(load_climate_source(runtime_config_, source_)),
-          placement_stage_(make_placement_stage(source_, runtime_config_)), climate_diagnostics_(),
-          startup_product_(make_product(source_, placement_stage_, runtime_config_,
-                                        climate_source_ ? &climate_source_.value() : nullptr,
-                                        &climate_diagnostics_)),
-          product_info_(cubey::terrain::terrain_backdrop_product_info(*startup_product_)),
+          startup_runtime_config_(runtime_config_), product_builds_(product_jobs_),
+          placement_stage_(loading_placement_stage()),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -443,7 +455,7 @@ class TerrainApp {
           camera_(cubey::Camera3DConfig{
               .fovy_radians = 40.0F * kDegreesToRadians,
               .near_z = 0.1F,
-              .far_z = product_info_.request.outer_radius_m * 5.0F,
+              .far_z = 100'000.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)),
           clouds_config_(terrain_cloud_config(run_config_, atmosphere_state_.environment)) {
@@ -459,6 +471,7 @@ class TerrainApp {
                 terrain_source_climate_available(paths);
         }
         configure_camera_for_placement(true);
+        request_product_build(runtime_config_, source_choice_);
     }
 
     TerrainApp(const TerrainApp&) = delete;
@@ -484,7 +497,8 @@ class TerrainApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
-            maybe_install_product_build(context);
+            poll_product_build(context.device(), context.gpu(),
+                               context.frame_resources().latest_submitted_ticket());
             orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
             (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                              timing.delta_seconds);
@@ -510,7 +524,9 @@ class TerrainApp {
                 .triangles = terrain_runtime_.draw_plan().submitted_triangle_count,
             };
         };
-        callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
+        callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
+            destroy_all_resources(context.gpu());
+        };
 
         return cubey::host::run_windowed_app(
             {
@@ -537,6 +553,8 @@ class TerrainApp {
             const std::uint32_t frame_slot_count =
                 cubey::host::headless_capture_frame_slot_count(run_config_);
             create_global_resources_if_needed(context.device(), context.gpu(), frame_slot_count);
+            product_builds_.finish(context.gpu());
+            install_ready_product_build(context.device(), context.gpu(), {});
             create_swapchain_resources(context.device(), context.render_target().extent,
                                        context.render_target().format, frame_slot_count);
         };
@@ -567,7 +585,9 @@ class TerrainApp {
                           cubey::render::render_graph_color_attachment_texture_state(),
                           cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
         };
-        callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
+        callbacks.shutdown = [this](cubey::host::HeadlessPngContext& context) {
+            destroy_all_resources(context.gpu());
+        };
 
         cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));
         return host.run();
@@ -579,10 +599,8 @@ class TerrainApp {
             return;
         }
 
-        const TerrainRasterProvenance& provenance = source_.provenance();
-        const TerrainHeightSourceMetadata metadata = source_.metadata();
         ImGui::SeparatorText("Source");
-        const bool product_build_pending = product_build_future_.valid();
+        const bool product_build_pending = product_builds_.busy();
         ImGui::BeginDisabled(product_build_pending);
         if (ImGui::BeginCombo("Terrain source",
                               terrain_source_choice_label(edit_source_choice_).data())) {
@@ -601,30 +619,36 @@ class TerrainApp {
             ImGui::EndCombo();
         }
         ImGui::EndDisabled();
-        ImGui::Text("Active source: %s", terrain_source_choice_label(source_choice_).data());
-        ImGui::Text("%.*s, seed %llu", static_cast<int>(metadata.id.size()), metadata.id.data(),
-                    static_cast<unsigned long long>(metadata.seed));
-        ImGui::Text("%u x %u at %.0f m", source_.width(), source_.height(),
-                    source_.sample_spacing_m());
-        const float width_km =
-            static_cast<float>(source_.width() - 1U) * source_.sample_spacing_m() * 0.001F;
-        const float height_km =
-            static_cast<float>(source_.height() - 1U) * source_.sample_spacing_m() * 0.001F;
-        ImGui::Text("Coverage: %.2f x %.2f km", width_km, height_km);
-        if (!provenance.generator.empty()) {
-            ImGui::Text("Generator: %s", provenance.generator.c_str());
+        if (source_.has_value()) {
+            const TerrainRasterProvenance& provenance = source_->provenance();
+            const TerrainHeightSourceMetadata metadata = source_->metadata();
+            ImGui::Text("Active source: %s", terrain_source_choice_label(source_choice_).data());
+            ImGui::Text("%.*s, seed %llu", static_cast<int>(metadata.id.size()), metadata.id.data(),
+                        static_cast<unsigned long long>(metadata.seed));
+            ImGui::Text("%u x %u at %.0f m", source_->width(), source_->height(),
+                        source_->sample_spacing_m());
+            const float width_km =
+                static_cast<float>(source_->width() - 1U) * source_->sample_spacing_m() * 0.001F;
+            const float height_km =
+                static_cast<float>(source_->height() - 1U) * source_->sample_spacing_m() * 0.001F;
+            ImGui::Text("Coverage: %.2f x %.2f km", width_km, height_km);
+            if (!provenance.generator.empty()) {
+                ImGui::Text("Generator: %s", provenance.generator.c_str());
+            }
+            if (!provenance.model_id.empty()) {
+                ImGui::TextWrapped("Model: %s", provenance.model_id.c_str());
+            }
+            if (!provenance.code_revision.empty() || !provenance.model_revision.empty()) {
+                const std::string_view code = short_revision(provenance.code_revision);
+                const std::string_view model = short_revision(provenance.model_revision);
+                ImGui::Text("Revisions: %.*s / %.*s", static_cast<int>(code.size()), code.data(),
+                            static_cast<int>(model.size()), model.data());
+            }
+            const std::string manifest = provenance.manifest_path.string();
+            ImGui::TextWrapped("Manifest: %s", manifest.c_str());
+        } else {
+            ImGui::TextDisabled("No resident terrain source");
         }
-        if (!provenance.model_id.empty()) {
-            ImGui::TextWrapped("Model: %s", provenance.model_id.c_str());
-        }
-        if (!provenance.code_revision.empty() || !provenance.model_revision.empty()) {
-            const std::string_view code = short_revision(provenance.code_revision);
-            const std::string_view model = short_revision(provenance.model_revision);
-            ImGui::Text("Revisions: %.*s / %.*s", static_cast<int>(code.size()), code.data(),
-                        static_cast<int>(model.size()), model.data());
-        }
-        const std::string manifest = provenance.manifest_path.string();
-        ImGui::TextWrapped("Manifest: %s", manifest.c_str());
 
         ImGui::SeparatorText("Placement");
         ImGui::BeginDisabled(product_build_pending);
@@ -684,13 +708,13 @@ class TerrainApp {
                                         edit_placement_mode_ != placement_stage_.mode ||
                                         edit_placement_index_ != placement_stage_.sample_index ||
                                         edit_surface_model_ != runtime_config_.surface_model;
-        ImGui::BeginDisabled(!product_edit_dirty || product_build_pending);
+        ImGui::BeginDisabled(!source_.has_value() || !product_edit_dirty || product_build_pending);
         if (ImGui::Button("Apply terrain")) {
             start_product_build();
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
-        ImGui::BeginDisabled(!product_edit_dirty || product_build_pending);
+        ImGui::BeginDisabled(!source_.has_value() || !product_edit_dirty || product_build_pending);
         if (ImGui::Button("Revert")) {
             edit_source_choice_ = source_choice_;
             edit_placement_mode_ = placement_stage_.mode;
@@ -699,11 +723,22 @@ class TerrainApp {
         }
         ImGui::EndDisabled();
 
-        if (product_build_pending) {
-            ImGui::Text("Status: rebuilding cached terrain...");
+        const cubey::StagedResourceStatus& build_status = product_builds_.status();
+        if (build_status.phase != cubey::StagedResourcePhase::Idle) {
+            const std::string_view phase = cubey::staged_resource_phase_name(build_status.phase);
+            ImGui::Text("Terrain generation %llu: %.*s",
+                        static_cast<unsigned long long>(build_status.generation.id),
+                        static_cast<int>(phase.size()), phase.data());
+        }
+        if (build_status.prepare_milliseconds > 0.0 || build_status.install_milliseconds > 0.0) {
+            ImGui::Text("Prepare / install: %.1f / %.1f ms", build_status.prepare_milliseconds,
+                        build_status.install_milliseconds);
+        }
+        if (!build_status.error.empty()) {
+            ImGui::TextWrapped("Terrain error: %s", build_status.error.c_str());
         }
         if (!product_rebuild_error_.empty()) {
-            ImGui::TextWrapped("Terrain error: %s", product_rebuild_error_.c_str());
+            ImGui::TextWrapped("Terrain activation error: %s", product_rebuild_error_.c_str());
         }
 
         const TerrainDirectionalPlacementPlan& placement = placement_stage_.placement;
@@ -885,14 +920,13 @@ class TerrainApp {
     }
 
     void start_product_build() {
-        if (product_build_future_.valid()) {
+        if (product_builds_.busy()) {
             return;
         }
 
         TerrainRuntimeConfig config = runtime_config_;
         const TerrainSourceChoice requested_source_choice = edit_source_choice_;
-        const bool source_changed = requested_source_choice != source_choice_;
-        if (source_changed) {
+        if (requested_source_choice != source_choice_) {
             const TerrainSourcePaths paths =
                 terrain_source_paths(requested_source_choice, startup_runtime_config_);
             config.heightfield_path = paths.heightfield;
@@ -906,34 +940,7 @@ class TerrainApp {
         config.surface_model = edit_surface_model_;
         product_rebuild_error_.clear();
         try {
-            product_build_future_ =
-                std::async(std::launch::async, [this, config = std::move(config),
-                                                requested_source_choice, source_changed] {
-                    TerrainProductBuild build;
-                    build.config = config;
-                    build.source_choice = requested_source_choice;
-                    if (source_changed) {
-                        build.replacement_source.emplace(
-                            require_heightfield(config.heightfield_path));
-                        build.replacement_climate_source =
-                            load_climate_source(config, build.replacement_source.value());
-                        build.placement =
-                            make_placement_stage(build.replacement_source.value(), config);
-                        build.product =
-                            make_product(build.replacement_source.value(), build.placement, config,
-                                         build.replacement_climate_source
-                                             ? &build.replacement_climate_source.value()
-                                             : nullptr,
-                                         &build.climate_diagnostics);
-                    } else {
-                        build.placement = make_placement_stage(source_, config);
-                        build.product =
-                            make_product(source_, build.placement, config,
-                                         climate_source_ ? &climate_source_.value() : nullptr,
-                                         &build.climate_diagnostics);
-                    }
-                    return build;
-                });
+            request_product_build(std::move(config), requested_source_choice);
         } catch (const std::exception& error) {
             product_rebuild_error_ = error.what();
         } catch (...) {
@@ -941,43 +948,88 @@ class TerrainApp {
         }
     }
 
-    void install_product_build(cubey::host::WindowedAppContext& context,
-                               TerrainProductBuild build) {
+    void request_product_build(TerrainRuntimeConfig config,
+                               TerrainSourceChoice requested_source_choice) {
+        const std::string label =
+            "terrain " + std::string(terrain_source_choice_label(requested_source_choice));
+        static_cast<void>(product_builds_.request(
+            label,
+            [config = std::move(config), requested_source_choice]() mutable {
+                TerrainProductBuild build;
+                build.config = config;
+                build.source_choice = requested_source_choice;
+                build.replacement_source.emplace(require_heightfield(config.heightfield_path));
+                build.replacement_climate_source =
+                    load_climate_source(config, build.replacement_source.value());
+                build.placement = make_placement_stage(build.replacement_source.value(), config);
+                build.product = make_product(
+                    build.replacement_source.value(), build.placement, config,
+                    build.replacement_climate_source ? &build.replacement_climate_source.value()
+                                                     : nullptr,
+                    &build.climate_diagnostics);
+                return build;
+            },
+            [this](cubey::vulkan::GpuOwnerContext& owner, TerrainProductBuild&& prepared) {
+                TerrainBackdropProductInfo info =
+                    cubey::terrain::terrain_backdrop_product_info(prepared.product);
+                cubey::TerrainBackdropResidentProduct resident =
+                    terrain_runtime_.build_resident_product(owner, prepared.product);
+                return TerrainResidentBuild{
+                    .prepared = std::move(prepared),
+                    .product_info = std::move(info),
+                    .resident = std::move(resident),
+                };
+            }));
+    }
+
+    void install_product_build(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                               cubey::vulkan::GpuSubmissionTicket retire_after,
+                               TerrainResidentBuild installed) {
         if (!global_resources_created_) {
             throw std::runtime_error("terrain resources are not ready for a product rebuild");
         }
 
-        const bool source_changed = build.replacement_source.has_value();
+        TerrainProductBuild& build = installed.prepared;
         const bool placement_changed =
-            source_changed || build.config.placement != placement_stage_.mode ||
+            !source_.has_value() || build.source_choice != source_choice_ ||
+            build.config.placement != placement_stage_.mode ||
             build.config.placement_index != placement_stage_.sample_index;
-        TerrainBackdropProductInfo next_product_info =
-            cubey::terrain::terrain_backdrop_product_info(build.product);
-        terrain_runtime_.replace_product(context.gpu(), build.product,
-                                         context.frame_resources().latest_submitted_ticket());
-        if (source_changed) {
-            source_ = std::move(build.replacement_source.value());
-            climate_source_ = std::move(build.replacement_climate_source);
-            source_choice_ = build.source_choice;
-        }
+        terrain_runtime_.install_resident_product(gpu, std::move(installed.resident), retire_after);
+        source_ = std::move(build.replacement_source);
+        climate_source_ = std::move(build.replacement_climate_source);
+        source_choice_ = build.source_choice;
         placement_stage_ = std::move(build.placement);
         climate_diagnostics_ = build.climate_diagnostics;
-        product_info_ = std::move(next_product_info);
+        product_info_ = std::move(installed.product_info);
         runtime_config_ = std::move(build.config);
+        camera_.set_projection(camera_.fovy_radians(), camera_.near_z(),
+                               product_info_.request.outer_radius_m * 5.0F);
         if (placement_changed) {
             configure_camera_for_placement(false);
         }
+        if (terrain_target_info_.has_value() && !terrain_runtime_.target_resources_created()) {
+            terrain_runtime_.create_target_resources(device, terrain_target_info_.value());
+        }
     }
 
-    void maybe_install_product_build(cubey::host::WindowedAppContext& context) {
-        if (!product_build_future_.valid() ||
-            product_build_future_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+    void install_ready_product_build(const cubey::vulkan::Device& device,
+                                     cubey::vulkan::GpuRuntime& gpu,
+                                     cubey::vulkan::GpuSubmissionTicket retire_after) {
+        if (!product_builds_.ready()) {
             return;
         }
 
+        auto result = product_builds_.take_ready();
+        install_product_build(device, gpu, retire_after, std::move(result.resident));
+        product_rebuild_error_.clear();
+    }
+
+    void poll_product_build(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                            cubey::vulkan::GpuSubmissionTicket retire_after) {
         try {
-            install_product_build(context, product_build_future_.get());
-            product_rebuild_error_.clear();
+            while (product_builds_.poll(gpu)) {
+            }
+            install_ready_product_build(device, gpu, retire_after);
         } catch (const std::exception& error) {
             product_rebuild_error_ = error.what();
         } catch (...) {
@@ -994,13 +1046,11 @@ class TerrainApp {
         gpu_profiler_.emplace(device, frame_slot_count, kTerrainGpuProfilerPassCapacity);
         const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
         stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
-        terrain_runtime_.create(
-            device, gpu, *startup_product_,
-            {
-                .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_TERRAIN_SHADER_DIR),
-                .frame_slot_count = frame_slot_count,
-            });
-        startup_product_.reset();
+        terrain_runtime_.create(device, {
+                                            .shaders = cubey::terrain_backdrop_runtime_shader_files(
+                                                CUBEY_TERRAIN_SHADER_DIR),
+                                            .frame_slot_count = frame_slot_count,
+                                        });
         atmosphere_atlases_.emplace(cubey::render::create_atmosphere_background_generated_textures(
             device, gpu, {.night_sky_extent = 64U}));
         atmosphere_background_.create_materials(
@@ -1015,12 +1065,14 @@ class TerrainApp {
     void create_swapchain_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                     VkFormat color_format, std::uint32_t frame_slot_count) {
         scene_depth_.emplace(device, extent, true);
-        terrain_runtime_.create_target_resources(device,
-                                                 cubey::TerrainBackdropRuntimeTargetInfo{
-                                                     .extent = extent,
-                                                     .color_format = kTerrainSceneColorFormat,
-                                                     .depth_format = scene_depth_->format(),
-                                                 });
+        terrain_target_info_ = cubey::TerrainBackdropRuntimeTargetInfo{
+            .extent = extent,
+            .color_format = kTerrainSceneColorFormat,
+            .depth_format = scene_depth_->format(),
+        };
+        if (terrain_runtime_.product_ready()) {
+            terrain_runtime_.create_target_resources(device, terrain_target_info_.value());
+        }
 
         const std::array stage_proxy_shaders{
             cubey::render::vertex_shader_file(shader_path("terrain_stage_proxy.vert.spv")),
@@ -1070,10 +1122,12 @@ class TerrainApp {
         atmosphere_background_.destroy_pipeline();
         stage_proxy_pipeline_.reset();
         terrain_runtime_.destroy_target_resources();
+        terrain_target_info_.reset();
         scene_depth_.reset();
     }
 
-    void destroy_all_resources() {
+    void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
+        product_builds_.shutdown(gpu);
         destroy_swapchain_resources();
         hdr_post_frame_.destroy();
         cloud_runtime_.destroy();
@@ -1123,6 +1177,17 @@ class TerrainApp {
                                 terrain_runtime_.draw_plan().submitted_sector_count);
         recorder->record_metric(frame_index, "terrain.backdrop", "submitted_triangles",
                                 terrain_runtime_.draw_plan().submitted_triangle_count);
+        const cubey::StagedResourceStatus& build_status = product_builds_.status();
+        recorder->record_metric(frame_index, "terrain.initialization", "generation",
+                                static_cast<double>(build_status.generation.id));
+        recorder->record_metric(frame_index, "terrain.initialization", "phase",
+                                static_cast<double>(static_cast<std::uint8_t>(build_status.phase)));
+        recorder->record_metric(frame_index, "terrain.initialization", "prepare_ms",
+                                build_status.prepare_milliseconds);
+        recorder->record_metric(frame_index, "terrain.initialization", "install_ms",
+                                build_status.install_milliseconds);
+        recorder->record_metric(frame_index, "terrain.initialization", "resident",
+                                terrain_runtime_.product_ready() ? 1.0 : 0.0);
         recorder->record_metric(
             frame_index, "terrain.backdrop", "product_render_triangles",
             static_cast<double>(product_info_.diagnostics.render_triangle_count));
@@ -1367,7 +1432,7 @@ class TerrainApp {
     void record_stage_proxy_pass(const cubey::vulkan::CommandRecorder& recorder,
                                  cubey::render::ColorTargetView color,
                                  cubey::render::DepthTargetView depth,
-                                 cubey::render::FrameSlot frame_slot) const {
+                                 cubey::render::FrameSlot frame_slot, bool clear_depth) const {
         const cubey::render::RenderTargetView target =
             cubey::render::render_target_view(color, depth);
         const cubey::render::RenderTargetRenderingInfo rendering(
@@ -1378,7 +1443,8 @@ class TerrainApp {
             },
             cubey::render::RenderTargetAttachmentOps{
                 .color = cubey::vulkan::load_store_attachment_ops(),
-                .depth = cubey::vulkan::load_store_attachment_ops(),
+                .depth = clear_depth ? cubey::vulkan::clear_discard_attachment_ops()
+                                     : cubey::vulkan::load_store_attachment_ops(),
             });
         recorder.begin_rendering(rendering.info());
         recorder.set_viewport_and_scissor(color.extent);
@@ -1400,6 +1466,24 @@ class TerrainApp {
         recorder.end_rendering();
     }
 
+    static void record_placeholder_depth_pass(const cubey::vulkan::CommandRecorder& recorder,
+                                              cubey::render::ColorTargetView color,
+                                              cubey::render::DepthTargetView depth) {
+        const cubey::render::RenderTargetRenderingInfo rendering(
+            cubey::render::render_target_view(color, depth),
+            cubey::render::RenderClearValues{
+                .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
+                .depth = cubey::render::depth_clear_value(),
+            },
+            cubey::render::RenderTargetAttachmentOps{
+                .color = cubey::vulkan::load_store_attachment_ops(),
+                .depth = cubey::vulkan::clear_discard_attachment_ops(),
+            });
+        recorder.begin_rendering(rendering.info());
+        recorder.set_viewport_and_scissor(color.extent);
+        recorder.end_rendering();
+    }
+
     [[nodiscard]] CompiledTerrainGraph current_render_graph(
         cubey::render::ColorTargetView target, cubey::render::FrameSlot frame_slot,
         cubey::render::RenderGraphTextureState target_initial_state,
@@ -1416,20 +1500,25 @@ class TerrainApp {
         const cubey::render::RenderGraphTextureHandle depth = graph.import_depth_target(
             "terrain depth", cubey::render::depth_target_view(*scene_depth_),
             cubey::render::render_graph_undefined_texture_state());
-        const std::optional<cubey::render::RenderGraphTextureState> shadow_initial_state =
-            terrain_runtime_.shadow_depth_is_sampled()
-                ? cubey::render::render_graph_sampled_depth_texture_state()
-                : cubey::render::render_graph_undefined_texture_state();
-        const cubey::render::RenderGraphTextureHandle shadow_depth = graph.import_depth_target(
-            "terrain shadow depth", terrain_runtime_.shadow_depth_target(), shadow_initial_state);
+        const bool terrain_ready = terrain_runtime_.target_resources_created();
+        std::optional<cubey::render::RenderGraphTextureHandle> shadow_depth;
+        if (terrain_ready) {
+            const std::optional<cubey::render::RenderGraphTextureState> shadow_initial_state =
+                terrain_runtime_.shadow_depth_is_sampled()
+                    ? cubey::render::render_graph_sampled_depth_texture_state()
+                    : cubey::render::render_graph_undefined_texture_state();
+            shadow_depth = graph.import_depth_target("terrain shadow depth",
+                                                     terrain_runtime_.shadow_depth_target(),
+                                                     shadow_initial_state);
 
-        if (terrain_runtime_.shadow_update_this_frame()) {
-            graph.add_pass("terrain shadow", cubey::render::RenderGraphQueueDomain::Graphics)
-                .write_depth(shadow_depth)
-                .material_pass(terrain_runtime_.shadow_material_pass())
-                .execute([this](const cubey::render::RenderGraphExecutionContext& context) {
-                    record_shadow_pass(context.recorder());
-                });
+            if (terrain_runtime_.shadow_update_this_frame()) {
+                graph.add_pass("terrain shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+                    .write_depth(shadow_depth.value())
+                    .material_pass(terrain_runtime_.shadow_material_pass())
+                    .execute([this](const cubey::render::RenderGraphExecutionContext& context) {
+                        record_shadow_pass(context.recorder());
+                    });
+            }
         }
 
         graph.add_pass("terrain atmosphere", cubey::render::RenderGraphQueueDomain::Graphics)
@@ -1441,29 +1530,45 @@ class TerrainApp {
                     context.recorder(),
                     cubey::render::resolved_color_target_view(context, scene_color), frame_slot);
             });
-        graph.add_pass("terrain surface", cubey::render::RenderGraphQueueDomain::Graphics)
-            .read_texture(shadow_depth)
-            .write_color(scene_color)
-            .write_depth(depth)
-            .material_pass(terrain_runtime_.surface_material_pass())
-            .execute([this, scene_color, depth,
-                      frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
-                record_terrain_pass(context.recorder(),
-                                    cubey::render::resolved_color_target_view(context, scene_color),
-                                    cubey::render::resolved_depth_target_view(context, depth),
-                                    frame_slot);
-            });
+        if (terrain_ready) {
+            graph.add_pass("terrain surface", cubey::render::RenderGraphQueueDomain::Graphics)
+                .read_texture(shadow_depth.value())
+                .write_color(scene_color)
+                .write_depth(depth)
+                .material_pass(terrain_runtime_.surface_material_pass())
+                .execute([this, scene_color, depth,
+                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_terrain_pass(
+                        context.recorder(),
+                        cubey::render::resolved_color_target_view(context, scene_color),
+                        cubey::render::resolved_depth_target_view(context, depth), frame_slot);
+                });
+        }
         if (runtime_config_.foreground_sphere) {
             graph.add_pass("terrain stage proxy", cubey::render::RenderGraphQueueDomain::Graphics)
                 .write_color(scene_color)
                 .write_depth(depth)
                 .material_pass(terrain_stage_proxy_pass_info())
-                .execute([this, scene_color, depth,
-                          frame_slot](const cubey::render::RenderGraphExecutionContext& context) {
+                .execute([this, scene_color, depth, frame_slot, terrain_ready](
+                             const cubey::render::RenderGraphExecutionContext& context) {
                     record_stage_proxy_pass(
                         context.recorder(),
                         cubey::render::resolved_color_target_view(context, scene_color),
-                        cubey::render::resolved_depth_target_view(context, depth), frame_slot);
+                        cubey::render::resolved_depth_target_view(context, depth), frame_slot,
+                        !terrain_ready);
+                });
+        } else if (!terrain_ready) {
+            graph
+                .add_pass("terrain placeholder depth",
+                          cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_color(scene_color)
+                .write_depth(depth)
+                .execute([scene_color,
+                          depth](const cubey::render::RenderGraphExecutionContext& context) {
+                    record_placeholder_depth_pass(
+                        context.recorder(),
+                        cubey::render::resolved_color_target_view(context, scene_color),
+                        cubey::render::resolved_depth_target_view(context, depth));
                 });
         }
         const bool clouds_enabled = cloud_runtime_frame.has_value() && cloud_runtime_frame->enabled;
@@ -1496,7 +1601,9 @@ class TerrainApp {
     }
 
     void complete_shadow_frame_recording() {
-        terrain_runtime_.complete_frame();
+        if (terrain_runtime_.target_resources_created()) {
+            terrain_runtime_.complete_frame();
+        }
     }
 
     void record_target(const cubey::vulkan::Device& device, VkCommandBuffer command_buffer,
@@ -1509,17 +1616,21 @@ class TerrainApp {
             atmosphere_uniforms(target.extent);
         const cubey::render::AtmosphereEnvironmentLighting lighting =
             cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
-        terrain_runtime_.prepare_frame(frame_slot,
-                                       {
-                                           .view_projection = camera_.view_projection_matrix(
-                                               frame_camera_transform_, aspect(target.extent)),
-                                           .camera_position = frame_camera_transform_.translation,
-                                           .atmosphere = atmosphere_frame,
-                                           .lighting = lighting,
-                                           .debug_view = runtime_config_.debug_view,
-                                           .material = runtime_config_.material,
-                                           .shadows_enabled = runtime_config_.shadows,
-                                       });
+        if (terrain_runtime_.target_resources_created()) {
+            terrain_runtime_.prepare_frame(
+                frame_slot, {
+                                .view_projection = camera_.view_projection_matrix(
+                                    frame_camera_transform_, aspect(target.extent)),
+                                .camera_position = frame_camera_transform_.translation,
+                                .atmosphere = atmosphere_frame,
+                                .lighting = lighting,
+                                .debug_view = runtime_config_.debug_view,
+                                .material = runtime_config_.material,
+                                .shadows_enabled = runtime_config_.shadows,
+                            });
+        } else {
+            terrain_runtime_.prepare_environment(frame_slot, atmosphere_frame, lighting);
+        }
         atmosphere_background_.upload(frame_slot, atmosphere_frame);
         std::optional<cubey::CloudEnvironmentRuntimeFrame> cloud_frame;
         if (cloud_layer_enabled()) {
@@ -1600,11 +1711,13 @@ class TerrainApp {
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainRuntimeConfig startup_runtime_config_{};
-    TerrainRasterHeightSource source_;
+    cubey::jobs::JobSystem product_jobs_{1U};
+    cubey::TerrainBackdropRuntime terrain_runtime_{};
+    cubey::StagedResource<TerrainProductBuild, TerrainResidentBuild> product_builds_;
+    std::optional<TerrainRasterHeightSource> source_{};
     std::optional<TerrainRasterClimateSource> climate_source_{};
     TerrainBackdropPlacementPlan placement_stage_{};
     TerrainBackdropClimateDiagnostics climate_diagnostics_{};
-    std::optional<TerrainBackdropProduct> startup_product_{};
     TerrainBackdropProductInfo product_info_{};
     TerrainSourceChoice source_choice_ = TerrainSourceChoice::Startup;
     TerrainSourceChoice edit_source_choice_ = TerrainSourceChoice::Startup;
@@ -1613,7 +1726,6 @@ class TerrainApp {
     TerrainPlacementMode edit_placement_mode_ = TerrainPlacementMode::Selected;
     std::uint32_t edit_placement_index_ = 0U;
     TerrainSurfaceModel edit_surface_model_ = TerrainSurfaceModel::MineralControl;
-    std::future<TerrainProductBuild> product_build_future_{};
     std::string product_rebuild_error_{};
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_;
@@ -1624,9 +1736,9 @@ class TerrainApp {
     float baked_foreground_height_m_ = 500.0F;
     float foreground_height_m_ = kTerrainDefaultForegroundHeightM;
 
-    cubey::TerrainBackdropRuntime terrain_runtime_{};
     std::optional<cubey::render::Mesh> stage_proxy_mesh_{};
     std::optional<cubey::vulkan::DepthAttachment> scene_depth_{};
+    std::optional<cubey::TerrainBackdropRuntimeTargetInfo> terrain_target_info_{};
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_atlases_{};
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_{};
     cubey::render::HdrPostFrame hdr_post_frame_{};
