@@ -63,7 +63,7 @@ detail, but not additional climate information.
 ## Baked Patch Audit
 
 The current companion is the SHA-bound 256 x 256 field in
-`build/dev/assets/terrain/surface-study/`. It covers approximately 61.4 km per
+`cache/terrain/sources/v1/surface-study/`. It covers approximately 61.4 km per
 side. Statistics below are from the baked seed-0 field after Cubey's unit
 normalization.
 

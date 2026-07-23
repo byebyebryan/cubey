@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP="${APP:-${ROOT_DIR}/build/dev/projects/terrain/terrain}"
-ASSET_ROOT="${ASSET_ROOT:-${ROOT_DIR}/build/dev/assets/terrain/climate-calibration}"
+ASSET_ROOT="${ASSET_ROOT:-${ROOT_DIR}/cache/terrain/sources/v1/climate-calibration}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/terrain/climate-calibration-v1}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"

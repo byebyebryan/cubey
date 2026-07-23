@@ -29,7 +29,7 @@ cmake --build --preset dev \
 ```
 
 It writes untracked assets under
-`build/dev/assets/terrain/climate-calibration/`. Ordinary configure, build, and
+`cache/terrain/sources/v1/climate-calibration/`. Ordinary configure, build, and
 test do not invoke Terrain Diffusion.
 
 The pinned inputs remain:

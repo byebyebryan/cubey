@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP="${APP:-${ROOT_DIR}/build/dev/projects/terrain/terrain}"
-HEIGHTFIELD="${HEIGHTFIELD:-${ROOT_DIR}/build/dev/assets/terrain/default}"
+HEIGHTFIELD="${HEIGHTFIELD:-${ROOT_DIR}/cache/terrain/sources/v1/default}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/terrain/lighting-material-v1}"
 WIDTH="${WIDTH:-1600}"
 HEIGHT="${HEIGHT:-900}"
