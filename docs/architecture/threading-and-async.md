@@ -529,10 +529,15 @@ Status: initial terrain and atmosphere adoption complete.
   descriptor generations. Atmosphere keeps its placeholder generation live,
   swaps fresh per-frame descriptor sets atomically, and no longer calls
   `vkDeviceWaitIdle` for atlas updates.
-- A validation run measured the default atmosphere atlas at about 18.2 seconds
-  of CPU preparation and 19.1 milliseconds of GPU installation. The long CPU
-  phase continued behind live frames; the install figure is evidence to watch,
-  not yet justification for transfer-queue or partial-atlas complexity.
+- A Debug validation run measured the default atmosphere atlas pair at about
+  18.2 seconds of CPU preparation and 19.1 milliseconds of GPU installation.
+  That build has debug symbols and no optimization. The complete Release
+  atmosphere test executable, which also generates six additional 64-pixel
+  diagnostic atlases, completes in 2.72 seconds. The long Debug phase still
+  proves that preparation continues behind live frames, but it is not a
+  packaged-startup estimate. A worktree-local derived-artifact cache is the
+  next response; the install figure remains evidence to watch, not yet
+  justification for transfer-queue or partial-atlas complexity.
 - glTF asset adoption remains a separate consumer batch. This slice does not
   add general streaming, partial terrain sectors, partial atlas tiles, cache
   eviction, or a resource dependency graph.

@@ -198,6 +198,44 @@ through shared primitives where the formulas already matched:
 - The shared cloud shaders used by `projects/atmosphere` consume the shared GLSL
   remap primitive while leaving source-aligned Perlin/Worley recipes intact.
 
+## Generated Artifact Cache V1
+
+Status: design contract; implementation is the next bounded foundation slice.
+
+CPU-generated atmosphere atlases are deterministic derived products, but the
+default night-sky cubemap is expensive enough that rebuilding it for every
+process launch wastes developer and test time. V1 adds a worktree-local cache at
+`cache/procedural/v1/`. The root `cache/` directory is ignored by Git so each
+worktree keeps its own visible derived data without publishing generated files
+or scattering them through user-level cache directories.
+
+Cache identity is recipe-based rather than content-hash-based because a lookup
+must be possible before generation. A recipe includes generator and formula
+versions, semantic domain, a deterministic parameter hash, artifact kind and
+value format, and the complete extent/face/mip layout. The cache stores a
+versioned binary header, recipe hash, artifact metadata, raw payload checksum,
+and payload. Missing, stale, truncated, corrupt, or incompatible entries are
+cache misses and regenerate through the normal producer.
+
+Cache IO belongs inside the existing CPU preparation job. A hit proceeds to the
+same complete GPU installation and frame-boundary activation as a generated
+payload. A miss generates and publishes through a unique same-directory
+temporary file plus atomic rename. Read or write failures are diagnostic but do
+not make rendering fail; the uncached generator remains the source of truth.
+
+V1 uses uncompressed payloads and a 512 MiB worktree budget. Successful hits
+refresh entry recency, and successful writes prune the oldest entries until the
+budget is met. The first typed consumers are the separately keyed lunar surface
+map and night-sky cubemap, so changing the Milky Way variation or diagnostic
+layer does not rebuild or duplicate the moon product.
+
+V1 does not add partial faces, low-to-high resolution refinement, compressed
+texture formats, remote/shared caches, general asset streaming, or runtime cache
+controls. Deleting `cache/procedural/` is the explicit developer force-rebuild
+operation. A configured build may override the default root, but normal local
+builds always resolve it against their own source worktree rather than the
+process working directory.
+
 ## Migration Tiers
 
 Procedural unification should move in tiers instead of forcing every project
