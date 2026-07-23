@@ -256,19 +256,25 @@ void main() {
     vec3 light_radiance = atmosphere.primary_light_color_angular_radius.xyz *
         atmosphere.primary_light_direction_intensity.w;
     float occlusion_strength =
-        0.90 * soil + 0.95 * vegetation + 1.20 * rock + 0.75 * snow;
+        1.05 * soil + 0.95 * vegetation + 1.35 * rock + 0.82 * snow;
     float refined_ambient_visibility = clamp(
-        1.0 - (1.0 - ambient_visibility) * occlusion_strength, 0.55, 1.0);
+        1.0 - (1.0 - ambient_visibility) * occlusion_strength, 0.50, 1.0);
     float material_ambient_visibility = mix(
         ambient_visibility, refined_ambient_visibility, filtered_detail);
+    vec3 ambient_normal = normalize(
+        mix(normal, classification_normal, 0.85 * filtered_detail));
     vec3 ambient_light = terrain_lighting_ambient(
-        base_color, terrain_diffuse_irradiance(normal), material_ambient_visibility);
+        base_color, terrain_diffuse_irradiance(ambient_normal),
+        material_ambient_visibility);
     vec3 direct_light = terrain_lighting_direct(
         base_color, roughness, normal, view_direction, light_direction,
         light_radiance, sun_visibility);
     float daylight = smoothstep(-0.10, 0.08, atmosphere.sun_direction_radius.y);
     float snow_night_response = mix(0.58, 1.0, daylight);
-    float snow_lighting_response = mix(1.0, snow_night_response, snow);
+    float refined_snow_night_response = mix(0.50, 1.0, daylight);
+    float material_snow_night_response = mix(
+        snow_night_response, refined_snow_night_response, filtered_detail);
+    float snow_lighting_response = mix(1.0, material_snow_night_response, snow);
     ambient_light *= snow_lighting_response;
     direct_light *= snow_lighting_response;
     if (debug_view == 24) {
