@@ -2,7 +2,7 @@
 
 Date: 2026-07-23
 
-Status: control defined; candidate pending.
+Status: accepted far-backdrop V1 visual baseline.
 
 ## Goal
 
@@ -99,3 +99,40 @@ At `1600 x 900`, combined terrain atmosphere, shadow, surface, stage, and post
 must remain at or below `1.10 ms` mean and p50 and within `0.10 ms` of the
 matched control. P95 remains evidence. Finalization also requires identical
 frozen metadata and a pixel-identical `flat` control.
+
+## Accepted Result
+
+The matched pack is retained under `outputs/terrain/visual-closure-v1`. The
+control uses revision `b771d2c`; the material and lighting candidate uses
+revision `70b78e9`. Finalization confirms:
+
+- elevation SHA-256
+  `27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df`;
+- product content hash `0x5261aadaadb7b969`;
+- `2,657,280` source samples and `742,368` render triangles;
+- render stride 3 and `5,592,404` generated-material bytes;
+- zero changed pixels in the matched `flat` control.
+
+| Lane | Steady mean | Steady p50 | Steady p95 |
+|---|---:|---:|---:|
+| Control | 0.890 ms | 0.878 ms | 0.970 ms |
+| Candidate | 0.896 ms | 0.884 ms | 0.975 ms |
+
+The candidate adds `0.006 ms` to mean and p50, remains below the `1.10 ms`
+gate, and stays well inside the allowed `0.10 ms` matched regression.
+Moving-clock mean/p50/p95 changes from `0.910 / 0.907 / 1.029 ms` to
+`0.915 / 0.912 / 1.025 ms`.
+
+The four qualified headings show stronger broad surface separation without a
+silhouette or topology change. The albedo diagnostic now distinguishes
+kilometer-scale cool and weathered mineral regions instead of one nearly
+uniform ground value. The detail-normal and direct-light diagnostics remove
+the long planar foreground streaks while retaining broad terrain response.
+Ambient separation improves at selected and raw-center placement, and the
+filtered snow response is less dominant below the horizon. No material seam,
+periodic tile, false vegetation, or new night-light discontinuity is visible.
+
+The `100 m` stress view remains too bare for a close-terrain claim. Roughness
+variation is intentionally restrained, and atmosphere still compresses much
+of the material range in the qualified daytime views. Those are accepted V1
+limits rather than reasons for another immediate tuning loop.

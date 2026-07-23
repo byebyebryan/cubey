@@ -62,8 +62,9 @@ Current stable foundation pieces:
   product with source-bounds-centered deterministic placement, continuous
   cached geometry, a persistent recipe-keyed CPU product, shared
   atmosphere/cloud/HDR lighting, submission-safe runtime replacement, terrain
-  and glTF consumers, executable headless smokes, a product review UI, and
-  opt-in historical studies;
+  and glTF consumers, executable headless smokes, a product review UI,
+  accepted mineral-led visual closure across selected/raw placement and the
+  day-to-night envelope, and opt-in historical studies;
 - renderer foundation pieces for target views, render graph declaration,
   material/pass metadata, forward PBR, generated/HDR IBL, surface LOD
   planning, and primitive mesh/draw helpers;
@@ -84,9 +85,10 @@ Recommended next feature streams:
   ready; near-field interaction and spray remain later feature work.
 - renderer foundation: use the shared dynamic environment handoff for future
   atmosphere/PBR consumers instead of adding project-local probe descriptors.
-- `projects/terrain`: material and terrain-light-response refinement against
-  the accepted far-field source. glTF Viewer proves the shared consumer path;
-  add further adapters only for concrete scene needs.
+- `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
+  consumer failure or a bounded next product; glTF Viewer already proves the
+  shared path. Shoreline/bathymetry composition belongs to the ocean stream,
+  while close terrain and planet-scale terrain remain separate projects.
 - `projects/planet`: local/global terrain morphing, streaming/residency
   contracts, and eventual ocean-as-local-water handoff remain a separate
   planet-scale track.

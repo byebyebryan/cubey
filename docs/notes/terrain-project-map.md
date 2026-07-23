@@ -1,6 +1,6 @@
 # Terrain Project Map
 
-Date: 2026-07-22
+Date: 2026-07-23
 
 This map records the terrain product-promotion boundary. Older river,
 mountain-driver, source-model, and landscape-evolution notes are historical
@@ -10,7 +10,7 @@ evidence rather than an active queue.
 
 | Location | Role | Change policy |
 | --- | --- | --- |
-| `projects/terrain` | Fixed-focus external-heightfield backdrop, shared runtime, atmosphere, material review, diagnostics, and capture. | Active product and review host. One runtime path and one asset contract. |
+| `projects/terrain` | Fixed-focus external-heightfield backdrop, shared runtime, atmosphere, material review, diagnostics, and capture. | Accepted far-backdrop V1 and review host. Reopen only for a concrete consumer failure or bounded next product. |
 | `studies/terrain/reference` | TerrainEngine and curated clean-room ShaderToy visual controls. | Optional frozen study. Maintenance and reproducibility fixes only. |
 | `studies/terrain/shadertoy` | External-source fidelity comparison between original raymarches and Cubey mesh transfer. | Optional restricted-source study. Do not promote source code directly. |
 | `studies/terrain/hydrology` | Regional drainage, graph routing, and analytical landscape-evolution experiments. | Optional paused study. Not a terrain-product dependency. |
@@ -81,7 +81,8 @@ findings must be re-expressed independently before they influence product code.
 
 ## Deferred Work
 
-- material and terrain-light-response refinement beyond the current candidate;
+- material and terrain-light-response refinement beyond the accepted V1
+  [visual closure](terrain-visual-closure-v1.md);
 - hydrology, rivers, lakes, wetlands, and coastlines;
 - biome/climate products and foliage placement;
 - terrain deformation, persistence, colliders, and streaming;

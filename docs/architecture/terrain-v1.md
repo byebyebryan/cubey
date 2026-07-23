@@ -238,11 +238,18 @@ failure; framebuffer resolution alone is not a fix.
 
 Vertex material channels classify ground, rock, snow, and ambient visibility
 from source height and geometric normal. The filtered-detail presentation adds
-one compute-generated periodic texture sampled in terrain-planar space for
-bounded albedo, roughness, and normal variation. The flat presentation bypasses
-those texture samples in the same shader and serves as the geometry/lighting
-control. Triplanar rock projection was rejected because it added three texture
-projections without a visible benefit inside the accepted camera envelope.
+one deterministic `1024 x 1024` RGBA8 compute-generated periodic texture with
+11 mips. Two terrain-planar samples provide a `32.768 km` macro field and a
+`2.048 km` local field for bounded albedo, roughness, and normal variation.
+Generated relief, mineral, and roughness fields use decorrelated seed domains.
+Normalized height, slope, and the baked material channels turn those fields
+into gradual lowland, upland, exposed-rock, and snow presentation.
+
+Local normal response fades with projected footprint and on steep faces where
+planar projection would stretch. The flat presentation bypasses those texture
+samples in the same shader and remains the geometry/lighting control. Triplanar
+rock projection was rejected because it added three texture projections
+without a visible benefit inside the accepted camera envelope.
 
 Both presentations use:
 
@@ -266,6 +273,12 @@ the sun crosses below the horizon. This preserves snow/rock separation under
 moonlight without letting high-albedo caps read as emissive under automatic
 night exposure.
 
+Filtered-detail lighting evaluates broad diffuse irradiance from the
+classification normal while reserving the generated normal primarily for
+direct and raking-light response. Material-aware ambient visibility deepens
+existing cavities without changing the shared atmosphere, exposure, or aerial
+perspective contracts.
+
 Directional terrain shadows use one cached `2048 x 2048` full-product depth
 map. A comparison sampler evaluates four bilinear taps at half-texel offsets,
 which preserves the separable `1 / 2 / 1` tent footprint while avoiding nine
@@ -274,6 +287,8 @@ explicit depth fetches. The map refreshes when the light direction changes by
 
 The detail texture improves material frequency but does not add geometry or
 claim grass, trees, scree, exposed strata, or close-surface fidelity.
+The accepted matched visual closure is recorded in
+[Terrain V1 Visual Closure](../notes/terrain-visual-closure-v1.md).
 
 ## Diagnostics
 

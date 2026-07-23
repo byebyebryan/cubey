@@ -2,7 +2,8 @@
 
 Date: 2026-07-20
 
-Status: candidate complete; recommended for acceptance, visual review pending.
+Status: historical candidate accepted, then superseded by the V1 visual
+closure.
 
 ## Goal
 
@@ -174,6 +175,14 @@ It does not justify another immediate material-tuning loop. After visual review,
 either merge it and exercise the accepted backdrop in one real consumer, or
 return explicitly to source filtering if the remaining terracing fails the
 qualified far-field use case.
+
+The later rendering-acceptance pass removed triplanar rock sampling to retain
+the sub-millisecond composition budget and corrected center topology, shadows,
+and snow response. The final two-sample material and lighting contract is
+recorded in
+[Terrain V1 Visual Closure](terrain-visual-closure-v1.md); the captures and
+four-sample details in this note remain historical evidence for the earlier
+candidate.
 
 ## Validation Result
 

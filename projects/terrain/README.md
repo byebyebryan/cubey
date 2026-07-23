@@ -274,6 +274,21 @@ checks the frozen heightfield, cached product, topology, stride, and material
 allocation; it then writes paired qualified, raking-light, stress, cloud, and
 diagnostic sheets under `outputs/terrain/material-v2`.
 
+Generate the accepted V1 visual-closure pack with:
+
+```sh
+projects/terrain/capture_visual_closure_review.sh control
+projects/terrain/capture_visual_closure_review.sh candidate
+projects/terrain/capture_visual_closure_review.sh finalize
+```
+
+It uses the canonical mineral-control source, selected and raw-center
+placement, four headings, the day-to-night solar envelope, 100/200/500 m
+framing, fair clouds, material and lighting diagnostics, and steady plus
+moving-clock profiles. Finalization preserves source/product/topology
+invariants, requires a pixel-identical flat control, and enforces the accepted
+`1.10 ms` mean/p50 terrain composition budget.
+
 ## Tests
 
 ```sh
