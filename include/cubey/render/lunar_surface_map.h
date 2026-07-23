@@ -1,16 +1,19 @@
 #pragma once
 
+#include <cubey/procedural/artifact_cache.h>
 #include <cubey/procedural/artifact_metadata.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace cubey::render {
 
 inline constexpr std::uint32_t kLunarSurfaceMapWidth = 1024;
 inline constexpr std::uint32_t kLunarSurfaceMapHeight = 512;
+inline constexpr std::string_view kLunarSurfaceMapFormulaVersion = "lunar-surface-map-v16";
 
 struct LunarSurfaceMapMip {
     std::uint32_t width = 1;
@@ -29,6 +32,9 @@ struct LunarSurfaceMap {
 };
 
 [[nodiscard]] std::uint32_t lunar_surface_map_mip_count(std::uint32_t width, std::uint32_t height);
+[[nodiscard]] cubey::procedural::ProceduralArtifactRecipe
+lunar_surface_map_recipe(std::uint32_t width = kLunarSurfaceMapWidth,
+                         std::uint32_t height = kLunarSurfaceMapHeight);
 [[nodiscard]] LunarSurfaceMap
 generate_lunar_surface_map(std::uint32_t width = kLunarSurfaceMapWidth,
                            std::uint32_t height = kLunarSurfaceMapHeight);

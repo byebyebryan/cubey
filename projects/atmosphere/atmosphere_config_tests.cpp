@@ -2,11 +2,14 @@
 #include "atmosphere_environment.h"
 
 #include <cubey/core/run_config.h>
+#include <cubey/procedural/artifact_cache.h>
+#include <cubey/render/atmosphere_atlas_cache.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/lunar_surface_map.h>
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -16,6 +19,7 @@
 #include <numbers>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <vector>
 
 namespace {
@@ -60,6 +64,23 @@ void require_not_contains(const std::string& haystack, const char* needle, const
         throw std::runtime_error(message);
     }
 }
+
+class CacheFixture {
+  public:
+    CacheFixture() {
+        const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
+        root = std::filesystem::temp_directory_path() /
+               ("cubey-atmosphere-cache-" + std::to_string(suffix));
+        std::filesystem::create_directories(root);
+    }
+
+    ~CacheFixture() {
+        std::error_code error;
+        std::filesystem::remove_all(root, error);
+    }
+
+    std::filesystem::path root{};
+};
 
 [[nodiscard]] const std::uint8_t* lunar_surface_map_texel(const cubey::render::LunarSurfaceMap& map,
                                                           std::uint32_t x, std::uint32_t y,
@@ -1005,6 +1026,60 @@ int main() {
     }
 
     {
+        CacheFixture fixture;
+        cubey::procedural::ProceduralArtifactCache cache({.root = fixture.root});
+        const NightSkyAtlasConfig night_config{
+            .procedural_variation = 2.0F,
+            .layer = NightSkyLayerView::Final,
+        };
+        const auto night_recipe = night_sky_atlas_recipe(night_config, 64U);
+        const auto varied_recipe =
+            night_sky_atlas_recipe(NightSkyAtlasConfig{.procedural_variation = 3.0F}, 64U);
+        const auto layer_recipe = night_sky_atlas_recipe(
+            NightSkyAtlasConfig{.procedural_variation = 2.0F, .layer = NightSkyLayerView::DustTau},
+            64U);
+        require(cubey::procedural::procedural_artifact_recipe_hash(night_recipe) !=
+                        cubey::procedural::procedural_artifact_recipe_hash(varied_recipe) &&
+                    cubey::procedural::procedural_artifact_recipe_hash(night_recipe) !=
+                        cubey::procedural::procedural_artifact_recipe_hash(layer_recipe),
+                "night sky cache recipes should include variation and diagnostic layer");
+
+        const PreparedNightSkyAtlas generated_night =
+            prepare_night_sky_atlas(cache, night_config, 64U);
+        require(generated_night.cache.source == AtmosphereAtlasPreparationSource::Generated &&
+                    generated_night.cache.stored,
+                "first night sky cache preparation should generate and store the atlas");
+        const PreparedNightSkyAtlas cached_night =
+            prepare_night_sky_atlas(cache, night_config, 64U);
+        require(cached_night.cache.source == AtmosphereAtlasPreparationSource::Cache &&
+                    cached_night.cache.generation_milliseconds == 0.0,
+                "second night sky cache preparation should load without generation");
+        require(cached_night.atlas.rgba32f == generated_night.atlas.rgba32f &&
+                    cached_night.atlas.mips.size() == generated_night.atlas.mips.size() &&
+                    cached_night.atlas.metadata.content_hash ==
+                        generated_night.atlas.metadata.content_hash,
+                "night sky cache hits should reconstruct exact atlas products");
+
+        const PreparedLunarSurfaceMap generated_moon = prepare_lunar_surface_map(cache, 128U, 64U);
+        require(generated_moon.cache.source == AtmosphereAtlasPreparationSource::Generated &&
+                    generated_moon.cache.stored,
+                "first lunar cache preparation should generate and store the map");
+        const PreparedLunarSurfaceMap cached_moon = prepare_lunar_surface_map(cache, 128U, 64U);
+        require(cached_moon.cache.source == AtmosphereAtlasPreparationSource::Cache &&
+                    cached_moon.map.rgba8 == generated_moon.map.rgba8 &&
+                    cached_moon.map.mips.size() == generated_moon.map.mips.size(),
+                "lunar cache hits should reconstruct exact map products");
+
+        const PreparedNightSkyAtlas varied_night =
+            prepare_night_sky_atlas(cache, NightSkyAtlasConfig{.procedural_variation = 3.0F}, 64U);
+        const PreparedLunarSurfaceMap retained_moon_cache =
+            prepare_lunar_surface_map(cache, 128U, 64U);
+        require(varied_night.cache.source == AtmosphereAtlasPreparationSource::Generated &&
+                    retained_moon_cache.cache.source == AtmosphereAtlasPreparationSource::Cache,
+                "night sky variation should miss without invalidating the lunar cache");
+    }
+
+    {
         TimeOfDayConfig solar_noon;
         solar_noon.time_hours = 12.0F;
         solar_noon.day_of_year = 80.0F;
@@ -1264,6 +1339,8 @@ int main() {
         read_text_file(repo_root / "include/cubey/render/atmosphere_background_frame.h");
     const std::string shared_background_source =
         read_text_file(repo_root / "src/cubey/render/atmosphere_background_frame.cpp");
+    const std::string shared_atlas_cache_source =
+        read_text_file(repo_root / "src/cubey/render/atmosphere_atlas_cache.cpp");
     const std::string shared_helper_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere.glsl");
     const std::string shader_entry_source =
@@ -1382,6 +1459,14 @@ int main() {
                      "shared render should own atmosphere fullscreen draw recording");
     require_contains(render_cmake_source, "render/atmosphere_background_frame.cpp",
                      "shared render build should compile the atmosphere background helper");
+    require_contains(render_cmake_source, "render/atmosphere_atlas_cache.cpp",
+                     "shared render build should compile the atmosphere atlas cache adapter");
+    require_contains(shared_atlas_cache_source, "ProceduralArtifactCache",
+                     "shared atmosphere atlas preparation should use the artifact cache");
+    require_contains(shared_atlas_cache_source, "generate_night_sky_atlas",
+                     "night sky cache misses should retain procedural generation");
+    require_contains(shared_atlas_cache_source, "generate_lunar_surface_map",
+                     "lunar cache misses should retain procedural generation");
     require_contains(app_source, "atmosphere_frame_uniforms(",
                      "atmosphere app should consume the environment uniform packer");
     require_contains(app_source, "AtmosphereBackgroundFrame",
@@ -1473,8 +1558,10 @@ int main() {
                      "water 3D build should track shared atmosphere shader dependencies");
     require_contains(app_source, "CelestialBodyFrame",
                      "atmosphere app should use the shared geometry moon frame");
-    require_contains(app_source, "prepared.lunar_surface.emplace(generate_lunar_surface_map())",
-                     "atmosphere app should prepare the visible moon surface off thread");
+    require_contains(app_source, "prepare_lunar_surface_map(atlas_cache_)",
+                     "atmosphere app should prepare the cached moon surface off thread");
+    require_contains(app_source, "prepare_resolved_night_sky_atlas(atlas_cache_",
+                     "atmosphere app should prepare the cached night sky off thread");
     require_contains(app_source, "textures.lunar_surface_sampler",
                      "atmosphere visible moon geometry should bind the surface map");
     require_contains(app_source, "record_moon_body_frame",

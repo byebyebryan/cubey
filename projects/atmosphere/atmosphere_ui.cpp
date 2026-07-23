@@ -63,6 +63,27 @@ void draw_loading_overlay(const AtmosphereLoadingStatus& status) {
     ImGui::End();
 }
 
+void draw_atlas_cache_diagnostics(
+    const char* label,
+    const std::optional<cubey::render::AtmosphereAtlasCacheDiagnostics>& diagnostics) {
+    if (!diagnostics.has_value()) {
+        ImGui::Text("%s: pending", label);
+        return;
+    }
+    const char* source =
+        diagnostics->source == cubey::render::AtmosphereAtlasPreparationSource::Cache ? "cache"
+                                                                                      : "generated";
+    ImGui::Text("%s: %s", label, source);
+    ImGui::Text("  load / generate / store: %.1f / %.1f / %.1f ms", diagnostics->load_milliseconds,
+                diagnostics->generation_milliseconds, diagnostics->store_milliseconds);
+    if (!diagnostics->path.empty()) {
+        ImGui::TextWrapped("  %s", diagnostics->path.string().c_str());
+    }
+    if (!diagnostics->diagnostic.empty()) {
+        ImGui::TextColored(ImVec4{1.0F, 0.72F, 0.30F, 1.0F}, "%s", diagnostics->diagnostic.c_str());
+    }
+}
+
 } // namespace
 
 void draw_atmosphere_ui(AtmosphereUiContext ui) {
@@ -273,6 +294,8 @@ void draw_atmosphere_ui(AtmosphereUiContext ui) {
                     ui.config.top_radius_km);
         ImGui::Text("Scale heights: R %.1f km / M %.1f km", ui.config.rayleigh_scale_height_km,
                     ui.config.mie_scale_height_km);
+        draw_atlas_cache_diagnostics("Night sky", ui.loading_status.night_sky_cache);
+        draw_atlas_cache_diagnostics("Moon", ui.loading_status.moon_cache);
     }
 
     ImGui::End();

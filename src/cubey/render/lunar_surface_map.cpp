@@ -434,8 +434,32 @@ std::uint32_t lunar_surface_map_mip_count(std::uint32_t width, std::uint32_t hei
     return levels;
 }
 
-LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t height) {
+cubey::procedural::ProceduralArtifactRecipe lunar_surface_map_recipe(std::uint32_t width,
+                                                                     std::uint32_t height) {
     const std::uint32_t mip_levels = lunar_surface_map_mip_count(width, height);
+    cubey::procedural::ProceduralHashBuilder parameters;
+    parameters.append_string("lunar-surface-map-parameters-v1");
+    parameters.append_u32(width);
+    parameters.append_u32(height);
+    return {
+        .name = "lunar surface map",
+        .generator = "cubey::render::generate_lunar_surface_map",
+        .formula_version = std::string{kLunarSurfaceMapFormulaVersion},
+        .domain = "render.lunar_surface_map",
+        .seed = cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
+        .parameter_hash = parameters.value(),
+        .space = cubey::procedural::ProceduralDomainSpace::Atlas,
+        .kind = cubey::procedural::ProceduralArtifactKind::Texture2D,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
+        .extent =
+            {.width = width, .height = height, .depth = 1U, .faces = 1U, .mip_levels = mip_levels},
+    };
+}
+
+LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t height) {
+    const cubey::procedural::ProceduralArtifactRecipe recipe =
+        lunar_surface_map_recipe(width, height);
+    const std::uint32_t mip_levels = recipe.extent.mip_levels;
     const std::size_t texel_count =
         static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
     const std::vector<Crater> craters = generate_craters();
@@ -496,15 +520,10 @@ LunarSurfaceMap generate_lunar_surface_map(std::uint32_t width, std::uint32_t he
     }
 
     map.metadata = cubey::procedural::make_procedural_artifact_metadata(
-        cubey::procedural::make_procedural_artifact_identity(
-            "lunar surface map", "cubey::render::generate_lunar_surface_map",
-            "lunar-surface-map-v16", "render.lunar_surface_map",
-            cubey::procedural::derive_seed(kLunarSurfaceBaseSeed, "render.lunar_surface_map"),
-            cubey::procedural::ProceduralDomainSpace::Atlas),
-        cubey::procedural::ProceduralArtifactKind::Texture2D,
-        cubey::procedural::ProceduralArtifactValueFormat::Rgba8Unorm,
-        {.width = width, .height = height, .depth = 1U, .faces = 1U, .mip_levels = mip_levels},
-        lunar_surface_map_hash(map.rgba8));
+        cubey::procedural::make_procedural_artifact_identity(recipe.name, recipe.generator,
+                                                             recipe.formula_version, recipe.domain,
+                                                             recipe.seed, recipe.space),
+        recipe.kind, recipe.format, recipe.extent, lunar_surface_map_hash(map.rgba8));
     return map;
 }
 

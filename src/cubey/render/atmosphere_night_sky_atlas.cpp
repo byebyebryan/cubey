@@ -561,15 +561,43 @@ std::uint32_t night_sky_atlas_mip_count(std::uint32_t extent) {
     return levels;
 }
 
+cubey::procedural::ProceduralArtifactRecipe
+night_sky_atlas_recipe(const NightSkyAtlasConfig& config, std::uint32_t extent) {
+    if (extent == 0U || (extent & (extent - 1U)) != 0U) {
+        throw std::runtime_error("night sky atlas extent must be a power of two");
+    }
+    const std::uint32_t mip_levels = night_sky_atlas_mip_count(extent);
+    const std::uint32_t quantized_variation =
+        static_cast<std::uint32_t>(std::round(config.procedural_variation * 1000.0F));
+    const std::uint32_t variation_seed = hash_u32(quantized_variation + 0x7a41c6d3U);
+    cubey::procedural::ProceduralHashBuilder parameters;
+    parameters.append_string("atmosphere-night-sky-atlas-parameters-v1");
+    parameters.append_u32(quantized_variation);
+    parameters.append_u32(static_cast<std::uint32_t>(config.layer));
+    return {
+        .name = "atmosphere night sky atlas",
+        .generator = "cubey::render::generate_night_sky_atlas",
+        .formula_version = std::string{kNightSkyAtlasFormulaVersion},
+        .domain = "atmosphere.night_sky_atlas",
+        .seed = variation_seed,
+        .parameter_hash = parameters.value(),
+        .space = cubey::procedural::ProceduralDomainSpace::Spherical,
+        .kind = cubey::procedural::ProceduralArtifactKind::TextureCube,
+        .format = cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
+        .extent =
+            {.width = extent, .height = extent, .depth = 1U, .faces = 6U, .mip_levels = mip_levels},
+    };
+}
+
 NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::uint32_t extent) {
     if (extent == 0U || (extent & (extent - 1U)) != 0U) {
         throw std::runtime_error("night sky atlas extent must be a power of two");
     }
 
     NightSkyAtlas atlas = make_empty_atlas(extent, config.layer);
-    const std::uint32_t variation_seed =
-        hash_u32(static_cast<std::uint32_t>(std::round(config.procedural_variation * 1000.0F)) +
-                 0x7a41c6d3U);
+    const cubey::procedural::ProceduralArtifactRecipe recipe =
+        night_sky_atlas_recipe(config, extent);
+    const std::uint32_t variation_seed = static_cast<std::uint32_t>(recipe.seed);
     for (std::uint32_t face = 0; face < 6U; ++face) {
         for (std::uint32_t y = 0; y < extent; ++y) {
             for (std::uint32_t x = 0; x < extent; ++x) {
@@ -581,17 +609,10 @@ NightSkyAtlas generate_night_sky_atlas(const NightSkyAtlasConfig& config, std::u
     }
     build_mips(atlas);
     atlas.metadata = cubey::procedural::make_procedural_artifact_metadata(
-        cubey::procedural::make_procedural_artifact_identity(
-            "atmosphere night sky atlas",
-            "cubey::render::generate_night_sky_atlas",
-            "atmosphere-night-sky-atlas-v2",
-            "atmosphere.night_sky_atlas",
-            variation_seed,
-            cubey::procedural::ProceduralDomainSpace::Spherical),
-        cubey::procedural::ProceduralArtifactKind::TextureCube,
-        cubey::procedural::ProceduralArtifactValueFormat::Rgba32Float,
-        {.width = extent, .height = extent, .depth = 1, .faces = 6, .mip_levels = atlas.mip_levels},
-        night_sky_atlas_hash(atlas.rgba32f));
+        cubey::procedural::make_procedural_artifact_identity(recipe.name, recipe.generator,
+                                                             recipe.formula_version, recipe.domain,
+                                                             recipe.seed, recipe.space),
+        recipe.kind, recipe.format, recipe.extent, night_sky_atlas_hash(atlas.rgba32f));
     return atlas;
 }
 

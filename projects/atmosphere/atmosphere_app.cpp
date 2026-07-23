@@ -14,6 +14,8 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/input.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/procedural/artifact_cache.h>
+#include <cubey/render/atmosphere_atlas_cache.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/celestial_body_frame.h>
@@ -48,6 +50,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -61,8 +64,6 @@ namespace {
 using cubey::FrameTiming;
 using cubey::host::FrameStatsSample;
 using cubey::host::FrameStatsSnapshot;
-using cubey::render::generate_lunar_surface_map;
-using cubey::render::generate_night_sky_atlas;
 using cubey::render::LunarSurfaceMap;
 using cubey::render::NightSkyAtlas;
 using cubey::render::NightSkyAtlasConfig;
@@ -103,11 +104,13 @@ struct ResolvedNightSkyAtlas {
 struct GeneratedNightSkyAtlas {
     ResolvedNightSkyAtlas resolved{};
     NightSkyAtlas atlas{};
+    cubey::render::AtmosphereAtlasCacheDiagnostics cache{};
 };
 
 struct PreparedAtmosphereAtlases {
     GeneratedNightSkyAtlas night_sky{};
     std::optional<LunarSurfaceMap> lunar_surface{};
+    std::optional<cubey::render::AtmosphereAtlasCacheDiagnostics> lunar_surface_cache{};
     std::shared_ptr<cubey::render::Texture2D> retained_lunar_surface{};
 };
 
@@ -117,6 +120,8 @@ struct AtmosphereAtlasResident {
     std::shared_ptr<cubey::render::TextureCube> night_sky{};
     std::shared_ptr<cubey::render::AtmosphereBackgroundFrameMaterial> background_material{};
     std::shared_ptr<cubey::render::CelestialBodyFrameMaterial> moon_material{};
+    std::optional<cubey::render::AtmosphereAtlasCacheDiagnostics> night_sky_cache{};
+    std::optional<cubey::render::AtmosphereAtlasCacheDiagnostics> lunar_surface_cache{};
     bool lunar_surface_placeholder = false;
     bool night_sky_placeholder = false;
 
@@ -172,10 +177,14 @@ std::filesystem::path shader_path(const char* filename) {
 }
 
 [[nodiscard]] GeneratedNightSkyAtlas
-generate_resolved_night_sky_atlas(ResolvedNightSkyAtlas resolved) {
+prepare_resolved_night_sky_atlas(cubey::procedural::ProceduralArtifactCache& cache,
+                                 ResolvedNightSkyAtlas resolved) {
+    cubey::render::PreparedNightSkyAtlas prepared =
+        cubey::render::prepare_night_sky_atlas(cache, night_sky_atlas_config(resolved));
     return {
         .resolved = resolved,
-        .atlas = generate_night_sky_atlas(night_sky_atlas_config(resolved)),
+        .atlas = std::move(prepared.atlas),
+        .cache = std::move(prepared.cache),
     };
 }
 
@@ -187,6 +196,7 @@ class AtmosphereApp {
           render_view_(atmosphere_config_.render_view),
           headless_base_time_hours_(atmosphere_config_.time_of_day.time_hours),
           headless_base_day_of_year_(atmosphere_config_.time_of_day.day_of_year),
+          atlas_cache_({.root = cubey::procedural::default_procedural_artifact_cache_root()}),
           atlas_builds_(atlas_jobs_) {
         view_controller_.set_auto_rotation_speed(0.0F);
     }
@@ -281,6 +291,7 @@ class AtmosphereApp {
             create_windowed_global_resources(context.device(), context.gpu(), frame_slot_count);
             atlas_builds_.finish(context.gpu());
             install_ready_atlas_generation(context.gpu(), {});
+            record_initialization_metrics(context.profile_recorder(), 0U);
             create_pipeline(context.device(), target.format, target.extent);
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
@@ -377,6 +388,47 @@ class AtmosphereApp {
         return gpu_profiler_.has_value() ? &gpu_profiler_.value() : nullptr;
     }
 
+    void record_initialization_metrics(cubey::profiling::ProfileRecorder* profile_recorder,
+                                       std::uint64_t frame_index) const {
+        if (profile_recorder == nullptr) {
+            return;
+        }
+        const cubey::StagedResourceStatus& status = atlas_builds_.status();
+        profile_recorder->record_metric(frame_index, "atmosphere.initialization", "generation",
+                                        static_cast<double>(status.generation.id));
+        profile_recorder->record_metric(
+            frame_index, "atmosphere.initialization", "phase",
+            static_cast<double>(static_cast<std::uint8_t>(status.phase)));
+        profile_recorder->record_metric(frame_index, "atmosphere.initialization", "prepare_ms",
+                                        status.prepare_milliseconds);
+        profile_recorder->record_metric(frame_index, "atmosphere.initialization", "install_ms",
+                                        status.install_milliseconds);
+        const auto record_cache =
+            [profile_recorder, frame_index](
+                std::string_view prefix,
+                const std::optional<cubey::render::AtmosphereAtlasCacheDiagnostics>& cache) {
+                if (!cache.has_value()) {
+                    return;
+                }
+                const std::string name_prefix{prefix};
+                profile_recorder->record_metric(
+                    frame_index, "atmosphere.initialization", name_prefix + "_cache_hit",
+                    cache->source == cubey::render::AtmosphereAtlasPreparationSource::Cache ? 1.0
+                                                                                            : 0.0);
+                profile_recorder->record_metric(frame_index, "atmosphere.initialization",
+                                                name_prefix + "_cache_load_ms",
+                                                cache->load_milliseconds);
+                profile_recorder->record_metric(frame_index, "atmosphere.initialization",
+                                                name_prefix + "_generation_ms",
+                                                cache->generation_milliseconds);
+                profile_recorder->record_metric(frame_index, "atmosphere.initialization",
+                                                name_prefix + "_cache_store_ms",
+                                                cache->store_milliseconds);
+            };
+        record_cache("night_sky", loading_status_.night_sky_cache);
+        record_cache("moon", loading_status_.moon_cache);
+    }
+
     void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
                              std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
         cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
@@ -387,25 +439,15 @@ class AtmosphereApp {
         const std::uint64_t collected_frame =
             collected_profile_frame_index(frame_index, frame_slot);
         record_gpu_timings(profile_recorder, collected_frame, latest_gpu_timings());
-        if (profile_recorder != nullptr) {
-            const cubey::StagedResourceStatus& status = atlas_builds_.status();
-            profile_recorder->record_metric(collected_frame, "atmosphere.initialization",
-                                            "generation",
-                                            static_cast<double>(status.generation.id));
-            profile_recorder->record_metric(
-                collected_frame, "atmosphere.initialization", "phase",
-                static_cast<double>(static_cast<std::uint8_t>(status.phase)));
-            profile_recorder->record_metric(collected_frame, "atmosphere.initialization",
-                                            "prepare_ms", status.prepare_milliseconds);
-            profile_recorder->record_metric(collected_frame, "atmosphere.initialization",
-                                            "install_ms", status.install_milliseconds);
-        }
+        record_initialization_metrics(profile_recorder, collected_frame);
     }
 
     void create_windowed_global_resources(cubey::vulkan::Device& device,
                                           cubey::vulkan::GpuRuntime& gpu,
                                           std::uint32_t frame_slot_count) {
         atlas_frame_slot_count_ = frame_slot_count;
+        loading_status_.moon_cache.reset();
+        loading_status_.night_sky_cache.reset();
         active_atlas_generation_ =
             create_placeholder_atlas_generation(device, gpu, frame_slot_count);
         atmosphere_background_.install_materials(active_atlas_generation_->background_material);
@@ -483,6 +525,8 @@ class AtmosphereApp {
         }
         auto resident = std::make_shared<AtmosphereAtlasResident>();
         resident->resolved = prepared.night_sky.resolved;
+        resident->night_sky_cache.emplace(std::move(prepared.night_sky.cache));
+        resident->lunar_surface_cache = std::move(prepared.lunar_surface_cache);
         if (prepared.retained_lunar_surface != nullptr) {
             resident->lunar_surface = std::move(prepared.retained_lunar_surface);
         } else if (prepared.lunar_surface.has_value()) {
@@ -557,13 +601,16 @@ class AtmosphereApp {
         }
         static_cast<void>(atlas_builds_.request(
             "atmosphere generated atlases",
-            [resolved, retained_lunar_surface]() mutable {
+            [this, resolved, retained_lunar_surface]() mutable {
                 PreparedAtmosphereAtlases prepared{
-                    .night_sky = generate_resolved_night_sky_atlas(resolved),
+                    .night_sky = prepare_resolved_night_sky_atlas(atlas_cache_, resolved),
                     .retained_lunar_surface = std::move(retained_lunar_surface),
                 };
                 if (prepared.retained_lunar_surface == nullptr) {
-                    prepared.lunar_surface.emplace(generate_lunar_surface_map());
+                    cubey::render::PreparedLunarSurfaceMap lunar_surface =
+                        cubey::render::prepare_lunar_surface_map(atlas_cache_);
+                    prepared.lunar_surface.emplace(std::move(lunar_surface.map));
+                    prepared.lunar_surface_cache.emplace(std::move(lunar_surface.cache));
                 }
                 return prepared;
             },
@@ -605,6 +652,14 @@ class AtmosphereApp {
         loading_status_.night_sky_pending = atlas_builds_.busy();
         loading_status_.moon_placeholder = lunar_placeholder;
         loading_status_.night_sky_placeholder = !current_night_sky_atlas_.has_value();
+        if (active_atlas_generation_ != nullptr) {
+            if (active_atlas_generation_->night_sky_cache.has_value()) {
+                loading_status_.night_sky_cache = active_atlas_generation_->night_sky_cache;
+            }
+            if (active_atlas_generation_->lunar_surface_cache.has_value()) {
+                loading_status_.moon_cache = active_atlas_generation_->lunar_surface_cache;
+            }
+        }
         loading_status_.generation = build_status.generation.id;
         loading_status_.prepare_milliseconds = build_status.prepare_milliseconds;
         loading_status_.install_milliseconds = build_status.install_milliseconds;
@@ -1108,6 +1163,7 @@ class AtmosphereApp {
     float headless_base_time_hours_ = 12.0F;
     float headless_base_day_of_year_ = 80.0F;
     cubey::jobs::JobSystem atlas_jobs_{2U};
+    cubey::procedural::ProceduralArtifactCache atlas_cache_;
     cubey::StagedResource<PreparedAtmosphereAtlases, std::shared_ptr<AtmosphereAtlasResident>>
         atlas_builds_;
     std::uint32_t atlas_frame_slot_count_ = 0U;
