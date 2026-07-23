@@ -2,7 +2,7 @@
 
 Date: 2026-07-22
 
-Status: implementation complete; whole-repository validation is the final gate.
+Status: validated and closed.
 
 ## Scope
 
@@ -108,7 +108,7 @@ under `cache/terrain/tooling/v1/`.
 
 ## Closure Gate
 
-The final gate is:
+The closure gate was:
 
 1. Debug and Release builds for all default targets.
 2. Full serial CTest.
@@ -116,3 +116,26 @@ The final gate is:
 4. Real default-source reuse without model initialization.
 5. Cold/warm terrain and glTF captures with byte-identical output.
 6. `git diff --check`, clean worktree, and publication of `main`.
+
+## Validation Result
+
+The 2026-07-22 closure run passed:
+
+- complete Debug and Release builds;
+- all 150 serial CTest cases;
+- both dependency-free source-cache cases and all 20 NumPy-backed producer
+  cases;
+- reuse of `cache/terrain/sources/v1/default` without producer startup; and
+- no remaining project or test call sites for uncached atmosphere-atlas
+  generation.
+
+Release cold/warm captures were run with the existing procedural cache moved
+aside, then the original cache was restored:
+
+| Consumer | Cold wall time | Warm wall time | PNG SHA-256 |
+| --- | ---: | ---: | --- |
+| Terrain | 1.36 s | 0.37 s | `424766c3b3626d374549b917f2c651a8bf259f50613f1cee131a543770d7415b` |
+| glTF Viewer with terrain | 1.73 s | 0.94 s | `a020224ab72220812886210f99d84c9f1f28672c2c27cbe45d23fd49d938cfe7` |
+
+Each consumer produced the same hash in its cold and warm runs. Review captures
+are retained under `outputs/terrain/foundation-closure-2026-07-22/`.
