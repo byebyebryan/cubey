@@ -14,6 +14,7 @@ GPU_IDLE_ATTEMPTS="${GPU_IDLE_ATTEMPTS:-300}"
 PROFILE_ATTEMPTS="${PROFILE_ATTEMPTS:-5}"
 SUMMARIZE_ONLY="${SUMMARIZE_ONLY:-0}"
 LANE_FILTER="${LANE_FILTER:-}"
+INCLUDE_SCALING="${INCLUDE_SCALING:-0}"
 
 mkdir -p "${OUT_DIR}/profiles" "${OUT_DIR}/captures" "${OUT_DIR}/clips"
 
@@ -464,12 +465,14 @@ study_lane adaptive-composed-cached-low adaptive low "${WIDTH}" "${HEIGHT}" 42 \
 study_lane adaptive-composed-planar-low adaptive low "${WIDTH}" "${HEIGHT}" 42 \
     "footprint / planar cloud reflection" on planar --ocean-surface-shading-policy footprint
 
-for camera in low mid; do
-    study_lane "adaptive-1440-fixed-${camera}" adaptive "${camera}" 2560 1440 42 \
-        "2560x1440 fixed shading" off cached --ocean-surface-shading-policy fixed
-    study_lane "adaptive-1440-footprint-${camera}" adaptive "${camera}" 2560 1440 42 \
-        "2560x1440 footprint shading" off cached --ocean-surface-shading-policy footprint
-done
+if [[ "${INCLUDE_SCALING}" == "1" ]]; then
+    for camera in low mid; do
+        study_lane "adaptive-1440-fixed-${camera}" adaptive "${camera}" 2560 1440 42 \
+            "2560x1440 fixed shading" off cached --ocean-surface-shading-policy fixed
+        study_lane "adaptive-1440-footprint-${camera}" adaptive "${camera}" 2560 1440 42 \
+            "2560x1440 footprint shading" off cached --ocean-surface-shading-policy footprint
+    done
+fi
 
 for camera in close low mid; do
     capture_motion_lane "adaptive-motion-fixed-${camera}" "${camera}" fixed
@@ -525,8 +528,10 @@ for camera in low mid; do
         "planar cloud reflection" on planar
 done
 
-study_lane scaling-low scaling low 2560 1440 42 "2560x1440 control" off cached
-study_lane scaling-mid scaling mid 2560 1440 42 "2560x1440 control" off cached
+if [[ "${INCLUDE_SCALING}" == "1" ]]; then
+    study_lane scaling-low scaling low 2560 1440 42 "2560x1440 control" off cached
+    study_lane scaling-mid scaling mid 2560 1440 42 "2560x1440 control" off cached
+fi
 
 if [[ -z "${LANE_FILTER}" ]]; then
     write_contact_sheet "${OUT_DIR}/control-contact-sheet.png" 3x1 \
@@ -547,8 +552,10 @@ if [[ -z "${LANE_FILTER}" ]]; then
         control-low shape-off-low control-mid shape-off-mid cascade0-mid cascade1-mid
     write_contact_sheet "${OUT_DIR}/composed-contact-sheet.png" 2x2 \
         composed-cached-low composed-planar-low composed-cached-mid composed-planar-mid
-    write_contact_sheet "${OUT_DIR}/scaling-contact-sheet.png" 2x2 \
-        control-low scaling-low control-mid scaling-mid
+    if [[ "${INCLUDE_SCALING}" == "1" ]]; then
+        write_contact_sheet "${OUT_DIR}/scaling-contact-sheet.png" 2x2 \
+            control-low scaling-low control-mid scaling-mid
+    fi
 fi
 
 if [[ -z "${LANE_FILTER}" || "${LANE_FILTER}" == "adaptive" ]]; then
@@ -564,9 +571,11 @@ if [[ -z "${LANE_FILTER}" || "${LANE_FILTER}" == "adaptive" ]]; then
         adaptive-footprint-mid adaptive-mesh256-mid
     write_contact_sheet "${OUT_DIR}/adaptive-composed-contact-sheet.png" 2x1 \
         adaptive-composed-cached-low adaptive-composed-planar-low
-    write_contact_sheet "${OUT_DIR}/adaptive-1440-contact-sheet.png" 2x2 \
-        adaptive-1440-fixed-low adaptive-1440-footprint-low \
-        adaptive-1440-fixed-mid adaptive-1440-footprint-mid
+    if [[ "${INCLUDE_SCALING}" == "1" ]]; then
+        write_contact_sheet "${OUT_DIR}/adaptive-1440-contact-sheet.png" 2x2 \
+            adaptive-1440-fixed-low adaptive-1440-footprint-low \
+            adaptive-1440-fixed-mid adaptive-1440-footprint-mid
+    fi
 fi
 
 {
@@ -585,6 +594,8 @@ fi
     printf -- '- Adaptive motion clips use a 3 deg/s orbit with live waves at low sun.\n'
     printf -- '- Fixed adaptive-study lanes preserve the pre-policy path for matched comparison.\n'
     printf -- '- Mesh-256 lanes remain diagnostic and do not imply a default geometry change.\n\n'
+    printf -- '- Resolution scaling runs only when `INCLUDE_SCALING=1`; unstable scaling is not '
+    printf 'part of the default verdict.\n\n'
     if [[ -n "${LANE_FILTER}" ]]; then
         printf -- '- Lane filter: `%s`\n\n' "${LANE_FILTER}"
     fi
