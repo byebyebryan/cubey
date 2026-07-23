@@ -385,7 +385,7 @@ generation is available; projects must not mutate active resource ownership
 from a worker or GPU-owner callback.
 
 The shared lifecycle uses monotonic generation identifiers and the phases
-`Preparing`, `QueuedForGpu`, `Installing`, `Ready`, `Failed`, and
+`Queued`, `Preparing`, `QueuedForGpu`, `Installing`, `Ready`, `Failed`, and
 `Superseded`. A newer request makes older results ineligible for activation.
 V1 bounds memory by allowing one active generation and one latest pending
 request instead of launching every intermediate UI edit. Arbitrary CPU kernels

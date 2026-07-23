@@ -28,6 +28,11 @@ void test_engine_reuses_project_frame_for_same_timing();
 void test_renderer_service_owns_forward_pbr_renderer_instances();
 void test_renderer_service_rejects_foreign_forward_pbr_renderer();
 void test_renderer_service_resource_lifecycle_is_safe_without_renderers();
+void test_staged_resource_finishes_owned_cpu_and_gpu_stages();
+void test_staged_resource_keeps_only_latest_pending_generation();
+void test_staged_resource_poll_does_not_wait_for_cpu_preparation();
+void test_staged_resource_reports_prepare_and_install_failures();
+void test_staged_resource_shutdown_discards_work_and_rejects_requests();
 void test_headless_capture_frame_helpers_select_png_or_video_timing();
 void test_headless_png_host_validates_capture_shape();
 void test_host_frame_stats_publish_window_title_metrics();
@@ -132,6 +137,11 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_renderer_service_owns_forward_pbr_renderer_instances),
         CUBEY_TEST(test_renderer_service_rejects_foreign_forward_pbr_renderer),
         CUBEY_TEST(test_renderer_service_resource_lifecycle_is_safe_without_renderers),
+        CUBEY_TEST(test_staged_resource_finishes_owned_cpu_and_gpu_stages),
+        CUBEY_TEST(test_staged_resource_poll_does_not_wait_for_cpu_preparation),
+        CUBEY_TEST(test_staged_resource_keeps_only_latest_pending_generation),
+        CUBEY_TEST(test_staged_resource_reports_prepare_and_install_failures),
+        CUBEY_TEST(test_staged_resource_shutdown_discards_work_and_rejects_requests),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color),
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths),
