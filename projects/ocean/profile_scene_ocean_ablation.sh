@@ -74,19 +74,11 @@ span_stats() {
         group == "wave" && $3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ {
             total[$1] += $5
         }
-        group == "background" && $3 == "ocean background" {
+        group == "scene" && $3 == "ocean scene" {
             total[$1] += $5
         }
-        group == "surface" && $3 == "ocean surface" {
-            total[$1] += $5
-        }
-        group == "core" &&
-            ($3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ || $3 == "ocean surface") {
-            total[$1] += $5
-        }
-        group == "adapter" &&
-            ($3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ || $3 == "ocean surface" ||
-             $3 == "cloud shadow" || $3 == "ocean.cloud_environment" ||
+        group == "products" &&
+            ($3 == "cloud shadow" || $3 == "ocean.cloud_environment" ||
              $3 == "ocean.cloud_planar_reflection") {
             total[$1] += $5
         }
@@ -113,6 +105,15 @@ span_stats() {
             printf "%.6f %.6f %.6f %d", sum / NR, values[p50_index], values[p95_index], NR
         }
     '
+}
+
+sum_values() {
+    awk -v first="$1" -v second="$2" 'BEGIN { printf "%.6f", first + second }'
+}
+
+subtract_nonnegative() {
+    awk -v first="$1" -v second="$2" \
+        'BEGIN { difference = first - second; printf "%.6f", (difference > 0 ? difference : 0) }'
 }
 
 metric_last() {
@@ -228,6 +229,37 @@ capture_lane() {
         --output "${output}"
 }
 
+background_lane_name() {
+    local camera="$1"
+    local width="$2"
+    local height="$3"
+    local sun_elevation="$4"
+    printf 'background-%s-%sx%s-sun%s' "${camera}" "${width}" "${height}" "${sun_elevation}"
+}
+
+ensure_background_lane() {
+    local camera="$1"
+    local width="$2"
+    local height="$3"
+    local sun_elevation="$4"
+    local lane
+    lane="$(background_lane_name "${camera}" "${width}" "${height}" "${sun_elevation}")"
+
+    if [[ "${SUMMARIZE_ONLY}" == "1" ]]; then
+        if [[ ! -f "${OUT_DIR}/profiles/${lane}.passes.csv" ]]; then
+            printf 'missing scene-ocean background profile: %s\n' \
+                "${OUT_DIR}/profiles/${lane}.passes.csv" >&2
+            exit 1
+        fi
+        return
+    fi
+    if [[ -f "${OUT_DIR}/profiles/${lane}.passes.csv" ]]; then
+        return
+    fi
+    run_lane "${lane}" "${camera}" "${width}" "${height}" "${sun_elevation}" off cached \
+        --debug-view background
+}
+
 summarize_lane() {
     local lane="$1"
     local family="$2"
@@ -250,14 +282,21 @@ summarize_lane() {
         fi
     done
 
+    local background_lane background_passes
+    background_lane="$(background_lane_name "${camera}" "${width}" "${height}" "${sun_elevation}")"
+    background_passes="${OUT_DIR}/profiles/${background_lane}.passes.csv"
+
     local total_mean total_p50 total_p95 samples
-    local _ wave_p50 background_p50 surface_p50 core_p50 adapter_p50 cloud_p50 post_p50
+    local _ wave_p50 scene_p50 background_p50 surface_p50 core_p50 adapter_p50
+    local products_p50 cloud_p50 post_p50
     read -r total_mean total_p50 total_p95 samples <<<"$(span_stats "${passes}" total)"
     read -r _ wave_p50 _ _ <<<"$(span_stats "${passes}" wave)"
-    read -r _ background_p50 _ _ <<<"$(span_stats "${passes}" background)"
-    read -r _ surface_p50 _ _ <<<"$(span_stats "${passes}" surface)"
-    read -r _ core_p50 _ _ <<<"$(span_stats "${passes}" core)"
-    read -r _ adapter_p50 _ _ <<<"$(span_stats "${passes}" adapter)"
+    read -r _ scene_p50 _ _ <<<"$(span_stats "${passes}" scene)"
+    read -r _ background_p50 _ _ <<<"$(span_stats "${background_passes}" scene)"
+    surface_p50="$(subtract_nonnegative "${scene_p50}" "${background_p50}")"
+    core_p50="$(sum_values "${wave_p50}" "${surface_p50}")"
+    read -r _ products_p50 _ _ <<<"$(span_stats "${passes}" products)"
+    adapter_p50="$(sum_values "${core_p50}" "${products_p50}")"
     read -r _ cloud_p50 _ _ <<<"$(span_stats "${passes}" cloud)"
     read -r _ post_p50 _ _ <<<"$(span_stats "${passes}" post)"
 
@@ -287,6 +326,7 @@ study_lane() {
         return
     fi
 
+    ensure_background_lane "${camera}" "${width}" "${height}" "${sun_elevation}"
     CAPTURE_BY_LANE["${lane}"]="${OUT_DIR}/captures/${lane}.png"
     LABEL_BY_LANE["${lane}"]="${lane}: ${setting}"
 
@@ -411,7 +451,9 @@ fi
     printf -- '- Frames: %s; warmup: %s; still frames: %s\n' \
         "${FRAMES}" "${WARMUP_FRAMES}" "${STILL_FRAMES}"
     printf -- '- Source: Windy, 512 half, curved far surface, paused time.\n'
-    printf -- '- Core-owned time: wave compute plus ocean surface.\n'
+    printf -- '- Totals use the original non-overlapping render-graph spans.\n'
+    printf -- '- Surface time is estimated by subtracting a matched background-only run.\n'
+    printf -- '- Core-owned time is wave compute plus the estimated ocean surface time.\n'
     printf -- '- Adapter time: core plus ocean-requested cloud shadow/reflection products.\n'
     printf -- '- Shared atmosphere background, cloud march/composite, and post remain separate.\n'
     printf -- '- Runs reject concurrent external GPU compute work.\n\n'

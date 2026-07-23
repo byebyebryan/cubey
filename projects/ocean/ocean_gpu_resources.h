@@ -92,10 +92,11 @@ class OceanGpuResources {
                                          const OceanSurfaceFeatureUniforms& uniforms) const;
 
     [[nodiscard]] bool initialized() const {
-        return surface_pipeline_.has_value();
+        return surface_pipelines_[0].has_value();
     }
 
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& surface_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    surface_pipeline(OceanDetailFilter filter) const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& spectrum_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& modulate_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& fft_pipeline() const;
@@ -187,7 +188,7 @@ class OceanGpuResources {
     std::optional<cubey::render::ComputePipelineResource> modulate_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> fft_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> unpack_pipeline_;
-    std::optional<cubey::render::GraphicsPipelineResource> surface_pipeline_;
+    std::array<std::optional<cubey::render::GraphicsPipelineResource>, 3> surface_pipelines_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 

@@ -75,19 +75,11 @@ frame_stats() {
              $3 == "ocean.cloud_planar_reflection") {
             total[$1] += $5
         }
-        group == "background" && $3 == "ocean background" {
+        group == "scene" && $3 == "ocean scene" {
             total[$1] += $5
         }
-        group == "surface" && $3 == "ocean surface" {
-            total[$1] += $5
-        }
-        group == "core" &&
-            ($3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ || $3 == "ocean surface") {
-            total[$1] += $5
-        }
-        group == "adapter" &&
-            ($3 ~ /^ocean\.(modulate|fft|unpack)\.c[0-9]+$/ || $3 == "ocean surface" ||
-             $3 == "cloud shadow" || $3 == "ocean.cloud_environment" ||
+        group == "products" &&
+            ($3 == "cloud shadow" || $3 == "ocean.cloud_environment" ||
              $3 == "ocean.cloud_planar_reflection") {
             total[$1] += $5
         }
@@ -111,6 +103,15 @@ frame_stats() {
     '
 }
 
+sum_values() {
+    awk -v first="$1" -v second="$2" 'BEGIN { printf "%.6f", first + second }'
+}
+
+subtract_nonnegative() {
+    awk -v first="$1" -v second="$2" \
+        'BEGIN { difference = first - second; printf "%.6f", (difference > 0 ? difference : 0) }'
+}
+
 run_lane() {
     local lane="$1"
     local map_size="$2"
@@ -118,6 +119,7 @@ run_lane() {
     local camera="$4"
     local cloud_mode="$5"
     local reflection="$6"
+    shift 6
     local prefix="${OUT_DIR}/profiles/${lane}"
     local video="${prefix}.mp4"
     local cloud_args=()
@@ -154,6 +156,7 @@ run_lane() {
             --profile-output "${prefix}" \
             --profile-warmup-frames "${WARMUP_FRAMES}" \
             "${cloud_args[@]}" \
+            "$@" \
             --output "${video}"
         rm -f "${video}"
 
@@ -168,6 +171,12 @@ run_lane() {
 }
 
 if [[ "${SUMMARIZE_ONLY}" != "1" ]]; then
+    run_lane background-256-half-mid 256 half mid off cached --debug-view background
+    run_lane background-512-half-mid 512 half mid off cached --debug-view background
+    run_lane background-1024-half-mid 1024 half mid off cached --debug-view background
+    run_lane background-512-full-mid 512 full mid off cached --debug-view background
+    run_lane background-512-half-low 512 half low off cached --debug-view background
+    run_lane background-512-half-high 512 half high off cached --debug-view background
     run_lane surface-256-half-mid 256 half mid off cached
     run_lane surface-512-half-mid 512 half mid off cached
     run_lane surface-1024-half-mid 1024 half mid off cached
@@ -199,14 +208,18 @@ summarize_lane() {
         fi
     done
 
+    local background_passes="${OUT_DIR}/profiles/background-${map_size}-${precision}-${camera}.passes.csv"
     local total_mean total_p50 total_p95 samples
-    local _ wave_p50 background_p50 surface_p50 core_p50 adapter_p50 cloud_p50 post_p50
+    local _ wave_p50 scene_p50 background_p50 surface_p50 core_p50 adapter_p50
+    local products_p50 cloud_p50 post_p50
     read -r total_mean total_p50 total_p95 samples <<<"$(frame_stats "${passes}" total)"
     read -r _ wave_p50 _ _ <<<"$(frame_stats "${passes}" wave)"
-    read -r _ background_p50 _ _ <<<"$(frame_stats "${passes}" background)"
-    read -r _ surface_p50 _ _ <<<"$(frame_stats "${passes}" surface)"
-    read -r _ core_p50 _ _ <<<"$(frame_stats "${passes}" core)"
-    read -r _ adapter_p50 _ _ <<<"$(frame_stats "${passes}" adapter)"
+    read -r _ scene_p50 _ _ <<<"$(frame_stats "${passes}" scene)"
+    read -r _ background_p50 _ _ <<<"$(frame_stats "${background_passes}" scene)"
+    surface_p50="$(subtract_nonnegative "${scene_p50}" "${background_p50}")"
+    core_p50="$(sum_values "${wave_p50}" "${surface_p50}")"
+    read -r _ products_p50 _ _ <<<"$(frame_stats "${passes}" products)"
+    adapter_p50="$(sum_values "${core_p50}" "${products_p50}")"
     read -r _ cloud_p50 _ _ <<<"$(frame_stats "${passes}" cloud)"
     read -r _ post_p50 _ _ <<<"$(frame_stats "${passes}" post)"
 
@@ -232,8 +245,9 @@ summarize_lane composed-512-half-planar 512 half mid on planar
     printf -- '- Resolution: %sx%s\n' "${WIDTH}" "${HEIGHT}"
     printf -- '- Frames: %s; warmup: %s\n' "${FRAMES}" "${WARMUP_FRAMES}"
     printf -- '- Sea state: Windy\n'
-    printf -- '- GPU samples are per-frame sums of non-overlapping leaf spans.\n'
-    printf -- '- Core-owned time is wave compute plus the ocean surface pass.\n'
+    printf -- '- GPU totals use the original non-overlapping render-graph spans.\n'
+    printf -- '- Surface time is estimated by subtracting a matched background-only run.\n'
+    printf -- '- Core-owned time is wave compute plus estimated ocean surface time.\n'
     printf -- '- Adapter time adds ocean-requested cloud shadow and reflection products.\n'
     printf -- '- Runs reject concurrent external GPU compute work.\n\n'
     printf '```tsv\n'

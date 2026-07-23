@@ -169,6 +169,9 @@ int main() {
                     ocean::ocean_detail_filter_from_name("bicubic") ==
                         ocean::OceanDetailFilter::Bicubic,
                 "ocean should parse explicit detail filter ablations");
+        require(ocean::ocean_render_view_from_name("background") ==
+                    ocean::OceanRenderView::Background,
+                "ocean should parse the background-only performance ablation");
         require(ocean::ocean_field_precision_from_name("") == ocean::OceanFieldPrecision::Half,
                 "empty ocean field precision config should resolve to the default half precision");
         require(ocean::ocean_field_precision_from_name("full") == ocean::OceanFieldPrecision::Full,
@@ -833,8 +836,11 @@ int main() {
                     ocean::OceanRenderView::Specular,
                 "ocean debug view cycle should include specular after planar validity");
         require(ocean::next_ocean_render_view(ocean::OceanRenderView::Specular) ==
+                    ocean::OceanRenderView::Background,
+                "ocean debug view cycle should include the background performance ablation");
+        require(ocean::next_ocean_render_view(ocean::OceanRenderView::Background) ==
                     ocean::OceanRenderView::Final,
-                "ocean debug view cycle should wrap after specular diagnostics");
+                "ocean debug view cycle should wrap after the background ablation");
 
         bool rejected = false;
         try {
@@ -1366,18 +1372,24 @@ int main() {
                          "ocean build should track extracted foam helpers");
         require_contains(cmake_source, "ocean_debug.glsl",
                          "ocean build should track extracted debug helpers");
+        require_contains(cmake_source, "CUBEY_OCEAN_DETAIL_FILTER=1",
+                         "ocean should compile a static bilinear filter variant");
+        require_contains(cmake_source, "CUBEY_OCEAN_DETAIL_FILTER=2",
+                         "ocean should compile a static bicubic filter variant");
         require_contains(fragment_shader, "#include \"ocean_shading.glsl\"",
                          "ocean fragment entry point should include shading helpers");
         require_contains(fragment_shader, "#include \"ocean_far_field.glsl\"",
                          "ocean fragment entry point should include far-field helpers");
         require_contains(fragment_shader, "#include \"ocean_foam.glsl\"",
                          "ocean fragment entry point should include foam helpers");
-        require_contains(fragment_shader, "sample_detail_texture",
-                         "ocean detail sampling should share the selected filter path");
+        require_contains(fragment_shader, "RETURN_DETAIL_TEXTURE",
+                         "ocean filter controls should preserve direct sampler references");
         require_contains(fragment_shader, "filter_mode == 1",
                          "ocean detail sampling should expose a bilinear ablation");
         require_contains(fragment_shader, "filter_mode == 2",
                          "ocean detail sampling should expose a bicubic ablation");
+        require_contains(gpu_resources_source, "surface_pipelines_[index]",
+                         "ocean should select filter variants without a fragment uniform branch");
         require_contains(fragment_shader, "#include \"ocean_debug.glsl\"",
                          "ocean fragment entry point should include debug helpers");
         require_contains(cmake_source, "shaders/cubey/atmosphere/atmosphere.frag",
@@ -1979,13 +1991,10 @@ int main() {
         require_contains(app_source, "ocean_cloud_shadow_half_extent_m",
                          "ocean cloud shadows should use a camera-scale local projection");
         require_before(app_source, "clouds.declare_shadow_product",
-                       "graph.add_pass(\"ocean surface\"",
+                       "graph.add_pass(\"ocean scene\"",
                        "ocean should generate cloud transmittance before drawing water");
-        require_before(app_source, "graph.add_pass(\"ocean background\"",
-                       "graph.add_pass(\"ocean surface\"",
-                       "ocean should draw the atmosphere before loading it under the surface");
-        require_contains(app_source, "cubey::vulkan::load_store_attachment_ops()",
-                         "ocean surface should preserve the attributed background pass");
+        require_contains(app_source, "render_view_ != OceanRenderView::Background",
+                         "ocean should expose an unperturbed background-only ablation");
         require_contains(app_source, "record_ocean_profile_metrics",
                          "ocean should export headless mesh metrics alongside GPU spans");
         require_contains(app_source, "\"submitted_triangles\"",

@@ -45,8 +45,12 @@ float ocean_detail_anti_repeat_strength() {
     return clamp(ocean_features.feature_options.w, 0.0, 1.0);
 }
 
+#ifndef CUBEY_OCEAN_DETAIL_FILTER
+#define CUBEY_OCEAN_DETAIL_FILTER 0
+#endif
+
 int ocean_detail_filter_mode() {
-    return int(clamp(floor(ocean_features.fade_options.x + 0.5), 0.0, 2.0));
+    return CUBEY_OCEAN_DETAIL_FILTER;
 }
 
 float ocean_terrain_foam_strength() {

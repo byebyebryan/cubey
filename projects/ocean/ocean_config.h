@@ -44,6 +44,7 @@ enum class OceanRenderView : std::uint32_t {
     Fresnel = 29,
     CloudReflectionValidity = 32,
     Specular = 33,
+    Background = 34,
 };
 
 enum class OceanFieldPrecision : std::uint32_t {
@@ -67,7 +68,7 @@ enum class OceanCloudReflectionSource : std::uint32_t {
     Planar = 1,
 };
 
-inline constexpr std::array<OceanRenderView, 28> kOceanRenderViews{
+inline constexpr std::array<OceanRenderView, 29> kOceanRenderViews{
     OceanRenderView::Final,           OceanRenderView::Height,       OceanRenderView::Displacement,
     OceanRenderView::Normal,          OceanRenderView::Foam,         OceanRenderView::FoamSource,
     OceanRenderView::FoamHistory,     OceanRenderView::Lod,          OceanRenderView::SkyRadiance,
@@ -78,6 +79,7 @@ inline constexpr std::array<OceanRenderView, 28> kOceanRenderViews{
     OceanRenderView::FarField,        OceanRenderView::CloudShadow,
     OceanRenderView::CloudReflection, OceanRenderView::WaterBody,    OceanRenderView::Fresnel,
     OceanRenderView::CloudReflectionValidity, OceanRenderView::Specular,
+    OceanRenderView::Background,
 };
 inline constexpr std::array<OceanFieldPrecision, 2> kOceanFieldPrecisions{
     OceanFieldPrecision::Full,
@@ -371,6 +373,8 @@ struct OceanCascadeLodBand {
         return "cloud-reflection-validity";
     case OceanRenderView::Specular:
         return "specular";
+    case OceanRenderView::Background:
+        return "background";
     }
     return "final";
 }

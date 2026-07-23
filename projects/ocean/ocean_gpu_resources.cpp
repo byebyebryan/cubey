@@ -169,7 +169,9 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
 
 void OceanGpuResources::reset() {
     profiler_.reset();
-    surface_pipeline_.reset();
+    for (auto& pipeline : surface_pipelines_) {
+        pipeline.reset();
+    }
     unpack_pipeline_.reset();
     fft_pipeline_.reset();
     modulate_pipeline_.reset();
@@ -628,26 +630,38 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
                                  .push_constants = {&unpack_push_constants, 1},
                              });
 
-    const std::array surface_shader_stage_files{
-        cubey::render::vertex_shader_file(shader_path(config.shader_dir, "ocean.vert.spv")),
-        cubey::render::fragment_shader_file(shader_path(config.shader_dir, "ocean.frag.spv")),
-    };
     const std::array surface_layouts{surface_layout_->handle()};
-    surface_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                          .extent = config.target_extent,
-                                          .color_format = config.color_format,
-                                          .depth_format = config.depth_format,
-                                          .shader_stage_files = surface_shader_stage_files,
-                                          .descriptor_set_layouts = surface_layouts,
-                                          .material_pass = ocean_surface_pass_info(),
-                                      });
+    for (std::size_t index = 0; index < surface_pipelines_.size(); ++index) {
+        const std::filesystem::path fragment_path =
+            index == 0U
+                ? shader_path(config.shader_dir, "ocean.frag.spv")
+                : config.shader_dir / "filters" /
+                      (index == 1U ? std::filesystem::path("bilinear")
+                                   : std::filesystem::path("bicubic")) /
+                      "ocean.frag.spv";
+        const std::array surface_shader_stage_files{
+            cubey::render::vertex_shader_file(shader_path(config.shader_dir, "ocean.vert.spv")),
+            cubey::render::fragment_shader_file(fragment_path),
+        };
+        surface_pipelines_[index].emplace(
+            device, cubey::render::GraphicsPipelineFileResourceConfig{
+                        .extent = config.target_extent,
+                        .color_format = config.color_format,
+                        .depth_format = config.depth_format,
+                        .shader_stage_files = surface_shader_stage_files,
+                        .descriptor_set_layouts = surface_layouts,
+                        .material_pass = ocean_surface_pass_info(),
+                    });
+    }
 }
 
-const cubey::render::GraphicsPipelineResource& OceanGpuResources::surface_pipeline() const {
-    if (!surface_pipeline_.has_value()) {
+const cubey::render::GraphicsPipelineResource&
+OceanGpuResources::surface_pipeline(OceanDetailFilter filter) const {
+    const std::size_t index = static_cast<std::size_t>(filter);
+    if (index >= surface_pipelines_.size() || !surface_pipelines_[index].has_value()) {
         throw std::runtime_error("ocean surface pipeline is not initialized");
     }
-    return surface_pipeline_.value();
+    return surface_pipelines_[index].value();
 }
 
 const cubey::render::ComputePipelineResource& OceanGpuResources::spectrum_pipeline() const {

@@ -51,6 +51,44 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
         ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_OCEAN_CLOUD_SHADER_DEPENDS}
+    )
+
+add_custom_target(cubey_project_ocean_bilinear_filter_shader)
+cubey_add_glsl_shaders(
+    cubey_project_ocean_bilinear_filter_shader
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/filters/bilinear"
+    DEFINES CUBEY_OCEAN_DETAIL_FILTER=1
+    INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        "${CMAKE_SOURCE_DIR}/shaders"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
+        ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
+    SOURCES shaders/ocean.frag
+)
+add_custom_target(cubey_project_ocean_bicubic_filter_shader)
+cubey_add_glsl_shaders(
+    cubey_project_ocean_bicubic_filter_shader
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/filters/bicubic"
+    DEFINES CUBEY_OCEAN_DETAIL_FILTER=2
+    INCLUDE_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        "${CMAKE_SOURCE_DIR}/shaders"
+    DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
+        ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
+    SOURCES shaders/ocean.frag
+)
+add_dependencies(
+    cubey_project_ocean
+    cubey_project_ocean_bilinear_filter_shader
+    cubey_project_ocean_bicubic_filter_shader
 )
 
 if (BUILD_TESTING)
