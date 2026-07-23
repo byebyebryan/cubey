@@ -137,8 +137,10 @@ MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-review-motion
 It records the source commit, emits a manifest and index, compares all three sea
 states at low/mid/high scales, covers cloudy noon and dawn/dusk/night lighting,
 and includes focused foam, reflection, shadow, specular, LOD, and far-field
-diagnostics. `profile_cloud_reflections.sh` is the focused cached-versus-planar
-performance harness.
+diagnostics. Use `profile_ocean_baseline.sh` for the whole-renderer 256/512/1024,
+half/full, camera-scale, and cloud-composition GPU matrix.
+`profile_cloud_reflections.sh` remains the focused cached-versus-planar
+reflection harness.
 
 Current decisions and boundaries are summarized in
 [Surface Ocean V1](../../docs/notes/ocean-surface-v1.md). Architecture and

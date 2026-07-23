@@ -5,6 +5,61 @@ Date: 2026-06-03
 These notes capture the current spectral-ocean cost model for
 `projects/ocean`. They are working notes, not final architecture guidance.
 
+## Measured Baseline
+
+The first whole-ocean GPU baseline was captured on 2026-07-23 at commit
+`521da2d503d69b3778480658b86f4cdf68bdd5a6` on the NVIDIA GeForce RTX 5070 Ti.
+Every lane used `1600 x 900`, Windy, 180 frames, 30 warmup frames, and 147
+steady GPU samples. The harness rejected concurrent external compute work.
+
+`total` is the per-frame sum of every recorded ocean GPU span. `wave` sums
+modulate, FFT, and unpack for both active cascades; one-time spectrum
+initialization is outside the warmed steady-state window.
+
+| Lane | Total mean / p50 / p95 | Wave p50 | Scene p50 | Cloud p50 |
+| --- | ---: | ---: | ---: | ---: |
+| 256 half, mid, clear | 1.855 / 1.855 / 1.865 ms | 0.153 ms | 1.689 ms | 0.000 ms |
+| 512 half, mid, clear | 2.263 / 2.262 / 2.271 ms | 0.318 ms | 1.930 ms | 0.000 ms |
+| 1024 half, mid, clear | 3.351 / 3.350 / 3.360 ms | 1.041 ms | 2.294 ms | 0.000 ms |
+| 512 full, mid, clear | 3.358 / 3.356 / 3.364 ms | 0.427 ms | 2.915 ms | 0.000 ms |
+| 512 half, low, clear | 1.643 / 1.643 / 1.656 ms | 0.318 ms | 1.311 ms | 0.000 ms |
+| 512 half, high, clear | 3.266 / 3.268 / 3.281 ms | 0.318 ms | 2.937 ms | 0.000 ms |
+| 512 half, mid, clouds cached | 3.954 / 3.878 / 4.990 ms | 0.320 ms | 1.936 ms | 1.610 ms |
+| 512 half, mid, clouds planar | 4.408 / 4.332 / 5.442 ms | 0.317 ms | 1.953 ms | 2.050 ms |
+
+The default clear path is primarily surface rendering, not FFT compute:
+`ocean scene` accounts for about 1.93 ms of the 2.26 ms p50 while steady wave
+generation accounts for about 0.32 ms. Camera altitude changes scene cost from
+1.31 ms at `low` to 2.94 ms at `high` while wave work stays constant. This
+points first to submitted clipmap and fragment/material work, then to FFT
+optimization.
+
+The full-precision lane adds about 1.09 ms over half precision, but most of the
+observed delta is in `ocean scene`, not the wave-compute spans. Treat this as a
+field-sampling/bandwidth lead to investigate rather than an established cause.
+The 1024 lane increases both wave and scene cost as expected.
+
+Cloud composition adds about 1.62 ms p50 with the cached reflection source.
+The planar reflection product adds another 0.45 ms. Both cloud lanes have an
+approximately 1.1 ms periodic cloud-environment refresh, which explains the
+higher p95 without affecting the steady p50.
+
+Observed device-local allocations were about 98 MiB for 256 half, 128 MiB for
+512 half, 248 MiB for 1024 half, 168 MiB for 512 full, and 440 MiB for the
+composed cloud lanes. These are whole-process allocations, not wave-texture-only
+estimates.
+
+Reproduce the matrix with:
+
+```sh
+projects/ocean/profile_ocean_baseline.sh outputs/ocean/performance-baseline
+```
+
+Raw captures and profiler artifacts remain ignored under `outputs/`. The
+headless profile currently reports zero submitted triangles, and wave
+self-shadow is included inside `ocean scene` rather than exposed as its own
+span. Both are instrumentation gaps, not zero-cost findings.
+
 ## Current Defaults
 
 The active ocean renderer defaults to:
@@ -172,10 +227,11 @@ The current direction is a hybrid model:
 
 ## Optimization Guardrails
 
-Before changing the algorithm again, capture measurements that include:
+Before changing the algorithm again, keep measurements that include:
 
 - per-pass GPU timings for spectrum, modulate, FFT, unpack, draw, self-shadow,
-  atmosphere, and post;
+  atmosphere, and post; the current baseline still needs separate draw and
+  self-shadow spans;
 - active cascade count, per-cascade map sizes, per-cascade update intervals,
   field precision, and enabled feature flags;
 - memory usage for all ocean wave resources;

@@ -59,8 +59,9 @@ the detailed foundation notes under `docs/architecture/`.
   captures and optimization candidates.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
-- [Ocean performance notes](ocean-performance.md): current spectral ocean FFT
-  cost model, observed map-size tradeoffs, and optimization guardrails.
+- [Ocean performance notes](ocean-performance.md): measured whole-renderer GPU
+  baseline, spectral FFT cost model, map-size tradeoffs, and optimization
+  guardrails.
 - [Surface Ocean V1](ocean-surface-v1.md): accepted local-ocean runtime,
   sea-state, lighting, LOD, removal, review, and terrain/planet boundaries.
 - [Ocean cloud lighting v1](ocean-cloud-lighting-v1.md): projected cloud shadow,
