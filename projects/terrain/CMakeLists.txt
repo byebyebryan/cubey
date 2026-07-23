@@ -68,9 +68,6 @@ add_custom_target(cubey_terrain_generate_default_asset
         --default-asset
         --output-dir "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}"
         --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
-    BYPRODUCTS
-        "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}/heightfield.json"
-        "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}/elevation.f32"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Generating the pinned seed-0 terrain heightfield"
     USES_TERMINAL
@@ -102,9 +99,6 @@ add_custom_target(cubey_terrain_generate_surface_study_asset
         --surface-study-asset
         --output-dir "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}"
         --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
-    BYPRODUCTS
-        "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/surface-fields.json"
-        "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/climate.f32"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Generating the pinned terrain surface-semantics climate companion"
     USES_TERMINAL
@@ -120,8 +114,6 @@ add_custom_target(cubey_terrain_generate_climate_calibration_assets
         --climate-calibration-assets
         --output-dir "${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}"
         --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
-    BYPRODUCTS
-        "${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}/calibration-index.json"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Generating five pinned terrain climate calibration regions"
     USES_TERMINAL
@@ -216,6 +208,8 @@ target_link_libraries(
 )
 
 if (BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
     set(
         CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET
         "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
@@ -258,6 +252,14 @@ if (BUILD_TESTING)
         NAME terrain_product_adapter_tests
         COMMAND cubey_project_terrain_product_adapter_tests
     )
+
+    add_test(
+        NAME terrain_source_cache_tests
+        COMMAND
+            "${Python3_EXECUTABLE}" -B
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_source_cache.py"
+    )
+    set_tests_properties(terrain_source_cache_tests PROPERTIES LABELS terrain)
 
     add_executable(cubey_project_terrain_shadow_tests terrain_shadow_tests.cpp)
     target_link_libraries(

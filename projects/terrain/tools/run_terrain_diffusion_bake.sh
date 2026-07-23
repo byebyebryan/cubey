@@ -4,10 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 BAKE_SCRIPT="${ROOT_DIR}/projects/terrain/tools/terrain_diffusion_bake.py"
 REFERENCE_OVERRIDE="${CUBEY_TERRAIN_DIFFUSION_ROOT:-}"
-REFERENCE_ROOT="${REFERENCE_OVERRIDE:-${CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT:-${HOME}/code/ref/terrain-diffusion}}"
-ENV_DIR="${CUBEY_TERRAIN_DIFFUSION_ENV:-${ROOT_DIR}/outputs/terrain/.terrain-diffusion-venv}"
+REFERENCE_ROOT="${REFERENCE_OVERRIDE:-${CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT:-${ROOT_DIR}/cache/terrain/tooling/v1/terrain-diffusion-src}}"
+ENV_DIR="${CUBEY_TERRAIN_DIFFUSION_ENV:-${ROOT_DIR}/cache/terrain/tooling/v1/terrain-diffusion-venv}"
 EXPECTED_REVISION="82a0431281f21a6ec3d691a12ee61525de5b0790"
 REFERENCE_URL="https://github.com/xandergos/terrain-diffusion.git"
+
+export PYTHONDONTWRITEBYTECODE=1
 
 force_regeneration=0
 for argument in "$@"; do

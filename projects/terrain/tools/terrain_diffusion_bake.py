@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import array
 import contextlib
 import dataclasses
 import hashlib
@@ -239,6 +240,44 @@ def _validate_pinned_source(source: object) -> None:
         raise RuntimeError("terrain source provenance does not match the pinned producer")
 
 
+def _require_integer(value: object, label: str, minimum: int, maximum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not minimum <= value <= maximum:
+        raise RuntimeError(f"{label} is invalid")
+    return value
+
+
+def _require_finite(value: object, label: str, *, positive: bool = False) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise RuntimeError(f"{label} is invalid")
+    result = float(value)
+    if not math.isfinite(result) or (positive and result <= 0.0):
+        raise RuntimeError(f"{label} is invalid")
+    return result
+
+
+def _validate_grid(grid: object, label: str) -> tuple[int, int]:
+    if not isinstance(grid, dict):
+        raise RuntimeError(f"{label} grid is missing")
+    width = _require_integer(grid.get("width"), f"{label} grid width", 2, 16_384)
+    height = _require_integer(grid.get("height"), f"{label} grid height", 2, 16_384)
+    _require_finite(grid.get("sample_spacing_m"), f"{label} sample spacing", positive=True)
+    _require_finite(grid.get("sample_origin_x_m"), f"{label} x origin")
+    _require_finite(grid.get("sample_origin_z_m"), f"{label} z origin")
+    if grid.get("axis_mapping") != {"world_x": "model_j", "world_z": "model_i"}:
+        raise RuntimeError(f"{label} axis mapping is incompatible")
+    return width, height
+
+
+def _read_float32_payload(path: Path, count: int, label: str) -> array.array:
+    values = array.array("f")
+    values.frombytes(path.read_bytes())
+    if sys.byteorder != "little":
+        values.byteswap()
+    if len(values) != count:
+        raise RuntimeError(f"{label} float count is invalid")
+    return values
+
+
 def _validate_payload_record(
     root: Path,
     record: object,
@@ -264,15 +303,71 @@ def _validate_payload_record(
     return verify_sha256_file(payload, expected_hash, str(payload))
 
 
+def _validate_float32_record(
+    root: Path,
+    record: object,
+    expected_name: str,
+    expected_shape: list[int],
+    expected_layout: str,
+    expected_sha256: str | None = None,
+) -> tuple[str, array.array]:
+    if (
+        not isinstance(record, dict)
+        or record.get("dtype") != "float32-le"
+        or record.get("layout") != expected_layout
+        or record.get("shape") != expected_shape
+        or record.get("byte_count") != math.prod(expected_shape) * 4
+    ):
+        raise RuntimeError(f"terrain payload contract is incompatible for {expected_name}")
+    payload_hash = _validate_payload_record(root, record, expected_name, expected_sha256)
+    values = _read_float32_payload(
+        root / expected_name, math.prod(expected_shape), expected_name
+    )
+    if not all(math.isfinite(value) for value in values):
+        raise RuntimeError(f"terrain payload contains non-finite values: {expected_name}")
+    return payload_hash, values
+
+
 def _validate_heightfield_bundle(root: Path, expected_sha256: str | None = None) -> str:
     manifest = _load_json(root / "heightfield.json")
-    if manifest.get("schema") != "cubey.terrain.heightfield.v1" or manifest.get("seed") != 0:
+    if (
+        manifest.get("schema") != "cubey.terrain.heightfield.v1"
+        or isinstance(manifest.get("seed"), bool)
+        or manifest.get("seed") != 0
+    ):
         raise RuntimeError("terrain heightfield manifest identity is incompatible")
-    _validate_pinned_source(manifest.get("source"))
+    source = manifest.get("source")
+    _validate_pinned_source(source)
+    if (
+        not isinstance(source, dict)
+        or not isinstance(source.get("id"), str)
+        or not source["id"]
+    ):
+        raise RuntimeError("terrain heightfield source id is missing")
+    width, height = _validate_grid(manifest.get("grid"), "terrain heightfield")
+    height_contract = manifest.get("height")
+    if not isinstance(height_contract, dict):
+        raise RuntimeError("terrain heightfield transform is missing")
+    _require_finite(height_contract.get("offset_m"), "terrain height offset")
+    _require_finite(height_contract.get("scale"), "terrain height scale", positive=True)
+    _require_finite(
+        height_contract.get("relief_scale_m"), "terrain relief scale", positive=True
+    )
     files = manifest.get("files")
     if not isinstance(files, dict):
         raise RuntimeError("terrain heightfield files are missing")
-    return _validate_payload_record(root, files.get("elevation"), "elevation.f32", expected_sha256)
+    elevation = files.get("elevation")
+    if not isinstance(elevation, dict) or elevation.get("unit") != "m":
+        raise RuntimeError("terrain elevation unit is incompatible")
+    elevation_sha256, _ = _validate_float32_record(
+        root,
+        elevation,
+        "elevation.f32",
+        [height, width],
+        "row-major-zx",
+        expected_sha256,
+    )
+    return elevation_sha256
 
 
 def _validate_surface_bundle(
@@ -281,21 +376,46 @@ def _validate_surface_bundle(
     expected_climate_sha256: str | None = None,
 ) -> str:
     manifest = _load_json(root / "surface-fields.json")
-    if manifest.get("schema") != SURFACE_STUDY_SCHEMA or manifest.get("seed") != 0:
+    if (
+        manifest.get("schema") != SURFACE_STUDY_SCHEMA
+        or isinstance(manifest.get("seed"), bool)
+        or manifest.get("seed") != 0
+    ):
         raise RuntimeError("terrain surface manifest identity is incompatible")
     _validate_pinned_source(manifest.get("source"))
     heightfield = manifest.get("heightfield")
     if (
         not isinstance(heightfield, dict)
+        or heightfield.get("schema") != "cubey.terrain.heightfield.v1"
         or heightfield.get("elevation_sha256") != expected_elevation_sha256
     ):
         raise RuntimeError("terrain surface fields are bound to another heightfield")
+    width, height = _validate_grid(manifest.get("grid"), "terrain surface")
     files = manifest.get("files")
     if not isinstance(files, dict):
         raise RuntimeError("terrain surface files are missing")
-    return _validate_payload_record(
-        root, files.get("climate"), "climate.f32", expected_climate_sha256
+    climate = files.get("climate")
+    expected_channels = [
+        {"name": name, "unit": unit} for name, unit in CLIMATE_CHANNELS
+    ]
+    if not isinstance(climate, dict) or climate.get("channels") != expected_channels:
+        raise RuntimeError("terrain climate channel contract is incompatible")
+    climate_sha256, values = _validate_float32_record(
+        root,
+        climate,
+        "climate.f32",
+        [len(CLIMATE_CHANNELS), height, width],
+        "channel-major-zx",
+        expected_climate_sha256,
     )
+    plane = width * height
+    if (
+        any(value < 0.0 for value in values[plane : 2 * plane])
+        or any(value < 0.0 for value in values[2 * plane : 3 * plane])
+        or any(value < 0.0 or value > 1.0 for value in values[3 * plane : 4 * plane])
+    ):
+        raise RuntimeError("terrain climate values violate declared physical ranges")
+    return climate_sha256
 
 
 def validate_existing_asset(mode: str, output_dir: Path) -> bool:
@@ -2064,7 +2184,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-cache",
         type=Path,
-        default=Path("outputs/terrain/.terrain-diffusion-data"),
+        default=Path("cache/terrain/tooling/v1/terrain-diffusion-data"),
     )
     parser.add_argument(
         "--force",

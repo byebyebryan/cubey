@@ -1,5 +1,6 @@
 build*/
 .cache/
 cache/
+__pycache__/
 compile_commands.json
 outputs/
