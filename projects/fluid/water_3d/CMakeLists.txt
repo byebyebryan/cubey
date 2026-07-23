@@ -123,7 +123,6 @@ if (BUILD_TESTING)
         water_3d_headless_writes_png
         cubey_project_water_3d
         "${CUBEY_WATER_3D_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --frames 4
         --grid-width 32
         --grid-height 32
@@ -137,7 +136,6 @@ if (BUILD_TESTING)
         water_3d_cloud_headless_writes_png
         cubey_project_water_3d
         "${CUBEY_WATER_3D_CLOUD_SMOKE_OUTPUT}"
-        --headless
         --frames 1
         --grid-width 32
         --grid-height 32

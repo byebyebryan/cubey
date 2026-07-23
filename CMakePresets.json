@@ -88,6 +88,27 @@
     {
       "name": "dev",
       "configurePreset": "dev",
+      "filter": {
+        "exclude": {
+          "label": "windowed"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-windowed",
+      "displayName": "Dev Windowed Smoke",
+      "configurePreset": "dev",
+      "environment": {
+        "CUBEY_ALLOW_WINDOWED_TESTS": "1"
+      },
+      "filter": {
+        "include": {
+          "label": "windowed"
+        }
+      },
       "output": {
         "outputOnFailure": true
       }
@@ -95,6 +116,11 @@
     {
       "name": "asan",
       "configurePreset": "asan",
+      "filter": {
+        "exclude": {
+          "label": "windowed"
+        }
+      },
       "output": {
         "outputOnFailure": true
       }
@@ -102,6 +128,11 @@
     {
       "name": "dev-terrain-studies",
       "configurePreset": "dev-terrain-studies",
+      "filter": {
+        "exclude": {
+          "label": "windowed"
+        }
+      },
       "output": {
         "outputOnFailure": true
       }

@@ -106,7 +106,6 @@ if(BUILD_TESTING)
         planet_headless_writes_png
         cubey_project_planet
         "${CUBEY_PLANET_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --frames 2
     )
     cubey_add_png_stats_test(
@@ -122,7 +121,6 @@ if(BUILD_TESTING)
             "${name}"
             cubey_project_planet
             "${output_path}"
-            --headless
             --frames 2
             --planet-pause-time
             ${ARGN}
@@ -233,7 +231,8 @@ if(BUILD_TESTING)
         --planet-time-hours
         18.13
     )
-    set_tests_properties(
+    cubey_label_tests(
+        sky
         planet_celestial_tests
         planet_headless_writes_png
         planet_headless_writes_png_stats
@@ -255,7 +254,6 @@ if(BUILD_TESTING)
         planet_day_moon_writes_png_stats
         planet_moon_occlusion_writes_png
         planet_moon_occlusion_writes_png_stats
-        PROPERTIES LABELS sky
     )
     cubey_add_planet_visual_smoke(
         planet_wire_lod_writes_png

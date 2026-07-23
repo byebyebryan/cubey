@@ -50,7 +50,6 @@ if (BUILD_TESTING)
         clouds_legacy_surface_headless_writes_png
         cubey_project_clouds_legacy
         "${CUBEY_CLOUDS_LEGACY_SURFACE_SMOKE_OUTPUT}"
-        --headless
         --frames
         2
         --cloud-camera-mode
@@ -70,7 +69,6 @@ if (BUILD_TESTING)
         clouds_legacy_high_headless_writes_png
         cubey_project_clouds_legacy
         "${CUBEY_CLOUDS_LEGACY_HIGH_SMOKE_OUTPUT}"
-        --headless
         --frames
         2
         --cloud-camera-mode
@@ -90,7 +88,6 @@ if (BUILD_TESTING)
         clouds_legacy_orbit_headless_writes_png
         cubey_project_clouds_legacy
         "${CUBEY_CLOUDS_LEGACY_ORBIT_SMOKE_OUTPUT}"
-        --headless
         --frames
         2
         --cloud-camera-mode

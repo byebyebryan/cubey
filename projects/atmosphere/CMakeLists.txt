@@ -60,7 +60,6 @@ if (BUILD_TESTING)
         atmosphere_headless_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_HEADLESS_SMOKE_OUTPUT}"
-        --headless
     )
     cubey_add_png_stats_test(
         atmosphere_headless_writes_png
@@ -76,7 +75,6 @@ if (BUILD_TESTING)
         atmosphere_solar_noon_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_SOLAR_NOON_SMOKE_OUTPUT}"
-        --headless
         --time-of-day-mode
         solar
         --time-hours
@@ -100,7 +98,6 @@ if (BUILD_TESTING)
         atmosphere_twilight_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_TWILIGHT_SMOKE_OUTPUT}"
-        --headless
         --time-of-day-mode
         solar
         --time-hours
@@ -124,7 +121,6 @@ if (BUILD_TESTING)
         atmosphere_night_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_NIGHT_SMOKE_OUTPUT}"
-        --headless
         --atmosphere-preset
         night
     )
@@ -142,7 +138,6 @@ if (BUILD_TESTING)
         atmosphere_stars_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_STARS_SMOKE_OUTPUT}"
-        --headless
         --atmosphere-preset
         night
         --debug-view
@@ -168,7 +163,6 @@ if (BUILD_TESTING)
         atmosphere_moonlit_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_MOONLIT_SMOKE_OUTPUT}"
-        --headless
         --atmosphere-preset
         moonlit-night
     )
@@ -186,7 +180,6 @@ if (BUILD_TESTING)
         atmosphere_moon_surface_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_MOON_SURFACE_SMOKE_OUTPUT}"
-        --headless
         --debug-view
         moon-surface
     )
@@ -204,7 +197,6 @@ if (BUILD_TESTING)
         atmosphere_milky_way_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_MILKY_WAY_SMOKE_OUTPUT}"
-        --headless
         --debug-view
         milky-way
     )
@@ -222,7 +214,6 @@ if (BUILD_TESTING)
         atmosphere_milky_way_dust_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_MILKY_WAY_DUST_SMOKE_OUTPUT}"
-        --headless
         --debug-view
         milky-way
         --milky-way-layer
@@ -242,7 +233,6 @@ if (BUILD_TESTING)
         atmosphere_milky_way_hii_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_MILKY_WAY_HII_SMOKE_OUTPUT}"
-        --headless
         --debug-view
         milky-way
         --milky-way-layer
@@ -262,7 +252,6 @@ if (BUILD_TESTING)
         atmosphere_transmittance_writes_png
         cubey_project_atmosphere
         "${CUBEY_ATMOSPHERE_TRANSMITTANCE_SMOKE_OUTPUT}"
-        --headless
         --debug-view
         transmittance
     )
@@ -273,16 +262,16 @@ if (BUILD_TESTING)
         0.005
     )
 
-    add_test(
-        NAME atmosphere_async_atlas_windowed_smoke
-        COMMAND
-            /bin/sh -c
-            "target=$1; out=$(\"$target\" --frames 60 --width 64 --height 64 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -eq 0 ]; then printf '%s\n' \"$out\" | grep -q 'atmosphere: .*rendering atmosphere project'; else printf '%s\n' \"$out\" | grep -q 'glfwInit failed\\|GLFW reports Vulkan is not supported'; fi"
-            "atmosphere_async_atlas_windowed_smoke"
-            "$<TARGET_FILE:cubey_project_atmosphere>"
+    cubey_add_windowed_smoke_test(
+        atmosphere_async_atlas_windowed_smoke
+        cubey_project_atmosphere
+        "atmosphere: .*rendering atmosphere project"
+        --frames
+        60
     )
     set_tests_properties(atmosphere_async_atlas_windowed_smoke PROPERTIES TIMEOUT 75)
-    set_tests_properties(
+    cubey_label_tests(
+        sky
         atmosphere_config_tests
         atmosphere_headless_writes_png
         atmosphere_headless_writes_png_stats
@@ -307,30 +296,29 @@ if (BUILD_TESTING)
         atmosphere_transmittance_writes_png
         atmosphere_transmittance_writes_png_stats
         atmosphere_async_atlas_windowed_smoke
-        PROPERTIES LABELS sky
     )
 
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/atmosphere-headless.mp4"
         )
-        add_test(
-            NAME atmosphere_headless_writes_video
-            COMMAND
-                /bin/sh -c
-                "output=$1; target=$2; rm -f \"$output\"; out=$(\"$target\" --headless --capture video --frames 60 --fps 60 --width 64 --height 64 --time-of-day-mode solar --time-speed-hours-per-second 2 --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then printf '%s\n' \"$out\" | grep -Eq 'no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found|vkCreateInstance'; exit; fi; test -s \"$output\"; strings \"$output\" | grep -q ftyp"
-                "atmosphere_headless_writes_video"
-                "${CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT}"
-                "$<TARGET_FILE:cubey_project_atmosphere>"
+        cubey_add_video_smoke_test(
+            atmosphere_headless_writes_video
+            cubey_project_atmosphere
+            "${CUBEY_ATMOSPHERE_HEADLESS_VIDEO_SMOKE_OUTPUT}"
+            --frames
+            60
+            --fps
+            60
+            --time-of-day-mode
+            solar
+            --time-speed-hours-per-second
+            2
         )
         set_tests_properties(
             atmosphere_headless_writes_video
             PROPERTIES TIMEOUT 30
         )
-        set_property(
-            TEST atmosphere_headless_writes_video
-            APPEND
-            PROPERTY ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/cmake/lsan.supp"
-        )
+        cubey_label_tests(sky atmosphere_headless_writes_video)
     endif()
 endif()

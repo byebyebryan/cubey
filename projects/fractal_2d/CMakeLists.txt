@@ -37,6 +37,5 @@ if (BUILD_TESTING)
         fractal_2d_headless_writes_png
         cubey_project_fractal_2d
         "${CUBEY_FRACTAL_2D_HEADLESS_SMOKE_OUTPUT}"
-        --headless
     )
 endif()

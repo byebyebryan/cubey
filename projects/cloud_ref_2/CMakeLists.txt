@@ -52,7 +52,6 @@ if (BUILD_TESTING)
         cloud_ref_2_surface_headless_writes_png
         cubey_project_cloud_ref_2
         "${CUBEY_CLOUD_REF_2_SURFACE_SMOKE_OUTPUT}"
-        --headless
         --frames
         70
         --cloud-camera-mode
@@ -72,7 +71,6 @@ if (BUILD_TESTING)
         cloud_ref_2_high_headless_writes_png
         cubey_project_cloud_ref_2
         "${CUBEY_CLOUD_REF_2_HIGH_SMOKE_OUTPUT}"
-        --headless
         --frames
         70
         --cloud-camera-mode

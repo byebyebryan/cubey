@@ -27,7 +27,6 @@ if (BUILD_TESTING)
         explosion_3d_headless_writes_png
         cubey_project_explosion_3d
         "${CUBEY_EXPLOSION_3D_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --frames 4
         --grid-width 32
         --grid-height 32

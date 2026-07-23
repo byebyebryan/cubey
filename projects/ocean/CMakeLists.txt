@@ -78,7 +78,6 @@ if (BUILD_TESTING)
         ocean_headless_writes_png
         cubey_project_ocean
         "${CUBEY_OCEAN_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --frames
         4
         --ocean-map-size
@@ -91,7 +90,6 @@ if (BUILD_TESTING)
         ocean_cached_cloud_environment_writes_png
         cubey_project_ocean
         "${CUBEY_OCEAN_CACHED_CLOUD_SMOKE_OUTPUT}"
-        --headless
         --frames
         4
         --ocean-map-size
@@ -108,7 +106,6 @@ if (BUILD_TESTING)
         ocean_planar_cloud_reflection_writes_png
         cubey_project_ocean
         "${CUBEY_OCEAN_PLANAR_CLOUD_SMOKE_OUTPUT}"
-        --headless
         --frames
         4
         --ocean-map-size

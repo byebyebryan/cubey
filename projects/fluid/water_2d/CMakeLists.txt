@@ -80,7 +80,6 @@ if (BUILD_TESTING)
         water_2d_headless_writes_png
         cubey_project_water_2d
         "${CUBEY_WATER_2D_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --frames 8
     )
     if (CUBEY_HAS_LIBAV)

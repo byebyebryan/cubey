@@ -90,7 +90,6 @@ if (BUILD_TESTING)
         gltf_viewer_headless_writes_png
         cubey_project_gltf_viewer
         "${CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT}"
-        --headless
     )
     set(CUBEY_GLTF_VIEWER_STATIC_ENV_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-static-env-headless-smoke.png"
@@ -99,7 +98,6 @@ if (BUILD_TESTING)
         gltf_viewer_static_environment_headless_writes_png
         cubey_project_gltf_viewer
         "${CUBEY_GLTF_VIEWER_STATIC_ENV_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --pbr-environment-source
         static
     )
@@ -111,7 +109,6 @@ if (BUILD_TESTING)
         gltf_viewer_terrain_backdrop_headless_writes_png
         cubey_project_gltf_viewer
         "${CUBEY_GLTF_VIEWER_TERRAIN_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --terrain-heightfield
         "${CUBEY_GLTF_VIEWER_TERRAIN_SMOKE_ASSET}"
         --terrain-foreground-height
@@ -154,7 +151,6 @@ if (BUILD_TESTING)
             "${test_name}"
             cubey_project_gltf_viewer
             "${CMAKE_CURRENT_BINARY_DIR}/${output_name}"
-            --headless
             --input "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
         )
     endfunction()

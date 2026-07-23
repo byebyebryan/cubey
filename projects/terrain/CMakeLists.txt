@@ -286,7 +286,6 @@ if (BUILD_TESTING)
         terrain_backdrop_headless_writes_png
         cubey_project_terrain
         "${CUBEY_TERRAIN_BACKDROP_SMOKE_OUTPUT}"
-        --headless
         --terrain-heightfield
         "${CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET}"
         --terrain-placement
@@ -301,6 +300,16 @@ if (BUILD_TESTING)
         0.05
     )
 
+    cubey_label_tests(
+        terrain
+        terrain_config_tests
+        terrain_raster_climate_source_tests
+        terrain_product_adapter_tests
+        terrain_shadow_tests
+        terrain_surface_model_tests
+        terrain_backdrop_headless_writes_png
+        terrain_backdrop_headless_writes_png_stats
+    )
     set_tests_properties(
         terrain_config_tests
         terrain_raster_climate_source_tests
@@ -309,6 +318,6 @@ if (BUILD_TESTING)
         terrain_surface_model_tests
         terrain_backdrop_headless_writes_png
         terrain_backdrop_headless_writes_png_stats
-        PROPERTIES LABELS terrain TIMEOUT 120
+        PROPERTIES TIMEOUT 120
     )
 endif()

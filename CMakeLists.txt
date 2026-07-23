@@ -387,6 +387,26 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
             "${CUBEY_CLASSIC_RENDERING_PATTERN}"
             ${CUBEY_DYNAMIC_RENDERING_SCAN_DIRS}
     )
+    file(
+        GLOB_RECURSE
+        CUBEY_CAPTURE_REVIEW_SCRIPTS
+        CONFIGURE_DEPENDS
+        "${CMAKE_SOURCE_DIR}/projects/capture*.sh"
+        "${CMAKE_SOURCE_DIR}/projects/*/capture*.sh"
+    )
+    add_test(
+        NAME capture_review_scripts_use_headless
+        COMMAND
+            /bin/sh -c
+            "failed=0; for script in \"$@\"; do if ! grep -q -- '--headless' \"$script\"; then printf 'capture review script does not select --headless: %s\n' \"$script\"; failed=1; fi; done; exit \"$failed\""
+            capture_review_scripts_use_headless
+            ${CUBEY_CAPTURE_REVIEW_SCRIPTS}
+    )
+    set_property(
+        TEST capture_review_scripts_use_headless
+        APPEND
+        PROPERTY LABELS "headless;policy"
+    )
 endif()
 
 if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)

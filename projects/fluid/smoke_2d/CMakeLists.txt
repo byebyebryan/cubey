@@ -66,7 +66,6 @@ if (BUILD_TESTING)
         smoke_2d_headless_writes_png
         cubey_project_smoke_2d
         "${CUBEY_SMOKE_2D_HEADLESS_SMOKE_OUTPUT}"
-        --headless
         --frames 8
     )
     if (CUBEY_HAS_LIBAV)
