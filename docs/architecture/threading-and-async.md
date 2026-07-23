@@ -351,7 +351,8 @@ Near-term test strategy:
 - Test worker exception propagation.
 - Test shutdown behavior: accepted jobs complete, new jobs are rejected after
   shutdown starts.
-- Keep current CTest window/no-display/headless coverage.
+- Keep no-session headless CTest coverage in the default suite and preserve
+  GLFW/swapchain coverage in the explicit `dev-windowed` suite.
 - Add a thread-sanitizer preset once the first real concurrent code lands.
 - Add a fake upload/capture queue test before threading it into Vulkan.
 

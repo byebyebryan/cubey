@@ -216,6 +216,22 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
+The default test preset excludes all windowed smoke tests. Headless PNG and
+video smokes run with desktop-session environment variables removed and require
+the offscreen host to report a successful capture. This keeps ordinary local
+and SSH validation independent of SDDM, X11, and Wayland sessions while still
+requiring an accessible Vulkan device.
+
+Run the GLFW/swapchain smoke suite only when opening windows is intentional:
+
+```bash
+ctest --preset dev-windowed
+```
+
+Windowed tests also require `CUBEY_ALLOW_WINDOWED_TESTS=1` at execution time, so
+a raw `ctest --test-dir build/dev` safely skips them. Directly launching an
+application without `--headless` remains interactive.
+
 GLFW, cgltf, stb, Basis Universal, and GLM fallback sources are resolved by
 CMake through `FetchContent` or `find_package` where appropriate; they are not
 the system packages that make Vulkan itself available.

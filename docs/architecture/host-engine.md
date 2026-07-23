@@ -237,6 +237,15 @@ setup before swapchain setup, and callback forwarding.
   `gltf_viewer --headless`, and `pbr_furnace --headless` use the headless host
   while keeping their resource setup, simulation/update work, and capture
   command recording sequence local.
+- Automated PNG and video smokes select the headless host centrally rather
+  than relying on every project call site to pass `--headless`. Their launch
+  environment removes display and desktop-session variables, and successful
+  tests require both a valid artifact and the headless-host completion marker.
+- GLFW/swapchain smokes are labeled `windowed`, require the positive
+  `CUBEY_ALLOW_WINDOWED_TESTS=1` execution gate, and run through the explicit
+  `dev-windowed` test preset. The default presets exclude them. This preserves
+  interactive host coverage without opening windows during ordinary local or
+  SSH validation.
 - `cubey::Engine` is the first scoped root owner. It lives in the engine layer
   because it composes project runtime services, the render resource handle
   registry, renderer instance lifetime, and created `Scene` instances, but does
