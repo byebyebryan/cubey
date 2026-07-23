@@ -76,7 +76,7 @@ level. Production assets, Python dependencies, and model weights remain outside
 Git and outside the renderer process. One small deterministic raster fixture is
 tracked under `tests/assets/terrain` for executable integration smokes.
 
-The default build-tree asset is generated only by the explicit
+The default worktree source bundle is generated only by the explicit
 `cubey_terrain_generate_default_asset` target. Ordinary configure, build, and
 test have no network or generation side effects. Missing data is an error, not
 a reason to switch source models.

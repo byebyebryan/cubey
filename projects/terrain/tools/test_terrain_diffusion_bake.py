@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import random
 import sys
 from pathlib import Path
@@ -189,6 +190,39 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
             self.assertEqual(bake.verify_sha256_file(path, expected, "fixture"), expected)
             with self.assertRaisesRegex(RuntimeError, "fixture SHA-256 mismatch"):
                 bake.verify_sha256_file(path, "0" * 64, "fixture")
+
+    def test_existing_default_asset_is_reused_only_after_payload_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            payload = root / "elevation.f32"
+            payload.write_bytes(b"deterministic terrain fixture")
+            payload_hash = bake.sha256_file(payload)
+            manifest = {
+                "schema": "cubey.terrain.heightfield.v1",
+                "source": {
+                    "generator": "terrain-diffusion",
+                    "code_revision": bake.CODE_REVISION,
+                    "model_id": bake.MODEL_ID,
+                    "model_revision": bake.MODEL_REVISION,
+                },
+                "seed": 0,
+                "files": {
+                    "elevation": {
+                        "path": payload.name,
+                        "byte_count": payload.stat().st_size,
+                        "sha256": payload_hash,
+                    }
+                },
+            }
+            (root / "heightfield.json").write_text(json.dumps(manifest))
+            original_hash = bake.DEFAULT_ASSET_ELEVATION_SHA256
+            bake.DEFAULT_ASSET_ELEVATION_SHA256 = payload_hash
+            try:
+                self.assertTrue(bake.validate_existing_asset("default", root))
+                payload.write_bytes(b"corrupt")
+                self.assertFalse(bake.validate_existing_asset("default", root))
+            finally:
+                bake.DEFAULT_ASSET_ELEVATION_SHA256 = original_hash
 
     def test_data_cache_rejects_bad_worldclim_archive_before_extraction(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

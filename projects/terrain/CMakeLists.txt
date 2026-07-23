@@ -1,33 +1,73 @@
 set(
+    CUBEY_TERRAIN_CACHE_ROOT
+    "${CMAKE_SOURCE_DIR}/cache/terrain"
+    CACHE PATH "Worktree-local terrain cache root"
+)
+set(
     CUBEY_TERRAIN_DEFAULT_ASSET_DIR
-    "${CMAKE_BINARY_DIR}/assets/terrain/default"
+    "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/default"
     CACHE PATH "Canonical generated terrain heightfield directory"
 )
 set(
     CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR
-    "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-src"
-    CACHE PATH "Build-local pinned terrain-diffusion checkout"
+    "${CUBEY_TERRAIN_CACHE_ROOT}/tooling/v1/terrain-diffusion-src"
+    CACHE PATH "Worktree-local pinned terrain-diffusion checkout"
+)
+set(
+    CUBEY_TERRAIN_DIFFUSION_ENV_DIR
+    "${CUBEY_TERRAIN_CACHE_ROOT}/tooling/v1/terrain-diffusion-venv"
+    CACHE PATH "Worktree-local terrain-diffusion Python environment"
+)
+set(
+    CUBEY_TERRAIN_DIFFUSION_DATA_DIR
+    "${CUBEY_TERRAIN_CACHE_ROOT}/tooling/v1/terrain-diffusion-data"
+    CACHE PATH "Worktree-local terrain-diffusion data cache"
 )
 set(
     CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR
-    "${CMAKE_BINARY_DIR}/assets/terrain/surface-study"
+    "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/surface-study"
     CACHE PATH "Generated terrain surface-semantics climate companion directory"
 )
 set(
     CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR
-    "${CMAKE_BINARY_DIR}/assets/terrain/climate-calibration"
+    "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/climate-calibration"
     CACHE PATH "Generated cross-climate terrain calibration asset directory"
 )
+
+# Migrate only the former build-local defaults; explicit caller overrides remain authoritative.
+if(CUBEY_TERRAIN_DEFAULT_ASSET_DIR STREQUAL "${CMAKE_BINARY_DIR}/assets/terrain/default")
+    set(CUBEY_TERRAIN_DEFAULT_ASSET_DIR
+        "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/default"
+        CACHE PATH "Canonical generated terrain heightfield directory" FORCE)
+endif()
+if(CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR STREQUAL
+   "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-src")
+    set(CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR
+        "${CUBEY_TERRAIN_CACHE_ROOT}/tooling/v1/terrain-diffusion-src"
+        CACHE PATH "Worktree-local pinned terrain-diffusion checkout" FORCE)
+endif()
+if(CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR STREQUAL
+   "${CMAKE_BINARY_DIR}/assets/terrain/surface-study")
+    set(CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR
+        "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/surface-study"
+        CACHE PATH "Generated terrain surface-semantics climate companion directory" FORCE)
+endif()
+if(CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR STREQUAL
+   "${CMAKE_BINARY_DIR}/assets/terrain/climate-calibration")
+    set(CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR
+        "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/climate-calibration"
+        CACHE PATH "Generated cross-climate terrain calibration asset directory" FORCE)
+endif()
 
 add_custom_target(cubey_terrain_generate_default_asset
     COMMAND
         "${CMAKE_COMMAND}" -E env
         "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
-        "CUBEY_TERRAIN_DIFFUSION_ENV=${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-venv"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
         --default-asset
         --output-dir "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}"
-        --data-cache "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-data"
+        --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
     BYPRODUCTS
         "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}/heightfield.json"
         "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}/elevation.f32"
@@ -37,15 +77,31 @@ add_custom_target(cubey_terrain_generate_default_asset
     VERBATIM
 )
 
+add_custom_target(cubey_terrain_regenerate_default_asset
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
+        --default-asset
+        --force
+        --output-dir "${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}"
+        --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Regenerating the pinned seed-0 terrain heightfield"
+    USES_TERMINAL
+    VERBATIM
+)
+
 add_custom_target(cubey_terrain_generate_surface_study_asset
     COMMAND
         "${CMAKE_COMMAND}" -E env
         "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
-        "CUBEY_TERRAIN_DIFFUSION_ENV=${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-venv"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
         --surface-study-asset
         --output-dir "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}"
-        --data-cache "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-data"
+        --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
     BYPRODUCTS
         "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/surface-fields.json"
         "${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}/climate.f32"
@@ -59,11 +115,11 @@ add_custom_target(cubey_terrain_generate_climate_calibration_assets
     COMMAND
         "${CMAKE_COMMAND}" -E env
         "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
-        "CUBEY_TERRAIN_DIFFUSION_ENV=${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-venv"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
         --climate-calibration-assets
         --output-dir "${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}"
-        --data-cache "${CMAKE_BINARY_DIR}/_deps/terrain-diffusion-data"
+        --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
     BYPRODUCTS
         "${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}/calibration-index.json"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"

@@ -220,6 +220,116 @@ def verify_sha256_file(path: Path, expected: str, label: str) -> str:
     return actual
 
 
+def _load_json(path: Path) -> dict[str, object]:
+    document = json.loads(path.read_text())
+    if not isinstance(document, dict):
+        raise RuntimeError(f"expected an object in {path}")
+    return document
+
+
+def _validate_pinned_source(source: object) -> None:
+    if not isinstance(source, dict):
+        raise RuntimeError("terrain source metadata is missing")
+    if (
+        source.get("generator") != "terrain-diffusion"
+        or source.get("code_revision") != CODE_REVISION
+        or source.get("model_id") != MODEL_ID
+        or source.get("model_revision") != MODEL_REVISION
+    ):
+        raise RuntimeError("terrain source provenance does not match the pinned producer")
+
+
+def _validate_payload_record(
+    root: Path,
+    record: object,
+    expected_name: str,
+    expected_sha256: str | None = None,
+) -> str:
+    if not isinstance(record, dict) or record.get("path") != expected_name:
+        raise RuntimeError(f"terrain payload record must reference {expected_name}")
+    payload = root / expected_name
+    byte_count = record.get("byte_count")
+    expected_hash = record.get("sha256")
+    if (
+        not isinstance(byte_count, int)
+        or byte_count <= 0
+        or not isinstance(expected_hash, str)
+        or len(expected_hash) != 64
+        or not payload.is_file()
+        or payload.stat().st_size != byte_count
+    ):
+        raise RuntimeError(f"terrain payload contract is incomplete for {payload}")
+    if expected_sha256 is not None and expected_hash != expected_sha256:
+        raise RuntimeError(f"terrain payload identity changed for {payload}")
+    return verify_sha256_file(payload, expected_hash, str(payload))
+
+
+def _validate_heightfield_bundle(root: Path, expected_sha256: str | None = None) -> str:
+    manifest = _load_json(root / "heightfield.json")
+    if manifest.get("schema") != "cubey.terrain.heightfield.v1" or manifest.get("seed") != 0:
+        raise RuntimeError("terrain heightfield manifest identity is incompatible")
+    _validate_pinned_source(manifest.get("source"))
+    files = manifest.get("files")
+    if not isinstance(files, dict):
+        raise RuntimeError("terrain heightfield files are missing")
+    return _validate_payload_record(root, files.get("elevation"), "elevation.f32", expected_sha256)
+
+
+def _validate_surface_bundle(
+    root: Path,
+    expected_elevation_sha256: str,
+    expected_climate_sha256: str | None = None,
+) -> str:
+    manifest = _load_json(root / "surface-fields.json")
+    if manifest.get("schema") != SURFACE_STUDY_SCHEMA or manifest.get("seed") != 0:
+        raise RuntimeError("terrain surface manifest identity is incompatible")
+    _validate_pinned_source(manifest.get("source"))
+    heightfield = manifest.get("heightfield")
+    if (
+        not isinstance(heightfield, dict)
+        or heightfield.get("elevation_sha256") != expected_elevation_sha256
+    ):
+        raise RuntimeError("terrain surface fields are bound to another heightfield")
+    files = manifest.get("files")
+    if not isinstance(files, dict):
+        raise RuntimeError("terrain surface files are missing")
+    return _validate_payload_record(
+        root, files.get("climate"), "climate.f32", expected_climate_sha256
+    )
+
+
+def validate_existing_asset(mode: str, output_dir: Path) -> bool:
+    try:
+        root = output_dir.resolve()
+        if mode == "default":
+            _validate_heightfield_bundle(root, DEFAULT_ASSET_ELEVATION_SHA256)
+        elif mode == "surface-study":
+            _validate_surface_bundle(
+                root, DEFAULT_ASSET_ELEVATION_SHA256, DEFAULT_ASSET_CLIMATE_SHA256
+            )
+        elif mode == "climate-calibration":
+            index = _load_json(root / "calibration-index.json")
+            if index.get("schema") != CLIMATE_CALIBRATION_SCHEMA or index.get("seed") != 0:
+                raise RuntimeError("terrain climate calibration index is incompatible")
+            _validate_pinned_source(index.get("source"))
+            for name in CLIMATE_EXPECTED_ORIGINS:
+                region = root / name
+                elevation_sha256 = _validate_heightfield_bundle(
+                    region,
+                    DEFAULT_ASSET_ELEVATION_SHA256 if name == "hot-dry" else None,
+                )
+                _validate_surface_bundle(
+                    region,
+                    elevation_sha256,
+                    DEFAULT_ASSET_CLIMATE_SHA256 if name == "hot-dry" else None,
+                )
+        else:
+            return False
+        return True
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError, RuntimeError):
+        return False
+
+
 def git_revision(path: Path) -> str:
     return subprocess.check_output(
         ["git", "-C", str(path), "rev-parse", "HEAD"], text=True
@@ -1956,6 +2066,16 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("outputs/terrain/.terrain-diffusion-data"),
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="regenerate even when the complete pinned output bundle validates",
+    )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         "--default-asset",
@@ -1977,6 +2097,23 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    mode = (
+        "default"
+        if args.default_asset
+        else "surface-study"
+        if args.surface_study_asset
+        else "climate-calibration"
+        if args.climate_calibration_assets
+        else ""
+    )
+    if args.validate_only:
+        if mode and validate_existing_asset(mode, args.output_dir):
+            print(f"terrain diffusion {mode}: reused {args.output_dir.resolve()}")
+            return 0
+        return 1
+    if mode and not args.force and validate_existing_asset(mode, args.output_dir):
+        print(f"terrain diffusion {mode}: reused {args.output_dir.resolve()}")
+        return 0
     if args.default_asset:
         bake_default_asset(args.reference_root, args.output_dir, args.data_cache)
     elif args.surface_study_asset:

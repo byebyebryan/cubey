@@ -2,11 +2,23 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+BAKE_SCRIPT="${ROOT_DIR}/projects/terrain/tools/terrain_diffusion_bake.py"
 REFERENCE_OVERRIDE="${CUBEY_TERRAIN_DIFFUSION_ROOT:-}"
 REFERENCE_ROOT="${REFERENCE_OVERRIDE:-${CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT:-${HOME}/code/ref/terrain-diffusion}}"
 ENV_DIR="${CUBEY_TERRAIN_DIFFUSION_ENV:-${ROOT_DIR}/outputs/terrain/.terrain-diffusion-venv}"
 EXPECTED_REVISION="82a0431281f21a6ec3d691a12ee61525de5b0790"
 REFERENCE_URL="https://github.com/xandergos/terrain-diffusion.git"
+
+force_regeneration=0
+for argument in "$@"; do
+  if [[ "${argument}" == "--force" ]]; then
+    force_regeneration=1
+    break
+  fi
+done
+if [[ ${force_regeneration} -eq 0 ]] && python3 "${BAKE_SCRIPT}" "$@" --validate-only; then
+  exit 0
+fi
 
 if [[ ! -d "${REFERENCE_ROOT}/.git" ]]; then
   if [[ -n "${REFERENCE_OVERRIDE}" ]]; then
@@ -46,5 +58,5 @@ if [[ "${1:-}" == "--test" ]]; then
 fi
 
 exec "${ENV_DIR}/bin/python" \
-  "${ROOT_DIR}/projects/terrain/tools/terrain_diffusion_bake.py" \
+  "${BAKE_SCRIPT}" \
   --reference-root "${REFERENCE_ROOT}" "$@"

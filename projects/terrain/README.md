@@ -50,9 +50,15 @@ cmake --build --preset dev --target cubey_terrain_generate_default_asset
 ```
 
 The target uses `CUBEY_TERRAIN_DIFFUSION_ROOT` when provided. Otherwise it
-creates a pinned source checkout, Python environment, data cache, and model
-cache under `build/dev/_deps`. Generated runtime files are written to
-`build/dev/assets/terrain/default` and are not committed.
+creates a pinned source checkout, Python environment, and data cache under the
+Git-ignored worktree path `cache/terrain/tooling/v1`. Generated runtime files
+are written to `cache/terrain/sources/v1/default`, shared by Debug and Release,
+and are not committed. A complete bundle is SHA-256 validated and reused;
+explicitly rebuild it with:
+
+```sh
+cmake --build --preset dev --target cubey_terrain_regenerate_default_asset
+```
 
 Normal configure, build, and test never download or generate this data. If the
 default or selected asset is missing, both GUI and headless startup fail with
@@ -68,7 +74,7 @@ cmake --build --preset dev \
 ```
 
 The calibration pack is written under
-`build/dev/assets/terrain/climate-calibration`. It is evidence for the
+`cache/terrain/sources/v1/climate-calibration`. It is evidence for the
 experimental surface model, not a production asset or biome contract.
 
 ## Build And Run
