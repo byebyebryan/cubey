@@ -112,6 +112,7 @@ struct OceanPushConstants {
     cubey::math::Vec4 cascade4_options;
     cubey::math::Vec4 water_color;
     cubey::math::Vec4 foam_color;
+    cubey::math::Vec4 quality_options;
 };
 
 struct OceanSpectrumPushConstants {
@@ -146,7 +147,7 @@ struct OceanReferencePillarPushConstants {
     cubey::math::Vec4 light_direction;
 };
 
-static_assert(sizeof(OceanPushConstants) == sizeof(float) * 60U);
+static_assert(sizeof(OceanPushConstants) == sizeof(float) * 64U);
 static_assert(sizeof(OceanSpectrumPushConstants) == sizeof(float) * 16U);
 static_assert(sizeof(OceanTerrainFieldUniforms) == sizeof(float) * 8U);
 static_assert(sizeof(OceanModulatePushConstants) == sizeof(float) * 8U);
@@ -177,6 +178,7 @@ struct OceanMeshDrawPlan {
     OceanSurfaceFrame surface_frame{};
     OceanMeshPatchList patches{};
     std::array<bool, kOceanMaxMeshPatches> visible_patches{};
+    std::array<OceanPatchShadingPlan, kOceanMaxMeshPatches> shading_plans{};
     OceanMeshDrawStats stats{};
 };
 
@@ -936,6 +938,10 @@ class OceanApp {
         metric("culled_patches", draw_plan.stats.culled_patches);
         metric("generated_triangles", draw_plan.stats.generated_triangles);
         metric("submitted_triangles", draw_plan.stats.submitted_triangles);
+        metric("reduced_filter_patches", draw_plan.stats.reduced_filter_patches);
+        metric("reduced_filter_triangles", draw_plan.stats.reduced_filter_triangles);
+        metric("reduced_shadow_patches", draw_plan.stats.reduced_shadow_patches);
+        metric("reduced_shadow_triangles", draw_plan.stats.reduced_shadow_triangles);
     }
 
     void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
@@ -1467,13 +1473,27 @@ class OceanApp {
             ocean_mesh_total_triangle_count(plan.surface_frame.mesh_config);
         for (std::size_t index = 0; index < plan.patches.count; ++index) {
             const OceanMeshPatch& patch = plan.patches.patches[index];
+            const OceanPatchShadingPlan shading_plan = ocean_patch_shading_plan(
+                ocean_config_, patch, transform.translation.x, transform.translation.z,
+                plan.surface_frame.horizon.camera_altitude_m, camera_.fovy_radians(),
+                extent.height);
+            plan.shading_plans[index] = shading_plan;
             const cubey::Bounds3D bounds = ocean_mesh_patch_world_bounds(
                 ocean_config_, plan.surface_frame, patch, transform.translation);
             const bool visible = cubey::scene::intersects(frustum, bounds);
             plan.visible_patches[index] = visible;
             if (visible) {
                 ++plan.stats.submitted_patches;
-                plan.stats.submitted_triangles += ocean_mesh_patch_triangle_count(patch);
+                const std::uint32_t triangles = ocean_mesh_patch_triangle_count(patch);
+                plan.stats.submitted_triangles += triangles;
+                if (shading_plan.detail_filter_reduced) {
+                    ++plan.stats.reduced_filter_patches;
+                    plan.stats.reduced_filter_triangles += triangles;
+                }
+                if (shading_plan.self_shadow_reduced) {
+                    ++plan.stats.reduced_shadow_patches;
+                    plan.stats.reduced_shadow_triangles += triangles;
+                }
             }
         }
         plan.stats.culled_patches = plan.stats.generated_patches - plan.stats.submitted_patches;
@@ -1482,7 +1502,9 @@ class OceanApp {
 
     [[nodiscard]] OceanPushConstants surface_push_constants(VkExtent2D extent,
                                                             const OceanSurfaceFrame& surface_frame,
-                                                            const OceanMeshPatch& patch) const {
+                                                            const OceanMeshPatch& patch,
+                                                            const OceanPatchShadingPlan&
+                                                                shading_plan) const {
         const cubey::Transform3D transform = camera_transform();
         const cubey::math::Mat4 view_projection =
             ocean_view_projection_matrix(extent, transform, surface_frame);
@@ -1570,6 +1592,13 @@ class OceanApp {
                     ocean_config_.foam_color_g,
                     ocean_config_.foam_color_b,
                     ocean_config_.normal_strength,
+                },
+            .quality_options =
+                {
+                    static_cast<float>(shading_plan.self_shadow_steps),
+                    shading_plan.conservative_footprint_m,
+                    static_cast<float>(shading_plan.detail_filter),
+                    shading_plan.self_shadow_reduced ? 1.0F : 0.0F,
                 },
         };
     }
@@ -1929,21 +1958,28 @@ class OceanApp {
                            cubey::render::FrameSlot frame_slot,
                            const cubey::render::CloudLayerShadowProduct* cloud_shadow) const {
         const OceanMeshDrawPlan draw_plan = ocean_mesh_draw_plan(extent);
-        const cubey::render::GraphicsPipelineResource& surface_pipeline =
-            ocean_gpu_.surface_pipeline(ocean_config_.detail_filter);
-        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.pipeline());
-        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, surface_pipeline.layout(), 0,
-                                     ocean_gpu_.surface_set(frame_slot));
         ocean_gpu_.upload_surface_feature_uniforms(
             frame_slot,
             surface_feature_uniforms(draw_plan.surface_frame, cloud_shadow, frame_slot));
+        const cubey::render::GraphicsPipelineResource* bound_pipeline = nullptr;
         for (std::size_t index = 0; index < draw_plan.patches.count; ++index) {
             if (!draw_plan.visible_patches[index]) {
                 continue;
             }
             const OceanMeshPatch& patch = draw_plan.patches.patches[index];
+            const OceanPatchShadingPlan& shading_plan = draw_plan.shading_plans[index];
+            const cubey::render::GraphicsPipelineResource& surface_pipeline =
+                ocean_gpu_.surface_pipeline(shading_plan.detail_filter);
+            if (bound_pipeline != &surface_pipeline) {
+                recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       surface_pipeline.pipeline());
+                recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                             surface_pipeline.layout(), 0,
+                                             ocean_gpu_.surface_set(frame_slot));
+                bound_pipeline = &surface_pipeline;
+            }
             const OceanPushConstants constants =
-                surface_push_constants(extent, draw_plan.surface_frame, patch);
+                surface_push_constants(extent, draw_plan.surface_frame, patch, shading_plan);
             recorder.push_constants(surface_pipeline.layout(),
                                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                                     constants);

@@ -747,6 +747,12 @@ void draw_ocean_ui(OceanUiContext ui) {
             ImGui::Text("Submitted: %u patches / %u tris / culled %u patches",
                         ui.draw_stats.submitted_patches, ui.draw_stats.submitted_triangles,
                         ui.draw_stats.culled_patches);
+            ImGui::Text("Reduced filter: %u patches / %u tris",
+                        ui.draw_stats.reduced_filter_patches,
+                        ui.draw_stats.reduced_filter_triangles);
+            ImGui::Text("Reduced shadow: %u patches / %u tris",
+                        ui.draw_stats.reduced_shadow_patches,
+                        ui.draw_stats.reduced_shadow_triangles);
             ImGui::Text("Base cells: %u configured / %u effective", ui.config.mesh_cells,
                         ui.surface_frame.mesh_config.mesh_cells);
             ImGui::Text("Near cell: %.2f m",

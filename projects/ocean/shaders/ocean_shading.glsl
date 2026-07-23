@@ -82,7 +82,7 @@ float ocean_self_shadow_bias() {
 }
 
 int ocean_self_shadow_steps() {
-    return int(clamp(floor(ocean_features.self_shadow_options.w + 0.5), 1.0,
+    return int(clamp(floor(ocean.quality_options.x + 0.5), 1.0,
                      float(OCEAN_SELF_SHADOW_MAX_STEPS)));
 }
 

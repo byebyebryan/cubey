@@ -43,6 +43,7 @@ layout(push_constant) uniform OceanParams {
     vec4 cascade4_options;
     vec4 water_color;
     vec4 foam_color;
+    vec4 quality_options;
 } ocean;
 
 layout(location = 0) out vec3 frag_world_position;

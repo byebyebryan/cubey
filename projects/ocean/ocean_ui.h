@@ -35,6 +35,10 @@ struct OceanMeshDrawStats {
     std::uint32_t culled_patches = 0;
     std::uint32_t generated_triangles = 0;
     std::uint32_t submitted_triangles = 0;
+    std::uint32_t reduced_filter_patches = 0;
+    std::uint32_t reduced_filter_triangles = 0;
+    std::uint32_t reduced_shadow_patches = 0;
+    std::uint32_t reduced_shadow_triangles = 0;
 };
 
 struct OceanUiContext {
