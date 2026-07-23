@@ -1,5 +1,7 @@
 #include "terrain_raster_climate_source.h"
 
+#include <cubey/asset/file_digest.h>
+
 #include <nlohmann/json.hpp>
 
 #include <chrono>
@@ -9,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -75,6 +78,8 @@ class Fixture {
                    {"sha256", hash},
                }}}},
         };
+        const std::string climate_hash =
+            cubey::asset::sha256_hex(std::as_bytes(std::span{climate}));
         climate_manifest = {
             {"schema", "cubey.terrain.surface-fields.study.v1"},
             {"source", {{"generator", "test"}, {"model_id", "test-climate"}}},
@@ -97,7 +102,7 @@ class Fixture {
                    {"layout", "channel-major-zx"},
                    {"shape", {4U, 4U, 4U}},
                    {"byte_count", 64U * sizeof(float)},
-                   {"sha256", std::string(64U, '1')},
+                   {"sha256", climate_hash},
                    {"channels",
                     {
                         {{"name", "temperature_mean"}, {"unit", "deg_c"}},
@@ -166,7 +171,19 @@ void test_rejects_invalid_contracts() {
     }
     {
         Fixture fixture;
+        fixture.climate[0U] += 1.0F;
+        fixture.write();
+        require_throws(
+            [&fixture] {
+                cubey::projects::terrain::TerrainRasterClimateSource source(fixture.root);
+            },
+            "climate source should reject payloads whose SHA-256 does not match the manifest");
+    }
+    {
+        Fixture fixture;
         fixture.climate[48U] = 1.5F;
+        fixture.climate_manifest["files"]["climate"]["sha256"] =
+            cubey::asset::sha256_hex(std::as_bytes(std::span{fixture.climate}));
         fixture.write();
         require_throws(
             [&fixture] {

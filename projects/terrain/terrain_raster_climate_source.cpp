@@ -1,5 +1,7 @@
 #include "terrain_raster_climate_source.h"
 
+#include <cubey/asset/file_digest.h>
+
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
@@ -54,15 +56,10 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, kChannelCoun
     }
 }
 
-[[nodiscard]] bool valid_sha256(std::string_view value) {
-    return value.size() == 64U && std::all_of(value.begin(), value.end(), [](char digit) {
-               return (digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f');
-           });
-}
-
 [[nodiscard]] std::vector<float> read_climate(const std::filesystem::path& path,
                                               std::size_t count,
-                                              std::uint64_t declared_byte_count) {
+                                              std::uint64_t declared_byte_count,
+                                              std::string_view declared_sha256) {
     if constexpr (std::endian::native != std::endian::little) {
         throw std::runtime_error("terrain climate source requires a little-endian host");
     }
@@ -81,6 +78,9 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, kChannelCoun
     if (!std::all_of(values.begin(), values.end(),
                      [](float value) { return std::isfinite(value); })) {
         throw std::runtime_error("terrain climate field contains non-finite values");
+    }
+    if (cubey::asset::sha256_hex(std::as_bytes(std::span{values})) != declared_sha256) {
+        throw std::runtime_error("terrain climate SHA-256 does not match manifest");
     }
     return values;
 }
@@ -102,7 +102,7 @@ TerrainRasterClimateSource::TerrainRasterClimateSource(
         metadata_.seed = document.at("seed").get<std::uint64_t>();
         metadata_.elevation_sha256 =
             document.at("heightfield").at("elevation_sha256").get<std::string>();
-        if (!valid_sha256(metadata_.elevation_sha256)) {
+        if (!cubey::asset::is_sha256_hex(metadata_.elevation_sha256)) {
             throw std::runtime_error("invalid terrain climate elevation binding");
         }
 
@@ -125,7 +125,7 @@ TerrainRasterClimateSource::TerrainRasterClimateSource(
             climate.at("layout").get<std::string_view>() != "channel-major-zx" ||
             climate.at("shape") != nlohmann::json::array(
                                        {kChannelCount, metadata_.height, metadata_.width}) ||
-            !valid_sha256(metadata_.climate_sha256)) {
+            !cubey::asset::is_sha256_hex(metadata_.climate_sha256)) {
             throw std::runtime_error("invalid terrain climate payload contract");
         }
         const nlohmann::json& channels = climate.at("channels");
@@ -143,8 +143,9 @@ TerrainRasterClimateSource::TerrainRasterClimateSource(
             throw std::runtime_error("terrain climate path must remain inside field");
         }
         const std::size_t plane = static_cast<std::size_t>(metadata_.width) * metadata_.height;
-        values_ = read_climate(manifest.parent_path() / relative_path, kChannelCount * plane,
-                               climate.at("byte_count").get<std::uint64_t>());
+        values_ =
+            read_climate(manifest.parent_path() / relative_path, kChannelCount * plane,
+                         climate.at("byte_count").get<std::uint64_t>(), metadata_.climate_sha256);
 
         const auto plane_values = [this, plane](std::uint32_t channel) {
             return std::span<const float>(values_).subspan(static_cast<std::size_t>(channel) * plane,
