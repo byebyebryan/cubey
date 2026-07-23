@@ -28,6 +28,9 @@ void test_gpu_runtime_rejects_unsubmitted_destruction_ticket();
 void test_gpu_runtime_retires_completed_and_queue_idle_destruction();
 void test_gpu_runtime_submit_and_wait_propagates_threaded_failures();
 void test_gpu_runtime_threaded_submit_and_wait_handles_owner_thread_calls();
+void test_gpu_runtime_typed_jobs_capture_failures_without_stopping_queue();
+void test_gpu_runtime_typed_jobs_execute_on_threaded_owner();
+void test_gpu_runtime_typed_jobs_return_results_inline();
 void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread();
 void test_gpu_submission_ticket_issuer_returns_monotonic_tickets();
 void test_gpu_work_queue_drains_fifo_and_owns_requests();
@@ -83,6 +86,9 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_gpu_runtime_defaults_to_threaded_execution),
         CUBEY_TEST(test_gpu_runtime_submit_and_wait_propagates_threaded_failures),
         CUBEY_TEST(test_gpu_runtime_threaded_submit_and_wait_handles_owner_thread_calls),
+        CUBEY_TEST(test_gpu_runtime_typed_jobs_return_results_inline),
+        CUBEY_TEST(test_gpu_runtime_typed_jobs_capture_failures_without_stopping_queue),
+        CUBEY_TEST(test_gpu_runtime_typed_jobs_execute_on_threaded_owner),
         CUBEY_TEST(test_gpu_runtime_wait_queue_idle_runs_on_owner_thread),
         CUBEY_TEST(test_gpu_runtime_mark_submission_completed_updates_completed_ticket),
         CUBEY_TEST(test_gpu_runtime_defers_destruction_until_submission_completion),

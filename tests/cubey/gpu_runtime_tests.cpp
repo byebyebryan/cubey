@@ -186,6 +186,76 @@ void test_gpu_runtime_preserves_pending_work_after_callback_failure() {
     require(events[2] == "after failure", "remaining work should preserve FIFO order");
 }
 
+void test_gpu_runtime_typed_jobs_return_results_inline() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    auto job = runtime.submit("typed inline job", [](cubey::vulkan::GpuOwnerContext& owner) {
+        require(owner.is_owner_thread(), "typed GPU job should receive its owner context");
+        return 42;
+    });
+
+    require(job.ticket().id == 1, "typed GPU job should expose its queued ticket");
+    require(job.ticket().label == "typed inline job",
+            "typed GPU job should preserve its label");
+    require(!job.ready(), "inline typed GPU job should remain pending before drain");
+    static_cast<void>(runtime.drain_inline());
+    require(job.ready(), "inline typed GPU job should become ready after drain");
+    require(job.get() == 42, "typed GPU job should return its result");
+}
+
+void test_gpu_runtime_typed_jobs_capture_failures_without_stopping_queue() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    auto failed = runtime.submit("typed failure", [](cubey::vulkan::GpuOwnerContext&) -> int {
+        throw std::runtime_error("typed GPU failure");
+    });
+    auto following = runtime.submit("typed following", [](cubey::vulkan::GpuOwnerContext&) {
+        return 7;
+    });
+
+    const cubey::vulkan::GpuDrainResult drained = runtime.drain_inline();
+    require(drained.completed_count == 2,
+            "captured typed failure should not stop later queued GPU work");
+    require(failed.ready() && following.ready(),
+            "typed GPU jobs should both complete after the queue drains");
+    bool propagated = false;
+    try {
+        static_cast<void>(failed.get());
+    } catch (const std::runtime_error& error) {
+        propagated = std::string(error.what()) == "typed GPU failure";
+    }
+    require(propagated, "typed GPU job should propagate its captured failure through get");
+    require(following.get() == 7, "typed failure should not poison following GPU jobs");
+}
+
+void test_gpu_runtime_typed_jobs_execute_on_threaded_owner() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+    const std::thread::id caller = std::this_thread::get_id();
+
+    auto job = runtime.submit("typed threaded job", [](cubey::vulkan::GpuOwnerContext& owner) {
+        require(owner.is_owner_thread(), "threaded typed job should run on the GPU owner");
+        return std::this_thread::get_id();
+    });
+    const std::thread::id worker = job.get();
+
+    require(worker != std::thread::id{}, "threaded typed GPU job should execute");
+    require(worker != caller, "threaded typed GPU job should not execute on its caller");
+}
+
 void test_gpu_runtime_defaults_to_threaded_execution() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     cubey::vulkan::GpuRuntime runtime({

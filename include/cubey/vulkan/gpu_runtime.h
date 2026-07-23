@@ -4,14 +4,19 @@
 #include <cubey/vulkan/submission_coordinator.h>
 #include <cubey/vulkan/submission_tickets.h>
 
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <future>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace cubey::vulkan {
@@ -36,6 +41,38 @@ class GpuOwnerContext {
 struct GpuWorkTicket {
     std::uint64_t id = 0;
     std::string label;
+};
+
+template <typename T>
+class GpuJobHandle {
+  public:
+    GpuJobHandle(GpuWorkTicket ticket, std::future<T> future)
+        : ticket_(std::move(ticket)), future_(std::move(future)) {}
+
+    GpuJobHandle(const GpuJobHandle&) = delete;
+    GpuJobHandle& operator=(const GpuJobHandle&) = delete;
+    GpuJobHandle(GpuJobHandle&&) noexcept = default;
+    GpuJobHandle& operator=(GpuJobHandle&&) noexcept = default;
+
+    [[nodiscard]] const GpuWorkTicket& ticket() const noexcept {
+        return ticket_;
+    }
+
+    [[nodiscard]] bool ready() const {
+        return future_.wait_for(std::chrono::seconds{0}) == std::future_status::ready;
+    }
+
+    void wait() const {
+        future_.wait();
+    }
+
+    T get() {
+        return future_.get();
+    }
+
+  private:
+    GpuWorkTicket ticket_{};
+    mutable std::future<T> future_;
 };
 
 struct GpuWorkRequest {
@@ -101,6 +138,29 @@ class GpuRuntime {
     GpuRuntime& operator=(GpuRuntime&&) = delete;
 
     [[nodiscard]] GpuWorkTicket enqueue(GpuWorkRequest request);
+    template <typename Function>
+    [[nodiscard]] auto submit(std::string label, Function&& function)
+        -> GpuJobHandle<
+            std::invoke_result_t<std::decay_t<Function>&, cubey::vulkan::GpuOwnerContext&>> {
+        using Callable = std::decay_t<Function>;
+        using Result = std::invoke_result_t<Callable&, cubey::vulkan::GpuOwnerContext&>;
+
+        Callable callable(std::forward<Function>(function));
+        auto task = std::make_shared<std::packaged_task<Result(GpuOwnerContext&)>>(
+            [callable = std::move(callable)](GpuOwnerContext& context) mutable -> Result {
+                if constexpr (std::is_void_v<Result>) {
+                    std::invoke(callable, context);
+                } else {
+                    return std::invoke(callable, context);
+                }
+            });
+        std::future<Result> future = task->get_future();
+        GpuWorkTicket ticket = enqueue({
+            .label = std::move(label),
+            .work = [task](GpuOwnerContext& context) { (*task)(context); },
+        });
+        return GpuJobHandle<Result>(std::move(ticket), std::move(future));
+    }
     [[nodiscard]] GpuWorkTicket submit_and_wait(GpuWorkRequest request);
     [[nodiscard]] GpuDrainResult drain();
     [[nodiscard]] GpuDrainResult drain_inline();
