@@ -16,6 +16,8 @@
 #include <cubey/host/imgui_helpers.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
+#include <cubey/procedural/artifact_cache.h>
+#include <cubey/procedural/hash.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/cloud_layer.h>
@@ -40,6 +42,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <numbers>
@@ -70,6 +73,7 @@
 namespace cubey::projects::terrain {
 namespace {
 
+using Clock = std::chrono::steady_clock;
 using cubey::asset::TerrainRasterProvenance;
 using cubey::terrain::plan_terrain_backdrop_placement;
 using cubey::terrain::TerrainBackdropPlacementPlan;
@@ -199,6 +203,10 @@ struct TerrainProductBuild {
     std::optional<TerrainRasterClimateSource> replacement_climate_source{};
     TerrainBackdropPlacementPlan placement{};
     TerrainBackdropClimateDiagnostics climate_diagnostics{};
+    TerrainProductCacheDiagnostics cache_diagnostics{};
+    double source_load_milliseconds = 0.0;
+    double climate_load_milliseconds = 0.0;
+    double placement_milliseconds = 0.0;
     TerrainBackdropProduct product{};
 };
 
@@ -221,6 +229,34 @@ static_assert(sizeof(TerrainStageProxyPushConstants) <= 128U);
 
 [[nodiscard]] std::uint64_t profile_frame_index(std::uint64_t frame_index) {
     return frame_index == 0U ? 0U : frame_index - 1U;
+}
+
+[[nodiscard]] double elapsed_milliseconds(Clock::time_point started) {
+    return std::chrono::duration<double, std::milli>(Clock::now() - started).count();
+}
+
+[[nodiscard]] constexpr std::string_view
+terrain_product_preparation_source_name(TerrainProductPreparationSource source) noexcept {
+    switch (source) {
+    case TerrainProductPreparationSource::Cache:
+        return "cache";
+    case TerrainProductPreparationSource::Generated:
+        return "generated";
+    }
+    return "unknown";
+}
+
+[[nodiscard]] constexpr std::string_view
+terrain_cache_lookup_name(cubey::procedural::ProceduralArtifactCacheLoadOutcome outcome) noexcept {
+    switch (outcome) {
+    case cubey::procedural::ProceduralArtifactCacheLoadOutcome::Hit:
+        return "hit";
+    case cubey::procedural::ProceduralArtifactCacheLoadOutcome::Miss:
+        return "miss";
+    case cubey::procedural::ProceduralArtifactCacheLoadOutcome::Rejected:
+        return "rejected";
+    }
+    return "unknown";
 }
 
 [[nodiscard]] std::uint64_t collected_profile_frame_index(std::uint64_t frame_index,
@@ -325,14 +361,16 @@ make_placement_stage(const TerrainRasterHeightSource& source, const TerrainRunti
     return plan_terrain_backdrop_placement(source, source.bounds(), request);
 }
 
-[[nodiscard]] TerrainBackdropProduct make_product(const TerrainRasterHeightSource& source,
-                                                  const TerrainBackdropPlacementPlan& placement,
-                                                  const TerrainRuntimeConfig& config,
-                                                  const TerrainRasterClimateSource* climate,
-                                                  TerrainBackdropClimateDiagnostics* diagnostics) {
-    return make_project_terrain_backdrop_product(
-        cubey::terrain::terrain_backdrop_v1_product_request(placement.stage, config.render_stride),
-        source, config.surface_model, climate, diagnostics);
+[[nodiscard]] std::uint64_t
+terrain_product_placement_parameter_hash(const TerrainRuntimeConfig& config,
+                                         const TerrainBackdropPlacementPlan& placement) {
+    cubey::procedural::ProceduralHashBuilder hash;
+    hash.append_string("terrain-product-placement-v1");
+    hash.append_u32(static_cast<std::uint32_t>(config.placement));
+    hash.append_u32(config.placement_index);
+    hash.append_float32(placement.placement.source_focus_xz.x);
+    hash.append_float32(placement.placement.source_focus_xz.y);
+    return hash.value();
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
@@ -446,8 +484,9 @@ class TerrainApp {
           runtime_config_(terrain_runtime_config_from_run_config(
               run_config_, std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
               std::filesystem::path(CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS))),
-          startup_runtime_config_(runtime_config_), product_builds_(product_jobs_),
-          placement_stage_(loading_placement_stage()),
+          startup_runtime_config_(runtime_config_),
+          product_cache_({.root = cubey::procedural::default_procedural_artifact_cache_root()}),
+          product_builds_(product_jobs_), placement_stage_(loading_placement_stage()),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -740,6 +779,29 @@ class TerrainApp {
         if (!product_rebuild_error_.empty()) {
             ImGui::TextWrapped("Terrain activation error: %s", product_rebuild_error_.c_str());
         }
+        if (source_.has_value()) {
+            const std::string_view preparation_source =
+                terrain_product_preparation_source_name(product_cache_diagnostics_.source);
+            const std::string_view lookup =
+                terrain_cache_lookup_name(product_cache_diagnostics_.lookup);
+            ImGui::Text("Source / climate / placement: %.1f / %.1f / %.1f ms",
+                        source_load_milliseconds_, climate_load_milliseconds_,
+                        placement_milliseconds_);
+            ImGui::Text("Product preparation: %.*s, lookup %.*s",
+                        static_cast<int>(preparation_source.size()), preparation_source.data(),
+                        static_cast<int>(lookup.size()), lookup.data());
+            ImGui::Text("Cache load / decode: %.1f / %.1f ms",
+                        product_cache_diagnostics_.load_milliseconds,
+                        product_cache_diagnostics_.decode_milliseconds);
+            ImGui::Text("Generate / encode / store: %.1f / %.1f / %.1f ms",
+                        product_cache_diagnostics_.generation_milliseconds,
+                        product_cache_diagnostics_.encode_milliseconds,
+                        product_cache_diagnostics_.store_milliseconds);
+            if (!product_cache_diagnostics_.diagnostic.empty()) {
+                ImGui::TextWrapped("Cache diagnostic: %s",
+                                   product_cache_diagnostics_.diagnostic.c_str());
+            }
+        }
 
         const TerrainDirectionalPlacementPlan& placement = placement_stage_.placement;
         const std::string_view placement_name = terrain_placement_mode_name(placement_stage_.mode);
@@ -954,19 +1016,33 @@ class TerrainApp {
             "terrain " + std::string(terrain_source_choice_label(requested_source_choice));
         static_cast<void>(product_builds_.request(
             label,
-            [config = std::move(config), requested_source_choice]() mutable {
+            [this, config = std::move(config), requested_source_choice]() mutable {
                 TerrainProductBuild build;
                 build.config = config;
                 build.source_choice = requested_source_choice;
+                const Clock::time_point source_load_started = Clock::now();
                 build.replacement_source.emplace(require_heightfield(config.heightfield_path));
+                build.source_load_milliseconds = elapsed_milliseconds(source_load_started);
+                const Clock::time_point climate_load_started = Clock::now();
                 build.replacement_climate_source =
                     load_climate_source(config, build.replacement_source.value());
+                build.climate_load_milliseconds = elapsed_milliseconds(climate_load_started);
+                const Clock::time_point placement_started = Clock::now();
                 build.placement = make_placement_stage(build.replacement_source.value(), config);
-                build.product = make_product(
-                    build.replacement_source.value(), build.placement, config,
+                build.placement_milliseconds = elapsed_milliseconds(placement_started);
+                const TerrainRasterClimateSource* climate =
                     build.replacement_climate_source ? &build.replacement_climate_source.value()
-                                                     : nullptr,
-                    &build.climate_diagnostics);
+                                                     : nullptr;
+                PreparedProjectTerrainBackdropProduct prepared =
+                    prepare_project_terrain_backdrop_product(
+                        product_cache_,
+                        cubey::terrain::terrain_backdrop_v1_product_request(build.placement.stage,
+                                                                            config.render_stride),
+                        build.replacement_source.value(), config.surface_model, climate,
+                        terrain_product_placement_parameter_hash(config, build.placement));
+                build.product = std::move(prepared.product);
+                build.climate_diagnostics = prepared.climate;
+                build.cache_diagnostics = std::move(prepared.cache);
                 return build;
             },
             [this](cubey::vulkan::GpuOwnerContext& owner, TerrainProductBuild&& prepared) {
@@ -1000,6 +1076,10 @@ class TerrainApp {
         source_choice_ = build.source_choice;
         placement_stage_ = std::move(build.placement);
         climate_diagnostics_ = build.climate_diagnostics;
+        product_cache_diagnostics_ = std::move(build.cache_diagnostics);
+        source_load_milliseconds_ = build.source_load_milliseconds;
+        climate_load_milliseconds_ = build.climate_load_milliseconds;
+        placement_milliseconds_ = build.placement_milliseconds;
         product_info_ = std::move(installed.product_info);
         runtime_config_ = std::move(build.config);
         camera_.set_projection(camera_.fovy_radians(), camera_.near_z(),
@@ -1188,6 +1268,32 @@ class TerrainApp {
                                 build_status.install_milliseconds);
         recorder->record_metric(frame_index, "terrain.initialization", "resident",
                                 terrain_runtime_.product_ready() ? 1.0 : 0.0);
+        recorder->record_metric(frame_index, "terrain.initialization", "source_load_ms",
+                                source_load_milliseconds_);
+        recorder->record_metric(frame_index, "terrain.initialization", "climate_load_ms",
+                                climate_load_milliseconds_);
+        recorder->record_metric(frame_index, "terrain.initialization", "placement_ms",
+                                placement_milliseconds_);
+        recorder->record_metric(
+            frame_index, "terrain.initialization", "product_cache_hit",
+            product_cache_diagnostics_.source == TerrainProductPreparationSource::Cache ? 1.0
+                                                                                        : 0.0);
+        recorder->record_metric(
+            frame_index, "terrain.initialization", "product_cache_lookup",
+            static_cast<double>(static_cast<std::uint8_t>(product_cache_diagnostics_.lookup)));
+        recorder->record_metric(frame_index, "terrain.initialization", "product_cache_stored",
+                                product_cache_diagnostics_.stored ? 1.0 : 0.0);
+        recorder->record_metric(frame_index, "terrain.initialization", "product_cache_load_ms",
+                                product_cache_diagnostics_.load_milliseconds);
+        recorder->record_metric(frame_index, "terrain.initialization", "product_cache_decode_ms",
+                                product_cache_diagnostics_.decode_milliseconds);
+        recorder->record_metric(frame_index, "terrain.initialization",
+                                "product_cache_generation_ms",
+                                product_cache_diagnostics_.generation_milliseconds);
+        recorder->record_metric(frame_index, "terrain.initialization", "product_cache_encode_ms",
+                                product_cache_diagnostics_.encode_milliseconds);
+        recorder->record_metric(frame_index, "terrain.initialization", "product_cache_store_ms",
+                                product_cache_diagnostics_.store_milliseconds);
         recorder->record_metric(
             frame_index, "terrain.backdrop", "product_render_triangles",
             static_cast<double>(product_info_.diagnostics.render_triangle_count));
@@ -1711,6 +1817,7 @@ class TerrainApp {
     RunConfig run_config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainRuntimeConfig startup_runtime_config_{};
+    cubey::procedural::ProceduralArtifactCache product_cache_;
     cubey::jobs::JobSystem product_jobs_{1U};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
     cubey::StagedResource<TerrainProductBuild, TerrainResidentBuild> product_builds_;
@@ -1718,6 +1825,7 @@ class TerrainApp {
     std::optional<TerrainRasterClimateSource> climate_source_{};
     TerrainBackdropPlacementPlan placement_stage_{};
     TerrainBackdropClimateDiagnostics climate_diagnostics_{};
+    TerrainProductCacheDiagnostics product_cache_diagnostics_{};
     TerrainBackdropProductInfo product_info_{};
     TerrainSourceChoice source_choice_ = TerrainSourceChoice::Startup;
     TerrainSourceChoice edit_source_choice_ = TerrainSourceChoice::Startup;
@@ -1727,6 +1835,9 @@ class TerrainApp {
     std::uint32_t edit_placement_index_ = 0U;
     TerrainSurfaceModel edit_surface_model_ = TerrainSurfaceModel::MineralControl;
     std::string product_rebuild_error_{};
+    double source_load_milliseconds_ = 0.0;
+    double climate_load_milliseconds_ = 0.0;
+    double placement_milliseconds_ = 0.0;
     cubey::OrbitController orbit_controller_;
     cubey::Camera3D camera_;
     cubey::Transform3D frame_camera_transform_{};

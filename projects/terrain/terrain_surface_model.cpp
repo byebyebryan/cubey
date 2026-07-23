@@ -1,5 +1,7 @@
 #include "terrain_surface_model.h"
 
+#include <cubey/procedural/hash.h>
+
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -128,6 +130,21 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
         std::min(landform_capacity * potential.cover_weight * potential.thermal_growth,
                  climate_ground);
     return {rock, snow, ambient_visibility, vegetation, potential.moisture_weight};
+}
+
+std::uint64_t terrain_surface_model_parameter_hash(TerrainSurfaceModel model) {
+    switch (model) {
+    case TerrainSurfaceModel::MineralControl:
+    case TerrainSurfaceModel::LandformTransition:
+    case TerrainSurfaceModel::ClimateTransition:
+        break;
+    default:
+        throw std::runtime_error("terrain surface model is invalid");
+    }
+    cubey::procedural::ProceduralHashBuilder hash;
+    hash.append_string(kTerrainSurfaceModelFormulaVersion);
+    hash.append_u32(static_cast<std::uint32_t>(model));
+    return hash.value();
 }
 
 } // namespace cubey::projects::terrain

@@ -249,6 +249,11 @@ if (BUILD_TESTING)
         cubey_project_terrain_product_adapter_tests
         PRIVATE cubey_project_terrain_surface_support cubey_project_warnings
     )
+    target_compile_definitions(
+        cubey_project_terrain_product_adapter_tests
+        PRIVATE
+            CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET="${CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET}"
+    )
     add_test(
         NAME terrain_product_adapter_tests
         COMMAND cubey_project_terrain_product_adapter_tests

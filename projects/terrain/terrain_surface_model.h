@@ -4,8 +4,11 @@
 
 #include <cstdint>
 #include <optional>
+#include <string_view>
 
 namespace cubey::projects::terrain {
+
+inline constexpr std::string_view kTerrainSurfaceModelFormulaVersion = "terrain-surface-model-v1";
 
 enum class TerrainSurfaceModel : std::uint8_t {
     MineralControl,
@@ -48,5 +51,6 @@ terrain_climate_potential(const TerrainClimateSample& climate);
 
 [[nodiscard]] TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
                                                             const TerrainSurfaceInputs& inputs);
+[[nodiscard]] std::uint64_t terrain_surface_model_parameter_hash(TerrainSurfaceModel model);
 
 } // namespace cubey::projects::terrain
