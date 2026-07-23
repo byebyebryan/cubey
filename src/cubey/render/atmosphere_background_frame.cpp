@@ -1,5 +1,7 @@
 #include <cubey/render/atmosphere_background_frame.h>
 
+#include <cubey/procedural/artifact_cache.h>
+#include <cubey/render/atmosphere_atlas_cache.h>
 #include <cubey/render/pass.h>
 
 #include <array>
@@ -137,6 +139,19 @@ AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textur
         device, gpu,
         generate_lunar_surface_map(config.lunar_surface_width, config.lunar_surface_height),
         generate_night_sky_atlas(config.night_sky, config.night_sky_extent));
+}
+
+AtmosphereBackgroundAtlasResources create_atmosphere_background_cached_textures(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const AtmosphereBackgroundGeneratedAtlasConfig& config) {
+    cubey::procedural::ProceduralArtifactCache cache(
+        {.root = cubey::procedural::default_procedural_artifact_cache_root()});
+    PreparedLunarSurfaceMap lunar_surface =
+        prepare_lunar_surface_map(cache, config.lunar_surface_width, config.lunar_surface_height);
+    PreparedNightSkyAtlas night_sky =
+        prepare_night_sky_atlas(cache, config.night_sky, config.night_sky_extent);
+    return create_atmosphere_background_atlas_resources(device, gpu, lunar_surface.map,
+                                                        night_sky.atlas);
 }
 
 AtmosphereBackgroundAtlasResources

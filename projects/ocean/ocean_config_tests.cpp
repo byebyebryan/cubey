@@ -1788,8 +1788,8 @@ int main() {
                          "ocean app should upload terrain-ocean metadata per frame");
         require_contains(app_source, "AtmosphereBackgroundFrame atmosphere_background_",
                          "ocean app should own the shared atmosphere background frame");
-        require_contains(app_source, "create_atmosphere_background_generated_textures",
-                         "ocean app should use shared generated atmosphere atlas textures");
+        require_contains(app_source, "create_atmosphere_background_cached_textures",
+                         "ocean app should reuse shared cached atmosphere atlas textures");
         require_contains(app_source, "record_atmosphere_background",
                          "ocean app should draw the shared atmosphere background");
         require_contains(app_source, "atmosphere_environment_for_surface_frame",

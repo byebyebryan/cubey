@@ -420,7 +420,7 @@ class PlanetApp {
         }
         if (!sky_atlas_resources_.has_value()) {
             sky_atlas_resources_.emplace(
-                cubey::render::create_atmosphere_background_generated_textures(device, gpu));
+                cubey::render::create_atmosphere_background_cached_textures(device, gpu));
         }
         if (clouds_config_.enabled) {
             create_cloud_resources(device, gpu);

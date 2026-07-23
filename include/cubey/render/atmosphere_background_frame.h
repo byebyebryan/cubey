@@ -75,6 +75,9 @@ create_atmosphere_night_sky_atlas_texture(const cubey::vulkan::Device& device,
 [[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_generated_textures(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
     const AtmosphereBackgroundGeneratedAtlasConfig& config = {});
+[[nodiscard]] AtmosphereBackgroundAtlasResources create_atmosphere_background_cached_textures(
+    const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+    const AtmosphereBackgroundGeneratedAtlasConfig& config = {});
 [[nodiscard]] AtmosphereBackgroundAtlasResources
 create_atmosphere_background_placeholder_textures(const cubey::vulkan::Device& device,
                                                   cubey::vulkan::GpuRuntime& gpu);

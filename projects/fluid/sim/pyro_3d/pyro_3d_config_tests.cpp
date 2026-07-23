@@ -608,8 +608,8 @@ int main() {
                          "pyro 3D shadow pipeline should support multiple descriptor sets");
         require_contains(app_source, "draw_atmosphere_environment_controls",
                          "pyro 3D should expose shared environment controls");
-        require_contains(app_source, "create_atmosphere_background_generated_textures",
-                         "pyro 3D should create shared atmosphere background atlases");
+        require_contains(app_source, "create_atmosphere_background_cached_textures",
+                         "pyro 3D should reuse shared cached atmosphere background atlases");
         require_contains(app_source, "upload_atmosphere_background",
                          "pyro 3D should upload direct atmosphere background uniforms");
         require_contains(app_source, "environment.render_moon_disk = false",

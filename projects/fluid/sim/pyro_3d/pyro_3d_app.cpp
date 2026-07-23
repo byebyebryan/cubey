@@ -627,7 +627,7 @@ class Pyro3DApp {
                                            std::uint32_t frame_slot_count) {
         if (use_atmosphere_environment_source() && !atmosphere_background_atlases_.has_value()) {
             atmosphere_background_atlases_.emplace(
-                cubey::render::create_atmosphere_background_generated_textures(
+                cubey::render::create_atmosphere_background_cached_textures(
                     device, gpu,
                     {
                         .night_sky_extent = 128,
