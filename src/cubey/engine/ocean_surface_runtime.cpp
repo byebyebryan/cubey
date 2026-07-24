@@ -1,4 +1,4 @@
-#include "ocean_gpu_resources.h"
+#include <cubey/engine/ocean_surface_runtime.h>
 
 #include <cubey/render/material.h>
 
@@ -8,11 +8,13 @@
 #include <stdexcept>
 #include <string>
 
-namespace cubey::projects::ocean {
+namespace cubey {
 namespace {
 
+using render::OceanFieldPrecision;
+
 constexpr std::uint32_t kOceanGpuProfilerPassCapacity = 64U;
-constexpr std::uint32_t kOceanSurfaceReflectionBinding = kOceanCascadeCount * 3U;
+constexpr std::uint32_t kOceanSurfaceReflectionBinding = cubey::render::kOceanCascadeCount * 3U;
 constexpr std::uint32_t kOceanSurfaceSkyRadianceBinding = kOceanSurfaceReflectionBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceTerrainFieldBinding = kOceanSurfaceSkyRadianceBinding + 1U;
 constexpr std::uint32_t kOceanSurfaceTerrainFieldUniformBinding =
@@ -37,7 +39,7 @@ constexpr std::uint32_t kOceanSurfaceBindingCount = kOceanSurfaceReflectionCurre
 }
 
 [[nodiscard]] std::uint32_t field_texture_index(std::uint32_t cascade, std::uint32_t field) {
-    return cascade * kOceanSpectrumFieldCount + field;
+    return cascade * cubey::render::kOceanSpectrumFieldCount + field;
 }
 
 [[nodiscard]] VkFormat ocean_field_format(OceanFieldPrecision precision) {
@@ -137,10 +139,10 @@ descriptor_info(std::span<const cubey::vulkan::DescriptorSetBindingConfig> bindi
 
 } // namespace
 
-void OceanGpuResources::create(const cubey::vulkan::Device& device,
-                               const OceanGpuResourceConfig& config) {
+void OceanSurfaceRuntime::create(const cubey::vulkan::Device& device,
+                                 const OceanSurfaceRuntimeCreateInfo& config) {
     reset();
-    validate_ocean_config(config.ocean);
+    render::validate_ocean_config(config.ocean);
     if (config.shader_dir.empty()) {
         throw std::runtime_error("ocean GPU resources require a shader directory");
     }
@@ -167,7 +169,7 @@ void OceanGpuResources::create(const cubey::vulkan::Device& device,
     profiler_.emplace(device, config.frame_slot_count, kOceanGpuProfilerPassCapacity);
 }
 
-void OceanGpuResources::reset() {
+void OceanSurfaceRuntime::reset() {
     profiler_.reset();
     for (auto& pipeline : surface_pipelines_) {
         pipeline.reset();
@@ -208,19 +210,19 @@ void OceanGpuResources::reset() {
     resolution_ = 0;
 }
 
-void OceanGpuResources::create_textures(const cubey::vulkan::Device& device,
-                                        const OceanConfig& config) {
+void OceanSurfaceRuntime::create_textures(const cubey::vulkan::Device& device,
+                                        const cubey::render::OceanSurfaceConfig& config) {
     const VkFormat field_format = ocean_field_format(config.field_precision);
     fallback_field_.emplace(make_ocean_field_texture(device, 1U, field_format, true));
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        cascade_allocated_[cascade] = ocean_cascade_enabled(config, cascade);
-        cascade_resolutions_[cascade] = ocean_cascade_map_size(config, cascade);
+    for (std::uint32_t cascade = 0; cascade < cubey::render::kOceanCascadeCount; ++cascade) {
+        cascade_allocated_[cascade] = cubey::render::ocean_cascade_enabled(config, cascade);
+        cascade_resolutions_[cascade] = cubey::render::ocean_cascade_map_size(config, cascade);
         if (!cascade_allocated_[cascade]) {
             continue;
         }
         const std::uint32_t map_size = cascade_resolutions_[cascade];
         h0_[cascade].emplace(make_ocean_field_texture(device, map_size, field_format, false));
-        for (std::uint32_t field = 0; field < kOceanSpectrumFieldCount; ++field) {
+        for (std::uint32_t field = 0; field < cubey::render::kOceanSpectrumFieldCount; ++field) {
             const std::uint32_t index = field_texture_index(cascade, field);
             fields_[index].emplace(
                 make_ocean_field_texture(device, map_size, field_format, false));
@@ -237,7 +239,7 @@ void OceanGpuResources::create_textures(const cubey::vulkan::Device& device,
     }
 }
 
-void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& device,
+void OceanSurfaceRuntime::create_descriptor_sets(const cubey::vulkan::Device& device,
                                                std::uint32_t frame_slot_count) {
     const std::array spectrum_bindings{
         cubey::vulkan::DescriptorSetBindingConfig{
@@ -247,7 +249,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         },
     };
     const cubey::vulkan::DescriptorSetInfo spectrum_info =
-        descriptor_info(spectrum_bindings, kOceanCascadeCount);
+        descriptor_info(spectrum_bindings, cubey::render::kOceanCascadeCount);
     spectrum_layout_.emplace(device, spectrum_info.layout_info());
     spectrum_pool_.emplace(device, spectrum_info.pool_info());
     for (VkDescriptorSet& set : spectrum_sets_) {
@@ -272,7 +274,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         },
     };
     const cubey::vulkan::DescriptorSetInfo modulate_info =
-        descriptor_info(modulate_bindings, kOceanCascadeCount);
+        descriptor_info(modulate_bindings, cubey::render::kOceanCascadeCount);
     modulate_layout_.emplace(device, modulate_info.layout_info());
     modulate_pool_.emplace(device, modulate_info.pool_info());
     for (VkDescriptorSet& set : modulate_sets_) {
@@ -327,7 +329,7 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
         },
     };
     const cubey::vulkan::DescriptorSetInfo unpack_info =
-        descriptor_info(unpack_bindings, kOceanCascadeCount);
+        descriptor_info(unpack_bindings, cubey::render::kOceanCascadeCount);
     unpack_layout_.emplace(device, unpack_info.layout_info());
     unpack_pool_.emplace(device, unpack_info.pool_info());
     for (VkDescriptorSet& set : unpack_sets_) {
@@ -336,24 +338,24 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
 
     std::array<cubey::vulkan::DescriptorSetBindingConfig, kOceanSurfaceBindingCount>
         surface_bindings{};
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+    for (std::uint32_t cascade = 0; cascade < cubey::render::kOceanCascadeCount; ++cascade) {
         surface_bindings[cascade] = cubey::vulkan::DescriptorSetBindingConfig{
             .binding = cascade,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         };
     }
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        surface_bindings[kOceanCascadeCount + cascade] = cubey::vulkan::DescriptorSetBindingConfig{
-            .binding = kOceanCascadeCount + cascade,
+    for (std::uint32_t cascade = 0; cascade < cubey::render::kOceanCascadeCount; ++cascade) {
+        surface_bindings[cubey::render::kOceanCascadeCount + cascade] = cubey::vulkan::DescriptorSetBindingConfig{
+            .binding = cubey::render::kOceanCascadeCount + cascade,
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
         };
     }
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
-        surface_bindings[kOceanCascadeCount * 2U + cascade] =
+    for (std::uint32_t cascade = 0; cascade < cubey::render::kOceanCascadeCount; ++cascade) {
+        surface_bindings[cubey::render::kOceanCascadeCount * 2U + cascade] =
             cubey::vulkan::DescriptorSetBindingConfig{
-                .binding = kOceanCascadeCount * 2U + cascade,
+                .binding = cubey::render::kOceanCascadeCount * 2U + cascade,
                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
             };
@@ -425,9 +427,9 @@ void OceanGpuResources::create_descriptor_sets(const cubey::vulkan::Device& devi
     }
 }
 
-void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) {
+void OceanSurfaceRuntime::update_descriptors(const cubey::vulkan::Device& device) {
     cubey::vulkan::DescriptorWriteBatch writes;
-    for (std::uint32_t cascade = 0; cascade < kOceanCascadeCount; ++cascade) {
+    for (std::uint32_t cascade = 0; cascade < cubey::render::kOceanCascadeCount; ++cascade) {
         const cubey::render::Texture2D& displacement_texture =
             cascade_allocated(cascade) ? displacement(cascade) : fallback_field();
         const cubey::render::Texture2D& normal_texture =
@@ -439,10 +441,10 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             writes.combined_image_sampler(surface_set, cascade,
                                           displacement_texture.sampler().handle(),
                                           displacement_texture.view(), VK_IMAGE_LAYOUT_GENERAL);
-            writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount,
+            writes.combined_image_sampler(surface_set, cascade + cubey::render::kOceanCascadeCount,
                                           normal_texture.sampler().handle(), normal_texture.view(),
                                           VK_IMAGE_LAYOUT_GENERAL);
-            writes.combined_image_sampler(surface_set, cascade + kOceanCascadeCount * 2U,
+            writes.combined_image_sampler(surface_set, cascade + cubey::render::kOceanCascadeCount * 2U,
                                           foam_texture.sampler().handle(), foam_texture.view(),
                                           VK_IMAGE_LAYOUT_GENERAL);
         }
@@ -460,9 +462,9 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
             .storage_image(unpack_set(cascade), 3, normal(cascade).view())
             .storage_image(unpack_set(cascade), 4, foam(cascade).view());
 
-        for (std::uint32_t field_index = 0; field_index < kOceanSpectrumFieldCount; ++field_index) {
+        for (std::uint32_t field_index = 0; field_index < cubey::render::kOceanSpectrumFieldCount; ++field_index) {
             const std::uint32_t base_fft_set =
-                (cascade * kOceanSpectrumFieldCount + field_index) * 3U;
+                (cascade * cubey::render::kOceanSpectrumFieldCount + field_index) * 3U;
             writes
                 .storage_image(fft_sets_[base_fft_set + 0U], 0, field(cascade, field_index).view())
                 .storage_image(fft_sets_[base_fft_set + 0U], 1, ping(cascade, field_index).view())
@@ -485,7 +487,7 @@ void OceanGpuResources::update_descriptors(const cubey::vulkan::Device& device) 
     writes.update(device);
 }
 
-void OceanGpuResources::update_atmosphere_probe_descriptors(
+void OceanSurfaceRuntime::update_atmosphere_probe_descriptors(
     const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
     const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current,
     const cubey::render::TextureCube& sky_radiance) {
@@ -512,7 +514,7 @@ void OceanGpuResources::update_atmosphere_probe_descriptors(
         .update(device);
 }
 
-void OceanGpuResources::update_terrain_ocean_field_descriptor(
+void OceanSurfaceRuntime::update_terrain_ocean_field_descriptor(
     const cubey::vulkan::Device& device, const cubey::render::Texture2D& fields) {
     if (surface_sets_.empty()) {
         throw std::runtime_error("ocean surface descriptor set is not initialized");
@@ -526,7 +528,7 @@ void OceanGpuResources::update_terrain_ocean_field_descriptor(
     writes.update(device);
 }
 
-void OceanGpuResources::update_terrain_ocean_field_uniform_descriptor(
+void OceanSurfaceRuntime::update_terrain_ocean_field_uniform_descriptor(
     const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot, VkBuffer buffer,
     VkDeviceSize range) {
     cubey::vulkan::DescriptorWriteBatch writes;
@@ -536,7 +538,7 @@ void OceanGpuResources::update_terrain_ocean_field_uniform_descriptor(
         .update(device);
 }
 
-void OceanGpuResources::update_cloud_shadow_descriptor(
+void OceanSurfaceRuntime::update_cloud_shadow_descriptor(
     const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot, VkSampler sampler,
     VkImageView image_view, VkImageLayout image_layout) {
     cubey::vulkan::DescriptorWriteBatch writes;
@@ -546,7 +548,7 @@ void OceanGpuResources::update_cloud_shadow_descriptor(
         .update(device);
 }
 
-void OceanGpuResources::update_cloud_environment_descriptors(
+void OceanSurfaceRuntime::update_cloud_environment_descriptors(
     const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
     const cubey::render::TextureCube& previous, const cubey::render::TextureCube& current) {
     cubey::vulkan::DescriptorWriteBatch writes;
@@ -562,7 +564,7 @@ void OceanGpuResources::update_cloud_environment_descriptors(
         .update(device);
 }
 
-void OceanGpuResources::update_cloud_planar_reflection_descriptor(
+void OceanSurfaceRuntime::update_cloud_planar_reflection_descriptor(
     const cubey::vulkan::Device& device, cubey::render::FrameSlot frame_slot,
     const cubey::render::Texture2D& texture) {
     cubey::vulkan::DescriptorWriteBatch writes;
@@ -574,7 +576,7 @@ void OceanGpuResources::update_cloud_planar_reflection_descriptor(
         .update(device);
 }
 
-void OceanGpuResources::upload_surface_feature_uniforms(
+void OceanSurfaceRuntime::upload_surface_feature_uniforms(
     cubey::render::FrameSlot frame_slot, const OceanSurfaceFeatureUniforms& uniforms) const {
     if (!surface_feature_uniforms_.has_value()) {
         throw std::runtime_error("ocean surface feature uniforms are not initialized");
@@ -582,8 +584,8 @@ void OceanGpuResources::upload_surface_feature_uniforms(
     surface_feature_uniforms_->upload(frame_slot, uniforms);
 }
 
-void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
-                                         const OceanGpuResourceConfig& config) {
+void OceanSurfaceRuntime::create_pipelines(const cubey::vulkan::Device& device,
+                                         const OceanSurfaceRuntimeCreateInfo& config) {
     const VkPushConstantRange spectrum_push_constants = compute_push_constant_range(16U);
     const VkPushConstantRange modulate_push_constants = compute_push_constant_range(8U);
     const VkPushConstantRange fft_push_constants = compute_push_constant_range(8U);
@@ -656,7 +658,7 @@ void OceanGpuResources::create_pipelines(const cubey::vulkan::Device& device,
 }
 
 const cubey::render::GraphicsPipelineResource&
-OceanGpuResources::surface_pipeline(OceanDetailFilter filter) const {
+OceanSurfaceRuntime::surface_pipeline(cubey::render::OceanDetailFilter filter) const {
     const std::size_t index = static_cast<std::size_t>(filter);
     if (index >= surface_pipelines_.size() || !surface_pipelines_[index].has_value()) {
         throw std::runtime_error("ocean surface pipeline is not initialized");
@@ -664,56 +666,56 @@ OceanGpuResources::surface_pipeline(OceanDetailFilter filter) const {
     return surface_pipelines_[index].value();
 }
 
-const cubey::render::ComputePipelineResource& OceanGpuResources::spectrum_pipeline() const {
+const cubey::render::ComputePipelineResource& OceanSurfaceRuntime::spectrum_pipeline() const {
     if (!spectrum_pipeline_.has_value()) {
         throw std::runtime_error("ocean spectrum pipeline is not initialized");
     }
     return spectrum_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& OceanGpuResources::modulate_pipeline() const {
+const cubey::render::ComputePipelineResource& OceanSurfaceRuntime::modulate_pipeline() const {
     if (!modulate_pipeline_.has_value()) {
         throw std::runtime_error("ocean modulate pipeline is not initialized");
     }
     return modulate_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& OceanGpuResources::fft_pipeline() const {
+const cubey::render::ComputePipelineResource& OceanSurfaceRuntime::fft_pipeline() const {
     if (!fft_pipeline_.has_value()) {
         throw std::runtime_error("ocean FFT pipeline is not initialized");
     }
     return fft_pipeline_.value();
 }
 
-const cubey::render::ComputePipelineResource& OceanGpuResources::unpack_pipeline() const {
+const cubey::render::ComputePipelineResource& OceanSurfaceRuntime::unpack_pipeline() const {
     if (!unpack_pipeline_.has_value()) {
         throw std::runtime_error("ocean unpack pipeline is not initialized");
     }
     return unpack_pipeline_.value();
 }
 
-VkDescriptorSet OceanGpuResources::spectrum_set(std::uint32_t cascade) const {
+VkDescriptorSet OceanSurfaceRuntime::spectrum_set(std::uint32_t cascade) const {
     return descriptor_at(spectrum_sets_, cascade, "ocean spectrum descriptor set");
 }
 
-VkDescriptorSet OceanGpuResources::modulate_set(std::uint32_t cascade) const {
+VkDescriptorSet OceanSurfaceRuntime::modulate_set(std::uint32_t cascade) const {
     return descriptor_at(modulate_sets_, cascade, "ocean modulate descriptor set");
 }
 
-VkDescriptorSet OceanGpuResources::fft_set(std::uint32_t cascade, std::uint32_t field,
+VkDescriptorSet OceanSurfaceRuntime::fft_set(std::uint32_t cascade, std::uint32_t field,
                                            std::uint32_t set_index) const {
-    if (field >= kOceanSpectrumFieldCount || set_index >= 3U) {
+    if (field >= cubey::render::kOceanSpectrumFieldCount || set_index >= 3U) {
         throw std::runtime_error("ocean FFT descriptor index out of range");
     }
-    return descriptor_at(fft_sets_, (cascade * kOceanSpectrumFieldCount + field) * 3U + set_index,
+    return descriptor_at(fft_sets_, (cascade * cubey::render::kOceanSpectrumFieldCount + field) * 3U + set_index,
                          "ocean FFT descriptor set");
 }
 
-VkDescriptorSet OceanGpuResources::unpack_set(std::uint32_t cascade) const {
+VkDescriptorSet OceanSurfaceRuntime::unpack_set(std::uint32_t cascade) const {
     return descriptor_at(unpack_sets_, cascade, "ocean unpack descriptor set");
 }
 
-VkDescriptorSet OceanGpuResources::surface_set(cubey::render::FrameSlot frame_slot) const {
+VkDescriptorSet OceanSurfaceRuntime::surface_set(cubey::render::FrameSlot frame_slot) const {
     cubey::render::validate_frame_slot(frame_slot);
     if (frame_slot.count != surface_sets_.size()) {
         throw std::runtime_error("ocean surface descriptor set frame slot count mismatch");
@@ -725,59 +727,59 @@ VkDescriptorSet OceanGpuResources::surface_set(cubey::render::FrameSlot frame_sl
     return set;
 }
 
-const cubey::render::Texture2D& OceanGpuResources::h0(std::uint32_t cascade) const {
+const cubey::render::Texture2D& OceanSurfaceRuntime::h0(std::uint32_t cascade) const {
     return texture_at(h0_, cascade, "ocean h0 texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::field(std::uint32_t cascade,
+const cubey::render::Texture2D& OceanSurfaceRuntime::field(std::uint32_t cascade,
                                                          std::uint32_t field) const {
     return field_texture_at(fields_, cascade, field, "ocean spectrum field texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::ping(std::uint32_t cascade,
+const cubey::render::Texture2D& OceanSurfaceRuntime::ping(std::uint32_t cascade,
                                                         std::uint32_t field) const {
     return field_texture_at(ping_, cascade, field, "ocean FFT ping texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::pong(std::uint32_t cascade,
+const cubey::render::Texture2D& OceanSurfaceRuntime::pong(std::uint32_t cascade,
                                                         std::uint32_t field) const {
     return field_texture_at(pong_, cascade, field, "ocean FFT pong texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::displacement(std::uint32_t cascade) const {
+const cubey::render::Texture2D& OceanSurfaceRuntime::displacement(std::uint32_t cascade) const {
     return texture_at(displacement_, cascade, "ocean displacement texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::normal(std::uint32_t cascade) const {
+const cubey::render::Texture2D& OceanSurfaceRuntime::normal(std::uint32_t cascade) const {
     return texture_at(normal_, cascade, "ocean normal texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::foam(std::uint32_t cascade) const {
+const cubey::render::Texture2D& OceanSurfaceRuntime::foam(std::uint32_t cascade) const {
     return texture_at(foam_, cascade, "ocean foam texture");
 }
 
-const cubey::render::Texture2D& OceanGpuResources::fallback_field() const {
+const cubey::render::Texture2D& OceanSurfaceRuntime::fallback_field() const {
     if (!fallback_field_.has_value()) {
         throw std::runtime_error("ocean fallback field texture is not initialized");
     }
     return fallback_field_.value();
 }
 
-bool OceanGpuResources::cascade_allocated(std::uint32_t cascade) const {
-    if (cascade >= kOceanCascadeCount) {
+bool OceanSurfaceRuntime::cascade_allocated(std::uint32_t cascade) const {
+    if (cascade >= cubey::render::kOceanCascadeCount) {
         throw std::runtime_error("ocean cascade index out of range");
     }
     return cascade_allocated_[cascade];
 }
 
-std::uint32_t OceanGpuResources::cascade_resolution(std::uint32_t cascade) const {
-    if (cascade >= kOceanCascadeCount) {
+std::uint32_t OceanSurfaceRuntime::cascade_resolution(std::uint32_t cascade) const {
+    if (cascade >= cubey::render::kOceanCascadeCount) {
         throw std::runtime_error("ocean cascade index out of range");
     }
     return cascade_resolutions_[cascade];
 }
 
-const std::vector<cubey::vulkan::GpuPassTiming>& OceanGpuResources::latest_timings() const {
+const std::vector<cubey::vulkan::GpuPassTiming>& OceanSurfaceRuntime::latest_timings() const {
     static const std::vector<cubey::vulkan::GpuPassTiming> kEmptyTimings;
     if (!profiler_.has_value()) {
         return kEmptyTimings;
@@ -785,7 +787,7 @@ const std::vector<cubey::vulkan::GpuPassTiming>& OceanGpuResources::latest_timin
     return profiler_->latest_timings();
 }
 
-const cubey::render::Texture2D& OceanGpuResources::texture_at(const TextureArray& textures,
+const cubey::render::Texture2D& OceanSurfaceRuntime::texture_at(const TextureArray& textures,
                                                               std::uint32_t cascade,
                                                               const char* label) const {
     if (cascade >= textures.size() || !textures[cascade].has_value()) {
@@ -795,9 +797,9 @@ const cubey::render::Texture2D& OceanGpuResources::texture_at(const TextureArray
 }
 
 const cubey::render::Texture2D&
-OceanGpuResources::field_texture_at(const FieldTextureArray& textures, std::uint32_t cascade,
+OceanSurfaceRuntime::field_texture_at(const FieldTextureArray& textures, std::uint32_t cascade,
                                     std::uint32_t field, const char* label) const {
-    if (cascade >= kOceanCascadeCount || field >= kOceanSpectrumFieldCount) {
+    if (cascade >= cubey::render::kOceanCascadeCount || field >= cubey::render::kOceanSpectrumFieldCount) {
         throw std::runtime_error(label == nullptr ? "ocean field index out of range" : label);
     }
     const std::uint32_t index = field_texture_index(cascade, field);
@@ -808,7 +810,7 @@ OceanGpuResources::field_texture_at(const FieldTextureArray& textures, std::uint
     return textures[index].value();
 }
 
-VkDescriptorSet OceanGpuResources::descriptor_at(std::span<const VkDescriptorSet> sets,
+VkDescriptorSet OceanSurfaceRuntime::descriptor_at(std::span<const VkDescriptorSet> sets,
                                                  std::uint32_t index, const char* label) const {
     if (index >= sets.size() || sets[index] == VK_NULL_HANDLE) {
         throw std::runtime_error(label == nullptr ? "ocean descriptor set is not initialized"
@@ -817,4 +819,4 @@ VkDescriptorSet OceanGpuResources::descriptor_at(std::span<const VkDescriptorSet
     return sets[index];
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey

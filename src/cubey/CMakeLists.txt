@@ -285,6 +285,7 @@ add_library(cubey_engine STATIC
     engine/gltf_scene_importer.cpp
     engine/gltf_scene_importer_deformation.cpp
     engine/gltf_scene_importer_materials.cpp
+    engine/ocean_surface_runtime.cpp
     engine/forward_pbr_renderer_3d.cpp
     engine/forward_pbr_renderer_3d_graph.cpp
     engine/forward_pbr_renderer_3d_recording.cpp

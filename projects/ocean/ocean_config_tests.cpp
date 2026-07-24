@@ -1231,6 +1231,10 @@ int main() {
         const std::filesystem::path shader_root(CUBEY_OCEAN_SHADER_SOURCE_DIR);
         const std::filesystem::path render_include_root =
             source_root.parent_path().parent_path() / "include/cubey/render";
+        const std::filesystem::path engine_include_root =
+            source_root.parent_path().parent_path() / "include/cubey/engine";
+        const std::filesystem::path engine_source_root =
+            source_root.parent_path().parent_path() / "src/cubey/engine";
         const std::string spectrum_shader =
             read_text_file(shader_root / "ocean_spectrum_body.glsl");
         const std::string modulate_shader =
@@ -1256,8 +1260,9 @@ int main() {
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
-            read_text_file(source_root / "ocean_gpu_resources.cpp");
-        const std::string gpu_header_source = read_text_file(source_root / "ocean_gpu_resources.h");
+            read_text_file(engine_source_root / "ocean_surface_runtime.cpp");
+        const std::string gpu_header_source =
+            read_text_file(engine_include_root / "ocean_surface_runtime.h");
         const std::string config_header =
             read_text_file(render_include_root / "ocean_surface_config.h");
         const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
@@ -1898,9 +1903,10 @@ int main() {
         require_contains(
             gpu_resources_source, "kOceanCascadeCount * 3U",
             "surface layout should bind displacement, normal, and foam for every cascade");
-        require_contains(gpu_resources_source, "cascade + kOceanCascadeCount",
+        require_contains(gpu_resources_source, "cascade + cubey::render::kOceanCascadeCount",
                          "surface descriptors should expose normal maps for every cascade");
-        require_contains(gpu_resources_source, "cascade + kOceanCascadeCount * 2U",
+        require_contains(gpu_resources_source,
+                         "cascade + cubey::render::kOceanCascadeCount * 2U",
                          "surface descriptors should expose foam maps for every cascade");
         require_contains(gpu_resources_source, "kOceanSurfaceReflectionBinding",
                          "surface descriptors should expose the atmosphere reflection probe");

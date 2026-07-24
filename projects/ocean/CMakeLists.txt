@@ -15,7 +15,6 @@ cubey_add_app_target(
         128
     SOURCES
         ocean_app.cpp
-        ocean_gpu_resources.cpp
         ocean_spectrum_diagnostics.cpp
         ocean_ui.cpp
         main.cpp
