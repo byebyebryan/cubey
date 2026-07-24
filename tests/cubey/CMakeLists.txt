@@ -137,6 +137,7 @@ foreach(test_name IN ITEMS
     terrain_backdrop_product
     terrain_backdrop_product_cache
     terrain_backdrop_placement
+    terrain_backdrop_preparation
     terrain_directional_placement
 )
     add_executable(
@@ -155,6 +156,12 @@ foreach(test_name IN ITEMS
         PROPERTIES LABELS terrain TIMEOUT 120
     )
 endforeach()
+
+target_compile_definitions(
+    cubey_terrain_backdrop_preparation_tests
+    PRIVATE
+        CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET="${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
+)
 
 add_executable(cubey_procedural_gpu_parity_tests
     procedural_gpu_parity_main.cpp

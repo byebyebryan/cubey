@@ -620,8 +620,8 @@ int main() {
                          "pyro 3D shadow pipeline should support multiple descriptor sets");
         require_contains(app_source, "draw_atmosphere_environment_controls",
                          "pyro 3D should expose shared environment controls");
-        require_contains(app_source, "TerrainRasterHeightSource",
-                         "pyro 3D should load terrain through the shared raster source");
+        require_contains(app_source, "prepare_raster_terrain_backdrop_product",
+                         "pyro 3D should prepare terrain through the shared raster adapter");
         require_contains(app_source, "TerrainBackdropRuntime",
                          "pyro 3D should use the shared terrain runtime");
         require_contains(cmake_source, "cubey_terrain_backdrop_shader_sources",

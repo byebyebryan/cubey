@@ -811,8 +811,8 @@ int main() {
                          "water 3D scene descriptors should bind a fallback environment cube");
         require_contains(gpu_resources, "AtmosphereBackgroundFrameMaterialConfig",
                          "water 3D should create direct atmosphere background descriptors");
-        require_contains(app, "TerrainRasterHeightSource",
-                         "water 3D should load terrain through the shared raster source");
+        require_contains(app, "prepare_raster_terrain_backdrop_product",
+                         "water 3D should prepare terrain through the shared raster adapter");
         require_contains(app, "TerrainBackdropRuntime",
                          "water 3D should use the shared terrain runtime");
         require_contains(app, "terrain_backdrop_visible() ? &terrain_runtime_ : nullptr",

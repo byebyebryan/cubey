@@ -7,7 +7,6 @@
 #include "water_3d_ui.h"
 
 #include <cubey/asset/hdr_image.h>
-#include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/profiling.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
@@ -30,8 +29,7 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/scene/camera_3d.h>
-#include <cubey/terrain/terrain_backdrop_placement.h>
-#include <cubey/terrain/terrain_backdrop_product.h>
+#include <cubey/terrain/terrain_backdrop_preparation.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -667,24 +665,15 @@ class Water3DApp {
             throw std::runtime_error(
                 "water 3D terrain backdrop requires --pbr-environment-source atmosphere");
         }
-        if (!std::filesystem::exists(config_.terrain.heightfield_path)) {
-            throw std::runtime_error("water 3D terrain heightfield does not exist: " +
-                                     config_.terrain.heightfield_path.string());
-        }
-        const cubey::asset::TerrainRasterHeightSource source(config_.terrain.heightfield_path);
-        const cubey::terrain::TerrainBackdropPlacementPlan placement =
-            cubey::terrain::plan_terrain_backdrop_placement(
-                source, source.bounds(), cubey::terrain::TerrainBackdropPlacementRequest{});
-        const cubey::terrain::TerrainBackdropStagePlan& stage = placement.stage;
-        const cubey::terrain::TerrainBackdropProduct product =
-            cubey::terrain::make_terrain_backdrop_product(
-                cubey::terrain::terrain_backdrop_v1_product_request(
-                    stage,
-                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride),
-                source);
-        terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+        const cubey::terrain::PreparedTerrainBackdropProduct prepared =
+            cubey::terrain::prepare_raster_terrain_backdrop_product({
+                .heightfield_path = config_.terrain.heightfield_path,
+                .render_stride =
+                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+            });
+        terrain_baked_foreground_height_m_ = prepared.baked_foreground_height_m;
         terrain_runtime_.create(
-            device, gpu, product,
+            device, gpu, prepared.product,
             {
                 .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_WATER_3D_SHADER_DIR),
                 .frame_slot_count = frame_slot_count,

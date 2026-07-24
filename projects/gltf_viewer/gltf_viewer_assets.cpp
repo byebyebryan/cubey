@@ -64,24 +64,15 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
     if (!use_atmosphere_environment_source()) {
         throw std::runtime_error("terrain backdrop requires --pbr-environment-source atmosphere");
     }
-    if (!std::filesystem::exists(config_.terrain.heightfield_path)) {
-        throw std::runtime_error("terrain heightfield does not exist: " +
-                                 config_.terrain.heightfield_path.string());
-    }
-    const cubey::asset::TerrainRasterHeightSource terrain_source(config_.terrain.heightfield_path);
-    cubey::terrain::TerrainBackdropPlacementRequest placement_request;
-    const cubey::terrain::TerrainBackdropPlacementPlan placement =
-        cubey::terrain::plan_terrain_backdrop_placement(terrain_source, terrain_source.bounds(),
-                                                        placement_request);
-    const cubey::terrain::TerrainBackdropStagePlan& stage = placement.stage;
-    const cubey::terrain::TerrainBackdropProduct product =
-        cubey::terrain::make_terrain_backdrop_product(
-            cubey::terrain::terrain_backdrop_v1_product_request(
-                stage, config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride),
-            terrain_source);
-    terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+    const cubey::terrain::PreparedTerrainBackdropProduct prepared =
+        cubey::terrain::prepare_raster_terrain_backdrop_product({
+            .heightfield_path = config_.terrain.heightfield_path,
+            .render_stride =
+                config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+        });
+    terrain_baked_foreground_height_m_ = prepared.baked_foreground_height_m;
     terrain_runtime_.create(
-        device, gpu, product,
+        device, gpu, prepared.product,
         {
             .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_GLTF_VIEWER_SHADER_DIR),
             .frame_slot_count = frame_slot_count,

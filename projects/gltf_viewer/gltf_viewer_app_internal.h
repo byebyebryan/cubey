@@ -4,7 +4,6 @@
 
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
-#include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_background_atlas_runtime.h>
 #include <cubey/engine/atmosphere_environment_config.h>
@@ -32,8 +31,7 @@
 #include <cubey/scene/light_manager.h>
 #include <cubey/scene/scene.h>
 #include <cubey/scene/view_3d.h>
-#include <cubey/terrain/terrain_backdrop_placement.h>
-#include <cubey/terrain/terrain_backdrop_product.h>
+#include <cubey/terrain/terrain_backdrop_preparation.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
