@@ -1,30 +1,34 @@
 # Terrain Backdrop Foundation Promotion
 
-Date: 2026-07-22
+Date: 2026-07-24
 
-Status: implemented and validated on 2026-07-21.
+Status: implemented and validated across glTF Viewer, Water3D, Fire3D, and
+Explosion3D.
 
 ## Decision
 
-Promote the accepted fixed-focus far-field terrain backdrop through one real
-second consumer. The shared contract owns raster height loading, deterministic
-placement, the cached continuous mesh product, culling, procedural detail,
-terrain self-shadowing, and draw recording. It does not become a general
-terrain engine.
+Promote the accepted fixed-focus far-field terrain backdrop through several
+materially different consumers. The shared contract owns validated raster
+height loading, deterministic placement and product preparation, the continuous
+mesh product, culling, procedural detail, terrain self-shadowing, and draw
+recording. It does not become a general terrain engine.
 
-The terrain review app remains the product laboratory. glTF Viewer is the
-second consumer and enables the backdrop only when an explicit terrain
-heightfield is supplied. The viewer owns its model-centered orbit, foreground
-composition, world placement, atmosphere/cloud selection, and UI. A missing
-terrain option leaves its existing resource, camera, graph, and rendering path
-unchanged.
+The terrain review app remains the product laboratory. glTF Viewer proves
+forward-PBR composition, Water3D proves a custom refractive graph, and the
+shared Pyro3D renderer proves depth-aware volume composition for Fire3D and
+Explosion3D. Each enables the backdrop only when an explicit terrain
+heightfield is supplied and retains ownership of its camera, foreground,
+atmosphere/cloud policy, UI, and capture behavior.
 
 ## Foundation Boundary
 
 - `cubey::asset` owns the immutable height-source interface and validated
   `cubey.terrain.heightfield.v1` raster loader with exact payload provenance.
-- `cubey::render` owns placement and stage plans, cached mesh products, the
-  default mineral surface classifier, culling plans, and terrain-shadow math.
+- `cubey::terrain` owns placement and stage plans, raster-to-product
+  preparation, cached mesh products, and the default mineral surface
+  classifier.
+- `cubey::render` owns presentation policy, culling plans, and terrain-shadow
+  math.
 - `cubey::engine` owns the GPU backdrop runtime and its composition hook in the
   forward PBR renderer.
 - Consumers own cameras, scene entities, source selection policy, async build
@@ -45,12 +49,21 @@ The rejected climate-response V1.1 branch is not part of this promotion.
 
 ## Composition Contract
 
-The forward renderer records one HDR scene in this order: atmosphere or
-skybox, terrain backdrop, opaque and alpha foreground geometry, depth-aware
-cloud composition, and one display transform. Terrain and foreground geometry
-share scene depth. Terrain keeps a separate cached full-product shadow map;
-terrain and foreground objects do not cast shadows onto each other in this
-version.
+All promoted consumers render terrain into linear HDR color and scene depth
+before their final display transform:
+
+- Forward PBR records atmosphere or skybox, terrain, opaque and alpha
+  foreground geometry, depth-aware clouds, and one display transform.
+- Water3D records atmosphere, moon, terrain, and its bounded test floor before
+  the screen-space water passes. Water refraction and occlusion consume the
+  resulting color and depth; clouds remain the final depth-aware scene layer.
+- Pyro3D records atmosphere, moon, and terrain before the volume pass. The
+  raymarch samples linear scene color, reconstructs scene distance from depth,
+  stops at opaque terrain, composites the volume, and applies one display
+  transform.
+
+Terrain keeps a separate cached full-product shadow map. Terrain and foreground
+objects do not cast shadows onto each other in this version.
 
 The cached product retains its accepted 500 m stage reference. A consumer may
 translate the complete product so its focus is any supported height above the
@@ -58,7 +71,7 @@ local terrain without rebuilding or changing product hashes. Culling, shadow
 projection, world positions, material sampling, and aerial perspective all use
 that translation.
 
-## glTF Proof Consumer
+## Consumer Proofs
 
 `--terrain-heightfield` enables the integration. The default is selected
 placement, continuous high-density stride-3 geometry, mineral control,
@@ -73,6 +86,17 @@ terrain material depends on atmosphere lighting and aerial perspective. Static
 IBL plus terrain is rejected explicitly instead of introducing a second,
 unvalidated terrain lighting path.
 
+Water3D uses the same `--terrain-heightfield` option and defaults to a 5 m
+foreground altitude. Its simulation remains project-owned; terrain is an
+optional scene backdrop and does not alter liquid boundaries, collision, or
+reflection capture.
+
+Fire3D and Explosion3D share the Pyro3D integration and default to a 0.5 m
+foreground altitude near the volume base. Terrain is shown only for the normal
+smoke presentation, not density or velocity diagnostics. The volume does not
+illuminate or shadow terrain, and the integration does not change the
+underlying fire or explosion model.
+
 ## Non-Goals
 
 - terrain generation or Terrain Diffusion inference in normal builds;
@@ -80,6 +104,7 @@ unvalidated terrain lighting path.
 - close terrain, traversal, collision, deformation, or gameplay queries;
 - clipmaps, streaming, floating origin, or adaptive LOD;
 - hydrology, erosion simulation, water, foliage, or planet projection;
+- terrain-driven water simulation or reciprocal fire/terrain lighting;
 - a generic render callback or public render-graph extension framework.
 
 ## Acceptance
@@ -91,16 +116,26 @@ unrestricted headings, and add no more than 0.75 ms mean or p50 steady GPU time
 against a matched viewer control. P95 and forced shadow updates remain
 diagnostic.
 
+The wider custom-renderer promotion reuses that measured terrain runtime but
+does not claim an isolated Water3D or Pyro3D steady-state increment. Their
+existing headless profile paths emphasize simulation rather than final
+presentation. A dedicated offscreen presentation benchmark should precede any
+per-consumer backdrop budget or optimization work.
+
 ## Implementation
 
 - The raster height-source API and loader live in `cubey::asset`.
-- Placement, stage planning, mesh products, material classification, culling,
-  and shadow planning live in `cubey::render`.
+- Placement, stage planning, raster product preparation, mesh products, and
+  material classification live in `cubey::terrain`.
+- Culling, presentation, and shadow planning live in `cubey::render`.
 - `TerrainBackdropRuntime` owns the shared GPU resources and recording path.
 - `ForwardPbrRenderer3D` composes an optional terrain backdrop into its HDR
   scene target before foreground PBR geometry.
-- Terrain uses the shared runtime; glTF Viewer proves the second-consumer path
-  only when `--terrain-heightfield` is present.
+- Water3D and Pyro3D compose the same runtime through their existing render
+  graphs instead of introducing renderer-specific terrain copies.
+- `prepare_raster_terrain_backdrop_product` centralizes source validation,
+  placement, v1 product generation, and the baked foreground offset. Consumers
+  retain runtime and application policy.
 
 The glTF integration deliberately requires an externally supplied validated
 heightfield. Normal builds and portable smoke tests do not fetch or generate
@@ -131,6 +166,12 @@ The executable integration smokes load and hash-check the tracked raster,
 select placement relative to its translated source bounds, create the shared
 runtime, render each real consumer, and apply nonblank PNG statistics. This
 closes the normal-test gap left by the generated canonical asset.
+
+The 2026-07-24 wider-consumer gate adds real headless terrain captures for
+Water3D and Fire3D, verifies the shared Pyro3D path with Explosion3D, and keeps
+all no-terrain PNG and video smokes green. The focused raster-preparation test
+uses the tracked source fixture and verifies placement, source identity, render
+stride, and foreground-offset propagation.
 
 The foundation cleanup retains the same product and pixels while compacting
 the canonical CPU/GPU mesh from `2,694,289` sampled vertices to `385,201`
