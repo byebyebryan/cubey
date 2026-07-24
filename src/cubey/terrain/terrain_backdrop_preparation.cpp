@@ -22,11 +22,14 @@ prepare_raster_terrain_backdrop_product(const TerrainRasterBackdropPreparationRe
         plan_terrain_backdrop_placement(source, source.bounds(), request.placement);
     TerrainBackdropProduct product = make_terrain_backdrop_product(
         terrain_backdrop_v1_product_request(placement.stage, request.render_stride), source);
+    const TerrainBackdropSurfaceEnvelope foreground_surface =
+        terrain_backdrop_surface_envelope(product, request.foreground_footprint_radius_m);
     const float baked_foreground_height_m =
         placement.stage.target_height_m - placement.stage.source_center_height_m;
     return {
         .placement = std::move(placement),
         .product = std::move(product),
+        .foreground_surface = foreground_surface,
         .baked_foreground_height_m = baked_foreground_height_m,
     };
 }

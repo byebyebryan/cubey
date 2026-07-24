@@ -148,6 +148,7 @@ add_library(cubey_terrain STATIC
     terrain/terrain_backdrop_product.cpp
     terrain/terrain_backdrop_product_cache.cpp
     terrain/terrain_backdrop_profile.cpp
+    terrain/terrain_backdrop_surface.cpp
     terrain/terrain_directional_placement.cpp
 )
 add_library(cubey::terrain ALIAS cubey_terrain)
@@ -190,6 +191,7 @@ target_link_libraries(
 add_library(cubey_render STATIC
     render/adaptive_patch_lod.cpp
     render/atmosphere_atlas_cache.cpp
+    render/backdrop_surface_placement.cpp
     render/celestial_system.cpp
     render/deformation.cpp
     render/atmosphere_background_frame.cpp

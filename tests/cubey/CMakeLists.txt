@@ -133,11 +133,27 @@ add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
 
+add_executable(
+    cubey_backdrop_surface_placement_tests
+    backdrop_surface_placement_tests.cpp
+)
+target_link_libraries(
+    cubey_backdrop_surface_placement_tests
+    PRIVATE
+        cubey::render
+        cubey_project_warnings
+)
+add_test(
+    NAME backdrop_surface_placement_tests
+    COMMAND cubey_backdrop_surface_placement_tests
+)
+
 foreach(test_name IN ITEMS
     terrain_backdrop_product
     terrain_backdrop_product_cache
     terrain_backdrop_placement
     terrain_backdrop_preparation
+    terrain_backdrop_surface
     terrain_directional_placement
 )
     add_executable(
