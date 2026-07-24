@@ -113,6 +113,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain backdrop foreground clearance](terrain-backdrop-foreground-clearance.md):
   strict 150 m AGL and 300 m lower-frustum contract for keeping backdrop framing
   out of unsupported surface-detail range.
+- [Backdrop surface placement](backdrop-surface-placement.md): shared foreground
+  bounds, terrain-footprint, ocean-crest, and consumer-clearance contract for
+  compositing terrain and ocean behind scene content.
 - [Terrain rendering quality reset](terrain-rendering-quality-reset.md):
   completed native-resolution correction for final-height shading, seeded
   procedural geology, bounded landform lighting, and honest reference controls.
