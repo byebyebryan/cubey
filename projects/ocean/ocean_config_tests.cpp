@@ -1228,34 +1228,38 @@ int main() {
         require(rejected, "ocean should reject invalid curvature strength");
 
         const std::filesystem::path source_root(CUBEY_OCEAN_SOURCE_DIR);
+        const std::filesystem::path shader_root(CUBEY_OCEAN_SHADER_SOURCE_DIR);
+        const std::filesystem::path render_include_root =
+            source_root.parent_path().parent_path() / "include/cubey/render";
         const std::string spectrum_shader =
-            read_text_file(source_root / "shaders/ocean_spectrum_body.glsl");
+            read_text_file(shader_root / "ocean_spectrum_body.glsl");
         const std::string modulate_shader =
-            read_text_file(source_root / "shaders/ocean_modulate_body.glsl");
+            read_text_file(shader_root / "ocean_modulate_body.glsl");
         const std::string unpack_shader =
-            read_text_file(source_root / "shaders/ocean_unpack_body.glsl");
+            read_text_file(shader_root / "ocean_unpack_body.glsl");
         const std::string spectrum_entry =
-            read_text_file(source_root / "shaders/ocean_spectrum.comp");
+            read_text_file(shader_root / "ocean_spectrum.comp");
         const std::string spectrum_half_entry =
-            read_text_file(source_root / "shaders/ocean_spectrum_half.comp");
-        const std::string vertex_shader = read_text_file(source_root / "shaders/ocean.vert");
-        const std::string ocean_fragment_entry = read_text_file(source_root / "shaders/ocean.frag");
+            read_text_file(shader_root / "ocean_spectrum_half.comp");
+        const std::string vertex_shader = read_text_file(shader_root / "ocean.vert");
+        const std::string ocean_fragment_entry = read_text_file(shader_root / "ocean.frag");
         const std::string fragment_shader =
-            ocean_fragment_entry + read_text_file(source_root / "shaders/ocean_shading.glsl") +
-            read_text_file(source_root / "shaders/ocean_far_field.glsl") +
-            read_text_file(source_root / "shaders/ocean_foam.glsl") +
-            read_text_file(source_root / "shaders/ocean_debug.glsl");
+            ocean_fragment_entry + read_text_file(shader_root / "ocean_shading.glsl") +
+            read_text_file(shader_root / "ocean_far_field.glsl") +
+            read_text_file(shader_root / "ocean_foam.glsl") +
+            read_text_file(shader_root / "ocean_debug.glsl");
         const std::string pillar_vertex_shader =
             read_text_file(source_root / "shaders/ocean_reference_pillar.vert");
         const std::string pillar_fragment_shader =
             read_text_file(source_root / "shaders/ocean_reference_pillar.frag");
-        const std::string mesh_header = read_text_file(source_root / "ocean_mesh.h");
+        const std::string mesh_header = read_text_file(render_include_root / "ocean_mesh.h");
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
             read_text_file(source_root / "ocean_gpu_resources.cpp");
         const std::string gpu_header_source = read_text_file(source_root / "ocean_gpu_resources.h");
-        const std::string config_header = read_text_file(source_root / "ocean_config.h");
+        const std::string config_header =
+            read_text_file(render_include_root / "ocean_surface_config.h");
         const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
         const std::string shader_cmake_source =
             read_text_file(source_root.parent_path().parent_path() / "cmake/CubeyShaders.cmake");
@@ -1439,18 +1443,20 @@ int main() {
                          "ocean build should compile the reference pillar vertex shader");
         require_contains(cmake_source, "ocean_reference_pillar.frag",
                          "ocean build should compile the reference pillar fragment shader");
-        require_contains(cmake_source, "ocean_spectrum_half.comp",
-                         "ocean build should compile half precision spectrum shader variants");
-        require_contains(cmake_source, "ocean_unpack_body.glsl",
-                         "ocean build should track shared compute shader bodies");
-        require_contains(cmake_source, "ocean_shading.glsl",
-                         "ocean build should track extracted fragment shading helpers");
-        require_contains(cmake_source, "ocean_far_field.glsl",
-                         "ocean build should track extracted far-field helpers");
-        require_contains(cmake_source, "ocean_foam.glsl",
-                         "ocean build should track extracted foam helpers");
-        require_contains(cmake_source, "ocean_debug.glsl",
-                         "ocean build should track extracted debug helpers");
+        require_contains(shader_cmake_source, "ocean_spectrum_half.comp",
+                         "shared ocean shader package should compile half precision variants");
+        require_contains(cmake_source, "CUBEY_OCEAN_SURFACE_SHADERS",
+                         "ocean build should consume the shared shader package");
+        require_contains(shader_cmake_source, "ocean_unpack_body.glsl",
+                         "shared ocean package should track compute shader bodies");
+        require_contains(shader_cmake_source, "ocean_shading.glsl",
+                         "shared ocean package should track fragment shading helpers");
+        require_contains(shader_cmake_source, "ocean_far_field.glsl",
+                         "shared ocean package should track far-field helpers");
+        require_contains(shader_cmake_source, "ocean_foam.glsl",
+                         "shared ocean package should track foam helpers");
+        require_contains(shader_cmake_source, "ocean_debug.glsl",
+                         "shared ocean package should track debug helpers");
         require_contains(cmake_source, "CUBEY_OCEAN_DETAIL_FILTER=1",
                          "ocean should compile a static bilinear filter variant");
         require_contains(cmake_source, "CUBEY_OCEAN_DETAIL_FILTER=2",

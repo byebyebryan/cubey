@@ -1,14 +1,14 @@
-#include "ocean_sea_state.h"
+#include <cubey/render/ocean_sea_state.h>
 
-#include "ocean_config.h"
+#include <cubey/render/ocean_surface_config.h>
 
 #include <stdexcept>
 #include <string>
 
-namespace cubey::projects::ocean {
+namespace cubey::render {
 namespace {
 
-[[nodiscard]] OceanSeaStateSettings sea_state_owned_settings(const OceanConfig& config) {
+[[nodiscard]] OceanSeaStateSettings sea_state_owned_settings(const OceanSurfaceConfig& config) {
     OceanSeaStateSettings settings{
         .roughness = config.roughness,
         .normal_strength = config.normal_strength,
@@ -181,7 +181,7 @@ OceanSeaStateSettings ocean_sea_state_settings(OceanSeaState state) {
     throw std::runtime_error("custom ocean sea state has no preset settings");
 }
 
-void apply_ocean_sea_state(OceanConfig& config, OceanSeaState state) {
+void apply_ocean_sea_state(OceanSurfaceConfig& config, OceanSeaState state) {
     const OceanSeaStateSettings settings = ocean_sea_state_settings(state);
     config.sea_state = state;
     config.cascade_enabled = {true, true, false, false, false};
@@ -211,14 +211,14 @@ void apply_ocean_sea_state(OceanConfig& config, OceanSeaState state) {
     config.sun_glitter_width = settings.sun_glitter_width;
 }
 
-bool ocean_config_matches_sea_state(const OceanConfig& config, OceanSeaState state) {
+bool ocean_config_matches_sea_state(const OceanSurfaceConfig& config, OceanSeaState state) {
     return state != OceanSeaState::Custom &&
            config.cascade_enabled ==
                std::array<bool, kOceanCascadeCount>{true, true, false, false, false} &&
            sea_state_owned_settings(config) == ocean_sea_state_settings(state);
 }
 
-OceanSeaState ocean_infer_sea_state(const OceanConfig& config) {
+OceanSeaState ocean_infer_sea_state(const OceanSurfaceConfig& config) {
     for (const OceanSeaState state : kOceanSeaStatePresets) {
         if (ocean_config_matches_sea_state(config, state)) {
             return state;
@@ -227,4 +227,4 @@ OceanSeaState ocean_infer_sea_state(const OceanConfig& config) {
     return OceanSeaState::Custom;
 }
 
-} // namespace cubey::projects::ocean
+} // namespace cubey::render

@@ -158,6 +158,43 @@ function(cubey_terrain_backdrop_shader_depends out_var)
     set(${out_var} ${terrain_backdrop_shader_depends} PARENT_SCOPE)
 endfunction()
 
+function(cubey_ocean_surface_shader_sources out_var)
+    set(
+        ocean_surface_shaders
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_spectrum.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_spectrum_half.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_modulate.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_modulate_half.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_fft.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_fft_half.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_unpack.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_unpack_half.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean.frag"
+    )
+    set(${out_var} ${ocean_surface_shaders} PARENT_SCOPE)
+endfunction()
+
+function(cubey_ocean_surface_shader_depends out_var)
+    cubey_shared_shader_depends(ocean_surface_shared_shader_depends)
+    cubey_atmosphere_shader_depends(ocean_surface_atmosphere_shader_depends)
+    set(
+        ocean_surface_shader_depends
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_spectrum_body.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_modulate_body.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_fft_body.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_unpack_body.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_shading.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_far_field.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_foam.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean_debug.glsl"
+        ${ocean_surface_shared_shader_depends}
+        ${ocean_surface_atmosphere_shader_depends}
+    )
+    list(REMOVE_DUPLICATES ocean_surface_shader_depends)
+    set(${out_var} ${ocean_surface_shader_depends} PARENT_SCOPE)
+endfunction()
+
 function(cubey_cloud_layer_shader_sources out_var)
     set(options)
     set(one_value_args COMPOSITE)

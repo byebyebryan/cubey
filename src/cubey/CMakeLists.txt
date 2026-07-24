@@ -209,6 +209,7 @@ add_library(cubey_render STATIC
     render/material_instance.cpp
     render/material.cpp
     render/mesh.cpp
+    render/ocean_sea_state.cpp
     render/pass.cpp
     render/pbr.cpp
     render/pbr_material_resources.cpp

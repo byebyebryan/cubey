@@ -1,6 +1,8 @@
 cubey_cloud_layer_shader_sources(CUBEY_OCEAN_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_OCEAN_CLOUD_SHADER_DEPENDS)
 cubey_atmosphere_shader_depends(CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS)
+cubey_ocean_surface_shader_sources(CUBEY_OCEAN_SURFACE_SHADERS)
+cubey_ocean_surface_shader_depends(CUBEY_OCEAN_SURFACE_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_ocean
@@ -14,21 +16,11 @@ cubey_add_app_target(
     SOURCES
         ocean_app.cpp
         ocean_gpu_resources.cpp
-        ocean_sea_state.cpp
         ocean_spectrum_diagnostics.cpp
         ocean_ui.cpp
         main.cpp
     SHADERS
-        shaders/ocean_spectrum.comp
-        shaders/ocean_spectrum_half.comp
-        shaders/ocean_modulate.comp
-        shaders/ocean_modulate_half.comp
-        shaders/ocean_fft.comp
-        shaders/ocean_fft_half.comp
-        shaders/ocean_unpack.comp
-        shaders/ocean_unpack_half.comp
-        shaders/ocean.vert
-        shaders/ocean.frag
+        ${CUBEY_OCEAN_SURFACE_SHADERS}
         shaders/ocean_reference_pillar.vert
         shaders/ocean_reference_pillar.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
@@ -38,17 +30,9 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
     SHADER_INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_spectrum_body.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_modulate_body.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_fft_body.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_unpack_body.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
+        ${CUBEY_OCEAN_SURFACE_SHADER_DEPENDS}
         ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_OCEAN_CLOUD_SHADER_DEPENDS}
     )
@@ -59,15 +43,11 @@ cubey_add_glsl_shaders(
     OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/filters/bilinear"
     DEFINES CUBEY_OCEAN_DETAIL_FILTER=1
     INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
+        ${CUBEY_OCEAN_SURFACE_SHADER_DEPENDS}
         ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
-    SOURCES shaders/ocean.frag
+    SOURCES "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean.frag"
 )
 add_custom_target(cubey_project_ocean_bicubic_filter_shader)
 cubey_add_glsl_shaders(
@@ -75,15 +55,11 @@ cubey_add_glsl_shaders(
     OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/filters/bicubic"
     DEFINES CUBEY_OCEAN_DETAIL_FILTER=2
     INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_shading.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_far_field.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_foam.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/ocean_debug.glsl"
+        ${CUBEY_OCEAN_SURFACE_SHADER_DEPENDS}
         ${CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS}
-    SOURCES shaders/ocean.frag
+    SOURCES "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean.frag"
 )
 add_dependencies(
     cubey_project_ocean
@@ -94,12 +70,12 @@ add_dependencies(
 if (BUILD_TESTING)
     add_executable(cubey_project_ocean_tests
         ocean_config_tests.cpp
-        ocean_sea_state.cpp
         ocean_spectrum_diagnostics.cpp
     )
     target_compile_definitions(cubey_project_ocean_tests
         PRIVATE
             CUBEY_OCEAN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+            CUBEY_OCEAN_SHADER_SOURCE_DIR="${CMAKE_SOURCE_DIR}/shaders/cubey/ocean"
     )
     target_link_libraries(
         cubey_project_ocean_tests
