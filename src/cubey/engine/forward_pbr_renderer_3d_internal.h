@@ -121,7 +121,8 @@ struct ForwardPbrRenderer3D::Impl {
                          const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
                          ForwardPbrRenderer3DBackgroundMode background_mode,
                          const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
-                         const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain);
+                         const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
+                         const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -133,7 +134,7 @@ struct ForwardPbrRenderer3D::Impl {
                            const render::PbrMaterialTable& materials,
                            render::PbrDebugView debug_view,
                            ForwardPbrRenderer3DBackgroundMode background_mode,
-                           TerrainBackdropRuntime* terrain) const;
+                           TerrainBackdropRuntime* terrain, OceanSurfaceRuntime* ocean) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,

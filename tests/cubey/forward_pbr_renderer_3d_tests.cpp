@@ -449,6 +449,22 @@ void test_forward_pbr_renderer_3d_render_request_validates_terrain_backdrop() {
                    "forward PBR terrain should require a complete runtime");
 }
 
+void test_forward_pbr_renderer_3d_render_request_validates_ocean_surface() {
+    cubey::ForwardPbrRenderer3DRenderRequest request = valid_render_request();
+    request.settings.ocean_surface.emplace();
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR ocean should require the atmosphere background");
+
+    request.settings.background_mode = cubey::ForwardPbrRenderer3DBackgroundMode::Atmosphere;
+    request.settings.atmosphere_background.emplace();
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR ocean should require a complete runtime");
+
+    request.settings.terrain_backdrop.emplace();
+    require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "forward PBR v1 should reject simultaneous terrain and ocean");
+}
+
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
     const cubey::scene::FrameRenderPlan3D valid({
         cubey::scene::RenderPassPlan3D{
@@ -682,7 +698,7 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
         .environment_blend = 0.35F,
         .environment_rotation_degrees = 90.0F,
         .debug_view = cubey::render::PbrDebugView::Shadow,
-        .terrain_reflection =
+        .backdrop_reflection =
             {
                 .radiance = {0.21F, 0.18F, 0.15F},
                 .strength = 0.72F,
@@ -724,11 +740,11 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
             "forward PBR scene uniforms should enable diffuse SH only when requested");
     require(uniforms.environment_options.y == 0.35F,
             "forward PBR scene uniforms should pack the environment crossfade");
-    require(uniforms.terrain_reflection_radiance_strength ==
+    require(uniforms.backdrop_reflection_radiance_strength ==
                 cubey::math::Vec4{0.21F, 0.18F, 0.15F, 0.72F},
-            "forward PBR scene uniforms should pack terrain reflection radiance and strength");
-    require(uniforms.terrain_reflection_horizon == cubey::math::Vec4{0.16F, 0.10F, 0.0F, 0.0F},
-            "forward PBR scene uniforms should pack terrain reflection horizon controls");
+            "forward PBR scene uniforms should pack backdrop reflection radiance and strength");
+    require(uniforms.backdrop_reflection_horizon == cubey::math::Vec4{0.16F, 0.10F, 0.0F, 0.0F},
+            "forward PBR scene uniforms should pack backdrop reflection horizon controls");
 }
 
 void test_terrain_backdrop_reflection_uses_product_materials_lighting_and_horizon() {
@@ -778,6 +794,45 @@ void test_terrain_backdrop_reflection_uses_product_materials_lighting_and_horizo
             "disabled terrain reflections should contribute no foreground radiance");
 }
 
+void test_ocean_surface_reflection_uses_water_material_lighting_and_horizon() {
+    cubey::render::OceanSurfaceConfig config;
+    cubey::OceanSurfaceRuntimeFrameInfo day;
+    day.camera_position_m = {0.0F, 20.0F, 0.0F};
+    day.planet_radius_m = 6'360'000.0F;
+    day.water_datum_m = 0.0F;
+    day.lighting.diffuse_irradiance_sh[0] = {0.8F, 0.9F, 1.0F};
+    day.lighting.primary_light_direction = {0.0F, 1.0F, 0.0F};
+    day.lighting.primary_light_color = {1.0F, 0.95F, 0.85F};
+    day.lighting.primary_light_intensity = 2.0F;
+
+    cubey::OceanSurfaceRuntimeFrameInfo night = day;
+    night.lighting.diffuse_irradiance_sh[0] = {0.03F, 0.04F, 0.08F};
+    night.lighting.primary_light_direction = {0.0F, -1.0F, 0.0F};
+    night.lighting.primary_light_color = {0.35F, 0.45F, 0.75F};
+    night.lighting.primary_light_intensity = 0.08F;
+
+    const cubey::render::OceanSurfaceFrame day_surface =
+        cubey::render::ocean_surface_frame_from_camera(config, day.camera_position_m,
+                                                       day.planet_radius_m, day.water_datum_m);
+    const cubey::render::OceanSurfaceFrame night_surface =
+        cubey::render::ocean_surface_frame_from_camera(config, night.camera_position_m,
+                                                       night.planet_radius_m, night.water_datum_m);
+    const cubey::BackdropReflection day_reflection =
+        cubey::ocean_surface_reflection(config, day, day_surface);
+    const cubey::BackdropReflection night_reflection =
+        cubey::ocean_surface_reflection(config, night, night_surface);
+
+    require(day_reflection.strength > 0.0F && day_reflection.strength <= 1.0F,
+            "ocean reflection strength should remain normalized");
+    require(day_reflection.horizon_elevation_sine < 0.0F &&
+                day_reflection.horizon_elevation_sine >= -0.08F,
+            "ocean reflection should derive a bounded horizon depression from camera altitude");
+    require(day_reflection.radiance.x > night_reflection.radiance.x &&
+                day_reflection.radiance.y > night_reflection.radiance.y &&
+                day_reflection.radiance.z > night_reflection.radiance.z,
+            "ocean reflection radiance should follow current environment lighting");
+}
+
 void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string header =
@@ -815,10 +870,10 @@ void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass(
                      "forward PBR fragment shader should receive diffuse SH coefficients");
     require_contains(fragment_shader, "environment_options.x > 0.5",
                      "forward PBR fragment shader should switch diffuse lighting to SH by flag");
-    require_contains(fragment_shader, "terrain_reflection_radiance_strength",
-                     "forward PBR fragment shader should receive terrain reflection radiance");
-    require_contains(fragment_shader, "terrain_coverage",
-                     "forward PBR environment sampling should apply terrain horizon coverage");
+    require_contains(fragment_shader, "backdrop_reflection_radiance_strength",
+                     "forward PBR fragment shader should receive backdrop reflection radiance");
+    require_contains(fragment_shader, "backdrop_coverage",
+                     "forward PBR environment sampling should apply backdrop horizon coverage");
     require_contains(fragment_shader, "CUBEY_PBR_DEBUG_ROUGHNESS",
                      "forward PBR fragment shader should expose named debug view constants");
     require_contains(fragment_shader, "cubey_pbr_debug_output",

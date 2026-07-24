@@ -106,8 +106,8 @@ struct PbrSceneUniforms {
     math::Vec4 debug_options{0.0F, 0.0F, 0.0F, 0.0F};
     std::array<math::Vec4, 9> diffuse_irradiance_sh{};
     math::Vec4 environment_options{0.0F, 0.0F, 0.0F, 0.0F};
-    math::Vec4 terrain_reflection_radiance_strength{0.0F, 0.0F, 0.0F, 0.0F};
-    math::Vec4 terrain_reflection_horizon{0.0F, 0.12F, 0.0F, 0.0F};
+    math::Vec4 backdrop_reflection_radiance_strength{0.0F, 0.0F, 0.0F, 0.0F};
+    math::Vec4 backdrop_reflection_horizon{0.0F, 0.12F, 0.0F, 0.0F};
 };
 
 struct PbrSkyboxUniforms {

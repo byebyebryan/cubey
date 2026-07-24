@@ -2,6 +2,7 @@
 
 #include <cubey/core/math.h>
 #include <cubey/engine/cloud_environment_runtime.h>
+#include <cubey/engine/ocean_surface_runtime.h>
 #include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
@@ -79,7 +80,7 @@ struct ForwardPbrRenderer3DSceneUniformInfo {
     float environment_blend = 1.0F;
     float environment_rotation_degrees = 0.0F;
     render::PbrDebugView debug_view = render::PbrDebugView::Final;
-    TerrainBackdropReflection terrain_reflection{};
+    BackdropReflection backdrop_reflection{};
 };
 
 struct ForwardPbrRenderer3DSkyboxUniformInfo {
@@ -139,6 +140,11 @@ struct ForwardPbrRenderer3DTerrainBackdrop {
     TerrainBackdropRuntimeFrameInfo frame{};
 };
 
+struct ForwardPbrRenderer3DOceanSurface {
+    OceanSurfaceRuntime* runtime = nullptr;
+    OceanSurfaceRuntimeFrameInfo frame{};
+};
+
 struct ForwardPbrRenderer3DSettings {
     float environment_rotation_degrees = 0.0F;
     float exposure = 0.0F;
@@ -149,6 +155,7 @@ struct ForwardPbrRenderer3DSettings {
     std::optional<render::AtmosphereEnvironmentFrameUniforms> atmosphere_background{};
     std::optional<ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds{};
     std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain_backdrop{};
+    std::optional<ForwardPbrRenderer3DOceanSurface> ocean_surface{};
 };
 
 struct ForwardPbrRenderer3DSceneTargetInfo {

@@ -120,6 +120,11 @@ void validate_forward_pbr_renderer_3d_render_request(
             throw std::runtime_error("forward PBR atmosphere clouds require a runtime");
         }
     }
+    if (request.settings.terrain_backdrop.has_value() &&
+        request.settings.ocean_surface.has_value()) {
+        throw std::runtime_error(
+            "forward PBR v1 does not compose terrain and ocean simultaneously");
+    }
     if (request.settings.terrain_backdrop.has_value()) {
         if (request.settings.background_mode != ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
             throw std::runtime_error(
@@ -128,6 +133,16 @@ void validate_forward_pbr_renderer_3d_render_request(
         const TerrainBackdropRuntime* runtime = request.settings.terrain_backdrop->runtime;
         if (runtime == nullptr || !runtime->created() || !runtime->target_resources_created()) {
             throw std::runtime_error("forward PBR terrain backdrop requires a complete runtime");
+        }
+    }
+    if (request.settings.ocean_surface.has_value()) {
+        if (request.settings.background_mode != ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
+            throw std::runtime_error(
+                "forward PBR ocean surface requires the atmosphere background");
+        }
+        const OceanSurfaceRuntime* runtime = request.settings.ocean_surface->runtime;
+        if (runtime == nullptr || !runtime->initialized()) {
+            throw std::runtime_error("forward PBR ocean surface requires a complete runtime");
         }
     }
 }
@@ -222,10 +237,10 @@ forward_pbr_renderer_3d_scene_uniforms(const ForwardPbrRenderer3DSceneUniformInf
                 0.0F,
                 0.0F,
             },
-        .terrain_reflection_radiance_strength = {info.terrain_reflection.radiance,
-                                                 info.terrain_reflection.strength},
-        .terrain_reflection_horizon = {info.terrain_reflection.horizon_elevation_sine,
-                                       info.terrain_reflection.horizon_softness, 0.0F, 0.0F},
+        .backdrop_reflection_radiance_strength = {info.backdrop_reflection.radiance,
+                                                  info.backdrop_reflection.strength},
+        .backdrop_reflection_horizon = {info.backdrop_reflection.horizon_elevation_sine,
+                                        info.backdrop_reflection.horizon_softness, 0.0F, 0.0F},
     };
 }
 

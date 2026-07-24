@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cubey/engine/backdrop_reflection.h>
+
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/pass.h>
@@ -68,12 +70,7 @@ struct TerrainBackdropRuntimeDrawPlan {
     std::uint32_t submitted_triangle_count = 0U;
 };
 
-struct TerrainBackdropReflection {
-    cubey::math::Vec3 radiance{0.0F, 0.0F, 0.0F};
-    float strength = 0.0F;
-    float horizon_elevation_sine = 0.0F;
-    float horizon_softness = 0.12F;
-};
+using TerrainBackdropReflection = BackdropReflection;
 
 [[nodiscard]] TerrainBackdropReflection
 terrain_backdrop_reflection(const terrain::TerrainBackdropProduct& product,

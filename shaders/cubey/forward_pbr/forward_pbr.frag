@@ -15,8 +15,8 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 debug_options;
     vec4 diffuse_irradiance_sh[9];
     vec4 environment_options;
-    vec4 terrain_reflection_radiance_strength;
-    vec4 terrain_reflection_horizon;
+    vec4 backdrop_reflection_radiance_strength;
+    vec4 backdrop_reflection_horizon;
 } scene;
 
 layout(set = 0, binding = 1) uniform sampler2D shadow_map;
@@ -135,13 +135,13 @@ vec3 cubey_pbr_prefiltered_environment(vec3 direction, float lod) {
     vec3 previous = textureLod(previous_prefiltered_cube, rotated, lod).rgb;
     vec3 current = textureLod(prefiltered_cube, rotated, lod).rgb;
     vec3 environment = mix(previous, current, clamp(scene.environment_options.y, 0.0, 1.0));
-    float horizon = scene.terrain_reflection_horizon.x;
-    float softness = max(scene.terrain_reflection_horizon.y, 0.001);
-    float terrain_coverage =
+    float horizon = scene.backdrop_reflection_horizon.x;
+    float softness = max(scene.backdrop_reflection_horizon.y, 0.001);
+    float backdrop_coverage =
         1.0 - smoothstep(horizon - softness, horizon + softness, direction.y);
-    float terrain_strength =
-        clamp(scene.terrain_reflection_radiance_strength.w * terrain_coverage, 0.0, 1.0);
-    return mix(environment, scene.terrain_reflection_radiance_strength.rgb, terrain_strength);
+    float backdrop_strength =
+        clamp(scene.backdrop_reflection_radiance_strength.w * backdrop_coverage, 0.0, 1.0);
+    return mix(environment, scene.backdrop_reflection_radiance_strength.rgb, backdrop_strength);
 }
 
 vec3 cubey_pbr_evaluate_diffuse_irradiance_sh(vec3 direction) {

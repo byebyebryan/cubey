@@ -90,6 +90,14 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         terrain->frame.atmosphere = settings.atmosphere_background.value();
         terrain->runtime->prepare_frame(target.frame_slot, terrain->frame);
     }
+    std::optional<ForwardPbrRenderer3DOceanSurface> ocean;
+    if (uses_final_display_transform && settings.ocean_surface.has_value()) {
+        ocean = settings.ocean_surface;
+        ocean->frame.view_projection = scene_plan.view_projection_matrix;
+        ocean->frame.camera_position_m = camera_position;
+        ocean->frame.viewport_extent = target.color_target.extent;
+        ocean->runtime->prepare_frame(target.frame_slot, ocean->frame);
+    }
 
     scene_material().upload(
         target.frame_slot,
@@ -104,8 +112,9 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment_blend = global_.environment.prefiltered_blend,
             .environment_rotation_degrees = settings.environment_rotation_degrees,
             .debug_view = settings.debug_view,
-            .terrain_reflection =
-                terrain.has_value() ? terrain->runtime->reflection() : TerrainBackdropReflection{},
+            .backdrop_reflection = terrain.has_value() ? terrain->runtime->reflection()
+                                   : ocean.has_value() ? ocean->runtime->reflection()
+                                                       : BackdropReflection{},
         }));
     skybox_material().upload(
         target.frame_slot,
@@ -132,7 +141,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         target.color_target, target.frame_slot, target.color_initial_state,
         target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
         resources.frame_meshes, resources.deformation_commands, *resources.materials,
-        settings.debug_view, settings.background_mode, settings.atmosphere_clouds, terrain);
+        settings.debug_view, settings.background_mode, settings.atmosphere_clouds, terrain, ocean);
     CloudEnvironmentRuntime* cloud_runtime =
         settings.atmosphere_clouds.has_value() ? settings.atmosphere_clouds->runtime : nullptr;
     global_.graph_executor.record(
@@ -175,7 +184,8 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
     ForwardPbrRenderer3DBackgroundMode background_mode,
     const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
-    const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain) {
+    const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
+    const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean) {
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
@@ -238,6 +248,14 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
             });
     }
 
+    if (ocean.has_value()) {
+        graph.add_pass("ocean update", render::RenderGraphQueueDomain::Compute)
+            .execute([runtime = ocean->runtime,
+                      frame_slot](const render::RenderGraphExecutionContext& context) {
+                runtime->record_update(context.recorder(), frame_slot);
+            });
+    }
+
     if (terrain.has_value() && terrain->runtime->shadow_update_this_frame()) {
         graph.add_pass("terrain shadow", render::RenderGraphQueueDomain::Graphics)
             .write_depth(terrain_shadow_depth)
@@ -267,12 +285,13 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
     scene_pass_builder.execute([this, scene_color, frame_slot, &scene_plan, mesh_resolver,
                                 &materials, debug_view, background_mode,
-                                terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr](
+                                terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
+                                ocean_runtime = ocean.has_value() ? ocean->runtime : nullptr](
                                    const render::RenderGraphExecutionContext& context) {
         const render::ColorTargetView target =
             render::resolved_color_target_view(context, scene_color);
         record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                          materials, debug_view, background_mode, terrain_runtime);
+                          materials, debug_view, background_mode, terrain_runtime, ocean_runtime);
     });
     if (clouds_enabled) {
         clouds->runtime->declare_surface_composite(graph, cloud_scene_color, cloud_frame,

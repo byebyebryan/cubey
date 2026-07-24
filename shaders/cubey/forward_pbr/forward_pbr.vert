@@ -12,8 +12,8 @@ layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     vec4 debug_options;
     vec4 diffuse_irradiance_sh[9];
     vec4 environment_options;
-    vec4 terrain_reflection_radiance_strength;
-    vec4 terrain_reflection_horizon;
+    vec4 backdrop_reflection_radiance_strength;
+    vec4 backdrop_reflection_horizon;
 } scene;
 
 layout(push_constant) uniform PbrPushConstants {
