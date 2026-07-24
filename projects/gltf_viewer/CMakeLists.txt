@@ -83,7 +83,7 @@ if (BUILD_TESTING)
         NAME gltf_viewer_uses_forward_pbr_renderer_3d
         COMMAND
             /bin/sh -c
-            "grep -q 'engine_\\.renderers()\\.create_forward_pbr_renderer_3d' \"$1\" && grep -q 'forward_pbr_renderer().record({' \"$2\" && grep -q 'clouds.record_pending_update' \"$2\" && grep -q 'atmosphere_clouds' \"$2\" && grep -q 'forward_pbr_renderer().update_environment' \"$2\" && ! grep -R --include='*.cpp' --include='*.h' -q 'ForwardPbrRenderer3D pbr_renderer_' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q '<cubey/render/shadow_map.h>' \"$3\""
+            "grep -q 'engine_\\.renderers()\\.create_forward_pbr_renderer_3d' \"$1\" && grep -q 'frame_resources.wait_for_frame' \"$1\" && grep -q 'forward_pbr_renderer().record({' \"$2\" && grep -q 'clouds.record_pending_update' \"$2\" && grep -q 'atmosphere_clouds' \"$2\" && grep -q 'forward_pbr_renderer().update_environment' \"$2\" && ! grep -R --include='*.cpp' --include='*.h' -q 'ForwardPbrRenderer3D pbr_renderer_' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q '<cubey/render/shadow_map.h>' \"$3\""
             gltf_viewer_uses_forward_pbr_renderer_3d
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_render.cpp"

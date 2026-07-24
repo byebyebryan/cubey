@@ -90,7 +90,7 @@ class GltfViewerApp {
                                               cubey::vulkan::GpuRuntime& gpu);
     void poll_atmosphere_background_atlases(const cubey::vulkan::Device& device,
                                             cubey::vulkan::GpuRuntime& gpu,
-                                            cubey::vulkan::GpuSubmissionTicket retire_after);
+                                            const cubey::vulkan::FrameResources& frame_resources);
     void finish_atmosphere_background_atlases(const cubey::vulkan::Device& device,
                                               cubey::vulkan::GpuRuntime& gpu);
     [[nodiscard]] cubey::render::AtmosphereBackgroundTextureBindings

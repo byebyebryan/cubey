@@ -185,9 +185,15 @@ void GltfViewerApp::create_atmosphere_background_atlases(const cubey::vulkan::De
 
 void GltfViewerApp::poll_atmosphere_background_atlases(
     const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
-    cubey::vulkan::GpuSubmissionTicket retire_after) {
+    const cubey::vulkan::FrameResources& frame_resources) {
+    const cubey::vulkan::GpuSubmissionTicket retire_after =
+        frame_resources.latest_submitted_ticket();
     if (!atmosphere_background_atlases_.poll(gpu, retire_after)) {
         return;
+    }
+    for (std::uint32_t index = 0U; index < frame_resources.frame_slot_count(); ++index) {
+        frame_resources.wait_for_frame(index);
+        gpu.mark_submission_completed(frame_resources.submitted_ticket(index));
     }
     const cubey::render::AtmosphereBackgroundTextureBindings textures =
         atmosphere_background_textures();

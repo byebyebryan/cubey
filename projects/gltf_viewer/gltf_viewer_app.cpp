@@ -259,7 +259,7 @@ int GltfViewerApp::run_windowed() {
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         poll_atmosphere_background_atlases(context.device(), context.gpu(),
-                                           context.frame_resources().latest_submitted_ticket());
+                                           context.frame_resources());
         update_animation(static_cast<float>(timing.delta_seconds));
         if (update_atmosphere_time(timing.delta_seconds)) {
             refresh_atmosphere_lighting_scene();
