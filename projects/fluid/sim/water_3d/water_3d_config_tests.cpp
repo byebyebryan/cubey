@@ -795,6 +795,10 @@ int main() {
                          "water 3D surface render should be recorded through the render graph");
         require_contains(commands, "water scene",
                          "water 3D surface render should include an offscreen scene pass");
+        require_contains(commands, "water terrain shadow",
+                         "water 3D terrain should declare its cached shadow pass in the graph");
+        require_contains(commands, "terrain->record_surface_draws",
+                         "water 3D scene depth should include the shared terrain surface");
         require_contains(commands, "water surface repair",
                          "water 3D surface render should repair small surface holes");
         require_contains(commands, "surface_smoothing_iterations",
@@ -807,6 +811,14 @@ int main() {
                          "water 3D scene descriptors should bind a fallback environment cube");
         require_contains(gpu_resources, "AtmosphereBackgroundFrameMaterialConfig",
                          "water 3D should create direct atmosphere background descriptors");
+        require_contains(app, "TerrainRasterHeightSource",
+                         "water 3D should load terrain through the shared raster source");
+        require_contains(app, "TerrainBackdropRuntime",
+                         "water 3D should use the shared terrain runtime");
+        require_contains(app, "terrain_backdrop_visible() ? &terrain_runtime_ : nullptr",
+                         "water 3D terrain composition should remain explicit and optional");
+        require_contains(cmake, "cubey_terrain_backdrop_shader_sources",
+                         "water 3D should compile the shared terrain shader set");
         require_contains(gpu_resources, "atmosphere_background_.create_pipeline",
                          "water 3D should create a direct atmosphere background pipeline");
         require_contains(cmake, "sky/celestial_body.vert",

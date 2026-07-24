@@ -1,5 +1,7 @@
 #include "water_3d_commands.h"
 
+#include <cubey/engine/terrain_backdrop_runtime.h>
+
 #include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/pbr.h>
@@ -953,15 +955,16 @@ void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
                                const SurfacePushConstants& push_constants,
                                cubey::render::ColorTargetView color_target,
                                cubey::render::DepthTargetView depth_target,
-                               bool atmosphere_background_enabled, bool moon_body_enabled) {
+                               bool atmosphere_background_enabled, bool moon_body_enabled,
+                               cubey::TerrainBackdropRuntime* terrain) {
     record_render_target_pass_with_stored_depth(
         recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
             .depth = cubey::render::depth_clear_value(),
         },
-        [&resources, frame_slot, push_constants, atmosphere_background_enabled,
-         moon_body_enabled](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [&resources, frame_slot, push_constants, atmosphere_background_enabled, moon_body_enabled,
+         terrain](const cubey::vulkan::CommandRecorder& pass_recorder) {
             if (atmosphere_background_enabled) {
                 cubey::render::record_fullscreen_pipeline_draw(
                     pass_recorder,
@@ -975,6 +978,9 @@ void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
             if (moon_body_enabled) {
                 resources.moon_body_frame().record_draw(pass_recorder, frame_slot,
                                                         resources.moon_mesh());
+            }
+            if (terrain != nullptr) {
+                terrain->record_surface_draws(pass_recorder, frame_slot);
             }
             cubey::render::record_fullscreen_pipeline_draw(
                 pass_recorder,
@@ -1042,7 +1048,7 @@ struct SurfaceRenderGraph {
     const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
     const Water3DRenderCamera& camera, Water3DRenderTargetMode target_mode,
     bool atmosphere_background_enabled, bool moon_body_enabled,
-    cubey::CloudEnvironmentRuntime* clouds,
+    cubey::TerrainBackdropRuntime* terrain, cubey::CloudEnvironmentRuntime* clouds,
     const cubey::CloudEnvironmentRuntimeFrame* cloud_runtime_frame) {
     Water3DGpuResources* resource_ptr = &resources;
     const Water3DConfig* config_ptr = &config;
@@ -1075,6 +1081,24 @@ struct SurfaceRenderGraph {
     const cubey::render::RenderGraphTextureHandle scene_depth =
         graph.create_texture(surface_depth_texture_desc("water scene depth", color_target.extent,
                                                         resources.depth_attachment().format()));
+    cubey::render::RenderGraphTextureHandle terrain_shadow_depth{};
+    if (terrain != nullptr) {
+        const std::optional<cubey::render::RenderGraphTextureState> terrain_shadow_initial_state =
+            terrain->shadow_depth_is_sampled()
+                ? cubey::render::render_graph_sampled_depth_texture_state()
+                : cubey::render::render_graph_undefined_texture_state();
+        terrain_shadow_depth =
+            graph.import_depth_target("water terrain shadow depth", terrain->shadow_depth_target(),
+                                      terrain_shadow_initial_state);
+        if (terrain->shadow_update_this_frame()) {
+            graph.add_pass("water terrain shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_depth(terrain_shadow_depth)
+                .material_pass(terrain->shadow_material_pass())
+                .execute([terrain](const cubey::render::RenderGraphExecutionContext& context) {
+                    terrain->record_shadow_pass(context.recorder());
+                });
+        }
+    }
     const cubey::render::RenderGraphTextureHandle raw_depth =
         graph.create_texture(surface_color_texture_desc(
             "water surface raw depth", color_target.extent, kWater3DSurfaceScalarFormat));
@@ -1094,22 +1118,26 @@ struct SurfaceRenderGraph {
         graph.create_texture(surface_color_texture_desc("water whitewater", color_target.extent,
                                                         kWater3DSceneColorFormat));
 
-    graph.add_pass("water scene", cubey::render::RenderGraphQueueDomain::Graphics)
-        .write_color(scene_color)
-        .write_depth(scene_depth)
-        .execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view, camera,
-                  output_format, scene_color, atmosphere_background_enabled, moon_body_enabled,
-                  scene_depth](const cubey::render::RenderGraphExecutionContext& context) {
-            const cubey::render::ColorTargetView target =
-                cubey::render::resolved_color_target_view(context, scene_color);
-            const SurfacePushConstants push_constants = surface_push_constants(
-                *config_ptr, *runtime_state_ptr, render_view, camera, target.extent, output_format,
-                0.0F, 0.0F, SurfacePassKind::Shading, atmosphere_background_enabled);
-            record_surface_scene_pass(
-                context.recorder(), *resource_ptr, frame_slot, push_constants, target,
-                cubey::render::resolved_depth_target_view(context, scene_depth),
-                atmosphere_background_enabled, moon_body_enabled);
-        });
+    auto scene_pass = graph.add_pass("water scene", cubey::render::RenderGraphQueueDomain::Graphics)
+                          .write_color(scene_color)
+                          .write_depth(scene_depth);
+    if (terrain != nullptr) {
+        scene_pass.read_texture(terrain_shadow_depth);
+    }
+    scene_pass.execute([resource_ptr, config_ptr, runtime_state_ptr, frame_slot, render_view,
+                        camera, output_format, scene_color, atmosphere_background_enabled,
+                        moon_body_enabled, scene_depth,
+                        terrain](const cubey::render::RenderGraphExecutionContext& context) {
+        const cubey::render::ColorTargetView target =
+            cubey::render::resolved_color_target_view(context, scene_color);
+        const SurfacePushConstants push_constants = surface_push_constants(
+            *config_ptr, *runtime_state_ptr, render_view, camera, target.extent, output_format,
+            0.0F, 0.0F, SurfacePassKind::Shading, atmosphere_background_enabled);
+        record_surface_scene_pass(context.recorder(), *resource_ptr, frame_slot, push_constants,
+                                  target,
+                                  cubey::render::resolved_depth_target_view(context, scene_depth),
+                                  atmosphere_background_enabled, moon_body_enabled, terrain);
+    });
     if (clouds_enabled) {
         clouds->declare_surface_composite(graph, cloud_scene_color, cloud_frame, frame_slot,
                                           scene_color, scene_depth);
@@ -1589,7 +1617,8 @@ void record_water_3d_surface_draw(
     const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
     const Water3DRenderCamera& camera, cubey::render::ColorTargetView color_target,
     Water3DRenderTargetMode target_mode, const Water3DEnvironmentTextureBindings& environment,
-    bool moon_body_enabled, cubey::CloudEnvironmentRuntime* clouds,
+    bool moon_body_enabled, cubey::TerrainBackdropRuntime* terrain,
+    cubey::CloudEnvironmentRuntime* clouds,
     const cubey::CloudEnvironmentRuntimeFrame* cloud_runtime_frame,
     cubey::vulkan::GpuTimestampProfiler* profiler) {
     if (!is_water_3d_surface_view(render_view)) {
@@ -1599,7 +1628,7 @@ void record_water_3d_surface_draw(
     const SurfaceRenderGraph render_graph = build_water_3d_surface_graph(
         color_target, resources, config, frame_slot, runtime_state, render_view, camera,
         target_mode, environment.atmosphere_background_textures.has_value(), moon_body_enabled,
-        clouds, cloud_runtime_frame);
+        terrain, clouds, cloud_runtime_frame);
     graph_executor.record(
         cubey::render::RenderGraphFrameRecordInfo{
             .device = &device,
@@ -1639,6 +1668,9 @@ void record_water_3d_surface_draw(
         });
     if (render_graph.clouds_enabled) {
         clouds->complete_surface_frame(frame_slot, render_graph.cloud);
+    }
+    if (terrain != nullptr) {
+        terrain->complete_frame();
     }
 }
 

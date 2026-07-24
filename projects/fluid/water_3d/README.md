@@ -33,6 +33,13 @@ anisotropic particle kernels, marching cubes, mesh generation, and richer
 collision are still deferred until the 3D solver and renderer contract are
 stable.
 
+Pass `--terrain-heightfield <field-or-directory>` to add the shared terrain
+backdrop behind the simulation. Terrain writes the existing scene color and
+depth before cloud composition, so the water surface refracts it and remains
+correctly occluded. The bounded checker floor remains immediately below the
+tank; terrain provides the surrounding landscape. Terrain requires the
+procedural atmosphere environment.
+
 Useful render views:
 
 - `surface`: default screen-space water surface.
@@ -62,6 +69,7 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d --water3d-hose --water3d-drain --water3d-rain --no-water3d-whitewater
 ./build/dev/projects/fluid/water_3d/water_3d --no-clouds
 ./build/dev/projects/fluid/water_3d/water_3d --pbr-environment-source static
+./build/dev/projects/fluid/water_3d/water_3d --terrain-heightfield cache/terrain/sources/v1/default --terrain-foreground-height 5
 ```
 
 Interactive controls include fill size/placement, render-domain scale, hose,

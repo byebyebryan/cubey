@@ -7,6 +7,7 @@
 #include "water_3d_ui.h"
 
 #include <cubey/asset/hdr_image.h>
+#include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/profiling.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
@@ -14,6 +15,7 @@
 #include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
+#include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -28,6 +30,8 @@
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph.h>
 #include <cubey/scene/camera_3d.h>
+#include <cubey/terrain/terrain_backdrop_placement.h>
+#include <cubey/terrain/terrain_backdrop_product.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -57,7 +61,9 @@ using cubey::host::FrameStatsSnapshot;
 constexpr float kCameraDistance = 4.0F;
 constexpr float kCameraNearPlane = 0.005F;
 constexpr float kCameraFarPlane = 20.0F;
+constexpr float kTerrainCameraFarPlane = 100'000.0F;
 constexpr float kCameraMinDistance = 0.55F;
+constexpr float kTerrainDefaultForegroundHeightM = 5.0F;
 constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
 constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
@@ -120,10 +126,15 @@ class Water3DApp {
           atmosphere_state_(water_3d_atmosphere_run_state(config_)),
           clouds_config_(water_3d_cloud_config(config_)),
           render_view_(water_3d_render_view_from_name(config_.debug_view)) {
+        if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
+            terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
+        }
         if (use_atmosphere_environment_source()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
         }
-        camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
+        camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane,
+                               terrain_backdrop_enabled() ? kTerrainCameraFarPlane
+                                                          : kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, 80.0F);
         orbit_controller_.set_auto_rotation_speed(0.0F);
@@ -218,14 +229,17 @@ class Water3DApp {
 
         const std::uint32_t particle_scan_count =
             water_3d_runtime_particle_scan_count(water_config_, runtime_state_);
+        const std::uint32_t terrain_triangles =
+            terrain_backdrop_visible() ? terrain_runtime_.draw_plan().submitted_triangle_count : 0U;
         const FrameStatsSample sample{
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles =
-                render_view_ == Water3DRenderView::Particles
-                    ? particle_scan_count * 2U
-                    : (is_water_3d_surface_view(render_view_) ? particle_scan_count * 4U + 8U : 2U),
+            .triangles = render_view_ == Water3DRenderView::Particles
+                             ? particle_scan_count * 2U
+                             : (is_water_3d_surface_view(render_view_)
+                                    ? particle_scan_count * 4U + 8U + terrain_triangles
+                                    : 2U),
         };
         if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
             stats.has_value()) {
@@ -236,11 +250,18 @@ class Water3DApp {
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
         const bool procedural_environment = use_atmosphere_environment_source();
+        Water3DTerrainUiState terrain_ui{
+            .visible = terrain_visible_,
+            .foreground_height_m = terrain_foreground_height_m_,
+            .material = terrain_material_,
+            .shadows = terrain_shadows_,
+        };
         const Water3DUiResult result = draw_water_3d_ui({
             .title = app_info_.ui_title,
             .config = water_config_,
             .atmosphere = procedural_environment ? &atmosphere_state_ : nullptr,
             .clouds = procedural_environment ? &clouds_config_ : nullptr,
+            .terrain = terrain_backdrop_enabled() ? &terrain_ui : nullptr,
             .runtime_state = runtime_state_,
             .resources = resources_,
             .performance =
@@ -270,6 +291,14 @@ class Water3DApp {
 
     [[nodiscard]] bool use_atmosphere_environment_source() const {
         return cubey::projects::fluid::water_3d::use_atmosphere_environment_source(config_);
+    }
+
+    [[nodiscard]] bool terrain_backdrop_enabled() const noexcept {
+        return !config_.terrain.heightfield_path.empty();
+    }
+
+    [[nodiscard]] bool terrain_backdrop_visible() const noexcept {
+        return terrain_backdrop_enabled() && terrain_visible_;
     }
 
     void refresh_atmosphere_environment() {
@@ -479,11 +508,13 @@ class Water3DApp {
 
     void destroy_swapchain_resources() {
         atmosphere_runtime_.clouds().destroy_surface_target_resources();
+        terrain_runtime_.destroy_target_resources();
         resources_.destroy_swapchain_resources();
     }
 
     void destroy_all_resources() {
         surface_graph_executor_.clear();
+        terrain_runtime_.destroy();
         resources_.destroy_all_resources();
         atmosphere_runtime_.destroy();
         atmosphere_background_atlases_.reset();
@@ -622,7 +653,42 @@ class Water3DApp {
         attach_project_gpu(gpu);
         resources_.create_global_resources_if_needed(device, gpu, runtime_.gpu(), water_config_,
                                                      frame_slot_count);
+        create_terrain_backdrop_resources(device, gpu, frame_slot_count);
         surface_graph_executor_.resize(frame_slot_count);
+    }
+
+    void create_terrain_backdrop_resources(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count) {
+        if (!terrain_backdrop_enabled()) {
+            return;
+        }
+        if (!use_atmosphere_environment_source()) {
+            throw std::runtime_error(
+                "water 3D terrain backdrop requires --pbr-environment-source atmosphere");
+        }
+        if (!std::filesystem::exists(config_.terrain.heightfield_path)) {
+            throw std::runtime_error("water 3D terrain heightfield does not exist: " +
+                                     config_.terrain.heightfield_path.string());
+        }
+        const cubey::asset::TerrainRasterHeightSource source(config_.terrain.heightfield_path);
+        const cubey::terrain::TerrainBackdropPlacementPlan placement =
+            cubey::terrain::plan_terrain_backdrop_placement(
+                source, source.bounds(), cubey::terrain::TerrainBackdropPlacementRequest{});
+        const cubey::terrain::TerrainBackdropStagePlan& stage = placement.stage;
+        const cubey::terrain::TerrainBackdropProduct product =
+            cubey::terrain::make_terrain_backdrop_product(
+                cubey::terrain::terrain_backdrop_v1_product_request(
+                    stage,
+                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride),
+                source);
+        terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+        terrain_runtime_.create(
+            device, gpu, product,
+            {
+                .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_WATER_3D_SHADER_DIR),
+                .frame_slot_count = frame_slot_count,
+            });
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
@@ -637,6 +703,14 @@ class Water3DApp {
                                 VkExtent2D extent, std::uint32_t frame_slot_count) {
         resources_.create_render_pipeline(device, color_format, extent,
                                           water_environment_bindings());
+        if (terrain_backdrop_enabled()) {
+            terrain_runtime_.create_target_resources(
+                device, {
+                            .extent = extent,
+                            .color_format = kWater3DSceneColorFormat,
+                            .depth_format = resources_.depth_attachment().format(),
+                        });
+        }
         if (use_atmosphere_environment_source() &&
             atmosphere_runtime_.clouds().surface_resources_created()) {
             atmosphere_runtime_.clouds().create_surface_target_resources(
@@ -644,6 +718,31 @@ class Water3DApp {
                 cubey::render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
                 kWater3DSceneColorFormat, extent, frame_slot_count);
         }
+    }
+
+    void
+    prepare_terrain_backdrop(cubey::render::FrameSlot frame_slot, const Water3DRenderCamera& camera,
+                             const cubey::render::AtmosphereEnvironmentFrameUniforms& atmosphere) {
+        if (!terrain_backdrop_visible()) {
+            return;
+        }
+        terrain_runtime_.prepare_frame(
+            frame_slot, {
+                            .view_projection = camera.view_projection,
+                            .camera_position = camera.position,
+                            .world_translation =
+                                {
+                                    kVolumeCenter.x,
+                                    kVolumeCenter.y + terrain_baked_foreground_height_m_ -
+                                        terrain_foreground_height_m_,
+                                    kVolumeCenter.z,
+                                },
+                            .atmosphere = atmosphere,
+                            .lighting = atmosphere_runtime_.lighting(),
+                            .material = terrain_material_,
+                            .shadows_enabled = terrain_shadows_,
+                            .reflections_enabled = false,
+                        });
     }
 
     void record_frame(cubey::host::WindowedAppContext& context,
@@ -672,9 +771,10 @@ class Water3DApp {
             resources_.upload_environment_lighting(render_frame.frame_slot,
                                                    environment_lighting_uniforms());
             if (use_atmosphere_environment_source()) {
-                resources_.upload_atmosphere_background(
-                    render_frame.frame_slot,
-                    atmosphere_background_uniforms(camera, render_frame.color_target.extent));
+                const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere =
+                    atmosphere_background_uniforms(camera, render_frame.color_target.extent);
+                resources_.upload_atmosphere_background(render_frame.frame_slot, atmosphere);
+                prepare_terrain_backdrop(render_frame.frame_slot, camera, atmosphere);
                 if (moon_body_render_enabled()) {
                     resources_.upload_moon_body(
                         render_frame.frame_slot,
@@ -693,6 +793,7 @@ class Water3DApp {
                 draw_config, render_frame.frame_slot, runtime_state_, render_view_, camera,
                 render_frame.color_target, Water3DRenderTargetMode::Present, environment,
                 moon_body_render_enabled(),
+                terrain_backdrop_visible() ? &terrain_runtime_ : nullptr,
                 cloud_frame.has_value() ? &atmosphere_runtime_.clouds() : nullptr,
                 cloud_frame.has_value() ? &cloud_frame.value() : nullptr, profiler);
         } else {
@@ -816,8 +917,10 @@ class Water3DApp {
                 resources_.upload_environment_lighting(frame.frame_slot,
                                                        environment_lighting_uniforms());
                 if (use_atmosphere_environment_source()) {
-                    resources_.upload_atmosphere_background(
-                        frame.frame_slot, atmosphere_background_uniforms(camera, target.extent));
+                    const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere =
+                        atmosphere_background_uniforms(camera, target.extent);
+                    resources_.upload_atmosphere_background(frame.frame_slot, atmosphere);
+                    prepare_terrain_backdrop(frame.frame_slot, camera, atmosphere);
                     if (moon_body_render_enabled()) {
                         resources_.upload_moon_body(frame.frame_slot,
                                                     moon_body_frame_uniforms(target.extent));
@@ -835,6 +938,7 @@ class Water3DApp {
                     draw_config, frame.frame_slot, runtime_state_, render_view_, camera, target,
                     Water3DRenderTargetMode::ColorAttachment, environment,
                     moon_body_render_enabled(),
+                    terrain_backdrop_visible() ? &terrain_runtime_ : nullptr,
                     cloud_frame.has_value() ? &atmosphere_runtime_.clouds() : nullptr,
                     cloud_frame.has_value() ? &cloud_frame.value() : nullptr);
             } else {
@@ -864,6 +968,7 @@ class Water3DApp {
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_;
+    cubey::TerrainBackdropRuntime terrain_runtime_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
     cubey::host::FrameStats ui_frame_stats_{0.25};
@@ -873,6 +978,12 @@ class Water3DApp {
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     double last_gpu_timing_print_seconds_ = -1.0;
+    float terrain_foreground_height_m_ = kTerrainDefaultForegroundHeightM;
+    float terrain_baked_foreground_height_m_ = 500.0F;
+    bool terrain_visible_ = true;
+    bool terrain_shadows_ = true;
+    cubey::render::TerrainBackdropMaterialMode terrain_material_ =
+        cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
     bool paused_ = false;
     bool reset_requested_ = true;
 };

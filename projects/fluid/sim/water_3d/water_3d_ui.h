@@ -3,6 +3,7 @@
 #include "water_3d_config.h"
 
 #include <cubey/host/performance_ui.h>
+#include <cubey/render/terrain_backdrop_presentation.h>
 
 namespace cubey {
 struct AtmosphereEnvironmentRunState;
@@ -13,11 +14,19 @@ namespace cubey::projects::fluid::water_3d {
 
 class Water3DGpuResources;
 
+struct Water3DTerrainUiState {
+    bool& visible;
+    float& foreground_height_m;
+    cubey::render::TerrainBackdropMaterialMode& material;
+    bool& shadows;
+};
+
 struct Water3DUiContext {
     const char* title = nullptr;
     Water3DConfig& config;
     cubey::AtmosphereEnvironmentRunState* atmosphere = nullptr;
     cubey::CloudEnvironmentConfig* clouds = nullptr;
+    Water3DTerrainUiState* terrain = nullptr;
     Water3DRuntimeState& runtime_state;
     Water3DGpuResources& resources;
     cubey::host::PerformanceUiContext performance;

@@ -17,6 +17,7 @@
 
 namespace cubey {
 class CloudEnvironmentRuntime;
+class TerrainBackdropRuntime;
 struct CloudEnvironmentRuntimeFrame;
 } // namespace cubey
 
@@ -57,7 +58,8 @@ void record_water_3d_surface_draw(
     const Water3DRuntimeState& runtime_state, Water3DRenderView render_view,
     const Water3DRenderCamera& camera, cubey::render::ColorTargetView color_target,
     Water3DRenderTargetMode target_mode, const Water3DEnvironmentTextureBindings& environment,
-    bool moon_body_enabled, cubey::CloudEnvironmentRuntime* clouds = nullptr,
+    bool moon_body_enabled, cubey::TerrainBackdropRuntime* terrain = nullptr,
+    cubey::CloudEnvironmentRuntime* clouds = nullptr,
     const cubey::CloudEnvironmentRuntimeFrame* cloud_frame = nullptr,
     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr);
 

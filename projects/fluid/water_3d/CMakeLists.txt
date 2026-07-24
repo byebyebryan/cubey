@@ -1,6 +1,8 @@
 cubey_cloud_layer_shader_sources(CUBEY_WATER_3D_CLOUD_SHADERS COMPOSITE background-depth)
 cubey_cloud_layer_shader_depends(CUBEY_WATER_3D_CLOUD_SHADER_DEPENDS)
 cubey_atmosphere_shader_depends(CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS)
+cubey_terrain_backdrop_shader_sources(CUBEY_WATER_3D_TERRAIN_SHADERS)
+cubey_terrain_backdrop_shader_depends(CUBEY_WATER_3D_TERRAIN_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_water_3d
@@ -40,6 +42,7 @@ cubey_add_app_target(
         ../../../shaders/cubey/sky/celestial_body.frag
         ../../../shaders/cubey/atmosphere_reflection_prefilter.frag
         ${CUBEY_WATER_3D_CLOUD_SHADERS}
+        ${CUBEY_WATER_3D_TERRAIN_SHADERS}
         ../sim/water_3d/shaders/water_3d_reset.comp
         ../sim/water_3d/shaders/water_3d_clear_grid.comp
         ../sim/water_3d/shaders/water_3d_clear_bins.comp
@@ -77,6 +80,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/common/shaders/water_3d_grid.glsl"
         ${CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS}
         ${CUBEY_WATER_3D_CLOUD_SHADER_DEPENDS}
+        ${CUBEY_WATER_3D_TERRAIN_SHADER_DEPENDS}
 )
 
 target_link_libraries(
@@ -94,6 +98,10 @@ if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
 endif()
 
 if (BUILD_TESTING)
+    set(
+        CUBEY_WATER_3D_TERRAIN_SMOKE_ASSET
+        "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
+    )
     add_executable(cubey_project_water_3d_tests
         ../sim/water_3d/water_3d_config_tests.cpp
     )
@@ -142,6 +150,29 @@ if (BUILD_TESTING)
         --grid-depth 32
     )
     set_tests_properties(water_3d_cloud_headless_writes_png PROPERTIES TIMEOUT 60)
+    set(CUBEY_WATER_3D_TERRAIN_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/water-3d-terrain-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        water_3d_terrain_headless_writes_png
+        cubey_project_water_3d
+        "${CUBEY_WATER_3D_TERRAIN_SMOKE_OUTPUT}"
+        --frames 1
+        --grid-width 32
+        --grid-height 32
+        --grid-depth 32
+        --no-clouds
+        --terrain-heightfield
+        "${CUBEY_WATER_3D_TERRAIN_SMOKE_ASSET}"
+        --terrain-foreground-height
+        5
+    )
+    cubey_add_png_stats_test(
+        water_3d_terrain_headless_writes_png
+        "${CUBEY_WATER_3D_TERRAIN_SMOKE_OUTPUT}"
+        0.02
+        0.05
+    )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_WATER_3D_HEADLESS_VIDEO_SMOKE_OUTPUT
             "${CMAKE_CURRENT_BINARY_DIR}/water-3d-headless.mp4"

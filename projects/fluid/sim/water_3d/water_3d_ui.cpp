@@ -263,6 +263,29 @@ Water3DUiResult draw_water_3d_ui(Water3DUiContext ui) {
              .enabled_help = "Render direct clouds and include them in water environment "
                              "reflections."});
     }
+    if (ui.terrain != nullptr) {
+        if (const cubey::host::ScopedImGuiGroup group{
+                "Terrain Backdrop",
+                {.default_open = false,
+                 .help = "Shared terrain rendered behind the simulation tank."}};
+            group) {
+            const cubey::host::ScopedImGuiId section_id("Terrain Backdrop");
+            cubey::host::imgui_checkbox("Visible", &ui.terrain->visible);
+            cubey::host::imgui_slider_float("Foreground height", &ui.terrain->foreground_height_m,
+                                            0.25F, 200.0F, "%.1f m");
+            const bool filtered =
+                ui.terrain->material == cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
+            int material = filtered ? 1 : 0;
+            if (ImGui::RadioButton("Flat", &material, 0)) {
+                ui.terrain->material = cubey::render::TerrainBackdropMaterialMode::Flat;
+            }
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Filtered detail", &material, 1)) {
+                ui.terrain->material = cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
+            }
+            cubey::host::imgui_checkbox("Shadows", &ui.terrain->shadows);
+        }
+    }
 
     if (const cubey::host::ScopedImGuiGroup group{
             "Foam and whitewater",
