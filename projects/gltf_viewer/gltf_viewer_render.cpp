@@ -215,16 +215,25 @@ void GltfViewerApp::update_ocean_environment_descriptors(const cubey::vulkan::De
 void GltfViewerApp::collect_gpu_timings(cubey::profiling::ProfileRecorder* recorder,
                                         std::uint64_t frame_index,
                                         cubey::render::FrameSlot frame_slot) {
-    if (!gpu_profiler_.has_value()) {
-        return;
-    }
-    gpu_profiler_->collect(frame_slot.index);
-    if (recorder == nullptr) {
-        return;
-    }
     const std::uint64_t collected_frame = collected_profile_frame_index(frame_index, frame_slot);
-    for (const cubey::vulkan::GpuPassTiming& timing : gpu_profiler_->latest_timings()) {
-        recorder->record_gpu_span(collected_frame, timing.label, timing.milliseconds);
+    if (gpu_profiler_.has_value()) {
+        gpu_profiler_->collect(frame_slot.index);
+        if (recorder != nullptr) {
+            for (const cubey::vulkan::GpuPassTiming& timing : gpu_profiler_->latest_timings()) {
+                recorder->record_gpu_span(collected_frame, timing.label, timing.milliseconds);
+            }
+        }
+    }
+    if (ocean_backdrop_enabled()) {
+        cubey::vulkan::GpuTimestampProfiler* ocean_profiler = ocean_runtime_.profiler();
+        if (ocean_profiler != nullptr) {
+            ocean_profiler->collect(frame_slot.index);
+            if (recorder != nullptr) {
+                for (const cubey::vulkan::GpuPassTiming& timing : ocean_runtime_.latest_timings()) {
+                    recorder->record_gpu_span(collected_frame, timing.label, timing.milliseconds);
+                }
+            }
+        }
     }
 }
 
