@@ -36,9 +36,9 @@ stable.
 Pass `--terrain-heightfield <field-or-directory>` to add the shared terrain
 backdrop behind the simulation. Terrain writes the existing scene color and
 depth before cloud composition, so the water surface refracts it and remains
-correctly occluded. The bounded checker floor remains immediately below the
-tank; terrain provides the surrounding landscape. Terrain requires the
-procedural atmosphere environment.
+correctly occluded. No project-owned floor is rendered; terrain and atmosphere
+provide the complete surrounding scene. Terrain requires the procedural
+atmosphere environment.
 
 Useful render views:
 

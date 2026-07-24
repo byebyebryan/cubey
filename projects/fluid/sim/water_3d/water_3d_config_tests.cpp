@@ -717,14 +717,12 @@ int main() {
                          "water 3D scene pass should preserve sampleable scene depth");
         require_contains(scene_shader, "environment_cube",
                          "water 3D scene pass should use the shared environment cube");
-        require_contains(scene_shader, "cubey/environment_lighting.glsl",
-                         "water 3D scene pass should include shared environment lighting");
-        require_contains(scene_shader, "layout(set = 0, binding = 1)",
-                         "water 3D scene pass should bind environment lighting uniforms");
-        require_contains(scene_shader, "cubey_env_primary_light_direction",
-                         "water 3D scene lighting should follow the shared environment light");
-        require_contains(scene_shader, "water_surface_domain_min",
-                         "water 3D scene pass should size the ground plane from domain scale");
+        require_not_contains(scene_shader, "ground_color",
+                             "water 3D scene pass should not synthesize a checker floor");
+        require_not_contains(scene_shader, "water_surface_domain_min",
+                             "water 3D scene pass should not intersect a bounded ground plane");
+        require_contains(commands, "if (!atmosphere_background_enabled)",
+                         "water 3D should draw the fallback environment only without atmosphere");
         require_contains(surface_depth, "gl_FragDepth",
                          "water 3D surface depth pass should write sphere-correct depth");
         require_contains(surface_depth, "frag_radius",
@@ -838,8 +836,6 @@ int main() {
                          "water 3D GPU resources should allocate environment lighting uniforms");
         require_contains(gpu_resources, "VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER",
                          "water 3D surface layouts should bind environment lighting uniforms");
-        require_contains(scene_shader, "external_sky",
-                         "water 3D scene shader should preserve direct atmosphere sky pixels");
         require_contains(commands, "resources.atmosphere_background().pipeline()",
                          "water 3D scene pass should draw the direct atmosphere background");
         require_contains(commands, "moon_body_frame().record_draw",

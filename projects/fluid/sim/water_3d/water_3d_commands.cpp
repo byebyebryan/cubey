@@ -982,13 +982,15 @@ void record_surface_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
             if (terrain != nullptr) {
                 terrain->record_surface_draws(pass_recorder, frame_slot);
             }
-            cubey::render::record_fullscreen_pipeline_draw(
-                pass_recorder,
-                {
-                    .pipeline = &resources.surface_scene_pipeline_resource(),
-                    .descriptor_set = resources.surface_scene_descriptor_set(frame_slot),
-                },
-                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
+            if (!atmosphere_background_enabled) {
+                cubey::render::record_fullscreen_pipeline_draw(
+                    pass_recorder,
+                    {
+                        .pipeline = &resources.surface_scene_pipeline_resource(),
+                        .descriptor_set = resources.surface_scene_descriptor_set(frame_slot),
+                    },
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, push_constants);
+            }
         });
 }
 

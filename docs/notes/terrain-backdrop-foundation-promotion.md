@@ -54,9 +54,10 @@ before their final display transform:
 
 - Forward PBR records atmosphere or skybox, terrain, opaque and alpha
   foreground geometry, depth-aware clouds, and one display transform.
-- Water3D records atmosphere, moon, terrain, and its bounded test floor before
-  the screen-space water passes. Water refraction and occlusion consume the
-  resulting color and depth; clouds remain the final depth-aware scene layer.
+- Water3D records atmosphere, moon, and terrain before the screen-space water
+  passes. Water refraction and occlusion consume the resulting color and depth;
+  clouds remain the final depth-aware scene layer. It renders no project-owned
+  floor.
 - Pyro3D records atmosphere, moon, and terrain before the volume pass. The
   raymarch samples linear scene color, reconstructs scene distance from depth,
   stops at opaque terrain, composites the volume, and applies one display
