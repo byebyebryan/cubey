@@ -9,6 +9,10 @@ the volume so the plume has a solid object to flow around and shadow against.
 By default, the raymarch and shadow passes consume the shared procedural
 atmosphere for dynamic light direction, color, sky tint, and exposure; pass
 `--pbr-environment-source static` for the legacy fixed-light fallback.
+Pass `--terrain-heightfield <field-or-directory>` to render the shared terrain
+behind the volume. The atmosphere, moon, and terrain first produce HDR scene
+color and depth; the fire raymarch then stops at that depth and composites once
+in linear space. Terrain requires the procedural atmosphere environment.
 
 Useful controls:
 
@@ -31,4 +35,5 @@ Useful commands:
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --pyro-obstacle-height 0.58 --pyro-obstacle-radius 0.105
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --debug-view density-slice --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d-density.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
+./build/dev/projects/fluid/fire_3d/fire_3d --terrain-heightfield cache/terrain/sources/v1/default
 ```

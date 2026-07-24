@@ -17,9 +17,14 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/environment_lighting.glsl"
+        ${CUBEY_PYRO_3D_TERRAIN_SHADER_DEPENDS}
 )
 
 if (BUILD_TESTING)
+    set(
+        CUBEY_FIRE_3D_TERRAIN_SMOKE_ASSET
+        "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
+    )
     set(CUBEY_FIRE_3D_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/fire-3d-headless-smoke.png"
     )
@@ -31,6 +36,26 @@ if (BUILD_TESTING)
         --grid-width 32
         --grid-height 32
         --grid-depth 32
+    )
+    set(CUBEY_FIRE_3D_TERRAIN_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/fire-3d-terrain-headless-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        fire_3d_terrain_headless_writes_png
+        cubey_project_fire_3d
+        "${CUBEY_FIRE_3D_TERRAIN_SMOKE_OUTPUT}"
+        --frames 4
+        --grid-width 32
+        --grid-height 32
+        --grid-depth 32
+        --terrain-heightfield
+        "${CUBEY_FIRE_3D_TERRAIN_SMOKE_ASSET}"
+    )
+    cubey_add_png_stats_test(
+        fire_3d_terrain_headless_writes_png
+        "${CUBEY_FIRE_3D_TERRAIN_SMOKE_OUTPUT}"
+        0.02
+        0.05
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_FIRE_3D_HEADLESS_VIDEO_SMOKE_OUTPUT

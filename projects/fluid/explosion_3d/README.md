@@ -10,6 +10,10 @@ ball obstacle can be enabled when the impulse should break around a solid shape.
 By default, the raymarch and shadow passes consume the shared procedural
 atmosphere for dynamic light direction, color, sky tint, and exposure; pass
 `--pbr-environment-source static` for the legacy fixed-light fallback.
+The shared Pyro3D presentation also accepts
+`--terrain-heightfield <field-or-directory>`. Terrain contributes HDR scene
+color and depth before the explosion raymarch, so opaque terrain terminates the
+volume correctly. Terrain requires the procedural atmosphere environment.
 
 Useful controls:
 
@@ -32,4 +36,5 @@ Useful commands:
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --pyro-obstacle-height 0.55 --pyro-obstacle-radius 0.18
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --debug-view velocity --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d-velocity.png
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
+./build/dev/projects/fluid/explosion_3d/explosion_3d --terrain-heightfield cache/terrain/sources/v1/default
 ```

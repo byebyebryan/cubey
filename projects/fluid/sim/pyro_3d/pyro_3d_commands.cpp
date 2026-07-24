@@ -1,6 +1,8 @@
 #include "pyro_3d_commands.h"
 
+#include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/render/pass.h>
+#include <cubey/render/render_graph.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/memory_barriers.h>
@@ -9,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 
 namespace cubey::projects::fluid::pyro_3d {
@@ -224,11 +227,11 @@ void record_source_buffer_update(VkCommandBuffer command_buffer,
                 config.obstacle_center_height,
                 config.obstacle_radius,
                 static_cast<float>(static_cast<std::uint32_t>(config.mode)),
-                0.0F,
+                camera.far_plane_m,
             },
         .style_options =
             {
-                config.render_exposure,
+                camera.near_plane_m,
                 config.render_background_lift,
                 config.render_rim_strength,
                 config.render_scatter_strength,
@@ -395,50 +398,82 @@ void record_pyro_3d_compute(VkCommandBuffer command_buffer, Pyro3DGpuResources& 
     }
 }
 
-void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResources& resources,
-                         const Pyro3DConfig& config, Pyro3DDebugView debug_view,
-                         const Pyro3DRenderCamera& camera,
-                         cubey::render::ColorTargetView color_target,
-                         const Pyro3DFrameState& frame_state,
-                         cubey::vulkan::GpuTimestampProfiler* profiler,
-                         std::uint32_t frame_slot_index, bool atmosphere_background_enabled,
-                         bool moon_body_enabled) {
-    const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    const RenderPushConstants push_constants = render_push_constants(
-        config, debug_view, camera, color_target.extent, atmosphere_background_enabled);
+namespace {
 
-    cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot_index,
-                                                   "raymarch");
+[[nodiscard]] cubey::render::RenderGraphTextureDesc pyro_scene_color_desc(VkExtent2D extent) {
+    return {
+        .label = "pyro scene color",
+        .extent = {extent.width, extent.height, 1U},
+        .format = kPyro3DSceneColorFormat,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+    };
+}
+
+[[nodiscard]] cubey::render::RenderGraphTextureDesc pyro_scene_depth_desc(VkExtent2D extent) {
+    return {
+        .label = "pyro scene depth",
+        .extent = {extent.width, extent.height, 1U},
+        .format = kPyro3DSceneDepthFormat,
+        .aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+    };
+}
+
+void record_pyro_scene_pass(const cubey::vulkan::CommandRecorder& recorder,
+                            Pyro3DGpuResources& resources, cubey::render::FrameSlot frame_slot,
+                            cubey::render::ColorTargetView color_target,
+                            cubey::render::DepthTargetView depth_target,
+                            bool atmosphere_background_enabled, bool moon_body_enabled,
+                            cubey::TerrainBackdropRuntime* terrain) {
     cubey::render::record_render_target_pass(
-        recorder, cubey::render::render_target_view(color_target),
+        recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.006F, 0.008F, 0.012F, 1.0F),
+            .depth = cubey::render::depth_clear_value(),
         },
-        [&resources, &frame_state, frame_slot_index, push_constants, atmosphere_background_enabled,
-         moon_body_enabled](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [&resources, frame_slot, atmosphere_background_enabled, moon_body_enabled,
+         terrain](const cubey::vulkan::CommandRecorder& pass_recorder) {
             if (atmosphere_background_enabled) {
                 cubey::render::record_fullscreen_pipeline_draw(
                     pass_recorder,
                     cubey::render::FullscreenPipelineDrawInfo{
                         .pipeline = &resources.atmosphere_background().pipeline(),
                         .descriptor_set =
-                            resources.atmosphere_background_descriptor_set(frame_slot_index),
+                            resources.atmosphere_background_descriptor_set(frame_slot.index),
                     });
             }
             if (moon_body_enabled) {
-                resources.moon_body_frame().record_draw(pass_recorder,
-                                                        cubey::render::FrameSlot{
-                                                            .index = frame_slot_index,
-                                                            .count = resources.frame_slot_count(),
-                                                        },
+                resources.moon_body_frame().record_draw(pass_recorder, frame_slot,
                                                         resources.moon_mesh());
             }
+            if (terrain != nullptr) {
+                terrain->record_surface_draws(pass_recorder, frame_slot);
+            }
+        });
+}
+
+void record_pyro_raymarch_pass(const cubey::vulkan::CommandRecorder& recorder,
+                               Pyro3DGpuResources& resources, const Pyro3DConfig& config,
+                               Pyro3DDebugView debug_view, const Pyro3DRenderCamera& camera,
+                               cubey::render::ColorTargetView color_target,
+                               const Pyro3DFrameState& frame_state,
+                               cubey::render::FrameSlot frame_slot,
+                               bool atmosphere_background_enabled) {
+    const RenderPushConstants push_constants = render_push_constants(
+        config, debug_view, camera, color_target.extent, atmosphere_background_enabled);
+    cubey::render::record_render_target_pass(
+        recorder, cubey::render::render_target_view(color_target),
+        cubey::render::RenderClearValues{
+            .color = cubey::render::color_clear_value(0.006F, 0.008F, 0.012F, 1.0F),
+        },
+        [&resources, &frame_state, frame_slot,
+         push_constants](const cubey::vulkan::CommandRecorder& pass_recorder) {
             const cubey::render::GraphicsPipelineResource& pipeline = resources.render_pipeline();
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
-            const std::array<VkDescriptorSet, 2> sets{
+            const std::array<VkDescriptorSet, 3> sets{
                 resources.render_descriptor_set(frame_state.density_a_current,
                                                 frame_state.velocity_a_current),
-                resources.environment_descriptor_set(frame_slot_index),
+                resources.environment_descriptor_set(frame_slot.index),
+                resources.scene_descriptor_set(frame_slot.index),
             };
             pass_recorder.bind_descriptor_sets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(),
                                                0, sets);
@@ -446,6 +481,132 @@ void record_pyro_3d_draw(VkCommandBuffer command_buffer, const Pyro3DGpuResource
                                          push_constants);
             cubey::render::record_fullscreen_triangle(pass_recorder);
         });
+}
+
+struct Pyro3DRenderGraph {
+    cubey::render::CompiledRenderGraph graph;
+    cubey::render::RenderGraphTextureHandle scene_color{};
+    cubey::render::RenderGraphTextureHandle scene_depth{};
+};
+
+[[nodiscard]] Pyro3DRenderGraph
+build_pyro_3d_render_graph(cubey::render::ColorTargetView color_target,
+                           Pyro3DGpuResources& resources, const Pyro3DConfig& config,
+                           Pyro3DDebugView debug_view, const Pyro3DRenderCamera& camera,
+                           Pyro3DRenderTargetMode target_mode, const Pyro3DFrameState& frame_state,
+                           cubey::render::FrameSlot frame_slot, bool atmosphere_background_enabled,
+                           bool moon_body_enabled, cubey::TerrainBackdropRuntime* terrain) {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureState initial_state =
+        target_mode == Pyro3DRenderTargetMode::Present
+            ? cubey::render::render_graph_undefined_texture_state()
+            : cubey::render::render_graph_color_attachment_texture_state();
+    const cubey::render::RenderGraphTextureState final_state =
+        target_mode == Pyro3DRenderTargetMode::Present
+            ? cubey::render::render_graph_present_texture_state()
+            : cubey::render::render_graph_color_attachment_texture_state();
+    const cubey::render::RenderGraphTextureHandle backbuffer =
+        graph.import_color_target("pyro backbuffer", color_target, initial_state, final_state);
+    const cubey::render::RenderGraphTextureHandle scene_color =
+        graph.create_texture(pyro_scene_color_desc(color_target.extent));
+    const cubey::render::RenderGraphTextureHandle scene_depth =
+        graph.create_texture(pyro_scene_depth_desc(color_target.extent));
+
+    cubey::render::RenderGraphTextureHandle terrain_shadow_depth{};
+    if (terrain != nullptr) {
+        const std::optional<cubey::render::RenderGraphTextureState> terrain_shadow_initial_state =
+            terrain->shadow_depth_is_sampled()
+                ? cubey::render::render_graph_sampled_depth_texture_state()
+                : cubey::render::render_graph_undefined_texture_state();
+        terrain_shadow_depth =
+            graph.import_depth_target("pyro terrain shadow depth", terrain->shadow_depth_target(),
+                                      terrain_shadow_initial_state);
+        if (terrain->shadow_update_this_frame()) {
+            graph.add_pass("pyro terrain shadow", cubey::render::RenderGraphQueueDomain::Graphics)
+                .write_depth(terrain_shadow_depth)
+                .material_pass(terrain->shadow_material_pass())
+                .execute([terrain](const cubey::render::RenderGraphExecutionContext& context) {
+                    terrain->record_shadow_pass(context.recorder());
+                });
+        }
+    }
+
+    auto scene_pass = graph.add_pass("pyro scene", cubey::render::RenderGraphQueueDomain::Graphics)
+                          .write_color(scene_color)
+                          .write_depth(scene_depth);
+    if (terrain != nullptr) {
+        scene_pass.read_texture(terrain_shadow_depth);
+    }
+    scene_pass.execute([&resources, frame_slot, scene_color, scene_depth,
+                        atmosphere_background_enabled, moon_body_enabled,
+                        terrain](const cubey::render::RenderGraphExecutionContext& context) {
+        record_pyro_scene_pass(context.recorder(), resources, frame_slot,
+                               cubey::render::resolved_color_target_view(context, scene_color),
+                               cubey::render::resolved_depth_target_view(context, scene_depth),
+                               atmosphere_background_enabled, moon_body_enabled, terrain);
+    });
+
+    graph.add_pass("pyro raymarch", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(scene_color)
+        .read_texture(scene_depth)
+        .write_color(backbuffer)
+        .execute([&resources, &config, debug_view, camera, frame_state, frame_slot, backbuffer,
+                  atmosphere_background_enabled](
+                     const cubey::render::RenderGraphExecutionContext& context) {
+            record_pyro_raymarch_pass(
+                context.recorder(), resources, config, debug_view, camera,
+                cubey::render::resolved_color_target_view(context, backbuffer), frame_state,
+                frame_slot, atmosphere_background_enabled);
+        });
+
+    return {
+        .graph = graph.compile(),
+        .scene_color = scene_color,
+        .scene_depth = scene_depth,
+    };
+}
+
+} // namespace
+
+void record_pyro_3d_draw(VkCommandBuffer command_buffer, const cubey::vulkan::Device& device,
+                         cubey::render::RenderGraphFrameExecutor& graph_executor,
+                         Pyro3DGpuResources& resources, const Pyro3DConfig& config,
+                         Pyro3DDebugView debug_view, const Pyro3DRenderCamera& camera,
+                         cubey::render::ColorTargetView color_target,
+                         Pyro3DRenderTargetMode target_mode, const Pyro3DFrameState& frame_state,
+                         cubey::TerrainBackdropRuntime* terrain,
+                         cubey::vulkan::GpuTimestampProfiler* profiler,
+                         std::uint32_t frame_slot_index, bool atmosphere_background_enabled,
+                         bool moon_body_enabled) {
+    const cubey::render::FrameSlot frame_slot{
+        .index = frame_slot_index,
+        .count = resources.frame_slot_count(),
+    };
+    const Pyro3DRenderGraph render_graph = build_pyro_3d_render_graph(
+        color_target, resources, config, debug_view, camera, target_mode, frame_state, frame_slot,
+        atmosphere_background_enabled, moon_body_enabled, terrain);
+    graph_executor.record(
+        cubey::render::RenderGraphFrameRecordInfo{
+            .device = &device,
+            .command_buffer = command_buffer,
+            .frame_slot = frame_slot,
+            .label = "vkEndCommandBuffer pyro_3d render graph",
+            .command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+            .profiler = profiler,
+        },
+        render_graph.graph,
+        [&resources, &device, frame_slot,
+         &render_graph](const cubey::render::RenderGraphResourceSet& graph_resources) {
+            resources.update_scene_descriptors(
+                device, frame_slot.index,
+                cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
+                                                             render_graph.scene_color),
+                cubey::render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
+                                                             render_graph.scene_depth));
+        });
+    if (terrain != nullptr) {
+        terrain->complete_frame();
+    }
 }
 
 } // namespace cubey::projects::fluid::pyro_3d

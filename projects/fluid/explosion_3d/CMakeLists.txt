@@ -17,6 +17,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/environment_lighting.glsl"
+        ${CUBEY_PYRO_3D_TERRAIN_SHADER_DEPENDS}
 )
 
 if (BUILD_TESTING)

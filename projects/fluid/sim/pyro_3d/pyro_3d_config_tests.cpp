@@ -576,6 +576,12 @@ int main() {
                          "pyro 3D raymarch shader should keep explosion flash separate from fire");
         require_contains(raymarch_shader, "external_background_enabled",
                          "pyro 3D raymarch shader should composite over direct backgrounds");
+        require_contains(raymarch_shader, "scene_depth_texture",
+                         "pyro 3D raymarch should consume opaque scene depth");
+        require_contains(raymarch_shader, "far_t = min(far_t, scene_ray_distance(direction))",
+                         "pyro 3D raymarch should stop at terrain and other scene geometry");
+        require_contains(raymarch_shader, "external_background ? 0.0",
+                         "pyro 3D should not reveal its empty volume bounds over terrain");
         require_contains(shadow_shader, "light_transmittance",
                          "pyro 3D shadow shader should retain shadow raymarching");
         require_contains(shadow_shader, "cubey/environment_lighting.glsl",
@@ -586,6 +592,12 @@ int main() {
                          "pyro 3D commands should bind per-frame environment descriptors");
         require_contains(commands_source, "atmosphere_background_descriptor_set",
                          "pyro 3D commands should draw the direct atmosphere background");
+        require_contains(commands_source, "RenderGraphFrameExecutor",
+                         "pyro 3D presentation should use the shared render graph executor");
+        require_contains(commands_source, "pyro terrain shadow",
+                         "pyro 3D terrain should declare its cached shadow pass");
+        require_contains(commands_source, "terrain->record_surface_draws",
+                         "pyro 3D scene depth should include the shared terrain surface");
         require_contains(gpu_resources_source, "EnvironmentLightingUniforms",
                          "pyro 3D GPU resources should allocate environment lighting uniforms");
         require_contains(gpu_resources_source, "AtmosphereBackgroundFrameMaterialConfig",
@@ -608,6 +620,12 @@ int main() {
                          "pyro 3D shadow pipeline should support multiple descriptor sets");
         require_contains(app_source, "draw_atmosphere_environment_controls",
                          "pyro 3D should expose shared environment controls");
+        require_contains(app_source, "TerrainRasterHeightSource",
+                         "pyro 3D should load terrain through the shared raster source");
+        require_contains(app_source, "TerrainBackdropRuntime",
+                         "pyro 3D should use the shared terrain runtime");
+        require_contains(cmake_source, "cubey_terrain_backdrop_shader_sources",
+                         "pyro 3D should compile the shared terrain shader set");
         require_contains(app_source, "create_atmosphere_background_cached_textures",
                          "pyro 3D should reuse shared cached atmosphere background atlases");
         require_contains(app_source, "upload_atmosphere_background",

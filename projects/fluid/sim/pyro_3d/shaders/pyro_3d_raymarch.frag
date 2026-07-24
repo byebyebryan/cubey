@@ -22,6 +22,8 @@ layout(set = 0, binding = 2) uniform sampler3D shadow_volume;
 layout(set = 1, binding = 0) uniform EnvironmentLightingBlock {
     CubeyEnvironmentLighting environment_lighting;
 };
+layout(set = 2, binding = 0) uniform sampler2D scene_color_texture;
+layout(set = 2, binding = 1) uniform sampler2D scene_depth_texture;
 
 layout(location = 0) in vec2 frag_position;
 layout(location = 1) in vec2 frag_uv;
@@ -201,6 +203,18 @@ vec3 display_transform(vec3 color) {
     return vec3(1.0) - exp(-max(color, vec3(0.0)) * exposure);
 }
 
+float scene_ray_distance(vec3 direction) {
+    float depth = texture(scene_depth_texture, frag_uv).r;
+    if (depth >= 0.999999) {
+        return 1.0e20;
+    }
+    float near_plane = max(params.style_options.x, 0.0001);
+    float far_plane = max(params.obstacle_options.w, near_plane + 0.0001);
+    float view_distance =
+        (near_plane * far_plane) / max(far_plane - depth * (far_plane - near_plane), 0.0001);
+    return view_distance / max(dot(direction, params.ray_forward_debug.xyz), 0.0001);
+}
+
 void main() {
     vec2 screen_position = vec2(frag_position.x, -frag_position.y);
     vec2 screen_uv = vec2(frag_uv.x, 1.0 - frag_uv.y);
@@ -236,13 +250,21 @@ void main() {
     float near_t = 0.0;
     float far_t = 0.0;
     bool external_background = external_background_enabled();
-    vec3 background = external_background ? vec3(0.0) : background_color(screen_uv);
+    vec3 background =
+        external_background ? texture(scene_color_texture, frag_uv).rgb : background_color(screen_uv);
     if (!ray_box_intersection(origin, direction, near_t, far_t)) {
-        out_color = external_background ? vec4(0.0) : vec4(background, 1.0);
+        out_color = vec4(clamp(display_transform(background), vec3(0.0), vec3(1.0)), 1.0);
         return;
     }
 
     near_t = max(near_t, 0.0);
+    if (external_background) {
+        far_t = min(far_t, scene_ray_distance(direction));
+    }
+    if (far_t <= near_t) {
+        out_color = vec4(clamp(display_transform(background), vec3(0.0), vec3(1.0)), 1.0);
+        return;
+    }
     int steps = max(int(params.camera_position_steps.w + 0.5), 1);
     float path_length = far_t - near_t;
     float step_length = path_length / float(steps);
@@ -267,7 +289,8 @@ void main() {
         vec4 density = density_at(position);
         float smoke_density_value = smoke_density(density, position);
         float smoke_extinction = smoke_density_value * params.render_options.x;
-        float base_extinction = base_volume_extinction(position);
+        float base_extinction =
+            external_background ? 0.0 : base_volume_extinction(position);
         float smoke_alpha = 1.0 - exp(-smoke_extinction * step_length);
         float base_alpha = 1.0 - exp(-base_extinction * step_length);
         float shadow = texture(shadow_volume, clamp(position, vec3(0.0), vec3(1.0))).r;
@@ -291,7 +314,6 @@ void main() {
         }
     }
 
-    vec3 color = external_background ? accumulated : accumulated + background * transmittance;
-    float alpha = external_background ? clamp(1.0 - transmittance, 0.0, 1.0) : 1.0;
-    out_color = vec4(clamp(display_transform(color), vec3(0.0), vec3(1.0)), alpha);
+    vec3 color = accumulated + background * transmittance;
+    out_color = vec4(clamp(display_transform(color), vec3(0.0), vec3(1.0)), 1.0);
 }

@@ -5,9 +5,11 @@
 #include "pyro_3d_gpu_resources.h"
 #include "pyro_3d_sources.h"
 
+#include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
+#include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
@@ -23,7 +25,11 @@
 #include <cubey/render/color_space.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/pass.h>
+#include <cubey/render/render_graph_frame.h>
+#include <cubey/render/terrain_backdrop_presentation.h>
 #include <cubey/scene/camera_3d.h>
+#include <cubey/terrain/terrain_backdrop_placement.h>
+#include <cubey/terrain/terrain_backdrop_product.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -37,6 +43,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
@@ -53,6 +60,10 @@ using cubey::host::FrameStatsSnapshot;
 
 constexpr float kFireCameraDistance = 2.05F;
 constexpr float kExplosionCameraDistance = 2.18F;
+constexpr float kCameraNearPlane = 0.01F;
+constexpr float kCameraFarPlane = 20.0F;
+constexpr float kTerrainCameraFarPlane = 100'000.0F;
+constexpr float kTerrainDefaultForegroundHeightM = 0.5F;
 constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
 constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
@@ -139,6 +150,12 @@ class Pyro3DApp {
           source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)),
           atmosphere_state_(pyro_3d_atmosphere_run_state(config_)),
           debug_view_(debug_view_from_name(config_.debug_view)) {
+        if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
+            terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
+        }
+        camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane,
+                               terrain_backdrop_enabled() ? kTerrainCameraFarPlane
+                                                          : kCameraFarPlane);
         orbit_controller_.set_home_distance(default_camera_distance(app_info_.mode));
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
@@ -362,6 +379,31 @@ class Pyro3DApp {
                                             0.0F, 3.0F, "%.2f");
         }
 
+        if (terrain_backdrop_enabled()) {
+            if (const cubey::host::ScopedImGuiGroup group{
+                    "Terrain Backdrop",
+                    {.default_open = false,
+                     .help = "Shared terrain behind the fire or explosion volume."}};
+                group) {
+                const cubey::host::ScopedImGuiId section_id("Terrain Backdrop");
+                cubey::host::imgui_checkbox("Visible", &terrain_visible_);
+                cubey::host::imgui_slider_float("Foreground height", &terrain_foreground_height_m_,
+                                                0.25F, 200.0F, "%.1f m");
+                int material =
+                    terrain_material_ == cubey::render::TerrainBackdropMaterialMode::FilteredDetail
+                        ? 1
+                        : 0;
+                if (ImGui::RadioButton("Flat", &material, 0)) {
+                    terrain_material_ = cubey::render::TerrainBackdropMaterialMode::Flat;
+                }
+                ImGui::SameLine();
+                if (ImGui::RadioButton("Filtered detail", &material, 1)) {
+                    terrain_material_ = cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
+                }
+                cubey::host::imgui_checkbox("Shadows", &terrain_shadows_);
+            }
+        }
+
         if (use_atmosphere_environment_source()) {
             if (cubey::host::draw_atmosphere_environment_controls(
                     atmosphere_state_,
@@ -431,7 +473,9 @@ class Pyro3DApp {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = 1,
+            .triangles = 1U + (terrain_backdrop_rendered()
+                                   ? terrain_runtime_.draw_plan().submitted_triangle_count
+                                   : 0U),
         };
         if (std::optional<FrameStatsSnapshot> stats = ui_frame_stats_.record_frame(sample);
             stats.has_value()) {
@@ -456,6 +500,18 @@ class Pyro3DApp {
 
     [[nodiscard]] bool use_atmosphere_environment_source() const {
         return cubey::projects::fluid::pyro_3d::use_atmosphere_environment_source(config_);
+    }
+
+    [[nodiscard]] bool terrain_backdrop_enabled() const noexcept {
+        return !config_.terrain.heightfield_path.empty();
+    }
+
+    [[nodiscard]] bool terrain_backdrop_visible() const noexcept {
+        return terrain_backdrop_enabled() && terrain_visible_;
+    }
+
+    [[nodiscard]] bool terrain_backdrop_rendered() const noexcept {
+        return terrain_backdrop_visible() && debug_view_ == Pyro3DDebugView::Smoke;
     }
 
     void refresh_atmosphere_environment() {
@@ -525,15 +581,21 @@ class Pyro3DApp {
         });
     }
 
-    [[nodiscard]] Pyro3DRenderCamera render_camera() const {
+    [[nodiscard]] Pyro3DRenderCamera render_camera(VkExtent2D extent) const {
         const cubey::Transform3D transform = render_camera_transform();
         const cubey::math::Quat rotation = transform.rotation;
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
         return {
+            .view_projection = camera_.view_projection_matrix(transform, aspect),
             .position = transform.translation,
             .right = rotation * cubey::math::Vec3{1.0F, 0.0F, 0.0F},
             .up = rotation * cubey::math::Vec3{0.0F, 1.0F, 0.0F},
             .forward = rotation * cubey::math::Vec3{0.0F, 0.0F, -1.0F},
             .fovy_radians = camera_.fovy_radians(),
+            .near_plane_m = camera_.near_z(),
+            .far_plane_m = camera_.far_z(),
         };
     }
 
@@ -614,10 +676,13 @@ class Pyro3DApp {
     }
 
     void destroy_swapchain_resources() {
+        terrain_runtime_.destroy_target_resources();
         resources_.destroy_swapchain_resources();
     }
 
     void destroy_all_resources() {
+        render_graph_executor_.clear();
+        terrain_runtime_.destroy();
         resources_.destroy_all_resources();
         atmosphere_background_atlases_.reset();
     }
@@ -636,6 +701,42 @@ class Pyro3DApp {
         attach_project_gpu(gpu);
         resources_.create_global_resources_if_needed(device, gpu, runtime_.gpu(), pyro_config_,
                                                      frame_slot_count);
+        create_terrain_backdrop_resources(device, gpu, frame_slot_count);
+        render_graph_executor_.resize(frame_slot_count);
+    }
+
+    void create_terrain_backdrop_resources(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count) {
+        if (!terrain_backdrop_enabled()) {
+            return;
+        }
+        if (!use_atmosphere_environment_source()) {
+            throw std::runtime_error(
+                "pyro 3D terrain backdrop requires --pbr-environment-source atmosphere");
+        }
+        if (!std::filesystem::exists(config_.terrain.heightfield_path)) {
+            throw std::runtime_error("pyro 3D terrain heightfield does not exist: " +
+                                     config_.terrain.heightfield_path.string());
+        }
+        const cubey::asset::TerrainRasterHeightSource source(config_.terrain.heightfield_path);
+        const cubey::terrain::TerrainBackdropPlacementPlan placement =
+            cubey::terrain::plan_terrain_backdrop_placement(
+                source, source.bounds(), cubey::terrain::TerrainBackdropPlacementRequest{});
+        const cubey::terrain::TerrainBackdropStagePlan& stage = placement.stage;
+        const cubey::terrain::TerrainBackdropProduct product =
+            cubey::terrain::make_terrain_backdrop_product(
+                cubey::terrain::terrain_backdrop_v1_product_request(
+                    stage,
+                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride),
+                source);
+        terrain_baked_foreground_height_m_ = stage.target_height_m - stage.source_center_height_m;
+        terrain_runtime_.create(
+            device, gpu, product,
+            {
+                .shaders = cubey::terrain_backdrop_runtime_shader_files(CUBEY_PYRO_3D_SHADER_DIR),
+                .frame_slot_count = frame_slot_count,
+            });
     }
 
     void attach_project_gpu(cubey::vulkan::GpuRuntime& gpu) {
@@ -650,12 +751,45 @@ class Pyro3DApp {
                                 VkExtent2D extent) {
         resources_.create_render_pipeline(device, color_format, extent,
                                           atmosphere_background_bindings());
+        if (terrain_backdrop_enabled()) {
+            terrain_runtime_.create_target_resources(device,
+                                                     {
+                                                         .extent = extent,
+                                                         .color_format = kPyro3DSceneColorFormat,
+                                                         .depth_format = kPyro3DSceneDepthFormat,
+                                                     });
+        }
+    }
+
+    void
+    prepare_terrain_backdrop(cubey::render::FrameSlot frame_slot, const Pyro3DRenderCamera& camera,
+                             const cubey::render::AtmosphereEnvironmentFrameUniforms& atmosphere) {
+        if (!terrain_backdrop_rendered()) {
+            return;
+        }
+        terrain_runtime_.prepare_frame(
+            frame_slot, {
+                            .view_projection = camera.view_projection,
+                            .camera_position = camera.position,
+                            .world_translation =
+                                {
+                                    kVolumeCenter.x,
+                                    kVolumeCenter.y + terrain_baked_foreground_height_m_ -
+                                        terrain_foreground_height_m_,
+                                    kVolumeCenter.z,
+                                },
+                            .atmosphere = atmosphere,
+                            .lighting = cubey::render::atmosphere_environment_lighting(
+                                atmosphere_state_.environment),
+                            .material = terrain_material_,
+                            .shadows_enabled = terrain_shadows_,
+                            .reflections_enabled = false,
+                        });
     }
 
     void record_frame(cubey::host::WindowedAppContext& context,
                       const cubey::host::WindowedRenderFrame& render_frame,
                       const ProjectFrame& frame) {
-        (void)context;
         cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
         if (profiler != nullptr) {
             profiler->collect(render_frame.frame_slot.index);
@@ -667,14 +801,15 @@ class Pyro3DApp {
             profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
         }
         const Pyro3DConfig draw_config = render_config();
-        const Pyro3DRenderCamera camera = render_camera();
+        const Pyro3DRenderCamera camera = render_camera(render_frame.color_target.extent);
         const bool atmosphere_background_enabled = atmosphere_background_bindings().has_value();
         resources_.upload_environment_lighting(render_frame.frame_slot.index,
                                                environment_lighting_uniforms());
         if (atmosphere_background_enabled) {
-            resources_.upload_atmosphere_background(
-                render_frame.frame_slot.index,
-                atmosphere_background_uniforms(camera, render_frame.color_target.extent));
+            const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere =
+                atmosphere_background_uniforms(camera, render_frame.color_target.extent);
+            resources_.upload_atmosphere_background(render_frame.frame_slot.index, atmosphere);
+            prepare_terrain_backdrop(render_frame.frame_slot, camera, atmosphere);
             if (moon_body_render_enabled()) {
                 resources_.upload_moon_body(
                     render_frame.frame_slot.index,
@@ -684,15 +819,12 @@ class Pyro3DApp {
         record_pyro_3d_compute(render_frame.command_buffer, resources_, draw_config, paused_,
                                reset_requested_, frame, source_gpu_, frame_state_, true, profiler,
                                render_frame.frame_slot.index);
-        cubey::render::record_present_render_target(
-            recorder, cubey::render::render_target_view(render_frame.color_target),
-            [this, &render_frame, draw_config, camera, atmosphere_background_enabled,
-             profiler](const cubey::vulkan::CommandRecorder& present_recorder) {
-                record_pyro_3d_draw(present_recorder.handle(), resources_, draw_config, debug_view_,
-                                    camera, render_frame.color_target, frame_state_, profiler,
-                                    render_frame.frame_slot.index, atmosphere_background_enabled,
-                                    moon_body_render_enabled());
-            });
+        record_pyro_3d_draw(render_frame.command_buffer, context.device(), render_graph_executor_,
+                            resources_, draw_config, debug_view_, camera, render_frame.color_target,
+                            Pyro3DRenderTargetMode::Present, frame_state_,
+                            terrain_backdrop_rendered() ? &terrain_runtime_ : nullptr, profiler,
+                            render_frame.frame_slot.index, atmosphere_background_enabled,
+                            moon_body_render_enabled());
         recorder.end("vkEndCommandBuffer pyro_3d");
     }
 
@@ -768,23 +900,27 @@ class Pyro3DApp {
                         record_headless_simulation_frame(runtime_.gpu(), project_frame);
                     },
             });
-        callbacks.record_capture = [this](cubey::host::HeadlessPngContext&,
+        callbacks.record_capture = [this](cubey::host::HeadlessPngContext& context,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
             const Pyro3DConfig draw_config = render_config();
-            const Pyro3DRenderCamera camera = render_camera();
+            const Pyro3DRenderCamera camera = render_camera(target.extent);
             const bool atmosphere_background_enabled = atmosphere_background_bindings().has_value();
             resources_.upload_environment_lighting(0, environment_lighting_uniforms());
             if (atmosphere_background_enabled) {
-                resources_.upload_atmosphere_background(
-                    0, atmosphere_background_uniforms(camera, target.extent));
+                const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere =
+                    atmosphere_background_uniforms(camera, target.extent);
+                resources_.upload_atmosphere_background(0, atmosphere);
+                prepare_terrain_backdrop({.index = 0U, .count = 1U}, camera, atmosphere);
                 if (moon_body_render_enabled()) {
                     resources_.upload_moon_body(0, moon_body_frame_uniforms(target.extent));
                 }
             }
-            record_pyro_3d_draw(command_buffer, resources_, draw_config, debug_view_, camera,
-                                target, frame_state_, nullptr, 0, atmosphere_background_enabled,
-                                moon_body_render_enabled());
+            record_pyro_3d_draw(command_buffer, context.device(), render_graph_executor_,
+                                resources_, draw_config, debug_view_, camera, target,
+                                Pyro3DRenderTargetMode::ColorAttachment, frame_state_,
+                                terrain_backdrop_rendered() ? &terrain_runtime_ : nullptr, nullptr,
+                                0, atmosphere_background_enabled, moon_body_render_enabled());
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
             destroy_all_resources();
@@ -803,6 +939,8 @@ class Pyro3DApp {
     std::vector<Pyro3DSourceGpu> source_gpu_;
     cubey::AtmosphereEnvironmentRunState atmosphere_state_;
     Pyro3DGpuResources resources_;
+    cubey::render::RenderGraphFrameExecutor render_graph_executor_;
+    cubey::TerrainBackdropRuntime terrain_runtime_;
     std::optional<cubey::render::AtmosphereBackgroundAtlasResources> atmosphere_background_atlases_;
     Pyro3DFrameState frame_state_;
     cubey::Camera3D camera_;
@@ -814,6 +952,12 @@ class Pyro3DApp {
     double latest_fps_ = 0.0;
     double latest_frame_ms_ = 0.0;
     double last_gpu_timing_print_seconds_ = -1.0;
+    float terrain_foreground_height_m_ = kTerrainDefaultForegroundHeightM;
+    float terrain_baked_foreground_height_m_ = 500.0F;
+    bool terrain_visible_ = true;
+    bool terrain_shadows_ = true;
+    cubey::render::TerrainBackdropMaterialMode terrain_material_ =
+        cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
     bool paused_ = false;
     bool reset_requested_ = true;
 };

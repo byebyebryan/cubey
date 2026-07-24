@@ -8,12 +8,14 @@
 #include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/environment_lighting.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/render_graph_types.h>
 #include <cubey/render/texture.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
+#include <cubey/vulkan/sampler.h>
 
 #include <vulkan/vulkan.h>
 
@@ -23,6 +25,9 @@
 #include <vector>
 
 namespace cubey::projects::fluid::pyro_3d {
+
+inline constexpr VkFormat kPyro3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+inline constexpr VkFormat kPyro3DSceneDepthFormat = VK_FORMAT_D32_SFLOAT;
 
 class Pyro3DGpuResources {
   public:
@@ -82,6 +87,11 @@ class Pyro3DGpuResources {
     [[nodiscard]] VkDescriptorSet render_descriptor_set(bool density_a_current,
                                                         bool velocity_a_current) const;
     [[nodiscard]] VkDescriptorSet environment_descriptor_set(std::uint32_t frame_slot_index) const;
+    [[nodiscard]] VkDescriptorSet scene_descriptor_set(std::uint32_t frame_slot_index) const;
+    void update_scene_descriptors(const cubey::vulkan::Device& device,
+                                  std::uint32_t frame_slot_index,
+                                  cubey::render::RenderGraphSampledTextureView scene_color,
+                                  cubey::render::RenderGraphSampledTextureView scene_depth) const;
     void
     upload_environment_lighting(std::uint32_t frame_slot_index,
                                 const cubey::render::EnvironmentLightingUniforms& uniforms) const;
@@ -129,6 +139,7 @@ class Pyro3DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorSetArray& render_descriptors() const;
     [[nodiscard]] VkDescriptorSetLayout environment_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorSetArray& environment_descriptors() const;
+    [[nodiscard]] const cubey::vulkan::DescriptorSetArray& scene_descriptors() const;
     [[nodiscard]] const cubey::vulkan::Buffer&
     environment_lighting_uniform_buffer(std::uint32_t frame_slot_index) const;
 
@@ -172,6 +183,9 @@ class Pyro3DGpuResources {
     std::optional<cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>>
         environment_lighting_uniforms_;
     std::optional<cubey::vulkan::DescriptorSetArray> environment_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetArray> scene_descriptors_;
+    std::optional<cubey::vulkan::Sampler> scene_sampler_;
+    std::optional<cubey::vulkan::Sampler> scene_depth_sampler_;
     cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
     cubey::render::CelestialBodyFrame moon_body_frame_;
     std::optional<cubey::render::Mesh> moon_mesh_;
