@@ -2,7 +2,7 @@
 
 Date: 2026-07-23
 
-Status: implementation contract; promotion not yet complete.
+Status: V1 promoted; clean-GPU performance verdict pending.
 
 ## Decision
 
@@ -15,6 +15,25 @@ The first viewer integration is explicit, atmosphere-backed, and ocean-only.
 It uses the accepted scene profile: Windy sea state, 512 half-precision fields,
 two active cascades, curved far surface, footprint-adaptive shading, and cached
 cloud/environment reflection. Terrain plus ocean composition is a later batch.
+
+## Landed V1
+
+- Shared render contracts, sea-state presets, clipmap planning, surface-frame
+  policy, and shaders live under `cubey::render`.
+- `cubey::engine::OceanSurfaceRuntime` owns the scene-profile FFT resources,
+  update recording, patch culling, surface draws, environment descriptors,
+  draw diagnostics, and foreground reflection approximation.
+- `ForwardPbrRenderer3D` validates and composes an optional ocean update and
+  surface draw. Its V1 request rejects missing atmosphere/runtime state and
+  simultaneous terrain plus ocean.
+- glTF Viewer is the first external consumer. It allocates no ocean resources
+  unless `--ocean-backdrop` is present and exposes visibility, sea state, and
+  foreground height at runtime.
+- The shared profile uses cached atmosphere/cloud probes. It does not capture
+  the foreground scene into the ocean reflection.
+- The ocean project uses the shared runtime as its GPU-resource implementation
+  through a compatibility adapter. Its expert terrain-field, planar-reflection,
+  diagnostic, and profiling orchestration remains project-owned.
 
 ## Ownership Boundary
 
@@ -55,6 +74,10 @@ share scene depth. Foreground PBR receives a bounded lower-hemisphere ocean
 reflection, but the ocean does not reflect foreground geometry in this
 version.
 
+Ocean GPU timestamps are collected into glTF Viewer's normal profile stream.
+This keeps the shared profile measurable without enabling the ocean project's
+expert UI.
+
 ## Non-Goals
 
 - terrain/ocean coexistence, shorelines, bathymetry, surf, or water masks;
@@ -81,3 +104,38 @@ height changes, and the disabled path.
 Promotion closes only after focused runtime/renderer/viewer tests, full serial
 tests, headless PNG/video smokes, review captures, and a documented performance
 verdict pass.
+
+## Validation Record
+
+Focused renderer, configuration, contract, disabled-path, and ocean-path tests
+pass. The final serial suite passed `133/133` tests. The maintained headless
+coverage includes:
+
+```text
+cubey_core_tests
+gltf_viewer_uses_forward_pbr_renderer_3d
+gltf_viewer_ocean_backdrop_is_explicit_and_shared
+gltf_viewer_headless_writes_png
+gltf_viewer_ocean_backdrop_headless_writes_png
+gltf_viewer_ocean_backdrop_headless_writes_png_stats
+ocean_headless_writes_png
+```
+
+Review captures are in `outputs/ocean/foundation-promotion/`:
+
+- `gltf-viewer-default-final.png`
+- `gltf-viewer-ocean-final.png`
+- `ocean-project-control.png`
+
+The final viewer captures are `1600 x 900`. This checkout has no configured
+glTF sample-asset directory, so the captures use the viewer's fallback cube.
+They prove horizon coverage, scene depth ordering, atmosphere/cloud binding,
+and the explicit disabled path; representative metallic glTF material response
+remains a follow-up capture gate once sample assets are configured.
+
+The accepted dedicated-ocean timing evidence remains under
+`outputs/ocean/adaptive-quality-20260723-v1/`. A matched glTF Viewer incremental
+timing verdict was not recorded during promotion because an unrelated GPU
+workload occupied the device. The profiler path is now complete, but the
+`1.50 ms` p50 gate must be measured on an uncontended GPU before declaring the
+performance acceptance closed.
