@@ -613,7 +613,7 @@ constexpr std::array<ConfigOptionDescriptor, 301> kRunConfigOptions{
     option(RunConfigOptionId::TerrainForegroundHeight, "terrain.foreground_height_m",
            "--terrain-foreground-height", "Foreground Height", "Terrain/Backdrop Stage",
            "Initial foreground and orbit focus height above the selected terrain center.",
-           ConfigOptionType::Float, bounded_range(2.0, 1000.0)),
+           ConfigOptionType::Float, bounded_range(0.0, 1000.0)),
     option(RunConfigOptionId::TerrainCameraPreset, "terrain.camera_preset",
            "--terrain-camera-preset", "Camera Preset", "Terrain",
            "Initial terrain review camera framing.", ConfigOptionType::Enum, no_range(),

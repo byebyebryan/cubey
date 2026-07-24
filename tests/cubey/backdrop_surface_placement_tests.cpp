@@ -1,4 +1,5 @@
 #include <cubey/render/backdrop_surface_placement.h>
+#include <cubey/render/ocean_surface_config.h>
 
 #include <cmath>
 #include <iostream>
@@ -116,6 +117,18 @@ void test_invalid_envelopes_are_rejected() {
     require(rejected, "surface maximum below nominal should be rejected");
 }
 
+void test_ocean_crest_allowance_tracks_enabled_displacement() {
+    cubey::render::OceanSurfaceConfig config{};
+    require_near(cubey::render::ocean_surface_placement_crest_allowance_m(config), 3.52F,
+                 "default ocean crest allowance should include both active cascades");
+    config.cascade_enabled[1] = false;
+    require_near(cubey::render::ocean_surface_placement_crest_allowance_m(config), 2.08F,
+                 "disabled ocean cascades should not contribute to placement");
+    config.surface_shape_strength = 0.5F;
+    require_near(cubey::render::ocean_surface_placement_crest_allowance_m(config), 1.04F,
+                 "ocean crest allowance should track shape strength");
+}
+
 } // namespace
 
 int main() {
@@ -124,6 +137,7 @@ int main() {
         test_minimum_clearance_raises_an_unsafe_request();
         test_exact_policy_reports_intentional_intersection();
         test_invalid_envelopes_are_rejected();
+        test_ocean_crest_allowance_tracks_enabled_displacement();
         std::cout << "backdrop_surface_placement_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

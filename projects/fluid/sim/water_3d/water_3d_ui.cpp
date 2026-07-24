@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <vector>
@@ -272,7 +273,10 @@ Water3DUiResult draw_water_3d_ui(Water3DUiContext ui) {
             const cubey::host::ScopedImGuiId section_id("Terrain Backdrop");
             cubey::host::imgui_checkbox("Visible", &ui.terrain->visible);
             cubey::host::imgui_slider_float("Foreground height", &ui.terrain->foreground_height_m,
-                                            0.25F, 200.0F, "%.1f m");
+                                            ui.terrain->minimum_foreground_height_m,
+                                            std::max(200.0F,
+                                                     ui.terrain->minimum_foreground_height_m * 2.0F),
+                                            "%.1f m");
             const bool filtered =
                 ui.terrain->material == cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
             int material = filtered ? 1 : 0;

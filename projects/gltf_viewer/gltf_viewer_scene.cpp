@@ -44,6 +44,25 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
     if (ocean_backdrop_enabled() && !ocean_foreground_height_explicit_) {
         ocean_foreground_height_m_ = std::max(20.0F, radius * 2.0F);
     }
+    if (ocean_backdrop_enabled()) {
+        const cubey::render::BackdropSurfacePlacement placement =
+            cubey::render::resolve_backdrop_surface_placement({
+                .surface =
+                    {
+                        .maximum_local_height_m =
+                            cubey::render::ocean_surface_placement_crest_allowance_m(ocean_config_),
+                    },
+                .foreground =
+                    {
+                        .anchor_world_height_m = scene_bounds_.center.y,
+                        .minimum_local_height_m = -scene_bounds_.half_extent.y,
+                    },
+                .requested_foreground_height_m = ocean_foreground_height_m_,
+                .minimum_clearance_m = 0.1F,
+            });
+        ocean_minimum_foreground_height_m_ = placement.required_foreground_height_m;
+        ocean_foreground_height_m_ = placement.effective_foreground_height_m;
+    }
     const float camera_distance = std::max(radius * 2.8F, 4.2F);
     orbit_controller_.set_distance_limits(std::max(radius * 0.05F, 0.05F),
                                           std::max(radius * 10.0F, camera_distance * 2.0F));
@@ -282,15 +301,24 @@ cubey::ForwardPbrRenderer3DTerrainBackdrop GltfViewerApp::terrain_backdrop_frame
         cubey::forward_pbr_renderer_3d_frame_plans(frame_plan);
     const cubey::math::Mat4& camera_world =
         view.transforms3d().world_affine_matrix(view.transforms3d().instance(camera_entity_));
+    const cubey::render::BackdropSurfacePlacement placement =
+        cubey::render::resolve_backdrop_surface_placement({
+            .surface = terrain_surface_,
+            .foreground =
+                {
+                    .anchor_world_height_m = scene_bounds_.center.y,
+                    .minimum_local_height_m = -scene_bounds_.half_extent.y,
+                },
+            .requested_foreground_height_m = terrain_foreground_height_m_,
+            .minimum_clearance_m = 0.1F,
+        });
     return {
         .runtime = &terrain_runtime_,
         .frame =
             {
                 .view_projection = plans.scene->view_projection_matrix,
                 .camera_position = cubey::math::Vec3{camera_world[3]},
-                .world_translation = {scene_bounds_.center.x,
-                                      scene_bounds_.center.y + terrain_baked_foreground_height_m_ -
-                                          terrain_foreground_height_m_,
+                .world_translation = {scene_bounds_.center.x, placement.surface_world_translation_y,
                                       scene_bounds_.center.z},
                 .atmosphere = atmosphere,
                 .lighting = atmosphere_runtime_.lighting(),
@@ -309,6 +337,21 @@ GltfViewerApp::ocean_surface_frame(const cubey::SceneReadView& view, VkExtent2D 
         atmosphere_runtime_.reflection_probe().snapshot();
     const cubey::render::CloudEnvironmentProbeSnapshot clouds =
         atmosphere_runtime_.clouds().snapshot();
+    const cubey::render::BackdropSurfacePlacement placement =
+        cubey::render::resolve_backdrop_surface_placement({
+            .surface =
+                {
+                    .maximum_local_height_m =
+                        cubey::render::ocean_surface_placement_crest_allowance_m(ocean_config_),
+                },
+            .foreground =
+                {
+                    .anchor_world_height_m = scene_bounds_.center.y,
+                    .minimum_local_height_m = -scene_bounds_.half_extent.y,
+                },
+            .requested_foreground_height_m = ocean_foreground_height_m_,
+            .minimum_clearance_m = 0.1F,
+        });
     return {
         .runtime = &ocean_runtime_,
         .frame =
@@ -317,7 +360,7 @@ GltfViewerApp::ocean_surface_frame(const cubey::SceneReadView& view, VkExtent2D 
                 .vertical_fov_radians = camera.fovy_radians(),
                 .planet_radius_m = atmosphere_state_.environment.bottom_radius_km * 1000.0F *
                                    ocean_config_.planet_radius_scale,
-                .water_datum_m = scene_bounds_.center.y - ocean_foreground_height_m_,
+                .water_datum_m = placement.surface_world_translation_y,
                 .elapsed_seconds = ocean_elapsed_seconds_,
                 .delta_seconds = ocean_delta_seconds_,
                 .lighting = atmosphere_runtime_.lighting(),

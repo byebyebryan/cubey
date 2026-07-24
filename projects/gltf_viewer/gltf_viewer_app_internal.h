@@ -18,6 +18,7 @@
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/backdrop_surface_placement.h>
 #include <cubey/render/cloud_layer.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/mesh.h>
@@ -191,13 +192,15 @@ class GltfViewerApp {
     cubey::render::OceanSurfaceConfig ocean_config_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;
-    float terrain_baked_foreground_height_m_ = 500.0F;
+    float terrain_minimum_foreground_height_m_ = 0.0F;
+    cubey::render::BackdropSurfaceEnvelope terrain_surface_{};
     bool terrain_visible_ = true;
     bool terrain_shadows_ = true;
     bool terrain_reflections_ = true;
     cubey::render::TerrainBackdropMaterialMode terrain_material_ =
         cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
     float ocean_foreground_height_m_ = 20.0F;
+    float ocean_minimum_foreground_height_m_ = 0.0F;
     bool ocean_foreground_height_explicit_ = false;
     bool ocean_visible_ = true;
     double ocean_elapsed_seconds_ = 0.0;

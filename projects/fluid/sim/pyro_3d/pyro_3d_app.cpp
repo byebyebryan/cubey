@@ -19,6 +19,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/atmosphere_background_frame.h>
 #include <cubey/render/atmosphere_environment.h>
+#include <cubey/render/backdrop_surface_placement.h>
 #include <cubey/render/celestial_body_frame.h>
 #include <cubey/render/celestial_system.h>
 #include <cubey/render/color_space.h>
@@ -388,7 +389,10 @@ class Pyro3DApp {
                 const cubey::host::ScopedImGuiId section_id("Terrain Backdrop");
                 cubey::host::imgui_checkbox("Visible", &terrain_visible_);
                 cubey::host::imgui_slider_float("Foreground height", &terrain_foreground_height_m_,
-                                                0.25F, 200.0F, "%.1f m");
+                                                terrain_minimum_foreground_height_m_,
+                                                std::max(200.0F,
+                                                         terrain_minimum_foreground_height_m_ * 2.0F),
+                                                "%.1f m");
                 int material =
                     terrain_material_ == cubey::render::TerrainBackdropMaterialMode::FilteredDetail
                         ? 1
@@ -720,8 +724,25 @@ class Pyro3DApp {
                 .heightfield_path = config_.terrain.heightfield_path,
                 .render_stride =
                     config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+                .foreground_footprint_radius_m = std::hypot(kVolumeHalfExtentM, kVolumeHalfExtentM),
             });
-        terrain_baked_foreground_height_m_ = prepared.baked_foreground_height_m;
+        terrain_surface_ = {
+            .nominal_local_height_m = prepared.foreground_surface.nominal_local_height_m,
+            .maximum_local_height_m = prepared.foreground_surface.maximum_local_height_m,
+        };
+        const cubey::render::BackdropSurfacePlacement placement =
+            cubey::render::resolve_backdrop_surface_placement({
+                .surface = terrain_surface_,
+                .foreground =
+                    {
+                        .anchor_world_height_m = kVolumeCenter.y,
+                        .minimum_local_height_m = -kVolumeHalfExtentM,
+                    },
+                .requested_foreground_height_m = terrain_foreground_height_m_,
+                .minimum_clearance_m = kTerrainVolumeClearanceM,
+            });
+        terrain_minimum_foreground_height_m_ = placement.required_foreground_height_m;
+        terrain_foreground_height_m_ = placement.effective_foreground_height_m;
         terrain_runtime_.create(
             device, gpu, prepared.product,
             {
@@ -758,6 +779,17 @@ class Pyro3DApp {
         if (!terrain_backdrop_rendered()) {
             return;
         }
+        const cubey::render::BackdropSurfacePlacement placement =
+            cubey::render::resolve_backdrop_surface_placement({
+                .surface = terrain_surface_,
+                .foreground =
+                    {
+                        .anchor_world_height_m = kVolumeCenter.y,
+                        .minimum_local_height_m = -kVolumeHalfExtentM,
+                    },
+                .requested_foreground_height_m = terrain_foreground_height_m_,
+                .minimum_clearance_m = kTerrainVolumeClearanceM,
+            });
         terrain_runtime_.prepare_frame(
             frame_slot, {
                             .view_projection = camera.view_projection,
@@ -765,8 +797,7 @@ class Pyro3DApp {
                             .world_translation =
                                 {
                                     kVolumeCenter.x,
-                                    kVolumeCenter.y + terrain_baked_foreground_height_m_ -
-                                        terrain_foreground_height_m_,
+                                    placement.surface_world_translation_y,
                                     kVolumeCenter.z,
                                 },
                             .atmosphere = atmosphere,
@@ -944,7 +975,8 @@ class Pyro3DApp {
     double latest_frame_ms_ = 0.0;
     double last_gpu_timing_print_seconds_ = -1.0;
     float terrain_foreground_height_m_ = kTerrainDefaultForegroundHeightM;
-    float terrain_baked_foreground_height_m_ = 500.0F;
+    float terrain_minimum_foreground_height_m_ = kTerrainDefaultForegroundHeightM;
+    cubey::render::BackdropSurfaceEnvelope terrain_surface_{};
     bool terrain_visible_ = true;
     bool terrain_shadows_ = true;
     cubey::render::TerrainBackdropMaterialMode terrain_material_ =

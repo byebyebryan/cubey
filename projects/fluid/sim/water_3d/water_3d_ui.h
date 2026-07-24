@@ -17,6 +17,7 @@ class Water3DGpuResources;
 struct Water3DTerrainUiState {
     bool& visible;
     float& foreground_height_m;
+    float minimum_foreground_height_m;
     cubey::render::TerrainBackdropMaterialMode& material;
     bool& shadows;
 };

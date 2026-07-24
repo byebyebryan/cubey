@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <span>
 #include <stdexcept>
@@ -69,8 +70,26 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
             .heightfield_path = config_.terrain.heightfield_path,
             .render_stride =
                 config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+            .foreground_footprint_radius_m =
+                std::hypot(scene_bounds_.half_extent.x, scene_bounds_.half_extent.z),
         });
-    terrain_baked_foreground_height_m_ = prepared.baked_foreground_height_m;
+    terrain_surface_ = {
+        .nominal_local_height_m = prepared.foreground_surface.nominal_local_height_m,
+        .maximum_local_height_m = prepared.foreground_surface.maximum_local_height_m,
+    };
+    const cubey::render::BackdropSurfacePlacement placement =
+        cubey::render::resolve_backdrop_surface_placement({
+            .surface = terrain_surface_,
+            .foreground =
+                {
+                    .anchor_world_height_m = scene_bounds_.center.y,
+                    .minimum_local_height_m = -scene_bounds_.half_extent.y,
+                },
+            .requested_foreground_height_m = terrain_foreground_height_m_,
+            .minimum_clearance_m = 0.1F,
+        });
+    terrain_minimum_foreground_height_m_ = placement.required_foreground_height_m;
+    terrain_foreground_height_m_ = placement.effective_foreground_height_m;
     terrain_runtime_.create(
         device, gpu, prepared.product,
         {

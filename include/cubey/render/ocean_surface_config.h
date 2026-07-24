@@ -561,6 +561,17 @@ ocean_cloud_reflection_source_from_name(std::string_view name) {
     return config.cascade_enabled[cascade];
 }
 
+[[nodiscard]] inline float
+ocean_surface_placement_crest_allowance_m(const OceanSurfaceConfig& config) noexcept {
+    float displacement_scale_sum = 0.0F;
+    for (std::uint32_t cascade = 0U; cascade < kOceanCascadeCount; ++cascade) {
+        if (config.cascade_enabled[cascade]) {
+            displacement_scale_sum += std::max(config.cascades[cascade].displacement_scale, 0.0F);
+        }
+    }
+    return displacement_scale_sum * std::max(config.surface_shape_strength, 0.0F) * 2.0F;
+}
+
 [[nodiscard]] inline std::uint32_t ocean_cascade_map_size(const OceanSurfaceConfig& config,
                                                           std::uint32_t cascade) {
     if (cascade >= kOceanCascadeCount) {

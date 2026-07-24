@@ -208,7 +208,9 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
     }
     if (terrain_backdrop_enabled() && ImGui::CollapsingHeader("Terrain Backdrop")) {
         ImGui::Checkbox("Visible", &terrain_visible_);
-        ImGui::SliderFloat("Foreground height", &terrain_foreground_height_m_, 2.0F, 1'000.0F,
+        ImGui::SliderFloat("Foreground height", &terrain_foreground_height_m_,
+                           terrain_minimum_foreground_height_m_,
+                           std::max(1'000.0F, terrain_minimum_foreground_height_m_ * 2.0F),
                            "%.0f m");
         ImGui::Checkbox("Terrain shadows", &terrain_shadows_);
         ImGui::Checkbox("Foreground reflections", &terrain_reflections_);
@@ -224,14 +226,34 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
     }
     if (ocean_backdrop_enabled() && ImGui::CollapsingHeader("Ocean Backdrop")) {
         ImGui::Checkbox("Visible##ocean", &ocean_visible_);
-        ImGui::SliderFloat("Foreground height##ocean", &ocean_foreground_height_m_, 1.0F, 10'000.0F,
-                           "%.0f m", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Foreground height##ocean", &ocean_foreground_height_m_,
+                           std::max(ocean_minimum_foreground_height_m_, 0.01F),
+                           std::max(10'000.0F, ocean_minimum_foreground_height_m_ * 2.0F), "%.0f m",
+                           ImGuiSliderFlags_Logarithmic);
         cubey::render::OceanSeaState sea_state = ocean_config_.sea_state;
         if (cubey::host::imgui_enum_combo("Sea state", sea_state,
                                           cubey::render::kOceanSeaStatePresets,
                                           cubey::render::ocean_sea_state_name)) {
             cubey::render::apply_ocean_sea_state(ocean_config_, sea_state);
             ocean_runtime_.set_config(ocean_config_);
+            const cubey::render::BackdropSurfacePlacement placement =
+                cubey::render::resolve_backdrop_surface_placement({
+                    .surface =
+                        {
+                            .maximum_local_height_m =
+                                cubey::render::ocean_surface_placement_crest_allowance_m(
+                                    ocean_config_),
+                        },
+                    .foreground =
+                        {
+                            .anchor_world_height_m = scene_bounds_.center.y,
+                            .minimum_local_height_m = -scene_bounds_.half_extent.y,
+                        },
+                    .requested_foreground_height_m = ocean_foreground_height_m_,
+                    .minimum_clearance_m = 0.1F,
+                });
+            ocean_minimum_foreground_height_m_ = placement.required_foreground_height_m;
+            ocean_foreground_height_m_ = placement.effective_foreground_height_m;
         }
     }
 

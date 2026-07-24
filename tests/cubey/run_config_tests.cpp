@@ -1991,6 +1991,25 @@ void test_run_config_parses_terrain_controls() {
     require(enabled_config.terrain.water_surface == 1,
             "run config should parse enabled terrain water surface");
 
+    std::string submeter_foreground_height_value = "0.5";
+    std::array<char*, 3> submeter_foreground_height_argv{
+        program.data(), foreground_height_flag.data(), submeter_foreground_height_value.data()};
+    const cubey::RunConfig submeter_foreground_height_config =
+        cubey::parse_run_config(static_cast<int>(submeter_foreground_height_argv.size()),
+                                submeter_foreground_height_argv.data());
+    require(submeter_foreground_height_config.terrain.foreground_height_m == 0.5F,
+            "run config should leave sub-meter terrain clearance to consumer placement policy");
+
+    std::string negative_foreground_height_value = "-0.1";
+    std::array<char*, 3> negative_foreground_height_argv{
+        program.data(), foreground_height_flag.data(), negative_foreground_height_value.data()};
+    require_throws(
+        [&negative_foreground_height_argv] {
+            cubey::parse_run_config(static_cast<int>(negative_foreground_height_argv.size()),
+                                    negative_foreground_height_argv.data());
+        },
+        "run config should reject negative terrain foreground height");
+
     std::string invalid_stride_value = "4";
     std::array<char*, 3> invalid_stride_argv{program.data(), render_stride_flag.data(),
                                              invalid_stride_value.data()};
