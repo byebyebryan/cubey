@@ -624,6 +624,10 @@ int main() {
                          "pyro 3D should prepare terrain through the shared raster adapter");
         require_contains(app_source, "TerrainBackdropRuntime",
                          "pyro 3D should use the shared terrain runtime");
+        require_contains(app_source, "kTerrainVolumeClearanceM = 0.10F",
+                         "pyro 3D terrain should retain clearance below the volume");
+        require_contains(app_source, "kVolumeHalfExtentM + kTerrainVolumeClearanceM",
+                         "pyro 3D terrain placement should account for the volume half-height");
         require_contains(cmake_source, "cubey_terrain_backdrop_shader_sources",
                          "pyro 3D should compile the shared terrain shader set");
         require_contains(app_source, "create_atmosphere_background_cached_textures",

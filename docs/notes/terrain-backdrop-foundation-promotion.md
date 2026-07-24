@@ -92,9 +92,10 @@ foreground altitude. Its simulation remains project-owned; terrain is an
 optional scene backdrop and does not alter liquid boundaries, collision, or
 reflection capture.
 
-Fire3D and Explosion3D share the Pyro3D integration and default to a 0.5 m
-foreground altitude near the volume base. Terrain is shown only for the normal
-smoke presentation, not density or velocity diagnostics. The volume does not
+Fire3D and Explosion3D share the Pyro3D integration and default to a 0.60 m
+terrain-to-volume-center distance: the normalized volume's 0.5 m half-height
+plus 0.10 m of clearance. Terrain is shown only for the normal smoke
+presentation, not density or velocity diagnostics. The volume does not
 illuminate or shadow terrain, and the integration does not change the
 underlying fire or explosion model.
 
