@@ -92,6 +92,10 @@ bool GltfViewerApp::terrain_backdrop_enabled() const noexcept {
     return !config_.terrain.heightfield_path.empty();
 }
 
+bool GltfViewerApp::ocean_backdrop_enabled() const noexcept {
+    return config_.ocean.backdrop > 0;
+}
+
 void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& device,
                                                 cubey::vulkan::GpuRuntime& gpu,
                                                 const cubey::asset::GltfAsset& asset,

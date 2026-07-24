@@ -41,6 +41,9 @@ void GltfViewerApp::create_fallback_scene() {
 
 void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
     const float radius = std::max(glm::length(scene_bounds_.half_extent), 1.0F);
+    if (ocean_backdrop_enabled() && !ocean_foreground_height_explicit_) {
+        ocean_foreground_height_m_ = std::max(20.0F, radius * 2.0F);
+    }
     const float camera_distance = std::max(radius * 2.8F, 4.2F);
     orbit_controller_.set_distance_limits(std::max(radius * 0.05F, 0.05F),
                                           std::max(radius * 10.0F, camera_distance * 2.0F));
@@ -54,9 +57,12 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
             .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         }),
         cubey::Camera3D({
-            .near_z = terrain_backdrop_enabled() ? 0.1F : std::max(radius * 0.001F, 0.01F),
-            .far_z = terrain_backdrop_enabled() ? std::max(radius * 12.0F, 16'384.0F * 5.0F)
-                                                : std::max(radius * 12.0F, 100.0F),
+            .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled()
+                          ? 0.1F
+                          : std::max(radius * 0.001F, 0.01F),
+            .far_z = terrain_backdrop_enabled() || ocean_backdrop_enabled()
+                         ? std::max(radius * 12.0F, 16'384.0F * 5.0F)
+                         : std::max(radius * 12.0F, 100.0F),
         }));
 
     const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
@@ -194,10 +200,11 @@ GltfViewerApp::atmosphere_background_uniforms(const cubey::SceneReadView& view,
             },
         .forward = {forward.x, forward.y, forward.z, 0.0F},
     };
-    if (terrain_backdrop_enabled()) {
+    if (terrain_backdrop_enabled() || ocean_backdrop_enabled()) {
         const cubey::math::Vec3 camera_position{world[3]};
-        const float terrain_reference_height =
-            scene_bounds_.center.y - terrain_foreground_height_m_;
+        const float surface_reference_height =
+            terrain_backdrop_enabled() ? scene_bounds_.center.y - terrain_foreground_height_m_
+                                       : scene_bounds_.center.y - ocean_foreground_height_m_;
         return cubey::render::atmosphere_environment_frame_uniforms(
             atmosphere_state_.environment,
             {
@@ -205,7 +212,7 @@ GltfViewerApp::atmosphere_background_uniforms(const cubey::SceneReadView& view,
                 .render_view = cubey::render::AtmosphereEnvironmentRenderView::Final,
                 .camera_position_km = {0.0F,
                                        atmosphere_state_.environment.bottom_radius_km +
-                                           std::max(camera_position.y - terrain_reference_height,
+                                           std::max(camera_position.y - surface_reference_height,
                                                     0.0F) *
                                                0.001F,
                                        0.0F},
@@ -242,11 +249,14 @@ GltfViewerApp::cloud_environment_frame(const cubey::SceneReadView& view,
     return atmosphere_runtime_.clouds().frame(
         cubey::CloudEnvironmentSurfaceViewInfo{
             .camera_position =
-                terrain_backdrop_enabled()
+                terrain_backdrop_enabled() || ocean_backdrop_enabled()
                     ? cubey::math::Vec3{
                           cubey::math::Vec3{world[3]}.x,
                           std::max(cubey::math::Vec3{world[3]}.y -
-                                       (scene_bounds_.center.y - terrain_foreground_height_m_),
+                                       (scene_bounds_.center.y -
+                                        (terrain_backdrop_enabled()
+                                             ? terrain_foreground_height_m_
+                                             : ocean_foreground_height_m_)),
                                    0.0F),
                           cubey::math::Vec3{world[3]}.z,
                       }
@@ -287,6 +297,35 @@ cubey::ForwardPbrRenderer3DTerrainBackdrop GltfViewerApp::terrain_backdrop_frame
                 .material = terrain_material_,
                 .shadows_enabled = terrain_shadows_,
                 .reflections_enabled = terrain_reflections_,
+            },
+    };
+}
+
+cubey::ForwardPbrRenderer3DOceanSurface
+GltfViewerApp::ocean_surface_frame(const cubey::SceneReadView& view, VkExtent2D color_extent) {
+    const cubey::CameraInstance3D camera_instance = view.cameras3d().instance(camera_entity_);
+    const cubey::Camera3D& camera = view.cameras3d().camera(camera_instance);
+    const cubey::render::AtmosphereReflectionProbeSnapshot atmosphere =
+        atmosphere_runtime_.reflection_probe().snapshot();
+    const cubey::render::CloudEnvironmentProbeSnapshot clouds =
+        atmosphere_runtime_.clouds().snapshot();
+    return {
+        .runtime = &ocean_runtime_,
+        .frame =
+            {
+                .viewport_extent = color_extent,
+                .vertical_fov_radians = camera.fovy_radians(),
+                .planet_radius_m = atmosphere_state_.environment.bottom_radius_km * 1000.0F *
+                                   ocean_config_.planet_radius_scale,
+                .water_datum_m = scene_bounds_.center.y - ocean_foreground_height_m_,
+                .elapsed_seconds = ocean_elapsed_seconds_,
+                .delta_seconds = ocean_delta_seconds_,
+                .lighting = atmosphere_runtime_.lighting(),
+                .atmosphere_environment_blend = atmosphere.blend,
+                .cloud_environment_blend = clouds.valid ? clouds.blend : 1.0F,
+                .cloud_environment_valid = clouds.valid,
+                .debug_view = cubey::render::OceanRenderView::Final,
+                .exposure = display_exposure(),
             },
     };
 }

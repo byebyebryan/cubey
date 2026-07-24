@@ -389,6 +389,8 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "pbr.environment_source",
         "pbr.ibl_intensity",
         "pbr.exposure",
+        "ocean.backdrop",
+        "ocean.foreground_height_m",
         "ocean.sea_state",
         "ocean.map_size",
         "ocean.cascade",
@@ -762,8 +764,7 @@ void test_run_config_loads_json_config_file() {
             "config file should set terrain v1 source controls");
     require(config.terrain.source_version == "v2" && config.terrain.render_path == "quality" &&
                 config.terrain.render_stride == 1U &&
-                config.terrain.surface_detail == "filtered-detail" &&
-                config.terrain.shadows == 0 &&
+                config.terrain.surface_detail == "filtered-detail" && config.terrain.shadows == 0 &&
                 config.terrain.target_edge_px == 5.0F,
             "config file should set terrain material presentation");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
@@ -1685,6 +1686,9 @@ void test_run_config_parses_water_controls() {
 
 void test_run_config_parses_ocean_controls() {
     std::string program = "cubey";
+    std::string backdrop_flag = "--ocean-backdrop";
+    std::string foreground_height_flag = "--ocean-foreground-height";
+    std::string foreground_height_value = "42";
     std::string sea_state_flag = "--ocean-sea-state";
     std::string sea_state_value = "calm";
     std::string map_flag = "--ocean-map-size";
@@ -1701,18 +1705,34 @@ void test_run_config_parses_ocean_controls() {
     std::string reflection_value = "0.8";
     std::string shadow_flag = "--ocean-cloud-shadow-strength";
     std::string shadow_value = "0.4";
-    std::array<char*, 17> argv{program.data(),          sea_state_flag.data(),
-                               sea_state_value.data(),  map_flag.data(),
-                               map_value.data(),        precision_flag.data(),
-                               precision_value.data(),  cascade_flag.data(),
-                               cascade_value.data(),    terrain_fields_flag.data(),
-                               wire_flag.data(),        opacity_flag.data(),
-                               opacity_value.data(),    reflection_flag.data(),
-                               reflection_value.data(), shadow_flag.data(),
-                               shadow_value.data()};
+    std::array<char*, 20> argv{
+        program.data(),
+        backdrop_flag.data(),
+        foreground_height_flag.data(),
+        foreground_height_value.data(),
+        sea_state_flag.data(),
+        sea_state_value.data(),
+        map_flag.data(),
+        map_value.data(),
+        precision_flag.data(),
+        precision_value.data(),
+        cascade_flag.data(),
+        cascade_value.data(),
+        terrain_fields_flag.data(),
+        wire_flag.data(),
+        opacity_flag.data(),
+        opacity_value.data(),
+        reflection_flag.data(),
+        reflection_value.data(),
+        shadow_flag.data(),
+        shadow_value.data(),
+    };
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
+    require(config.ocean.backdrop == 1, "run config should parse ocean backdrop enablement");
+    require(config.ocean.foreground_height_m == 42.0F,
+            "run config should parse ocean foreground height");
     require(config.ocean.sea_state == "calm", "run config should parse ocean sea state");
     require(config.ocean.map_size == 256, "run config should parse ocean map size");
     require(config.ocean.field_precision == "half",
@@ -1732,6 +1752,10 @@ void test_run_config_parses_ocean_controls() {
     require(all_config.ocean.cascade == -1, "run config should parse all ocean cascades");
 
     const cubey::RunConfig defaults = cubey::parse_run_config(1, all_argv.data());
+    require(defaults.ocean.backdrop == -1,
+            "run config should leave ocean backdrop disabled unless explicitly selected");
+    require(!cubey::run_config_float_is_set(defaults.ocean.foreground_height_m),
+            "run config should leave ocean foreground height to the consumer default");
     require(defaults.ocean.sea_state.empty(),
             "run config should leave ocean sea state to the project default");
     require(defaults.ocean.cascade == -1, "run config should default to all ocean cascades");
@@ -1917,8 +1941,7 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse terrain v1 source controls");
     require(config.terrain.source_version == "v2.1" && config.terrain.render_path == "quality" &&
                 config.terrain.render_stride == 1U &&
-                config.terrain.surface_detail == "filtered-detail" &&
-                config.terrain.shadows == 0 &&
+                config.terrain.surface_detail == "filtered-detail" && config.terrain.shadows == 0 &&
                 config.terrain.target_edge_px == 5.0F,
             "run config should parse terrain material presentation");
     require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");
@@ -1969,8 +1992,8 @@ void test_run_config_parses_terrain_controls() {
             "run config should parse enabled terrain water surface");
 
     std::string invalid_stride_value = "4";
-    std::array<char*, 3> invalid_stride_argv{
-        program.data(), render_stride_flag.data(), invalid_stride_value.data()};
+    std::array<char*, 3> invalid_stride_argv{program.data(), render_stride_flag.data(),
+                                             invalid_stride_value.data()};
     require_throws(
         [&invalid_stride_argv] {
             cubey::parse_run_config(static_cast<int>(invalid_stride_argv.size()),

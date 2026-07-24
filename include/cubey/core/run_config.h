@@ -98,6 +98,8 @@ struct RunConfig {
     };
 
     struct OceanOptions {
+        int backdrop = -1;
+        float foreground_height_m = kRunConfigUnsetFloat;
         std::string sea_state{};
         std::uint32_t map_size = 0;
         std::string field_precision{};

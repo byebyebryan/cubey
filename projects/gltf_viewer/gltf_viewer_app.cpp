@@ -135,7 +135,12 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 GltfViewerApp::GltfViewerApp(RunConfig config)
     : config_(std::move(config)), debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
       atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)),
-      clouds_config_(gltf_viewer_cloud_config(config_)) {
+      clouds_config_(gltf_viewer_cloud_config(config_)),
+      ocean_config_(cubey::ocean_surface_config_from_run_config(config_)) {
+    if (terrain_backdrop_enabled() && ocean_backdrop_enabled()) {
+        throw std::runtime_error(
+            "glTF viewer v1 accepts either terrain or ocean backdrop, not both");
+    }
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
         terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
@@ -143,6 +148,10 @@ GltfViewerApp::GltfViewerApp(RunConfig config)
     terrain_shadows_ = config_.terrain.shadows != 0;
     if (config_.terrain.surface_detail == "flat") {
         terrain_material_ = cubey::render::TerrainBackdropMaterialMode::Flat;
+    }
+    if (cubey::run_config_float_is_set(config_.ocean.foreground_height_m)) {
+        ocean_foreground_height_m_ = config_.ocean.foreground_height_m;
+        ocean_foreground_height_explicit_ = true;
     }
 }
 
@@ -204,14 +213,25 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
         ImGui::Checkbox("Terrain shadows", &terrain_shadows_);
         ImGui::Checkbox("Foreground reflections", &terrain_reflections_);
         int material =
-            terrain_material_ == cubey::render::TerrainBackdropMaterialMode::FilteredDetail ? 1
-                                                                                             : 0;
+            terrain_material_ == cubey::render::TerrainBackdropMaterialMode::FilteredDetail ? 1 : 0;
         if (ImGui::RadioButton("Flat", material == 0)) {
             terrain_material_ = cubey::render::TerrainBackdropMaterialMode::Flat;
         }
         ImGui::SameLine();
         if (ImGui::RadioButton("Filtered detail", material == 1)) {
             terrain_material_ = cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
+        }
+    }
+    if (ocean_backdrop_enabled() && ImGui::CollapsingHeader("Ocean Backdrop")) {
+        ImGui::Checkbox("Visible##ocean", &ocean_visible_);
+        ImGui::SliderFloat("Foreground height##ocean", &ocean_foreground_height_m_, 1.0F, 10'000.0F,
+                           "%.0f m", ImGuiSliderFlags_Logarithmic);
+        cubey::render::OceanSeaState sea_state = ocean_config_.sea_state;
+        if (cubey::host::imgui_enum_combo("Sea state", sea_state,
+                                          cubey::render::kOceanSeaStatePresets,
+                                          cubey::render::ocean_sea_state_name)) {
+            cubey::render::apply_ocean_sea_state(ocean_config_, sea_state);
+            ocean_runtime_.set_config(ocean_config_);
         }
     }
 
@@ -245,6 +265,8 @@ int GltfViewerApp::run_windowed() {
             refresh_atmosphere_lighting_scene();
         }
         atmosphere_runtime_.advance(timing.delta_seconds);
+        ocean_delta_seconds_ = timing.delta_seconds > 0.0 ? timing.delta_seconds : (1.0 / 60.0);
+        ocean_elapsed_seconds_ += ocean_delta_seconds_;
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::D)) {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
@@ -310,6 +332,9 @@ int GltfViewerApp::run_headless() {
                 refresh_atmosphere_lighting_scene();
             }
             atmosphere_runtime_.advance(frame.timing.delta_seconds);
+            ocean_delta_seconds_ =
+                frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
+            ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;
             orbit_controller_.update(frame.timing.delta_seconds);
             update_camera_transform();
         };

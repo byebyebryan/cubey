@@ -34,6 +34,25 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
                                                              .depth_format = target.depth_format,
                                                          });
     }
+    if (ocean_backdrop_enabled()) {
+        if (!use_atmosphere_environment_source()) {
+            throw std::runtime_error("ocean backdrop requires --pbr-environment-source atmosphere");
+        }
+        const cubey::ForwardPbrRenderer3DSceneTargetInfo target =
+            forward_pbr_renderer().scene_target_info();
+        ocean_runtime_.create(device, {
+                                          .ocean = ocean_config_,
+                                          .shader_dir = CUBEY_GLTF_VIEWER_SHADER_DIR,
+                                          .color_format = target.color_format,
+                                          .depth_format = target.depth_format,
+                                          .target_extent = target.extent,
+                                          .frame_slot_count = frame_slot_count,
+                                      });
+        for (std::uint32_t index = 0U; index < frame_slot_count; ++index) {
+            update_ocean_environment_descriptors(device,
+                                                 {.index = index, .count = frame_slot_count});
+        }
+    }
     if (use_atmosphere_environment_source()) {
         atmosphere_runtime_.clouds().create_surface_target_resources(
             device,
@@ -46,12 +65,14 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
 }
 
 void GltfViewerApp::destroy_swapchain_resources() {
+    ocean_runtime_.reset();
     terrain_runtime_.destroy_target_resources();
     atmosphere_runtime_.clouds().destroy_surface_target_resources();
     engine_.renderers().destroy_swapchain_resources();
 }
 
 void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
+    ocean_runtime_.reset();
     terrain_runtime_.destroy();
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
@@ -111,6 +132,9 @@ void GltfViewerApp::record_viewer_target(
     if (cloud_frame.has_value()) {
         record_cloud_environment_if_needed(recorder, frame_slot, cloud_frame.value());
     }
+    if (ocean_backdrop_enabled()) {
+        update_ocean_environment_descriptors(device, frame_slot);
+    }
     forward_pbr_renderer().update_environment(device, frame_slot, pbr_environment_bindings());
     std::optional<cubey::ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds;
     if (cloud_frame.has_value()) {
@@ -124,6 +148,10 @@ void GltfViewerApp::record_viewer_target(
     std::optional<cubey::ForwardPbrRenderer3DTerrainBackdrop> terrain_backdrop;
     if (terrain_backdrop_enabled() && terrain_visible_) {
         terrain_backdrop = terrain_backdrop_frame(scene_view, frame_plan, atmosphere_background);
+    }
+    std::optional<cubey::ForwardPbrRenderer3DOceanSurface> ocean_surface;
+    if (ocean_backdrop_enabled() && ocean_visible_) {
+        ocean_surface = ocean_surface_frame(scene_view, color_target.extent);
     }
     forward_pbr_renderer().record({
         .device = &device,
@@ -156,10 +184,31 @@ void GltfViewerApp::record_viewer_target(
                 .atmosphere_background = atmosphere_background,
                 .atmosphere_clouds = atmosphere_clouds,
                 .terrain_backdrop = terrain_backdrop,
+                .ocean_surface = ocean_surface,
             },
     });
     if (owns_command_buffer) {
         recorder.end("vkEndCommandBuffer gltf_viewer");
+    }
+}
+
+void GltfViewerApp::update_ocean_environment_descriptors(const cubey::vulkan::Device& device,
+                                                         cubey::render::FrameSlot frame_slot) {
+    const cubey::render::AtmosphereReflectionProbe& atmosphere_probe =
+        atmosphere_runtime_.reflection_probe();
+    const cubey::render::AtmosphereReflectionProbeSnapshot atmosphere = atmosphere_probe.snapshot();
+    ocean_runtime_.update_atmosphere_probe_descriptors(device, frame_slot, *atmosphere.previous,
+                                                       *atmosphere.current,
+                                                       atmosphere_probe.sky_radiance_cube());
+
+    const cubey::render::CloudEnvironmentProbeSnapshot clouds =
+        atmosphere_runtime_.clouds().snapshot();
+    if (clouds.valid) {
+        ocean_runtime_.update_cloud_environment_descriptors(device, frame_slot, *clouds.previous,
+                                                            *clouds.current);
+    } else {
+        ocean_runtime_.update_cloud_environment_descriptors(device, frame_slot, *atmosphere.current,
+                                                            *atmosphere.current);
     }
 }
 
@@ -221,6 +270,9 @@ void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& conte
                                           const cubey::host::HeadlessCaptureFrame& frame,
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
+    ocean_delta_seconds_ =
+        frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
+    ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;
     collect_gpu_timings(context.profile_recorder(), frame.index, frame.frame_slot);
     record_viewer_target(context.device(), command_buffer, target, frame.frame_slot,
                          cubey::render::render_graph_color_attachment_texture_state(),

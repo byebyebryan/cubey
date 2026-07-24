@@ -112,6 +112,11 @@ class GltfViewerApp {
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count);
     [[nodiscard]] bool terrain_backdrop_enabled() const noexcept;
+    [[nodiscard]] bool ocean_backdrop_enabled() const noexcept;
+    void update_ocean_environment_descriptors(const cubey::vulkan::Device& device,
+                                              cubey::render::FrameSlot frame_slot);
+    [[nodiscard]] cubey::ForwardPbrRenderer3DOceanSurface
+    ocean_surface_frame(const cubey::SceneReadView& view, VkExtent2D color_extent);
     void collect_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64_t frame_index,
                              cubey::render::FrameSlot frame_slot);
     [[nodiscard]] cubey::ForwardPbrRenderer3DTerrainBackdrop
@@ -184,6 +189,8 @@ class GltfViewerApp {
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     cubey::AtmosphereBackgroundAtlasRuntime atmosphere_background_atlases_{};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
+    cubey::OceanSurfaceRuntime ocean_runtime_{};
+    cubey::render::OceanSurfaceConfig ocean_config_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;
     float terrain_baked_foreground_height_m_ = 500.0F;
@@ -192,6 +199,11 @@ class GltfViewerApp {
     bool terrain_reflections_ = true;
     cubey::render::TerrainBackdropMaterialMode terrain_material_ =
         cubey::render::TerrainBackdropMaterialMode::FilteredDetail;
+    float ocean_foreground_height_m_ = 20.0F;
+    bool ocean_foreground_height_explicit_ = false;
+    bool ocean_visible_ = true;
+    double ocean_elapsed_seconds_ = 0.0;
+    double ocean_delta_seconds_ = 1.0 / 60.0;
 };
 
 } // namespace cubey::projects::gltf_viewer

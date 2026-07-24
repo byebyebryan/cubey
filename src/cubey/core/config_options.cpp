@@ -154,7 +154,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 299> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 301> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -233,6 +233,14 @@ constexpr std::array<ConfigOptionDescriptor, 299> kRunConfigOptions{
            "Yaw rotation applied to the environment in degrees.", ConfigOptionType::Float),
     option(RunConfigOptionId::PbrExposure, "pbr.exposure", "--exposure", "Exposure", "PBR",
            "Manual exposure bias in stops.", ConfigOptionType::Float, bounded_range(-4.0, 4.0)),
+    option(RunConfigOptionId::OceanBackdrop, "ocean.backdrop", "--ocean-backdrop",
+           "Ocean Backdrop", "Ocean",
+           "Enable the shared ocean surface as a scene backdrop.", ConfigOptionType::Bool,
+           no_range(), {}, "--no-ocean-backdrop"),
+    option(RunConfigOptionId::OceanForegroundHeight, "ocean.foreground_height_m",
+           "--ocean-foreground-height", "Foreground Height", "Ocean",
+           "Foreground scene height above the ocean datum in meters.", ConfigOptionType::Float,
+           bounded_range(-10000.0, 100000.0)),
     option(RunConfigOptionId::OceanSeaState, "ocean.sea_state", "--ocean-sea-state", "Sea State",
            "Ocean", "Tuned ocean surface state: calm, windy, or stormy.", ConfigOptionType::Enum,
            no_range(), enum_choices(kOceanSeaStates)),
@@ -1449,6 +1457,10 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.pbr.environment_rotation_degrees;
     case RunConfigOptionId::PbrExposure:
         return config.pbr.exposure;
+    case RunConfigOptionId::OceanBackdrop:
+        return optional_bool(config.ocean.backdrop);
+    case RunConfigOptionId::OceanForegroundHeight:
+        return optional_float(config.ocean.foreground_height_m);
     case RunConfigOptionId::OceanSeaState:
         return config.ocean.sea_state.empty() ? nlohmann::json(nullptr)
                                               : nlohmann::json(config.ocean.sea_state);
@@ -2778,6 +2790,13 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         config.pbr.exposure = parse_config_float(value, option);
         validate_range(config.pbr.exposure, option);
         config.pbr.exposure_explicit = true;
+        break;
+    case RunConfigOptionId::OceanBackdrop:
+        config.ocean.backdrop = parse_config_bool(value, option) ? 1 : 0;
+        break;
+    case RunConfigOptionId::OceanForegroundHeight:
+        config.ocean.foreground_height_m = parse_config_float(value, option);
+        validate_range(config.ocean.foreground_height_m, option);
         break;
     case RunConfigOptionId::OceanSeaState:
         config.ocean.sea_state = std::string(value);

@@ -4,6 +4,8 @@ cubey_cloud_layer_shader_sources(CUBEY_GLTF_VIEWER_CLOUD_SHADERS COMPOSITE backg
 cubey_cloud_layer_shader_depends(CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS)
 cubey_terrain_backdrop_shader_sources(CUBEY_GLTF_VIEWER_TERRAIN_SHADERS)
 cubey_terrain_backdrop_shader_depends(CUBEY_GLTF_VIEWER_TERRAIN_SHADER_DEPENDS)
+cubey_ocean_surface_shader_sources(CUBEY_GLTF_VIEWER_OCEAN_SHADERS)
+cubey_ocean_surface_shader_depends(CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_gltf_viewer
@@ -21,6 +23,7 @@ cubey_add_app_target(
         ${CUBEY_FORWARD_PBR_SHADERS}
         ${CUBEY_GLTF_VIEWER_CLOUD_SHADERS}
         ${CUBEY_GLTF_VIEWER_TERRAIN_SHADERS}
+        ${CUBEY_GLTF_VIEWER_OCEAN_SHADERS}
         shaders/gltf_deform.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
@@ -28,6 +31,31 @@ cubey_add_app_target(
         ${CUBEY_FORWARD_PBR_SHADER_DEPENDS}
         ${CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS}
         ${CUBEY_GLTF_VIEWER_TERRAIN_SHADER_DEPENDS}
+        ${CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS}
+)
+
+add_custom_target(cubey_project_gltf_viewer_bilinear_ocean_shader)
+cubey_add_glsl_shaders(
+    cubey_project_gltf_viewer_bilinear_ocean_shader
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/filters/bilinear"
+    DEFINES CUBEY_OCEAN_DETAIL_FILTER=1
+    INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/shaders"
+    DEPENDS ${CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS}
+    SOURCES "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean.frag"
+)
+add_custom_target(cubey_project_gltf_viewer_bicubic_ocean_shader)
+cubey_add_glsl_shaders(
+    cubey_project_gltf_viewer_bicubic_ocean_shader
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders/filters/bicubic"
+    DEFINES CUBEY_OCEAN_DETAIL_FILTER=2
+    INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/shaders"
+    DEPENDS ${CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS}
+    SOURCES "${CMAKE_SOURCE_DIR}/shaders/cubey/ocean/ocean.frag"
+)
+add_dependencies(
+    cubey_project_gltf_viewer
+    cubey_project_gltf_viewer_bilinear_ocean_shader
+    cubey_project_gltf_viewer_bicubic_ocean_shader
 )
 
 if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
@@ -83,6 +111,18 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 
+    add_test(
+        NAME gltf_viewer_ocean_backdrop_is_explicit_and_shared
+        COMMAND
+            /bin/sh -c
+            "grep -q 'config_\\.ocean\\.backdrop' \"$1\" && grep -q 'ocean backdrop requires --pbr-environment-source atmosphere' \"$2\" && grep -q 'OceanSurfaceRuntime' \"$3\" && grep -q '\\.ocean_surface = ocean_surface' \"$2\" && ! grep -R --include='*.cpp' --include='*.h' -q 'projects/ocean' \"$4\""
+            gltf_viewer_ocean_backdrop_is_explicit_and_shared
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_render.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app_internal.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
     set(CUBEY_GLTF_VIEWER_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-headless-smoke.png"
     )
@@ -119,6 +159,26 @@ if (BUILD_TESTING)
     cubey_add_png_stats_test(
         gltf_viewer_terrain_backdrop_headless_writes_png
         "${CUBEY_GLTF_VIEWER_TERRAIN_HEADLESS_SMOKE_OUTPUT}"
+        0.02
+        0.05
+    )
+    set(
+        CUBEY_GLTF_VIEWER_OCEAN_HEADLESS_SMOKE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-ocean-backdrop-smoke.png"
+    )
+    cubey_add_png_smoke_test(
+        gltf_viewer_ocean_backdrop_headless_writes_png
+        cubey_project_gltf_viewer
+        "${CUBEY_GLTF_VIEWER_OCEAN_HEADLESS_SMOKE_OUTPUT}"
+        --ocean-backdrop
+        --ocean-map-size
+        128
+        --pbr-environment-source
+        atmosphere
+    )
+    cubey_add_png_stats_test(
+        gltf_viewer_ocean_backdrop_headless_writes_png
+        "${CUBEY_GLTF_VIEWER_OCEAN_HEADLESS_SMOKE_OUTPUT}"
         0.02
         0.05
     )
