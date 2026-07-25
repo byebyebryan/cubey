@@ -44,6 +44,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <filesystem>
@@ -254,6 +255,37 @@ terrain_source_choice_availability(const TerrainSourceChoice& choice) {
         return choice.label;
     }
     return choice.label + " (" + std::string(terrain_source_availability_name(availability)) + ")";
+}
+
+enum class TerrainProductLoadPhase : std::uint8_t {
+    None,
+    Waiting,
+    LoadingHeightfield,
+    LoadingClimate,
+    PlanningPlacement,
+    PreparingProduct,
+    UploadingProduct,
+};
+
+[[nodiscard]] constexpr std::string_view
+terrain_product_load_phase_name(TerrainProductLoadPhase phase) noexcept {
+    switch (phase) {
+    case TerrainProductLoadPhase::None:
+        return "idle";
+    case TerrainProductLoadPhase::Waiting:
+        return "waiting for worker";
+    case TerrainProductLoadPhase::LoadingHeightfield:
+        return "loading heightfield";
+    case TerrainProductLoadPhase::LoadingClimate:
+        return "loading climate fields";
+    case TerrainProductLoadPhase::PlanningPlacement:
+        return "planning backdrop placement";
+    case TerrainProductLoadPhase::PreparingProduct:
+        return "loading or building render product";
+    case TerrainProductLoadPhase::UploadingProduct:
+        return "uploading render product";
+    }
+    return "unknown";
 }
 
 constexpr std::array<std::string_view, 8U> kTerrainGpuTimingLabels{
@@ -723,6 +755,7 @@ class TerrainApp {
 
         ImGui::SeparatorText("Source");
         refresh_source_choice_availability();
+        const cubey::StagedResourceStatus& build_status = product_builds_.status();
         const bool product_build_pending = product_builds_.busy();
         const std::string source_preview =
             terrain_source_choice_label(source_choices_.at(edit_source_choice_index_),
@@ -748,10 +781,28 @@ class TerrainApp {
         }
         ImGui::EndDisabled();
         if (source_.has_value()) {
+            ImGui::Text("Showing: %s", source_choices_.at(source_choice_index_).label.c_str());
+        } else {
+            ImGui::TextDisabled("Showing: loading placeholder");
+        }
+        if (product_build_pending) {
+            const TerrainProductLoadPhase load_phase =
+                product_load_phase_.load(std::memory_order_relaxed);
+            const std::string_view phase = terrain_product_load_phase_name(load_phase);
+            ImGui::Text("Loading: %s", build_status.generation.label.c_str());
+            if (product_load_started_at_.has_value()) {
+                ImGui::Text("Phase: %.*s (%.1f s)", static_cast<int>(phase.size()), phase.data(),
+                            elapsed_milliseconds(*product_load_started_at_) * 0.001);
+            } else {
+                ImGui::Text("Phase: %.*s", static_cast<int>(phase.size()), phase.data());
+            }
+            if (source_.has_value()) {
+                ImGui::TextDisabled("Showing current terrain until replacement is ready");
+            }
+        }
+        if (source_.has_value()) {
             const TerrainRasterProvenance& provenance = source_->provenance();
             const TerrainHeightSourceMetadata metadata = source_->metadata();
-            ImGui::Text("Active source: %s",
-                        source_choices_.at(source_choice_index_).label.c_str());
             ImGui::Text("%.*s, seed %llu", static_cast<int>(metadata.id.size()), metadata.id.data(),
                         static_cast<unsigned long long>(metadata.seed));
             ImGui::Text("%u x %u at %.0f m", source_->width(), source_->height(),
@@ -858,13 +909,6 @@ class TerrainApp {
         }
         ImGui::EndDisabled();
 
-        const cubey::StagedResourceStatus& build_status = product_builds_.status();
-        if (build_status.phase != cubey::StagedResourcePhase::Idle) {
-            const std::string_view phase = cubey::staged_resource_phase_name(build_status.phase);
-            ImGui::Text("Terrain generation %llu: %.*s",
-                        static_cast<unsigned long long>(build_status.generation.id),
-                        static_cast<int>(phase.size()), phase.data());
-        }
         if (build_status.prepare_milliseconds > 0.0 || build_status.install_milliseconds > 0.0) {
             ImGui::Text("Prepare / install: %.1f / %.1f ms", build_status.prepare_milliseconds,
                         build_status.install_milliseconds);
@@ -1105,50 +1149,68 @@ class TerrainApp {
 
     void request_product_build(TerrainRuntimeConfig config,
                                std::size_t requested_source_choice_index) {
-        const std::string label =
-            "terrain " + source_choices_.at(requested_source_choice_index).label;
-        static_cast<void>(product_builds_.request(
-            label,
-            [this, config = std::move(config), requested_source_choice_index]() mutable {
-                TerrainProductBuild build;
-                build.config = config;
-                build.source_choice_index = requested_source_choice_index;
-                const Clock::time_point source_load_started = Clock::now();
-                build.replacement_source.emplace(require_heightfield(config.heightfield_path));
-                build.source_load_milliseconds = elapsed_milliseconds(source_load_started);
-                const Clock::time_point climate_load_started = Clock::now();
-                build.replacement_climate_source =
-                    load_climate_source(config, build.replacement_source.value());
-                build.climate_load_milliseconds = elapsed_milliseconds(climate_load_started);
-                const Clock::time_point placement_started = Clock::now();
-                build.placement = make_placement_stage(build.replacement_source.value(), config);
-                build.placement_milliseconds = elapsed_milliseconds(placement_started);
-                const TerrainRasterClimateSource* climate =
-                    build.replacement_climate_source ? &build.replacement_climate_source.value()
-                                                     : nullptr;
-                PreparedProjectTerrainBackdropProduct prepared =
-                    prepare_project_terrain_backdrop_product(
-                        product_cache_,
-                        cubey::terrain::terrain_backdrop_v1_product_request(build.placement.stage,
-                                                                            config.render_stride),
-                        build.replacement_source.value(), config.surface_model, climate,
-                        terrain_product_placement_parameter_hash(config, build.placement));
-                build.product = std::move(prepared.product);
-                build.climate_diagnostics = prepared.climate;
-                build.cache_diagnostics = std::move(prepared.cache);
-                return build;
-            },
-            [this](cubey::vulkan::GpuOwnerContext& owner, TerrainProductBuild&& prepared) {
-                TerrainBackdropProductInfo info =
-                    cubey::terrain::terrain_backdrop_product_info(prepared.product);
-                cubey::TerrainBackdropResidentProduct resident =
-                    terrain_runtime_.build_resident_product(owner, prepared.product);
-                return TerrainResidentBuild{
-                    .prepared = std::move(prepared),
-                    .product_info = std::move(info),
-                    .resident = std::move(resident),
-                };
-            }));
+        const std::string label = source_choices_.at(requested_source_choice_index).label;
+        product_load_started_at_ = Clock::now();
+        product_load_phase_.store(TerrainProductLoadPhase::Waiting, std::memory_order_relaxed);
+        try {
+            static_cast<void>(product_builds_.request(
+                label,
+                [this, config = std::move(config), requested_source_choice_index]() mutable {
+                    TerrainProductBuild build;
+                    build.config = config;
+                    build.source_choice_index = requested_source_choice_index;
+                    product_load_phase_.store(TerrainProductLoadPhase::LoadingHeightfield,
+                                              std::memory_order_relaxed);
+                    const Clock::time_point source_load_started = Clock::now();
+                    build.replacement_source.emplace(require_heightfield(config.heightfield_path));
+                    build.source_load_milliseconds = elapsed_milliseconds(source_load_started);
+                    product_load_phase_.store(TerrainProductLoadPhase::LoadingClimate,
+                                              std::memory_order_relaxed);
+                    const Clock::time_point climate_load_started = Clock::now();
+                    build.replacement_climate_source =
+                        load_climate_source(config, build.replacement_source.value());
+                    build.climate_load_milliseconds = elapsed_milliseconds(climate_load_started);
+                    product_load_phase_.store(TerrainProductLoadPhase::PlanningPlacement,
+                                              std::memory_order_relaxed);
+                    const Clock::time_point placement_started = Clock::now();
+                    build.placement =
+                        make_placement_stage(build.replacement_source.value(), config);
+                    build.placement_milliseconds = elapsed_milliseconds(placement_started);
+                    const TerrainRasterClimateSource* climate =
+                        build.replacement_climate_source ? &build.replacement_climate_source.value()
+                                                         : nullptr;
+                    product_load_phase_.store(TerrainProductLoadPhase::PreparingProduct,
+                                              std::memory_order_relaxed);
+                    PreparedProjectTerrainBackdropProduct prepared =
+                        prepare_project_terrain_backdrop_product(
+                            product_cache_,
+                            cubey::terrain::terrain_backdrop_v1_product_request(
+                                build.placement.stage, config.render_stride),
+                            build.replacement_source.value(), config.surface_model, climate,
+                            terrain_product_placement_parameter_hash(config, build.placement));
+                    build.product = std::move(prepared.product);
+                    build.climate_diagnostics = prepared.climate;
+                    build.cache_diagnostics = std::move(prepared.cache);
+                    return build;
+                },
+                [this](cubey::vulkan::GpuOwnerContext& owner, TerrainProductBuild&& prepared) {
+                    product_load_phase_.store(TerrainProductLoadPhase::UploadingProduct,
+                                              std::memory_order_relaxed);
+                    TerrainBackdropProductInfo info =
+                        cubey::terrain::terrain_backdrop_product_info(prepared.product);
+                    cubey::TerrainBackdropResidentProduct resident =
+                        terrain_runtime_.build_resident_product(owner, prepared.product);
+                    return TerrainResidentBuild{
+                        .prepared = std::move(prepared),
+                        .product_info = std::move(info),
+                        .resident = std::move(resident),
+                    };
+                }));
+        } catch (...) {
+            product_load_phase_.store(TerrainProductLoadPhase::None, std::memory_order_relaxed);
+            product_load_started_at_.reset();
+            throw;
+        }
     }
 
     void install_product_build(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
@@ -1183,6 +1245,8 @@ class TerrainApp {
         if (terrain_target_info_.has_value() && !terrain_runtime_.target_resources_created()) {
             terrain_runtime_.create_target_resources(device, terrain_target_info_.value());
         }
+        product_load_phase_.store(TerrainProductLoadPhase::None, std::memory_order_relaxed);
+        product_load_started_at_.reset();
     }
 
     void install_ready_product_build(const cubey::vulkan::Device& device,
@@ -1203,9 +1267,18 @@ class TerrainApp {
             while (product_builds_.poll(gpu)) {
             }
             install_ready_product_build(device, gpu, retire_after);
+            if (!product_builds_.busy() && !product_builds_.ready() &&
+                product_builds_.status().phase == cubey::StagedResourcePhase::Failed) {
+                product_load_phase_.store(TerrainProductLoadPhase::None, std::memory_order_relaxed);
+                product_load_started_at_.reset();
+            }
         } catch (const std::exception& error) {
+            product_load_phase_.store(TerrainProductLoadPhase::None, std::memory_order_relaxed);
+            product_load_started_at_.reset();
             product_rebuild_error_ = error.what();
         } catch (...) {
+            product_load_phase_.store(TerrainProductLoadPhase::None, std::memory_order_relaxed);
+            product_load_started_at_.reset();
             product_rebuild_error_ = "unknown terrain product rebuild error";
         }
     }
@@ -1925,6 +1998,8 @@ class TerrainApp {
     TerrainRuntimeConfig runtime_config_{};
     TerrainRuntimeConfig startup_runtime_config_{};
     cubey::procedural::ProceduralArtifactCache product_cache_;
+    std::atomic<TerrainProductLoadPhase> product_load_phase_{TerrainProductLoadPhase::None};
+    std::optional<Clock::time_point> product_load_started_at_{};
     cubey::jobs::JobSystem product_jobs_{1U};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
     cubey::StagedResource<TerrainProductBuild, TerrainResidentBuild> product_builds_;

@@ -186,7 +186,9 @@ remain visible when their data is absent and report `not generated`,
 never launches Terrain Diffusion itself. If a region cannot satisfy the
 requested placement, the current source remains active and the UI reports the
 contract error. Calibration regions remain evidence rather than named
-production presets.
+production presets. During replacement, the source panel names both the
+resident terrain and requested preset, then reports heightfield, climate,
+placement, product-preparation, and GPU-upload phases with elapsed time.
 
 `backdrop-stage` shows the foreground sphere; `backdrop` hides it. Material
 choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
