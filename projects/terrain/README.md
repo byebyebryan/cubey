@@ -102,6 +102,32 @@ The calibration pack is written under
 `cache/terrain/sources/v1/climate-calibration`. It is evidence for the
 experimental surface model, not a production asset or biome contract.
 
+The committed source catalog defines one default and four optional natural
+location presets:
+
+```text
+mountain-backdrop-1 (default)
+alpine-range-1
+mountain-valley-1
+rolling-hills-1
+rolling-lowland-1
+```
+
+Normal setup remains one preset and one Terrain Diffusion query. Optional
+presets are generated independently, only when requested:
+
+```sh
+cmake --build --preset dev --target cubey_terrain_generate_alpine_range_1
+cmake --build --preset dev --target cubey_terrain_generate_mountain_valley_1
+cmake --build --preset dev --target cubey_terrain_generate_rolling_hills_1
+cmake --build --preset dev --target cubey_terrain_generate_rolling_lowland_1
+```
+
+Each target queries its pinned location directly and writes an independent,
+Git-ignored bundle under `cache/terrain/sources/v1/presets`. It does not rerun
+the landscape scans or ranking studies. The recipe catalog, exact source
+identity, and expected hashes are committed; generated raster data is not.
+
 ## Build And Run
 
 ```sh
@@ -151,13 +177,16 @@ frame completes, without a queue- or device-idle stall. `raw-sample` uses the
 independent deterministic placement index and performs no quality rejection or
 retry.
 
-The source selector stages the same complete replacement for the startup source
-or any available `hot-dry`, `hot-wet`, `cool-wet`, `cold-dry`, and `cold-wet`
-calibration region. It loads the paired height and climate manifests rather than
-recoloring the active geometry. Missing generated regions are disabled. If a
-region cannot satisfy the requested placement, the current source remains
-active and the UI reports the contract error. These regions remain calibration
-evidence rather than named production biome presets.
+The source selector stages the same complete replacement for the startup source,
+optional catalog presets, or available `hot-dry`, `hot-wet`, `cool-wet`,
+`cold-dry`, and `cold-wet` calibration regions. It loads paired height and
+climate manifests rather than recoloring the active geometry. Optional recipes
+remain visible when their data is absent and report `not generated`,
+`generating`, or `incomplete`; only complete bundles are selectable. The app
+never launches Terrain Diffusion itself. If a region cannot satisfy the
+requested placement, the current source remains active and the UI reports the
+contract error. Calibration regions remain evidence rather than named
+production presets.
 
 `backdrop-stage` shows the foreground sphere; `backdrop` hides it. Material
 choices are `flat` and `filtered-detail`. Supported `--debug-view` values are:
@@ -335,8 +364,10 @@ adapters remain deferred until a concrete scene requires one.
 
 See [Terrain V1 Runtime](../../docs/architecture/terrain-v1.md),
 [Terrain Product Promotion](../../docs/notes/terrain-product-promotion.md), and
-[Terrain Project Map](../../docs/notes/terrain-project-map.md). The experimental
-climate path is documented in
+[Terrain Project Map](../../docs/notes/terrain-project-map.md). The default and
+optional generation boundary is documented in
+[Terrain Source Preset Contract](../../docs/notes/terrain-source-preset-contract.md).
+The experimental climate path is documented in
 [Terrain Climate Surface Model Research](../../docs/notes/terrain-climate-surface-model-research.md)
 and
 [Terrain Climate Calibration V1](../../docs/notes/terrain-climate-calibration-v1.md).

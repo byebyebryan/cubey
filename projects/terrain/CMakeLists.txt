@@ -275,7 +275,8 @@ target_compile_definitions(
         CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD="${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}"
         CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS="${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}"
         CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSETS="${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}"
-        CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSETS="${CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSET_DIR}"
+        CUBEY_TERRAIN_SOURCE_PRESET_CATALOG="${CUBEY_TERRAIN_SOURCE_PRESET_CATALOG}"
+        CUBEY_TERRAIN_OPTIONAL_PRESET_ASSETS="${CUBEY_TERRAIN_OPTIONAL_PRESET_ASSET_DIR}"
 )
 target_link_libraries(
     cubey_project_terrain
@@ -321,6 +322,12 @@ if (BUILD_TESTING)
             cubey_project_terrain_runtime
             cubey_project_warnings
             nlohmann_json::nlohmann_json
+    )
+    target_compile_definitions(
+        cubey_project_terrain_source_catalog_tests
+        PRIVATE
+            CUBEY_TERRAIN_SOURCE_PRESET_CATALOG="${CUBEY_TERRAIN_SOURCE_PRESET_CATALOG}"
+            CUBEY_TERRAIN_OPTIONAL_PRESET_ASSETS="${CUBEY_TERRAIN_OPTIONAL_PRESET_ASSET_DIR}"
     )
     add_test(
         NAME terrain_source_catalog_tests

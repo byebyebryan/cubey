@@ -72,8 +72,12 @@
 #error "CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSETS must be defined by the terrain CMake target"
 #endif
 
-#ifndef CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSETS
-#error "CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSETS must be defined by the terrain CMake target"
+#ifndef CUBEY_TERRAIN_SOURCE_PRESET_CATALOG
+#error "CUBEY_TERRAIN_SOURCE_PRESET_CATALOG must be defined by the terrain CMake target"
+#endif
+
+#ifndef CUBEY_TERRAIN_OPTIONAL_PRESET_ASSETS
+#error "CUBEY_TERRAIN_OPTIONAL_PRESET_ASSETS must be defined by the terrain CMake target"
 #endif
 
 namespace cubey::projects::terrain {
@@ -113,11 +117,18 @@ struct TerrainSourceChoice {
     TerrainSourcePaths paths{};
     std::optional<std::uint64_t> expected_seed{};
     bool climate_required = false;
+    std::optional<TerrainSourceCatalogEntry> preset{};
 };
+
+[[nodiscard]] bool same_source_path(const std::filesystem::path& lhs,
+                                    const std::filesystem::path& rhs) {
+    return std::filesystem::absolute(lhs).lexically_normal() ==
+           std::filesystem::absolute(rhs).lexically_normal();
+}
 
 [[nodiscard]] std::vector<TerrainSourceChoice>
 terrain_source_choices(const TerrainRuntimeConfig& startup_config,
-                       std::string& variation_catalog_error) {
+                       std::string& preset_catalog_error) {
     std::vector<TerrainSourceChoice> result{
         TerrainSourceChoice{
             .id = "startup",
@@ -130,6 +141,32 @@ terrain_source_choices(const TerrainRuntimeConfig& startup_config,
             .expected_seed = startup_config.expected_seed,
         },
     };
+
+    std::optional<TerrainSourcePresetCatalog> preset_catalog;
+    try {
+        preset_catalog = load_terrain_source_preset_catalog(
+            std::filesystem::path(CUBEY_TERRAIN_SOURCE_PRESET_CATALOG),
+            std::filesystem::path(CUBEY_TERRAIN_OPTIONAL_PRESET_ASSETS));
+        const TerrainSourcePaths default_paths{
+            .heightfield = std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
+            .surface_fields = std::filesystem::path(CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS),
+        };
+        if (same_source_path(startup_config.heightfield_path, default_paths.heightfield)) {
+            result.front().id = "preset/" + preset_catalog->default_id;
+            result.front().label = "Preset: " + preset_catalog->default_label;
+            result.front().expected_seed = preset_catalog->default_seed;
+        } else {
+            result.push_back({
+                .id = "preset/" + preset_catalog->default_id,
+                .label = "Preset: " + preset_catalog->default_label,
+                .paths = default_paths,
+                .expected_seed = preset_catalog->default_seed,
+            });
+        }
+    } catch (const std::exception& catalog_error) {
+        preset_catalog_error = catalog_error.what();
+    }
+
     constexpr std::array calibration_sources{
         std::pair{"hot-dry", "Calibration: Hot / dry"},
         std::pair{"hot-wet", "Calibration: Hot / wet"},
@@ -149,27 +186,25 @@ terrain_source_choices(const TerrainRuntimeConfig& startup_config,
         });
     }
 
-    const std::filesystem::path variation_root(CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSETS);
-    std::error_code error;
-    if (std::filesystem::is_regular_file(variation_root / "variation-index.json", error) &&
-        !error) {
-        try {
-            for (TerrainSourceCatalogEntry entry :
-                 load_terrain_landscape_variation_catalog(variation_root)) {
-                result.push_back({
-                    .id = "variation/" + entry.id,
-                    .label = "Variation: " + entry.label,
-                    .paths =
-                        {
-                            .heightfield = std::move(entry.heightfield_path),
-                            .surface_fields = std::move(entry.surface_fields_path),
-                        },
-                    .expected_seed = entry.seed,
-                    .climate_required = true,
-                });
+    if (preset_catalog.has_value()) {
+        for (TerrainSourceCatalogEntry entry : preset_catalog->optional_presets) {
+            TerrainSourceChoice choice{
+                .id = "preset/" + entry.id,
+                .label = "Preset: " + entry.label,
+                .paths =
+                    {
+                        .heightfield = entry.heightfield_path,
+                        .surface_fields = entry.surface_fields_path,
+                    },
+                .expected_seed = entry.seed,
+                .climate_required = true,
+                .preset = std::move(entry),
+            };
+            if (same_source_path(startup_config.heightfield_path, choice.paths.heightfield)) {
+                result.front() = std::move(choice);
+            } else {
+                result.push_back(std::move(choice));
             }
-        } catch (const std::exception& catalog_error) {
-            variation_catalog_error = catalog_error.what();
         }
     }
     return result;
@@ -187,9 +222,38 @@ terrain_source_choices(const TerrainRuntimeConfig& startup_config,
     return terrain_manifest_available(paths.surface_fields, "surface-fields.json");
 }
 
-[[nodiscard]] bool terrain_source_choice_available(const TerrainSourceChoice& choice) {
-    return terrain_manifest_available(choice.paths.heightfield, "heightfield.json") &&
-           (!choice.climate_required || terrain_source_climate_available(choice.paths));
+[[nodiscard]] TerrainSourceAvailability
+terrain_source_choice_availability(const TerrainSourceChoice& choice) {
+    if (choice.preset.has_value()) {
+        return terrain_source_availability(*choice.preset);
+    }
+
+    const bool heightfield =
+        terrain_manifest_available(choice.paths.heightfield, "heightfield.json");
+    const bool surface_fields =
+        !choice.climate_required || terrain_source_climate_available(choice.paths);
+    if (heightfield && surface_fields) {
+        return TerrainSourceAvailability::Available;
+    }
+
+    std::error_code heightfield_error;
+    const bool heightfield_storage =
+        std::filesystem::exists(choice.paths.heightfield, heightfield_error) && !heightfield_error;
+    std::error_code surface_fields_error;
+    const bool surface_fields_storage =
+        choice.climate_required &&
+        std::filesystem::exists(choice.paths.surface_fields, surface_fields_error) &&
+        !surface_fields_error;
+    return !heightfield_storage && !surface_fields_storage ? TerrainSourceAvailability::NotGenerated
+                                                           : TerrainSourceAvailability::Incomplete;
+}
+
+[[nodiscard]] std::string terrain_source_choice_label(const TerrainSourceChoice& choice,
+                                                      TerrainSourceAvailability availability) {
+    if (availability == TerrainSourceAvailability::Available) {
+        return choice.label;
+    }
+    return choice.label + " (" + std::string(terrain_source_availability_name(availability)) + ")";
 }
 
 constexpr std::array<std::string_view, 8U> kTerrainGpuTimingLabels{
@@ -505,14 +569,10 @@ class TerrainApp {
           }),
           atmosphere_state_(terrain_atmosphere_state(run_config_)),
           clouds_config_(terrain_cloud_config(run_config_, atmosphere_state_.environment)) {
-        source_choices_ = terrain_source_choices(startup_runtime_config_, variation_catalog_error_);
-        source_choice_available_.reserve(source_choices_.size());
-        source_choice_climate_available_.reserve(source_choices_.size());
-        for (const TerrainSourceChoice& choice : source_choices_) {
-            source_choice_available_.push_back(terrain_source_choice_available(choice));
-            source_choice_climate_available_.push_back(
-                terrain_source_climate_available(choice.paths));
-        }
+        source_choices_ = terrain_source_choices(startup_runtime_config_, preset_catalog_error_);
+        source_choice_availability_.resize(source_choices_.size());
+        source_choice_climate_available_.resize(source_choices_.size());
+        refresh_source_choice_availability();
         edit_placement_mode_ = runtime_config_.placement;
         edit_placement_index_ = runtime_config_.placement_index;
         edit_surface_model_ = runtime_config_.surface_model;
@@ -643,6 +703,18 @@ class TerrainApp {
         return host.run();
     }
 
+    void refresh_source_choice_availability() {
+        for (std::size_t index = 0U; index < source_choices_.size(); ++index) {
+            const TerrainSourceChoice& choice = source_choices_[index];
+            const TerrainSourceAvailability availability =
+                terrain_source_choice_availability(choice);
+            source_choice_availability_[index] = availability;
+            source_choice_climate_available_[index] =
+                availability == TerrainSourceAvailability::Available &&
+                terrain_source_climate_available(choice.paths);
+        }
+    }
+
     void draw_ui(cubey::host::WindowedAppContext& context) {
         if (!cubey::host::begin_control_panel("Terrain", {.width = 410.0F})) {
             ImGui::End();
@@ -650,16 +722,21 @@ class TerrainApp {
         }
 
         ImGui::SeparatorText("Source");
+        refresh_source_choice_availability();
         const bool product_build_pending = product_builds_.busy();
+        const std::string source_preview =
+            terrain_source_choice_label(source_choices_.at(edit_source_choice_index_),
+                                        source_choice_availability_.at(edit_source_choice_index_));
         ImGui::BeginDisabled(product_build_pending);
-        if (ImGui::BeginCombo("Terrain source",
-                              source_choices_.at(edit_source_choice_index_).label.c_str())) {
+        if (ImGui::BeginCombo("Terrain source", source_preview.c_str())) {
             for (std::size_t index = 0U; index < source_choices_.size(); ++index) {
                 const TerrainSourceChoice& choice = source_choices_[index];
-                const bool available = source_choice_available_[index];
+                const TerrainSourceAvailability availability = source_choice_availability_[index];
+                const bool available = availability == TerrainSourceAvailability::Available;
                 const bool selected = index == edit_source_choice_index_;
+                const std::string label = terrain_source_choice_label(choice, availability);
                 ImGui::BeginDisabled(!available);
-                if (ImGui::Selectable(choice.label.c_str(), selected)) {
+                if (ImGui::Selectable(label.c_str(), selected)) {
                     edit_source_choice_index_ = index;
                 }
                 if (selected) {
@@ -701,8 +778,8 @@ class TerrainApp {
         } else {
             ImGui::TextDisabled("No resident terrain source");
         }
-        if (!variation_catalog_error_.empty()) {
-            ImGui::TextWrapped("Variation catalog: %s", variation_catalog_error_.c_str());
+        if (!preset_catalog_error_.empty()) {
+            ImGui::TextWrapped("Preset catalog: %s", preset_catalog_error_.c_str());
         }
 
         ImGui::SeparatorText("Placement");
@@ -762,7 +839,11 @@ class TerrainApp {
                                         edit_placement_mode_ != placement_stage_.mode ||
                                         edit_placement_index_ != placement_stage_.sample_index ||
                                         edit_surface_model_ != runtime_config_.surface_model;
-        ImGui::BeginDisabled(!source_.has_value() || !product_edit_dirty || product_build_pending);
+        const bool edited_source_available =
+            source_choice_availability_[edit_source_choice_index_] ==
+            TerrainSourceAvailability::Available;
+        ImGui::BeginDisabled(!source_.has_value() || !product_edit_dirty || product_build_pending ||
+                             !edited_source_available);
         if (ImGui::Button("Apply terrain")) {
             start_product_build();
         }
@@ -1856,9 +1937,9 @@ class TerrainApp {
     std::vector<TerrainSourceChoice> source_choices_{};
     std::size_t source_choice_index_ = 0U;
     std::size_t edit_source_choice_index_ = 0U;
-    std::vector<bool> source_choice_available_{};
+    std::vector<TerrainSourceAvailability> source_choice_availability_{};
     std::vector<bool> source_choice_climate_available_{};
-    std::string variation_catalog_error_{};
+    std::string preset_catalog_error_{};
     TerrainPlacementMode edit_placement_mode_ = TerrainPlacementMode::Selected;
     std::uint32_t edit_placement_index_ = 0U;
     TerrainSurfaceModel edit_surface_model_ = TerrainSurfaceModel::MineralControl;

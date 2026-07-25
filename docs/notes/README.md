@@ -167,6 +167,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain external generator bakeoff review](terrain-external-generator-bakeoff-review.md):
   completed Terrain Diffusion evidence, determinism corrections, measured
   source-quality gain, backdrop-composition failure, and reference verdict.
+- [Terrain source preset contract](terrain-source-preset-contract.md): one
+  committed default recipe, independently generated optional natural locations,
+  runtime availability states, and uncommitted raster storage.
 - [Terrain raster backdrop v1](terrain-raster-backdrop-v1.md): completed opt-in
   external-heightfield product, deterministic natural staging, seam-matched
   continuous center, and measured far-field acceptance.
