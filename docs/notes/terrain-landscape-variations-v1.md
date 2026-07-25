@@ -2,7 +2,7 @@
 
 Date: 2026-07-24
 
-Status: implementation planned; evidence pending.
+Status: accepted as a project-local source catalog; no foundation presets promoted.
 
 ## Purpose
 
@@ -79,6 +79,20 @@ The index is a project-local review catalog. It is not a foundation terrain
 preset API. The terrain app retains the startup source and frozen climate
 calibration controls when the optional catalog is absent.
 
+The accepted deterministic selections are:
+
+| ID | Seed | Coarse origin | Elevation SHA-256 | Climate SHA-256 |
+| --- | ---: | ---: | --- | --- |
+| `alpine-range` | 12345 | 0, -32 | `5fbf519f9af5...` | `2eb169eefd3f...` |
+| `temperate-mountain-valley` | 0 | 120, -112 | `a978ecd435d2...` | `7e96235ec4d6...` |
+| `dry-upland` | 9012 | 64, 0 | `7e0d5cfc47ab...` | `36fd8ad536e7...` |
+| `rolling-wet-lowland` | 12345 | -96, -56 | `fd52d7c3b25f...` | `9012e73dd078...` |
+
+Generation scanned 2,642 coarse candidates across the three pinned worlds.
+The first complete bake took 258.52 seconds, including 49.03 seconds for the
+coarse scan, and produced a 76,879,888-byte ignored package. A valid existing
+package is reused without loading the model.
+
 ## Review Contract
 
 The headless pack is written to
@@ -105,6 +119,38 @@ Acceptance requires:
 
 P95 remains reported rather than gated.
 
+## Result
+
+The four-source pack is available at
+`outputs/terrain/landscape-variations-v1/`. All four sources:
+
+- produced unique source and rendered geometry identities;
+- passed selected backdrop placement without discontinuities or registration
+  failures;
+- stayed below the 1.10 ms combined terrain mean and p50 gate at 1600 x 900;
+- remained distinguishable in fixed-scale source height and slope views before
+  material.
+
+| ID | Selected local relief | P95 slope | Snow | Vegetation | Moisture | Mean / p50 / p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `alpine-range` | 28.84 m | 0.131 | 0.244 | 0.000 | 0.880 | 0.932 / 0.923 / 0.981 ms |
+| `temperate-mountain-valley` | 91.43 m | 0.260 | 0.020 | 0.140 | 0.978 | 0.944 / 0.939 / 1.026 ms |
+| `dry-upland` | 37.03 m | 0.183 | 0.000 | 0.102 | 0.050 | 0.914 / 0.921 / 0.947 ms |
+| `rolling-wet-lowland` | 16.29 m | 0.058 | 0.002 | 0.608 | 1.000 | 0.965 / 0.965 / 0.973 ms |
+
+The source study succeeds. Terrain Diffusion can provide useful deterministic
+landscape variation without custom conditioning, and the existing continuous
+surface model responds to its climate fields in the intended direction. This
+earns the four variants a project-local catalog for review and future scene
+work, not named biome semantics or a shared consumer API.
+
+The comparison also exposes current rendering limits. Alpine snow and
+atmospheric haze flatten some mid-distance detail. Rolling wet lowland is a
+credible low-relief backdrop but visually sparse without foliage geometry.
+Clay mode mainly validates the silhouette because it is unlit; fixed-scale
+height and slope remain the stronger morphology evidence. These are rendering
+and content follow-ups rather than reasons to reject the source set.
+
 ## Explicit Deferrals
 
 - custom Terrain Diffusion conditioning maps or SNR studies;
@@ -114,7 +160,7 @@ P95 remains reported rather than gated.
 - per-variant material formulas or palette tuning;
 - public foundation presets and wider consumer integration.
 
-## Planned Commits
+## Commits
 
 1. `docs(terrain): define landscape variation study`
 2. `feat(terrain): bake deterministic landscape variants`

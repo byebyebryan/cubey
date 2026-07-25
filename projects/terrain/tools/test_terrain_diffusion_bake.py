@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import random
 import sys
@@ -333,6 +334,30 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
         selections = bake.select_landscape_variations(candidates)
 
         self.assertEqual(selections[0].candidate.seed, 0)
+
+    def test_landscape_selection_validation_freezes_world_origins(self) -> None:
+        selections = [
+            bake.LandscapeSelection(
+                variant,
+                self.landscape_candidate(
+                    *bake.LANDSCAPE_EXPECTED_SELECTIONS[variant.name],
+                    variant.target_relief_m,
+                    variant.target_temperature_c,
+                    variant.target_precipitation_mm,
+                ),
+                0.0,
+            )
+            for variant in bake.LANDSCAPE_VARIANTS
+        ]
+
+        bake.validate_landscape_selections(selections)
+        changed = list(selections)
+        changed[0] = dataclasses.replace(
+            changed[0],
+            candidate=dataclasses.replace(changed[0].candidate, coarse_i=8),
+        )
+        with self.assertRaisesRegex(RuntimeError, "selections changed"):
+            bake.validate_landscape_selections(changed)
 
     def test_area_average_field_uses_disjoint_source_blocks(self) -> None:
         source = np.arange(4 * 4, dtype=np.float32).reshape(1, 4, 4)

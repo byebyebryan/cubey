@@ -264,6 +264,31 @@ LANDSCAPE_VARIANTS = (
     ),
 )
 
+LANDSCAPE_EXPECTED_SELECTIONS = {
+    "alpine-range": (12345, 0, -32),
+    "temperate-mountain-valley": (0, 120, -112),
+    "dry-upland": (9012, 64, 0),
+    "rolling-wet-lowland": (12345, -96, -56),
+}
+LANDSCAPE_EXPECTED_HASHES = {
+    "alpine-range": (
+        "5fbf519f9af538d0f1b684e01a4aa1c830ac1896ced2f082ddecb09a3bc9a63a",
+        "2eb169eefd3ffe1743c6e24948e7446c7f633cbfa85ed9d2898dd708d67e2971",
+    ),
+    "temperate-mountain-valley": (
+        "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737",
+        "7e96235ec4d6005491aa0bb7cfbb913afc939cd97e5a408b734cdea760d4f3fa",
+    ),
+    "dry-upland": (
+        "7e0d5cfc47abdfc8d1338217efa7c70a082fe46bc742028c5e90e871b73f441c",
+        "36fd8ad536e7021cf1f0a2591c41cce5125c015d81efdefdb1fa82cf47dbf3ea",
+    ),
+    "rolling-wet-lowland": (
+        "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2",
+        "9012e73dd078bb623007fea24970c252b7ced882f86b9d5e6a8846bfe97fc507",
+    ),
+}
+
 
 @dataclasses.dataclass(frozen=True)
 class LandscapeCandidate:
@@ -614,6 +639,20 @@ def validate_existing_asset(mode: str, output_dir: Path) -> bool:
                     or record.get("surface_fields") != f"{name}/surface-fields.json"
                 ):
                     raise RuntimeError("terrain landscape variation paths are incompatible")
+                selection = record.get("selection", {}).get("candidate", {})
+                actual_selection = (
+                    selection.get("seed"),
+                    selection.get("coarse_i"),
+                    selection.get("coarse_j"),
+                )
+                if actual_selection != LANDSCAPE_EXPECTED_SELECTIONS.get(name):
+                    raise RuntimeError("terrain landscape variation selection changed")
+                expected_hashes = LANDSCAPE_EXPECTED_HASHES.get(name)
+                if expected_hashes is None or (
+                    record.get("elevation_sha256"),
+                    record.get("climate_sha256"),
+                ) != expected_hashes:
+                    raise RuntimeError("terrain landscape variation hash changed")
                 region = root / name
                 elevation_sha256 = _validate_heightfield_bundle(
                     region, record.get("elevation_sha256"), seed
@@ -1033,6 +1072,22 @@ def select_landscape_variations(
             )
         )
     return selections
+
+
+def validate_landscape_selections(selections: list[LandscapeSelection]) -> None:
+    actual = {
+        selection.variant.name: (
+            selection.candidate.seed,
+            selection.candidate.coarse_i,
+            selection.candidate.coarse_j,
+        )
+        for selection in selections
+    }
+    if actual != LANDSCAPE_EXPECTED_SELECTIONS:
+        raise RuntimeError(
+            "terrain landscape variation selections changed: "
+            + json.dumps(actual, sort_keys=True)
+        )
 
 
 def comparison_calibration(fields) -> dict[str, float]:
@@ -2882,6 +2937,7 @@ def bake_landscape_variation_assets(
                 )
             scan_seconds = time.perf_counter() - scan_start
             selections = select_landscape_variations(all_candidates)
+            validate_landscape_selections(selections)
 
             generated_regions = []
             for selection in selections:
