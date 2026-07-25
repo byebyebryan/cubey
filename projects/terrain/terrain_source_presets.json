@@ -1,0 +1,162 @@
+{
+  "schema": "cubey.terrain.source-presets.v1",
+  "default_preset": "mountain-backdrop-1",
+  "producer": {
+    "code_revision": "82a0431281f21a6ec3d691a12ee61525de5b0790",
+    "model_id": "xandergos/terrain-diffusion-30m",
+    "model_revision": "9ef8030cb805b433b98ec25c5dddefbac07a9e26",
+    "native_resolution_m": 30.0
+  },
+  "policy": {
+    "generated_assets_committed": false,
+    "default_generation": "single-preset-single-query",
+    "optional_generation": "one-preset-per-explicit-target",
+    "study_generation": "developer-only"
+  },
+  "presets": [
+    {
+      "id": "mountain-backdrop-1",
+      "label": "Mountain backdrop 1",
+      "tier": "default",
+      "asset_directory": "default",
+      "generation_target": "cubey_terrain_generate_default_asset",
+      "generator": {
+        "mode": "canonical-default",
+        "seed": 0,
+        "model_native_origin": {
+          "i": -2048,
+          "j": -6144
+        },
+        "climate_output": false
+      },
+      "expected": {
+        "elevation_sha256": "27b49f12f29ae24629a8ec03d12b53c6986404c0354069529be75a5ea02c45df",
+        "climate_sha256": null
+      }
+    },
+    {
+      "id": "alpine-range-1",
+      "label": "Alpine range 1",
+      "tier": "optional",
+      "asset_directory": "alpine-range-1",
+      "generation_target": "cubey_terrain_generate_alpine_range_1",
+      "source_study": "landscape-variations/alpine-range",
+      "generator": {
+        "mode": "natural-region",
+        "climate_output": true,
+        "candidate": {
+          "seed": 12345,
+          "coarse_i": 0,
+          "coarse_j": -32,
+          "land_fraction": 1.0,
+          "land_p25_m": 2014.9114685058594,
+          "land_p50_m": 2845.1912841796875,
+          "land_p90_m": 4844.677490234375,
+          "relief_m": 2829.7660217285156,
+          "temperature_median_c": -0.2711530923843384,
+          "temperature_stddev_median_c": 9.084373474121094,
+          "precipitation_median_mm": 334.33392333984375,
+          "precipitation_cv_median": 1.0,
+          "distance_squared": 1024
+        }
+      },
+      "expected": {
+        "elevation_sha256": "5fbf519f9af538d0f1b684e01a4aa1c830ac1896ced2f082ddecb09a3bc9a63a",
+        "climate_sha256": "2eb169eefd3ffe1743c6e24948e7446c7f633cbfa85ed9d2898dd708d67e2971"
+      }
+    },
+    {
+      "id": "mountain-valley-1",
+      "label": "Mountain valley 1",
+      "tier": "optional",
+      "asset_directory": "mountain-valley-1",
+      "generation_target": "cubey_terrain_generate_mountain_valley_1",
+      "source_study": "desert-canyon-study/canyon-candidate-2",
+      "generator": {
+        "mode": "natural-region",
+        "climate_output": true,
+        "candidate": {
+          "seed": 0,
+          "coarse_i": 104,
+          "coarse_j": -104,
+          "land_fraction": 0.953125,
+          "land_p25_m": 371.6593017578125,
+          "land_p50_m": 1305.3306884765625,
+          "land_p90_m": 3212.96142578125,
+          "relief_m": 2841.3021240234375,
+          "temperature_median_c": 8.19758129119873,
+          "temperature_stddev_median_c": 8.841520309448242,
+          "precipitation_median_mm": 231.0210723876953,
+          "precipitation_cv_median": 0.36517924070358276,
+          "distance_squared": 21632
+        }
+      },
+      "expected": {
+        "elevation_sha256": "2a919b516d8ae4fb8c193cdd8db1a8ba055ba702e5cbd1ff50ad2b7fc6ab3c48",
+        "climate_sha256": "e36484c232042800965eea606833bd4ef755c178669a0126180414216934e01e"
+      }
+    },
+    {
+      "id": "rolling-hills-1",
+      "label": "Rolling hills 1",
+      "tier": "optional",
+      "asset_directory": "rolling-hills-1",
+      "generation_target": "cubey_terrain_generate_rolling_hills_1",
+      "source_study": "desert-canyon-study/desert-intermediate-relief",
+      "generator": {
+        "mode": "natural-region",
+        "climate_output": true,
+        "candidate": {
+          "seed": 9012,
+          "coarse_i": -32,
+          "coarse_j": 8,
+          "land_fraction": 1.0,
+          "land_p25_m": 522.961181640625,
+          "land_p50_m": 781.5439147949219,
+          "land_p90_m": 1145.7683715820312,
+          "relief_m": 622.8071899414062,
+          "temperature_median_c": 21.130847930908203,
+          "temperature_stddev_median_c": 5.954591751098633,
+          "precipitation_median_mm": 107.57730865478516,
+          "precipitation_cv_median": 0.19028274714946747,
+          "distance_squared": 1088
+        }
+      },
+      "expected": {
+        "elevation_sha256": "00fc8836855c52caba7d9b114b00d8ba426d0b9f716825f7e19c42f2e273c28d",
+        "climate_sha256": "f40bb2830fd4fc0302747b128b601b859e11b397b882427f0005d56a6984b81f"
+      }
+    },
+    {
+      "id": "rolling-lowland-1",
+      "label": "Rolling lowland 1",
+      "tier": "optional",
+      "asset_directory": "rolling-lowland-1",
+      "generation_target": "cubey_terrain_generate_rolling_lowland_1",
+      "source_study": "landscape-variations/rolling-wet-lowland",
+      "generator": {
+        "mode": "natural-region",
+        "climate_output": true,
+        "candidate": {
+          "seed": 12345,
+          "coarse_i": -96,
+          "coarse_j": -56,
+          "land_fraction": 0.984375,
+          "land_p25_m": 64.1551513671875,
+          "land_p50_m": 148.37559509277344,
+          "land_p90_m": 730.0088623046878,
+          "relief_m": 665.8537109375003,
+          "temperature_median_c": 15.28410816192627,
+          "temperature_stddev_median_c": 6.464278221130371,
+          "precipitation_median_mm": 831.6901245117188,
+          "precipitation_cv_median": 0.7054985761642456,
+          "distance_squared": 12352
+        }
+      },
+      "expected": {
+        "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2",
+        "climate_sha256": "9012e73dd078bb623007fea24970c252b7ced882f86b9d5e6a8846bfe97fc507"
+      }
+    }
+  ]
+}
