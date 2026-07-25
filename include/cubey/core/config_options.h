@@ -140,6 +140,7 @@ enum class RunConfigOptionId {
     TerrainBackdropMeshDensity,
     TerrainRenderStride,
     TerrainSurfaceDetail,
+    TerrainAerialPerspective,
     TerrainShadows,
     TerrainTargetEdgePx,
     TerrainWeathering,

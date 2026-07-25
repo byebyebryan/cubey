@@ -254,8 +254,9 @@ without a visible benefit inside the accepted camera envelope.
 Both presentations use:
 
 - classification normals from the cached source mesh;
-- shared atmosphere-derived direct light and diffuse irradiance;
-- physical aerial perspective between camera and terrain;
+- shared atmosphere-derived direct light and pi-normalized diffuse irradiance;
+- shared physical aerial perspective between camera and terrain, blended at a
+  bounded 20% product default with a live 0-100% review control;
 - the shared atmosphere background with a running daytime solar clock;
 - depth-aware shared Cloud V1 composition in the final surface view;
 - the shared HDR post path.

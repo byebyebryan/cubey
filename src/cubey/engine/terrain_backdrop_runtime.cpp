@@ -738,7 +738,8 @@ void TerrainBackdropRuntime::record_surface_draws(const vulkan::CommandRecorder&
                                          render::TerrainBackdropMaterialMode::FilteredDetail
                                      ? 1.0F
                                      : 0.0F,
-                                 0.0F, 0.0F, 0.0F},
+                                 std::clamp(impl_->frame.aerial_perspective_strength, 0.0F, 1.0F),
+                                 0.0F, 0.0F},
             .world_translation = {impl_->frame.world_translation, 0.0F},
         });
     if (impl_->draw_plan.center_visible && impl_->generation->meshes.center.has_value()) {

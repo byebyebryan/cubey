@@ -39,6 +39,8 @@ void test_defaults_publish_the_product_contract() {
                 config.placement_index == 0U && config.initial_foreground_height_m == 200.0F &&
                 config.render_stride == 3U &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::FilteredDetail &&
+                config.aerial_perspective_strength ==
+                    cubey::projects::terrain::kTerrainDefaultAerialPerspectiveStrength &&
                 config.shadows &&
                 config.debug_view == cubey::projects::terrain::TerrainDebugView::Surface,
             "terrain defaults should select the canonical review product");
@@ -56,6 +58,7 @@ void test_supported_overrides_remain_narrow() {
     run_config.terrain.foreground_height_m = 500.0F;
     run_config.terrain.camera_preset = "backdrop";
     run_config.terrain.surface_detail = "flat";
+    run_config.terrain.aerial_perspective_strength = 0.6F;
     run_config.terrain.render_stride = 1U;
     run_config.terrain.shadows = 0;
     run_config.terrain.backdrop_azimuth_degrees = -90.0F;
@@ -73,7 +76,7 @@ void test_supported_overrides_remain_narrow() {
                 config.placement_index == 9U && config.initial_foreground_height_m == 500.0F &&
                 config.render_stride == 1U &&
                 config.material == cubey::projects::terrain::TerrainMaterialMode::Flat &&
-                !config.shadows &&
+                config.aerial_perspective_strength == 0.6F && !config.shadows &&
                 config.debug_view == cubey::projects::terrain::TerrainDebugView::Slope,
             "terrain should retain only product review overrides");
     require(std::abs(config.initial_azimuth_radians.value() + std::numbers::pi_v<float> * 0.5F) <
@@ -168,6 +171,15 @@ void test_retired_modes_fail_explicitly() {
                 invalid_stride, "/tmp/default"));
         },
         "unsupported terrain render stride should be rejected");
+
+    cubey::RunConfig invalid_aerial_perspective;
+    invalid_aerial_perspective.terrain.aerial_perspective_strength = 1.1F;
+    require_throws(
+        [&invalid_aerial_perspective] {
+            static_cast<void>(cubey::projects::terrain::terrain_runtime_config_from_run_config(
+                invalid_aerial_perspective, "/tmp/default"));
+        },
+        "unsupported terrain aerial perspective should be rejected");
 
     cubey::RunConfig missing_climate;
     missing_climate.terrain.surface_model = "climate-transition";

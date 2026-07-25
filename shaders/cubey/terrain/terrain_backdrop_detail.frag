@@ -288,5 +288,7 @@ void main() {
     vec3 color = ambient_light + direct_light;
     CubeyAtmosphereSample aerial = terrain_aerial_perspective(
         pc.camera_position.xyz, frag_world_position);
-    out_color = vec4(color * aerial.transmittance + aerial.color, 1.0);
+    vec3 aerial_color = color * aerial.transmittance + aerial.color;
+    float aerial_strength = clamp(pc.material_options.y, 0.0, 1.0);
+    out_color = vec4(mix(color, aerial_color, aerial_strength), 1.0);
 }

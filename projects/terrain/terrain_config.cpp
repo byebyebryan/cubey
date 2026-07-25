@@ -227,6 +227,10 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     if (config.render_stride < 1U || config.render_stride > 3U) {
         throw std::runtime_error("terrain render stride must be 1, 2, or 3");
     }
+    if (!std::isfinite(config.aerial_perspective_strength) ||
+        config.aerial_perspective_strength < 0.0F || config.aerial_perspective_strength > 1.0F) {
+        throw std::runtime_error("terrain aerial perspective must be within [0, 1]");
+    }
 }
 
 TerrainRuntimeConfig
@@ -262,6 +266,9 @@ terrain_runtime_config_from_run_config(const RunConfig& config,
     }
     result.foreground_sphere = config.terrain.camera_preset != "backdrop";
     result.material = terrain_material_mode_from_name(config.terrain.surface_detail);
+    if (cubey::run_config_float_is_set(config.terrain.aerial_perspective_strength)) {
+        result.aerial_perspective_strength = config.terrain.aerial_perspective_strength;
+    }
     result.shadows = config.terrain.shadows < 0 || config.terrain.shadows != 0;
     result.debug_view = terrain_debug_view_from_name(config.debug_view);
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;

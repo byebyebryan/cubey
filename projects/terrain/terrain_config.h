@@ -13,6 +13,9 @@
 
 namespace cubey::projects::terrain {
 
+inline constexpr float kTerrainDefaultAerialPerspectiveStrength =
+    cubey::render::kTerrainBackdropDefaultAerialPerspectiveStrength;
+
 using TerrainDebugView = cubey::render::TerrainBackdropDebugView;
 using TerrainMaterialMode = cubey::render::TerrainBackdropMaterialMode;
 using cubey::terrain::TerrainPlacementMode;
@@ -31,6 +34,7 @@ struct TerrainRuntimeConfig {
     std::uint32_t render_stride = 3U;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
     TerrainMaterialMode material = TerrainMaterialMode::FilteredDetail;
+    float aerial_perspective_strength = kTerrainDefaultAerialPerspectiveStrength;
     bool shadows = true;
     bool foreground_sphere = true;
 };

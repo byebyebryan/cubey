@@ -4,6 +4,8 @@
 
 namespace cubey::render {
 
+inline constexpr float kTerrainBackdropDefaultAerialPerspectiveStrength = 0.20F;
+
 enum class TerrainBackdropDebugView : std::uint8_t {
     Surface = 0,
     Height = 1,

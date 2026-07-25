@@ -30,6 +30,8 @@ The active path is fixed:
   sectors, with the continuous inner stage retained as a receiver only;
 - shared physical atmosphere, a running daytime solar clock, depth-aware
   Cloud V1 composition, environment lighting, and HDR post;
+- bounded 20% default terrain aerial perspective, adjustable from 0-100% for
+  scene-specific distance haze without changing the shared atmosphere;
 - height, slope, material, normal, edge, and ownership diagnostics.
 
 The renderer does not modify the source shape. The center is regular terrain,
@@ -141,10 +143,10 @@ generated climate-calibration regions, source provenance and dimensions,
 runtime placement mode and raw-sample index, placement metrics,
 orbit radius/elevation, foreground height and reset, foreground-sphere
 visibility, flat/detail presentation, supported diagnostics, directional-shadow
-state, atmosphere controls, submitted geometry, stable GPU timings, and shared
-cloud controls. Preparation diagnostics identify cache hit/miss/rejection and
-report source, climate, placement, load/decode, generation, encode, and store
-times independently.
+state, terrain aerial-perspective strength, atmosphere controls, submitted
+geometry, stable GPU timings, and shared cloud controls. Preparation diagnostics
+identify cache hit/miss/rejection and report source, climate, placement,
+load/decode, generation, encode, and store times independently.
 
 Windowed startup also publishes placeholder lunar/night-sky textures while the
 shared atlas runtime prepares cached payloads and uploads a complete
@@ -162,6 +164,7 @@ Useful startup overrides:
   --terrain-foreground-height 500 \
   --terrain-camera-preset backdrop \
   --terrain-surface-detail filtered-detail \
+  --terrain-aerial-perspective 0.2 \
   --terrain-shadows \
   --terrain-backdrop-azimuth 90 \
   --terrain-backdrop-orbit-radius 200 \

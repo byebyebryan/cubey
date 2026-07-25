@@ -452,6 +452,7 @@ void test_run_config_descriptors_cover_project_control_paths() {
         "terrain.backdrop_mesh_density",
         "terrain.render_stride",
         "terrain.surface_detail",
+        "terrain.aerial_perspective_strength",
         "terrain.shadows",
         "terrain.target_edge_px",
         "terrain.weathering",
@@ -642,6 +643,7 @@ void test_run_config_loads_json_config_file() {
     "render_path": "quality",
     "render_stride": 1,
     "surface_detail": "filtered-detail",
+    "aerial_perspective_strength": 0.4,
     "shadows": false,
     "target_edge_px": 5.0,
     "weathering": "local",
@@ -765,7 +767,8 @@ void test_run_config_loads_json_config_file() {
     require(config.terrain.source_version == "v2" && config.terrain.render_path == "quality" &&
                 config.terrain.render_stride == 1U &&
                 config.terrain.surface_detail == "filtered-detail" && config.terrain.shadows == 0 &&
-                config.terrain.target_edge_px == 5.0F,
+                config.terrain.target_edge_px == 5.0F &&
+                config.terrain.aerial_perspective_strength == 0.4F,
             "config file should set terrain material presentation");
     require(config.terrain.recipe == "temperate-mountain-range-stress",
             "config file should set terrain recipe");
@@ -1794,6 +1797,8 @@ void test_run_config_parses_terrain_controls() {
     std::string render_stride_value = "1";
     std::string surface_detail_flag = "--terrain-surface-detail";
     std::string surface_detail_value = "filtered-detail";
+    std::string aerial_perspective_flag = "--terrain-aerial-perspective";
+    std::string aerial_perspective_value = "0.45";
     std::string shadows_flag = "--no-terrain-shadows";
     std::string target_edge_flag = "--terrain-target-edge-px";
     std::string target_edge_value = "5.0";
@@ -1856,7 +1861,7 @@ void test_run_config_parses_terrain_controls() {
     std::string preview_surface_flag = "--terrain-preview-surface";
     std::string preview_surface_value = "post-erosion";
     std::string water_surface_flag = "--no-terrain-water-surface";
-    std::array<char*, 75> argv{program.data(),
+    std::array<char*, 77> argv{program.data(),
                                seed_flag.data(),
                                seed_value.data(),
                                preset_flag.data(),
@@ -1869,6 +1874,8 @@ void test_run_config_parses_terrain_controls() {
                                render_stride_value.data(),
                                surface_detail_flag.data(),
                                surface_detail_value.data(),
+                               aerial_perspective_flag.data(),
+                               aerial_perspective_value.data(),
                                shadows_flag.data(),
                                target_edge_flag.data(),
                                target_edge_value.data(),
@@ -1942,7 +1949,8 @@ void test_run_config_parses_terrain_controls() {
     require(config.terrain.source_version == "v2.1" && config.terrain.render_path == "quality" &&
                 config.terrain.render_stride == 1U &&
                 config.terrain.surface_detail == "filtered-detail" && config.terrain.shadows == 0 &&
-                config.terrain.target_edge_px == 5.0F,
+                config.terrain.target_edge_px == 5.0F &&
+                config.terrain.aerial_perspective_strength == 0.45F,
             "run config should parse terrain material presentation");
     require(config.terrain.cell_size == 5.5F, "run config should parse terrain cell size");
     require(config.terrain.sea_level == -3.25F, "run config should parse terrain sea level");

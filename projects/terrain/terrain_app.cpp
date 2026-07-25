@@ -1000,6 +1000,8 @@ class TerrainApp {
             runtime_config_.material = TerrainMaterialMode::FilteredDetail;
         }
         ImGui::Checkbox("Directional shadows", &runtime_config_.shadows);
+        ImGui::SliderFloat("Aerial perspective", &runtime_config_.aerial_perspective_strength, 0.0F,
+                           1.0F, "%.2f");
 
         constexpr std::array diagnostics{
             TerrainDebugView::Surface,
@@ -1912,6 +1914,8 @@ class TerrainApp {
                                 .lighting = lighting,
                                 .debug_view = runtime_config_.debug_view,
                                 .material = runtime_config_.material,
+                                .aerial_perspective_strength =
+                                    runtime_config_.aerial_perspective_strength,
                                 .shadows_enabled = runtime_config_.shadows,
                             });
         } else {

@@ -207,6 +207,7 @@ struct RunConfig {
         std::string backdrop_mesh_density{};
         std::uint32_t render_stride = 0U;
         std::string surface_detail{};
+        float aerial_perspective_strength = kRunConfigUnsetFloat;
         int shadows = -1;
         float target_edge_px = kRunConfigUnsetFloat;
         std::string weathering{};
