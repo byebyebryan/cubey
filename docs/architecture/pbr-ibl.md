@@ -40,6 +40,9 @@ Radiance HDR equirectangular environment assets:
   direct light data, low-order diffuse irradiance SH, a runtime atmosphere
   reflection probe for specular IBL, and explicit environment bindings that use
   generated/HDR fallback resources for diffuse irradiance and DFG lookup.
+  Atmosphere SH stores the Lambert-convolved response normalized by pi because
+  PBR and backdrop consumers multiply that response by diffuse albedo directly;
+  consumers must not add or remove another pi factor.
   The shared atmosphere draw shaders live under
   `shaders/cubey/atmosphere/`, while the atmosphere model include and
   reflection prefilter remain in `shaders/cubey/`.

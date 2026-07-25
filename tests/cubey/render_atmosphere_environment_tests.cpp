@@ -271,6 +271,8 @@ void test_atmosphere_environment_lighting_projects_diffuse_sh() {
             "daylight atmosphere SH should be much brighter than night SH");
     require(day_up.y > day_down.y,
             "daylight atmosphere SH should light upward-facing normals more than ground-facing");
+    require(day_up.x < 1.0F && day_up.y < 1.0F && day_up.z < 1.0F,
+            "daylight diffuse SH should use a pi-normalized Lambert response");
     require(day_lighting.primary_light_intensity == day_lighting.sun_intensity,
             "daylight primary atmosphere light should be the sun");
     require(day_lighting.ambient_color.y == day_up.y,

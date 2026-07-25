@@ -171,10 +171,10 @@ namespace {
     constexpr std::uint32_t kSampleCount = 128;
     constexpr float kPi = std::numbers::pi_v<float>;
     constexpr float kGoldenAngle = 2.39996322972865332F;
-    constexpr std::array<float, 9> kLambertConvolution{
-        kPi,       (2.0F * kPi) / 3.0F, (2.0F * kPi) / 3.0F,
-        (2.0F * kPi) / 3.0F, kPi / 4.0F,          kPi / 4.0F,
-        kPi / 4.0F,          kPi / 4.0F,          kPi / 4.0F,
+    constexpr std::array<float, 9> kNormalizedLambertConvolution{
+        1.0F,       2.0F / 3.0F, 2.0F / 3.0F,
+        2.0F / 3.0F, 1.0F / 4.0F, 1.0F / 4.0F,
+        1.0F / 4.0F, 1.0F / 4.0F, 1.0F / 4.0F,
     };
     std::array<math::Vec3, 9> coefficients{};
     const float sample_weight = (4.0F * kPi) / static_cast<float>(kSampleCount);
@@ -192,7 +192,9 @@ namespace {
         }
     }
     for (std::size_t index = 0; index < coefficients.size(); ++index) {
-        coefficients[index] *= kLambertConvolution[index];
+        // Consumers multiply this diffuse response by albedo directly, so keep
+        // the Lambert convolution normalized by pi.
+        coefficients[index] *= kNormalizedLambertConvolution[index];
     }
     return coefficients;
 }
