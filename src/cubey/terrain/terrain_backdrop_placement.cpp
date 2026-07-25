@@ -16,9 +16,9 @@ constexpr std::string_view kRawPlacementDomain = "terrain.backdrop.raw-placement
 
 [[nodiscard]] std::string
 selected_placement_failure(const TerrainDirectionalPlacementPlan& placement,
-                           const TerrainDirectionalPlacementRequest& request) {
+    const TerrainDirectionalPlacementRequest& request) {
     std::ostringstream message;
-    message << "terrain heightfield has no passing selected backdrop stage; best candidate at "
+    message << "terrain heightfield has no locally safe selected backdrop stage; best candidate at "
             << request.local_radius_m << " m local radius fails:";
     if (placement.local_relief_m > request.maximum_local_relief_m) {
         message << " local relief " << placement.local_relief_m << " m > "
@@ -27,24 +27,6 @@ selected_placement_failure(const TerrainDirectionalPlacementPlan& placement,
     if (placement.local_p95_slope > request.maximum_local_p95_slope) {
         message << " p95 slope " << placement.local_p95_slope << " > "
                 << request.maximum_local_p95_slope << ";";
-    }
-    if (placement.mountain_sector_count < request.minimum_mountain_sectors ||
-        placement.mountain_sector_count > request.maximum_mountain_sectors) {
-        message << " mountain sectors " << placement.mountain_sector_count << " outside ["
-                << request.minimum_mountain_sectors << ", " << request.maximum_mountain_sectors
-                << "];";
-    }
-    if (placement.largest_mountain_arc_sectors < request.minimum_mountain_arc_sectors) {
-        message << " mountain arc " << placement.largest_mountain_arc_sectors << " < "
-                << request.minimum_mountain_arc_sectors << ";";
-    }
-    if (placement.largest_open_arc_sectors < request.minimum_open_arc_sectors) {
-        message << " open arc " << placement.largest_open_arc_sectors << " < "
-                << request.minimum_open_arc_sectors << ";";
-    }
-    if (placement.gradual_rise_sector_count * 2U < std::max(placement.mountain_sector_count, 1U)) {
-        message << " gradual mountain sectors " << placement.gradual_rise_sector_count << " / "
-                << placement.mountain_sector_count << " < 1/2;";
     }
     return message.str();
 }
@@ -148,7 +130,7 @@ plan_terrain_backdrop_placement(const TerrainHeightSource& source,
         }
         result.placement =
             plan_terrain_directional_placement(source, placement_request, source_center);
-        if (!result.placement.contract_satisfied) {
+        if (!result.placement.local_contract_satisfied) {
             throw std::runtime_error(
                 selected_placement_failure(result.placement, placement_request));
         }

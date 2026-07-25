@@ -162,6 +162,13 @@ stage and clearance-qualified 250 m orbit with margin. The review app's wider
 orbit remains an inspection stress control, not a reason to reject an otherwise
 usable backdrop placement.
 
+Selected search ranks candidates that satisfy both the local gate and the
+mountain/open directional composition first. When a source has no such
+mountain composition, as with rolling hills or lowland fields, it falls back to
+the highest-scoring candidate that still passes the local gate. Directional
+metrics remain visible as `best available`; only local safety, source coverage,
+and focused-stage clearance are hard activation gates.
+
 The selected source coordinate is only a translation into the heightfield. The
 source remains continuous and unchanged. The focused stage maps a 500 m
 clearance-qualified reference height to local zero. The review app may move the
@@ -183,10 +190,10 @@ The standalone review app can also stage a source change between its startup
 field and any available generated climate-calibration region. Height and
 climate manifests are loaded and binding-validated together on the background
 build. The validated source, filtered mip chain, placement, cached product, and
-GPU meshes become active as one successful replacement; a failed source or
-placement contract leaves the previous product untouched. This is a review
-control over explicit generated evidence, not a runtime biome generator or a
-terrain consumer API.
+GPU meshes become active as one successful replacement; failed source
+validation, local placement safety, or stage clearance leaves the previous
+product untouched. This is a review control over explicit generated evidence,
+not a runtime biome generator or a terrain consumer API.
 
 The V1 camera contract is:
 

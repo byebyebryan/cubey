@@ -951,7 +951,9 @@ class TerrainApp {
         }
         ImGui::Text("Focus: %.3f, %.3f km", placement.source_focus_xz.x * 0.001F,
                     placement.source_focus_xz.y * 0.001F);
-        ImGui::Text("Directional contract: %s", placement.contract_satisfied ? "pass" : "fail");
+        ImGui::Text("Local stage: %s", placement.local_contract_satisfied ? "pass" : "fail");
+        ImGui::Text("Mountain composition: %s",
+                    placement.contract_satisfied ? "preferred" : "best available");
         ImGui::Text("Score: %.3f", placement.score);
         ImGui::Text("Local relief (%.0f m): %.1f / %.1f m", placement.local_radius_m,
                     placement.local_relief_m, placement.maximum_local_relief_m);
@@ -1575,6 +1577,8 @@ class TerrainApp {
                                 placement_stage_.placement.source_focus_xz.x);
         recorder->record_metric(frame_index, "terrain.placement", "source_focus_z_m",
                                 placement_stage_.placement.source_focus_xz.y);
+        recorder->record_metric(frame_index, "terrain.placement", "local_contract",
+                                placement_stage_.placement.local_contract_satisfied ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.placement", "directional_contract",
                                 placement_stage_.placement.contract_satisfied ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.placement", "score",

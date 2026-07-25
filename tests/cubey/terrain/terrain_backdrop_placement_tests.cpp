@@ -67,6 +67,23 @@ class FlatSource final : public cubey::asset::TerrainHeightSource {
     }
 };
 
+class SteepSource final : public cubey::asset::TerrainHeightSource {
+  public:
+    [[nodiscard]] cubey::asset::TerrainHeightSourceMetadata metadata() const noexcept override {
+        return {
+            .id = "steep-stage-test",
+            .seed = 0U,
+            .relief_scale_m = 50'000.0F,
+            .gradient_step_m = 16.0F,
+        };
+    }
+
+    [[nodiscard]] float
+    sample_height(const cubey::asset::TerrainQuery& query) const override {
+        return query.world_xz.x * 0.5F;
+    }
+};
+
 constexpr cubey::asset::TerrainHeightSourceBounds kLargeBounds{
     .minimum_xz = {-50'000.0F, -50'000.0F},
     .maximum_xz = {50'000.0F, 50'000.0F},
@@ -116,20 +133,35 @@ void test_raw_center_reports_failed_composition_without_rejecting_the_stage() {
                  "raw center should not curate its initial heading");
 }
 
-void test_selected_failure_reports_the_failed_contract() {
+void test_selected_mode_falls_back_to_the_best_locally_safe_composition() {
+    using namespace cubey::terrain;
+    const TerrainBackdropPlacementPlan plan =
+        plan_terrain_backdrop_placement(FlatSource{}, kLargeBounds,
+                                        TerrainBackdropPlacementRequest{});
+    require(plan.placement.local_contract_satisfied &&
+                !plan.placement.contract_satisfied && plan.stage.contract_satisfied,
+            "selected placement should accept a safe source without mountain composition");
+    require(plan.placement.mountain_sector_count == 0U &&
+                plan.placement.largest_open_arc_sectors == plan.placement.sector_count,
+            "flat fallback should retain honest directional diagnostics");
+}
+
+void test_selected_failure_reports_the_failed_local_contract() {
     using namespace cubey::terrain;
     try {
-        static_cast<void>(plan_terrain_backdrop_placement(FlatSource{}, kLargeBounds,
+        static_cast<void>(plan_terrain_backdrop_placement(SteepSource{}, kLargeBounds,
                                                           TerrainBackdropPlacementRequest{}));
     } catch (const std::exception& error) {
         const std::string message = error.what();
-        require(message.find("best candidate at 500 m local radius fails") != std::string::npos &&
-                    message.find("mountain sectors 0 outside [4, 14]") != std::string::npos &&
-                    message.find("mountain arc 0 < 3") != std::string::npos,
-                "selected rejection should identify its local gate and directional thresholds");
+        require(message.find("no locally safe selected backdrop stage") != std::string::npos &&
+                    message.find("best candidate at 500 m local radius fails") !=
+                        std::string::npos &&
+                    message.find("local relief") != std::string::npos &&
+                    message.find("p95 slope") != std::string::npos,
+                "selected rejection should identify its failed local safety thresholds");
         return;
     }
-    throw std::runtime_error("flat terrain should fail selected placement");
+    throw std::runtime_error("steep terrain should fail selected placement");
 }
 
 void test_selected_mode_centers_search_on_translated_source_bounds() {
@@ -211,7 +243,8 @@ int main() {
     try {
         test_selected_mode_preserves_directional_placement_and_focus_height();
         test_raw_center_reports_failed_composition_without_rejecting_the_stage();
-        test_selected_failure_reports_the_failed_contract();
+        test_selected_mode_falls_back_to_the_best_locally_safe_composition();
+        test_selected_failure_reports_the_failed_local_contract();
         test_selected_mode_centers_search_on_translated_source_bounds();
         test_raw_sample_is_indexed_deterministic_and_coverage_safe();
         test_placement_rejects_insufficient_source_coverage();

@@ -65,6 +65,7 @@ struct TerrainDirectionalPlacementPlan {
     std::uint32_t coarse_candidate_count = 0U;
     std::uint32_t refined_candidate_count = 0U;
     std::uint32_t full_candidate_count = 0U;
+    bool local_contract_satisfied = false;
     bool contract_satisfied = false;
     float score = 0.0F;
     std::vector<TerrainDirectionalSectorSample> sectors{};

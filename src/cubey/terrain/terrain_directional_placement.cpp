@@ -21,6 +21,7 @@ static_assert(kMediumRefinementOffsetM + kFineRefinementOffsetM ==
 
 struct Candidate {
     cubey::math::Vec2 focus{0.0F, 0.0F};
+    bool local_contract_satisfied = false;
     bool contract_satisfied = false;
     float score = -std::numeric_limits<float>::infinity();
 };
@@ -160,8 +161,9 @@ evaluate(const TerrainHeightSource& source, const TerrainDirectionalPlacementReq
         result.mountain_yaw_radians = std::atan2(direction_x, -direction_z);
     }
 
-    const bool local_contract = result.local_relief_m <= request.maximum_local_relief_m &&
-                                result.local_p95_slope <= request.maximum_local_p95_slope;
+    result.local_contract_satisfied =
+        result.local_relief_m <= request.maximum_local_relief_m &&
+        result.local_p95_slope <= request.maximum_local_p95_slope;
     const bool coverage_contract =
         result.mountain_sector_count >= request.minimum_mountain_sectors &&
         result.mountain_sector_count <= request.maximum_mountain_sectors &&
@@ -169,7 +171,8 @@ evaluate(const TerrainHeightSource& source, const TerrainDirectionalPlacementReq
         result.largest_open_arc_sectors >= request.minimum_open_arc_sectors;
     const bool rise_contract =
         result.gradual_rise_sector_count * 2U >= std::max(result.mountain_sector_count, 1U);
-    result.contract_satisfied = local_contract && coverage_contract && rise_contract;
+    result.contract_satisfied =
+        result.local_contract_satisfied && coverage_contract && rise_contract;
 
     const float local_score =
         2.0F * (1.0F -
@@ -217,6 +220,8 @@ score_candidates(const TerrainHeightSource& source,
             evaluate(source, request, focus, request.detailed_search);
         result.push_back({
             .focus = focus,
+            .local_contract_satisfied =
+                request.detailed_search && plan.local_contract_satisfied,
             .contract_satisfied = request.detailed_search && plan.contract_satisfied,
             .score = plan.score,
         });
@@ -224,6 +229,9 @@ score_candidates(const TerrainHeightSource& source,
     std::sort(result.begin(), result.end(), [](const Candidate& lhs, const Candidate& rhs) {
         if (lhs.contract_satisfied != rhs.contract_satisfied) {
             return lhs.contract_satisfied;
+        }
+        if (lhs.local_contract_satisfied != rhs.local_contract_satisfied) {
+            return lhs.local_contract_satisfied;
         }
         if (lhs.score != rhs.score) {
             return lhs.score > rhs.score;
@@ -240,6 +248,9 @@ score_candidates(const TerrainHeightSource& source,
                                   const TerrainDirectionalPlacementPlan& rhs) {
     if (lhs.contract_satisfied != rhs.contract_satisfied) {
         return lhs.contract_satisfied;
+    }
+    if (lhs.local_contract_satisfied != rhs.local_contract_satisfied) {
+        return lhs.local_contract_satisfied;
     }
     if (lhs.score != rhs.score) {
         return lhs.score > rhs.score;

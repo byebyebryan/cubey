@@ -239,7 +239,10 @@ the exact placement metrics used by the review.
 Selected placement evaluates a 500 m radius around the subject, with limits of
 120 m local relief and 0.275 P95 slope. This covers the 300 m stage and the
 clearance-qualified 250 m orbit with margin. Wider review-app orbits are stress
-views and do not expand the accepted placement contract.
+views and do not expand the accepted placement contract. Mountain/open
+directional composition is a preferred ranking contract, not a source-validity
+gate: non-mountain presets activate at the best locally safe candidate and
+report `best available` composition in the UI.
 
 Generate the isolated lighting and material candidate pack with:
 
