@@ -143,6 +143,7 @@ add_custom_target(cubey_terrain_generate_landscape_variation_assets
 add_library(cubey_project_terrain_runtime STATIC
     terrain_config.cpp
     terrain_raster_climate_source.cpp
+    terrain_source_catalog.cpp
 )
 target_include_directories(
     cubey_project_terrain_runtime
@@ -220,6 +221,7 @@ target_compile_definitions(
         CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD="${CUBEY_TERRAIN_DEFAULT_ASSET_DIR}"
         CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS="${CUBEY_TERRAIN_SURFACE_STUDY_ASSET_DIR}"
         CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSETS="${CUBEY_TERRAIN_CLIMATE_CALIBRATION_ASSET_DIR}"
+        CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSETS="${CUBEY_TERRAIN_LANDSCAPE_VARIATION_ASSET_DIR}"
 )
 target_link_libraries(
     cubey_project_terrain
@@ -256,6 +258,19 @@ if (BUILD_TESTING)
     add_test(
         NAME terrain_raster_climate_source_tests
         COMMAND cubey_project_terrain_raster_climate_source_tests
+    )
+
+    add_executable(cubey_project_terrain_source_catalog_tests terrain_source_catalog_tests.cpp)
+    target_link_libraries(
+        cubey_project_terrain_source_catalog_tests
+        PRIVATE
+            cubey_project_terrain_runtime
+            cubey_project_warnings
+            nlohmann_json::nlohmann_json
+    )
+    add_test(
+        NAME terrain_source_catalog_tests
+        COMMAND cubey_project_terrain_source_catalog_tests
     )
 
     add_executable(cubey_project_terrain_product_adapter_tests terrain_product_adapter_tests.cpp)
@@ -324,6 +339,7 @@ if (BUILD_TESTING)
         terrain
         terrain_config_tests
         terrain_raster_climate_source_tests
+        terrain_source_catalog_tests
         terrain_product_adapter_tests
         terrain_shadow_tests
         terrain_surface_model_tests
@@ -333,6 +349,7 @@ if (BUILD_TESTING)
     set_tests_properties(
         terrain_config_tests
         terrain_raster_climate_source_tests
+        terrain_source_catalog_tests
         terrain_product_adapter_tests
         terrain_shadow_tests
         terrain_surface_model_tests
