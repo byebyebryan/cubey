@@ -34,6 +34,33 @@ void test_mineral_control_preserves_existing_channels() {
             "mineral control should retain bounded material channels");
 }
 
+void test_mineral_control_reserves_snow_for_upper_summits() {
+    auto shoulder = low_plain();
+    shoulder.normalized_height = 0.48F;
+    shoulder.slope = 0.12F;
+    shoulder.normal_y = 0.91F;
+    const auto shoulder_weights = cubey::projects::terrain::terrain_surface_weights(
+        cubey::projects::terrain::TerrainSurfaceModel::MineralControl, shoulder);
+
+    auto summit = shoulder;
+    summit.normalized_height = 0.88F;
+    const auto summit_weights = cubey::projects::terrain::terrain_surface_weights(
+        cubey::projects::terrain::TerrainSurfaceModel::MineralControl, summit);
+
+    auto summit_face = summit;
+    summit_face.slope = 0.62F;
+    summit_face.normal_y = 0.34F;
+    const auto face_weights = cubey::projects::terrain::terrain_surface_weights(
+        cubey::projects::terrain::TerrainSurfaceModel::MineralControl, summit_face);
+
+    require(shoulder_weights.snow == 0.0F,
+            "mineral control should keep middle-elevation shoulders exposed");
+    require(summit_weights.snow > 0.8F,
+            "mineral control should retain snow on upper summits");
+    require(face_weights.snow < 0.05F && face_weights.rock > 0.8F,
+            "mineral control should expose steep summit faces as rock");
+}
+
 void test_landform_capacity_prefers_low_flat_terrain() {
     const auto plain = cubey::projects::terrain::terrain_surface_weights(
         cubey::projects::terrain::TerrainSurfaceModel::LandformTransition, low_plain());
@@ -126,6 +153,7 @@ void test_weights_remain_bounded() {
 int main() {
     try {
         test_mineral_control_preserves_existing_channels();
+        test_mineral_control_reserves_snow_for_upper_summits();
         test_landform_capacity_prefers_low_flat_terrain();
         test_climate_modulates_landform_capacity_continuously();
         test_climate_potential_exposes_existing_empirical_proxies();

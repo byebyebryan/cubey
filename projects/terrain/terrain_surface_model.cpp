@@ -89,8 +89,8 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
     const float exposed_rock = smoothstep(0.17F, 0.54F, slope);
     const float alpine_rock = mountain_factor * smoothstep(0.42F, 0.72F, height) *
                               smoothstep(0.035F, 0.30F, slope);
-    float snow = mountain_factor * smoothstep(0.25F, 0.39F, height) *
-                 smoothstep(0.30F, 0.82F, normal_y);
+    float snow = mountain_factor * smoothstep(0.58F, 0.80F, height) *
+                 smoothstep(0.38F, 0.78F, normal_y);
     snow = std::clamp(snow, 0.0F, 1.0F);
     float rock =
         std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);

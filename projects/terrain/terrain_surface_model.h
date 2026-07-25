@@ -8,7 +8,7 @@
 
 namespace cubey::projects::terrain {
 
-inline constexpr std::string_view kTerrainSurfaceModelFormulaVersion = "terrain-surface-model-v1";
+inline constexpr std::string_view kTerrainSurfaceModelFormulaVersion = "terrain-surface-model-v2";
 
 enum class TerrainSurfaceModel : std::uint8_t {
     MineralControl,
