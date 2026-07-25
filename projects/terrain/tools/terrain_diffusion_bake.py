@@ -3113,6 +3113,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="generate four deterministic natural landscape variants",
     )
+    mode.add_argument(
+        "--desert-canyon-study-assets",
+        action="store_true",
+        help="generate deterministic desert and canyon source-study assets",
+    )
     return parser.parse_args()
 
 
@@ -3127,8 +3132,40 @@ def main() -> int:
         if args.climate_calibration_assets
         else "landscape-variations"
         if args.landscape_variation_assets
+        else "desert-canyon-study"
+        if args.desert_canyon_study_assets
         else ""
     )
+    if mode == "desert-canyon-study":
+        from terrain_diffusion_landform_study import (
+            bake_landform_study_assets,
+            validate_existing_asset as validate_landform_study_asset,
+        )
+
+        if args.validate_only:
+            if validate_landform_study_asset(
+                sys.modules[__name__], args.output_dir
+            ):
+                print(
+                    f"terrain diffusion {mode}: reused "
+                    f"{args.output_dir.resolve()}"
+                )
+                return 0
+            return 1
+        if not args.force and validate_landform_study_asset(
+            sys.modules[__name__], args.output_dir
+        ):
+            print(
+                f"terrain diffusion {mode}: reused {args.output_dir.resolve()}"
+            )
+            return 0
+        bake_landform_study_assets(
+            sys.modules[__name__],
+            args.reference_root,
+            args.output_dir,
+            args.data_cache,
+        )
+        return 0
     if args.validate_only:
         if mode and validate_existing_asset(mode, args.output_dir):
             print(f"terrain diffusion {mode}: reused {args.output_dir.resolve()}")

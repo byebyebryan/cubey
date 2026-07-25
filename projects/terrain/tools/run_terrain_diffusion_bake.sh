@@ -57,7 +57,9 @@ export PYTHONPATH="${REFERENCE_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
 if [[ "${1:-}" == "--test" ]]; then
   shift
   exec "${ENV_DIR}/bin/python" -m unittest \
-    "${ROOT_DIR}/projects/terrain/tools/test_terrain_diffusion_bake.py" "$@"
+    "${ROOT_DIR}/projects/terrain/tools/test_terrain_diffusion_bake.py" \
+    "${ROOT_DIR}/projects/terrain/tools/test_terrain_diffusion_landform_study.py" \
+    "$@"
 fi
 
 exec "${ENV_DIR}/bin/python" \

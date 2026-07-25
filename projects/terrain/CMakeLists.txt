@@ -38,6 +38,11 @@ set(
     "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/landscape-variations"
     CACHE PATH "Generated terrain landscape variation asset directory"
 )
+set(
+    CUBEY_TERRAIN_DESERT_CANYON_STUDY_ASSET_DIR
+    "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/desert-canyon-study"
+    CACHE PATH "Generated terrain desert and canyon study asset directory"
+)
 
 # Migrate only the former build-local defaults; explicit caller overrides remain authoritative.
 if(CUBEY_TERRAIN_DEFAULT_ASSET_DIR STREQUAL "${CMAKE_BINARY_DIR}/assets/terrain/default")
@@ -136,6 +141,21 @@ add_custom_target(cubey_terrain_generate_landscape_variation_assets
         --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     COMMENT "Generating four pinned natural terrain landscape variants"
+    USES_TERMINAL
+    VERBATIM
+)
+
+add_custom_target(cubey_terrain_generate_desert_canyon_study_assets
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
+        "CUBEY_TERRAIN_DIFFUSION_ENV=${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
+        --desert-canyon-study-assets
+        --output-dir "${CUBEY_TERRAIN_DESERT_CANYON_STUDY_ASSET_DIR}"
+        --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Generating pinned Terrain Diffusion desert and canyon study assets"
     USES_TERMINAL
     VERBATIM
 )
