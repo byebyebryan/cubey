@@ -59,6 +59,7 @@ if [[ "${1:-}" == "--test" ]]; then
   exec "${ENV_DIR}/bin/python" -m unittest \
     "${ROOT_DIR}/projects/terrain/tools/test_terrain_diffusion_bake.py" \
     "${ROOT_DIR}/projects/terrain/tools/test_terrain_diffusion_landform_study.py" \
+    "${ROOT_DIR}/projects/terrain/tools/test_terrain_diffusion_source_presets.py" \
     "$@"
 fi
 

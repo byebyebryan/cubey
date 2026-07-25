@@ -43,6 +43,16 @@ set(
     "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/desert-canyon-study"
     CACHE PATH "Generated terrain desert and canyon study asset directory"
 )
+set(
+    CUBEY_TERRAIN_SOURCE_PRESET_CATALOG
+    "${CMAKE_CURRENT_SOURCE_DIR}/terrain_source_presets.json"
+    CACHE FILEPATH "Committed terrain source preset recipe catalog"
+)
+set(
+    CUBEY_TERRAIN_OPTIONAL_PRESET_ASSET_DIR
+    "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/presets"
+    CACHE PATH "Generated optional terrain source preset root"
+)
 
 # Migrate only the former build-local defaults; explicit caller overrides remain authoritative.
 if(CUBEY_TERRAIN_DEFAULT_ASSET_DIR STREQUAL "${CMAKE_BINARY_DIR}/assets/terrain/default")
@@ -159,6 +169,30 @@ add_custom_target(cubey_terrain_generate_desert_canyon_study_assets
     USES_TERMINAL
     VERBATIM
 )
+
+function(cubey_add_terrain_source_preset_target preset_id)
+    string(REPLACE "-" "_" target_suffix "${preset_id}")
+    add_custom_target(cubey_terrain_generate_${target_suffix}
+        COMMAND
+            "${CMAKE_COMMAND}" -E env
+            "CUBEY_TERRAIN_DIFFUSION_FALLBACK_ROOT=${CUBEY_TERRAIN_DIFFUSION_SOURCE_DIR}"
+            "CUBEY_TERRAIN_DIFFUSION_ENV=${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/run_terrain_diffusion_bake.sh"
+            --source-preset "${preset_id}"
+            --preset-catalog "${CUBEY_TERRAIN_SOURCE_PRESET_CATALOG}"
+            --output-dir "${CUBEY_TERRAIN_OPTIONAL_PRESET_ASSET_DIR}/${preset_id}"
+            --data-cache "${CUBEY_TERRAIN_DIFFUSION_DATA_DIR}"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMENT "Generating optional terrain source preset ${preset_id}"
+        USES_TERMINAL
+        VERBATIM
+    )
+endfunction()
+
+cubey_add_terrain_source_preset_target(alpine-range-1)
+cubey_add_terrain_source_preset_target(mountain-valley-1)
+cubey_add_terrain_source_preset_target(rolling-hills-1)
+cubey_add_terrain_source_preset_target(rolling-lowland-1)
 
 add_library(cubey_project_terrain_runtime STATIC
     terrain_config.cpp

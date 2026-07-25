@@ -3083,6 +3083,12 @@ def parse_args() -> argparse.Namespace:
         default=Path("cache/terrain/tooling/v1/terrain-diffusion-data"),
     )
     parser.add_argument(
+        "--preset-catalog",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / "terrain_source_presets.json",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="regenerate even when the complete pinned output bundle validates",
@@ -3118,6 +3124,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="generate deterministic desert and canyon source-study assets",
     )
+    mode.add_argument(
+        "--source-preset",
+        metavar="ID",
+        help="generate one curated optional source preset directly",
+    )
     return parser.parse_args()
 
 
@@ -3134,11 +3145,54 @@ def main() -> int:
         if args.landscape_variation_assets
         else "desert-canyon-study"
         if args.desert_canyon_study_assets
+        else "source-preset"
+        if args.source_preset
         else ""
     )
+    if mode == "source-preset":
+        from terrain_diffusion_source_presets import (
+            bake_source_preset_asset,
+            validate_source_preset_asset,
+        )
+
+        if args.validate_only:
+            if validate_source_preset_asset(
+                sys.modules[__name__],
+                args.preset_catalog,
+                args.source_preset,
+                args.output_dir,
+            ):
+                print(
+                    f"terrain diffusion source preset {args.source_preset}: "
+                    f"reused {args.output_dir.resolve()}"
+                )
+                return 0
+            return 1
+        if not args.force and validate_source_preset_asset(
+            sys.modules[__name__],
+            args.preset_catalog,
+            args.source_preset,
+            args.output_dir,
+        ):
+            print(
+                f"terrain diffusion source preset {args.source_preset}: "
+                f"reused {args.output_dir.resolve()}"
+            )
+            return 0
+        bake_source_preset_asset(
+            sys.modules[__name__],
+            args.reference_root,
+            args.preset_catalog,
+            args.source_preset,
+            args.output_dir,
+            args.data_cache,
+        )
+        return 0
     if mode == "desert-canyon-study":
         from terrain_diffusion_landform_study import (
             bake_landform_study_assets,
+        )
+        from terrain_diffusion_landform_study import (
             validate_existing_asset as validate_landform_study_asset,
         )
 
