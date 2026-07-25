@@ -5,9 +5,9 @@ from __future__ import annotations
 import hashlib
 import random
 import sys
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 import numpy as np
 
@@ -44,6 +44,32 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
             coarse[2, i0 : i0 + 8, j0 : j0 + 8] = temperature
             coarse[4, i0 : i0 + 8, j0 : j0 + 8] = precipitation
         return coarse
+
+    @staticmethod
+    def landscape_candidate(
+        seed: int,
+        coarse_i: int,
+        coarse_j: int,
+        relief_m: float,
+        temperature_c: float,
+        precipitation_mm: float,
+        land_fraction: float = 1.0,
+    ) -> bake.LandscapeCandidate:
+        return bake.LandscapeCandidate(
+            seed=seed,
+            coarse_i=coarse_i,
+            coarse_j=coarse_j,
+            land_fraction=land_fraction,
+            land_p25_m=100.0,
+            land_p50_m=100.0 + 0.4 * relief_m,
+            land_p90_m=100.0 + relief_m,
+            relief_m=relief_m,
+            temperature_median_c=temperature_c,
+            temperature_stddev_median_c=7.0,
+            precipitation_median_mm=precipitation_mm,
+            precipitation_cv_median=0.4,
+            distance_squared=coarse_i * coarse_i + coarse_j * coarse_j,
+        )
 
     def test_process_rng_seeding_handles_zero_deterministically(self) -> None:
         class FakeCuda:
@@ -253,6 +279,61 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "canonical hot-dry control"):
             bake.select_climate_calibration_regions(coarse)
 
+    def test_landscape_variations_select_four_distinct_recipes(self) -> None:
+        candidates = [
+            self.landscape_candidate(0, -8, -8, 2_700.0, -4.0, 300.0),
+            self.landscape_candidate(9012, -8, 8, 1_600.0, 10.0, 800.0),
+            self.landscape_candidate(12345, 8, -8, 1_300.0, 20.0, 150.0),
+            self.landscape_candidate(0, 8, 8, 600.0, 16.0, 1_000.0),
+        ]
+
+        selections = bake.select_landscape_variations(candidates)
+
+        self.assertEqual(
+            [selection.variant.name for selection in selections],
+            [variant.name for variant in bake.LANDSCAPE_VARIANTS],
+        )
+        self.assertEqual(
+            len(
+                {
+                    (
+                        selection.candidate.seed,
+                        selection.candidate.coarse_i,
+                        selection.candidate.coarse_j,
+                    )
+                    for selection in selections
+                }
+            ),
+            len(selections),
+        )
+
+    def test_landscape_lowland_does_not_inherit_mountain_relief_gate(self) -> None:
+        candidate = self.landscape_candidate(0, 0, 0, 600.0, 16.0, 1_000.0)
+
+        self.assertTrue(bake.LANDSCAPE_VARIANTS[-1].accepts(candidate))
+        self.assertLess(candidate.relief_m, bake.CLIMATE_MIN_RELIEF_M)
+
+    def test_landscape_selection_rejects_missing_recipe_without_fallback(self) -> None:
+        candidates = [
+            self.landscape_candidate(0, 0, 0, 1_300.0, 20.0, 150.0),
+        ]
+
+        with self.assertRaisesRegex(RuntimeError, "landscape variant alpine-range"):
+            bake.select_landscape_variations(candidates)
+
+    def test_landscape_selection_uses_frozen_seed_order_for_ties(self) -> None:
+        candidates = [
+            self.landscape_candidate(9012, -8, -8, 2_700.0, -4.0, 300.0),
+            self.landscape_candidate(0, 8, 8, 2_700.0, -4.0, 300.0),
+            self.landscape_candidate(9012, -8, 8, 1_600.0, 10.0, 800.0),
+            self.landscape_candidate(12345, 8, -8, 1_300.0, 20.0, 150.0),
+            self.landscape_candidate(12345, 16, 8, 600.0, 16.0, 1_000.0),
+        ]
+
+        selections = bake.select_landscape_variations(candidates)
+
+        self.assertEqual(selections[0].candidate.seed, 0)
+
     def test_area_average_field_uses_disjoint_source_blocks(self) -> None:
         source = np.arange(4 * 4, dtype=np.float32).reshape(1, 4, 4)
 
@@ -325,6 +406,51 @@ class TerrainDiffusionBakeTests(unittest.TestCase):
         )
         self.assertEqual(surface["grid"]["sample_spacing_m"], 240.0)
         self.assertEqual(surface["provenance"]["regime"], "hot-wet")
+
+    def test_landscape_manifests_preserve_variant_seed_and_binding(self) -> None:
+        candidate = self.landscape_candidate(
+            9012, -8, 8, 1_600.0, 10.0, 800.0
+        )
+        selection = bake.LandscapeSelection(
+            bake.LANDSCAPE_VARIANTS[1], candidate, 0.0
+        )
+        generated = {
+            "seed": 9012,
+            "selection": selection,
+            "model_native_origin": {"i": -2_048, "j": 2_048},
+            "total_seconds": 3.5,
+        }
+        source = {"id": "test", "generator": "terrain-diffusion"}
+        elevation_file = {
+            "path": "elevation.f32",
+            "dtype": "float32-le",
+            "byte_count": 16,
+            "sha256": "e" * 64,
+        }
+        climate_file = {
+            "path": "climate.f32",
+            "dtype": "float32-le",
+            "byte_count": 16,
+            "sha256": "c" * 64,
+        }
+
+        heightfield = bake.landscape_variation_heightfield_manifest(
+            elevation_file, generated, source
+        )
+        surface = bake.landscape_variation_surface_manifest(
+            climate_file, elevation_file["sha256"], generated, source
+        )
+
+        self.assertEqual(heightfield["seed"], 9012)
+        self.assertEqual(surface["seed"], 9012)
+        self.assertEqual(
+            heightfield["provenance"]["landscape_variant"],
+            "temperate-mountain-valley",
+        )
+        self.assertEqual(
+            surface["heightfield"]["elevation_sha256"],
+            heightfield["files"]["elevation"]["sha256"],
+        )
 
     def test_float_hash_matches_written_payload(self) -> None:
         values = np.array([[1.0, 2.0]], dtype=np.float32)

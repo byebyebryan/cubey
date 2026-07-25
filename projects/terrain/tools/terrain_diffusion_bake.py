@@ -11,7 +11,6 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import platform
 import resource
 import shutil
@@ -21,9 +20,9 @@ import tempfile
 import time
 import urllib.request
 import zipfile
+from pathlib import Path
 
 from export_heightfield_manifest import export_study_field
-
 
 CODE_REVISION = "82a0431281f21a6ec3d691a12ee61525de5b0790"
 MODEL_ID = "xandergos/terrain-diffusion-30m"
@@ -52,12 +51,16 @@ SURFACE_STUDY_DOWNSAMPLE = 8
 SURFACE_STUDY_SIZE = FIELD_SIZE // SURFACE_STUDY_DOWNSAMPLE
 CLIMATE_CALIBRATION_SCHEMA = "cubey.terrain.climate-calibration.v1"
 CLIMATE_CALIBRATION_REGION_SCHEMA = "cubey.terrain.climate-calibration-region.v1"
+LANDSCAPE_VARIATION_SCHEMA = "cubey.terrain.landscape-variations.v1"
+LANDSCAPE_VARIATION_REGION_SCHEMA = "cubey.terrain.landscape-variation-region.v1"
 CLIMATE_MACRO_SPACING_M = MODEL_NATIVE_RESOLUTION_M * COARSE_CELL_NATIVE_SAMPLES
 CLIMATE_SCAN_BEGIN = -128
 CLIMATE_SCAN_END = 136
 CLIMATE_MIN_RELIEF_M = 1_000.0
 CLIMATE_CALIBRATION_PACKAGE_LIMIT_BYTES = 128 * 1024 * 1024
 CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS = 300.0
+LANDSCAPE_VARIATION_PACKAGE_LIMIT_BYTES = 128 * 1024 * 1024
+LANDSCAPE_VARIATION_GENERATION_LIMIT_SECONDS = 300.0
 CLIMATE_CONTROL_ORIGIN = (-8, -24)
 CLIMATE_EXPECTED_ORIGINS = {
     "hot-dry": CLIMATE_CONTROL_ORIGIN,
@@ -159,6 +162,143 @@ CLIMATE_REGIMES = (
         minimum_precipitation_mm=200.0,
     ),
 )
+
+
+@dataclasses.dataclass(frozen=True)
+class LandscapeVariantSpec:
+    name: str
+    label: str
+    target_relief_m: float
+    minimum_relief_m: float
+    maximum_relief_m: float
+    target_temperature_c: float
+    minimum_temperature_c: float | None
+    maximum_temperature_c: float | None
+    target_precipitation_mm: float
+    minimum_precipitation_mm: float | None
+    maximum_precipitation_mm: float | None
+    minimum_land_fraction: float
+
+    def accepts(self, candidate: LandscapeCandidate) -> bool:
+        return (
+            candidate.land_fraction >= self.minimum_land_fraction
+            and self.minimum_relief_m <= candidate.relief_m <= self.maximum_relief_m
+            and (
+                self.minimum_temperature_c is None
+                or candidate.temperature_median_c >= self.minimum_temperature_c
+            )
+            and (
+                self.maximum_temperature_c is None
+                or candidate.temperature_median_c <= self.maximum_temperature_c
+            )
+            and (
+                self.minimum_precipitation_mm is None
+                or candidate.precipitation_median_mm >= self.minimum_precipitation_mm
+            )
+            and (
+                self.maximum_precipitation_mm is None
+                or candidate.precipitation_median_mm <= self.maximum_precipitation_mm
+            )
+        )
+
+    def as_json(self) -> dict[str, object]:
+        return dataclasses.asdict(self)
+
+
+LANDSCAPE_VARIANTS = (
+    LandscapeVariantSpec(
+        "alpine-range",
+        "Alpine range",
+        2_700.0,
+        2_000.0,
+        4_500.0,
+        -4.0,
+        None,
+        2.0,
+        300.0,
+        200.0,
+        None,
+        0.90,
+    ),
+    LandscapeVariantSpec(
+        "temperate-mountain-valley",
+        "Temperate mountain valley",
+        1_600.0,
+        1_200.0,
+        2_200.0,
+        10.0,
+        5.0,
+        15.0,
+        800.0,
+        500.0,
+        1_600.0,
+        0.95,
+    ),
+    LandscapeVariantSpec(
+        "dry-upland",
+        "Dry upland",
+        1_300.0,
+        900.0,
+        1_800.0,
+        20.0,
+        15.0,
+        None,
+        150.0,
+        None,
+        300.0,
+        0.95,
+    ),
+    LandscapeVariantSpec(
+        "rolling-wet-lowland",
+        "Rolling wet lowland",
+        600.0,
+        300.0,
+        900.0,
+        16.0,
+        8.0,
+        24.0,
+        1_000.0,
+        600.0,
+        None,
+        0.98,
+    ),
+)
+
+
+@dataclasses.dataclass(frozen=True)
+class LandscapeCandidate:
+    seed: int
+    coarse_i: int
+    coarse_j: int
+    land_fraction: float
+    land_p25_m: float
+    land_p50_m: float
+    land_p90_m: float
+    relief_m: float
+    temperature_median_c: float
+    temperature_stddev_median_c: float
+    precipitation_median_mm: float
+    precipitation_cv_median: float
+    distance_squared: int
+
+    def as_json(self) -> dict[str, object]:
+        return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass(frozen=True)
+class LandscapeSelection:
+    variant: LandscapeVariantSpec
+    candidate: LandscapeCandidate
+    score: float
+
+    def as_json(self) -> dict[str, object]:
+        return {
+            "variant": self.variant.name,
+            "label": self.variant.label,
+            "recipe": self.variant.as_json(),
+            "score": self.score,
+            "candidate": self.candidate.as_json(),
+        }
 
 
 @dataclasses.dataclass(frozen=True)
@@ -328,12 +468,16 @@ def _validate_float32_record(
     return payload_hash, values
 
 
-def _validate_heightfield_bundle(root: Path, expected_sha256: str | None = None) -> str:
+def _validate_heightfield_bundle(
+    root: Path,
+    expected_sha256: str | None = None,
+    expected_seed: int = ORDER_CHECK_SEED,
+) -> str:
     manifest = _load_json(root / "heightfield.json")
     if (
         manifest.get("schema") != "cubey.terrain.heightfield.v1"
         or isinstance(manifest.get("seed"), bool)
-        or manifest.get("seed") != 0
+        or manifest.get("seed") != expected_seed
     ):
         raise RuntimeError("terrain heightfield manifest identity is incompatible")
     source = manifest.get("source")
@@ -374,12 +518,13 @@ def _validate_surface_bundle(
     root: Path,
     expected_elevation_sha256: str,
     expected_climate_sha256: str | None = None,
+    expected_seed: int = ORDER_CHECK_SEED,
 ) -> str:
     manifest = _load_json(root / "surface-fields.json")
     if (
         manifest.get("schema") != SURFACE_STUDY_SCHEMA
         or isinstance(manifest.get("seed"), bool)
-        or manifest.get("seed") != 0
+        or manifest.get("seed") != expected_seed
     ):
         raise RuntimeError("terrain surface manifest identity is incompatible")
     _validate_pinned_source(manifest.get("source"))
@@ -443,6 +588,44 @@ def validate_existing_asset(mode: str, output_dir: Path) -> bool:
                     elevation_sha256,
                     DEFAULT_ASSET_CLIMATE_SHA256 if name == "hot-dry" else None,
                 )
+        elif mode == "landscape-variations":
+            index = _load_json(root / "variation-index.json")
+            if (
+                index.get("schema") != LANDSCAPE_VARIATION_SCHEMA
+                or index.get("seeds") != list(SEEDS)
+            ):
+                raise RuntimeError("terrain landscape variation index is incompatible")
+            _validate_pinned_source(index.get("source"))
+            variants = index.get("variants")
+            if not isinstance(variants, list) or len(variants) != len(LANDSCAPE_VARIANTS):
+                raise RuntimeError("terrain landscape variation catalog is incomplete")
+            expected_names = [variant.name for variant in LANDSCAPE_VARIANTS]
+            if [variant.get("id") for variant in variants if isinstance(variant, dict)] != expected_names:
+                raise RuntimeError("terrain landscape variation catalog order is incompatible")
+            for record in variants:
+                if not isinstance(record, dict):
+                    raise RuntimeError("terrain landscape variation entry is invalid")
+                name = record["id"]
+                seed = record["seed"]
+                if isinstance(seed, bool) or seed not in SEEDS:
+                    raise RuntimeError("terrain landscape variation seed is incompatible")
+                if (
+                    record.get("heightfield") != f"{name}/heightfield.json"
+                    or record.get("surface_fields") != f"{name}/surface-fields.json"
+                ):
+                    raise RuntimeError("terrain landscape variation paths are incompatible")
+                region = root / name
+                elevation_sha256 = _validate_heightfield_bundle(
+                    region, record.get("elevation_sha256"), seed
+                )
+                climate_sha256 = _validate_surface_bundle(
+                    region, elevation_sha256, record.get("climate_sha256"), seed
+                )
+                if (
+                    elevation_sha256 != record.get("elevation_sha256")
+                    or climate_sha256 != record.get("climate_sha256")
+                ):
+                    raise RuntimeError("terrain landscape variation identity changed")
         else:
             return False
         return True
@@ -568,7 +751,7 @@ def climate_region_candidates(coarse_values) -> list[ClimateRegionCandidate]:
             if relief < CLIMATE_MIN_RELIEF_M:
                 continue
 
-            def land_median(values) -> float:
+            def land_median(values, rows=rows, columns=columns, land=land) -> float:
                 return float(np.median(values[rows, columns][land]))
 
             candidates.append(
@@ -667,6 +850,189 @@ def select_climate_calibration_regions(
                 f"got {actual}"
             )
     return selections, candidates
+
+
+def landscape_candidates(seed: int, coarse_values) -> list[LandscapeCandidate]:
+    """Summarize every non-overlapping product window without a global relief gate."""
+    import numpy as np
+
+    coarse = np.asarray(coarse_values, dtype=np.float32)
+    expected_size = CLIMATE_SCAN_END - CLIMATE_SCAN_BEGIN
+    if coarse.shape != (6, expected_size, expected_size):
+        raise ValueError(
+            f"landscape scan must be 6x{expected_size}x{expected_size}, got {coarse.shape}"
+        )
+    if not np.isfinite(coarse).all():
+        raise ValueError("landscape scan contains non-finite values")
+
+    elevation = np.sign(coarse[0]) * np.square(np.abs(coarse[0]))
+    temperature = coarse[2]
+    temperature_stddev = np.maximum(coarse[3] * 0.01, 0.0)
+    precipitation = np.maximum(coarse[4], 0.0)
+    precipitation_cv = np.clip(coarse[5] * 0.01, 0.0, 1.0)
+    candidates = []
+    for coarse_i in range(CLIMATE_SCAN_BEGIN, CLIMATE_SCAN_END, COARSE_WINDOW_CELLS):
+        for coarse_j in range(CLIMATE_SCAN_BEGIN, CLIMATE_SCAN_END, COARSE_WINDOW_CELLS):
+            i0 = coarse_i - CLIMATE_SCAN_BEGIN
+            j0 = coarse_j - CLIMATE_SCAN_BEGIN
+            rows = slice(i0, i0 + COARSE_WINDOW_CELLS)
+            columns = slice(j0, j0 + COARSE_WINDOW_CELLS)
+            elevation_window = elevation[rows, columns]
+            land = elevation_window > 0.0
+            land_fraction = float(np.mean(land))
+            if not np.any(land):
+                continue
+            land_elevation = elevation_window[land]
+            land_p25, land_p50, land_p90 = np.percentile(
+                land_elevation, (25.0, 50.0, 90.0)
+            )
+
+            def land_median(values, rows=rows, columns=columns, land=land) -> float:
+                return float(np.median(values[rows, columns][land]))
+
+            candidates.append(
+                LandscapeCandidate(
+                    seed=seed,
+                    coarse_i=coarse_i,
+                    coarse_j=coarse_j,
+                    land_fraction=land_fraction,
+                    land_p25_m=float(land_p25),
+                    land_p50_m=float(land_p50),
+                    land_p90_m=float(land_p90),
+                    relief_m=float(land_p90 - land_p25),
+                    temperature_median_c=land_median(temperature),
+                    temperature_stddev_median_c=land_median(temperature_stddev),
+                    precipitation_median_mm=land_median(precipitation),
+                    precipitation_cv_median=land_median(precipitation_cv),
+                    distance_squared=coarse_i * coarse_i + coarse_j * coarse_j,
+                )
+            )
+    return candidates
+
+
+def landscape_variant_score(
+    variant: LandscapeVariantSpec, candidate: LandscapeCandidate
+) -> float:
+    relief_scale = max(
+        (variant.maximum_relief_m - variant.minimum_relief_m) * 0.5, 1.0
+    )
+    relief_distance = (candidate.relief_m - variant.target_relief_m) / relief_scale
+    temperature_distance = (
+        candidate.temperature_median_c - variant.target_temperature_c
+    ) / 8.0
+    precipitation_distance = (
+        math.log10(max(candidate.precipitation_median_mm, 1.0))
+        - math.log10(variant.target_precipitation_mm)
+    ) / 0.45
+    land_distance = (1.0 - candidate.land_fraction) / 0.1
+    return (
+        relief_distance * relief_distance
+        + temperature_distance * temperature_distance
+        + precipitation_distance * precipitation_distance
+        + 0.25 * land_distance * land_distance
+    )
+
+
+def landscape_variant_violation_score(
+    variant: LandscapeVariantSpec, candidate: LandscapeCandidate
+) -> float:
+    def outside(value: float, minimum: float | None, maximum: float | None, scale: float) -> float:
+        if minimum is not None and value < minimum:
+            return (minimum - value) / scale
+        if maximum is not None and value > maximum:
+            return (value - maximum) / scale
+        return 0.0
+
+    violations = (
+        outside(
+            candidate.land_fraction,
+            variant.minimum_land_fraction,
+            None,
+            0.1,
+        ),
+        outside(
+            candidate.relief_m,
+            variant.minimum_relief_m,
+            variant.maximum_relief_m,
+            500.0,
+        ),
+        outside(
+            candidate.temperature_median_c,
+            variant.minimum_temperature_c,
+            variant.maximum_temperature_c,
+            8.0,
+        ),
+        outside(
+            math.log10(max(candidate.precipitation_median_mm, 1.0)),
+            (
+                math.log10(variant.minimum_precipitation_mm)
+                if variant.minimum_precipitation_mm is not None
+                else None
+            ),
+            (
+                math.log10(variant.maximum_precipitation_mm)
+                if variant.maximum_precipitation_mm is not None
+                else None
+            ),
+            0.45,
+        ),
+    )
+    return sum(value * value for value in violations)
+
+
+def select_landscape_variations(
+    candidates: list[LandscapeCandidate],
+) -> list[LandscapeSelection]:
+    seed_order = {seed: index for index, seed in enumerate(SEEDS)}
+    selections = []
+    used_origins: set[tuple[int, int, int]] = set()
+    for variant in LANDSCAPE_VARIANTS:
+        eligible = [
+            candidate
+            for candidate in candidates
+            if (candidate.seed, candidate.coarse_i, candidate.coarse_j) not in used_origins
+            and variant.accepts(candidate)
+        ]
+        if not eligible:
+            nearest = sorted(
+                candidates,
+                key=lambda candidate: (
+                    landscape_variant_violation_score(variant, candidate),
+                    landscape_variant_score(variant, candidate),
+                    seed_order.get(candidate.seed, len(seed_order)),
+                    candidate.distance_squared,
+                    candidate.coarse_i,
+                    candidate.coarse_j,
+                ),
+            )[:5]
+            summary = json.dumps(
+                [candidate.as_json() for candidate in nearest],
+                sort_keys=True,
+                allow_nan=False,
+            )
+            raise RuntimeError(
+                f"no qualified coarse window for landscape variant {variant.name}; "
+                f"nearest candidates: {summary}"
+            )
+        candidate = min(
+            eligible,
+            key=lambda value: (
+                landscape_variant_score(variant, value),
+                seed_order.get(value.seed, len(seed_order)),
+                value.distance_squared,
+                value.coarse_i,
+                value.coarse_j,
+            ),
+        )
+        used_origins.add((candidate.seed, candidate.coarse_i, candidate.coarse_j))
+        selections.append(
+            LandscapeSelection(
+                variant,
+                candidate,
+                landscape_variant_score(variant, candidate),
+            )
+        )
+    return selections
 
 
 def comparison_calibration(fields) -> dict[str, float]:
@@ -958,6 +1324,106 @@ def climate_calibration_surface_manifest(
     }
 
 
+def landscape_variation_heightfield_manifest(
+    elevation_file: dict[str, object],
+    generated: dict[str, object],
+    common_source: dict[str, object],
+) -> dict[str, object]:
+    half_span = (FIELD_SIZE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    selection: LandscapeSelection = generated["selection"]
+    return {
+        "schema": "cubey.terrain.heightfield.v1",
+        "source": common_source,
+        "seed": generated["seed"],
+        "grid": {
+            "width": FIELD_SIZE,
+            "height": FIELD_SIZE,
+            "sample_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+            "sample_origin_x_m": -half_span,
+            "sample_origin_z_m": -half_span,
+            "axis_mapping": {"world_x": "model_j", "world_z": "model_i"},
+        },
+        "height": {
+            "offset_m": DEFAULT_ASSET_HEIGHT_OFFSET_M,
+            "scale": DEFAULT_ASSET_HEIGHT_SCALE,
+            "relief_scale_m": COMPARISON_RELIEF_M,
+        },
+        "files": {
+            "elevation": {
+                **elevation_file,
+                "layout": "row-major-zx",
+                "shape": [FIELD_SIZE, FIELD_SIZE],
+                "unit": "m",
+            }
+        },
+        "provenance": {
+            "purpose": "cubey-terrain-landscape-variations-v1",
+            "selection": "multi-seed-natural-landscape-v1",
+            "landscape_variant": selection.variant.name,
+            "model_native_origin": generated["model_native_origin"],
+            "generation_seconds": generated["total_seconds"],
+        },
+    }
+
+
+def landscape_variation_surface_manifest(
+    climate_file: dict[str, object],
+    elevation_sha256: str,
+    generated: dict[str, object],
+    common_source: dict[str, object],
+) -> dict[str, object]:
+    half_span = (FIELD_SIZE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    block_center_offset = (
+        (SURFACE_STUDY_DOWNSAMPLE - 1) * MODEL_NATIVE_RESOLUTION_M * 0.5
+    )
+    selection: LandscapeSelection = generated["selection"]
+    return {
+        "schema": SURFACE_STUDY_SCHEMA,
+        "source": common_source,
+        "seed": generated["seed"],
+        "heightfield": {
+            "schema": "cubey.terrain.heightfield.v1",
+            "elevation_sha256": elevation_sha256,
+        },
+        "grid": {
+            "width": SURFACE_STUDY_SIZE,
+            "height": SURFACE_STUDY_SIZE,
+            "sample_spacing_m": MODEL_NATIVE_RESOLUTION_M
+            * SURFACE_STUDY_DOWNSAMPLE,
+            "sample_origin_x_m": -half_span + block_center_offset,
+            "sample_origin_z_m": -half_span + block_center_offset,
+            "axis_mapping": {"world_x": "model_j", "world_z": "model_i"},
+        },
+        "files": {
+            "climate": {
+                **climate_file,
+                "layout": "channel-major-zx",
+                "shape": [
+                    len(CLIMATE_CHANNELS),
+                    SURFACE_STUDY_SIZE,
+                    SURFACE_STUDY_SIZE,
+                ],
+                "channels": [
+                    {"name": name, "unit": unit}
+                    for name, unit in CLIMATE_CHANNELS
+                ],
+            }
+        },
+        "processing": {
+            "method": "area-average",
+            "factor": SURFACE_STUDY_DOWNSAMPLE,
+            "source_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+        },
+        "provenance": {
+            "purpose": "cubey-terrain-landscape-variations-v1",
+            "selection": "multi-seed-natural-landscape-v1",
+            "landscape_variant": selection.variant.name,
+            "model_native_origin": generated["model_native_origin"],
+            "generation_seconds": generated["total_seconds"],
+        },
+    }
+
+
 def _write_gray16(path: Path, values, low: float, high: float) -> None:
     import numpy as np
     from PIL import Image
@@ -1214,6 +1680,20 @@ def _coarse_climate_scan(world):
     return coarse, selections, candidates
 
 
+def _coarse_landscape_scan(world, seed: int):
+    begin = CLIMATE_SCAN_BEGIN
+    end = CLIMATE_SCAN_END
+    coarse_weighted = world.coarse[:, begin:end, begin:end]
+    coarse = (
+        (coarse_weighted[:-1] / coarse_weighted[-1:])
+        .detach()
+        .cpu()
+        .numpy()
+        .astype("float32", copy=True)
+    )
+    return coarse, landscape_candidates(seed, coarse)
+
+
 def _tile_overlap_validation(
     tiles: list[QueriedTile], label: str
 ) -> tuple[list[dict[str, object]], float]:
@@ -1256,6 +1736,33 @@ def _generate_climate_region(
     overlaps, _ = _tile_overlap_validation(tiles, selection.regime.name)
     return {
         "seed": ORDER_CHECK_SEED,
+        "selection": selection,
+        "model_native_origin": {"i": native_i, "j": native_j},
+        "elevation": elevation,
+        "climate": climate,
+        "tiles": tiles,
+        "overlaps": overlaps,
+        "total_seconds": time.perf_counter() - generation_start,
+    }
+
+
+def _generate_landscape_region(
+    world,
+    torch,
+    selection: LandscapeSelection,
+) -> dict[str, object]:
+    generation_start = time.perf_counter()
+    candidate = selection.candidate
+    native_i = candidate.coarse_i * COARSE_CELL_NATIVE_SAMPLES
+    native_j = candidate.coarse_j * COARSE_CELL_NATIVE_SAMPLES
+    requests = _tile_requests(native_i, native_j)
+    tiles = [
+        _query_tile(world, torch, name, bounds, True) for name, bounds in requests
+    ]
+    elevation, climate = _stitch_tiles(tiles, with_climate=True)
+    overlaps, _ = _tile_overlap_validation(tiles, selection.variant.name)
+    return {
+        "seed": candidate.seed,
         "selection": selection,
         "model_native_origin": {"i": native_i, "j": native_j},
         "elevation": elevation,
@@ -1484,6 +1991,141 @@ def _write_climate_calibration_region(
     return {
         "name": selection.regime.name,
         "directory": selection.regime.name,
+        "selection": selection.as_json(),
+        "heightfield": str(heightfield_path.relative_to(root)),
+        "heightfield_sha256": sha256_file(heightfield_path),
+        "surface_fields": str(surface_fields_path.relative_to(root)),
+        "surface_fields_sha256": sha256_file(surface_fields_path),
+        "summary": str(summary_path.relative_to(root)),
+        "summary_sha256": sha256_file(summary_path),
+        "elevation_sha256": elevation_file["sha256"],
+        "climate_sha256": climate_file["sha256"],
+        "generation_seconds": generated["total_seconds"],
+    }
+
+
+def _write_landscape_variation_region(
+    root: Path,
+    generated: dict[str, object],
+    common_source: dict[str, object],
+) -> dict[str, object]:
+    import numpy as np
+
+    selection: LandscapeSelection = generated["selection"]
+    region_dir = root / selection.variant.name
+    region_dir.mkdir(parents=True, exist_ok=True)
+
+    elevation = np.asarray(generated["elevation"], dtype=np.float32)
+    climate = area_average_field(
+        normalize_climate_channels(generated["climate"]),
+        SURFACE_STUDY_DOWNSAMPLE,
+    )
+    rendered = (
+        (elevation + DEFAULT_ASSET_HEIGHT_OFFSET_M) * DEFAULT_ASSET_HEIGHT_SCALE
+    ).astype(np.float32)
+    elevation_file = write_f32(region_dir / "elevation.f32", elevation)
+    climate_file = write_f32(region_dir / "climate.f32", climate)
+
+    heightfield = landscape_variation_heightfield_manifest(
+        elevation_file, generated, common_source
+    )
+    surface_fields = landscape_variation_surface_manifest(
+        climate_file, elevation_file["sha256"], generated, common_source
+    )
+    heightfield_path = region_dir / "heightfield.json"
+    surface_fields_path = region_dir / "surface-fields.json"
+    heightfield_path.write_text(
+        json.dumps(heightfield, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    surface_fields_path.write_text(
+        json.dumps(surface_fields, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+
+    preview_step = 4
+    _write_rgb8(
+        region_dir / "height.png",
+        height_preview_rgb(rendered[::preview_step, ::preview_step]),
+    )
+    gradient_z, gradient_x = np.gradient(
+        rendered.astype(np.float64), MODEL_NATIVE_RESOLUTION_M
+    )
+    slope = np.sqrt(gradient_x * gradient_x + gradient_z * gradient_z)
+    _write_rgb8(
+        region_dir / "slope.png",
+        slope_preview_rgb(slope[::preview_step, ::preview_step]),
+    )
+    climate_previews = _write_calibration_climate_previews(region_dir, climate)
+    tile_records = [
+        {
+            "name": tile.name,
+            "bounds_native": list(tile.bounds),
+            "seconds": tile.seconds,
+        }
+        for tile in generated["tiles"]
+    ]
+    summary = {
+        "schema": LANDSCAPE_VARIATION_REGION_SCHEMA,
+        "id": selection.variant.name,
+        "label": selection.variant.label,
+        "selection": selection.as_json(),
+        "seed": generated["seed"],
+        "model_native_origin": generated["model_native_origin"],
+        "files": {
+            "heightfield": {
+                "path": heightfield_path.name,
+                "sha256": sha256_file(heightfield_path),
+            },
+            "surface_fields": {
+                "path": surface_fields_path.name,
+                "sha256": sha256_file(surface_fields_path),
+            },
+            "elevation": elevation_file,
+            "climate": climate_file,
+        },
+        "previews": {
+            "height": {
+                "path": "height.png",
+                "scale": {
+                    "minimum": 0.0,
+                    "maximum": COMPARISON_RELIEF_M,
+                    "unit": "m",
+                },
+            },
+            "slope": {
+                "path": "slope.png",
+                "scale": {"minimum": 0.0, "maximum": 1.5},
+            },
+            "climate": climate_previews,
+        },
+        "statistics": {
+            "elevation_raw_m": _field_stats(elevation),
+            "elevation_product_m": _field_stats(rendered),
+            "slope": _field_stats(slope),
+            "climate": {
+                name: {"unit": unit, **_field_stats(climate[index])}
+                for index, (name, unit) in enumerate(CLIMATE_CHANNELS)
+            },
+        },
+        "generation": {
+            "seconds": generated["total_seconds"],
+            "tiles": tile_records,
+        },
+        "validation": {
+            "tile_context_halo_samples": TILE_CONTEXT_HALO,
+            "seam_validation_half_width_samples": SEAM_VALIDATION_HALF_WIDTH,
+            "overlap_tolerance_m": ORDER_TOLERANCE_M,
+            "overlaps": generated["overlaps"],
+        },
+    }
+    summary_path = region_dir / "region-summary.json"
+    summary_path.write_text(
+        json.dumps(summary, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    return {
+        "id": selection.variant.name,
+        "label": selection.variant.label,
+        "directory": selection.variant.name,
+        "seed": generated["seed"],
         "selection": selection.as_json(),
         "heightfield": str(heightfield_path.relative_to(root)),
         "heightfield_sha256": sha256_file(heightfield_path),
@@ -2169,6 +2811,204 @@ def bake_climate_calibration_assets(
     print(f"terrain climate calibration assets: wrote {output_dir}")
 
 
+def bake_landscape_variation_assets(
+    reference_root: Path, output_dir: Path, data_cache: Path
+) -> None:
+    """Generate deterministic natural landscape variants across pinned worlds."""
+    import torch
+    from huggingface_hub import snapshot_download
+
+    reference_root = reference_root.resolve()
+    output_dir = output_dir.resolve()
+    data_cache = data_cache.resolve()
+    actual_revision = git_revision(reference_root)
+    if actual_revision != CODE_REVISION:
+        raise RuntimeError(
+            f"terrain-diffusion checkout must be {CODE_REVISION}, got {actual_revision}"
+        )
+    if not torch.cuda.is_available():
+        raise RuntimeError("Terrain landscape variation generation requires CUDA")
+
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cudnn.benchmark = False
+    torch.set_float32_matmul_precision("highest")
+    torch.use_deterministic_algorithms(True, warn_only=True)
+
+    _prepare_data_cache(reference_root, data_cache)
+    snapshot = Path(
+        snapshot_download(repo_id=MODEL_ID, revision=MODEL_REVISION)
+    ).resolve()
+
+    sys.path.insert(0, str(reference_root))
+    from terrain_diffusion.inference.world_pipeline import WorldPipeline
+
+    with _working_directory(data_cache):
+        _seed_process_rngs(torch, SEEDS[0])
+        world = WorldPipeline.from_pretrained(
+            str(snapshot),
+            seed=SEEDS[0],
+            latents_batch_size=LATENTS_BATCH_SIZE,
+            torch_compile=False,
+            dtype=None,
+            caching_strategy="direct",
+            cache_limit=None,
+            log_mode="info",
+        )
+        world.to("cuda")
+        world.bind()
+        if float(world.native_resolution) != MODEL_NATIVE_RESOLUTION_M:
+            raise RuntimeError(
+                f"expected {MODEL_NATIVE_RESOLUTION_M:g} m model, got {world.native_resolution}"
+            )
+
+        generation_start = time.perf_counter()
+        scan_start = time.perf_counter()
+        all_candidates = []
+        scan_records = []
+        try:
+            for seed in SEEDS:
+                _seed_process_rngs(torch, seed)
+                world.change_seed(seed)
+                coarse, candidates = _coarse_landscape_scan(world, seed)
+                _cuda_sync(torch)
+                all_candidates.extend(candidates)
+                scan_records.append(
+                    {
+                        "seed": seed,
+                        "shape": list(coarse.shape),
+                        "candidate_count": len(candidates),
+                    }
+                )
+            scan_seconds = time.perf_counter() - scan_start
+            selections = select_landscape_variations(all_candidates)
+
+            generated_regions = []
+            for selection in selections:
+                seed = selection.candidate.seed
+                _seed_process_rngs(torch, seed)
+                world.change_seed(seed)
+                generated_regions.append(
+                    _generate_landscape_region(world, torch, selection)
+                )
+        finally:
+            world.close()
+
+    common_source = {
+        "id": "terrain-diffusion-30m",
+        "generator": "terrain-diffusion",
+        "code_revision": CODE_REVISION,
+        "model_id": MODEL_ID,
+        "model_revision": MODEL_REVISION,
+        "model_snapshot": str(snapshot),
+        "native_resolution_m": MODEL_NATIVE_RESOLUTION_M,
+        "settings": {
+            "device": "cuda",
+            "dtype": "fp32",
+            "latents_batch_size": LATENTS_BATCH_SIZE,
+            "torch_compile": False,
+            "caching_strategy": "direct",
+            "custom_conditioning": False,
+            "process_rng_seeding": "seed-value-v1",
+            "climate_output": True,
+        },
+    }
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(
+        tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent)
+    )
+    try:
+        variants = [
+            _write_landscape_variation_region(
+                temporary, generated, common_source
+            )
+            for generated in generated_regions
+        ]
+        generation_seconds = time.perf_counter() - generation_start
+        index = {
+            "schema": LANDSCAPE_VARIATION_SCHEMA,
+            "source": common_source,
+            "seeds": list(SEEDS),
+            "scan": {
+                "coarse_bounds": {
+                    "begin_i": CLIMATE_SCAN_BEGIN,
+                    "begin_j": CLIMATE_SCAN_BEGIN,
+                    "end_i": CLIMATE_SCAN_END,
+                    "end_j": CLIMATE_SCAN_END,
+                },
+                "sample_spacing_m": CLIMATE_MACRO_SPACING_M,
+                "window_cells": COARSE_WINDOW_CELLS,
+                "window_extent_m": FIELD_SIZE * MODEL_NATIVE_RESOLUTION_M,
+                "selection_seconds": scan_seconds,
+                "candidate_count": len(all_candidates),
+                "worlds": scan_records,
+                "candidates": [
+                    candidate.as_json() for candidate in all_candidates
+                ],
+            },
+            "selection": {
+                "method": "multi-seed-natural-landscape-v1",
+                "precipitation_distance_scale_log10": 0.45,
+                "temperature_distance_scale_c": 8.0,
+                "recipes": [variant.as_json() for variant in LANDSCAPE_VARIANTS],
+                "regions": [selection.as_json() for selection in selections],
+            },
+            "field_contract": {
+                "elevation_size": [FIELD_SIZE, FIELD_SIZE],
+                "elevation_spacing_m": MODEL_NATIVE_RESOLUTION_M,
+                "climate_size": [SURFACE_STUDY_SIZE, SURFACE_STUDY_SIZE],
+                "climate_spacing_m": MODEL_NATIVE_RESOLUTION_M
+                * SURFACE_STUDY_DOWNSAMPLE,
+                "height_offset_m": DEFAULT_ASSET_HEIGHT_OFFSET_M,
+                "height_scale": DEFAULT_ASSET_HEIGHT_SCALE,
+                "target_relief_m": COMPARISON_RELIEF_M,
+            },
+            "variants": variants,
+            "validation": {
+                "all_recipes_selected": len(variants) == len(LANDSCAPE_VARIANTS),
+                "generation_seconds": generation_seconds,
+                "generation_limit_seconds": LANDSCAPE_VARIATION_GENERATION_LIMIT_SECONDS,
+                "within_generation_limit": generation_seconds
+                <= LANDSCAPE_VARIATION_GENERATION_LIMIT_SECONDS,
+                "package_limit_bytes": LANDSCAPE_VARIATION_PACKAGE_LIMIT_BYTES,
+                "package_bytes": 0,
+                "within_package_limit": True,
+            },
+        }
+        index_path = temporary / "variation-index.json"
+        for _ in range(8):
+            index_path.write_text(
+                json.dumps(index, indent=2, sort_keys=True, allow_nan=False) + "\n"
+            )
+            package_bytes = _directory_size(temporary)
+            if index["validation"]["package_bytes"] == package_bytes:
+                break
+            index["validation"]["package_bytes"] = package_bytes
+        else:
+            raise RuntimeError("landscape variation package size did not stabilize")
+
+        package_bytes = _directory_size(temporary)
+        if package_bytes > LANDSCAPE_VARIATION_PACKAGE_LIMIT_BYTES:
+            raise RuntimeError(
+                f"landscape variation package is {package_bytes} bytes, over the "
+                f"{LANDSCAPE_VARIATION_PACKAGE_LIMIT_BYTES}-byte limit"
+            )
+        if generation_seconds > LANDSCAPE_VARIATION_GENERATION_LIMIT_SECONDS:
+            raise RuntimeError(
+                f"landscape variation generation took {generation_seconds:.3f} seconds, "
+                f"over the {LANDSCAPE_VARIATION_GENERATION_LIMIT_SECONDS:.0f}-second limit"
+            )
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        os.replace(temporary, output_dir)
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+
+    print(f"terrain landscape variation assets: wrote {output_dir}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -2212,6 +3052,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="generate five deterministic cross-climate calibration regions",
     )
+    mode.add_argument(
+        "--landscape-variation-assets",
+        action="store_true",
+        help="generate four deterministic natural landscape variants",
+    )
     return parser.parse_args()
 
 
@@ -2224,6 +3069,8 @@ def main() -> int:
         if args.surface_study_asset
         else "climate-calibration"
         if args.climate_calibration_assets
+        else "landscape-variations"
+        if args.landscape_variation_assets
         else ""
     )
     if args.validate_only:
@@ -2240,6 +3087,10 @@ def main() -> int:
         bake_surface_study_asset(args.reference_root, args.output_dir, args.data_cache)
     elif args.climate_calibration_assets:
         bake_climate_calibration_assets(
+            args.reference_root, args.output_dir, args.data_cache
+        )
+    elif args.landscape_variation_assets:
+        bake_landscape_variation_assets(
             args.reference_root, args.output_dir, args.data_cache
         )
     else:

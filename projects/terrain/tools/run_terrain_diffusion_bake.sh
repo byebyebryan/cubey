@@ -18,7 +18,8 @@ for argument in "$@"; do
     break
   fi
 done
-if [[ ${force_regeneration} -eq 0 ]] && python3 "${BAKE_SCRIPT}" "$@" --validate-only; then
+if [[ "${1:-}" != "--test" && ${force_regeneration} -eq 0 ]] &&
+    python3 "${BAKE_SCRIPT}" "$@" --validate-only; then
   exit 0
 fi
 
