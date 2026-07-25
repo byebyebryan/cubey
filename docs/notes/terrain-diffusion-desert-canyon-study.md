@@ -2,7 +2,8 @@
 
 Date: 2026-07-25
 
-Status: implementation planned; evidence pending.
+Status: completed. Desert source variation confirmed; canonical canyon source
+not confirmed.
 
 ## Question
 
@@ -105,9 +106,70 @@ It includes:
 - fixed-scale height, slope, and probe-depth views;
 - 500 m surface captures from two headings;
 - 500 m clay silhouettes and 200 m surface stress views;
-- material-weight, vegetation, and moisture diagnostics;
+- material-weight diagnostics plus numerical vegetation and moisture metrics;
 - source, climate, placement, and terrain timing metrics;
 - the previous dry upland and temperate mountain valley as controls.
+
+The study source package contains seven complete height/climate bundles and
+fifteen intermediate probes. Generation took 432.40 seconds, including 188.86
+seconds for intermediate probes, and produced 133,837,424 bytes of ignored
+cache data. The final seed, coarse origin, elevation hash, and climate hash for
+every retained source are frozen in the generator contract.
+
+## Results
+
+### Desert
+
+All three strict hot/dry windows are useful source variations:
+
+- `desert-high-relief` contains a broad arid massif and passes the existing
+  selected mountain-backdrop placement contract.
+- `desert-intermediate-relief` contains rolling, moderately dissected arid
+  terrain. It is the strongest general desert-backdrop candidate in the raw
+  comparison.
+- `desert-low-relief` establishes a genuinely low-relief arid control rather
+  than another mountain source.
+
+Their full-field morphology differs from `dry-upland`, so this is more than a
+palette-only variation. The current renderer nevertheless undersells the
+result: all three retain the shared cool blue-gray surface response and lack a
+distinct warm mineral, sediment, or exposed-rock treatment. The low-relief
+source also retains sparse cover through the current climate material mapping.
+The next desert work belongs in surface interpretation and rendering, not in
+another source generator.
+
+### Canyon
+
+The morphology probe found connected incision, but none of the four retained
+sources passes as a canonical canyon terrain:
+
+- `canyon-candidate-1` has the clearest connected branching incision in the
+  23.04 km probe, but the raw-center scene is locally shallow.
+- `canyon-candidate-2` is the best perspective result and reads as a broad
+  gorge or mountain valley. Its local surface is wet and partly vegetated, so
+  it does not read as an arid canyon.
+- `canyon-candidate-3` has the strongest raw-center relief and slope, but reads
+  as an escarpment or cliff wall rather than a connected canyon system.
+- `canyon-candidate-4` remains a mountain basin and ridge field.
+
+The result is still useful: broad relief plus morphological closing can reject
+many ordinary mountain fields and find gorge-like terrain without D8 flow or
+authored channels. It is not sufficient to identify the geology, wall
+structure, and plateau incision expected from a defined canyon biome.
+
+### Placement And Cost
+
+The review uses `raw-center` for matched morphology comparison and separately
+probes compatibility with the existing selected backdrop placement. Seven of
+nine sources pass that mountain-oriented selector. The intermediate- and
+low-relief deserts correctly fail because they do not provide the required
+mountain sectors and arc. That is a placement-policy mismatch, not a malformed
+heightfield.
+
+All nine study and control sources have unique geometry hashes. Combined
+terrain mean timings range from 0.856 to 0.955 ms and p50 timings range from
+0.846 to 0.958 ms at 1600 x 900. Every source remains below the 1.10 ms mean and
+p50 gate; observed p95 ranges from 0.922 to 1.003 ms.
 
 ## Acceptance
 
@@ -124,25 +186,33 @@ grooves fails.
 Every retained full asset must:
 
 - preserve deterministic seed, origin, payload hashes, and source provenance;
-- pass selected backdrop placement;
 - contain no holes, seams, or source/material registration failures;
 - remain within the accepted 1.10 ms combined terrain mean and p50 budget at
   1600 x 900.
 
 P95 is reported rather than gated.
 
+Selected placement is reported as a compatibility result rather than a source
+acceptance gate. The current contract intentionally selects mountain-backed
+stages and must not reject otherwise valid plains or desert terrain.
+
 ## Decision Boundary
 
-If strong examples already exist, they remain project-local source candidates
-for later productization. If neither class succeeds, the next experiment may
+The arid sources remain project-local candidates for a focused desert material
+pass. `canyon-candidate-2` remains a gorge reference, but the canyon catalog is
+not promoted as a biome.
+
+If a dedicated canyon remains a priority, the next source experiment should
 vary elevation conditioning strength, elevation frequency, or coarse pooling
-one factor at a time.
+one factor at a time and retain this pack as the control. Another selector-only
+pass over the same natural worlds is unlikely to produce a qualitatively
+different answer.
 
 Custom conditioning is deferred until those natural-source and parameter
 studies fail. Any future conditioning must be a broad procedural field, not an
 authored canyon centerline.
 
-## Planned Commits
+## Commits
 
 1. `docs(terrain): define desert and canyon study`
 2. `feat(terrain): probe diffusion landform candidates`
