@@ -284,18 +284,8 @@ night exposure.
 Filtered-detail lighting evaluates broad diffuse irradiance from the
 classification normal while reserving the generated normal primarily for
 direct and raking-light response. Material-aware ambient visibility deepens
-existing cavities. A restrained classification-slope sky-visibility factor
-preserves ambient light on broad surfaces while giving steep soil and rock
-enough separation to remain readable under ordinary daylight. This terrain-local
-term does not change the shared atmosphere, exposure, or aerial-perspective
-contracts.
-
-A source-derived normal-texture study at 512 and 1024 resolution was rejected:
-inside the accepted far-field envelope it produced only marginal variation,
-occasionally softened the cached mesh response, and did not justify another
-descriptor, sample, preparation product, or 4 MiB allocation. Source-normal
-recovery remains deferred until a future streamed source-detail or midground
-product can use the same data structurally.
+existing cavities without changing the shared atmosphere, exposure, or aerial
+perspective contracts.
 
 Directional terrain shadows use one cached `2048 x 2048` full-product depth
 map. A comparison sampler evaluates four bilinear taps at half-texel offsets,
@@ -313,9 +303,7 @@ updates.
 The detail texture improves material frequency but does not add geometry or
 claim grass, trees, scree, exposed strata, or close-surface fidelity.
 The accepted matched visual closure is recorded in
-[Terrain V1 Visual Closure](../notes/terrain-visual-closure-v1.md). The later
-daylight readability refinement and rejected source-normal study are recorded
-in [Terrain Daylight Form V1](../notes/terrain-daylight-form-v1.md).
+[Terrain V1 Visual Closure](../notes/terrain-visual-closure-v1.md).
 
 ## Diagnostics
 

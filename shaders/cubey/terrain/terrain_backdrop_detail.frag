@@ -189,11 +189,11 @@ void main() {
             0.10 * smoothstep(0.08, 0.48, slope),
         0.0, 1.0);
     vec3 refined_ground = mix(
-        srgb_to_linear(vec3(0.235, 0.260, 0.275)),
-        srgb_to_linear(vec3(0.405, 0.340, 0.265)), upland_weathering);
+        srgb_to_linear(vec3(0.260, 0.275, 0.280)),
+        srgb_to_linear(vec3(0.380, 0.325, 0.265)), upland_weathering);
     vec3 refined_rock = mix(
-        srgb_to_linear(vec3(0.300, 0.335, 0.365)),
-        srgb_to_linear(vec3(0.485, 0.410, 0.320)), rock_mineral);
+        srgb_to_linear(vec3(0.325, 0.350, 0.370)),
+        srgb_to_linear(vec3(0.465, 0.400, 0.325)), rock_mineral);
     vec3 refined_snow = mix(
         srgb_to_linear(vec3(0.68, 0.72, 0.75)),
         srgb_to_linear(vec3(0.77, 0.80, 0.82)),
@@ -266,12 +266,6 @@ void main() {
         1.0 - (1.0 - ambient_visibility) * occlusion_strength, 0.50, 1.0);
     float material_ambient_visibility = mix(
         ambient_visibility, refined_ambient_visibility, filtered_detail);
-    float slope_exposure = 1.0 - clamp(classification_normal.y, 0.0, 1.0);
-    float horizon_occlusion_strength =
-        0.10 * soil + 0.08 * vegetation + 0.14 * rock + 0.05 * snow;
-    float sky_visibility =
-        1.0 - horizon_occlusion_strength * smoothstep(0.08, 0.70, slope_exposure);
-    material_ambient_visibility *= mix(1.0, sky_visibility, filtered_detail);
     vec3 ambient_normal = normalize(
         mix(normal, classification_normal, 0.85 * filtered_detail));
     vec3 ambient_light = terrain_lighting_ambient(
