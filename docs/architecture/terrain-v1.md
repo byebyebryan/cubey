@@ -304,6 +304,11 @@ The detail texture improves material frequency but does not add geometry or
 claim grass, trees, scree, exposed strata, or close-surface fidelity.
 The accepted matched visual closure is recorded in
 [Terrain V1 Visual Closure](../notes/terrain-visual-closure-v1.md).
+Further fidelity work is bounded by the
+[Terrain Visual Fidelity Strategy](../notes/terrain-visual-fidelity-strategy.md):
+the far-backdrop height and topology remain frozen unless a consumer justifies
+a terrain-correlated surface-data study, while closer terrain is a separate
+product.
 
 ## Diagnostics
 

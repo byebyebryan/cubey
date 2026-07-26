@@ -188,6 +188,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Rejected terrain daylight-form study](terrain-daylight-form-v1.md): marginal
   mineral/ambient tuning and source-normal texture experiments that did not
   produce a meaningful visual improvement.
+- [Terrain visual fidelity strategy](terrain-visual-fidelity-strategy.md):
+  source-versus-rendering diagnosis, effort ranking, and the bounded
+  surface-data proof required before reopening the accepted far backdrop.
 - [Rejected terrain climate response V1.1](../archive/terrain/climate-response-v1-1-rejected.md):
   compact evidence from the unmerged climate branch and the snow-allocation
   failure that kept mineral control as the production default.

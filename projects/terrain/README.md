@@ -330,6 +330,9 @@ invariants, requires a pixel-identical flat control, and enforces the accepted
 The rejected daylight-form study records a marginal mineral/ambient tuning pass
 and an uneconomical source-normal texture experiment:
 [`docs/notes/terrain-daylight-form-v1.md`](../../docs/notes/terrain-daylight-form-v1.md).
+The resulting source-versus-rendering diagnosis, effort boundary, and stop
+conditions are recorded in
+[`docs/notes/terrain-visual-fidelity-strategy.md`](../../docs/notes/terrain-visual-fidelity-strategy.md).
 
 ## Tests
 
