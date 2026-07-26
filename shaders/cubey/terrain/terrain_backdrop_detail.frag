@@ -118,7 +118,8 @@ float terrain_sun_visibility(vec3 world_position, vec3 normal,
             terrain_shadow_map,
             vec3(shadow_uv + tap_offsets[tap] * texel, receiver_depth));
     }
-    return visibility * 0.25;
+    float shadow_confidence = smoothstep(0.10, 0.31, light_direction.y);
+    return mix(1.0, visibility * 0.25, shadow_confidence);
 }
 
 void main() {
