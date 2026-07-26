@@ -27,7 +27,8 @@ The active path is fixed:
 - cullable static sectors plus an optional foreground review sphere;
 - flat and filtered planar procedural-detail material presentations;
 - cached hardware-filtered directional shadows from the outer backdrop
-  sectors, with the continuous inner stage retained as a receiver only;
+  sectors, with texel-scaled receiver normal bias and the continuous inner
+  stage retained as a receiver only;
 - shared physical atmosphere, a running daytime solar clock, depth-aware
   Cloud V1 composition, environment lighting, and HDR post;
 - bounded 20% default terrain aerial perspective, adjustable from 0-100% for

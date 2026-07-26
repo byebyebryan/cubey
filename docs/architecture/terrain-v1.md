@@ -290,8 +290,11 @@ perspective contracts.
 Directional terrain shadows use one cached `2048 x 2048` full-product depth
 map. A comparison sampler evaluates four bilinear taps at half-texel offsets,
 which preserves the separable `1 / 2 / 1` tent footprint while avoiding nine
-explicit depth fetches. The map refreshes when the light direction changes by
-`0.5` degree; below-horizon light suspends updates.
+explicit depth fetches. Receivers apply a slope-aware depth bias plus a
+shadow-texel-scaled geometric-normal offset; this prevents the polar terrain
+triangles from self-shadowing while retaining larger valley occlusion. The map
+refreshes when the light direction changes by `0.5` degree; below-horizon light
+suspends updates.
 
 The detail texture improves material frequency but does not add geometry or
 claim grass, trees, scree, exposed strata, or close-surface fidelity.

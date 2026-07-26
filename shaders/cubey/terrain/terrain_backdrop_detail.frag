@@ -84,7 +84,13 @@ float terrain_sun_visibility(vec3 world_position, vec3 normal,
     if (atmosphere.shadow_options.x < 0.5) {
         return 1.0;
     }
-    vec4 light_clip = atmosphere.light_view_projection * vec4(world_position, 1.0);
+    float ndotl = clamp(dot(normal, light_direction), 0.0, 1.0);
+    float texel_world_m = max(atmosphere.shadow_options.w, 0.0);
+    float normal_offset_m =
+        texel_world_m * mix(0.85, 0.35, ndotl);
+    vec3 receiver_position = world_position + normal * normal_offset_m;
+    vec4 light_clip =
+        atmosphere.light_view_projection * vec4(receiver_position, 1.0);
     if (light_clip.w <= 0.0) {
         return 1.0;
     }
@@ -96,10 +102,8 @@ float terrain_sun_visibility(vec3 world_position, vec3 normal,
         return 1.0;
     }
 
-    float ndotl = clamp(dot(normal, light_direction), 0.0, 1.0);
     float slope_tangent = sqrt(max(1.0 - ndotl * ndotl, 0.0)) /
         max(ndotl, 0.2);
-    float texel_world_m = max(atmosphere.shadow_options.w, 0.0);
     float bias_m = max(
         0.75, texel_world_m * (0.25 + 0.35 * min(slope_tangent, 2.0)));
     float receiver_depth = light_ndc.z -
