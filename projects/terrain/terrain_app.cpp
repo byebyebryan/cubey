@@ -639,7 +639,8 @@ class TerrainApp {
             const cubey::vulkan::GpuSubmissionTicket retire_after =
                 context.frame_resources().latest_submitted_ticket();
             poll_product_build(context.device(), context.gpu(), retire_after);
-            poll_atmosphere_atlases(context.device(), context.gpu(), retire_after);
+            poll_atmosphere_atlases(context.device(), context.gpu(), context.frame_resources(),
+                                    retire_after);
             orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
             (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                              timing.delta_seconds);
@@ -1289,8 +1290,13 @@ class TerrainApp {
 
     void poll_atmosphere_atlases(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu,
+                                 const cubey::vulkan::FrameResources& frame_resources,
                                  cubey::vulkan::GpuSubmissionTicket retire_after) {
         if (atmosphere_atlases_.poll(gpu, retire_after)) {
+            for (std::uint32_t index = 0U; index < frame_resources.frame_slot_count(); ++index) {
+                frame_resources.wait_for_frame(index);
+                gpu.mark_submission_completed(frame_resources.submitted_ticket(index));
+            }
             atmosphere_background_.update_texture_bindings(device, atmosphere_atlases_.bindings());
         }
     }
