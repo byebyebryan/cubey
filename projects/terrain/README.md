@@ -327,6 +327,12 @@ moving-clock profiles. Finalization preserves source/product/topology
 invariants, requires a pixel-identical flat control, and enforces the accepted
 `1.10 ms` mean/p50 terrain composition budget.
 
+The subsequent bounded daylight-form pass widens only the filtered-detail
+mineral range and adds restrained slope-aware sky visibility. Its five-source
+review, measured GPU gate, and rejected 512/1024 source-normal texture study are
+recorded in
+[`docs/notes/terrain-daylight-form-v1.md`](../../docs/notes/terrain-daylight-form-v1.md).
+
 ## Tests
 
 ```sh

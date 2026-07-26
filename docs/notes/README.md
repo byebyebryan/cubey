@@ -185,6 +185,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain material v2](terrain-material-v2.md): frozen-source refinement gate
   for broad mineral identity, mesoscopic light response, matched captures, and
   explicit performance and visual acceptance criteria.
+- [Terrain daylight form v1](terrain-daylight-form-v1.md): accepted mineral
+  range and slope-aware sky-visibility refinement, plus the measured rejection
+  of an extra source-normal texture layer.
 - [Rejected terrain climate response V1.1](../archive/terrain/climate-response-v1-1-rejected.md):
   compact evidence from the unmerged climate branch and the snow-allocation
   failure that kept mineral control as the production default.
