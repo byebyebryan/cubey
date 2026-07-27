@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP="${APP:-${ROOT_DIR}/build/dev/projects/planet/planet}"
-OUT_DIR="${1:-${ROOT_DIR}/outputs/planet-sky-foundation-$(date +%Y%m%d-%H%M%S)}"
+APP="${APP:-${ROOT_DIR}/build/dev/projects/planet_legacy/planet-legacy}"
+OUT_DIR="${1:-${ROOT_DIR}/outputs/planet-legacy-sky-foundation-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"

@@ -16,11 +16,11 @@ set(CUBEY_PLANET_SHADERS
 )
 
 cubey_add_app_target(
-    cubey_project_planet
-    OUTPUT_NAME planet
+    cubey_project_planet_legacy
+    OUTPUT_NAME planet-legacy
     SHADER_DEFINE CUBEY_PLANET_SHADER_DIR
-    WINDOWED_SMOKE_TEST planet_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "planet: .*rendering planet project"
+    WINDOWED_SMOKE_TEST planet_legacy_reaches_glfw
+    WINDOWED_SMOKE_PATTERN "planet-legacy: .*rendering legacy planet project"
     SOURCES
         main.cpp
         planet_app.cpp
@@ -49,7 +49,7 @@ cubey_add_app_target(
 
 if(BUILD_TESTING)
     add_executable(
-        cubey_project_planet_tests
+        cubey_project_planet_legacy_tests
         planet_camera.cpp
         planet_config.cpp
         planet_frame.cpp
@@ -58,29 +58,29 @@ if(BUILD_TESTING)
         planet_frame_tests.cpp
     )
     target_link_libraries(
-        cubey_project_planet_tests
+        cubey_project_planet_legacy_tests
         PRIVATE
             cubey::cubey
             cubey_project_warnings
     )
-    add_test(NAME planet_frame_tests COMMAND cubey_project_planet_tests)
+    add_test(NAME planet_legacy_frame_tests COMMAND cubey_project_planet_legacy_tests)
 
     add_executable(
-        cubey_project_planet_celestial_tests
+        cubey_project_planet_legacy_celestial_tests
         planet_atmosphere_adapter.cpp
         planet_celestial.cpp
         planet_celestial_tests.cpp
     )
     target_link_libraries(
-        cubey_project_planet_celestial_tests
+        cubey_project_planet_legacy_celestial_tests
         PRIVATE
             cubey::cubey
             cubey_project_warnings
     )
-    add_test(NAME planet_celestial_tests COMMAND cubey_project_planet_celestial_tests)
+    add_test(NAME planet_legacy_celestial_tests COMMAND cubey_project_planet_legacy_celestial_tests)
 
     add_executable(
-        cubey_project_planet_surface_tests
+        cubey_project_planet_legacy_surface_tests
         planet_camera.cpp
         planet_config.cpp
         planet_frame.cpp
@@ -92,24 +92,24 @@ if(BUILD_TESTING)
         planet_surface_tests.cpp
     )
     target_link_libraries(
-        cubey_project_planet_surface_tests
+        cubey_project_planet_legacy_surface_tests
         PRIVATE
             cubey::cubey
             cubey_project_warnings
     )
-    add_test(NAME planet_surface_tests COMMAND cubey_project_planet_surface_tests)
+    add_test(NAME planet_legacy_surface_tests COMMAND cubey_project_planet_legacy_surface_tests)
 
     set(CUBEY_PLANET_HEADLESS_SMOKE_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/planet-headless-smoke.png"
+        "${CMAKE_CURRENT_BINARY_DIR}/planet-legacy-headless-smoke.png"
     )
     cubey_add_png_smoke_test(
-        planet_headless_writes_png
-        cubey_project_planet
+        planet_legacy_headless_writes_png
+        cubey_project_planet_legacy
         "${CUBEY_PLANET_HEADLESS_SMOKE_OUTPUT}"
         --frames 2
     )
     cubey_add_png_stats_test(
-        planet_headless_writes_png
+        planet_legacy_headless_writes_png
         "${CUBEY_PLANET_HEADLESS_SMOKE_OUTPUT}"
         0.00001
         0.00005
@@ -119,7 +119,7 @@ if(BUILD_TESTING)
         set(output_path "${CMAKE_CURRENT_BINARY_DIR}/${output_file}")
         cubey_add_png_smoke_test(
             "${name}"
-            cubey_project_planet
+            cubey_project_planet_legacy
             "${output_path}"
             --frames 2
             --planet-pause-time
@@ -134,8 +134,8 @@ if(BUILD_TESTING)
     endfunction()
 
     cubey_add_planet_visual_smoke(
-        planet_surface_dawn_writes_png
-        planet-surface-dawn.png
+        planet_legacy_surface_dawn_writes_png
+        planet-legacy-surface-dawn.png
         --planet-camera-mode
         surface
         --planet-day-of-year
@@ -144,8 +144,8 @@ if(BUILD_TESTING)
         5.5
     )
     cubey_add_planet_visual_smoke(
-        planet_surface_day_writes_png
-        planet-surface-day.png
+        planet_legacy_surface_day_writes_png
+        planet-legacy-surface-day.png
         --planet-camera-mode
         surface
         --planet-day-of-year
@@ -154,8 +154,8 @@ if(BUILD_TESTING)
         12.0
     )
     cubey_add_planet_visual_smoke(
-        planet_surface_night_writes_png
-        planet-surface-night.png
+        planet_legacy_surface_night_writes_png
+        planet-legacy-surface-night.png
         --planet-camera-mode
         surface
         --planet-day-of-year
@@ -164,8 +164,8 @@ if(BUILD_TESTING)
         0.0
     )
     cubey_add_planet_visual_smoke(
-        planet_surface_sun_dawn_writes_png
-        planet-surface-sun-dawn.png
+        planet_legacy_surface_sun_dawn_writes_png
+        planet-legacy-surface-sun-dawn.png
         --planet-camera-mode
         surface
         --planet-day-of-year
@@ -178,8 +178,8 @@ if(BUILD_TESTING)
         22
     )
     cubey_add_planet_visual_smoke(
-        planet_surface_antisun_dawn_writes_png
-        planet-surface-antisun-dawn.png
+        planet_legacy_surface_antisun_dawn_writes_png
+        planet-legacy-surface-antisun-dawn.png
         --planet-camera-mode
         surface
         --planet-day-of-year
@@ -192,8 +192,8 @@ if(BUILD_TESTING)
         22
     )
     cubey_add_planet_visual_smoke(
-        planet_orbit_lit_writes_png
-        planet-orbit-lit.png
+        planet_legacy_orbit_lit_writes_png
+        planet-legacy-orbit-lit.png
         --planet-camera-mode
         orbit
         --planet-day-of-year
@@ -202,8 +202,8 @@ if(BUILD_TESTING)
         12.0
     )
     cubey_add_planet_visual_smoke(
-        planet_orbit_terminator_writes_png
-        planet-orbit-terminator.png
+        planet_legacy_orbit_terminator_writes_png
+        planet-legacy-orbit-terminator.png
         --planet-camera-mode
         orbit
         --planet-day-of-year
@@ -212,8 +212,8 @@ if(BUILD_TESTING)
         18.0
     )
     cubey_add_planet_visual_smoke(
-        planet_day_moon_writes_png
-        planet-day-moon.png
+        planet_legacy_day_moon_writes_png
+        planet-legacy-day-moon.png
         --planet-camera-mode
         surface
         --planet-day-of-year
@@ -222,8 +222,8 @@ if(BUILD_TESTING)
         12.0
     )
     cubey_add_planet_visual_smoke(
-        planet_moon_occlusion_writes_png
-        planet-moon-occlusion.png
+        planet_legacy_moon_occlusion_writes_png
+        planet-legacy-moon-occlusion.png
         --planet-camera-mode
         orbit
         --planet-day-of-year
@@ -233,39 +233,39 @@ if(BUILD_TESTING)
     )
     cubey_label_tests(
         sky
-        planet_celestial_tests
-        planet_headless_writes_png
-        planet_headless_writes_png_stats
-        planet_surface_dawn_writes_png
-        planet_surface_dawn_writes_png_stats
-        planet_surface_day_writes_png
-        planet_surface_day_writes_png_stats
-        planet_surface_night_writes_png
-        planet_surface_night_writes_png_stats
-        planet_surface_sun_dawn_writes_png
-        planet_surface_sun_dawn_writes_png_stats
-        planet_surface_antisun_dawn_writes_png
-        planet_surface_antisun_dawn_writes_png_stats
-        planet_orbit_lit_writes_png
-        planet_orbit_lit_writes_png_stats
-        planet_orbit_terminator_writes_png
-        planet_orbit_terminator_writes_png_stats
-        planet_day_moon_writes_png
-        planet_day_moon_writes_png_stats
-        planet_moon_occlusion_writes_png
-        planet_moon_occlusion_writes_png_stats
+        planet_legacy_celestial_tests
+        planet_legacy_headless_writes_png
+        planet_legacy_headless_writes_png_stats
+        planet_legacy_surface_dawn_writes_png
+        planet_legacy_surface_dawn_writes_png_stats
+        planet_legacy_surface_day_writes_png
+        planet_legacy_surface_day_writes_png_stats
+        planet_legacy_surface_night_writes_png
+        planet_legacy_surface_night_writes_png_stats
+        planet_legacy_surface_sun_dawn_writes_png
+        planet_legacy_surface_sun_dawn_writes_png_stats
+        planet_legacy_surface_antisun_dawn_writes_png
+        planet_legacy_surface_antisun_dawn_writes_png_stats
+        planet_legacy_orbit_lit_writes_png
+        planet_legacy_orbit_lit_writes_png_stats
+        planet_legacy_orbit_terminator_writes_png
+        planet_legacy_orbit_terminator_writes_png_stats
+        planet_legacy_day_moon_writes_png
+        planet_legacy_day_moon_writes_png_stats
+        planet_legacy_moon_occlusion_writes_png
+        planet_legacy_moon_occlusion_writes_png_stats
     )
     cubey_add_planet_visual_smoke(
-        planet_wire_lod_writes_png
-        planet-wire-lod.png
+        planet_legacy_wire_lod_writes_png
+        planet-legacy-wire-lod.png
         --planet-camera-mode
         surface
         --debug-view
         wireframe
     )
     cubey_add_planet_visual_smoke(
-        planet_local_detail_wireframe_writes_png
-        planet-local-detail-wireframe.png
+        planet_legacy_local_detail_wireframe_writes_png
+        planet-legacy-local-detail-wireframe.png
         --planet-camera-mode
         surface
         --planet-camera-altitude-m
@@ -278,8 +278,8 @@ if(BUILD_TESTING)
         local-detail-wireframe
     )
     cubey_add_planet_visual_smoke(
-        planet_local_detail_blend_writes_png
-        planet-local-detail-blend.png
+        planet_legacy_local_detail_blend_writes_png
+        planet-legacy-local-detail-blend.png
         --planet-camera-mode
         surface
         --planet-camera-altitude-m
@@ -292,8 +292,8 @@ if(BUILD_TESTING)
         local-detail-blend
     )
     cubey_add_planet_visual_smoke(
-        planet_local_detail_height_writes_png
-        planet-local-detail-height.png
+        planet_legacy_local_detail_height_writes_png
+        planet-legacy-local-detail-height.png
         --planet-camera-mode
         surface
         --planet-camera-altitude-m
@@ -306,8 +306,8 @@ if(BUILD_TESTING)
         local-detail-height
     )
     cubey_add_planet_visual_smoke(
-        planet_local_detail_features_writes_png
-        planet-local-detail-features.png
+        planet_legacy_local_detail_features_writes_png
+        planet-legacy-local-detail-features.png
         --planet-camera-mode
         surface
         --planet-camera-altitude-m
@@ -320,8 +320,8 @@ if(BUILD_TESTING)
         local-detail-features
     )
     cubey_add_planet_visual_smoke(
-        planet_local_detail_final_writes_png
-        planet-local-detail-final.png
+        planet_legacy_local_detail_final_writes_png
+        planet-legacy-local-detail-final.png
         --planet-camera-mode
         surface
         --planet-camera-altitude-m
@@ -334,11 +334,52 @@ if(BUILD_TESTING)
         local-detail-final
     )
     cubey_add_planet_visual_smoke(
-        planet_surface_field_writes_png
-        planet-surface-field.png
+        planet_legacy_surface_field_writes_png
+        planet-legacy-surface-field.png
         --planet-camera-mode
         orbit
         --debug-view
         moisture
+    )
+    cubey_label_tests(
+        legacy
+        planet_legacy_reaches_glfw
+        planet_legacy_frame_tests
+        planet_legacy_celestial_tests
+        planet_legacy_surface_tests
+        planet_legacy_headless_writes_png
+        planet_legacy_headless_writes_png_stats
+        planet_legacy_surface_dawn_writes_png
+        planet_legacy_surface_dawn_writes_png_stats
+        planet_legacy_surface_day_writes_png
+        planet_legacy_surface_day_writes_png_stats
+        planet_legacy_surface_night_writes_png
+        planet_legacy_surface_night_writes_png_stats
+        planet_legacy_surface_sun_dawn_writes_png
+        planet_legacy_surface_sun_dawn_writes_png_stats
+        planet_legacy_surface_antisun_dawn_writes_png
+        planet_legacy_surface_antisun_dawn_writes_png_stats
+        planet_legacy_orbit_lit_writes_png
+        planet_legacy_orbit_lit_writes_png_stats
+        planet_legacy_orbit_terminator_writes_png
+        planet_legacy_orbit_terminator_writes_png_stats
+        planet_legacy_day_moon_writes_png
+        planet_legacy_day_moon_writes_png_stats
+        planet_legacy_moon_occlusion_writes_png
+        planet_legacy_moon_occlusion_writes_png_stats
+        planet_legacy_wire_lod_writes_png
+        planet_legacy_wire_lod_writes_png_stats
+        planet_legacy_local_detail_wireframe_writes_png
+        planet_legacy_local_detail_wireframe_writes_png_stats
+        planet_legacy_local_detail_blend_writes_png
+        planet_legacy_local_detail_blend_writes_png_stats
+        planet_legacy_local_detail_height_writes_png
+        planet_legacy_local_detail_height_writes_png_stats
+        planet_legacy_local_detail_features_writes_png
+        planet_legacy_local_detail_features_writes_png_stats
+        planet_legacy_local_detail_final_writes_png
+        planet_legacy_local_detail_final_writes_png_stats
+        planet_legacy_surface_field_writes_png
+        planet_legacy_surface_field_writes_png_stats
     )
 endif()

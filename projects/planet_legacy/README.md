@@ -1,57 +1,58 @@
-# Planet
+# Planet Legacy
 
-`planet` is the foundation project for planet-scale rendering experiments. The
-current version opens a window or headless capture path, renders a cube-sphere
-planet surface through a procedural terrain-field contract, owns the local
-sky/celestial state, and provides the target project boundary for future
-terrain, ocean, clouds, and streaming integration.
+`planet-legacy` is the frozen pre-reboot planet renderer. It preserves the
+cube-sphere LOD, local-detail, terrain-field, and surface-camera experiments as
+comparison evidence. New planet work belongs in [`../planet`](../planet/).
+
+Do not add production features here. The target remains buildable so historical
+captures, frame behavior, and terrain diagnostics can be inspected when needed.
 
 Run it with:
 
 ```sh
-./build/dev/projects/planet/planet
-./build/dev/projects/planet/planet --headless --frames 120 --output outputs/planet.png
-./build/dev/projects/planet/planet --planet-scale-preset earthlike
-./build/dev/projects/planet/planet --planet-scale-preset mini
-./build/dev/projects/planet/planet --debug-view lod-level
-./build/dev/projects/planet/planet --debug-view cell-edge
-./build/dev/projects/planet/planet --debug-view terrain-height
-./build/dev/projects/planet/planet --debug-view terrain-band-base
-./build/dev/projects/planet/planet --debug-view terrain-band-relief
-./build/dev/projects/planet/planet --debug-view terrain-band-detail
-./build/dev/projects/planet/planet --debug-view terrain-slope
-./build/dev/projects/planet/planet --debug-view terrain-material
-./build/dev/projects/planet/planet --debug-view lod-transition
-./build/dev/projects/planet/planet --debug-view bathymetry
-./build/dev/projects/planet/planet --debug-view shoreline
-./build/dev/projects/planet/planet --debug-view land-mask
-./build/dev/projects/planet/planet --debug-view moisture
-./build/dev/projects/planet/planet --debug-view temperature
-./build/dev/projects/planet/planet --debug-view roughness
-./build/dev/projects/planet/planet --debug-view wireframe
-./build/dev/projects/planet/planet --debug-view celestial-planes
-./build/dev/projects/planet/planet --debug-view local-detail-wireframe
-./build/dev/projects/planet/planet --debug-view local-detail-blend
-./build/dev/projects/planet/planet --debug-view local-detail-lod
-./build/dev/projects/planet/planet --debug-view local-detail-height
-./build/dev/projects/planet/planet --debug-view local-detail-features
-./build/dev/projects/planet/planet --debug-view local-detail-final
-./build/dev/projects/planet/planet --debug-view local-detail-horizon
-./build/dev/projects/planet/planet --debug-view atmosphere-transmittance
-./build/dev/projects/planet/planet --debug-view atmosphere-inscatter
-./build/dev/projects/planet/planet --debug-view atmosphere-path-length
-./build/dev/projects/planet/planet --debug-view seams
-./build/dev/projects/planet/planet --planet-atmosphere-mode physical
-./build/dev/projects/planet/planet --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
-./build/dev/projects/planet/planet --rayleigh-scale 1.0 --mie-scale 0.85 --ozone-scale 1.1 --twilight-strength 1.1
-./build/dev/projects/planet/planet --planet-max-lod-level 7 --planet-lod-target-edge-px 8
-./build/dev/projects/planet/planet --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
-./build/dev/projects/planet/planet --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
-./build/dev/projects/planet/planet --planet-local-detail-height-m 220 --planet-local-detail-scale-m 180
-./build/dev/projects/planet/planet --no-planet-local-detail
-./build/dev/projects/planet/planet --planet-terrain-mid-detail-strength 0.58 --planet-terrain-fine-detail-strength 0.12 --planet-terrain-fine-detail-scale 12
-./build/dev/projects/planet/planet --planet-sea-level-m 0 --planet-shoreline-width-m 1500
-./build/dev/projects/planet/planet --clouds --cloud-quality quarter --cloud-weather-preset broken-cumulus
+./build/dev/projects/planet_legacy/planet-legacy
+./build/dev/projects/planet_legacy/planet-legacy --headless --frames 120 --output outputs/planet.png
+./build/dev/projects/planet_legacy/planet-legacy --planet-scale-preset earthlike
+./build/dev/projects/planet_legacy/planet-legacy --planet-scale-preset mini
+./build/dev/projects/planet_legacy/planet-legacy --debug-view lod-level
+./build/dev/projects/planet_legacy/planet-legacy --debug-view cell-edge
+./build/dev/projects/planet_legacy/planet-legacy --debug-view terrain-height
+./build/dev/projects/planet_legacy/planet-legacy --debug-view terrain-band-base
+./build/dev/projects/planet_legacy/planet-legacy --debug-view terrain-band-relief
+./build/dev/projects/planet_legacy/planet-legacy --debug-view terrain-band-detail
+./build/dev/projects/planet_legacy/planet-legacy --debug-view terrain-slope
+./build/dev/projects/planet_legacy/planet-legacy --debug-view terrain-material
+./build/dev/projects/planet_legacy/planet-legacy --debug-view lod-transition
+./build/dev/projects/planet_legacy/planet-legacy --debug-view bathymetry
+./build/dev/projects/planet_legacy/planet-legacy --debug-view shoreline
+./build/dev/projects/planet_legacy/planet-legacy --debug-view land-mask
+./build/dev/projects/planet_legacy/planet-legacy --debug-view moisture
+./build/dev/projects/planet_legacy/planet-legacy --debug-view temperature
+./build/dev/projects/planet_legacy/planet-legacy --debug-view roughness
+./build/dev/projects/planet_legacy/planet-legacy --debug-view wireframe
+./build/dev/projects/planet_legacy/planet-legacy --debug-view celestial-planes
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-wireframe
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-blend
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-lod
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-height
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-features
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-final
+./build/dev/projects/planet_legacy/planet-legacy --debug-view local-detail-horizon
+./build/dev/projects/planet_legacy/planet-legacy --debug-view atmosphere-transmittance
+./build/dev/projects/planet_legacy/planet-legacy --debug-view atmosphere-inscatter
+./build/dev/projects/planet_legacy/planet-legacy --debug-view atmosphere-path-length
+./build/dev/projects/planet_legacy/planet-legacy --debug-view seams
+./build/dev/projects/planet_legacy/planet-legacy --planet-atmosphere-mode physical
+./build/dev/projects/planet_legacy/planet-legacy --planet-atmosphere-haze-strength 0.18 --planet-atmosphere-aerial-strength 0.35
+./build/dev/projects/planet_legacy/planet-legacy --rayleigh-scale 1.0 --mie-scale 0.85 --ozone-scale 1.1 --twilight-strength 1.1
+./build/dev/projects/planet_legacy/planet-legacy --planet-max-lod-level 7 --planet-lod-target-edge-px 8
+./build/dev/projects/planet_legacy/planet-legacy --planet-max-lod-level 12 --planet-patch-resolution 128 --planet-lod-target-edge-px 6
+./build/dev/projects/planet_legacy/planet-legacy --planet-local-detail-lod-levels 6 --planet-local-detail-cells 128 --planet-local-detail-outer-extent-m 8192
+./build/dev/projects/planet_legacy/planet-legacy --planet-local-detail-height-m 220 --planet-local-detail-scale-m 180
+./build/dev/projects/planet_legacy/planet-legacy --no-planet-local-detail
+./build/dev/projects/planet_legacy/planet-legacy --planet-terrain-mid-detail-strength 0.58 --planet-terrain-fine-detail-strength 0.12 --planet-terrain-fine-detail-scale 12
+./build/dev/projects/planet_legacy/planet-legacy --planet-sea-level-m 0 --planet-shoreline-width-m 1500
+./build/dev/projects/planet_legacy/planet-legacy --clouds --cloud-quality quarter --cloud-weather-preset broken-cumulus
 ```
 
 For repeatable atmosphere and celestial-body captures, keep the solar clock
@@ -62,13 +63,13 @@ repeatable sample for the current surface point rather than a guarantee of local
 daylight.
 
 ```sh
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-surface-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 12.0 --planet-camera-mode surface --output outputs/planet-surface-day.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --output outputs/planet-surface-night.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode orbit --output outputs/planet-orbit-dawn.png
-./build/dev/projects/planet/planet --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-orbit-backlit.png
-./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 4.35 --planet-time-speed-hours-per-second 0.03 --planet-camera-mode surface --planet-camera-altitude-m 1200 --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-surface-twilight.mp4
-projects/planet/capture_cloud_review.sh outputs/planet-cloud-review
+./build/dev/projects/planet_legacy/planet-legacy --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 4.75 --planet-camera-mode surface --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-legacy-surface-dawn.png
+./build/dev/projects/planet_legacy/planet-legacy --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 12.0 --planet-camera-mode surface --output outputs/planet-legacy-surface-day.png
+./build/dev/projects/planet_legacy/planet-legacy --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 0.0 --planet-camera-mode surface --output outputs/planet-legacy-surface-night.png
+./build/dev/projects/planet_legacy/planet-legacy --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 5.5 --planet-camera-mode orbit --output outputs/planet-legacy-orbit-dawn.png
+./build/dev/projects/planet_legacy/planet-legacy --headless --frames 2 --width 1280 --height 720 --planet-pause-time --planet-day-of-year 80 --planet-time-hours 18.0 --planet-camera-mode orbit --output outputs/planet-legacy-orbit-backlit.png
+./build/dev/projects/planet_legacy/planet-legacy --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 4.35 --planet-time-speed-hours-per-second 0.03 --planet-camera-mode surface --planet-camera-altitude-m 1200 --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output outputs/planet-legacy-surface-twilight.mp4
+projects/planet_legacy/capture_cloud_review.sh outputs/planet-legacy-cloud-review
 ```
 
 The broader manual capture matrix is tracked in

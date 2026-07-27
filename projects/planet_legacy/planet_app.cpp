@@ -63,7 +63,7 @@ namespace cubey::projects::planet {
 namespace {
 
 constexpr const char* kAppName = "planet";
-constexpr const char* kReadyStatus = "rendering planet project";
+constexpr const char* kReadyStatus = "rendering legacy planet project";
 constexpr float kPlanetCameraBaseYaw = 0.55F;
 constexpr float kPlanetCameraBasePitch = 0.28F;
 constexpr float kPlanetMoonAngularRadiusScale = 4.0F;
@@ -1778,7 +1778,7 @@ int run_planet(const RunConfig& config) {
         PlanetApp app(config);
         return app.run();
     } catch (const std::exception& error) {
-        std::fprintf(stderr, "planet: %s\n", error.what());
+    std::fprintf(stderr, "planet-legacy: %s\n", error.what());
         return 1;
     }
 }
