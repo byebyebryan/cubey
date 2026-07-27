@@ -60,6 +60,9 @@ constexpr std::array<std::string_view, 2> kPlanetCameraModes{"orbit", "surface"}
 constexpr std::array<std::string_view, 3> kPlanetSurfaceLooks{"default", "sun", "antisun"};
 constexpr std::array<std::string_view, 3> kPlanetAtmosphereModes{"analytic", "physical",
                                                                  "physical-preview"};
+constexpr std::array<std::string_view, 4> kPlanetOrbitalViews{"lit", "terminator", "crescent",
+                                                               "night"};
+constexpr std::array<std::string_view, 2> kPlanetSurfaceQualities{"draft", "standard"};
 constexpr std::array<std::string_view, 2> kTimeOfDayModes{"manual", "solar"};
 constexpr std::array<std::string_view, 2> kNightSkyModes{"human", "camera"};
 constexpr std::array<std::string_view, 3> kAtmosphereGroundModes{"ground", "sky-only",
@@ -154,7 +157,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 302> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 305> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -524,6 +527,16 @@ constexpr std::array<ConfigOptionDescriptor, 302> kRunConfigOptions{
     option(RunConfigOptionId::PlanetAtmosphereMode, "planet.atmosphere_mode",
            "--planet-atmosphere-mode", "Atmosphere Mode", "Planet", "Planet sky atmosphere mode.",
            ConfigOptionType::Enum, no_range(), enum_choices(kPlanetAtmosphereModes)),
+    option(RunConfigOptionId::PlanetOrbitalView, "planet.orbital_view", "--planet-view",
+           "Orbital View", "Planet", "Orbital lighting preset: lit, terminator, crescent, or night.",
+           ConfigOptionType::Enum, no_range(), enum_choices(kPlanetOrbitalViews)),
+    option(RunConfigOptionId::PlanetDiskCoverage, "planet.disk_coverage", "--planet-disk-coverage",
+           "Disk Coverage", "Planet", "Target planet-disk height as a viewport fraction.",
+           ConfigOptionType::Float, bounded_range(0.15, 0.70)),
+    option(RunConfigOptionId::PlanetSurfaceQuality, "planet.surface_quality",
+           "--planet-surface-quality", "Surface Quality", "Planet",
+           "Orbital source resolution: draft or standard.", ConfigOptionType::Enum, no_range(),
+           enum_choices(kPlanetSurfaceQualities)),
     option(RunConfigOptionId::TerrainSeed, "terrain.seed", "--terrain-seed", "Seed", "Terrain",
            "Deterministic procedural terrain seed.", ConfigOptionType::UInt64),
     option(RunConfigOptionId::TerrainPreset, "terrain.preset", "--terrain-preset", "Preset",
@@ -1647,6 +1660,15 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
         return config.planet.atmosphere_mode.empty()
                    ? nlohmann::json(nullptr)
                    : nlohmann::json(config.planet.atmosphere_mode);
+    case RunConfigOptionId::PlanetOrbitalView:
+        return config.planet.orbital_view.empty() ? nlohmann::json(nullptr)
+                                                  : nlohmann::json(config.planet.orbital_view);
+    case RunConfigOptionId::PlanetDiskCoverage:
+        return optional_float(config.planet.disk_coverage);
+    case RunConfigOptionId::PlanetSurfaceQuality:
+        return config.planet.surface_quality.empty()
+                   ? nlohmann::json(nullptr)
+                   : nlohmann::json(config.planet.surface_quality);
     case RunConfigOptionId::TerrainSeed:
         return config.terrain.seed_set ? nlohmann::json(config.terrain.seed)
                                        : nlohmann::json(nullptr);
@@ -3099,6 +3121,16 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::PlanetAtmosphereMode:
         config.planet.atmosphere_mode = std::string(value);
+        break;
+    case RunConfigOptionId::PlanetOrbitalView:
+        config.planet.orbital_view = std::string(value);
+        break;
+    case RunConfigOptionId::PlanetDiskCoverage:
+        config.planet.disk_coverage = parse_config_float(value, option);
+        validate_range(config.planet.disk_coverage, option);
+        break;
+    case RunConfigOptionId::PlanetSurfaceQuality:
+        config.planet.surface_quality = std::string(value);
         break;
     case RunConfigOptionId::TerrainSeed:
         config.terrain.seed = parse_number<std::uint64_t>(value, option, "unsigned integer");

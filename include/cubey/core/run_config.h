@@ -180,6 +180,9 @@ struct RunConfig {
         int time_paused = -1;
         std::string camera_mode{};
         std::string atmosphere_mode{};
+        std::string orbital_view{};
+        float disk_coverage = kRunConfigUnsetFloat;
+        std::string surface_quality{};
         bool terrain_seed_set = false;
     };
 
