@@ -17,14 +17,8 @@ the detailed foundation notes under `docs/architecture/`.
 - [Celestial rendering research](celestial-rendering-research.md): historical
   pivot note from atmosphere-owned celestial disks toward shared visible body
   geometry with atmosphere as a consumer.
-- [Planet gap closure checkpoint](planet-gap-closure.md): current planet
-  project state, missing foundation gaps, and the intended split-commit batch.
-- [Planet surface quality pass](planet-surface-quality.md): procedural terrain,
-  material, LOD, and capture goals from the planet surface batch.
-- [Planet terrain field v2](planet-terrain-field-v2.md): current terrain field
-  sample/tile vocabulary for later ocean, biome, cache, and streaming work.
-- [Planet atmosphere v1](planet-atmosphere-v1.md): immediate planet-local
-  scattering, transmittance, and aerial-perspective direction.
+- [Archived planet renderer notes](../archive/planet/README.md): pre-reboot
+  surface, terrain, atmosphere, cloud, and capture records.
 - [Sky and celestial current state](sky-celestial-current-state.md): accepted
   Moon, Milky Way, and Star Field V2 ownership, render paths, and deferred
   feature boundaries.
@@ -53,8 +47,6 @@ the detailed foundation notes under `docs/architecture/`.
 - [Procedural Milky Way v2 research](milky-way-v2-research.md): accepted
   atlas-layer research, source/reference takeaways, and field-based direction
   for replacing hand-stamped Milky Way landmarks with procedural structure.
-- [Planet visual capture recipes](planet-visual-captures.md): repeatable
-  orbit, surface, atmosphere, LOD, celestial, and surface-field capture matrix.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
@@ -81,9 +73,6 @@ the detailed foundation notes under `docs/architecture/`.
 - [Cloud foundation integration checkpoint](cloud-foundation-integration-checkpoint.md):
   current shared runtime ownership, accepted surface consumers, direct/cached
   product boundaries, and deferred aerial/orbit scope.
-- [Planet cloud integration checkpoint](planet-cloud-integration.md): current
-  planet cloud capture baseline, depth-composition issue list, and deferred
-  integration work.
 - [Procedural terrain reference review](procedural-terrain-reference-review.md):
   current pass over `3DWorld`, `Planet-Generator`, `TerraForge3D`, and
   `terrain-diffusion`, with lessons for code-centric terrain recipes, field

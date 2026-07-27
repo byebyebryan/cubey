@@ -73,7 +73,7 @@ projects/planet_legacy/capture_cloud_review.sh outputs/planet-legacy-cloud-revie
 ```
 
 The broader manual capture matrix is tracked in
-[`docs/notes/planet-visual-captures.md`](../../docs/notes/planet-visual-captures.md).
+[`docs/archive/planet/planet-visual-captures.md`](../../docs/archive/planet/planet-visual-captures.md).
 
 ## Status
 
@@ -212,7 +212,7 @@ config rather than only the seed, so future cache invalidation has a stable
 boundary.
 
 The terrain v2 direction is documented in
-[`docs/notes/planet-terrain-field-v2.md`](../../docs/notes/planet-terrain-field-v2.md).
+[`docs/archive/planet/planet-terrain-field-v2.md`](../../docs/archive/planet/planet-terrain-field-v2.md).
 It keeps the source procedural and project-local while making the sample and
 tile summary vocabulary explicit enough for later ocean, biome, cache, and
 streaming work.

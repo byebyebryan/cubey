@@ -18,8 +18,8 @@ than the root design and roadmap.
 - [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
   horizon-scale local ocean, planet-compatible contracts, curved-local
   rendering, and explicit handoff to planet-scale work.
-- [Planet rendering](planet-rendering.md): planet-scale frame, LOD,
-  terrain-field, sky/celestial, and ocean handoff direction.
+- [Planet rendering](planet-rendering.md): orbital planet product, deterministic
+  surface fields, celestial composition, and validation policy.
 - [Terrain reboot direction](terrain-reboot.md): local terrain product
   generator strategy, previous terrain lessons, reference takeaways, product
   contract, and first vertical slice.
