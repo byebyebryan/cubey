@@ -47,10 +47,10 @@ Current active projects:
 - `atmosphere`: clear-sky scattering workbench with solar time of day, twilight,
   procedural stars, moon rendering, Milky Way atlas layers, the shared
   production cloud layer, and headless output.
-- `planet`: Earth-scale planet rendering foundation with camera-relative
-  cube-sphere LOD, procedural terrain fields, local-detail diagnostics,
-  shared sky/celestial state, physical atmosphere preview, HDR post, and
-  headless visual smoke coverage.
+- `planet`: orbital-only Earth-like globe product with deterministic cached
+  surface fields, shared sky/celestial composition, phase presets, and
+  headless visual review coverage. Surface-scale terrain and planet LOD remain
+  explicitly out of scope.
 - `terrain`: external-raster far-backdrop product with deterministic selected
   and raw placement, continuous cached sector geometry, shared
   atmosphere/cloud lighting, terrain self-shadowing, procedural material
@@ -374,8 +374,7 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 ./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-3d.mp4
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
 ./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
-./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 23.0 --planet-time-speed-hours-per-second 0.0 --planet-camera-mode orbit --planet-camera-altitude-m 14000000 --planet-camera-orbit-spin-deg-per-sec 8.0 --planet-atmosphere-mode physical --output /tmp/cubey-planet-orbit.mp4
-./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-day-of-year 80 --planet-time-hours 4.35 --planet-time-speed-hours-per-second 0.03 --planet-camera-mode surface --planet-camera-altitude-m 1200 --planet-camera-surface-look sun --planet-camera-surface-pitch-deg 22 --planet-atmosphere-mode physical --output /tmp/cubey-planet-surface-twilight.mp4
+./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-camera-mode orbit --planet-view terminator --planet-disk-coverage 0.48 --output /tmp/cubey-planet-orbit.mp4
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --ocean-map-size 128 --output /tmp/cubey-ocean.mp4
 ```
 
@@ -413,9 +412,9 @@ layers are installed.
 - `ocean`: left-drag orbits the camera, mouse wheel
   zooms, Space pauses/resumes wave time, `R` resets, `D` cycles wave-core debug
   views, Escape closes.
-- `planet`: left-drag orbits the planet, right-drag looks around in surface
-  mode, mouse wheel changes distance, WASD moves the surface camera, Escape
-  closes.
+- `planet`: left-drag orbits the planet, mouse wheel changes disk distance,
+  `R` resets the orbit, and Escape closes. Surface mode is intentionally not
+  part of orbital V1.
 - `pbr_furnace`: left-drag orbits the camera, Escape closes.
 
 `--debug-view` currently accepts `final`, `base-color`, `normal`,
