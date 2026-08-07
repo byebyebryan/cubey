@@ -223,7 +223,7 @@ set(LAZY_SERIALIZABLE_ENABLE_SINGLE_HEADER_TARGET OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     lazy_serializable
     GIT_REPOSITORY https://github.com/byebyebryan/lazy-serializable.git
-    GIT_TAG        5137bc5c2665f7962fc1a8385b6e2872112fc55c
+    GIT_TAG        v0.1.0
 )
 FetchContent_MakeAvailable(lazy_serializable)
 
