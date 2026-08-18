@@ -1,3 +1,4 @@
+#include "planet_config.h"
 #include "planet_surface_product.h"
 
 #include <cubey/procedural/artifact_cache.h>
@@ -15,6 +16,14 @@ void require(bool condition, const char* message) {
 }
 
 } // namespace
+
+namespace cubey::projects::planet::tests {
+void parses_live_options_and_preserves_typed_unset_state();
+void rejects_unrelated_paths_and_flags();
+void parses_debug_view_and_resolves_runtime_selection();
+void template_contains_only_common_profile_and_live_planet_scope();
+void layered_sources_preserve_precedence();
+} // namespace cubey::projects::planet::tests
 
 int main() {
     try {
@@ -47,6 +56,12 @@ int main() {
         require(recipe.kind == cubey::procedural::ProceduralArtifactKind::TextureCube,
                 "surface product must be a cubemap");
         std::filesystem::remove_all(cache_root);
+        cubey::projects::planet::tests::parses_live_options_and_preserves_typed_unset_state();
+        cubey::projects::planet::tests::rejects_unrelated_paths_and_flags();
+        cubey::projects::planet::tests::parses_debug_view_and_resolves_runtime_selection();
+        cubey::projects::planet::tests::
+            template_contains_only_common_profile_and_live_planet_scope();
+        cubey::projects::planet::tests::layered_sources_preserve_precedence();
     } catch (const std::exception& error) {
         std::cerr << "planet surface product test failure: " << error.what() << '\n';
         return 1;

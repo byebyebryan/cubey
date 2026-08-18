@@ -141,17 +141,18 @@ make_orbit_sphere_mesh() {
     return cubey::render::vertex_position_color_normal_uv_input_layout();
 }
 
-[[nodiscard]] float phase_degrees_for_orbital_view(const std::string& view) {
-    if (view.empty() || view == "lit") {
+[[nodiscard]] float phase_degrees_for_orbital_view(
+    const std::optional<PlanetOrbitalView>& view) {
+    if (!view.has_value() || view.value() == PlanetOrbitalView::Lit) {
         return 0.0F;
     }
-    if (view == "terminator") {
+    if (view.value() == PlanetOrbitalView::Terminator) {
         return 90.0F;
     }
-    if (view == "crescent") {
+    if (view.value() == PlanetOrbitalView::Crescent) {
         return 135.0F;
     }
-    if (view == "night") {
+    if (view.value() == PlanetOrbitalView::Night) {
         return 170.0F;
     }
     throw std::invalid_argument("unknown planet orbital view");
@@ -164,41 +165,25 @@ make_orbit_sphere_mesh() {
 
 class PlanetApp {
   public:
-    explicit PlanetApp(RunConfig config)
+    explicit PlanetApp(PlanetConfig config)
         : config_(std::move(config)),
           surface_jobs_(1U),
           surface_builds_(surface_jobs_),
           surface_cache_({.root = cubey::procedural::default_procedural_artifact_cache_root()}) {
-        if (!config_.planet.camera_mode.empty() && config_.planet.camera_mode != "orbit") {
-            throw std::invalid_argument(
-                "planet orbital V1 only supports --planet-camera-mode orbit");
-        }
-        if (config_.planet.surface_quality == "draft") {
+        validate_planet_config(config_);
+        if (config_.planet.surface_quality == PlanetSurfaceQuality::Draft) {
             surface_config_.extent = 256U;
         }
-        if (!config_.planet.surface_quality.empty() && config_.planet.surface_quality != "draft" &&
-            config_.planet.surface_quality != "standard") {
-            throw std::invalid_argument("unknown planet surface quality");
-        }
-        if (config_.planet.terrain_seed_set) {
-            surface_config_.seed = config_.planet.terrain_seed;
-        }
-        if (config_.debug_view == "land") {
-            debug_view_ = 1;
-        } else if (config_.debug_view == "elevation") {
-            debug_view_ = 2;
-        } else if (config_.debug_view == "ice") {
-            debug_view_ = 3;
-        } else if (config_.debug_view == "roughness") {
-            debug_view_ = 4;
-        } else if (config_.debug_view == "albedo") {
-            debug_view_ = 5;
+        if (config_.planet.terrain_seed.has_value()) {
+            surface_config_.seed = config_.planet.terrain_seed.value();
         }
         phase_degrees_ = phase_degrees_for_orbital_view(config_.planet.orbital_view);
+        debug_view_ = static_cast<int>(resolve_planet_debug_view(config_.common.debug_view));
         headless_base_phase_degrees_ = phase_degrees_;
-        const float initial_distance = cubey::run_config_float_is_set(config_.planet.disk_coverage)
-                                           ? distance_for_disk_coverage(config_.planet.disk_coverage,
-                                                                       camera_.fovy_radians())
+        const float initial_distance = config_.planet.disk_coverage.has_value()
+                                           ? distance_for_disk_coverage(
+                                                 config_.planet.disk_coverage.value(),
+                                                 camera_.fovy_radians())
                                            : 5.4F;
         orbit_controller_.set_home_distance(initial_distance);
         orbit_controller_.set_distance(initial_distance);
@@ -215,7 +200,7 @@ class PlanetApp {
     PlanetApp& operator=(const PlanetApp&) = delete;
 
     int run() {
-        if (config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
         return run_windowed();
@@ -267,7 +252,7 @@ class PlanetApp {
             destroy_all_resources(context.gpu());
         };
         return cubey::host::run_windowed_app(
-            {.run_config = config_,
+            {.run_config = config_.common,
              .app_name = "planet",
              .ready_status = "rendering orbital planet project",
              .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -279,7 +264,7 @@ class PlanetApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = config_;
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -287,7 +272,7 @@ class PlanetApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             create_global_resources(context.device(), context.gpu(),
-                                    cubey::host::headless_capture_frame_slot_count(config_));
+                                    cubey::host::headless_capture_frame_slot_count(config_.common));
             request_surface_product();
             surface_builds_.finish(context.gpu());
             install_ready_surface_product(context.device());
@@ -299,7 +284,7 @@ class PlanetApp {
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
             phase_degrees_ = headless_base_phase_degrees_;
-            if (config_.capture_mode == CaptureMode::Video && time_playing_) {
+            if (config_.common.capture_mode == CaptureMode::Video && time_playing_) {
                 phase_degrees_ += static_cast<float>(frame.timing.elapsed_seconds) * 5.0F;
             }
             update_camera_transform();
@@ -561,7 +546,7 @@ class PlanetApp {
         return surface_mesh_.value();
     }
 
-    RunConfig config_;
+    PlanetConfig config_;
     cubey::Camera3D camera_{
         {.fovy_radians = glm::radians(42.0F), .near_z = 0.01F, .far_z = 20.0F}};
     cubey::Transform3D camera_transform_{};
@@ -590,7 +575,7 @@ class PlanetApp {
 
 } // namespace
 
-int run_planet(const RunConfig& config) {
+int run_planet(const PlanetConfig& config) {
     PlanetApp app(config);
     return app.run();
 }

@@ -8,6 +8,7 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "planet: .*rendering orbital planet project"
     SOURCES
         main.cpp
+        planet_config.cpp
         planet_app.cpp
         planet_surface_product.cpp
     SHADERS
@@ -23,6 +24,8 @@ cubey_add_app_target(
 
 if (BUILD_TESTING)
     add_executable(cubey_project_planet_tests
+        planet_config.cpp
+        planet_config_tests.cpp
         planet_surface_product.cpp
         planet_surface_product_tests.cpp
     )
@@ -31,6 +34,7 @@ if (BUILD_TESTING)
         cubey_project_planet_tests
         PRIVATE
             cubey::cubey
+            cubey::host
             cubey_project_options
             cubey_project_warnings
     )

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "planet_config.h"
 
 namespace cubey::projects::planet {
 
-int run_planet(const RunConfig& config);
+int run_planet(const PlanetConfig& config);
 
 } // namespace cubey::projects::planet
