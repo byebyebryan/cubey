@@ -208,24 +208,15 @@ if (NOT glm_FOUND)
     FetchContent_MakeAvailable(glm)
 endif()
 
-set(LAZY_SERIALIZABLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_MULTI OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_LAZY_JSON OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_BINARY OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_TEXT OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_RAPID_JSON OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_NLOHMANN_JSON ON CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_YAML OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_TOML OFF CACHE BOOL "" FORCE)
-set(LAZY_SERIALIZABLE_ENABLE_SINGLE_HEADER_TARGET OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(
-    lazy_serializable
-    GIT_REPOSITORY https://github.com/byebyebryan/lazy-serializable.git
-    GIT_TAG        v0.1.0
-)
-FetchContent_MakeAvailable(lazy_serializable)
+find_package(nlohmann_json CONFIG QUIET)
+if (NOT nlohmann_json_FOUND)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG        v3.12.0
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
+endif()
 
 if (NOT DEFINED BUILD_TESTING)
     set(BUILD_TESTING ${CUBEY_BUILD_HOST} CACHE BOOL "Build tests")

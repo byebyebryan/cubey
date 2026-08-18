@@ -274,7 +274,10 @@ setup before swapchain setup, and callback forwarding.
 - `cubey::config::Schema` is the project-independent config kernel. It composes
   schemas over caller-owned typed storage and drives JSON loading, named CLI
   parsing, bool negative aliases, deferred `--set path=value` overrides, and
-  template generation from one metadata source.
+  template generation from one metadata source. JSON persistence is implemented
+  directly from schema bindings or, for unmigrated projects, the legacy option
+  descriptor registry; configuration does not depend on a general-purpose
+  object-serialization layer.
 - `cubey::host::CommonRunConfig` is the host-facing boundary for window,
   capture, validation, and profiling state. The active `planet` executable is
   the first project-owned facade: it composes the common schema with only its

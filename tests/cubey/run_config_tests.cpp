@@ -932,9 +932,15 @@ void test_run_config_rejects_invalid_json_config_file() {
 void test_run_config_writes_json_template() {
     const std::filesystem::path path = temp_config_path("cubey-run-config-template-test.json");
     std::string program = "cubey";
+    std::string width_flag = "--width";
+    std::string width_value = "960";
+    std::string set_flag = "--set";
+    std::string set_value = "ocean.sea_state=stormy";
     std::string template_flag = "--write-config-template";
     std::string template_path = path.string();
-    std::array<char*, 3> argv{program.data(), template_flag.data(), template_path.data()};
+    std::array<char*, 7> argv{program.data(),      width_flag.data(), width_value.data(),
+                              set_flag.data(),     set_value.data(),  template_flag.data(),
+                              template_path.data()};
 
     const cubey::RunConfig config =
         cubey::parse_run_config(static_cast<int>(argv.size()), argv.data());
@@ -966,6 +972,15 @@ void test_run_config_writes_json_template() {
             "config template should include water 3D options");
     require(text.find("\"clouds\"") != std::string::npos,
             "config template should include cloud options");
+
+    std::string config_flag = "--config";
+    std::string config_path = path.string();
+    std::array<char*, 3> reload_argv{program.data(), config_flag.data(), config_path.data()};
+    const cubey::RunConfig reloaded =
+        cubey::parse_run_config(static_cast<int>(reload_argv.size()), reload_argv.data());
+    require(reloaded.width == 960U, "descriptor-written config should reload common option values");
+    require(reloaded.ocean.sea_state == "stormy",
+            "descriptor-written config should reload nested project option values");
 }
 
 void test_run_config_parses_input_path() {
