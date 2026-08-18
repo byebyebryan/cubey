@@ -266,7 +266,7 @@ void test_cloud_scene_depth_consumers_select_explicit_policies() {
     const std::string ocean = read_text_file(root / "projects/ocean/ocean_app.cpp");
     const std::string water =
         read_text_file(root / "projects/fluid/sim/water_3d/water_3d_app.cpp");
-    const std::string planet = read_text_file(root / "projects/planet/planet_app.cpp");
+    const std::string planet = read_text_file(root / "projects/planet_legacy/planet_app.cpp");
     constexpr std::string_view opaque = "CloudLayerSceneDepthMode::OpaqueForeground";
     constexpr std::string_view distance = "CloudLayerSceneDepthMode::DistanceAware";
 
@@ -336,7 +336,7 @@ void test_cloud_layer_cmake_package_tracks_composite_modes() {
         read_text_file(source_root / "projects/atmosphere/CMakeLists.txt");
     const std::string ocean_cmake = read_text_file(source_root / "projects/ocean/CMakeLists.txt");
     const std::string planet_cmake =
-        read_text_file(source_root / "projects/planet/CMakeLists.txt");
+        read_text_file(source_root / "projects/planet_legacy/CMakeLists.txt");
 
     require(shader_cmake.find("CUBEY_CLOUD_COMPOSITE STREQUAL \"background\"") !=
                 std::string::npos,
