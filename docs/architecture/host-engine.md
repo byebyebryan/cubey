@@ -14,14 +14,14 @@ The host layer is responsible for host flow:
 - Input collection, per-frame input snapshots, and low-level event dispatch.
 - Windowed frame loop, frame timing, window-title/stdout frame stats, and frame
   limits.
-- Shared CLI/config parsing for common window, frame-limit, capture,
-  diagnostics, and project-tuning options. JSON config files load before named
-  CLI flags, and generic `--set path=value` overrides are applied last.
-- Shared option descriptors for configurable runtime state: stable paths,
-  labels, group paths, value kinds, ranges, enum choices, and help text. Config
-  templates, generic `--set path=value` overrides, and descriptor-backed named
-  CLI flags should reuse this metadata instead of inventing parallel option
-  names.
+- Generic, composable CLI/config schema plumbing for common window,
+  frame-limit, capture, and diagnostics options plus project-owned option
+  groups. JSON config files load before named CLI flags, and generic
+  `--set path=value` overrides are applied last.
+- Typed schema bindings and option metadata for configurable runtime state:
+  stable paths, labels, group paths, value kinds, ranges, enum choices, and
+  help text. Config templates, generic `--set path=value` overrides, and named
+  CLI flags reuse this metadata instead of inventing parallel option names.
 - Shared ImGui control helpers for project debug panels: hierarchical groups,
   consistent parent/child visual treatment, common scalar/vector/enum widgets,
   and title/control hover help. Project panels stay hand-authored until a
@@ -271,13 +271,17 @@ setup before swapchain setup, and callback forwarding.
   project-level RGBA8 image readback tickets with pending/completed/failed
   status and completed pixel payload handoff. Deferred GPU retirement belongs
   to `GpuRuntime` and uses only real submission tickets.
-- `cubey::ConfigOptionDescriptor` currently drives JSON config templates,
-  descriptor-backed named CLI parsing, bool negative aliases, and generic
-  `--set path=value` overrides. Shared host, capture, profiling, grid,
-  atmosphere, PBR, terrain, ocean, smoke, pyro, and water tuning flags now flow
-  through the same descriptor registry. The explicit parser path is reserved
-  for bootstrap-only commands such as loading config files, deferred
-  `--set path=value` overrides, and writing config templates.
+- `cubey::config::Schema` is the project-independent config kernel. It composes
+  schemas over caller-owned typed storage and drives JSON loading, named CLI
+  parsing, bool negative aliases, deferred `--set path=value` overrides, and
+  template generation from one metadata source.
+- `cubey::host::CommonRunConfig` is the host-facing boundary for window,
+  capture, validation, and profiling state. The active `planet` executable is
+  the first project-owned facade: it composes the common schema with only its
+  five live `planet.*` options, owns typed project defaults and validation, and
+  rejects unrelated legacy project keys. Existing projects remain on
+  `RunConfig` and cross the host boundary through an explicit compatibility
+  conversion while they are migrated incrementally.
 - Shared ImGui helpers now cover hierarchical debug-panel groups, hover help,
   common command buttons, and bool/int/unsigned-int/float/vector/enum/color
   controls. Active ocean, atmosphere, terrain, smoke, water, fire, and

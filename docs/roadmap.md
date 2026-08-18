@@ -191,15 +191,14 @@ Current checkpoint:
   camera-backed 2D pan/zoom, and input-aware orbit-control helpers.
 - Reusable `cubey::host::FrameStats` covers lightweight
   FPS/frame-time/extent/triangle telemetry formatting for windowed examples.
-- Reusable `cubey::ConfigOptionDescriptor` and JSON run-config loading provide
-  the first shared option metadata layer: stable option paths, labels, groups,
-  value kinds, ranges, enum choices, help text, config templates, and generic
-  `--set path=value` overrides. Descriptor-covered named CLI flags now parse
-  through the same metadata, including negative aliases for selected bool
-  options. Shared host, capture, profiling, grid, atmosphere, PBR, terrain,
-  ocean, smoke, pyro, and water tuning flags now share that descriptor path;
-  explicit parser branches are kept for bootstrap commands like `--config`,
-  `--set`, and `--write-config-template`.
+- Reusable `cubey::config::Schema` provides a composable typed option layer:
+  stable paths, labels, groups, value kinds, ranges, enum choices, help text,
+  config templates, named CLI flags, and generic `--set path=value` overrides.
+  `cubey::host::CommonRunConfig` separates host-consumed state from project
+  state. The active `planet` executable is the first project-owned facade and
+  exposes only common/profile settings plus its five live `planet.*` options.
+  Other projects still use the legacy global `ConfigOptionDescriptor` registry
+  and convert explicitly at the host boundary pending incremental migration.
 - Reusable ImGui helpers now cover hierarchical debug-panel groups, standard
   option hover help, command buttons, and common
   bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,
@@ -691,10 +690,12 @@ has proven useful.
 - Narrow no-GLFW headless capture host that shares no-window instance/device,
   offscreen target, capture transitions, readback, PNG writing, and optional
   MP4 writing. Status: complete for current headless examples/projects.
-- Project-owned config facades once another project repeats the current planet
-  option pressure. Shared core should keep generic parse/template/override
-  plumbing; project modules should own option groups, defaults, validation, and
-  UI descriptor sources. Status: deferred.
+- Project-owned config facades. Shared core keeps generic
+  parse/template/override plumbing; project modules own option groups,
+  defaults, validation, and eventual UI descriptor sources. Status: first
+  extraction complete for active `planet`, including the common host boundary;
+  migrate another project only when doing so simplifies active work or proves
+  a missing generic contract.
 - Input/UI hooks once the contract is clear enough to keep project code cleaner
   without becoming a generic editor or UI framework.
 

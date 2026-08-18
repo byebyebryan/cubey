@@ -275,6 +275,7 @@ Shared run options can also be loaded from JSON config files:
 ```bash
 ./build/dev/projects/ocean/ocean --config ocean.json --set ocean.map_size=512
 ./build/dev/projects/atmosphere/atmosphere --write-config-template atmosphere-template.json
+./build/dev/projects/planet/planet --write-config-template planet-template.json
 ```
 
 Config precedence is defaults, `--config`, named CLI flags, then `--set
@@ -283,6 +284,11 @@ ranges, enum choices, and help text for config templates, generic `--set`
 overrides, and descriptor-backed named CLI flags. Runtime ImGui panels are still
 hand-authored project surfaces, but active projects use shared group/control
 helpers so hover help and hierarchy stay visually consistent.
+The active `planet` executable is the first project-owned config facade: its
+template contains the common host/profile settings and its five live
+`planet.*` options, and it rejects unrelated legacy project keys. Other
+executables currently retain the broader legacy registry while they are
+migrated incrementally.
 `smoke_2d` defaults to a `1024x1024` solver grid and five procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs`
