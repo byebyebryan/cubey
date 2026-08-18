@@ -53,7 +53,7 @@ int InstancedCubesApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = config_,
+            .run_config = cubey::host::common_run_config_from_legacy(config_),
             .app_name = "instanced_cubes",
             .ready_status = "rendering instanced cube grid",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,

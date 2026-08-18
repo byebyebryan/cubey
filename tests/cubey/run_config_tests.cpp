@@ -364,7 +364,8 @@ void test_shared_cloud_ui_defaults_to_surface_controls() {
         read_text_file(source_root / "include/cubey/host/cloud_environment_ui.h");
     const std::string ui_source =
         read_text_file(source_root / "src/cubey/host/cloud_environment_ui.cpp");
-    const std::string planet_ui = read_text_file(source_root / "projects/planet/planet_ui.cpp");
+    const std::string planet_ui =
+        read_text_file(source_root / "projects/planet_legacy/planet_ui.cpp");
 
     require_contains(ui_header, "show_aerial_orbit_controls = false",
                      "shared cloud UI should hide deferred aerial/orbit controls by default");

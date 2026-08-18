@@ -226,7 +226,7 @@ class TerrainApp {
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
         return cubey::host::run_windowed_app(
             {
-                .run_config = config_,
+                .run_config = cubey::host::common_run_config_from_legacy(config_),
                 .app_name = "terrain_hydrology",
                 .ready_status = "rendering archived terrain hydrology product",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -239,7 +239,7 @@ class TerrainApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = config_;
+        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -248,7 +248,7 @@ class TerrainApp {
             create_global_resources_if_needed(context.gpu());
             create_forward_pass(context.device(), context.render_target().extent,
                                 context.render_target().format,
-                                cubey::host::headless_capture_frame_slot_count(config_));
+                                cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,

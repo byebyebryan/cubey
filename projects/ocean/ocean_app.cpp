@@ -799,7 +799,7 @@ class OceanApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = config_,
+                .run_config = cubey::host::common_run_config_from_legacy(config_),
                 .app_name = "ocean",
                 .ready_status = "rendering ocean project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -812,7 +812,7 @@ class OceanApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = config_;
+        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -821,7 +821,7 @@ class OceanApp {
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
             create_pipeline(context.device(), context.gpu(), target.format, target.extent,
-                            cubey::host::headless_capture_frame_slot_count(config_));
+                            cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,

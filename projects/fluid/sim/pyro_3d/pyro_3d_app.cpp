@@ -206,7 +206,7 @@ class Pyro3DApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = config_,
+                .run_config = cubey::host::common_run_config_from_legacy(config_),
                 .app_name = app_info_.app_name,
                 .ready_status = app_info_.ready_status,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -891,7 +891,7 @@ class Pyro3DApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = config_;
+        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -908,7 +908,7 @@ class Pyro3DApp {
             };
         }
         cubey::host::install_headless_simulation_driver(
-            callbacks, config_,
+            callbacks, cubey::host::common_run_config_from_legacy(config_),
             {
                 .png_frame_count = pyro_3d_headless_frame_count(config_),
                 .png_timing =

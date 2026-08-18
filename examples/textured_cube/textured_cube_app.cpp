@@ -57,7 +57,7 @@ int TexturedCubeApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = config_,
+            .run_config = cubey::host::common_run_config_from_legacy(config_),
             .app_name = "textured_cube",
             .ready_status = "rendering interactive compute shaded textured cube",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,

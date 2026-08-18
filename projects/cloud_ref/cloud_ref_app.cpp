@@ -609,7 +609,7 @@ class CloudRefApp {
         };
         return cubey::host::run_windowed_app(
             {
-                .run_config = run_config_,
+                .run_config = cubey::host::common_run_config_from_legacy(run_config_),
                 .app_name = "cloud_ref",
                 .ready_status = "rendering reference cloud project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -622,7 +622,7 @@ class CloudRefApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = run_config_;
+        host_config.run_config = cubey::host::common_run_config_from_legacy(run_config_);
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;

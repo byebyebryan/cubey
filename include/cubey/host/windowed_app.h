@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
+#include <cubey/host/common_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/windowed_host.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -15,7 +15,7 @@
 namespace cubey::host {
 
 struct WindowedAppConfig {
-    RunConfig run_config;
+    CommonRunConfig run_config;
     const char* app_name = "cubey";
     const char* ready_status = nullptr;
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;

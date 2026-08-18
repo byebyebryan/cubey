@@ -33,7 +33,7 @@ int SpinningCubeApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = config_,
+            .run_config = cubey::host::common_run_config_from_legacy(config_),
             .app_name = "spinning_cube",
             .ready_status = "rendering indexed cube",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,

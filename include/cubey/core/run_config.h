@@ -9,16 +9,13 @@
 #include <string>
 #include <utility>
 
+#include <cubey/core/capture_mode.h>
+
 namespace cubey {
 
 struct CliAppInfo {
     const char* app_name = "cubey";
     const char* default_title = "cubey";
-};
-
-enum class CaptureMode {
-    Png,
-    Video,
 };
 
 inline constexpr float kRunConfigUnsetFloat = std::numeric_limits<float>::quiet_NaN();

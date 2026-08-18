@@ -16,6 +16,7 @@ set_target_properties(cubey_stb_image_write PROPERTIES CXX_CLANG_TIDY "")
 
 add_library(cubey_core STATIC
     $<TARGET_OBJECTS:cubey_stb_image_write>
+    core/config_schema.cpp
     core/config_options.cpp
     core/run_config.cpp
     core/file_io.cpp
@@ -56,6 +57,7 @@ target_link_libraries(
     PUBLIC
         cubey_project_options
         glm::glm
+        nlohmann_json::nlohmann_json
     PRIVATE
         lazy::serializable::nlohmann-json
         cubey_external_fastnoise_lite

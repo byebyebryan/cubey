@@ -318,7 +318,7 @@ int GltfViewerApp::run_windowed() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = config_,
+            .run_config = cubey::host::common_run_config_from_legacy(config_),
             .app_name = "gltf_viewer",
             .ready_status = "rendering glTF/PBR viewer",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -331,7 +331,7 @@ int GltfViewerApp::run_windowed() {
 
 int GltfViewerApp::run_headless() {
     cubey::host::HeadlessPngHostConfig host_config;
-    host_config.run_config = config_;
+    host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
@@ -339,11 +339,11 @@ int GltfViewerApp::run_headless() {
     cubey::host::HeadlessPngHostCallbacks callbacks;
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
         create_global_resources_if_needed(context.device(), context.gpu(),
-                                          cubey::host::headless_capture_frame_slot_count(config_));
+                                          cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
         finish_atmosphere_background_atlases(context.device(), context.gpu());
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format,
-                               cubey::host::headless_capture_frame_slot_count(config_));
+                               cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
     };
     if (config_.capture_mode == CaptureMode::Video) {
         orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);

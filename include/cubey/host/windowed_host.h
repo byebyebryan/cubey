@@ -2,7 +2,7 @@
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/profiling.h>
-#include <cubey/core/run_config.h>
+#include <cubey/host/common_config.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/glfw_window.h>
 #include <cubey/host/ui.h>
@@ -32,7 +32,7 @@ class ImGuiOverlay;
 
 class WindowedAppContext {
   public:
-    WindowedAppContext(const RunConfig& config, GlfwWindow& window,
+    WindowedAppContext(const CommonRunConfig& config, GlfwWindow& window,
                        cubey::vulkan::Instance& instance, GlfwSurface& surface,
                        cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
                        cubey::vulkan::FrameResources& frame_resources,
@@ -40,7 +40,7 @@ class WindowedAppContext {
                        std::uint32_t frame_slot_count, UiCaptureState ui_capture,
                        cubey::profiling::ProfileRecorder* profile_recorder);
 
-    [[nodiscard]] const RunConfig& config() const {
+    [[nodiscard]] const CommonRunConfig& config() const {
         return config_;
     }
     [[nodiscard]] GlfwWindow& window() const {
@@ -84,7 +84,7 @@ class WindowedAppContext {
     }
 
   private:
-    const RunConfig& config_;
+    const CommonRunConfig& config_;
     GlfwWindow& window_;
     cubey::vulkan::Instance& instance_;
     GlfwSurface& surface_;
@@ -99,7 +99,7 @@ class WindowedAppContext {
 };
 
 struct WindowedHostConfig {
-    RunConfig run_config;
+    CommonRunConfig run_config;
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     VkImageUsageFlags swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     std::uint32_t frame_slot_count = 2;

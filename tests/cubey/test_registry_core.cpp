@@ -1,6 +1,14 @@
 #include "test_registry_common.h"
 
 void test_file_io_round_trips_binary_bytes();
+void test_config_schema_composes_typed_bindings_and_emits_template();
+void test_config_schema_binds_typed_enum_and_emits_symbolic_value();
+void test_config_schema_rejects_duplicate_and_invalid_metadata();
+void test_config_schema_rejects_wrong_type_unknown_and_range();
+void test_config_schema_bool_aliases_null_and_precedence();
+void test_config_schema_layers_config_files_in_argv_order();
+void test_config_schema_named_values_can_spell_bootstrap_flags();
+void test_common_host_config_normalizes_capture_compatibility();
 void test_frame_clock_tracks_delta_elapsed_and_index();
 void test_gltf_animation_wraps_looping_playback_time();
 void test_gltf_animation_samples_linear_translation();
@@ -125,6 +133,14 @@ namespace cubey::tests {
 
 std::span<const TestCase> core_test_cases() {
     static constexpr std::array tests{
+        CUBEY_TEST(test_config_schema_composes_typed_bindings_and_emits_template),
+        CUBEY_TEST(test_config_schema_binds_typed_enum_and_emits_symbolic_value),
+        CUBEY_TEST(test_config_schema_rejects_duplicate_and_invalid_metadata),
+        CUBEY_TEST(test_config_schema_rejects_wrong_type_unknown_and_range),
+        CUBEY_TEST(test_config_schema_bool_aliases_null_and_precedence),
+        CUBEY_TEST(test_config_schema_layers_config_files_in_argv_order),
+        CUBEY_TEST(test_config_schema_named_values_can_spell_bootstrap_flags),
+        CUBEY_TEST(test_common_host_config_normalizes_capture_compatibility),
         CUBEY_TEST(test_run_config_parses_png_output_path),
         CUBEY_TEST(test_active_project_ui_uses_shared_common_controls),
         CUBEY_TEST(test_active_project_ui_raw_combo_exceptions_are_explicit),

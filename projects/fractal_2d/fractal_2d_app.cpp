@@ -85,7 +85,7 @@ class FractalApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = config_,
+                .run_config = cubey::host::common_run_config_from_legacy(config_),
                 .app_name = "fractal_2d",
                 .ready_status = "rendering fullscreen fractal",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -99,7 +99,7 @@ class FractalApp {
   private:
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = config_;
+        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;

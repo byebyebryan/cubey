@@ -37,7 +37,7 @@ void validate_config(const WindowedHostConfig& config, const WindowedHostCallbac
 } // namespace
 
 WindowedAppContext::WindowedAppContext(
-    const RunConfig& config, GlfwWindow& window, cubey::vulkan::Instance& instance,
+    const CommonRunConfig& config, GlfwWindow& window, cubey::vulkan::Instance& instance,
     GlfwSurface& surface, cubey::vulkan::Device& device, cubey::vulkan::Swapchain& swapchain,
     cubey::vulkan::FrameResources& frame_resources, cubey::vulkan::GpuRuntime& gpu,
     const cubey::input::InputFrame& input, std::uint32_t frame_slot_count,

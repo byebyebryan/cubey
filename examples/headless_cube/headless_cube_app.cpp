@@ -8,7 +8,7 @@ HeadlessCubeApp::HeadlessCubeApp(RunConfig config) : config_(std::move(config)) 
 
 int HeadlessCubeApp::run() {
     cubey::host::HeadlessPngHostConfig host_config;
-    host_config.run_config = config_;
+    host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
 
     cubey::host::HeadlessPngHostCallbacks callbacks;

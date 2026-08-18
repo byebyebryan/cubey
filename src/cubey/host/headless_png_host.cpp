@@ -85,7 +85,8 @@ struct HeadlessCaptureSlot {
 
 } // namespace
 
-HeadlessPngContext::HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
+HeadlessPngContext::HeadlessPngContext(const CommonRunConfig& config,
+                                       cubey::vulkan::Instance& instance,
                                        cubey::vulkan::Device& device,
                                        cubey::vulkan::GpuRuntime& gpu,
                                        const HeadlessRenderTarget& target,
@@ -111,20 +112,21 @@ std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height) {
     return pixel_count * kRgba8BytesPerPixel;
 }
 
-std::uint32_t headless_capture_frame_slot_count(const RunConfig& config) {
+std::uint32_t headless_capture_frame_slot_count(const CommonRunConfig& config) {
     return config.capture_mode == CaptureMode::Video
                ? static_cast<std::uint32_t>(kVideoCaptureSlotCount)
                : cubey::render::kSingleFrameSlotCount;
 }
 
-std::uint32_t headless_capture_frame_count(const RunConfig& config) {
+std::uint32_t headless_capture_frame_count(const CommonRunConfig& config) {
     if (config.capture_mode == CaptureMode::Video) {
         return config.frames == 0 ? 300 : config.frames;
     }
     return 1;
 }
 
-HeadlessCaptureFrame headless_capture_frame(const RunConfig& config, std::uint32_t frame_index) {
+HeadlessCaptureFrame headless_capture_frame(const CommonRunConfig& config,
+                                            std::uint32_t frame_index) {
     const std::uint32_t count = headless_capture_frame_count(config);
     if (frame_index >= count) {
         throw std::runtime_error("headless capture frame index is out of range");
@@ -168,8 +170,9 @@ FrameTiming headless_video_simulation_timing(const HeadlessCaptureFrame& frame) 
     };
 }
 
-HeadlessCaptureFrame headless_simulation_frame(const RunConfig& config, std::uint32_t frame_index,
-                                               std::uint32_t frame_count, FrameTiming timing) {
+HeadlessCaptureFrame headless_simulation_frame(const CommonRunConfig& config,
+                                               std::uint32_t frame_index, std::uint32_t frame_count,
+                                               FrameTiming timing) {
     if (frame_count == 0) {
         throw std::runtime_error("headless simulation requires at least one frame");
     }
@@ -185,7 +188,7 @@ HeadlessCaptureFrame headless_simulation_frame(const RunConfig& config, std::uin
     };
 }
 
-void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, RunConfig config,
+void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, CommonRunConfig config,
                                         HeadlessSimulationDriver driver) {
     if (!driver.png_timing) {
         throw std::runtime_error("headless simulation driver requires PNG timing callback");

@@ -87,7 +87,7 @@ class Water2DApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = config_,
+                .run_config = cubey::host::common_run_config_from_legacy(config_),
                 .app_name = "water_2d",
                 .ready_status = "rendering 2D water project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -304,21 +304,21 @@ class Water2DApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = config_;
+        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
             const std::uint32_t frame_slot_count =
-                cubey::host::headless_capture_frame_slot_count(config_);
+                cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_));
             create_global_resources_if_needed(context.device(), context.gpu(), frame_slot_count);
             create_render_pipeline(context.device(), target.format, target.extent);
             graph_executor_.clear();
             graph_executor_.resize(frame_slot_count);
         };
         cubey::host::install_headless_simulation_driver(
-            callbacks, config_,
+            callbacks, cubey::host::common_run_config_from_legacy(config_),
             {
                 .png_frame_count = water_2d_headless_frame_count(config_),
                 .png_timing =

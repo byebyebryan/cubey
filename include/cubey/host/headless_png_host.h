@@ -2,9 +2,9 @@
 
 #include <cubey/core/frame_clock.h>
 #include <cubey/core/profiling.h>
-#include <cubey/core/run_config.h>
 #include <cubey/engine/capture_queue.h>
 #include <cubey/engine/project_gpu_services.h>
+#include <cubey/host/common_config.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/target.h>
 #include <cubey/vulkan/device.h>
@@ -33,12 +33,12 @@ struct HeadlessCaptureFrame {
 
 class HeadlessPngContext {
   public:
-    HeadlessPngContext(const RunConfig& config, cubey::vulkan::Instance& instance,
+    HeadlessPngContext(const CommonRunConfig& config, cubey::vulkan::Instance& instance,
                        cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
                        const HeadlessRenderTarget& target,
                        cubey::profiling::ProfileRecorder* profile_recorder);
 
-    [[nodiscard]] const RunConfig& config() const {
+    [[nodiscard]] const CommonRunConfig& config() const {
         return config_;
     }
     [[nodiscard]] cubey::vulkan::Instance& instance() const {
@@ -58,7 +58,7 @@ class HeadlessPngContext {
     }
 
   private:
-    const RunConfig& config_;
+    const CommonRunConfig& config_;
     cubey::vulkan::Instance& instance_;
     cubey::vulkan::Device& device_;
     cubey::vulkan::GpuRuntime& gpu_;
@@ -67,7 +67,7 @@ class HeadlessPngContext {
 };
 
 struct HeadlessPngHostConfig {
-    RunConfig run_config;
+    CommonRunConfig run_config;
     VkQueueFlags required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     VkFormat output_format = VK_FORMAT_R8G8B8A8_SRGB;
     bool require_dynamic_rendering = true;
@@ -99,16 +99,16 @@ struct HeadlessSimulationDriver {
                                                                   std::uint32_t height) {
     return headless_png_byte_size(width, height);
 }
-[[nodiscard]] std::uint32_t headless_capture_frame_slot_count(const RunConfig& config);
-[[nodiscard]] std::uint32_t headless_capture_frame_count(const RunConfig& config);
-[[nodiscard]] HeadlessCaptureFrame headless_capture_frame(const RunConfig& config,
+[[nodiscard]] std::uint32_t headless_capture_frame_slot_count(const CommonRunConfig& config);
+[[nodiscard]] std::uint32_t headless_capture_frame_count(const CommonRunConfig& config);
+[[nodiscard]] HeadlessCaptureFrame headless_capture_frame(const CommonRunConfig& config,
                                                           std::uint32_t frame_index);
 [[nodiscard]] FrameTiming headless_video_simulation_timing(const HeadlessCaptureFrame& frame);
-[[nodiscard]] HeadlessCaptureFrame headless_simulation_frame(const RunConfig& config,
+[[nodiscard]] HeadlessCaptureFrame headless_simulation_frame(const CommonRunConfig& config,
                                                              std::uint32_t frame_index,
                                                              std::uint32_t frame_count,
                                                              FrameTiming timing);
-void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, RunConfig config,
+void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, CommonRunConfig config,
                                         HeadlessSimulationDriver driver);
 
 class HeadlessPngHost {

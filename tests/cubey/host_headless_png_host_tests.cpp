@@ -1,9 +1,12 @@
+#include <cubey/core/run_config.h>
 #include <cubey/host/headless_png_host.h>
 
 #include <stdexcept>
 #include <type_traits>
 
 namespace {
+
+static_assert(!std::is_convertible_v<cubey::RunConfig, cubey::host::CommonRunConfig>);
 
 void require(bool condition, const char* message) {
     if (!condition) {
@@ -74,11 +77,13 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
     config.capture_mode = cubey::CaptureMode::Png;
     config.frames = 99;
     config.fps = 24;
-    require(cubey::host::headless_capture_frame_count(config) == 1,
+    const cubey::host::CommonRunConfig common_config =
+        cubey::host::common_run_config_from_legacy(config);
+    require(cubey::host::headless_capture_frame_count(common_config) == 1,
             "PNG capture should always render one output frame");
 
     const cubey::host::HeadlessCaptureFrame png_frame =
-        cubey::host::headless_capture_frame(config, 0);
+        cubey::host::headless_capture_frame(common_config, 0);
     require(png_frame.index == 0, "PNG capture frame should start at index zero");
     require(png_frame.count == 1, "PNG capture frame should report one frame");
     require(png_frame.frame_slot.index == 0, "PNG capture should use frame slot zero");
@@ -89,14 +94,18 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
     config.capture_mode = cubey::CaptureMode::Video;
     config.frames = 0;
     config.fps = 30;
-    require(cubey::host::headless_capture_frame_count(config) == 300,
+    const cubey::host::CommonRunConfig common_video_config =
+        cubey::host::common_run_config_from_legacy(config);
+    require(cubey::host::headless_capture_frame_count(common_video_config) == 300,
             "video capture should resolve zero frames to the default duration");
-    require(cubey::host::headless_capture_frame_slot_count(config) == 3,
+    require(cubey::host::headless_capture_frame_slot_count(common_video_config) == 3,
             "video capture should use a small in-flight slot ring");
 
     config.frames = 12;
+    const cubey::host::CommonRunConfig common_video_frames_config =
+        cubey::host::common_run_config_from_legacy(config);
     const cubey::host::HeadlessCaptureFrame video_frame =
-        cubey::host::headless_capture_frame(config, 3);
+        cubey::host::headless_capture_frame(common_video_frames_config, 3);
     require(video_frame.index == 3, "video capture frame should preserve frame index");
     require(video_frame.count == 12, "video capture frame should report configured count");
     require(video_frame.frame_slot.index == 0,
@@ -117,7 +126,8 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
             "video simulation timing should point at the simulated frame end");
 
     const cubey::host::HeadlessCaptureFrame simulation_frame =
-        cubey::host::headless_simulation_frame(config, 4, 12, simulation_timing);
+        cubey::host::headless_simulation_frame(common_video_frames_config, 4, 12,
+                                               simulation_timing);
     require(simulation_frame.index == 4, "simulation frame should preserve frame index");
     require(simulation_frame.count == 12, "simulation frame should preserve frame count");
     require(simulation_frame.frame_slot.index == 1,
@@ -126,19 +136,17 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
             "simulation frame should carry caller-provided timing");
     require_throws(
         [&] {
-            static_cast<void>(cubey::host::headless_simulation_frame(
-                config, 0, 0, simulation_timing));
+            static_cast<void>(cubey::host::headless_simulation_frame(common_video_frames_config, 0,
+                                                                     0, simulation_timing));
         },
         "simulation frame helper should reject zero frame count");
     require_throws(
         [&] {
-            static_cast<void>(cubey::host::headless_simulation_frame(
-                config, 12, 12, simulation_timing));
+            static_cast<void>(cubey::host::headless_simulation_frame(common_video_frames_config, 12,
+                                                                     12, simulation_timing));
         },
         "simulation frame helper should reject out-of-range frame indices");
     require_throws(
-        [&] {
-            static_cast<void>(cubey::host::headless_video_simulation_timing(png_frame));
-        },
+        [&] { static_cast<void>(cubey::host::headless_video_simulation_timing(png_frame)); },
         "video simulation timing should reject static PNG timing");
 }

@@ -183,7 +183,7 @@ int PbrFurnaceApp::run_windowed() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = config_,
+            .run_config = cubey::host::common_run_config_from_legacy(config_),
             .app_name = "pbr_furnace",
             .ready_status = "rendering PBR white furnace",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -196,7 +196,7 @@ int PbrFurnaceApp::run_windowed() {
 
 int PbrFurnaceApp::run_headless() {
     cubey::host::HeadlessPngHostConfig host_config;
-    host_config.run_config = config_;
+    host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
@@ -205,7 +205,7 @@ int PbrFurnaceApp::run_headless() {
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
         create_global_resources_if_needed(
             context.device(), context.gpu(),
-            cubey::host::headless_capture_frame_slot_count(config_));
+            cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
         create_forward_pass(context.device(), context.render_target().extent,
                             context.render_target().format);
     };
