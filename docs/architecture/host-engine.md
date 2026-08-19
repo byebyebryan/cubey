@@ -110,7 +110,7 @@ host loop explicit and reusable while removing repeated example glue: headless
 rejection, ready logging, optional Escape-to-close behavior, global resource
 setup before swapchain setup, and callback forwarding.
 
-## Migration Order
+## Historical Migration Record
 
 1. Extract `GlfwWindow`. Status: complete.
 2. Migrate the early clear-only smoke target to prove the platform layer.
@@ -219,13 +219,11 @@ setup before swapchain setup, and callback forwarding.
   policy hook. Graph-backed examples build per-frame declarations there and
   immediately delegate command-buffer begin/end, frame-slot graph resources,
   and pass execution to `cubey::render::RenderGraphFrameExecutor`.
-- All current windowed examples/projects use the host layer: `spinning_cube`,
-  `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
-  `particle_cubes`, `fractal_2d`, and `smoke_2d`.
-  Cube examples keep the app callback shell thin and split resources, scene
-  updates, render recording, and compute simulation into local implementation
-  files. They still own their shaders, descriptors, command recording sequence,
-  and example-specific state.
+- Every active windowed example and project uses the host layer. Cube examples
+  keep the app callback shell thin and split resources, scene updates, render
+  recording, and compute simulation into local implementation files. Projects
+  use the same host loop while retaining their shaders, descriptors, simulation
+  policy, graph declarations, and project-specific state.
 - `cubey::host::HeadlessCaptureHost` owns the repeated no-window Vulkan
   instance/device, submission coordinator, GPU runtime, offscreen RGBA target,
   deterministic `HeadlessCaptureFrame` timing, color-attachment/readback
@@ -233,10 +231,10 @@ setup before swapchain setup, and callback forwarding.
   writing, and optional MP4 video writing without depending on GLFW. Its target
   view uses the same `cubey::render::ColorTargetView` vocabulary as the
   windowed path. `HeadlessPngHost` remains available as the older name.
-- `headless_cube`, `fractal_2d --headless`, `smoke_2d --headless`,
-  `gltf_viewer --headless`, and `pbr_furnace --headless` use the headless host
-  while keeping their resource setup, simulation/update work, and capture
-  command recording sequence local.
+- `headless_cube` and every active visual project use the headless host while
+  keeping resource setup, simulation/update work, and capture command recording
+  local. The `HeadlessPngHost` name remains source-compatible, but the contract
+  includes both PNG and optional MP4 capture.
 - Automated PNG and video smokes select the headless host centrally rather
   than relying on every project call site to pass `--headless`. Their launch
   environment removes display and desktop-session variables, and successful

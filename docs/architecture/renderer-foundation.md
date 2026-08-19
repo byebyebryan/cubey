@@ -67,8 +67,9 @@ Examples and projects still own render intent:
 - material pass declarations, descriptor resources, descriptor writes, and
   binding order;
 - graphics/compute pipeline target choice and shader selection;
-- image layout transition choice, barriers, pass ordering, and command-buffer
-  scope;
+- pass/resource declarations and render intent; direct paths still own image
+  transitions and barriers, while graph-backed paths delegate synchronization
+  for declared boundaries to compiled graph requirements;
 - camera, material, simulation, and interaction policy.
 
 Examples and projects may use `cubey::vulkan::CommandRecorder` for repeated
@@ -302,14 +303,15 @@ full engine architecture.
   Vulkan layout/access/stage tuples. Recorder-backed graph
   execution records before/after requirements through `CommandRecorder` around
   pass callbacks. Pass reordering, pass culling, descriptor allocation,
-  aliasing, and async scheduling remain future work. `shadow_cube` now uses
-  graph-derived shadow-depth, transient
-  scene-color, backbuffer, and depth sync, and `smoke_2d` declares a coarse
-  simulation-to-render graph boundary.
+  aliasing, and async scheduling remain future work. Current consumers include
+  `shadow_cube`, `ForwardPbrRenderer3D`, atmosphere, cloud reference, ocean,
+  terrain, Smoke 2D, Water 2D, Water 3D, and Pyro 3D. They share declared
+  resource/synchronization vocabulary without moving descriptors, pipelines,
+  solver-internal barriers, or project render policy into the graph.
 - `cubey::vulkan::CommandRecorder` is the current low-level recording helper
-  used by examples and `smoke_2d` for common Vulkan command-buffer calls. It
-  does not own pass scheduling, automatic barriers, descriptor policy, or
-  renderer state.
+  used directly by applications and by recorder-backed graph execution for
+  common Vulkan command-buffer calls. It does not own pass scheduling,
+  descriptor policy, or renderer state.
 - Scene render-planning helpers live with the scene/component layer and emit
   sorted CPU draw plans from committed scene read views. They use
   `cubey::scene` even though the output feeds rendering, because the helpers
@@ -346,16 +348,16 @@ full engine architecture.
 
 ## Multipass Direction
 
-`examples/shadow_cube` is the current reference for graph-declared multipass rendering:
-build a shadow `cubey::scene::View3D`, build a camera `cubey::scene::View3D`,
-record a depth-only pass through `ShadowMapPass3D`, record the scene pass into
-a graph-created transient color target, then record a fullscreen present pass
-that samples that target into the swapchain. The example declares the
-pass/resource flow through `RenderGraphBuilder` and enters those passes through
-`CompiledRenderGraph::execute()`. Shadow-depth, scene-depth, scene-color,
-backbuffer acquire, and present release transitions are graph-derived and
-recorded by recorder-backed graph execution, while graph transient resources are
-held per frame slot. The reusable foundation intentionally stops at view/pass
+`examples/shadow_cube` remains the smallest reference for graph-declared
+multipass rendering: build shadow and camera views, record a depth-only pass,
+render into a graph-created transient color target, then present through a
+fullscreen pass. Production consumers now include the reusable forward-PBR
+renderer and atmosphere/cloud/ocean/terrain/fluid projects, so the graph is a
+current foundation boundary rather than a single-example experiment.
+Shadow-depth, scene-depth, scene-color, backbuffer acquire, and present release
+transitions are graph-derived and recorded by recorder-backed graph execution,
+while graph transient resources are held per frame slot. The reusable
+foundation intentionally stops at view/pass
 planning, render-item draw intent, target/texture ownership, material pass
 metadata, depth-only rendering info, synchronous pass-callback execution,
 execution-time resource resolution, simple transient allocation, frame-slot

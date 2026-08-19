@@ -514,7 +514,8 @@ Status: threaded default plus inline test mode complete.
 
 ### Slice 7: Progressive Resource Initialization
 
-Status: terrain, atmosphere, and glTF adoption complete.
+Status: terrain products, Planet surface products, atmosphere atlases, and glTF
+atmosphere-atlas consumption complete.
 
 - Added typed `GpuJobHandle<T>` results without changing raw queued-work
   failure behavior.
@@ -527,6 +528,9 @@ Status: terrain, atmosphere, and glTF adoption complete.
 - Terrain startup and UI rebuilds now share one CPU-prepare/GPU-install path.
   Complete products activate at the frame boundary and old GPU generations
   retire through submission tickets.
+- Planet surface generation uses the same staged lifecycle: windowed mode can
+  present before the surface is resident, headless mode finishes before frame
+  zero, and complete replacements activate at a frame boundary.
 - Generated lunar/night-sky atlases now install as complete texture and
   descriptor generations. Atmosphere keeps its own dynamic placeholder
   generation live. The shared `AtmosphereBackgroundAtlasRuntime` gives terrain
@@ -553,12 +557,13 @@ Status: terrain, atmosphere, and glTF adoption complete.
   `prepare_ms` remains request-to-observation latency: during startup it can
   include time while host/GPU initialization delays polling an already-finished
   CPU job, so it is not a generator benchmark.
-- Ocean, planet, water-3D, and pyro-3D retain synchronous resource setup for
-  now, but use the same persistent atlas cache instead of regenerating on every
-  launch. This slice does not add general streaming, partial terrain sectors,
-  partial atlas tiles, or a resource dependency graph. Cache eviction is
-  deliberately limited to the generated-artifact cache's coarse worktree
-  budget.
+- Ocean, Water 3D, and Pyro 3D retain synchronous project-resource setup for
+  now, but use the same persistent atlas cache instead of regenerating shared
+  environment products on every launch. glTF asset loading itself also remains
+  synchronous; only its atmosphere-atlas consumer uses the staged lifecycle.
+  This slice does not add general streaming, partial terrain sectors, partial
+  atlas tiles, or a resource dependency graph. Cache eviction is deliberately
+  limited to the generated-artifact cache's coarse worktree budget.
 
 ## Open Questions
 

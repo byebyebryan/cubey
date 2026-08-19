@@ -502,7 +502,7 @@ Deferred surface-field work:
 ## Suggested Sequence
 
 The first planet gap-closure, celestial, atmosphere, and terrain-field batches
-are tracked in [`docs/notes/`](../notes/README.md). Keep temporary
+are tracked in [`docs/notes/`](../../notes/README.md). Keep temporary
 implementation checkpoints there and promote only stable contracts back into
 this architecture note.
 

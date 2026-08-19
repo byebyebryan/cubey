@@ -87,15 +87,13 @@ around the pass callback; this is graph-owned synchronization, not hidden render
 policy.
 
 It does not allocate descriptors, reorder passes, cull passes, alias transient
-memory, or schedule async work. `examples/shadow_cube` is the first multipass
-reference migration: the graph now executes shadow, scene, and present pass
-callbacks through `RenderGraphFrameExecutor`, allocates a non-aliased transient
-scene color target, resolves that target into dynamic-rendering and descriptor
-inputs, and records shadow-depth, scene-depth, scene-color, backbuffer acquire,
-and present release transitions from graph-derived requirements.
-`projects/fluid/smoke_2d` builds a coarse simulation-compute to fullscreen-render
-graph and records it through the same executor while keeping solver-internal
-barriers manual.
+memory, or schedule async work. `examples/shadow_cube` was the first multipass
+reference migration, and `projects/fluid/smoke_2d` first exercised the coarse
+simulation-compute to fullscreen-render boundary. The graph is now also used by
+`ForwardPbrRenderer3D`, atmosphere, cloud reference, ocean, terrain, Water 2D,
+Water 3D, and the shared Pyro 3D renderer. These consumers use graph-owned
+declared pass-boundary synchronization while keeping solver-internal barriers,
+descriptors, pipelines, and render intent explicit.
 
 ## Boundary
 
@@ -211,7 +209,7 @@ Completed slices:
 4. Validation for missing resources, invalid handles, read-before-write for
    non-imported resources, and duplicate incompatible same-pass access.
 5. Synchronous execution callbacks on compiled passes.
-6. Initial `shadow_cube` migration to execute the shadow and scene pass bodies
+6. Initial `shadow_cube` migration to execute shadow and scene pass bodies
    through the graph shell.
 7. In-graph sync requirement derivation for texture transitions and buffer
    barriers, with recorder-backed execution recording them through
@@ -222,28 +220,32 @@ Completed slices:
 10. `shadow_cube` transient scene-color allocation, resolved color target views,
     and a graph-declared fullscreen present pass.
 11. Per-frame-slot graph resource ownership and sampled texture view resolution.
-12. Recorder-aware graph execution plus `RenderGraphFrameExecutor`, now used by
-    `shadow_cube` and `smoke_2d` to keep app `record_frame` callbacks focused
+12. Recorder-aware graph execution plus `RenderGraphFrameExecutor`, first used
+    by `shadow_cube` and `smoke_2d` to keep app `record_frame` callbacks focused
     on building per-frame data and graph declarations.
+13. Adoption by `ForwardPbrRenderer3D`, atmosphere, cloud reference, ocean,
+    terrain, Water 2D, Water 3D, and Pyro 3D without adding scheduler, aliasing,
+    or automatic descriptor policy.
 
 This keeps the graph as a validation, vocabulary, pass-ordering, and
 sync-requirement shell rather than a renderer rewrite. Barriers stay explicit in
 compiled graph data, and recorder-backed execution records them around pass
 callbacks.
 
-## Adoption Triggers
+## Further Expansion Triggers
 
-Expand graph code when at least one of these becomes active work:
+The declaration/execution boundary is already broadly adopted. Expand its
+feature set only when a current consumer demonstrates one of these needs:
 
-- a second multipass example repeats shadow-map target and barrier plumbing;
-- bloom, tone mapping, TAA, or another postprocess chain introduces
-  intermediate color targets;
-- deferred rendering or a G-buffer needs multiple interdependent attachments;
-- readback or capture needs to target intermediate resources instead of the
-  final swapchain/offscreen output only;
-- compute/render interop grows beyond local hand-written barriers;
-- optional debug passes become easier to declare than manually branch;
-- split graphics/compute queues or async compute scheduling becomes concrete.
+- intermediate-resource readback or capture cannot remain project-local;
+- a deferred/G-buffer or longer postprocess chain needs attachment lifetime
+  analysis beyond the current ordered graph;
+- transient-resource memory pressure justifies measured aliasing work;
+- optional pass culling has a concrete performance or maintenance benefit;
+- compute/render interop crosses queue families and makes split-queue ownership
+  or async scheduling concrete;
+- repeated descriptor preparation around graph-created resources proves a
+  narrow descriptor-facing contract.
 
 ## Deferred Complexity
 

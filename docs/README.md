@@ -21,16 +21,16 @@ Detailed current foundation notes live under
 - [Vulkan abstraction map](architecture/vulkan-abstractions.md): reusable
   Vulkan foundation boundaries and planned framework slices.
 - [Renderer foundation](architecture/renderer-foundation.md): `cubey::render`
-  contracts that sit above Vulkan without introducing scene, material, or
-  render-graph policy.
+  contracts that sit above Vulkan, including the minimal render graph and the
+  boundary between render vocabulary and engine-owned renderer policy.
 - [Shader foundation](architecture/shader-foundation.md): GLSL module
   ownership, build-time SPIR-V compilation, and shared include boundaries.
 - [Reference-first rendering feature workflow](architecture/rendering-feature-workflow.md):
   start complex visual features from known-good references, then integrate and
   extend once a captured baseline exists.
-- [Render graph direction](architecture/render-graph.md): current and future
-  pass/resource graph vocabulary, execution boundary, adoption triggers, and
-  deferred complexity.
+- [Render graph direction](architecture/render-graph.md): current pass/resource
+  graph vocabulary, execution boundary, broad adoption, and triggers for any
+  expansion beyond the intentionally small contract.
 - [Entity and component foundation](architecture/entity-component-foundation.md):
   manager-oriented entity/component shape, MT-stable storage, read views, edit
   commits, and transform manager direction.
@@ -76,6 +76,10 @@ Detailed current foundation notes live under
 ## Project Docs
 
 Project-specific design stays beside the project:
+
+The root [README](../README.md) contains the complete active executable
+inventory. This section indexes projects and studies that currently have a
+local README.
 
 Active projects:
 

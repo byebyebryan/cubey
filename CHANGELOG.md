@@ -75,6 +75,9 @@ versioned section and use that section as the release notes.
   CPU-side cleanup actions after completed frame/submission points.
 - Public async-ready project runtime vocabulary: project frames, extents,
   render packets, project context services, and `ProjectLike` concept checks.
+- Composable typed configuration schemas with JSON file loading,
+  target-specific template output, named CLI flags, deferred `--set`
+  overrides, unknown-key rejection, and project-owned executable facades.
 - Public `ProjectRuntimeServices` owner for project-facing jobs, uploads,
   captures, frame tickets, deferred destruction, and `ProjectFrame` creation
   from frame timing.
@@ -136,6 +139,9 @@ versioned section and use that section as the release notes.
 - Shared forward-PBR renderer service and shader package with shadow, skybox,
   HDR scene color, post/display transform, debug views, and render-graph-backed
   recording.
+- Shared staged-resource lifecycle with typed CPU preparation/GPU installation,
+  generation-safe frame-boundary activation, deterministic headless completion,
+  and submission-ticket retirement, plus a bounded generated-artifact cache.
 - Premultiplied-alpha blending policy for forward PBR alpha materials.
 - Optional in-process H.264 MP4 capture for headless runs when libav/FFmpeg
   development packages are available at configure time.
@@ -151,9 +157,21 @@ versioned section and use that section as the release notes.
   workload, Calm/Windy/Stormy presets, persistent whitecaps, clipmap LOD,
   curved-local surface mapping, shared environment lighting, and deterministic
   visual review tooling.
-- `projects/terrain`, a directly sampled CPU/GLSL terrain source and
-  camera-relative clipmap renderer with CPU/GPU parity tests and fixed visual
-  review packs.
+- Shared ocean-surface model/runtime ownership so forward-PBR consumers can
+  compose the accepted ocean product without taking ownership of its FFT and
+  presentation implementation.
+- `projects/terrain`, an external-heightfield far-backdrop product with
+  validated source/placement, cached CPU products, continuous fixed-sector
+  geometry, shared environment lighting, runtime replacement, and headless
+  review coverage.
+- Shared raster-backdrop preparation, placement/clearance contracts, and runtime
+  composition used by glTF Viewer, Water 3D, and the Pyro 3D products.
+- `projects/planet`, an orbital-only Earth-like globe with cached deterministic
+  surface fields, phase presets, shared sky/celestial composition, project-owned
+  typed configuration, and headless review coverage.
+- `projects/fluid/water_2d`, `water_3d`, `fire_3d`, and `explosion_3d`, covering
+  APIC/PIC-FLIP liquids and shared dense volumetric pyro with windowed controls,
+  diagnostics, and deterministic headless capture.
 
 ### Changed
 
@@ -195,21 +213,19 @@ versioned section and use that section as the release notes.
   shell snippets.
 - Headless PNG smoke tests now apply a narrow LeakSanitizer suppression for
   DBus allocations left alive by the Vulkan loader/driver path on Linux.
-- Roadmap and Vulkan abstraction docs now frame the host/engine host as the
-  standard windowed-example path while still deferring renderer and scene-system
-  abstractions.
+- Roadmap and Vulkan abstraction docs now frame the host/engine layer as the
+  standard windowed/headless path while keeping project lifecycle and render
+  intent explicit.
 - The particle rewrite is currently categorized as a cube-first example-sized
   reference program rather than a first-class `projects/` target.
 - `spinning_cube`, `textured_cube`, `shadow_cube`, `instanced_cubes`,
   `material_cubes`, and `particle_cubes` now use the shared GLFW/windowed host
   layer while keeping command recording sequence and render resources
   example-local.
-- `headless_cube`, `fractal_2d --headless`, and `smoke_2d --headless` now use
-  the shared no-GLFW headless PNG host while keeping resource setup, simulation,
-  and command recording sequence local to each runnable.
-- `gltf_viewer --headless` and `pbr_furnace --headless` also use the shared
-  headless host; projects that need per-frame renderer resources now size those
-  resources from the active capture frame-slot count.
+- `headless_cube` and every active visual project now use the shared no-GLFW
+  PNG/MP4 host while keeping resource setup, simulation, and command recording
+  local; projects with per-frame renderer resources size them from the active
+  capture frame-slot count.
 - `smoke_2d` simulation steps now consume `ProjectFrame` values from shared
   project runtime adapter in both windowed and headless modes, while keeping
   Vulkan command recording sequence and resource policy project-local.
@@ -232,8 +248,8 @@ versioned section and use that section as the release notes.
   sequence; video capture uses a small in-flight render/readback slot ring and
   CPU encoding on a worker thread.
 - Surface clouds are hosted by `projects/atmosphere`; the dedicated cloud
-  projects are explicitly reference or legacy lanes rather than competing
-  production owners.
+  reference project is a comparison lane rather than a competing production
+  owner, and superseded cloud viewers have been retired.
 - Ocean cloud lighting now uses a planar reflected-camera product with cached
   environment fallback. Current-view/hybrid reflections, spectral-moment
   handoff experiments, synthetic far normals, and filtered far-whitecaps were
@@ -241,6 +257,24 @@ versioned section and use that section as the release notes.
 - Ocean controls are grouped by Waves, Surface, Lighting, Scale & LOD,
   Environment, and Diagnostics, with shared atmosphere/cloud controls exposed
   through their foundation components.
+- Render-graph declaration, per-frame transient ownership, resource resolution,
+  and graph-derived declared-boundary synchronization are now used by the
+  forward-PBR renderer and atmosphere, cloud, ocean, terrain, and fluid
+  projects without introducing scheduling or automatic descriptor policy.
+- Every active executable now composes the common host schema with only its
+  project-owned typed options; JSON/CLI/template behavior no longer crosses a
+  global option registry or compatibility conversion.
+
+### Removed
+
+- The legacy global `RunConfig`, 302-option descriptor registry, parser/runner,
+  compatibility adapters, sentinel defaults, and `lazy-serializable`
+  dependency.
+- Superseded runnable viewers under `projects/cloud_ref_2`,
+  `projects/clouds_legacy`, and `projects/planet_legacy`; their architecture
+  lessons remain documented and their source is recoverable from Git history.
+- Terrain reference, ShaderToy, and hydrology viewer layers; their useful
+  algorithms, generators, exports, and tests remain as opt-in studies.
 
 ## Pre-2.0 History
 

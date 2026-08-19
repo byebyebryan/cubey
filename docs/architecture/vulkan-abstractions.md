@@ -592,15 +592,16 @@ draw, asset/resource policy, or UI/runtime pressure.
 Goal: prepare project code for non-stalling GPU workflows without introducing a
 full threaded renderer.
 
-- Status: design captured in [threading and async design](threading-and-async.md).
+- Status: initial runtime, queued-work, and staged-resource passes complete;
+  see [threading and async design](threading-and-async.md).
 - Added a small CPU job facade behind Cubey APIs.
-- Introduce queued upload/capture/readback shapes, initially processed
-  synchronously by the GPU owner.
-- Keep examples direct; make the first project use the async-ready boundary.
+- Added queued upload/capture/readback shapes and a strict threaded GPU owner.
+- Kept examples direct while projects adopted the async-ready boundary.
 - Added the first project runtime vocabulary and lifecycle concept.
 
-This batch should create design pressure before the first real project grows
-around blocking helper calls.
+Later staged-resource work extended this boundary with typed GPU results,
+generation-safe activation, and deferred retirement without adding a full
+threaded renderer.
 
 ### Batch 8: First Project And Runtime Pressure
 
@@ -618,13 +619,11 @@ Goal: let a real project define the host/engine seam.
 This is the point where a project interface around setup, update, render,
 resize, and shutdown may become worthwhile.
 
-Status: `projects/fluid/smoke_2d` now provides the first project-scale checkpoint.
-It uses storage-buffer ping-pong fields, compute injection/advection,
-project-local pressure projection, pointer injection, debug render modes,
-fullscreen rendering, and shared-host headless PNG output. The next useful
-work is solver tuning, another project with different lifecycle/resource needs,
-or a clearly designed foundation boundary; it should not default to a broad
-renderer abstraction.
+Status: complete for the current project portfolio. Smoke, water, pyro,
+atmosphere, ocean, terrain, Planet, and glTF/PBR projects now provide varied
+windowed/headless, compute/render, staged-resource, and renderer-policy
+pressure. That breadth has still not justified a generic project lifecycle
+host; projects retain setup, simulation, render intent, and shutdown policy.
 
 ### Batch 9: Frame Overlap Runtime
 
@@ -642,8 +641,8 @@ systems on top.
   active slot through `WindowedRenderFrame`.
 
 This batch keeps binary semaphores, one queue family, and one command pool.
-Timeline semaphores, split queues, deferred destruction integration, and
-parallel command recording remain separate slices.
+Submission-ticket deferred destruction has since landed; timeline semaphores,
+split queues, and parallel command recording remain separate slices.
 
 ### Batch 10: Transform v2 And Entity-Backed Managers
 
@@ -682,17 +681,20 @@ rendering without introducing a render graph.
 - Added `examples/shadow_cube` as the reference: depth-only shadow pass into a
   sampled depth texture, then a color pass that samples it.
 
-Still intentionally deferred:
+At this batch, render-graph scheduling, graph-derived barriers, shadow policy,
+and renderer policy were intentionally deferred. The minimal render graph and
+graph-derived declared-boundary synchronization have since landed, and
+`ForwardPbrRenderer3D` now owns one reusable renderer-policy path. Shadow
+atlases/cascades/filtering and general renderer-owned material/light policy
+remain deferred.
 
-- render graph/frame graph scheduling;
-- automatic barrier insertion;
-- shadow atlas/cascades/filtering policy;
-- renderer-owned materials or light upload policy.
+## Current Recommendation
 
-## Near-Term Recommendation
-
-Batch 1 through Batch 11 have their first passes on `main`. Cubey now has the
-first scene/read-view, render-packet, and multipass shadow-map foundation. The
-next foundation decision should either deepen render command ownership
-carefully, such as command buffer/request queues, or add a narrow resource or
-manager contract that a larger project can immediately use.
+Batch 1 through Batch 11 have their first passes on `main`, and later work has
+added broad render-graph adoption, an engine-owned forward-PBR renderer,
+project-owned typed configuration, and staged whole-generation resources.
+Further Vulkan/renderer abstraction should now follow measured consumer
+pressure: reconcile repeated graph/resource setup first, or adopt staged glTF
+asset loading if profiling identifies startup as the next visible bottleneck.
+Do not default to split queues, automatic scheduling, descriptor abstraction,
+or a generic project host.

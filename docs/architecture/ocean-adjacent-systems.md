@@ -1,11 +1,10 @@
 # Ocean Adjacent Systems
 
-`projects/ocean` is the active reference-derived deep-water renderer. The next
-visible quality jump still depends on systems that should not be built directly
-inside the ocean project first. Shorelines, shallow water, atmospheric
-scattering, clouds, and planet-scale LOD each have enough policy and tuning
-surface to deserve standalone project pressure before they become shared
-renderer inputs.
+`projects/ocean` is the active reference-derived deep-water renderer. Future
+shoreline, shallow-water, and planet-surface composition each have enough policy
+and tuning surface to deserve standalone project pressure before becoming
+shared renderer inputs. That coastal/planet integration lane is deliberately
+deferred; it is not the current default next stream.
 
 This note captures the intended split so parallel work can stay mergeable.
 
@@ -24,22 +23,21 @@ ocean renderer through small data and shader contracts:
   exported fields, routing, and future shoreline/bathymetry work.
 - `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
-- `projects/planet`: whole-world scale, camera-relative origin, planet surface
-  LOD, precision diagnostics, and eventual composition of atmosphere, terrain,
-  ocean, clouds, and weather.
+- `projects/planet`: orbital-only globe and whole-world visual reference. It
+  does not own surface LOD, a landed frame, or ocean integration; those require
+  a separately scoped planet-surface product.
 
 The active ocean renderer should remain the consumer of these systems, not their
 first owner. That keeps the renderer focused on reference-quality water
 presentation while the supporting systems become inspectable in isolation.
 
 For planet scale, `projects/ocean` should stop at horizon-scale and curved-local
-rendering. `projects/planet` now owns the landed frame, surface LOD,
-terrain-field integration, atmosphere preview, and local-detail diagnostics
-while consuming the shared sky/celestial foundation; the remaining integration
-target is to port ocean as one local water layer when local/global morphing,
-persistent topology, streaming, and render order are stable. The reusable
-adaptive patch selection mechanics now live in `cubey::render`, but planet still
-owns the cube-sphere mapping and world-scale policy.
+rendering. The active `projects/planet` executable is orbital-only and consumes
+the shared sky/celestial foundation; it does not own a landed frame, surface
+LOD, terrain integration, or local-detail diagnostics. Ocean-as-local-water,
+cube-sphere mapping, persistent topology, and streaming therefore require a
+separately scoped planet-surface product. The reusable adaptive patch selection
+mechanics remain available in `cubey::render`, but have no active Planet owner.
 
 ## Atmosphere Project
 
@@ -169,10 +167,11 @@ Those fields can later modulate shoreline foam, local current direction, river
 mouths, and surf-zone behavior without requiring the ocean renderer to own the
 solver.
 
-## Planet Project Relationship
+## Future Planet-Surface Relationship
 
-`projects/planet` is the right home for scale and LOD work that would otherwise
-distort the ocean renderer. Its first useful scope should be deliberately plain:
+A future planet-surface product is the right home for scale and LOD work that
+would otherwise distort the ocean renderer. It should not be inferred from the
+active orbital Planet. Its first useful scope should be deliberately plain:
 
 - configurable planet radius, including small Kerbal-style scales;
 - camera world position, local tangent frame, horizon, altitude, and far plane;
@@ -184,12 +183,13 @@ distort the ocean renderer. Its first useful scope should be deliberately plain:
 
 Ocean integration target:
 
-- planet supplies radius, datum, local tangent frame, camera-relative origin,
-  atmosphere altitude, shared celestial body state adapters, and render order;
+- the future planet-surface product supplies radius, datum, local tangent frame,
+  camera-relative origin, atmosphere altitude, shared celestial state adapters,
+  and render order;
 - ocean supplies local wave displacement, normals, foam, material response, and
   optional local wake/disturbance fields;
-- terrain, bathymetry, clouds, and global weather remain planet or adjacent
-  system inputs, not ocean-owned state.
+- terrain, bathymetry, clouds, and global weather remain planet-surface or
+  adjacent-system inputs, not ocean-owned state.
 
 ## Shared Contracts
 
@@ -219,11 +219,12 @@ them to shared renderer or shader packages when they are stable enough to stand
 without project policy or when at least two projects use the same contract
 without special cases. The terrain-ocean field texture and static 2D clipmap
 diagnostic helpers have crossed that multi-consumer threshold. The adaptive patch
-LOD selection helper moved to `cubey::render` after the planet behavior
-stabilized, but project-specific terrain, ocean, and planet policies remain
+LOD selection helper moved to `cubey::render` after the retired local-detail
+Planet experiments stabilized its mechanics, but it has no active Planet owner;
+project-specific terrain, ocean, and future planet-surface policies remain
 outside that helper.
 
-## Current Integration Order
+## Deferred Integration Sequence
 
 1. Keep Surface Ocean V1 and the atmosphere-hosted surface-cloud path stable as
    the visual baseline; aerial/orbit clouds remain a later-version track.
@@ -237,9 +238,9 @@ outside that helper.
 5. Resume `fluid_25d` only when dynamic terrain-bound water is required, then
    feed its state through the same contract rather than adding solver policy to
    ocean.
-6. Continue `projects/planet` as the planet-frame, LOD, local sky, and celestial
-   owner before making ocean itself planet-scale.
+6. If planet-surface work is approved later, establish its frame, LOD,
+   streaming, and local-sky contracts before making ocean itself planet-scale.
 
-This order keeps the landed renderers independently useful and makes the next
-cross-project dependency explicit instead of routing new work through legacy
-projects.
+This sequence records dependency order without scheduling coastal work now. It
+keeps the landed renderers independently useful and prevents future integration
+from being routed through retired projects or the orbital-only Planet.

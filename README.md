@@ -125,6 +125,7 @@ Authoritative current docs:
 - [Render graph direction](docs/architecture/render-graph.md)
 - [Entity and component foundation](docs/architecture/entity-component-foundation.md)
 - [Host and engine](docs/architecture/host-engine.md)
+- [Configuration V2](docs/architecture/configuration.md)
 - [Threading and async](docs/architecture/threading-and-async.md)
 - [Procedural generation foundation](docs/architecture/procedural-generation.md)
 - [glTF assets and PBR](docs/architecture/gltf-assets.md)

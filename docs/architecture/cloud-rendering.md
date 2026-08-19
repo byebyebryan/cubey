@@ -57,7 +57,8 @@ cloud app. The current stable path is:
   cubemap lifecycle, refresh cadence, generation blending, fallback packaging,
   and the shared PBR texture-binding handoff;
 - `cubey::CloudEnvironmentConfig`: owns the project-facing cloud settings,
-  defaults, weather presets, and run-config mapping;
+  defaults, and weather presets; shared schema metadata binds typed startup
+  options for consumers that expose those controls;
 - `cubey::host::draw_cloud_environment_controls`: owns the shared V1 tuning UI
   for those settings;
 - `projects/atmosphere`: primary tuning and inspection surface for shared
@@ -74,9 +75,9 @@ cloud app. The current stable path is:
   its HDR scene background without modifying opaque scene pixels before the
   water surface pass, and reuses the same filtered environment through its
   existing PBR bindings;
-- `projects/planet`: deferred aerial/orbit pressure surface that retains physical
-  distance-aware cloud/surface composition; not a Cloud V1 consumer and not the
-  source of surface-cloud defaults yet.
+- `projects/planet`: orbital-only globe with a project-local restrained cloud
+  veil. It does not instantiate the shared Cloud V1 runtime and is not an
+  aerial/orbit pressure consumer.
 
 Consumers still decide which cloud products they need and package local camera
 and atmosphere lighting into `CloudLayerFrameInfo`. Generated noise/weather
@@ -88,10 +89,12 @@ contract are no longer project-local.
 Scene-depth composition is an explicit render policy, not a cloud tuning option.
 Atmosphere-only, cached-environment, and planar-reflection products disable scene
 depth. glTF Viewer, ocean, and Water 3D preserve any opaque foreground pixel
-exactly because their visible cloud product is a background layer. Planet compares
-cloud-hit distance against scene depth because its cloud shell may legitimately
-appear in front of the surface. Both active depth modes return untouched HDR scene
-color before cloud resolve/post work whenever geometry fully occludes the cloud.
+exactly because their visible cloud product is a background layer. The retired
+local-detail Planet prototype established a distance-aware composition mode for
+cloud shells that can appear in front of a surface, but no active executable
+currently owns that path. Active background consumers return untouched HDR
+scene color before cloud resolve/post work whenever geometry fully occludes the
+cloud.
 
 Visible cloud ownership follows the same rule in every accepted surface
 consumer: the project's `AtmosphereEnvironmentRuntime` owns one
@@ -140,9 +143,9 @@ templates should present the canonical names above.
 The shared `CloudEnvironmentUiConfig` defaults to the Cloud V1 surface control
 surface. Atmosphere and ocean inherit that default, so density-model,
 distance-mode, horizon-bridge, and orbit-shell controls stay hidden in normal
-tuning. Planet explicitly opts into those deferred controls as a pressure path;
-that makes later aerial/orbit work visible without turning it into the default
-foundation contract.
+tuning. No active project opts into the deferred aerial/orbit controls; a future
+dedicated batch must provide its own pressure surface rather than treating
+hidden controls as implemented scope.
 
 ## Lessons From the Historical Prototype
 
@@ -152,8 +155,8 @@ foundation contract.
   surface regime belongs to Cloud V1;
 - clouds need to consume the shared atmosphere/celestial lighting state;
 - clouds should render into their own product before composition;
-- consumers such as ocean and planet should receive cloud outputs rather than
-  raymarching clouds in their material shaders;
+- consumers such as ocean and any future planet-surface product should receive
+  cloud outputs rather than raymarching clouds in their material shaders;
 - performance diagnostics, quality presets, temporal toggles, and debug views
   are mandatory, not polish.
 
@@ -277,17 +280,16 @@ reference: fuller surface coverage and stronger phase/powder/detail relief than
 the old default, but lower shadow and lower twilight intensity than the explicit
 TerrainEngine-inspired study preset.
 
-The first implementation pass should make `cloud_ref` lighting honest before
-adding more features: remove or relabel inactive controls, make debug views show
-real ambient/direct/phase/source terms, replace the ambient/direct mix with an
-additive source equation, then reintroduce powder as a scalar intensity with
-off/current/new comparisons in the capture pack.
+The retained `cloud_ref` target remains the lighting/shape comparison surface:
+inactive controls must stay absent or honestly labeled, and debug views should
+continue to expose real ambient/direct/phase/source terms. New production work
+belongs in the shared atmosphere-hosted path after it is validated there.
 
 ## Lessons From `projects/cloud_ref_2`
 
-`projects/cloud_ref_2` is not a useful visual target yet. It deliberately reused Cubey
-noise/weather data instead of faithfully importing the Godot source textures,
-and the result still reads messy even when the cache is bypassed.
+`projects/cloud_ref_2` was not a useful visual target. It deliberately reused
+Cubey noise/weather data instead of faithfully importing the Godot source
+textures, and the result remained messy even when the cache was bypassed.
 
 It did prove several architecture points:
 
@@ -301,8 +303,8 @@ It did prove several architecture points:
   runtime goal;
 - cache artifacts should be separated from density artifacts before tuning.
 
-The production renderer should borrow the cache idea only after the direct
-density model is visually credible. Otherwise, cache work just hides or
+Future aerial/orbit work should borrow the cache idea only when a direct density
+model is visually credible. Otherwise, cache work just hides or
 amplifies bad cloud shape.
 
 ## Production Shape
@@ -311,8 +313,9 @@ The production cloud renderer now lives as the shared cloud layer consumed by
 `projects/atmosphere` and `projects/ocean` for surface-view sky composition.
 Ocean consumes local shadow, planar reflection, and cached fallback products;
 the glTF viewer validates the cached environment through general PBR materials.
-Planet high/orbit views are a later-version track, not the current production
-target.
+Planet-scale Cloud V1 high/orbit integration remains a later-version track.
+The active orbital Planet instead owns a deliberately restrained project-local
+veil and does not consume this shared cloud runtime.
 
 Initial scope:
 
@@ -465,28 +468,27 @@ shared sky/celestial/atmosphere state and emits:
 - debug views for weather, base/detail density, lighting, shadow, distance,
   steps, and composition, plus deferred cache/local/orbit regime diagnostics.
 
-Deferred outputs include planet-scale shadow products and shared PBR ownership
-of clouded environment bindings. Ocean proves the receiver contracts without
-owning cloud raymarch code: it samples the shared shadow product, uses the
-reflected-camera product for local detail, and falls back to a coherent cached
-environment.
-Planet, terrain, and glTF/PBR consumers should follow the same ownership rule
-when their scale and environment-product contracts are ready.
+Deferred outputs include planet-scale shadow products and aerial/orbit weather
+products. Shared PBR ownership of clouded environment bindings has landed:
+glTF Viewer and Water 3D consume the coherent environment handoff, while ocean
+also samples the receiver shadow and reflected-camera products without owning
+cloud raymarch code. Future terrain or planet-surface consumers should follow
+the same ownership rule when their scale contracts are ready.
 
-V1 should use `RenderGraphBuilder` to make the cloud product and composite
-passes explicit. Descriptor sets, textures, material instances, and synchronization
-policy remain owned by the atmosphere integration until at least two consumers
-need direct cloud products. Downstream branches should use the atmosphere cloud
-capture helper and shared `clouds.*` config options to check visual and contract
+V1 uses `RenderGraphBuilder` to make cloud product, environment, shadow,
+reflection, and composite passes explicit. Runtime owners retain descriptors,
+textures, and material instances, while graph execution owns synchronization at
+declared boundaries. Downstream work should use the atmosphere cloud capture
+helper and shared `clouds.*` config options to check visual and contract
 assumptions without adopting cloud internals.
 
 The final composite tone and color post pass is shared through
 `shaders/cubey/cloud/cloud_composite_post.glsl`. The active composite shaders
 are the external-background variants: atmosphere uses the background-only path;
-glTF Viewer, ocean, and Water 3D use opaque-foreground scene depth; and planet
-uses physical distance-aware scene depth. Legacy standalone/reference cloud
-projects keep their own local shaders instead of depending on a shared standalone
-composite entry point.
+glTF Viewer, ocean, and Water 3D use opaque-foreground scene depth. The physical
+distance-aware mode is retained for future scale pressure but has no active
+Planet consumer. The retained `cloud_ref` project keeps its local shaders;
+superseded standalone cloud viewers are available only through Git history.
 
 ## Current Milestone
 
@@ -494,7 +496,7 @@ The standalone production pressure project has served its purpose and has been
 absorbed into atmosphere. Cloud V1 surface quality is good enough to act as the
 current shared foundation checkpoint for atmosphere and ocean surface views.
 Further surface polish is useful, but it is no longer a blocker for resuming
-focused ocean, terrain, planet, or renderer feature work.
+focused ocean, terrain, asset, or renderer feature work.
 
 The active Cloud V1 milestone is:
 

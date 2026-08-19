@@ -3,7 +3,8 @@
 This note captures the product and architecture direction for moving
 `projects/ocean` from a large visible water patch toward horizon-scale and
 curved-local rendering. Full planet scale is now treated as a separate
-`projects/planet` direction, not the next responsibility of the ocean project.
+future planet-surface direction, not the next responsibility of the ocean
+project or the active orbital-only `projects/planet` executable.
 
 The current renderer is good enough as a wave and material testbed, but it still
 reads as a large square surface when viewed from some angles or distances. The
@@ -14,7 +15,8 @@ incompatible with later planet integration.
 ## Direction
 
 Do not turn `projects/ocean` into a full planet renderer. Build ocean as a local
-tangent patch that can later be hosted by `projects/planet`:
+tangent patch that can later be hosted by a separately scoped planet-surface
+product:
 
 - get immediate visual value from horizon-scale local ocean rendering;
 - make coordinate, mesh, atmosphere, and terrain contracts compatible with
@@ -66,8 +68,8 @@ Current implementation status: `projects/ocean` has the local tangent frame,
 curved-far surface mode, automatic horizon-driven mesh extent, Mid/High/Wide
 camera presets, headless camera-preset capture support, and diagnostics for the
 effective mesh plus cascade contribution weights. It deliberately still uses
-`ClipmapGrid2D`; changing to the planet adaptive patch planner is deferred until
-planet handoff or shoreline integration creates a real address-space need.
+`ClipmapGrid2D`; adopting the shared adaptive patch planner is deferred until a
+future planet-surface or shoreline consumer creates a real address-space need.
 
 Tier 1 should solve the current square-bound presentation problem.
 
@@ -118,13 +120,12 @@ surface, with displacement riding on top of that mapped surface. This keeps the
 renderer debuggable while proving the T1.5 frame contract under real curvature
 pressure.
 
-### Planet Project Handoff
+### Future Planet-Surface Handoff
 
 Goal: stop ocean scale work at a clean handoff boundary.
 
 Rendering and navigating ocean, terrain, atmosphere, and weather at planetary
-scale is a separate project tier, not just a bigger ocean mesh. It belongs in
-`projects/planet`, which likely needs:
+a future planet-surface product, which likely needs:
 
 - a planet coordinate model and floating-origin system;
 - camera-relative rendering throughout the engine;
@@ -246,7 +247,7 @@ Still deferred inside ocean:
 - shoreline interaction and local bathymetry-driven surf inputs;
 - true atmospheric LUT aerial perspective for far-water extinction.
 
-Deferred to `projects/planet`:
+Deferred to a future planet-surface product:
 
 - floating origin or large-world camera state outside the ocean project;
 - planet-scale patch LOD and streaming;
@@ -255,12 +256,13 @@ Deferred to `projects/planet`:
   reflection, and shadow outputs from the planet/weather stack.
 
 The ocean project should stop at the current local horizon-scale/curved-local
-boundary until `projects/planet` provides a stronger host. Planet-scale ocean is
-not a bigger square FFT mesh; it is a local water layer attached to a planet
-frame. The future handoff should be:
+boundary until a separately scoped product provides a stronger host.
+Planet-scale ocean is not a bigger square FFT mesh; it is a local water layer
+attached to a planet frame. The future handoff should be:
 
-- planet owns the Earth-like radius, local tangent frame, render origin, sea
-  datum, bathymetry, shoreline SDF, and global tile identity;
+- the future planet-surface product owns the Earth-like radius, local tangent
+  frame, render origin, sea datum, bathymetry, shoreline SDF, and global tile
+  identity;
 - ocean owns local wave displacement, normals, foam, material response, and
   interaction textures;
 - a viewer-centered local detail clipmap bridges the two so mesh density and FFT
@@ -282,8 +284,8 @@ horizon/aerial-perspective composition is the most direct path from the current
 renderer.
 
 T1 and T2 should target deck, ship-mast, and cinematic drone views first.
-Aircraft and space-scale views are diagnostic only until `projects/planet` owns
-the surface LOD and world-frame contracts.
+Aircraft and space-scale views are diagnostic only until a planet-surface
+product owns the surface LOD and world-frame contracts.
 
 ## Design Constraints
 
@@ -315,7 +317,8 @@ Avoid:
    safety margin.
 3. Done enough for now: horizon-derived extent, curved far-surface mapping, and
    aerial perspective keep square bounds out of normal ocean views. Deeper mesh
-   topology work should happen against the planet/local-detail host contract.
+   topology work should wait for a separately scoped planet-surface consumer;
+   the active orbital Planet is not a local-detail host.
 4. Done as a placeholder: add horizon-aware atmosphere/aerial-perspective
    blending for the far ocean.
 5. Done as a flat seam: introduce local-frame, surface-frame, datum, projection,
@@ -324,15 +327,13 @@ Avoid:
 6. Done: add a single-pass curved far-ocean mapping path with Flat/Curved-Far
    surface modes, horizon-ratio blend controls, and curvature diagnostics.
 7. Done enough for now: ocean has reached the horizon-scale/curved-local
-   endpoint and should remain a water renderer/testbed while planet-scale
-   patching, celestial ownership, and future streaming continue in
-   `projects/planet`.
-8. Next in `projects/planet`: harden local/global morphing, persistent
-   topology, cache/streaming contracts, render order, and ocean payload
-   attachment before porting any ocean waves.
+   endpoint and should remain a water renderer/testbed.
+8. Deferred to a separately approved planet-surface product: define local/global
+   morphing, persistent topology, cache/streaming contracts, render order, and
+   ocean payload attachment before porting any ocean waves.
 
-This keeps ocean product-visible while leaving a clean path for `projects/planet`
-to consume it later.
+This keeps ocean product-visible without expanding the active orbital Planet or
+committing Cubey to a planet-surface implementation now.
 
 ## Open Questions
 
@@ -341,5 +342,5 @@ to consume it later.
 - Should the first far mesh be clipmap-based, radial/annular, or a hybrid?
 - How much of the atmosphere path needs true aerial perspective before Tier 1
   hides the horizon boundary convincingly?
-- What exact frame contract should `projects/planet` use when it consumes ocean
-  as a local water layer?
+- What exact frame contract should a future planet-surface product use when it
+  consumes ocean as a local water layer?

@@ -43,12 +43,12 @@ Current stable foundation pieces:
   GPU-owner submission, deferred destruction vocabulary, and project runtime
   services;
 - progressive whole-generation initialization over shared CPU jobs and typed
-  GPU-owner results, now exercised by terrain products and generated
-  atmosphere atlases with placeholder-first windowed presentation,
-  deterministic headless completion, atomic activation, and deferred
-  retirement, plus a bounded worktree-local generated-artifact cache that
-  removes repeat night-sky, lunar atlas, and terrain backdrop-product
-  generation;
+  GPU-owner results, now exercised by terrain products, Planet surface
+  products, generated atmosphere atlases, and glTF atmosphere-atlas consumers
+  with placeholder-first windowed presentation, deterministic headless
+  completion, atomic activation, and deferred retirement, plus a bounded
+  worktree-local generated-artifact cache that removes repeat night-sky, lunar
+  atlas, planet-surface, and terrain backdrop-product generation;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
 - composable `cubey::config::Schema`, the typed host-owned
@@ -83,11 +83,12 @@ Current stable foundation pieces:
   tests audit those package dependencies.
 
 The bounded progressive-initialization slice is complete for generated
-atmosphere atlases and terrain products. Further adoption should be driven by a
-concrete consumer such as glTF asset loading. General asset streaming, partial
-terrain residency, split-queue scheduling, and per-frame upload budgets remain
-deferred until profiling shows that whole-generation installation is the real
-bottleneck.
+atmosphere atlases, Planet surface products, and terrain products; glTF Viewer
+also consumes the shared staged atmosphere-atlas lifecycle. Further adoption
+should be driven by a concrete consumer such as glTF asset loading. General
+asset streaming, partial terrain residency, split-queue scheduling, and
+per-frame upload budgets remain deferred until profiling shows that
+whole-generation installation is the real bottleneck.
 
 Recommended next feature or foundation streams:
 
@@ -100,9 +101,10 @@ Recommended next feature or foundation streams:
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
-- `projects/planet`: local/global terrain morphing, streaming/residency
-  contracts, and eventual ocean-as-local-water handoff remain a separate
-  planet-scale track.
+- `projects/planet`: the orbital product is closed for its current scope.
+  Surface terrain, local/global morphing, streaming/residency, and ocean
+  handoff require a separately scoped planet-surface product rather than
+  expansion of the active executable by default.
 - `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
   directly improves current surface/ocean views; high/aerial/orbit cloud
   products should stay deferred until a dedicated batch.
@@ -114,12 +116,12 @@ Known non-blockers:
 - The filtered cloud environment is available to general PBR, but visible cloud
   composition, cloud shadows, and planar reflections remain explicit products;
   one cached cubemap should not be treated as a replacement for them.
-- `cloud_march.comp`, `surface_cloud_march.comp`, `planet_surface.frag`, and a
-  few volume diagnostics shaders remain future split targets; the active shader
-  foundation is sufficient for current feature work.
-- Planet still has deferred streaming, project-owned config facade, and
-  planet/ocean composition work. Those should be feature tracks, not reasons to
-  block ocean or atmosphere iteration.
+- `cloud_march.comp`, `surface_cloud_march.comp`, and a few volume diagnostics
+  shaders remain future split targets; the active shader foundation is
+  sufficient for current feature work.
+- Planet-surface streaming and planet/ocean composition remain possible future
+  product tracks, not unfinished obligations of the orbital executable or
+  reasons to block ocean or atmosphere iteration.
 - Configuration V2 is complete and has no legacy compatibility layer or dual
   system.
 
@@ -145,8 +147,8 @@ Exit criteria:
 
 ## Phase 1: Windowed Vulkan Runtime Skeleton
 
-Status: windowed framework checkpoint and first headless artifact checkpoint
-complete; frame overlap remains open.
+Status: windowed/headless host, frame-overlap, and first artifact checkpoints
+complete; later queue and recording optimizations remain deferred.
 
 Goal: build maintainable mainline Vulkan modules and prove visible desktop
 rendering without turning the library into a generic game engine.
@@ -232,10 +234,10 @@ Current checkpoint:
 - Reusable `cubey::procedural` now provides the first procedural foundation
   slice: local 2D scalar fields, centered grid sampling, deterministic 2D/3D
   value-noise/FBM/ridged-FBM, scalar operators, field normalization, weighted
-  3x3 blur, and matching small GLSL helper includes. Terrain Lab, procedural
-  terrain, planet, ocean, water, atmosphere/sky, and active cloud now consume
-  shared helpers where their existing formulas match, while their domain drivers
-  remain project-owned.
+  3x3 blur, and matching small GLSL helper includes. Retained terrain studies,
+  active terrain, Planet, ocean, water, atmosphere/sky, and active cloud consume
+  shared helpers where their formulas match, while domain drivers remain
+  project-owned.
 - Reusable `cubey::vulkan::ShaderModule` exists, and CMake can compile GLSL to
   SPIR-V with `glslangValidator` for example targets, including shared include
   directories and dependency tracking. Reusable `cubey::vulkan::read_spirv_file`
@@ -361,9 +363,10 @@ Current checkpoint:
   scene-depth, scene-color, backbuffer, and present transitions recorded by
   graph execution while pass callbacks still own descriptors, pipelines, and
   app-specific resource policy.
-  `smoke_2d` builds a coarse simulation-compute to fullscreen-render graph and
-  records it through the same frame executor, with graph-owned buffer barriers
-  plus backbuffer acquire/release at that boundary.
+  The graph is now used by `shadow_cube`, `ForwardPbrRenderer3D`, atmosphere,
+  cloud reference, ocean, terrain, Smoke 2D, Water 2D, Water 3D, and the shared
+  Pyro 3D renderer. Graph-owned barriers cover declared pass boundaries while
+  solver-internal synchronization and project render intent remain explicit.
 - Reusable `cubey::scene` transaction helpers cover common renderable, camera,
   and directional-light entity setup while keeping entity/component ownership
   explicit.
@@ -622,55 +625,54 @@ Exit criteria:
 
 ## Phase 5: First Real Project
 
-Status: broadened; the first `smoke_2d` solver checkpoints are complete, and
-the current project-pressure work has moved through ocean rendering into the
-planet foundation.
+Status: complete for the current active project portfolio.
 
 Goal: prove the framework with non-trivial procedural graphics projects and let
 repeated project needs shape the host/engine API.
 
 Project checkpoints:
 
-- `projects/fluid/smoke_2d` starts the fluid simulation rewrite as a smaller 2D
-  dye-and-velocity field. The current checkpoint has compute injection,
-  MacCormack advection, vorticity confinement, pressure
-  projection, procedural moving injectors, pause/reset, debug render modes, fullscreen
-  rendering, a windowed smoke, and deterministic headless PNG/MP4 output.
-  Simulation timing now flows through `ProjectFrame` in both windowed and
-  headless modes. The windowed frame now declares a coarse render graph for
-  simulation compute followed by fullscreen rendering; solver-internal barriers
-  remain project-owned, while the compute-to-render boundary uses graph-owned
-  buffer barriers and the backbuffer acquire/release path.
+- The fluid family now covers Smoke 2D, Water 2D, Water 3D, and shared Pyro 3D
+  fire/explosion products. Each has windowed interaction, deterministic
+  headless PNG/MP4 output, project-owned solver policy, and graph-declared
+  compute/render boundaries where that contract is useful.
 - `projects/atmosphere` now hosts the active surface cloud/weather layer.
   The shared `CloudLayerRuntime` keeps the texture-backed coherent density path,
   generated 3D base/detail noise, generated 2D weather map, spherical-shell
   direct march, cloud product/composite passes, nested controls, and diagnostics
   for raw density, transmittance, lighting, distance, and steps. The historical
-  planet-aware prototype remains a pressure reference for surface/high/orbit
+  planet-aware prototype remains historical evidence for surface/high/orbit
   lessons, while retired `projects/cloud_ref_2` remains an architecture
-  reference. Cloud V1 is intentionally surface-only: atmosphere
-  is the tuning host and ocean is the surface-view consumer. Ocean consumes a
-  bounded local shadow product and planar cloud reflection with a cached
-  environment fallback. Planet, aerial/high-altitude, orbit shells, shared PBR
-  ownership of the cache, and general clouded PBR outputs remain deferred.
+  reference. Cloud V1 is intentionally surface-only: atmosphere is the tuning
+  host; glTF Viewer, ocean, and Water 3D consume its accepted products.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer
   and future donor rather than the owner of planet-scale navigation. Surface
   Ocean V1 fixes the default cost at C0/C1 and adds Calm/Windy/Stormy behavior
   presets without conflating sea state with quality or water-body ownership.
-- `projects/planet` is the current scale/LOD foundation project. It owns
-  Earth-like scale, camera-relative cube-sphere surface LOD on the shared
-  adaptive patch planner, project-local terrain fields, local-detail diagnostics,
-  shared sky/celestial foundation consumption, physical atmosphere preview, HDR
-  post, and visual smoke coverage.
+- `projects/terrain` owns the active external-heightfield far-backdrop product:
+  validated source/placement, cached CPU products, fixed continuous sectors,
+  shared environment lighting, runtime replacement, and glTF consumption. The
+  retained terrain studies no longer own runnable viewers.
+- `projects/planet` is the orbital-only planet product. It owns a deterministic
+  cached direction-domain surface, phase presets, shared sky/celestial
+  composition, fixed-sphere rendering, and headless review coverage. Surface
+  terrain, patch LOD, streaming, and coast integration belong to future
+  projects rather than the active executable.
+- `projects/gltf_viewer` and `pbr_furnace` prove the reusable forward-PBR
+  renderer, imported glTF material/animation/deformation paths, HDR or generated
+  IBL, graph-owned shadow/HDR/post passes, and optional environment, terrain,
+  and ocean composition.
 
 Candidate follow-ups:
 
-- Pressure solver upgrades, richer injectors, or a clearer smoke/liquid split
-  for `smoke_2d`.
-- Planet local-detail handoff, seam/morph behavior, cache/streaming contracts,
-  and eventual ocean payload boundaries.
+- Reconcile and consolidate render-graph contracts only where the now-broad
+  consumer set repeats real setup or synchronization policy.
+- Profile glTF startup and adopt staged asset preparation/installation if
+  blocking asset loading is the next visible host/engine bottleneck.
+- Reopen Planet surface/streaming work only as an explicitly separate product
+  checkpoint with a concrete residency contract.
 - Marching cubes for compute-generated geometry and indirect draw pressure.
 - SDF sculpting if the sparse resource model becomes the more interesting
   framework driver.
@@ -679,41 +681,48 @@ Candidate follow-ups:
 
 Exit criteria:
 
-- The project runs interactively with a window.
-- The same project can run headlessly for a fixed number of frames and produce a
-  deterministic output artifact.
+- Active projects run interactively with a window.
+- Active visual projects can run headlessly for a fixed number of frames and
+  produce deterministic output artifacts where capture is part of their
+  contract.
 - README contains exact commands for local smoke testing. Status: complete for
-  the current `smoke_2d`, ocean, and planet checkpoints.
+  the current portfolio.
 
 ## Phase 6: Runtime Extraction
 
-Status: active.
+Status: complete for the current host/engine/config extraction checkpoint;
+further extraction is consumer-driven.
 
 Goal: extract only the host concepts that repeated windowed/headless project code
 has proven useful.
 
 - GLFW-backed window host outside `cubey::vulkan`. Status: complete.
-- Initial windowed host outside `cubey::vulkan`. Status: complete for current
-  windowed examples.
+- Initial windowed host outside `cubey::vulkan`. Status: complete for all active
+  windowed examples and projects.
 - Project lifecycle vocabulary: setup, update, render packet, resize, shutdown.
+  Status: complete as a narrow concept and runtime-service boundary; no generic
+  lifecycle host has been introduced.
 - Project runtime services for jobs, uploads, captures, and `ProjectFrame`
   creation. Status: complete.
 - Thin project runtime adapter for one project frame per host frame and context
   access. Status: complete.
 - Strict GPU runtime exposed through windowed/headless host contexts, with
   setup-time GPU work entering through a queue and running on the runtime owner.
-  Status: complete for current headless capture and textured-cube setup work.
+  Status: complete for current host contexts, project GPU services, ticketed
+  readback, and deferred retirement.
 - Narrow no-GLFW headless capture host that shares no-window instance/device,
   offscreen target, capture transitions, readback, PNG writing, and optional
   MP4 writing. Status: complete for current headless examples/projects.
 - Project-owned config facades. Shared core keeps generic
-  parse/template/override plumbing; project modules own option groups,
-  defaults, validation, and eventual UI descriptor sources. Status: first
-  extraction complete for active `planet`, including the common host boundary;
-  migrate another project only when doing so simplifies active work or proves
-  a missing generic contract.
-- Input/UI hooks once the contract is clear enough to keep project code cleaner
-  without becoming a generic editor or UI framework.
+  parse/template/override plumbing; every active executable owns its option
+  groups, defaults, and validation. Status: Configuration V2 complete and the
+  legacy global registry removed.
+- Shared input, camera, ImGui control, performance, and config metadata helpers
+  cover repeated host/project mechanics without becoming a generic editor.
+- The minimal render graph and `ForwardPbrRenderer3D` provide the first reusable
+  command/resource and renderer-policy boundaries earned by multiple projects.
+- A generic project lifecycle host remains deferred; current projects still own
+  setup, simulation, render intent, and shutdown policy.
 
 Exit criteria:
 
@@ -724,14 +733,15 @@ Exit criteria:
 - Examples remain useful as small reference programs rather than becoming hidden
   framework tests.
 
-## Later
+## Deferred Until Concrete Pressure
 
-- ImGui debug controls.
-- Orbit camera and common interaction helpers.
-- Ports of original Cubey projects: fluid simulation, marching cubes,
-  camera/shadow tests, and larger particle projects. Fractal 2D now lives under
-  `projects/fractal_2d`; particle smoke work stays in `examples/particle_cubes`
-  unless it grows into a larger project.
+- Timeline semaphores, split graphics/compute/present queues, parallel command
+  recording, transient graph aliasing, and automatic async scheduling.
+- Source-asset streaming, partial terrain/atlas residency, and general resource
+  dependency graphs; whole-generation staged activation remains the current
+  contract.
+- Marching cubes, larger particle systems, or other compute-generated geometry
+  only when a project needs indirect draw or geometry-lifetime pressure.
 - SDF sculpting experiments from `projectR` if the resource model holds up.
 - Browser or alternate-backend work only after a concrete project earns the
   extra shader and platform surface area.

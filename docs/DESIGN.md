@@ -342,13 +342,10 @@ named explicitly and live in either `examples/` or `projects/`:
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, including `atmosphere`, `terrain`, `smoke_2d`, `water_2d`, `water_3d`,
   `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`, `planet`,
-  and `pbr_furnace`; reference, paused-lab, and legacy targets remain beside
-  them with explicit names and status docs.
+  and `pbr_furnace`; retained reference and design-only targets have explicit
+  names and status docs, while retired implementations live in Git history.
 - `third_party/` - small vendored dependencies with explicit license notes.
-- `tools/` - repo utilities, asset processors, shader tools, or diagnostics.
 - `tests/` - unit and integration tests.
-- `benchmarks/` - performance targets once there is something meaningful to
-  measure.
 
 CMake should model this as explicit targets, not source-folder convention. The
 layering order is:
@@ -411,12 +408,15 @@ cubey/
         renderer_service.h -- engine-owned renderer instance lifetime
         project_gpu_services.h -- project-facing GPU uploads/readbacks
         project_runtime.h  -- async-ready project vocabulary
+        staged_resource.h  -- whole-generation CPU/GPU preparation and activation
         upload_queue.h     -- CPU-owned upload request queue
         video_encoder.h    -- optional libav-backed MP4 video encoder
       asset/
         gltf_asset.h       -- glTF/glb CPU asset data loader
         hdr_image.h        -- standalone Radiance HDR CPU image loader
       host/
+        common_config.h    -- host-owned typed configuration boundary
+        configured_app.h   -- shared parse/template/error/launch flow
         frame_stats.h      -- windowed telemetry sampling and title formatting
         glfw_window.h      -- GLFW window and surface host
         headless_png_host.h -- no-window offscreen PNG/MP4 capture host aliases
@@ -436,6 +436,8 @@ cubey/
         resource_handle.h  -- opaque render resource handle values
         resource_registry.h -- render handle identity and material tags
         resource_table.h   -- project-owned move-only render resources
+        render_graph_builder.h -- pass/resource declaration and validation
+        render_graph_frame.h -- per-frame resource ownership and execution
         shadow_map.h       -- reusable sampled-depth shadow-map pass resource
       scene/
         entity.h           -- generational entity handles and stable manager
@@ -477,7 +479,7 @@ cubey/
     cubey/
       CMakeLists.txt       -- layered cubey::* library targets
       asset/               -- glTF/glb parsing, URI loading, and image decode
-      core/                -- run config, jobs, frame timing, I/O, and PNG writer
+      core/                -- typed config kernel, jobs, frame timing, I/O, and PNG writer
       engine/              -- engine root, project runtime, queues, GPU services,
                              -- glTF scene import, and reusable renderer internals
       host/                -- concrete GLFW/windowed/headless hosts
@@ -505,7 +507,7 @@ cubey/
         CMakeLists.txt
         main.cpp
         atmosphere_app.* -- solar time, sky, moon, Milky Way, and HDR post host path
-        atmosphere_environment.* -- project-to-shared atmosphere config adapter
+        atmosphere_environment.* -- shared-atmosphere config and frame adapter
         atmosphere_ui.* -- live atmosphere and night-sky controls
       cloud_ref/          -- TerrainEngine-style surface-cloud reference
       fractal_2d/
@@ -605,8 +607,9 @@ cubey/
           ocean_unpack.comp -- displacement, normals, and foam from FFT fields
           ocean.vert      -- camera-relative clipmap and cascaded displacement
           ocean.frag      -- water, foam, shared environment lighting, diagnostics
-      planet/             -- planet frame, surface LOD, terrain field, and sky foundation
+      planet/             -- orbital globe, cached surface fields, and sky composition
       terrain/            -- raster heightfield backdrop product and review app
+      fluid_25d/          -- design-only terrain-bound shallow-water direction
       pbr_furnace/
         CMakeLists.txt
         main.cpp
@@ -615,15 +618,10 @@ cubey/
         pbr_furnace_scene_runtime.* -- scene entities and frame plans
         pbr_furnace_render.* -- render request assembly and headless target path
         pbr_furnace_scene.* -- material grid definition and tests
-
-    studies/terrain/      -- opt-in visual reference, ShaderToy, and hydrology studies
-      fluid_25d/
-  tools/
+  studies/terrain/        -- opt-in algorithm, ShaderToy, and hydrology studies
   tests/
     cubey/                 -- domain-split test registry and focused unit tests
-  benchmarks/
   shaders/                 -- shared GLSL includes (lighting, noise, math)
-  assets/                  -- textures, meshes
   third_party/             -- vendored single-header dependencies and notices
   docs/
     README.md              -- docs index and taxonomy

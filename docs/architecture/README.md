@@ -19,7 +19,7 @@ than the root design and roadmap.
   environment lighting, and terrain/planet boundaries.
 - [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
   horizon-scale local ocean, planet-compatible contracts, curved-local
-  rendering, and explicit handoff to planet-scale work.
+  rendering, and deferred handoff to a future planet-surface product.
 - [Planet rendering](planet-rendering.md): orbital planet product, deterministic
   surface fields, celestial composition, and validation policy.
 - [Terrain reboot direction](terrain-reboot.md): local terrain product
@@ -33,8 +33,8 @@ than the root design and roadmap.
   `projects/cloud_ref_2` lessons; see the retirement archive for provenance.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
-- [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material
-  contract, texture upload, HDR environments, and viewer boundaries.
+- [glTF assets and PBR](gltf-assets.md): glTF import, PBR material contract,
+  texture upload, HDR environments, and viewer boundaries.
 - [Animation and deformation](animation-deformation.md): glTF animation,
   morph targets, skinning, GPU deformation, and validation asset direction.
 - [PBR and IBL direction](pbr-ibl.md): generated and HDR-backed cubemap IBL,
@@ -42,9 +42,9 @@ than the root design and roadmap.
 - [Reference-first rendering feature workflow](rendering-feature-workflow.md):
   default workflow for complex visual features: port a known-good reference,
   capture a baseline, then integrate and extend inside Cubey.
-- [Render graph direction](render-graph.md): current and future pass/resource
-  graph vocabulary, execution boundary, adoption triggers, and deferred
-  complexity.
+- [Render graph direction](render-graph.md): the broadly adopted pass/resource
+  declaration, execution, synchronization, and frame-resource boundary plus
+  explicitly deferred scheduler complexity.
 - [Renderer foundation](renderer-foundation.md): `cubey::render` contracts
   that sit above Vulkan.
 - [Shader foundation](shader-foundation.md): GLSL module ownership, build-time
