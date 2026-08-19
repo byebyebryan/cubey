@@ -553,8 +553,8 @@ void generate_storage_volume_texture(const cubey::vulkan::Device& device,
 
 class CloudRefApp {
   public:
-    explicit CloudRefApp(RunConfig config)
-        : run_config_(std::move(config)), config_(clouds_config_from_run_config(run_config_)) {}
+    explicit CloudRefApp(CloudRefProjectConfig config)
+        : project_config_(std::move(config)), config_(project_config_.clouds) {}
 
     CloudRefApp(const CloudRefApp&) = delete;
     CloudRefApp& operator=(const CloudRefApp&) = delete;
@@ -565,7 +565,7 @@ class CloudRefApp {
     }
 
     int run() {
-        if (run_config_.headless) {
+        if (project_config_.common.headless) {
             return run_headless();
         }
         return run_windowed();
@@ -609,7 +609,7 @@ class CloudRefApp {
         };
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(run_config_),
+                .run_config = project_config_.common,
                 .app_name = "cloud_ref",
                 .ready_status = "rendering reference cloud project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -622,7 +622,7 @@ class CloudRefApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(run_config_);
+        host_config.run_config = project_config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -794,7 +794,7 @@ class CloudRefApp {
     }
 
     void reset_config() {
-        config_ = clouds_config_from_run_config(run_config_);
+        config_ = clouds_config_from_options(project_config_.options);
         if (std::find(kCloudRefCameraModes.begin(), kCloudRefCameraModes.end(),
                       config_.camera_mode) == kCloudRefCameraModes.end()) {
             config_.camera_mode = CloudsCameraMode::Surface;
@@ -1138,7 +1138,7 @@ class CloudRefApp {
                       "vkEndCommandBuffer cloud_ref headless");
     }
 
-    RunConfig run_config_;
+    CloudRefProjectConfig project_config_;
     CloudsConfig config_{};
     float yaw_ = 0.0F;
     float pitch_ = 0.0F;
@@ -1160,7 +1160,7 @@ class CloudRefApp {
 
 } // namespace
 
-int run_cloud_ref(const RunConfig& config) {
+int run_cloud_ref(const CloudRefProjectConfig& config) {
     CloudRefApp app(config);
     return app.run();
 }

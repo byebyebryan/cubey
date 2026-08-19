@@ -410,7 +410,7 @@ make_ocean_reference_pillar_mesh() {
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
-ocean_atmosphere_run_state(const RunConfig& run_config) {
+ocean_atmosphere_run_state(const OceanStartupOptions& run_config) {
     return cubey::atmosphere_environment_run_state_from_config(
         run_config.atmosphere,
         {
@@ -687,30 +687,29 @@ make_ocean_diagnostic_terrain_fields(const OceanConfig& config, float water_datu
 
 class OceanApp {
   public:
-    explicit OceanApp(RunConfig config)
-        : config_(std::move(config)), ocean_config_(ocean_config_from_run_config(config_)),
+    explicit OceanApp(OceanProjectConfig config)
+        : config_(std::move(config)), ocean_config_(ocean_config_from_options(config_)),
           spectrum_diagnostics_(ocean_spectrum_diagnostics(ocean_config_)),
-          clouds_config_(ocean_cloud_config_from_run_config(config_)),
+          clouds_config_(ocean_cloud_config_from_options(config_)),
           atmosphere_state_(ocean_atmosphere_run_state(config_)),
           atmosphere_lighting_(
               cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment)),
           render_view_(ocean_config_.render_view) {
-        diagnostics_.selected_cascade = config_.ocean.cascade;
+        diagnostics_.selected_cascade = config_.ocean.cascade.value_or(-1);
         diagnostics_.wire_overlay = config_.ocean.wire_overlay;
-        if (config_.ocean.size_reference >= 0) {
-            diagnostics_.size_reference_enabled = config_.ocean.size_reference != 0;
+        if (config_.ocean.size_reference) {
+            diagnostics_.size_reference_enabled = *config_.ocean.size_reference;
         }
-        if (cubey::run_config_float_is_set(config_.ocean.wire_opacity)) {
-            diagnostics_.wire_opacity = config_.ocean.wire_opacity;
+        if (config_.ocean.wire_opacity) {
+            diagnostics_.wire_opacity = *config_.ocean.wire_opacity;
         }
-        camera_preset_ = ocean_camera_preset_from_name(config_.ocean.camera_preset);
+        camera_preset_ = ocean_camera_preset_from_name(
+            config_.ocean.camera_preset.value_or("default"));
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, kCameraMaxDistance);
         const float orbit_degrees_per_second =
-            cubey::run_config_float_is_set(config_.ocean.camera_orbit_spin_degrees_per_second)
-                ? config_.ocean.camera_orbit_spin_degrees_per_second
-                : 0.0F;
+            config_.ocean.camera_orbit_spin_degrees_per_second.value_or(0.0F);
         orbit_controller_.set_auto_rotation_speed(
             orbit_degrees_per_second * std::numbers::pi_v<float> / 180.0F);
         apply_camera_preset(camera_preset_);
@@ -724,7 +723,7 @@ class OceanApp {
     }
 
     int run() {
-        if (config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
         return run_windowed();
@@ -799,7 +798,7 @@ class OceanApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(config_),
+                .run_config = config_.common,
                 .app_name = "ocean",
                 .ready_status = "rendering ocean project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -812,7 +811,7 @@ class OceanApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -821,7 +820,7 @@ class OceanApp {
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
             create_pipeline(context.device(), context.gpu(), target.format, target.extent,
-                            cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
+                            cubey::host::headless_capture_frame_slot_count(config_.common));
         };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
@@ -958,7 +957,7 @@ class OceanApp {
     }
 
     void maybe_print_gpu_timings(double elapsed_seconds) {
-        if (!config_.print_frame_stats) {
+        if (!config_.common.print_frame_stats) {
             return;
         }
         const std::vector<cubey::vulkan::GpuPassTiming>& timings = ocean_gpu_.latest_timings();
@@ -2458,7 +2457,7 @@ class OceanApp {
         ++windowed_frame_index_;
     }
 
-    RunConfig config_;
+    OceanProjectConfig config_;
     OceanConfig ocean_config_;
     OceanSpectrumDiagnostics spectrum_diagnostics_;
     cubey::CloudEnvironmentConfig clouds_config_{};
@@ -2509,7 +2508,7 @@ class OceanApp {
 
 } // namespace
 
-int run_ocean(const RunConfig& config) {
+int run_ocean(const OceanProjectConfig& config) {
     OceanApp app(config);
     return app.run();
 }

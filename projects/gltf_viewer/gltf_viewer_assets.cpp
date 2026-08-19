@@ -50,7 +50,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
                     .frame_slot_count = frame_slot_count,
                     .atmosphere_background_textures = atmosphere_background_textures(),
                 });
-    if (!config_.profile_output_prefix.empty()) {
+    if (!config_.common.profile_output_prefix.empty()) {
         gpu_profiler_.emplace(device, frame_slot_count, 16U);
     }
     create_terrain_backdrop_resources(device, gpu, frame_slot_count);
@@ -67,9 +67,8 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
     }
     const cubey::terrain::PreparedTerrainBackdropProduct prepared =
         cubey::terrain::prepare_raster_terrain_backdrop_product({
-            .heightfield_path = config_.terrain.heightfield_path,
-            .render_stride =
-                config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+            .heightfield_path = *config_.terrain.heightfield_path,
+            .render_stride = config_.terrain.render_stride.value_or(3U),
             .foreground_footprint_radius_m =
                 std::hypot(scene_bounds_.half_extent.x, scene_bounds_.half_extent.z),
         });
@@ -99,11 +98,11 @@ void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Devic
 }
 
 bool GltfViewerApp::terrain_backdrop_enabled() const noexcept {
-    return !config_.terrain.heightfield_path.empty();
+    return config_.terrain.heightfield_path.has_value();
 }
 
 bool GltfViewerApp::ocean_backdrop_enabled() const noexcept {
-    return config_.ocean.backdrop > 0;
+    return config_.ocean.backdrop.value_or(false);
 }
 
 void GltfViewerApp::create_imported_asset_scene(const cubey::vulkan::Device& device,
@@ -160,12 +159,12 @@ std::filesystem::path GltfViewerApp::resolved_input_path() const {
 }
 
 std::filesystem::path GltfViewerApp::resolved_environment_path() const {
-    if (!config_.pbr.environment_path.empty()) {
-        if (!std::filesystem::exists(config_.pbr.environment_path)) {
+    if (config_.pbr.environment_path) {
+        if (!std::filesystem::exists(*config_.pbr.environment_path)) {
             throw std::runtime_error("environment HDR does not exist: " +
-                                     config_.pbr.environment_path.string());
+                                     config_.pbr.environment_path->string());
         }
-        return config_.pbr.environment_path;
+        return *config_.pbr.environment_path;
     }
 
     const std::filesystem::path sample = bundled_sample_environment_path();
@@ -235,7 +234,7 @@ GltfViewerApp::atmosphere_background_textures() const {
 }
 
 bool GltfViewerApp::use_atmosphere_environment_source() const {
-    return config_.pbr.environment_source.empty() || config_.pbr.environment_source == "atmosphere";
+    return !config_.pbr.environment_source || *config_.pbr.environment_source == "atmosphere";
 }
 
 cubey::render::PbrEnvironmentTextureBindings GltfViewerApp::pbr_environment_bindings() const {

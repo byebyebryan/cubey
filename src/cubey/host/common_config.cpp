@@ -1,7 +1,5 @@
 #include <cubey/host/common_config.h>
 
-#include <cubey/core/run_config.h>
-
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -63,27 +61,6 @@ void set_bool_json(bool& target, const nlohmann::json& value, std::string_view p
 
 } // namespace
 
-CommonRunConfig common_run_config_from_legacy(const RunConfig& legacy) {
-    CommonRunConfig config;
-    config.title = legacy.title;
-    config.width = legacy.width;
-    config.height = legacy.height;
-    config.frames = legacy.frames;
-    config.fps = legacy.fps;
-    config.output_path = legacy.output_path;
-    config.debug_view = legacy.debug_view;
-    config.profile_output_prefix = legacy.profile_output_prefix;
-    config.profile_warmup_frames = legacy.profile_warmup_frames;
-    config.profile_diagnostic_interval = legacy.profile_diagnostic_interval;
-    config.capture_mode = legacy.capture_mode;
-    config.headless = legacy.headless;
-    config.print_frame_stats = legacy.print_frame_stats;
-    config.profile_diagnostics = legacy.profile_diagnostics;
-    config.validation = legacy.validation;
-    config.require_validation = legacy.require_validation;
-    return config;
-}
-
 void normalize_common_run_config(CommonRunConfig& config, bool output_path_explicit) {
     if (config.width == 0U || config.height == 0U) {
         throw std::runtime_error("width and height must be positive");
@@ -135,9 +112,6 @@ config::Schema common_run_config_schema(CommonRunConfig& config) {
         .bind(option("output", "--output", "Output", "Capture",
                      "Output path for headless PNG or video capture.", ValueType::Path),
               config.output_path)
-        .bind(option("debug_view", "--debug-view", "Debug View", "Debug",
-                     "Project-specific debug view name.", ValueType::String),
-              config.debug_view)
         .bind(option("headless", "--headless", "Headless", "Host", "Run without opening a window.",
                      ValueType::Bool),
               config.headless)

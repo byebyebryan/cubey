@@ -619,71 +619,95 @@ ocean_unpack_push_constants(const render::OceanSurfaceConfig& config, std::uint3
 
 } // namespace
 
-render::OceanSurfaceConfig ocean_surface_config_from_run_config(const RunConfig& config) {
+render::OceanSurfaceConfig
+ocean_surface_config_from_options(const OceanSurfaceOptions& options) {
     render::OceanSurfaceConfig ocean;
-    if (!config.ocean.sea_state.empty()) {
-        render::apply_ocean_sea_state(ocean,
-                                      render::ocean_sea_state_from_name(config.ocean.sea_state));
+    if (options.sea_state) {
+        render::apply_ocean_sea_state(ocean, render::ocean_sea_state_from_name(*options.sea_state));
     }
-    if (config.ocean.map_size != 0U) {
-        ocean.map_size = config.ocean.map_size;
+    if (options.map_size) {
+        ocean.map_size = *options.map_size;
     }
-    if (config.ocean.mesh_cells != 0U) {
-        ocean.mesh_cells = config.ocean.mesh_cells;
+    if (options.mesh_cells) {
+        ocean.mesh_cells = *options.mesh_cells;
     }
-    if (config.ocean.mesh_lod_levels != 0U) {
-        ocean.mesh_lod_levels = config.ocean.mesh_lod_levels;
+    if (options.mesh_lod_levels) {
+        ocean.mesh_lod_levels = *options.mesh_lod_levels;
     }
-    if (run_config_float_is_set(config.ocean.horizon_target_near_cell_m)) {
-        ocean.horizon_target_near_cell_m = config.ocean.horizon_target_near_cell_m;
+    if (options.horizon_target_near_cell_m) {
+        ocean.horizon_target_near_cell_m = *options.horizon_target_near_cell_m;
     }
-    ocean.surface_shading_policy =
-        render::ocean_surface_shading_policy_from_name(config.ocean.surface_shading_policy);
-    if (run_config_float_is_set(config.ocean.self_shadow_strength)) {
-        ocean.self_shadow_strength = config.ocean.self_shadow_strength;
+    if (options.surface_shading_policy) {
+        ocean.surface_shading_policy =
+            render::ocean_surface_shading_policy_from_name(*options.surface_shading_policy);
     }
-    if (config.ocean.self_shadow_steps != 0U) {
-        ocean.self_shadow_steps = config.ocean.self_shadow_steps;
+    if (options.self_shadow_strength) {
+        ocean.self_shadow_strength = *options.self_shadow_strength;
     }
-    if (config.ocean.self_shadow_far_steps != 0U) {
-        ocean.self_shadow_far_steps = config.ocean.self_shadow_far_steps;
+    if (options.self_shadow_steps) {
+        ocean.self_shadow_steps = *options.self_shadow_steps;
     }
-    if (run_config_float_is_set(config.ocean.shape_anti_repeat_strength)) {
-        ocean.shape_anti_repeat_strength = config.ocean.shape_anti_repeat_strength;
+    if (options.self_shadow_far_steps) {
+        ocean.self_shadow_far_steps = *options.self_shadow_far_steps;
     }
-    if (run_config_float_is_set(config.ocean.detail_anti_repeat_strength)) {
-        ocean.detail_anti_repeat_strength = config.ocean.detail_anti_repeat_strength;
+    if (options.shape_anti_repeat_strength) {
+        ocean.shape_anti_repeat_strength = *options.shape_anti_repeat_strength;
     }
-    ocean.detail_filter = render::ocean_detail_filter_from_name(config.ocean.detail_filter);
-    if (config.ocean.spectral_domains >= 0) {
-        ocean.spectral_domains_enabled = config.ocean.spectral_domains != 0;
+    if (options.detail_anti_repeat_strength) {
+        ocean.detail_anti_repeat_strength = *options.detail_anti_repeat_strength;
     }
-    if (config.ocean.terrain_fields >= 0) {
-        ocean.terrain_fields_enabled = config.ocean.terrain_fields != 0;
+    if (options.detail_filter) {
+        ocean.detail_filter = render::ocean_detail_filter_from_name(*options.detail_filter);
     }
-    ocean.field_precision = render::ocean_field_precision_from_name(config.ocean.field_precision);
-    ocean.surface_mode = render::ocean_surface_mode_from_name(config.ocean.surface_mode);
-    if (run_config_float_is_set(config.ocean.planet_radius_scale)) {
-        ocean.planet_radius_scale = config.ocean.planet_radius_scale;
+    if (options.spectral_domains) {
+        ocean.spectral_domains_enabled = *options.spectral_domains;
     }
-    if (run_config_float_is_set(config.ocean.curvature_start_ratio)) {
-        ocean.curvature_start_ratio = config.ocean.curvature_start_ratio;
+    if (options.terrain_fields) {
+        ocean.terrain_fields_enabled = *options.terrain_fields;
     }
-    if (run_config_float_is_set(config.ocean.curvature_end_ratio)) {
-        ocean.curvature_end_ratio = config.ocean.curvature_end_ratio;
+    if (options.field_precision) {
+        ocean.field_precision = render::ocean_field_precision_from_name(*options.field_precision);
     }
-    if (run_config_float_is_set(config.ocean.curvature_strength)) {
-        ocean.curvature_strength = config.ocean.curvature_strength;
+    if (options.surface_mode) {
+        ocean.surface_mode = render::ocean_surface_mode_from_name(*options.surface_mode);
     }
-    if (run_config_float_is_set(config.ocean.cloud_reflection_strength)) {
-        ocean.cloud_reflection_strength = config.ocean.cloud_reflection_strength;
+    if (options.planet_radius_scale) {
+        ocean.planet_radius_scale = *options.planet_radius_scale;
     }
-    if (run_config_float_is_set(config.ocean.cloud_shadow_strength)) {
-        ocean.cloud_shadow_strength = config.ocean.cloud_shadow_strength;
+    if (options.curvature_start_ratio) {
+        ocean.curvature_start_ratio = *options.curvature_start_ratio;
     }
-    ocean.cloud_reflection_source = render::OceanCloudReflectionSource::CachedEnvironment;
-    ocean.render_view = render::OceanRenderView::Final;
-    ocean.exposure = config.pbr.exposure;
+    if (options.curvature_end_ratio) {
+        ocean.curvature_end_ratio = *options.curvature_end_ratio;
+    }
+    if (options.curvature_strength) {
+        ocean.curvature_strength = *options.curvature_strength;
+    }
+    if (options.cloud_reflection_strength) {
+        ocean.cloud_reflection_strength = *options.cloud_reflection_strength;
+    }
+    if (options.cloud_reflection_source) {
+        ocean.cloud_reflection_source =
+            render::ocean_cloud_reflection_source_from_name(*options.cloud_reflection_source);
+    }
+    if (options.cloud_environment_extent) {
+        ocean.cloud_environment_extent = *options.cloud_environment_extent;
+    }
+    if (options.cloud_environment_update_hz) {
+        ocean.cloud_environment_update_hz = *options.cloud_environment_update_hz;
+    }
+    if (options.cloud_planar_resolution_scale) {
+        ocean.cloud_planar_resolution_scale = *options.cloud_planar_resolution_scale;
+    }
+    if (options.cloud_planar_view_steps) {
+        ocean.cloud_planar_view_steps = *options.cloud_planar_view_steps;
+    }
+    if (options.cloud_planar_guard_band) {
+        ocean.cloud_planar_guard_band = *options.cloud_planar_guard_band;
+    }
+    if (options.cloud_shadow_strength) {
+        ocean.cloud_shadow_strength = *options.cloud_shadow_strength;
+    }
     render::validate_ocean_config(ocean);
     return ocean;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
 #include <cubey/engine/backdrop_reflection.h>
+#include <cubey/engine/cloud_environment_config.h>
 #include <cubey/render/ocean_surface_config.h>
 
 #include <cubey/core/math.h>
@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 #include <filesystem>
 #include <optional>
 #include <span>
@@ -31,6 +32,43 @@ class CommandRecorder;
 
 namespace cubey {
 
+// Typed startup inputs consumed by the shared ocean surface subsystem. Project
+// facades may add camera, diagnostic, and backdrop controls around this narrow
+// runtime fragment without importing another project's configuration type.
+struct OceanSurfaceOptions {
+    std::optional<std::string> sea_state{};
+    std::optional<std::uint32_t> map_size{};
+    std::optional<std::string> field_precision{};
+    std::optional<std::string> surface_mode{};
+    std::optional<std::uint32_t> mesh_cells{};
+    std::optional<std::uint32_t> mesh_lod_levels{};
+    std::optional<float> horizon_target_near_cell_m{};
+    std::optional<std::string> surface_shading_policy{};
+    std::optional<float> self_shadow_strength{};
+    std::optional<std::uint32_t> self_shadow_steps{};
+    std::optional<std::uint32_t> self_shadow_far_steps{};
+    std::optional<float> shape_anti_repeat_strength{};
+    std::optional<float> detail_anti_repeat_strength{};
+    std::optional<std::string> detail_filter{};
+    std::optional<bool> spectral_domains{};
+    std::optional<bool> terrain_fields{};
+    std::optional<float> planet_radius_scale{};
+    std::optional<float> curvature_start_ratio{};
+    std::optional<float> curvature_end_ratio{};
+    std::optional<float> curvature_strength{};
+    std::optional<std::string> cloud_reflection_source{};
+    std::optional<std::uint32_t> cloud_environment_extent{};
+    std::optional<float> cloud_environment_update_hz{};
+    std::optional<float> cloud_planar_resolution_scale{};
+    std::optional<std::uint32_t> cloud_planar_view_steps{};
+    std::optional<float> cloud_planar_guard_band{};
+    std::optional<float> cloud_reflection_strength{};
+    std::optional<float> cloud_shadow_strength{};
+};
+
+[[nodiscard]] render::OceanSurfaceConfig
+ocean_surface_config_from_options(const OceanSurfaceOptions& options);
+
 struct OceanSurfaceRuntimeCreateInfo {
     cubey::render::OceanSurfaceConfig ocean{};
     std::filesystem::path shader_dir{};
@@ -39,9 +77,6 @@ struct OceanSurfaceRuntimeCreateInfo {
     VkExtent2D target_extent{};
     std::uint32_t frame_slot_count = 1U;
 };
-
-[[nodiscard]] cubey::render::OceanSurfaceConfig
-ocean_surface_config_from_run_config(const RunConfig& config);
 
 struct OceanSurfaceRuntimeFrameInfo {
     cubey::math::Mat4 view_projection{1.0F};

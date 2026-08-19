@@ -32,7 +32,7 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
         .reference_geometry_enabled = false,
     };
 
-    cubey::RunConfig::AtmosphereOptions default_options;
+    cubey::AtmosphereEnvironmentOptions default_options;
     cubey::AtmosphereEnvironmentRunState default_state =
         cubey::atmosphere_environment_run_state_from_config(default_options, defaults);
     require(default_state.solar_time_enabled,
@@ -47,7 +47,7 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
     require(default_state.auto_exposure_enabled,
             "default atmosphere run state should enable auto exposure");
 
-    cubey::RunConfig::AtmosphereOptions manual;
+    cubey::AtmosphereEnvironmentOptions manual;
     manual.sun_elevation_degrees = 4.0F;
     manual.time_hours = 16.0F;
     cubey::AtmosphereEnvironmentRunState manual_state =
@@ -66,7 +66,7 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
     require(manual_state.auto_exposure_enabled,
             "manual sun options should still default to auto exposure");
 
-    cubey::RunConfig::AtmosphereOptions sky_only_no_ground;
+    cubey::AtmosphereEnvironmentOptions sky_only_no_ground;
     sky_only_no_ground.ground_mode = "sky-only-no-ground-occlusion";
     cubey::AtmosphereEnvironmentRunState sky_only_no_ground_state =
         cubey::atmosphere_environment_run_state_from_config(sky_only_no_ground, defaults);
@@ -74,7 +74,7 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
                 cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             "shared atmosphere run config should override caller ground mode defaults");
 
-    cubey::RunConfig::AtmosphereOptions solar;
+    cubey::AtmosphereEnvironmentOptions solar;
     solar.time_of_day_mode = "solar";
     solar.time_hours = 12.0F;
     solar.day_of_year = 80.0F;
@@ -91,7 +91,7 @@ void test_atmosphere_environment_run_config_resolves_manual_and_solar_modes() {
 }
 
 void test_atmosphere_environment_run_config_advances_dynamic_time() {
-    cubey::RunConfig::AtmosphereOptions atmosphere;
+    cubey::AtmosphereEnvironmentOptions atmosphere;
     atmosphere.time_of_day_mode = "solar";
     atmosphere.time_hours = 23.5F;
     atmosphere.day_of_year = 365.0F;
@@ -118,7 +118,7 @@ void test_atmosphere_environment_run_config_advances_dynamic_time() {
 }
 
 void test_atmosphere_environment_run_state_resolves_control_mutations() {
-    cubey::RunConfig::AtmosphereOptions atmosphere;
+    cubey::AtmosphereEnvironmentOptions atmosphere;
     atmosphere.time_of_day_mode = "manual";
     atmosphere.sun_elevation_degrees = 10.0F;
     atmosphere.sun_azimuth_degrees = 15.0F;
@@ -161,7 +161,7 @@ void test_atmosphere_environment_look_options_apply_without_time_or_sun() {
     environment.sun_azimuth_degrees = -15.0F;
     environment.time_of_day.time_hours = 8.0F;
 
-    cubey::RunConfig::AtmosphereOptions atmosphere;
+    cubey::AtmosphereEnvironmentOptions atmosphere;
     atmosphere.camera_altitude_km = 12.0F;
     atmosphere.sun_elevation_degrees = 4.0F;
     atmosphere.time_hours = 16.0F;

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "spinning_cube_config.h"
 
 namespace cubey::examples::spinning_cube {
 
-int run_spinning_cube(const RunConfig& config);
+int run_spinning_cube(const SpinningCubeConfig& config);
 
 } // namespace cubey::examples::spinning_cube

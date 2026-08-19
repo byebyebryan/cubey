@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "instanced_cubes_config.h"
 
 namespace cubey::examples::instanced_cubes {
 
-int run_instanced_cubes(const RunConfig& config);
+int run_instanced_cubes(const InstancedCubesConfig& config);
 
 } // namespace cubey::examples::instanced_cubes

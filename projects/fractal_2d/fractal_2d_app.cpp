@@ -45,7 +45,7 @@ std::filesystem::path shader_path(const char* filename) {
 
 class FractalApp {
   public:
-    explicit FractalApp(RunConfig config) : config_(std::move(config)) {}
+    explicit FractalApp(Fractal2dConfig config) : config_(std::move(config)) {}
 
     FractalApp(const FractalApp&) = delete;
     FractalApp& operator=(const FractalApp&) = delete;
@@ -55,7 +55,7 @@ class FractalApp {
     }
 
     int run() {
-        if (config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
 
@@ -85,7 +85,7 @@ class FractalApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(config_),
+                .run_config = config_.common,
                 .app_name = "fractal_2d",
                 .ready_status = "rendering fullscreen fractal",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -99,7 +99,7 @@ class FractalApp {
   private:
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -196,7 +196,7 @@ class FractalApp {
         return pipeline_resource_.value();
     }
 
-    RunConfig config_;
+    Fractal2dConfig config_;
     FractalView view_;
     cubey::input::PanZoom2DController view_controller_{cubey::Camera2D({
         .center = {-0.5F, 0.0F},
@@ -208,7 +208,7 @@ class FractalApp {
 
 } // namespace
 
-int run_fractal_2d(const RunConfig& config) {
+int run_fractal_2d(const Fractal2dConfig& config) {
     FractalApp app(config);
     return app.run();
 }

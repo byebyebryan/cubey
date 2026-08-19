@@ -20,8 +20,8 @@
 
 namespace cubey::config {
 
-// This is deliberately independent from RunConfig and from any project option
-// identifiers. Projects describe their own fields by composing schemas.
+// This is deliberately independent from any project option identifiers.
+// Projects describe their own fields by composing schemas.
 enum class ValueType {
     Bool,
     Int,

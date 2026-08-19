@@ -12,7 +12,7 @@ using cubey::host::FrameStatsSample;
 
 } // namespace
 
-InstancedCubesApp::InstancedCubesApp(RunConfig config) : config_(std::move(config)) {
+InstancedCubesApp::InstancedCubesApp(InstancedCubesConfig config) : config_(std::move(config)) {
     orbit_controller_.set_home_distance(kCameraDistance);
 }
 
@@ -53,7 +53,7 @@ int InstancedCubesApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "instanced_cubes",
             .ready_status = "rendering instanced cube grid",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -64,7 +64,7 @@ int InstancedCubesApp::run() {
         std::move(callbacks));
 }
 
-int run_instanced_cubes(const RunConfig& config) {
+int run_instanced_cubes(const InstancedCubesConfig& config) {
     InstancedCubesApp app(config);
     return app.run();
 }

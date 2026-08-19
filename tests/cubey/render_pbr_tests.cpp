@@ -898,7 +898,7 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
     require_not_contains(gltf_header, "AtmosphereDiffuseSource",
                          "glTF viewer should not expose multiple atmosphere diffuse paths");
     require_contains(gltf_app, "gltf_viewer_atmosphere_run_state",
-                     "glTF viewer should resolve atmosphere options from RunConfig");
+                     "glTF viewer should resolve project-owned atmosphere options");
     require_contains(gltf_app, "atmosphere_runtime_.set_environment",
                      "glTF viewer should feed atmosphere config into the shared runtime");
     require_contains(gltf_app, "callbacks.draw_ui",

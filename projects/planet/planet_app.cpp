@@ -178,7 +178,7 @@ class PlanetApp {
             surface_config_.seed = config_.planet.terrain_seed.value();
         }
         phase_degrees_ = phase_degrees_for_orbital_view(config_.planet.orbital_view);
-        debug_view_ = static_cast<int>(resolve_planet_debug_view(config_.common.debug_view));
+        debug_view_ = static_cast<int>(resolve_planet_debug_view(config_.debug_view));
         headless_base_phase_degrees_ = phase_degrees_;
         const float initial_distance = config_.planet.disk_coverage.has_value()
                                            ? distance_for_disk_coverage(

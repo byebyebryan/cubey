@@ -19,7 +19,7 @@ namespace cubey::examples::headless_cube {
 
 class HeadlessCubeApp {
   public:
-    explicit HeadlessCubeApp(RunConfig config);
+    explicit HeadlessCubeApp(HeadlessCubeConfig config);
 
     HeadlessCubeApp(const HeadlessCubeApp&) = delete;
     HeadlessCubeApp& operator=(const HeadlessCubeApp&) = delete;
@@ -40,7 +40,7 @@ class HeadlessCubeApp {
     [[nodiscard]] const cubey::render::Mesh& cube_mesh() const;
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const;
 
-    RunConfig config_;
+    HeadlessCubeConfig config_;
     std::optional<cubey::render::Mesh> cube_mesh_;
     std::optional<cubey::render::ForwardScenePass3D> forward_pass_;
 };

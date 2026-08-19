@@ -4,11 +4,11 @@
 
 namespace cubey::examples::headless_cube {
 
-HeadlessCubeApp::HeadlessCubeApp(RunConfig config) : config_(std::move(config)) {}
+HeadlessCubeApp::HeadlessCubeApp(HeadlessCubeConfig config) : config_(std::move(config)) {}
 
 int HeadlessCubeApp::run() {
     cubey::host::HeadlessPngHostConfig host_config;
-    host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+    host_config.run_config = config_.common;
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -27,7 +27,7 @@ int HeadlessCubeApp::run() {
     return host.run();
 }
 
-int run_headless_cube(const RunConfig& config) {
+int run_headless_cube(const HeadlessCubeConfig& config) {
     HeadlessCubeApp app(config);
     return app.run();
 }

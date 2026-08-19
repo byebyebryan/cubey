@@ -1,15 +1,18 @@
 #pragma once
 
+#include "../common/fluid_config_schema.h"
 #include "../common/water_common.h"
 
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
+#include <cubey/host/common_config.h>
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 
 namespace cubey::projects::fluid::water_2d {
@@ -142,6 +145,14 @@ struct Water2DConfig {
     Water2DHoseConfig hose{};
     Water2DDrainConfig drain{};
     Water2DWaveConfig wave{};
+};
+
+struct Water2DStartupOptions {
+    std::optional<std::string> transfer_mode{};
+    std::optional<std::uint32_t> transfer_limit{};
+    std::optional<bool> hose{};
+    std::optional<bool> drain{};
+    std::optional<bool> wave{};
 };
 
 struct Water2DSimulationUniforms {
@@ -533,33 +544,36 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
                        "water diagnostics buffer is too large");
 }
 
-[[nodiscard]] inline Water2DConfig water_2d_config_from_run_config(const RunConfig& config) {
+[[nodiscard]] inline Water2DConfig
+water_2d_config_from_options(const common::FluidGridOptions& grid,
+                             const Water2DStartupOptions& options,
+                             const host::CommonRunConfig& common_config) {
     Water2DConfig water_config;
-    if (config.profile_diagnostics && !config.headless) {
+    if (common_config.profile_diagnostics && !common_config.headless) {
         throw std::runtime_error("water 2D profile diagnostics require --headless");
     }
-    water_config.profile_diagnostics = config.profile_diagnostics;
-    water_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
-    if (config.grid.width != 0) {
-        water_config.grid_width = config.grid.width;
+    water_config.profile_diagnostics = common_config.profile_diagnostics;
+    water_config.profile_diagnostic_interval = common_config.profile_diagnostic_interval;
+    if (grid.width) {
+        water_config.grid_width = *grid.width;
     }
-    if (config.grid.height != 0) {
-        water_config.grid_height = config.grid.height;
+    if (grid.height) {
+        water_config.grid_height = *grid.height;
     }
-    if (!config.water2d.transfer_mode.empty()) {
-        water_config.transfer_mode = water_2d_transfer_mode_from_name(config.water2d.transfer_mode);
+    if (options.transfer_mode) {
+        water_config.transfer_mode = water_2d_transfer_mode_from_name(*options.transfer_mode);
     }
-    if (config.water2d.transfer_limit != 0) {
-        water_config.max_particles_per_cell = config.water2d.transfer_limit;
+    if (options.transfer_limit) {
+        water_config.max_particles_per_cell = *options.transfer_limit;
     }
-    if (config.water2d.hose >= 0) {
-        water_config.hose.enabled = config.water2d.hose != 0;
+    if (options.hose) {
+        water_config.hose.enabled = *options.hose;
     }
-    if (config.water2d.drain >= 0) {
-        water_config.drain.enabled = config.water2d.drain != 0;
+    if (options.drain) {
+        water_config.drain.enabled = *options.drain;
     }
-    if (config.water2d.wave >= 0) {
-        water_config.wave.enabled = config.water2d.wave != 0;
+    if (options.wave) {
+        water_config.wave.enabled = *options.wave;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));
@@ -570,7 +584,8 @@ inline void apply_water_2d_scenario_defaults(Water2DConfig& config) {
     return water_config;
 }
 
-[[nodiscard]] inline std::uint32_t water_2d_headless_frame_count(const RunConfig& config) {
+[[nodiscard]] inline std::uint32_t
+water_2d_headless_frame_count(const host::CommonRunConfig& config) {
     if (config.frames == 0) {
         return 120;
     }

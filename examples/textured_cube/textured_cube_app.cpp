@@ -12,7 +12,7 @@ using cubey::host::FrameStatsSample;
 
 } // namespace
 
-TexturedCubeApp::TexturedCubeApp(RunConfig config) : config_(std::move(config)) {
+TexturedCubeApp::TexturedCubeApp(TexturedCubeConfig config) : config_(std::move(config)) {
     orbit_controller_.set_home_distance(kCameraDistance);
 }
 
@@ -57,7 +57,7 @@ int TexturedCubeApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "textured_cube",
             .ready_status = "rendering interactive compute shaded textured cube",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -68,7 +68,7 @@ int TexturedCubeApp::run() {
         std::move(callbacks));
 }
 
-int run_textured_cube(const RunConfig& config) {
+int run_textured_cube(const TexturedCubeConfig& config) {
     TexturedCubeApp app(config);
     return app.run();
 }

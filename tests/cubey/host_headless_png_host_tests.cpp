@@ -1,12 +1,9 @@
-#include <cubey/core/run_config.h>
 #include <cubey/host/headless_png_host.h>
 
 #include <stdexcept>
 #include <type_traits>
 
 namespace {
-
-static_assert(!std::is_convertible_v<cubey::RunConfig, cubey::host::CommonRunConfig>);
 
 void require(bool condition, const char* message) {
     if (!condition) {
@@ -73,12 +70,11 @@ void test_headless_png_host_validates_capture_shape() {
 }
 
 void test_headless_capture_frame_helpers_select_png_or_video_timing() {
-    cubey::RunConfig config;
+    cubey::host::CommonRunConfig config;
     config.capture_mode = cubey::CaptureMode::Png;
     config.frames = 99;
     config.fps = 24;
-    const cubey::host::CommonRunConfig common_config =
-        cubey::host::common_run_config_from_legacy(config);
+    const cubey::host::CommonRunConfig common_config = config;
     require(cubey::host::headless_capture_frame_count(common_config) == 1,
             "PNG capture should always render one output frame");
 
@@ -94,16 +90,14 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
     config.capture_mode = cubey::CaptureMode::Video;
     config.frames = 0;
     config.fps = 30;
-    const cubey::host::CommonRunConfig common_video_config =
-        cubey::host::common_run_config_from_legacy(config);
+    const cubey::host::CommonRunConfig common_video_config = config;
     require(cubey::host::headless_capture_frame_count(common_video_config) == 300,
             "video capture should resolve zero frames to the default duration");
     require(cubey::host::headless_capture_frame_slot_count(common_video_config) == 3,
             "video capture should use a small in-flight slot ring");
 
     config.frames = 12;
-    const cubey::host::CommonRunConfig common_video_frames_config =
-        cubey::host::common_run_config_from_legacy(config);
+    const cubey::host::CommonRunConfig common_video_frames_config = config;
     const cubey::host::HeadlessCaptureFrame video_frame =
         cubey::host::headless_capture_frame(common_video_frames_config, 3);
     require(video_frame.index == 3, "video capture frame should preserve frame index");

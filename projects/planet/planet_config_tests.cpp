@@ -77,9 +77,9 @@ void rejects_unrelated_paths_and_flags() {
 
 void parses_debug_view_and_resolves_runtime_selection() {
     const PlanetConfig cli_config = parse({"--debug-view", "land"});
-    require(cli_config.common.debug_view == "land",
-            "planet should preserve the common debug-view CLI value");
-    require(resolve_planet_debug_view(cli_config.common.debug_view) == PlanetDebugView::Land,
+    require(cli_config.debug_view == "land",
+            "planet should preserve its project-owned debug-view CLI value");
+    require(resolve_planet_debug_view(cli_config.debug_view) == PlanetDebugView::Land,
             "planet should resolve the land debug view");
 
     const std::filesystem::path path =
@@ -89,7 +89,7 @@ void parses_debug_view_and_resolves_runtime_selection() {
         output << R"({"debug_view":"roughness"})";
     }
     const PlanetConfig json_config = parse({"--config", path.string()});
-    require(resolve_planet_debug_view(json_config.common.debug_view) == PlanetDebugView::Roughness,
+    require(resolve_planet_debug_view(json_config.debug_view) == PlanetDebugView::Roughness,
             "planet should resolve the JSON debug view");
     std::filesystem::remove(path);
 }
@@ -104,6 +104,8 @@ void template_contains_only_common_profile_and_live_planet_scope() {
     const nlohmann::json document = schema.template_json();
     require(document.contains("width") && document.contains("profile"),
             "planet template should include common and profile options");
+    require(document.contains("debug_view"),
+            "planet template should keep the project-owned debug-view path");
     require(document.at("planet").size() == 5U,
             "planet template should expose exactly five live project options");
     require(document.at("planet").contains("camera_mode"),

@@ -1,31 +1,171 @@
 #include "terrain_config.h"
 
+#include <cubey/engine/atmosphere_environment_schema.h>
+#include <cubey/engine/cloud_environment_schema.h>
+#include <cubey/host/configured_app.h>
+
+#include <nlohmann/json.hpp>
+
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace cubey::projects::terrain {
 namespace {
 
-[[nodiscard]] bool has_retired_product_options(const RunConfig::TerrainOptions& terrain) {
-    return !terrain.preset.empty() || !terrain.source_version.empty() ||
-           !terrain.render_path.empty() || !terrain.backdrop_mesh_density.empty() ||
-           cubey::run_config_float_is_set(terrain.target_edge_px) || !terrain.weathering.empty() ||
-           cubey::run_config_float_is_set(terrain.weathering_strength) ||
-           cubey::run_config_float_is_set(terrain.cell_size) ||
-           cubey::run_config_float_is_set(terrain.sea_level) ||
-           cubey::run_config_float_is_set(terrain.land_extent) ||
-           cubey::run_config_float_is_set(terrain.coast_noise) ||
-           cubey::run_config_float_is_set(terrain.relief) ||
-           cubey::run_config_float_is_set(terrain.ridges) ||
-           cubey::run_config_float_is_set(terrain.valleys) ||
-           cubey::run_config_float_is_set(terrain.vertical_scale) || !terrain.recipe.empty() ||
-           !terrain.study_field_path.empty() || !terrain.backdrop_profile.empty() ||
-           !terrain.backdrop_center.empty() || !terrain.backdrop_mode.empty() ||
-           cubey::run_config_float_is_set(terrain.backdrop_minimum_visible_distance_m) ||
-           !terrain.presentation.empty() || !terrain.preview_color.empty() ||
-           !terrain.preview_surface.empty() || terrain.water_surface >= 0;
+using cubey::config::OptionSpec;
+using cubey::config::ValueType;
+
+inline constexpr float kTerrainDefaultTimeHours = 9.0F;
+
+[[nodiscard]] OptionSpec option(std::string path, std::string cli_name, std::string label,
+                                std::string group_path, std::string help, ValueType type,
+                                cubey::config::Range range = {},
+                                std::vector<std::string> enum_values = {}) {
+    return {
+        .path = std::move(path),
+        .cli_name = std::move(cli_name),
+        .negative_cli_name = {},
+        .label = std::move(label),
+        .group_path = std::move(group_path),
+        .help = std::move(help),
+        .type = type,
+        .range = range,
+        .enum_values = std::move(enum_values),
+    };
+}
+
+[[nodiscard]] TerrainCameraPreset terrain_camera_preset_from_name(std::string_view name) {
+    if (name == "backdrop") {
+        return TerrainCameraPreset::Backdrop;
+    }
+    if (name == "backdrop-stage") {
+        return TerrainCameraPreset::BackdropStage;
+    }
+    throw std::runtime_error("terrain product camera must be backdrop or backdrop-stage");
+}
+
+[[nodiscard]] std::string_view terrain_camera_preset_name(TerrainCameraPreset preset) noexcept {
+    return preset == TerrainCameraPreset::Backdrop ? "backdrop" : "backdrop-stage";
+}
+
+void set_json_string(std::optional<TerrainDebugView>& target, const nlohmann::json& value,
+                     std::string_view path) {
+    if (value.is_null()) {
+        target.reset();
+        return;
+    }
+    if (!value.is_string()) {
+        throw std::runtime_error("wrong JSON type for config option: " + std::string(path));
+    }
+    const std::string text = value.get<std::string>();
+    if (text.empty()) {
+        target.reset();
+    } else {
+        target = terrain_debug_view_from_name(text);
+    }
+}
+
+void bind_debug_view(cubey::config::Schema::Builder& builder, TerrainProjectConfig& config) {
+    const OptionSpec spec = option("debug_view", "--debug-view", "Debug View", "Terrain/Debug",
+                                   "Terrain backdrop diagnostic view; aliases remain accepted.",
+                                   ValueType::String);
+    builder.bind_custom(
+        spec,
+        [&config](std::string_view value) {
+            if (value.empty()) {
+                config.debug_view.reset();
+            } else {
+                config.debug_view = terrain_debug_view_from_name(value);
+            }
+        },
+        [&config](const nlohmann::json& value) {
+            set_json_string(config.debug_view, value, "debug_view");
+        },
+        [&config] {
+            return config.debug_view.has_value()
+                       ? nlohmann::json(std::string(terrain_debug_view_name(
+                             config.debug_view.value())))
+                       : nlohmann::json(nullptr);
+        });
+}
+
+void bind_camera_preset(cubey::config::Schema::Builder& builder,
+                        TerrainProjectConfig& config) {
+    // Keep the historical enum spellings in metadata so those inputs receive
+    // the same active-product rejection, while only backdrop and
+    // backdrop-stage can be stored by the typed facade.
+    const OptionSpec spec = option(
+        "terrain.camera_preset", "--terrain-camera-preset", "Camera Preset", "Terrain",
+        "Initial terrain review framing; the active product supports backdrop or backdrop-stage.",
+        ValueType::Enum, {}, {"oblique", "profile", "top", "surface", "surface-low", "ground",
+                              "backdrop", "backdrop-stage", "midground", "coastal-oblique"});
+    builder.bind_custom(
+        spec,
+        [&config](std::string_view value) {
+            if (value.empty()) {
+                config.terrain.camera_preset.reset();
+            } else {
+                config.terrain.camera_preset = terrain_camera_preset_from_name(value);
+            }
+        },
+        [&config](const nlohmann::json& value) {
+            if (value.is_null()) {
+                config.terrain.camera_preset.reset();
+            } else if (!value.is_string()) {
+                throw std::runtime_error(
+                    "wrong JSON type for config option: terrain.camera_preset");
+            } else if (value.get<std::string>().empty()) {
+                config.terrain.camera_preset.reset();
+            } else {
+                config.terrain.camera_preset =
+                    terrain_camera_preset_from_name(value.get<std::string>());
+            }
+        },
+        [&config] {
+            return config.terrain.camera_preset.has_value()
+                       ? nlohmann::json(std::string(terrain_camera_preset_name(
+                             config.terrain.camera_preset.value())))
+                       : nlohmann::json(nullptr);
+        });
+}
+
+void bind_surface_detail(cubey::config::Schema::Builder& builder,
+                         TerrainProjectConfig& config) {
+    const OptionSpec spec = option(
+        "terrain.surface_detail", "--terrain-surface-detail", "Surface Detail", "Terrain",
+        "Terrain material detail mode.", ValueType::Enum, {}, {"flat", "filtered-detail"});
+    builder.bind_custom(
+        spec,
+        [&config](std::string_view value) {
+            if (value.empty()) {
+                config.terrain.surface_detail.reset();
+            } else {
+                config.terrain.surface_detail = terrain_material_mode_from_name(value);
+            }
+        },
+        [&config](const nlohmann::json& value) {
+            if (value.is_null()) {
+                config.terrain.surface_detail.reset();
+            } else if (!value.is_string()) {
+                throw std::runtime_error(
+                    "wrong JSON type for config option: terrain.surface_detail");
+            } else if (value.get<std::string>().empty()) {
+                config.terrain.surface_detail.reset();
+            } else {
+                config.terrain.surface_detail =
+                    terrain_material_mode_from_name(value.get<std::string>());
+            }
+        },
+        [&config] {
+            return config.terrain.surface_detail.has_value()
+                       ? nlohmann::json(std::string(terrain_material_mode_name(
+                             config.terrain.surface_detail.value())))
+                       : nlohmann::json(nullptr);
+        });
 }
 
 } // namespace
@@ -233,61 +373,170 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     }
 }
 
-TerrainRuntimeConfig
-terrain_runtime_config_from_run_config(const RunConfig& config,
-                                       const std::filesystem::path& default_heightfield_path,
-                                       const std::filesystem::path& default_surface_fields_path) {
-    if (has_retired_product_options(config.terrain)) {
-        throw std::runtime_error(
-            "retired procedural, profile, weathering, LOD, or study options are not supported by "
-            "the terrain product");
-    }
+TerrainRuntimeConfig terrain_runtime_config_from_options(
+    const TerrainStartupOptions& options, TerrainDebugView debug_view,
+    const std::filesystem::path& default_heightfield_path,
+    const std::filesystem::path& default_surface_fields_path) {
     TerrainRuntimeConfig result;
-    result.heightfield_path = config.terrain.heightfield_path.empty()
-                                  ? default_heightfield_path
-                                  : config.terrain.heightfield_path;
-    if (!config.terrain.surface_fields_path.empty()) {
-        result.surface_fields_path = config.terrain.surface_fields_path;
-    } else if (config.terrain.heightfield_path.empty()) {
+    result.heightfield_path =
+        options.heightfield_path.has_value() && !options.heightfield_path->empty()
+            ? options.heightfield_path.value()
+            : default_heightfield_path;
+    if (options.surface_fields_path.has_value() && !options.surface_fields_path->empty()) {
+        result.surface_fields_path = options.surface_fields_path.value();
+    } else if (!options.heightfield_path.has_value() || options.heightfield_path->empty()) {
         result.surface_fields_path = default_surface_fields_path;
     }
-    result.surface_model = terrain_surface_model_from_name(config.terrain.surface_model);
-    if (config.terrain.seed_set) {
-        result.expected_seed = config.terrain.seed;
+    result.surface_model = options.surface_model.value_or(TerrainSurfaceModel::MineralControl);
+    result.expected_seed = options.seed;
+    result.placement = options.placement.value_or(TerrainPlacementMode::Selected);
+    result.placement_index = options.placement_index.value_or(0U);
+    result.initial_foreground_height_m = options.foreground_height_m.value_or(200.0F);
+    if (options.camera_preset.has_value()) {
+        result.foreground_sphere =
+            options.camera_preset.value() == TerrainCameraPreset::BackdropStage;
     }
-    result.placement = terrain_placement_mode_from_name(config.terrain.placement);
-    result.placement_index = config.terrain.placement_index;
-    if (cubey::run_config_float_is_set(config.terrain.foreground_height_m)) {
-        result.initial_foreground_height_m = config.terrain.foreground_height_m;
-    }
-    if (!config.terrain.camera_preset.empty() && config.terrain.camera_preset != "backdrop" &&
-        config.terrain.camera_preset != "backdrop-stage") {
-        throw std::runtime_error("terrain product camera must be backdrop or backdrop-stage");
-    }
-    result.foreground_sphere = config.terrain.camera_preset != "backdrop";
-    result.material = terrain_material_mode_from_name(config.terrain.surface_detail);
-    if (cubey::run_config_float_is_set(config.terrain.aerial_perspective_strength)) {
-        result.aerial_perspective_strength = config.terrain.aerial_perspective_strength;
-    }
-    result.shadows = config.terrain.shadows < 0 || config.terrain.shadows != 0;
-    result.debug_view = terrain_debug_view_from_name(config.debug_view);
+    result.material = options.surface_detail.value_or(TerrainMaterialMode::FilteredDetail);
+    result.aerial_perspective_strength =
+        options.aerial_perspective_strength.value_or(kTerrainDefaultAerialPerspectiveStrength);
+    result.shadows = options.shadows.value_or(true);
+    result.debug_view = debug_view;
     constexpr float degrees_to_radians = std::numbers::pi_v<float> / 180.0F;
-    if (cubey::run_config_float_is_set(config.terrain.backdrop_azimuth_degrees)) {
+    if (options.backdrop_azimuth_degrees.has_value()) {
         result.initial_azimuth_radians =
-            config.terrain.backdrop_azimuth_degrees * degrees_to_radians;
+            options.backdrop_azimuth_degrees.value() * degrees_to_radians;
     }
-    if (cubey::run_config_float_is_set(config.terrain.backdrop_orbit_radius_m)) {
-        result.initial_orbit_radius_m = config.terrain.backdrop_orbit_radius_m;
-    }
-    if (cubey::run_config_float_is_set(config.terrain.backdrop_elevation_degrees)) {
+    result.initial_orbit_radius_m = options.backdrop_orbit_radius_m;
+    if (options.backdrop_elevation_degrees.has_value()) {
         result.initial_elevation_radians =
-            config.terrain.backdrop_elevation_degrees * degrees_to_radians;
+            options.backdrop_elevation_degrees.value() * degrees_to_radians;
     }
-    if (config.terrain.render_stride != 0U) {
-        result.render_stride = config.terrain.render_stride;
-    }
+    result.render_stride = options.render_stride.value_or(3U);
     validate_terrain_runtime_config(result);
     return result;
+}
+
+cubey::AtmosphereEnvironmentRunState terrain_atmosphere_state_from_options(
+    const cubey::AtmosphereEnvironmentOptions& atmosphere) {
+    cubey::validate_atmosphere_environment_options(atmosphere);
+    cubey::AtmosphereEnvironmentOptions resolved = atmosphere;
+    const bool explicit_clock = resolved.time_hours.has_value() ||
+                                resolved.day_of_year.has_value() ||
+                                resolved.latitude_degrees.has_value();
+    const bool explicit_sun = resolved.sun_elevation_degrees.has_value() ||
+                              resolved.sun_azimuth_degrees.has_value();
+    if (!resolved.time_of_day_mode.has_value() && !explicit_clock && !explicit_sun) {
+        resolved.time_of_day_mode = "solar";
+        resolved.time_hours = kTerrainDefaultTimeHours;
+    }
+    return cubey::atmosphere_environment_run_state_from_config(
+        resolved,
+        {
+            .sun_elevation_degrees = 38.0F,
+            .sun_azimuth_degrees = -42.0F,
+            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
+            .reference_geometry_enabled = false,
+        });
+}
+
+cubey::CloudEnvironmentConfig terrain_cloud_config_from_options(
+    const cubey::CloudEnvironmentOptions& clouds,
+    const cubey::render::AtmosphereEnvironmentConfig& atmosphere) {
+    cubey::CloudEnvironmentConfig result{};
+    cubey::apply_cloud_environment_weather_preset(
+        result, cubey::CloudEnvironmentWeatherPreset::FairWeather);
+    cubey::apply_cloud_environment_options(result, clouds);
+    cubey::apply_cloud_environment_surface_v1_policy(result);
+    result.layer.planet_radius_m = atmosphere.bottom_radius_km * 1000.0F;
+    result.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
+    result.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
+    return result;
+}
+
+cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config) {
+    auto builder = cubey::config::Schema::builder().compose(
+        cubey::host::common_run_config_schema(config.common));
+    bind_debug_view(builder, config);
+    builder
+        .bind(option("terrain.heightfield", "--terrain-heightfield", "Heightfield", "Terrain",
+                     "Runtime raster heightfield manifest or directory.", ValueType::Path),
+              config.terrain.heightfield_path)
+        .bind(option("terrain.surface_fields", "--terrain-surface-fields", "Surface Fields",
+                     "Terrain", "Optional climate companion manifest or directory.",
+                     ValueType::Path),
+              config.terrain.surface_fields_path)
+        .bind(option("terrain.seed", "--terrain-seed", "Seed", "Terrain",
+                     "Expected source seed; assignment is preserved explicitly.",
+                     ValueType::UInt64),
+              config.terrain.seed)
+        .bind(option("terrain.surface_model", "--terrain-surface-model", "Surface Model",
+                     "Terrain", "Terrain surface material model.", ValueType::Enum, {},
+                     {"mineral-control", "landform-transition", "climate-transition"}),
+              config.terrain.surface_model)
+        .bind(option("terrain.placement", "--terrain-placement", "Placement", "Terrain",
+                     "Startup terrain source placement.", ValueType::Enum, {},
+                     {"selected", "raw-center", "raw-sample"}),
+              config.terrain.placement)
+        .bind(option("terrain.placement_index", "--terrain-placement-index", "Placement Index",
+                     "Terrain", "Deterministic raw-sample placement index.", ValueType::UInt32),
+              config.terrain.placement_index)
+        .bind(option("terrain.foreground_height_m", "--terrain-foreground-height",
+                     "Foreground Height", "Terrain",
+                     "Initial foreground and orbit focus height in meters.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.0, .max = 1000.0}),
+              config.terrain.foreground_height_m);
+    bind_camera_preset(builder, config);
+    bind_surface_detail(builder, config);
+    OptionSpec terrain_shadows = option(
+        "terrain.shadows", "--terrain-shadows", "Shadows", "Terrain",
+        "Enable cached directional terrain shadows.", ValueType::Bool);
+    terrain_shadows.negative_cli_name = "--no-terrain-shadows";
+    builder
+        .bind(std::move(terrain_shadows), config.terrain.shadows)
+        .bind(option("terrain.aerial_perspective_strength", "--terrain-aerial-perspective",
+                     "Aerial Perspective", "Terrain",
+                     "Aerial perspective strength for the terrain backdrop.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
+              config.terrain.aerial_perspective_strength)
+        .bind(option("terrain.render_stride", "--terrain-render-stride", "Render Stride",
+                     "Terrain", "Cached terrain topology stride.", ValueType::UInt32,
+                     {.has_min = true, .has_max = true, .min = 1.0, .max = 3.0}),
+              config.terrain.render_stride)
+        .bind(option("terrain.backdrop_azimuth_degrees", "--terrain-backdrop-azimuth",
+                     "Initial Azimuth", "Terrain", "Initial backdrop orbit azimuth in degrees.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -360.0, .max = 360.0}),
+              config.terrain.backdrop_azimuth_degrees)
+        .bind(option("terrain.backdrop_orbit_radius_m", "--terrain-backdrop-orbit-radius",
+                     "Orbit Radius", "Terrain", "Initial backdrop orbit radius in meters.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 50.0, .max = 1000.0}),
+              config.terrain.backdrop_orbit_radius_m)
+        .bind(option("terrain.backdrop_elevation_degrees", "--terrain-backdrop-elevation",
+                     "Orbit Elevation", "Terrain", "Initial backdrop orbit elevation in degrees.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.0, .max = 30.0}),
+              config.terrain.backdrop_elevation_degrees);
+    builder.compose(cubey::atmosphere_environment_schema(config.atmosphere));
+    builder.compose(cubey::cloud_environment_schema(config.clouds));
+    return std::move(builder).build();
+}
+
+TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
+                                                  cubey::config::ParseResult* result) {
+    TerrainProjectConfig config = cubey::host::parse_configured_app<TerrainProjectConfig>(
+        argc, argv, terrain_project_config_schema, result);
+    cubey::validate_atmosphere_environment_options(config.atmosphere);
+    cubey::validate_cloud_environment_options(config.clouds);
+    return config;
+}
+
+void resolve_terrain_project_config(TerrainProjectConfig& config,
+                                    const std::filesystem::path& default_heightfield_path,
+                                    const std::filesystem::path& default_surface_fields_path) {
+    config.runtime = terrain_runtime_config_from_options(
+        config.terrain, config.debug_view.value_or(TerrainDebugView::Surface),
+        default_heightfield_path, default_surface_fields_path);
 }
 
 } // namespace cubey::projects::terrain

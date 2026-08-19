@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "pbr_furnace_config.h"
 
 namespace cubey::projects::pbr_furnace {
 
-int run_pbr_furnace(const RunConfig& config);
+int run_pbr_furnace(const PbrFurnaceConfig& config);
 
 } // namespace cubey::projects::pbr_furnace

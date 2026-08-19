@@ -102,7 +102,6 @@ constexpr float kDegreesToRadians = std::numbers::pi_v<float> / 180.0F;
 constexpr float kTerrainMinimumForegroundHeightM = 2.0F;
 constexpr float kTerrainDefaultForegroundHeightM = 200.0F;
 constexpr float kTerrainMaximumForegroundHeightM = 1'000.0F;
-constexpr float kTerrainDefaultTimeHours = 9.0F;
 constexpr float kTerrainCloudSceneDepthFadeM = 500.0F;
 constexpr float kTerrainInspectionPitchLimitRadians = 1'000.0F;
 constexpr float kTerrainInspectionMaximumOrbitRadiusM = 1'000.0F;
@@ -476,42 +475,6 @@ terrain_product_placement_parameter_hash(const TerrainRuntimeConfig& config,
     return hash.value();
 }
 
-[[nodiscard]] cubey::AtmosphereEnvironmentRunState
-terrain_atmosphere_state(const RunConfig& config) {
-    RunConfig::AtmosphereOptions atmosphere = config.atmosphere;
-    const bool explicit_clock = cubey::run_config_float_is_set(atmosphere.time_hours) ||
-                                cubey::run_config_float_is_set(atmosphere.day_of_year) ||
-                                cubey::run_config_float_is_set(atmosphere.latitude_degrees);
-    const bool explicit_sun = cubey::run_config_float_is_set(atmosphere.sun_elevation_degrees) ||
-                              cubey::run_config_float_is_set(atmosphere.sun_azimuth_degrees);
-    if (atmosphere.time_of_day_mode.empty() && !explicit_clock && !explicit_sun) {
-        atmosphere.time_of_day_mode = "solar";
-        atmosphere.time_hours = kTerrainDefaultTimeHours;
-    }
-    return cubey::atmosphere_environment_run_state_from_config(
-        atmosphere,
-        {
-            .sun_elevation_degrees = 38.0F,
-            .sun_azimuth_degrees = -42.0F,
-            .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
-            .reference_geometry_enabled = false,
-        });
-}
-
-[[nodiscard]] cubey::CloudEnvironmentConfig
-terrain_cloud_config(const RunConfig& config,
-                     const cubey::render::AtmosphereEnvironmentConfig& atmosphere) {
-    cubey::CloudEnvironmentConfig clouds{};
-    cubey::apply_cloud_environment_weather_preset(
-        clouds, cubey::CloudEnvironmentWeatherPreset::FairWeather);
-    cubey::apply_cloud_environment_run_config(clouds, config.clouds);
-    cubey::apply_cloud_environment_surface_v1_policy(clouds);
-    clouds.layer.planet_radius_m = atmosphere.bottom_radius_km * 1000.0F;
-    clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
-    clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
-    return clouds;
-}
-
 [[nodiscard]] cubey::render::MaterialPassInfo terrain_stage_proxy_pass_info() {
     return {
         .label = "terrain.stage-proxy",
@@ -580,13 +543,18 @@ terrain_stage_proxy_mesh_data() {
     return placement;
 }
 
+[[nodiscard]] TerrainProjectConfig resolve_terrain_app_config(TerrainProjectConfig config) {
+    resolve_terrain_project_config(config,
+                                   std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
+                                   std::filesystem::path(CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS));
+    return config;
+}
+
 class TerrainApp {
   public:
-    explicit TerrainApp(RunConfig config)
-        : run_config_(std::move(config)),
-          runtime_config_(terrain_runtime_config_from_run_config(
-              run_config_, std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
-              std::filesystem::path(CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS))),
+    explicit TerrainApp(TerrainProjectConfig config)
+        : config_(resolve_terrain_app_config(std::move(config))),
+          runtime_config_(config_.runtime),
           startup_runtime_config_(runtime_config_),
           product_cache_({.root = cubey::procedural::default_procedural_artifact_cache_root()}),
           product_builds_(product_jobs_), placement_stage_(loading_placement_stage()),
@@ -599,8 +567,9 @@ class TerrainApp {
               .near_z = 0.1F,
               .far_z = 100'000.0F,
           }),
-          atmosphere_state_(terrain_atmosphere_state(run_config_)),
-          clouds_config_(terrain_cloud_config(run_config_, atmosphere_state_.environment)) {
+          atmosphere_state_(terrain_atmosphere_state_from_options(config_.atmosphere)),
+          clouds_config_(terrain_cloud_config_from_options(config_.clouds,
+                                                           atmosphere_state_.environment)) {
         source_choices_ = terrain_source_choices(startup_runtime_config_, preset_catalog_error_);
         source_choice_availability_.resize(source_choices_.size());
         source_choice_climate_available_.resize(source_choices_.size());
@@ -617,7 +586,7 @@ class TerrainApp {
     TerrainApp& operator=(const TerrainApp&) = delete;
 
     int run() {
-        return run_config_.headless ? run_headless() : run_windowed();
+        return config_.common.headless ? run_headless() : run_windowed();
     }
 
   private:
@@ -672,7 +641,7 @@ class TerrainApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(run_config_),
+                .run_config = config_.common,
                 .app_name = "terrain",
                 .ready_status = "rendering raster terrain backdrop",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -685,7 +654,7 @@ class TerrainApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(run_config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -693,7 +662,7 @@ class TerrainApp {
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             const std::uint32_t frame_slot_count =
-                cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(run_config_));
+                cubey::host::headless_capture_frame_slot_count(config_.common);
             create_global_resources_if_needed(context.device(), context.gpu(), frame_slot_count);
             finish_atmosphere_atlases(context.device(), context.gpu());
             product_builds_.finish(context.gpu());
@@ -701,10 +670,11 @@ class TerrainApp {
             create_swapchain_resources(context.device(), context.render_target().extent,
                                        context.render_target().format, frame_slot_count);
         };
-        if (run_config_.capture_mode == CaptureMode::Video) {
+        if (config_.common.capture_mode == CaptureMode::Video) {
             const float duration_seconds =
-                run_config_.frames > 1U && run_config_.fps > 0U
-                    ? static_cast<float>(run_config_.frames) / static_cast<float>(run_config_.fps)
+                config_.common.frames > 1U && config_.common.fps > 0U
+                    ? static_cast<float>(config_.common.frames) /
+                          static_cast<float>(config_.common.fps)
                     : 0.0F;
             orbit_controller_.set_auto_rotation_speed(
                 duration_seconds > 0.0F ? 2.0F * std::numbers::pi_v<float> / duration_seconds
@@ -1697,8 +1667,7 @@ class TerrainApp {
     }
 
     [[nodiscard]] float display_exposure() const {
-        return run_config_.pbr.exposure_explicit ? run_config_.pbr.exposure
-                                                 : atmosphere_state_.resolved_exposure;
+        return atmosphere_state_.resolved_exposure;
     }
 
     void record_shadow_pass(const cubey::vulkan::CommandRecorder& recorder) const {
@@ -2008,7 +1977,7 @@ class TerrainApp {
         return stage_proxy_pipeline_.value();
     }
 
-    RunConfig run_config_;
+    TerrainProjectConfig config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainRuntimeConfig startup_runtime_config_{};
     cubey::procedural::ProceduralArtifactCache product_cache_;
@@ -2059,7 +2028,7 @@ class TerrainApp {
 
 } // namespace
 
-int run_terrain(const cubey::RunConfig& config) {
+int run_terrain(const TerrainProjectConfig& config) {
     TerrainApp app(config);
     return app.run();
 }

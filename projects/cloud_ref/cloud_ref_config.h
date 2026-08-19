@@ -1,12 +1,23 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include <cubey/engine/atmosphere_environment_config.h>
+#include <cubey/engine/cloud_environment_config.h>
 #include <cubey/render/atmosphere_environment.h>
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 namespace cubey::projects::cloud_ref {
+
+struct CloudsStartupOptions {
+    struct Clouds : cubey::CloudEnvironmentOptions {
+        std::optional<std::string> camera_mode{};
+        std::optional<float> resolve_radius_px{};
+    } clouds;
+    cubey::AtmosphereEnvironmentOptions atmosphere;
+    std::string debug_view{};
+};
 
 inline constexpr float kCloudsDefaultPlanetRadiusM = 600000.0F;
 inline constexpr float kCloudsDefaultBottomAltitudeM = 5000.0F;
@@ -160,7 +171,7 @@ void apply_clouds_weather_preset(CloudsConfig& config, CloudsWeatherPreset prese
 [[nodiscard]] const char* clouds_resolve_mode_name(CloudsResolveMode mode);
 [[nodiscard]] CloudsQualityBudget clouds_quality_budget(CloudsQuality quality);
 [[nodiscard]] float clouds_default_camera_altitude_m(CloudsCameraMode mode);
-[[nodiscard]] CloudsConfig clouds_config_from_run_config(const RunConfig& run_config);
+[[nodiscard]] CloudsConfig clouds_config_from_options(const CloudsStartupOptions& options);
 void advance_clouds_time(CloudsConfig& config, double delta_seconds);
 void validate_clouds_config(const CloudsConfig& config);
 

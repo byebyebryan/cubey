@@ -58,7 +58,7 @@ extern const cubey::math::Vec3 kLightDirection;
 
 class GltfViewerApp {
   public:
-    explicit GltfViewerApp(RunConfig config);
+    explicit GltfViewerApp(GltfViewerProjectConfig config);
 
     GltfViewerApp(const GltfViewerApp&) = delete;
     GltfViewerApp& operator=(const GltfViewerApp&) = delete;
@@ -165,7 +165,7 @@ class GltfViewerApp {
                                VkCommandBuffer command_buffer,
                                const cubey::host::HeadlessRenderTarget& target);
 
-    RunConfig config_;
+    GltfViewerProjectConfig config_;
     cubey::Engine engine_;
     cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
     cubey::Scene* scene_ = nullptr;

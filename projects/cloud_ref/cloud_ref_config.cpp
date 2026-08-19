@@ -355,146 +355,150 @@ float clouds_default_camera_altitude_m(CloudsCameraMode mode) {
     return 1200.0F;
 }
 
-CloudsConfig clouds_config_from_run_config(const RunConfig& run_config) {
+CloudsConfig clouds_config_from_options(const CloudsStartupOptions& run_config) {
+    validate_cloud_environment_options(run_config.clouds);
     CloudsConfig config{};
 
-    if (!run_config.clouds.camera_mode.empty()) {
-        config.camera_mode = clouds_camera_mode_from_string(run_config.clouds.camera_mode);
+    if (run_config.clouds.camera_mode) {
+        config.camera_mode = clouds_camera_mode_from_string(*run_config.clouds.camera_mode);
     }
     config.camera_altitude_m = clouds_default_camera_altitude_m(config.camera_mode);
     bool time_hours_overridden = false;
-    if (!run_config.clouds.quality.empty()) {
-        config.quality = clouds_quality_from_string(run_config.clouds.quality);
+    if (run_config.clouds.quality) {
+        config.quality = clouds_quality_from_string(*run_config.clouds.quality);
     }
-    if (run_config.clouds.view_steps > 0) {
-        config.view_steps_override = static_cast<std::int32_t>(run_config.clouds.view_steps);
+    if (run_config.clouds.view_steps) {
+        config.view_steps_override = static_cast<std::int32_t>(*run_config.clouds.view_steps);
     }
-    if (run_config.clouds.view_samples > 0) {
-        config.view_samples = static_cast<std::int32_t>(run_config.clouds.view_samples);
+    if (run_config.clouds.view_samples) {
+        config.view_samples = static_cast<std::int32_t>(*run_config.clouds.view_samples);
     }
-    if (!run_config.clouds.weather_preset.empty()) {
+    if (run_config.clouds.weather_preset) {
         config.weather_preset =
-            clouds_weather_preset_from_string(run_config.clouds.weather_preset);
+            clouds_weather_preset_from_string(*run_config.clouds.weather_preset);
     }
     apply_clouds_weather_preset(config, config.weather_preset);
     if (!run_config.debug_view.empty()) {
         config.debug_view = clouds_debug_view_from_string(run_config.debug_view);
     }
-    if (run_config_float_is_set(run_config.clouds.planet_radius_m)) {
-        config.planet_radius_m = run_config.clouds.planet_radius_m;
+    if (run_config.clouds.planet_radius_m) {
+        config.planet_radius_m = *run_config.clouds.planet_radius_m;
     }
-    if (run_config_float_is_set(run_config.clouds.camera_altitude_m)) {
-        config.camera_altitude_m = run_config.clouds.camera_altitude_m;
+    if (run_config.clouds.camera_altitude_m) {
+        config.camera_altitude_m = *run_config.clouds.camera_altitude_m;
     }
-    if (run_config_float_is_set(run_config.clouds.bottom_altitude_m)) {
-        config.bottom_altitude_m = run_config.clouds.bottom_altitude_m;
+    if (run_config.clouds.bottom_altitude_m) {
+        config.bottom_altitude_m = *run_config.clouds.bottom_altitude_m;
     }
-    if (run_config_float_is_set(run_config.clouds.top_altitude_m)) {
-        config.top_altitude_m = run_config.clouds.top_altitude_m;
+    if (run_config.clouds.top_altitude_m) {
+        config.top_altitude_m = *run_config.clouds.top_altitude_m;
     }
-    if (run_config_float_is_set(run_config.clouds.coverage)) {
-        config.coverage = run_config.clouds.coverage;
+    if (run_config.clouds.coverage) {
+        config.coverage = *run_config.clouds.coverage;
     }
-    if (run_config_float_is_set(run_config.clouds.density)) {
-        config.density = run_config.clouds.density;
+    if (run_config.clouds.density) {
+        config.density = *run_config.clouds.density;
     }
-    if (run_config_float_is_set(run_config.clouds.weather_scale_km)) {
-        config.weather_scale_km = run_config.clouds.weather_scale_km;
+    if (run_config.clouds.weather_scale_km) {
+        config.weather_scale_km = *run_config.clouds.weather_scale_km;
     }
-    if (run_config_float_is_set(run_config.clouds.wind_speed_mps)) {
-        config.wind_speed_mps = run_config.clouds.wind_speed_mps;
+    if (run_config.clouds.wind_speed_mps) {
+        config.wind_speed_mps = *run_config.clouds.wind_speed_mps;
     }
-    if (run_config_float_is_set(run_config.clouds.shadow_strength)) {
-        config.shadow_strength = run_config.clouds.shadow_strength;
+    if (run_config.clouds.shadow_strength) {
+        config.shadow_strength = *run_config.clouds.shadow_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.horizon_strength)) {
-        config.horizon_strength = run_config.clouds.horizon_strength;
+    if (run_config.clouds.horizon_strength) {
+        config.horizon_strength = *run_config.clouds.horizon_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.weather_fronts)) {
-        config.weather_fronts = run_config.clouds.weather_fronts;
+    if (run_config.clouds.weather_fronts) {
+        config.weather_fronts = *run_config.clouds.weather_fronts;
     }
-    if (run_config_float_is_set(run_config.clouds.weather_cells)) {
-        config.weather_cells = run_config.clouds.weather_cells;
+    if (run_config.clouds.weather_cells) {
+        config.weather_cells = *run_config.clouds.weather_cells;
     }
-    if (run_config_float_is_set(run_config.clouds.weather_streaks)) {
-        config.weather_streaks = run_config.clouds.weather_streaks;
+    if (run_config.clouds.weather_streaks) {
+        config.weather_streaks = *run_config.clouds.weather_streaks;
     }
-    if (run_config_float_is_set(run_config.clouds.detail_erosion)) {
-        config.detail_erosion = run_config.clouds.detail_erosion;
+    if (run_config.clouds.detail_erosion) {
+        config.detail_erosion = *run_config.clouds.detail_erosion;
     }
-    if (run_config_float_is_set(run_config.clouds.ambient_strength)) {
-        config.ambient_strength = run_config.clouds.ambient_strength;
+    if (run_config.clouds.ambient_strength) {
+        config.ambient_strength = *run_config.clouds.ambient_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.direct_strength)) {
-        config.direct_strength = run_config.clouds.direct_strength;
+    if (run_config.clouds.direct_strength) {
+        config.direct_strength = *run_config.clouds.direct_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.phase_strength)) {
-        config.phase_strength = run_config.clouds.phase_strength;
+    if (run_config.clouds.phase_strength) {
+        config.phase_strength = *run_config.clouds.phase_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.powder_strength)) {
-        config.powder_strength = run_config.clouds.powder_strength;
+    if (run_config.clouds.powder_strength) {
+        config.powder_strength = *run_config.clouds.powder_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.final_contrast)) {
-        config.final_contrast = run_config.clouds.final_contrast;
+    if (run_config.clouds.final_contrast) {
+        config.final_contrast = *run_config.clouds.final_contrast;
     }
-    if (run_config_float_is_set(run_config.clouds.final_saturation)) {
-        config.final_saturation = run_config.clouds.final_saturation;
+    if (run_config.clouds.final_saturation) {
+        config.final_saturation = *run_config.clouds.final_saturation;
     }
-    if (run_config_float_is_set(run_config.clouds.horizon_glow_strength)) {
-        config.horizon_glow_strength = run_config.clouds.horizon_glow_strength;
+    if (run_config.clouds.horizon_glow_strength) {
+        config.horizon_glow_strength = *run_config.clouds.horizon_glow_strength;
     }
-    if (run_config_float_is_set(run_config.clouds.sun_glare_strength)) {
-        config.sun_glare_strength = run_config.clouds.sun_glare_strength;
+    if (run_config.clouds.sun_glare_strength) {
+        config.sun_glare_strength = *run_config.clouds.sun_glare_strength;
     }
-    if (!run_config.clouds.resolve_mode.empty()) {
-        config.resolve_mode = clouds_resolve_mode_from_string(run_config.clouds.resolve_mode);
+    if (run_config.clouds.resolve_mode) {
+        config.resolve_mode = clouds_resolve_mode_from_string(*run_config.clouds.resolve_mode);
     }
-    if (run_config_float_is_set(run_config.clouds.resolve_strength)) {
-        config.post_blur_strength = run_config.clouds.resolve_strength;
+    if (run_config.clouds.resolve_strength) {
+        config.post_blur_strength = *run_config.clouds.resolve_strength;
         config.post_blur_enabled = config.post_blur_strength > 0.0F;
     }
-    if (run_config_float_is_set(run_config.clouds.resolve_radius_px)) {
-        config.post_blur_radius_px = run_config.clouds.resolve_radius_px;
+    if (run_config.clouds.resolve_radius_px) {
+        config.post_blur_radius_px = *run_config.clouds.resolve_radius_px;
     }
-    if (run_config.clouds.temporal >= 0) {
-        config.temporal_enabled = run_config.clouds.temporal != 0;
+    if (run_config.clouds.temporal) {
+        config.temporal_enabled = *run_config.clouds.temporal;
     }
-    if (run_config.clouds.local_volume >= 0) {
-        config.local_volume_enabled = run_config.clouds.local_volume != 0;
+    if (run_config.clouds.local_volume) {
+        config.local_volume_enabled = *run_config.clouds.local_volume;
     }
-    if (run_config.clouds.horizon_layer >= 0) {
-        config.horizon_layer_enabled = run_config.clouds.horizon_layer != 0;
+    if (run_config.clouds.horizon_layer) {
+        config.horizon_layer_enabled = *run_config.clouds.horizon_layer;
     }
 
-    if (run_config.atmosphere.time_of_day_mode == "manual") {
+    if (run_config.atmosphere.time_of_day_mode &&
+        *run_config.atmosphere.time_of_day_mode == "manual") {
         config.time.solar_clock = false;
-    } else if (run_config.atmosphere.time_of_day_mode == "solar") {
+    } else if (run_config.atmosphere.time_of_day_mode &&
+               *run_config.atmosphere.time_of_day_mode == "solar") {
         config.time.solar_clock = true;
     }
-    if (run_config_float_is_set(run_config.atmosphere.time_hours)) {
-        config.time.time_hours = run_config.atmosphere.time_hours;
+    validate_atmosphere_environment_options(run_config.atmosphere);
+    if (run_config.atmosphere.time_hours) {
+        config.time.time_hours = *run_config.atmosphere.time_hours;
         time_hours_overridden = true;
     }
-    if (run_config_float_is_set(run_config.atmosphere.day_of_year)) {
-        config.time.day_of_year = run_config.atmosphere.day_of_year;
+    if (run_config.atmosphere.day_of_year) {
+        config.time.day_of_year = *run_config.atmosphere.day_of_year;
     }
-    if (run_config_float_is_set(run_config.atmosphere.latitude_degrees)) {
-        config.time.latitude_degrees = run_config.atmosphere.latitude_degrees;
+    if (run_config.atmosphere.latitude_degrees) {
+        config.time.latitude_degrees = *run_config.atmosphere.latitude_degrees;
     }
-    if (run_config_float_is_set(run_config.atmosphere.sun_azimuth_offset_degrees)) {
-        config.time.azimuth_offset_degrees = run_config.atmosphere.sun_azimuth_offset_degrees;
+    if (run_config.atmosphere.sun_azimuth_offset_degrees) {
+        config.time.azimuth_offset_degrees = *run_config.atmosphere.sun_azimuth_offset_degrees;
     }
-    if (run_config_float_is_set(run_config.atmosphere.time_speed_hours_per_second)) {
-        config.time.speed_hours_per_second = run_config.atmosphere.time_speed_hours_per_second;
+    if (run_config.atmosphere.time_speed_hours_per_second) {
+        config.time.speed_hours_per_second = *run_config.atmosphere.time_speed_hours_per_second;
     }
-    if (run_config.atmosphere.time_paused >= 0) {
-        config.time.playing = run_config.atmosphere.time_paused == 0;
+    if (run_config.atmosphere.time_paused) {
+        config.time.playing = !*run_config.atmosphere.time_paused;
     }
-    if (run_config_float_is_set(run_config.atmosphere.sun_elevation_degrees)) {
-        config.time.manual_sun_elevation_degrees = run_config.atmosphere.sun_elevation_degrees;
+    if (run_config.atmosphere.sun_elevation_degrees) {
+        config.time.manual_sun_elevation_degrees = *run_config.atmosphere.sun_elevation_degrees;
     }
-    if (run_config_float_is_set(run_config.atmosphere.sun_azimuth_degrees)) {
-        config.time.manual_sun_azimuth_degrees = run_config.atmosphere.sun_azimuth_degrees;
+    if (run_config.atmosphere.sun_azimuth_degrees) {
+        config.time.manual_sun_azimuth_degrees = *run_config.atmosphere.sun_azimuth_degrees;
     }
     if (!time_hours_overridden && config.camera_mode == CloudsCameraMode::OrbitTerminator) {
         config.time.time_hours = 6.0F;

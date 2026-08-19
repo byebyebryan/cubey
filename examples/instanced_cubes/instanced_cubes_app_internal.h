@@ -43,7 +43,7 @@ static_assert(sizeof(CubeInstanceData) == sizeof(cubey::math::Mat4) + sizeof(cub
 
 class InstancedCubesApp {
   public:
-    explicit InstancedCubesApp(RunConfig config);
+    explicit InstancedCubesApp(InstancedCubesConfig config);
 
     InstancedCubesApp(const InstancedCubesApp&) = delete;
     InstancedCubesApp& operator=(const InstancedCubesApp&) = delete;
@@ -70,7 +70,7 @@ class InstancedCubesApp {
     [[nodiscard]] cubey::math::Mat4 cube_spin_matrix(const FrameTiming& timing) const;
     void record_cube_frame(const cubey::host::WindowedRenderFrame& frame);
 
-    RunConfig config_;
+    InstancedCubesConfig config_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;

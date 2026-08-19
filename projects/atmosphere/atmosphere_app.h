@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "atmosphere_project_config.h"
 
 namespace cubey::projects::atmosphere {
 
-int run_atmosphere(const RunConfig& config);
+int run_atmosphere(const AtmosphereProjectConfig& config);
 
 } // namespace cubey::projects::atmosphere

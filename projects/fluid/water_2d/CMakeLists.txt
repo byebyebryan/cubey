@@ -67,6 +67,7 @@ if (BUILD_TESTING)
         cubey_project_water_2d_tests
         PRIVATE
             cubey::cubey
+            cubey::host
             cubey_project_fluid_common
             cubey_project_options
             cubey_project_warnings

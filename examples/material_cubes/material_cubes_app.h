@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "material_cubes_config.h"
 
 namespace cubey::examples::material_cubes {
 
-int run_material_cubes(const RunConfig& config);
+int run_material_cubes(const MaterialCubesConfig& config);
 
 } // namespace cubey::examples::material_cubes

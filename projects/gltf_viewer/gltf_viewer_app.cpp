@@ -47,7 +47,7 @@ constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
-gltf_viewer_atmosphere_run_state(const RunConfig& run_config) {
+gltf_viewer_atmosphere_run_state(const GltfViewerStartupOptions& run_config) {
     return cubey::atmosphere_environment_run_state_from_config(
         run_config.atmosphere,
         {
@@ -58,9 +58,9 @@ gltf_viewer_atmosphere_run_state(const RunConfig& run_config) {
         });
 }
 
-[[nodiscard]] cubey::CloudEnvironmentConfig gltf_viewer_cloud_config(const RunConfig& run_config) {
+[[nodiscard]] cubey::CloudEnvironmentConfig gltf_viewer_cloud_config(const GltfViewerStartupOptions& run_config) {
     cubey::CloudEnvironmentConfig clouds{};
-    cubey::apply_cloud_environment_run_config(clouds, run_config.clouds);
+    cubey::apply_cloud_environment_options(clouds, run_config.clouds);
     clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
     clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
@@ -132,25 +132,25 @@ std::vector<std::uint32_t> fallback_cube_indices() {
     return indices;
 }
 
-GltfViewerApp::GltfViewerApp(RunConfig config)
+GltfViewerApp::GltfViewerApp(GltfViewerProjectConfig config)
     : config_(std::move(config)), debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
       atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)),
       clouds_config_(gltf_viewer_cloud_config(config_)),
-      ocean_config_(cubey::ocean_surface_config_from_run_config(config_)) {
+      ocean_config_(gltf_viewer_ocean_config_from_options(config_)) {
     if (terrain_backdrop_enabled() && ocean_backdrop_enabled()) {
         throw std::runtime_error(
             "glTF viewer v1 accepts either terrain or ocean backdrop, not both");
     }
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
-    if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
-        terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
+    if (config_.terrain.foreground_height_m) {
+        terrain_foreground_height_m_ = *config_.terrain.foreground_height_m;
     }
-    terrain_shadows_ = config_.terrain.shadows != 0;
-    if (config_.terrain.surface_detail == "flat") {
+    terrain_shadows_ = config_.terrain.shadows.value_or(false);
+    if (config_.terrain.surface_detail && *config_.terrain.surface_detail == "flat") {
         terrain_material_ = cubey::render::TerrainBackdropMaterialMode::Flat;
     }
-    if (cubey::run_config_float_is_set(config_.ocean.foreground_height_m)) {
-        ocean_foreground_height_m_ = config_.ocean.foreground_height_m;
+    if (config_.ocean.foreground_height_m) {
+        ocean_foreground_height_m_ = *config_.ocean.foreground_height_m;
         ocean_foreground_height_explicit_ = true;
     }
 }
@@ -261,7 +261,7 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
 }
 
 int GltfViewerApp::run() {
-    if (config_.headless) {
+    if (config_.common.headless) {
         return run_headless();
     }
     return run_windowed();
@@ -318,7 +318,7 @@ int GltfViewerApp::run_windowed() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "gltf_viewer",
             .ready_status = "rendering glTF/PBR viewer",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -331,7 +331,7 @@ int GltfViewerApp::run_windowed() {
 
 int GltfViewerApp::run_headless() {
     cubey::host::HeadlessPngHostConfig host_config;
-    host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+    host_config.run_config = config_.common;
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
@@ -339,13 +339,13 @@ int GltfViewerApp::run_headless() {
     cubey::host::HeadlessPngHostCallbacks callbacks;
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
         create_global_resources_if_needed(context.device(), context.gpu(),
-                                          cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
+                                          cubey::host::headless_capture_frame_slot_count(config_.common));
         finish_atmosphere_background_atlases(context.device(), context.gpu());
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format,
-                               cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
+                               cubey::host::headless_capture_frame_slot_count(config_.common));
     };
-    if (config_.capture_mode == CaptureMode::Video) {
+    if (config_.common.capture_mode == CaptureMode::Video) {
         orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
         callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                         const cubey::host::HeadlessCaptureFrame& frame) {
@@ -375,7 +375,7 @@ int GltfViewerApp::run_headless() {
     return host.run();
 }
 
-int run_gltf_viewer(const RunConfig& config) {
+int run_gltf_viewer(const GltfViewerProjectConfig& config) {
     GltfViewerApp app(config);
     return app.run();
 }

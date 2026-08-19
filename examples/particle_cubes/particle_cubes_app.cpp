@@ -11,7 +11,7 @@ namespace {
 using cubey::host::FrameStatsSample;
 } // namespace
 
-ParticleCubesApp::ParticleCubesApp(RunConfig config) : config_(std::move(config)) {
+ParticleCubesApp::ParticleCubesApp(ParticleCubesConfig config) : config_(std::move(config)) {
     orbit_controller_.set_home_distance(kCameraDistance);
 }
 
@@ -61,7 +61,7 @@ int ParticleCubesApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "particle_cubes",
             .ready_status = "rendering compute-driven cube particles",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -72,7 +72,7 @@ int ParticleCubesApp::run() {
         std::move(callbacks));
 }
 
-int run_particle_cubes(const RunConfig& config) {
+int run_particle_cubes(const ParticleCubesConfig& config) {
     ParticleCubesApp app(config);
     return app.run();
 }

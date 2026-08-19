@@ -44,7 +44,7 @@ struct MaterialCube {
 
 class MaterialCubesApp {
   public:
-    explicit MaterialCubesApp(RunConfig config);
+    explicit MaterialCubesApp(MaterialCubesConfig config);
 
     MaterialCubesApp(const MaterialCubesApp&) = delete;
     MaterialCubesApp& operator=(const MaterialCubesApp&) = delete;
@@ -84,7 +84,7 @@ class MaterialCubesApp {
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const;
     [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const;
 
-    RunConfig config_;
+    MaterialCubesConfig config_;
     cubey::Engine engine_;
     cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
     cubey::Scene* scene_ = nullptr;

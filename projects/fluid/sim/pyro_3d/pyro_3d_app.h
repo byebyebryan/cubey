@@ -1,8 +1,6 @@
 #pragma once
 
-#include "pyro_3d_config.h"
-
-#include <cubey/core/run_config.h>
+#include "pyro_3d_project_config.h"
 
 namespace cubey::projects::fluid::pyro_3d {
 
@@ -13,6 +11,6 @@ struct Pyro3DAppInfo {
     const char* ui_title = "Pyro 3D";
 };
 
-int run_pyro_3d(const RunConfig& config, Pyro3DAppInfo app_info);
+int run_pyro_3d(const Pyro3DProjectConfig& config, Pyro3DAppInfo app_info);
 
 } // namespace cubey::projects::fluid::pyro_3d

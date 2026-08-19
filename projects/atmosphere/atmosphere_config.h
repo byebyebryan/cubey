@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cubey/core/math.h>
-#include <cubey/core/run_config.h>
+#include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/cloud_environment_config.h>
+#include <cubey/engine/pbr_environment_schema.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
 #include <cubey/render/cloud_layer.h>
@@ -11,11 +12,26 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 
 namespace cubey::projects::atmosphere {
+
+struct AtmosphereStartupOptions {
+    struct Atmosphere : cubey::AtmosphereEnvironmentOptions {
+        std::optional<std::string> preset{};
+        std::optional<std::string> milky_way_layer{};
+        std::optional<float> milky_way_variation{};
+        std::optional<bool> reference_geometry{};
+    } atmosphere;
+
+    struct Pbr : cubey::PbrExposureOptions {} pbr;
+
+    std::string debug_view{};
+    cubey::CloudEnvironmentOptions clouds{};
+};
 
 using cubey::render::kNightSkyLayerViews;
 using cubey::render::NightSkyLayerView;
@@ -766,124 +782,127 @@ inline void validate_atmosphere_config(const AtmosphereConfig& config) {
     }
 }
 
-inline void apply_atmosphere_cloud_run_config(AtmosphereCloudConfig& config,
-                                              const RunConfig::CloudOptions& run_clouds) {
-    cubey::apply_cloud_environment_run_config(
+inline void apply_atmosphere_cloud_options(AtmosphereCloudConfig& config,
+                                              const cubey::CloudEnvironmentOptions& run_clouds) {
+    cubey::apply_cloud_environment_options(
         config, run_clouds, cubey::CloudEnvironmentConfigPolicy::AllowDeferredDiagnostics);
 }
 
-[[nodiscard]] inline AtmosphereConfig atmosphere_config_from_run_config(const RunConfig& run) {
+[[nodiscard]] inline AtmosphereConfig
+atmosphere_config_from_options(const AtmosphereStartupOptions& run) {
     AtmosphereConfig config =
-        atmosphere_config_for_preset(atmosphere_preset_from_name(run.atmosphere.preset));
+        atmosphere_config_for_preset(
+            atmosphere_preset_from_name(run.atmosphere.preset.value_or("")));
     config.render_view = atmosphere_render_view_from_name(run.debug_view);
-    if (!run.atmosphere.time_of_day_mode.empty()) {
-        config.time_of_day.mode = sun_control_mode_from_name(run.atmosphere.time_of_day_mode);
+    if (run.atmosphere.time_of_day_mode) {
+        config.time_of_day.mode = sun_control_mode_from_name(*run.atmosphere.time_of_day_mode);
     }
-    if (!run.atmosphere.night_sky_mode.empty()) {
+    if (run.atmosphere.night_sky_mode) {
         config.night_sky.visual_mode =
-            night_sky_visual_mode_from_name(run.atmosphere.night_sky_mode);
+            night_sky_visual_mode_from_name(*run.atmosphere.night_sky_mode);
     }
-    if (!run.atmosphere.milky_way_layer.empty()) {
-        config.night_sky.layer = night_sky_layer_view_from_name(run.atmosphere.milky_way_layer);
+    if (run.atmosphere.milky_way_layer) {
+        config.night_sky.layer =
+            night_sky_layer_view_from_name(*run.atmosphere.milky_way_layer);
     }
-    if (!run.atmosphere.ground_mode.empty()) {
-        config.ground_mode = atmosphere_ground_mode_from_name(run.atmosphere.ground_mode);
+    if (run.atmosphere.ground_mode) {
+        config.ground_mode = atmosphere_ground_mode_from_name(*run.atmosphere.ground_mode);
     }
-    const bool manual_sun_override =
-        run_config_float_is_set(run.atmosphere.sun_elevation_degrees) ||
-        run_config_float_is_set(run.atmosphere.sun_azimuth_degrees);
+    validate_atmosphere_environment_options(run.atmosphere);
+    const bool manual_sun_override = run.atmosphere.sun_elevation_degrees.has_value() ||
+                                     run.atmosphere.sun_azimuth_degrees.has_value();
     if (manual_sun_override) {
         config.time_of_day.mode = SunControlMode::ManualSun;
     }
-    if (run_config_float_is_set(run.atmosphere.sun_elevation_degrees)) {
-        config.sun_elevation_degrees = run.atmosphere.sun_elevation_degrees;
+    if (run.atmosphere.sun_elevation_degrees) {
+        config.sun_elevation_degrees = *run.atmosphere.sun_elevation_degrees;
     }
-    if (run_config_float_is_set(run.atmosphere.sun_azimuth_degrees)) {
-        config.sun_azimuth_degrees = run.atmosphere.sun_azimuth_degrees;
+    if (run.atmosphere.sun_azimuth_degrees) {
+        config.sun_azimuth_degrees = *run.atmosphere.sun_azimuth_degrees;
     }
-    if (run_config_float_is_set(run.atmosphere.camera_altitude_km)) {
-        config.camera_altitude_km = run.atmosphere.camera_altitude_km;
+    if (run.atmosphere.camera_altitude_km) {
+        config.camera_altitude_km = *run.atmosphere.camera_altitude_km;
     }
-    if (run_config_float_is_set(run.atmosphere.camera_yaw_offset_degrees)) {
-        config.camera_yaw_offset_degrees = run.atmosphere.camera_yaw_offset_degrees;
+    if (run.atmosphere.camera_yaw_offset_degrees) {
+        config.camera_yaw_offset_degrees = *run.atmosphere.camera_yaw_offset_degrees;
     }
-    if (run_config_float_is_set(run.atmosphere.camera_pitch_offset_degrees)) {
-        config.camera_pitch_offset_degrees = run.atmosphere.camera_pitch_offset_degrees;
+    if (run.atmosphere.camera_pitch_offset_degrees) {
+        config.camera_pitch_offset_degrees = *run.atmosphere.camera_pitch_offset_degrees;
     }
-    if (run_config_float_is_set(run.atmosphere.mie_scale)) {
-        config.mie_density_scale = run.atmosphere.mie_scale;
+    if (run.atmosphere.mie_scale) {
+        config.mie_density_scale = *run.atmosphere.mie_scale;
     }
-    if (run_config_float_is_set(run.atmosphere.time_hours)) {
-        config.time_of_day.time_hours = run.atmosphere.time_hours;
+    if (run.atmosphere.time_hours) {
+        config.time_of_day.time_hours = *run.atmosphere.time_hours;
     }
-    if (run_config_float_is_set(run.atmosphere.day_of_year)) {
-        config.time_of_day.day_of_year = run.atmosphere.day_of_year;
+    if (run.atmosphere.day_of_year) {
+        config.time_of_day.day_of_year = *run.atmosphere.day_of_year;
     }
-    if (run_config_float_is_set(run.atmosphere.latitude_degrees)) {
-        config.time_of_day.latitude_degrees = run.atmosphere.latitude_degrees;
+    if (run.atmosphere.latitude_degrees) {
+        config.time_of_day.latitude_degrees = *run.atmosphere.latitude_degrees;
     }
-    if (run_config_float_is_set(run.atmosphere.sun_azimuth_offset_degrees)) {
-        config.time_of_day.azimuth_offset_degrees = run.atmosphere.sun_azimuth_offset_degrees;
+    if (run.atmosphere.sun_azimuth_offset_degrees) {
+        config.time_of_day.azimuth_offset_degrees = *run.atmosphere.sun_azimuth_offset_degrees;
     }
-    if (run_config_float_is_set(run.atmosphere.time_speed_hours_per_second)) {
-        config.time_of_day.speed_hours_per_second = run.atmosphere.time_speed_hours_per_second;
+    if (run.atmosphere.time_speed_hours_per_second) {
+        config.time_of_day.speed_hours_per_second = *run.atmosphere.time_speed_hours_per_second;
     }
-    if (run.atmosphere.time_paused == 1) {
+    if (run.atmosphere.time_paused.value_or(false)) {
         config.time_of_day.playing = false;
     }
-    if (run.atmosphere.auto_exposure >= 0) {
-        config.time_of_day.auto_exposure_enabled = run.atmosphere.auto_exposure == 1;
+    if (run.atmosphere.auto_exposure) {
+        config.time_of_day.auto_exposure_enabled = *run.atmosphere.auto_exposure;
     }
     if (run.pbr.exposure_explicit) {
         config.exposure = run.pbr.exposure;
         config.time_of_day.auto_exposure_enabled = false;
     }
-    if (run_config_float_is_set(run.atmosphere.exposure_bias)) {
-        config.time_of_day.exposure_bias = run.atmosphere.exposure_bias;
+    if (run.atmosphere.exposure_bias) {
+        config.time_of_day.exposure_bias = *run.atmosphere.exposure_bias;
     }
-    if (run_config_float_is_set(run.atmosphere.twilight_strength)) {
-        config.night_sky.twilight_strength = run.atmosphere.twilight_strength;
+    if (run.atmosphere.twilight_strength) {
+        config.night_sky.twilight_strength = *run.atmosphere.twilight_strength;
     }
-    if (run_config_float_is_set(run.atmosphere.twilight_horizon_warmth)) {
-        config.night_sky.twilight_horizon_warmth = run.atmosphere.twilight_horizon_warmth;
+    if (run.atmosphere.twilight_horizon_warmth) {
+        config.night_sky.twilight_horizon_warmth = *run.atmosphere.twilight_horizon_warmth;
     }
-    if (run_config_float_is_set(run.atmosphere.star_intensity)) {
-        config.night_sky.star_intensity = run.atmosphere.star_intensity;
+    if (run.atmosphere.star_intensity) {
+        config.night_sky.star_intensity = *run.atmosphere.star_intensity;
     }
-    if (run_config_float_is_set(run.atmosphere.star_density)) {
-        config.night_sky.star_density = run.atmosphere.star_density;
+    if (run.atmosphere.star_density) {
+        config.night_sky.star_density = *run.atmosphere.star_density;
     }
-    if (run_config_float_is_set(run.atmosphere.milky_way_intensity)) {
-        config.night_sky.milky_way_intensity = run.atmosphere.milky_way_intensity;
+    if (run.atmosphere.milky_way_intensity) {
+        config.night_sky.milky_way_intensity = *run.atmosphere.milky_way_intensity;
     }
-    if (run_config_float_is_set(run.atmosphere.milky_way_contrast)) {
-        config.night_sky.milky_way_contrast = run.atmosphere.milky_way_contrast;
+    if (run.atmosphere.milky_way_contrast) {
+        config.night_sky.milky_way_contrast = *run.atmosphere.milky_way_contrast;
     }
-    if (run_config_float_is_set(run.atmosphere.light_pollution)) {
-        config.night_sky.light_pollution = run.atmosphere.light_pollution;
+    if (run.atmosphere.light_pollution) {
+        config.night_sky.light_pollution = *run.atmosphere.light_pollution;
     }
-    if (run_config_float_is_set(run.atmosphere.milky_way_variation)) {
-        config.night_sky.procedural_variation = run.atmosphere.milky_way_variation;
+    if (run.atmosphere.milky_way_variation) {
+        config.night_sky.procedural_variation = *run.atmosphere.milky_way_variation;
     }
-    if (run.atmosphere.moon >= 0) {
-        config.moon.enabled = run.atmosphere.moon == 1;
+    if (run.atmosphere.moon) {
+        config.moon.enabled = *run.atmosphere.moon;
     }
-    if (run.atmosphere.reference_geometry >= 0) {
-        config.reference_geometry_enabled = run.atmosphere.reference_geometry == 1;
+    if (run.atmosphere.reference_geometry) {
+        config.reference_geometry_enabled = *run.atmosphere.reference_geometry;
     }
-    if (run_config_float_is_set(run.atmosphere.moon_intensity)) {
-        config.moon.disk_intensity = run.atmosphere.moon_intensity;
+    if (run.atmosphere.moon_intensity) {
+        config.moon.disk_intensity = *run.atmosphere.moon_intensity;
     }
-    if (run_config_float_is_set(run.atmosphere.moonlight_intensity)) {
-        config.moon.moonlight_intensity = run.atmosphere.moonlight_intensity;
+    if (run.atmosphere.moonlight_intensity) {
+        config.moon.moonlight_intensity = *run.atmosphere.moonlight_intensity;
     }
-    if (run_config_float_is_set(run.atmosphere.moon_phase_offset_days)) {
-        config.moon.phase_offset_days = run.atmosphere.moon_phase_offset_days;
+    if (run.atmosphere.moon_phase_offset_days) {
+        config.moon.phase_offset_days = *run.atmosphere.moon_phase_offset_days;
     }
-    if (run_config_float_is_set(run.atmosphere.moon_size_scale)) {
-        config.moon.angular_radius_scale = run.atmosphere.moon_size_scale;
+    if (run.atmosphere.moon_size_scale) {
+        config.moon.angular_radius_scale = *run.atmosphere.moon_size_scale;
     }
-    apply_atmosphere_cloud_run_config(config.clouds, run.clouds);
+    apply_atmosphere_cloud_options(config.clouds, run.clouds);
     resolve_atmosphere_time_of_day(config);
     validate_atmosphere_config(config);
     return config;

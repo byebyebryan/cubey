@@ -8,7 +8,7 @@
 namespace cubey::examples::shadow_cube {
 namespace detail {
 
-ShadowCubeApp::ShadowCubeApp(RunConfig config) : config_(std::move(config)) {
+ShadowCubeApp::ShadowCubeApp(ShadowCubeConfig config) : config_(std::move(config)) {
     orbit_controller_.set_home_distance(kShadowCubeCameraDistance);
 }
 
@@ -37,7 +37,7 @@ int ShadowCubeApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "shadow_cube",
             .ready_status = "rendering directional shadow cube",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -136,7 +136,7 @@ const cubey::vulkan::DepthAttachment& ShadowCubeApp::depth_attachment() const {
 
 } // namespace detail
 
-int run_shadow_cube(const RunConfig& config) {
+int run_shadow_cube(const ShadowCubeConfig& config) {
     detail::ShadowCubeApp app(config);
     return app.run();
 }

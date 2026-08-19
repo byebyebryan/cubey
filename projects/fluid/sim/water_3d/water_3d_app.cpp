@@ -70,23 +70,25 @@ constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseV
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
 constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
 
-[[nodiscard]] bool use_atmosphere_environment_source(const RunConfig& config) {
-    return config.pbr.environment_source.empty() || config.pbr.environment_source == "atmosphere";
+[[nodiscard]] bool use_atmosphere_environment_source(const Water3DProjectConfig& config) {
+    return !config.pbr.environment_source.has_value() ||
+           config.pbr.environment_source.value() == "atmosphere";
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
-water_3d_atmosphere_run_state(const RunConfig& config) {
+water_3d_atmosphere_run_state(const cubey::AtmosphereEnvironmentOptions& options) {
     return cubey::atmosphere_environment_run_state_from_config(
-        config.atmosphere,
+        options,
         {
             .ground_mode = cubey::render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion,
             .reference_geometry_enabled = false,
         });
 }
 
-[[nodiscard]] cubey::CloudEnvironmentConfig water_3d_cloud_config(const RunConfig& config) {
+[[nodiscard]] cubey::CloudEnvironmentConfig
+water_3d_cloud_config(const cubey::CloudEnvironmentOptions& options) {
     cubey::CloudEnvironmentConfig clouds{};
-    cubey::apply_cloud_environment_run_config(clouds, config.clouds);
+    cubey::apply_cloud_environment_options(clouds, options);
     clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
     clouds.layer.density_model = cubey::render::CloudLayerDensityModel::SurfaceVolume;
     clouds.layer.distance_mode = cubey::render::CloudLayerDistanceMode::Local;
@@ -121,14 +123,14 @@ water_3d_static_environment_lighting(float exposure, float intensity) {
 
 class Water3DApp {
   public:
-    Water3DApp(RunConfig config, Water3DAppInfo app_info)
+    Water3DApp(Water3DProjectConfig config, Water3DAppInfo app_info)
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
-          water_config_(water_3d_config_from_run_config(config_)),
-          atmosphere_state_(water_3d_atmosphere_run_state(config_)),
-          clouds_config_(water_3d_cloud_config(config_)),
+          water_config_(config_.simulation),
+          atmosphere_state_(water_3d_atmosphere_run_state(config_.atmosphere)),
+          clouds_config_(water_3d_cloud_config(config_.clouds)),
           render_view_(water_3d_render_view_from_name(config_.debug_view)) {
-        if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
-            terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
+        if (config_.terrain.foreground_height_m.has_value()) {
+            terrain_foreground_height_m_ = config_.terrain.foreground_height_m.value();
         }
         if (use_atmosphere_environment_source()) {
             atmosphere_runtime_.set_environment(atmosphere_state_.environment);
@@ -145,7 +147,7 @@ class Water3DApp {
     Water3DApp& operator=(const Water3DApp&) = delete;
 
     int run() {
-        if (config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
 
@@ -186,7 +188,7 @@ class Water3DApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(config_),
+                .run_config = config_.common,
                 .app_name = app_info_.app_name,
                 .ready_status = app_info_.ready_status,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -296,7 +298,7 @@ class Water3DApp {
     }
 
     [[nodiscard]] bool terrain_backdrop_enabled() const noexcept {
-        return !config_.terrain.heightfield_path.empty();
+        return config_.terrain.heightfield_path.has_value();
     }
 
     [[nodiscard]] bool terrain_backdrop_visible() const noexcept {
@@ -524,12 +526,12 @@ class Water3DApp {
     }
 
     [[nodiscard]] std::filesystem::path resolved_environment_path() const {
-        if (!config_.pbr.environment_path.empty()) {
-            if (!std::filesystem::exists(config_.pbr.environment_path)) {
+        if (config_.pbr.environment_path.has_value()) {
+            if (!std::filesystem::exists(config_.pbr.environment_path.value())) {
                 throw std::runtime_error("environment HDR does not exist: " +
-                                         config_.pbr.environment_path.string());
+                                         config_.pbr.environment_path.value().string());
             }
-            return config_.pbr.environment_path;
+            return config_.pbr.environment_path.value();
         }
 
         const std::filesystem::path sample = bundled_sample_environment_path();
@@ -671,9 +673,8 @@ class Water3DApp {
         }
         const cubey::terrain::PreparedTerrainBackdropProduct prepared =
             cubey::terrain::prepare_raster_terrain_backdrop_product({
-                .heightfield_path = config_.terrain.heightfield_path,
-                .render_stride =
-                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+                .heightfield_path = config_.terrain.heightfield_path.value(),
+                .render_stride = config_.terrain.render_stride.value_or(3U),
                 .foreground_footprint_radius_m = std::hypot(kVolumeHalfExtentM, kVolumeHalfExtentM),
             });
         terrain_surface_ = {
@@ -831,7 +832,7 @@ class Water3DApp {
     }
 
     void maybe_print_gpu_timings(const ProjectFrame& frame) {
-        if (!config_.print_frame_stats) {
+        if (!config_.common.print_frame_stats) {
             return;
         }
         const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
@@ -890,7 +891,7 @@ class Water3DApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -898,11 +899,11 @@ class Water3DApp {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
             create_global_resources_if_needed(
                 context.device(), context.gpu(),
-                cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
+                cubey::host::headless_capture_frame_slot_count(config_.common));
             create_render_pipeline(context.device(), target.format, target.extent,
-                                   cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
+                                   cubey::host::headless_capture_frame_slot_count(config_.common));
         };
-        if (config_.capture_mode == CaptureMode::Video) {
+        if (config_.common.capture_mode == CaptureMode::Video) {
             orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
             callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
@@ -910,9 +911,9 @@ class Water3DApp {
             };
         }
         cubey::host::install_headless_simulation_driver(
-            callbacks, cubey::host::common_run_config_from_legacy(config_),
+            callbacks, config_.common,
             {
-                .png_frame_count = water_3d_headless_frame_count(config_),
+                .png_frame_count = water_3d_headless_frame_count(config_.common),
                 .png_timing =
                     [this](std::uint64_t simulation_frame) {
                         return fixed_water_3d_headless_timing(water_config_, simulation_frame);
@@ -976,7 +977,7 @@ class Water3DApp {
         return host.run();
     }
 
-    RunConfig config_;
+    Water3DProjectConfig config_;
     Water3DAppInfo app_info_;
     cubey::ProjectRuntimeAdapter runtime_;
     Water3DConfig water_config_;
@@ -1011,7 +1012,7 @@ class Water3DApp {
 
 } // namespace
 
-int run_water_3d(const RunConfig& config, Water3DAppInfo app_info) {
+int run_water_3d(const Water3DProjectConfig& config, Water3DAppInfo app_info) {
     Water3DApp app(config, app_info);
     return app.run();
 }

@@ -4,7 +4,7 @@
 
 namespace cubey::examples::spinning_cube {
 
-SpinningCubeApp::SpinningCubeApp(RunConfig config) : config_(std::move(config)) {}
+SpinningCubeApp::SpinningCubeApp(SpinningCubeConfig config) : config_(std::move(config)) {}
 
 int SpinningCubeApp::run() {
     cubey::host::WindowedAppCallbacks callbacks;
@@ -33,7 +33,7 @@ int SpinningCubeApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "spinning_cube",
             .ready_status = "rendering indexed cube",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -43,7 +43,7 @@ int SpinningCubeApp::run() {
         std::move(callbacks));
 }
 
-int run_spinning_cube(const RunConfig& config) {
+int run_spinning_cube(const SpinningCubeConfig& config) {
     SpinningCubeApp app(config);
     return app.run();
 }

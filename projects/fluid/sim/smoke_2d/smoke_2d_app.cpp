@@ -37,9 +37,9 @@ using cubey::host::FrameStatsSnapshot;
 
 class Smoke2DApp {
   public:
-    explicit Smoke2DApp(RunConfig config)
+    explicit Smoke2DApp(Smoke2DProjectConfig config)
         : config_(std::move(config)), runtime_(1),
-          smoke_config_(smoke_2d_config_from_run_config(config_)),
+          smoke_config_(config_.simulation),
           injector_states_(create_smoke_2d_injectors(smoke_config_)),
           injector_gpu_(smoke_2d_injectors_to_gpu(injector_states_, smoke_config_)),
           debug_view_(smoke_2d_debug_view_from_name(config_.debug_view)) {}
@@ -48,7 +48,7 @@ class Smoke2DApp {
     Smoke2DApp& operator=(const Smoke2DApp&) = delete;
 
     int run() {
-        if (config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
 
@@ -91,7 +91,7 @@ class Smoke2DApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(config_),
+                .run_config = config_.common,
                 .app_name = "smoke_2d",
                 .ready_status = "rendering 2D smoke project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -241,7 +241,7 @@ class Smoke2DApp {
     }
 
     void maybe_print_gpu_timings(const ProjectFrame& frame) {
-        if (!config_.print_frame_stats) {
+        if (!config_.common.print_frame_stats) {
             return;
         }
         const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
@@ -291,7 +291,7 @@ class Smoke2DApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -301,9 +301,9 @@ class Smoke2DApp {
             create_render_pipeline(context.device(), target.format, target.extent);
         };
         cubey::host::install_headless_simulation_driver(
-            callbacks, cubey::host::common_run_config_from_legacy(config_),
+            callbacks, config_.common,
             {
-                .png_frame_count = headless_frame_count(config_),
+                .png_frame_count = headless_frame_count(config_.common),
                 .png_timing =
                     [this](std::uint64_t simulation_frame) {
                         return fixed_headless_timing(smoke_config_, simulation_frame);
@@ -330,7 +330,7 @@ class Smoke2DApp {
         return host.run();
     }
 
-    RunConfig config_;
+    Smoke2DProjectConfig config_;
     cubey::ProjectRuntimeAdapter runtime_;
     Smoke2DConfig smoke_config_;
     std::vector<Smoke2DInjectorState> injector_states_;
@@ -350,7 +350,7 @@ class Smoke2DApp {
 
 } // namespace
 
-int run_smoke_2d(const RunConfig& config) {
+int run_smoke_2d(const Smoke2DProjectConfig& config) {
     Smoke2DApp app(config);
     return app.run();
 }

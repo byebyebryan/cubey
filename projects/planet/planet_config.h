@@ -47,6 +47,7 @@ struct PlanetLiveOptions {
 
 struct PlanetConfig {
     cubey::host::CommonRunConfig common;
+    std::string debug_view;
     PlanetLiveOptions planet;
 };
 

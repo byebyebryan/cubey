@@ -1,8 +1,10 @@
 #include "pyro_3d_config.h"
+#include "pyro_3d_project_config.h"
 #include "pyro_3d_sources.h"
 
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
+
+#include <nlohmann/json.hpp>
 
 #include <array>
 #include <cstddef>
@@ -17,6 +19,8 @@
 #include <vector>
 
 namespace {
+
+namespace pyro = cubey::projects::fluid::pyro_3d;
 
 void require(bool condition, const char* message) {
     if (!condition) {
@@ -52,6 +56,16 @@ void require_contains(const std::string& haystack, const char* needle, const cha
 
 [[nodiscard]] float length_squared(std::array<float, 3> value) {
     return (value[0] * value[0]) + (value[1] * value[1]) + (value[2] * value[2]);
+}
+
+[[nodiscard]] pyro::Pyro3DProjectConfig parse_project(
+    std::vector<std::string> arguments, pyro::Pyro3DMode mode) {
+    std::vector<char*> argv;
+    argv.reserve(arguments.size());
+    for (std::string& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    return pyro::parse_pyro_3d_project_config(static_cast<int>(argv.size()), argv.data(), mode);
 }
 
 } // namespace
@@ -162,9 +176,12 @@ int main() {
                     pyro::Pyro3DDebugView::Smoke,
                 "pyro 3D debug view should cycle from velocity to smoke");
 
-        const cubey::RunConfig default_run_config;
+        const pyro::Pyro3DProjectConfig default_project_config;
         const pyro::Pyro3DConfig default_fire_config =
-            pyro::pyro_3d_config_from_run_config(default_run_config, pyro::Pyro3DMode::Fire);
+            pyro::pyro_3d_config_from_options(default_project_config.grid,
+                                              default_project_config.pyro,
+                                              pyro::Pyro3DMode::Fire,
+                                              default_project_config.common);
         require(default_fire_config.source_count == config.source_count,
                 "default run config should preserve fire source count");
         require(default_fire_config.source_radius == config.source_radius,
@@ -184,7 +201,10 @@ int main() {
         require(default_fire_config.render_smoke_warmth == config.render_smoke_warmth,
                 "default run config should preserve fire smoke warmth");
         const pyro::Pyro3DConfig default_explosion_config =
-            pyro::pyro_3d_config_from_run_config(default_run_config, pyro::Pyro3DMode::Explosion);
+            pyro::pyro_3d_config_from_options(default_project_config.grid,
+                                              default_project_config.pyro,
+                                              pyro::Pyro3DMode::Explosion,
+                                              default_project_config.common);
         require(default_explosion_config.source_count == pyro::kDefaultExplosion3DSourceCount,
                 "pyro 3D explosion should default to a shell source layout");
         require(default_explosion_config.source_radius == pyro::kDefaultExplosion3DSourceRadius,
@@ -231,37 +251,43 @@ int main() {
                 "pyro 3D explosion should default to brighter flame");
         require(default_explosion_config.render_flame_core_strength == 2.10F,
                 "pyro 3D explosion should default to a brighter flame core");
-        cubey::RunConfig explicit_default_radius_config;
+        pyro::Pyro3DProjectConfig explicit_default_radius_config;
         explicit_default_radius_config.pyro.source_radius = pyro::kDefaultPyro3DSourceRadius;
-        const pyro::Pyro3DConfig explicit_fire_radius_config = pyro::pyro_3d_config_from_run_config(
-            explicit_default_radius_config, pyro::Pyro3DMode::Fire);
+        const pyro::Pyro3DConfig explicit_fire_radius_config = pyro::pyro_3d_config_from_options(
+            explicit_default_radius_config.grid, explicit_default_radius_config.pyro,
+            pyro::Pyro3DMode::Fire, explicit_default_radius_config.common);
         const pyro::Pyro3DConfig explicit_explosion_radius_config =
-            pyro::pyro_3d_config_from_run_config(explicit_default_radius_config,
-                                                 pyro::Pyro3DMode::Explosion);
+            pyro::pyro_3d_config_from_options(explicit_default_radius_config.grid,
+                                              explicit_default_radius_config.pyro,
+                                              pyro::Pyro3DMode::Explosion,
+                                              explicit_default_radius_config.common);
         require(explicit_fire_radius_config.source_radius == pyro::kDefaultPyro3DSourceRadius,
                 "explicit default-size source radius should override fire mode radius");
         require(explicit_explosion_radius_config.source_radius == pyro::kDefaultPyro3DSourceRadius,
                 "explicit default-size source radius should override explosion mode radius");
 
-        cubey::RunConfig explicit_source_height_config;
+        pyro::Pyro3DProjectConfig explicit_source_height_config;
         explicit_source_height_config.pyro.source_height = 0.21F;
-        const pyro::Pyro3DConfig explicit_fire_height_config = pyro::pyro_3d_config_from_run_config(
-            explicit_source_height_config, pyro::Pyro3DMode::Fire);
+        const pyro::Pyro3DConfig explicit_fire_height_config = pyro::pyro_3d_config_from_options(
+            explicit_source_height_config.grid, explicit_source_height_config.pyro,
+            pyro::Pyro3DMode::Fire, explicit_source_height_config.common);
         const pyro::Pyro3DConfig explicit_explosion_height_config =
-            pyro::pyro_3d_config_from_run_config(explicit_source_height_config,
-                                                 pyro::Pyro3DMode::Explosion);
+            pyro::pyro_3d_config_from_options(explicit_source_height_config.grid,
+                                              explicit_source_height_config.pyro,
+                                              pyro::Pyro3DMode::Explosion,
+                                              explicit_source_height_config.common);
         require(explicit_fire_height_config.source_center_height == 0.21F,
                 "explicit source height should override fire mode height");
         require(explicit_explosion_height_config.source_center_height == 0.21F,
                 "explicit source height should override explosion mode height");
 
-        cubey::RunConfig run_config;
+        pyro::Pyro3DProjectConfig run_config;
         run_config.grid.width = 64;
         run_config.grid.height = 48;
         run_config.grid.depth = 32;
-        run_config.pyro.shadow_grid.width = 24;
-        run_config.pyro.shadow_grid.height = 20;
-        run_config.pyro.shadow_grid.depth = 16;
+        run_config.pyro.shadow_grid_width = 24;
+        run_config.pyro.shadow_grid_height = 20;
+        run_config.pyro.shadow_grid_depth = 16;
         run_config.pyro.shadow_steps = 48;
         run_config.pyro.shadow_update_interval = 3;
         run_config.pyro.sources = 6;
@@ -286,7 +312,8 @@ int main() {
         run_config.pyro.explosion_boost = 22.0F;
 
         const pyro::Pyro3DConfig fire_config =
-            pyro::pyro_3d_config_from_run_config(run_config, pyro::Pyro3DMode::Fire);
+            pyro::pyro_3d_config_from_options(run_config.grid, run_config.pyro,
+                                              pyro::Pyro3DMode::Fire, run_config.common);
         require(fire_config.mode == pyro::Pyro3DMode::Fire,
                 "pyro 3D config should honor requested fire mode");
         require(fire_config.grid_width == 64, "pyro 3D config should honor run config width");
@@ -345,10 +372,11 @@ int main() {
 
         bool threw_for_too_many_sources = false;
         try {
-            cubey::RunConfig invalid_source_config;
+            pyro::Pyro3DProjectConfig invalid_source_config;
             invalid_source_config.pyro.sources = pyro::kMaxPyro3DSourceCount + 1U;
-            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_source_config,
-                                                                   pyro::Pyro3DMode::Fire));
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                invalid_source_config.grid, invalid_source_config.pyro, pyro::Pyro3DMode::Fire,
+                invalid_source_config.common));
         } catch (const std::runtime_error&) {
             threw_for_too_many_sources = true;
         }
@@ -356,10 +384,11 @@ int main() {
                 "pyro 3D config should reject source counts above the shader policy limit");
         bool threw_for_invalid_source_height = false;
         try {
-            cubey::RunConfig invalid_source_config;
+            pyro::Pyro3DProjectConfig invalid_source_config;
             invalid_source_config.pyro.source_height = 1.2F;
-            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_source_config,
-                                                                   pyro::Pyro3DMode::Fire));
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                invalid_source_config.grid, invalid_source_config.pyro, pyro::Pyro3DMode::Fire,
+                invalid_source_config.common));
         } catch (const std::runtime_error&) {
             threw_for_invalid_source_height = true;
         }
@@ -367,10 +396,11 @@ int main() {
                 "pyro 3D config should reject source heights outside the volume");
         bool threw_for_invalid_obstacle_height = false;
         try {
-            cubey::RunConfig invalid_obstacle_config;
+            pyro::Pyro3DProjectConfig invalid_obstacle_config;
             invalid_obstacle_config.pyro.obstacle_height = 1.2F;
-            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_obstacle_config,
-                                                                   pyro::Pyro3DMode::Fire));
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                invalid_obstacle_config.grid, invalid_obstacle_config.pyro,
+                pyro::Pyro3DMode::Fire, invalid_obstacle_config.common));
         } catch (const std::runtime_error&) {
             threw_for_invalid_obstacle_height = true;
         }
@@ -378,10 +408,11 @@ int main() {
                 "pyro 3D config should reject obstacle heights outside the volume");
         bool threw_for_invalid_obstacle_radius = false;
         try {
-            cubey::RunConfig invalid_obstacle_config;
+            pyro::Pyro3DProjectConfig invalid_obstacle_config;
             invalid_obstacle_config.pyro.obstacle_radius = 0.6F;
-            static_cast<void>(pyro::pyro_3d_config_from_run_config(invalid_obstacle_config,
-                                                                   pyro::Pyro3DMode::Fire));
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                invalid_obstacle_config.grid, invalid_obstacle_config.pyro,
+                pyro::Pyro3DMode::Fire, invalid_obstacle_config.common));
         } catch (const std::runtime_error&) {
             threw_for_invalid_obstacle_radius = true;
         }
@@ -437,7 +468,8 @@ int main() {
                 "pyro 3D fire source turbulence should vary fuel over time");
 
         const pyro::Pyro3DConfig explosion_config =
-            pyro::pyro_3d_config_from_run_config(run_config, pyro::Pyro3DMode::Explosion);
+            pyro::pyro_3d_config_from_options(run_config.grid, run_config.pyro,
+                                              pyro::Pyro3DMode::Explosion, run_config.common);
         require(explosion_config.mode == pyro::Pyro3DMode::Explosion,
                 "pyro 3D config should honor requested explosion mode");
         std::vector<pyro::Pyro3DSourceState> explosion_sources =
@@ -488,16 +520,164 @@ int main() {
         require(explosion_pause_gpu.front().velocity_strength[3] == 0.0F,
                 "pyro 3D explosion should pause force between impulses");
 
-        require(pyro::pyro_3d_headless_frame_count(run_config) == 120,
+        require(pyro::pyro_3d_headless_frame_count(run_config.common) == 120,
                 "pyro 3D headless PNG should default to a settled simulation frame");
-        run_config.frames = 8;
-        require(pyro::pyro_3d_headless_frame_count(run_config) == 8,
+        run_config.common.frames = 8;
+        require(pyro::pyro_3d_headless_frame_count(run_config.common) == 8,
                 "pyro 3D headless frame count should honor explicit frames");
         const cubey::FrameTiming fixed_timing = pyro::fixed_pyro_3d_headless_timing(fire_config, 5);
         require(fixed_timing.frame_index == 5,
                 "pyro 3D fixed headless timing should preserve frame index");
         require(fixed_timing.delta_seconds == fire_config.fixed_delta_seconds,
                 "pyro 3D fixed headless timing should use fixed dt");
+
+        const pyro::Pyro3DProjectConfig parsed_fire_defaults =
+            parse_project({"fire_3d"}, pyro::Pyro3DMode::Fire);
+        const pyro::Pyro3DProjectConfig parsed_explosion_defaults =
+            parse_project({"explosion_3d"}, pyro::Pyro3DMode::Explosion);
+        require(parsed_fire_defaults.simulation.mode == pyro::Pyro3DMode::Fire,
+                "fire parser should bind fire mode into the shared runtime product");
+        require(parsed_explosion_defaults.simulation.mode == pyro::Pyro3DMode::Explosion,
+                "explosion parser should bind explosion mode into the shared runtime product");
+        require(parsed_fire_defaults.simulation.source_count == 1U &&
+                    parsed_explosion_defaults.simulation.source_count ==
+                        pyro::kDefaultExplosion3DSourceCount,
+                "shared parser should preserve distinct fire and explosion defaults");
+
+        pyro::Pyro3DProjectConfig parity_fire;
+        pyro::Pyro3DProjectConfig parity_explosion;
+        const cubey::config::Schema fire_schema = pyro::pyro_3d_project_config_schema(parity_fire);
+        const cubey::config::Schema explosion_schema =
+            pyro::pyro_3d_project_config_schema(parity_explosion);
+        require(fire_schema.options().size() == explosion_schema.options().size(),
+                "fire and explosion should expose one shared schema inventory");
+        for (std::size_t index = 0; index < fire_schema.options().size(); ++index) {
+            const cubey::config::OptionSpec& fire_option = fire_schema.options()[index];
+            const cubey::config::OptionSpec& explosion_option = explosion_schema.options()[index];
+            require(fire_option.path == explosion_option.path &&
+                        fire_option.cli_name == explosion_option.cli_name &&
+                        fire_option.negative_cli_name == explosion_option.negative_cli_name &&
+                        fire_option.type == explosion_option.type &&
+                        fire_option.enum_values == explosion_option.enum_values,
+                    "fire and explosion schema metadata should remain identical");
+        }
+
+        const std::filesystem::path layered_path =
+            std::filesystem::temp_directory_path() / "cubey-pyro-3d-config-layering.json";
+        {
+            std::ofstream file(layered_path);
+            file << R"({"grid":{"width":32,"height":28,"depth":24},"pyro":{"sources":2,"source_radius":0.07},"pbr":{"environment_source":"atmosphere"}})";
+        }
+        const pyro::Pyro3DProjectConfig layered = parse_project(
+            {"fire_3d", "--config", layered_path.string(), "--grid-width", "40",
+             "--pyro-sources", "3", "--set", "grid.height=36", "--set",
+             "pyro.source_radius=0.091", "--set", "pbr.environment_source=static"},
+            pyro::Pyro3DMode::Fire);
+        require(layered.grid.width == 40U && layered.grid.height == 36U &&
+                    layered.grid.depth == 24U,
+                "Pyro parser should layer file, named, and --set grid values in order");
+        require(layered.simulation.source_count == 3U &&
+                    layered.simulation.source_radius == 0.091F,
+                "Pyro parser should layer file, named, and --set project values in order");
+        require(layered.pbr.environment_source == "static",
+                "Pyro parser should let deferred --set override named environment source");
+        std::filesystem::remove(layered_path);
+
+        const std::filesystem::path template_path =
+            std::filesystem::temp_directory_path() / "cubey-pyro-3d-config-template.json";
+        static_cast<void>(parse_project({"fire_3d", "--write-config-template", template_path.string()},
+                                        pyro::Pyro3DMode::Fire));
+        {
+            std::ifstream file(template_path);
+            nlohmann::json template_document;
+            file >> template_document;
+            require(template_document.contains("pyro") && template_document.contains("grid") &&
+                        template_document.contains("atmosphere") &&
+                        !template_document.contains("ocean") &&
+                        !template_document.contains("planet"),
+                    "Pyro template should contain only shared host/environment and Pyro scope");
+        }
+        std::filesystem::remove(template_path);
+
+        const std::filesystem::path unrelated_path =
+            std::filesystem::temp_directory_path() / "cubey-pyro-3d-unrelated.json";
+        {
+            std::ofstream file(unrelated_path);
+            file << R"({"ocean":{"map_size":128}})";
+        }
+        bool rejected_unrelated_key = false;
+        try {
+            static_cast<void>(parse_project({"fire_3d", "--config", unrelated_path.string()},
+                                             pyro::Pyro3DMode::Fire));
+        } catch (const std::runtime_error&) {
+            rejected_unrelated_key = true;
+        }
+        std::filesystem::remove(unrelated_path);
+        require(rejected_unrelated_key, "Pyro parser should reject unrelated project config keys");
+
+        bool rejected_manual_sun_in_solar_mode = false;
+        try {
+            static_cast<void>(parse_project({"fire_3d", "--time-of-day-mode", "solar",
+                                             "--sun-elevation", "10"},
+                                            pyro::Pyro3DMode::Fire));
+        } catch (const std::runtime_error&) {
+            rejected_manual_sun_in_solar_mode = true;
+        }
+        require(rejected_manual_sun_in_solar_mode,
+                "Pyro parser should retain atmosphere manual-sun validation");
+        bool rejected_invalid_cloud_samples = false;
+        try {
+            static_cast<void>(parse_project({"fire_3d", "--cloud-view-samples", "3"},
+                                            pyro::Pyro3DMode::Fire));
+        } catch (const std::runtime_error&) {
+            rejected_invalid_cloud_samples = true;
+        }
+        require(rejected_invalid_cloud_samples,
+                "Pyro parser should retain shared cloud option validators");
+
+        cubey::host::CommonRunConfig profiling_common;
+        profiling_common.headless = true;
+        profiling_common.profile_diagnostics = true;
+        profiling_common.profile_diagnostic_interval = 7U;
+        const pyro::Pyro3DConfig profiling_config = pyro::pyro_3d_config_from_options(
+            {}, {}, pyro::Pyro3DMode::Fire, profiling_common);
+        require(profiling_config.headless && profiling_config.profile_diagnostics &&
+                    profiling_config.profile_diagnostic_interval == 7U,
+                "Pyro converter should sync canonical common profiling and headless state");
+        bool rejected_windowed_profiling = false;
+        profiling_common.headless = false;
+        try {
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                {}, {}, pyro::Pyro3DMode::Fire, profiling_common));
+        } catch (const std::runtime_error&) {
+            rejected_windowed_profiling = true;
+        }
+        require(rejected_windowed_profiling,
+                "Pyro profile diagnostics should require headless mode");
+
+        bool rejected_invalid_explosion_interval = false;
+        try {
+            pyro::Pyro3DStartupOptions invalid_options;
+            invalid_options.explosion_interval_seconds = 0.0F;
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                {}, invalid_options, pyro::Pyro3DMode::Explosion));
+        } catch (const std::runtime_error&) {
+            rejected_invalid_explosion_interval = true;
+        }
+        require(rejected_invalid_explosion_interval,
+                "Pyro converter should reject nonpositive explosion intervals");
+        bool rejected_invalid_explosion_duration = false;
+        try {
+            pyro::Pyro3DStartupOptions invalid_options;
+            invalid_options.explosion_interval_seconds = 0.5F;
+            invalid_options.explosion_duration_seconds = 0.75F;
+            static_cast<void>(pyro::pyro_3d_config_from_options(
+                {}, invalid_options, pyro::Pyro3DMode::Explosion));
+        } catch (const std::runtime_error&) {
+            rejected_invalid_explosion_duration = true;
+        }
+        require(rejected_invalid_explosion_duration,
+                "Pyro converter should reject explosion durations longer than intervals");
 
         const std::filesystem::path source_dir = CUBEY_PYRO_3D_SOURCE_DIR;
         const std::string commands_source = read_text_file(source_dir / "pyro_3d_commands.cpp");

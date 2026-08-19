@@ -77,6 +77,7 @@ if (BUILD_TESTING)
         cubey_project_pyro_3d_tests
         PRIVATE
             cubey::cubey
+            cubey::host
             cubey_project_options
             cubey_project_warnings
     )

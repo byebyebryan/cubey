@@ -1,7 +1,6 @@
-#include "atmosphere_config.h"
+#include "atmosphere_project_config.h"
 #include "atmosphere_environment.h"
 
-#include <cubey/core/run_config.h>
 #include <cubey/procedural/artifact_cache.h>
 #include <cubey/render/atmosphere_atlas_cache.h>
 #include <cubey/render/atmosphere_night_sky_atlas.h>
@@ -194,9 +193,95 @@ night_sky_luminance_stats(const cubey::render::NightSkyAtlas& atlas, float thres
 
 } // namespace
 
+void test_project_schema_contract() {
+    using namespace cubey::projects::atmosphere;
+    char arg0[] = "atmosphere";
+    char arg1[] = "--atmosphere-preset";
+    char arg2[] = "night";
+    char arg3[] = "--no-clouds";
+    char arg4[] = "--set";
+    char arg5[] = "atmosphere.star_intensity=2.0";
+    char* argv[] = {arg0, arg1, arg2, arg3, arg4, arg5};
+    const auto parsed = parse_atmosphere_project_config(6, argv);
+    require(parsed.common.width == 1280U && parsed.common.height == 720U,
+            "atmosphere schema should preserve host defaults");
+    require(parsed.options.atmosphere.preset == "night" && parsed.options.clouds.enabled == 0,
+            "atmosphere schema should bind named and negative bool flags");
+    require(parsed.options.atmosphere.star_intensity == 2.0F,
+            "atmosphere schema should apply deferred set precedence");
+
+    AtmosphereProjectConfig json_config;
+    auto schema = atmosphere_project_config_schema(json_config);
+    schema.apply_json({{"atmosphere", {{"time_hours", 17.5}}},
+                       {"clouds", {{"enabled", false}}}});
+    require(json_config.options.atmosphere.time_hours == 17.5F &&
+                json_config.options.clouds.enabled == 0,
+            "atmosphere schema should bind JSON paths");
+    const auto template_path =
+        std::filesystem::temp_directory_path() / "cubey-atmosphere-schema-template-v2.json";
+    schema.write_template(template_path);
+    const std::string template_text = read_text_file(template_path);
+    std::filesystem::remove(template_path);
+    require_contains(template_text, "atmosphere", "atmosphere template should expose owned options");
+    require_not_contains(template_text, "smoke", "atmosphere template should omit retired options");
+    require_throws([&] { schema.apply_json({{"smoke", {{"injectors", 1}}}}); },
+                   "atmosphere schema should reject unrelated options");
+}
+
+void test_shared_schema_validation_and_aliases() {
+    using namespace cubey::projects::atmosphere;
+    AtmosphereProjectConfig config;
+    const auto schema = atmosphere_project_config_schema(config);
+    require_throws([&] { schema.set("atmosphere.sun_elevation_degrees", "91"); },
+                   "atmosphere shared range should reject an out-of-range sun");
+    require_throws([&] { schema.set("clouds.view_samples", "5"); },
+                   "cloud shared range should reject an invalid sample count");
+    require_throws([&] { schema.set("clouds.weather_preset", "not-a-weather-preset"); },
+                   "cloud shared enum should reject an unknown weather preset");
+    require_throws([&] { schema.set("pbr.exposure", "4.1"); },
+                   "shared PBR exposure should enforce its upper range on named values");
+    require(schema.find_by_cli_name("--play-time") == nullptr,
+            "atmosphere pause should not invent a play-time alias");
+
+    char arg0[] = "atmosphere";
+    char arg1[] = "--no-auto-exposure";
+    char* argv[] = {arg0, arg1};
+    const auto parsed = parse_atmosphere_project_config(2, argv);
+    require(parsed.options.atmosphere.auto_exposure == 0,
+            "atmosphere shared negative bool alias should remain supported");
+
+    const char* invalid_samples[] = {"atmosphere", "--cloud-view-samples", "3"};
+    require_throws(
+        [&] {
+            static_cast<void>(parse_atmosphere_project_config(
+                3, const_cast<char**>(invalid_samples)));
+        },
+        "atmosphere parser should reject the unsupported three-sample cloud mode");
+
+    const char* conflicting_sun[] = {"atmosphere", "--time-of-day-mode", "solar",
+                                     "--sun-elevation", "30"};
+    require_throws(
+        [&] {
+            static_cast<void>(parse_atmosphere_project_config(
+                5, const_cast<char**>(conflicting_sun)));
+        },
+        "atmosphere parser should reject manual sun angles with solar time");
+
+    AtmosphereProjectConfig defaults;
+    const auto default_schema = atmosphere_project_config_schema(defaults);
+    const auto default_document = default_schema.template_json();
+    require(default_document.at("atmosphere").at("sun_elevation_degrees").is_null() &&
+                default_document.at("atmosphere").at("auto_exposure").is_null() &&
+                default_document.at("clouds").at("view_samples").is_null(),
+            "atmosphere template should preserve absent optional environment values as null");
+}
+
 int main() {
     using namespace cubey::projects::atmosphere;
     using namespace cubey::render;
+
+    test_project_schema_contract();
+    test_shared_schema_validation_and_aliases();
 
     for (const AtmosphereRenderView view : kAtmosphereRenderViews) {
         require(atmosphere_render_view_from_name(atmosphere_render_view_name(view)) == view,
@@ -658,7 +743,7 @@ int main() {
     }
 
     {
-        cubey::RunConfig run_config{};
+        AtmosphereStartupOptions run_config{};
         run_config.clouds.enabled = 0;
         run_config.clouds.debug_view = "orbit-weather";
         run_config.clouds.weather_preset = "storm";
@@ -687,7 +772,7 @@ int main() {
         run_config.clouds.temporal = 0;
         run_config.clouds.local_volume = 0;
         run_config.clouds.horizon_layer = 1;
-        const AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        const AtmosphereConfig config = atmosphere_config_from_options(run_config);
         require(!config.clouds.enabled, "atmosphere run config should disable clouds");
         require(config.clouds.weather_preset == AtmosphereCloudWeatherPreset::StormCells,
                 "atmosphere run config should map cloud weather preset");
@@ -748,13 +833,13 @@ int main() {
                 "atmosphere run config should map horizon layer flag");
     }
     {
-        cubey::RunConfig run_config{};
+        AtmosphereStartupOptions run_config{};
         run_config.clouds.weather_preset = "reference-parity";
         run_config.clouds.quality = "half";
         run_config.clouds.distance_mode = "auto";
         run_config.clouds.horizon_layer = 1;
         run_config.clouds.view_steps = 48;
-        const AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        const AtmosphereConfig config = atmosphere_config_from_options(run_config);
         require(
             config.clouds.weather_preset == AtmosphereCloudWeatherPreset::SurfaceVolume,
             "atmosphere run config should map legacy reference parity preset to surface volume");
@@ -1226,7 +1311,7 @@ int main() {
                        "atmosphere config should reject invalid camera view offsets");
     }
     {
-        cubey::RunConfig run_config;
+        AtmosphereStartupOptions run_config;
         run_config.atmosphere.preset = "sunset";
         run_config.debug_view = "moon";
         run_config.atmosphere.night_sky_mode = "camera";
@@ -1252,7 +1337,7 @@ int main() {
         run_config.atmosphere.moon_size_scale = 1.75F;
         run_config.atmosphere.reference_geometry = 0;
         run_config.atmosphere.ground_mode = "sky-only-no-ground-occlusion";
-        AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        AtmosphereConfig config = atmosphere_config_from_options(run_config);
         require(config.preset == AtmospherePreset::Sunset,
                 "run config should select atmosphere preset");
         require(config.render_view == AtmosphereRenderView::Moon,
@@ -1294,7 +1379,7 @@ int main() {
                 "manual sun mode should keep the default auto exposure");
     }
     {
-        cubey::RunConfig run_config;
+        AtmosphereStartupOptions run_config;
         run_config.atmosphere.time_of_day_mode = "solar";
         run_config.atmosphere.time_hours = 17.8F;
         run_config.atmosphere.day_of_year = 80.0F;
@@ -1302,7 +1387,7 @@ int main() {
         run_config.atmosphere.sun_azimuth_offset_degrees = 5.0F;
         run_config.atmosphere.time_speed_hours_per_second = 1.25F;
         run_config.atmosphere.exposure_bias = 0.5F;
-        AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        AtmosphereConfig config = atmosphere_config_from_options(run_config);
         require(config.time_of_day.mode == SunControlMode::SolarClock,
                 "run config should select solar clock mode");
         require(config.time_of_day.time_hours == 17.8F && config.time_of_day.day_of_year == 80.0F &&
@@ -1315,11 +1400,11 @@ int main() {
         require(config.exposure > 0.0F, "solar clock config should resolve auto exposure");
     }
     {
-        cubey::RunConfig run_config;
+        AtmosphereStartupOptions run_config;
         run_config.atmosphere.time_of_day_mode = "solar";
         run_config.pbr.exposure = -1.25F;
         run_config.pbr.exposure_explicit = true;
-        AtmosphereConfig config = atmosphere_config_from_run_config(run_config);
+        AtmosphereConfig config = atmosphere_config_from_options(run_config);
         require(!config.time_of_day.auto_exposure_enabled,
                 "explicit exposure should disable auto exposure");
         require(config.exposure == -1.25F, "explicit exposure should become fixed exposure");

@@ -1,6 +1,5 @@
 #include "water_3d_config.h"
-
-#include <cubey/core/run_config.h>
+#include "../../water_3d/water_3d_project_config.h"
 
 #include <cstdio>
 #include <exception>
@@ -9,6 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -48,6 +48,17 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     std::ostringstream stream;
     stream << file.rdbuf();
     return stream.str();
+}
+
+[[nodiscard]] cubey::projects::fluid::water_3d::Water3DProjectConfig parse_project(
+    std::vector<std::string> arguments) {
+    std::vector<char*> argv;
+    argv.reserve(arguments.size());
+    for (std::string& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    return cubey::projects::fluid::water_3d::parse_water_3d_project_config(
+        static_cast<int>(argv.size()), argv.data());
 }
 
 } // namespace
@@ -260,52 +271,148 @@ int main() {
                     water::Water3DRenderView::Surface,
                 "water 3D render view cycle should wrap after whitewater");
 
-        cubey::RunConfig run_config;
-        run_config.grid.width = 32;
-        run_config.grid.height = 48;
-        run_config.grid.depth = 40;
-        run_config.headless = true;
-        run_config.profile_diagnostics = true;
-        run_config.profile_diagnostic_interval = 7;
-        run_config.water3d.transfer_mode = "pic-flip";
-        run_config.water3d.transfer_limit = 96;
-        run_config.water3d.p2g_mode = "tiled";
-        run_config.water3d.hose = 1;
-        run_config.water3d.drain = 1;
-        run_config.water3d.rain = 1;
-        run_config.water3d.wave = 0;
-        run_config.water3d.whitewater = 0;
-        const water::Water3DConfig overridden = water::water_3d_config_from_run_config(run_config);
+        water::Water3DProjectConfig project_config;
+        project_config.grid.width = 32U;
+        project_config.grid.height = 48U;
+        project_config.grid.depth = 40U;
+        project_config.common.headless = true;
+        project_config.common.profile_diagnostics = true;
+        project_config.common.profile_diagnostic_interval = 7U;
+        project_config.water.transfer_mode = "pic-flip";
+        project_config.water.transfer_limit = 96U;
+        project_config.water.p2g_mode = "tiled";
+        project_config.water.hose = true;
+        project_config.water.drain = true;
+        project_config.water.rain = true;
+        project_config.water.wave = false;
+        project_config.water.whitewater = false;
+        project_config.pbr.ibl_intensity = 1.4F;
+        project_config.pbr.environment_rotation_degrees = 18.0F;
+        project_config.pbr.exposure = -0.5F;
+        const water::Water3DConfig overridden = water::water_3d_config_from_options(
+            project_config.grid, project_config.water, project_config.pbr,
+            project_config.common);
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,
                 "water 3D should accept CLI grid dimensions");
         require(overridden.active_particle_count ==
                     water::active_particle_count_for_fill(overridden),
-                "water 3D run-config construction should refresh active particle counts");
+                "water 3D project config should refresh active particle counts");
         require(overridden.particle_capacity == water::particle_capacity_for_config(overridden),
-                "water 3D run-config construction should refresh particle capacity");
+                "water 3D project config should refresh particle capacity");
         require(overridden.profile_diagnostics && overridden.profile_diagnostic_interval == 7U,
-                "water 3D run-config construction should preserve profile diagnostics flags");
+                "water 3D project config should preserve profile diagnostics flags");
+        require(overridden.environment_intensity == 1.4F &&
+                    overridden.environment_rotation_degrees == 18.0F &&
+                    overridden.exposure == -0.5F,
+                "water 3D project config should preserve typed PBR startup values");
         require(overridden.transfer_mode == water::Water3DTransferMode::PicFlip &&
                     overridden.max_particles_per_cell == 96U,
-                "water 3D run-config construction should parse transfer mode and limit");
+                "water 3D project config should parse transfer mode and limit");
         require(overridden.p2g_mode == water::Water3DP2GMode::TiledFaces,
-                "water 3D run-config construction should parse P2G mode");
+                "water 3D project config should parse P2G mode");
         require(overridden.hose.enabled && overridden.drain.enabled && overridden.rain.enabled,
-                "water 3D run-config construction should enable requested emitters");
+                "water 3D project config should enable requested emitters");
         require(!overridden.wave.enabled && !overridden.whitewater_enabled,
-                "water 3D run-config construction should disable requested optional systems");
+                "water 3D project config should disable requested optional systems");
 
         bool rejected_windowed_diagnostics = false;
         try {
-            cubey::RunConfig windowed_diagnostics;
+            cubey::host::CommonRunConfig windowed_diagnostics;
             windowed_diagnostics.profile_diagnostics = true;
-            static_cast<void>(water::water_3d_config_from_run_config(windowed_diagnostics));
+            static_cast<void>(water::water_3d_config_from_options(
+                {}, {}, {}, windowed_diagnostics));
         } catch (const std::runtime_error&) {
             rejected_windowed_diagnostics = true;
         }
         require(rejected_windowed_diagnostics,
                 "water 3D should reject diagnostic readback in windowed mode");
+
+        const std::filesystem::path layered_path =
+            std::filesystem::temp_directory_path() / "cubey-water-3d-config-test.json";
+        const std::filesystem::path template_path =
+            std::filesystem::temp_directory_path() / "cubey-water-3d-template-test.json";
+        {
+            std::ofstream file(layered_path);
+            file << R"({
+                "grid": {"size": 24, "depth": 28},
+                "water3d": {"transfer": "apic", "hose": false},
+                "pbr": {"ibl_intensity": 1.25, "environment_source": "atmosphere"},
+                "atmosphere": {"time_of_day_mode": "manual", "sun_elevation_degrees": 20.0},
+                "clouds": {"enabled": false}
+            })";
+        }
+        const water::Water3DProjectConfig layered = parse_project(
+            {"water_3d", "--config", layered_path.string(), "--grid-width", "26",
+             "--water3d-transfer", "picflip", "--water3d-hose", "--set",
+             "water3d.transfer_limit=96", "--set", "pbr.ibl_intensity=1.7"});
+        require(layered.grid.size == 24U && layered.grid.width == 26U &&
+                    layered.grid.height == 24U && layered.grid.depth == 28U,
+                "water grid.size should fan out width and height while depth stays separate");
+        require(layered.water.transfer_mode == "picflip" &&
+                    layered.water.transfer_limit == 96U,
+                "water named flags and --set should override config-file values in order");
+        require(layered.water.hose == true && layered.simulation.hose.enabled &&
+                    layered.simulation.max_particles_per_cell == 96U,
+                "water positive bool alias should synchronize the typed runtime config");
+        require(layered.pbr.ibl_intensity == 1.7F &&
+                    layered.pbr.environment_source == "atmosphere",
+                "water PBR options should preserve shared paths and precedence");
+        require(layered.atmosphere.time_of_day_mode == "manual" &&
+                    layered.atmosphere.sun_elevation_degrees == 20.0F,
+                "water should compose shared atmosphere startup options");
+        require(layered.clouds.enabled == false && layered.simulation.whitewater_enabled,
+                "water cloud disable should remain independent of whitewater defaults");
+
+        const water::Water3DProjectConfig negative = parse_project(
+            {"water_3d", "--no-water3d-hose", "--no-water3d-drain", "--water3d-rain",
+             "--no-water3d-wave", "--no-water3d-whitewater", "--no-clouds", "--no-moon"});
+        require(negative.water.hose == false && negative.water.drain == false &&
+                    negative.water.rain == true && negative.water.wave == false &&
+                    negative.water.whitewater == false,
+                "water negative bool aliases should bind optional startup toggles");
+        require(!negative.simulation.hose.enabled && !negative.simulation.drain.enabled &&
+                    negative.simulation.rain.enabled && !negative.simulation.wave.enabled &&
+                    !negative.simulation.whitewater_enabled,
+                "water negative bool aliases should update the runtime product");
+        require(negative.clouds.enabled == false && negative.atmosphere.moon == false,
+                "water shared negative aliases should remain available");
+
+        bool rejected_unknown_key = false;
+        try {
+            static_cast<void>(parse_project({"water_3d", "--set", "smoke.injectors=4"}));
+        } catch (const std::runtime_error&) {
+            rejected_unknown_key = true;
+        }
+        require(rejected_unknown_key,
+                "water schema should reject options owned by another target");
+        bool rejected_cloud_samples = false;
+        try {
+            static_cast<void>(parse_project({"water_3d", "--cloud-view-samples", "3"}));
+        } catch (const std::runtime_error&) {
+            rejected_cloud_samples = true;
+        }
+        require(rejected_cloud_samples,
+                "water should validate shared cloud sample choices after parsing");
+        const auto templated =
+            parse_project({"water_3d", "--write-config-template", template_path.string()});
+        (void)templated;
+        const std::string template_json = read_text_file(template_path);
+        require_contains(template_json, "\"water3d\"",
+                         "water template should expose live Water 3D options");
+        require_contains(template_json, "\"atmosphere\"",
+                         "water template should expose shared atmosphere options");
+        require_contains(template_json, "\"clouds\"",
+                         "water template should expose shared cloud options");
+        require_contains(template_json, "\"pbr\"",
+                         "water template should expose shared PBR options");
+        require_not_contains(template_json, "smoke",
+                             "water template should omit unrelated project options");
+        require_not_contains(template_json, "particle_capacity",
+                             "water template should omit derived runtime products");
+        std::error_code cleanup_error;
+        std::filesystem::remove(layered_path, cleanup_error);
+        std::filesystem::remove(template_path, cleanup_error);
 
         bool rejected = false;
         try {
@@ -316,6 +423,13 @@ int main() {
             rejected = true;
         }
         require(rejected, "water 3D should reject degenerate grid dimensions");
+
+        cubey::host::CommonRunConfig common_config;
+        require(water::water_3d_headless_frame_count(common_config) == 120U,
+                "water 3D headless frames should default to 120 simulations");
+        common_config.frames = 8U;
+        require(water::water_3d_headless_frame_count(common_config) == 8U,
+                "water 3D headless frames should honor explicit frame counts");
 
         const std::filesystem::path shader_dir =
             std::filesystem::path(CUBEY_WATER_3D_SOURCE_DIR) / "shaders";
@@ -394,8 +508,8 @@ int main() {
 
         require_contains(app, "atmosphere_runtime_.clouds()",
                          "water 3D should use atmosphere-owned shared clouds");
-        require_contains(app, "water_3d_cloud_config(config_)",
-                         "water 3D should consume shared cloud run config");
+        require_contains(app, "water_3d_cloud_config(config_.clouds)",
+                         "water 3D should consume typed shared cloud options");
         require_contains(app, "record_pending_update",
                          "water 3D should refresh the cached cloud environment");
         require_contains(commands, "water cloud scene color",

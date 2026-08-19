@@ -7,10 +7,6 @@
 #include <filesystem>
 #include <string>
 
-namespace cubey {
-struct RunConfig;
-}
-
 namespace cubey::host {
 
 // The host consumes only this boundary. Project fields remain in the owning
@@ -22,7 +18,6 @@ struct CommonRunConfig {
     std::uint32_t frames = 0U;
     std::uint32_t fps = 60U;
     std::filesystem::path output_path = "cubey-output.png";
-    std::string debug_view{};
     std::filesystem::path profile_output_prefix{};
     std::uint32_t profile_warmup_frames = 0U;
     std::uint32_t profile_diagnostic_interval = 1U;
@@ -35,8 +30,6 @@ struct CommonRunConfig {
 
     CommonRunConfig() = default;
 };
-
-[[nodiscard]] CommonRunConfig common_run_config_from_legacy(const RunConfig& legacy);
 
 // Applies host-level invariants after all configuration sources have been
 // layered. output_path_explicit distinguishes an explicit default path from

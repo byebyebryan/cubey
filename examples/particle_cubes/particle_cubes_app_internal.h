@@ -52,7 +52,7 @@ static_assert(sizeof(ComputePushConstants) == 32);
 
 class ParticleCubesApp {
   public:
-    explicit ParticleCubesApp(RunConfig config);
+    explicit ParticleCubesApp(ParticleCubesConfig config);
 
     ParticleCubesApp(const ParticleCubesApp&) = delete;
     ParticleCubesApp& operator=(const ParticleCubesApp&) = delete;
@@ -82,7 +82,7 @@ class ParticleCubesApp {
                                                         VkExtent2D extent) const;
     void record_particle_cubes_frame(const cubey::host::WindowedRenderFrame& frame);
 
-    RunConfig config_;
+    ParticleCubesConfig config_;
     OrbitController orbit_controller_;
     bool paused_ = false;
     bool reset_cubes_requested_ = false;

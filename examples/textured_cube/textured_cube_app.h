@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
+#include "textured_cube_config.h"
 
 namespace cubey::examples::textured_cube {
 
-int run_textured_cube(const RunConfig& config);
+int run_textured_cube(const TexturedCubeConfig& config);
 
 } // namespace cubey::examples::textured_cube

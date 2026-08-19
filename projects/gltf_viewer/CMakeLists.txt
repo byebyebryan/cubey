@@ -75,6 +75,24 @@ if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
 endif()
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_gltf_viewer_tests
+        gltf_viewer_config_tests.cpp
+    )
+    target_include_directories(
+        cubey_project_gltf_viewer_tests
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+    target_link_libraries(
+        cubey_project_gltf_viewer_tests
+        PRIVATE
+            cubey::engine
+            cubey::host
+            cubey_project_options
+            cubey_project_warnings
+    )
+    add_test(NAME gltf_viewer_config_tests COMMAND cubey_project_gltf_viewer_tests)
+
     set(
         CUBEY_GLTF_VIEWER_TERRAIN_SMOKE_ASSET
         "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"

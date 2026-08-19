@@ -30,7 +30,7 @@ inline constexpr float kShadowCubeCameraDistance = 5.2F;
 
 class ShadowCubeApp {
   public:
-    explicit ShadowCubeApp(RunConfig config);
+    explicit ShadowCubeApp(ShadowCubeConfig config);
 
     ShadowCubeApp(const ShadowCubeApp&) = delete;
     ShadowCubeApp& operator=(const ShadowCubeApp&) = delete;
@@ -94,7 +94,7 @@ class ShadowCubeApp {
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& present_pipeline_resource() const;
     [[nodiscard]] const cubey::vulkan::DepthAttachment& depth_attachment() const;
 
-    RunConfig config_;
+    ShadowCubeConfig config_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;

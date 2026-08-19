@@ -44,7 +44,7 @@ static_assert(sizeof(SceneUniforms) == (sizeof(cubey::math::Mat4) * 2U) + (sizeo
 
 class TexturedCubeApp {
   public:
-    explicit TexturedCubeApp(RunConfig config);
+    explicit TexturedCubeApp(TexturedCubeConfig config);
 
     TexturedCubeApp(const TexturedCubeApp&) = delete;
     TexturedCubeApp& operator=(const TexturedCubeApp&) = delete;
@@ -81,7 +81,7 @@ class TexturedCubeApp {
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D extent) const;
     void record_cube_frame(const cubey::host::WindowedRenderFrame& frame);
 
-    RunConfig config_;
+    TexturedCubeConfig config_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;

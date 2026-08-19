@@ -1,16 +1,91 @@
 #pragma once
 
-#include <cubey/core/run_config.h>
 #include <cubey/render/cloud_layer_config.h>
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 
 namespace cubey {
+
+// Typed startup inputs consumed by the shared cloud environment runtime.
+// Public projects bind their own schemas to this narrow subsystem fragment.
+struct CloudEnvironmentOptions {
+    std::optional<std::string> debug_view{};
+    std::optional<std::string> quality{};
+    std::optional<std::uint32_t> view_steps{};
+    std::optional<std::uint32_t> view_samples{};
+    std::optional<std::string> view_sample_mode{};
+    std::optional<std::string> weather_preset{};
+    std::optional<std::string> sampling_mode{};
+    std::optional<std::string> density_model{};
+    std::optional<std::string> resolve_mode{};
+    std::optional<std::string> background_mode{};
+    std::optional<std::string> distance_mode{};
+    std::optional<std::string> orbit_representation{};
+    std::optional<float> planet_radius_m{};
+    std::optional<float> camera_altitude_m{};
+    std::optional<float> bottom_altitude_m{};
+    std::optional<float> top_altitude_m{};
+    std::optional<float> coverage{};
+    std::optional<float> density{};
+    std::optional<float> weather_scale_km{};
+    std::optional<float> shape_domain_km{};
+    std::optional<float> footprint_filter_strength{};
+    std::optional<float> edge_softness{};
+    std::optional<float> edge_detail_fade{};
+    std::optional<float> edge_resolve_strength{};
+    std::optional<float> vertical_shear_fraction{};
+    std::optional<float> wind_speed_mps{};
+    std::optional<float> shadow_strength{};
+    std::optional<float> horizon_strength{};
+    std::optional<float> weather_fronts{};
+    std::optional<float> weather_cells{};
+    std::optional<float> weather_streaks{};
+    std::optional<float> weather_softness{};
+    std::optional<float> weather_influence{};
+    std::optional<float> detail_erosion{};
+    std::optional<float> ambient_strength{};
+    std::optional<float> direct_strength{};
+    std::optional<float> phase_strength{};
+    std::optional<float> twilight_color_strength{};
+    std::optional<float> twilight_edge_strength{};
+    std::optional<float> twilight_saturation_strength{};
+    std::optional<float> afterglow_strength{};
+    std::optional<float> powder_strength{};
+    std::optional<float> final_contrast{};
+    std::optional<float> final_saturation{};
+    std::optional<float> resolve_strength{};
+    std::optional<float> resolve_radius_px{};
+    std::optional<float> horizon_glow_strength{};
+    std::optional<float> sun_glare_strength{};
+    std::optional<float> jitter_strength{};
+    std::optional<float> orbit_transition_start_m{};
+    std::optional<float> orbit_transition_end_m{};
+    std::optional<float> far_shell_start_m{};
+    std::optional<float> far_shell_end_m{};
+    std::optional<float> far_shell_strength{};
+    std::optional<float> orbit_detail_strength{};
+    std::optional<float> orbit_density_scale{};
+    std::optional<float> orbit_fill{};
+    std::optional<float> orbit_motion_strength{};
+    std::optional<float> orbit_shell_extinction{};
+    std::optional<bool> enabled{};
+    std::optional<bool> temporal{};
+    std::optional<bool> local_volume{};
+    std::optional<bool> horizon_layer{};
+};
+
+inline void validate_cloud_environment_options(const CloudEnvironmentOptions& options) {
+    if (options.view_samples && *options.view_samples != 1U && *options.view_samples != 2U &&
+        *options.view_samples != 4U) {
+        throw std::runtime_error("cloud view samples must be one of 1, 2, or 4");
+    }
+}
 
 enum class CloudEnvironmentWeatherPreset : std::uint32_t {
     Clear = 0,
@@ -518,59 +593,60 @@ inline void apply_cloud_environment_weather_preset(CloudEnvironmentConfig& confi
     }
 }
 
-inline void apply_cloud_environment_run_config(
+inline void apply_cloud_environment_options(
     CloudEnvironmentConfig& config,
-    const RunConfig::CloudOptions& run_clouds,
+    const CloudEnvironmentOptions& run_clouds,
     CloudEnvironmentConfigPolicy policy = CloudEnvironmentConfigPolicy::SurfaceV1Only) {
-    auto apply_float = [](float value, float& target) {
-        if (run_config_float_is_set(value)) {
-            target = value;
+    validate_cloud_environment_options(run_clouds);
+    auto apply_float = [](const std::optional<float>& value, float& target) {
+        if (value) {
+            target = *value;
         }
     };
 
-    if (!run_clouds.weather_preset.empty()) {
+    if (run_clouds.weather_preset) {
         apply_cloud_environment_weather_preset(
-            config, cloud_environment_weather_preset_from_name(run_clouds.weather_preset));
+            config, cloud_environment_weather_preset_from_name(*run_clouds.weather_preset));
     }
-    if (!run_clouds.quality.empty()) {
-        config.layer.quality = cloud_environment_quality_from_name(run_clouds.quality);
+    if (run_clouds.quality) {
+        config.layer.quality = cloud_environment_quality_from_name(*run_clouds.quality);
     }
-    if (run_clouds.enabled >= 0) {
-        config.enabled = run_clouds.enabled != 0;
+    if (run_clouds.enabled) {
+        config.enabled = *run_clouds.enabled;
     }
-    if (!run_clouds.debug_view.empty()) {
+    if (run_clouds.debug_view) {
         config.layer.debug_view =
-            cubey::render::cloud_layer_debug_view_from_name(run_clouds.debug_view);
+            cubey::render::cloud_layer_debug_view_from_name(*run_clouds.debug_view);
     }
-    if (!run_clouds.sampling_mode.empty()) {
+    if (run_clouds.sampling_mode) {
         config.layer.sampling_mode =
-            cloud_environment_sampling_mode_from_name(run_clouds.sampling_mode);
+            cloud_environment_sampling_mode_from_name(*run_clouds.sampling_mode);
     }
-    if (!run_clouds.view_sample_mode.empty()) {
+    if (run_clouds.view_sample_mode) {
         config.layer.view_sample_mode =
-            cloud_environment_view_sample_mode_from_name(run_clouds.view_sample_mode);
+            cloud_environment_view_sample_mode_from_name(*run_clouds.view_sample_mode);
     }
-    if (!run_clouds.distance_mode.empty()) {
+    if (run_clouds.distance_mode) {
         config.layer.distance_mode =
-            cloud_environment_distance_mode_from_name(run_clouds.distance_mode);
+            cloud_environment_distance_mode_from_name(*run_clouds.distance_mode);
     }
-    if (!run_clouds.orbit_representation.empty()) {
+    if (run_clouds.orbit_representation) {
         config.layer.orbit_representation =
-            cloud_environment_orbit_representation_from_name(run_clouds.orbit_representation);
+            cloud_environment_orbit_representation_from_name(*run_clouds.orbit_representation);
     }
-    if (!run_clouds.density_model.empty()) {
+    if (run_clouds.density_model) {
         config.layer.density_model =
-            cloud_environment_density_model_from_name(run_clouds.density_model);
+            cloud_environment_density_model_from_name(*run_clouds.density_model);
     }
-    if (!run_clouds.resolve_mode.empty()) {
+    if (run_clouds.resolve_mode) {
         config.layer.resolve_mode =
-            cloud_environment_resolve_mode_from_name(run_clouds.resolve_mode);
+            cloud_environment_resolve_mode_from_name(*run_clouds.resolve_mode);
     }
-    if (run_clouds.view_steps > 0U) {
-        config.layer.view_steps_override = static_cast<std::int32_t>(run_clouds.view_steps);
+    if (run_clouds.view_steps) {
+        config.layer.view_steps_override = static_cast<std::int32_t>(*run_clouds.view_steps);
     }
-    if (run_clouds.view_samples > 0U) {
-        config.layer.view_samples = static_cast<std::int32_t>(run_clouds.view_samples);
+    if (run_clouds.view_samples) {
+        config.layer.view_samples = static_cast<std::int32_t>(*run_clouds.view_samples);
     }
 
     apply_float(run_clouds.bottom_altitude_m, config.layer.bottom_altitude_m);
@@ -619,14 +695,14 @@ inline void apply_cloud_environment_run_config(
     apply_float(run_clouds.orbit_motion_strength, config.layer.orbit_motion_strength);
     apply_float(run_clouds.orbit_shell_extinction, config.layer.orbit_shell_extinction);
 
-    if (run_clouds.temporal >= 0) {
-        config.layer.temporal_enabled = run_clouds.temporal != 0;
+    if (run_clouds.temporal) {
+        config.layer.temporal_enabled = *run_clouds.temporal;
     }
-    if (run_clouds.local_volume >= 0) {
-        config.layer.local_volume_enabled = run_clouds.local_volume != 0;
+    if (run_clouds.local_volume) {
+        config.layer.local_volume_enabled = *run_clouds.local_volume;
     }
-    if (run_clouds.horizon_layer >= 0) {
-        config.layer.horizon_layer_enabled = run_clouds.horizon_layer != 0;
+    if (run_clouds.horizon_layer) {
+        config.layer.horizon_layer_enabled = *run_clouds.horizon_layer;
     }
     config.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
     if (policy == CloudEnvironmentConfigPolicy::SurfaceV1Only) {

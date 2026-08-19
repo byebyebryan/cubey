@@ -1,4 +1,4 @@
-#include "ocean_config.h"
+#include "ocean_project_config.h"
 #include "ocean_horizon.h"
 #include "ocean_mesh.h"
 #include "ocean_spectrum_diagnostics.h"
@@ -6,7 +6,6 @@
 #include "ocean_surface_quality.h"
 #include "ocean_ui.h"
 
-#include <cubey/core/run_config.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 
 #include <array>
@@ -14,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <numbers>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -25,8 +25,23 @@ void require(bool condition, const char* message) {
     }
 }
 
+template <typename Fn> void require_throws(Fn&& fn, const char* message) {
+    try {
+        fn();
+    } catch (const std::exception&) {
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 void require_near(float value, float expected, float tolerance, const char* message) {
     require(value >= expected - tolerance && value <= expected + tolerance, message);
+}
+
+void require_near(const std::optional<float>& value, float expected, float tolerance,
+                  const char* message) {
+    require(value.has_value(), message);
+    require_near(*value, expected, tolerance, message);
 }
 
 std::string read_text_file(const std::filesystem::path& path) {
@@ -56,9 +71,61 @@ void require_before(const std::string& text, const std::string& first, const std
 
 } // namespace
 
+void test_ocean_schema_contract() {
+    namespace ocean = cubey::projects::ocean;
+    char arg0[] = "ocean";
+    char arg1[] = "--ocean-map-size";
+    char arg2[] = "128";
+    char arg3[] = "--set";
+    char arg4[] = "ocean.map_size=256";
+    char* argv[] = {arg0, arg1, arg2, arg3, arg4};
+    const auto parsed = ocean::parse_ocean_project_config(5, argv);
+    require(parsed.ocean.map_size == 256U, "ocean schema should apply --set precedence");
+    ocean::OceanProjectConfig json_config;
+    auto schema = ocean::ocean_project_config_schema(json_config);
+    schema.apply_json({{"ocean", {{"sea_state", "calm"}}},
+                       {"clouds", {{"enabled", false}}}});
+    require(json_config.ocean.sea_state == "calm" && json_config.clouds.enabled == 0,
+            "ocean schema should bind JSON paths");
+    const auto template_path =
+        std::filesystem::temp_directory_path() / "cubey-ocean-schema-template-v2.json";
+    schema.write_template(template_path);
+    const std::string template_text = read_text_file(template_path);
+    std::filesystem::remove(template_path);
+    require_contains(template_text, "ocean", "ocean template should expose owned options");
+    require_not_contains(template_text, "smoke", "ocean template should omit retired options");
+    bool rejected = false;
+    try {
+        schema.apply_json({{"smoke", {{"injectors", 1}}}});
+    } catch (const std::exception&) {
+        rejected = true;
+    }
+    require(rejected, "ocean schema should reject unrelated options");
+}
+
+void test_shared_schema_validation_and_aliases() {
+    namespace ocean = cubey::projects::ocean;
+    ocean::OceanProjectConfig config;
+    const auto schema = ocean::ocean_project_config_schema(config);
+    require_throws([&] { schema.set("ocean.mesh_cells", "31"); },
+                   "ocean shared range should reject undersized meshes");
+    require_throws([&] { schema.set("ocean.surface_shading_policy", "footprint-adaptive"); },
+                   "ocean shared enum should reject an unsupported spelling");
+    require_throws([&] { schema.set("pbr.exposure", "-4.1"); },
+                   "ocean shared PBR exposure should enforce its lower range");
+
+    const char* argv[] = {"ocean", "--no-ocean-size-reference"};
+    const auto parsed = ocean::parse_ocean_project_config(2, const_cast<char**>(argv));
+    require(parsed.ocean.size_reference == 0,
+            "ocean shared negative bool alias should remain supported");
+}
+
 int main() {
     try {
         namespace ocean = cubey::projects::ocean;
+
+        test_ocean_schema_contract();
+        test_shared_schema_validation_and_aliases();
 
         const ocean::OceanConfig defaults{};
         require(defaults.sea_state == ocean::OceanSeaState::Windy,
@@ -268,7 +335,7 @@ int main() {
         require(defaults.spectral_domains_enabled,
                 "ocean should default to spectral source-domain filtering");
         const cubey::CloudEnvironmentConfig default_clouds =
-            ocean::ocean_cloud_config_from_run_config(cubey::RunConfig{});
+            ocean::ocean_cloud_config_from_options(ocean::OceanStartupOptions{});
         require(default_clouds.enabled, "ocean clouds should be enabled by default");
         require(default_clouds.layer.distance_mode == cubey::render::CloudLayerDistanceMode::Auto,
                 "ocean clouds should use the shared surface horizon handoff distance mode");
@@ -283,20 +350,20 @@ int main() {
                     !default_clouds.layer.temporal_enabled &&
                     default_clouds.layer.horizon_layer_enabled,
                 "ocean clouds should inherit stable surface horizon defaults");
-        cubey::RunConfig local_only_clouds_config;
+        ocean::OceanStartupOptions local_only_clouds_config;
         local_only_clouds_config.clouds.distance_mode = "local";
         local_only_clouds_config.clouds.horizon_layer = 0;
         const cubey::CloudEnvironmentConfig local_only_clouds =
-            ocean::ocean_cloud_config_from_run_config(local_only_clouds_config);
+            ocean::ocean_cloud_config_from_options(local_only_clouds_config);
         require(local_only_clouds.layer.distance_mode ==
                         cubey::render::CloudLayerDistanceMode::Local &&
                     !local_only_clouds.layer.horizon_layer_enabled,
                 "ocean should preserve the local-only cloud fallback");
-        cubey::RunConfig no_clouds_config;
+        ocean::OceanStartupOptions no_clouds_config;
         no_clouds_config.clouds.enabled = 0;
-        require(!ocean::ocean_cloud_config_from_run_config(no_clouds_config).enabled,
+        require(!ocean::ocean_cloud_config_from_options(no_clouds_config).enabled,
                 "ocean should honor --no-clouds");
-        cubey::RunConfig deferred_clouds_config;
+        ocean::OceanStartupOptions deferred_clouds_config;
         deferred_clouds_config.clouds.quality = "half";
         deferred_clouds_config.clouds.view_steps = 48;
         deferred_clouds_config.clouds.view_samples = 2;
@@ -309,7 +376,7 @@ int main() {
         deferred_clouds_config.clouds.local_volume = 0;
         deferred_clouds_config.clouds.horizon_layer = 1;
         const cubey::CloudEnvironmentConfig clamped_clouds =
-            ocean::ocean_cloud_config_from_run_config(deferred_clouds_config);
+            ocean::ocean_cloud_config_from_options(deferred_clouds_config);
         require(clamped_clouds.layer.quality == cubey::render::CloudLayerQuality::Half,
                 "ocean cloud policy should preserve surface quality overrides");
         require(clamped_clouds.layer.view_steps_override == 48 &&
@@ -910,100 +977,100 @@ int main() {
         }
         require(rejected, "ocean should not expose the experimental detail debug view");
 
-        cubey::RunConfig run_config;
-        run_config.debug_view = "foam";
-        run_config.ocean.sea_state = "stormy";
-        run_config.ocean.map_size = 128;
-        run_config.ocean.surface_mode = "flat";
-        run_config.ocean.mesh_cells = 256U;
-        run_config.ocean.mesh_lod_levels = 4U;
-        run_config.ocean.horizon_target_near_cell_m = 3.5F;
-        run_config.ocean.surface_shading_policy = "footprint";
-        run_config.ocean.self_shadow_strength = 0.2F;
-        run_config.ocean.self_shadow_steps = 4U;
-        run_config.ocean.self_shadow_far_steps = 2U;
-        run_config.ocean.shape_anti_repeat_strength = 0.25F;
-        run_config.ocean.detail_anti_repeat_strength = 0.5F;
-        run_config.ocean.detail_filter = "bilinear";
-        run_config.ocean.planet_radius_scale = 0.25F;
-        run_config.ocean.curvature_start_ratio = 0.20F;
-        run_config.ocean.curvature_end_ratio = 0.80F;
-        run_config.ocean.curvature_strength = 0.35F;
-        run_config.ocean.cloud_reflection_source = "planar";
-        run_config.ocean.cloud_environment_extent = 128U;
-        run_config.ocean.cloud_environment_update_hz = 8.0F;
-        run_config.ocean.cloud_planar_resolution_scale = 0.75F;
-        run_config.ocean.cloud_planar_view_steps = 48U;
-        run_config.ocean.cloud_planar_guard_band = 0.22F;
-        run_config.ocean.cloud_reflection_strength = 0.82F;
-        run_config.ocean.cloud_shadow_strength = 0.41F;
-        run_config.ocean.spectral_domains = 0;
-        run_config.ocean.terrain_fields = 1;
-        run_config.pbr.exposure = 0.5F;
-        const ocean::OceanConfig from_run_config = ocean::ocean_config_from_run_config(run_config);
-        require(from_run_config.render_view == ocean::OceanRenderView::Foam,
-                "run config should initialize ocean debug view");
-        require(from_run_config.sea_state == ocean::OceanSeaState::Stormy,
-                "run config should apply the selected sea state before independent overrides");
-        require(from_run_config.map_size == 128U, "run config should initialize ocean map size");
-        require(from_run_config.field_precision == ocean::OceanFieldPrecision::Half,
-                "run config should inherit the default ocean field precision");
-        require(from_run_config.surface_mode == ocean::OceanSurfaceMode::Flat,
-                "run config should initialize ocean surface mode");
-        require(from_run_config.mesh_cells == 256U &&
-                    from_run_config.mesh_lod_levels == 4U,
-                "run config should initialize ocean mesh ablation controls");
-        require_near(from_run_config.horizon_target_near_cell_m, 3.5F, 0.001F,
-                     "run config should initialize the ocean near-cell target");
-        require(from_run_config.surface_shading_policy ==
+        ocean::OceanStartupOptions startup;
+        startup.debug_view = "foam";
+        startup.ocean.sea_state = "stormy";
+        startup.ocean.map_size = 128;
+        startup.ocean.surface_mode = "flat";
+        startup.ocean.mesh_cells = 256U;
+        startup.ocean.mesh_lod_levels = 4U;
+        startup.ocean.horizon_target_near_cell_m = 3.5F;
+        startup.ocean.surface_shading_policy = "footprint";
+        startup.ocean.self_shadow_strength = 0.2F;
+        startup.ocean.self_shadow_steps = 4U;
+        startup.ocean.self_shadow_far_steps = 2U;
+        startup.ocean.shape_anti_repeat_strength = 0.25F;
+        startup.ocean.detail_anti_repeat_strength = 0.5F;
+        startup.ocean.detail_filter = "bilinear";
+        startup.ocean.planet_radius_scale = 0.25F;
+        startup.ocean.curvature_start_ratio = 0.20F;
+        startup.ocean.curvature_end_ratio = 0.80F;
+        startup.ocean.curvature_strength = 0.35F;
+        startup.ocean.cloud_reflection_source = "planar";
+        startup.ocean.cloud_environment_extent = 128U;
+        startup.ocean.cloud_environment_update_hz = 8.0F;
+        startup.ocean.cloud_planar_resolution_scale = 0.75F;
+        startup.ocean.cloud_planar_view_steps = 48U;
+        startup.ocean.cloud_planar_guard_band = 0.22F;
+        startup.ocean.cloud_reflection_strength = 0.82F;
+        startup.ocean.cloud_shadow_strength = 0.41F;
+        startup.ocean.spectral_domains = 0;
+        startup.ocean.terrain_fields = 1;
+        startup.pbr.exposure = 0.5F;
+        const ocean::OceanConfig from_options = ocean::ocean_config_from_options(startup);
+        require(from_options.render_view == ocean::OceanRenderView::Foam,
+                "startup options should initialize ocean debug view");
+        require(from_options.sea_state == ocean::OceanSeaState::Stormy,
+                "startup options should apply the selected sea state before independent overrides");
+        require(from_options.map_size == 128U, "startup options should initialize ocean map size");
+        require(from_options.field_precision == ocean::OceanFieldPrecision::Half,
+                "startup options should inherit the default ocean field precision");
+        require(from_options.surface_mode == ocean::OceanSurfaceMode::Flat,
+                "startup options should initialize ocean surface mode");
+        require(from_options.mesh_cells == 256U &&
+                    from_options.mesh_lod_levels == 4U,
+                "startup options should initialize ocean mesh ablation controls");
+        require_near(from_options.horizon_target_near_cell_m, 3.5F, 0.001F,
+                     "startup options should initialize the ocean near-cell target");
+        require(from_options.surface_shading_policy ==
                     ocean::OceanSurfaceShadingPolicy::FootprintAdaptive,
-                "run config should initialize the ocean surface shading policy");
-        require_near(from_run_config.self_shadow_strength, 0.2F, 0.001F,
-                     "run config should initialize ocean self-shadow strength");
-        require(from_run_config.self_shadow_steps == 4U,
-                "run config should initialize ocean self-shadow steps");
-        require(from_run_config.self_shadow_far_steps == 2U,
-                "run config should initialize far ocean self-shadow steps");
-        require_near(from_run_config.shape_anti_repeat_strength, 0.25F, 0.001F,
-                     "run config should initialize shape anti-repeat strength");
-        require_near(from_run_config.detail_anti_repeat_strength, 0.5F, 0.001F,
-                     "run config should initialize detail anti-repeat strength");
-        require(from_run_config.detail_filter == ocean::OceanDetailFilter::Bilinear,
-                "run config should initialize the ocean detail filter");
-        require_near(from_run_config.planet_radius_scale, 0.25F, 0.001F,
-                     "run config should initialize ocean planet radius scale");
-        require_near(from_run_config.curvature_start_ratio, 0.20F, 0.001F,
-                     "run config should initialize ocean curvature start ratio");
-        require_near(from_run_config.curvature_end_ratio, 0.80F, 0.001F,
-                     "run config should initialize ocean curvature end ratio");
-        require_near(from_run_config.curvature_strength, 0.35F, 0.001F,
-                     "run config should initialize ocean curvature strength");
-        require_near(from_run_config.cloud_reflection_strength, 0.82F, 0.001F,
-                     "run config should initialize cloud reflection strength");
-        require(from_run_config.cloud_reflection_source ==
+                "startup options should initialize the ocean surface shading policy");
+        require_near(from_options.self_shadow_strength, 0.2F, 0.001F,
+                     "startup options should initialize ocean self-shadow strength");
+        require(from_options.self_shadow_steps == 4U,
+                "startup options should initialize ocean self-shadow steps");
+        require(from_options.self_shadow_far_steps == 2U,
+                "startup options should initialize far ocean self-shadow steps");
+        require_near(from_options.shape_anti_repeat_strength, 0.25F, 0.001F,
+                     "startup options should initialize shape anti-repeat strength");
+        require_near(from_options.detail_anti_repeat_strength, 0.5F, 0.001F,
+                     "startup options should initialize detail anti-repeat strength");
+        require(from_options.detail_filter == ocean::OceanDetailFilter::Bilinear,
+                "startup options should initialize the ocean detail filter");
+        require_near(from_options.planet_radius_scale, 0.25F, 0.001F,
+                     "startup options should initialize ocean planet radius scale");
+        require_near(from_options.curvature_start_ratio, 0.20F, 0.001F,
+                     "startup options should initialize ocean curvature start ratio");
+        require_near(from_options.curvature_end_ratio, 0.80F, 0.001F,
+                     "startup options should initialize ocean curvature end ratio");
+        require_near(from_options.curvature_strength, 0.35F, 0.001F,
+                     "startup options should initialize ocean curvature strength");
+        require_near(from_options.cloud_reflection_strength, 0.82F, 0.001F,
+                     "startup options should initialize cloud reflection strength");
+        require(from_options.cloud_reflection_source ==
                     ocean::OceanCloudReflectionSource::Planar,
-                "run config should initialize cloud reflection source");
-        require(from_run_config.cloud_environment_extent == 128U,
-                "run config should initialize cloud environment extent");
-        require_near(from_run_config.cloud_environment_update_hz, 8.0F, 0.001F,
-                     "run config should initialize cloud environment update rate");
-        require_near(from_run_config.cloud_planar_resolution_scale, 0.75F, 0.001F,
-                     "run config should initialize planar cloud resolution");
-        require(from_run_config.cloud_planar_view_steps == 48U,
-                "run config should initialize planar cloud step count");
-        require_near(from_run_config.cloud_planar_guard_band, 0.22F, 0.001F,
-                     "run config should initialize planar cloud guard band");
-        require_near(from_run_config.cloud_shadow_strength, 0.41F, 0.001F,
-                     "run config should initialize cloud shadow strength");
-        require(!from_run_config.spectral_domains_enabled,
-                "run config should initialize ocean spectral domain override");
-        require(from_run_config.terrain_fields_enabled,
-                "run config should initialize ocean terrain field override");
-        require_near(from_run_config.exposure, 0.5F, 0.001F,
-                     "run config should initialize ocean exposure");
+                "startup options should initialize cloud reflection source");
+        require(from_options.cloud_environment_extent == 128U,
+                "startup options should initialize cloud environment extent");
+        require_near(from_options.cloud_environment_update_hz, 8.0F, 0.001F,
+                     "startup options should initialize cloud environment update rate");
+        require_near(from_options.cloud_planar_resolution_scale, 0.75F, 0.001F,
+                     "startup options should initialize planar cloud resolution");
+        require(from_options.cloud_planar_view_steps == 48U,
+                "startup options should initialize planar cloud step count");
+        require_near(from_options.cloud_planar_guard_band, 0.22F, 0.001F,
+                     "startup options should initialize planar cloud guard band");
+        require_near(from_options.cloud_shadow_strength, 0.41F, 0.001F,
+                     "startup options should initialize cloud shadow strength");
+        require(!from_options.spectral_domains_enabled,
+                "startup options should initialize ocean spectral domain override");
+        require(from_options.terrain_fields_enabled,
+                "startup options should initialize ocean terrain field override");
+        require_near(from_options.exposure, 0.5F, 0.001F,
+                     "startup options should initialize ocean exposure");
         const cubey::AtmosphereEnvironmentRunState default_atmosphere_state =
             cubey::atmosphere_environment_run_state_from_config(
-                cubey::RunConfig{}.atmosphere,
+                ocean::OceanStartupOptions{}.atmosphere,
                 {
                     .sun_elevation_degrees = 20.0F,
                     .sun_azimuth_degrees = -20.0F,
@@ -1018,7 +1085,7 @@ int main() {
                      "default ocean atmosphere should use the shared sunrise orientation offset");
         require_near(default_atmosphere_state.time_speed_hours_per_second, 0.5F, 0.001F,
                      "default ocean atmosphere should run at half an hour per second");
-        cubey::RunConfig solar_run_config;
+        ocean::OceanStartupOptions solar_run_config;
         solar_run_config.atmosphere.time_of_day_mode = "solar";
         solar_run_config.atmosphere.time_hours = 0.0F;
         const cubey::AtmosphereEnvironmentRunState solar_state =
@@ -1028,7 +1095,7 @@ int main() {
         require(solar_state.resolved_exposure > 0.0F,
                 "solar atmosphere run state should resolve a night exposure");
 
-        cubey::RunConfig manual_run_config;
+        ocean::OceanStartupOptions manual_run_config;
         manual_run_config.atmosphere.sun_elevation_degrees = 20.0F;
         const cubey::AtmosphereEnvironmentRunState manual_state =
             cubey::atmosphere_environment_run_state_from_config(manual_run_config.atmosphere);
@@ -1061,7 +1128,7 @@ int main() {
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        cubey::RunConfig parsed = cubey::parse_run_config(26, const_cast<char**>(argv));
+        ocean::OceanProjectConfig parsed = ocean::parse_ocean_project_config(26, const_cast<char**>(argv));
         require(parsed.ocean.sea_state == "calm", "CLI parser should accept --ocean-sea-state");
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
@@ -1112,7 +1179,7 @@ int main() {
             "3",
             "--no-ocean-size-reference",
         };
-        parsed = cubey::parse_run_config(static_cast<int>(std::size(ablation_argv)),
+        parsed = ocean::parse_ocean_project_config(static_cast<int>(std::size(ablation_argv)),
                                          const_cast<char**>(ablation_argv));
         require(parsed.ocean.mesh_cells == 192U && parsed.ocean.mesh_lod_levels == 4U,
                 "CLI parser should accept ocean mesh ablation controls");
@@ -1138,11 +1205,11 @@ int main() {
                 "CLI parser should accept a disabled ocean size reference");
 
         const char* all_cascade_argv[] = {"ocean", "--ocean-cascade", "all"};
-        parsed = cubey::parse_run_config(3, const_cast<char**>(all_cascade_argv));
+        parsed = ocean::parse_ocean_project_config(3, const_cast<char**>(all_cascade_argv));
         require(parsed.ocean.cascade == -1, "CLI parser should accept all ocean cascades");
 
         const char* spectral_domains_argv[] = {"ocean", "--ocean-spectral-domains"};
-        parsed = cubey::parse_run_config(2, const_cast<char**>(spectral_domains_argv));
+        parsed = ocean::parse_ocean_project_config(2, const_cast<char**>(spectral_domains_argv));
         require(parsed.ocean.spectral_domains == 1,
                 "CLI parser should accept --ocean-spectral-domains");
 

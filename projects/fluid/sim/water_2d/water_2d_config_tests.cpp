@@ -1,7 +1,7 @@
 #include "water_2d_config.h"
+#include "../../water_2d/water_2d_project_config.h"
 
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
 
 #include <cstdio>
 #include <exception>
@@ -10,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -39,6 +40,17 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     std::ostringstream stream;
     stream << file.rdbuf();
     return stream.str();
+}
+
+[[nodiscard]] cubey::projects::fluid::water_2d::Water2DProjectConfig parse_project(
+    std::vector<std::string> arguments) {
+    std::vector<char*> argv;
+    argv.reserve(arguments.size());
+    for (std::string& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    return cubey::projects::fluid::water_2d::parse_water_2d_project_config(
+        static_cast<int>(argv.size()), argv.data());
 }
 
 } // namespace
@@ -311,31 +323,33 @@ int main() {
         require(minimum_grid.initial_particle_capacity == (12U * 12U * 4U),
                 "water minimum grid should clamp maximum fill to the interior border");
 
-        const cubey::RunConfig default_run_config;
-        const cubey::projects::fluid::water_2d::Water2DConfig default_from_run_config =
-            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(default_run_config);
-        require(default_from_run_config.grid_width == config.grid_width,
-                "default run config should preserve water grid width");
-        require(default_from_run_config.grid_height == config.grid_height,
-                "default run config should preserve water grid height");
-        require(default_from_run_config.active_particle_count == config.active_particle_count,
-                "default run config should preserve water active particle count");
-        require(default_from_run_config.initial_particle_capacity ==
+        const cubey::projects::fluid::water_2d::Water2DProjectConfig default_project;
+        const cubey::projects::fluid::water_2d::Water2DConfig default_from_options =
+            cubey::projects::fluid::water_2d::water_2d_config_from_options(
+                default_project.grid, default_project.water, default_project.common);
+        require(default_from_options.grid_width == config.grid_width,
+                "default project config should preserve water grid width");
+        require(default_from_options.grid_height == config.grid_height,
+                "default project config should preserve water grid height");
+        require(default_from_options.active_particle_count == config.active_particle_count,
+                "default project config should preserve water active particle count");
+        require(default_from_options.initial_particle_capacity ==
                     config.initial_particle_capacity,
-                "default run config should preserve water initial particle capacity");
-        require(default_from_run_config.particle_capacity == config.particle_capacity,
-                "default run config should preserve water particle capacity");
-        require(!default_from_run_config.profile_diagnostics &&
-                    default_from_run_config.profile_diagnostic_interval == 1U,
+                "default project config should preserve water initial particle capacity");
+        require(default_from_options.particle_capacity == config.particle_capacity,
+                "default project config should preserve water particle capacity");
+        require(!default_from_options.profile_diagnostics &&
+                    default_from_options.profile_diagnostic_interval == 1U,
                 "water diagnostics should be opt-in with per-frame sampling by default");
 
-        cubey::RunConfig run_config;
-        run_config.grid.width = 320;
-        run_config.grid.height = 180;
+        cubey::projects::fluid::water_2d::Water2DProjectConfig project_config;
+        project_config.grid.width = 320U;
+        project_config.grid.height = 180U;
         const cubey::projects::fluid::water_2d::Water2DConfig configured =
-            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(run_config);
-        require(configured.grid_width == 320, "water config should honor run config grid width");
-        require(configured.grid_height == 180, "water config should honor run config grid height");
+            cubey::projects::fluid::water_2d::water_2d_config_from_options(
+                project_config.grid, project_config.water, project_config.common);
+        require(configured.grid_width == 320, "water config should honor project grid width");
+        require(configured.grid_height == 180, "water config should honor project grid height");
         require(configured.active_particle_count == (160U * 126U * 4U),
                 "water config should size active particles from configured grid dimensions");
         require(configured.initial_particle_capacity == (294U * 165U * 4U),
@@ -344,44 +358,90 @@ int main() {
                     ((294U * 165U * 4U) + kExpectedHoseParticleCapacity),
                 "water config should add hose capacity to configured particle capacity");
 
-        cubey::RunConfig transfer_run_config;
-        transfer_run_config.water2d.transfer_mode = "pic-flip";
-        transfer_run_config.water2d.transfer_limit = 48;
-        transfer_run_config.water2d.hose = 1;
-        transfer_run_config.water2d.drain = 1;
-        transfer_run_config.water2d.wave = 1;
+        cubey::projects::fluid::water_2d::Water2DStartupOptions transfer_options;
+        transfer_options.transfer_mode = "pic-flip";
+        transfer_options.transfer_limit = 48U;
+        transfer_options.hose = true;
+        transfer_options.drain = true;
+        transfer_options.wave = true;
         const cubey::projects::fluid::water_2d::Water2DConfig transfer_config =
-            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(transfer_run_config);
+            cubey::projects::fluid::water_2d::water_2d_config_from_options(
+                {}, transfer_options, {});
         require(transfer_config.transfer_mode ==
                     cubey::projects::fluid::water_2d::Water2DTransferMode::PicFlip,
-                "water run-config should parse transfer mode");
+                "water project config should parse transfer mode");
         require(transfer_config.max_particles_per_cell == 48,
-                "water run-config should parse transfer sample limit");
+                "water project config should parse transfer sample limit");
         require(transfer_config.hose.enabled && transfer_config.drain.enabled &&
                     transfer_config.wave.enabled,
-                "water run-config should parse hose, drain, and wave toggles");
+                "water project config should parse hose, drain, and wave toggles");
 
-        cubey::RunConfig diagnostics_run_config;
-        diagnostics_run_config.headless = true;
-        diagnostics_run_config.profile_diagnostics = true;
-        diagnostics_run_config.profile_diagnostic_interval = 7U;
+        cubey::host::CommonRunConfig diagnostics_common;
+        diagnostics_common.headless = true;
+        diagnostics_common.profile_diagnostics = true;
+        diagnostics_common.profile_diagnostic_interval = 7U;
         const cubey::projects::fluid::water_2d::Water2DConfig diagnostics_config =
-            cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
-                diagnostics_run_config);
+            cubey::projects::fluid::water_2d::water_2d_config_from_options(
+                {}, {}, diagnostics_common);
         require(diagnostics_config.profile_diagnostics &&
                     diagnostics_config.profile_diagnostic_interval == 7U,
-                "water run-config should preserve profile diagnostics flags");
+                "water common config should preserve profile diagnostics flags");
         bool rejected_windowed_diagnostics = false;
         try {
-            cubey::RunConfig windowed_diagnostics;
+            cubey::host::CommonRunConfig windowed_diagnostics;
             windowed_diagnostics.profile_diagnostics = true;
-            static_cast<void>(cubey::projects::fluid::water_2d::water_2d_config_from_run_config(
-                windowed_diagnostics));
+            static_cast<void>(cubey::projects::fluid::water_2d::water_2d_config_from_options(
+                {}, {}, windowed_diagnostics));
         } catch (const std::runtime_error&) {
             rejected_windowed_diagnostics = true;
         }
         require(rejected_windowed_diagnostics,
                 "water profile diagnostics should require headless mode");
+
+        const std::filesystem::path layered_path =
+            std::filesystem::temp_directory_path() / "cubey-water-2d-config-test.json";
+        const std::filesystem::path template_path =
+            std::filesystem::temp_directory_path() / "cubey-water-2d-template-test.json";
+        {
+            std::ofstream file(layered_path);
+            file << R"({"grid":{"size":24},"water2d":{"transfer":"apic","hose":false}})";
+        }
+        const auto layered = parse_project({"water_2d", "--config", layered_path.string(),
+                                            "--water2d-transfer", "picflip", "--water2d-hose",
+                                            "--set", "water2d.transfer_limit=48"});
+        require(layered.grid.size == 24U && layered.grid.width == 24U &&
+                    layered.grid.height == 24U,
+                "water grid.size should fan out to both dimensions");
+        require(layered.water.transfer_mode == "picflip" && layered.water.transfer_limit == 48U,
+                "water --set and named flags should layer over config files");
+        require(layered.water.hose && layered.simulation.hose.enabled,
+                "water positive bool alias should enable hose emission");
+        const auto negative = parse_project({"water_2d", "--no-water2d-hose",
+                                             "--no-water2d-drain", "--water2d-wave"});
+        require(negative.water.hose == false && negative.water.drain == false &&
+                    negative.water.wave == true,
+                "water negative bool aliases should bind optional toggles");
+        require(!negative.simulation.hose.enabled && !negative.simulation.drain.enabled &&
+                    negative.simulation.wave.enabled,
+                "water bool aliases should synchronize the typed runtime config");
+        bool rejected_unknown_key = false;
+        try {
+            static_cast<void>(parse_project({"water_2d", "--set", "smoke.injectors=4"}));
+        } catch (const std::runtime_error&) {
+            rejected_unknown_key = true;
+        }
+        require(rejected_unknown_key, "water schema should reject options owned by another target");
+        const auto templated = parse_project(
+            {"water_2d", "--write-config-template", template_path.string()});
+        (void)templated;
+        const std::string template_json = read_text_file(template_path);
+        require_contains(template_json, "\"water2d\"",
+                         "water template should expose live water options");
+        require_not_contains(template_json, "smoke",
+                             "water template should omit smoke-only options");
+        std::error_code cleanup_error;
+        std::filesystem::remove(layered_path, cleanup_error);
+        std::filesystem::remove(template_path, cleanup_error);
 
         cubey::projects::fluid::water_2d::Water2DConfig edited_fill = config;
         edited_fill.initial_fill_width = 0.25F;
@@ -437,11 +497,14 @@ int main() {
         require(cubey::projects::fluid::water_2d::water_2d_runtime_particle_scan_count(
                     config, runtime_state) == config.particle_capacity,
                 "water runtime particle scan count should clamp to particle capacity");
-        require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(run_config) == 120,
+        cubey::host::CommonRunConfig common_config;
+        require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(common_config) ==
+                    120,
                 "water headless frame count should default to 120");
-        run_config.frames = 8;
-        require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(run_config) == 8,
-                "water headless frame count should honor run config frames");
+        common_config.frames = 8;
+        require(cubey::projects::fluid::water_2d::water_2d_headless_frame_count(common_config) ==
+                    8,
+                "water headless frame count should honor common config frames");
 
         const cubey::FrameTiming timing =
             cubey::projects::fluid::water_2d::fixed_water_2d_headless_timing(config, 5);

@@ -78,54 +78,13 @@ void test_procedural_source_recipes_compose_layers_and_debug_fields();
 void test_procedural_source_recipes_normalize_outputs();
 void test_procedural_source_recipes_reject_invalid_layers();
 void test_procedural_scalar_field_summarizes_and_normalizes();
-void test_run_cli_app_sets_default_title_and_returns_runner_status();
 void test_active_project_ui_uses_shared_common_controls();
 void test_active_project_ui_raw_combo_exceptions_are_explicit();
 void test_retired_ocean_ui_exceptions_are_removed();
 void test_imgui_helper_layer_covers_active_common_controls();
 void test_active_project_ui_uses_shared_performance_panel();
 void test_active_project_ui_starts_low_noise_sections_collapsed();
-void test_run_config_parses_animation_options();
-void test_run_config_parses_video_capture_defaults();
-void test_run_config_parses_pbr_debug_view_name();
-void test_run_config_parses_atmosphere_options();
-void test_run_config_rejects_invalid_atmosphere_options();
-void test_run_config_parses_frame_stats_flag();
-void test_run_config_parses_profile_options();
-void test_run_config_rejects_invalid_profile_diagnostics_options();
-void test_run_config_parses_grid_dimensions();
-void test_run_config_parses_water_controls();
-void test_run_config_parses_ocean_controls();
-void test_run_config_parses_terrain_controls();
-void test_run_config_rejects_invalid_ocean_controls();
-void test_run_config_parses_planet_controls();
-void test_run_config_rejects_invalid_planet_controls();
-void test_run_config_parses_shadow_volume_controls();
-void test_run_config_parses_smoke_injector_count();
-void test_run_config_parses_smoke_injector_orbit_controls();
-void test_run_config_parses_smoke_injector_force_controls();
-void test_run_config_parses_smoke_solver_controls();
-void test_run_config_parses_pyro_buoyancy_control();
-void test_run_config_parses_pyro_source_controls();
-void test_run_config_parses_pyro_fire_controls();
-void test_run_config_parses_pyro_obstacle_controls();
-void test_run_config_parses_input_path();
-void test_run_config_parses_pbr_environment_options();
-void test_run_config_rejects_invalid_pbr_options();
-void test_run_config_parses_png_output_path();
-void test_run_config_preserves_explicit_video_capture_timing_and_output();
-void test_run_config_rejects_invalid_capture_options();
-void test_run_config_descriptors_have_help_text();
-void test_run_config_descriptor_cli_names_are_unique();
-void test_run_config_promoted_flags_are_not_explicit_parser_branches();
 void test_shared_cloud_ui_defaults_to_surface_controls();
-void test_run_config_descriptors_cover_project_control_paths();
-void test_run_config_toggle_descriptors_have_negative_aliases();
-void test_run_config_loads_json_config_file();
-void test_run_config_cli_and_set_override_config_file();
-void test_run_config_descriptor_cli_and_set_precedence();
-void test_run_config_rejects_invalid_json_config_file();
-void test_run_config_writes_json_template();
 void test_video_encoder_validates_config_and_frame_size();
 void test_video_encoder_writes_mp4_when_backend_is_available();
 
@@ -141,56 +100,15 @@ std::span<const TestCase> core_test_cases() {
         CUBEY_TEST(test_config_schema_layers_config_files_in_argv_order),
         CUBEY_TEST(test_config_schema_named_values_can_spell_bootstrap_flags),
         CUBEY_TEST(test_common_host_config_normalizes_capture_compatibility),
-        CUBEY_TEST(test_run_config_parses_png_output_path),
         CUBEY_TEST(test_active_project_ui_uses_shared_common_controls),
         CUBEY_TEST(test_active_project_ui_raw_combo_exceptions_are_explicit),
         CUBEY_TEST(test_retired_ocean_ui_exceptions_are_removed),
         CUBEY_TEST(test_imgui_helper_layer_covers_active_common_controls),
         CUBEY_TEST(test_active_project_ui_uses_shared_performance_panel),
         CUBEY_TEST(test_active_project_ui_starts_low_noise_sections_collapsed),
-        CUBEY_TEST(test_run_config_parses_video_capture_defaults),
-        CUBEY_TEST(test_run_config_preserves_explicit_video_capture_timing_and_output),
-        CUBEY_TEST(test_run_config_rejects_invalid_capture_options),
-        CUBEY_TEST(test_run_config_descriptors_have_help_text),
-        CUBEY_TEST(test_run_config_descriptor_cli_names_are_unique),
-        CUBEY_TEST(test_run_config_promoted_flags_are_not_explicit_parser_branches),
         CUBEY_TEST(test_shared_cloud_ui_defaults_to_surface_controls),
-        CUBEY_TEST(test_run_config_descriptors_cover_project_control_paths),
-        CUBEY_TEST(test_run_config_toggle_descriptors_have_negative_aliases),
-        CUBEY_TEST(test_run_config_loads_json_config_file),
-        CUBEY_TEST(test_run_config_cli_and_set_override_config_file),
-        CUBEY_TEST(test_run_config_descriptor_cli_and_set_precedence),
-        CUBEY_TEST(test_run_config_rejects_invalid_json_config_file),
-        CUBEY_TEST(test_run_config_writes_json_template),
-        CUBEY_TEST(test_run_config_parses_pbr_environment_options),
-        CUBEY_TEST(test_run_config_rejects_invalid_pbr_options),
         CUBEY_TEST(test_video_encoder_validates_config_and_frame_size),
         CUBEY_TEST(test_video_encoder_writes_mp4_when_backend_is_available),
-        CUBEY_TEST(test_run_config_parses_input_path),
-        CUBEY_TEST(test_run_config_parses_animation_options),
-        CUBEY_TEST(test_run_config_parses_pbr_debug_view_name),
-        CUBEY_TEST(test_run_config_parses_atmosphere_options),
-        CUBEY_TEST(test_run_config_rejects_invalid_atmosphere_options),
-        CUBEY_TEST(test_run_config_parses_frame_stats_flag),
-        CUBEY_TEST(test_run_config_parses_profile_options),
-        CUBEY_TEST(test_run_config_rejects_invalid_profile_diagnostics_options),
-        CUBEY_TEST(test_run_config_parses_grid_dimensions),
-        CUBEY_TEST(test_run_config_parses_water_controls),
-        CUBEY_TEST(test_run_config_parses_ocean_controls),
-        CUBEY_TEST(test_run_config_parses_terrain_controls),
-        CUBEY_TEST(test_run_config_rejects_invalid_ocean_controls),
-        CUBEY_TEST(test_run_config_parses_planet_controls),
-        CUBEY_TEST(test_run_config_rejects_invalid_planet_controls),
-        CUBEY_TEST(test_run_config_parses_shadow_volume_controls),
-        CUBEY_TEST(test_run_config_parses_smoke_injector_count),
-        CUBEY_TEST(test_run_config_parses_smoke_injector_orbit_controls),
-        CUBEY_TEST(test_run_config_parses_smoke_injector_force_controls),
-        CUBEY_TEST(test_run_config_parses_smoke_solver_controls),
-        CUBEY_TEST(test_run_config_parses_pyro_buoyancy_control),
-        CUBEY_TEST(test_run_config_parses_pyro_source_controls),
-        CUBEY_TEST(test_run_config_parses_pyro_fire_controls),
-        CUBEY_TEST(test_run_config_parses_pyro_obstacle_controls),
-        CUBEY_TEST(test_run_cli_app_sets_default_title_and_returns_runner_status),
         CUBEY_TEST(test_file_io_round_trips_binary_bytes),
         CUBEY_TEST(test_frame_clock_tracks_delta_elapsed_and_index),
         CUBEY_TEST(test_process_resource_stats_sampler_reports_memory),

@@ -209,6 +209,8 @@ target_link_libraries(
     PUBLIC
         cubey::core
         cubey::asset
+        cubey::engine
+        cubey::host
         cubey::terrain
     PRIVATE
         cubey_project_warnings

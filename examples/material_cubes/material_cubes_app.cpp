@@ -10,7 +10,7 @@ namespace detail {
 
 using cubey::host::FrameStatsSample;
 
-MaterialCubesApp::MaterialCubesApp(RunConfig config)
+MaterialCubesApp::MaterialCubesApp(MaterialCubesConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {
     orbit_controller_.set_home_distance(kCameraDistance);
@@ -58,7 +58,7 @@ int MaterialCubesApp::run() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "material_cubes",
             .ready_status = "rendering material instance cubes",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -71,7 +71,7 @@ int MaterialCubesApp::run() {
 
 } // namespace detail
 
-int run_material_cubes(const RunConfig& config) {
+int run_material_cubes(const MaterialCubesConfig& config) {
     detail::MaterialCubesApp app(config);
     return app.run();
 }

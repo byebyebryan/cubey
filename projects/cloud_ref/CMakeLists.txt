@@ -38,6 +38,7 @@ if (BUILD_TESTING)
         PRIVATE
             cubey::core
             cubey::render
+            cubey::host
             cubey_project_options
             cubey_project_warnings
     )

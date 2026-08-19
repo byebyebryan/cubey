@@ -1,22 +1,27 @@
 #include "../sim/pyro_3d/pyro_3d_app.h"
 
-#include <cubey/core/run_config.h>
+#include <cubey/host/configured_app.h>
 
 int main(int argc, char** argv) {
     namespace pyro = cubey::projects::fluid::pyro_3d;
-    return cubey::run_cli_app(argc, argv,
-                              {
-                                  .app_name = "explosion_3d",
-                                  .default_title = "cubey explosion 3D",
-                              },
-                              [](const cubey::RunConfig& config) {
-                                  return pyro::run_pyro_3d(
-                                      config,
-                                      {
-                                          .mode = pyro::Pyro3DMode::Explosion,
-                                          .app_name = "explosion_3d",
-                                          .ready_status = "rendering 3D explosion project",
-                                          .ui_title = "Explosion 3D",
-                                      });
-                              });
+    return cubey::host::run_configured_app(
+        argc, argv,
+        {
+            .app_name = "explosion_3d",
+            .default_title = "cubey explosion 3D",
+        },
+        [](int parse_argc, char** parse_argv, cubey::config::ParseResult* result) {
+            return pyro::parse_pyro_3d_project_config(parse_argc, parse_argv,
+                                                      pyro::Pyro3DMode::Explosion, result);
+        },
+        [](const pyro::Pyro3DProjectConfig& config) {
+            return pyro::run_pyro_3d(
+                config,
+                {
+                    .mode = pyro::Pyro3DMode::Explosion,
+                    .app_name = "explosion_3d",
+                    .ready_status = "rendering 3D explosion project",
+                    .ui_title = "Explosion 3D",
+                });
+        });
 }

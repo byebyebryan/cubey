@@ -165,12 +165,13 @@ void MaterialCubesApp::create_ibl_resources(const cubey::vulkan::Device& device,
     cubey::render::GeneratedPbrEnvironmentConfig ibl_config;
     ibl_config.intensity = config_.pbr.ibl_intensity;
 
-    if (!config_.pbr.environment_path.empty()) {
-        if (!std::filesystem::exists(config_.pbr.environment_path)) {
+    if (config_.pbr.environment_path) {
+        if (!std::filesystem::exists(*config_.pbr.environment_path)) {
             throw std::runtime_error("environment HDR does not exist: " +
-                                     config_.pbr.environment_path.string());
+                                     config_.pbr.environment_path->string());
         }
-        const cubey::asset::HdrImage image = cubey::asset::load_hdr_image(config_.pbr.environment_path);
+        const cubey::asset::HdrImage image =
+            cubey::asset::load_hdr_image(*config_.pbr.environment_path);
         ibl_environment_.emplace(cubey::render::create_pbr_environment_from_equirectangular(
             device, gpu,
             cubey::render::PbrEquirectangularImage{

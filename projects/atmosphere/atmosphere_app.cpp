@@ -1,6 +1,5 @@
 #include "atmosphere_app.h"
 
-#include "atmosphere_config.h"
 #include "atmosphere_environment.h"
 #include "atmosphere_ui.h"
 
@@ -190,9 +189,9 @@ prepare_resolved_night_sky_atlas(cubey::procedural::ProceduralArtifactCache& cac
 
 class AtmosphereApp {
   public:
-    explicit AtmosphereApp(RunConfig config)
-        : run_config_(std::move(config)),
-          atmosphere_config_(atmosphere_config_from_run_config(run_config_)),
+    explicit AtmosphereApp(AtmosphereProjectConfig config)
+        : config_(std::move(config)),
+          atmosphere_config_(config_.atmosphere),
           render_view_(atmosphere_config_.render_view),
           headless_base_time_hours_(atmosphere_config_.time_of_day.time_hours),
           headless_base_day_of_year_(atmosphere_config_.time_of_day.day_of_year),
@@ -208,7 +207,7 @@ class AtmosphereApp {
 
     int run() {
         request_night_sky_atlas_if_needed(desired_windowed_night_sky_atlas());
-        if (run_config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
         return run_windowed();
@@ -265,7 +264,7 @@ class AtmosphereApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(run_config_),
+                .run_config = config_.common,
                 .app_name = "atmosphere",
                 .ready_status = "rendering atmosphere project",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -278,7 +277,7 @@ class AtmosphereApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(run_config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
         host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
         host_config.require_dynamic_rendering = true;
@@ -346,7 +345,7 @@ class AtmosphereApp {
     }
 
     void update_headless_time(const cubey::host::HeadlessCaptureFrame& frame) {
-        if (run_config_.capture_mode == CaptureMode::Video &&
+        if (config_.common.capture_mode == CaptureMode::Video &&
             atmosphere_config_.time_of_day.mode == SunControlMode::SolarClock &&
             atmosphere_config_.time_of_day.playing) {
             set_atmosphere_time_from_elapsed(atmosphere_config_.time_of_day,
@@ -1146,7 +1145,7 @@ class AtmosphereApp {
         return moon_mesh_.value();
     }
 
-    RunConfig run_config_;
+    AtmosphereProjectConfig config_;
     AtmosphereConfig atmosphere_config_;
     AtmosphereRenderView render_view_ = AtmosphereRenderView::Final;
     cubey::OrbitController view_controller_{cubey::OrbitControllerConfig{
@@ -1187,7 +1186,7 @@ class AtmosphereApp {
 
 } // namespace
 
-int run_atmosphere(const RunConfig& config) {
+int run_atmosphere(const AtmosphereProjectConfig& config) {
     AtmosphereApp app(config);
     return app.run();
 }

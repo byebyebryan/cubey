@@ -1,13 +1,17 @@
 #pragma once
 
+#include "../common/fluid_config_schema.h"
+
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
+#include <cubey/host/common_config.h>
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 
 namespace cubey::projects::fluid::smoke_2d {
@@ -62,6 +66,26 @@ struct Smoke2DConfig {
     std::uint32_t profile_diagnostic_interval = 1;
     bool profile_diagnostics = false;
     bool headless = false;
+};
+
+// Startup overrides are intentionally separate from the concrete simulation
+// product.  The former model "unset" with optional values; the latter keeps
+// the complete, validated runtime defaults used by shaders and UI.
+struct Smoke2DStartupOptions {
+    std::optional<std::uint32_t> injectors{};
+    std::optional<std::uint32_t> pressure_iterations{};
+    std::optional<std::string> pressure_solver{};
+    std::optional<float> dye_decay{};
+    std::optional<float> velocity_decay{};
+    std::optional<float> injector_radius{};
+    std::optional<float> injector_force{};
+    std::optional<float> injector_propulsion{};
+    std::optional<float> injector_orbit_radius{};
+    std::optional<float> injector_orbit_radius_spread{};
+    std::optional<float> injector_orbit_angular_speed{};
+    std::optional<float> injector_orbit_angular_speed_spread{};
+    std::optional<float> injector_orbit_phase_spread{};
+    std::optional<float> vorticity{};
 };
 
 [[nodiscard]] inline Smoke2DDebugView next_debug_view(Smoke2DDebugView view) {
@@ -173,61 +197,65 @@ smoke_2d_pressure_solver_from_name(std::string_view name) {
     return cell_count * sizeof(float);
 }
 
-[[nodiscard]] inline Smoke2DConfig smoke_2d_config_from_run_config(const RunConfig& config) {
+[[nodiscard]] inline Smoke2DConfig
+smoke_2d_config_from_options(const common::FluidGridOptions& grid,
+                             const Smoke2DStartupOptions& options,
+                             const host::CommonRunConfig& common_config) {
     Smoke2DConfig smoke_config;
-    if (config.grid.width != 0) {
-        smoke_config.grid_width = config.grid.width;
+    if (grid.width) {
+        smoke_config.grid_width = *grid.width;
     }
-    if (config.grid.height != 0) {
-        smoke_config.grid_height = config.grid.height;
+    if (grid.height) {
+        smoke_config.grid_height = *grid.height;
     }
-    if (config.smoke.injectors != 0) {
-        if (config.smoke.injectors > kMaxProceduralInjectorCount) {
+    if (options.injectors) {
+        if (*options.injectors > kMaxProceduralInjectorCount) {
             throw std::runtime_error("smoke injector count must be 1..16");
         }
-        smoke_config.procedural_injector_count = config.smoke.injectors;
+        smoke_config.procedural_injector_count = *options.injectors;
     }
-    if (config.smoke.pressure_iterations != 0) {
-        smoke_config.pressure_iterations = config.smoke.pressure_iterations;
+    if (options.pressure_iterations) {
+        smoke_config.pressure_iterations = *options.pressure_iterations;
     }
-    smoke_config.pressure_solver = smoke_2d_pressure_solver_from_name(config.smoke.pressure_solver);
-    if (run_config_float_is_set(config.smoke.dye_decay)) {
-        smoke_config.dye_decay_per_second = config.smoke.dye_decay;
+    smoke_config.pressure_solver =
+        smoke_2d_pressure_solver_from_name(options.pressure_solver.value_or(""));
+    if (options.dye_decay) {
+        smoke_config.dye_decay_per_second = *options.dye_decay;
     }
-    if (run_config_float_is_set(config.smoke.velocity_decay)) {
-        smoke_config.velocity_decay_per_second = config.smoke.velocity_decay;
+    if (options.velocity_decay) {
+        smoke_config.velocity_decay_per_second = *options.velocity_decay;
     }
-    if (run_config_float_is_set(config.smoke.injector_radius)) {
-        smoke_config.injector_injection_radius = config.smoke.injector_radius;
+    if (options.injector_radius) {
+        smoke_config.injector_injection_radius = *options.injector_radius;
     }
-    if (run_config_float_is_set(config.smoke.injector_force)) {
-        smoke_config.injector_injection_strength = config.smoke.injector_force;
+    if (options.injector_force) {
+        smoke_config.injector_injection_strength = *options.injector_force;
     }
-    if (run_config_float_is_set(config.smoke.injector_propulsion)) {
-        smoke_config.injector_propulsion_strength = config.smoke.injector_propulsion;
+    if (options.injector_propulsion) {
+        smoke_config.injector_propulsion_strength = *options.injector_propulsion;
     }
-    if (run_config_float_is_set(config.smoke.injector_orbit_radius)) {
-        smoke_config.injector_orbit_radius = config.smoke.injector_orbit_radius;
+    if (options.injector_orbit_radius) {
+        smoke_config.injector_orbit_radius = *options.injector_orbit_radius;
     }
-    if (run_config_float_is_set(config.smoke.injector_orbit_radius_spread)) {
-        smoke_config.injector_orbit_radius_spread = config.smoke.injector_orbit_radius_spread;
+    if (options.injector_orbit_radius_spread) {
+        smoke_config.injector_orbit_radius_spread = *options.injector_orbit_radius_spread;
     }
-    if (run_config_float_is_set(config.smoke.injector_orbit_angular_speed)) {
-        smoke_config.injector_orbit_angular_speed = config.smoke.injector_orbit_angular_speed;
+    if (options.injector_orbit_angular_speed) {
+        smoke_config.injector_orbit_angular_speed = *options.injector_orbit_angular_speed;
     }
-    if (run_config_float_is_set(config.smoke.injector_orbit_angular_speed_spread)) {
+    if (options.injector_orbit_angular_speed_spread) {
         smoke_config.injector_orbit_angular_speed_spread =
-            config.smoke.injector_orbit_angular_speed_spread;
+            *options.injector_orbit_angular_speed_spread;
     }
-    if (run_config_float_is_set(config.smoke.injector_orbit_phase_spread)) {
-        smoke_config.injector_orbit_phase_spread = config.smoke.injector_orbit_phase_spread;
+    if (options.injector_orbit_phase_spread) {
+        smoke_config.injector_orbit_phase_spread = *options.injector_orbit_phase_spread;
     }
-    if (run_config_float_is_set(config.smoke.vorticity)) {
-        smoke_config.vorticity_strength = config.smoke.vorticity;
+    if (options.vorticity) {
+        smoke_config.vorticity_strength = *options.vorticity;
     }
-    smoke_config.profile_diagnostics = config.profile_diagnostics;
-    smoke_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
-    smoke_config.headless = config.headless;
+    smoke_config.profile_diagnostics = common_config.profile_diagnostics;
+    smoke_config.profile_diagnostic_interval = common_config.profile_diagnostic_interval;
+    smoke_config.headless = common_config.headless;
     static_cast<void>(field_cell_count(smoke_config));
     if (smoke_config.profile_diagnostics && !smoke_config.headless) {
         throw std::runtime_error("smoke 2D profile diagnostics require --headless");
@@ -280,7 +308,7 @@ smoke_2d_pressure_solver_from_name(std::string_view name) {
     return smoke_config;
 }
 
-[[nodiscard]] inline std::uint32_t headless_frame_count(const RunConfig& config) {
+[[nodiscard]] inline std::uint32_t headless_frame_count(const host::CommonRunConfig& config) {
     if (config.frames == 0) {
         return 120;
     }

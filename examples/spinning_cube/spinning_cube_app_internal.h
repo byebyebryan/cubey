@@ -25,7 +25,7 @@ namespace cubey::examples::spinning_cube {
 
 class SpinningCubeApp {
   public:
-    explicit SpinningCubeApp(RunConfig config);
+    explicit SpinningCubeApp(SpinningCubeConfig config);
 
     SpinningCubeApp(const SpinningCubeApp&) = delete;
     SpinningCubeApp& operator=(const SpinningCubeApp&) = delete;
@@ -50,7 +50,7 @@ class SpinningCubeApp {
     void destroy_render_handles();
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const;
 
-    RunConfig config_;
+    SpinningCubeConfig config_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     cubey::Entity cube_entity_;

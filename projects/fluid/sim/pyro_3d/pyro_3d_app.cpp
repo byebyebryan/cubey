@@ -1,7 +1,6 @@
 #include "pyro_3d_app.h"
 
 #include "pyro_3d_commands.h"
-#include "pyro_3d_config.h"
 #include "pyro_3d_gpu_resources.h"
 #include "pyro_3d_sources.h"
 
@@ -105,12 +104,15 @@ constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
     throw std::runtime_error("pyro 3D debug view must be smoke, density-slice, or velocity");
 }
 
-[[nodiscard]] bool use_atmosphere_environment_source(const RunConfig& config) {
-    return config.pbr.environment_source.empty() || config.pbr.environment_source == "atmosphere";
+[[nodiscard]] bool pyro_3d_uses_atmosphere_environment_source(
+    const Pyro3DProjectConfig& config) {
+    return !config.pbr.environment_source.has_value() ||
+           config.pbr.environment_source->empty() ||
+           *config.pbr.environment_source == "atmosphere";
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
-pyro_3d_atmosphere_run_state(const RunConfig& config) {
+pyro_3d_atmosphere_run_state(const Pyro3DProjectConfig& config) {
     return cubey::atmosphere_environment_run_state_from_config(
         config.atmosphere,
         {
@@ -144,20 +146,20 @@ constexpr std::array<Pyro3DDebugView, 3> kDebugViews{
 
 class Pyro3DApp {
   public:
-    Pyro3DApp(RunConfig config, Pyro3DAppInfo app_info)
+    Pyro3DApp(Pyro3DProjectConfig config, Pyro3DAppInfo app_info)
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
-          pyro_config_(pyro_3d_config_from_run_config(config_, app_info_.mode)),
+          pyro_config_(config_.simulation),
           source_states_(create_pyro_3d_sources(pyro_config_)),
           source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)),
           atmosphere_state_(pyro_3d_atmosphere_run_state(config_)),
           debug_view_(debug_view_from_name(config_.debug_view)) {
-        if (cubey::run_config_float_is_set(config_.terrain.foreground_height_m)) {
-            terrain_foreground_height_m_ = config_.terrain.foreground_height_m;
+        if (config_.terrain.foreground_height_m.has_value()) {
+            terrain_foreground_height_m_ = *config_.terrain.foreground_height_m;
         }
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane,
                                terrain_backdrop_enabled() ? kTerrainCameraFarPlane
                                                           : kCameraFarPlane);
-        orbit_controller_.set_home_distance(default_camera_distance(app_info_.mode));
+        orbit_controller_.set_home_distance(default_camera_distance(pyro_config_.mode));
         orbit_controller_.set_auto_rotation_speed(0.12F);
     }
 
@@ -165,7 +167,7 @@ class Pyro3DApp {
     Pyro3DApp& operator=(const Pyro3DApp&) = delete;
 
     int run() {
-        if (config_.headless) {
+        if (config_.common.headless) {
             return run_headless();
         }
 
@@ -206,7 +208,7 @@ class Pyro3DApp {
 
         return cubey::host::run_windowed_app(
             {
-                .run_config = cubey::host::common_run_config_from_legacy(config_),
+                .run_config = config_.common,
                 .app_name = app_info_.app_name,
                 .ready_status = app_info_.ready_status,
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -503,11 +505,12 @@ class Pyro3DApp {
     }
 
     [[nodiscard]] bool use_atmosphere_environment_source() const {
-        return cubey::projects::fluid::pyro_3d::use_atmosphere_environment_source(config_);
+        return pyro_3d_uses_atmosphere_environment_source(config_);
     }
 
     [[nodiscard]] bool terrain_backdrop_enabled() const noexcept {
-        return !config_.terrain.heightfield_path.empty();
+        return config_.terrain.heightfield_path.has_value() &&
+               !config_.terrain.heightfield_path->empty();
     }
 
     [[nodiscard]] bool terrain_backdrop_visible() const noexcept {
@@ -721,9 +724,9 @@ class Pyro3DApp {
         }
         const cubey::terrain::PreparedTerrainBackdropProduct prepared =
             cubey::terrain::prepare_raster_terrain_backdrop_product({
-                .heightfield_path = config_.terrain.heightfield_path,
+                .heightfield_path = *config_.terrain.heightfield_path,
                 .render_stride =
-                    config_.terrain.render_stride == 0U ? 3U : config_.terrain.render_stride,
+                    config_.terrain.render_stride.value_or(3U),
                 .foreground_footprint_radius_m = std::hypot(kVolumeHalfExtentM, kVolumeHalfExtentM),
             });
         terrain_surface_ = {
@@ -851,7 +854,7 @@ class Pyro3DApp {
     }
 
     void maybe_print_gpu_timings(const ProjectFrame& frame) {
-        if (!config_.print_frame_stats) {
+        if (!config_.common.print_frame_stats) {
             return;
         }
         const std::vector<cubey::vulkan::GpuPassTiming>& timings = resources_.latest_timings();
@@ -891,7 +894,7 @@ class Pyro3DApp {
 
     int run_headless() {
         cubey::host::HeadlessPngHostConfig host_config;
-        host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+        host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
@@ -900,7 +903,7 @@ class Pyro3DApp {
             create_global_resources_if_needed(context.device(), context.gpu(), 1);
             create_render_pipeline(context.device(), target.format, target.extent);
         };
-        if (config_.capture_mode == CaptureMode::Video) {
+        if (config_.common.capture_mode == CaptureMode::Video) {
             orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
             callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
                                             const cubey::host::HeadlessCaptureFrame& frame) {
@@ -908,9 +911,9 @@ class Pyro3DApp {
             };
         }
         cubey::host::install_headless_simulation_driver(
-            callbacks, cubey::host::common_run_config_from_legacy(config_),
+            callbacks, config_.common,
             {
-                .png_frame_count = pyro_3d_headless_frame_count(config_),
+                .png_frame_count = pyro_3d_headless_frame_count(config_.common),
                 .png_timing =
                     [this](std::uint64_t simulation_frame) {
                         return fixed_pyro_3d_headless_timing(pyro_config_, simulation_frame);
@@ -953,7 +956,7 @@ class Pyro3DApp {
         return host.run();
     }
 
-    RunConfig config_;
+    Pyro3DProjectConfig config_;
     Pyro3DAppInfo app_info_;
     cubey::ProjectRuntimeAdapter runtime_;
     Pyro3DConfig pyro_config_;
@@ -987,7 +990,7 @@ class Pyro3DApp {
 
 } // namespace
 
-int run_pyro_3d(const RunConfig& config, Pyro3DAppInfo app_info) {
+int run_pyro_3d(const Pyro3DProjectConfig& config, Pyro3DAppInfo app_info) {
     Pyro3DApp app(config, app_info);
     return app.run();
 }

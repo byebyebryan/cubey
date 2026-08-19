@@ -51,7 +51,7 @@ struct WhitePbrEnvironment {
 
 class PbrFurnaceApp {
   public:
-    explicit PbrFurnaceApp(RunConfig config);
+    explicit PbrFurnaceApp(PbrFurnaceConfig config);
 
     PbrFurnaceApp(const PbrFurnaceApp&) = delete;
     PbrFurnaceApp& operator=(const PbrFurnaceApp&) = delete;
@@ -101,7 +101,7 @@ class PbrFurnaceApp {
     scene_material() const;
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const;
 
-    RunConfig config_;
+    PbrFurnaceConfig config_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     cubey::Entity camera_entity_{};

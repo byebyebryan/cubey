@@ -138,12 +138,12 @@ cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_sphere_mesh(
     return mesh;
 }
 
-PbrFurnaceApp::PbrFurnaceApp(RunConfig config) : config_(std::move(config)) {
+PbrFurnaceApp::PbrFurnaceApp(PbrFurnaceConfig config) : config_(std::move(config)) {
     orbit_controller_.set_home_distance(kCameraDistance);
 }
 
 int PbrFurnaceApp::run() {
-    if (config_.headless) {
+    if (config_.common.headless) {
         return run_headless();
     }
     return run_windowed();
@@ -183,7 +183,7 @@ int PbrFurnaceApp::run_windowed() {
 
     return cubey::host::run_windowed_app(
         {
-            .run_config = cubey::host::common_run_config_from_legacy(config_),
+            .run_config = config_.common,
             .app_name = "pbr_furnace",
             .ready_status = "rendering PBR white furnace",
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT,
@@ -196,7 +196,7 @@ int PbrFurnaceApp::run_windowed() {
 
 int PbrFurnaceApp::run_headless() {
     cubey::host::HeadlessPngHostConfig host_config;
-    host_config.run_config = cubey::host::common_run_config_from_legacy(config_);
+    host_config.run_config = config_.common;
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
@@ -205,7 +205,7 @@ int PbrFurnaceApp::run_headless() {
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
         create_global_resources_if_needed(
             context.device(), context.gpu(),
-            cubey::host::headless_capture_frame_slot_count(cubey::host::common_run_config_from_legacy(config_)));
+            cubey::host::headless_capture_frame_slot_count(config_.common));
         create_forward_pass(context.device(), context.render_target().extent,
                             context.render_target().format);
     };
@@ -221,7 +221,7 @@ int PbrFurnaceApp::run_headless() {
     return host.run();
 }
 
-int run_pbr_furnace(const RunConfig& config) {
+int run_pbr_furnace(const PbrFurnaceConfig& config) {
     PbrFurnaceApp app(config);
     return app.run();
 }

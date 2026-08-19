@@ -1,8 +1,8 @@
 #include "smoke_2d_config.h"
 #include "smoke_2d_injectors.h"
+#include "../../smoke_2d/smoke_2d_project_config.h"
 
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
 
 #include <array>
 #include <cmath>
@@ -50,6 +50,17 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     std::ostringstream stream;
     stream << file.rdbuf();
     return stream.str();
+}
+
+[[nodiscard]] cubey::projects::fluid::smoke_2d::Smoke2DProjectConfig parse_project(
+    std::vector<std::string> arguments) {
+    std::vector<char*> argv;
+    argv.reserve(arguments.size());
+    for (std::string& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    return cubey::projects::fluid::smoke_2d::parse_smoke_2d_project_config(
+        static_cast<int>(argv.size()), argv.data());
 }
 
 [[nodiscard]] float length_squared(std::array<float, 2> value) {
@@ -137,40 +148,41 @@ int main() {
                     cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::RedBlackGaussSeidel,
                 "pressure solver parser should accept rbgs");
 
-        const cubey::RunConfig default_run_config;
-        const cubey::projects::fluid::smoke_2d::Smoke2DConfig default_from_run_config =
-            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(default_run_config);
-        require(default_from_run_config.grid_width == config.grid_width,
-                "default run config should preserve smoke grid width");
-        require(default_from_run_config.grid_height == config.grid_height,
-                "default run config should preserve smoke grid height");
-        require(default_from_run_config.procedural_injector_count ==
+        const cubey::projects::fluid::smoke_2d::Smoke2DProjectConfig default_project;
+        const cubey::projects::fluid::smoke_2d::Smoke2DConfig default_from_options =
+            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                default_project.grid, default_project.smoke, default_project.common);
+        require(default_from_options.grid_width == config.grid_width,
+                "default project config should preserve smoke grid width");
+        require(default_from_options.grid_height == config.grid_height,
+                "default project config should preserve smoke grid height");
+        require(default_from_options.procedural_injector_count ==
                     config.procedural_injector_count,
-                "default run config should preserve smoke injector count");
-        require(default_from_run_config.injector_injection_strength ==
+                "default project config should preserve smoke injector count");
+        require(default_from_options.injector_injection_strength ==
                     config.injector_injection_strength,
-                "default run config should preserve smoke injector strength");
-        require(default_from_run_config.pressure_iterations == config.pressure_iterations,
-                "default run config should preserve smoke pressure iterations");
-        require(default_from_run_config.pressure_solver == config.pressure_solver,
-                "default run config should preserve smoke pressure solver");
-        require(default_from_run_config.dye_decay_per_second == config.dye_decay_per_second,
-                "default run config should preserve smoke dye decay");
-        require(default_from_run_config.velocity_decay_per_second ==
+                "default project config should preserve smoke injector strength");
+        require(default_from_options.pressure_iterations == config.pressure_iterations,
+                "default project config should preserve smoke pressure iterations");
+        require(default_from_options.pressure_solver == config.pressure_solver,
+                "default project config should preserve smoke pressure solver");
+        require(default_from_options.dye_decay_per_second == config.dye_decay_per_second,
+                "default project config should preserve smoke dye decay");
+        require(default_from_options.velocity_decay_per_second ==
                     config.velocity_decay_per_second,
-                "default run config should preserve smoke velocity decay");
-        require(default_from_run_config.injector_injection_radius ==
+                "default project config should preserve smoke velocity decay");
+        require(default_from_options.injector_injection_radius ==
                     config.injector_injection_radius,
-                "default run config should preserve smoke injector radius");
-        require(default_from_run_config.injector_orbit_radius == config.injector_orbit_radius,
-                "default run config should preserve smoke orbit radius");
-        require(default_from_run_config.vorticity_strength == config.vorticity_strength,
-                "default run config should preserve smoke vorticity");
-        require(default_from_run_config.advection_strength == config.advection_strength,
-                "default run config should preserve smoke advection strength");
-        require(default_from_run_config.low_energy_cleanup_strength ==
+                "default project config should preserve smoke injector radius");
+        require(default_from_options.injector_orbit_radius == config.injector_orbit_radius,
+                "default project config should preserve smoke orbit radius");
+        require(default_from_options.vorticity_strength == config.vorticity_strength,
+                "default project config should preserve smoke vorticity");
+        require(default_from_options.advection_strength == config.advection_strength,
+                "default project config should preserve smoke advection strength");
+        require(default_from_options.low_energy_cleanup_strength ==
                     config.low_energy_cleanup_strength,
-                "default run config should preserve smoke cleanup strength");
+                "default project config should preserve smoke cleanup strength");
         std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorState> default_injectors =
             cubey::projects::fluid::smoke_2d::create_smoke_2d_injectors(config);
         require(default_injectors.size() == 5,
@@ -181,73 +193,74 @@ int main() {
                     "default smoke injector speed spread should not leave an injector static");
         }
 
-        cubey::RunConfig run_config;
-        run_config.grid.width = 1024;
-        run_config.grid.height = 768;
-        run_config.smoke.injectors = 8;
-        run_config.smoke.pressure_iterations = 48;
-        run_config.smoke.pressure_solver = "rbgs";
-        run_config.smoke.dye_decay = 0.985F;
-        run_config.smoke.velocity_decay = 0.991F;
-        run_config.smoke.injector_radius = 0.041F;
-        run_config.smoke.injector_force = 7.5F;
-        run_config.smoke.injector_propulsion = 1.6F;
-        run_config.smoke.injector_orbit_radius = 0.24F;
-        run_config.smoke.injector_orbit_radius_spread = 0.18F;
-        run_config.smoke.injector_orbit_angular_speed = 0.1F;
-        run_config.smoke.injector_orbit_angular_speed_spread = 1.2F;
-        run_config.smoke.injector_orbit_phase_spread = 0.75F;
-        run_config.smoke.vorticity = 24.0F;
+        cubey::projects::fluid::smoke_2d::Smoke2DProjectConfig project_config;
+        project_config.grid.width = 1024U;
+        project_config.grid.height = 768U;
+        project_config.smoke.injectors = 8U;
+        project_config.smoke.pressure_iterations = 48U;
+        project_config.smoke.pressure_solver = "rbgs";
+        project_config.smoke.dye_decay = 0.985F;
+        project_config.smoke.velocity_decay = 0.991F;
+        project_config.smoke.injector_radius = 0.041F;
+        project_config.smoke.injector_force = 7.5F;
+        project_config.smoke.injector_propulsion = 1.6F;
+        project_config.smoke.injector_orbit_radius = 0.24F;
+        project_config.smoke.injector_orbit_radius_spread = 0.18F;
+        project_config.smoke.injector_orbit_angular_speed = 0.1F;
+        project_config.smoke.injector_orbit_angular_speed_spread = 1.2F;
+        project_config.smoke.injector_orbit_phase_spread = 0.75F;
+        project_config.smoke.vorticity = 24.0F;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig configured =
-            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(run_config);
-        require(configured.grid_width == 1024, "smoke config should honor run config grid width");
-        require(configured.grid_height == 768, "smoke config should honor run config grid height");
+            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                project_config.grid, project_config.smoke, project_config.common);
+        require(configured.grid_width == 1024, "smoke config should honor project grid width");
+        require(configured.grid_height == 768, "smoke config should honor project grid height");
         require(configured.procedural_injector_count == 8,
-                "smoke config should honor run config injector count");
+                "smoke config should honor project injector count");
         require(configured.pressure_iterations == 48,
-                "smoke config should honor run config pressure iterations");
+                "smoke config should honor project pressure iterations");
         require(configured.pressure_solver ==
                     cubey::projects::fluid::smoke_2d::Smoke2DPressureSolver::RedBlackGaussSeidel,
-                "smoke config should honor run config pressure solver");
+                "smoke config should honor project pressure solver");
         require(configured.dye_decay_per_second == 0.985F,
-                "smoke config should honor run config dye decay");
+                "smoke config should honor project dye decay");
         require(configured.velocity_decay_per_second == 0.991F,
-                "smoke config should honor run config velocity decay");
+                "smoke config should honor project velocity decay");
         require(configured.injector_injection_radius == 0.041F,
-                "smoke config should honor run config injector radius");
+                "smoke config should honor project injector radius");
         require(configured.injector_injection_strength == 7.5F,
-                "smoke config should honor run config injector force");
+                "smoke config should honor project injector force");
         require(configured.injector_propulsion_strength == 1.6F,
-                "smoke config should honor run config injector propulsion");
+                "smoke config should honor project injector propulsion");
         require(configured.injector_orbit_radius == 0.24F,
-                "smoke config should honor run config injector orbit radius");
+                "smoke config should honor project injector orbit radius");
         require(configured.injector_orbit_radius_spread == 0.18F,
-                "smoke config should honor run config injector orbit radius spread");
+                "smoke config should honor project injector orbit radius spread");
         require(configured.injector_orbit_angular_speed == 0.1F,
-                "smoke config should honor run config injector orbit angular speed");
+                "smoke config should honor project injector orbit angular speed");
         require(configured.injector_orbit_angular_speed_spread == 1.2F,
-                "smoke config should honor run config injector orbit angular speed spread");
+                "smoke config should honor project injector orbit angular speed spread");
         require(configured.injector_orbit_phase_spread == 0.75F,
-                "smoke config should honor run config injector orbit phase spread");
+                "smoke config should honor project injector orbit phase spread");
         require(configured.vorticity_strength == 24.0F,
-                "smoke config should honor run config vorticity");
-        cubey::RunConfig diagnostics_run_config;
-        diagnostics_run_config.headless = true;
-        diagnostics_run_config.profile_diagnostics = true;
-        diagnostics_run_config.profile_diagnostic_interval = 7U;
+                "smoke config should honor project vorticity");
+        project_config.common.headless = true;
+        project_config.common.profile_diagnostics = true;
+        project_config.common.profile_diagnostic_interval = 7U;
         const cubey::projects::fluid::smoke_2d::Smoke2DConfig diagnostics_config =
-            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
-                diagnostics_run_config);
+            cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                project_config.grid, project_config.smoke, project_config.common);
         require(diagnostics_config.profile_diagnostics &&
                     diagnostics_config.profile_diagnostic_interval == 7U &&
                     diagnostics_config.headless,
                 "smoke run-config construction should preserve profile diagnostics flags");
         bool rejected_windowed_diagnostics = false;
         try {
-            cubey::RunConfig windowed_diagnostics;
+            cubey::host::CommonRunConfig windowed_diagnostics;
             windowed_diagnostics.profile_diagnostics = true;
-            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
-                windowed_diagnostics));
+            cubey::projects::fluid::smoke_2d::Smoke2DStartupOptions options;
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                {}, options, windowed_diagnostics));
         } catch (const std::runtime_error&) {
             rejected_windowed_diagnostics = true;
         }
@@ -256,11 +269,11 @@ int main() {
 
         bool threw_for_too_many_injectors = false;
         try {
-            cubey::RunConfig invalid_injector_config;
-            invalid_injector_config.smoke.injectors =
+            cubey::projects::fluid::smoke_2d::Smoke2DStartupOptions options;
+            options.injectors =
                 cubey::projects::fluid::smoke_2d::kMaxProceduralInjectorCount + 1U;
-            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
-                invalid_injector_config));
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                {}, options, {}));
         } catch (const std::runtime_error&) {
             threw_for_too_many_injectors = true;
         }
@@ -268,35 +281,77 @@ int main() {
                 "smoke config should reject injector counts above the shader policy limit");
         bool threw_for_invalid_decay = false;
         try {
-            cubey::RunConfig invalid_decay_config;
-            invalid_decay_config.smoke.dye_decay = 1.2F;
-            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
-                invalid_decay_config));
+            cubey::projects::fluid::smoke_2d::Smoke2DStartupOptions options;
+            options.dye_decay = 1.2F;
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                {}, options, {}));
         } catch (const std::runtime_error&) {
             threw_for_invalid_decay = true;
         }
         require(threw_for_invalid_decay, "smoke config should reject dye decay above one");
         bool threw_for_invalid_radius = false;
         try {
-            cubey::RunConfig invalid_radius_config;
-            invalid_radius_config.smoke.injector_radius = 0.0F;
-            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
-                invalid_radius_config));
+            cubey::projects::fluid::smoke_2d::Smoke2DStartupOptions options;
+            options.injector_radius = 0.0F;
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                {}, options, {}));
         } catch (const std::runtime_error&) {
             threw_for_invalid_radius = true;
         }
         require(threw_for_invalid_radius, "smoke config should reject nonpositive injector radius");
         bool threw_for_invalid_pressure_solver = false;
         try {
-            cubey::RunConfig invalid_pressure_solver_config;
-            invalid_pressure_solver_config.smoke.pressure_solver = "sor";
-            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_run_config(
-                invalid_pressure_solver_config));
+            cubey::projects::fluid::smoke_2d::Smoke2DStartupOptions options;
+            options.pressure_solver = "sor";
+            static_cast<void>(cubey::projects::fluid::smoke_2d::smoke_2d_config_from_options(
+                {}, options, {}));
         } catch (const std::runtime_error&) {
             threw_for_invalid_pressure_solver = true;
         }
         require(threw_for_invalid_pressure_solver,
                 "smoke config should reject unsupported pressure solvers");
+
+        const std::filesystem::path layered_path =
+            std::filesystem::temp_directory_path() / "cubey-smoke-2d-config-test.json";
+        const std::filesystem::path template_path =
+            std::filesystem::temp_directory_path() / "cubey-smoke-2d-template-test.json";
+        {
+            std::ofstream file(layered_path);
+            file << R"({"grid":{"size":24},"smoke":{"injectors":3}})";
+        }
+        const auto layered = parse_project({"smoke_2d", "--config", layered_path.string(),
+                                            "--smoke-injectors", "5", "--set",
+                                            "smoke.injectors=7"});
+        require(layered.grid.size == 24U && layered.grid.width == 24U &&
+                    layered.grid.height == 24U,
+                "smoke grid.size should fan out to both dimensions");
+        require(layered.smoke.injectors == 7U,
+                "smoke --set should override named flags and config files");
+        const auto named = parse_project({"smoke_2d", "--grid-width", "40", "--grid-height",
+                                          "32", "--smoke-injectors", "6", "--no-validation"});
+        require(named.grid.width == 40U && named.grid.height == 32U &&
+                    named.smoke.injectors == 6U,
+                "smoke named flags should bind project-owned options");
+        require(!named.common.validation && !named.common.require_validation,
+                "smoke negative validation alias should preserve host coupling");
+        bool rejected_unknown_key = false;
+        try {
+            static_cast<void>(parse_project({"smoke_2d", "--set", "water2d.wave=true"}));
+        } catch (const std::runtime_error&) {
+            rejected_unknown_key = true;
+        }
+        require(rejected_unknown_key, "smoke schema should reject options owned by another target");
+        const auto templated = parse_project(
+            {"smoke_2d", "--write-config-template", template_path.string()});
+        (void)templated;
+        const std::string template_json = read_text_file(template_path);
+        require_contains(template_json, "\"smoke\"",
+                         "smoke template should expose live smoke options");
+        require_not_contains(template_json, "water2d",
+                             "smoke template should omit water-only options");
+        std::error_code cleanup_error;
+        std::filesystem::remove(layered_path, cleanup_error);
+        std::filesystem::remove(template_path, cleanup_error);
 
         std::vector<cubey::projects::fluid::smoke_2d::Smoke2DInjectorState> injectors =
             cubey::projects::fluid::smoke_2d::create_smoke_2d_injectors(configured);
@@ -372,10 +427,11 @@ int main() {
                     length_squared(slow_orbits.back().velocity),
                 "injector angular speed spread should increase initial source velocity");
 
-        require(cubey::projects::fluid::smoke_2d::headless_frame_count(run_config) == 120,
+        cubey::host::CommonRunConfig common_config;
+        require(cubey::projects::fluid::smoke_2d::headless_frame_count(common_config) == 120,
                 "headless frame count should default to 120 frames");
-        run_config.frames = 8;
-        require(cubey::projects::fluid::smoke_2d::headless_frame_count(run_config) == 8,
+        common_config.frames = 8;
+        require(cubey::projects::fluid::smoke_2d::headless_frame_count(common_config) == 8,
                 "headless frame count should honor --frames");
 
         const cubey::FrameTiming timing =

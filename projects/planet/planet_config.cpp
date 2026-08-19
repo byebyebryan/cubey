@@ -30,6 +30,9 @@ cubey::config::Schema planet_config_schema(PlanetConfig& config) {
     cubey::config::Schema::Builder builder = cubey::config::Schema::builder().compose(
         cubey::host::common_run_config_schema(config.common));
     builder
+        .bind(option("debug_view", "--debug-view", "Debug View", "Debug",
+                     "Project-specific debug view name.", cubey::config::ValueType::String),
+              config.debug_view)
         .bind(option("planet.camera_mode", "--planet-camera-mode", "Camera Mode", "Planet",
                      "Initial planet camera mode.", cubey::config::ValueType::Enum, {},
                      {"orbit", "surface"}),

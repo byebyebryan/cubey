@@ -1,15 +1,19 @@
 #pragma once
 
+#include "../common/fluid_config_schema.h"
 #include "../common/water_common.h"
 
+#include <cubey/engine/pbr_environment_schema.h>
 #include <cubey/core/frame_clock.h>
-#include <cubey/core/run_config.h>
+#include <cubey/host/common_config.h>
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 
 namespace cubey::projects::fluid::water_3d {
@@ -236,6 +240,20 @@ struct Water3DConfig {
     Water3DRainConfig rain{};
     std::uint32_t profile_diagnostic_interval = 1;
     bool profile_diagnostics = false;
+};
+
+// Startup-only overrides retain the distinction between an omitted option and
+// an explicit value.  The concrete Water3DConfig below remains the runtime
+// product with its established defaults.
+struct Water3DStartupOptions {
+    std::optional<std::string> transfer_mode{};
+    std::optional<std::uint32_t> transfer_limit{};
+    std::optional<std::string> p2g_mode{};
+    std::optional<bool> hose{};
+    std::optional<bool> drain{};
+    std::optional<bool> rain{};
+    std::optional<bool> wave{};
+    std::optional<bool> whitewater{};
 };
 
 struct Water3DSimulationUniforms {
@@ -789,48 +807,52 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     return sizeof(std::uint32_t) * kWater3DDiagnosticSlotCount;
 }
 
-[[nodiscard]] inline Water3DConfig water_3d_config_from_run_config(const RunConfig& config) {
+[[nodiscard]] inline Water3DConfig
+water_3d_config_from_options(const common::FluidGridOptions& grid,
+                             const Water3DStartupOptions& options,
+                             const cubey::PbrStaticIblOptions& pbr,
+                             const host::CommonRunConfig& common_config) {
     Water3DConfig water_config;
-    if (config.grid.width != 0) {
-        water_config.grid_width = config.grid.width;
-    }
-    if (config.grid.height != 0) {
-        water_config.grid_height = config.grid.height;
-    }
-    if (config.grid.depth != 0) {
-        water_config.grid_depth = config.grid.depth;
-    }
-    water_config.environment_intensity = config.pbr.ibl_intensity;
-    water_config.environment_rotation_degrees = config.pbr.environment_rotation_degrees;
-    water_config.exposure = config.pbr.exposure;
-    if (config.profile_diagnostics && !config.headless) {
+    if (common_config.profile_diagnostics && !common_config.headless) {
         throw std::runtime_error("water 3D profile diagnostics require --headless");
     }
-    water_config.profile_diagnostics = config.profile_diagnostics;
-    water_config.profile_diagnostic_interval = config.profile_diagnostic_interval;
-    if (!config.water3d.transfer_mode.empty()) {
-        water_config.transfer_mode = water_3d_transfer_mode_from_name(config.water3d.transfer_mode);
+    water_config.profile_diagnostics = common_config.profile_diagnostics;
+    water_config.profile_diagnostic_interval = common_config.profile_diagnostic_interval;
+    if (grid.width) {
+        water_config.grid_width = *grid.width;
     }
-    if (config.water3d.transfer_limit != 0) {
-        water_config.max_particles_per_cell = config.water3d.transfer_limit;
+    if (grid.height) {
+        water_config.grid_height = *grid.height;
     }
-    if (!config.water3d.p2g_mode.empty()) {
-        water_config.p2g_mode = water_3d_p2g_mode_from_name(config.water3d.p2g_mode);
+    if (grid.depth) {
+        water_config.grid_depth = *grid.depth;
     }
-    if (config.water3d.hose >= 0) {
-        water_config.hose.enabled = config.water3d.hose != 0;
+    water_config.environment_intensity = pbr.ibl_intensity;
+    water_config.environment_rotation_degrees = pbr.environment_rotation_degrees;
+    water_config.exposure = pbr.exposure;
+    if (options.transfer_mode) {
+        water_config.transfer_mode = water_3d_transfer_mode_from_name(*options.transfer_mode);
     }
-    if (config.water3d.drain >= 0) {
-        water_config.drain.enabled = config.water3d.drain != 0;
+    if (options.transfer_limit) {
+        water_config.max_particles_per_cell = *options.transfer_limit;
     }
-    if (config.water3d.rain >= 0) {
-        water_config.rain.enabled = config.water3d.rain != 0;
+    if (options.p2g_mode) {
+        water_config.p2g_mode = water_3d_p2g_mode_from_name(*options.p2g_mode);
     }
-    if (config.water3d.wave >= 0) {
-        water_config.wave.enabled = config.water3d.wave != 0;
+    if (options.hose) {
+        water_config.hose.enabled = *options.hose;
     }
-    if (config.water3d.whitewater >= 0) {
-        water_config.whitewater_enabled = config.water3d.whitewater != 0;
+    if (options.drain) {
+        water_config.drain.enabled = *options.drain;
+    }
+    if (options.rain) {
+        water_config.rain.enabled = *options.rain;
+    }
+    if (options.wave) {
+        water_config.wave.enabled = *options.wave;
+    }
+    if (options.whitewater) {
+        water_config.whitewater_enabled = *options.whitewater;
     }
     refresh_particle_counts(water_config);
     static_cast<void>(cell_count(water_config));
@@ -858,7 +880,8 @@ water_3d_runtime_particle_scan_count(const Water3DConfig& config,
     return water_config;
 }
 
-[[nodiscard]] inline std::uint32_t water_3d_headless_frame_count(const RunConfig& config) {
+[[nodiscard]] inline std::uint32_t
+water_3d_headless_frame_count(const host::CommonRunConfig& config) {
     return config.frames == 0 ? 120U : config.frames;
 }
 

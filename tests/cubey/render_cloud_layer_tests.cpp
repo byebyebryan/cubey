@@ -100,6 +100,22 @@ float transform_point(const cubey::math::Vec4& row, const cubey::math::Vec3& poi
 
 } // namespace
 
+void test_shared_cloud_ui_defaults_to_surface_controls() {
+    const std::filesystem::path source_root = source_root_path();
+    const std::string ui_header =
+        read_text_file(source_root / "include/cubey/host/cloud_environment_ui.h");
+    const std::string ui_source =
+        read_text_file(source_root / "src/cubey/host/cloud_environment_ui.cpp");
+
+    require(ui_header.find("show_aerial_orbit_controls = false") != std::string::npos,
+            "shared cloud UI should hide deferred aerial/orbit controls by default");
+    require(ui_source.find("Horizon handoff") != std::string::npos,
+            "shared cloud UI should expose the surface horizon handoff control");
+    require(ui_source.find("Cloud V1 surfaces hide the deferred aerial/orbit controls") !=
+                std::string::npos,
+            "shared cloud UI should label the hidden deferred-control contract");
+}
+
 void test_cloud_layer_view_regime_resolves_surface_camera() {
     const cubey::render::CloudLayerViewRegime regime =
         cubey::render::cloud_layer_view_regime(regime_input(150.0F, {0.0F, 0.0F, -1.0F}));

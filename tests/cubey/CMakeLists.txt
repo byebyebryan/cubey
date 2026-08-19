@@ -2,7 +2,6 @@ add_executable(cubey_core_tests
     animation_tests.cpp
     atmosphere_environment_runtime_tests.cpp
     config_schema_tests.cpp
-    run_config_tests.cpp
     camera_manager_tests.cpp
     camera_tests.cpp
     capture_queue_tests.cpp
@@ -133,6 +132,18 @@ cubey_add_glsl_shaders(
 add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
+
+add_executable(cubey_config_v2_tests config_v2_tests.cpp)
+target_link_libraries(
+    cubey_config_v2_tests
+    PRIVATE
+        cubey::cubey
+        cubey::host
+        cubey_project_options
+        cubey_project_warnings
+        nlohmann_json::nlohmann_json
+)
+add_test(NAME cubey_config_v2_tests COMMAND cubey_config_v2_tests)
 
 add_executable(
     cubey_backdrop_surface_placement_tests
