@@ -275,16 +275,15 @@ setup before swapchain setup, and callback forwarding.
   schemas over caller-owned typed storage and drives JSON loading, named CLI
   parsing, bool negative aliases, deferred `--set path=value` overrides, and
   template generation from one metadata source. JSON persistence is implemented
-  directly from schema bindings or, for unmigrated projects, the legacy option
-  descriptor registry; configuration does not depend on a general-purpose
-  object-serialization layer.
+  directly from schema bindings; configuration does not depend on a
+  general-purpose object-serialization layer.
 - `cubey::host::CommonRunConfig` is the host-facing boundary for window,
-  capture, validation, and profiling state. The active `planet` executable is
-  the first project-owned facade: it composes the common schema with only its
-  five live `planet.*` options, owns typed project defaults and validation, and
-  rejects unrelated legacy project keys. Existing projects remain on
-  `RunConfig` and cross the host boundary through an explicit compatibility
-  conversion while they are migrated incrementally.
+  capture, validation, and profiling state. Every executable owns a typed
+  facade that composes the common schema with only its live project options,
+  defaults, and validation. `cubey::host::run_configured_app()` shares the
+  parse/template/error/launch flow without owning project policy. The completed
+  repository-wide clean break and its ownership rules are recorded in
+  [Configuration V2](configuration.md).
 - Shared ImGui helpers now cover hierarchical debug-panel groups, hover help,
   common command buttons, and bool/int/unsigned-int/float/vector/enum/color
   controls. Active ocean, atmosphere, terrain, smoke, water, fire, and

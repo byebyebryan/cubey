@@ -5,6 +5,8 @@ than the root design and roadmap.
 
 - [Host and engine](host-engine.md): GLFW/windowed host, headless host, input,
   frame flow, and project lifecycle direction.
+- [Configuration V2](configuration.md): project-owned typed configuration,
+  schema/host ownership, and the completed clean-break migration.
 - [Entity and component foundation](entity-component-foundation.md):
   manager-oriented entity/component shape, MT-stable storage, read views, edit
   commits, and transform manager direction.

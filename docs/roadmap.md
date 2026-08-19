@@ -19,6 +19,8 @@ framework layers and foundation rules,
 pass/resource graph vocabulary,
 [procedural generation foundation](architecture/procedural-generation.md) for
 shared source-field, noise, and operator direction,
+[Configuration V2](architecture/configuration.md) for the project-owned typed
+config clean break,
 [host and engine](architecture/host-engine.md) for the GLFW/windowed host and
 scoped engine ownership path, and
 [threading and async design](architecture/threading-and-async.md) for the
@@ -26,11 +28,14 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
-Status: ready to resume focused feature work from `main`.
+Status: Configuration V2 is complete; the next product or foundation
+checkpoint is ready to be selected from `main`.
 
-The recent foundation push has landed enough shared runtime, renderer, shader,
-environment, and UI/config infrastructure that the next work should move back
-to product-facing features instead of another broad foundation pass.
+The recent foundation push landed shared runtime, renderer, shader,
+environment, UI, and project-owned configuration infrastructure. Retired
+cloud/planet applications and terrain-study viewers are gone, and the global
+configuration registry has now been removed. Product-facing or engine-level
+work can proceed without a compatibility config layer.
 
 Current stable foundation pieces:
 
@@ -46,6 +51,11 @@ Current stable foundation pieces:
   generation;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
+- composable `cubey::config::Schema`, the typed host-owned
+  `CommonRunConfig`, target-specific typed facades for every active executable,
+  shared subsystem schema fragments where semantics truly match, and direct
+  schema-backed JSON/CLI/template handling. The former `RunConfig`, global
+  option registry, parser/runner, and host compatibility conversion are gone;
 - shared procedural/noise helpers on CPU and GLSL for project-local terrain,
   water, atmosphere, ocean, and cloud fields;
 - shared sky/celestial/atmosphere state used by atmosphere, ocean,
@@ -79,22 +89,25 @@ terrain residency, split-queue scheduling, and per-frame upload budgets remain
 deferred until profiling shows that whole-generation installation is the real
 bottleneck.
 
-Recommended next feature streams:
+Recommended next feature or foundation streams:
 
-- `projects/ocean`: shoreline/bathymetry composition after terrain products are
-  ready; near-field interaction and spray remain later feature work.
 - renderer foundation: use the shared dynamic environment handoff for future
-  atmosphere/PBR consumers instead of adding project-local probe descriptors.
+  atmosphere/PBR consumers instead of adding project-local probe descriptors;
+  deepen render-graph or command ownership only around a concrete repeated
+  project need.
+- glTF/asset pipeline: extend progressive initialization to asset loading if
+  profiling confirms it is the next visible host/engine bottleneck.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
-  shared path. Shoreline/bathymetry composition belongs to the ocean stream,
-  while close terrain and planet-scale terrain remain separate projects.
+  shared path. Close terrain and planet-scale terrain remain separate projects.
 - `projects/planet`: local/global terrain morphing, streaming/residency
   contracts, and eventual ocean-as-local-water handoff remain a separate
   planet-scale track.
 - `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
   directly improves current surface/ocean views; high/aerial/orbit cloud
   products should stay deferred until a dedicated batch.
+- coastal shoreline/bathymetry composition remains deliberately deferred; it
+  is not the default next stream.
 
 Known non-blockers:
 
@@ -107,6 +120,8 @@ Known non-blockers:
 - Planet still has deferred streaming, project-owned config facade, and
   planet/ocean composition work. Those should be feature tracks, not reasons to
   block ocean or atmosphere iteration.
+- Configuration V2 is complete and has no legacy compatibility layer or dual
+  system.
 
 ## Phase 0: Repo Foundation
 
@@ -195,10 +210,11 @@ Current checkpoint:
   stable paths, labels, groups, value kinds, ranges, enum choices, help text,
   config templates, named CLI flags, and generic `--set path=value` overrides.
   `cubey::host::CommonRunConfig` separates host-consumed state from project
-  state. The active `planet` executable is the first project-owned facade and
-  exposes only common/profile settings plus its five live `planet.*` options.
-  Other projects still use the legacy global `ConfigOptionDescriptor` registry
-  and convert explicitly at the host boundary pending incremental migration.
+  state. Every active executable composes that common schema with only its live
+  typed project options and validation. Shared subsystem fragments exist only
+  where multiple consumers share path, default, and semantic contracts. JSON,
+  named flags, `--set`, and target-specific templates use this path directly;
+  the legacy global registry and host conversion have been deleted.
 - Reusable ImGui helpers now cover hierarchical debug-panel groups, standard
   option hover help, command buttons, and common
   bool/int/unsigned-int/float/vector/enum/color controls. Active ocean,

@@ -36,6 +36,8 @@ Detailed current foundation notes live under
   commits, and transform manager direction.
 - [Host and engine](architecture/host-engine.md): GLFW/windowed host, headless
   host, input, frame flow, and project lifecycle direction.
+- [Configuration V2](architecture/configuration.md): project-owned typed
+  configuration and the completed repository-wide legacy-config removal.
 - [Threading and async](architecture/threading-and-async.md): CPU jobs, queued
   GPU work, ownership, and future threading boundaries.
 - [Fluid simulation direction](architecture/fluid-simulation.md): project

@@ -391,7 +391,7 @@ cubey/
   include/
     cubey/
       core/
-        run_config.h       -- shared run configuration
+        config_schema.h    -- composable typed configuration kernel
         jobs.h             -- CPU job facade
         frame_clock.h      -- frame timing
         file_io.h          -- generic binary file reads/writes

@@ -278,11 +278,12 @@ ranges, enum choices, and help text for config templates, generic `--set`
 overrides, and descriptor-backed named CLI flags. Runtime ImGui panels are still
 hand-authored project surfaces, but active projects use shared group/control
 helpers so hover help and hierarchy stay visually consistent.
-The active `planet` executable is the first project-owned config facade: its
-template contains the common host/profile settings and its five live
-`planet.*` options, and it rejects unrelated legacy project keys. Other
-executables currently retain the broader legacy registry while they are
-migrated incrementally.
+Every active executable owns a typed config facade composed from the common
+host/profile schema and only its live project options. Generated templates are
+therefore target-specific, and unrelated project keys are rejected. The
+[Configuration V2 architecture](docs/architecture/configuration.md) records
+the ownership rules and completed clean break; the former global `RunConfig`,
+descriptor registry, parser/runner, and host compatibility bridge are gone.
 `smoke_2d` defaults to a `1024x1024` solver grid and five procedural
 injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
 compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs`

@@ -359,8 +359,8 @@ Initial scope:
 - quality presets tied to render scale, view steps, light steps, and cache
   cadence;
 - diagnostics for every major field;
-- shared `RunConfig` descriptors plus existing ImGui helper controls from the
-  start.
+- shared cloud schema metadata plus existing ImGui helper controls from the
+  start, composed into each consuming executable's typed facade.
 
 The absorption pass keeps the shared `cubey::render::CloudLayer*` contract,
 common shader assets, shared generated-resource helpers, atmosphere backdrop
