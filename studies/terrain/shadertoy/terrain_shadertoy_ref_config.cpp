@@ -94,7 +94,6 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
     bool surface_explicit = false;
     bool normal_explicit = false;
     bool shading_explicit = false;
-    parsed.forwarded_arguments.emplace_back(argv[0]);
     for (int index = 1; index < argc; ++index) {
         const std::string_view option = argv[index];
         if (option == "--reference-study") {
@@ -139,8 +138,7 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
             } else if (value == "detailed") {
                 parsed.reference_config.normal = ReferenceNormal::Detailed;
             } else {
-                throw std::runtime_error(
-                    "--reference-normal must be geometry, atlas, or detailed");
+                throw std::runtime_error("--reference-normal must be geometry, atlas, or detailed");
             }
         } else if (option == "--reference-shading") {
             shading_explicit = true;
@@ -172,7 +170,8 @@ ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** 
                     "or uplift");
             }
         } else {
-            parsed.forwarded_arguments.emplace_back(argv[index]);
+            throw std::runtime_error("unknown terrain ShaderToy reference option: " +
+                                     std::string(option));
         }
     }
     if (parsed.reference_config.study != ReferenceStudy::Mountains) {

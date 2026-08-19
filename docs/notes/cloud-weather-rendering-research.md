@@ -8,8 +8,9 @@ Historical note: this file is chronological. Sections that mention
 `projects/cloud` describe the former standalone production cloud project before
 it was absorbed into the shared `cubey::render::CloudLayerRuntime`. Current
 production cloud tuning happens through `projects/atmosphere`, with
-`cloud_ref`, `cloud_ref_2`, and `clouds_legacy` kept as reference or legacy
-targets.
+`cloud_ref` remains the retained runnable reference; `cloud_ref_2` and
+`clouds_legacy` are retired snapshots preserved in the notes and Git history,
+not active runnable targets.
 
 ## References
 
@@ -616,7 +617,8 @@ Summary:
 
 - stop tuning `clouds_legacy` as a production base;
 - keep `cloud_ref` as the visual/density-shape reference;
-- keep `cloud_ref_2` as the cached-sky architecture reference;
+- preserve `cloud_ref_2` as cached-sky architecture evidence in the notes and
+  Git history;
 - start production cloud work with texture-backed coherent density and shared
   atmosphere/config integration before adding the cached hemisphere path.
 

@@ -5,8 +5,6 @@
 #include "terrain_ref_config.h"
 #include "terrain_ref_mesh.h"
 
-#include <cubey/core/run_config.h>
-
 #include <cmath>
 #include <cstdint>
 #include <stdexcept>
@@ -32,174 +30,65 @@ template <typename Fn> void require_throws(Fn&& fn, const char* message) {
     throw std::runtime_error(message);
 }
 
-void test_terrain_ref_config_from_run_config() {
-    cubey::RunConfig run_config;
-    cubey::projects::terrain_ref::TerrainRefConfig config =
-        cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.seed == cubey::projects::terrain_ref::kTerrainRefDefaultSeed,
-            "terrain_ref should default seed");
-    require(config.grid_width == cubey::projects::terrain_ref::kTerrainRefDefaultGridSize,
-            "terrain_ref should default grid width");
-    require(config.grid_height == cubey::projects::terrain_ref::kTerrainRefDefaultGridSize,
-            "terrain_ref should default grid height");
+void test_terrain_ref_config_model() {
+    using namespace cubey::projects::terrain_ref;
+    TerrainRefConfig config;
+    require(config.seed == kTerrainRefDefaultSeed, "terrain_ref should default seed");
+    require(config.grid_width == kTerrainRefDefaultGridSize &&
+                config.grid_height == kTerrainRefDefaultGridSize,
+            "terrain_ref should default grid dimensions");
+    require(config.cell_size_m == kTerrainRefDefaultCellSizeM &&
+                config.vertical_scale == kTerrainRefDefaultVerticalScale,
+            "terrain_ref should default scale values");
     require(config.water_surface, "terrain_ref should default water on");
-    require(config.camera_preset == cubey::projects::terrain_ref::TerrainRefCameraPreset::Oblique,
+    require(config.camera_preset == TerrainRefCameraPreset::Oblique,
             "terrain_ref should default to oblique camera");
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::TerrainEngine,
+    require(config.recipe == TerrainRefRecipe::TerrainEngine,
             "terrain_ref should default to TerrainEngine recipe");
-    require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Recipe,
+    require(config.material_mode == TerrainRefMaterialMode::Recipe,
             "terrain_ref should default to recipe material");
-    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
+    require(config.surface_mode == TerrainRefSurfaceMode::Filtered,
             "terrain_ref should default to filtered surface");
     require(!config.erosion_filter_enabled,
             "terrain_ref should not filter ordinary recipes by default");
 
-    run_config.grid.width = 129U;
-    run_config.grid.height = 257U;
-    run_config.terrain.seed = 42U;
-    run_config.terrain.seed_set = true;
-    run_config.terrain.cell_size = 64.0F;
-    run_config.terrain.vertical_scale = 0.75F;
-    run_config.terrain.camera_preset = "surface_low";
-    run_config.terrain.preview_color = "height";
-    run_config.terrain.water_surface = 0;
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeTerrainEngine);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::TerrainEngine,
-            "terrain_ref should parse TerrainEngine recipe");
-    require(config.grid_width == 129U && config.grid_height == 257U,
-            "terrain_ref should use shared grid dimensions");
-    require(config.seed == 42U, "terrain_ref should use terrain seed");
-    require(config.cell_size_m == 64.0F, "terrain_ref should use terrain cell size");
-    require(config.vertical_scale == 0.75F, "terrain_ref should use terrain vertical scale");
-    require(config.camera_preset ==
-                cubey::projects::terrain_ref::TerrainRefCameraPreset::SurfaceLow,
-            "terrain_ref should parse surface-low camera alias");
-    require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Height,
-            "terrain_ref should parse height material preview");
-    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
-            "terrain_ref should keep the default filtered surface");
-    require(!config.water_surface, "terrain_ref should allow disabling water");
-
-    run_config.terrain.camera_preset = "coastal_oblique";
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.camera_preset ==
-                cubey::projects::terrain_ref::TerrainRefCameraPreset::CoastalOblique,
-            "terrain_ref should parse coastal-oblique camera alias");
-    require(cubey::projects::terrain_ref::terrain_ref_camera_preset_name(config.camera_preset) ==
+    config.grid_width = 129U;
+    config.grid_height = 257U;
+    config.seed = 42U;
+    config.cell_size_m = 64.0F;
+    config.vertical_scale = 0.75F;
+    config.camera_preset = terrain_ref_camera_preset_from_name("surface_low");
+    config.material_mode = terrain_ref_material_mode_from_name("height");
+    config.surface_mode = terrain_ref_surface_mode_from_name("post-erosion");
+    config.water_surface = false;
+    config.recipe = terrain_ref_recipe_from_name(kTerrainRefRecipeShadertoyAlpine);
+    config.erosion_filter_enabled = true;
+    require(config.grid_width == 129U && config.grid_height == 257U && config.seed == 42U,
+            "terrain_ref should preserve direct grid and seed values");
+    require(config.camera_preset == TerrainRefCameraPreset::SurfaceLow &&
+                config.material_mode == TerrainRefMaterialMode::Height &&
+                config.surface_mode == TerrainRefSurfaceMode::Filtered && !config.water_surface,
+            "terrain_ref should preserve parsed direct values");
+    require(config.recipe == TerrainRefRecipe::ShadertoyAlpine &&
+                config.erosion_filter_enabled,
+            "terrain_ref should preserve the selected recipe and filter state");
+    require(terrain_ref_camera_preset_from_name("coastal_oblique") ==
+                TerrainRefCameraPreset::CoastalOblique,
+            "terrain_ref should retain the coastal-oblique alias");
+    require(terrain_ref_camera_preset_name(TerrainRefCameraPreset::CoastalOblique) ==
                 "coastal-oblique",
             "terrain_ref should expose coastal-oblique camera name");
-    run_config.terrain.camera_preset = "surface_low";
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyMountain);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyMountain,
-            "terrain_ref should parse ShaderToy mountain recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyAlpine);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyAlpine,
-            "terrain_ref should parse ShaderToy alpine recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyDunes);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyDunes,
-            "terrain_ref should parse ShaderToy dunes recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyLakeBasin);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyLakeBasin,
-            "terrain_ref should parse ShaderToy lake-basin recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyBadlands);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyBadlands,
-            "terrain_ref should parse ShaderToy badlands recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyCoastIsland);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyCoastIsland,
-            "terrain_ref should parse ShaderToy coast-island recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyPlains);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyPlains,
-            "terrain_ref should parse ShaderToy plains recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyGorge);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyGorge,
-            "terrain_ref should parse ShaderToy gorge recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyGlacialHighland);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe ==
-                cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyGlacialHighland,
-            "terrain_ref should parse ShaderToy glacial-highland recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyCraterField);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe == cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyCraterField,
-            "terrain_ref should parse ShaderToy crater-field recipe");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyErosionFilter);
-    run_config.terrain.preview_color = "erosion";
-    run_config.terrain.preview_surface = "pre-process";
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.recipe ==
-                cubey::projects::terrain_ref::TerrainRefRecipe::ShadertoyErosionFilter,
-            "terrain_ref should parse ShaderToy erosion-filter recipe");
-    require(config.material_mode == cubey::projects::terrain_ref::TerrainRefMaterialMode::Erosion,
-            "terrain_ref should parse erosion diagnostic color");
-    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Base,
-            "terrain_ref should parse pre-process surface");
-
-    run_config.terrain.preview_color = "height";
-    run_config.terrain.preview_surface = "post-erosion";
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.surface_mode == cubey::projects::terrain_ref::TerrainRefSurfaceMode::Filtered,
-            "terrain_ref should parse post-erosion surface");
-    require(!config.erosion_filter_enabled,
-            "dedicated erosion reference should own its filtering internally");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyAlpine);
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(config.erosion_filter_enabled,
-            "post-erosion should enable filtering for ordinary biome recipes");
-    run_config.terrain.preview_surface = "pre-process";
-    config = cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config);
-    require(!config.erosion_filter_enabled,
-            "pre-process should preserve the ordinary biome source");
-
-    run_config.terrain.recipe = "temperate-mountain-river";
+    require(terrain_ref_recipe_from_name(kTerrainRefRecipeShadertoyErosionFilter) ==
+                TerrainRefRecipe::ShadertoyErosionFilter,
+            "terrain_ref should parse the erosion-filter recipe");
+    require(terrain_ref_material_mode_from_name("erosion") == TerrainRefMaterialMode::Erosion &&
+                terrain_ref_surface_mode_from_name("pre-process") == TerrainRefSurfaceMode::Base,
+            "terrain_ref should parse erosion diagnostic modes");
     require_throws(
-        [&run_config] {
-            static_cast<void>(
-                cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config));
-        },
+        [] { static_cast<void>(terrain_ref_recipe_from_name("temperate-mountain-river")); },
         "terrain_ref should reject non-reference terrain recipes");
-
-    run_config.terrain.recipe =
-        std::string(cubey::projects::terrain_ref::kTerrainRefRecipeShadertoyMountain);
-    run_config.terrain.preview_color = "river";
     require_throws(
-        [&run_config] {
-            static_cast<void>(
-                cubey::projects::terrain_ref::terrain_ref_config_from_run_config(run_config));
-        },
+        [] { static_cast<void>(terrain_ref_material_mode_from_name("river")); },
         "terrain_ref should reject unsupported preview color modes");
 }
 
@@ -455,7 +344,7 @@ void test_shadertoy_erosion_reference_sampling() {
 } // namespace
 
 int main() {
-    test_terrain_ref_config_from_run_config();
+    test_terrain_ref_config_model();
     test_terrain_engine_reference_sampling_is_deterministic();
     test_shadertoy_mountain_reference_sampling_is_deterministic();
     test_shadertoy_biome_reference_sampling_is_deterministic();

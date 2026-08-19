@@ -1,19 +1,21 @@
 # Terrain ShaderToy Study
 
-The ShaderToy terrain study is an optional, local-only fidelity tool. It compiles
-selected external ShaderToy terrain sources without copying them into Cubey,
-then transfers their height fields to one Cubey mesh and diagnostic harness for
-controlled comparison. Mountains also retains its original raymarch control.
+The ShaderToy terrain study is an optional, local-only fidelity source study. It
+compiles selected external ShaderToy terrain sources without copying them into
+Cubey, then retains their height/config/camera and mesh diagnostic logic for
+controlled comparison. The former viewer and raymarch control are retired.
 
 Configure with the default sibling reference checkout:
 
 ```sh
 cmake --preset dev-terrain-studies
-cmake --build --preset dev-terrain-studies --target cubey_study_terrain_shadertoy
+cmake --build --preset dev-terrain-studies --target \
+  cubey_study_terrain_shadertoy_reference_core cubey_study_terrain_shadertoy_tests
+ctest --preset dev-terrain-studies -R '^terrain_shadertoy_ref_tests$' --output-on-failure
 ```
 
 Override the source directory with `-DCUBEY_SHADERTOY_REF_DIR=/path/to/ShaderToy`.
-When any required study source is absent, CMake skips the app and its tests.
+When any required study source is absent, CMake skips the study and its tests.
 
 The main local options are:
 
@@ -53,28 +55,9 @@ the exact baked height. They are broad low-pass, signed residual, and positive
 broad-residual views respectively; they do not duplicate or reconstruct the
 reference's internal formulas.
 
-The windowed mesh path supports a lightweight inspection orbit around the
-source camera target. Left-drag rotates, the mouse wheel zooms, and `R` restores
-the exact configured reference view. Headless captures and the raymarch control
-remain fixed.
-
-Generate the fixed comparison pack with:
-
-```sh
-studies/terrain/shadertoy/capture_mountains_fidelity.sh
-```
-
-Generate the arbitrary-view, simplification, and GPU timing pack with:
-
-```sh
-studies/terrain/shadertoy/capture_mountains_generalization.sh
-```
-
-Generate the multi-source morphology pack with:
-
-```sh
-studies/terrain/shadertoy/capture_source_shape_studies.sh
-```
+The former windowed mesh path, headless capture scripts, and GPU profile test
+were retired. Their shader/source evidence and the detailed configuration
+vocabulary above remain for non-viewer comparison and future research.
 
 The design, licensing boundary, and acceptance criteria are recorded in
 [`docs/notes/terrain-shadertoy-mountains-fidelity.md`](../../../docs/notes/terrain-shadertoy-mountains-fidelity.md).

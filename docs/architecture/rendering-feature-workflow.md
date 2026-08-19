@@ -93,9 +93,10 @@ spectrum/FFT/unpack path as its core, then adding Cubey atmosphere, terrain
 fields, diagnostics, and feature-isolation controls around it.
 
 The cloud direction also follows this policy: `cloud_ref` is the visual-shape
-reference, `cloud_ref_2` is a cache-architecture reference, and
-`clouds_legacy` is integration evidence. None of them should be treated as the
-single final renderer.
+reference, `projects/cloud_ref_2` is an architecture reference, and
+`projects/clouds_legacy` is integration evidence. Both projects are retired;
+neither should be treated as the single final renderer. See the retirement
+archive for the recovery anchor.
 
 Future atmosphere, terrain, planet, ocean, cloud, material, and lighting work
 should use the same pattern unless the task is explicitly a foundation spike:

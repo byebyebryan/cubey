@@ -629,10 +629,10 @@ Project checkpoints:
   The shared `CloudLayerRuntime` keeps the texture-backed coherent density path,
   generated 3D base/detail noise, generated 2D weather map, spherical-shell
   direct march, cloud product/composite passes, nested controls, and diagnostics
-  for raw density, transmittance, lighting, distance, and steps. `clouds_legacy`
-  remains the frozen planet-aware pressure project for surface/high/orbit
-  lessons, while `projects/cloud_ref_2` remains a historical cached-sky
-  architecture reference. Cloud V1 is intentionally surface-only: atmosphere
+  for raw density, transmittance, lighting, distance, and steps. The historical
+  planet-aware prototype remains a pressure reference for surface/high/orbit
+  lessons, while retired `projects/cloud_ref_2` remains an architecture
+  reference. Cloud V1 is intentionally surface-only: atmosphere
   is the tuning host and ocean is the surface-view consumer. Ocean consumes a
   bounded local shadow product and planar cloud reflection with a cached
   environment fallback. Planet, aerial/high-altitude, orbit shells, shared PBR

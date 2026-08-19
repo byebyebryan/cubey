@@ -96,18 +96,14 @@ Paused studies and design-only projects:
 - `fluid_25d`: design-only shallow-water direction for terrain-bound rivers,
   flooding, sources, and sinks.
 
-Reference studies and legacy projects:
+Reference studies and retained research:
 
 - `cloud_ref`: TerrainEngine-style local surface cloud reference used to check
   density, sampling, and lighting before promotion into the shared cloud layer.
-- `cloud_ref_2`: Godot-v2-style cached-sky architecture reference used to
-  inspect octahedral cache behavior, not a visual target.
-- `studies/terrain/reference`: frozen terrain reference renderer used to compare
-  TerrainEngine and ShaderToy-derived terrain cues.
-- `studies/terrain/shadertoy`: restricted-source fidelity study used to compare
-  original raymarched references with mesh transfer.
-- `clouds_legacy`: frozen first-pass planet-aware cloud/weather prototype kept
-  as evidence for scale, horizon, UI, and integration failure modes.
+- `studies/terrain/reference`: frozen terrain reference algorithms, mesh, and
+  shader evidence used to compare TerrainEngine and ShaderToy-derived cues.
+- `studies/terrain/shadertoy`: restricted-source fidelity study retaining its
+  source/config and camera logic for non-viewer comparisons.
 
 The retired terrain workbench, terrain lab, and coastal demo are summarized in
 [Archived terrain attempts](docs/archive/terrain/legacy-attempts.md); Git history
@@ -145,8 +141,6 @@ Project-local docs:
 
 - [Atmosphere](projects/atmosphere/README.md)
 - [Cloud Ref](projects/cloud_ref/README.md)
-- [Cloud Ref 2](projects/cloud_ref_2/README.md)
-- [Clouds Legacy](projects/clouds_legacy/README.md)
 - [Fluid overview](projects/fluid/README.md)
 - [Smoke 2D](projects/fluid/smoke_2d/README.md)
 - [Water 2D](projects/fluid/water_2d/README.md)

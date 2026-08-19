@@ -64,9 +64,9 @@ First useful scope:
 Clouds should stay separate from the clear-sky shader. Treat them as an
 additional layer with its own weather map, coverage, density, lighting, and
 shadow controls rather than folding cloud noise into the base atmosphere pass.
-The first cloud implementation is frozen in `projects/clouds_legacy`, where it
-proved surface, above-cloud, and orbit pressure before any shared renderer
-promotion. Active production cloud work now lives in `projects/atmosphere`
+The first cloud implementation, `projects/clouds_legacy`, is retired; its
+experiments proved surface, above-cloud, and orbit pressure before any shared
+renderer promotion. Active production cloud work now lives in `projects/atmosphere`
 through `cubey::render::CloudLayerRuntime`.
 
 Ocean integration target:

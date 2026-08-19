@@ -43,7 +43,8 @@ The current target is useful for renderer and source-model evaluation:
 - directional lighting and lightweight distance/altitude fog;
 - optional flat waterline intersection;
 - oblique and surface review cameras;
-- fast headless captures for comparison.
+- deterministic source/config and mesh checks for comparison. The former viewer
+  and capture scripts are retired.
 
 For `shadertoy-erosion-filter`, use `--terrain-preview-surface pre-process` to
 review the base source and `height` or `post-erosion` to review the filtered
@@ -67,30 +68,14 @@ ShaderToy recipes are visual/source references, not production biome contracts.
 
 ```sh
 cmake --preset dev-terrain-studies
-cmake --build --preset dev-terrain-studies --target cubey_study_terrain_reference cubey_study_terrain_reference_tests
-ctest --preset dev-terrain-studies -R terrain_ref --output-on-failure
-
-mkdir -p outputs/terrain_ref/terrain-engine outputs/terrain_ref/shadertoy-mountain outputs/terrain_ref/shape-compare
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-camera-preset oblique --terrain-water-surface --output outputs/terrain_ref/terrain-engine/oblique-water.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain_ref/terrain-engine/oblique-dry.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain_ref/terrain-engine/surface-low-water.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-camera-preset surface-low --no-terrain-water-surface --output outputs/terrain_ref/terrain-engine/surface-low-dry.png
-
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset oblique --terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/oblique-water.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset oblique --no-terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/oblique-dry.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/surface-low-water.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --no-terrain-water-surface --output outputs/terrain_ref/shadertoy-mountain/surface-low-dry.png
-
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-camera-preset oblique --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/terrain-engine-oblique-height.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/terrain-engine-surface-low-height.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset oblique --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-oblique-height.png
-./build/dev-terrain-studies/studies/terrain/reference/terrain_reference --headless --width 1280 --height 720 --terrain-recipe shadertoy-mountain --terrain-camera-preset surface-low --terrain-preview-color height --no-terrain-water-surface --output outputs/terrain_ref/shape-compare/shadertoy-mountain-surface-low-height.png
-
-studies/terrain/reference/capture_shadertoy_biome_refs.sh
-studies/terrain/reference/capture_shadertoy_erosion_ref.sh
-studies/terrain/reference/capture_erosion_generalization.sh
-studies/terrain/reference/capture_closure_review.sh
+cmake --build --preset dev-terrain-studies --target \
+  cubey_study_terrain_reference_core cubey_study_terrain_reference_tests
+ctest --preset dev-terrain-studies -R '^terrain_ref_tests$' --output-on-failure
 ```
+
+The former windowed/headless viewer and its capture scripts were retired. The
+reference shaders, typed configuration model, CPU samplers, mesh construction,
+and historical capture evidence remain available for source-level comparison.
 
 The closure status, multi-seed matrix, carry-forward decisions, and known weak
 recipes are recorded in

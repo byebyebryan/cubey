@@ -364,8 +364,6 @@ void test_shared_cloud_ui_defaults_to_surface_controls() {
         read_text_file(source_root / "include/cubey/host/cloud_environment_ui.h");
     const std::string ui_source =
         read_text_file(source_root / "src/cubey/host/cloud_environment_ui.cpp");
-    const std::string planet_ui =
-        read_text_file(source_root / "projects/planet_legacy/planet_ui.cpp");
 
     require_contains(ui_header, "show_aerial_orbit_controls = false",
                      "shared cloud UI should hide deferred aerial/orbit controls by default");
@@ -373,8 +371,6 @@ void test_shared_cloud_ui_defaults_to_surface_controls() {
                      "shared cloud UI should expose the surface horizon handoff control");
     require_contains(ui_source, "Cloud V1 surfaces hide the deferred aerial/orbit controls",
                      "shared cloud UI should label the hidden deferred-control contract");
-    require_contains(planet_ui, ".show_aerial_orbit_controls = true",
-                     "planet UI should explicitly opt into deferred cloud controls");
 }
 
 void test_run_config_descriptors_cover_project_control_paths() {

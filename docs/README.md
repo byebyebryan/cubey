@@ -86,12 +86,10 @@ Active projects:
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Planet](../projects/planet/README.md)
-- [Planet Legacy](../projects/planet_legacy/README.md)
 
 Reference projects:
 
 - [Cloud Ref](../projects/cloud_ref/README.md)
-- [Cloud Ref 2](../projects/cloud_ref_2/README.md)
 - [Terrain Ref](../studies/terrain/reference/README.md)
 - [Terrain ShaderToy Study](../studies/terrain/shadertoy/README.md)
 
@@ -102,8 +100,8 @@ Paused labs and design-only projects:
 
 Legacy material:
 
-- [Clouds Legacy](../projects/clouds_legacy/README.md)
 - [Archived terrain attempts](archive/terrain/legacy-attempts.md)
+- [Retired project snapshot](archive/retired-projects.md)
 - [Terrain-ocean field contract](archive/terrain/terrain-ocean-field-contract.md)
 - [Rejected terrain climate response V1.1](archive/terrain/climate-response-v1-1-rejected.md)
 

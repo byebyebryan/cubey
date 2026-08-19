@@ -1,9 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace cubey::projects::terrain_shadertoy_ref {
 
@@ -61,7 +59,6 @@ struct TerrainShadertoyRefConfig {
 
 struct ParsedTerrainShadertoyRefArgs {
     TerrainShadertoyRefConfig reference_config{};
-    std::vector<std::string> forwarded_arguments{};
 };
 
 [[nodiscard]] ParsedTerrainShadertoyRefArgs parse_terrain_shadertoy_ref_args(int argc, char** argv);

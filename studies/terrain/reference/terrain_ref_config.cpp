@@ -149,40 +149,6 @@ TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name
         "or coastal-oblique");
 }
 
-TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config) {
-    TerrainRefConfig result;
-    result.recipe = terrain_ref_recipe_from_name(config.terrain.recipe);
-    result.grid_width = config.grid.width == 0U ? kTerrainRefDefaultGridSize : config.grid.width;
-    result.grid_height = config.grid.height == 0U ? kTerrainRefDefaultGridSize : config.grid.height;
-    result.cell_size_m = cubey::run_config_float_is_set(config.terrain.cell_size)
-                             ? config.terrain.cell_size
-                             : kTerrainRefDefaultCellSizeM;
-    result.seed = config.terrain.seed_set ? config.terrain.seed : kTerrainRefDefaultSeed;
-    result.vertical_scale = cubey::run_config_float_is_set(config.terrain.vertical_scale)
-                                ? config.terrain.vertical_scale
-                                : kTerrainRefDefaultVerticalScale;
-    result.camera_preset = terrain_ref_camera_preset_from_name(
-        config.terrain.camera_preset.empty() ? kTerrainRefDefaultCameraPreset
-                                             : std::string_view(config.terrain.camera_preset));
-    result.material_mode = terrain_ref_material_mode_from_name(config.terrain.preview_color);
-    result.surface_mode = terrain_ref_surface_mode_from_name(config.terrain.preview_surface);
-    result.erosion_filter_enabled = config.terrain.preview_surface == "post-erosion" &&
-                                    result.recipe != TerrainRefRecipe::ShadertoyErosionFilter;
-    result.water_surface =
-        config.terrain.water_surface >= 0 ? config.terrain.water_surface != 0 : true;
-
-    if (result.grid_width < 2U || result.grid_height < 2U) {
-        throw std::runtime_error("terrain_ref grid dimensions must be at least 2");
-    }
-    if (!std::isfinite(result.cell_size_m) || result.cell_size_m <= 0.0F) {
-        throw std::runtime_error("terrain_ref cell size must be positive");
-    }
-    if (!std::isfinite(result.vertical_scale) || result.vertical_scale <= 0.0F) {
-        throw std::runtime_error("terrain_ref vertical scale must be positive");
-    }
-    return result;
-}
-
 float terrain_ref_extent_m(const TerrainRefConfig& config) {
     return static_cast<float>(std::max(config.grid_width, config.grid_height) - 1U) *
            config.cell_size_m;

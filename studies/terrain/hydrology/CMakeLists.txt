@@ -70,29 +70,6 @@ target_link_libraries(
         cubey_project_warnings
 )
 
-cubey_add_app_target(
-    cubey_study_terrain_hydrology
-    OUTPUT_NAME terrain_hydrology
-    SHADER_DEFINE CUBEY_TERRAIN_HYDROLOGY_LAB_SHADER_DIR
-    WINDOWED_SMOKE_TEST terrain_hydrology_reaches_glfw
-    WINDOWED_SMOKE_PATTERN
-        "terrain_hydrology: .*rendering archived terrain hydrology product"
-    WINDOWED_SMOKE_ARGS
-        --grid-size
-        65
-    SOURCES
-        main.cpp
-        terrain_app.cpp
-    SHADERS
-        shaders/terrain.vert
-        shaders/terrain.frag
-)
-target_link_libraries(
-    cubey_study_terrain_hydrology
-    PRIVATE
-        cubey_study_terrain_hydrology_render_support
-)
-
 if (BUILD_TESTING)
     add_executable(cubey_study_terrain_hydrology_tests
         terrain_tests.cpp
@@ -137,129 +114,10 @@ if (BUILD_TESTING)
             FIXTURES_REQUIRED terrain_hydrology_generate_output
     )
 
-    set(CUBEY_TERRAIN_HYDROLOGY_LAB_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-hydrology-lab-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_hydrology_lab_headless_writes_png
-        cubey_study_terrain_hydrology
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --grid-size
-        65
-        --debug-view
-        surface
-        --terrain-camera-preset
-        oblique
-    )
-    cubey_add_png_stats_test(
-        terrain_hydrology_lab_headless_writes_png
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
-    set(CUBEY_TERRAIN_HYDROLOGY_LAB_SURFACE_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-hydrology-lab-surface-low-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_hydrology_lab_surface_low_headless_writes_png
-        cubey_study_terrain_hydrology
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_SURFACE_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --grid-size
-        65
-        --debug-view
-        surface
-        --terrain-camera-preset
-        surface-low
-    )
-    cubey_add_png_stats_test(
-        terrain_hydrology_lab_surface_low_headless_writes_png
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_SURFACE_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
-    set(CUBEY_TERRAIN_HYDROLOGY_LAB_CONTROL_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-hydrology-lab-control-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_hydrology_lab_control_headless_writes_png
-        cubey_study_terrain_hydrology
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_CONTROL_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --grid-size
-        65
-        --terrain-recipe
-        upland-broad-noise-control-v1
-        --debug-view
-        surface
-        --terrain-camera-preset
-        oblique
-    )
-    cubey_add_png_stats_test(
-        terrain_hydrology_lab_control_headless_writes_png
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_CONTROL_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
-    set(CUBEY_TERRAIN_HYDROLOGY_LAB_LANDSCAPE_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-hydrology-lab-landscape-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_hydrology_lab_landscape_headless_writes_png
-        cubey_study_terrain_hydrology
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_LANDSCAPE_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --grid-size
-        65
-        --terrain-cell-size
-        100
-        --terrain-recipe
-        upland-landscape-evolution-v1
-        --debug-view
-        surface
-        --terrain-camera-preset
-        oblique
-    )
-    cubey_add_png_stats_test(
-        terrain_hydrology_lab_landscape_headless_writes_png
-        "${CUBEY_TERRAIN_HYDROLOGY_LAB_LANDSCAPE_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
     cubey_label_tests(
-        terrain_hydrology_lab
-        terrain_hydrology_reaches_glfw
+        terrain_hydrology
         terrain_hydrology_lab_tests
         terrain_hydrology_generate_exports_fields
         terrain_hydrology_generate_exports_manifest
-        terrain_hydrology_lab_headless_writes_png
-        terrain_hydrology_lab_headless_writes_png_stats
-        terrain_hydrology_lab_surface_low_headless_writes_png
-        terrain_hydrology_lab_surface_low_headless_writes_png_stats
-        terrain_hydrology_lab_control_headless_writes_png
-        terrain_hydrology_lab_control_headless_writes_png_stats
-        terrain_hydrology_lab_landscape_headless_writes_png
-        terrain_hydrology_lab_landscape_headless_writes_png_stats
     )
 endif()

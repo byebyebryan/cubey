@@ -379,8 +379,9 @@ Near-term non-goals:
   pass;
 - no CPU migration of generated atmosphere lunar/night-sky atlas noise until it
   has its own golden-value or image-review pass;
-- no deduplication of `cloud_ref`, `cloud_ref_2`, or `clouds_legacy` while they
-  are still useful as reference snapshots;
+- keep the retained `cloud_ref` reference distinct; `cloud_ref_2` and
+  `clouds_legacy` are retired snapshots preserved in docs and Git history while
+  their historical source evidence remains useful;
 - no promotion of physical hydrology, erosion, foliage, materials, streaming, or
   Vulkan resource policy into `cubey::procedural`.
 

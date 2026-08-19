@@ -46,5 +46,6 @@ The script writes the lit, phase, and source-field review pack to
 
 The full boundary, reference provenance, and explicitly deferred scope live in
 [the planet rendering architecture](../../docs/architecture/planet-rendering.md).
-The frozen implementation remains at
-[`projects/planet_legacy`](../planet_legacy/README.md).
+The pre-reboot `projects/planet_legacy` implementation is preserved as
+historical design evidence and in Git history; it is not an active project
+dependency. See the [retirement snapshot](../../docs/archive/retired-projects.md).

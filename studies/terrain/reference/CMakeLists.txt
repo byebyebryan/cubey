@@ -1,145 +1,38 @@
-cubey_add_app_target(
-    cubey_study_terrain_reference
-    OUTPUT_NAME terrain_reference
-    SHADER_DEFINE CUBEY_TERRAIN_REF_SHADER_DIR
-    WINDOWED_SMOKE_TEST terrain_reference_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "terrain_reference: .*rendering terrain reference"
-    SOURCES
-        main.cpp
-        shadertoy_biome_reference.cpp
-        shadertoy_erosion_reference.cpp
-        shadertoy_mountain_reference.cpp
-        terrain_engine_reference.cpp
-        terrain_ref_app.cpp
-        terrain_ref_config.cpp
-        terrain_ref_mesh.cpp
-    SHADERS
-        shaders/terrain_ref.vert
-        shaders/terrain_ref.frag
-    SHADER_INCLUDE_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
-    SHADER_DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/terrain_engine_reference.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_biome_reference.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_erosion_reference.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/shaders/shadertoy_mountain_reference.glsl"
+add_library(cubey_study_terrain_reference_core STATIC
+    shadertoy_biome_reference.cpp
+    shadertoy_erosion_reference.cpp
+    shadertoy_mountain_reference.cpp
+    terrain_engine_reference.cpp
+    terrain_ref_config.cpp
+    terrain_ref_mesh.cpp
+)
+target_include_directories(
+    cubey_study_terrain_reference_core
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_link_libraries(
+    cubey_study_terrain_reference_core
+    PUBLIC
+        cubey::core
+        cubey::render
+    PRIVATE
+        cubey_project_warnings
 )
 
 if (BUILD_TESTING)
     add_executable(cubey_study_terrain_reference_tests
-        terrain_engine_reference.cpp
-        shadertoy_biome_reference.cpp
-        shadertoy_erosion_reference.cpp
-        shadertoy_mountain_reference.cpp
-        terrain_ref_config.cpp
-        terrain_ref_mesh.cpp
         terrain_ref_tests.cpp
-    )
-    target_include_directories(
-        cubey_study_terrain_reference_tests
-        PRIVATE
-            "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
         cubey_study_terrain_reference_tests
         PRIVATE
-            cubey::core
-            cubey::render
+            cubey_study_terrain_reference_core
             cubey_project_warnings
     )
     add_test(NAME terrain_ref_tests COMMAND cubey_study_terrain_reference_tests)
-
-    set(CUBEY_TERRAIN_REF_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_ref_headless_writes_png
-        cubey_study_terrain_reference
-        "${CUBEY_TERRAIN_REF_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --terrain-camera-preset
-        oblique
-    )
-    cubey_add_png_stats_test(
-        terrain_ref_headless_writes_png
-        "${CUBEY_TERRAIN_REF_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
-    set(CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-erosion-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_ref_erosion_headless_writes_png
-        cubey_study_terrain_reference
-        "${CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --terrain-recipe
-        shadertoy-erosion-filter
-        --terrain-camera-preset
-        oblique
-        --terrain-preview-surface
-        post-erosion
-        --terrain-preview-color
-        erosion
-        --no-terrain-water-surface
-    )
-    cubey_add_png_stats_test(
-        terrain_ref_erosion_headless_writes_png
-        "${CUBEY_TERRAIN_REF_EROSION_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
-    set(CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/terrain-ref-erosion-generalization-headless.png"
-    )
-    cubey_add_png_smoke_test(
-        terrain_ref_erosion_generalization_headless_writes_png
-        cubey_study_terrain_reference
-        "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
-        --headless
-        --width
-        320
-        --height
-        180
-        --grid-size
-        129
-        --terrain-recipe
-        shadertoy-alpine
-        --terrain-camera-preset
-        oblique
-        --terrain-preview-surface
-        post-erosion
-        --terrain-preview-color
-        erosion
-        --no-terrain-water-surface
-    )
-    cubey_add_png_stats_test(
-        terrain_ref_erosion_generalization_headless_writes_png
-        "${CUBEY_TERRAIN_REF_EROSION_GENERALIZATION_HEADLESS_OUTPUT}"
-        0.00001
-        0.00005
-    )
-
     cubey_label_tests(
         reference
-        terrain_reference_reaches_glfw
         terrain_ref_tests
-        terrain_ref_headless_writes_png
-        terrain_ref_headless_writes_png_stats
-        terrain_ref_erosion_headless_writes_png
-        terrain_ref_erosion_headless_writes_png_stats
-        terrain_ref_erosion_generalization_headless_writes_png
-        terrain_ref_erosion_generalization_headless_writes_png_stats
     )
 endif()

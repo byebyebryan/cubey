@@ -508,8 +508,6 @@ cubey/
         atmosphere_environment.* -- project-to-shared atmosphere config adapter
         atmosphere_ui.* -- live atmosphere and night-sky controls
       cloud_ref/          -- TerrainEngine-style surface-cloud reference
-      cloud_ref_2/        -- Godot-v2-style cache architecture reference
-      clouds_legacy/      -- frozen planet-aware cloud/weather prototype
       fractal_2d/
         CMakeLists.txt
         main.cpp

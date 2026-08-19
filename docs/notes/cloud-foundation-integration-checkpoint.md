@@ -318,10 +318,11 @@ Current split:
   horizon handoff plus aerial/orbit, far-bridge, and diagnostic paths;
 - `experimental-aerial-orbit`: temporary high/orbit transition scaffold, not a
   fallback for surface rendering;
-- `projects/cloud_ref`: known-good narrow reference/demo that should remain
-  available;
-- `projects/clouds_legacy` and git history: record of failed standalone and
-  absorbed approaches, not active implementation targets.
+- `projects/cloud_ref`: known-good narrow reference/demo that remains the
+  retained runnable reference;
+- `projects/clouds_legacy` and Git history: record of failed standalone and
+  absorbed approaches, preserved as historical evidence rather than an
+  available project or active implementation target.
 
 ## Surface Horizon Handoff Promotion 2026-07-08
 

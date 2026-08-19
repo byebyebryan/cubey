@@ -3,8 +3,6 @@
 #include "shadertoy_erosion_reference.h"
 #include "terrain_engine_reference.h"
 
-#include <cubey/core/run_config.h>
-
 #include <cstdint>
 #include <string_view>
 
@@ -50,14 +48,12 @@ inline constexpr std::string_view kTerrainRefRecipeShadertoyAlpine = "shadertoy-
 inline constexpr std::string_view kTerrainRefRecipeShadertoyDunes = "shadertoy-dunes";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyLakeBasin = "shadertoy-lake-basin";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyBadlands = "shadertoy-badlands";
-inline constexpr std::string_view kTerrainRefRecipeShadertoyCoastIsland =
-    "shadertoy-coast-island";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyCoastIsland = "shadertoy-coast-island";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyPlains = "shadertoy-plains";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyGorge = "shadertoy-gorge";
 inline constexpr std::string_view kTerrainRefRecipeShadertoyGlacialHighland =
     "shadertoy-glacial-highland";
-inline constexpr std::string_view kTerrainRefRecipeShadertoyCraterField =
-    "shadertoy-crater-field";
+inline constexpr std::string_view kTerrainRefRecipeShadertoyCraterField = "shadertoy-crater-field";
 inline constexpr std::string_view kTerrainRefDefaultCameraPreset = "oblique";
 inline constexpr float kTerrainRefDefaultCellSizeM = 32.0F;
 inline constexpr std::uint32_t kTerrainRefDefaultGridSize = 513U;
@@ -83,7 +79,6 @@ struct TerrainRefConfig {
 [[nodiscard]] TerrainRefSurfaceMode terrain_ref_surface_mode_from_name(std::string_view name);
 [[nodiscard]] std::string_view terrain_ref_camera_preset_name(TerrainRefCameraPreset preset);
 [[nodiscard]] TerrainRefCameraPreset terrain_ref_camera_preset_from_name(std::string_view name);
-[[nodiscard]] TerrainRefConfig terrain_ref_config_from_run_config(const cubey::RunConfig& config);
 [[nodiscard]] float terrain_ref_extent_m(const TerrainRefConfig& config);
 
 } // namespace cubey::projects::terrain_ref

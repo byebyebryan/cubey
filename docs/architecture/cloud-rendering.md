@@ -1,16 +1,20 @@
 # Cloud Rendering Direction
 
-This document promotes the lessons from `projects/clouds_legacy`,
-`projects/cloud_ref`, and `projects/cloud_ref_2` into the direction for the
-production surface cloud layer hosted by `projects/atmosphere`. The reference
-projects should remain available as guardrails, but new cloud feature work
-should not keep tuning throwaway ports or a separate standalone production app.
+This document promotes the lessons from the retained `projects/cloud_ref`
+reference and retired `projects/clouds_legacy` and `projects/cloud_ref_2`
+prototypes into the direction for the production surface cloud layer hosted by
+`projects/atmosphere`. Those projects are historical evidence; new cloud
+feature work should not keep tuning throwaway ports or a separate standalone
+production app.
+The retirement rationale and recovery anchor are recorded in
+[`docs/archive/retired-projects.md`](../archive/retired-projects.md).
 
 ## Decision
 
 Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
-instead of continuing `clouds_legacy`, reviving a standalone `projects/cloud`,
-or pulling `cloud_ref_2` toward visual quality.
+instead of reviving `projects/clouds_legacy` or `projects/cloud_ref_2` as
+standalone cloud applications or pulling either experiment toward visual
+quality.
 
 The accepted production baseline is now the surface-volume cloud path validated
 through the `cloud_ref` parity work, with the shared lower-sky horizon handoff
@@ -28,18 +32,19 @@ The V1 production renderer should combine:
 
 - the texture-backed cloud density model from the TerrainEngine-style
   `cloud_ref`;
-- the integration contracts and scale pressure learned from `clouds_legacy`;
+- the integration contracts and scale pressure learned from
+  `projects/clouds_legacy`;
 - shared sky, celestial, atmosphere, and exposure inputs for sun/moon light,
   sky color, and background classification.
 
 Later aerial/orbit work may borrow the cached sky/cloud product architecture
-from the Godot-v2-style `cloud_ref_2`, but that cache architecture is not part
-of Cloud V1.
+from `projects/cloud_ref_2`, but that cache architecture is not part of Cloud
+V1.
 
 Do not treat any one reference as the final renderer. `cloud_ref` is the best
-shape reference. `cloud_ref_2` is the best cache architecture reference.
-`clouds_legacy` is the best warning about scale, horizon, UI, and integration
-failure modes.
+shape reference; `projects/cloud_ref_2` is the cache architecture reference,
+and `projects/clouds_legacy` is the warning about scale, horizon, UI, and
+integration failure modes.
 
 ## Current Ownership
 
@@ -124,9 +129,9 @@ Keep the unfinished paths, but label them honestly:
 - temporal reconstruction is diagnostic until it stops turning cloud noise into
   shimmer;
 - `cloud_ref` is the local/surface visual reference and lighting test bed;
-- `cloud_ref_2` is a cached-sky architecture reference, not a quality target;
-- `clouds_legacy` is frozen evidence of failed and useful ideas from the first
-  planet-aware cloud prototype.
+- `projects/cloud_ref_2` is an architecture reference, not a quality target;
+- `projects/clouds_legacy` is evidence of failed and useful ideas from the first
+  cloud implementation.
 
 Compatibility aliases such as `reference-parity`, `cloud-ref-compatible`, and
 `procedural` can keep parsing old configs, but docs, UI, and generated config
@@ -139,9 +144,9 @@ tuning. Planet explicitly opts into those deferred controls as a pressure path;
 that makes later aerial/orbit work visible without turning it into the default
 foundation contract.
 
-## Lessons From Legacy
+## Lessons From the Historical Prototype
 
-`clouds_legacy` proved the right long-term product pressure:
+`projects/clouds_legacy` proved the right long-term product pressure:
 
 - surface, high-altitude, and orbit views all matter eventually, but only the
   surface regime belongs to Cloud V1;
@@ -278,9 +283,9 @@ real ambient/direct/phase/source terms, replace the ambient/direct mix with an
 additive source equation, then reintroduce powder as a scalar intensity with
 off/current/new comparisons in the capture pack.
 
-## Lessons From Cloud Ref 2
+## Lessons From `projects/cloud_ref_2`
 
-`cloud_ref_2` is not a useful visual target yet. It deliberately reused Cubey
+`projects/cloud_ref_2` is not a useful visual target yet. It deliberately reused Cubey
 noise/weather data instead of faithfully importing the Godot source textures,
 and the result still reads messy even when the cache is bypassed.
 

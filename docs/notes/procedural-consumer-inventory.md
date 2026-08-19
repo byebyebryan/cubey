@@ -54,8 +54,9 @@ Shared needs:
 - future `SourceRecipe3D` or volume-field recipes after the cloud volume shapes
   are reviewed against the current renderer.
 
-Do not deduplicate `cloud_ref`, `cloud_ref_2`, or `clouds_legacy`; those remain
-reference snapshots while production cloud keeps its active density model.
+Keep the retained `cloud_ref` reference distinct. The retired `cloud_ref_2` and
+`clouds_legacy` snapshots remain historical evidence in the notes and Git
+history, while production cloud keeps its active density model.
 
 ### Ocean
 

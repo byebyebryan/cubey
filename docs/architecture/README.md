@@ -27,7 +27,8 @@ than the root design and roadmap.
   CPU terrain ownership, cached product contract, consumer boundary, and
   acceptance criteria after closing the reference lane.
 - [Cloud rendering](cloud-rendering.md): production cloud direction promoted
-  from `clouds_legacy`, `cloud_ref`, and `cloud_ref_2` lessons.
+  from `projects/cloud_ref` and the retired `projects/clouds_legacy` and
+  `projects/cloud_ref_2` lessons; see the retirement archive for provenance.
 - [Ocean adjacent systems](ocean-adjacent-systems.md): atmosphere, clouds,
   terrain, bathymetry, shoreline, and shallow-water integration boundaries.
 - [glTF assets and PBR](gltf-assets.md): static glTF import, PBR material

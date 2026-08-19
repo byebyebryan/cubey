@@ -35,9 +35,10 @@ hydrology, erosion, coastlines, waves, vegetation, atmospheric LUT work,
 volumetric orbital clouds, rings, or surface-scale composition. Those concerns
 must not be hidden inside the orbital material or cloud shell.
 
-The previous experiments remain available under `projects/planet_legacy` and
-[`docs/archive/planet`](../archive/planet/README.md). They are comparison
-evidence, not an implementation base for this product.
+The previous `projects/planet_legacy` experiments are preserved in the archived
+planet design notes and Git history. They are comparison evidence, not an
+implementation base for this product; the retirement rationale and recovery
+anchor are in [`docs/archive/retired-projects.md`](../archive/retired-projects.md).
 
 ## Validation Gates
 

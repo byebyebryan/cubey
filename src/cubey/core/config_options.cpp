@@ -70,9 +70,6 @@ constexpr std::array<std::string_view, 6> kMilkyWayLayers{
 constexpr std::array<std::string_view, 7> kCloudCameraModes{
     "surface", "surface-up", "surface-sun", "high", "high-oblique", "orbit", "orbit-terminator"};
 constexpr std::array<std::string_view, 3> kCloudQualities{"quarter", "half", "full"};
-constexpr std::array<std::string_view, 4> kCloudCacheFrames{"4", "16", "64", "256"};
-constexpr std::array<std::string_view, 4> kCloudRenderPaths{"cached", "direct", "diff",
-                                                            "alpha-diff"};
 constexpr std::array<std::string_view, 4> kCloudSamplingModes{"interleaved", "bayer", "blue-noise",
                                                               "off"};
 constexpr std::array<std::string_view, 2> kCloudViewSampleModes{"single-frame", "temporal-phased"};
@@ -154,7 +151,7 @@ option(RunConfigOptionId id, std::string_view path, std::string_view cli_name,
     };
 }
 
-constexpr std::array<ConfigOptionDescriptor, 305> kRunConfigOptions{
+constexpr std::array<ConfigOptionDescriptor, 302> kRunConfigOptions{
     option(RunConfigOptionId::Title, "title", "--title", "Title", "App",
            "Window title. Project defaults are applied when this remains cubey.",
            ConfigOptionType::String),
@@ -820,22 +817,6 @@ constexpr std::array<ConfigOptionDescriptor, 305> kRunConfigOptions{
     option(RunConfigOptionId::CloudWeatherPreset, "clouds.weather_preset", "--cloud-weather-preset",
            "Weather Preset", kCloudLayerGroup, "Cloud coverage, density, scale, and wind preset.",
            ConfigOptionType::Enum, no_range(), enum_choices(kCloudWeatherPresets)),
-    option(RunConfigOptionId::CloudCacheFrames, "clouds.cache_frames", "--cloud-cache-frames",
-           "Cache Frames", kCloudReferenceGroup,
-           "cloud_ref_2 cached-sky reference refresh frames; not used by the production "
-           "surface-volume path.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kCloudCacheFrames), {},
-           ConfigOptionStability::Reference),
-    option(RunConfigOptionId::CloudCacheTextureSize, "clouds.cache_texture_size",
-           "--cloud-cache-texture-size", "Cache Texture Size", kCloudReferenceGroup,
-           "cloud_ref_2 cached-sky reference texture size; not used by the production "
-           "surface-volume path.",
-           ConfigOptionType::UInt32, min_range(1.0), {}, {}, ConfigOptionStability::Reference),
-    option(RunConfigOptionId::CloudRenderPath, "clouds.render_path", "--cloud-render-path",
-           "Render Path", kCloudReferenceGroup,
-           "cloud_ref_2 validation render path: cached, direct, diff, or alpha-diff.",
-           ConfigOptionType::Enum, no_range(), enum_choices(kCloudRenderPaths), {},
-           ConfigOptionStability::Reference),
     option(RunConfigOptionId::CloudSamplingMode, "clouds.sampling_mode", "--cloud-sampling-mode",
            "Sampling Mode", kCloudSamplingGroup,
            "Cloud ray-start sampling mode: interleaved, bayer, blue-noise, or off.",
@@ -1869,14 +1850,6 @@ nlohmann::json option_to_json(const RunConfig& config, const ConfigOptionDescrip
     case RunConfigOptionId::CloudWeatherPreset:
         return config.clouds.weather_preset.empty() ? nlohmann::json(nullptr)
                                                     : nlohmann::json(config.clouds.weather_preset);
-    case RunConfigOptionId::CloudCacheFrames:
-        return config.clouds.cache_frames.empty() ? nlohmann::json(nullptr)
-                                                  : nlohmann::json(config.clouds.cache_frames);
-    case RunConfigOptionId::CloudCacheTextureSize:
-        return optional_uint32(config.clouds.cache_texture_size);
-    case RunConfigOptionId::CloudRenderPath:
-        return config.clouds.render_path.empty() ? nlohmann::json(nullptr)
-                                                 : nlohmann::json(config.clouds.render_path);
     case RunConfigOptionId::CloudSamplingMode:
         return config.clouds.sampling_mode.empty() ? nlohmann::json(nullptr)
                                                    : nlohmann::json(config.clouds.sampling_mode);
@@ -2871,17 +2844,6 @@ void set_run_config_option_from_string(RunConfig& config, const ConfigOptionDesc
         break;
     case RunConfigOptionId::CloudWeatherPreset:
         config.clouds.weather_preset = std::string(value);
-        break;
-    case RunConfigOptionId::CloudCacheFrames:
-        config.clouds.cache_frames = std::string(value);
-        break;
-    case RunConfigOptionId::CloudCacheTextureSize:
-        config.clouds.cache_texture_size =
-            parse_number<std::uint32_t>(value, option, "unsigned integer");
-        validate_range(config.clouds.cache_texture_size, option);
-        break;
-    case RunConfigOptionId::CloudRenderPath:
-        config.clouds.render_path = std::string(value);
         break;
     case RunConfigOptionId::CloudSamplingMode:
         config.clouds.sampling_mode = std::string(value);

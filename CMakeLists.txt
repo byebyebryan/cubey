@@ -349,8 +349,6 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
             CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
                 "${CMAKE_SOURCE_DIR}/projects/atmosphere"
                 "${CMAKE_SOURCE_DIR}/projects/cloud_ref"
-                "${CMAKE_SOURCE_DIR}/projects/cloud_ref_2"
-                "${CMAKE_SOURCE_DIR}/projects/clouds_legacy"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
                 "${CMAKE_SOURCE_DIR}/projects/gltf_viewer"
@@ -358,15 +356,6 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
                 "${CMAKE_SOURCE_DIR}/projects/pbr_furnace"
                 "${CMAKE_SOURCE_DIR}/projects/planet"
                 "${CMAKE_SOURCE_DIR}/projects/terrain"
-        )
-    endif()
-    if (CUBEY_BUILD_TERRAIN_STUDIES)
-        list(
-            APPEND
-            CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
-                "${CMAKE_SOURCE_DIR}/studies/terrain/reference"
-                "${CMAKE_SOURCE_DIR}/studies/terrain/shadertoy"
-                "${CMAKE_SOURCE_DIR}/studies/terrain/hydrology"
         )
     endif()
     add_test(

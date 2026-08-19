@@ -85,8 +85,8 @@ The current oversized shader pressure points are:
 - `projects/ocean/shaders/ocean.frag`: active, already split into project-local
   helpers. Keep the entry shader focused on declarations, cascade sampling, and
   final composition.
-- `projects/clouds_legacy` and `projects/cloud_ref_2`: legacy/reference
-  snapshots, do not refactor as part of shared shader foundation work.
+- Retired cloud prototypes are historical evidence; do not recreate or refactor
+  them as part of shared shader foundation work.
 
 ## Extraction Rules
 

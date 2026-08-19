@@ -50,10 +50,12 @@ water, material product, vegetation, LOD, streaming, or planet adapter yet.
 ```sh
 cmake --preset dev-terrain-studies
 cmake --build --preset dev-terrain-studies --target \
-  cubey_study_terrain_hydrology \
+  cubey_study_terrain_hydrology_core \
+  cubey_study_terrain_hydrology_export \
+  cubey_study_terrain_hydrology_render_support \
   cubey_study_terrain_hydrology_generate \
   cubey_study_terrain_hydrology_tests
-ctest --preset dev-terrain-studies -L terrain_hydrology_lab --output-on-failure
+ctest --preset dev-terrain-studies -L terrain_hydrology --output-on-failure
 
 ./build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology_generate \
   --grid-size 513 --terrain-cell-size 100 \
@@ -68,16 +70,7 @@ ctest --preset dev-terrain-studies -L terrain_hydrology_lab --output-on-failure
   --terrain-export-raw \
   --terrain-output-dir outputs/terrain_hydrology_lab/source-control/seed-9012
 
-./build/dev-terrain-studies/studies/terrain/hydrology/terrain_hydrology \
-  --terrain-seed 9012 \
-  --terrain-camera-preset oblique \
-  --debug-view surface
-
-studies/terrain/hydrology/capture_review.sh
-
-studies/terrain/hydrology/capture_landscape_evolution_v1.sh
-
-studies/terrain/hydrology/run_analytical_oracle.py \
+python3 studies/terrain/hydrology/run_analytical_oracle.py \
   --analytical-ref ~/code/ref/analytical-terrains
 ```
 
@@ -85,16 +78,16 @@ Raw `.f32` output is opt-in and exists for lossless research interchange. The
 analytical runner uses the separately cloned, research-only reference as an
 external oracle; it is not a build or runtime dependency.
 
-The renderer accepts `surface`, `flow-direction`, `height`, `source`, or any
-published field name through `--debug-view`. Camera presets use the shared
-terrain choices, including `oblique`, `top`, `profile`, `surface`, and
-`surface-low`.
+The former viewer accepted `surface`, `flow-direction`, `height`, `source`, or
+any published field name through `--debug-view`; that host layer and its PNG
+capture scripts are retired. The field names and camera vocabulary remain
+useful research labels.
 
 The current ignored review output lives under
 `outputs/terrain_hydrology_lab/source-bakeoff-v1/`. See
 [`docs/notes/terrain-source-bakeoff-v1.md`](../../../docs/notes/terrain-source-bakeoff-v1.md)
-for measurements, visual findings, and the next model boundary. The older
-single-recipe layout remains available through `capture_v1_baseline.sh`.
+for measurements, visual findings, and the next model boundary. Single-recipe
+evidence remains available through the generator and tracked review notes.
 
 The finite regional analytical candidate is specified in
 [`docs/notes/terrain-landscape-evolution-v1.md`](../../../docs/notes/terrain-landscape-evolution-v1.md).
