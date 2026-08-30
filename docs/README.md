@@ -10,6 +10,8 @@ scratch material out of the main path.
 - [Design](DESIGN.md): project purpose, tenets, reference sources, architecture,
   and repository structure.
 - [Roadmap](roadmap.md): current implementation phases and next work.
+- [Showcase storyboard and capture plan](showcase.md): public demo scope,
+  cinematic shot cards, media provenance, and gated capture work.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
 

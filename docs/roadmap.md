@@ -82,6 +82,12 @@ Current stable foundation pieces:
   shaders are split, shared shader packages expose include dependencies, and
   tests audit those package dependencies.
 
+The public visual showcase has a separate design checkpoint in [Showcase
+Storyboard and Capture Plan](showcase.md). Its eleven shot cards and
+provenance rules are now the storyboard authority; the shared capture timeline,
+authored camera controls, selected media, and GitHub player attachments are not
+implemented yet.
+
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, and terrain products; glTF Viewer
 also consumes the shared staged atmosphere-atlas lifecycle. Further adoption
@@ -92,6 +98,11 @@ whole-generation installation is the real bottleneck.
 
 Recommended next feature or foundation streams:
 
+- public visual showcase: complete the creative lock in [Showcase Storyboard
+  and Capture Plan](showcase.md), then implement only the minimal shared
+  capture contract and prove it with the Ocean vertical slice before moving
+  through the condition-, camera-, and simulation-led cohorts; hero selection
+  remains an editorial decision after rendered drafts;
 - renderer foundation: use the shared dynamic environment handoff for future
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated

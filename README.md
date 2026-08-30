@@ -24,6 +24,10 @@ preserved on the `legacy` branch.
   under `projects/`.
 - Headless PNG and optional MP4 output are first-class verification/capture
   paths for projects that can render without a window.
+- The public visual showcase is planned as eleven separate project stories;
+  storyboard scope, capture gates, and media provenance live in the
+  [showcase plan](docs/showcase.md). It does not include internal validation
+  targets or retained reference studies.
 - Runtime debug UI uses ImGui where projects need live controls; Cubey still
   does not aim to become an editor.
 
@@ -85,8 +89,12 @@ Current active projects:
   upload, rigid/morph/skinned animation, generated or HDR-backed IBL, shared
   atmosphere/cloud composition, optional raster terrain backdrop, shadow maps,
   and headless capture.
+
+Internal validation targets:
+
 - `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
-  behavior under uniform generated IBL.
+  behavior under uniform generated IBL. It remains maintained for internal
+  validation and is not a public showcase demo.
 
 Paused studies and design-only projects:
 
@@ -117,6 +125,7 @@ Authoritative current docs:
 
 - [Design](docs/DESIGN.md)
 - [Roadmap](docs/roadmap.md)
+- [Showcase storyboard and capture plan](docs/showcase.md)
 - [Architecture notes](docs/architecture/README.md)
 - [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
 - [Renderer foundation](docs/architecture/renderer-foundation.md)
