@@ -270,6 +270,10 @@ float cloud_starfield(vec3 direction) {
     return smoothstep(0.993, 1.0, stars);
 }
 
+float cloud_internal_star_visibility() {
+    return 1.0 - step(0.5, params.background_options.w);
+}
+
 vec3 cloud_sky_color(vec3 direction) {
     vec3 up = cloud_planet_up();
     vec3 sun_dir = normalize(params.sun_direction_intensity.xyz);
@@ -301,7 +305,8 @@ vec3 cloud_sky_color(vec3 direction) {
            params.sun_direction_intensity.w * 6.0 * glare_scale;
     sky += vec3(1.0, 0.50, 0.18) * pow(sun_alignment, 42.0) * day *
            params.sun_direction_intensity.w * 0.45 * glare_scale;
-    sky += vec3(cloud_starfield(direction)) * (1.0 - day) * 0.9;
+    sky += vec3(cloud_starfield(direction)) * (1.0 - day) * 0.9 *
+           cloud_internal_star_visibility();
     return sky;
 }
 

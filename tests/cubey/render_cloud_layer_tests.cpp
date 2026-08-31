@@ -237,6 +237,17 @@ void test_cloud_layer_scene_depth_modes_match_shader_contract() {
                 common.find("const int CLOUD_SCENE_DEPTH_OPAQUE_FOREGROUND = 2;") !=
                     std::string::npos,
             "cloud scene-depth enum values should match GLSL constants");
+
+    frame.external_background = true;
+    const cubey::render::CloudLayerFrameUniforms external_background_uniforms =
+        cubey::render::cloud_layer_frame_uniforms(config, frame);
+    require_near(external_background_uniforms.background_options.w, 1.0F, 0.0001F,
+                 "cloud uniforms should identify external atmosphere composition");
+    require(common.find("float cloud_internal_star_visibility()") != std::string::npos &&
+                common.find("return 1.0 - step(0.5, params.background_options.w);") !=
+                    std::string::npos &&
+                common.find("cloud_internal_star_visibility();") != std::string::npos,
+            "external atmosphere composition should suppress the cloud fallback starfield");
 }
 
 void test_cloud_scene_depth_composite_bypasses_opaque_foreground_before_resolve() {
