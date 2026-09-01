@@ -379,7 +379,7 @@ Useful headless video captures when FFmpeg/libav support is enabled:
 
 ```bash
 ./build/dev/examples/headless_cube/headless_cube --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-headless-cube.mp4
-./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --output /tmp/cubey-gltf-viewer.mp4
+./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --capture-video-orbit-degrees 30 --capture-camera-distance-scale 0.75 --output /tmp/cubey-gltf-viewer.mp4
 ./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
 ./build/dev/projects/fluid/water_2d/water_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-2d.mp4
 ./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-3d.mp4

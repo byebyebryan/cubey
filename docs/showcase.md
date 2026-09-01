@@ -271,12 +271,14 @@ unjustified subsystem or produce an unreadable intermediate state.
 - **Publication role:** Root-gallery candidate; hero eligibility deferred.
 - **Current feasibility:** The viewer has typed animation index/speed/paused
   options, scene-bound orbit camera setup, shared environment integration, and
-  a headless video path with automatic orbit. The asset is an input requirement
-  rather than a bundled showcase choice
+  an optional eased `--capture-video-orbit-degrees` move with a
+  scene-relative `--capture-camera-distance-scale`. Omitting the authored move
+  preserves the historical automatic orbit; zero degrees gives a fixed shot.
+  The asset remains an input requirement rather than a bundled showcase choice
   ([viewer config](../projects/gltf_viewer/gltf_viewer_config.h)).
-- **Bounded missing controls:** Select and record one legal showcase asset;
-  author initial pose, arc extent, and animation timing. Replace hardcoded
-  capture orbit speed only as part of that bounded recipe.
+- **Bounded missing controls:** Select and record one legal showcase asset and
+  lock its animation segment, initial pose, arc extent, and ending hold. Keep
+  those choices in the shot recipe; a generic animation timeline is not needed.
 
 ### Smoke 2D — structure from motion (`smoke_2d`)
 
@@ -362,16 +364,15 @@ unjustified subsystem or produce an unreadable intermediate state.
 - **Publication role:** Root-gallery candidate; hero eligibility deferred.
 - **Current feasibility:** Water 3D has the long showcase tank, deterministic
   headless fixed-step driver, screen-space surface/foam/whitewater renderer,
-  optional wave/hose/drain/rain controls, and a stable default camera with
-  interactive orbit ([Water 3D README](../projects/fluid/water_3d/README.md)).
-  However, its current headless video path forces an automatic orbit using a
-  hardcoded capture speed and updates that orbit before every frame; it does not
-  currently express the approved stable three-quarter shot.
-- **Bounded missing controls:** Add a project-owned capture camera mode that
-  can disable the forced video orbit and record the stable three-quarter
-  initial pose. If a moving variant is later approved, the same project-owned
-  mode may accept a bounded authored path; shared host code must not impose an
-  orbit on Water 3D or all fluid projects.
+  optional wave/hose/drain/rain controls, and project-owned capture framing
+  ([Water 3D README](../projects/fluid/water_3d/README.md)). An optional
+  `--capture-video-orbit-degrees` authors an eased bounded arc, with zero
+  degrees selecting the stable three-quarter shot; omission preserves the
+  historical automatic video orbit. `--capture-camera-distance` controls the
+  absolute tank framing without changing windowed defaults.
+- **Bounded missing controls:** Lock the selected fixed or restrained-orbit
+  recipe and ending hold through visual review. No shared camera mode or host
+  timeline work is required.
 
 ### Fire 3D — flow around form (`fire_3d`)
 
@@ -396,12 +397,14 @@ unjustified subsystem or produce an unreadable intermediate state.
 - **Publication role:** Supporting project gallery; root inclusion after
   editorial review.
 - **Current feasibility:** Fire uses the shared dense 3D pyro solver, exposes
-  source/fire/obstacle/render settings, has interactive orbit input, and uses a
-  deterministic headless simulation driver with an automatic video orbit
-  ([Fire 3D README](../projects/fluid/fire_3d/README.md)).
-- **Bounded missing controls:** Replace the hardcoded headless orbit speed with
-  an authored bounded arc only if needed; record warm-up/source timing and
-  environment state. Keep pyro source and rendering policy project-owned.
+  source/fire/obstacle/render settings, and has a deterministic headless driver
+  with project-owned camera distance and eased bounded-orbit controls
+  ([Fire 3D README](../projects/fluid/fire_3d/README.md)). Zero capture-orbit
+  degrees gives the accepted fixed view; omission preserves the historical
+  automatic video orbit for compatibility.
+- **Bounded missing controls:** Record and lock warm-up/source timing,
+  environment state, and the ending hold. Keep pyro source and rendering policy
+  project-owned.
 
 ### Explosion 3D — impulse to aftermath (`explosion_3d`)
 
@@ -425,14 +428,15 @@ unjustified subsystem or produce an unreadable intermediate state.
 - **Duration/transitions:** 6–8 seconds, continuous one-impulse lifecycle
   followed by a short aftermath hold.
 - **Publication role:** Root-gallery candidate; hero eligibility deferred.
-- **Current feasibility:** Explosion shares the pyro solver and headless driver,
-  exposes interval, duration, boost, source, obstacle, environment, and render
-  controls, and currently applies the same automatic headless video orbit path
-  as Fire ([Explosion 3D README](../projects/fluid/explosion_3d/README.md)).
-- **Bounded missing controls:** Author one-shot interval/start timing and an
-  optional bounded camera delta in project capture state. Do not add a generic
-  event sequencer; the existing explosion parameters are sufficient for the
-  first story.
+- **Current feasibility:** Explosion shares the pyro solver, headless driver,
+  capture camera controls, and interval/duration/boost/source/obstacle/
+  environment options with Fire
+  ([Explosion 3D README](../projects/fluid/explosion_3d/README.md)). It can use a
+  fixed or eased bounded capture orbit without changing its normal automatic
+  video-orbit default.
+- **Bounded missing controls:** Author one-shot interval/start timing and the
+  ending hold. Do not add a generic event sequencer; the existing explosion
+  parameters are sufficient for the first story.
 
 ### Fractal 2D — descend into structure (`fractal_2d`)
 

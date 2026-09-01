@@ -112,6 +112,18 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
     require(video_frame.timing.elapsed_seconds == 3.0 / 30.0,
             "video timing should use deterministic elapsed time");
 
+    require(cubey::host::headless_capture_progress({.index = 0, .count = 5}) == 0.0F &&
+                cubey::host::headless_capture_progress({.index = 2, .count = 5}) == 0.5F &&
+                cubey::host::headless_capture_progress({.index = 4, .count = 5}) == 1.0F,
+            "capture progress should span the exact output frame endpoints");
+    require(cubey::host::headless_capture_eased_progress({.index = 1, .count = 5}) < 0.5F &&
+                cubey::host::headless_capture_eased_progress({.index = 2, .count = 5}) == 0.5F &&
+                cubey::host::headless_capture_eased_progress({.index = 3, .count = 5}) > 0.5F,
+            "capture easing should preserve a symmetric smoothstep midpoint");
+    require(cubey::host::headless_capture_progress({.index = 0, .count = 1}) == 1.0F &&
+                cubey::host::headless_capture_progress({.index = 8, .count = 5}) == 1.0F,
+            "capture progress should handle a single frame and clamp invalid high indices");
+
     const cubey::FrameTiming simulation_timing =
         cubey::host::headless_video_simulation_timing(video_frame);
     require(simulation_timing.frame_index == 4,

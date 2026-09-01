@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <numbers>
 #include <span>
 #include <utility>
 #include <vector>
@@ -58,7 +59,8 @@ gltf_viewer_atmosphere_run_state(const GltfViewerStartupOptions& run_config) {
         });
 }
 
-[[nodiscard]] cubey::CloudEnvironmentConfig gltf_viewer_cloud_config(const GltfViewerStartupOptions& run_config) {
+[[nodiscard]] cubey::CloudEnvironmentConfig
+gltf_viewer_cloud_config(const GltfViewerStartupOptions& run_config) {
     cubey::CloudEnvironmentConfig clouds{};
     cubey::apply_cloud_environment_options(clouds, run_config.clouds);
     clouds.layer.background_mode = cubey::render::CloudLayerBackgroundMode::Atmosphere;
@@ -338,17 +340,20 @@ int GltfViewerApp::run_headless() {
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
-        create_global_resources_if_needed(context.device(), context.gpu(),
-                                          cubey::host::headless_capture_frame_slot_count(config_.common));
+        create_global_resources_if_needed(
+            context.device(), context.gpu(),
+            cubey::host::headless_capture_frame_slot_count(config_.common));
         finish_atmosphere_background_atlases(context.device(), context.gpu());
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format,
                                cubey::host::headless_capture_frame_slot_count(config_.common));
     };
     if (config_.common.capture_mode == CaptureMode::Video) {
-        orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
-        callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
-                                        const cubey::host::HeadlessCaptureFrame& frame) {
+        const bool authored_orbit = config_.capture.video_orbit_degrees.has_value();
+        orbit_controller_.set_auto_rotation_speed(authored_orbit ? 0.0F : kHeadlessVideoOrbitSpeed);
+        callbacks.before_frame = [this,
+                                  authored_orbit](cubey::host::HeadlessPngContext&,
+                                                  const cubey::host::HeadlessCaptureFrame& frame) {
             update_animation(static_cast<float>(frame.timing.delta_seconds));
             if (update_atmosphere_time(frame.timing.delta_seconds)) {
                 refresh_atmosphere_lighting_scene();
@@ -357,7 +362,14 @@ int GltfViewerApp::run_headless() {
             ocean_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
             ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;
-            orbit_controller_.update(frame.timing.delta_seconds);
+            if (authored_orbit) {
+                capture_orbit_offset_radians_ =
+                    config_.capture.video_orbit_degrees.value() *
+                    cubey::host::headless_capture_eased_progress(frame) *
+                    (std::numbers::pi_v<float> / 180.0F);
+            } else {
+                orbit_controller_.update(frame.timing.delta_seconds);
+            }
             update_camera_transform();
         };
     }

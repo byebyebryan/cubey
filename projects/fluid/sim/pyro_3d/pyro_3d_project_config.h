@@ -19,6 +19,15 @@
 
 namespace cubey::projects::fluid::pyro_3d {
 
+inline constexpr float kPyro3DMinimumCaptureCameraDistance = 0.35F;
+inline constexpr float kPyro3DMaximumCaptureCameraDistance = 80.0F;
+inline constexpr float kPyro3DMaximumCaptureOrbitDegrees = 180.0F;
+
+struct Pyro3DCaptureOptions {
+    std::optional<float> camera_distance{};
+    std::optional<float> video_orbit_degrees{};
+};
+
 struct Pyro3DPbrOptions : cubey::PbrStaticIblOptions {
     std::optional<std::string> environment_source{};
 };
@@ -34,6 +43,7 @@ struct Pyro3DProjectConfig {
     common::FluidGridOptions grid{};
     std::string debug_view{};
     Pyro3DStartupOptions pyro{};
+    Pyro3DCaptureOptions capture{};
     cubey::AtmosphereEnvironmentOptions atmosphere{};
     cubey::CloudEnvironmentOptions clouds{};
     Pyro3DPbrOptions pbr{};
@@ -46,9 +56,9 @@ namespace pyro_3d_project_config_detail {
 using config::OptionSpec;
 using config::ValueType;
 
-inline OptionSpec option(std::string path, std::string cli, std::string label,
-                         std::string group, std::string help, ValueType type,
-                         config::Range range = {}, std::vector<std::string> choices = {}) {
+inline OptionSpec option(std::string path, std::string cli, std::string label, std::string group,
+                         std::string help, ValueType type, config::Range range = {},
+                         std::vector<std::string> choices = {}) {
     return {.path = std::move(path),
             .cli_name = std::move(cli),
             .negative_cli_name = {},
@@ -62,8 +72,7 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
 
 } // namespace pyro_3d_project_config_detail
 
-[[nodiscard]] inline config::Schema pyro_3d_project_config_schema(
-    Pyro3DProjectConfig& config) {
+[[nodiscard]] inline config::Schema pyro_3d_project_config_schema(Pyro3DProjectConfig& config) {
     using config::ValueType;
     using pyro_3d_project_config_detail::option;
 
@@ -73,6 +82,24 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
                         "Pyro 3D debug view: smoke, density-slice, or velocity.",
                         ValueType::String),
                  config.debug_view);
+
+    builder
+        .bind(option("pyro.capture.camera_distance", "--capture-camera-distance", "Camera Distance",
+                     "Capture", "Headless capture camera distance override.", ValueType::Float,
+                     {.has_min = true,
+                      .has_max = true,
+                      .min = kPyro3DMinimumCaptureCameraDistance,
+                      .max = kPyro3DMaximumCaptureCameraDistance}),
+              config.capture.camera_distance)
+        .bind(option("pyro.capture.video_orbit_degrees", "--capture-video-orbit-degrees",
+                     "Video Orbit", "Capture",
+                     "Optional eased video orbit in total degrees; zero keeps the camera fixed.",
+                     ValueType::Float,
+                     {.has_min = true,
+                      .has_max = true,
+                      .min = 0.0,
+                      .max = kPyro3DMaximumCaptureOrbitDegrees}),
+              config.capture.video_orbit_degrees);
 
     constexpr config::Range positive{.has_min = true, .min = 1.0};
     constexpr config::Range nonnegative{.has_min = true, .min = 0.0};
@@ -84,8 +111,8 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
         .bind(option("pyro.shadow_grid.width", "--shadow-grid-width", "Shadow Width", "Pyro 3D",
                      "Shadow-volume grid width.", ValueType::UInt32, positive),
               config.pyro.shadow_grid_width)
-        .bind(option("pyro.shadow_grid.height", "--shadow-grid-height", "Shadow Height",
-                     "Pyro 3D", "Shadow-volume grid height.", ValueType::UInt32, positive),
+        .bind(option("pyro.shadow_grid.height", "--shadow-grid-height", "Shadow Height", "Pyro 3D",
+                     "Shadow-volume grid height.", ValueType::UInt32, positive),
               config.pyro.shadow_grid_height)
         .bind(option("pyro.shadow_grid.depth", "--shadow-grid-depth", "Shadow Depth", "Pyro 3D",
                      "Shadow-volume grid depth.", ValueType::UInt32, positive),
@@ -116,8 +143,8 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
         .bind(option("pyro.temperature", "--pyro-temperature", "Temperature", "Pyro 3D",
                      "Temperature injected by sources.", ValueType::Float, nonnegative),
               config.pyro.temperature)
-        .bind(option("pyro.fuel", "--pyro-fuel", "Fuel", "Pyro 3D",
-                     "Fuel injected by sources.", ValueType::Float, nonnegative),
+        .bind(option("pyro.fuel", "--pyro-fuel", "Fuel", "Pyro 3D", "Fuel injected by sources.",
+                     ValueType::Float, nonnegative),
               config.pyro.fuel)
         .bind(option("pyro.buoyancy", "--pyro-buoyancy", "Buoyancy", "Pyro 3D",
                      "Thermal buoyancy strength.", ValueType::Float, nonnegative),
@@ -147,11 +174,11 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
         .bind(option("pyro.turbulence", "--pyro-turbulence", "Turbulence", "Pyro 3D",
                      "Source turbulence amount.", ValueType::Float, nonnegative),
               config.pyro.turbulence)
-        .bind(option("pyro.obstacle_height", "--pyro-obstacle-height", "Obstacle Height",
-                     "Pyro 3D", "Ball obstacle center height.", ValueType::Float, unit),
+        .bind(option("pyro.obstacle_height", "--pyro-obstacle-height", "Obstacle Height", "Pyro 3D",
+                     "Ball obstacle center height.", ValueType::Float, unit),
               config.pyro.obstacle_height)
-        .bind(option("pyro.obstacle_radius", "--pyro-obstacle-radius", "Obstacle Radius",
-                     "Pyro 3D", "Ball obstacle radius.", ValueType::Float, radius),
+        .bind(option("pyro.obstacle_radius", "--pyro-obstacle-radius", "Obstacle Radius", "Pyro 3D",
+                     "Ball obstacle radius.", ValueType::Float, radius),
               config.pyro.obstacle_radius)
         .bind(option("pyro.explosion_interval_seconds", "--explosion-interval",
                      "Explosion Interval", "Pyro 3D", "Seconds between explosion impulses.",
@@ -177,21 +204,20 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
         .bind(option("terrain.heightfield", "--terrain-heightfield", "Heightfield", "Terrain",
                      "Terrain backdrop heightfield.", ValueType::Path),
               config.terrain.heightfield_path)
-        .bind(option("terrain.render_stride", "--terrain-render-stride", "Render Stride",
-                     "Terrain", "Cached topology stride used for terrain backdrop geometry.",
-                     ValueType::UInt32,
-                     {.has_min = true, .has_max = true, .min = 1.0, .max = 3.0}),
+        .bind(option("terrain.render_stride", "--terrain-render-stride", "Render Stride", "Terrain",
+                     "Cached topology stride used for terrain backdrop geometry.",
+                     ValueType::UInt32, {.has_min = true, .has_max = true, .min = 1.0, .max = 3.0}),
               config.terrain.render_stride)
         .bind(option("terrain.foreground_height_m", "--terrain-foreground-height",
-                     "Foreground Height", "Terrain", "Terrain foreground height.",
-                     ValueType::Float,
+                     "Foreground Height", "Terrain", "Terrain foreground height.", ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 0.0, .max = 1000.0}),
               config.terrain.foreground_height_m);
     return std::move(builder).build();
 }
 
-[[nodiscard]] inline Pyro3DProjectConfig parse_pyro_3d_project_config(
-    int argc, char** argv, Pyro3DMode mode, config::ParseResult* result = nullptr) {
+[[nodiscard]] inline Pyro3DProjectConfig
+parse_pyro_3d_project_config(int argc, char** argv, Pyro3DMode mode,
+                             config::ParseResult* result = nullptr) {
     Pyro3DProjectConfig config = host::parse_configured_app<Pyro3DProjectConfig>(
         argc, argv, pyro_3d_project_config_schema, result);
     validate_atmosphere_environment_options(config.atmosphere);
@@ -200,8 +226,8 @@ inline OptionSpec option(std::string path, std::string cli, std::string label,
     return config;
 }
 
-[[nodiscard]] inline Pyro3DProjectConfig parse_pyro_3d_project_config(
-    int argc, char** argv, config::ParseResult* result = nullptr) {
+[[nodiscard]] inline Pyro3DProjectConfig
+parse_pyro_3d_project_config(int argc, char** argv, config::ParseResult* result = nullptr) {
     return parse_pyro_3d_project_config(argc, argv, Pyro3DMode::Fire, result);
 }
 

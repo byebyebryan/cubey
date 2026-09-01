@@ -44,6 +44,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -397,7 +398,7 @@ class Water3DApp {
         return cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = kVolumeCenter,
             .distance = orbit_controller_.distance(),
-            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+            .yaw = kCameraBaseYaw + orbit_controller_.yaw() + capture_orbit_offset_radians_,
             .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         });
     }
@@ -903,12 +904,26 @@ class Water3DApp {
             create_render_pipeline(context.device(), target.format, target.extent,
                                    cubey::host::headless_capture_frame_slot_count(config_.common));
         };
+        if (config_.capture.camera_distance.has_value()) {
+            orbit_controller_.set_distance(config_.capture.camera_distance.value());
+        }
         if (config_.common.capture_mode == CaptureMode::Video) {
-            orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
-            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
-                                            const cubey::host::HeadlessCaptureFrame& frame) {
-                orbit_controller_.update(frame.timing.delta_seconds);
-            };
+            if (config_.capture.video_orbit_degrees.has_value()) {
+                orbit_controller_.set_auto_rotation_speed(0.0F);
+                callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                                const cubey::host::HeadlessCaptureFrame& frame) {
+                    capture_orbit_offset_radians_ =
+                        config_.capture.video_orbit_degrees.value() *
+                        cubey::host::headless_capture_eased_progress(frame) *
+                        (std::numbers::pi_v<float> / 180.0F);
+                };
+            } else {
+                orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
+                callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                                const cubey::host::HeadlessCaptureFrame& frame) {
+                    orbit_controller_.update(frame.timing.delta_seconds);
+                };
+            }
         }
         cubey::host::install_headless_simulation_driver(
             callbacks, config_.common,
@@ -992,6 +1007,7 @@ class Water3DApp {
     cubey::TerrainBackdropRuntime terrain_runtime_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
+    float capture_orbit_offset_radians_ = 0.0F;
     cubey::host::FrameStats ui_frame_stats_{0.25};
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     cubey::host::ProcessResourceStatsSampler process_stats_;

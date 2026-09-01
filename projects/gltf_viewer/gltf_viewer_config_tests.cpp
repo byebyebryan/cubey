@@ -38,7 +38,7 @@ void test_defaults_named_flags_and_typed_runtime() {
     char arg10[] = "--no-clouds";
     char arg11[] = "--terrain-surface-detail";
     char arg12[] = "flat";
-    char* argv[] = {arg0, arg1, arg2, arg3, arg4, arg5, arg6,
+    char* argv[] = {arg0, arg1, arg2, arg3,  arg4,  arg5, arg6,
                     arg7, arg8, arg9, arg10, arg11, arg12};
     const auto config = cubey::projects::gltf_viewer::parse_gltf_viewer_project_config(
         static_cast<int>(std::size(argv)), argv);
@@ -57,7 +57,8 @@ void test_defaults_named_flags_and_typed_runtime() {
     require(ocean.map_size == 128U && ocean.sea_state == cubey::render::OceanSeaState::Calm,
             "glTF typed ocean runtime should consume startup options");
     require(ocean.render_view == cubey::render::OceanRenderView::Final &&
-                ocean.cloud_reflection_source == cubey::render::OceanCloudReflectionSource::CachedEnvironment,
+                ocean.cloud_reflection_source ==
+                    cubey::render::OceanCloudReflectionSource::CachedEnvironment,
             "glTF ocean backdrop should retain final/cached legacy semantics");
 }
 
@@ -83,10 +84,12 @@ void test_set_json_template_and_unknown_scope() {
     const auto path = std::filesystem::temp_directory_path() / "cubey-gltf-viewer-template-v2.json";
     schema.write_template(path);
     std::ifstream file(path);
-    const std::string text((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    const std::string text((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
     std::filesystem::remove(path);
     require(text.find("gltf") != std::string::npos && text.find("ocean") != std::string::npos &&
-                text.find("terrain") != std::string::npos && text.find("smoke") == std::string::npos,
+                text.find("terrain") != std::string::npos &&
+                text.find("smoke") == std::string::npos,
             "glTF template should expose only owned groups");
     const auto document = schema.template_json();
     require(document.at("pbr").at("environment").is_null() &&
@@ -127,6 +130,49 @@ void test_shared_schema_validation_and_scope() {
         "glTF parser should reject the unsupported three-sample cloud mode");
 }
 
+void test_capture_orbit_controls() {
+    namespace gltf = cubey::projects::gltf_viewer;
+
+    const char* default_arguments[] = {"gltf_viewer"};
+    const gltf::GltfViewerProjectConfig defaults =
+        gltf::parse_gltf_viewer_project_config(1, const_cast<char**>(default_arguments));
+    require(!defaults.capture.video_orbit_degrees.has_value(),
+            "glTF bounded capture orbit should remain opt-in");
+    require(!defaults.capture.camera_distance_scale.has_value(),
+            "glTF capture distance scale should remain opt-in");
+
+    const char* named_arguments[] = {"gltf_viewer", "--capture-video-orbit-degrees", "30",
+                                     "--capture-camera-distance-scale", "0.75"};
+    const gltf::GltfViewerProjectConfig named =
+        gltf::parse_gltf_viewer_project_config(5, const_cast<char**>(named_arguments));
+    require(named.capture.video_orbit_degrees == 30.0F,
+            "glTF capture orbit should parse its total degree extent");
+    require(named.capture.camera_distance_scale == 0.75F,
+            "glTF capture distance scale should parse its framing override");
+
+    gltf::GltfViewerProjectConfig deferred;
+    const auto schema = gltf::gltf_viewer_project_config_schema(deferred);
+    schema.set("gltf.capture.video_orbit_degrees", "45");
+    schema.set("gltf.capture.camera_distance_scale", "1.25");
+    require(deferred.capture.video_orbit_degrees == 45.0F,
+            "glTF capture orbit should bind through config v2 paths");
+    require(deferred.capture.camera_distance_scale == 1.25F,
+            "glTF capture distance scale should bind through config v2 paths");
+    require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "-0.1"); },
+                   "glTF capture orbit should reject negative degrees");
+    require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "180.1"); },
+                   "glTF capture orbit should reject unbounded degrees");
+    require_throws([&] { schema.set("gltf.capture.camera_distance_scale", "0.49"); },
+                   "glTF capture distance scale should reject values below its bound");
+    require_throws([&] { schema.set("gltf.capture.camera_distance_scale", "2.01"); },
+                   "glTF capture distance scale should reject values above its bound");
+    const auto document = schema.template_json();
+    require(document.at("gltf").at("capture").at("video_orbit_degrees").get<float>() == 45.0F,
+            "glTF template should expose the configured capture orbit");
+    require(document.at("gltf").at("capture").at("camera_distance_scale").get<float>() == 1.25F,
+            "glTF template should expose the configured capture distance scale");
+}
+
 } // namespace
 
 int main() {
@@ -134,6 +180,7 @@ int main() {
         test_defaults_named_flags_and_typed_runtime();
         test_set_json_template_and_unknown_scope();
         test_shared_schema_validation_and_scope();
+        test_capture_orbit_controls();
     } catch (const std::exception& error) {
         std::cerr << "gltf_viewer_config_tests: " << error.what() << '\n';
         return EXIT_FAILURE;

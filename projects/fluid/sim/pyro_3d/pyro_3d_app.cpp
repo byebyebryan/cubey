@@ -42,6 +42,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
@@ -104,10 +105,8 @@ constexpr cubey::math::Vec3 kVolumeCenter{0.5F, 0.5F, 0.5F};
     throw std::runtime_error("pyro 3D debug view must be smoke, density-slice, or velocity");
 }
 
-[[nodiscard]] bool pyro_3d_uses_atmosphere_environment_source(
-    const Pyro3DProjectConfig& config) {
-    return !config.pbr.environment_source.has_value() ||
-           config.pbr.environment_source->empty() ||
+[[nodiscard]] bool pyro_3d_uses_atmosphere_environment_source(const Pyro3DProjectConfig& config) {
+    return !config.pbr.environment_source.has_value() || config.pbr.environment_source->empty() ||
            *config.pbr.environment_source == "atmosphere";
 }
 
@@ -148,8 +147,7 @@ class Pyro3DApp {
   public:
     Pyro3DApp(Pyro3DProjectConfig config, Pyro3DAppInfo app_info)
         : config_(std::move(config)), app_info_(app_info), runtime_(1),
-          pyro_config_(config_.simulation),
-          source_states_(create_pyro_3d_sources(pyro_config_)),
+          pyro_config_(config_.simulation), source_states_(create_pyro_3d_sources(pyro_config_)),
           source_gpu_(pyro_3d_sources_to_gpu(source_states_, pyro_config_)),
           atmosphere_state_(pyro_3d_atmosphere_run_state(config_)),
           debug_view_(debug_view_from_name(config_.debug_view)) {
@@ -390,11 +388,10 @@ class Pyro3DApp {
                 group) {
                 const cubey::host::ScopedImGuiId section_id("Terrain Backdrop");
                 cubey::host::imgui_checkbox("Visible", &terrain_visible_);
-                cubey::host::imgui_slider_float("Foreground height", &terrain_foreground_height_m_,
-                                                terrain_minimum_foreground_height_m_,
-                                                std::max(200.0F,
-                                                         terrain_minimum_foreground_height_m_ * 2.0F),
-                                                "%.1f m");
+                cubey::host::imgui_slider_float(
+                    "Foreground height", &terrain_foreground_height_m_,
+                    terrain_minimum_foreground_height_m_,
+                    std::max(200.0F, terrain_minimum_foreground_height_m_ * 2.0F), "%.1f m");
                 int material =
                     terrain_material_ == cubey::render::TerrainBackdropMaterialMode::FilteredDetail
                         ? 1
@@ -583,7 +580,7 @@ class Pyro3DApp {
         return cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = kVolumeCenter,
             .distance = orbit_controller_.distance(),
-            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
+            .yaw = kCameraBaseYaw + orbit_controller_.yaw() + capture_orbit_offset_radians_,
             .pitch = kCameraBasePitch + orbit_controller_.pitch(),
         });
     }
@@ -725,8 +722,7 @@ class Pyro3DApp {
         const cubey::terrain::PreparedTerrainBackdropProduct prepared =
             cubey::terrain::prepare_raster_terrain_backdrop_product({
                 .heightfield_path = *config_.terrain.heightfield_path,
-                .render_stride =
-                    config_.terrain.render_stride.value_or(3U),
+                .render_stride = config_.terrain.render_stride.value_or(3U),
                 .foreground_footprint_radius_m = std::hypot(kVolumeHalfExtentM, kVolumeHalfExtentM),
             });
         terrain_surface_ = {
@@ -903,12 +899,26 @@ class Pyro3DApp {
             create_global_resources_if_needed(context.device(), context.gpu(), 1);
             create_render_pipeline(context.device(), target.format, target.extent);
         };
+        if (config_.capture.camera_distance.has_value()) {
+            orbit_controller_.set_distance(config_.capture.camera_distance.value());
+        }
         if (config_.common.capture_mode == CaptureMode::Video) {
-            orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
-            callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
-                                            const cubey::host::HeadlessCaptureFrame& frame) {
-                orbit_controller_.update(frame.timing.delta_seconds);
-            };
+            if (config_.capture.video_orbit_degrees.has_value()) {
+                orbit_controller_.set_auto_rotation_speed(0.0F);
+                callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                                const cubey::host::HeadlessCaptureFrame& frame) {
+                    capture_orbit_offset_radians_ =
+                        config_.capture.video_orbit_degrees.value() *
+                        cubey::host::headless_capture_eased_progress(frame) *
+                        (std::numbers::pi_v<float> / 180.0F);
+                };
+            } else {
+                orbit_controller_.set_auto_rotation_speed(kHeadlessVideoOrbitSpeed);
+                callbacks.before_frame = [this](cubey::host::HeadlessPngContext&,
+                                                const cubey::host::HeadlessCaptureFrame& frame) {
+                    orbit_controller_.update(frame.timing.delta_seconds);
+                };
+            }
         }
         cubey::host::install_headless_simulation_driver(
             callbacks, config_.common,
@@ -970,6 +980,7 @@ class Pyro3DApp {
     Pyro3DFrameState frame_state_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
+    float capture_orbit_offset_radians_ = 0.0F;
     cubey::host::FrameStats ui_frame_stats_{0.25};
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     cubey::host::ProcessResourceStatsSampler process_stats_;

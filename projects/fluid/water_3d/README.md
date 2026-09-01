@@ -60,6 +60,7 @@ Common runs:
 ```sh
 ./build/dev/projects/fluid/water_3d/water_3d
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 24 --output outputs/water-3d.png
+./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 240 --fps 30 --capture-camera-distance 2.5 --capture-video-orbit-degrees 15 --output outputs/water-3d.mp4
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 48 --grid-height 48 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 128 --grid-height 64 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --environment build/dev/_deps/cubey_hdr_sample_assets-src/venetian_crossroads_2k.hdr
@@ -79,6 +80,11 @@ and Cloud V1 controls; static environment mode hides those controls.
 
 Water-specific CLI controls:
 
+- `--capture-video-orbit-degrees N`: author an eased, bounded headless-video
+  orbit over the complete frame range. Use `0` for a fixed camera; omit the
+  option to preserve the historical automatic video orbit.
+- `--capture-camera-distance N`: override the absolute headless capture-camera
+  distance without changing the normal windowed camera.
 - `--water3d-transfer apic|pic-flip`: select APIC or PIC/FLIP grid-to-particle
   transfer.
 - `--water3d-transfer-limit N`: cap sorted particle samples consumed per cell by

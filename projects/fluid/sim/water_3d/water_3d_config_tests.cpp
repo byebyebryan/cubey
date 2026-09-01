@@ -1,5 +1,5 @@
-#include "water_3d_config.h"
 #include "../../water_3d/water_3d_project_config.h"
+#include "water_3d_config.h"
 
 #include <cstdio>
 #include <exception>
@@ -50,8 +50,8 @@ void require_not_contains(const std::string& haystack, const char* needle, const
     return stream.str();
 }
 
-[[nodiscard]] cubey::projects::fluid::water_3d::Water3DProjectConfig parse_project(
-    std::vector<std::string> arguments) {
+[[nodiscard]] cubey::projects::fluid::water_3d::Water3DProjectConfig
+parse_project(std::vector<std::string> arguments) {
     std::vector<char*> argv;
     argv.reserve(arguments.size());
     for (std::string& argument : arguments) {
@@ -290,8 +290,7 @@ int main() {
         project_config.pbr.environment_rotation_degrees = 18.0F;
         project_config.pbr.exposure = -0.5F;
         const water::Water3DConfig overridden = water::water_3d_config_from_options(
-            project_config.grid, project_config.water, project_config.pbr,
-            project_config.common);
+            project_config.grid, project_config.water, project_config.pbr, project_config.common);
         require(overridden.grid_width == 32 && overridden.grid_height == 48 &&
                     overridden.grid_depth == 40,
                 "water 3D should accept CLI grid dimensions");
@@ -320,8 +319,8 @@ int main() {
         try {
             cubey::host::CommonRunConfig windowed_diagnostics;
             windowed_diagnostics.profile_diagnostics = true;
-            static_cast<void>(water::water_3d_config_from_options(
-                {}, {}, {}, windowed_diagnostics));
+            static_cast<void>(
+                water::water_3d_config_from_options({}, {}, {}, windowed_diagnostics));
         } catch (const std::runtime_error&) {
             rejected_windowed_diagnostics = true;
         }
@@ -342,21 +341,19 @@ int main() {
                 "clouds": {"enabled": false}
             })";
         }
-        const water::Water3DProjectConfig layered = parse_project(
-            {"water_3d", "--config", layered_path.string(), "--grid-width", "26",
-             "--water3d-transfer", "picflip", "--water3d-hose", "--set",
-             "water3d.transfer_limit=96", "--set", "pbr.ibl_intensity=1.7"});
+        const water::Water3DProjectConfig layered =
+            parse_project({"water_3d", "--config", layered_path.string(), "--grid-width", "26",
+                           "--water3d-transfer", "picflip", "--water3d-hose", "--set",
+                           "water3d.transfer_limit=96", "--set", "pbr.ibl_intensity=1.7"});
         require(layered.grid.size == 24U && layered.grid.width == 26U &&
                     layered.grid.height == 24U && layered.grid.depth == 28U,
                 "water grid.size should fan out width and height while depth stays separate");
-        require(layered.water.transfer_mode == "picflip" &&
-                    layered.water.transfer_limit == 96U,
+        require(layered.water.transfer_mode == "picflip" && layered.water.transfer_limit == 96U,
                 "water named flags and --set should override config-file values in order");
         require(layered.water.hose == true && layered.simulation.hose.enabled &&
                     layered.simulation.max_particles_per_cell == 96U,
                 "water positive bool alias should synchronize the typed runtime config");
-        require(layered.pbr.ibl_intensity == 1.7F &&
-                    layered.pbr.environment_source == "atmosphere",
+        require(layered.pbr.ibl_intensity == 1.7F && layered.pbr.environment_source == "atmosphere",
                 "water PBR options should preserve shared paths and precedence");
         require(layered.atmosphere.time_of_day_mode == "manual" &&
                     layered.atmosphere.sun_elevation_degrees == 20.0F,
@@ -378,14 +375,50 @@ int main() {
         require(negative.clouds.enabled == false && negative.atmosphere.moon == false,
                 "water shared negative aliases should remain available");
 
+        const water::Water3DProjectConfig capture_defaults = parse_project({"water_3d"});
+        require(!capture_defaults.capture.camera_distance.has_value() &&
+                    !capture_defaults.capture.video_orbit_degrees.has_value(),
+                "water capture controls should remain omitted by default");
+        const water::Water3DProjectConfig fixed_capture =
+            parse_project({"water_3d", "--capture-video-orbit-degrees", "0",
+                           "--capture-camera-distance", "2.75"});
+        require(fixed_capture.capture.video_orbit_degrees == 0.0F &&
+                    fixed_capture.capture.camera_distance == 2.75F,
+                "water capture controls should parse fixed mode and distance");
+        const water::Water3DProjectConfig deferred_capture =
+            parse_project({"water_3d", "--set", "water3d.capture.video_orbit_degrees=12", "--set",
+                           "water3d.capture.camera_distance=3.25"});
+        require(deferred_capture.capture.video_orbit_degrees == 12.0F &&
+                    deferred_capture.capture.camera_distance == 3.25F,
+                "water capture controls should support config v2 deferred assignments");
+        const water::Water3DProjectConfig bounded_orbit =
+            parse_project({"water_3d", "--capture-video-orbit-degrees", "15"});
+        require(bounded_orbit.capture.video_orbit_degrees == 15.0F,
+                "water capture controls should parse a bounded video orbit");
+        bool rejected_capture_orbit = false;
+        try {
+            static_cast<void>(
+                parse_project({"water_3d", "--capture-video-orbit-degrees", "180.1"}));
+        } catch (const std::runtime_error&) {
+            rejected_capture_orbit = true;
+        }
+        require(rejected_capture_orbit, "water capture orbit should reject unbounded degrees");
+        bool rejected_capture_distance = false;
+        try {
+            static_cast<void>(parse_project({"water_3d", "--capture-camera-distance", "0.54"}));
+        } catch (const std::runtime_error&) {
+            rejected_capture_distance = true;
+        }
+        require(rejected_capture_distance,
+                "water capture camera should reject distances below the controller minimum");
+
         bool rejected_unknown_key = false;
         try {
             static_cast<void>(parse_project({"water_3d", "--set", "smoke.injectors=4"}));
         } catch (const std::runtime_error&) {
             rejected_unknown_key = true;
         }
-        require(rejected_unknown_key,
-                "water schema should reject options owned by another target");
+        require(rejected_unknown_key, "water schema should reject options owned by another target");
         bool rejected_cloud_samples = false;
         try {
             static_cast<void>(parse_project({"water_3d", "--cloud-view-samples", "3"}));
@@ -406,6 +439,8 @@ int main() {
                          "water template should expose shared cloud options");
         require_contains(template_json, "\"pbr\"",
                          "water template should expose shared PBR options");
+        require_contains(template_json, "\"video_orbit_degrees\"",
+                         "water template should expose authored capture motion");
         require_not_contains(template_json, "smoke",
                              "water template should omit unrelated project options");
         require_not_contains(template_json, "particle_capacity",

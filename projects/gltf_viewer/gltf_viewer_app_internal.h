@@ -175,6 +175,7 @@ class GltfViewerApp {
     cubey::Entity light_entity_{};
     cubey::Bounds3D scene_bounds_{};
     cubey::OrbitController orbit_controller_;
+    float capture_orbit_offset_radians_ = 0.0F;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};

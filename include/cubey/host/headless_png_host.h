@@ -14,6 +14,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -30,6 +31,21 @@ struct HeadlessCaptureFrame {
     cubey::render::FrameSlot frame_slot{};
     FrameTiming timing{};
 };
+
+// Resolves authored capture motion against the complete output frame range so
+// the first and last frames land exactly on their requested endpoints.
+[[nodiscard]] inline float headless_capture_progress(const HeadlessCaptureFrame& frame) {
+    if (frame.count <= 1U) {
+        return 1.0F;
+    }
+    return std::clamp(static_cast<float>(frame.index) / static_cast<float>(frame.count - 1U), 0.0F,
+                      1.0F);
+}
+
+[[nodiscard]] inline float headless_capture_eased_progress(const HeadlessCaptureFrame& frame) {
+    const float progress = headless_capture_progress(frame);
+    return progress * progress * (3.0F - (2.0F * progress));
+}
 
 class HeadlessPngContext {
   public:

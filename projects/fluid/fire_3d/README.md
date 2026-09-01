@@ -35,5 +35,12 @@ Useful commands:
 ./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --pyro-obstacle-height 0.58 --pyro-obstacle-radius 0.105
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --debug-view density-slice --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d-density.png
 ./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
+./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 240 --fps 30 --capture-video-orbit-degrees 0 --capture-camera-distance 2.1 --output /tmp/cubey-fire-3d.mp4
 ./build/dev/projects/fluid/fire_3d/fire_3d --terrain-heightfield cache/terrain/sources/v1/default
 ```
+
+For headless video, `--capture-video-orbit-degrees N` authors an eased bounded
+move over the complete frame range; use `0` for a fixed camera or omit the
+option to preserve the historical automatic orbit. `--capture-camera-distance`
+overrides the absolute capture framing. The same controls are shared with
+`explosion_3d`.

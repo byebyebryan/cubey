@@ -63,7 +63,8 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
         ocean_minimum_foreground_height_m_ = placement.required_foreground_height_m;
         ocean_foreground_height_m_ = placement.effective_foreground_height_m;
     }
-    const float camera_distance = std::max(radius * 2.8F, 4.2F);
+    const float camera_distance =
+        std::max(radius * 2.8F, 4.2F) * config_.capture.camera_distance_scale.value_or(1.0F);
     orbit_controller_.set_distance_limits(std::max(radius * 0.05F, 0.05F),
                                           std::max(radius * 10.0F, camera_distance * 2.0F));
     orbit_controller_.set_home_distance(camera_distance);
@@ -153,12 +154,13 @@ void GltfViewerApp::refresh_atmosphere_lighting_scene() {
 void GltfViewerApp::update_camera_transform() {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
     edits.transforms3d().set_local_transform(
-        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                            .target = scene_bounds_.center,
-                            .distance = orbit_controller_.distance(),
-                            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
-                            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
-                        }));
+        camera_entity_,
+        cubey::orbit_camera_transform(cubey::OrbitCameraState{
+            .target = scene_bounds_.center,
+            .distance = orbit_controller_.distance(),
+            .yaw = kCameraBaseYaw + orbit_controller_.yaw() + capture_orbit_offset_radians_,
+            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
+        }));
     scene().commit(edits);
 }
 

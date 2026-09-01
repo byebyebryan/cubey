@@ -2,8 +2,8 @@
 
 #include <cubey/engine/atmosphere_environment_schema.h>
 #include <cubey/engine/cloud_environment_schema.h>
-#include <cubey/engine/ocean_surface_schema.h>
 #include <cubey/engine/ocean_surface_runtime.h>
+#include <cubey/engine/ocean_surface_schema.h>
 #include <cubey/engine/pbr_environment_schema.h>
 #include <cubey/host/configured_app.h>
 
@@ -18,6 +18,15 @@
 #include <vector>
 
 namespace cubey::projects::gltf_viewer {
+
+inline constexpr float kGltfViewerMaximumCaptureOrbitDegrees = 180.0F;
+inline constexpr float kGltfViewerMinimumCaptureCameraDistanceScale = 0.5F;
+inline constexpr float kGltfViewerMaximumCaptureCameraDistanceScale = 2.0F;
+
+struct GltfViewerCaptureOptions {
+    std::optional<float> video_orbit_degrees{};
+    std::optional<float> camera_distance_scale{};
+};
 
 struct GltfViewerStartupOptions {
     struct Gltf {
@@ -34,6 +43,7 @@ struct GltfViewerStartupOptions {
 
     cubey::AtmosphereEnvironmentOptions atmosphere;
     cubey::CloudEnvironmentOptions clouds;
+    GltfViewerCaptureOptions capture{};
     struct Pbr : cubey::PbrStaticIblOptions {
         std::optional<std::string> environment_source{};
     } pbr;
@@ -58,9 +68,9 @@ namespace detail {
 using config::OptionSpec;
 using config::ValueType;
 
-inline OptionSpec option(std::string path, std::string cli, std::string label,
-                         std::string group, std::string help, ValueType type,
-                         config::Range range = {}, std::vector<std::string> choices = {}) {
+inline OptionSpec option(std::string path, std::string cli, std::string label, std::string group,
+                         std::string help, ValueType type, config::Range range = {},
+                         std::vector<std::string> choices = {}) {
     return {.path = std::move(path),
             .cli_name = std::move(cli),
             .negative_cli_name = {},
@@ -79,8 +89,8 @@ using config::ValueType;
 
 inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig& config) {
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
-    builder.bind(detail::option("gltf.input", "--input", "Input", "glTF",
-                                "glTF or GLB asset path.", ValueType::Path),
+    builder.bind(detail::option("gltf.input", "--input", "Input", "glTF", "glTF or GLB asset path.",
+                                ValueType::Path),
                  config.gltf.input_path);
     builder.bind(detail::option("gltf.animation_index", "--animation-index", "Animation Index",
                                 "glTF", "Animation clip index to play.", ValueType::UInt32),
@@ -92,6 +102,27 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                 "glTF", "Start glTF animation playback paused.", ValueType::Bool),
                  config.gltf.animation_paused);
 
+    builder.bind(detail::option("gltf.capture.video_orbit_degrees", "--capture-video-orbit-degrees",
+                                "Video Orbit", "Capture",
+                                "Optional bounded glTF video orbit in total degrees; smoothstep "
+                                "easing runs from the initial to final scene-bounds view.",
+                                ValueType::Float,
+                                {.has_min = true,
+                                 .has_max = true,
+                                 .min = 0.0,
+                                 .max = kGltfViewerMaximumCaptureOrbitDegrees}),
+                 config.capture.video_orbit_degrees);
+    builder.bind(detail::option("gltf.capture.camera_distance_scale",
+                                "--capture-camera-distance-scale", "Camera Distance Scale",
+                                "Capture",
+                                "Optional scene-bounds-relative capture camera distance scale.",
+                                ValueType::Float,
+                                {.has_min = true,
+                                 .has_max = true,
+                                 .min = kGltfViewerMinimumCaptureCameraDistanceScale,
+                                 .max = kGltfViewerMaximumCaptureCameraDistanceScale}),
+                 config.capture.camera_distance_scale);
+
     builder.compose(cubey::pbr_static_ibl_schema(config.pbr));
     builder.bind(detail::option("pbr.environment_source", "--pbr-environment-source",
                                 "Environment Source", "PBR",
@@ -102,18 +133,17 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
     builder.compose(cubey::atmosphere_environment_schema(config.atmosphere));
     builder.compose(cubey::cloud_environment_schema(config.clouds));
     builder.compose(cubey::ocean_surface_schema(config.ocean));
-    OptionSpec backdrop = detail::option("ocean.backdrop", "--ocean-backdrop", "Ocean Backdrop",
-                                         "Ocean", "Enable the shared ocean surface as a scene backdrop.",
-                                         ValueType::Bool);
+    OptionSpec backdrop =
+        detail::option("ocean.backdrop", "--ocean-backdrop", "Ocean Backdrop", "Ocean",
+                       "Enable the shared ocean surface as a scene backdrop.", ValueType::Bool);
     backdrop.negative_cli_name = "--no-ocean-backdrop";
     builder.bind(std::move(backdrop), config.ocean.backdrop);
-    builder.bind(detail::option("ocean.foreground_height_m", "--ocean-foreground-height",
-                                "Foreground Height", "Ocean",
-                                "Foreground scene height above the ocean datum in meters.",
-                                ValueType::Float,
-                                {.has_min = true, .has_max = true, .min = -10000.0,
-                                 .max = 100000.0}),
-                 config.ocean.foreground_height_m);
+    builder.bind(
+        detail::option("ocean.foreground_height_m", "--ocean-foreground-height",
+                       "Foreground Height", "Ocean",
+                       "Foreground scene height above the ocean datum in meters.", ValueType::Float,
+                       {.has_min = true, .has_max = true, .min = -10000.0, .max = 100000.0}),
+        config.ocean.foreground_height_m);
     builder.bind(detail::option("debug_view", "--debug-view", "Debug View", "PBR",
                                 "PBR debug view.", ValueType::String),
                  config.debug_view);
@@ -121,14 +151,14 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
     builder.bind(detail::option("terrain.heightfield", "--terrain-heightfield", "Heightfield",
                                 "Terrain", "Terrain backdrop heightfield.", ValueType::Path),
                  config.terrain.heightfield_path);
-    builder.bind(detail::option("terrain.render_stride", "--terrain-render-stride", "Render Stride",
-                                "Terrain", "Cached topology stride used for terrain geometry comparison captures.",
-                                ValueType::UInt32,
-                                {.has_min = true, .has_max = true, .min = 1.0, .max = 3.0}),
+    builder.bind(detail::option(
+                     "terrain.render_stride", "--terrain-render-stride", "Render Stride", "Terrain",
+                     "Cached topology stride used for terrain geometry comparison captures.",
+                     ValueType::UInt32, {.has_min = true, .has_max = true, .min = 1.0, .max = 3.0}),
                  config.terrain.render_stride);
-    builder.bind(detail::option("terrain.surface_detail", "--terrain-surface-detail", "Surface Detail",
-                                "Terrain", "Terrain material detail.", ValueType::Enum, {},
-                                {"flat", "filtered-detail"}),
+    builder.bind(detail::option("terrain.surface_detail", "--terrain-surface-detail",
+                                "Surface Detail", "Terrain", "Terrain material detail.",
+                                ValueType::Enum, {}, {"flat", "filtered-detail"}),
                  config.terrain.surface_detail);
     builder.bind(detail::option("terrain.foreground_height_m", "--terrain-foreground-height",
                                 "Foreground Height", "Terrain", "Terrain foreground height.",
@@ -155,8 +185,8 @@ gltf_viewer_ocean_config_from_options(const GltfViewerStartupOptions& config) {
     return ocean;
 }
 
-inline GltfViewerProjectConfig parse_gltf_viewer_project_config(int argc, char** argv,
-                                                                config::ParseResult* result = nullptr) {
+inline GltfViewerProjectConfig
+parse_gltf_viewer_project_config(int argc, char** argv, config::ParseResult* result = nullptr) {
     GltfViewerProjectConfig config = host::parse_configured_app<GltfViewerProjectConfig>(
         argc, argv, gltf_viewer_project_config_schema, result);
     validate_atmosphere_environment_options(config.atmosphere);
