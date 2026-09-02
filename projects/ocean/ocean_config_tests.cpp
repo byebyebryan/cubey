@@ -1,6 +1,6 @@
-#include "ocean_project_config.h"
 #include "ocean_horizon.h"
 #include "ocean_mesh.h"
+#include "ocean_project_config.h"
 #include "ocean_spectrum_diagnostics.h"
 #include "ocean_surface_frame.h"
 #include "ocean_surface_quality.h"
@@ -83,8 +83,7 @@ void test_ocean_schema_contract() {
     require(parsed.ocean.map_size == 256U, "ocean schema should apply --set precedence");
     ocean::OceanProjectConfig json_config;
     auto schema = ocean::ocean_project_config_schema(json_config);
-    schema.apply_json({{"ocean", {{"sea_state", "calm"}}},
-                       {"clouds", {{"enabled", false}}}});
+    schema.apply_json({{"ocean", {{"sea_state", "calm"}}}, {"clouds", {{"enabled", false}}}});
     require(json_config.ocean.sea_state == "calm" && json_config.clouds.enabled == 0,
             "ocean schema should bind JSON paths");
     const auto template_path =
@@ -93,6 +92,8 @@ void test_ocean_schema_contract() {
     const std::string template_text = read_text_file(template_path);
     std::filesystem::remove(template_path);
     require_contains(template_text, "ocean", "ocean template should expose owned options");
+    require_contains(template_text, "video_orbit_degrees",
+                     "ocean template should expose authored capture motion");
     require_not_contains(template_text, "smoke", "ocean template should omit retired options");
     bool rejected = false;
     try {
@@ -113,11 +114,35 @@ void test_shared_schema_validation_and_aliases() {
                    "ocean shared enum should reject an unsupported spelling");
     require_throws([&] { schema.set("pbr.exposure", "-4.1"); },
                    "ocean shared PBR exposure should enforce its lower range");
+    schema.set("ocean.capture.video_orbit_degrees", "6");
+    require(config.capture.video_orbit_degrees == 6.0F,
+            "ocean should bind bounded capture motion through its config v2 path");
 
     const char* argv[] = {"ocean", "--no-ocean-size-reference"};
     const auto parsed = ocean::parse_ocean_project_config(2, const_cast<char**>(argv));
     require(parsed.ocean.size_reference == 0,
             "ocean shared negative bool alias should remain supported");
+
+    const char* bounded_orbit_argv[] = {"ocean", "--capture-video-orbit-degrees", "8"};
+    const auto bounded_orbit =
+        ocean::parse_ocean_project_config(3, const_cast<char**>(bounded_orbit_argv));
+    require(bounded_orbit.capture.video_orbit_degrees == 8.0F,
+            "ocean should parse the shared bounded capture-orbit interface");
+    require_throws(
+        [] {
+            const char* conflicting_argv[] = {"ocean", "--capture-video-orbit-degrees", "8",
+                                              "--ocean-camera-orbit-spin-deg-per-sec", "1"};
+            static_cast<void>(
+                ocean::parse_ocean_project_config(5, const_cast<char**>(conflicting_argv)));
+        },
+        "ocean should reject bounded and continuous capture orbits together");
+    require_throws(
+        [] {
+            const char* unbounded_argv[] = {"ocean", "--capture-video-orbit-degrees", "180.1"};
+            static_cast<void>(
+                ocean::parse_ocean_project_config(3, const_cast<char**>(unbounded_argv)));
+        },
+        "ocean should reject unbounded capture-orbit degrees");
 }
 
 int main() {
@@ -278,7 +303,7 @@ int main() {
         fixed_quality.surface_shading_policy = ocean::OceanSurfaceShadingPolicy::Fixed;
         const ocean::OceanPatchShadingPlan fixed_far_quality =
             ocean::ocean_patch_shading_plan(fixed_quality, far_quality_patch, 0.0F, 0.0F, 10.0F,
-                                             std::numbers::pi_v<float> / 3.0F, 900U);
+                                            std::numbers::pi_v<float> / 3.0F, 900U);
         require(fixed_far_quality.detail_filter == ocean::OceanDetailFilter::Adaptive &&
                     fixed_far_quality.self_shadow_steps == 8U,
                 "fixed ocean shading should preserve one filter and shadow count");
@@ -286,14 +311,14 @@ int main() {
         ocean::OceanConfig footprint_quality = defaults;
         const ocean::OceanPatchShadingPlan near_quality =
             ocean::ocean_patch_shading_plan(footprint_quality, near_quality_patch, 0.0F, 0.0F,
-                                             10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
+                                            10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
         require(near_quality.detail_filter == ocean::OceanDetailFilter::Adaptive &&
-                    near_quality.self_shadow_steps == 8U &&
-                    !near_quality.detail_filter_reduced && !near_quality.self_shadow_reduced,
+                    near_quality.self_shadow_steps == 8U && !near_quality.detail_filter_reduced &&
+                    !near_quality.self_shadow_reduced,
                 "footprint shading should preserve near-field quality");
         const ocean::OceanPatchShadingPlan far_quality =
-            ocean::ocean_patch_shading_plan(footprint_quality, far_quality_patch, 0.0F, 0.0F,
-                                             10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
+            ocean::ocean_patch_shading_plan(footprint_quality, far_quality_patch, 0.0F, 0.0F, 10.0F,
+                                            std::numbers::pi_v<float> / 3.0F, 900U);
         require(far_quality.detail_filter == ocean::OceanDetailFilter::Bilinear &&
                     far_quality.self_shadow_steps == 4U && far_quality.detail_filter_reduced &&
                     far_quality.self_shadow_reduced,
@@ -301,8 +326,8 @@ int main() {
         footprint_quality.detail_filter = ocean::OceanDetailFilter::Bicubic;
         footprint_quality.self_shadow_steps = 2U;
         const ocean::OceanPatchShadingPlan explicit_far_quality =
-            ocean::ocean_patch_shading_plan(footprint_quality, far_quality_patch, 0.0F, 0.0F,
-                                             10.0F, std::numbers::pi_v<float> / 3.0F, 900U);
+            ocean::ocean_patch_shading_plan(footprint_quality, far_quality_patch, 0.0F, 0.0F, 10.0F,
+                                            std::numbers::pi_v<float> / 3.0F, 900U);
         require(explicit_far_quality.detail_filter == ocean::OceanDetailFilter::Bicubic &&
                     explicit_far_quality.self_shadow_steps == 2U &&
                     !explicit_far_quality.detail_filter_reduced,
@@ -1017,8 +1042,7 @@ int main() {
                 "startup options should inherit the default ocean field precision");
         require(from_options.surface_mode == ocean::OceanSurfaceMode::Flat,
                 "startup options should initialize ocean surface mode");
-        require(from_options.mesh_cells == 256U &&
-                    from_options.mesh_lod_levels == 4U,
+        require(from_options.mesh_cells == 256U && from_options.mesh_lod_levels == 4U,
                 "startup options should initialize ocean mesh ablation controls");
         require_near(from_options.horizon_target_near_cell_m, 3.5F, 0.001F,
                      "startup options should initialize the ocean near-cell target");
@@ -1047,8 +1071,7 @@ int main() {
                      "startup options should initialize ocean curvature strength");
         require_near(from_options.cloud_reflection_strength, 0.82F, 0.001F,
                      "startup options should initialize cloud reflection strength");
-        require(from_options.cloud_reflection_source ==
-                    ocean::OceanCloudReflectionSource::Planar,
+        require(from_options.cloud_reflection_source == ocean::OceanCloudReflectionSource::Planar,
                 "startup options should initialize cloud reflection source");
         require(from_options.cloud_environment_extent == 128U,
                 "startup options should initialize cloud environment extent");
@@ -1128,7 +1151,8 @@ int main() {
                               "0.8",
                               "--ocean-curvature-strength",
                               "0.35"};
-        ocean::OceanProjectConfig parsed = ocean::parse_ocean_project_config(26, const_cast<char**>(argv));
+        ocean::OceanProjectConfig parsed =
+            ocean::parse_ocean_project_config(26, const_cast<char**>(argv));
         require(parsed.ocean.sea_state == "calm", "CLI parser should accept --ocean-sea-state");
         require(parsed.ocean.map_size == 256U, "CLI parser should accept --ocean-map-size");
         require(parsed.ocean.surface_mode == "flat",
@@ -1154,33 +1178,21 @@ int main() {
                      "CLI parser should accept ocean wire opacity");
 
         const char* ablation_argv[] = {
-            "ocean",
-            "--ocean-mesh-cells",
-            "192",
-            "--ocean-mesh-lod-levels",
-            "4",
-            "--ocean-horizon-target-near-cell-m",
-            "3.0",
-            "--ocean-self-shadow-strength",
-            "0.0",
-            "--ocean-self-shadow-steps",
-            "2",
-            "--ocean-self-shadow-far-steps",
-            "1",
-            "--ocean-surface-shading-policy",
-            "footprint",
-            "--ocean-shape-anti-repeat-strength",
-            "0.5",
-            "--ocean-detail-anti-repeat-strength",
-            "0.25",
-            "--ocean-detail-filter",
-            "bicubic",
-            "--ocean-camera-orbit-spin-deg-per-sec",
-            "3",
-            "--no-ocean-size-reference",
+            "ocean",     "--ocean-mesh-cells",
+            "192",       "--ocean-mesh-lod-levels",
+            "4",         "--ocean-horizon-target-near-cell-m",
+            "3.0",       "--ocean-self-shadow-strength",
+            "0.0",       "--ocean-self-shadow-steps",
+            "2",         "--ocean-self-shadow-far-steps",
+            "1",         "--ocean-surface-shading-policy",
+            "footprint", "--ocean-shape-anti-repeat-strength",
+            "0.5",       "--ocean-detail-anti-repeat-strength",
+            "0.25",      "--ocean-detail-filter",
+            "bicubic",   "--ocean-camera-orbit-spin-deg-per-sec",
+            "3",         "--no-ocean-size-reference",
         };
         parsed = ocean::parse_ocean_project_config(static_cast<int>(std::size(ablation_argv)),
-                                         const_cast<char**>(ablation_argv));
+                                                   const_cast<char**>(ablation_argv));
         require(parsed.ocean.mesh_cells == 192U && parsed.ocean.mesh_lod_levels == 4U,
                 "CLI parser should accept ocean mesh ablation controls");
         require_near(parsed.ocean.horizon_target_near_cell_m, 3.0F, 0.001F,
@@ -1306,19 +1318,17 @@ int main() {
             read_text_file(shader_root / "ocean_spectrum_body.glsl");
         const std::string modulate_shader =
             read_text_file(shader_root / "ocean_modulate_body.glsl");
-        const std::string unpack_shader =
-            read_text_file(shader_root / "ocean_unpack_body.glsl");
-        const std::string spectrum_entry =
-            read_text_file(shader_root / "ocean_spectrum.comp");
+        const std::string unpack_shader = read_text_file(shader_root / "ocean_unpack_body.glsl");
+        const std::string spectrum_entry = read_text_file(shader_root / "ocean_spectrum.comp");
         const std::string spectrum_half_entry =
             read_text_file(shader_root / "ocean_spectrum_half.comp");
         const std::string vertex_shader = read_text_file(shader_root / "ocean.vert");
         const std::string ocean_fragment_entry = read_text_file(shader_root / "ocean.frag");
-        const std::string fragment_shader =
-            ocean_fragment_entry + read_text_file(shader_root / "ocean_shading.glsl") +
-            read_text_file(shader_root / "ocean_far_field.glsl") +
-            read_text_file(shader_root / "ocean_foam.glsl") +
-            read_text_file(shader_root / "ocean_debug.glsl");
+        const std::string fragment_shader = ocean_fragment_entry +
+                                            read_text_file(shader_root / "ocean_shading.glsl") +
+                                            read_text_file(shader_root / "ocean_far_field.glsl") +
+                                            read_text_file(shader_root / "ocean_foam.glsl") +
+                                            read_text_file(shader_root / "ocean_debug.glsl");
         const std::string pillar_vertex_shader =
             read_text_file(source_root / "shaders/ocean_reference_pillar.vert");
         const std::string pillar_fragment_shader =
@@ -1972,8 +1982,7 @@ int main() {
             "surface layout should bind displacement, normal, and foam for every cascade");
         require_contains(gpu_resources_source, "cascade + cubey::render::kOceanCascadeCount",
                          "surface descriptors should expose normal maps for every cascade");
-        require_contains(gpu_resources_source,
-                         "cascade + cubey::render::kOceanCascadeCount * 2U",
+        require_contains(gpu_resources_source, "cascade + cubey::render::kOceanCascadeCount * 2U",
                          "surface descriptors should expose foam maps for every cascade");
         require_contains(gpu_resources_source, "kOceanSurfaceReflectionBinding",
                          "surface descriptors should expose the atmosphere reflection probe");

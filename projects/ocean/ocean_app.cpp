@@ -703,15 +703,17 @@ class OceanApp {
         if (config_.ocean.wire_opacity) {
             diagnostics_.wire_opacity = *config_.ocean.wire_opacity;
         }
-        camera_preset_ = ocean_camera_preset_from_name(
-            config_.ocean.camera_preset.value_or("default"));
+        camera_preset_ =
+            ocean_camera_preset_from_name(config_.ocean.camera_preset.value_or("default"));
         camera_.set_projection(camera_.fovy_radians(), kCameraNearPlane, kCameraFarPlane);
         orbit_controller_.set_home_distance(kCameraDistance);
         orbit_controller_.set_distance_limits(kCameraMinDistance, kCameraMaxDistance);
         const float orbit_degrees_per_second =
-            config_.ocean.camera_orbit_spin_degrees_per_second.value_or(0.0F);
-        orbit_controller_.set_auto_rotation_speed(
-            orbit_degrees_per_second * std::numbers::pi_v<float> / 180.0F);
+            config_.capture.video_orbit_degrees.has_value()
+                ? 0.0F
+                : config_.ocean.camera_orbit_spin_degrees_per_second.value_or(0.0F);
+        orbit_controller_.set_auto_rotation_speed(orbit_degrees_per_second *
+                                                  std::numbers::pi_v<float> / 180.0F);
         apply_camera_preset(camera_preset_);
     }
 
@@ -829,7 +831,15 @@ class OceanApp {
             time_seconds_ = frame.timing.elapsed_seconds;
             last_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
-            orbit_controller_.update(frame.timing.delta_seconds);
+            if (config_.common.capture_mode == CaptureMode::Video &&
+                config_.capture.video_orbit_degrees.has_value()) {
+                capture_orbit_offset_radians_ =
+                    config_.capture.video_orbit_degrees.value() *
+                    cubey::host::headless_capture_eased_progress(frame) *
+                    (std::numbers::pi_v<float> / 180.0F);
+            } else {
+                orbit_controller_.update(frame.timing.delta_seconds);
+            }
             update_atmosphere_time(frame.timing.delta_seconds);
             atmosphere_runtime_.advance(frame.timing.delta_seconds);
             collect_gpu_timings(context.profile_recorder(), frame.index, frame.frame_slot,
@@ -1415,7 +1425,7 @@ class OceanApp {
         return cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = {0.0F, 0.0F, 0.0F},
             .distance = distance,
-            .yaw = camera_base_yaw_ + orbit_controller_.yaw(),
+            .yaw = camera_base_yaw_ + orbit_controller_.yaw() + capture_orbit_offset_radians_,
             .pitch = pitch,
         });
     }
@@ -1499,11 +1509,10 @@ class OceanApp {
         return plan;
     }
 
-    [[nodiscard]] OceanPushConstants surface_push_constants(VkExtent2D extent,
-                                                            const OceanSurfaceFrame& surface_frame,
-                                                            const OceanMeshPatch& patch,
-                                                            const OceanPatchShadingPlan&
-                                                                shading_plan) const {
+    [[nodiscard]] OceanPushConstants
+    surface_push_constants(VkExtent2D extent, const OceanSurfaceFrame& surface_frame,
+                           const OceanMeshPatch& patch,
+                           const OceanPatchShadingPlan& shading_plan) const {
         const cubey::Transform3D transform = camera_transform();
         const cubey::math::Mat4 view_projection =
             ocean_view_projection_matrix(extent, transform, surface_frame);
@@ -2094,13 +2103,12 @@ class OceanApp {
                             .color = cubey::render::color_clear_value(0.0F, 0.0F, 0.0F, 1.0F),
                             .depth = cubey::render::depth_clear_value(),
                         },
-                        [this, target, frame_slot, cloud_shadow, cloud_shadow_enabled](
-                            const cubey::vulkan::CommandRecorder& recorder) {
+                        [this, target, frame_slot, cloud_shadow,
+                         cloud_shadow_enabled](const cubey::vulkan::CommandRecorder& recorder) {
                             record_atmosphere_background(recorder, target.extent, frame_slot);
                             if (render_view_ != OceanRenderView::Background) {
-                                record_ocean_draw(
-                                    recorder, target.extent, frame_slot,
-                                    cloud_shadow_enabled ? &cloud_shadow : nullptr);
+                                record_ocean_draw(recorder, target.extent, frame_slot,
+                                                  cloud_shadow_enabled ? &cloud_shadow : nullptr);
                                 record_reference_pillar_draw(recorder, target.extent);
                             }
                         });
@@ -2468,6 +2476,7 @@ class OceanApp {
     OceanCameraPreset camera_preset_ = OceanCameraPreset::Default;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
+    float capture_orbit_offset_radians_ = 0.0F;
     cubey::host::FrameStats ui_frame_stats_;
     std::optional<FrameStatsSnapshot> latest_frame_stats_;
     cubey::host::ProcessResourceStatsSampler process_stats_;

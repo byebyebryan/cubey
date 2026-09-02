@@ -16,14 +16,17 @@
 #include <vector>
 
 namespace cubey::projects::ocean {
+
+inline constexpr float kOceanMaximumCaptureOrbitDegrees = 180.0F;
+
 namespace detail {
 
 using config::OptionSpec;
 using config::ValueType;
 
-inline OptionSpec option(std::string path, std::string cli, std::string label,
-                         std::string group, std::string help, ValueType type,
-                         config::Range range = {}, std::vector<std::string> choices = {}) {
+inline OptionSpec option(std::string path, std::string cli, std::string label, std::string group,
+                         std::string help, ValueType type, config::Range range = {},
+                         std::vector<std::string> choices = {}) {
     return {.path = std::move(path),
             .cli_name = std::move(cli),
             .negative_cli_name = {},
@@ -70,8 +73,7 @@ inline void bind_cascade(config::Schema::Builder& builder, OceanStartupOptions::
         },
         [&ocean] {
             return ocean.cascade
-                       ? nlohmann::json(*ocean.cascade < 0 ? "all"
-                                                           : std::to_string(*ocean.cascade))
+                       ? nlohmann::json(*ocean.cascade < 0 ? "all" : std::to_string(*ocean.cascade))
                        : nlohmann::json(nullptr);
         });
 }
@@ -87,31 +89,41 @@ struct OceanProjectConfig : OceanStartupOptions {
 
 inline config::Schema ocean_project_config_schema(OceanProjectConfig& config) {
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
-    builder.compose(cubey::ocean_surface_schema(
-        config.ocean, cubey::OceanSurfaceSchemaMode::OceanProject));
-    OptionSpec backdrop = detail::option("ocean.backdrop", "--ocean-backdrop", "Ocean Backdrop",
-                                         "Ocean", "Enable the shared ocean surface as a scene backdrop.",
-                                         ValueType::Bool);
+    builder.compose(
+        cubey::ocean_surface_schema(config.ocean, cubey::OceanSurfaceSchemaMode::OceanProject));
+    OptionSpec backdrop =
+        detail::option("ocean.backdrop", "--ocean-backdrop", "Ocean Backdrop", "Ocean",
+                       "Enable the shared ocean surface as a scene backdrop.", ValueType::Bool);
     backdrop.negative_cli_name = "--no-ocean-backdrop";
     builder.bind(std::move(backdrop), config.ocean.backdrop);
-    builder.bind(detail::option("ocean.foreground_height_m", "--ocean-foreground-height",
-                                "Foreground Height", "Ocean",
-                                "Foreground scene height above the ocean datum in meters.",
-                                ValueType::Float,
-                                {.has_min = true, .has_max = true, .min = -10000.0,
-                                 .max = 100000.0}),
-                 config.ocean.foreground_height_m);
+    builder.bind(
+        detail::option("ocean.foreground_height_m", "--ocean-foreground-height",
+                       "Foreground Height", "Ocean",
+                       "Foreground scene height above the ocean datum in meters.", ValueType::Float,
+                       {.has_min = true, .has_max = true, .min = -10000.0, .max = 100000.0}),
+        config.ocean.foreground_height_m);
     builder.bind(detail::option("ocean.camera_preset", "--ocean-camera-preset", "Camera Preset",
                                 "Ocean", "Initial ocean camera preset for repeatable captures.",
                                 ValueType::Enum, {},
                                 {"default", "low", "mid", "high", "close", "overhead", "wide"}),
                  config.ocean.camera_preset);
-    builder.bind(detail::option("ocean.camera_orbit_spin_degrees_per_second",
-                                "--ocean-camera-orbit-spin-deg-per-sec", "Camera Orbit Spin",
-                                "Ocean", "Headless capture orbit-camera yaw spin rate in degrees per second.",
-                                ValueType::Float,
-                                {.has_min = true, .has_max = true, .min = -360.0, .max = 360.0}),
-                 config.ocean.camera_orbit_spin_degrees_per_second);
+    builder.bind(
+        detail::option("ocean.camera_orbit_spin_degrees_per_second",
+                       "--ocean-camera-orbit-spin-deg-per-sec", "Camera Orbit Spin", "Ocean",
+                       "Headless capture orbit-camera yaw spin rate in degrees per second.",
+                       ValueType::Float,
+                       {.has_min = true, .has_max = true, .min = -360.0, .max = 360.0}),
+        config.ocean.camera_orbit_spin_degrees_per_second);
+    builder.bind(
+        detail::option("ocean.capture.video_orbit_degrees", "--capture-video-orbit-degrees",
+                       "Video Orbit", "Capture",
+                       "Optional eased video orbit in total degrees; zero keeps the camera fixed.",
+                       ValueType::Float,
+                       {.has_min = true,
+                        .has_max = true,
+                        .min = 0.0,
+                        .max = kOceanMaximumCaptureOrbitDegrees}),
+        config.capture.video_orbit_degrees);
     OptionSpec size_reference = detail::option(
         "ocean.size_reference", "--ocean-size-reference", "Size Reference", "Ocean",
         "Draw the diagnostic ocean scale pillar and its analytical shadow.", ValueType::Bool);
@@ -119,7 +131,8 @@ inline config::Schema ocean_project_config_schema(OceanProjectConfig& config) {
     builder.bind(std::move(size_reference), config.ocean.size_reference);
     detail::bind_cascade(builder, config.ocean);
     builder.bind(detail::option("ocean.wire_opacity", "--ocean-wire-opacity", "Wire Opacity",
-                                "Ocean", "Opacity used by the ocean wire overlay.", ValueType::Float,
+                                "Ocean", "Opacity used by the ocean wire overlay.",
+                                ValueType::Float,
                                 {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
                  config.ocean.wire_opacity);
     builder.bind(detail::option("ocean.wire_overlay", "--ocean-wire-overlay", "Wire Overlay",
@@ -140,6 +153,11 @@ inline OceanProjectConfig parse_ocean_project_config(int argc, char** argv,
         argc, argv, ocean_project_config_schema, result);
     validate_atmosphere_environment_options(config.atmosphere);
     validate_cloud_environment_options(config.clouds);
+    if (config.capture.video_orbit_degrees.has_value() &&
+        config.ocean.camera_orbit_spin_degrees_per_second.has_value()) {
+        throw std::runtime_error(
+            "Ocean capture cannot combine a bounded video orbit with a continuous orbit spin");
+    }
     return config;
 }
 

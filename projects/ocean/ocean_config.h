@@ -6,14 +6,18 @@
 #include <cubey/engine/pbr_environment_schema.h>
 #include <cubey/render/ocean_surface_config.h>
 
-#include <string>
 #include <filesystem>
 #include <optional>
+#include <string>
 
 namespace cubey::projects::ocean {
 
 using namespace cubey::render;
 using OceanConfig = cubey::render::OceanSurfaceConfig;
+
+struct OceanCaptureOptions {
+    std::optional<float> video_orbit_degrees{};
+};
 
 struct OceanStartupOptions {
     struct Ocean : cubey::OceanSurfaceOptions {
@@ -26,6 +30,8 @@ struct OceanStartupOptions {
         std::optional<float> wire_opacity{};
         bool wire_overlay = false;
     } ocean;
+
+    OceanCaptureOptions capture{};
 
     cubey::AtmosphereEnvironmentOptions atmosphere;
     cubey::CloudEnvironmentOptions clouds;
