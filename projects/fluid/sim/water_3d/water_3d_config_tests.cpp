@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -379,6 +380,112 @@ int main() {
         require(!capture_defaults.capture.camera_distance.has_value() &&
                     !capture_defaults.capture.video_orbit_degrees.has_value(),
                 "water capture controls should remain omitted by default");
+        require(!capture_defaults.water.wave_amplitude.has_value() &&
+                    !capture_defaults.water.wave_frequency_hz.has_value() &&
+                    !capture_defaults.water.whitewater_intensity.has_value() &&
+                    !capture_defaults.water.whitewater_speed_threshold.has_value(),
+                "water tuning controls should remain omitted by default");
+        require(!capture_defaults.water.initial_fill_width.has_value() &&
+                    !capture_defaults.water.initial_fill_height.has_value() &&
+                    !capture_defaults.water.initial_fill_depth.has_value(),
+                "water initial fill controls should remain omitted by default");
+        const water::Water3DProjectConfig named_fill = parse_project(
+            {"water_3d", "--water3d-initial-fill-width", "0.60",
+             "--water3d-initial-fill-height", "0.75", "--water3d-initial-fill-depth", "0.75"});
+        constexpr std::uint32_t kExpectedAuditionFillParticles = 76U * 48U * 36U * 4U;
+        require(named_fill.water.initial_fill_width == 0.60F &&
+                    named_fill.water.initial_fill_height == 0.75F &&
+                    named_fill.water.initial_fill_depth == 0.75F,
+                "water initial fill controls should parse explicit named overrides");
+        require(named_fill.simulation.initial_fill_width == 0.60F &&
+                    named_fill.simulation.initial_fill_height == 0.75F &&
+                    named_fill.simulation.initial_fill_depth == 0.75F &&
+                    named_fill.simulation.active_particle_count == kExpectedAuditionFillParticles,
+                "water initial fill controls should update typed runtime counts");
+        require(named_fill.simulation.initial_particle_capacity ==
+                        capture_defaults.simulation.initial_particle_capacity &&
+                    named_fill.simulation.particle_capacity ==
+                        capture_defaults.simulation.particle_capacity,
+                "water initial fill controls should preserve derived capacity headroom");
+        const water::Water3DProjectConfig deferred_fill = parse_project(
+            {"water_3d", "--set", "water3d.initial_fill_width=0.60", "--set",
+             "water3d.initial_fill_height=0.75", "--set", "water3d.initial_fill_depth=0.75"});
+        require(deferred_fill.water.initial_fill_width == 0.60F &&
+                    deferred_fill.water.initial_fill_height == 0.75F &&
+                    deferred_fill.water.initial_fill_depth == 0.75F &&
+                    deferred_fill.simulation.active_particle_count == kExpectedAuditionFillParticles,
+                "water initial fill controls should support config v2 deferred overrides");
+        const water::Water3DProjectConfig bounded_fill = parse_project(
+            {"water_3d", "--water3d-initial-fill-width", "0.08",
+             "--water3d-initial-fill-height", "0.08", "--water3d-initial-fill-depth", "0.08"});
+        require(bounded_fill.simulation.initial_fill_width == water::kWater3DMinFillFraction &&
+                    bounded_fill.simulation.initial_fill_height == water::kWater3DMinFillFraction &&
+                    bounded_fill.simulation.initial_fill_depth == water::kWater3DMinFillFraction &&
+                    bounded_fill.simulation.active_particle_count == 600U,
+                "water initial fill controls should accept the lower bounds");
+        const water::Water3DProjectConfig maximum_fill = parse_project(
+            {"water_3d", "--water3d-initial-fill-width", "0.75",
+             "--water3d-initial-fill-height", "0.75", "--water3d-initial-fill-depth", "0.75"});
+        require(maximum_fill.simulation.initial_fill_width == water::kWater3DMaxFillFraction &&
+                    maximum_fill.simulation.initial_fill_height == water::kWater3DMaxFillFraction &&
+                    maximum_fill.simulation.initial_fill_depth == water::kWater3DMaxFillFraction &&
+                    maximum_fill.simulation.active_particle_count == kExpectedInitialParticleCapacity,
+                "water initial fill controls should accept the upper bounds");
+        const auto rejects_fill = [](std::vector<std::string> arguments) {
+            try {
+                static_cast<void>(parse_project(std::move(arguments)));
+            } catch (const std::runtime_error&) {
+                return true;
+            }
+            return false;
+        };
+        require(rejects_fill({"water_3d", "--water3d-initial-fill-width", "0.079"}),
+                "water initial fill width should reject values below the lower bound");
+        require(rejects_fill({"water_3d", "--water3d-initial-fill-height", "0.751"}),
+                "water initial fill height should reject values above the upper bound");
+        require(rejects_fill({"water_3d", "--water3d-initial-fill-depth", "0.0"}),
+                "water initial fill depth should reject values below the lower bound");
+        const water::Water3DProjectConfig tuned =
+            parse_project({"water_3d", "--water3d-wave-amplitude", "1.50",
+                           "--water3d-wave-frequency-hz", "0.42", "--water3d-whitewater-intensity",
+                           "1.35", "--water3d-whitewater-speed-threshold", "0.85"});
+        require(tuned.water.wave_amplitude == 1.50F && tuned.water.wave_frequency_hz == 0.42F &&
+                    tuned.water.whitewater_intensity == 1.35F &&
+                    tuned.water.whitewater_speed_threshold == 0.85F,
+                "water tuning controls should parse explicit named overrides");
+        require(tuned.simulation.wave.amplitude == 1.50F &&
+                    tuned.simulation.wave.frequency_hz == 0.42F &&
+                    tuned.simulation.whitewater_intensity == 1.35F &&
+                    tuned.simulation.whitewater_speed_threshold == 0.85F,
+                "water tuning controls should update the typed runtime config");
+        const water::Water3DProjectConfig deferred_tuned = parse_project(
+            {"water_3d", "--set", "water3d.wave_amplitude=1.50", "--set",
+             "water3d.wave_frequency_hz=0.42", "--set", "water3d.whitewater_intensity=1.35",
+             "--set", "water3d.whitewater_speed_threshold=0.85"});
+        require(deferred_tuned.simulation.wave.amplitude == 1.50F &&
+                    deferred_tuned.simulation.wave.frequency_hz == 0.42F &&
+                    deferred_tuned.simulation.whitewater_intensity == 1.35F &&
+                    deferred_tuned.simulation.whitewater_speed_threshold == 0.85F,
+                "water tuning controls should support config v2 deferred overrides");
+        const auto rejects_negative_tuning = [](std::vector<std::string> arguments) {
+            try {
+                static_cast<void>(parse_project(std::move(arguments)));
+            } catch (const std::runtime_error&) {
+                return true;
+            }
+            return false;
+        };
+        require(rejects_negative_tuning({"water_3d", "--set", "water3d.wave_amplitude=-0.01"}),
+                "water wave amplitude should reject negative values");
+        require(rejects_negative_tuning(
+                    {"water_3d", "--set", "water3d.wave_frequency_hz=-0.01"}),
+                "water wave frequency should reject negative values");
+        require(
+            rejects_negative_tuning({"water_3d", "--set", "water3d.whitewater_intensity=-0.01"}),
+            "water whitewater intensity should reject negative values");
+        require(rejects_negative_tuning(
+                    {"water_3d", "--set", "water3d.whitewater_speed_threshold=-0.01"}),
+                "water whitewater speed threshold should reject negative values");
         const water::Water3DProjectConfig fixed_capture =
             parse_project({"water_3d", "--capture-video-orbit-degrees", "0",
                            "--capture-camera-distance", "2.75"});
@@ -441,6 +548,20 @@ int main() {
                          "water template should expose shared PBR options");
         require_contains(template_json, "\"video_orbit_degrees\"",
                          "water template should expose authored capture motion");
+        require_contains(template_json, "\"wave_amplitude\"",
+                         "water template should expose wave amplitude");
+        require_contains(template_json, "\"wave_frequency_hz\"",
+                         "water template should expose wave frequency");
+        require_contains(template_json, "\"whitewater_intensity\"",
+                         "water template should expose whitewater intensity");
+        require_contains(template_json, "\"whitewater_speed_threshold\"",
+                         "water template should expose whitewater speed threshold");
+        require_contains(template_json, "\"initial_fill_width\"",
+                         "water template should expose initial fill width");
+        require_contains(template_json, "\"initial_fill_height\"",
+                         "water template should expose initial fill height");
+        require_contains(template_json, "\"initial_fill_depth\"",
+                         "water template should expose initial fill depth");
         require_not_contains(template_json, "smoke",
                              "water template should omit unrelated project options");
         require_not_contains(template_json, "particle_capacity",

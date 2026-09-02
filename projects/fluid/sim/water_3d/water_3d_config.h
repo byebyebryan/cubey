@@ -249,6 +249,13 @@ struct Water3DStartupOptions {
     std::optional<std::string> transfer_mode{};
     std::optional<std::uint32_t> transfer_limit{};
     std::optional<std::string> p2g_mode{};
+    std::optional<float> initial_fill_width{};
+    std::optional<float> initial_fill_height{};
+    std::optional<float> initial_fill_depth{};
+    std::optional<float> wave_amplitude{};
+    std::optional<float> wave_frequency_hz{};
+    std::optional<float> whitewater_intensity{};
+    std::optional<float> whitewater_speed_threshold{};
     std::optional<bool> hose{};
     std::optional<bool> drain{};
     std::optional<bool> rain{};
@@ -838,6 +845,27 @@ water_3d_config_from_options(const common::FluidGridOptions& grid,
     }
     if (options.p2g_mode) {
         water_config.p2g_mode = water_3d_p2g_mode_from_name(*options.p2g_mode);
+    }
+    if (options.initial_fill_width) {
+        water_config.initial_fill_width = *options.initial_fill_width;
+    }
+    if (options.initial_fill_height) {
+        water_config.initial_fill_height = *options.initial_fill_height;
+    }
+    if (options.initial_fill_depth) {
+        water_config.initial_fill_depth = *options.initial_fill_depth;
+    }
+    if (options.wave_amplitude) {
+        water_config.wave.amplitude = *options.wave_amplitude;
+    }
+    if (options.wave_frequency_hz) {
+        water_config.wave.frequency_hz = *options.wave_frequency_hz;
+    }
+    if (options.whitewater_intensity) {
+        water_config.whitewater_intensity = *options.whitewater_intensity;
+    }
+    if (options.whitewater_speed_threshold) {
+        water_config.whitewater_speed_threshold = *options.whitewater_speed_threshold;
     }
     if (options.hose) {
         water_config.hose.enabled = *options.hose;

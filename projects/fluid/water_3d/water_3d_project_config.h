@@ -113,6 +113,44 @@ inline OptionSpec option(std::string path, std::string cli, std::string label, s
                         {"active", "active-faces", "tiled", "tiled-faces"}),
                  config.water.p2g_mode);
 
+    constexpr config::Range fill_fraction{.has_min = true,
+                                          .has_max = true,
+                                          .min = kWater3DMinFillFraction,
+                                          .max = kWater3DMaxFillFraction};
+    builder
+        .bind(option("water3d.initial_fill_width", "--water3d-initial-fill-width",
+                     "Initial Fill Width", "Water 3D",
+                     "Initial water fill width as a fraction of the grid.", ValueType::Float,
+                     fill_fraction),
+              config.water.initial_fill_width)
+        .bind(option("water3d.initial_fill_height", "--water3d-initial-fill-height",
+                     "Initial Fill Height", "Water 3D",
+                     "Initial water fill height as a fraction of the grid.", ValueType::Float,
+                     fill_fraction),
+              config.water.initial_fill_height)
+        .bind(option("water3d.initial_fill_depth", "--water3d-initial-fill-depth",
+                     "Initial Fill Depth", "Water 3D",
+                     "Initial water fill depth as a fraction of the grid.", ValueType::Float,
+                     fill_fraction),
+              config.water.initial_fill_depth);
+
+    constexpr config::Range nonnegative{.has_min = true, .min = 0.0};
+    builder
+        .bind(option("water3d.wave_amplitude", "--water3d-wave-amplitude", "Wave Amplitude",
+                     "Water 3D", "Wave forcing amplitude.", ValueType::Float, nonnegative),
+              config.water.wave_amplitude)
+        .bind(option("water3d.wave_frequency_hz", "--water3d-wave-frequency-hz", "Wave Frequency",
+                     "Water 3D", "Wave forcing frequency in hertz.", ValueType::Float, nonnegative),
+              config.water.wave_frequency_hz)
+        .bind(option("water3d.whitewater_intensity", "--water3d-whitewater-intensity",
+                     "Whitewater Intensity", "Water 3D", "Whitewater emission intensity.",
+                     ValueType::Float, nonnegative),
+              config.water.whitewater_intensity)
+        .bind(option("water3d.whitewater_speed_threshold", "--water3d-whitewater-speed-threshold",
+                     "Whitewater Speed Threshold", "Water 3D",
+                     "Minimum speed for whitewater emission.", ValueType::Float, nonnegative),
+              config.water.whitewater_speed_threshold);
+
     OptionSpec hose = option("water3d.hose", "--water3d-hose", "Hose", "Water 3D",
                              "Enable hose injection.", ValueType::Bool);
     hose.negative_cli_name = "--no-water3d-hose";
