@@ -1,9 +1,12 @@
 # Cubey showcase media
 
-This directory is the committed media package for the four approved root
-highlights, in editorial order: Ocean, glTF + Terrain, Water 3D, and Fire 3D.
-Each poster is generated from its corresponding committed MP4. Click a poster
-to open the committed MP4 fallback:
+This directory keeps the four published highlights reproducible and independent
+of GitHub's presentation layer. The root README uses native video players;
+these committed MP4s, generated posters, and the manifest are the durable,
+hashable source of truth.
+
+The gallery order is Ocean, glTF + Terrain, Water 3D, and Fire 3D. Each poster
+is extracted from its corresponding committed MP4; click one to open the clip:
 
 | Highlight | Poster / committed MP4 |
 | --- | --- |
@@ -12,22 +15,22 @@ to open the committed MP4 fallback:
 | Water 3D | [![Water 3D](water-3d.png)](water-3d.mp4) |
 | Fire 3D | [![Fire 3D](fire-3d.png)](fire-3d.mp4) |
 
-The four MP4s are silent, fast-start H.264 High 1280x720 publications at exact
-60 FPS. `manifest.json` records the byte hashes, poster timestamps, capture
-recipes, source revisions, capture-time dirty-diff provenance, and licensing.
+The four clips are silent, fast-start H.264 High publications at 1280x720 and
+exactly 60 FPS. `manifest.json` records their byte hashes, poster timestamps,
+capture recipes, source revisions, capture-time dirty-diff provenance,
+attachment URLs, and licensing.
 
-The higher-quality capture masters and audition comparisons remain ignored
-under `outputs/showcase/audition-2/`; they are not copied into this package.
-There is no merged hero reel.
+Higher-quality capture masters, comparisons, and diagnostic media remain in
+the ignored `outputs/showcase/audition-2/` workspace. They are editing evidence,
+not part of the repository package.
 
 ## GitHub attachment publication
 
-The exact committed MP4s were uploaded in editorial order through GitHub's
-Markdown attachment flow and anchored by closed [issue #1](https://github.com/byebyebryan/cubey/issues/1),
-with source commit `e21fdd86ba83049d0d187caf3973b1124163e576`. The issue is
-closed with reason `completed`; the same mapping is recorded in `manifest.json`.
-GitHub's native-player URLs are the README presentation layer. The committed
-MP4 and poster links below remain the inspectable, hashable fallback artifacts.
+The exact committed MP4s were uploaded through GitHub's Markdown attachment
+flow and anchored by closed [issue #1](https://github.com/byebyebryan/cubey/issues/1)
+at source commit `e21fdd86ba83049d0d187caf3973b1124163e576`. The same mapping
+is recorded in `manifest.json`. GitHub serves those attachments to the native
+players; the repository copies below remain independently inspectable.
 
 | Highlight | Native player attachment | Committed MP4 | Poster fallback |
 | --- | --- | --- | --- |

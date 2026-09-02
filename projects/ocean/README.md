@@ -42,9 +42,12 @@ preset-owned settings appear as `Custom` in the GUI.
 
 [![Ocean showcase poster](../../docs/media/showcase/ocean.png)](../../docs/media/showcase/ocean.mp4)
 
-The committed highlight uses Windy, the default camera, a 30-degree eased
-bounded arc, no size-reference pillar, and a 14:00-to-21:00 solar sweep over
-480 frames at 60 FPS. Reproduce the ignored capture source with:
+The highlight holds one Windy sea state while afternoon light moves through
+golden hour, dusk, and into night. A 30-degree eased camera arc reveals the
+changing reflection and foreground waves without losing the horizon.
+
+The exact capture uses the default camera, no size-reference pillar, and a
+14:00-to-21:00 solar sweep over 480 frames at 60 FPS:
 
 ```sh
 ./build/dev/projects/ocean/ocean --headless --capture video --frames 480 --fps 60 \

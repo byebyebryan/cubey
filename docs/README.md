@@ -1,19 +1,26 @@
 # Cubey Docs
 
-This directory separates current design guidance from living notes and archived
-history. Keep the top-level docs focused on the current architecture and
-direction; move stale investigation notes, superseded decisions, and temporary
-scratch material out of the main path.
+Cubey's documentation separates practical setup, current design contracts,
+project guides, acceptance evidence, and archived history. Start with the
+shortest document that answers the question; the deeper architecture notes are
+there when implementation boundaries matter.
+
+## Start here
+
+- [Build and run Cubey](getting-started.md): prerequisites, CMake presets,
+  interactive and headless runs, video capture, configuration, and controls.
+- [Design](DESIGN.md): purpose, tenets, reference sources, architecture, and
+  repository structure.
+- [Roadmap](roadmap.md): current readiness, completed foundations, and likely
+  next work.
+- [Showcase](../README.md#showcase): the four current project highlights.
 
 ## Current Design
 
-- [Design](DESIGN.md): project purpose, tenets, reference sources, architecture,
-  and repository structure.
-- [Roadmap](roadmap.md): current implementation phases and next work.
 - [Showcase storyboard and capture plan](showcase.md): public demo scope,
   cinematic shot cards, media provenance, and gated capture work.
-- [Showcase media package](media/showcase/README.md): the four locked root
-  highlights, committed poster-linked MP4s, hashes, recipes, and licensing.
+- [Showcase media package](media/showcase/README.md): native-player mapping,
+  committed MP4/poster fallbacks, hashes, recipes, and licensing.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
 
@@ -81,9 +88,8 @@ Detailed current foundation notes live under
 
 Project-specific design stays beside the project:
 
-The root [README](../README.md) contains the complete active executable
-inventory. This section indexes projects and studies that currently have a
-local README.
+The root [README](../README.md) maps the active project families. This section
+indexes projects and studies that currently have a local README.
 
 Active projects:
 

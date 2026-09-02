@@ -21,10 +21,13 @@ Useful options include `--animation-index`, `--animation-speed`,
 
 [![glTF + Terrain showcase poster](../../docs/media/showcase/gltf-terrain.png)](../../docs/media/showcase/gltf-terrain.mp4)
 
-The committed highlight uses the ignored Khronos Damaged Helmet input, the
-canonical Terrain V1 backdrop, full broken-cumulus clouds, atmosphere lighting,
-scene-distance scale `0.70`, exposure `1.0`, IBL intensity `1.0`, and a 30-degree
-eased arc over 480 frames at 60 FPS. Its source capture is reproducible with:
+The highlight stages the Damaged Helmet against Cubey's canonical Terrain V1
+backdrop. A slow partial orbit and afternoon-to-night lighting change reveal the
+imported material response first, then let the emissive details take over.
+
+The exact capture uses full broken-cumulus clouds, atmosphere lighting,
+scene-distance scale `0.70`, exposure `1.0`, IBL intensity `1.0`, and a
+30-degree eased arc over 480 frames at 60 FPS:
 
 ```sh
 ./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1280 --height 720 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --pbr-environment-source atmosphere --time-of-day-mode solar --time-hours 14.0 --time-speed-hours-per-second 0.875 --clouds --cloud-weather-preset broken-cumulus --cloud-quality full --terrain-heightfield cache/terrain/sources/v1/default --terrain-surface-detail filtered-detail --terrain-shadows --terrain-foreground-height 200 --capture-camera-distance-scale 0.70 --capture-video-orbit-degrees 30 --exposure 1.0 --ibl-intensity 1.0 --output outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4

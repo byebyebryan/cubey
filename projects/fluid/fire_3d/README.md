@@ -43,8 +43,12 @@ Useful commands:
 
 [![Fire 3D showcase poster](../../../docs/media/showcase/fire-3d.png)](../../../docs/media/showcase/fire-3d.mp4)
 
-The committed highlight uses one source, no obstacle, no terrain or clouds, a
-fixed camera at distance `1.65`, three seconds of source warm-up, and the
+The highlight opens on a mature plume and lets the fire and smoke carry the
+motion as daylight fades into night. A fixed camera and empty environment keep
+the flame core, side breakup, and darker smoke structure easy to read.
+
+The exact capture uses one source, no obstacle, no terrain, no clouds, a
+camera distance of `1.65`, three seconds of hidden warm-up, and the
 15:30-to-22:30 retained window. Its Balanced simulation overrides are
 `source-radius 0.11`, `soot 13`, `soot-yield 0.35`, `expansion 1.10`,
 `flame-cooling 3.4`, `shredding 4.2`, `turbulence 1.2`, `buoyancy 2.1`, and

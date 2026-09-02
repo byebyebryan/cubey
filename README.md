@@ -1,256 +1,147 @@
-# cubey
+# Cubey
 
-Cubey is a native desktop GPU workbench for procedural graphics experiments and
-projects. The goal is a small, deliberate C++/Vulkan foundation that keeps
-engine, host, resource, input, camera, transform, and project boundaries explicit
-while leaving the interesting work in shaders, compute, and project code.
+Cubey is a native C++20/Vulkan workbench for real-time rendering, GPU
+simulation, and procedural environments. It is a collection of focused visual
+projects built on a deliberately small shared foundation: enough engine to make
+the experiments coherent, without turning the repository into a general game
+engine or editor.
 
-Cubey is not a generic game engine, editor, SDK, or backend-agnostic renderer.
-It should still use established graphics terminology and proven public
-precedent when shaping new foundation contracts.
+Projects own their scenes, simulation, configuration, and presentation. Shared
+modules provide the recurring vocabulary—Vulkan resources, render passes,
+camera and transform math, asset loading, procedural sky and clouds, terrain,
+PBR, profiling, and deterministic headless capture.
+
+[Build and run](docs/getting-started.md) · [Design](docs/DESIGN.md) · [Architecture](docs/architecture/README.md) · [Roadmap](docs/roadmap.md)
 
 ## Showcase
 
-The four locked root-gallery highlights are published as native GitHub players
-in editorial order. Each player uses the exact committed MP4 attached to the
-closed [showcase video attachment anchor](https://github.com/byebyebryan/cubey/issues/1).
-The gallery is intentionally a set of independent project stories rather than
-a merged hero reel.
+These four short captures show the current range of the workbench. Each is a
+continuous eight-second, 720p/60 FPS project story rather than a segment from a
+combined reel.
 
 ### Ocean
 
 https://github.com/user-attachments/assets/dc923c55-1061-402f-92ad-09b7da2e7208
 
-[Committed MP4](docs/media/showcase/ocean.mp4) · [Poster fallback](docs/media/showcase/ocean.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+A Windy spectral sea carries afternoon light through golden hour and into
+night. The slow camera arc keeps the horizon stable while the waves, foam,
+cloud reflections, and atmosphere change together.
+
+[Project](projects/ocean/README.md) · [Committed MP4](docs/media/showcase/ocean.mp4) · [Poster](docs/media/showcase/ocean.png)
 
 ### glTF + Terrain
 
 https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02
 
-[Committed MP4](docs/media/showcase/gltf-terrain.mp4) · [Poster fallback](docs/media/showcase/gltf-terrain.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+The Damaged Helmet exercises Cubey's imported PBR materials against its raster
+terrain and procedural environment. A restrained orbit and daylight-to-night
+transition reveal the material response and emissive details.
+
+[Project](projects/gltf_viewer/README.md) · [Committed MP4](docs/media/showcase/gltf-terrain.mp4) · [Poster](docs/media/showcase/gltf-terrain.png)
 
 ### Water 3D
 
 https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75
 
-[Committed MP4](docs/media/showcase/water-3d.mp4) · [Poster fallback](docs/media/showcase/water-3d.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+An APIC dam break collapses through a long tank, then spreads and rebounds into
+surface foam and secondary whitewater. The clear sky keeps the simulation and
+screen-space reconstruction legible.
+
+[Project](projects/fluid/water_3d/README.md) · [Committed MP4](docs/media/showcase/water-3d.mp4) · [Poster](docs/media/showcase/water-3d.png)
 
 ### Fire 3D
 
 https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0
 
-[Committed MP4](docs/media/showcase/fire-3d.mp4) · [Poster fallback](docs/media/showcase/fire-3d.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+A warmed-up volumetric plume evolves from daylight into night. The fixed camera
+lets combustion, turbulence, flame shaping, and smoke structure carry the
+motion.
 
-See the [showcase media package](docs/media/showcase/README.md) for the
-native-player mapping, committed fallbacks, recipes, hashes, and license
-boundaries.
+[Project](projects/fluid/fire_3d/README.md) · [Committed MP4](docs/media/showcase/fire-3d.mp4) · [Poster](docs/media/showcase/fire-3d.png)
 
-Active development lives on `main`. The original OpenGL 4 shader playground is
-preserved on the `legacy` branch.
+The [showcase package](docs/media/showcase/README.md) preserves the exact media,
+posters, capture recipes, hashes, attachment mapping, and license boundaries.
+The glTF-derived clip has a separate CC-BY-NC-4.0 media license; Cubey source
+and the other original showcase media remain MIT licensed.
 
-## Current Direction
+## Project map
 
-- Primary target: native Vulkan on desktop.
-- Primary library: layered `cubey::*` targets with public headers under
-  `include/cubey/` and an aggregate `cubey::cubey` target for examples and
-  projects.
-- Optional host layer: `cubey_host`, for GLFW-backed window hosting.
-- Runnable targets live under `examples/` or `projects/`; examples are
-  intentionally cube-focused renderer demos, while richer/non-cube work lives
-  under `projects/`.
-- Headless PNG and optional MP4 output are first-class verification/capture
-  paths for projects that can render without a window.
-- The public visual showcase currently packages four locked project stories
-  (Ocean, glTF + Terrain, Water 3D, and Fire 3D); the broader eleven-card
-  storyboard, capture gates, and media provenance live in the [showcase plan](docs/showcase.md).
-  The remaining seven cards are future editorial work and do not include
-  internal validation targets or retained reference studies.
-- Runtime debug UI uses ImGui where projects need live controls; Cubey still
-  does not aim to become an editor.
+Cubey's runnable projects are independent products, not scenes in one monolithic
+application. They reuse foundation code where the contract is genuinely shared
+and keep domain-specific policy local.
 
-Current examples:
+### Environments and rendering
 
-- `spinning_cube`: primitive cube mesh with shared transform/camera math and depth.
-- `textured_cube`: primitive cube mesh, compute-generated texture, descriptors,
-  scene lighting, and input.
-- `shadow_cube`: primitive cube/plane meshes, graph-declared directional shadow
-  map, transient scene color target, and fullscreen triangle present pass.
-- `instanced_cubes`: real instance-rate vertex input with one cube mesh and many
-  cube instances.
-- `material_cubes`: multiple material handles and material instances bound per
-  scene draw packet.
-- `headless_cube`: no-window offscreen cube PNG/MP4 capture path.
-- `particle_cubes`: compute-updated cube particles rendered as indexed cube
-  instances.
+| Project | Focus |
+| --- | --- |
+| [Atmosphere](projects/atmosphere/README.md) | Clear-sky scattering, solar time, twilight, stars, moon, Milky Way, and the shared surface-cloud layer. |
+| [Ocean](projects/ocean/README.md) | Spectral FFT waves, clipmap LOD, persistent whitecaps, curved local horizon, and atmosphere/cloud lighting. |
+| [Terrain](projects/terrain/README.md) | External-raster far backdrop with cached sector geometry, placement, material detail, and self-shadowing. |
+| [Planet](projects/planet/README.md) | Orbital-only Earth-like globe with deterministic surface fields and shared celestial composition. |
+| [glTF Viewer](projects/gltf_viewer/README.md) | Imported PBR assets, animation and deformation, generated or HDR IBL, shadows, and optional terrain. |
+| [Fractal 2D](projects/fractal_2d/) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
 
-Current active projects:
+Terrain, Planet, and Ocean deliberately represent different scales: far
+backdrop, orbital body, and local water surface. Surface-scale planet terrain,
+shorelines, bathymetry, and shallow-water coupling remain separate work rather
+than hidden extensions of those products.
 
-- `atmosphere`: clear-sky scattering workbench with solar time of day, twilight,
-  procedural stars, moon rendering, Milky Way atlas layers, the shared
-  production cloud layer, and headless output.
-- `planet`: orbital-only Earth-like globe product with deterministic cached
-  surface fields, shared sky/celestial composition, phase presets, and
-  headless visual review coverage. Surface-scale terrain and planet LOD remain
-  explicitly out of scope.
-- `terrain`: external-raster far-backdrop product with deterministic selected
-  and raw placement, continuous cached sector geometry, shared
-  atmosphere/cloud lighting, terrain self-shadowing, procedural material
-  detail, runtime replacement, and headless review coverage.
-- `ocean`: active ocean renderer derived from the GodotOceanWaves
-  spectrum/FFT/unpack core, with Calm/Windy/Stormy presets, configurable
-  cascade slots, persistent whitecaps, camera-relative clipmap LOD, curved
-  local horizon mapping, shared atmosphere/cloud lighting, planar cloud
-  reflection with cached fallback, and terrain-field hooks.
-- `smoke_2d`: compute-updated dye/velocity field with MacCormack advection,
-  vorticity, pressure projection, debug views, and
-  deterministic headless capture output.
-- `water_2d`: 2D APIC free-surface liquid with a PIC/FLIP fallback,
-  particle-grid transfers, MAC-grid pressure projection, reset presets,
-  hose/drain material flow, obstacle shapes, surface/foam debug views, live
-  frame/memory diagnostics, and deterministic headless capture output.
-- `water_3d`: 3D APIC free-surface liquid in a long showcase tank, with stable
-  particle-grid transfer ranges, screen-space water surface rendering, rain,
-  hose/drain/wave controls, whitewater, shared procedural atmosphere/cloud
-  composition and reflection, profiling diagnostics, and headless capture
-  output.
-- `fire_3d`: dense volumetric pyro fire demo with 3D storage textures,
-  MacCormack advection, combustion, projection, vorticity confinement,
-  raymarching, shared procedural environment lighting, orbit camera controls,
-  debug views, and headless capture output.
-- `explosion_3d`: the same shared 3D pyro solver presented as repeated impulse
-  bursts with explosion-specific timing, boost controls, and shared environment
-  lighting.
-- `fractal_2d`: fullscreen Mandelbrot-style shader with windowed navigation and
-  headless output.
-- `gltf_viewer`: glTF/glb viewer for imported assets, PBR materials, texture
-  upload, rigid/morph/skinned animation, generated or HDR-backed IBL, shared
-  atmosphere/cloud composition, optional raster terrain backdrop, shadow maps,
-  and headless capture.
+### Simulation
 
-Internal validation targets:
+| Project | Focus |
+| --- | --- |
+| [Smoke 2D](projects/fluid/smoke_2d/README.md) | GPU dye/velocity field with MacCormack advection, vorticity, and pressure projection. |
+| [Water 2D](projects/fluid/water_2d/README.md) | APIC free-surface liquid with PIC/FLIP fallback, obstacles, hose/drain flow, and surface diagnostics. |
+| [Water 3D](projects/fluid/water_3d/README.md) | APIC liquid, sorted particle-grid transfers, screen-space surface reconstruction, and whitewater. |
+| [Fire 3D](projects/fluid/fire_3d/README.md) | Dense volumetric combustion, projection, vorticity, shadow volume, and raymarching. |
+| [Explosion 3D](projects/fluid/explosion_3d/README.md) | The shared pyro solver presented as repeated impulses with explosion-specific timing and controls. |
 
-- `pbr_furnace`: white-furnace PBR validation scene for roughness/metallic
-  behavior under uniform generated IBL. It remains maintained for internal
-  validation and is not a public showcase demo.
+### Foundation examples
 
-Paused studies and design-only projects:
+The cube-focused programs under [`examples/`](examples/) isolate reusable
+renderer behavior: transforms and depth, compute-generated textures, render
+graph passes, shadow maps, instance-rate input, material handles, particle
+compute, and no-window capture. They are small foundation tests rather than
+showcase projects.
 
-- `studies/terrain/hydrology`: opt-in snapshot of the previous regional terrain
-  product, routing, and analytical landscape-evolution work; paused while the
-  active raster backdrop remains focused on rendering and composition.
-- `fluid_25d`: design-only shallow-water direction for terrain-bound rivers,
-  flooding, sources, and sinks.
+[`pbr_furnace`](projects/pbr_furnace/) is likewise maintained as an internal
+white-furnace validation target, not a public demo.
 
-Reference studies and retained research:
+### Studies and retained references
 
-- `cloud_ref`: TerrainEngine-style local surface cloud reference used to check
-  density, sampling, and lighting before promotion into the shared cloud layer.
-- `studies/terrain/reference`: frozen terrain reference algorithms, mesh, and
-  shader evidence used to compare TerrainEngine and ShaderToy-derived cues.
-- `studies/terrain/shadertoy`: restricted-source fidelity study retaining its
-  source/config and camera logic for non-viewer comparisons.
+- [Fluid 2.5D](projects/fluid_25d/README.md) is a design-only direction for
+  terrain-bound rivers, flooding, sources, and sinks.
+- [Terrain Hydrology](studies/terrain/hydrology/README.md) is a paused snapshot
+  of the earlier regional terrain and landscape-evolution work.
+- [Cloud Ref](projects/cloud_ref/README.md), [Terrain Ref](studies/terrain/reference/README.md),
+  and the [Terrain ShaderToy study](studies/terrain/shadertoy/README.md) retain
+  reference evidence without competing with active products.
+- [Archived terrain attempts](docs/archive/terrain/legacy-attempts.md) summarize
+  the retired terrain workbench, terrain lab, and coastal demo; Git history
+  remains the implementation archive.
 
-The retired terrain workbench, terrain lab, and coastal demo are summarized in
-[Archived terrain attempts](docs/archive/terrain/legacy-attempts.md); Git history
-remains their implementation archive.
+## Foundation
 
-## Documentation
+- Native Vulkan is the primary backend and desktop is the primary target.
+- Layered `cubey::*` libraries expose reusable headers under `include/cubey/`;
+  projects consume the aggregate `cubey::cubey` target where appropriate.
+- `cubey_host` supplies GLFW-backed windowing and the deterministic headless
+  host without owning project policy.
+- Each executable owns a typed Config V2 facade composed from shared host and
+  engine schemas plus only its live project options.
+- Headless PNG and optional H.264 MP4 capture are first-class validation and
+  publication paths.
+- ImGui provides project controls and diagnostics, but Cubey does not aim to
+  become an editor.
 
-Start with the [docs index](docs/README.md).
+The architecture is deliberately pressure-driven: shared abstractions are
+promoted from repeated project needs, while Vulkan-specific requirements stay
+visible when hiding them would make the code less useful.
 
-Authoritative current docs:
+## Build and run
 
-- [Design](docs/DESIGN.md)
-- [Roadmap](docs/roadmap.md)
-- [Showcase storyboard and capture plan](docs/showcase.md)
-- [Architecture notes](docs/architecture/README.md)
-- [Vulkan abstraction map](docs/architecture/vulkan-abstractions.md)
-- [Renderer foundation](docs/architecture/renderer-foundation.md)
-- [Reference-first rendering feature workflow](docs/architecture/rendering-feature-workflow.md)
-- [PBR and IBL direction](docs/architecture/pbr-ibl.md)
-- [Render graph direction](docs/architecture/render-graph.md)
-- [Entity and component foundation](docs/architecture/entity-component-foundation.md)
-- [Host and engine](docs/architecture/host-engine.md)
-- [Configuration V2](docs/architecture/configuration.md)
-- [Threading and async](docs/architecture/threading-and-async.md)
-- [Procedural generation foundation](docs/architecture/procedural-generation.md)
-- [glTF assets and PBR](docs/architecture/gltf-assets.md)
-- [Animation and deformation](docs/architecture/animation-deformation.md)
-- [Fluid simulation direction](docs/architecture/fluid-simulation.md)
-- [Ocean rendering](docs/architecture/ocean-rendering.md)
-- [Ocean horizon and curved-local scale](docs/architecture/ocean-horizon-and-planet-scale.md)
-- [Planet rendering](docs/architecture/planet-rendering.md)
-- [Ocean adjacent systems](docs/architecture/ocean-adjacent-systems.md)
-- [C++ style guide](docs/cpp-style.md)
-- [Changelog / release notes](CHANGELOG.md)
-
-Project-local docs:
-
-- [Atmosphere](projects/atmosphere/README.md)
-- [Cloud Ref](projects/cloud_ref/README.md)
-- [Fluid overview](projects/fluid/README.md)
-- [Smoke 2D](projects/fluid/smoke_2d/README.md)
-- [Water 2D](projects/fluid/water_2d/README.md)
-- [Water 3D](projects/fluid/water_3d/README.md)
-- [Fluid 2.5D design](projects/fluid_25d/README.md)
-- [Fire 3D](projects/fluid/fire_3d/README.md)
-- [Explosion 3D](projects/fluid/explosion_3d/README.md)
-- [glTF Viewer](projects/gltf_viewer/README.md)
-- [Planet](projects/planet/README.md)
-- [Terrain](projects/terrain/README.md)
-- [Terrain Hydrology Lab](studies/terrain/hydrology/README.md)
-- [Terrain Ref](studies/terrain/reference/README.md)
-- [Terrain ShaderToy Study](studies/terrain/shadertoy/README.md)
-- [Archived Terrain Attempts](docs/archive/terrain/legacy-attempts.md)
-- [Ocean](projects/ocean/README.md)
-
-## Development Setup
-
-Cubey needs a native C++20 toolchain plus system Vulkan development packages.
-CMake fetches several project dependencies when needed, but it does not provide
-the Vulkan SDK/loader, GPU driver, compiler toolchain, or shader compiler.
-
-Required system dependencies:
-
-- C++20 compiler and standard build tools.
-- CMake, Ninja, and Git.
-- Vulkan headers.
-- Vulkan loader / ICD loader (`libvulkan.so` on Linux).
-- A Vulkan-capable GPU driver / ICD for your hardware.
-- `glslangValidator` for build-time GLSL to SPIR-V shader compilation.
-
-Package names vary by distro. Examples:
-
-```bash
-# Arch Linux
-sudo pacman -S --needed base-devel cmake ninja git vulkan-headers vulkan-icd-loader vulkan-tools glslang
-# Also install one Vulkan driver package for your GPU, such as vulkan-radeon,
-# vulkan-intel, amdvlk, or the NVIDIA driver stack.
-# Optional for MP4 capture: sudo pacman -S --needed pkgconf ffmpeg
-
-# Ubuntu / Debian
-sudo apt install build-essential cmake ninja-build git libvulkan-dev vulkan-tools glslang-tools
-# Also install the Vulkan driver package for your GPU, such as
-# mesa-vulkan-drivers or the vendor driver stack.
-# Optional for MP4 capture: sudo apt install pkg-config libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
-
-# Fedora
-sudo dnf install gcc-c++ cmake ninja-build git vulkan-headers vulkan-loader-devel vulkan-tools glslang
-# Also install the Vulkan driver package for your GPU, such as
-# mesa-vulkan-drivers or the vendor driver stack.
-# Optional for MP4 capture: install pkgconf-pkg-config and FFmpeg/libav
-# development packages from your enabled repositories.
-```
-
-Optional but useful:
-
-- Vulkan validation layers for local smoke runs with `--require-validation`.
-- `pkg-config` plus FFmpeg/libav development packages for in-process H.264 MP4
-  capture. CMake controls this with `CUBEY_VIDEO_CAPTURE=AUTO|ON|OFF`; `AUTO`
-  enables it when `libavcodec`, `libavformat`, `libavutil`, and `libswscale`
-  are found.
-
-Use the CMake presets as the default entrypoint:
+Cubey needs a C++20 compiler, CMake, Ninja, Vulkan development packages, a
+working Vulkan driver, and `glslangValidator`.
 
 ```bash
 cmake --preset dev
@@ -258,218 +149,40 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-The default test preset excludes all windowed smoke tests. Headless PNG and
-video smokes run with desktop-session environment variables removed and require
-the offscreen host to report a successful capture. This keeps ordinary local
-and SSH validation independent of SDDM, X11, and Wayland sessions while still
-requiring an accessible Vulkan device.
-
-Run the GLFW/swapchain smoke suite only when opening windows is intentional:
+Then launch a project, for example:
 
 ```bash
-ctest --preset dev-windowed
+./build/dev/projects/ocean/ocean
+./build/dev/projects/fluid/water_3d/water_3d
+./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb
 ```
 
-Windowed tests also require `CUBEY_ALLOW_WINDOWED_TESTS=1` at execution time, so
-a raw `ctest --test-dir build/dev` safely skips them. Directly launching an
-application without `--headless` remains interactive.
+See [Build and run Cubey](docs/getting-started.md) for distro packages,
+headless PNG/MP4 capture, sample assets, validation, configuration precedence,
+and common controls.
 
-GLFW, cgltf, stb, Basis Universal, and GLM fallback sources are resolved by
-CMake through `FetchContent` or `find_package` where appropriate; they are not
-the system packages that make Vulkan itself available.
+## Documentation
 
-Optional sample assets can be fetched at configure time:
+The [docs index](docs/README.md) separates current architecture, project guides,
+evidence, and archived work. Good starting points:
 
-```bash
-cmake --preset dev -DCUBEY_FETCH_GLTF_SAMPLE_ASSETS=ON -DCUBEY_FETCH_HDR_SAMPLE_ASSETS=ON
-```
+- [Design](docs/DESIGN.md) — purpose, tenets, and repository structure.
+- [Architecture notes](docs/architecture/README.md) — current engine and
+  rendering contracts.
+- [Configuration V2](docs/architecture/configuration.md) — typed project-owned
+  config, JSON serialization, CLI precedence, and validation.
+- [Roadmap](docs/roadmap.md) — current readiness and likely next foundation
+  work.
+- [Showcase plan](docs/showcase.md) — shot design, capture contract, and media
+  provenance.
+- [Changelog](CHANGELOG.md) — implementation history and release notes.
 
-Useful windowed smokes:
-
-```bash
-./build/dev/examples/spinning_cube/spinning_cube --frames 300 --width 1280 --height 720
-./build/dev/examples/textured_cube/textured_cube --frames 300 --width 1280 --height 720
-./build/dev/examples/shadow_cube/shadow_cube --frames 300 --width 1280 --height 720
-./build/dev/examples/instanced_cubes/instanced_cubes --frames 300 --width 1280 --height 720
-./build/dev/examples/material_cubes/material_cubes --frames 300 --width 1280 --height 720
-./build/dev/examples/material_cubes/material_cubes --debug-view normal --frames 300 --width 1280 --height 720
-./build/dev/examples/particle_cubes/particle_cubes --frames 300 --width 1280 --height 720
-./build/dev/projects/fractal_2d/fractal_2d --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid/smoke_2d/smoke_2d --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid/water_2d/water_2d --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid/water_3d/water_3d --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid/fire_3d/fire_3d --frames 300 --width 1280 --height 720
-./build/dev/projects/fluid/explosion_3d/explosion_3d --frames 300 --width 1280 --height 720
-./build/dev/projects/atmosphere/atmosphere --frames 300 --width 1280 --height 720
-./build/dev/projects/planet/planet --frames 300 --width 1280 --height 720
-./build/dev/projects/ocean/ocean --ocean-map-size 128 --frames 300 --width 1280 --height 720
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --environment path/to/env.hdr --animation-index 0 --animation-speed 1.0 --frames 300 --width 1280 --height 720
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --debug-view roughness --frames 300 --width 1280 --height 720
-./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb --terrain-heightfield path/to/heightfield --terrain-foreground-height 200 --pbr-environment-source atmosphere --frames 300 --width 1280 --height 720
-./build/dev/projects/pbr_furnace/pbr_furnace --frames 300 --width 1280 --height 720
-```
-
-Windowed `--frames` runs print a final `windowed_perf` FPS/frame-time summary.
-Use `--print-frame-stats` for periodic stdout samples while a window remains
-open; the window title also shows the latest sampled FPS and frame time.
-Shared run options can also be loaded from JSON config files:
-
-```bash
-./build/dev/projects/ocean/ocean --config ocean.json --set ocean.map_size=512
-./build/dev/projects/atmosphere/atmosphere --write-config-template atmosphere-template.json
-./build/dev/projects/planet/planet --write-config-template planet-template.json
-```
-
-Config precedence is defaults, `--config`, named CLI flags, then `--set
-path=value`. Config descriptors carry stable paths, labels, groups, value
-ranges, enum choices, and help text for config templates, generic `--set`
-overrides, and descriptor-backed named CLI flags. Runtime ImGui panels are still
-hand-authored project surfaces, but active projects use shared group/control
-helpers so hover help and hierarchy stay visually consistent.
-Every active executable owns a typed config facade composed from the common
-host/profile schema and only its live project options. Generated templates are
-therefore target-specific, and unrelated project keys are rejected. The
-[Configuration V2 architecture](docs/architecture/configuration.md) records
-the ownership rules and completed clean break; the former global `RunConfig`,
-descriptor registry, parser/runner, and host compatibility bridge are gone.
-`smoke_2d` defaults to a `1024x1024` solver grid and five procedural
-injectors; use `--grid-width`, `--grid-height`, and `--smoke-injectors 1..16` to
-compare other simulation/demo shapes. Use `--smoke-pressure-solver jacobi|rbgs`
-to compare the Jacobi and red-black Gauss-Seidel pressure paths;
-`--profile-diagnostics` is available in headless smoke runs when paired with
-`--profile-output`.
-`water_2d` defaults to a `256x144` MAC grid with APIC particle-grid transfer and
-a PIC/FLIP fallback. It uses particles for liquid motion and a face-centered
-grid for pressure, so it is intentionally a different solver family from
-`smoke_2d`. Runtime UI controls cover reset presets, transfer mode, fill volume,
-hose emission, bottom drain, obstacle shape, substeps, pressure iterations,
-PIC/FLIP blend, collision damping, particle separation, surface/foam shading,
-and Water2D frame/memory diagnostics.
-`water_3d` defaults to a `128x64x48` long-tank APIC liquid scene. It keeps
-particle storage stable and builds sorted particle-index ranges for transfer,
-then renders the default view through a screen-space surface path with
-refraction, absorption, environment reflection, foam, and secondary whitewater.
-By default it uses the shared procedural atmosphere as its sky/reflection/
-lighting source. Surface clouds are composed before the refractive water pass
-and also feed the filtered environment reflection. Use `--no-clouds` for the
-clear procedural path; `--pbr-environment-source static` keeps the older static
-IBL fallback and skips procedural clouds.
-Use `--water3d-transfer apic|pic-flip`, `--water3d-transfer-limit N`,
-`--water3d-p2g-mode active|tiled`, `--water3d-hose`, `--water3d-drain`,
-`--water3d-rain`, `--water3d-wave`, `--water3d-whitewater`, and
-`--profile-diagnostics` for focused solver/render profiling.
-`fire_3d` and `explosion_3d` share the `pyro_3d` dense solver core. They default
-to a `128x128x128` solver volume with a decoupled `64x64x64` shadow volume.
-Their raymarch and shadow paths use the shared procedural atmosphere for dynamic
-light direction, color, sky tint, and exposure by default; pass
-`--pbr-environment-source static` for the legacy fixed-light fallback. Use
-`--grid-width`, `--grid-height`, `--grid-depth`, `--shadow-grid-width`,
-`--shadow-grid-height`, `--shadow-grid-depth`, `--shadow-steps`,
-`--shadow-update-interval`, `--pyro-sources`, `--pyro-source-radius`,
-`--pyro-source-force`, `--pyro-soot`, `--pyro-temperature`, `--pyro-fuel`,
-`--pyro-buoyancy`, `--pyro-ignition-temperature`, `--pyro-burn-rate`,
-`--pyro-heat-output`, `--pyro-soot-yield`, `--pyro-expansion`,
-`--pyro-flame-cooling`, `--pyro-shredding`, `--pyro-turbulence`,
-`--pyro-obstacle-height`, and `--pyro-obstacle-radius` for lower-cost smoke
-tests or heavier local runs. `explosion_3d` also accepts `--explosion-interval`,
-`--explosion-duration`, and `--explosion-boost`.
-`--print-frame-stats` also emits periodic `pyro_3d_gpu` pass timings when
-timestamp queries are available.
-`ocean` is a rendering-focused water project rather than a CFD solver. It now
-starts from the GodotOceanWaves-derived spectrum/FFT/unpack path and exposes
-`--ocean-map-size 128|256|512|1024`,
-`--debug-view final|height|displacement|normal|foam|foam-source|foam-history|lod|footprint|energy-lod|far-field|cloud-shadow|cloud-reflection|cloud-reflection-validity|sky-radiance|reflection|specular|direct-light|ambient-light|exposure|terrain-depth|terrain-shore|terrain-slope|curvature`,
-and `--ocean-cascade all|0|1|2|3|4` for focused inspection. Use
-`--ocean-wire-overlay`, `--ocean-wire-opacity 0.0..1.0`,
-`--ocean-spectral-domains`, `--no-ocean-spectral-domains`,
-`--ocean-terrain-fields`, and `--no-ocean-terrain-fields` for captured
-diagnostics. The GUI groups wave fields, surface material, lighting, scale/LOD,
-shared environment, and diagnostics; each cascade owns its workload and wave
-parameters. Final view composites the shared surface cloud layer over the
-atmosphere sky, projects cloud shadows onto the local ocean, and uses planar
-cloud reflection with a cached environment fallback. Use `--no-clouds` for the
-clear-sky path. The canonical visual matrix is
-`projects/ocean/capture_ocean_review.sh`.
-The old `ocean_ref` and `ocean_legacy` projects were retired after their useful
-comparison and donor work landed in `ocean`; use git history if a deleted
-implementation detail is needed for archaeology.
-The removed coastal terrain demo established the terrain-ocean field vocabulary
-preserved in
-[Terrain-ocean field contract](docs/archive/terrain/terrain-ocean-field-contract.md).
-
-Useful headless PNG smokes:
-
-```bash
-./build/dev/examples/headless_cube/headless_cube --width 640 --height 360 --output /tmp/cubey-headless-cube.png
-./build/dev/projects/fractal_2d/fractal_2d --headless --width 640 --height 360 --output /tmp/cubey-fractal-2d.png
-./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-smoke-2d.png
-./build/dev/projects/fluid/water_2d/water_2d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-2d.png
-./build/dev/projects/fluid/water_3d/water_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-water-3d.png
-./build/dev/projects/fluid/fire_3d/fire_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-fire-3d.png
-./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-explosion-3d.png
-./build/dev/projects/atmosphere/atmosphere --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-atmosphere.png
-./build/dev/projects/planet/planet --headless --frames 120 --width 640 --height 360 --output /tmp/cubey-planet.png
-./build/dev/projects/ocean/ocean --headless --frames 120 --width 640 --height 360 --ocean-map-size 128 --output /tmp/cubey-ocean.png
-./build/dev/projects/pbr_furnace/pbr_furnace --headless --width 640 --height 360 --output /tmp/cubey-pbr-furnace.png
-```
-
-Useful headless video captures when FFmpeg/libav support is enabled:
-
-```bash
-./build/dev/examples/headless_cube/headless_cube --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-headless-cube.mp4
-./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 180 --fps 60 --input path/to/model.glb --environment path/to/env.hdr --capture-video-orbit-degrees 30 --capture-camera-distance-scale 0.75 --output /tmp/cubey-gltf-viewer.mp4
-./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-smoke-2d.mp4
-./build/dev/projects/fluid/water_2d/water_2d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-2d.mp4
-./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-water-3d.mp4
-./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-fire-3d.mp4
-./build/dev/projects/fluid/explosion_3d/explosion_3d --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --output /tmp/cubey-explosion-3d.mp4
-./build/dev/projects/planet/planet --headless --capture video --frames 900 --fps 30 --width 1280 --height 720 --planet-camera-mode orbit --planet-view terminator --planet-disk-coverage 0.48 --output /tmp/cubey-planet-orbit.mp4
-./build/dev/projects/ocean/ocean --headless --capture video --frames 180 --fps 60 --width 1280 --height 720 --ocean-map-size 128 --output /tmp/cubey-ocean.mp4
-```
-
-Use `--require-validation` on local smoke commands when Vulkan validation
-layers are installed.
-
-## Controls
-
-- `textured_cube`: left-drag orbits the camera, Space pauses/resumes
-  auto-orbit, `R` resets the camera, Escape closes.
-- `shadow_cube`: left-drag orbits the camera, `R` resets the camera, Escape
-  closes.
-- `instanced_cubes`: left-drag orbits the camera, `R` resets the camera, Escape
-  closes.
-- `material_cubes`: left-drag orbits the camera, `R` resets the camera, `D`
-  cycles PBR debug views, Escape closes.
-- `particle_cubes`: left-drag orbits the camera, Space pauses/resumes compute
-  updates, `R` resets the camera and cube field, Escape closes.
-- `fractal_2d`: left-drag pans, mouse wheel zooms around the cursor, `R` resets,
-  Escape closes.
-- `smoke_2d`: Space pauses/resumes, `R` resets, `D` cycles
-  dye/velocity/divergence/pressure/speed/vorticity views, Escape
-  closes.
-- `water_2d`: Space pauses/resumes, `R` resets, `D` cycles
-  surface/particles/cells/velocity/divergence/pressure/solid/foam views, Escape
-  closes.
-- `water_3d`: left-drag orbits the camera, mouse wheel zooms, Space
-  pauses/resumes, `R` resets, `D` cycles surface/particles/cells/velocity/
-  pressure/solid/overpack/surface diagnostic/whitewater views, Escape closes.
-- `fire_3d` / `explosion_3d`: left-drag orbits the camera, mouse wheel zooms,
-  Space pauses/resumes, `R` resets, `D` cycles smoke/density/velocity views,
-  Escape closes.
-- `gltf_viewer`: left-drag orbits the camera, `D` cycles PBR debug views,
-  Escape closes.
-- `ocean`: left-drag orbits the camera, mouse wheel
-  zooms, Space pauses/resumes wave time, `R` resets, `D` cycles wave-core debug
-  views, Escape closes.
-- `planet`: left-drag orbits the planet, mouse wheel changes disk distance,
-  `R` resets the orbit, and Escape closes. Surface mode is intentionally not
-  part of orbital V1.
-- `pbr_furnace`: left-drag orbits the camera, Escape closes.
-
-`--debug-view` currently accepts `final`, `base-color`, `normal`,
-`geometric-normal`, `roughness`, `metallic`, `occlusion`, `emissive`, `shadow`,
-`alpha`, and `uv0` on the shared forward-PBR path.
+Active development lives on `main`. The original OpenGL 4 shader playground is
+preserved on the `legacy` branch.
 
 ## License
 
-Cubey is licensed under the [MIT License](LICENSE).
+Cubey source and original project media are licensed under the [MIT License](LICENSE).
+The Damaged Helmet-derived glTF showcase MP4 and poster are a media-only
+CC-BY-NC-4.0 exception with their attribution recorded in the
+[showcase manifest](docs/media/showcase/manifest.json).

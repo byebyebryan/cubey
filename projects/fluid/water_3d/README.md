@@ -77,10 +77,14 @@ Common runs:
 
 [![Water 3D showcase poster](../../../docs/media/showcase/water-3d.png)](../../../docs/media/showcase/water-3d.mp4)
 
-The committed highlight is a dam-only break with wave forcing disabled, initial
-fill `0.60/0.75/0.75`, whitewater intensity `1.35`, speed threshold `0.85`, a
-0.5-second pre-roll, camera distance `2.2`, and a 30-degree eased arc. It uses
-clear sky and retains frames 30:510 from this source capture:
+The highlight follows one substantial dam break from collapse through impact
+and rebound. Wave forcing is disabled so the motion comes entirely from the
+initial volume; the clear sky and close three-quarter view keep the reconstructed
+surface, foam, and whitewater readable.
+
+The exact capture uses initial fill `0.60/0.75/0.75`, whitewater intensity
+`1.35`, speed threshold `0.85`, a 0.5-second pre-roll, camera distance `2.2`,
+and a 30-degree eased arc. It retains frames 30:510 from this source:
 
 ```sh
 ./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 510 --fps 60 --width 1280 --height 720 --capture-camera-distance 2.2 --capture-video-orbit-degrees 30 --time-of-day-mode solar --time-hours 13.5625 --time-speed-hours-per-second 0.875 --no-clouds --cloud-weather-preset broken-cumulus --cloud-quality full --no-water3d-wave --water3d-whitewater --water3d-whitewater-intensity 1.35 --water3d-whitewater-speed-threshold 0.85 --water3d-initial-fill-width 0.60 --water3d-initial-fill-height 0.75 --water3d-initial-fill-depth 0.75 --output outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-source.mp4
