@@ -84,9 +84,11 @@ Current stable foundation pieces:
 
 The public visual showcase has a separate design checkpoint in [Showcase
 Storyboard and Capture Plan](showcase.md). Its eleven shot cards and
-provenance rules are now the storyboard authority; the shared capture timeline,
-authored camera controls, selected media, and GitHub player attachments are not
-implemented yet.
+provenance rules remain the storyboard authority. Four highlights are now
+creatively locked and packaged as committed poster-linked MP4s in the
+[showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
+Water 3D, and Fire 3D. The remaining seven cards and GitHub player attachments
+are future editorial work.
 
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, and terrain products; glTF Viewer
@@ -98,11 +100,11 @@ whole-generation installation is the real bottleneck.
 
 Recommended next feature or foundation streams:
 
-- public visual showcase: complete the creative lock in [Showcase Storyboard
-  and Capture Plan](showcase.md), then implement only the minimal shared
-  capture contract and prove it with the Ocean vertical slice before moving
-  through the condition-, camera-, and simulation-led cohorts; hero selection
-  remains an editorial decision after rendered drafts;
+- public visual showcase: maintain the four-highlight package and provenance
+  manifest, then complete the remaining seven storyboard cards as bounded
+  editorial work. Upload exact committed bytes through GitHub's attachment
+  flow only after the package is pushed; those native-player URLs are not yet
+  recorded;
 - renderer foundation: use the shared dynamic environment handoff for future
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated

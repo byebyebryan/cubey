@@ -9,6 +9,23 @@ Cubey is not a generic game engine, editor, SDK, or backend-agnostic renderer.
 It should still use established graphics terminology and proven public
 precedent when shaping new foundation contracts.
 
+## Showcase
+
+The four locked root-gallery highlights are available as poster-linked,
+committed MP4s. The gallery is intentionally a set of independent project
+stories rather than a merged hero reel.
+
+| Ocean | glTF + Terrain | Water 3D | Fire 3D |
+| --- | --- | --- | --- |
+| [![Ocean](docs/media/showcase/ocean.png)](docs/media/showcase/ocean.mp4) | [![glTF + Terrain](docs/media/showcase/gltf-terrain.png)](docs/media/showcase/gltf-terrain.mp4) | [![Water 3D](docs/media/showcase/water-3d.png)](docs/media/showcase/water-3d.mp4) | [![Fire 3D](docs/media/showcase/fire-3d.png)](docs/media/showcase/fire-3d.mp4) |
+
+These poster links fall back to the committed relative MP4s. Native inline
+players will replace or supplement them after the exact files are pushed and
+uploaded through GitHub's attachment flow; attachment URLs are intentionally
+not recorded yet. See the [showcase media package](docs/media/showcase/README.md)
+and its [manifest](docs/media/showcase/manifest.json) for recipes, hashes, and
+license boundaries.
+
 Active development lives on `main`. The original OpenGL 4 shader playground is
 preserved on the `legacy` branch.
 
@@ -24,10 +41,11 @@ preserved on the `legacy` branch.
   under `projects/`.
 - Headless PNG and optional MP4 output are first-class verification/capture
   paths for projects that can render without a window.
-- The public visual showcase is planned as eleven separate project stories;
-  storyboard scope, capture gates, and media provenance live in the
-  [showcase plan](docs/showcase.md). It does not include internal validation
-  targets or retained reference studies.
+- The public visual showcase currently packages four locked project stories
+  (Ocean, glTF + Terrain, Water 3D, and Fire 3D); the broader eleven-card
+  storyboard, capture gates, and media provenance live in the [showcase plan](docs/showcase.md).
+  The remaining seven cards are future editorial work and do not include
+  internal validation targets or retained reference studies.
 - Runtime debug UI uses ImGui where projects need live controls; Cubey still
   does not aim to become an editor.
 
@@ -158,6 +176,7 @@ Project-local docs:
 - [Fluid 2.5D design](projects/fluid_25d/README.md)
 - [Fire 3D](projects/fluid/fire_3d/README.md)
 - [Explosion 3D](projects/fluid/explosion_3d/README.md)
+- [glTF Viewer](projects/gltf_viewer/README.md)
 - [Planet](projects/planet/README.md)
 - [Terrain](projects/terrain/README.md)
 - [Terrain Hydrology Lab](studies/terrain/hydrology/README.md)

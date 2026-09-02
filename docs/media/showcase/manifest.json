@@ -1,0 +1,174 @@
+{
+  "schema": "cubey.showcase.manifest",
+  "schema_version": 1,
+  "video_contract": {
+    "container": "MP4",
+    "codec": "H.264 High",
+    "width": 1280,
+    "height": 720,
+    "pixel_format": "yuv420p",
+    "frame_rate": "60/1",
+    "constant_frame_rate": true,
+    "frames": 480,
+    "duration_seconds": 8.0,
+    "audio": "none",
+    "faststart": true,
+    "encode": "libx264 medium CRF 24"
+  },
+  "entries": [
+    {
+      "id": "ocean",
+      "project": "ocean",
+      "title": "Ocean",
+      "publication": {
+        "path": "docs/media/showcase/ocean.mp4",
+        "bytes": 6718736,
+        "sha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b"
+      },
+      "poster": {
+        "path": "docs/media/showcase/ocean.png",
+        "timestamp_seconds": 5.0,
+        "format": "PNG",
+        "colorspace": "RGB",
+        "width": 1280,
+        "height": 720,
+        "bytes": 971707,
+        "sha256": "40605723e7c51dc99f4c184442fdea2ad2cc50ee4d7edf6139e171cc78a10e0a"
+      },
+      "source": {
+        "revision": "51b5b5fe5dd5cf667dd634786a95d3c806956dd7",
+        "capture_dirty_diff_sha256": "04dd3d7413d1fa2c18205bfe87bc3ed7085c106777bf493a04e21fea3471a1d0",
+        "ignored_publication": "outputs/showcase/audition-2/ocean/ocean-day-dusk-night-30deg-60fps-publication.mp4"
+      },
+      "recipe": {
+        "capture_command": "build/dev/projects/ocean/ocean --headless --capture video --frames 480 --fps 60 --width 1280 --height 720 --ocean-sea-state windy --ocean-camera-preset default --capture-video-orbit-degrees 30 --no-ocean-size-reference --time-of-day-mode solar --time-hours 14.0 --time-speed-hours-per-second 0.875 --output outputs/showcase/audition-2/ocean/ocean-day-dusk-night-30deg-60fps-source.mp4",
+        "postprocess_commands": [
+          "ffmpeg -y -i outputs/showcase/audition-2/ocean/ocean-day-dusk-night-30deg-60fps-source.mp4 -an -c:v libx264 -preset medium -crf 24 -pix_fmt yuv420p -r 60 -movflags +faststart outputs/showcase/audition-2/ocean/ocean-day-dusk-night-30deg-60fps-publication.mp4"
+        ],
+        "poster_command": "ffmpeg -y -i docs/media/showcase/ocean.mp4 -ss 5.0 -frames:v 1 -vf format=rgb24 docs/media/showcase/ocean.png"
+      },
+      "license": {
+        "source_code": "MIT",
+        "media": "MIT",
+        "attribution": "Cubey-generated media."
+      }
+    },
+    {
+      "id": "gltf-terrain",
+      "project": "gltf_viewer",
+      "title": "glTF + Terrain",
+      "publication": {
+        "path": "docs/media/showcase/gltf-terrain.mp4",
+        "bytes": 1804016,
+        "sha256": "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2"
+      },
+      "poster": {
+        "path": "docs/media/showcase/gltf-terrain.png",
+        "timestamp_seconds": 4.0,
+        "format": "PNG",
+        "colorspace": "RGB",
+        "width": 1280,
+        "height": 720,
+        "bytes": 372380,
+        "sha256": "b4d44e3a05e4fb861694a4b50d88c4542e885f7326906dc5c3f6ebb092419485"
+      },
+      "source": {
+        "revision": "51b5b5fe5dd5cf667dd634786a95d3c806956dd7",
+        "capture_dirty_diff_sha256": "04dd3d7413d1fa2c18205bfe87bc3ed7085c106777bf493a04e21fea3471a1d0",
+        "ignored_publication": "outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-publication.mp4"
+      },
+      "recipe": {
+        "capture_command": "build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1280 --height 720 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --pbr-environment-source atmosphere --time-of-day-mode solar --time-hours 14.0 --time-speed-hours-per-second 0.875 --clouds --cloud-weather-preset broken-cumulus --cloud-quality full --terrain-heightfield cache/terrain/sources/v1/default --terrain-surface-detail filtered-detail --terrain-shadows --terrain-foreground-height 200 --capture-camera-distance-scale 0.70 --capture-video-orbit-degrees 30 --exposure 1.0 --ibl-intensity 1.0 --output outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4",
+        "postprocess_commands": [
+          "ffmpeg -y -i outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4 -an -c:v libx264 -preset medium -crf 24 -pix_fmt yuv420p -r 60 -movflags +faststart outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-publication.mp4"
+        ],
+        "poster_command": "ffmpeg -y -i docs/media/showcase/gltf-terrain.mp4 -ss 4.0 -frames:v 1 -vf format=rgb24 docs/media/showcase/gltf-terrain.png"
+      },
+      "license": {
+        "source_code": "MIT",
+        "media": "CC-BY-NC-4.0",
+        "attribution": "Damaged Helmet: ctxwing (2018 rebuild/conversion, CC-BY-4.0) and theblueturtle_ (2016 earlier model, CC-BY-NC-4.0).",
+        "upstream": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet",
+        "asset_source_revision": "9429648735279342b4c32b8745f7904196607379",
+        "asset_sha256": "a1e3b04de97b11de564ce6e53b95f02954a297f0008183ac63a4f5974f6b32d8",
+        "notice": "This media-only exception does not relicense Cubey source; glTF media is not permissively reusable."
+      }
+    },
+    {
+      "id": "water-3d",
+      "project": "water_3d",
+      "title": "Water 3D",
+      "publication": {
+        "path": "docs/media/showcase/water-3d.mp4",
+        "bytes": 1308520,
+        "sha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece"
+      },
+      "poster": {
+        "path": "docs/media/showcase/water-3d.png",
+        "timestamp_seconds": 2.0,
+        "format": "PNG",
+        "colorspace": "RGB",
+        "width": 1280,
+        "height": 720,
+        "bytes": 238897,
+        "sha256": "22688a05fcefec6abdee2706ac9f465a3cdef5fedfd904f56cfeaded86fc5376"
+      },
+      "source": {
+        "revision": "51b5b5fe5dd5cf667dd634786a95d3c806956dd7",
+        "capture_dirty_diff_sha256": "145e08b447c5d24137d9b6e4ebd28192a92b2575ad42f21c5f75ae0d881d451b",
+        "ignored_publication": "outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-publication.mp4"
+      },
+      "recipe": {
+        "capture_command": "build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 510 --fps 60 --width 1280 --height 720 --capture-camera-distance 2.2 --capture-video-orbit-degrees 30 --time-of-day-mode solar --time-hours 13.5625 --time-speed-hours-per-second 0.875 --no-clouds --cloud-weather-preset broken-cumulus --cloud-quality full --no-water3d-wave --water3d-whitewater --water3d-whitewater-intensity 1.35 --water3d-whitewater-speed-threshold 0.85 --water3d-initial-fill-width 0.60 --water3d-initial-fill-height 0.75 --water3d-initial-fill-depth 0.75 --output outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-source.mp4",
+        "postprocess_commands": [
+          "ffmpeg -y -i outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-source.mp4 -filter_complex '[0:v]trim=start_frame=30:end_frame=510,setpts=PTS-STARTPTS,format=yuv420p[v]' -map '[v]' -an -r 60 -c:v libx264 -crf 18 -preset medium -pix_fmt yuv420p -movflags +faststart outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-retained.mp4",
+          "ffmpeg -y -i outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-retained.mp4 -an -c:v libx264 -preset medium -crf 24 -pix_fmt yuv420p -r 60 -movflags +faststart outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-publication.mp4"
+        ],
+        "poster_command": "ffmpeg -y -i docs/media/showcase/water-3d.mp4 -ss 2.0 -frames:v 1 -vf format=rgb24 docs/media/showcase/water-3d.png"
+      },
+      "license": {
+        "source_code": "MIT",
+        "media": "MIT",
+        "attribution": "Cubey-generated media."
+      }
+    },
+    {
+      "id": "fire-3d",
+      "project": "fire_3d",
+      "title": "Fire 3D",
+      "publication": {
+        "path": "docs/media/showcase/fire-3d.mp4",
+        "bytes": 877564,
+        "sha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348"
+      },
+      "poster": {
+        "path": "docs/media/showcase/fire-3d.png",
+        "timestamp_seconds": 4.0,
+        "format": "PNG",
+        "colorspace": "RGB",
+        "width": 1280,
+        "height": 720,
+        "bytes": 102930,
+        "sha256": "fbd8b576ade4de1efcb09cf221a4c64a3432b2ba242d94e3752fa193eed34e04"
+      },
+      "source": {
+        "revision": "51b5b5fe5dd5cf667dd634786a95d3c806956dd7",
+        "capture_dirty_diff_sha256": "f9c33ca0b26675d867b96c310f5d4abb5146f69cfe07cca0435713a4643ba61e",
+        "ignored_publication": "outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-publication.mp4"
+      },
+      "recipe": {
+        "capture_command": "build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 660 --fps 60 --width 1280 --height 720 --capture-video-orbit-degrees 0 --capture-camera-distance 1.65 --pyro-sources 1 --pyro-obstacle-radius 0 --time-of-day-mode solar --time-hours 12.875 --time-speed-hours-per-second 0.875 --pyro-source-radius 0.11 --pyro-soot 13 --pyro-soot-yield 0.35 --pyro-expansion 1.10 --pyro-flame-cooling 3.4 --pyro-shredding 4.2 --pyro-turbulence 1.2 --pyro-buoyancy 2.1 --pyro-source-force 8.0 --output outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-source.mp4",
+        "postprocess_commands": [
+          "ffmpeg -y -i outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-source.mp4 -filter_complex '[0:v]trim=start_frame=180:end_frame=660,setpts=PTS-STARTPTS,format=yuv420p[v]' -map '[v]' -an -r 60 -c:v libx264 -crf 18 -preset medium -movflags +faststart outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-retained.mp4",
+          "ffmpeg -y -i outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-retained.mp4 -an -c:v libx264 -preset medium -crf 24 -pix_fmt yuv420p -r 60 -movflags +faststart outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-publication.mp4"
+        ],
+        "poster_command": "ffmpeg -y -i docs/media/showcase/fire-3d.mp4 -ss 4.0 -frames:v 1 -vf format=rgb24 docs/media/showcase/fire-3d.png"
+      },
+      "license": {
+        "source_code": "MIT",
+        "media": "MIT",
+        "attribution": "Cubey-generated media."
+      }
+    }
+  ]
+}

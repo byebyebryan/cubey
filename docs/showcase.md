@@ -1,8 +1,10 @@
 # Showcase Storyboard and Capture Plan
 
 Status: design authority. This document defines what the public visual
-showcase should communicate and the capture work that follows. It does not
-claim that the storyboard shots, media, or capture automation exist yet.
+showcase should communicate and the capture work that follows. Four root
+highlights are now creatively locked and packaged as committed media; the
+remaining seven storyboard cards and GitHub attachment publication remain
+future editorial work.
 
 The showcase is a set of small project stories whose render inputs and capture
 recipes can be reproduced. It is not a single merged reel and it is not a
@@ -17,21 +19,22 @@ The first public-facing set contains these eleven active projects:
 | Project | Public role | Story family |
 | --- | --- | --- |
 | `atmosphere` | Root-gallery candidate; hero eligibility deferred | Condition-led |
-| `ocean` | Root-gallery candidate; hero eligibility deferred | Condition-led |
+| `ocean` | Packaged root-gallery highlight; hero eligibility deferred | Condition-led |
 | `planet` | Root-gallery candidate; hero eligibility deferred | Condition-led |
 | `terrain` | Root-gallery candidate; hero eligibility deferred | Camera-led |
-| `gltf_viewer` | Root-gallery candidate; hero eligibility deferred | Camera-led |
+| `gltf_viewer` | Packaged root-gallery highlight; hero eligibility deferred | Camera-led |
 | `smoke_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
-| `water_3d` | Root-gallery candidate; hero eligibility deferred | Simulation-led |
-| `fire_3d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
+| `water_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
+| `fire_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
 | `explosion_3d` | Root-gallery candidate; hero eligibility deferred | Simulation-led |
 | `fractal_2d` | Supporting project gallery; root inclusion after editorial review | Camera-led |
 
 “Root-gallery candidate” describes editorial eligibility, not a final ordering
-or hero decision. The hero is selected only after the rendered clips are
-reviewed together. Every project may retain a project-local clip even when it
-does not enter the first root gallery.
+or hero decision. The four packaged highlights are ordered Ocean, glTF +
+Terrain, Water 3D, and Fire 3D; hero selection remains deferred. Every project
+may retain a project-local clip even when it does not enter the first root
+gallery.
 
 `pbr_furnace` is explicitly excluded from this public set. It is an internal
 white-furnace PBR validation target and remains useful for technical checks;
@@ -152,36 +155,37 @@ unjustified subsystem or produce an unreadable intermediate state.
 
 ### Ocean — one sea, changing light (`ocean`)
 
-- **Takeaway / cinematic verb:** Compare the same ocean under a changing day
-  and sea state, showing lighting, waves, foam, and reflection as one system.
-- **Opening:** Calm swell before sunrise from a low/mid horizon viewpoint.
-- **Development:** Dawn becomes daylight while the wave condition moves from
-  Calm toward Windy; the horizon remains the visual anchor.
-- **Payoff:** A Stormy state arrives under low warm light, making whitecaps,
-  roughness, self-shadow, and cloud reflection legible.
-- **Ending:** Resolve into a moonlit residual swell and hold the horizon rather
-  than ending on a camera turn.
-- **Camera:** Fixed low/mid horizon camera. At most, use an extremely subtle
-  lateral drift or a 5–10 degree bounded arc across the whole clip if a static
-  frame feels lifeless. Do not use a full orbit merely for suite consistency.
-- **Condition/config intent:** Keep seeds, map quality, cascades, environment,
-  and camera fixed. Change solar time and Calm/Windy/Stormy sea-state intent in
-  a controlled sequence. Prefer a continuous runtime transition; if spectral
-  preset changes cannot transition cleanly without a new wave-morphing system,
-  render same-camera fixed-step/reproducible segments and use restrained editorial
-  dissolves.
-- **Duration/transitions:** 12–14 seconds: Calm dawn, Windy daylight, Stormy
-  sunset, moonlit resolve. Continuous preferred; same-camera dissolve is the
-  explicit fallback.
-- **Publication role:** Root-gallery candidate; hero eligibility deferred.
+- **Takeaway / cinematic verb:** Hold one Windy ocean condition while afternoon
+  light crosses golden hour, dusk, and night, showing waves, foam, reflection,
+  and atmosphere as one system.
+- **Opening:** Stable afternoon light immediately establishes the wider
+  low/mid-horizon composition and foreground wave scale.
+- **Development:** The sun approaches the horizon while the locked camera arc
+  reveals changing reflection and surface structure.
+- **Payoff:** Warm low light makes whitecaps, roughness, self-shadow, and cloud
+  reflection legible together.
+- **Ending:** Resolve into established night lighting and hold the horizon as
+  the camera arc comes to rest.
+- **Camera:** Low/mid horizon camera with the gallery's locked eased 30-degree
+  bounded arc across the whole clip. Keep pitch, distance, and the horizon
+  anchor fixed; this remains a partial observational move rather than a full
+  turntable orbit.
+- **Condition/config intent:** Lock Windy, cloud-rich atmosphere, seeds, map
+  quality, cascades, camera pitch, and distance. Advance solar time
+  continuously from 14:00 to approximately 21:00 at 0.875 hours per second.
+- **Duration/transitions:** Eight seconds and 480 native frames at 60 FPS, with
+  no cuts or dissolves.
+- **Publication role:** Packaged root-gallery highlight; hero eligibility
+  deferred.
 - **Current feasibility:** Ocean already exposes Calm/Windy/Stormy presets,
-  named camera presets, optional orbit spin, atmosphere/cloud lighting, and
-  headless video timing ([Ocean README](../projects/ocean/README.md)). A zero
-  orbit speed gives the desired stable baseline, but headless capture currently
-  advances elapsed time rather than authoring a sequence of sea states.
-- **Bounded missing controls:** Add a project-owned capture recipe for time and
-  sea-state beats, plus a deterministic transition or segment boundary. Keep
-  spectrum ownership in Ocean; do not move wave presets into the host timeline.
+  named camera presets, atmosphere/cloud lighting, headless video timing, and
+  an optional eased `--capture-video-orbit-degrees` move
+  ([Ocean README](../projects/ocean/README.md)). Zero degrees gives the stable
+  baseline, while the showcase recipe uses the reviewed 30-degree arc.
+  The older continuous spin-rate control remains available for profiling.
+- **Bounded missing controls:** The camera, condition, solar sweep, duration,
+  and cadence are locked. Keep spectrum ownership in Ocean; no sea-state
+  timeline or wave-morphing system is required for this shot.
 
 ### Planet — follow the terminator (`planet`)
 
@@ -253,32 +257,32 @@ unjustified subsystem or produce an unreadable intermediate state.
   deformation, materials, and lighting as one coherent viewer experience.
 - **Opening:** A clean three-quarter frame establishes the complete asset and
   its ground/environment relationship.
-- **Development:** The chosen glTF animation begins while the camera makes a
-  slow partial orbit, revealing a second silhouette and material response.
-- **Payoff:** The most expressive pose aligns with the strongest three-quarter
-  view and environment light.
-- **Ending:** The animation and camera settle on that pose without looping at a
-  distracting seam.
-- **Camera:** Controlled partial orbit around the imported scene bounds. The
-  camera should frame the asset, not expose viewer UI or a diagnostic pass.
-- **Condition/config intent:** One redistributable animated glTF/GLB with
-  recorded license and checksum; one animation index and speed; stable
-  atmosphere/cloud or HDR environment. Terrain or ocean backdrop is optional
-  but must not compete with the asset.
-- **Duration/transitions:** 8–10 seconds, continuous animation plus eased
-  camera arc. If the animation is shorter, select a clean loop segment rather
-  than cutting between assets.
-- **Publication role:** Root-gallery candidate; hero eligibility deferred.
+- **Development:** The camera makes a slow partial orbit while solar lighting
+  moves toward golden hour, revealing a second silhouette and material
+  response.
+- **Payoff:** Warm low light aligns with the strongest three-quarter view,
+  followed by the helmet's emissive details becoming dominant at night.
+- **Ending:** The camera settles on the established emissive night pose.
+- **Camera:** Controlled eased 30-degree partial orbit around the imported
+  scene bounds. The camera should frame the asset, not expose viewer UI or a
+  diagnostic pass.
+- **Condition/config intent:** The ignored Khronos Damaged Helmet GLB with
+  recorded checksum, attributed under a media-only `CC-BY-NC-4.0` boundary;
+  procedural atmosphere, full-quality broken-cumulus clouds, and the canonical
+  terrain backdrop remain fixed.
+- **Duration/transitions:** Eight seconds and 480 native frames at 60 FPS, with
+  one continuous eased camera and lighting arc.
+- **Publication role:** Packaged root-gallery highlight; hero eligibility
+  deferred.
 - **Current feasibility:** The viewer has typed animation index/speed/paused
   options, scene-bound orbit camera setup, shared environment integration, and
   an optional eased `--capture-video-orbit-degrees` move with a
-  scene-relative `--capture-camera-distance-scale`. Omitting the authored move
-  preserves the historical automatic orbit; zero degrees gives a fixed shot.
-  The asset remains an input requirement rather than a bundled showcase choice
+  scene-relative `--capture-camera-distance-scale`. The packaged recipe uses
+  the canonical terrain backdrop and full broken-cumulus clouds
   ([viewer config](../projects/gltf_viewer/gltf_viewer_config.h)).
-- **Bounded missing controls:** Select and record one legal showcase asset and
-  lock its animation segment, initial pose, arc extent, and ending hold. Keep
-  those choices in the shot recipe; a generic animation timeline is not needed.
+- **Bounded missing controls:** The pose, framing, 30-degree arc, lighting
+  sweep, duration, cadence, and explicit media-only license notice are locked;
+  no animation timeline is needed.
 
 ### Smoke 2D — structure from motion (`smoke_2d`)
 
@@ -342,69 +346,72 @@ unjustified subsystem or produce an unreadable intermediate state.
 
 ### Water 3D — collapse and rebound (`water_3d`)
 
-- **Takeaway / cinematic verb:** Show a 3D liquid volume leaving its dam,
-  crossing the long tank, colliding, and resolving into whitewater.
-- **Opening:** The left-biased dam-break volume is poised in the long tank;
-  the water surface and surrounding environment are already initialized.
-- **Development:** The bulk flow crosses the tank and develops a readable
-  crest, with the stable three-quarter view preserving depth.
-- **Payoff:** Impact, screen-space surface reconstruction, foam, and secondary
-  whitewater all read in one frame.
-- **Ending:** Let the rebound and reflection settle without switching to a
-  diagnostic view.
-- **Camera:** Stable three-quarter observational camera. A very small bounded
-  dolly is optional; no automatic orbit is required for the story.
-- **Condition/config intent:** Default long showcase tank, APIC, wave driver
-  only when it supports the dam-break read, whitewater enabled, deterministic
-  fixed timestep, and a stable procedural atmosphere or explicitly recorded
-  HDR environment. Optional rain/hose/drain are off unless a later card is
-  authored around them.
-- **Duration/transitions:** 8–10 seconds from reset, continuous simulation with
-  a short ending hold.
-- **Publication role:** Root-gallery candidate; hero eligibility deferred.
+- **Takeaway / cinematic verb:** Show a substantial 3D dam break leaving its
+  fill, spreading through the long tank, and resolving into whitewater without
+  an artificial recurring wave.
+- **Opening:** The enlarged left-biased fill is poised behind the dam with the
+  water surface and clear-sky environment already initialized.
+- **Development:** The bulk volume collapses and spreads while the eased
+  three-quarter move preserves the crest, tank edges, and depth cues.
+- **Payoff:** The impact, reconstructed surface, foam, and secondary
+  whitewater remain legible in the close framing.
+- **Ending:** Let the dam-only sheet settle into a broad shallow tank without
+  switching to a diagnostic view.
+- **Camera:** Three-quarter observational framing at distance `2.2` with the
+  gallery's locked eased 30-degree bounded arc. Keep camera pitch fixed.
+- **Condition/config intent:** APIC, wave forcing off, initial fill
+  `0.60/0.75/0.75`, whitewater intensity `1.35`, speed threshold `0.85`,
+  deterministic fixed timestep, and clear sky. Rain, hose, and drain remain
+  off.
+- **Duration/transitions:** Eight retained seconds and 480 native frames at 60
+  FPS after a 0.5-second simulation pre-roll, with no editorial cut.
+- **Publication role:** Packaged root-gallery highlight; hero eligibility
+  deferred.
 - **Current feasibility:** Water 3D has the long showcase tank, deterministic
   headless fixed-step driver, screen-space surface/foam/whitewater renderer,
-  optional wave/hose/drain/rain controls, and project-owned capture framing
-  ([Water 3D README](../projects/fluid/water_3d/README.md)). An optional
-  `--capture-video-orbit-degrees` authors an eased bounded arc, with zero
-  degrees selecting the stable three-quarter shot; omission preserves the
-  historical automatic video orbit. `--capture-camera-distance` controls the
-  absolute tank framing without changing windowed defaults.
-- **Bounded missing controls:** Lock the selected fixed or restrained-orbit
-  recipe and ending hold through visual review. No shared camera mode or host
-  timeline work is required.
+  config-v2 startup bindings for fill and wave controls, and project-owned
+  capture framing ([Water 3D README](../projects/fluid/water_3d/README.md)).
+  `--capture-video-orbit-degrees` authors the eased bounded arc and
+  `--capture-camera-distance` controls absolute tank framing without changing
+  windowed defaults; `--no-clouds`, `--no-water3d-wave`, and the selected
+  whitewater/fill overrides reproduce the package.
+- **Bounded missing controls:** The 30-degree arc, distance, clear-sky
+  dam-only condition, pre-roll, duration, and 60 FPS publication cadence are
+  locked. No shared camera mode or host timeline work is required.
 
 ### Fire 3D — flow around form (`fire_3d`)
 
-- **Takeaway / cinematic verb:** Show a sustained pyro plume dividing around a
-  solid obstacle, with volumetric fire, smoke, and shadow structure visible.
-- **Opening:** A quiet volume and obstacle establish scale before ignition is
-  fully developed.
-- **Development:** The plume rises and wraps around the obstacle; the flame
+- **Takeaway / cinematic verb:** Show a sustained balanced pyro plume with
+  volumetric fire and smoke structure against a clean sky.
+- **Opening:** Three seconds of hidden warm-up provide a fully formed plume in
+  stable daylight; one source establishes the scale without an obstacle.
+- **Development:** The plume rises with visible side breakup while the flame
   core and darker smoke separate visually.
-- **Payoff:** A mature plume shows turbulence, rim/scatter, and volume shadows
-  against the environment.
-- **Ending:** Hold the mature flow and stop before density decay makes it
+- **Payoff:** A mature balanced plume shows turbulence, rim/scatter, and volume
+  structure through dusk and night.
+- **Ending:** Hold the mature flow before density decay makes the composition
   visually thin.
-- **Camera:** Very slow 10–15 degree bounded arc around the volume, or a locked
-  three-quarter view if the arc competes with the flame. The plume is the
-  dominant motion.
-- **Condition/config intent:** Fire mode, one source, obstacle enabled, stable
-  source/fire model and atmosphere lighting. Use the final smoke view, not
-  density or velocity diagnostics.
-- **Duration/transitions:** 7–9 seconds after a short warm-up, continuous
-  simulation with a gentle camera move and ending hold.
-- **Publication role:** Supporting project gallery; root inclusion after
-  editorial review.
+- **Camera:** Locked three-quarter view at distance `1.65`; the plume remains
+  the dominant motion.
+- **Condition/config intent:** Fire mode, one source, obstacle disabled, no
+  terrain or clouds, and the reviewed Balanced parameters: source radius
+  `0.11`, soot `13`, soot yield `0.35`, expansion `1.10`, flame cooling `3.4`,
+  shredding `4.2`, turbulence `1.2`, buoyancy `2.1`, and source force `8.0`.
+  Use the final smoke view, not density or velocity diagnostics.
+- **Duration/transitions:** Three seconds of hidden warm-up followed by eight
+  retained seconds and 480 native frames at 60 FPS, retaining the 15:30–22:30
+  solar window with no camera cut.
+- **Publication role:** Packaged root-gallery highlight; hero eligibility
+  deferred.
 - **Current feasibility:** Fire uses the shared dense 3D pyro solver, exposes
   source/fire/obstacle/render settings, and has a deterministic headless driver
   with project-owned camera distance and eased bounded-orbit controls
   ([Fire 3D README](../projects/fluid/fire_3d/README.md)). Zero capture-orbit
-  degrees gives the accepted fixed view; omission preserves the historical
-  automatic video orbit for compatibility.
-- **Bounded missing controls:** Record and lock warm-up/source timing,
-  environment state, and the ending hold. Keep pyro source and rendering policy
-  project-owned.
+  degrees gives the accepted fixed view. The selected Balanced simulation
+  overrides and retained window are recorded in the package manifest.
+- **Bounded missing controls:** Warm-up, source timing, Balanced parameters,
+  environment, fixed camera, duration, and cadence are locked. Keep pyro source
+  and rendering policy project-owned.
 
 ### Explosion 3D — impulse to aftermath (`explosion_3d`)
 
@@ -468,6 +475,27 @@ unjustified subsystem or produce an unreadable intermediate state.
 
 ## Media and provenance contract
 
+### Locked root-gallery capture standard
+
+The current Ocean, Water 3D, Fire 3D, and glTF + Terrain highlights use one
+native capture and publication standard:
+
+- render masters at 1280x720 and exact 60 FPS CFR;
+- render every output frame natively rather than duplicating or interpolating
+  frames from a lower-rate capture;
+- use 480 frames for each selected eight-second highlight, including any
+  project-owned warm-up rendered before the retained range;
+- encode silent H.264 High-profile, yuv420p publication files with libx264
+  `medium`, CRF 24, exact 60 FPS, and fast-start metadata; and
+- retain the higher-quality capture master beside the publication derivative
+  until the committed artifact and provenance record are approved.
+
+Ocean, Water 3D, and glTF + Terrain share the reviewed eased 30-degree camera
+arc; Fire remains fixed. A 30 FPS derivative may be produced by deterministic
+2:1 decimation for a constrained downstream target, but it is not the canonical
+gallery publication. Do not derive 24 FPS from the 60 FPS master as a default:
+the non-integer cadence requires a separate editorial decision.
+
 The publication model is intentionally hybrid:
 
 1. Auditions and diagnostic packs are written below an ignored path such as
@@ -504,15 +532,17 @@ reviewable artifact before the next cohort begins.
 
 ### 1. Creative lock
 
-Turn the cards above into a small machine-readable inventory/shot-card record.
-Resolve any remaining questions about beat timing, camera intent, condition
-sequence, and publication role. Do not implement a timeline until every
-project has an approved story and the suite has been checked for repetitive
-camera language.
+The four current root highlights have completed this lock: beat timing, camera
+intent, scene conditions, publication role, and suite order are recorded in the
+committed media manifest. Keep the remaining seven cards in storyboard form
+until their own editorial decisions are made; do not implement a generic
+timeline for them.
 
-Exit gate: eleven approved cards; exclusions remain explicit; no hero is named.
+Exit gate for the current package: four approved cards in the order Ocean,
+glTF + Terrain, Water 3D, and Fire 3D; exclusions remain explicit and no hero
+is named.
 
-### 2. Minimal shared capture contract
+### 2. Minimal shared capture contract (current four complete)
 
 Specify only shared host concerns:
 
@@ -526,20 +556,24 @@ Project-owned hooks express condition and scene timelines. Shared code must not
 own Ocean sea states, Planet phase semantics, Water scenarios, Pyro impulses,
 asset animation choices, or Fractal destinations.
 
-Exit gate: the contract can express a fixed-camera condition clip, a bounded
-camera reveal, and a stable simulation observation without introducing a
-generic cinematic editor.
+The current four prove the contract: Ocean and glTF use bounded 30-degree
+moves, Water uses the same move with a project-owned dam-only recipe, and Fire
+uses a fixed camera with project-owned warm-up and retained-window trimming.
 
-### 3. Ocean vertical slice
+Exit gate for the current package: the contract expresses a fixed-camera
+condition clip, a bounded camera reveal, and a stable simulation observation
+without introducing a generic cinematic editor.
 
-Use Ocean to validate the whole design because it separates a stable camera
-from changing lighting and sea conditions. Produce ignored auditions and a
-provenance manifest for the fixed-camera Calm → Windy → Stormy concept. Prefer
-continuous runtime transitions; prove the same-camera dissolve fallback only
-if spectral preset transitions are not justified.
+### 3. Ocean vertical slice (complete)
 
-Exit gate: one fixed-step/reproducible Ocean story can be captured without UI
-and the result can be reviewed as a storyboard, poster, and short video.
+Ocean validated the design with a Windy condition, cloud-rich environment,
+continuous 14:00-to-21:00 solar sweep, and a bounded 30-degree camera arc.
+The ignored audition and committed provenance manifest are retained; the
+earlier fixed-camera Calm → Windy → Stormy concept remains storyboard history,
+not the current package recipe.
+
+Exit gate: the fixed-step/reproducible Ocean story is captured without UI and
+reviewable as a storyboard, poster, and short video.
 
 ### 4. Implement cohorts
 
@@ -549,32 +583,37 @@ Move through cohorts that share creative shape, not merely source directory:
 - **Camera-led:** Terrain, glTF Viewer, Fractal 2D.
 - **Simulation-led:** Smoke 2D, Water 2D, Water 3D, Fire 3D, Explosion 3D.
 
-Each project gets a project-owned shot recipe and a draft capture. Missing
-controls stay bounded to the card; a new shared abstraction requires a
+The current four have project-owned shot recipes, final captures, posters, and
+provenance. The remaining seven cards are future editorial cohorts. Missing
+controls stay bounded to each card; a new shared abstraction requires a
 separate architecture review.
 
-Exit gate: every card is reproducible in draft form, with no capture-only
-hardcoded behavior contradicting the approved story.
+Exit gate for the current package: each selected card is reproducible from its
+recorded recipe, with no capture-only hardcoded behavior contradicting the
+approved story.
 
 ### 5. Suite editorial gate
 
-Review the drafts together at README size. Check opening legibility, payoff,
-dead time, repeated arcs, color/pacing balance, condition readability, and
-whether motion adds information. Select the hero and root-gallery order only
-here, after rendered evidence exists.
+The four final captures were reviewed together at README size for opening
+legibility, payoff, dead time, repeated arcs, color/pacing balance, condition
+readability, and whether motion adds information. Their root-gallery order is
+now locked; hero selection remains deferred. The remaining seven cards still
+need this editorial pass.
 
-Exit gate: one approved final cut per project, an approved root-gallery set,
-and a hero chosen from the actual rendered candidates.
+Exit gate for the current package: four approved final cuts and an approved
+root-gallery set, with no hero chosen from outside the rendered candidates.
 
 ### 6. Final masters
 
-Render the selected clips at one source revision with the agreed resolution,
-FPS, H.264 settings, posters, exact effective configs, commands, asset
-provenance, and hashes. Keep auditions and diagnostics ignored. Commit the
-masters and provenance in reviewable groups.
+The four selected clips are rendered at one source revision with the agreed
+resolution, FPS, H.264 settings, posters, exact effective configs, commands,
+asset provenance, and hashes. Auditions and diagnostics remain ignored; the
+publication MP4s and manifest are committed in this package. Render the
+remaining seven only after their editorial locks.
 
-Exit gate: each selected file passes codec/dimension/duration/hash checks and
-can be regenerated from the recorded recipe.
+Exit gate for the current package: each selected file passes
+codec/dimension/duration/hash checks and can be regenerated from the recorded
+recipe.
 
 ### 7. GitHub attachment publication and verification
 
@@ -590,7 +629,7 @@ changes.
 
 ## Design boundary
 
-This document is the creative and capture-planning checkpoint. It does not
-authorize implementation of camera paths, timeline APIs, project config
-fields, capture scripts, media files, README players, uploads, commits, or
-pushes. Those are follow-on slices after the cards and gates are accepted.
+This document records the approved camera and 60 FPS capture/publication
+standard for the current four root-gallery highlights. It does not authorize
+new timeline APIs, unrelated project capture work, GitHub uploads, commits, or
+pushes. Those remain explicit follow-on actions.

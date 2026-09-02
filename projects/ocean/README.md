@@ -18,6 +18,9 @@ GodotOceanWaves is MIT licensed; its notice is in
 ./build/dev/projects/ocean/ocean
 ./build/dev/projects/ocean/ocean --headless --frames 120 \
   --width 1280 --height 720 --output /tmp/cubey-ocean.png
+./build/dev/projects/ocean/ocean --headless --capture video --frames 480 --fps 60 \
+  --width 1280 --height 720 --ocean-sea-state windy \
+  --capture-video-orbit-degrees 30 --output /tmp/cubey-ocean.mp4
 ```
 
 The default is the `Windy` sea state with a 512 map, half-precision wave fields,
@@ -34,6 +37,26 @@ Sea state changes wave energy, whitecap response, foam, roughness, self-shadow,
 and far-field material response. It does not change field quality, active work
 count, camera, environment, seeds, or cascade directions. Manual edits to
 preset-owned settings appear as `Custom` in the GUI.
+
+## Showcase highlight
+
+[![Ocean showcase poster](../../docs/media/showcase/ocean.png)](../../docs/media/showcase/ocean.mp4)
+
+The committed highlight uses Windy, the default camera, a 30-degree eased
+bounded arc, no size-reference pillar, and a 14:00-to-21:00 solar sweep over
+480 frames at 60 FPS. Reproduce the ignored capture source with:
+
+```sh
+./build/dev/projects/ocean/ocean --headless --capture video --frames 480 --fps 60 \
+  --width 1280 --height 720 --ocean-sea-state windy \
+  --ocean-camera-preset default --capture-video-orbit-degrees 30 \
+  --no-ocean-size-reference --time-of-day-mode solar --time-hours 14.0 \
+  --time-speed-hours-per-second 0.875 \
+  --output outputs/showcase/audition-2/ocean/ocean-day-dusk-night-30deg-60fps-source.mp4
+```
+
+See the [showcase media manifest](../../docs/media/showcase/manifest.json) for
+the publication hash and complete provenance.
 
 ## Controls
 
@@ -71,6 +94,7 @@ overrides include:
 --ocean-detail-anti-repeat-strength 0..1
 --ocean-detail-filter adaptive|bilinear|bicubic
 --ocean-camera-orbit-spin-deg-per-sec -360..360
+--capture-video-orbit-degrees 0..180
 --ocean-size-reference | --no-ocean-size-reference
 --ocean-cascade all|0|1|2|3|4
 --ocean-surface-mode flat|curved-far
@@ -78,6 +102,12 @@ overrides include:
 --cloud-quality quarter|half|full
 --no-clouds
 ```
+
+For a deterministic headless-video move, `--capture-video-orbit-degrees N`
+authors an eased bounded orbit over the complete frame range; use `0` for a
+fixed camera or omit it to preserve Ocean's existing fixed default. The older
+`--ocean-camera-orbit-spin-deg-per-sec` remains available for continuous spins
+and profiling runs, but cannot be combined with the bounded move.
 
 ## Rendering
 

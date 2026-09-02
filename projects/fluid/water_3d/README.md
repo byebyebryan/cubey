@@ -60,7 +60,7 @@ Common runs:
 ```sh
 ./build/dev/projects/fluid/water_3d/water_3d
 ./build/dev/projects/fluid/water_3d/water_3d --headless --frames 24 --output outputs/water-3d.png
-./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 240 --fps 30 --capture-camera-distance 2.5 --capture-video-orbit-degrees 15 --output outputs/water-3d.mp4
+./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 480 --fps 60 --capture-camera-distance 2.5 --capture-video-orbit-degrees 30 --output outputs/water-3d.mp4
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 48 --grid-height 48 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --grid-width 128 --grid-height 64 --grid-depth 48
 ./build/dev/projects/fluid/water_3d/water_3d --environment build/dev/_deps/cubey_hdr_sample_assets-src/venetian_crossroads_2k.hdr
@@ -72,6 +72,22 @@ Common runs:
 ./build/dev/projects/fluid/water_3d/water_3d --pbr-environment-source static
 ./build/dev/projects/fluid/water_3d/water_3d --terrain-heightfield cache/terrain/sources/v1/default --terrain-foreground-height 5
 ```
+
+## Showcase highlight
+
+[![Water 3D showcase poster](../../../docs/media/showcase/water-3d.png)](../../../docs/media/showcase/water-3d.mp4)
+
+The committed highlight is a dam-only break with wave forcing disabled, initial
+fill `0.60/0.75/0.75`, whitewater intensity `1.35`, speed threshold `0.85`, a
+0.5-second pre-roll, camera distance `2.2`, and a 30-degree eased arc. It uses
+clear sky and retains frames 30:510 from this source capture:
+
+```sh
+./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 510 --fps 60 --width 1280 --height 720 --capture-camera-distance 2.2 --capture-video-orbit-degrees 30 --time-of-day-mode solar --time-hours 13.5625 --time-speed-hours-per-second 0.875 --no-clouds --cloud-weather-preset broken-cumulus --cloud-quality full --no-water3d-wave --water3d-whitewater --water3d-whitewater-intensity 1.35 --water3d-whitewater-speed-threshold 0.85 --water3d-initial-fill-width 0.60 --water3d-initial-fill-height 0.75 --water3d-initial-fill-depth 0.75 --output outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-source.mp4
+```
+
+The retained and publication trim commands, exact hash, and poster timestamp
+are recorded in the [showcase media manifest](../../../docs/media/showcase/manifest.json).
 
 Interactive controls include fill size/placement, render-domain scale, hose,
 drain, wave, rain, solver settings, surface reconstruction, whitewater, and

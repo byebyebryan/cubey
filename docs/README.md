@@ -12,6 +12,8 @@ scratch material out of the main path.
 - [Roadmap](roadmap.md): current implementation phases and next work.
 - [Showcase storyboard and capture plan](showcase.md): public demo scope,
   cinematic shot cards, media provenance, and gated capture work.
+- [Showcase media package](media/showcase/README.md): the four locked root
+  highlights, committed poster-linked MP4s, hashes, recipes, and licensing.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
 
@@ -92,6 +94,7 @@ Active projects:
 - [Water 3D](../projects/fluid/water_3d/README.md)
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
+- [glTF Viewer](../projects/gltf_viewer/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Planet](../projects/planet/README.md)
 
