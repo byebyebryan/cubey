@@ -11,20 +11,39 @@ precedent when shaping new foundation contracts.
 
 ## Showcase
 
-The four locked root-gallery highlights are available as poster-linked,
-committed MP4s. The gallery is intentionally a set of independent project
-stories rather than a merged hero reel.
+The four locked root-gallery highlights are published as native GitHub players
+in editorial order. Each player uses the exact committed MP4 attached to the
+closed [showcase video attachment anchor](https://github.com/byebyebryan/cubey/issues/1).
+The gallery is intentionally a set of independent project stories rather than
+a merged hero reel.
 
-| Ocean | glTF + Terrain | Water 3D | Fire 3D |
-| --- | --- | --- | --- |
-| [![Ocean](docs/media/showcase/ocean.png)](docs/media/showcase/ocean.mp4) | [![glTF + Terrain](docs/media/showcase/gltf-terrain.png)](docs/media/showcase/gltf-terrain.mp4) | [![Water 3D](docs/media/showcase/water-3d.png)](docs/media/showcase/water-3d.mp4) | [![Fire 3D](docs/media/showcase/fire-3d.png)](docs/media/showcase/fire-3d.mp4) |
+### Ocean
 
-These poster links fall back to the committed relative MP4s. Native inline
-players will replace or supplement them after the exact files are pushed and
-uploaded through GitHub's attachment flow; attachment URLs are intentionally
-not recorded yet. See the [showcase media package](docs/media/showcase/README.md)
-and its [manifest](docs/media/showcase/manifest.json) for recipes, hashes, and
-license boundaries.
+https://github.com/user-attachments/assets/dc923c55-1061-402f-92ad-09b7da2e7208
+
+[Committed MP4](docs/media/showcase/ocean.mp4) · [Poster fallback](docs/media/showcase/ocean.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+
+### glTF + Terrain
+
+https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02
+
+[Committed MP4](docs/media/showcase/gltf-terrain.mp4) · [Poster fallback](docs/media/showcase/gltf-terrain.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+
+### Water 3D
+
+https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75
+
+[Committed MP4](docs/media/showcase/water-3d.mp4) · [Poster fallback](docs/media/showcase/water-3d.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+
+### Fire 3D
+
+https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0
+
+[Committed MP4](docs/media/showcase/fire-3d.mp4) · [Poster fallback](docs/media/showcase/fire-3d.png) · [Manifest/provenance](docs/media/showcase/manifest.json)
+
+See the [showcase media package](docs/media/showcase/README.md) for the
+native-player mapping, committed fallbacks, recipes, hashes, and license
+boundaries.
 
 Active development lives on `main`. The original OpenGL 4 shader playground is
 preserved on the `legacy` branch.

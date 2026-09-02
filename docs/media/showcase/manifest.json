@@ -1,6 +1,15 @@
 {
   "schema": "cubey.showcase.manifest",
-  "schema_version": 1,
+  "schema_version": 2,
+  "github_attachment_publication": {
+    "anchor_issue": {
+      "number": 1,
+      "url": "https://github.com/byebyebryan/cubey/issues/1",
+      "state": "CLOSED",
+      "state_reason": "COMPLETED"
+    },
+    "source_commit": "e21fdd86ba83049d0d187caf3973b1124163e576"
+  },
   "video_contract": {
     "container": "MP4",
     "codec": "H.264 High",
@@ -23,7 +32,8 @@
       "publication": {
         "path": "docs/media/showcase/ocean.mp4",
         "bytes": 6718736,
-        "sha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b"
+        "sha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
+        "github_attachment_url": "https://github.com/user-attachments/assets/dc923c55-1061-402f-92ad-09b7da2e7208"
       },
       "poster": {
         "path": "docs/media/showcase/ocean.png",
@@ -60,7 +70,8 @@
       "publication": {
         "path": "docs/media/showcase/gltf-terrain.mp4",
         "bytes": 1804016,
-        "sha256": "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2"
+        "sha256": "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2",
+        "github_attachment_url": "https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02"
       },
       "poster": {
         "path": "docs/media/showcase/gltf-terrain.png",
@@ -101,7 +112,8 @@
       "publication": {
         "path": "docs/media/showcase/water-3d.mp4",
         "bytes": 1308520,
-        "sha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece"
+        "sha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
+        "github_attachment_url": "https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75"
       },
       "poster": {
         "path": "docs/media/showcase/water-3d.png",
@@ -139,7 +151,8 @@
       "publication": {
         "path": "docs/media/showcase/fire-3d.mp4",
         "bytes": 877564,
-        "sha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348"
+        "sha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
+        "github_attachment_url": "https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0"
       },
       "poster": {
         "path": "docs/media/showcase/fire-3d.png",

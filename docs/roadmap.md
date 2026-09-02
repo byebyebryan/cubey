@@ -87,8 +87,9 @@ Storyboard and Capture Plan](showcase.md). Its eleven shot cards and
 provenance rules remain the storyboard authority. Four highlights are now
 creatively locked and packaged as committed poster-linked MP4s in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
-Water 3D, and Fire 3D. The remaining seven cards and GitHub player attachments
-are future editorial work.
+Water 3D, and Fire 3D. GitHub native-player attachments for these four are
+published and recorded in the package manifest; the remaining seven cards are
+future editorial work.
 
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, and terrain products; glTF Viewer
@@ -101,10 +102,9 @@ whole-generation installation is the real bottleneck.
 Recommended next feature or foundation streams:
 
 - public visual showcase: maintain the four-highlight package and provenance
-  manifest, then complete the remaining seven storyboard cards as bounded
-  editorial work. Upload exact committed bytes through GitHub's attachment
-  flow only after the package is pushed; those native-player URLs are not yet
-  recorded;
+  manifest; GitHub attachment publication for these exact committed bytes is
+  complete. Complete the remaining seven storyboard cards as bounded editorial
+  work;
 - renderer foundation: use the shared dynamic environment handoff for future
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated

@@ -2,9 +2,10 @@
 
 Status: design authority. This document defines what the public visual
 showcase should communicate and the capture work that follows. Four root
-highlights are now creatively locked and packaged as committed media; the
-remaining seven storyboard cards and GitHub attachment publication remain
-future editorial work.
+highlights are now creatively locked and packaged as committed media. The
+remaining seven storyboard cards are future editorial work; GitHub attachment
+publication for the current four is complete and recorded in the [showcase
+manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
 
 The showcase is a set of small project stories whose render inputs and capture
 recipes can be reproduced. It is not a single merged reel and it is not a
@@ -615,21 +616,23 @@ Exit gate for the current package: each selected file passes
 codec/dimension/duration/hash checks and can be regenerated from the recorded
 recipe.
 
-### 7. GitHub attachment publication and verification
+### 7. GitHub attachment publication and verification (complete)
 
-Upload each exact committed master through GitHub Markdown, record the native
-player URL, update the root/project README references, and verify the rendered
-players plus committed-file links. Confirm attachment bytes against the
-recorded SHA-256 and leave technical/internal projects out of the public
-gallery.
+Each exact committed master was uploaded through GitHub Markdown in the
+locked editorial order and anchored by [issue #1](https://github.com/byebyebryan/cubey/issues/1),
+which is closed with reason `completed`. The native-player URLs are recorded in
+the root and package READMEs and in the [manifest](media/showcase/manifest.json)
+alongside each committed relative reference. The four attachment endpoints
+return `video/mp4` and match the recorded SHA-256 files; technical/internal
+projects remain outside the public gallery.
 
-Exit gate: README players render, relative references resolve, the provenance
-manifest is complete, and local Git state contains only reviewed publication
-changes.
+Exit gate (met): README players render, relative references resolve, the
+provenance manifest is complete, and local Git state contains only reviewed
+publication changes.
 
 ## Design boundary
 
 This document records the approved camera and 60 FPS capture/publication
 standard for the current four root-gallery highlights. It does not authorize
-new timeline APIs, unrelated project capture work, GitHub uploads, commits, or
-pushes. Those remain explicit follow-on actions.
+future uploads, commits, pushes, timeline APIs, or unrelated capture work;
+future actions remain explicitly authorized.
