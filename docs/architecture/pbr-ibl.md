@@ -23,8 +23,8 @@ Radiance HDR equirectangular environment assets:
   PBR forward rendering of a caller-provided 3D frame plan. It renders glTF PBR
   and skybox shading into a linear HDR scene color target, then applies
   exposure, tone mapping, and output encoding in a fullscreen post pass. The
-  shader model uses Filament-style base-color remapping, factor-only IOR
-  controls, `KHR_materials_specular` factors/textures, clearcoat, sheen,
+  shader model uses glTF base-color remapping, exact dielectric IOR controls,
+  `KHR_materials_specular` factors/textures, clearcoat, sheen,
   anisotropy, iridescence, DFG-based IBL, specular energy compensation,
   correlated Smith direct visibility, indirect specular occlusion, environment
   rotation, exposure, and tone mapping from the per-frame render request. The
@@ -94,14 +94,14 @@ views skip skybox rendering so material channels are visible against the scene
 clear color before the normal post transform.
 
 The shared shader include remaps `baseColor` into `diffuseColor =
-baseColor * (1 - metallic)` and computes dielectric F0 from Filament-style
-reflectance (`F0 = 0.16 * reflectance^2`) plus glTF
-`KHR_materials_specular` controls before mixing toward metallic `baseColor`.
-Diffuse lighting uses `diffuseColor` directly; Fresnel-derived attenuation
-stays on the specular path, where the DFG blue channel provides the
-single-scatter energy term used for multiscatter compensation. Per-draw push
-constants now carry only the model transform; material factors live in the
-material descriptor set.
+baseColor * (1 - metallic)` and computes dielectric F0 directly from glTF IOR
+(`F0 = ((ior - 1) / (ior + 1))^2`). IOR zero preserves glTF's
+specular-glossiness compatibility mode. `KHR_materials_specular` then supplies
+the dielectric F0 color and F90 weight; both direct and image-based diffuse
+lighting are attenuated by the remaining Fresnel energy. The DFG blue channel
+provides the single-scatter energy term used for multiscatter compensation.
+Per-draw push constants now carry only the model transform; material factors
+live in the material descriptor set.
 Optional extension textures still use fixed descriptor slots with default
 fallback textures, but shader fetches are gated by per-material flags so the
 common path does not sample absent extension textures.

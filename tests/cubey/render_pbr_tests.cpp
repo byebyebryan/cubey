@@ -195,7 +195,7 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.occlusion_strength = 0.8F;
     factors.specular_color_factor = {0.7F, 0.8F, 0.9F};
     factors.specular_factor = 0.65F;
-    factors.reflectance = 0.42F;
+    factors.dielectric_ior = 1.8F;
     factors.clearcoat_factor = 0.6F;
     factors.clearcoat_roughness_factor = 0.35F;
     factors.clearcoat_normal_scale = 0.8F;
@@ -255,8 +255,8 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
                 uniforms.specular_color_factor.b == factors.specular_color_factor.b &&
                 uniforms.specular_color_factor.a == factors.specular_factor,
             "PBR material uniforms should pack specular extension factors");
-    require(uniforms.material_model.x == factors.reflectance,
-            "PBR material uniforms should pack dielectric reflectance");
+    require(uniforms.material_model.x == factors.dielectric_ior,
+            "PBR material uniforms should pack dielectric IOR");
     require(uniforms.material_model.y ==
                 static_cast<float>(
                     static_cast<std::underlying_type_t<cubey::render::MaterialAlphaMode>>(
@@ -537,18 +537,19 @@ void test_pbr_skybox_pass_declares_scene_set() {
     require(pass.push_constants.empty(), "PBR skybox pass should not use push constants");
 }
 
-void test_pbr_reflectance_helpers_match_filament_convention() {
-    require(cubey::render::pbr_f0_from_reflectance(0.5F) == 0.04F,
-            "reflectance 0.5 should map to dielectric F0 0.04");
-    require(cubey::render::pbr_reflectance_from_ior(1.5F) == 0.5F,
-            "IOR 1.5 should map to default reflectance 0.5");
-    require(cubey::render::pbr_f0_from_reflectance(0.0F) == 0.0F,
-            "minimum reflectance should map to zero F0");
-    require(cubey::render::pbr_f0_from_reflectance(1.0F) == 0.16F,
-            "maximum reflectance should map to F0 0.16");
+void test_pbr_ior_helpers_preserve_glTF_dialect() {
+    require(cubey::render::pbr_f0_from_ior(0.0F) == 1.0F,
+            "IOR zero should use glTF's infinite-IOR compatibility mode");
+    require(cubey::render::pbr_f0_from_ior(1.0F) == 0.0F,
+            "IOR one should have zero normal-incidence reflectance");
+    const float default_f0 = cubey::render::pbr_f0_from_ior(1.5F);
+    require(default_f0 > 0.0399F && default_f0 < 0.0401F,
+            "IOR 1.5 should map to dielectric F0 0.04");
+    require(cubey::render::pbr_f0_from_ior(2.42F) > 0.16F,
+            "high dielectric IOR should not be clipped through a reflectance control");
 }
 
-void test_pbr_shaders_use_filament_style_material_remap() {
+void test_pbr_shaders_use_gltf_material_remap() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string pbr = read_source_file(source_root / "shaders/cubey/pbr.glsl");
     const std::string post =
@@ -568,10 +569,14 @@ void test_pbr_shaders_use_filament_style_material_remap() {
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
     require_contains(pbr, "cubey_pbr_f0",
                      "PBR shader should expose a baseColor-to-F0 remap helper");
-    require_contains(pbr, "cubey_pbr_f0_from_reflectance",
-                     "PBR shader should expose the Filament reflectance-to-F0 helper");
+    require_contains(pbr, "cubey_pbr_f0_from_ior",
+                     "PBR shader should expose the glTF IOR-to-F0 helper");
     require_contains(pbr, "cubey_pbr_dielectric_f0",
                      "PBR shader should expose dielectric F0 material extension helper");
+    require_contains(pbr, "if (ior == 0.0)",
+                     "PBR shader should preserve glTF IOR zero compatibility mode");
+    require_contains(pbr, "f90 * dfg.g",
+                     "PBR shader should use the material F90 endpoint for indirect specular");
     require_contains(pbr, "cubey_pbr_lambert_diffuse",
                      "PBR shader should expose a Lambert diffuse helper");
     require_contains(pbr, "cubey_pbr_apply_display_transform",
@@ -605,18 +610,21 @@ void test_pbr_shaders_use_filament_style_material_remap() {
         require_contains(*shader, "cubey_pbr_dielectric_f0",
                          "PBR fragment shaders should compute dielectric F0 from material factors");
         require_contains(*shader, "material.material_model.x",
-                         "PBR fragment shaders should read material reflectance");
+                         "PBR fragment shaders should read material dielectric IOR");
         require_contains(*shader, "cubey_pbr_has_material_texture",
                          "PBR fragment shaders should branch optional texture reads by flag");
         require_contains(*shader, "vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);",
                          "PBR fragment shaders should compute F0 through the shared helper");
         require_contains(
-            *shader, "irradiance * diffuse_color",
-            "PBR indirect diffuse should use diffuseColor without Fresnel attenuation");
-        require_not_contains(*shader, "(vec3(1.0) - ibl_f) * (1.0 - metallic)",
-                             "PBR indirect diffuse should not double-attenuate metallic values");
-        require_not_contains(*shader, "(vec3(1.0) - f) * (1.0 - metallic)",
-                             "PBR direct diffuse should not double-attenuate metallic values");
+            *shader,
+            "vec3 f90 = mix(vec3(cubey_pbr_saturate(specular_strength)), vec3(1.0), metallic);",
+            "PBR fragment shaders should preserve glTF specular F90 behavior");
+        require_contains(*shader, "cubey_pbr_fresnel_schlick(ndotv, f0, f90)",
+                         "PBR indirect diffuse should use the material Fresnel endpoints");
+        require_contains(*shader, "diffuse_ibl_attenuation",
+                         "PBR indirect diffuse should be attenuated by dielectric Fresnel");
+        require_contains(*shader, "cubey_pbr_indirect_specular(f0, f90, dfg)",
+                         "PBR indirect specular should use the material Fresnel endpoints");
     }
 
     require_contains(gltf, "cubey_pbr_lambert_diffuse(diffuse_color)",
@@ -762,6 +770,10 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover alpha blending");
     require_contains(cmake, "SpecularTest/glTF/SpecularTest.gltf",
                      "glTF viewer sample smoke tests should cover specular materials");
+    require_contains(cmake, "UnlitTest/glTF/UnlitTest.gltf",
+                     "glTF viewer sample smoke tests should cover unlit materials");
+    require_contains(cmake, "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf",
+                     "glTF viewer sample smoke tests should cover emissive strength");
     require_contains(cmake, "TextureTransformTest/glTF/TextureTransformTest.gltf",
                      "glTF viewer sample smoke tests should cover texture transforms");
     require_contains(cmake, "TextureTransformMultiTest/glTF/TextureTransformMultiTest.gltf",
@@ -776,6 +788,8 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover required KTX2 BasisU textures");
     require_contains(cmake, "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf",
                      "glTF viewer sample smoke tests should cover KTX2 alpha/emissive textures");
+    require_contains(cmake, "--no-clouds",
+                     "glTF sample smoke tests should avoid cloud-dependent captures");
 
     require_contains(gltf_docs, "MikkTSpace",
                      "glTF docs should record the tangent-space reference");

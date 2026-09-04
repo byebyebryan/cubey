@@ -44,6 +44,26 @@ renderer.
 - core glTF animations, skins, node skin bindings, node/mesh morph weights, and
   inverse bind matrices.
 
+## Material Extension Contract
+
+The importer may recognize more material-extension data than the renderer can
+claim as complete. `extensionsRequired` is therefore deliberately restricted
+to extensions whose loader path and rendered semantics are closed:
+
+| Extension | Required-use status | Current boundary |
+| --- | --- | --- |
+| `KHR_texture_transform` | supported | UV0/UV1 transforms and texture-coordinate overrides are propagated to every current material slot. |
+| `KHR_texture_basisu` | supported | KTX2 BasisU payloads transcode to BC7 or RGBA8, with sample-asset smoke coverage. |
+| `KHR_materials_unlit` | supported | Base color, vertex color, texture transforms, and alpha policy bypass lighting. |
+| `KHR_materials_emissive_strength` | supported | Strength is folded into HDR emissive radiance. |
+| `KHR_materials_ior`, `KHR_materials_specular` | partial | Their CPU data path and core dielectric F0/F90 shading are covered; required-use promotion waits on full visual conformance coverage. |
+| `KHR_materials_clearcoat`, `KHR_materials_sheen`, `KHR_materials_anisotropy`, `KHR_materials_iridescence` | partial | Their current texture/factor plumbing and approximate lobes remain available only for optional extension use. |
+
+Partial extensions remain useful for renderer development and optional asset
+inspection, but Cubey rejects them when an asset declares them required. Each
+extension is promoted independently after analytic and deterministic sample
+coverage closes its semantics.
+
 Unsupported features fail early instead of being silently ignored:
 unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate
 sets above UV1, additional skin influence sets, unsupported morph target
@@ -130,7 +150,7 @@ to an engine-owned `ForwardPbrRenderer3D` through the shared forward-PBR request
 helper for pass recording. Its reusable
 forward-PBR shader package under `shaders/cubey/forward_pbr` writes linear HDR
 scene color and uses the shared Cubey PBR helper include for
-base-color-to-diffuse/F0 remapping, reflectance/specular factor controls,
+base-color-to-diffuse/F0 remapping, dielectric IOR/specular controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion. The glTF PBR shader also evaluates the current
 opaque material extension lobes: clearcoat, sheen, anisotropic GGX, and a

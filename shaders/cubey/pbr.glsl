@@ -11,15 +11,21 @@ vec3 cubey_pbr_diffuse_color(vec3 base_color, float metallic) {
     return base_color * (1.0 - metallic);
 }
 
-float cubey_pbr_f0_from_reflectance(float reflectance) {
-    float clamped = cubey_pbr_saturate(reflectance);
-    return 0.16 * clamped * clamped;
+float cubey_pbr_f0_from_ior(float ior) {
+    if (ior == 0.0) {
+        // KHR_materials_ior's specular-glossiness compatibility mode.
+        return 1.0;
+    }
+    float clamped_ior = max(ior, 1.0);
+    float root_f0 = (clamped_ior - 1.0) / (clamped_ior + 1.0);
+    return root_f0 * root_f0;
 }
 
 vec3 cubey_pbr_dielectric_f0(vec3 specular_color_factor, float specular_factor,
-                             float reflectance) {
-    return vec3(cubey_pbr_f0_from_reflectance(reflectance)) *
-           cubey_pbr_saturate(specular_color_factor) * cubey_pbr_saturate(specular_factor);
+                             float ior) {
+    vec3 specular_color = max(specular_color_factor, vec3(0.0));
+    float f0 = cubey_pbr_f0_from_ior(ior);
+    return min(vec3(f0) * specular_color, vec3(1.0)) * cubey_pbr_saturate(specular_factor);
 }
 
 vec3 cubey_pbr_f0(vec3 base_color, float metallic, vec3 dielectric_f0) {
@@ -57,6 +63,10 @@ float cubey_pbr_visibility_smith_ggx_correlated(float ndotv, float ndotl, float 
 
 vec3 cubey_pbr_fresnel_schlick(float cos_theta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(cubey_pbr_saturate(1.0 - cos_theta), 5.0);
+}
+
+vec3 cubey_pbr_fresnel_schlick(float cos_theta, vec3 f0, vec3 f90) {
+    return f0 + (f90 - f0) * pow(cubey_pbr_saturate(1.0 - cos_theta), 5.0);
 }
 
 float cubey_pbr_clearcoat_direct(float ndotv, float ndotl, float ndoth, float vdoth,
@@ -108,8 +118,8 @@ vec3 cubey_pbr_energy_compensation(vec3 f0, float white_conductor_single_scatter
     return 1.0 + f0 * ((1.0 / energy) - 1.0);
 }
 
-vec3 cubey_pbr_indirect_specular(vec3 f0, vec3 dfg) {
-    return (f0 * dfg.r + vec3(dfg.g)) * cubey_pbr_energy_compensation(f0, dfg.b);
+vec3 cubey_pbr_indirect_specular(vec3 f0, vec3 f90, vec3 dfg) {
+    return (f0 * dfg.r + f90 * dfg.g) * cubey_pbr_energy_compensation(f0, dfg.b);
 }
 
 float cubey_pbr_specular_ao(float ndotv, float ambient_occlusion, float roughness) {

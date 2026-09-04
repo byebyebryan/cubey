@@ -9,6 +9,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -190,7 +191,6 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
     "KHR_materials_ior",
     "KHR_materials_specular",
     "KHR_materials_emissive_strength",
-    "KHR_materials_unlit",
     "KHR_materials_clearcoat",
     "KHR_materials_sheen",
     "KHR_materials_anisotropy",
@@ -251,7 +251,6 @@ std::filesystem::path write_triangle_gltf(const std::filesystem::path& dir) {
         "specularColorTexture": {"index": 2}
       },
       "KHR_materials_emissive_strength": {"emissiveStrength": 2.0},
-      "KHR_materials_unlit": {},
       "KHR_materials_clearcoat": {
         "clearcoatFactor": 0.6,
         "clearcoatTexture": {"index": 3},
@@ -655,7 +654,7 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(material.base_color_factor.r, 0.8F, "base color factor should load");
     require_close(material.metallic_factor, 0.2F, "metallic factor should load");
     require_close(material.roughness_factor, 0.4F, "roughness factor should load");
-    require_close(material.reflectance, 0.714285F, "IOR extension should load as reflectance");
+    require_close(material.ior, 1.8F, "IOR extension should preserve the authored value");
     require_close(material.specular_factor, 0.7F, "specular factor should load");
     require_close(material.specular_color_factor.r, 0.9F, "specular color factor red should load");
     require_close(material.specular_color_factor.g, 0.8F,
@@ -668,7 +667,6 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(material.emissive_factor.r, 0.2F, "emissive strength should scale red");
     require_close(material.emissive_factor.g, 0.4F, "emissive strength should scale green");
     require_close(material.emissive_factor.b, 0.6F, "emissive strength should scale blue");
-    require(material.unlit, "unlit material extension should load");
     require_close(material.clearcoat_factor, 0.6F, "clearcoat factor should load");
     require_close(material.clearcoat_roughness_factor, 0.25F,
                   "clearcoat roughness factor should load");
@@ -713,6 +711,28 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(primitive.vertices[0].tangent.x, 1.0F, "loader should generate missing tangents");
     require_close(primitive.local_bounds.center.x, 0.5F, "bounds center should be computed");
 
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_preserves_ior_special_and_high_values() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_ior_values");
+    const std::filesystem::path path = dir / "ior_values.gltf";
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_ior"],
+  "materials": [
+    {"extensions": {"KHR_materials_ior": {"ior": 0.0}}},
+    {"extensions": {"KHR_materials_ior": {"ior": 2.42}}}
+  ]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+
+    require(asset.materials.size() == 3, "loader should preserve IOR test materials");
+    require_close(asset.materials[1].ior, 0.0F,
+                  "loader should preserve the IOR zero compatibility sentinel");
+    require_close(asset.materials[2].ior, 2.42F,
+                  "loader should not clip high dielectric IOR values");
     std::filesystem::remove_all(dir);
 }
 
@@ -1150,59 +1170,59 @@ void test_gltf_asset_rejects_unknown_required_extensions() {
     std::filesystem::remove_all(dir);
 }
 
-void test_gltf_asset_accepts_supported_required_extensions() {
+void test_gltf_asset_accepts_closed_required_extensions() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_supported_required_extension");
     const std::filesystem::path path = dir / "supported_required_extension.gltf";
     write_text_file(path, R"JSON({
   "asset": {"version": "2.0"},
   "extensionsUsed": [
-    "KHR_materials_ior",
     "KHR_materials_emissive_strength",
     "KHR_materials_unlit",
-    "KHR_materials_clearcoat",
-    "KHR_materials_sheen",
-    "KHR_materials_anisotropy",
-    "KHR_materials_iridescence"
+    "KHR_texture_transform",
+    "KHR_texture_basisu"
   ],
   "extensionsRequired": [
-    "KHR_materials_ior",
     "KHR_materials_emissive_strength",
     "KHR_materials_unlit",
-    "KHR_materials_clearcoat",
-    "KHR_materials_sheen",
-    "KHR_materials_anisotropy",
-    "KHR_materials_iridescence"
+    "KHR_texture_transform",
+    "KHR_texture_basisu"
   ],
-  "materials": [{
+  "materials": [
+  {
     "emissiveFactor": [0.2, 0.3, 0.4],
     "extensions": {
-      "KHR_materials_ior": {"ior": 1.8},
-      "KHR_materials_emissive_strength": {"emissiveStrength": 3.0},
-      "KHR_materials_unlit": {},
-      "KHR_materials_clearcoat": {"clearcoatFactor": 0.4},
-      "KHR_materials_sheen": {"sheenRoughnessFactor": 0.35},
-      "KHR_materials_anisotropy": {"anisotropyStrength": 0.25},
-      "KHR_materials_iridescence": {"iridescenceFactor": 0.2}
+      "KHR_materials_emissive_strength": {"emissiveStrength": 3.0}
     }
+  },
+  {
+    "extensions": {"KHR_materials_unlit": {}}
   }]
 })JSON");
 
     const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
 
-    require(asset.materials.size() == 2, "loader should preserve material with required extension");
-    require_close(asset.materials[1].reflectance, 0.714285F,
-                  "supported required material extension should load");
+    require(asset.materials.size() == 3, "loader should preserve required-extension materials");
     require_close(asset.materials[1].emissive_factor.g, 0.9F,
-                  "supported required emissive strength should load");
-    require(asset.materials[1].unlit, "supported required unlit extension should load");
-    require_close(asset.materials[1].clearcoat_factor, 0.4F,
-                  "supported required clearcoat extension should load");
-    require_close(asset.materials[1].sheen_roughness_factor, 0.35F,
-                  "supported required sheen extension should load");
-    require_close(asset.materials[1].anisotropy_strength, 0.25F,
-                  "supported required anisotropy extension should load");
-    require_close(asset.materials[1].iridescence_factor, 0.2F,
-                  "supported required iridescence extension should load");
+                  "closed required emissive-strength extension should load");
+    require(asset.materials[2].unlit, "closed required unlit extension should load");
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_rejects_partial_required_extensions() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_partial_required_extensions");
+    const std::filesystem::path path = dir / "partial_required_extensions.gltf";
+    constexpr std::array<std::string_view, 6> kPartialExtensions{
+        "KHR_materials_ior",   "KHR_materials_specular",   "KHR_materials_clearcoat",
+        "KHR_materials_sheen", "KHR_materials_anisotropy", "KHR_materials_iridescence",
+    };
+    for (const std::string_view extension : kPartialExtensions) {
+        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                                  "  \"extensionsUsed\": [\"" + std::string{extension} + "\"],\n" +
+                                  "  \"extensionsRequired\": [\"" + std::string{extension} +
+                                  "\"]\n}\n");
+        require_throws([&path] { (void)cubey::asset::load_gltf_asset(path); },
+                       "loader should reject every material extension not closed for required use");
+    }
     std::filesystem::remove_all(dir);
 }
 

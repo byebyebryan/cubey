@@ -214,12 +214,6 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
     };
 }
 
-[[nodiscard]] float reflectance_from_ior(float ior) {
-    const float clamped_ior = std::max(ior, 1.0F);
-    const float root_f0 = (clamped_ior - 1.0F) / (clamped_ior + 1.0F);
-    return std::clamp(std::sqrt((root_f0 * root_f0) / 0.16F), 0.0F, 1.0F);
-}
-
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
@@ -263,7 +257,7 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
                                       ? load_texture_ref(material.specular.specular_color_texture,
                                                          texture_base, texture_count)
                                       : GltfTextureRef{},
-        .reflectance = material.has_ior != 0 ? reflectance_from_ior(material.ior.ior) : 0.5F,
+        .ior = material.has_ior != 0 ? material.ior.ior : 1.5F,
         .emissive_factor =
             {
                 material.emissive_factor[0] * emissive_strength,
@@ -1166,11 +1160,14 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
 }
 
 [[nodiscard]] bool supports_required_extension(std::string_view extension) noexcept {
-    static constexpr std::array<std::string_view, 10> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength", "KHR_materials_ior",   "KHR_materials_specular",
-        "KHR_texture_transform",           "KHR_texture_basisu",  "KHR_materials_unlit",
-        "KHR_materials_clearcoat",         "KHR_materials_sheen", "KHR_materials_anisotropy",
-        "KHR_materials_iridescence",
+    // This is intentionally stricter than the set of extensions that the
+    // importer can parse. An extension is accepted from extensionsRequired
+    // only after its data path and rendered semantics have both been closed.
+    static constexpr std::array<std::string_view, 4> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength",
+        "KHR_texture_transform",
+        "KHR_texture_basisu",
+        "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

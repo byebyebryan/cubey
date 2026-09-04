@@ -320,6 +320,7 @@ void main() {
     vec3 dielectric_f0 = cubey_pbr_dielectric_f0(
         specular_color_factor, specular_strength, material.material_model.x);
     vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);
+    vec3 f90 = mix(vec3(cubey_pbr_saturate(specular_strength)), vec3(1.0), metallic);
     float iridescence_factor = clamp(material.anisotropy_iridescence.w, 0.0, 1.0);
     if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_IRIDESCENCE)) {
         iridescence_factor *= texture(iridescence_texture,
@@ -387,8 +388,10 @@ void main() {
                         anisotropy_alpha_roughness, alpha_roughness)
                   : cubey_pbr_distribution_ggx(ndoth, roughness);
     float v = cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
-    vec3 f = cubey_pbr_fresnel_schlick(vdoth, f0);
+    vec3 f = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
     vec3 specular = d * v * f * energy_compensation;
+    vec3 diffuse_direct = cubey_pbr_lambert_diffuse(diffuse_color) *
+                          (1.0 - max(max(f.r, f.g), f.b));
 
     vec3 radiance = scene.light_color_intensity.rgb * scene.light_color_intensity.a;
     float visibility = shadow_visibility(frag_shadow_position, normal, light_direction);
@@ -409,8 +412,7 @@ void main() {
     float clearcoat_attenuation = 1.0 - clearcoat_fresnel;
     vec3 sheen_direct =
         cubey_pbr_sheen_direct(sheen_color, sheen_roughness, ndotv, ndotl, ndoth);
-    vec3 base_direct =
-        (cubey_pbr_lambert_diffuse(diffuse_color) + specular + sheen_direct) * clearcoat_attenuation;
+    vec3 base_direct = (diffuse_direct + specular + sheen_direct) * clearcoat_attenuation;
     vec3 clearcoat_direct =
         vec3(clearcoat_factor *
              cubey_pbr_clearcoat_direct(clearcoat_ndotv, clearcoat_ndotl, clearcoat_ndoth, vdoth,
@@ -419,7 +421,9 @@ void main() {
                   visibility;
 
     vec3 irradiance = cubey_pbr_diffuse_irradiance(normal);
-    vec3 diffuse_ibl = irradiance * diffuse_color;
+    vec3 ibl_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90);
+    float diffuse_ibl_attenuation = 1.0 - max(max(ibl_fresnel.r, ibl_fresnel.g), ibl_fresnel.b);
+    vec3 diffuse_ibl = irradiance * diffuse_color * diffuse_ibl_attenuation;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
     vec3 prefiltered =
@@ -428,7 +432,7 @@ void main() {
         cubey_pbr_specular_ao(ndotv, occlusion, roughness) *
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
     vec3 specular_ibl =
-        prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
+        prefiltered * cubey_pbr_indirect_specular(f0, f90, dfg) * specular_occlusion;
     vec3 sheen_ibl = irradiance * sheen_color * occlusion * 0.25;
     vec3 clearcoat_reflection = reflect(-view_direction, clearcoat_normal);
     vec3 clearcoat_prefiltered = cubey_pbr_prefiltered_environment(
@@ -440,13 +444,14 @@ void main() {
         cubey_pbr_horizon_specular_occlusion(clearcoat_reflection, geometric_normal);
     vec3 clearcoat_ibl =
         clearcoat_factor * clearcoat_prefiltered *
-        cubey_pbr_indirect_specular(vec3(0.04), clearcoat_dfg) * clearcoat_specular_occlusion;
+        cubey_pbr_indirect_specular(vec3(0.04), vec3(1.0), clearcoat_dfg) *
+        clearcoat_specular_occlusion;
     vec3 ambient = (((diffuse_ibl * occlusion) + specular_ibl + sheen_ibl) *
                         clearcoat_attenuation +
                     clearcoat_ibl) *
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
-               albedo * occlusion;
+               diffuse_color * diffuse_ibl_attenuation * occlusion;
     vec3 color = ambient + direct + emissive;
     out_color = vec4(color * output_alpha, output_alpha);
 }

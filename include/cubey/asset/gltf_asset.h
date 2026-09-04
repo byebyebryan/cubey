@@ -106,7 +106,10 @@ struct GltfMaterial {
     float specular_factor = 1.0F;
     GltfTextureRef specular_texture{};
     GltfTextureRef specular_color_texture{};
-    float reflectance = 0.5F;
+    // Preserve the authored value rather than converting through Cubey's old
+    // bounded reflectance control. Zero is the glTF specular-glossiness
+    // compatibility sentinel; otherwise the value is an index of refraction.
+    float ior = 1.5F;
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
     float clearcoat_factor = 0.0F;
     float clearcoat_roughness_factor = 0.0F;

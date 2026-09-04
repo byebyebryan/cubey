@@ -3,6 +3,7 @@
 #include <array>
 
 void test_gltf_asset_loads_static_pbr_triangle();
+void test_gltf_asset_preserves_ior_special_and_high_values();
 void test_gltf_asset_marks_nodes_authored_with_matrix();
 void test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs();
 void test_gltf_asset_loads_uv1_vertex_color_and_texture_transform();
@@ -16,7 +17,8 @@ void test_gltf_asset_loads_normalized_rotation_animation_output();
 void test_gltf_asset_loads_skinning_and_morph_data();
 void test_gltf_asset_ignores_unknown_optional_extensions();
 void test_gltf_asset_rejects_unknown_required_extensions();
-void test_gltf_asset_accepts_supported_required_extensions();
+void test_gltf_asset_accepts_closed_required_extensions();
+void test_gltf_asset_rejects_partial_required_extensions();
 void test_gltf_asset_loads_required_basisu_texture_source();
 void test_gltf_asset_rejects_layered_basisu_material_images();
 void test_gltf_asset_rejects_formatted_ktx2_basisu_sources();
@@ -33,8 +35,9 @@ void test_terrain_raster_height_source_rejects_invalid_contracts();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 27> tests{
+    static constexpr std::array<TestCase, 29> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
+        CUBEY_TEST(test_gltf_asset_preserves_ior_special_and_high_values),
         CUBEY_TEST(test_gltf_asset_marks_nodes_authored_with_matrix),
         CUBEY_TEST(test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs),
         CUBEY_TEST(test_gltf_asset_loads_uv1_vertex_color_and_texture_transform),
@@ -48,7 +51,8 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_loads_skinning_and_morph_data),
         CUBEY_TEST(test_gltf_asset_ignores_unknown_optional_extensions),
         CUBEY_TEST(test_gltf_asset_rejects_unknown_required_extensions),
-        CUBEY_TEST(test_gltf_asset_accepts_supported_required_extensions),
+        CUBEY_TEST(test_gltf_asset_accepts_closed_required_extensions),
+        CUBEY_TEST(test_gltf_asset_rejects_partial_required_extensions),
         CUBEY_TEST(test_gltf_asset_loads_required_basisu_texture_source),
         CUBEY_TEST(test_gltf_asset_rejects_layered_basisu_material_images),
         CUBEY_TEST(test_gltf_asset_rejects_formatted_ktx2_basisu_sources),

@@ -109,9 +109,12 @@ void main() {
     vec3 dielectric_f0 = cubey_pbr_dielectric_f0(
         specular_color_factor, specular_strength, material.material_model.x);
     vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);
+    vec3 f90 = mix(vec3(cubey_pbr_saturate(specular_strength)), vec3(1.0), metallic);
 
     vec3 irradiance = texture(irradiance_cube, normal).rgb;
-    vec3 diffuse_ibl = irradiance * diffuse_color;
+    vec3 ibl_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90);
+    float diffuse_ibl_attenuation = 1.0 - max(max(ibl_fresnel.r, ibl_fresnel.g), ibl_fresnel.b);
+    vec3 diffuse_ibl = irradiance * diffuse_color * diffuse_ibl_attenuation;
     vec3 reflection = reflect(-view_direction, normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
     vec3 prefiltered = textureLod(prefiltered_cube, reflection,
@@ -123,7 +126,7 @@ void main() {
         cubey_pbr_specular_ao(ndotv, occlusion, roughness) *
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
     vec3 specular_ibl =
-        prefiltered * cubey_pbr_indirect_specular(f0, dfg) * specular_occlusion;
+        prefiltered * cubey_pbr_indirect_specular(f0, f90, dfg) * specular_occlusion;
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
     vec3 color = (((diffuse_ibl * occlusion) + specular_ibl) *

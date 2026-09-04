@@ -203,8 +203,8 @@ full engine architecture.
   `pbr_skybox_pass_info()`, `pbr_forward_pass_info()`, and
   `pbr_post_pass_info()` define the current PBR contract: one scene
   uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
-  push constants, a skybox environment set, a fullscreen post set, reflectance
-  controls, `KHR_materials_specular` factors/textures, and the current opaque
+  push constants, a skybox environment set, a fullscreen post set, dielectric
+  IOR plus `KHR_materials_specular` factors/textures, and the current opaque
   glTF extension lobes: clearcoat, sheen, anisotropy, and iridescence. Optional
   extension texture slots stay fixed in the descriptor layout, while material
   texture flags gate shader fetches for absent textures. The scene set includes

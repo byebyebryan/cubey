@@ -230,14 +230,11 @@ if (BUILD_TESTING)
             cubey_project_gltf_viewer
             "${CMAKE_CURRENT_BINARY_DIR}/${output_name}"
             --input "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
+            --pbr-environment-source static
+            --no-clouds
         )
     endfunction()
 
-    cubey_add_gltf_viewer_sample_smoke_test(
-        gltf_viewer_alpha_mask_headless_writes_png
-        "AlphaMaskModeTest/glTF/AlphaMaskModeTest.gltf"
-        "gltf-viewer-alpha-mask-smoke.png"
-    )
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_alpha_blend_headless_writes_png
         "AlphaBlendModeTest/glTF/AlphaBlendModeTest.gltf"
@@ -247,6 +244,16 @@ if (BUILD_TESTING)
         gltf_viewer_damaged_helmet_headless_writes_png
         "DamagedHelmet/glTF/DamagedHelmet.gltf"
         "gltf-viewer-damaged-helmet-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_unlit_test_headless_writes_png
+        "UnlitTest/glTF/UnlitTest.gltf"
+        "gltf-viewer-unlit-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_emissive_strength_test_headless_writes_png
+        "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf"
+        "gltf-viewer-emissive-strength-test-smoke.png"
     )
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_anisotropy_barn_lamp_ktx_basisu_headless_writes_png

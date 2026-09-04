@@ -158,11 +158,11 @@ void test_pbr_material_table_groups_factors_and_supports_lifetime_operations();
 void test_pbr_material_table_tracks_descriptor_layout_explicitly();
 void test_hdr_post_frame_helpers_pack_scene_color_and_display_transform();
 void test_pbr_post_pass_declares_uniforms_and_scene_color();
-void test_pbr_reflectance_helpers_match_filament_convention();
+void test_pbr_ior_helpers_preserve_glTF_dialect();
 void test_pbr_scene_uniforms_carry_display_transform();
 void test_pbr_skybox_pass_declares_scene_set();
 void test_pbr_skybox_uniforms_are_uniform_buffer_safe();
-void test_pbr_shaders_use_filament_style_material_remap();
+void test_pbr_shaders_use_gltf_material_remap();
 void test_forward_pbr_shader_package_uses_renderer_names();
 void test_gltf_material_fallback_textures_preserve_pbr_factor_channels();
 void test_pbr_examples_and_gltf_importer_share_material_resources();
@@ -356,8 +356,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_hdr_post_frame_helpers_pack_scene_color_and_display_transform),
         CUBEY_TEST(test_pbr_skybox_uniforms_are_uniform_buffer_safe),
         CUBEY_TEST(test_pbr_skybox_pass_declares_scene_set),
-        CUBEY_TEST(test_pbr_reflectance_helpers_match_filament_convention),
-        CUBEY_TEST(test_pbr_shaders_use_filament_style_material_remap),
+        CUBEY_TEST(test_pbr_ior_helpers_preserve_glTF_dialect),
+        CUBEY_TEST(test_pbr_shaders_use_gltf_material_remap),
         CUBEY_TEST(test_forward_pbr_shader_package_uses_renderer_names),
         CUBEY_TEST(test_gltf_material_fallback_textures_preserve_pbr_factor_channels),
         CUBEY_TEST(test_pbr_examples_and_gltf_importer_share_material_resources),

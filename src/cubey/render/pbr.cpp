@@ -386,15 +386,13 @@ PbrDebugView next_pbr_debug_view(PbrDebugView view) {
     return PbrDebugView::Final;
 }
 
-float pbr_f0_from_reflectance(float reflectance) {
-    const float clamped = std::clamp(reflectance, 0.0F, 1.0F);
-    return 0.16F * clamped * clamped;
-}
-
-float pbr_reflectance_from_ior(float ior) {
+float pbr_f0_from_ior(float ior) {
+    if (ior == 0.0F) {
+        return 1.0F;
+    }
     const float clamped_ior = std::max(ior, 1.0F);
     const float root_f0 = (clamped_ior - 1.0F) / (clamped_ior + 1.0F);
-    return std::clamp(std::sqrt((root_f0 * root_f0) / 0.16F), 0.0F, 1.0F);
+    return root_f0 * root_f0;
 }
 
 PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
@@ -422,7 +420,7 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
                 factors.specular_color_factor.b,
                 factors.specular_factor,
             },
-        .material_model = {factors.reflectance, material_alpha_mode_uniform(alpha_mode),
+        .material_model = {factors.dielectric_ior, material_alpha_mode_uniform(alpha_mode),
                            factors.unlit ? 1.0F : 0.0F, static_cast<float>(factors.texture_flags)},
         .clearcoat_factor_roughness_normal =
             {

@@ -132,7 +132,9 @@ struct PbrMaterialFactors {
     float occlusion_strength = 1.0F;
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
     float specular_factor = 1.0F;
-    float reflectance = 0.5F;
+    // Zero is the glTF specular-glossiness compatibility sentinel. Other
+    // values are dielectric indices of refraction.
+    float dielectric_ior = 1.5F;
     float clearcoat_factor = 0.0F;
     float clearcoat_roughness_factor = 0.0F;
     float clearcoat_normal_scale = 1.0F;
@@ -154,7 +156,7 @@ struct PbrMaterialUniforms {
     math::Vec4 emissive_alpha_cutoff{0.0F, 0.0F, 0.0F, 0.0F};
     math::Vec4 metallic_roughness_normal_occlusion{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec4 specular_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
-    math::Vec4 material_model{0.5F, 0.0F, 0.0F, 0.0F};
+    math::Vec4 material_model{1.5F, 0.0F, 0.0F, 0.0F};
     math::Vec4 clearcoat_factor_roughness_normal{0.0F, 0.0F, 1.0F, 0.0F};
     math::Vec4 sheen_color_roughness{0.0F, 0.0F, 0.0F, 0.0F};
     math::Vec4 anisotropy_iridescence{0.0F, 1.0F, 0.0F, 0.0F};
@@ -233,8 +235,7 @@ struct PbrForwardPassConfig {
 pbr_display_transform_for_target(VkFormat target_format, float exposure = 0.0F,
                                  PbrTonemap tonemap = PbrTonemap::Aces);
 [[nodiscard]] math::Vec4 pbr_display_transform_uniform(const PbrDisplayTransform& transform);
-[[nodiscard]] float pbr_f0_from_reflectance(float reflectance);
-[[nodiscard]] float pbr_reflectance_from_ior(float ior);
+[[nodiscard]] float pbr_f0_from_ior(float ior);
 [[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
                                                         MaterialAlphaMode alpha_mode);
 [[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors);

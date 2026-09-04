@@ -156,8 +156,8 @@ Reusable spatial types should stay explicit and narrow:
   resources.
   Shared PBR shader helpers follow the established metallic-roughness remap:
   base color becomes diffuse color for non-metals and F0 for metals, while
-  dielectric F0 comes from Filament-style reflectance plus factor-only glTF
-  IOR/specular controls. The PBR post contract carries final display transform
+  dielectric F0 comes directly from glTF IOR plus glTF specular controls. The
+  PBR post contract carries final display transform
   controls for exposure, tone mapping, and target encoding.
   Prefiltered KTX/KTX2 environment import and offline filtering remain future
   asset-pipeline work.

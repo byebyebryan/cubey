@@ -133,7 +133,7 @@ void MaterialCubesApp::create_materials(const cubey::vulkan::Device& device,
                                              .base_color_factor = variant.base_color,
                                              .metallic_factor = variant.metallic,
                                              .roughness_factor = variant.roughness,
-                                             .reflectance = 0.5F,
+                                             .dielectric_ior = 1.5F,
                                          });
         materials_.emplace_instance(material, device,
                                     cubey::render::FrameUniformMaterialInstanceConfig{

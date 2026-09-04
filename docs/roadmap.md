@@ -470,8 +470,8 @@ Current checkpoint:
   checkout is configured.
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
-  rows, uniform white IBL cubemaps, Filament-style base-color/reflectance
-  remapping, DFG-based energy compensation, reusable PBR material uniform
+  rows, uniform white IBL cubemaps, glTF base-color/IOR/specular remapping,
+  DFG-based energy compensation, reusable PBR material uniform
   descriptors, and windowed plus headless capture output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
