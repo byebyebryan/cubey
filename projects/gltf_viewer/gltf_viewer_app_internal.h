@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gltf_viewer_app.h"
+#include "gltf_viewer_loading_cage.h"
 
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
@@ -155,9 +156,9 @@ class GltfViewerApp {
                                           cubey::vulkan::GpuRuntime& gpu,
                                           std::uint32_t frame_slot_count);
     void create_fallback_material(const cubey::vulkan::Device& device,
-                                  std::uint32_t frame_slot_count,
+                                  std::uint32_t frame_slot_count, bool loading_cage,
                                   GltfViewerSceneGeneration& generation);
-    void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu,
+    void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu, bool loading_cage,
                               GltfViewerSceneGeneration& generation);
     void create_ibl_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
     void create_terrain_backdrop_resources(const cubey::vulkan::Device& device,

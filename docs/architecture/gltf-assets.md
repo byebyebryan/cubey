@@ -23,6 +23,8 @@ renderer.
 `cubey::asset` owns CPU-side loaded asset data:
 
 - glTF/glb parsing through `cgltf`;
+- a metadata-only scene-bounds probe that resolves the selected scene and
+  reachable node transforms from declared `POSITION` accessor min/max values;
 - external buffers, data URIs, image buffer views, PNG/JPEG decode for glTF
   textures through `stb_image`, `KHR_texture_basisu` KTX2 texture payloads
   through the Basis Universal transcoder, and standalone Radiance HDR decode;
@@ -154,9 +156,13 @@ owns default textures, texture upload, and material instance creation.
 - `ShadowMapPass3D` owns a sampled depth texture plus depth-only pipeline for
   directional shadow passes.
 
-`projects/gltf_viewer` is the integration project. It first publishes a complete
-generated PBR cube generation, then loads an input asset from `--input` or the
-configured Khronos DamagedHelmet sample through the shared staged lifecycle.
+`projects/gltf_viewer` is the integration project. With a resolved `--input`
+asset (or configured Khronos DamagedHelmet sample), it first performs the
+metadata-only bounds probe and publishes a complete wireframe-style indexed
+loading cage framed from those authored rest-pose bounds. It falls back to a
+neutral unit cage if probing fails; with no resolved input it retains the
+generated solid PBR cube generation. The full asset then loads through the
+shared staged lifecycle.
 File loading and import preparation run on a CPU worker, residency runs on the
 GPU owner, and the app atomically activates the complete scene generation at a
 frame boundary. The previous generation remains renderable until activation and
@@ -216,6 +222,16 @@ current pressure for deciding when that integration is worth doing.
 
 The asset loader stays CPU-only. It does not create entities, renderable
 handles, textures, descriptors, pipelines, or scenes.
+
+The scene-bounds probe is also CPU-only and intentionally does not load
+external buffers or embedded GLB BIN chunks, decode images, transcode textures,
+or construct materials. For GLB files it reads only the JSON chunk needed for
+metadata parsing; textual `.gltf` files are read as JSON while their external
+buffers remain unopened.
+Its bounds are authored rest-pose bounds: morph and skin animation extremes
+are not included. The viewer's loading cage is project-local indexed triangle
+geometry made from twelve thin rectangular prisms, so it does not require
+line-rasterization support or renderer-wide changes.
 
 The engine importer is the current bridge between asset data and runtime scene
 resources. Its preparation phase stays CPU-only, its residency phase creates

@@ -43,17 +43,44 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     }
     frame_slot_count_ = frame_slot_count;
 
+    requested_input_path_ = resolved_input_path();
+    const bool has_requested_input = !requested_input_path_.empty();
+    const bool loading_cage = has_requested_input;
+    cubey::asset::GltfBounds3D fallback_bounds{
+        .center = {0.0F, 0.0F, 0.0F},
+        .half_extent = {1.0F, 1.0F, 1.0F},
+    };
+    if (has_requested_input) {
+        try {
+            fallback_bounds = cubey::asset::probe_gltf_scene_bounds(requested_input_path_);
+        } catch (const std::exception&) {
+            // Keep startup resilient and let the staged request publish the
+            // canonical parse/validation error. A neutral cage still makes
+            // the requested-input state intentional while that request runs.
+            fallback_bounds = {
+                .center = {0.0F, 0.0F, 0.0F},
+                .half_extent = {1.0F, 1.0F, 1.0F},
+            };
+        } catch (...) {
+            fallback_bounds = {
+                .center = {0.0F, 0.0F, 0.0F},
+                .half_extent = {1.0F, 1.0F, 1.0F},
+            };
+        }
+    }
+
     // The fallback is intentionally complete before the input is even queued:
     // windowed startup can present it while decoding/transcoding happens off-thread.
     auto fallback = std::make_shared<GltfViewerSceneGeneration>();
     fallback->source = {.id = 0U, .label = "fallback"};
+    fallback->source_path = requested_input_path_;
     fallback->bounds = {
-        .center = {0.0F, 0.0F, 0.0F},
-        .half_extent = {1.0F, 1.0F, 1.0F},
+        .center = fallback_bounds.center,
+        .half_extent = fallback_bounds.half_extent,
     };
     create_default_textures(device, gpu, fallback->import_resources);
-    create_fallback_material(device, frame_slot_count, *fallback);
-    create_fallback_mesh(gpu, *fallback);
+    create_fallback_material(device, frame_slot_count, loading_cage, *fallback);
+    create_fallback_mesh(gpu, loading_cage, *fallback);
     create_fallback_scene(*fallback);
     active_generation_ = std::move(fallback);
 
@@ -78,10 +105,8 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     create_terrain_backdrop_resources(device, frame_slot_count);
     global_resources_created_ = true;
 
-    // `resolved_input_path` retains the legacy synchronous validation for an
-    // explicitly requested missing file.  Loading a valid file starts only
-    // after fallback/global rendering resources are available.
-    requested_input_path_ = resolved_input_path();
+    // Loading a valid file starts only after fallback/global rendering
+    // resources are available.
     if (!requested_input_path_.empty()) {
         request_imported_asset_build(
             requested_input_path_,
@@ -473,18 +498,23 @@ void GltfViewerApp::create_cloud_environment_runtime(const cubey::vulkan::Device
 }
 
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,
-                                             std::uint32_t frame_slot_count,
+                                             std::uint32_t frame_slot_count, bool loading_cage,
                                              GltfViewerSceneGeneration& generation) {
-    const cubey::render::MaterialHandle material =
-        engine_.render_resources().create_material("gltf_viewer.fallback.material");
+    const cubey::render::MaterialHandle material = engine_.render_resources().create_material(
+        loading_cage ? "gltf_viewer.loading_cage.material" : "gltf_viewer.fallback.material");
     generation.import_result.material_handles.push_back(material);
     generation.import_result.first_material_handle = material;
     generation.import_resources.materials.set_factors(
-        material, cubey::render::PbrMaterialFactors{
-                      .base_color_factor = {0.86F, 0.82F, 0.72F, 1.0F},
-                      .metallic_factor = 0.0F,
-                      .roughness_factor = 0.58F,
-                  });
+        material,
+        cubey::render::PbrMaterialFactors{
+            .base_color_factor = loading_cage ? cubey::math::Vec4{0.12F, 0.32F, 0.58F, 1.0F}
+                                              : cubey::math::Vec4{0.86F, 0.82F, 0.72F, 1.0F},
+            .emissive_factor =
+                loading_cage ? cubey::math::Vec3{0.08F, 0.18F, 0.32F} : cubey::math::Vec3{0.0F},
+            .metallic_factor = 0.0F,
+            .roughness_factor = 0.58F,
+            .unlit = loading_cage,
+        });
     generation.import_resources.materials.emplace_instance(
         material, device,
         cubey::render::FrameUniformMaterialInstanceConfig{
@@ -498,12 +528,28 @@ void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device
         });
 }
 
-void GltfViewerApp::create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu,
+void GltfViewerApp::create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu, bool loading_cage,
                                          GltfViewerSceneGeneration& generation) {
-    std::vector<cubey::render::PbrVertex> vertices = fallback_cube_vertices();
-    std::vector<std::uint32_t> indices = fallback_cube_indices();
-    const cubey::render::MeshHandle mesh =
-        engine_.render_resources().create_mesh("gltf_viewer.fallback.cube");
+    std::vector<cubey::render::PbrVertex> vertices;
+    std::vector<std::uint32_t> indices;
+    cubey::asset::GltfBounds3D local_bounds{
+        .center = generation.bounds.center,
+        .half_extent = generation.bounds.half_extent,
+    };
+    if (loading_cage) {
+        GltfViewerLoadingCageMesh cage = make_gltf_viewer_loading_cage({
+            .center = generation.bounds.center,
+            .half_extent = generation.bounds.half_extent,
+        });
+        vertices = std::move(cage.vertices);
+        indices = std::move(cage.indices);
+        local_bounds = cage.render_bounds;
+    } else {
+        vertices = fallback_cube_vertices();
+        indices = fallback_cube_indices();
+    }
+    const cubey::render::MeshHandle mesh = engine_.render_resources().create_mesh(
+        loading_cage ? "gltf_viewer.loading_cage" : "gltf_viewer.fallback.cube");
     generation.import_resources.meshes.emplace(
         mesh, gpu,
         cubey::render::indexed_mesh_config(std::span<const cubey::render::PbrVertex>{vertices},
@@ -515,16 +561,16 @@ void GltfViewerApp::create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu,
             .material = generation.import_result.first_material_handle,
             .local_bounds =
                 {
-                    .center = {0.0F, 0.0F, 0.0F},
-                    .half_extent = {1.0F, 1.0F, 1.0F},
+                    .center = local_bounds.center,
+                    .half_extent = local_bounds.half_extent,
                 },
         },
     }};
-    generation.triangle_count = kFallbackCubeTriangleCount;
+    generation.triangle_count = static_cast<std::uint32_t>(indices.size() / 3U);
     generation.import_result.triangle_count = generation.triangle_count;
     generation.import_result.bounds = {
-        .center = {0.0F, 0.0F, 0.0F},
-        .half_extent = {1.0F, 1.0F, 1.0F},
+        .center = generation.bounds.center,
+        .half_extent = generation.bounds.half_extent,
     };
     generation.import_resources.active = true;
 }

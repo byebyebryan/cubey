@@ -4,11 +4,16 @@
 generated or HDR-backed image-based lighting, animation, the shared procedural
 atmosphere/cloud environment, and an optional Terrain V1 backdrop.
 
-Windowed runs publish a generated fallback first, prepare the requested
-asset on a CPU worker, create its resident resources on the GPU owner, and
-atomically activate the complete scene at a frame boundary. The previous scene
-remains visible if loading fails. Headless capture uses the same staged path but
-waits for it to finish before frame zero.
+Windowed runs resolve and probe the requested asset's metadata first, then
+publish a wireframe-style indexed loading cage at its authored scene bounds.
+The probe reads only textual glTF JSON or the JSON chunk of a GLB; external
+buffers and embedded BIN payloads remain unopened until staged preparation.
+The full asset is prepared on a CPU worker, its resident resources are created
+on the GPU owner, and the complete scene is atomically activated at a frame
+boundary. A probe failure uses a neutral unit cage and follows the normal
+staged error path; with no input, the generated solid cube remains the demo
+fallback. The previous scene remains visible if loading fails. Headless capture
+uses the same staged path but waits for it to finish before frame zero.
 
 ## Run
 

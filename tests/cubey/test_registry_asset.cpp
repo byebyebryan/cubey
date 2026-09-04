@@ -3,6 +3,9 @@
 #include <array>
 
 void test_gltf_asset_loads_static_pbr_triangle();
+void test_gltf_asset_probes_transformed_scene_bounds_without_loading_buffers();
+void test_gltf_asset_probes_glb_json_without_reading_embedded_bin();
+void test_gltf_asset_probe_rejects_malformed_glb_headers();
 void test_gltf_asset_preserves_ior_special_and_high_values();
 void test_gltf_asset_validates_ior_and_specular_material_values();
 void test_gltf_asset_marks_nodes_authored_with_matrix();
@@ -36,8 +39,11 @@ void test_terrain_raster_height_source_rejects_invalid_contracts();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 30> tests{
+    static constexpr std::array<TestCase, 33> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
+        CUBEY_TEST(test_gltf_asset_probes_transformed_scene_bounds_without_loading_buffers),
+        CUBEY_TEST(test_gltf_asset_probes_glb_json_without_reading_embedded_bin),
+        CUBEY_TEST(test_gltf_asset_probe_rejects_malformed_glb_headers),
         CUBEY_TEST(test_gltf_asset_preserves_ior_special_and_high_values),
         CUBEY_TEST(test_gltf_asset_validates_ior_and_specular_material_values),
         CUBEY_TEST(test_gltf_asset_marks_nodes_authored_with_matrix),

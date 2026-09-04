@@ -16,6 +16,7 @@ cubey_add_app_target(
     SOURCES
         gltf_viewer_app.cpp
         gltf_viewer_assets.cpp
+        gltf_viewer_loading_cage.cpp
         gltf_viewer_render.cpp
         gltf_viewer_scene.cpp
         main.cpp
@@ -93,6 +94,24 @@ if (BUILD_TESTING)
     )
     add_test(NAME gltf_viewer_config_tests COMMAND cubey_project_gltf_viewer_tests)
 
+    add_executable(
+        cubey_project_gltf_viewer_loading_cage_tests
+        gltf_viewer_loading_cage.cpp
+        gltf_viewer_loading_cage_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_gltf_viewer_loading_cage_tests
+        PRIVATE
+            cubey::engine
+            cubey::host
+            cubey_project_options
+            cubey_project_warnings
+    )
+    add_test(
+        NAME gltf_viewer_loading_cage_tests
+        COMMAND cubey_project_gltf_viewer_loading_cage_tests
+    )
+
     set(
         CUBEY_GLTF_VIEWER_TERRAIN_SMOKE_ASSET
         "${CMAKE_SOURCE_DIR}/tests/assets/terrain/backdrop-smoke"
@@ -128,6 +147,17 @@ if (BUILD_TESTING)
             gltf_viewer_stages_import_after_fallback
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
+    )
+
+    add_test(
+        NAME gltf_viewer_uses_metadata_loading_cage
+        COMMAND
+            /bin/sh -c
+            "grep -q 'probe_gltf_scene_bounds' \"$1\" && grep -q 'make_gltf_viewer_loading_cage' \"$1\" && grep -q 'loading_cage' \"$2\" && grep -q 'kVerticesPerPrism = 24U' \"$3\" && grep -q 'kIndicesPerPrism = 36U' \"$3\""
+            gltf_viewer_uses_metadata_loading_cage
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_loading_cage.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_loading_cage_tests.cpp"
     )
 
     add_test(

@@ -246,6 +246,11 @@ struct GltfLoadConfig {
 
 [[nodiscard]] GltfAsset load_gltf_asset(const std::filesystem::path& path,
                                         GltfLoadConfig config = {});
+// Reads only glTF scene/node/accessor metadata. The returned bounds describe
+// the authored rest pose; animated skin and morph extremes are intentionally
+// outside this probe's contract.
+[[nodiscard]] GltfBounds3D probe_gltf_scene_bounds(const std::filesystem::path& path,
+                                                   std::uint32_t scene_index = kInvalidAssetIndex);
 [[nodiscard]] const char* gltf_alpha_mode_name(GltfAlphaMode mode) noexcept;
 [[nodiscard]] GltfTextureColorSpace gltf_texture_color_space_for_base_color() noexcept;
 [[nodiscard]] GltfTextureColorSpace
