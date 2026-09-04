@@ -115,6 +115,20 @@ constexpr std::array<PbrDefaultTextureSpec, 15> kDefaultTextureSpecs{
         });
 }
 
+[[nodiscard]] Texture2D create_pbr_default_texture(const cubey::vulkan::Device& device,
+                                                   cubey::vulkan::GpuOwnerContext& gpu,
+                                                   const PbrDefaultTextureSpec& spec) {
+    return create_uploaded_texture_2d(
+        device, gpu,
+        {
+            .extent = {1, 1},
+            .format = spec.format,
+            .rgba8 = std::span<const std::uint8_t>{spec.rgba8.data(), spec.rgba8.size()},
+            .create_sampler = true,
+            .sampler = {},
+        });
+}
+
 } // namespace
 
 std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept {
@@ -127,6 +141,27 @@ std::span<const PbrDefaultTextureSpec> pbr_default_texture_specs() noexcept {
 
 PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device& device,
                                                     cubey::vulkan::GpuRuntime& gpu) {
+    return {
+        .base_color = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[0]),
+        .metallic_roughness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[1]),
+        .normal = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[2]),
+        .occlusion = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[3]),
+        .emissive = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[4]),
+        .specular = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[5]),
+        .specular_color = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[6]),
+        .clearcoat = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[7]),
+        .clearcoat_roughness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[8]),
+        .clearcoat_normal = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[9]),
+        .sheen_color = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[10]),
+        .sheen_roughness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[11]),
+        .anisotropy = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[12]),
+        .iridescence = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[13]),
+        .iridescence_thickness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[14]),
+    };
+}
+
+PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device& device,
+                                                    cubey::vulkan::GpuOwnerContext& gpu) {
     return {
         .base_color = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[0]),
         .metallic_roughness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[1]),
@@ -272,6 +307,22 @@ void PbrMaterialTable::upload(MaterialHandle material, FrameSlot frame_slot) con
 void PbrMaterialTable::upload(MaterialHandle material, FrameSlot frame_slot,
                               MaterialAlphaMode alpha_mode) const {
     instance(material).upload(frame_slot, pbr_material_uniforms(factors(material), alpha_mode));
+}
+
+void PbrMaterialTable::rebind(MaterialHandle from, MaterialHandle to) {
+    if (!contains(from)) {
+        throw std::runtime_error("PBR material table rebind requires an existing source handle");
+    }
+    if (from == to) {
+        return;
+    }
+    if (contains_factors(to) || contains_instance(to)) {
+        throw std::runtime_error("PBR material table rebind destination already exists");
+    }
+    instances_.rebind(from, to);
+    auto factors = factors_.extract(from);
+    factors.key() = to;
+    factors_.insert(std::move(factors));
 }
 
 void PbrMaterialTable::erase(MaterialHandle material) {

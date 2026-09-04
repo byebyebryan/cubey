@@ -2,12 +2,12 @@
 
 #include "gltf_basisu_texture.h"
 
-#include <cubey/engine/engine.h>
 #include <cubey/render/material.h>
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/sampler.h>
 
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <stdexcept>
@@ -38,7 +38,7 @@ struct TextureCacheKeyHash {
     }
 };
 
-using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCacheKeyHash>;
+using TextureCache = std::unordered_map<TextureCacheKey, std::uint32_t, TextureCacheKeyHash>;
 
 [[nodiscard]] VkFilter to_vk_filter(asset::GltfTextureFilter filter) {
     switch (filter) {
@@ -74,13 +74,8 @@ using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCac
 }
 
 [[nodiscard]] VkFormat image_format_for_color_space(asset::GltfTextureColorSpace color_space) {
-    switch (color_space) {
-    case asset::GltfTextureColorSpace::Srgb:
-        return VK_FORMAT_R8G8B8A8_SRGB;
-    case asset::GltfTextureColorSpace::Linear:
-        return VK_FORMAT_R8G8B8A8_UNORM;
-    }
-    return VK_FORMAT_R8G8B8A8_UNORM;
+    return color_space == asset::GltfTextureColorSpace::Srgb ? VK_FORMAT_R8G8B8A8_SRGB
+                                                             : VK_FORMAT_R8G8B8A8_UNORM;
 }
 
 [[nodiscard]] render::MaterialAlphaMode gltf_alpha_mode(asset::GltfAlphaMode mode) {
@@ -98,13 +93,8 @@ using TextureCache = std::unordered_map<TextureCacheKey, std::size_t, TextureCac
 [[nodiscard]] render::PbrTextureTransform pbr_texture_transform(const asset::GltfTextureRef& ref) {
     return {
         .offset_scale = {ref.offset.x, ref.offset.y, ref.scale.x, ref.scale.y},
-        .rotation_texcoord =
-            {
-                std::cos(ref.rotation),
-                std::sin(ref.rotation),
-                static_cast<float>(ref.texcoord),
-                0.0F,
-            },
+        .rotation_texcoord = {std::cos(ref.rotation), std::sin(ref.rotation),
+                              static_cast<float>(ref.texcoord), 0.0F},
     };
 }
 
@@ -131,39 +121,111 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
 
 [[nodiscard]] std::uint32_t pbr_texture_flags(const asset::GltfMaterial& material) {
     std::uint32_t flags = 0U;
-    if (material.specular_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Specular);
-    }
-    if (material.specular_color_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SpecularColor);
-    }
-    if (material.clearcoat_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Clearcoat);
-    }
-    if (material.clearcoat_roughness_texture.has_value()) {
-        flags |=
-            render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::ClearcoatRoughness);
-    }
-    if (material.clearcoat_normal_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::ClearcoatNormal);
-    }
-    if (material.sheen_color_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SheenColor);
-    }
-    if (material.sheen_roughness_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::SheenRoughness);
-    }
-    if (material.anisotropy_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Anisotropy);
-    }
-    if (material.iridescence_texture.has_value()) {
-        flags |= render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::Iridescence);
-    }
-    if (material.iridescence_thickness_texture.has_value()) {
-        flags |=
-            render::pbr_material_texture_flag(render::PbrMaterialTextureFlag::IridescenceThickness);
-    }
+    const auto set = [&flags](bool present, render::PbrMaterialTextureFlag flag) {
+        if (present) {
+            flags |= render::pbr_material_texture_flag(flag);
+        }
+    };
+    set(material.specular_texture.has_value(), render::PbrMaterialTextureFlag::Specular);
+    set(material.specular_color_texture.has_value(), render::PbrMaterialTextureFlag::SpecularColor);
+    set(material.clearcoat_texture.has_value(), render::PbrMaterialTextureFlag::Clearcoat);
+    set(material.clearcoat_roughness_texture.has_value(),
+        render::PbrMaterialTextureFlag::ClearcoatRoughness);
+    set(material.clearcoat_normal_texture.has_value(),
+        render::PbrMaterialTextureFlag::ClearcoatNormal);
+    set(material.sheen_color_texture.has_value(), render::PbrMaterialTextureFlag::SheenColor);
+    set(material.sheen_roughness_texture.has_value(),
+        render::PbrMaterialTextureFlag::SheenRoughness);
+    set(material.anisotropy_texture.has_value(), render::PbrMaterialTextureFlag::Anisotropy);
+    set(material.iridescence_texture.has_value(), render::PbrMaterialTextureFlag::Iridescence);
+    set(material.iridescence_thickness_texture.has_value(),
+        render::PbrMaterialTextureFlag::IridescenceThickness);
     return flags;
+}
+
+[[nodiscard]] vulkan::SamplerConfig sampler_config_for_texture(const asset::GltfAsset& asset,
+                                                               const asset::GltfTexture& texture,
+                                                               std::uint32_t mip_levels = 1) {
+    const float max_lod = static_cast<float>(mip_levels > 0 ? mip_levels - 1U : 0U);
+    if (texture.sampler_index >= asset.samplers.size()) {
+        return {.max_lod = max_lod};
+    }
+    const asset::GltfSampler& sampler = asset.samplers[texture.sampler_index];
+    return {
+        .min_filter = to_vk_filter(sampler.min_filter),
+        .mag_filter = to_vk_filter(sampler.mag_filter),
+        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .address_mode_u = to_vk_address_mode(sampler.wrap_s),
+        .address_mode_v = to_vk_address_mode(sampler.wrap_t),
+        .address_mode_w = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+        .mipmap_mode = to_vk_mipmap_mode(sampler.mip_filter),
+        .max_lod = sampler.mip_filter == asset::GltfTextureMipFilter::None ? 0.0F : max_lod,
+    };
+}
+
+[[nodiscard]] std::uint32_t
+prepare_texture_for_ref(GltfPreparedScene& prepared, const asset::GltfAsset& asset,
+                        const asset::GltfTextureRef& ref, asset::GltfTextureColorSpace color_space,
+                        GltfSceneImportCapabilities capabilities, TextureCache& texture_cache) {
+    if (!ref.has_value()) {
+        return asset::kInvalidAssetIndex;
+    }
+    if (ref.texture_index >= asset.textures.size()) {
+        throw std::runtime_error("glTF material texture index is out of range");
+    }
+    const TextureCacheKey key{.texture_index = ref.texture_index, .color_space = color_space};
+    if (const auto existing = texture_cache.find(key); existing != texture_cache.end()) {
+        return existing->second;
+    }
+
+    const asset::GltfTexture& texture = asset.textures[ref.texture_index];
+    if (texture.image_index >= asset.images.size()) {
+        throw std::runtime_error("glTF texture image index is out of range");
+    }
+    const asset::GltfImage& image = asset.images[texture.image_index];
+    GltfPreparedTexture prepared_texture;
+    if (image.encoding == asset::GltfImageEncoding::Ktx2Basisu) {
+        GltfBasisuTextureUpload transcoded = transcode_gltf_basisu_texture(
+            image, color_space, capabilities.supports_texture_compression_bc);
+        prepared_texture = {
+            .extent = transcoded.extent,
+            .mip_levels = transcoded.mip_levels,
+            .format = transcoded.format,
+            .rgba8 = false,
+            .bytes = std::move(transcoded.bytes),
+            .mips = std::move(transcoded.mips),
+            .sampler = sampler_config_for_texture(asset, texture, transcoded.mip_levels),
+        };
+    } else if (image.encoding == asset::GltfImageEncoding::Rgba8) {
+        prepared_texture = {
+            .extent = {image.width, image.height},
+            .mip_levels = 1,
+            .format = image_format_for_color_space(color_space),
+            .rgba8 = true,
+            .bytes = image.rgba8,
+            .sampler = sampler_config_for_texture(asset, texture),
+        };
+    } else {
+        throw std::runtime_error("unsupported glTF image encoding");
+    }
+
+    const std::uint32_t prepared_index = static_cast<std::uint32_t>(prepared.textures.size());
+    prepared.textures.push_back(std::move(prepared_texture));
+    texture_cache.emplace(key, prepared_index);
+    return prepared_index;
+}
+
+void prepare_material_texture(GltfPreparedMaterial& material, GltfPreparedScene& prepared,
+                              const asset::GltfAsset& asset, render::PbrMaterialBinding binding,
+                              const asset::GltfTextureRef& texture,
+                              asset::GltfTextureColorSpace color_space,
+                              GltfSceneImportCapabilities capabilities,
+                              TextureCache& texture_cache) {
+    material.textures.push_back({
+        .binding = binding,
+        .texture_index = prepare_texture_for_ref(prepared, asset, texture, color_space,
+                                                 capabilities, texture_cache),
+    });
 }
 
 [[nodiscard]] const render::Texture2D& default_texture(const GltfSceneImportResources& resources,
@@ -175,233 +237,32 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
 }
 
 [[nodiscard]] TextureBinding texture_binding(const render::Texture2D& texture) {
-    return {
-        .sampler = texture.sampler().handle(),
-        .view = texture.view(),
-    };
-}
-
-[[nodiscard]] vulkan::SamplerConfig sampler_config_for_texture(const asset::GltfAsset& asset,
-                                                               const asset::GltfTexture& texture,
-                                                               std::uint32_t mip_levels = 1) {
-    const float max_lod = static_cast<float>(mip_levels > 0 ? mip_levels - 1U : 0U);
-    if (texture.sampler_index >= asset.samplers.size()) {
-        return {
-            .max_lod = max_lod,
-        };
-    }
-    const asset::GltfSampler& sampler = asset.samplers[texture.sampler_index];
-    const float sampled_max_lod =
-        sampler.mip_filter == asset::GltfTextureMipFilter::None ? 0.0F : max_lod;
-    return {
-        .min_filter = to_vk_filter(sampler.min_filter),
-        .mag_filter = to_vk_filter(sampler.mag_filter),
-        .address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .address_mode_u = to_vk_address_mode(sampler.wrap_s),
-        .address_mode_v = to_vk_address_mode(sampler.wrap_t),
-        .address_mode_w = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .mipmap_mode = to_vk_mipmap_mode(sampler.mip_filter),
-        .max_lod = sampled_max_lod,
-    };
-}
-
-[[nodiscard]] TextureBinding
-texture_binding_for_ref(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                        GltfSceneImportResources& resources, const asset::GltfAsset& asset,
-                        const asset::GltfTextureRef& ref, asset::GltfTextureColorSpace color_space,
-                        render::PbrMaterialBinding fallback_slot, TextureCache& texture_cache) {
-    if (!ref.has_value()) {
-        return texture_binding(default_texture(resources, fallback_slot));
-    }
-    if (ref.texture_index >= asset.textures.size()) {
-        throw std::runtime_error("glTF material texture index is out of range");
-    }
-    const TextureCacheKey cache_key{
-        .texture_index = ref.texture_index,
-        .color_space = color_space,
-    };
-    const auto cached = texture_cache.find(cache_key);
-    if (cached != texture_cache.end()) {
-        return texture_binding(resources.textures.at(cached->second));
-    }
-
-    const asset::GltfTexture& texture = asset.textures[ref.texture_index];
-    if (texture.image_index >= asset.images.size()) {
-        throw std::runtime_error("glTF texture image index is out of range");
-    }
-    const asset::GltfImage& image = asset.images[texture.image_index];
-    render::Texture2D uploaded = [&] {
-        if (image.encoding == asset::GltfImageEncoding::Ktx2Basisu) {
-            GltfBasisuTextureUpload transcoded = transcode_gltf_basisu_texture(
-                image, color_space, device.supports_texture_compression_bc());
-            return render::create_uploaded_texture_2d(
-                device, gpu,
-                {
-                    .extent = transcoded.extent,
-                    .mip_levels = transcoded.mip_levels,
-                    .format = transcoded.format,
-                    .bytes = std::span<const std::uint8_t>{transcoded.bytes.data(),
-                                                           transcoded.bytes.size()},
-                    .mips = std::span<const render::UploadedTexture2DMip>{transcoded.mips.data(),
-                                                                          transcoded.mips.size()},
-                    .create_sampler = true,
-                    .sampler = sampler_config_for_texture(asset, texture, transcoded.mip_levels),
-                });
-        }
-        if (image.encoding != asset::GltfImageEncoding::Rgba8) {
-            throw std::runtime_error("unsupported glTF image encoding");
-        }
-        return render::create_uploaded_texture_2d(
-            device, gpu,
-            {
-                .extent = {image.width, image.height},
-                .format = image_format_for_color_space(color_space),
-                .rgba8 = std::span<const std::uint8_t>{image.rgba8.data(), image.rgba8.size()},
-                .create_sampler = true,
-                .sampler = sampler_config_for_texture(asset, texture),
-            });
-    }();
-    resources.textures.push_back(std::move(uploaded));
-    texture_cache.emplace(cache_key, resources.textures.size() - 1U);
-    return texture_binding(resources.textures.back());
+    return {.sampler = texture.sampler().handle(), .view = texture.view()};
 }
 
 [[nodiscard]] std::vector<render::SampledImageMaterialBinding>
-material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                                GltfSceneImportResources& resources, const asset::GltfAsset& asset,
-                                const asset::GltfMaterial& source, TextureCache& texture_cache) {
-    const TextureBinding base_color =
-        texture_binding_for_ref(device, gpu, resources, asset, source.base_color_texture,
-                                asset::gltf_texture_color_space_for_base_color(),
-                                render::PbrMaterialBinding::BaseColor, texture_cache);
-    const TextureBinding metallic_roughness =
-        texture_binding_for_ref(device, gpu, resources, asset, source.metallic_roughness_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::MetallicRoughness, texture_cache);
-    const TextureBinding normal = texture_binding_for_ref(
-        device, gpu, resources, asset, source.normal_texture, asset::GltfTextureColorSpace::Linear,
-        render::PbrMaterialBinding::Normal, texture_cache);
-    const TextureBinding occlusion = texture_binding_for_ref(
-        device, gpu, resources, asset, source.occlusion_texture,
-        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Occlusion, texture_cache);
-    const TextureBinding emissive = texture_binding_for_ref(
-        device, gpu, resources, asset, source.emissive_texture, asset::GltfTextureColorSpace::Srgb,
-        render::PbrMaterialBinding::Emissive, texture_cache);
-    const TextureBinding specular = texture_binding_for_ref(
-        device, gpu, resources, asset, source.specular_texture,
-        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Specular, texture_cache);
-    const TextureBinding specular_color =
-        texture_binding_for_ref(device, gpu, resources, asset, source.specular_color_texture,
-                                asset::GltfTextureColorSpace::Srgb,
-                                render::PbrMaterialBinding::SpecularColor, texture_cache);
-    const TextureBinding clearcoat = texture_binding_for_ref(
-        device, gpu, resources, asset, source.clearcoat_texture,
-        asset::GltfTextureColorSpace::Linear, render::PbrMaterialBinding::Clearcoat, texture_cache);
-    const TextureBinding clearcoat_roughness =
-        texture_binding_for_ref(device, gpu, resources, asset, source.clearcoat_roughness_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::ClearcoatRoughness, texture_cache);
-    const TextureBinding clearcoat_normal =
-        texture_binding_for_ref(device, gpu, resources, asset, source.clearcoat_normal_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::ClearcoatNormal, texture_cache);
-    const TextureBinding sheen_color = texture_binding_for_ref(
-        device, gpu, resources, asset, source.sheen_color_texture,
-        asset::GltfTextureColorSpace::Srgb, render::PbrMaterialBinding::SheenColor, texture_cache);
-    const TextureBinding sheen_roughness =
-        texture_binding_for_ref(device, gpu, resources, asset, source.sheen_roughness_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::SheenRoughness, texture_cache);
-    const TextureBinding anisotropy =
-        texture_binding_for_ref(device, gpu, resources, asset, source.anisotropy_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::Anisotropy, texture_cache);
-    const TextureBinding iridescence =
-        texture_binding_for_ref(device, gpu, resources, asset, source.iridescence_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::Iridescence, texture_cache);
-    const TextureBinding iridescence_thickness =
-        texture_binding_for_ref(device, gpu, resources, asset, source.iridescence_thickness_texture,
-                                asset::GltfTextureColorSpace::Linear,
-                                render::PbrMaterialBinding::IridescenceThickness, texture_cache);
-
-    return {
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::BaseColor),
-            .sampler = base_color.sampler,
-            .image_view = base_color.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::MetallicRoughness),
-            .sampler = metallic_roughness.sampler,
-            .image_view = metallic_roughness.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Normal),
-            .sampler = normal.sampler,
-            .image_view = normal.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Occlusion),
-            .sampler = occlusion.sampler,
-            .image_view = occlusion.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Emissive),
-            .sampler = emissive.sampler,
-            .image_view = emissive.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Specular),
-            .sampler = specular.sampler,
-            .image_view = specular.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::SpecularColor),
-            .sampler = specular_color.sampler,
-            .image_view = specular_color.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Clearcoat),
-            .sampler = clearcoat.sampler,
-            .image_view = clearcoat.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::ClearcoatRoughness),
-            .sampler = clearcoat_roughness.sampler,
-            .image_view = clearcoat_roughness.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::ClearcoatNormal),
-            .sampler = clearcoat_normal.sampler,
-            .image_view = clearcoat_normal.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::SheenColor),
-            .sampler = sheen_color.sampler,
-            .image_view = sheen_color.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::SheenRoughness),
-            .sampler = sheen_roughness.sampler,
-            .image_view = sheen_roughness.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Anisotropy),
-            .sampler = anisotropy.sampler,
-            .image_view = anisotropy.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Iridescence),
-            .sampler = iridescence.sampler,
-            .image_view = iridescence.view,
-        },
-        render::SampledImageMaterialBinding{
-            .binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::IridescenceThickness),
-            .sampler = iridescence_thickness.sampler,
-            .image_view = iridescence_thickness.view,
-        },
-    };
+material_sampled_image_bindings(const GltfSceneImportResources& resources,
+                                const GltfPreparedMaterial& material) {
+    std::vector<render::SampledImageMaterialBinding> bindings;
+    bindings.reserve(material.textures.size());
+    for (const GltfPreparedMaterialTexture& texture_ref : material.textures) {
+        const render::Texture2D* texture = nullptr;
+        if (texture_ref.texture_index == asset::kInvalidAssetIndex) {
+            texture = &default_texture(resources, texture_ref.binding);
+        } else {
+            if (texture_ref.texture_index >= resources.textures.size()) {
+                throw std::runtime_error("prepared glTF texture index is out of range");
+            }
+            texture = &resources.textures[texture_ref.texture_index];
+        }
+        const TextureBinding binding = texture_binding(*texture);
+        bindings.push_back({
+            .binding = static_cast<std::uint32_t>(texture_ref.binding),
+            .sampler = binding.sampler,
+            .image_view = binding.view,
+        });
+    }
+    return bindings;
 }
 
 [[nodiscard]] std::string import_label(const GltfSceneImportConfig& config, const char* kind,
@@ -409,83 +270,162 @@ material_sampled_image_bindings(const vulkan::Device& device, vulkan::GpuRuntime
     return config.label_prefix + "." + kind + "." + std::to_string(index);
 }
 
-} // namespace
-
-void create_default_textures(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                             GltfSceneImportResources& resources) {
-    if (resources.default_textures.has_value()) {
-        return;
-    }
-    resources.default_textures.emplace(render::create_pbr_default_texture_set(device, gpu));
+[[nodiscard]] render::MaterialHandle staging_material_handle(std::size_t index) {
+    return {.index = static_cast<std::uint32_t>(index + 1U), .generation = 0U};
 }
 
-void create_material_resources(Engine& engine, const vulkan::Device& device,
-                               vulkan::GpuRuntime& gpu, GltfSceneImportResources& resources,
-                               GltfSceneImportResult& result, const asset::GltfAsset& asset,
-                               const GltfSceneImportConfig& config) {
-    const render::MaterialPassInfo pass = render::pbr_forward_pass_info();
+} // namespace
+
+void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset& asset,
+                            const GltfSceneImportConfig& config,
+                            GltfSceneImportCapabilities capabilities) {
     TextureCache texture_cache;
-    result.material_handles.reserve(asset.materials.size());
+    prepared.materials.reserve(asset.materials.size());
     for (std::size_t index = 0; index < asset.materials.size(); ++index) {
         const asset::GltfMaterial& source = asset.materials[index];
         const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode);
-        const std::string label =
-            source.label.empty() ? import_label(config, "material", index) : source.label;
-        const render::MaterialHandle material =
-            engine.render_resources().create_material(render::MaterialInfo{
-                .label = label,
-                .alpha_mode = gltf_alpha_mode(source.alpha_mode),
-                .blend = render::material_blend_mode_for_alpha_mode(alpha_mode),
-                .cull_mode = source.double_sided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT,
-                .sort_key = static_cast<std::uint32_t>(index),
-                .pass_mask = render::material_pass_mask_for_alpha_mode(alpha_mode),
-            });
-        result.material_handles.push_back(material);
-        resources.materials.set_factors(
-            material, render::PbrMaterialFactors{
-                          .base_color_factor = source.base_color_factor,
-                          .emissive_factor = source.emissive_factor,
-                          .alpha_cutoff = source.alpha_mode == asset::GltfAlphaMode::Mask
-                                              ? source.alpha_cutoff
-                                              : 0.0F,
-                          .alpha_mode = alpha_mode,
-                          .metallic_factor = source.metallic_factor,
-                          .roughness_factor = source.roughness_factor,
-                          .normal_scale = source.normal_scale,
-                          .occlusion_strength = source.occlusion_strength,
-                          .specular_color_factor = source.specular_color_factor,
-                          .specular_factor = source.specular_factor,
-                          .dielectric_ior = source.ior,
-                          .clearcoat_factor = source.clearcoat_factor,
-                          .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
-                          .clearcoat_normal_scale = source.clearcoat_normal_scale,
-                          .sheen_color_factor = source.sheen_color_factor,
-                          .sheen_roughness_factor = source.sheen_roughness_factor,
-                          .anisotropy_strength = source.anisotropy_strength,
-                          .anisotropy_rotation = source.anisotropy_rotation,
-                          .iridescence_factor = source.iridescence_factor,
-                          .iridescence_ior = source.iridescence_ior,
-                          .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
-                          .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
-                          .unlit = source.unlit,
-                          .texture_flags = pbr_texture_flags(source),
-                          .texture_transforms = pbr_texture_transforms(source),
-                      });
+        GltfPreparedMaterial material{
+            .info =
+                {
+                    .label = source.label.empty() ? import_label(config, "material", index)
+                                                  : source.label,
+                    .alpha_mode = alpha_mode,
+                    .blend = render::material_blend_mode_for_alpha_mode(alpha_mode),
+                    .cull_mode = source.double_sided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT,
+                    .sort_key = static_cast<std::uint32_t>(index),
+                    .pass_mask = render::material_pass_mask_for_alpha_mode(alpha_mode),
+                },
+            .factors =
+                {
+                    .base_color_factor = source.base_color_factor,
+                    .emissive_factor = source.emissive_factor,
+                    .alpha_cutoff = source.alpha_mode == asset::GltfAlphaMode::Mask
+                                        ? source.alpha_cutoff
+                                        : 0.0F,
+                    .alpha_mode = alpha_mode,
+                    .metallic_factor = source.metallic_factor,
+                    .roughness_factor = source.roughness_factor,
+                    .normal_scale = source.normal_scale,
+                    .occlusion_strength = source.occlusion_strength,
+                    .specular_color_factor = source.specular_color_factor,
+                    .specular_factor = source.specular_factor,
+                    .dielectric_ior = source.ior,
+                    .clearcoat_factor = source.clearcoat_factor,
+                    .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
+                    .clearcoat_normal_scale = source.clearcoat_normal_scale,
+                    .sheen_color_factor = source.sheen_color_factor,
+                    .sheen_roughness_factor = source.sheen_roughness_factor,
+                    .anisotropy_strength = source.anisotropy_strength,
+                    .anisotropy_rotation = source.anisotropy_rotation,
+                    .iridescence_factor = source.iridescence_factor,
+                    .iridescence_ior = source.iridescence_ior,
+                    .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
+                    .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
+                    .unlit = source.unlit,
+                    .texture_flags = pbr_texture_flags(source),
+                    .texture_transforms = pbr_texture_transforms(source),
+                },
+        };
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::BaseColor,
+                                 source.base_color_texture,
+                                 asset::gltf_texture_color_space_for_base_color(), capabilities,
+                                 texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::MetallicRoughness,
+                                 source.metallic_roughness_texture,
+                                 asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Normal,
+                                 source.normal_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Occlusion,
+                                 source.occlusion_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Emissive,
+                                 source.emissive_texture, asset::GltfTextureColorSpace::Srgb,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Specular,
+                                 source.specular_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::SpecularColor,
+                                 source.specular_color_texture, asset::GltfTextureColorSpace::Srgb,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Clearcoat,
+                                 source.clearcoat_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::ClearcoatRoughness,
+                                 source.clearcoat_roughness_texture,
+                                 asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::ClearcoatNormal,
+                                 source.clearcoat_normal_texture,
+                                 asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::SheenColor,
+                                 source.sheen_color_texture, asset::GltfTextureColorSpace::Srgb,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::SheenRoughness,
+                                 source.sheen_roughness_texture,
+                                 asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Anisotropy,
+                                 source.anisotropy_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::Iridescence,
+                                 source.iridescence_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::IridescenceThickness,
+                                 source.iridescence_thickness_texture,
+                                 asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
+        prepared.materials.push_back(std::move(material));
+    }
+    if (prepared.materials.empty()) {
+        throw std::runtime_error("glTF scene import requires at least one material");
+    }
+}
+
+void build_gltf_material_resources(vulkan::GpuOwnerContext& gpu, const GltfPreparedScene& prepared,
+                                   const GltfSceneImportConfig& config,
+                                   GltfSceneResident& resident) {
+    gpu.require_owner_thread("glTF material residency requires the GPU owner thread");
+    GltfSceneImportResources& resources = resident.resources;
+    resources.default_textures.emplace(render::create_pbr_default_texture_set(gpu.device(), gpu));
+    resources.textures.reserve(prepared.textures.size());
+    for (const GltfPreparedTexture& texture : prepared.textures) {
+        const std::span<const std::uint8_t> bytes{texture.bytes.data(), texture.bytes.size()};
+        resources.textures.push_back(render::create_uploaded_texture_2d(
+            gpu.device(), gpu,
+            {
+                .extent = texture.extent,
+                .mip_levels = texture.mip_levels,
+                .format = texture.format,
+                .rgba8 = texture.rgba8 ? bytes : std::span<const std::uint8_t>{},
+                .bytes = texture.rgba8 ? std::span<const std::uint8_t>{} : bytes,
+                .mips = std::span<const render::UploadedTexture2DMip>{texture.mips.data(),
+                                                                      texture.mips.size()},
+                .create_sampler = true,
+                .sampler = texture.sampler,
+            }));
+    }
+
+    const render::MaterialPassInfo pass = render::pbr_forward_pass_info();
+    resident.material_handles.reserve(prepared.materials.size());
+    for (std::size_t index = 0; index < prepared.materials.size(); ++index) {
+        const GltfPreparedMaterial& material = prepared.materials[index];
+        const render::MaterialHandle handle = staging_material_handle(index);
+        resources.materials.set_factors(handle, material.factors);
         resources.materials.emplace_instance(
-            material, device,
+            handle, gpu.device(),
             render::FrameUniformMaterialInstanceConfig{
                 .material_pass = pass,
                 .descriptor_set = 1,
                 .frame_slot_count = config.frame_slot_count,
                 .uniform_binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Uniforms),
-                .sampled_images = material_sampled_image_bindings(device, gpu, resources, asset,
-                                                                  source, texture_cache),
+                .sampled_images = material_sampled_image_bindings(resources, material),
             });
+        resident.material_handles.push_back(handle);
     }
-    if (result.material_handles.empty()) {
-        throw std::runtime_error("glTF scene import requires at least one material");
-    }
-    result.first_material_handle = result.material_handles.front();
 }
 
 } // namespace cubey

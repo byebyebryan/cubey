@@ -515,7 +515,7 @@ Status: threaded default plus inline test mode complete.
 ### Slice 7: Progressive Resource Initialization
 
 Status: terrain products, Planet surface products, atmosphere atlases, and glTF
-atmosphere-atlas consumption complete.
+asset generations complete.
 
 - Added typed `GpuJobHandle<T>` results without changing raw queued-work
   failure behavior.
@@ -538,6 +538,13 @@ atmosphere-atlas consumption complete.
   glTF updates both its visible background and atmosphere reflection-probe
   bindings after activation. None of these paths calls `vkDeviceWaitIdle` for
   atlas updates.
+- glTF scene import is split into CPU-only preparation, GPU-owner residency,
+  and app-thread activation. The viewer presents a complete generated fallback
+  first, atomically activates the imported asset and optional terrain as one
+  generation, and retires the previous generation after its latest submission
+  ticket. Headless capture blocks on the same staged path before frame zero.
+  Failed or superseded residents are released through the GPU owner rather than
+  on the polling or shutdown caller.
 - The worktree-local generated-artifact cache now closes the dominant repeat
   startup cost without changing staged activation. On the validation
   workstation, the default Release atlas pair prepared in 2.421 seconds cold
@@ -559,8 +566,7 @@ atmosphere-atlas consumption complete.
   CPU job, so it is not a generator benchmark.
 - Ocean, Water 3D, and Pyro 3D retain synchronous project-resource setup for
   now, but use the same persistent atlas cache instead of regenerating shared
-  environment products on every launch. glTF asset loading itself also remains
-  synchronous; only its atmosphere-atlas consumer uses the staged lifecycle.
+  environment products on every launch.
   This slice does not add general streaming, partial terrain sectors, partial
   atlas tiles, or a resource dependency graph. Cache eviction is deliberately
   limited to the generated-artifact cache's coarse worktree budget.

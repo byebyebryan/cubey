@@ -4,6 +4,12 @@
 generated or HDR-backed image-based lighting, animation, the shared procedural
 atmosphere/cloud environment, and an optional Terrain V1 backdrop.
 
+Windowed runs publish a generated fallback first, prepare the requested
+asset on a CPU worker, create its resident resources on the GPU owner, and
+atomically activate the complete scene at a frame boundary. The previous scene
+remains visible if loading fails. Headless capture uses the same staged path but
+waits for it to finish before frame zero.
+
 ## Run
 
 ```sh

@@ -117,11 +117,24 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
 
+    # Viewer-specific lifecycle guard: fallback/global resources are created
+    # through the host's global phase, whereas parsing is only requested via
+    # StagedResource and activation publishes a complete replacement generation.
+    add_test(
+        NAME gltf_viewer_stages_import_after_fallback
+        COMMAND
+            /bin/sh -c
+            "grep -q 'callbacks.create_global_resources' \"$1\" && grep -q 'create_fallback_scene' \"$2\" && grep -q 'asset_builds_\.request' \"$2\" && grep -q 'callbacks.create_swapchain_resources' \"$1\" && grep -q 'poll_imported_asset_build' \"$1\" && grep -q 'std::shared_ptr<GltfViewerSceneGeneration> previous' \"$2\" && grep -q 'active_generation_ = std::move(next)' \"$2\" && grep -q 'asset_activation_error_' \"$2\""
+            gltf_viewer_stages_import_after_fallback
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
+    )
+
     add_test(
         NAME gltf_viewer_terrain_backdrop_is_explicit_and_shared
         COMMAND
             /bin/sh -c
-            "grep -q 'config_\.terrain\.heightfield_path' \"$1\" && grep -q 'terrain backdrop requires --pbr-environment-source atmosphere' \"$1\" && grep -q 'TerrainBackdropRuntime' \"$2\" && grep -q 'terrain_backdrop' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q 'projects/terrain' \"$4\""
+            "grep -q 'config_\.terrain\.heightfield_path' \"$1\" && grep -q 'terrain backdrop requires --pbr-environment-source atmosphere' \"$1\" && grep -q 'TerrainBackdropRuntime' \"$2\" && grep -q 'generation\.terrain_surface\.has_value()' \"$3\" && ! grep -R --include='*.cpp' --include='*.h' -q 'projects/terrain' \"$4\""
             gltf_viewer_terrain_backdrop_is_explicit_and_shared
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app_internal.h"

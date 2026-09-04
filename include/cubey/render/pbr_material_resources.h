@@ -48,6 +48,9 @@ struct PbrDefaultTextureSet {
 [[nodiscard]] std::span<const PbrDefaultTextureSpec> pbr_default_texture_specs() noexcept;
 [[nodiscard]] PbrDefaultTextureSet
 create_pbr_default_texture_set(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
+[[nodiscard]] PbrDefaultTextureSet
+create_pbr_default_texture_set(const cubey::vulkan::Device& device,
+                               cubey::vulkan::GpuOwnerContext& gpu);
 [[nodiscard]] const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set,
                                                    PbrMaterialBinding binding);
 [[nodiscard]] std::vector<SampledImageMaterialBinding>
@@ -85,6 +88,7 @@ class PbrMaterialTable {
     [[nodiscard]] VkDescriptorSetLayout layout(MaterialHandle material) const;
     void upload(MaterialHandle material, FrameSlot frame_slot) const;
     void upload(MaterialHandle material, FrameSlot frame_slot, MaterialAlphaMode alpha_mode) const;
+    void rebind(MaterialHandle from, MaterialHandle to);
     void erase(MaterialHandle material);
     void clear();
 

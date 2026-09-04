@@ -135,7 +135,8 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 }
 
 GltfViewerApp::GltfViewerApp(GltfViewerProjectConfig config)
-    : config_(std::move(config)), debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
+    : config_(std::move(config)), asset_builds_(asset_jobs_),
+      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
       atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)),
       clouds_config_(gltf_viewer_cloud_config(config_)),
       ocean_config_(gltf_viewer_ocean_config_from_options(config_)) {
@@ -189,6 +190,23 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
     if (!cubey::host::begin_control_panel("glTF Viewer", {.width = 430.0F})) {
         ImGui::End();
         return;
+    }
+
+    const cubey::StagedResourceStatus& asset_status = asset_builds_.status();
+    ImGui::Text("Asset: %s generation %llu (%s)",
+                active_generation().fallback ? "fallback" : "imported",
+                static_cast<unsigned long long>(active_generation().source.id),
+                cubey::staged_resource_phase_name(asset_status.phase).data());
+    if (!requested_input_path_.empty()) {
+        ImGui::TextWrapped("Input: %s", requested_input_path_.string().c_str());
+    }
+    ImGui::Text("CPU %.1f ms  GPU %.1f ms  activation %.1f ms", asset_status.prepare_milliseconds,
+                asset_status.install_milliseconds, asset_activation_milliseconds_);
+    ImGui::Text(
+        "%u triangles  %llu upload bytes", active_generation().triangle_count,
+        static_cast<unsigned long long>(active_generation().import_result.mesh_upload_byte_count));
+    if (!asset_activation_error_.empty()) {
+        ImGui::TextWrapped("Asset load error: %s", asset_activation_error_.c_str());
     }
 
     if (cubey::host::draw_atmosphere_environment_controls(
@@ -248,8 +266,8 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
                         },
                     .foreground =
                         {
-                            .anchor_world_height_m = scene_bounds_.center.y,
-                            .minimum_local_height_m = -scene_bounds_.half_extent.y,
+                            .anchor_world_height_m = active_generation().bounds.center.y,
+                            .minimum_local_height_m = -active_generation().bounds.half_extent.y,
                         },
                     .requested_foreground_height_m = ocean_foreground_height_m_,
                     .minimum_clearance_m = 0.1F,
@@ -271,9 +289,11 @@ int GltfViewerApp::run() {
 
 int GltfViewerApp::run_windowed() {
     cubey::host::WindowedAppCallbacks callbacks;
-    callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
+    callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
         create_global_resources_if_needed(context.device(), context.gpu(),
                                           context.frame_slot_count());
+    };
+    callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
         create_frame_resources(context.device(), context.swapchain().extent(),
                                context.swapchain().format(), context.frame_slot_count());
     };
@@ -282,6 +302,8 @@ int GltfViewerApp::run_windowed() {
         destroy_swapchain_resources();
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
+        poll_imported_asset_build(context.gpu(),
+                                  context.frame_resources().latest_submitted_ticket());
         poll_atmosphere_background_atlases(context.device(), context.gpu(),
                                            context.frame_resources());
         update_animation(static_cast<float>(timing.delta_seconds));
@@ -311,7 +333,7 @@ int GltfViewerApp::run_windowed() {
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = triangle_count_,
+            .triangles = active_generation().triangle_count,
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
@@ -343,6 +365,7 @@ int GltfViewerApp::run_headless() {
         create_global_resources_if_needed(
             context.device(), context.gpu(),
             cubey::host::headless_capture_frame_slot_count(config_.common));
+        finish_imported_asset_build(context.gpu(), {});
         finish_atmosphere_background_atlases(context.device(), context.gpu());
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format,

@@ -7,17 +7,23 @@
 
 namespace cubey {
 
-void create_default_textures(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                             GltfSceneImportResources& resources);
+void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset& asset,
+                            const GltfSceneImportConfig& config,
+                            GltfSceneImportCapabilities capabilities);
 
-void create_material_resources(Engine& engine, const vulkan::Device& device,
-                               vulkan::GpuRuntime& gpu, GltfSceneImportResources& resources,
-                               GltfSceneImportResult& result, const asset::GltfAsset& asset,
-                               const GltfSceneImportConfig& config);
+void build_gltf_material_resources(vulkan::GpuOwnerContext& gpu, const GltfPreparedScene& prepared,
+                                   const GltfSceneImportConfig& config,
+                                   GltfSceneResident& resident);
 
-void create_deformation_resources(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                                  GltfSceneImportResources& resources,
-                                  const asset::GltfAsset& asset,
-                                  const GltfSceneImportConfig& config);
+void prepare_gltf_deformation_primitives(GltfPreparedScene& prepared,
+                                         const asset::GltfAsset& asset);
+
+void build_gltf_deformation_resources(vulkan::GpuOwnerContext& gpu,
+                                      const GltfPreparedScene& prepared,
+                                      const GltfSceneImportConfig& config,
+                                      GltfSceneResident& resident);
+
+void rebuild_gltf_deformation_frame_meshes(GltfSceneImportResources& resources,
+                                           const GltfSceneImportConfig& config);
 
 } // namespace cubey

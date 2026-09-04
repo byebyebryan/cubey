@@ -181,6 +181,7 @@ void test_render_resource_handles_are_hashable_keys();
 void test_render_resource_registry_round_trips_mesh_and_material_info();
 void test_render_resource_registry_tracks_handle_lifetime_and_labels();
 void test_render_resource_table_resolves_move_only_resources_by_handle();
+void test_render_resource_table_rebinds_move_only_resource_without_reconstruction();
 void test_render_target_rendering_info_describes_dynamic_rendering();
 void test_render_target_rendering_info_describes_multiple_color_attachments();
 void test_render_target_views_describe_color_only_targets();
@@ -378,6 +379,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_resource_handles_are_hashable_keys),
         CUBEY_TEST(test_render_resource_registry_round_trips_mesh_and_material_info),
         CUBEY_TEST(test_render_resource_table_resolves_move_only_resources_by_handle),
+        CUBEY_TEST(test_render_resource_table_rebinds_move_only_resource_without_reconstruction),
         CUBEY_TEST(test_shadow_map_sampler_uses_depth_texture_defaults),
         CUBEY_TEST(test_shadow_map_depth_texture_config_describes_sampled_depth_target),
         CUBEY_TEST(test_shadow_depth_pass_info_declares_depth_only_state),

@@ -3,10 +3,12 @@
 #include <vulkan/vulkan.h>
 
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <utility>
 
 namespace {
 
@@ -26,6 +28,56 @@ cubey::vulkan::SubmissionCoordinator fake_submission() {
         [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
         [](VkQueue, const char*) {});
 }
+
+struct ResidentTrackerState {
+    std::mutex mutex;
+    std::condition_variable changed;
+    std::thread::id installed_thread{};
+    std::thread::id destroyed_thread{};
+    bool installed = false;
+    bool destroyed = false;
+};
+
+class MoveOnlyResidentTracker {
+  public:
+    explicit MoveOnlyResidentTracker(std::shared_ptr<ResidentTrackerState> state)
+        : state_(std::move(state)) {}
+
+    MoveOnlyResidentTracker(const MoveOnlyResidentTracker&) = delete;
+    MoveOnlyResidentTracker& operator=(const MoveOnlyResidentTracker&) = delete;
+
+    MoveOnlyResidentTracker(MoveOnlyResidentTracker&& other) noexcept
+        : state_(std::move(other.state_)),
+          owns_resident_(std::exchange(other.owns_resident_, false)) {}
+
+    MoveOnlyResidentTracker& operator=(MoveOnlyResidentTracker&& other) noexcept {
+        if (this != &other) {
+            release();
+            state_ = std::move(other.state_);
+            owns_resident_ = std::exchange(other.owns_resident_, false);
+        }
+        return *this;
+    }
+
+    ~MoveOnlyResidentTracker() {
+        release();
+    }
+
+  private:
+    void release() {
+        if (!owns_resident_ || state_ == nullptr) {
+            return;
+        }
+        std::scoped_lock lock(state_->mutex);
+        state_->destroyed = true;
+        state_->destroyed_thread = std::this_thread::get_id();
+        state_->changed.notify_all();
+        owns_resident_ = false;
+    }
+
+    std::shared_ptr<ResidentTrackerState> state_;
+    bool owns_resident_ = true;
+};
 
 } // namespace
 
@@ -154,6 +206,150 @@ void test_staged_resource_keeps_only_latest_pending_generation() {
     require(result.generation.id == latest.id && result.resident == 30,
             "only the latest pending generation should become resident");
     require(second_preparations == 0, "replaced pending generation should never consume a worker");
+}
+
+void test_staged_resource_discards_replaced_ready_resident_on_gpu_owner() {
+    cubey::jobs::JobSystem jobs(1);
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime gpu({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+    cubey::StagedResource<int, MoveOnlyResidentTracker> resource(jobs);
+    const auto state = std::make_shared<ResidentTrackerState>();
+    const auto replacement_state = std::make_shared<ResidentTrackerState>();
+
+    static_cast<void>(resource.request(
+        "tracked ready", [] { return 1; },
+        [state](cubey::vulkan::GpuOwnerContext& owner, int&&) {
+            std::scoped_lock lock(state->mutex);
+            state->installed = true;
+            state->installed_thread = std::this_thread::get_id();
+            require(owner.is_owner_thread(), "tracked resident should install on the GPU owner");
+            return MoveOnlyResidentTracker(state);
+        }));
+    resource.finish(gpu);
+    require(resource.ready(), "tracked generation should become ready before replacement");
+
+    const std::thread::id caller_thread = std::this_thread::get_id();
+    static_cast<void>(resource.request(
+        "replacement", [] { return 2; },
+        [replacement_state](cubey::vulkan::GpuOwnerContext&, int&&) {
+            return MoveOnlyResidentTracker(replacement_state);
+        }));
+    {
+        std::scoped_lock lock(state->mutex);
+        require(state->installed, "tracked generation should record its install thread");
+        require(!state->destroyed,
+                "replacing a ready generation should defer resident destruction until poll");
+    }
+
+    static_cast<void>(resource.poll(gpu));
+    {
+        std::scoped_lock lock(state->mutex);
+        require(state->destroyed, "poll should dispose a replaced resident");
+        require(state->destroyed_thread == state->installed_thread,
+                "replaced resident should be destroyed on the GPU owner thread");
+        require(state->destroyed_thread != caller_thread,
+                "threaded GPU disposal should not run on the polling caller");
+    }
+    resource.shutdown(gpu);
+}
+
+void test_staged_resource_shutdown_discards_ready_resident_on_gpu_owner() {
+    cubey::jobs::JobSystem jobs(1);
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime gpu({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+    cubey::StagedResource<int, MoveOnlyResidentTracker> resource(jobs);
+    const auto state = std::make_shared<ResidentTrackerState>();
+
+    static_cast<void>(resource.request(
+        "shutdown tracked", [] { return 3; },
+        [state](cubey::vulkan::GpuOwnerContext& owner, int&&) {
+            std::scoped_lock lock(state->mutex);
+            state->installed = true;
+            state->installed_thread = std::this_thread::get_id();
+            require(owner.is_owner_thread(), "tracked resident should install on the GPU owner");
+            return MoveOnlyResidentTracker(state);
+        }));
+    resource.finish(gpu);
+    require(resource.ready(), "shutdown test generation should become ready");
+
+    resource.shutdown(gpu);
+    {
+        std::scoped_lock lock(state->mutex);
+        require(state->destroyed, "shutdown should dispose a ready resident before returning");
+        require(state->destroyed_thread == state->installed_thread,
+                "shutdown resident disposal should run on the GPU owner thread");
+    }
+    require(!resource.ready(), "shutdown should remove the discarded ready generation");
+}
+
+void test_staged_resource_shutdown_discards_superseded_install_on_gpu_owner() {
+    cubey::jobs::JobSystem jobs(1);
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime gpu({
+        .device = fake_device(),
+        .submission = &submission,
+    });
+    cubey::StagedResource<int, MoveOnlyResidentTracker> resource(jobs);
+    const auto state = std::make_shared<ResidentTrackerState>();
+    const auto replacement_state = std::make_shared<ResidentTrackerState>();
+    std::mutex mutex;
+    std::condition_variable install_started_cv;
+    std::condition_variable release_install_cv;
+    bool install_started = false;
+    bool release_install = false;
+
+    static_cast<void>(resource.request(
+        "shutdown superseded", [] { return 4; },
+        [state, &mutex, &install_started_cv, &release_install_cv, &install_started,
+         &release_install](cubey::vulkan::GpuOwnerContext& owner, int&&) {
+            {
+                std::scoped_lock lock(mutex);
+                install_started = true;
+                state->installed = true;
+                state->installed_thread = std::this_thread::get_id();
+            }
+            install_started_cv.notify_one();
+            {
+                std::unique_lock lock(mutex);
+                release_install_cv.wait(lock, [&] { return release_install; });
+            }
+            require(owner.is_owner_thread(), "tracked resident should install on the GPU owner");
+            return MoveOnlyResidentTracker(state);
+        }));
+
+    while (resource.status().phase != cubey::StagedResourcePhase::Installing) {
+        static_cast<void>(resource.poll(gpu));
+    }
+    {
+        std::unique_lock lock(mutex);
+        install_started_cv.wait(lock, [&] { return install_started; });
+    }
+
+    static_cast<void>(resource.request(
+        "shutdown replacement", [] { return 5; },
+        [replacement_state](cubey::vulkan::GpuOwnerContext&, int&&) {
+            return MoveOnlyResidentTracker(replacement_state);
+        }));
+    {
+        std::scoped_lock lock(mutex);
+        release_install = true;
+    }
+    release_install_cv.notify_one();
+
+    resource.shutdown(gpu);
+    {
+        std::scoped_lock lock(state->mutex);
+        require(state->destroyed,
+                "shutdown should dispose an installed superseded resident before returning");
+        require(state->destroyed_thread == state->installed_thread,
+                "superseded resident disposal should run on the GPU owner thread");
+    }
 }
 
 void test_staged_resource_reports_prepare_and_install_failures() {

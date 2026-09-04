@@ -13,6 +13,8 @@
 #include <cubey/engine/engine.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/engine/gltf_scene_importer.h>
+#include <cubey/engine/staged_resource.h>
+#include <cubey/engine/terrain_backdrop_runtime.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -39,7 +41,9 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace cubey::projects::gltf_viewer {
@@ -55,6 +59,45 @@ extern const cubey::math::Vec3 kLightDirection;
 [[nodiscard]] cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target);
 [[nodiscard]] std::vector<cubey::render::PbrVertex> fallback_cube_vertices();
 [[nodiscard]] std::vector<std::uint32_t> fallback_cube_indices();
+
+// A complete, renderable scene generation.  The fallback uses the same
+// ownership shape as an imported asset, so swapping an imported generation
+// never leaves the renderer with split scene/resource state.
+struct GltfViewerSceneGeneration {
+    cubey::StagedResourceGeneration source{};
+    std::filesystem::path source_path{};
+    bool fallback = true;
+    std::optional<cubey::asset::GltfAsset> asset{};
+    cubey::Scene* scene = nullptr;
+    cubey::Entity camera_entity{};
+    cubey::Entity light_camera_entity{};
+    cubey::Entity light_entity{};
+    cubey::Bounds3D bounds{};
+    std::uint32_t triangle_count = 0;
+    cubey::animation::GltfAnimationPlayback animation_playback{};
+    std::optional<cubey::animation::GltfAnimationSample> animation_sample{};
+    cubey::GltfSceneImportResources import_resources{};
+    cubey::GltfSceneImportResult import_result{};
+    std::optional<cubey::render::BackdropSurfaceEnvelope> terrain_surface{};
+};
+
+// CPU preparation is deliberately self-contained: the worker owns the asset
+// decoder result, importer bytes, and optional terrain product, but no Engine
+// objects or Vulkan wrappers.
+struct GltfViewerPreparedGeneration {
+    std::filesystem::path source_path{};
+    cubey::asset::GltfAsset asset{};
+    cubey::GltfPreparedScene gltf{};
+    std::optional<cubey::terrain::PreparedTerrainBackdropProduct> terrain{};
+};
+
+// GPU residency carries the CPU semantic product forward so activation can
+// construct a complete scene atomically on the application thread.
+struct GltfViewerResidentGeneration {
+    GltfViewerPreparedGeneration prepared{};
+    cubey::GltfSceneResident gltf{};
+    std::optional<cubey::TerrainBackdropResidentProduct> terrain{};
+};
 
 class GltfViewerApp {
   public:
@@ -77,14 +120,24 @@ class GltfViewerApp {
     void destroy_swapchain_resources();
     void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu);
 
-    void create_imported_asset_scene(const cubey::vulkan::Device& device,
-                                     cubey::vulkan::GpuRuntime& gpu,
-                                     const cubey::asset::GltfAsset& asset,
-                                     std::uint32_t frame_slot_count);
+    void request_imported_asset_build(std::filesystem::path input,
+                                      cubey::GltfSceneImportCapabilities capabilities,
+                                      std::uint32_t frame_slot_count);
+    void poll_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
+                                   cubey::vulkan::GpuSubmissionTicket retire_after);
+    void finish_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
+                                     cubey::vulkan::GpuSubmissionTicket retire_after);
+    void activate_imported_asset_generation(
+        cubey::vulkan::GpuRuntime& gpu, cubey::vulkan::GpuSubmissionTicket retire_after,
+        cubey::StagedResourceResult<GltfViewerResidentGeneration> resident);
+    void retire_scene_generation(cubey::vulkan::GpuRuntime& gpu,
+                                 cubey::vulkan::GpuSubmissionTicket retire_after,
+                                 const std::shared_ptr<GltfViewerSceneGeneration>& generation);
     [[nodiscard]] std::filesystem::path resolved_input_path() const;
     [[nodiscard]] std::filesystem::path resolved_environment_path() const;
     void create_default_textures(const cubey::vulkan::Device& device,
-                                 cubey::vulkan::GpuRuntime& gpu);
+                                 cubey::vulkan::GpuRuntime& gpu,
+                                 cubey::GltfSceneImportResources& resources);
     void create_atmosphere_background_atlases(const cubey::vulkan::Device& device,
                                               cubey::vulkan::GpuRuntime& gpu);
     void poll_atmosphere_background_atlases(const cubey::vulkan::Device& device,
@@ -102,13 +155,12 @@ class GltfViewerApp {
                                           cubey::vulkan::GpuRuntime& gpu,
                                           std::uint32_t frame_slot_count);
     void create_fallback_material(const cubey::vulkan::Device& device,
-                                  std::uint32_t frame_slot_count);
-    [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
-    fallback_material_sampled_images() const;
-    void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu);
+                                  std::uint32_t frame_slot_count,
+                                  GltfViewerSceneGeneration& generation);
+    void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu,
+                              GltfViewerSceneGeneration& generation);
     void create_ibl_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
     void create_terrain_backdrop_resources(const cubey::vulkan::Device& device,
-                                           cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count);
     [[nodiscard]] bool terrain_backdrop_enabled() const noexcept;
     [[nodiscard]] bool ocean_backdrop_enabled() const noexcept;
@@ -123,8 +175,9 @@ class GltfViewerApp {
                            const cubey::scene::FrameRenderPlan3D& frame_plan,
                            const cubey::render::AtmosphereEnvironmentFrameUniforms& atmosphere);
 
-    void create_fallback_scene();
-    void create_camera_and_light(cubey::SceneTransaction& setup);
+    void create_fallback_scene(GltfViewerSceneGeneration& generation);
+    void create_camera_and_light(GltfViewerSceneGeneration& generation,
+                                 cubey::SceneTransaction& setup);
     void update_animation(float delta_seconds);
     [[nodiscard]] bool update_atmosphere_time(double delta_seconds);
     void draw_ui(cubey::host::WindowedAppContext& context);
@@ -141,9 +194,11 @@ class GltfViewerApp {
     cloud_environment_frame(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
     [[nodiscard]] float display_exposure() const;
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const;
+    [[nodiscard]] GltfViewerSceneGeneration& active_generation();
+    [[nodiscard]] const GltfViewerSceneGeneration& active_generation() const;
     [[nodiscard]] cubey::Scene& scene();
     [[nodiscard]] const cubey::Scene& scene() const;
-    void destroy_scene_if_needed();
+    void destroy_scene_generation(GltfViewerSceneGeneration& generation);
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const;
     [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const;
 
@@ -168,33 +223,29 @@ class GltfViewerApp {
     GltfViewerProjectConfig config_;
     cubey::Engine engine_;
     cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
-    cubey::Scene* scene_ = nullptr;
-    std::optional<cubey::asset::GltfAsset> asset_{};
-    cubey::Entity camera_entity_{};
-    cubey::Entity light_camera_entity_{};
-    cubey::Entity light_entity_{};
-    cubey::Bounds3D scene_bounds_{};
+    cubey::jobs::JobSystem asset_jobs_{1U};
+    cubey::StagedResource<GltfViewerPreparedGeneration, GltfViewerResidentGeneration> asset_builds_;
+    std::shared_ptr<GltfViewerSceneGeneration> active_generation_{};
+    std::filesystem::path requested_input_path_{};
+    double asset_activation_milliseconds_ = 0.0;
+    std::string asset_activation_error_{};
+    bool global_resources_created_ = false;
+    std::uint32_t frame_slot_count_ = 0U;
     cubey::OrbitController orbit_controller_;
     float capture_orbit_offset_radians_ = 0.0F;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::AtmosphereEnvironmentRuntime atmosphere_runtime_{};
     cubey::AtmosphereEnvironmentRunState atmosphere_state_{};
     cubey::CloudEnvironmentConfig clouds_config_{};
-    cubey::animation::GltfAnimationPlayback animation_playback_{};
-    std::optional<cubey::animation::GltfAnimationSample> animation_sample_{};
-    std::uint32_t triangle_count_ = 0;
-
-    cubey::GltfSceneImportResources import_resources_{};
-    cubey::GltfSceneImportResult import_result_{};
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     cubey::AtmosphereBackgroundAtlasRuntime atmosphere_background_atlases_{};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
+    std::optional<cubey::TerrainBackdropRuntimeTargetInfo> terrain_target_info_{};
     cubey::OceanSurfaceRuntime ocean_runtime_{};
     cubey::render::OceanSurfaceConfig ocean_config_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;
     float terrain_minimum_foreground_height_m_ = 0.0F;
-    cubey::render::BackdropSurfaceEnvelope terrain_surface_{};
     bool terrain_visible_ = true;
     bool terrain_shadows_ = true;
     bool terrain_reflections_ = true;

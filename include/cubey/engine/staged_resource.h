@@ -6,12 +6,14 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace cubey {
 
@@ -102,7 +104,7 @@ template <typename Prepared, typename Resident> class StagedResource {
             .install = InstallFunction(std::forward<Install>(install)),
         };
         const StagedResourceGeneration generation = request.generation;
-        ready_.reset();
+        queue_ready_for_disposal();
         if (active_.has_value()) {
             active_->superseded = true;
             pending_ = std::move(request);
@@ -114,19 +116,24 @@ template <typename Prepared, typename Resident> class StagedResource {
     }
 
     [[nodiscard]] bool poll(vulkan::GpuRuntime& gpu) {
+        const bool disposed = drain_discarded(gpu);
         if (!active_.has_value()) {
-            return launch_pending();
+            return disposed || launch_pending();
         }
 
+        bool progressed = false;
         switch (active_->stage) {
         case ActiveStage::Preparing:
-            return poll_preparation();
+            progressed = poll_preparation();
+            break;
         case ActiveStage::ReadyForGpu:
-            return submit_installation(gpu);
+            progressed = submit_installation(gpu);
+            break;
         case ActiveStage::Installing:
-            return poll_installation();
+            progressed = poll_installation();
+            break;
         }
-        return false;
+        return disposed || progressed;
     }
 
     void finish(vulkan::GpuRuntime& gpu) {
@@ -134,20 +141,16 @@ template <typename Prepared, typename Resident> class StagedResource {
             wait_for_active_stage(gpu);
             static_cast<void>(poll(gpu));
         }
+        static_cast<void>(drain_discarded(gpu));
         if (status_.phase == StagedResourcePhase::Failed) {
             throw std::runtime_error(status_.error);
         }
     }
 
     void shutdown(vulkan::GpuRuntime& gpu) {
-        if (!accepting_ && !active_.has_value()) {
-            ready_.reset();
-            return;
-        }
-
         accepting_ = false;
         pending_.reset();
-        ready_.reset();
+        queue_ready_for_disposal();
         if (active_.has_value()) {
             active_->superseded = true;
             set_status(active_->generation, StagedResourcePhase::Superseded,
@@ -157,6 +160,7 @@ template <typename Prepared, typename Resident> class StagedResource {
             wait_for_active_stage(gpu);
             static_cast<void>(poll(gpu));
         }
+        static_cast<void>(drain_discarded(gpu));
         ready_.reset();
     }
 
@@ -180,9 +184,19 @@ template <typename Prepared, typename Resident> class StagedResource {
         if (!ready_.has_value()) {
             throw std::runtime_error("staged resource has no ready generation");
         }
-        Result result = std::move(ready_.value());
+        Ready ready = std::move(ready_.value());
+        if (ready.resident == nullptr || !ready.resident->resident.has_value()) {
+            throw std::runtime_error("staged resource ready generation has no resident");
+        }
+        Resident resident = std::move(ready.resident->resident.value());
+        ready.resident->resident.reset();
         ready_.reset();
-        return result;
+        return Result{
+            .generation = std::move(ready.generation),
+            .resident = std::move(resident),
+            .prepare_milliseconds = ready.prepare_milliseconds,
+            .install_milliseconds = ready.install_milliseconds,
+        };
     }
 
   private:
@@ -200,12 +214,24 @@ template <typename Prepared, typename Resident> class StagedResource {
         InstallFunction install{};
     };
 
+    struct ResidentHolder {
+        std::optional<Resident> resident{};
+    };
+
+    struct Ready {
+        StagedResourceGeneration generation{};
+        std::shared_ptr<ResidentHolder> resident{};
+        double prepare_milliseconds = 0.0;
+        double install_milliseconds = 0.0;
+    };
+
     struct Active {
         StagedResourceGeneration generation{};
         InstallFunction install{};
         jobs::JobHandle<Prepared> preparation;
         std::optional<Prepared> prepared{};
-        std::optional<vulkan::GpuJobHandle<Resident>> installation{};
+        std::optional<vulkan::GpuJobHandle<void>> installation{};
+        std::shared_ptr<ResidentHolder> resident{};
         Clock::time_point prepare_started{};
         Clock::time_point install_started{};
         double prepare_milliseconds = 0.0;
@@ -295,12 +321,14 @@ template <typename Prepared, typename Resident> class StagedResource {
             Prepared prepared = std::move(active_->prepared.value());
             active_->prepared.reset();
             InstallFunction install = std::move(active_->install);
+            const std::shared_ptr<ResidentHolder> resident = std::make_shared<ResidentHolder>();
+            active_->resident = resident;
             const std::string label = active_->generation.label + " GPU install";
             active_->install_started = Clock::now();
-            active_->installation.emplace(
-                gpu.submit(label, [prepared = std::move(prepared), install = std::move(install)](
-                                      vulkan::GpuOwnerContext& owner) mutable {
-                    return install(owner, std::move(prepared));
+            active_->installation.emplace(gpu.submit(
+                label, [resident, prepared = std::move(prepared),
+                        install = std::move(install)](vulkan::GpuOwnerContext& owner) mutable {
+                    resident->resident.emplace(install(owner, std::move(prepared)));
                 }));
             active_->stage = ActiveStage::Installing;
             set_active_status(StagedResourcePhase::Installing);
@@ -318,8 +346,11 @@ template <typename Prepared, typename Resident> class StagedResource {
         }
 
         try {
-            Resident resident = active_->installation->get();
+            static_cast<void>(active_->installation->get());
             active_->install_milliseconds = elapsed_milliseconds(active_->install_started);
+            if (active_->resident == nullptr || !active_->resident->resident.has_value()) {
+                throw std::runtime_error("GPU installation produced no resident");
+            }
             if (active_->superseded) {
                 discard_active();
                 return true;
@@ -327,8 +358,9 @@ template <typename Prepared, typename Resident> class StagedResource {
             const StagedResourceGeneration generation = active_->generation;
             const double prepare_milliseconds = active_->prepare_milliseconds;
             const double install_milliseconds = active_->install_milliseconds;
+            std::shared_ptr<ResidentHolder> resident = std::move(active_->resident);
             active_.reset();
-            ready_.emplace(Result{
+            ready_.emplace(Ready{
                 .generation = generation,
                 .resident = std::move(resident),
                 .prepare_milliseconds = prepare_milliseconds,
@@ -349,6 +381,7 @@ template <typename Prepared, typename Resident> class StagedResource {
         const double prepare_milliseconds = active_->prepare_milliseconds;
         const double install_milliseconds = active_->install_milliseconds;
         const bool superseded = active_->superseded;
+        queue_active_resident_for_disposal();
         active_.reset();
         if (pending_.has_value()) {
             static_cast<void>(launch_pending());
@@ -364,6 +397,7 @@ template <typename Prepared, typename Resident> class StagedResource {
         const StagedResourceGeneration generation = active_->generation;
         const double prepare_milliseconds = active_->prepare_milliseconds;
         const double install_milliseconds = active_->install_milliseconds;
+        queue_active_resident_for_disposal();
         active_.reset();
         if (pending_.has_value()) {
             static_cast<void>(launch_pending());
@@ -371,6 +405,48 @@ template <typename Prepared, typename Resident> class StagedResource {
             set_status(generation, StagedResourcePhase::Superseded, prepare_milliseconds,
                        install_milliseconds);
         }
+    }
+
+    void queue_ready_for_disposal() {
+        if (!ready_.has_value()) {
+            return;
+        }
+        if (ready_->resident != nullptr && ready_->resident->resident.has_value()) {
+            discarded_.push_back(std::move(ready_->resident));
+        }
+        ready_.reset();
+    }
+
+    void queue_active_resident_for_disposal() {
+        if (!active_.has_value() || active_->resident == nullptr) {
+            return;
+        }
+        if (active_->resident->resident.has_value()) {
+            discarded_.push_back(std::move(active_->resident));
+        }
+        active_->resident.reset();
+    }
+
+    [[nodiscard]] bool drain_discarded(vulkan::GpuRuntime& gpu) {
+        if (discarded_.empty()) {
+            return false;
+        }
+
+        std::vector<std::shared_ptr<ResidentHolder>> discarded = discarded_;
+        static_cast<void>(gpu.submit_and_wait({
+            .label = "discard staged GPU residents",
+            .work =
+                [discarded = std::move(discarded)](vulkan::GpuOwnerContext& owner) mutable {
+                    owner.require_owner_thread("staged resident disposal requires the GPU owner");
+                    for (const std::shared_ptr<ResidentHolder>& resident : discarded) {
+                        if (resident != nullptr) {
+                            resident->resident.reset();
+                        }
+                    }
+                },
+        }));
+        discarded_.clear();
+        return true;
     }
 
     void wait_for_active_stage(vulkan::GpuRuntime& gpu) {
@@ -399,7 +475,8 @@ template <typename Prepared, typename Resident> class StagedResource {
     std::uint64_t next_generation_id_ = 1;
     std::optional<Active> active_{};
     std::optional<Request> pending_{};
-    std::optional<Result> ready_{};
+    std::optional<Ready> ready_{};
+    std::vector<std::shared_ptr<ResidentHolder>> discarded_{};
     StagedResourceStatus status_{};
     bool accepting_ = true;
 };

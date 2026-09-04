@@ -84,17 +84,25 @@ non-Basis KTX2 payloads, Draco/meshopt compression, transmission, volume,
 dispersion, glTF cameras/lights, glTF environment extensions, advanced
 animation runtime features, and streaming remain future slices.
 
-`cubey::engine` owns the current asset-to-scene bridge and renderer instance
-service:
+`cubey::engine` owns the current staged asset-to-scene bridge and renderer
+instance service:
 
 - `GltfSceneImportResources` stores app-owned mesh resources, material
   instances, material factors, uploaded material textures, default PBR textures,
   and per-import deformation resources;
-- `import_gltf_scene()` maps glTF nodes into scene entities, 3D transforms,
-  renderables, registry-issued mesh/material handles, imported bounds, triangle
-  counts, and per-node output mesh handles for morph/skinning deformation. Nodes
-  authored with a glTF `matrix` import as explicit affine `Transform3D` values
-  so static hierarchy evaluation and bounds use the authored matrix;
+- `prepare_gltf_scene()` is CPU-only: it validates and copies material, texture,
+  mesh, node, morph, and skin data into a self-contained prepared product,
+  including BasisU transcoding, bounds, and triangle counts;
+- `build_gltf_scene_resident()` runs on the GPU owner and creates textures,
+  material instances, static meshes, and deformation buffers without mutating
+  `Engine` or `Scene` state;
+- `activate_gltf_scene()` adopts one complete resident product into registry-
+  issued mesh/material handles and maps glTF nodes into scene entities, 3D
+  transforms, renderables, and per-node output mesh handles. Nodes authored
+  with a glTF `matrix` activate as explicit affine `Transform3D` values so
+  hierarchy evaluation and bounds use the authored matrix;
+- `import_gltf_scene()` remains the blocking compatibility wrapper over those
+  three phases for callers that do not need staged activation;
 - glTF alpha modes map into explicit render material alpha policy: `MASK`
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
   renders forward-only with premultiplied source-over alpha blending and no
@@ -146,9 +154,17 @@ owns default textures, texture upload, and material instance creation.
 - `ShadowMapPass3D` owns a sampled depth texture plus depth-only pipeline for
   directional shadow passes.
 
-`projects/gltf_viewer` is the integration project. It loads an input asset from
-`--input`, falls back to the Khronos DamagedHelmet sample when the sample-assets
-directory is configured, and otherwise renders a generated PBR cube. It can use
+`projects/gltf_viewer` is the integration project. It first publishes a complete
+generated PBR cube generation, then loads an input asset from `--input` or the
+configured Khronos DamagedHelmet sample through the shared staged lifecycle.
+File loading and import preparation run on a CPU worker, residency runs on the
+GPU owner, and the app atomically activates the complete scene generation at a
+frame boundary. The previous generation remains renderable until activation and
+retires only after its latest submission ticket. Optional terrain preparation
+and residency travel with the asset generation so scene and backdrop publish
+together. Headless capture uses the same path but calls `finish()` before frame
+zero. If no input or configured sample is available, the generated cube remains
+active. The viewer can use
 `--environment path/to/env.hdr` or the optional fetched Filament
 `lightroom_14b.hdr` sample for static HDR-backed IBL; by default it renders the
 procedural atmosphere as the visible background and captures that atmosphere
@@ -202,8 +218,9 @@ The asset loader stays CPU-only. It does not create entities, renderable
 handles, textures, descriptors, pipelines, or scenes.
 
 The engine importer is the current bridge between asset data and runtime scene
-resources. It creates scene/render handles and app-owned resource tables, but
-it does not choose shaders, record passes, allocate pipelines, or define
+resources. Its preparation phase stays CPU-only, its residency phase creates
+app-owned GPU resources, and only activation creates scene/render handles. It
+does not choose shaders, record passes, allocate graphics pipelines, or define
 renderer-wide material policy. `RendererService` owns renderer instance
 lifetime only. `ForwardPbrRenderer3D` is a separate engine-layer renderer
 implementation: it records one PBR view using the shared forward-PBR shader

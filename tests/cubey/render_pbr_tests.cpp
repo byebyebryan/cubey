@@ -852,8 +852,8 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     require_not_contains(importer_header, "base_color_default",
                          "glTF import resources should not expose per-slot default textures");
 
-    require_contains(viewer, "import_resources_.default_textures",
-                     "glTF viewer fallback should use the import resource default texture set");
+    require_contains(viewer, "generation.import_resources.default_textures",
+                     "glTF viewer fallback should use the generation import default texture set");
     require_contains(viewer, "cubey::render::pbr_default_sampled_image_bindings(",
                      "glTF viewer fallback material should use shared default sampled bindings");
     require_not_contains(viewer_header, "base_color_default_",

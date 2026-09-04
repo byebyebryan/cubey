@@ -36,6 +36,29 @@ template <typename HandleT, typename ResourceT, typename HashT> class ResourceTa
         }
     }
 
+    void rebind(HandleT from, HandleT to) {
+        if (!to) {
+            throw std::runtime_error(
+                "resource table rebind requires a non-null destination handle");
+        }
+        if (from == to) {
+            if (!resources_.contains(from)) {
+                throw std::runtime_error(
+                    "resource table rebind requires an existing source handle");
+            }
+            return;
+        }
+        if (resources_.contains(to)) {
+            throw std::runtime_error("resource table rebind destination already exists");
+        }
+        auto node = resources_.extract(from);
+        if (node.empty()) {
+            throw std::runtime_error("resource table rebind requires an existing source handle");
+        }
+        node.key() = to;
+        resources_.insert(std::move(node));
+    }
+
     void clear() {
         resources_.clear();
     }

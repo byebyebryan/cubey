@@ -390,7 +390,7 @@ struct TerrainBackdropRuntime::Impl {
     std::optional<render::FrameUniformMaterialInstance<TerrainEnvironmentGpuParameters>>
         environment_material{};
     std::optional<render::ShadowMapPass3D> shadow_pass{};
-    std::optional<render::GraphicsPipelineResource> surface_pipeline{};
+    std::shared_ptr<render::GraphicsPipelineResource> surface_pipeline{};
     render::TerrainShadowCacheState shadow_cache{};
     render::TerrainShadowProjection frame_shadow{};
     TerrainBackdropRuntimeFrameInfo frame{};
@@ -516,17 +516,17 @@ void TerrainBackdropRuntime::create_target_resources(
         impl_->environment_material->layout(),
         impl_->generation->detail_material->layout(),
     };
-    impl_->surface_pipeline.emplace(device,
-                                    render::GraphicsPipelineFileResourceConfig{
-                                        .extent = target.extent,
-                                        .color_format = target.color_format,
-                                        .depth_format = target.depth_format,
-                                        .shader_stage_files = shaders,
-                                        .vertex_bindings = vertex_input.bindings(),
-                                        .vertex_attributes = vertex_input.attribute_descriptions(),
-                                        .descriptor_set_layouts = layouts,
-                                        .material_pass = impl_->surface_pass,
-                                    });
+    impl_->surface_pipeline = std::make_shared<render::GraphicsPipelineResource>(
+        device, render::GraphicsPipelineFileResourceConfig{
+                    .extent = target.extent,
+                    .color_format = target.color_format,
+                    .depth_format = target.depth_format,
+                    .shader_stage_files = shaders,
+                    .vertex_bindings = vertex_input.bindings(),
+                    .vertex_attributes = vertex_input.attribute_descriptions(),
+                    .descriptor_set_layouts = layouts,
+                    .material_pass = impl_->surface_pass,
+                });
 }
 
 void TerrainBackdropRuntime::destroy_target_resources() {
@@ -588,6 +588,45 @@ void TerrainBackdropRuntime::install_resident_product(vulkan::GpuRuntime& gpu,
         throw;
     }
     impl_->install(std::move(next_generation));
+}
+
+void TerrainBackdropRuntime::install_resident_product(
+    vulkan::GpuRuntime& gpu, TerrainBackdropResidentProduct product,
+    vulkan::GpuSubmissionTicket retire_after, const TerrainBackdropRuntimeTargetInfo& target) {
+    if (!created() || !product.valid() || target.color_format == VK_FORMAT_UNDEFINED ||
+        target.depth_format == VK_FORMAT_UNDEFINED || target.extent.width == 0U ||
+        target.extent.height == 0U) {
+        throw std::runtime_error("invalid terrain backdrop resident target product");
+    }
+    if (target_resources_created()) {
+        throw std::runtime_error("terrain backdrop runtime target is already created");
+    }
+
+    const auto next_generation =
+        std::static_pointer_cast<TerrainBackdropRuntimeGeneration>(product.state_);
+    const std::array shaders{
+        render::vertex_shader_file(impl_->shaders.vertex),
+        render::fragment_shader_file(impl_->shaders.fragment),
+    };
+    const render::VertexInputLayout vertex_input = terrain_vertex_input_layout();
+    const std::array layouts{
+        impl_->environment_material->layout(),
+        next_generation->detail_material->layout(),
+    };
+    const std::shared_ptr<render::GraphicsPipelineResource> surface_pipeline =
+        std::make_shared<render::GraphicsPipelineResource>(
+            *impl_->device, render::GraphicsPipelineFileResourceConfig{
+                                .extent = target.extent,
+                                .color_format = target.color_format,
+                                .depth_format = target.depth_format,
+                                .shader_stage_files = shaders,
+                                .vertex_bindings = vertex_input.bindings(),
+                                .vertex_attributes = vertex_input.attribute_descriptions(),
+                                .descriptor_set_layouts = layouts,
+                                .material_pass = impl_->surface_pass,
+                            });
+    install_resident_product(gpu, std::move(product), retire_after);
+    impl_->surface_pipeline = surface_pipeline;
 }
 
 void TerrainBackdropRuntime::replace_product(vulkan::GpuRuntime& gpu,
@@ -766,7 +805,7 @@ bool TerrainBackdropRuntime::product_ready() const noexcept {
     return impl_->generation != nullptr;
 }
 bool TerrainBackdropRuntime::target_resources_created() const noexcept {
-    return impl_->surface_pipeline.has_value();
+    return impl_->surface_pipeline != nullptr;
 }
 bool TerrainBackdropRuntime::shadow_update_this_frame() const noexcept {
     return impl_->shadow_update;

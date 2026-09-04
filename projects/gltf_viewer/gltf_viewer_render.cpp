@@ -23,16 +23,26 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
         device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
                     .extent = extent,
                     .color_format = color_format,
-                    .materials = &import_resources_.materials,
+                    .materials = &active_generation().import_resources.materials,
                 });
-    if (terrain_backdrop_enabled()) {
+    if (terrain_backdrop_enabled() && active_generation().terrain_surface.has_value() &&
+        terrain_runtime_.product_ready()) {
         const cubey::ForwardPbrRenderer3DSceneTargetInfo target =
             forward_pbr_renderer().scene_target_info();
-        terrain_runtime_.create_target_resources(device, {
-                                                             .extent = target.extent,
-                                                             .color_format = target.color_format,
-                                                             .depth_format = target.depth_format,
-                                                         });
+        terrain_target_info_ = cubey::TerrainBackdropRuntimeTargetInfo{
+            .extent = target.extent,
+            .color_format = target.color_format,
+            .depth_format = target.depth_format,
+        };
+        terrain_runtime_.create_target_resources(device, terrain_target_info_.value());
+    } else if (terrain_backdrop_enabled()) {
+        const cubey::ForwardPbrRenderer3DSceneTargetInfo target =
+            forward_pbr_renderer().scene_target_info();
+        terrain_target_info_ = cubey::TerrainBackdropRuntimeTargetInfo{
+            .extent = target.extent,
+            .color_format = target.color_format,
+            .depth_format = target.depth_format,
+        };
     }
     if (ocean_backdrop_enabled()) {
         if (!use_atmosphere_environment_source()) {
@@ -67,25 +77,33 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
 void GltfViewerApp::destroy_swapchain_resources() {
     ocean_runtime_.reset();
     terrain_runtime_.destroy_target_resources();
+    terrain_target_info_.reset();
     atmosphere_runtime_.clouds().destroy_surface_target_resources();
     engine_.renderers().destroy_swapchain_resources();
 }
 
 void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
+    asset_builds_.shutdown(gpu);
+    gpu.wait_queue_idle("gltf_viewer generation retirement");
+    if (active_generation_) {
+        destroy_scene_generation(*active_generation_);
+        cubey::destroy_gltf_scene_import(engine_, active_generation_->import_resources,
+                                         active_generation_->import_result);
+        active_generation_.reset();
+    }
     ocean_runtime_.reset();
     terrain_runtime_.destroy();
+    terrain_target_info_.reset();
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
     gpu_profiler_.reset();
     atmosphere_runtime_.destroy();
     ibl_environment_.reset();
     atmosphere_background_atlases_.shutdown(gpu);
-    destroy_scene_if_needed();
-    cubey::destroy_gltf_scene_import(engine_, import_resources_, import_result_);
-    animation_playback_ = {};
-    animation_sample_.reset();
-    triangle_count_ = 0;
-    asset_.reset();
+    requested_input_path_.clear();
+    asset_activation_error_.clear();
+    global_resources_created_ = false;
+    frame_slot_count_ = 0U;
 }
 
 void GltfViewerApp::record_viewer_target(
@@ -112,18 +130,22 @@ void GltfViewerApp::record_viewer_target(
         gpu_profiler_->begin_frame(command_buffer, frame_slot.index);
     }
 
+    GltfViewerSceneGeneration& generation = active_generation();
     cubey::SceneReadView scene_view = scene().read();
     const cubey::scene::FrameRenderPlan3D frame_plan =
         current_frame_plan(scene_view, color_target.extent);
-    if (asset_.has_value()) {
-        cubey::update_gltf_deformation_frame(
-            import_resources_, asset_.value(), import_result_, scene_view, frame_slot,
-            animation_sample_.has_value() ? &animation_sample_.value() : nullptr);
+    if (generation.asset.has_value()) {
+        cubey::update_gltf_deformation_frame(generation.import_resources, generation.asset.value(),
+                                             generation.import_result, scene_view, frame_slot,
+                                             generation.animation_sample.has_value()
+                                                 ? &generation.animation_sample.value()
+                                                 : nullptr);
     }
     const std::vector<cubey::render::GpuDeformationCommand> deformation_commands =
-        cubey::gltf_deformation_commands_for_frame(import_resources_, frame_slot);
+        cubey::gltf_deformation_commands_for_frame(generation.import_resources, frame_slot);
     const cubey::render::FrameMeshResourceTable* frame_meshes =
-        deformation_commands.empty() ? nullptr : &import_resources_.deformation.frame_meshes;
+        deformation_commands.empty() ? nullptr
+                                     : &generation.import_resources.deformation.frame_meshes;
     std::optional<cubey::CloudEnvironmentRuntimeFrame> cloud_frame;
     if (use_atmosphere_environment_source() && clouds_config_.enabled) {
         cloud_frame = cloud_environment_frame(scene_view, color_target.extent);
@@ -146,7 +168,8 @@ void GltfViewerApp::record_viewer_target(
     const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere_background =
         atmosphere_background_uniforms(scene_view, color_target.extent);
     std::optional<cubey::ForwardPbrRenderer3DTerrainBackdrop> terrain_backdrop;
-    if (terrain_backdrop_enabled() && terrain_visible_) {
+    if (terrain_backdrop_enabled() && terrain_visible_ && generation.terrain_surface.has_value() &&
+        terrain_runtime_.product_ready()) {
         terrain_backdrop = terrain_backdrop_frame(scene_view, frame_plan, atmosphere_background);
     }
     std::optional<cubey::ForwardPbrRenderer3DOceanSurface> ocean_surface;
@@ -165,15 +188,15 @@ void GltfViewerApp::record_viewer_target(
         .profiler = gpu_profiler_.has_value() ? &*gpu_profiler_ : nullptr,
         .scene = &scene_view,
         .frame_plan = &frame_plan,
-        .camera_entity = camera_entity_,
-        .light_entity = light_entity_,
+        .camera_entity = generation.camera_entity,
+        .light_entity = generation.light_entity,
         .fallback_light = fallback_light_packet(),
         .scene_resources =
             {
-                .meshes = &import_resources_.meshes,
+                .meshes = &generation.import_resources.meshes,
                 .frame_meshes = frame_meshes,
                 .deformation_commands = deformation_commands,
-                .materials = &import_resources_.materials,
+                .materials = &generation.import_resources.materials,
             },
         .settings =
             {

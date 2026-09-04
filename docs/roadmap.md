@@ -44,7 +44,7 @@ Current stable foundation pieces:
   services;
 - progressive whole-generation initialization over shared CPU jobs and typed
   GPU-owner results, now exercised by terrain products, Planet surface
-  products, generated atmosphere atlases, and glTF atmosphere-atlas consumers
+  products, generated atmosphere atlases, and complete glTF scene generations
   with placeholder-first windowed presentation, deterministic headless
   completion, atomic activation, and deferred retirement, plus a bounded
   worktree-local generated-artifact cache that removes repeat night-sky, lunar
@@ -92,9 +92,8 @@ published and recorded in the package manifest; the remaining seven cards are
 future editorial work.
 
 The bounded progressive-initialization slice is complete for generated
-atmosphere atlases, Planet surface products, and terrain products; glTF Viewer
-also consumes the shared staged atmosphere-atlas lifecycle. Further adoption
-should be driven by a concrete consumer such as glTF asset loading. General
+atmosphere atlases, Planet surface products, terrain products, and glTF Viewer
+scene generations. General
 asset streaming, partial terrain residency, split-queue scheduling, and
 per-frame upload budgets remain deferred until profiling shows that
 whole-generation installation is the real bottleneck.
@@ -109,8 +108,9 @@ Recommended next feature or foundation streams:
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated
   project need.
-- glTF/asset pipeline: extend progressive initialization to asset loading if
-  profiling confirms it is the next visible host/engine bottleneck.
+- glTF/asset pipeline: profile the now-staged CPU preparation and GPU residency
+  phases before considering transfer queues, upload budgets, partial residency,
+  or wider asset-system abstractions.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
@@ -458,9 +458,11 @@ Current checkpoint:
   sampled depth targets, depth-only dynamic rendering, graph-derived
   sampled-depth/scene-color/backbuffer sync, render-graph pass declarations,
   transient allocation, and CPU pass planning.
-- `projects/gltf_viewer` links against `cubey`, loads static glTF/glb assets
-  through `cubey::asset`, imports scene/render resources through the shared
-  engine glTF scene importer, uploads PBR material textures, builds shadow and
+- `projects/gltf_viewer` links against `cubey`, prepares static glTF/glb assets
+  on a CPU worker, builds complete resident resources on the GPU owner, and
+  atomically activates scene generations through the shared engine glTF scene
+  importer while retaining a complete fallback or previous generation. It
+  builds shadow and
   scene frame plans, and delegates reusable shadow/skybox/PBR graph recording
   to an engine-owned `ForwardPbrRenderer3D` created by `RendererService`. It
   submits per-frame target, view, `ForwardPbrRenderer3DSceneResources`, and
@@ -682,8 +684,8 @@ Candidate follow-ups:
 
 - Reconcile and consolidate render-graph contracts only where the now-broad
   consumer set repeats real setup or synchronization policy.
-- Profile glTF startup and adopt staged asset preparation/installation if
-  blocking asset loading is the next visible host/engine bottleneck.
+- Profile glTF CPU preparation and whole-generation GPU installation before
+  expanding the staged lifecycle into partial residency or transfer scheduling.
 - Reopen Planet surface/streaming work only as an explicitly separate product
   checkpoint with a concrete residency contract.
 - Marching cubes for compute-generated geometry and indirect draw pressure.

@@ -56,3 +56,20 @@ void test_render_resource_table_resolves_move_only_resources_by_handle() {
     require_throws([&meshes, mesh] { meshes.erase(mesh); },
                    "erasing a missing resource should throw");
 }
+
+void test_render_resource_table_rebinds_move_only_resource_without_reconstruction() {
+    cubey::render::MeshResourceTable<MoveOnlyResource> meshes;
+    const cubey::render::MeshHandle staging{.index = 1, .generation = 1};
+    const cubey::render::MeshHandle activated{.index = 7, .generation = 3};
+    meshes.emplace(staging, 42);
+
+    meshes.rebind(staging, activated);
+
+    require(!meshes.contains(staging), "rebind should remove the staging handle");
+    require(meshes.contains(activated), "rebind should publish the activated handle");
+    require(meshes.at(activated).value == 42,
+            "rebind should preserve a move-only resource without reconstructing it");
+    meshes.rebind(activated, activated);
+    require(meshes.at(activated).value == 42,
+            "rebind should tolerate activation handles that already match staging identity");
+}

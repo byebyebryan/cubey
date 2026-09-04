@@ -121,6 +121,12 @@ class TerrainBackdropRuntime {
                            const terrain::TerrainBackdropProduct& product) const;
     void install_resident_product(vulkan::GpuRuntime& gpu, TerrainBackdropResidentProduct product,
                                   vulkan::GpuSubmissionTicket retire_after);
+    // Creates target resources against the resident product before publishing
+    // it. This keeps an application's product/target activation atomic when a
+    // runtime begins without a terrain generation.
+    void install_resident_product(vulkan::GpuRuntime& gpu, TerrainBackdropResidentProduct product,
+                                  vulkan::GpuSubmissionTicket retire_after,
+                                  const TerrainBackdropRuntimeTargetInfo& target);
     void replace_product(vulkan::GpuRuntime& gpu, const terrain::TerrainBackdropProduct& product,
                          vulkan::GpuSubmissionTicket retire_after);
     void prepare_environment(render::FrameSlot frame_slot,

@@ -1,5 +1,6 @@
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/engine/gltf_scene_importer.h>
+#include <cubey/render/resource_registry.h>
 #include <cubey/scene/scene.h>
 
 #include <glm/gtc/constants.hpp>
@@ -165,6 +166,99 @@ void test_gltf_scene_importer_classifies_deformable_primitives() {
         "static primitive should not require deformation resources");
     require(cubey::gltf_primitive_requires_deformation(cubey::GltfPrimitiveDeformationKind::Skin),
             "skinned primitive should require deformation resources");
+}
+
+void test_gltf_scene_importer_prepares_owned_cpu_scene_without_engine_or_gpu() {
+    cubey::asset::GltfAsset asset;
+    asset.materials.emplace_back();
+    asset.meshes.resize(1);
+    cubey::asset::GltfMeshPrimitive& primitive = asset.meshes[0].primitives.emplace_back();
+    primitive.vertices = {
+        {.position = {1.0F, 2.0F, 3.0F}},
+        {.position = {2.0F, 2.0F, 3.0F}},
+        {.position = {1.0F, 3.0F, 3.0F}},
+    };
+    primitive.indices = {0, 1, 2};
+    primitive.local_bounds = {
+        .center = {1.5F, 2.5F, 3.0F},
+        .half_extent = {0.5F, 0.5F, 0.0F},
+    };
+    asset.nodes = {{.mesh_index = 0}};
+    asset.scenes = {{.root_nodes = {0}}};
+
+    const cubey::GltfPreparedScene prepared = cubey::prepare_gltf_scene(
+        asset, {.label_prefix = "prepared-test"}, {.supports_texture_compression_bc = false});
+
+    require(prepared.materials.size() == 1,
+            "CPU preparation should preserve material data without an engine");
+    require(prepared.meshes.size() == 1 && prepared.meshes[0].primitives.size() == 1,
+            "CPU preparation should convert mesh primitives without GPU residency");
+    require(prepared.nodes.size() == 1 && prepared.root_nodes == std::vector<std::uint32_t>{0},
+            "CPU preparation should resolve the selected node hierarchy");
+    require(prepared.triangle_count == 1,
+            "CPU preparation should report triangle metadata before GPU residency");
+    require_close(prepared.bounds.center.x, 1.5F,
+                  "CPU preparation should calculate scene bounds from prepared geometry");
+
+    asset.meshes[0].primitives[0].vertices[0].position.x = 99.0F;
+    require_close(prepared.meshes[0].primitives[0].vertices[0].position.x, 1.0F,
+                  "prepared CPU data should own converted vertices independently of the asset");
+}
+
+void test_gltf_scene_importer_reserves_provisional_handle_generation() {
+    cubey::render::RenderResourceRegistry registry;
+    const cubey::render::MaterialHandle old_material = registry.create_material();
+    const cubey::render::MaterialHandle replacement_material = registry.create_material();
+    const cubey::render::MeshHandle old_mesh = registry.create_mesh();
+    const cubey::render::MeshHandle replacement_mesh = registry.create_mesh();
+
+    const cubey::render::MaterialHandle provisional_material{
+        .index = replacement_material.index,
+        .generation = 0,
+    };
+    const cubey::render::MeshHandle provisional_mesh{
+        .index = replacement_mesh.index,
+        .generation = 0,
+    };
+    const cubey::render::MaterialHandle legacy_material{
+        .index = replacement_material.index,
+        .generation = 1,
+    };
+    const cubey::render::MeshHandle legacy_mesh{
+        .index = replacement_mesh.index,
+        .generation = 1,
+    };
+    require(old_material.index == 1 && replacement_material.index == 2,
+            "replacement fixture should keep an old material registry entry alive");
+    require(old_mesh.index == 1 && replacement_mesh.index == 2,
+            "replacement fixture should keep an old mesh registry entry alive");
+    require(
+        replacement_material == legacy_material,
+        "the legacy generation-one provisional material identity should collide on replacement");
+    require(replacement_mesh == legacy_mesh,
+            "the legacy generation-one provisional mesh identity should collide on replacement");
+    require(replacement_material != provisional_material,
+            "replacement material registry handles must not collide with provisional handles");
+    require(replacement_mesh != provisional_mesh,
+            "replacement mesh registry handles must not collide with provisional handles");
+
+    const std::filesystem::path root = CUBEY_SOURCE_DIR;
+    const std::string importer =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer.cpp");
+    const std::string materials =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
+    cubey::tests::require_contains(
+        importer, "staging_mesh_handle(std::size_t index)",
+        "glTF mesh residency should construct explicit provisional handles");
+    cubey::tests::require_contains(
+        importer, ".generation = 0U};",
+        "glTF mesh residency should reserve generation zero for provisional handles");
+    cubey::tests::require_contains(
+        materials, "staging_material_handle(std::size_t index)",
+        "glTF material residency should construct explicit provisional handles");
+    cubey::tests::require_contains(
+        materials, ".generation = 0U};",
+        "glTF material residency should reserve generation zero for provisional handles");
 }
 
 void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy() {
