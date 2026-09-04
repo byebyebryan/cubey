@@ -4,6 +4,7 @@
 
 void test_gltf_asset_loads_static_pbr_triangle();
 void test_gltf_asset_preserves_ior_special_and_high_values();
+void test_gltf_asset_validates_ior_and_specular_material_values();
 void test_gltf_asset_marks_nodes_authored_with_matrix();
 void test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs();
 void test_gltf_asset_loads_uv1_vertex_color_and_texture_transform();
@@ -35,9 +36,10 @@ void test_terrain_raster_height_source_rejects_invalid_contracts();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 29> tests{
+    static constexpr std::array<TestCase, 30> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
         CUBEY_TEST(test_gltf_asset_preserves_ior_special_and_high_values),
+        CUBEY_TEST(test_gltf_asset_validates_ior_and_specular_material_values),
         CUBEY_TEST(test_gltf_asset_marks_nodes_authored_with_matrix),
         CUBEY_TEST(test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs),
         CUBEY_TEST(test_gltf_asset_loads_uv1_vertex_color_and_texture_transform),

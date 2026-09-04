@@ -140,24 +140,37 @@ void test_capture_orbit_controls() {
             "glTF bounded capture orbit should remain opt-in");
     require(!defaults.capture.camera_distance_scale.has_value(),
             "glTF capture distance scale should remain opt-in");
+    require(!defaults.capture.camera_yaw_degrees.has_value() &&
+                !defaults.capture.camera_pitch_degrees.has_value(),
+            "glTF capture camera angles should remain opt-in");
 
-    const char* named_arguments[] = {"gltf_viewer", "--capture-video-orbit-degrees", "30",
-                                     "--capture-camera-distance-scale", "0.75"};
+    const char* named_arguments[] = {
+        "gltf_viewer", "--capture-video-orbit-degrees", "30", "--capture-camera-distance-scale",
+        "0.75",        "--capture-camera-yaw",          "45", "--capture-camera-pitch",
+        "-15"};
     const gltf::GltfViewerProjectConfig named =
-        gltf::parse_gltf_viewer_project_config(5, const_cast<char**>(named_arguments));
+        gltf::parse_gltf_viewer_project_config(9, const_cast<char**>(named_arguments));
     require(named.capture.video_orbit_degrees == 30.0F,
             "glTF capture orbit should parse its total degree extent");
     require(named.capture.camera_distance_scale == 0.75F,
             "glTF capture distance scale should parse its framing override");
+    require(named.capture.camera_yaw_degrees == 45.0F &&
+                named.capture.camera_pitch_degrees == -15.0F,
+            "glTF capture camera angles should parse their framing overrides");
 
     gltf::GltfViewerProjectConfig deferred;
     const auto schema = gltf::gltf_viewer_project_config_schema(deferred);
     schema.set("gltf.capture.video_orbit_degrees", "45");
     schema.set("gltf.capture.camera_distance_scale", "1.25");
+    schema.set("gltf.capture.camera_yaw_degrees", "90");
+    schema.set("gltf.capture.camera_pitch_degrees", "-30");
     require(deferred.capture.video_orbit_degrees == 45.0F,
             "glTF capture orbit should bind through config v2 paths");
     require(deferred.capture.camera_distance_scale == 1.25F,
             "glTF capture distance scale should bind through config v2 paths");
+    require(deferred.capture.camera_yaw_degrees == 90.0F &&
+                deferred.capture.camera_pitch_degrees == -30.0F,
+            "glTF capture camera angles should bind through config v2 paths");
     require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "-0.1"); },
                    "glTF capture orbit should reject negative degrees");
     require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "180.1"); },
@@ -166,11 +179,18 @@ void test_capture_orbit_controls() {
                    "glTF capture distance scale should reject values below its bound");
     require_throws([&] { schema.set("gltf.capture.camera_distance_scale", "2.01"); },
                    "glTF capture distance scale should reject values above its bound");
+    require_throws([&] { schema.set("gltf.capture.camera_yaw_degrees", "180.1"); },
+                   "glTF capture yaw should reject values outside its bound");
+    require_throws([&] { schema.set("gltf.capture.camera_pitch_degrees", "-89.1"); },
+                   "glTF capture pitch should reject values outside its bound");
     const auto document = schema.template_json();
     require(document.at("gltf").at("capture").at("video_orbit_degrees").get<float>() == 45.0F,
             "glTF template should expose the configured capture orbit");
     require(document.at("gltf").at("capture").at("camera_distance_scale").get<float>() == 1.25F,
             "glTF template should expose the configured capture distance scale");
+    require(document.at("gltf").at("capture").at("camera_yaw_degrees").get<float>() == 90.0F &&
+                document.at("gltf").at("capture").at("camera_pitch_degrees").get<float>() == -30.0F,
+            "glTF template should expose the configured capture camera angles");
 }
 
 } // namespace

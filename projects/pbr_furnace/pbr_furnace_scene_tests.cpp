@@ -38,8 +38,7 @@ int main() {
     const auto& last_first_row =
         materials[cubey::projects::pbr_furnace::kPbrFurnaceColumnCount - 1U];
     require_close(last_first_row.metallic, 0.0F, "first row should stay dielectric");
-    require_close(last_first_row.roughness, 1.0F,
-                  "roughness ramp should end at full roughness");
+    require_close(last_first_row.roughness, 1.0F, "roughness ramp should end at full roughness");
 
     const auto& last_material = materials.back();
     require(last_material.row == 5 && last_material.column == 5,
@@ -67,5 +66,44 @@ int main() {
                           "new furnace rows should restart at minimum roughness");
         }
     }
+
+    const auto default_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("none");
+    require(default_layout.materials.size() == materials.size(),
+            "default conformance selection should preserve the white-furnace grid");
+    require_close(default_layout.camera_distance, 9.0F,
+                  "default conformance selection should preserve the white-furnace framing");
+
+    const auto ior_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("ior");
+    require(ior_layout.materials.size() == 4,
+            "IOR conformance should expose four independently inspectable specimens");
+    require_close(ior_layout.materials[0].ior, 1.0F, "IOR conformance should begin at unit IOR");
+    require_close(ior_layout.materials[1].ior, 1.5F,
+                  "IOR conformance should include the glTF default IOR");
+    require_close(ior_layout.materials[2].ior, 2.42F,
+                  "IOR conformance should retain high dielectric IOR");
+    require_close(ior_layout.materials[3].ior, 0.0F,
+                  "IOR conformance should include the compatibility sentinel");
+
+    const auto specular_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("specular");
+    require(specular_layout.materials.size() == 4,
+            "specular conformance should expose four independently inspectable specimens");
+    require_close(specular_layout.materials[0].specular_factor, 0.0F,
+                  "specular conformance should isolate factor zero");
+    require_close(specular_layout.materials[1].specular_factor, 1.0F,
+                  "specular conformance should isolate factor one");
+    require(specular_layout.materials[2].specular_color_factor.r >
+                specular_layout.materials[2].specular_color_factor.b,
+            "specular conformance should include a red material F0 witness");
+    require(specular_layout.materials[3].specular_color_factor.b >
+                specular_layout.materials[3].specular_color_factor.r,
+            "specular conformance should include a blue material F0 witness");
+
+    bool rejected_unknown_case = false;
+    try {
+        static_cast<void>(cubey::projects::pbr_furnace::pbr_furnace_layout("unknown"));
+    } catch (const std::invalid_argument&) {
+        rejected_unknown_case = true;
+    }
+    require(rejected_unknown_case, "PBR furnace should reject unknown conformance cases");
     return 0;
 }

@@ -138,8 +138,9 @@ cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_sphere_mesh(
     return mesh;
 }
 
-PbrFurnaceApp::PbrFurnaceApp(PbrFurnaceConfig config) : config_(std::move(config)) {
-    orbit_controller_.set_home_distance(kCameraDistance);
+PbrFurnaceApp::PbrFurnaceApp(PbrFurnaceConfig config)
+    : config_(std::move(config)), layout_(pbr_furnace_layout(config_.conformance_case)) {
+    orbit_controller_.set_home_distance(layout_.camera_distance);
 }
 
 int PbrFurnaceApp::run() {
@@ -169,14 +170,14 @@ int PbrFurnaceApp::run_windowed() {
         record_furnace_frame(frame.command_buffer, frame.color_target, frame.frame_slot, true);
     };
     callbacks.frame_stats_sample =
-        [](cubey::host::WindowedAppContext& context,
-           const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+        [this](cubey::host::WindowedAppContext& context,
+               const FrameTiming& timing) -> std::optional<FrameStatsSample> {
         const VkExtent2D extent = context.swapchain().extent();
         return FrameStatsSample{
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = static_cast<std::uint32_t>(kPbrFurnaceMaterialCount) * 24U * 48U * 2U,
+            .triangles = static_cast<std::uint32_t>(layout_.materials.size()) * 24U * 48U * 2U,
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext&) { destroy_all_resources(); };
@@ -209,12 +210,11 @@ int PbrFurnaceApp::run_headless() {
         create_forward_pass(context.device(), context.render_target().extent,
                             context.render_target().format);
     };
-    callbacks.record_frame = [this](cubey::host::HeadlessPngContext&,
-                                    const cubey::host::HeadlessCaptureFrame& frame,
-                                    VkCommandBuffer command_buffer,
-                                    const cubey::host::HeadlessRenderTarget& target) {
-        record_furnace_frame(command_buffer, target, frame.frame_slot, false);
-    };
+    callbacks.record_frame =
+        [this](cubey::host::HeadlessPngContext&, const cubey::host::HeadlessCaptureFrame& frame,
+               VkCommandBuffer command_buffer, const cubey::host::HeadlessRenderTarget& target) {
+            record_furnace_frame(command_buffer, target, frame.frame_slot, false);
+        };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
 
     cubey::host::HeadlessPngHost host(std::move(host_config), std::move(callbacks));

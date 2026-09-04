@@ -71,22 +71,25 @@ void PbrFurnaceApp::create_scene_material(const cubey::vulkan::Device& device,
 
 void PbrFurnaceApp::create_materials(const cubey::vulkan::Device& device,
                                      std::uint32_t frame_slot_count) {
-    const auto materials = pbr_furnace_material_grid();
-    material_handles_.reserve(materials.size());
-    for (const PbrFurnaceMaterial& furnace_material : materials) {
+    material_handles_.reserve(layout_.materials.size());
+    for (const PbrFurnaceMaterial& furnace_material : layout_.materials) {
         const cubey::render::MaterialHandle material =
             engine_.render_resources().create_material(cubey::render::MaterialInfo{
                 .label = "pbr_furnace.material.r" + std::to_string(furnace_material.row) + ".c" +
                          std::to_string(furnace_material.column),
                 .sort_key =
                     (furnace_material.row * kPbrFurnaceColumnCount) + furnace_material.column,
-        });
+            });
         material_handles_.push_back(material);
-        materials_.set_factors(material, cubey::render::PbrMaterialFactors{
-                                             .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
-                                             .metallic_factor = furnace_material.metallic,
-                                             .roughness_factor = furnace_material.roughness,
-                                         });
+        materials_.set_factors(material,
+                               cubey::render::PbrMaterialFactors{
+                                   .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
+                                   .metallic_factor = furnace_material.metallic,
+                                   .roughness_factor = furnace_material.roughness,
+                                   .specular_color_factor = furnace_material.specular_color_factor,
+                                   .specular_factor = furnace_material.specular_factor,
+                                   .dielectric_ior = furnace_material.ior,
+                               });
         materials_.emplace_instance(material, device,
                                     cubey::render::FrameUniformMaterialInstanceConfig{
                                         .material_pass = cubey::render::pbr_forward_pass_info(),

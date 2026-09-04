@@ -214,6 +214,27 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
     };
 }
 
+void require_valid_material_ior(float ior) {
+    if (!std::isfinite(ior) || (ior != 0.0F && ior < 1.0F)) {
+        throw gltf_error(
+            "KHR_materials_ior ior must be 0 or a finite value greater than or equal to 1");
+    }
+}
+
+void require_valid_specular_factor(float factor) {
+    if (!std::isfinite(factor) || factor < 0.0F || factor > 1.0F) {
+        throw gltf_error("KHR_materials_specular specularFactor must be finite and in [0, 1]");
+    }
+}
+
+void require_valid_specular_color(const math::Vec3& color) {
+    if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+        color.r < 0.0F || color.g < 0.0F || color.b < 0.0F) {
+        throw gltf_error(
+            "KHR_materials_specular specularColorFactor must contain finite nonnegative values");
+    }
+}
+
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
@@ -236,6 +257,13 @@ void require_optional_color_accessor(const cgltf_accessor* accessor, const char*
                   material.sheen.sheen_color_factor[2],
               }
             : math::Vec3{0.0F, 0.0F, 0.0F};
+    if (material.has_ior != 0) {
+        require_valid_material_ior(material.ior.ior);
+    }
+    if (material.has_specular != 0) {
+        require_valid_specular_factor(material.specular.specular_factor);
+        require_valid_specular_color(specular_color);
+    }
     return {
         .label = label_or_empty(material.name),
         .base_color_factor =
@@ -1163,11 +1191,9 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
     // This is intentionally stricter than the set of extensions that the
     // importer can parse. An extension is accepted from extensionsRequired
     // only after its data path and rendered semantics have both been closed.
-    static constexpr std::array<std::string_view, 4> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength",
-        "KHR_texture_transform",
-        "KHR_texture_basisu",
-        "KHR_materials_unlit",
+    static constexpr std::array<std::string_view, 6> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength", "KHR_materials_ior",  "KHR_materials_specular",
+        "KHR_texture_transform",           "KHR_texture_basisu", "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

@@ -26,12 +26,12 @@ function(cubey_label_tests label)
     endforeach()
 endfunction()
 
-function(cubey_add_png_smoke_test name target output_path)
+function(cubey_add_png_capture_test name target output_path width height)
     list(FIND ARGN "--headless" explicit_headless_index)
     if (NOT explicit_headless_index EQUAL -1)
         message(
             FATAL_ERROR
-            "${name}: cubey_add_png_smoke_test selects --headless automatically"
+            "${name}: cubey_add_png_capture_test selects --headless automatically"
         )
     endif()
     set(skip_marker "${output_path}.skip")
@@ -39,11 +39,13 @@ function(cubey_add_png_smoke_test name target output_path)
         NAME "${name}"
         COMMAND
             /bin/sh -c
-            "output=$1; skip_marker=$2; target=$3; shift 3; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f \"$output\" \"$skip_marker\"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS \"$target\" --headless --width 64 --height 64 \"$@\" --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then if printf '%s\n' \"$out\" | grep -Eq \"$skip_re\"; then touch \"$skip_marker\"; exit 77; fi; exit \"$status\"; fi; if ! printf '%s\n' \"$out\" | grep -q 'headless_png:'; then printf 'headless PNG marker missing\n'; exit 1; fi; test -s \"$output\"; sig=$(od -An -tx1 -N8 \"$output\" | tr -d ' \\n'); test \"$sig\" = \"89504e470d0a1a0a\""
+            "output=$1; skip_marker=$2; target=$3; width=$4; height=$5; shift 5; skip_re='no Vulkan physical devices found|vkEnumeratePhysicalDevices|no Vulkan device with required queues and dynamic rendering found'; rm -f \"$output\" \"$skip_marker\"; out=$(env -u DISPLAY -u WAYLAND_DISPLAY -u XAUTHORITY -u XDG_SESSION_TYPE -u XDG_RUNTIME_DIR -u DBUS_SESSION_BUS_ADDRESS \"$target\" --headless --width \"$width\" --height \"$height\" \"$@\" --output \"$output\" 2>&1); status=$?; printf '%s\n' \"$out\"; if printf '%s\n' \"$out\" | grep -q 'vulkan validation error'; then exit 1; fi; if [ \"$status\" -ne 0 ]; then if printf '%s\n' \"$out\" | grep -Eq \"$skip_re\"; then touch \"$skip_marker\"; exit 77; fi; exit \"$status\"; fi; if ! printf '%s\n' \"$out\" | grep -q 'headless_png:'; then printf 'headless PNG marker missing\n'; exit 1; fi; test -s \"$output\"; sig=$(od -An -tx1 -N8 \"$output\" | tr -d ' \\n'); test \"$sig\" = \"89504e470d0a1a0a\""
             "${name}"
             "${output_path}"
             "${skip_marker}"
             "$<TARGET_FILE:${target}>"
+            "${width}"
+            "${height}"
             ${ARGN}
     )
     set_tests_properties("${name}" PROPERTIES TIMEOUT 45 SKIP_RETURN_CODE 77)
@@ -53,6 +55,10 @@ function(cubey_add_png_smoke_test name target output_path)
         APPEND
         PROPERTY ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_SOURCE_DIR}/cmake/lsan.supp"
     )
+endfunction()
+
+function(cubey_add_png_smoke_test name target output_path)
+    cubey_add_png_capture_test("${name}" "${target}" "${output_path}" 64 64 ${ARGN})
 endfunction()
 
 function(cubey_add_png_stats_test smoke_name output_path min_mean_luma min_luma_range)
@@ -72,6 +78,27 @@ function(cubey_add_png_stats_test smoke_name output_path min_mean_luma min_luma_
     )
     set_tests_properties("${stats_name}" PROPERTIES TIMEOUT 10 DEPENDS "${smoke_name}" SKIP_RETURN_CODE 77)
     set_property(TEST "${stats_name}" APPEND PROPERTY LABELS "headless;artifact")
+endfunction()
+
+function(cubey_add_png_material_conformance_test capture_name output_path conformance_case)
+    set(test_name "${capture_name}_material_conformance")
+    set(skip_marker "${output_path}.skip")
+    add_test(
+        NAME "${test_name}"
+        COMMAND
+            /bin/sh -c
+            "output=$1; skip_marker=$2; verifier=$3; conformance_case=$4; if ! test -s \"$output\"; then if test -f \"$skip_marker\"; then printf 'material_conformance: skipped %s because capture skipped\\n' \"$output\"; exit 77; fi; printf 'material_conformance: missing expected PNG %s\\n' \"$output\"; exit 1; fi; \"$verifier\" --material-conformance \"$conformance_case\" \"$output\""
+            "${test_name}"
+            "${output_path}"
+            "${skip_marker}"
+            "$<TARGET_FILE:cubey_png_stats>"
+            "${conformance_case}"
+    )
+    set_tests_properties(
+        "${test_name}"
+        PROPERTIES TIMEOUT 10 DEPENDS "${capture_name}" SKIP_RETURN_CODE 77
+    )
+    set_property(TEST "${test_name}" APPEND PROPERTY LABELS "headless;artifact;conformance")
 endfunction()
 
 function(cubey_add_video_smoke_test name target output_path)

@@ -31,7 +31,6 @@
 namespace cubey::projects::pbr_furnace {
 
 constexpr float kSphereRadius = 0.46F;
-constexpr float kCameraDistance = 9.0F;
 constexpr std::uint32_t kIblPrefilteredExtent = 64;
 constexpr std::uint32_t kIblPrefilteredMipLevels = 5;
 constexpr VkFormat kIblFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -102,6 +101,7 @@ class PbrFurnaceApp {
     [[nodiscard]] const cubey::render::ForwardScenePass3D& forward_pass() const;
 
     PbrFurnaceConfig config_;
+    PbrFurnaceLayout layout_;
     cubey::Engine engine_;
     cubey::Scene* scene_ = nullptr;
     cubey::Entity camera_entity_{};

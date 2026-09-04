@@ -56,13 +56,24 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_texture_basisu` | supported | KTX2 BasisU payloads transcode to BC7 or RGBA8, with sample-asset smoke coverage. |
 | `KHR_materials_unlit` | supported | Base color, vertex color, texture transforms, and alpha policy bypass lighting. |
 | `KHR_materials_emissive_strength` | supported | Strength is folded into HDR emissive radiance. |
-| `KHR_materials_ior`, `KHR_materials_specular` | partial | Their CPU data path and core dielectric F0/F90 shading are covered; required-use promotion waits on full visual conformance coverage. |
+| `KHR_materials_ior` | supported | Authored IOR is validated as exactly zero or finite and at least one, preserved through material packing, and checked by analytic loader coverage plus the deterministic white-IBL furnace. |
+| `KHR_materials_specular` | supported | Factor and color inputs are validated before import, including factor-only and texture/transform paths; F0/F90 feed direct and split-sum IBL response, with deterministic furnace and Khronos `SpecularTest` capture coverage. |
 | `KHR_materials_clearcoat`, `KHR_materials_sheen`, `KHR_materials_anisotropy`, `KHR_materials_iridescence` | partial | Their current texture/factor plumbing and approximate lobes remain available only for optional extension use. |
 
 Partial extensions remain useful for renderer development and optional asset
 inspection, but Cubey rejects them when an asset declares them required. Each
 extension is promoted independently after analytic and deterministic sample
-coverage closes its semantics.
+coverage closes its semantics. Loader and analytic witnesses live in focused
+core tests, while the material-conformance CTest label separates rendered
+checks from ordinary smoke: the opt-in `pbr_furnace --conformance-case` layouts
+capture fixed 512px white-IBL IOR or specular specimens and inspect foreground
+region/channel relationships rather than byte-identical images. The
+pinned Khronos `SpecularTest` lane adds fixed manual directional lighting plus
+half-intensity static IBL, no clouds, explicit exposure, and a front-on camera
+for end-to-end model-grid/chromatic-response evidence through the shared forward
+renderer; it is not a pixel oracle for the asset. Its bounded sphere-grid
+samples cannot be satisfied by the sky/background. Failed semantic checks leave
+their PNG artifact in the build tree for inspection.
 
 Unsupported features fail early instead of being silently ignored:
 unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate

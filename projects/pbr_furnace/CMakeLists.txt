@@ -35,6 +35,16 @@ if (BUILD_TESTING)
     )
     add_test(NAME pbr_furnace_scene_tests COMMAND cubey_project_pbr_furnace_tests)
 
+    add_executable(cubey_project_pbr_furnace_config_tests pbr_furnace_config_tests.cpp)
+    target_link_libraries(
+        cubey_project_pbr_furnace_config_tests
+        PRIVATE
+            cubey::host
+            cubey_project_options
+            cubey_project_warnings
+    )
+    add_test(NAME pbr_furnace_config_tests COMMAND cubey_project_pbr_furnace_config_tests)
+
     set(CUBEY_PBR_FURNACE_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-headless-smoke.png"
     )
@@ -42,6 +52,47 @@ if (BUILD_TESTING)
         pbr_furnace_headless_writes_png
         cubey_project_pbr_furnace
         "${CUBEY_PBR_FURNACE_HEADLESS_SMOKE_OUTPUT}"
+    )
+    set(CUBEY_PBR_FURNACE_IOR_CONFORMANCE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-ior-conformance.png"
+    )
+    cubey_add_png_capture_test(
+        pbr_furnace_ior_conformance_writes_png
+        cubey_project_pbr_furnace
+        "${CUBEY_PBR_FURNACE_IOR_CONFORMANCE_OUTPUT}"
+        512
+        512
+        --conformance-case
+        ior
+    )
+    cubey_add_png_material_conformance_test(
+        pbr_furnace_ior_conformance_writes_png
+        "${CUBEY_PBR_FURNACE_IOR_CONFORMANCE_OUTPUT}"
+        furnace-ior
+    )
+    set(CUBEY_PBR_FURNACE_SPECULAR_CONFORMANCE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-specular-conformance.png"
+    )
+    cubey_add_png_capture_test(
+        pbr_furnace_specular_conformance_writes_png
+        cubey_project_pbr_furnace
+        "${CUBEY_PBR_FURNACE_SPECULAR_CONFORMANCE_OUTPUT}"
+        512
+        512
+        --conformance-case
+        specular
+    )
+    cubey_add_png_material_conformance_test(
+        pbr_furnace_specular_conformance_writes_png
+        "${CUBEY_PBR_FURNACE_SPECULAR_CONFORMANCE_OUTPUT}"
+        furnace-specular
+    )
+    cubey_label_tests(
+        conformance
+        pbr_furnace_ior_conformance_writes_png
+        pbr_furnace_ior_conformance_writes_png_material_conformance
+        pbr_furnace_specular_conformance_writes_png
+        pbr_furnace_specular_conformance_writes_png_material_conformance
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_PBR_FURNACE_HEADLESS_VIDEO_SMOKE_OUTPUT

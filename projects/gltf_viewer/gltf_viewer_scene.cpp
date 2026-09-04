@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <stdexcept>
 
 namespace cubey::projects::gltf_viewer {
@@ -15,6 +16,14 @@ namespace {
 
 constexpr float kCameraBaseYaw = cubey::render::kAtmosphereEnvironmentSunriseViewYawRadians;
 constexpr float kCameraBasePitch = cubey::render::kAtmosphereEnvironmentSunriseViewPitchRadians;
+
+[[nodiscard]] float capture_camera_angle_radians(const std::optional<float>& override_degrees,
+                                                 float default_radians) {
+    if (!override_degrees.has_value()) {
+        return default_radians;
+    }
+    return *override_degrees * (std::numbers::pi_v<float> / 180.0F);
+}
 
 } // namespace
 
@@ -73,8 +82,12 @@ void GltfViewerApp::create_camera_and_light(cubey::SceneTransaction& setup) {
         cubey::orbit_camera_transform(cubey::OrbitCameraState{
             .target = scene_bounds_.center,
             .distance = orbit_controller_.distance(),
-            .yaw = kCameraBaseYaw + orbit_controller_.yaw(),
-            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
+            .yaw =
+                capture_camera_angle_radians(config_.capture.camera_yaw_degrees, kCameraBaseYaw) +
+                orbit_controller_.yaw(),
+            .pitch = capture_camera_angle_radians(config_.capture.camera_pitch_degrees,
+                                                  kCameraBasePitch) +
+                     orbit_controller_.pitch(),
         }),
         cubey::Camera3D({
             .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled()
@@ -154,13 +167,16 @@ void GltfViewerApp::refresh_atmosphere_lighting_scene() {
 void GltfViewerApp::update_camera_transform() {
     cubey::SceneEditQueue edits = scene().create_edit_queue();
     edits.transforms3d().set_local_transform(
-        camera_entity_,
-        cubey::orbit_camera_transform(cubey::OrbitCameraState{
-            .target = scene_bounds_.center,
-            .distance = orbit_controller_.distance(),
-            .yaw = kCameraBaseYaw + orbit_controller_.yaw() + capture_orbit_offset_radians_,
-            .pitch = kCameraBasePitch + orbit_controller_.pitch(),
-        }));
+        camera_entity_, cubey::orbit_camera_transform(cubey::OrbitCameraState{
+                            .target = scene_bounds_.center,
+                            .distance = orbit_controller_.distance(),
+                            .yaw = capture_camera_angle_radians(config_.capture.camera_yaw_degrees,
+                                                                kCameraBaseYaw) +
+                                   orbit_controller_.yaw() + capture_orbit_offset_radians_,
+                            .pitch = capture_camera_angle_radians(
+                                         config_.capture.camera_pitch_degrees, kCameraBasePitch) +
+                                     orbit_controller_.pitch(),
+                        }));
     scene().commit(edits);
 }
 

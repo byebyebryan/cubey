@@ -9,9 +9,8 @@ namespace cubey::projects::pbr_furnace {
 void PbrFurnaceApp::create_scene() {
     scene_ = &engine_.create_scene();
     cubey::SceneTransaction setup = scene().begin_transaction();
-    const auto materials = pbr_furnace_material_grid();
-    for (std::size_t index = 0; index < materials.size(); ++index) {
-        const PbrFurnaceMaterial& material = materials[index];
+    for (std::size_t index = 0; index < layout_.materials.size(); ++index) {
+        const PbrFurnaceMaterial& material = layout_.materials[index];
         static_cast<void>(cubey::scene::create_renderable_entity_3d(
             setup, {
                        .transform =
@@ -64,7 +63,7 @@ cubey::scene::RenderFramePlan3D PbrFurnaceApp::current_frame_plan(const cubey::S
     };
     cubey::scene::RenderFramePlan3D plan =
         cubey::scene::build_render_frame_plan_3d(render_view, view, engine_.render_resources());
-    if (plan.draw_packets.size() != kPbrFurnaceMaterialCount) {
+    if (plan.draw_packets.size() != layout_.materials.size()) {
         throw std::runtime_error("pbr_furnace scene should produce one packet per material");
     }
     return plan;

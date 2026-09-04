@@ -22,10 +22,16 @@ namespace cubey::projects::gltf_viewer {
 inline constexpr float kGltfViewerMaximumCaptureOrbitDegrees = 180.0F;
 inline constexpr float kGltfViewerMinimumCaptureCameraDistanceScale = 0.5F;
 inline constexpr float kGltfViewerMaximumCaptureCameraDistanceScale = 2.0F;
+inline constexpr float kGltfViewerMinimumCaptureCameraYawDegrees = -180.0F;
+inline constexpr float kGltfViewerMaximumCaptureCameraYawDegrees = 180.0F;
+inline constexpr float kGltfViewerMinimumCaptureCameraPitchDegrees = -89.0F;
+inline constexpr float kGltfViewerMaximumCaptureCameraPitchDegrees = 89.0F;
 
 struct GltfViewerCaptureOptions {
     std::optional<float> video_orbit_degrees{};
     std::optional<float> camera_distance_scale{};
+    std::optional<float> camera_yaw_degrees{};
+    std::optional<float> camera_pitch_degrees{};
 };
 
 struct GltfViewerStartupOptions {
@@ -122,6 +128,24 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                  .min = kGltfViewerMinimumCaptureCameraDistanceScale,
                                  .max = kGltfViewerMaximumCaptureCameraDistanceScale}),
                  config.capture.camera_distance_scale);
+    builder.bind(detail::option("gltf.capture.camera_yaw_degrees", "--capture-camera-yaw",
+                                "Camera Yaw", "Capture",
+                                "Optional absolute capture camera yaw in degrees.",
+                                ValueType::Float,
+                                {.has_min = true,
+                                 .has_max = true,
+                                 .min = kGltfViewerMinimumCaptureCameraYawDegrees,
+                                 .max = kGltfViewerMaximumCaptureCameraYawDegrees}),
+                 config.capture.camera_yaw_degrees);
+    builder.bind(detail::option("gltf.capture.camera_pitch_degrees", "--capture-camera-pitch",
+                                "Camera Pitch", "Capture",
+                                "Optional absolute capture camera pitch in degrees.",
+                                ValueType::Float,
+                                {.has_min = true,
+                                 .has_max = true,
+                                 .min = kGltfViewerMinimumCaptureCameraPitchDegrees,
+                                 .max = kGltfViewerMaximumCaptureCameraPitchDegrees}),
+                 config.capture.camera_pitch_degrees);
 
     builder.compose(cubey::pbr_static_ibl_schema(config.pbr));
     builder.bind(detail::option("pbr.environment_source", "--pbr-environment-source",

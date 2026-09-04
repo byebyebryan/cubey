@@ -270,6 +270,53 @@ if (BUILD_TESTING)
         "SpecularTest/glTF/SpecularTest.gltf"
         "gltf-viewer-specular-test-smoke.png"
     )
+    if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
+        set(CUBEY_GLTF_VIEWER_SPECULAR_TEST_CONFORMANCE_PATH
+            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/SpecularTest/glTF/SpecularTest.gltf"
+        )
+        set(CUBEY_GLTF_VIEWER_SPECULAR_TEST_CONFORMANCE_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-specular-test-conformance.png"
+        )
+        cubey_add_png_capture_test(
+            gltf_viewer_specular_test_material_conformance_writes_png
+            cubey_project_gltf_viewer
+            "${CUBEY_GLTF_VIEWER_SPECULAR_TEST_CONFORMANCE_OUTPUT}"
+            512
+            512
+            --input
+            "${CUBEY_GLTF_VIEWER_SPECULAR_TEST_CONFORMANCE_PATH}"
+            --pbr-environment-source
+            static
+            --ibl-intensity
+            0.5
+            --no-clouds
+            --exposure
+            0
+            --capture-camera-distance-scale
+            0.5
+            --capture-camera-yaw
+            0
+            --capture-camera-pitch
+            0
+            --time-of-day-mode
+            manual
+            --sun-elevation
+            14
+            --sun-azimuth
+            180
+            --pause-time
+        )
+        cubey_add_png_material_conformance_test(
+            gltf_viewer_specular_test_material_conformance_writes_png
+            "${CUBEY_GLTF_VIEWER_SPECULAR_TEST_CONFORMANCE_OUTPUT}"
+            gltf-specular-test
+        )
+        cubey_label_tests(
+            conformance
+            gltf_viewer_specular_test_material_conformance_writes_png
+            gltf_viewer_specular_test_material_conformance_writes_png_material_conformance
+        )
+    endif()
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_texture_transform_headless_writes_png
         "TextureTransformTest/glTF/TextureTransformTest.gltf"

@@ -36,6 +36,19 @@ template <typename Action> void require_throws(Action&& action, const char* mess
     throw std::runtime_error(message);
 }
 
+template <typename Action>
+void require_throws_with_message(Action&& action, std::string_view expected_message,
+                                 const char* message) {
+    try {
+        action();
+    } catch (const std::exception& error) {
+        require(std::string_view{error.what()}.find(expected_message) != std::string_view::npos,
+                message);
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 void append_f32(std::vector<std::uint8_t>& bytes, float value) {
     const std::size_t offset = bytes.size();
     bytes.resize(offset + sizeof(float));
@@ -736,6 +749,59 @@ void test_gltf_asset_preserves_ior_special_and_high_values() {
     std::filesystem::remove_all(dir);
 }
 
+void test_gltf_asset_validates_ior_and_specular_material_values() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_material_extension_values");
+    const std::filesystem::path path = dir / "material_extension_values.gltf";
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_ior", "KHR_materials_specular"],
+  "extensionsRequired": ["KHR_materials_ior", "KHR_materials_specular"],
+  "materials": [
+    {"extensions": {"KHR_materials_ior": {"ior": 0.0}}},
+    {"extensions": {"KHR_materials_ior": {"ior": 2.42}}},
+    {"extensions": {"KHR_materials_specular": {
+      "specularFactor": 0.35,
+      "specularColorFactor": [1.25, 0.5, 0.0]
+    }}}
+  ]
+})JSON");
+    const cubey::asset::GltfAsset valid = cubey::asset::load_gltf_asset(path);
+    require_close(valid.materials[1].ior, 0.0F, "valid IOR zero compatibility value should load");
+    require_close(valid.materials[2].ior, 2.42F, "valid high IOR should load");
+    require_close(valid.materials[3].specular_color_factor.r, 1.25F,
+                  "finite nonnegative specular color should not be silently clamped");
+
+    const auto require_invalid = [&path](std::string_view extension) {
+        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                                  "  \"extensionsUsed\": [\"" + std::string{extension} +
+                                  "\"],\n  \"materials\": [{\"extensions\": {\"" +
+                                  std::string{extension} + "\": " +
+                                  (extension == "KHR_materials_ior" ? "{\"ior\": 0.5}"
+                                                                    : "{\"specularFactor\": 1.1}") +
+                                  "}}]\n}\n");
+        require_throws_with_message(
+            [&path] { (void)cubey::asset::load_gltf_asset(path); }, extension,
+            "invalid material extension value should identify its rejected extension");
+    };
+    require_invalid("KHR_materials_ior");
+    require_invalid("KHR_materials_specular");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_specular"],
+  "materials": [{"extensions": {"KHR_materials_specular": {
+    "specularFactor": 0.5,
+    "specularColorFactor": [-0.01, 0.5, 0.5]
+  }}}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "specularColorFactor",
+        "negative specular color should be rejected with a field-specific error");
+
+    std::filesystem::remove_all(dir);
+}
+
 void test_gltf_asset_marks_nodes_authored_with_matrix() {
     const std::filesystem::path dir = test_dir("cubey-gltf-matrix-node");
     const std::filesystem::path path = dir / "matrix_node.gltf";
@@ -1211,9 +1277,11 @@ void test_gltf_asset_accepts_closed_required_extensions() {
 void test_gltf_asset_rejects_partial_required_extensions() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_partial_required_extensions");
     const std::filesystem::path path = dir / "partial_required_extensions.gltf";
-    constexpr std::array<std::string_view, 6> kPartialExtensions{
-        "KHR_materials_ior",   "KHR_materials_specular",   "KHR_materials_clearcoat",
-        "KHR_materials_sheen", "KHR_materials_anisotropy", "KHR_materials_iridescence",
+    constexpr std::array<std::string_view, 4> kPartialExtensions{
+        "KHR_materials_clearcoat",
+        "KHR_materials_sheen",
+        "KHR_materials_anisotropy",
+        "KHR_materials_iridescence",
     };
     for (const std::string_view extension : kPartialExtensions) {
         write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +

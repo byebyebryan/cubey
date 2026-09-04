@@ -1,5 +1,7 @@
 #include "pbr_furnace_scene.h"
 
+#include <stdexcept>
+
 namespace cubey::projects::pbr_furnace {
 namespace {
 
@@ -53,6 +55,87 @@ std::array<PbrFurnaceMaterial, kPbrFurnaceMaterialCount> pbr_furnace_material_gr
         }
     }
     return materials;
+}
+
+PbrFurnaceLayout pbr_furnace_layout(std::string_view conformance_case) {
+    if (conformance_case == "none") {
+        const auto grid = pbr_furnace_material_grid();
+        return {
+            .materials = std::vector<PbrFurnaceMaterial>(grid.begin(), grid.end()),
+            .camera_distance = 9.0F,
+        };
+    }
+    if (conformance_case == "ior") {
+        // The four left-to-right cells are IOR 1.0, 1.5, 2.42, and the
+        // glTF IOR-zero compatibility sentinel. All other factors are fixed.
+        return {
+            .materials =
+                {
+                    {.row = 0,
+                     .column = 0,
+                     .metallic = 0.0F,
+                     .roughness = 0.32F,
+                     .ior = 1.0F,
+                     .position = {-3.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 1,
+                     .metallic = 0.0F,
+                     .roughness = 0.32F,
+                     .ior = 1.5F,
+                     .position = {-1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 2,
+                     .metallic = 0.0F,
+                     .roughness = 0.32F,
+                     .ior = 2.42F,
+                     .position = {1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 3,
+                     .metallic = 0.0F,
+                     .roughness = 0.32F,
+                     .ior = 0.0F,
+                     .position = {3.0F, 0.0F, 0.0F}},
+                },
+            .camera_distance = 8.0F,
+        };
+    }
+    if (conformance_case == "specular") {
+        // The first pair isolates factor zero versus one. The second pair
+        // isolates red and blue specular-color factors under the same IBL.
+        return {
+            .materials =
+                {
+                    {.row = 0,
+                     .column = 0,
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .specular_factor = 0.0F,
+                     .position = {-3.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 1,
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .specular_factor = 1.0F,
+                     .position = {-1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 2,
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .specular_color_factor = {1.0F, 0.05F, 0.05F},
+                     .ior = 0.0F,
+                     .position = {1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 3,
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .specular_color_factor = {0.05F, 0.05F, 1.0F},
+                     .ior = 0.0F,
+                     .position = {3.0F, 0.0F, 0.0F}},
+                },
+            .camera_distance = 8.0F,
+        };
+    }
+    throw std::invalid_argument("unknown PBR furnace conformance case");
 }
 
 } // namespace cubey::projects::pbr_furnace

@@ -60,7 +60,9 @@ Radiance HDR equirectangular environment assets:
   bespoke ocean shader remains outside the full PBR material path;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
-  uniform white environment;
+  uniform white environment. Its default grid is unchanged; opt-in `ior` and
+  `specular` conformance layouts fix camera, white IBL, linear output, and
+  material specimens for relational capture checks;
 - optional Filament sample HDR environments can be fetched by CMake for local
   inspection, with `lightroom_14b.hdr` as the default viewer environment when
   available;
@@ -105,6 +107,29 @@ live in the material descriptor set.
 Optional extension textures still use fixed descriptor slots with default
 fallback textures, but shader fetches are gated by per-material flags so the
 common path does not sample absent extension textures.
+
+## IOR And Specular Conformance
+
+`KHR_materials_ior` accepts only IOR zero (the glTF compatibility sentinel) or
+a finite value at least one. Cubey preserves the authored value, including
+high values such as 2.42, and computes the dielectric normal-incidence endpoint
+from it. `KHR_materials_specular` accepts a finite factor in `[0, 1]` and a
+finite nonnegative color without silently clamping malformed data. Its factor
+and color form the dielectric F0 endpoint while the factor supplies dielectric
+F90; metallic materials continue to use base color and unit F90. Both direct
+diffuse and diffuse IBL lose the Fresnel-reflected energy, while split-sum IBL
+uses the material F0/F90 endpoints.
+
+Focused core tests run the CPU/loader witnesses. The `conformance` CTest label
+runs opt-in 512px white-IBL furnace captures with tolerant region and channel
+relationships and—when the pinned Khronos assets are configured—a fixed manual
+directional-light, half-intensity static-IBL/no-cloud 512px `SpecularTest`
+capture through `gltf_viewer`. The front-on capture camera makes the sample's
+dark mirror specimens inspectable while retaining the shared direct-light path;
+its bounded sphere-grid witnesses verify useful model framing and chromatic
+material response rather than treating the sky or every sample cell as a pixel
+oracle. These artifacts are retained on semantic-check failure and are
+deliberately not cross-GPU byte goldens.
 
 The current display transform is intentionally small: exposure in stops, a
 linear-or-ACES tone-map selector, and an output-encoding selector. The reusable
