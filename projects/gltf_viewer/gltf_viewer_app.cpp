@@ -202,6 +202,15 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
     }
     ImGui::Text("CPU %.1f ms  GPU %.1f ms  activation %.1f ms", asset_status.prepare_milliseconds,
                 asset_status.install_milliseconds, asset_activation_milliseconds_);
+    if (active_generation().loading_metrics.has_value()) {
+        const GltfViewerLoadingMetrics& loading_metrics =
+            active_generation().loading_metrics.value();
+        ImGui::Text("Probe %.1f  load %.1f  prepare %.1f  residency %.1f ms",
+                    loading_metrics.metadata_probe_milliseconds,
+                    loading_metrics.gltf_asset_load_milliseconds,
+                    loading_metrics.gltf_scene_prepare_milliseconds,
+                    loading_metrics.gltf_scene_residency_milliseconds);
+    }
     ImGui::Text(
         "%u triangles  %llu upload bytes", active_generation().triangle_count,
         static_cast<unsigned long long>(active_generation().import_result.mesh_upload_byte_count));

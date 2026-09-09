@@ -396,6 +396,12 @@ if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)
         GIT_TAG        2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf
     )
     FetchContent_MakeAvailable(gltf_sample_assets)
+    if (NOT IS_DIRECTORY "${gltf_sample_assets_SOURCE_DIR}/Models")
+        message(
+            FATAL_ERROR
+            "Configured Khronos glTF Sample Assets checkout has no Models directory: ${gltf_sample_assets_SOURCE_DIR}"
+        )
+    endif()
     set(CUBEY_GLTF_SAMPLE_ASSETS_DIR "${gltf_sample_assets_SOURCE_DIR}" CACHE PATH "" FORCE)
 endif()
 

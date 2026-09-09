@@ -13,7 +13,9 @@ renderer.
   inventing project-specific names.
 - Khronos glTF Sample Assets are the default external reference set. CMake can
   point at an existing checkout with `CUBEY_GLTF_SAMPLE_ASSETS_DIR` or fetch it
-  with `CUBEY_FETCH_GLTF_SAMPLE_ASSETS=ON`.
+  with `CUBEY_FETCH_GLTF_SAMPLE_ASSETS=ON`. The checked-in
+  `dev-gltf-conformance` preset is the isolated, opt-in lane for the pinned
+  checkout; ordinary `dev` configuration keeps the fetch disabled.
 - Filament remains the practical reference for keeping CPU asset data, engine
   scene import, renderable resources, material instances, views, and renderer
   policy separate.
@@ -200,10 +202,29 @@ occlusion, emissive, shadow, alpha, and UV0.
 The viewer plays one active glTF animation clip, applies rigid TRS channels to
 scene transforms, uploads morph weights and skin joint palettes per frame, and
 records a compute deformation pass before shadow and PBR scene passes.
-When Khronos Sample Assets are configured, optional headless smoke tests cover
-material, texture transform, alpha, and tangent-space validation scenes,
-including `SpecularTest`, `TextureTransformTest`, `TextureTransformMultiTest`,
-`NormalTangentTest`, `NormalTangentMirrorTest`, and `DamagedHelmet`.
+When Khronos Sample Assets are configured, optional headless compatibility
+smokes cover material, texture transform, alpha, and tangent-space validation
+scenes, including `SpecularTest`, `TextureTransformTest`,
+`TextureTransformMultiTest`, `NormalTangentTest`, `NormalTangentMirrorTest`,
+and `DamagedHelmet`. These tests carry the `gltf_sample` and `compatibility`
+labels and only assert that the viewer can load and produce a valid PNG; they
+are not golden-pixel comparisons. The `dev-gltf-conformance` test preset also
+selects the `gltf` core/viewer evidence and `conformance` checks, including the
+deterministic furnace IOR/specular captures and the semantic Khronos
+`SpecularTest` capture when registered. It excludes tests labeled `windowed`.
+The configured sample inventory checks every referenced path at configure time
+and fails if the lane would otherwise register no sample tests. Downloaded
+assets and generated captures stay under the isolated build tree.
+
+Performance evidence is separate from those compatibility and conformance
+checks. The release-only
+`projects/gltf_viewer/profile_gltf_loading.sh` workflow profiles the staged
+metadata probe, asset load, scene preparation, GPU residency, and activation
+boundaries against a pinned five-asset Sample Assets corpus. It emits a
+complete 19-metric `gltf_loading` generation set per observation and keeps
+first-observation, warm-repetition, and cold-cache claims distinct. The current
+baseline and decision rules live in
+[`docs/notes/gltf-loading-profile.md`](../notes/gltf-loading-profile.md).
 
 Cubey's tangent-space policy is validate-first. glTF recommends MikkTSpace for
 missing tangents, and Filament exposes MikkTSpace generation as an optional

@@ -51,6 +51,9 @@ the detailed foundation notes under `docs/architecture/`.
   captures and optimization candidates.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
+- [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset
+  corpus, repeatable first/warm staged-loading measurements, and the current
+  performance decision gate.
 - [Ocean performance notes](ocean-performance.md): measured whole-renderer GPU
   baseline, spectral FFT cost model, map-size tradeoffs, and optimization
   guardrails.

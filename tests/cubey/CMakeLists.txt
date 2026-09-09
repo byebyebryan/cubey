@@ -132,6 +132,7 @@ cubey_add_glsl_shaders(
 add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
+set_property(TEST cubey_core_tests APPEND PROPERTY LABELS "gltf;core")
 
 add_executable(cubey_config_v2_tests config_v2_tests.cpp)
 target_link_libraries(

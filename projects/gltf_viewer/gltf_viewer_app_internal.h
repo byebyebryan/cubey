@@ -2,6 +2,7 @@
 
 #include "gltf_viewer_app.h"
 #include "gltf_viewer_loading_cage.h"
+#include "gltf_viewer_loading_metrics.h"
 
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
@@ -75,6 +76,7 @@ struct GltfViewerSceneGeneration {
     cubey::Entity light_entity{};
     cubey::Bounds3D bounds{};
     std::uint32_t triangle_count = 0;
+    std::optional<GltfViewerLoadingMetrics> loading_metrics{};
     cubey::animation::GltfAnimationPlayback animation_playback{};
     std::optional<cubey::animation::GltfAnimationSample> animation_sample{};
     cubey::GltfSceneImportResources import_resources{};
@@ -87,6 +89,7 @@ struct GltfViewerSceneGeneration {
 // objects or Vulkan wrappers.
 struct GltfViewerPreparedGeneration {
     std::filesystem::path source_path{};
+    GltfViewerLoadingMetrics loading_metrics{};
     cubey::asset::GltfAsset asset{};
     cubey::GltfPreparedScene gltf{};
     std::optional<cubey::terrain::PreparedTerrainBackdropProduct> terrain{};
@@ -96,6 +99,7 @@ struct GltfViewerPreparedGeneration {
 // construct a complete scene atomically on the application thread.
 struct GltfViewerResidentGeneration {
     GltfViewerPreparedGeneration prepared{};
+    GltfViewerLoadingMetrics loading_metrics{};
     cubey::GltfSceneResident gltf{};
     std::optional<cubey::TerrainBackdropResidentProduct> terrain{};
 };
@@ -123,7 +127,8 @@ class GltfViewerApp {
 
     void request_imported_asset_build(std::filesystem::path input,
                                       cubey::GltfSceneImportCapabilities capabilities,
-                                      std::uint32_t frame_slot_count);
+                                      std::uint32_t frame_slot_count,
+                                      GltfViewerLoadingMetrics loading_metrics);
     void poll_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
                                    cubey::vulkan::GpuSubmissionTicket retire_after);
     void finish_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
@@ -228,6 +233,7 @@ class GltfViewerApp {
     cubey::StagedResource<GltfViewerPreparedGeneration, GltfViewerResidentGeneration> asset_builds_;
     std::shared_ptr<GltfViewerSceneGeneration> active_generation_{};
     std::filesystem::path requested_input_path_{};
+    std::vector<GltfViewerLoadingMetrics> pending_loading_metrics_{};
     double asset_activation_milliseconds_ = 0.0;
     std::string asset_activation_error_{};
     bool global_resources_created_ = false;

@@ -50,7 +50,9 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
         .center = {0.0F, 0.0F, 0.0F},
         .half_extent = {1.0F, 1.0F, 1.0F},
     };
+    GltfViewerLoadingMetrics requested_loading_metrics{};
     if (has_requested_input) {
+        const Clock::time_point probe_started = Clock::now();
         try {
             fallback_bounds = cubey::asset::probe_gltf_scene_bounds(requested_input_path_);
         } catch (const std::exception&) {
@@ -67,6 +69,8 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
                 .half_extent = {1.0F, 1.0F, 1.0F},
             };
         }
+        requested_loading_metrics = gltf_viewer_loading_metrics_for_probe(
+            requested_input_path_, elapsed_milliseconds(probe_started));
     }
 
     // The fallback is intentionally complete before the input is even queued:
@@ -111,7 +115,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
         request_imported_asset_build(
             requested_input_path_,
             {.supports_texture_compression_bc = device.supports_texture_compression_bc()},
-            frame_slot_count);
+            frame_slot_count, std::move(requested_loading_metrics));
     }
 }
 
@@ -140,18 +144,29 @@ bool GltfViewerApp::ocean_backdrop_enabled() const noexcept {
 
 void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
                                                  cubey::GltfSceneImportCapabilities capabilities,
-                                                 std::uint32_t frame_slot_count) {
+                                                 std::uint32_t frame_slot_count,
+                                                 GltfViewerLoadingMetrics loading_metrics) {
     const cubey::GltfSceneImportConfig import_config = gltf_import_config(frame_slot_count);
     const std::optional<std::filesystem::path> terrain_path = config_.terrain.heightfield_path;
     const std::uint32_t terrain_stride = config_.terrain.render_stride.value_or(3U);
     const std::string label = input.filename().empty() ? input.string() : input.filename().string();
     static_cast<void>(asset_builds_.request(
         label,
-        [input, import_config, capabilities, terrain_path, terrain_stride]() {
+        [input, import_config, capabilities, terrain_path, terrain_stride,
+         loading_metrics = std::move(loading_metrics)]() mutable {
             GltfViewerPreparedGeneration prepared;
             prepared.source_path = input;
+            prepared.loading_metrics = std::move(loading_metrics);
+            const Clock::time_point asset_load_started = Clock::now();
             prepared.asset = cubey::asset::load_gltf_asset(input);
+            prepared.loading_metrics.gltf_asset_load_milliseconds =
+                elapsed_milliseconds(asset_load_started);
+            collect_gltf_viewer_asset_loading_metrics(prepared.loading_metrics, prepared.asset);
+            const Clock::time_point scene_prepare_started = Clock::now();
             prepared.gltf = cubey::prepare_gltf_scene(prepared.asset, import_config, capabilities);
+            prepared.loading_metrics.gltf_scene_prepare_milliseconds =
+                elapsed_milliseconds(scene_prepare_started);
+            collect_gltf_viewer_prepared_loading_metrics(prepared.loading_metrics, prepared.gltf);
             if (terrain_path.has_value()) {
                 prepared.terrain.emplace(cubey::terrain::prepare_raster_terrain_backdrop_product({
                     .heightfield_path = terrain_path.value(),
@@ -165,7 +180,12 @@ void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
         [this, import_config](cubey::vulkan::GpuOwnerContext& owner,
                               GltfViewerPreparedGeneration&& prepared) {
             GltfViewerResidentGeneration resident;
+            resident.loading_metrics = prepared.loading_metrics;
+            const Clock::time_point gltf_residency_started = Clock::now();
             resident.gltf = cubey::build_gltf_scene_resident(owner, prepared.gltf, import_config);
+            resident.loading_metrics.gltf_scene_residency_milliseconds =
+                elapsed_milliseconds(gltf_residency_started);
+            collect_gltf_viewer_resident_loading_metrics(resident.loading_metrics, resident.gltf);
             if (prepared.terrain.has_value()) {
                 resident.terrain.emplace(
                     terrain_runtime_.build_resident_product(owner, prepared.terrain->product));
@@ -227,6 +247,7 @@ void GltfViewerApp::activate_imported_asset_generation(
     next->fallback = false;
     next->bounds = product.prepared.gltf.bounds;
     next->triangle_count = product.prepared.gltf.triangle_count;
+    next->loading_metrics = product.loading_metrics;
     next->animation_playback = {
         .animation_index = config_.gltf.animation_index,
         .speed = config_.gltf.animation_speed,
@@ -315,11 +336,21 @@ void GltfViewerApp::activate_imported_asset_generation(
     }
     active_generation_ = std::move(next);
     asset_activation_milliseconds_ = elapsed_milliseconds(started);
+    GltfViewerLoadingMetrics& loading_metrics = active_generation().loading_metrics.value();
+    loading_metrics.generation_id = active_generation().source.id;
+    loading_metrics.staged_worker_prepare_milliseconds = resident.prepare_milliseconds;
+    loading_metrics.staged_gpu_install_milliseconds = resident.install_milliseconds;
+    loading_metrics.activation_milliseconds = asset_activation_milliseconds_;
+    pending_loading_metrics_.push_back(loading_metrics);
     std::printf(
-        "gltf_viewer: activated generation %llu (%s), CPU %.1f ms, GPU %.1f ms, "
-        "activation %.1f ms, %u triangles, %llu upload bytes\n",
+        "gltf_viewer: activated generation %llu (%s), probe %.1f ms, load %.1f ms, "
+        "prepare %.1f ms, residency %.1f ms, CPU %.1f ms, GPU %.1f ms, activation %.1f ms, "
+        "%u triangles, %llu upload bytes\n",
         static_cast<unsigned long long>(active_generation().source.id),
-        active_generation().source.label.c_str(), resident.prepare_milliseconds,
+        active_generation().source.label.c_str(), loading_metrics.metadata_probe_milliseconds,
+        loading_metrics.gltf_asset_load_milliseconds,
+        loading_metrics.gltf_scene_prepare_milliseconds,
+        loading_metrics.gltf_scene_residency_milliseconds, resident.prepare_milliseconds,
         resident.install_milliseconds, asset_activation_milliseconds_,
         active_generation().triangle_count,
         static_cast<unsigned long long>(active_generation().import_result.mesh_upload_byte_count));

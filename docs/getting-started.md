@@ -75,6 +75,21 @@ cmake --preset dev \
   -DCUBEY_FETCH_HDR_SAMPLE_ASSETS=ON
 ```
 
+For the pinned Khronos glTF validation lane, use the dedicated preset. It is
+isolated under `build/dev-gltf-conformance`, explicitly enables the glTF Sample
+Assets fetch, and runs labeled glTF compatibility and semantic conformance
+tests while excluding windowed tests:
+
+```bash
+cmake --preset dev-gltf-conformance
+cmake --build --preset dev-gltf-conformance
+ctest --preset dev-gltf-conformance
+```
+
+The ordinary `dev` preset keeps sample-asset fetching disabled. Fetched assets
+and generated capture artifacts remain in the build tree and are not part of
+the repository.
+
 ## Run a project
 
 Applications open an interactive window unless `--headless` is supplied:

@@ -101,6 +101,7 @@ void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
     ibl_environment_.reset();
     atmosphere_background_atlases_.shutdown(gpu);
     requested_input_path_.clear();
+    pending_loading_metrics_.clear();
     asset_activation_error_.clear();
     global_resources_created_ = false;
     frame_slot_count_ = 0U;
@@ -291,6 +292,8 @@ void GltfViewerApp::record_cloud_environment_if_needed(
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
+    static_cast<void>(emit_gltf_viewer_pending_loading_metrics(
+        context.profile_recorder(), frame.timing.frame_index, pending_loading_metrics_));
     collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index, frame.frame_slot);
     record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
                          frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
@@ -305,6 +308,8 @@ void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& conte
     ocean_delta_seconds_ =
         frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
     ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;
+    static_cast<void>(emit_gltf_viewer_pending_loading_metrics(
+        context.profile_recorder(), frame.index, pending_loading_metrics_));
     collect_gpu_timings(context.profile_recorder(), frame.index, frame.frame_slot);
     record_viewer_target(context.device(), command_buffer, target, frame.frame_slot,
                          cubey::render::render_graph_color_attachment_texture_state(),

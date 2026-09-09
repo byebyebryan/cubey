@@ -17,6 +17,7 @@ cubey_add_app_target(
         gltf_viewer_app.cpp
         gltf_viewer_assets.cpp
         gltf_viewer_loading_cage.cpp
+        gltf_viewer_loading_metrics.cpp
         gltf_viewer_render.cpp
         gltf_viewer_scene.cpp
         main.cpp
@@ -93,6 +94,11 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME gltf_viewer_config_tests COMMAND cubey_project_gltf_viewer_tests)
+    set_property(
+        TEST gltf_viewer_config_tests
+        APPEND
+        PROPERTY LABELS "gltf;viewer;structural"
+    )
 
     add_executable(
         cubey_project_gltf_viewer_loading_cage_tests
@@ -110,6 +116,46 @@ if (BUILD_TESTING)
     add_test(
         NAME gltf_viewer_loading_cage_tests
         COMMAND cubey_project_gltf_viewer_loading_cage_tests
+    )
+    set_property(
+        TEST gltf_viewer_loading_cage_tests
+        APPEND
+        PROPERTY LABELS "gltf;viewer;structural"
+    )
+
+    add_executable(
+        cubey_project_gltf_viewer_loading_metrics_tests
+        gltf_viewer_loading_metrics.cpp
+        gltf_viewer_loading_metrics_tests.cpp
+    )
+    target_link_libraries(
+        cubey_project_gltf_viewer_loading_metrics_tests
+        PRIVATE
+            cubey::engine
+            cubey::host
+            cubey_project_options
+            cubey_project_warnings
+    )
+    add_test(
+        NAME gltf_viewer_loading_metrics_tests
+        COMMAND cubey_project_gltf_viewer_loading_metrics_tests
+    )
+    set_property(
+        TEST gltf_viewer_loading_metrics_tests
+        APPEND
+        PROPERTY LABELS "gltf;viewer;structural"
+    )
+
+    add_test(
+        NAME gltf_viewer_loading_profile_script_tests
+        COMMAND
+            bash
+            "${CMAKE_CURRENT_SOURCE_DIR}/profile_gltf_loading_tests.sh"
+    )
+    set_property(
+        TEST gltf_viewer_loading_profile_script_tests
+        APPEND
+        PROPERTY LABELS "gltf;viewer;structural"
     )
 
     set(
@@ -148,6 +194,11 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
     )
+    set_property(
+        TEST gltf_viewer_stages_import_after_fallback
+        APPEND
+        PROPERTY LABELS "gltf;viewer;structural"
+    )
 
     add_test(
         NAME gltf_viewer_uses_metadata_loading_cage
@@ -158,6 +209,11 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_loading_cage.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_loading_cage_tests.cpp"
+    )
+    set_property(
+        TEST gltf_viewer_uses_metadata_loading_cage
+        APPEND
+        PROPERTY LABELS "gltf;viewer;structural"
     )
 
     add_test(
@@ -254,6 +310,7 @@ if (BUILD_TESTING)
         )
     endif()
 
+    set(CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TESTS)
     function(cubey_add_gltf_viewer_sample_smoke_test test_name sample_relative_path output_name)
         if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)
             return()
@@ -276,6 +333,14 @@ if (BUILD_TESTING)
             --pbr-environment-source static
             --no-clouds
         )
+        set_property(
+            TEST "${test_name}"
+            APPEND
+            PROPERTY LABELS "gltf;gltf_sample;compatibility"
+        )
+        set(sample_tests "${CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TESTS}")
+        list(APPEND sample_tests "${test_name}")
+        set(CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TESTS "${sample_tests}" PARENT_SCOPE)
     endfunction()
 
     cubey_add_gltf_viewer_sample_smoke_test(
@@ -359,6 +424,16 @@ if (BUILD_TESTING)
             gltf_viewer_specular_test_material_conformance_writes_png
             gltf_viewer_specular_test_material_conformance_writes_png_material_conformance
         )
+        cubey_label_tests(
+            gltf
+            gltf_viewer_specular_test_material_conformance_writes_png
+            gltf_viewer_specular_test_material_conformance_writes_png_material_conformance
+        )
+        cubey_label_tests(
+            gltf_sample
+            gltf_viewer_specular_test_material_conformance_writes_png
+            gltf_viewer_specular_test_material_conformance_writes_png_material_conformance
+        )
     endif()
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_texture_transform_headless_writes_png
@@ -380,4 +455,21 @@ if (BUILD_TESTING)
         "NormalTangentMirrorTest/glTF/NormalTangentMirrorTest.gltf"
         "gltf-viewer-normal-tangent-mirror-smoke.png"
     )
+    if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
+        list(
+            LENGTH
+            CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TESTS
+            CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TEST_COUNT
+        )
+        if (CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TEST_COUNT EQUAL 0)
+            message(
+                FATAL_ERROR
+                "Configured Khronos glTF Sample Assets produced zero expected viewer sample smoke tests"
+            )
+        endif()
+        message(
+            STATUS
+            "Cubey glTF sample compatibility inventory: ${CUBEY_GLTF_VIEWER_SAMPLE_SMOKE_TEST_COUNT} tests"
+        )
+    endif()
 endif()

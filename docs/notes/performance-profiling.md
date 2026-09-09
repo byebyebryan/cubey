@@ -74,3 +74,26 @@ the current brute-force integrator as a reference/debug path, then add a runtime
 path based on a transmittance LUT, sky-view LUT, and optionally an
 aerial-perspective LUT. This note intentionally parks that optimization work for
 later; it is not part of the current cloud integration cleanup.
+
+## glTF staged-loading profile
+
+The glTF viewer has a separate startup profile because its useful evidence is
+asset- and stage-specific rather than steady-state frame throughput. Run
+[`projects/gltf_viewer/profile_gltf_loading.sh`](../../projects/gltf_viewer/profile_gltf_loading.sh)
+after building the release viewer. It records one named first observation and
+five warm repetitions for five pinned Khronos Sample Assets, with static PBR
+IBL, no clouds or backdrops, one validated PNG per observation, and
+`--profile-warmup-frames 0`. `REPEATS`, `APP`, `ASSET_ROOT`, `WIDTH`, `HEIGHT`,
+and a positional output directory are supported. Live runs require the exact
+clean pinned Sample Assets checkout and a fresh output directory; summary-only
+replay instead uses the retained manifest/profile CSVs without requiring that
+checkout or a viewer binary.
+
+The runner requires one complete 19-metric `gltf_loading` generation set per
+profile and writes `runs.csv`, `summary.csv`, metadata, and a deterministic
+observation manifest. Its first observation is not a cold-cache claim.
+Interpret the stage timings in
+the [glTF loading profile note](gltf-loading-profile.md): correctness failures
+precede optimization, and the measured dominant phase (asset load, scene
+preparation, or residency) chooses the next bounded investigation. This lane
+does not by itself justify streaming or transfer-queue infrastructure.

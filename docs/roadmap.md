@@ -28,14 +28,17 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
-Status: Configuration V2 is complete; the next product or foundation
-checkpoint is ready to be selected from `main`.
+Status: the first glTF conformance and staged-loading evidence checkpoint is
+complete; the next bounded asset-pipeline investigation is selected from
+measured release data.
 
 The recent foundation push landed shared runtime, renderer, shader,
 environment, UI, and project-owned configuration infrastructure. Retired
 cloud/planet applications and terrain-study viewers are gone, and the global
 configuration registry has now been removed. Product-facing or engine-level
-work can proceed without a compatibility config layer.
+work can proceed without a compatibility config layer. The glTF viewer now has
+an isolated pinned Khronos compatibility/conformance lane and named loading
+stage metrics backed by a repeatable release-profile corpus.
 
 Current stable foundation pieces:
 
@@ -46,9 +49,10 @@ Current stable foundation pieces:
   GPU-owner results, now exercised by terrain products, Planet surface
   products, generated atmosphere atlases, and complete glTF scene generations
   with placeholder-first windowed presentation, deterministic headless
-  completion, atomic activation, and deferred retirement, plus a bounded
-  worktree-local generated-artifact cache that removes repeat night-sky, lunar
-  atlas, planet-surface, and terrain backdrop-product generation;
+  completion, atomic activation, deferred retirement, and per-generation
+  probe/load/prepare/residency/activation evidence, plus a bounded worktree-local
+  generated-artifact cache that removes repeat night-sky, lunar atlas,
+  planet-surface, and terrain backdrop-product generation;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
 - composable `cubey::config::Schema`, the typed host-owned
@@ -93,10 +97,12 @@ future editorial work.
 
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, terrain products, and glTF Viewer
-scene generations. General
-asset streaming, partial terrain residency, split-queue scheduling, and
-per-frame upload budgets remain deferred until profiling shows that
-whole-generation installation is the real bottleneck.
+scene generations. The first pinned five-asset glTF release profile shows a
+negligible metadata probe, asset-load-dominated DamagedHelmet/Sponza paths,
+BasisU-dominated scene preparation for AnisotropyBarnLamp, and measurable but
+smaller GPU-residency costs. General asset streaming, partial terrain
+residency, split-queue scheduling, and per-frame upload budgets remain deferred;
+the evidence does not yet justify those runtime designs.
 
 Recommended next feature or foundation streams:
 
@@ -108,9 +114,12 @@ Recommended next feature or foundation streams:
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated
   project need.
-- glTF/asset pipeline: profile the now-staged CPU preparation and GPU residency
-  phases before considering transfer queues, upload budgets, partial residency,
-  or wider asset-system abstractions.
+- glTF/asset pipeline: use the pinned release workflow to decompose Sponza's
+  roughly 465 ms warm asset-load phase into document parsing, referenced-buffer
+  and image I/O, and image decode work. Optimize only the dominant measured
+  subphase and require a same-corpus before/after result. Keep transfer queues,
+  upload budgets, partial residency, and wider asset-system abstractions
+  deferred unless later evidence selects them.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
