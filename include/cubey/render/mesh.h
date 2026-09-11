@@ -76,6 +76,8 @@ struct MeshUploadBatch;
                                             std::string label = "upload meshes");
 [[nodiscard]] MeshUploadBatch upload_meshes(cubey::vulkan::GpuOwnerContext& context,
                                             std::span<const MeshConfig> configs);
+[[nodiscard]] MeshUploadBatch upload_meshes(cubey::vulkan::GpuUploadBatch& batch,
+                                            std::span<const MeshConfig> configs);
 
 class Mesh {
   public:
@@ -100,10 +102,19 @@ class Mesh {
         return index_count_;
     }
 
+    // Used by resumable upload sessions after their final same-queue copy has
+    // been recorded. The buffers remain private to Mesh once adopted.
+    [[nodiscard]] static Mesh from_uploaded_buffers(cubey::vulkan::Buffer vertex_buffer,
+                                                    cubey::vulkan::Buffer index_buffer,
+                                                    VkIndexType index_type,
+                                                    std::uint32_t index_count);
+
   private:
     friend MeshUploadBatch upload_meshes(cubey::vulkan::GpuRuntime& gpu,
                                          std::span<const MeshConfig> configs, std::string label);
     friend MeshUploadBatch upload_meshes(cubey::vulkan::GpuOwnerContext& context,
+                                         std::span<const MeshConfig> configs);
+    friend MeshUploadBatch upload_meshes(cubey::vulkan::GpuUploadBatch& batch,
                                          std::span<const MeshConfig> configs);
 
     Mesh(cubey::vulkan::Buffer vertex_buffer, cubey::vulkan::Buffer index_buffer,

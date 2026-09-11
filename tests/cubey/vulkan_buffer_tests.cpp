@@ -1,5 +1,7 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/detail/buffer_upload_plan.h>
+#include <cubey/vulkan/detail/staging_pool_plan.h>
+#include <cubey/vulkan/staging_pool.h>
 
 #include <vulkan/vulkan.h>
 
@@ -7,6 +9,8 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 namespace {
 
@@ -154,4 +158,117 @@ void test_device_buffer_upload_plan_splits_large_unaligned_requests() {
     }
     require(copied_bytes == upload_sizes,
             "upload plan should cover every request exactly once without gaps");
+}
+
+void test_staging_pool_plan_aligns_reclaims_and_wraps_ranges() {
+    cubey::vulkan::detail::StagingPoolPlanner planner({
+        .initial_block_byte_size = 32,
+        .growth_block_byte_size = 32,
+        .max_total_byte_size = 64,
+    });
+
+    const auto first = planner.try_reserve(5, 4);
+    const auto second = planner.try_reserve(5, 8);
+    require(first.has_value() && first->block_index == 0 && first->offset == 0,
+            "first staging reservation should begin at the initial block origin");
+    require(second.has_value() && second->block_index == 0 && second->offset == 8,
+            "staging reservations should honor requested alignment within a block");
+
+    planner.commit(first->id, {.value = 1});
+    planner.commit(second->id, {.value = 2});
+    require(planner.reclaim({.value = 1}) == 1,
+            "only allocations whose ticket completed should be reclaimed");
+
+    const auto wrapped = planner.try_reserve(4, 4);
+    require(wrapped.has_value() && wrapped->block_index == 0 && wrapped->offset == 0,
+            "reclaimed leading space should be reused before allocating a new block");
+    planner.cancel(wrapped->id);
+    require(planner.reclaim({.value = 2}) == 1,
+            "later ticket completion should reclaim its remaining aligned range");
+
+    const auto merged = planner.try_reserve(32, 4);
+    require(merged.has_value() && merged->block_index == 0 && merged->offset == 0,
+            "adjacent reclaimed ranges should merge into a full reusable block");
+}
+
+void test_staging_pool_plan_grows_to_cap_then_reports_backpressure() {
+    cubey::vulkan::detail::StagingPoolPlanner planner({
+        .initial_block_byte_size = 16,
+        .growth_block_byte_size = 16,
+        .max_total_byte_size = 32,
+    });
+
+    const auto first = planner.try_reserve(16, 4);
+    const auto second = planner.try_reserve(16, 4);
+    require(first.has_value() && second.has_value() && second->block_index == 1,
+            "a full initial block should grow by one bounded staging block");
+    require(planner.block_count() == 2 && planner.total_capacity_byte_size() == 32,
+            "planner growth should remain within the configured total cap");
+
+    planner.commit(first->id, {.value = 1});
+    planner.commit(second->id, {.value = 2});
+    require(!planner.try_reserve(4, 4).has_value(),
+            "in-flight ranges at the cap should apply explicit allocation backpressure");
+    require(planner.reclaim({.value = 1}) == 1,
+            "completion should reclaim only the first graphics submission range");
+    const auto retried = planner.try_reserve(8, 8);
+    require(retried.has_value() && retried->block_index == 0 && retried->offset == 0,
+            "a retry after reclaim should reuse capacity without further growth");
+}
+
+void test_staging_pool_plan_commit_many_validates_before_mutating() {
+    cubey::vulkan::detail::StagingPoolPlanner planner({
+        .initial_block_byte_size = 32,
+        .growth_block_byte_size = 32,
+        .max_total_byte_size = 32,
+    });
+    const auto first = planner.try_reserve(8, 4);
+    const auto second = planner.try_reserve(8, 4);
+    require(first.has_value() && second.has_value(),
+            "commit-many validation requires two active reservations");
+
+    const std::array invalid_ids{first->id, second->id, std::uint64_t{999}};
+    bool rejected = false;
+    try {
+        planner.commit_many(invalid_ids, {.value = 1});
+    } catch (const std::runtime_error& error) {
+        rejected = std::string(error.what()) == "staging pool reservation is unknown";
+    }
+    require(rejected, "commit-many should reject an unknown reservation before mutation");
+
+    planner.cancel(first->id);
+    planner.cancel(second->id);
+    require(planner.reserved_byte_size() == 0,
+            "failed commit-many must leave every earlier reservation cancellable");
+
+    const auto retry_first = planner.try_reserve(8, 4);
+    const auto retry_second = planner.try_reserve(8, 4);
+    require(retry_first.has_value() && retry_second.has_value(),
+            "planner should accept a fresh all-or-none commit set");
+    const std::array valid_ids{retry_first->id, retry_second->id};
+    planner.commit_many(valid_ids, {.value = 2});
+    require(planner.reclaim({.value = 2}) == 2,
+            "successful commit-many should retire every reservation on one ticket");
+}
+
+void test_gpu_staging_reservation_is_move_only_and_inerts_the_source() {
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::GpuStagingReservation>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::GpuStagingReservation>);
+    static_assert(std::is_move_constructible_v<cubey::vulkan::GpuStagingReservation>);
+    static_assert(!std::is_move_assignable_v<cubey::vulkan::GpuStagingReservation>);
+
+    cubey::vulkan::GpuStagingReservation original;
+    original.buffer = reinterpret_cast<VkBuffer>(0x57);
+    original.mapped = reinterpret_cast<std::byte*>(0x58);
+    original.offset = 12;
+    original.byte_size = 20;
+    cubey::vulkan::GpuStagingReservation moved(std::move(original));
+
+    require(moved.buffer == reinterpret_cast<VkBuffer>(0x57) &&
+                moved.mapped == reinterpret_cast<std::byte*>(0x58) && moved.offset == 12 &&
+                moved.byte_size == 20,
+            "moved staging reservation should retain the visible lease metadata");
+    require(original.buffer == VK_NULL_HANDLE && original.mapped == nullptr &&
+                original.offset == 0 && original.byte_size == 0,
+            "moved-from staging reservation must be inert");
 }

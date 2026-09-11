@@ -1,5 +1,7 @@
 #include <cubey/render/mesh.h>
 
+#include <cubey/vulkan/upload_batch.h>
+
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -70,6 +72,21 @@ Mesh::Mesh(cubey::vulkan::Buffer vertex_buffer, cubey::vulkan::Buffer index_buff
     : vertex_buffer_(std::move(vertex_buffer)), index_buffer_(std::move(index_buffer)),
       index_type_(index_type), index_count_(index_count) {}
 
+Mesh Mesh::from_uploaded_buffers(cubey::vulkan::Buffer vertex_buffer,
+                                 cubey::vulkan::Buffer index_buffer, VkIndexType index_type,
+                                 std::uint32_t index_count) {
+    if (vertex_buffer.handle() == VK_NULL_HANDLE || vertex_buffer.size() == 0 ||
+        index_buffer.handle() == VK_NULL_HANDLE || index_buffer.size() == 0 || index_count == 0) {
+        throw std::runtime_error("uploaded mesh buffers must be nonempty");
+    }
+    const VkDeviceSize index_element_size = mesh_index_element_size(index_type);
+    if (index_count > std::numeric_limits<VkDeviceSize>::max() / index_element_size ||
+        index_buffer.size() != static_cast<VkDeviceSize>(index_count) * index_element_size) {
+        throw std::runtime_error("uploaded mesh index buffer does not match its index type");
+    }
+    return Mesh(std::move(vertex_buffer), std::move(index_buffer), index_type, index_count);
+}
+
 MeshUploadBatch upload_meshes(cubey::vulkan::GpuRuntime& gpu, std::span<const MeshConfig> configs,
                               std::string label) {
     if (configs.size() > std::numeric_limits<std::size_t>::max() / 2) {
@@ -135,6 +152,44 @@ MeshUploadBatch upload_meshes(cubey::vulkan::GpuOwnerContext& context,
         .meshes = {},
         .uploaded_byte_count = buffer_batch.uploaded_byte_count,
         .transfer_submission_count = buffer_batch.transfer_submission_count,
+    };
+    result.meshes.reserve(configs.size());
+    for (std::size_t mesh_index = 0; mesh_index < configs.size(); ++mesh_index) {
+        const MeshConfig& config = configs[mesh_index];
+        result.meshes.push_back(Mesh(std::move(buffer_batch.buffers[mesh_index * 2]),
+                                     std::move(buffer_batch.buffers[mesh_index * 2 + 1]),
+                                     config.index_type, config.index_count));
+    }
+    return result;
+}
+
+MeshUploadBatch upload_meshes(cubey::vulkan::GpuUploadBatch& batch,
+                              std::span<const MeshConfig> configs) {
+    if (configs.size() > std::numeric_limits<std::size_t>::max() / 2) {
+        throw std::runtime_error("mesh upload batch is too large");
+    }
+    std::vector<cubey::vulkan::DeviceBufferUpload> uploads;
+    uploads.reserve(configs.size() * 2);
+    for (const MeshConfig& config : configs) {
+        validate_mesh_config(config);
+        uploads.push_back({
+            .data = config.vertex_data,
+            .byte_size = config.vertex_bytes,
+            .usage = config.vertex_usage | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        });
+        uploads.push_back({
+            .data = config.index_data,
+            .byte_size = config.index_bytes,
+            .usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        });
+    }
+
+    cubey::vulkan::DeviceBufferUploadBatch buffer_batch =
+        cubey::vulkan::upload_device_buffers(batch, uploads);
+    MeshUploadBatch result{
+        .meshes = {},
+        .uploaded_byte_count = buffer_batch.uploaded_byte_count,
+        .transfer_submission_count = 0U,
     };
     result.meshes.reserve(configs.size());
     for (std::size_t mesh_index = 0; mesh_index < configs.size(); ++mesh_index) {

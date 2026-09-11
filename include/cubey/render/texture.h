@@ -12,6 +12,10 @@
 #include <optional>
 #include <span>
 
+namespace cubey::vulkan {
+class GpuUploadBatch;
+}
+
 namespace cubey::render {
 
 enum class Texture2DUsage : std::uint8_t {
@@ -264,6 +268,9 @@ class DepthTexture {
                                                    const UploadedTexture2DConfig& config);
 [[nodiscard]] Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
                                                    cubey::vulkan::GpuOwnerContext& context,
+                                                   const UploadedTexture2DConfig& config);
+[[nodiscard]] Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
+                                                   cubey::vulkan::GpuUploadBatch& batch,
                                                    const UploadedTexture2DConfig& config);
 [[nodiscard]] TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,
                                                        cubey::vulkan::GpuRuntime& gpu,

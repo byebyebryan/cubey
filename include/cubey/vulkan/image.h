@@ -127,6 +127,8 @@ struct BufferImageCopyConfig {
     std::uint32_t base_array_layer = 0;
     std::uint32_t layer_count = 1;
     VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    // Appended to retain positional aggregate compatibility for existing callers.
+    VkOffset3D image_offset{0, 0, 0};
 };
 
 [[nodiscard]] VkBufferImageCopy buffer_image_copy(VkExtent3D extent);

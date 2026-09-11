@@ -1,6 +1,8 @@
 #include <cubey/vulkan/submission_tickets.h>
 
+#include <algorithm>
 #include <exception>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -34,37 +36,34 @@ void DeferredGpuDestructionQueue::defer_after(GpuSubmissionTicket ticket,
 }
 
 std::size_t DeferredGpuDestructionQueue::retire_completed(GpuSubmissionTicket completed) {
-    std::vector<std::function<void()>> ready_actions;
-    {
-        std::scoped_lock lock(mutex_);
-        std::vector<PendingAction> still_pending;
-        still_pending.reserve(pending_.size());
-
-        for (PendingAction& pending : pending_) {
-            if (pending.ticket <= completed) {
-                ready_actions.push_back(std::move(pending.action));
-            } else {
-                still_pending.push_back(std::move(pending));
-            }
-        }
-
-        pending_ = std::move(still_pending);
-    }
-
     std::exception_ptr first_failure;
-    for (const std::function<void()>& action : ready_actions) {
+    std::size_t retired_count = 0U;
+    for (;;) {
+        std::optional<std::function<void()>> action;
+        {
+            std::scoped_lock lock(mutex_);
+            const auto found = std::find_if(
+                pending_.begin(), pending_.end(),
+                [completed](const PendingAction& pending) { return pending.ticket <= completed; });
+            if (found == pending_.end()) {
+                break;
+            }
+            action.emplace(std::move(found->action));
+            pending_.erase(found);
+        }
         try {
-            action();
+            action.value()();
         } catch (...) {
             if (first_failure == nullptr) {
                 first_failure = std::current_exception();
             }
         }
+        ++retired_count;
     }
     if (first_failure != nullptr) {
         std::rethrow_exception(first_failure);
     }
-    return ready_actions.size();
+    return retired_count;
 }
 
 std::size_t DeferredGpuDestructionQueue::pending_count() const {

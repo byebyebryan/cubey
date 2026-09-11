@@ -91,8 +91,13 @@ add_library(cubey_vulkan STATIC
     vulkan/sampler.cpp
     vulkan/shader_module.cpp
     vulkan/shader_bytecode.cpp
+    vulkan/staging_pool.cpp
+    vulkan/staging_pool_plan.cpp
     vulkan/submission_tickets.cpp
     vulkan/submission_coordinator.cpp
+    vulkan/upload_batch.cpp
+    vulkan/upload_step.cpp
+    vulkan/upload_step_resources.cpp
     vulkan/swapchain.cpp
 )
 add_library(cubey::vulkan ALIAS cubey_vulkan)

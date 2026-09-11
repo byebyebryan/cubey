@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/detail/buffer_upload_plan.h>
 #include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/upload_batch.h>
 #include <cubey/vulkan/vk_check.h>
 
 #include <cstddef>
@@ -74,6 +75,12 @@ void Buffer::upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offse
         throw std::runtime_error("buffer upload range is outside the buffer");
     }
 
+    if (mapped_ != nullptr) {
+        std::memcpy(mapped_ + static_cast<std::size_t>(offset), data,
+                    static_cast<std::size_t>(byte_size));
+        return;
+    }
+
     void* mapped = nullptr;
     check(vkMapMemory(device_, memory_, offset, byte_size, 0, &mapped), "vkMapMemory buffer");
     std::memcpy(mapped, data, static_cast<std::size_t>(byte_size));
@@ -90,6 +97,12 @@ void Buffer::download(void* data, VkDeviceSize byte_size, VkDeviceSize offset) c
     }
     if (byte_size == 0 || offset > size_ || byte_size > size_ - offset) {
         throw std::runtime_error("buffer download range is outside the buffer");
+    }
+
+    if (mapped_ != nullptr) {
+        std::memcpy(data, mapped_ + static_cast<std::size_t>(offset),
+                    static_cast<std::size_t>(byte_size));
+        return;
     }
 
     void* mapped = nullptr;
@@ -146,6 +159,10 @@ void Buffer::create(const BufferConfig& config) {
 }
 
 void Buffer::destroy() {
+    if (mapped_ != nullptr) {
+        vkUnmapMemory(device_, memory_);
+        mapped_ = nullptr;
+    }
     if (buffer_ != VK_NULL_HANDLE) {
         vkDestroyBuffer(device_, buffer_, nullptr);
         buffer_ = VK_NULL_HANDLE;
@@ -161,6 +178,7 @@ void Buffer::move_from(Buffer& other) noexcept {
     device_ = other.device_;
     buffer_ = other.buffer_;
     memory_ = other.memory_;
+    mapped_ = other.mapped_;
     size_ = other.size_;
     memory_properties_ = other.memory_properties_;
 
@@ -168,8 +186,22 @@ void Buffer::move_from(Buffer& other) noexcept {
     other.device_ = VK_NULL_HANDLE;
     other.buffer_ = VK_NULL_HANDLE;
     other.memory_ = VK_NULL_HANDLE;
+    other.mapped_ = nullptr;
     other.size_ = 0;
     other.memory_properties_ = 0;
+}
+
+std::byte* Buffer::map_persistent() {
+    if ((memory_properties_ & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0 ||
+        (memory_properties_ & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+        throw std::runtime_error("persistent buffer mapping requires host-visible coherent memory");
+    }
+    if (mapped_ == nullptr) {
+        void* mapped = nullptr;
+        check(vkMapMemory(device_, memory_, 0, size_, 0, &mapped), "vkMapMemory persistent buffer");
+        mapped_ = static_cast<std::byte*>(mapped);
+    }
+    return mapped_;
 }
 
 BufferConfig staging_buffer_config(VkDeviceSize byte_size) {
@@ -235,6 +267,17 @@ Buffer upload_device_buffer(GpuRuntime& gpu, const void* data, VkDeviceSize byte
     DeviceBufferUploadBatch batch =
         upload_device_buffers(gpu, std::span{&upload, 1U}, "upload device buffer");
     return std::move(batch.buffers.front());
+}
+
+Buffer upload_device_buffer(GpuUploadBatch& batch, const void* data, VkDeviceSize byte_size,
+                            VkBufferUsageFlags usage) {
+    const DeviceBufferUpload upload{
+        .data = data,
+        .byte_size = byte_size,
+        .usage = usage,
+    };
+    DeviceBufferUploadBatch uploaded = upload_device_buffers(batch, std::span{&upload, 1U});
+    return std::move(uploaded.buffers.front());
 }
 
 DeviceBufferUploadBatch upload_device_buffers(GpuOwnerContext& context,
@@ -303,6 +346,49 @@ DeviceBufferUploadBatch upload_device_buffers(GpuRuntime& gpu,
             },
     }));
     return std::move(uploaded.value());
+}
+
+DeviceBufferUploadBatch upload_device_buffers(GpuUploadBatch& batch,
+                                              std::span<const DeviceBufferUpload> uploads) {
+    const detail::DeviceBufferUploadPlan plan = validate_and_plan_device_buffer_uploads(uploads);
+    DeviceBufferUploadBatch result;
+    result.uploaded_byte_count = plan.uploaded_byte_count;
+    if (uploads.empty()) {
+        return result;
+    }
+
+    result.buffers.reserve(uploads.size());
+    for (const DeviceBufferUpload& upload : uploads) {
+        result.buffers.emplace_back(batch.device(),
+                                    device_local_buffer_config(upload.byte_size, upload.usage));
+    }
+
+    for (const detail::DeviceBufferUploadChunk& chunk : plan.chunks) {
+        std::vector<std::byte> staging_bytes(static_cast<std::size_t>(chunk.staging_byte_size));
+        for (const detail::DeviceBufferUploadCopyPiece& piece : chunk.pieces) {
+            const DeviceBufferUpload& upload = uploads[piece.upload_index];
+            const auto* source =
+                static_cast<const std::byte*>(upload.data) + piece.destination_offset;
+            std::memcpy(staging_bytes.data() + static_cast<std::size_t>(piece.source_offset),
+                        source, static_cast<std::size_t>(piece.byte_size));
+        }
+
+        Buffer staging(batch.device(), staging_buffer_config(chunk.staging_byte_size));
+        staging.upload(staging_bytes.data(), chunk.staging_byte_size);
+        for (const detail::DeviceBufferUploadCopyPiece& piece : chunk.pieces) {
+            VkBufferCopy copy{
+                .srcOffset = piece.source_offset,
+                .dstOffset = piece.destination_offset,
+                .size = piece.byte_size,
+            };
+            vkCmdCopyBuffer(batch.command_buffer(), staging.handle(),
+                            result.buffers[piece.upload_index].handle(), 1, &copy);
+        }
+        batch.add_uploaded_bytes(chunk.staging_byte_size);
+        batch.add_copy_count(static_cast<std::uint32_t>(chunk.pieces.size()));
+        batch.retain_staging(std::move(staging));
+    }
+    return result;
 }
 
 } // namespace cubey::vulkan

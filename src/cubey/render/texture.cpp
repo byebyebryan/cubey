@@ -3,6 +3,7 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/upload_batch.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -624,6 +625,108 @@ Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
             },
     }));
     return std::move(texture).value();
+}
+
+Texture2D create_uploaded_texture_2d(const cubey::vulkan::Device& device,
+                                     cubey::vulkan::GpuUploadBatch& batch,
+                                     const UploadedTexture2DConfig& config) {
+    validate_config(Texture2DConfig{
+        .extent = config.extent,
+        .mip_levels = config.mip_levels,
+        .format = config.format,
+        .usage = Texture2DUsage::TransferSampled,
+        .create_sampler = config.create_sampler,
+        .sampler = config.sampler,
+    });
+    if (!config.bytes.empty() && !config.rgba8.empty()) {
+        throw std::runtime_error("uploaded texture helper accepts one source byte span");
+    }
+    const std::span<const std::uint8_t> source = config.bytes.empty() ? config.rgba8 : config.bytes;
+
+    std::vector<UploadedTexture2DMip> mips;
+    if (config.mips.empty()) {
+        VkDeviceSize offset = 0;
+        mips.reserve(config.mip_levels);
+        for (std::uint32_t mip = 0; mip < config.mip_levels; ++mip) {
+            const VkExtent2D mip_extent = texture_2d_mip_extent(config.extent, mip);
+            const std::size_t mip_bytes = texture_2d_byte_size(mip_extent, 1, config.format);
+            mips.push_back(UploadedTexture2DMip{
+                .extent = mip_extent,
+                .byte_offset = offset,
+                .byte_count = mip_bytes,
+            });
+            offset += static_cast<VkDeviceSize>(mip_bytes);
+        }
+    } else {
+        if (config.mips.size() != config.mip_levels) {
+            throw std::runtime_error("uploaded texture mip region count must match mip levels");
+        }
+        mips.assign(config.mips.begin(), config.mips.end());
+    }
+
+    std::size_t total_mip_bytes = 0;
+    for (std::uint32_t mip = 0; mip < config.mip_levels; ++mip) {
+        const UploadedTexture2DMip& upload_mip = mips[mip];
+        const VkExtent2D expected_extent = texture_2d_mip_extent(config.extent, mip);
+        if (upload_mip.extent.width != expected_extent.width ||
+            upload_mip.extent.height != expected_extent.height) {
+            throw std::runtime_error("uploaded texture mip extent must match base extent");
+        }
+        const std::size_t expected_size = texture_2d_byte_size(upload_mip.extent, 1, config.format);
+        if (upload_mip.byte_count != expected_size) {
+            throw std::runtime_error("uploaded texture mip byte count must match format");
+        }
+        const std::size_t offset = static_cast<std::size_t>(upload_mip.byte_offset);
+        const std::size_t end =
+            checked_add(offset, upload_mip.byte_count, "uploaded texture mip offset overflows");
+        if (end > source.size()) {
+            throw std::runtime_error("uploaded texture mip region exceeds source bytes");
+        }
+        total_mip_bytes = checked_add(total_mip_bytes, upload_mip.byte_count,
+                                      "uploaded texture mip byte total overflows");
+    }
+    if (config.mips.empty() && source.size() != total_mip_bytes) {
+        throw std::runtime_error("uploaded texture byte count must match format, extent, and mips");
+    }
+
+    Texture2D texture(device, Texture2DConfig{
+                                  .extent = config.extent,
+                                  .mip_levels = config.mip_levels,
+                                  .format = config.format,
+                                  .usage = Texture2DUsage::TransferSampled,
+                                  .create_sampler = config.create_sampler,
+                                  .sampler = config.sampler,
+                              });
+    cubey::vulkan::Buffer staging(
+        device, cubey::vulkan::staging_buffer_config(static_cast<VkDeviceSize>(source.size())));
+    staging.upload(source.data(), static_cast<VkDeviceSize>(source.size()));
+
+    std::vector<VkBufferImageCopy> copies;
+    copies.reserve(config.mip_levels);
+    for (std::uint32_t mip = 0; mip < config.mip_levels; ++mip) {
+        const UploadedTexture2DMip& upload_mip = mips[mip];
+        copies.push_back(cubey::vulkan::buffer_image_copy(cubey::vulkan::BufferImageCopyConfig{
+            .extent = {upload_mip.extent.width, upload_mip.extent.height, 1},
+            .buffer_offset = upload_mip.byte_offset,
+            .mip_level = mip,
+            .base_array_layer = 0,
+            .layer_count = 1,
+        }));
+    }
+
+    cubey::vulkan::transition_image_layout(
+        batch.command_buffer(),
+        cubey::vulkan::begin_transfer_dst_transition(texture.handle(), config.mip_levels, 1));
+    vkCmdCopyBufferToImage(batch.command_buffer(), staging.handle(), texture.handle(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           static_cast<std::uint32_t>(copies.size()), copies.data());
+    cubey::vulkan::transition_image_layout(
+        batch.command_buffer(), cubey::vulkan::finish_transfer_dst_for_sampling_transition(
+                                    texture.handle(), config.mip_levels, 1));
+    batch.add_uploaded_bytes(static_cast<VkDeviceSize>(source.size()));
+    batch.add_copy_count(static_cast<std::uint32_t>(copies.size()));
+    batch.retain_staging(std::move(staging));
+    return texture;
 }
 
 TextureCube create_uploaded_texture_cube(const cubey::vulkan::Device& device,

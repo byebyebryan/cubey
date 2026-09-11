@@ -824,7 +824,7 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     const std::string importer_header =
         read_source_file(source_root / "include/cubey/engine/gltf_scene_importer.h");
     const std::string importer =
-        read_source_file(source_root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
+        read_source_file(source_root / "src/cubey/engine/gltf_scene_upload_session.cpp");
     const std::string viewer_header =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h");
     const std::string viewer =
@@ -842,11 +842,11 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     require_contains(importer_header, "std::optional<render::PbrDefaultTextureSet>",
                      "glTF import resources should own the shared PBR default texture set");
     require_contains(importer, "resources.materials.set_factors(",
-                     "glTF importer should store factors through the PBR material table");
+                     "glTF upload session should store factors through the PBR material table");
     require_contains(importer, "resources.materials.emplace_instance(",
-                     "glTF importer should store instances through the PBR material table");
+                     "glTF upload session should store instances through the PBR material table");
     require_contains(importer, "render::pbr_default_texture(",
-                     "glTF importer should resolve missing textures through shared defaults");
+                     "glTF upload session should resolve missing textures through shared defaults");
     require_not_contains(importer_header, "material_factors",
                          "glTF import resources should not expose a parallel factor map");
     require_not_contains(importer_header, "base_color_default",

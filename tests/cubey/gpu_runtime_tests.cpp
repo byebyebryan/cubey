@@ -1,6 +1,8 @@
 #include "source_file_test_helpers.h"
 
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/upload_batch.h>
+#include <cubey/vulkan/upload_step.h>
 
 #include <vulkan/vulkan.h>
 
@@ -11,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 namespace {
@@ -62,6 +65,155 @@ void test_gpu_work_queue_drains_fifo_and_owns_requests() {
     require(drained[0].ticket.label == "first upload", "drained work should preserve labels");
     require(static_cast<bool>(drained[0].work), "drained work should preserve callbacks");
     require(drained[1].ticket.id == second.id, "drain should preserve second queued work");
+}
+
+void test_gpu_upload_batch_is_non_movable_lexical_owner_scope() {
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::GpuUploadBatch>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::GpuUploadBatch>);
+    static_assert(!std::is_move_constructible_v<cubey::vulkan::GpuUploadBatch>);
+    static_assert(!std::is_move_assignable_v<cubey::vulkan::GpuUploadBatch>);
+    require(true, "GPU upload batch should remain a lexical owner-scope object");
+}
+
+void test_gpu_upload_step_is_non_movable_lexical_owner_scope() {
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::GpuUploadStep>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::GpuUploadStep>);
+    static_assert(!std::is_move_constructible_v<cubey::vulkan::GpuUploadStep>);
+    static_assert(!std::is_move_assignable_v<cubey::vulkan::GpuUploadStep>);
+    require(true, "GPU upload step should remain a lexical owner-scope object");
+}
+
+void test_gpu_runtime_owner_cleanup_is_move_only_and_runs_on_owner() {
+    static_assert(!std::is_copy_constructible_v<cubey::vulkan::GpuRuntimeOwnerCleanup>);
+    static_assert(!std::is_copy_assignable_v<cubey::vulkan::GpuRuntimeOwnerCleanup>);
+    static_assert(std::is_move_constructible_v<cubey::vulkan::GpuRuntimeOwnerCleanup>);
+    static_assert(std::is_move_assignable_v<cubey::vulkan::GpuRuntimeOwnerCleanup>);
+
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    std::size_t cleanup_count = 0;
+    cubey::vulkan::GpuRuntimeOwnerCleanup cleanup = runtime.register_owner_cleanup(
+        "test owner cleanup", [&cleanup_count](cubey::vulkan::GpuOwnerContext& owner) {
+            require(owner.is_owner_thread(), "registered cleanup must run on the GPU owner");
+            ++cleanup_count;
+        });
+    cubey::vulkan::GpuRuntimeOwnerCleanup moved_cleanup = std::move(cleanup);
+    require(!cleanup.registered(), "moved-from owner cleanup must be inert");
+    require(!cleanup.belongs_to(runtime),
+            "moved-from owner cleanup must not retain a runtime identity");
+    require(moved_cleanup.registered(), "moved owner cleanup must retain its registration");
+    require(moved_cleanup.belongs_to(runtime),
+            "owner cleanup should retain its creating runtime identity");
+
+    moved_cleanup.request();
+    require(cleanup_count == 0U, "owner cleanup must not run on the requesting thread");
+    static_cast<void>(runtime.drain_inline());
+    require(cleanup_count == 1U, "owner cleanup should run exactly once after owner drain");
+    require(!moved_cleanup.registered(), "completed owner cleanup should unregister itself");
+    moved_cleanup.request();
+    static_cast<void>(runtime.drain_inline());
+    require(cleanup_count == 1U, "completed owner cleanup must not be queued twice");
+}
+
+void test_gpu_runtime_owner_cleanup_move_assignment_retires_replaced_registration() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    std::size_t replaced_cleanup_count = 0;
+    std::size_t adopted_cleanup_count = 0;
+    cubey::vulkan::GpuRuntimeOwnerCleanup cleanup = runtime.register_owner_cleanup(
+        "replaced cleanup", [&replaced_cleanup_count](cubey::vulkan::GpuOwnerContext& owner) {
+            require(owner.is_owner_thread(), "replaced cleanup must run on the GPU owner");
+            ++replaced_cleanup_count;
+        });
+    cubey::vulkan::GpuRuntimeOwnerCleanup adopted = runtime.register_owner_cleanup(
+        "adopted cleanup", [&adopted_cleanup_count](cubey::vulkan::GpuOwnerContext& owner) {
+            require(owner.is_owner_thread(), "adopted cleanup must run on the GPU owner");
+            ++adopted_cleanup_count;
+        });
+
+    cleanup = std::move(adopted);
+    require(!adopted.registered(), "move assignment must leave its source inert");
+    require(cleanup.registered(), "move assignment must adopt the incoming registration");
+    require(replaced_cleanup_count == 0U && adopted_cleanup_count == 0U,
+            "move assignment should queue, not run, replaced cleanup on the caller thread");
+
+    static_cast<void>(runtime.drain_inline());
+    require(replaced_cleanup_count == 1U && adopted_cleanup_count == 0U,
+            "move assignment must retire the replaced registration on the GPU owner");
+
+    cleanup.request();
+    static_cast<void>(runtime.drain_inline());
+    require(adopted_cleanup_count == 1U,
+            "move-assigned token must still own and retire the incoming registration");
+}
+
+void test_gpu_runtime_shutdown_runs_remaining_owner_cleanups_before_teardown() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    std::vector<std::string> events;
+    static_cast<void>(runtime.enqueue({
+        .label = "work before shutdown cleanup",
+        .work =
+            [&events](cubey::vulkan::GpuOwnerContext& owner) {
+                require(owner.is_owner_thread(), "queued work should run on the GPU owner");
+                events.emplace_back("work");
+            },
+    }));
+    cubey::vulkan::GpuRuntimeOwnerCleanup cleanup = runtime.register_owner_cleanup(
+        "shutdown owner cleanup", [&events](cubey::vulkan::GpuOwnerContext& owner) {
+            require(owner.is_owner_thread(), "shutdown cleanup must run on the GPU owner");
+            events.emplace_back("cleanup");
+        });
+
+    runtime.shutdown();
+    require(events.size() == 2U && events[0] == "work" && events[1] == "cleanup",
+            "shutdown should drain work before owner cleanup and device teardown");
+    require(!cleanup.registered(), "shutdown should consume remaining cleanup registrations");
+    require(!cleanup.belongs_to(runtime),
+            "stopped runtimes must no longer accept registered cleanup identities");
+    cleanup.request();
+    require(events.size() == 2U, "late cleanup requests must be inert after runtime shutdown");
+}
+
+void test_gpu_runtime_default_staging_pool_is_explicitly_disabled() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    require(!runtime.has_staging_pool(),
+            "fake runtimes should report that staging-pool support is disabled");
+
+    bool rejected = false;
+    static_cast<void>(runtime.submit_and_wait({
+        .label = "observe absent staging pool",
+        .work =
+            [&rejected](cubey::vulkan::GpuOwnerContext& context) {
+                try {
+                    static_cast<void>(context.staging_pool());
+                } catch (const std::runtime_error& error) {
+                    rejected =
+                        std::string(error.what()) == "GPU runtime has no configured staging pool";
+                }
+            },
+    }));
+    require(rejected, "fake runtimes should require an explicit staging-pool configuration");
 }
 
 void test_gpu_runtime_drains_inline_on_owner_thread() {
@@ -200,8 +352,7 @@ void test_gpu_runtime_typed_jobs_return_results_inline() {
     });
 
     require(job.ticket().id == 1, "typed GPU job should expose its queued ticket");
-    require(job.ticket().label == "typed inline job",
-            "typed GPU job should preserve its label");
+    require(job.ticket().label == "typed inline job", "typed GPU job should preserve its label");
     require(!job.ready(), "inline typed GPU job should remain pending before drain");
     static_cast<void>(runtime.drain_inline());
     require(job.ready(), "inline typed GPU job should become ready after drain");
@@ -219,9 +370,8 @@ void test_gpu_runtime_typed_jobs_capture_failures_without_stopping_queue() {
     auto failed = runtime.submit("typed failure", [](cubey::vulkan::GpuOwnerContext&) -> int {
         throw std::runtime_error("typed GPU failure");
     });
-    auto following = runtime.submit("typed following", [](cubey::vulkan::GpuOwnerContext&) {
-        return 7;
-    });
+    auto following =
+        runtime.submit("typed following", [](cubey::vulkan::GpuOwnerContext&) { return 7; });
 
     const cubey::vulkan::GpuDrainResult drained = runtime.drain_inline();
     require(drained.completed_count == 2,
@@ -396,6 +546,40 @@ void test_gpu_runtime_defers_destruction_until_submission_completion() {
     require(retired == 1, "repeated completion should not repeat a retired action");
 }
 
+void test_gpu_owner_completion_retires_ticket_without_advancing_later_tickets() {
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    const cubey::vulkan::GpuSubmissionTicket first = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "first upload");
+    const cubey::vulkan::GpuSubmissionTicket later = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x58)}}, "later upload");
+    cubey::vulkan::GpuRuntime runtime({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    std::size_t retired = 0U;
+    static_cast<void>(runtime.submit_and_wait({
+        .label = "register ticketed retirement",
+        .work =
+            [first, &retired](cubey::vulkan::GpuOwnerContext& owner) {
+                owner.defer_destruction_after(first, [&retired] { ++retired; });
+            },
+    }));
+    require(retired == 0U && submission.completed().value == 0U,
+            "registering a ticketed retirement must not complete its submission");
+
+    static_cast<void>(runtime.submit_and_wait({
+        .label = "complete first ticket",
+        .work =
+            [first](cubey::vulkan::GpuOwnerContext& owner) { owner.complete_submission(first); },
+    }));
+    require(retired == 1U && submission.completed() == first,
+            "owner completion should retire only the completed upload ticket");
+    require(submission.completed() < later,
+            "completing one upload must not make a later graphics ticket appear complete");
+}
+
 void test_gpu_runtime_collects_retirement_after_owner_work_advances_completion() {
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
     const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
@@ -410,9 +594,10 @@ void test_gpu_runtime_collects_retirement_after_owner_work_advances_completion()
     runtime.defer_destruction_after(submitted, [&retired] { retired = true; });
     static_cast<void>(runtime.enqueue({
         .label = "complete submission",
-        .work = [submitted](cubey::vulkan::GpuOwnerContext& owner) {
-            owner.submission().mark_completed(submitted);
-        },
+        .work =
+            [submitted](cubey::vulkan::GpuOwnerContext& owner) {
+                owner.submission().mark_completed(submitted);
+            },
     }));
     static_cast<void>(runtime.drain_inline());
 
@@ -490,6 +675,54 @@ void test_gpu_runtime_shutdown_rejects_new_work() {
     require(rejected, "GPU runtime should reject enqueue after shutdown");
 }
 
+void test_gpu_runtime_inline_shutdown_allows_reentrant_owner_callbacks() {
+    {
+        cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+        cubey::vulkan::GpuRuntime runtime({
+            .device = fake_device(),
+            .submission = &submission,
+            .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+        });
+        bool admitted_callback_returned = false;
+        static_cast<void>(runtime.enqueue({
+            .label = "reentrant inline shutdown callback",
+            .work =
+                [&runtime, &admitted_callback_returned](cubey::vulkan::GpuOwnerContext& owner) {
+                    require(owner.is_owner_thread(), "inline callback must run on the GPU owner");
+                    runtime.shutdown();
+                    admitted_callback_returned = true;
+                },
+        }));
+
+        runtime.shutdown();
+        require(admitted_callback_returned,
+                "outer inline shutdown should complete an admitted reentrant callback");
+    }
+
+    {
+        cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+        cubey::vulkan::GpuRuntime runtime({
+            .device = fake_device(),
+            .submission = &submission,
+            .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+        });
+        bool retained_cleanup_returned = false;
+        cubey::vulkan::GpuRuntimeOwnerCleanup cleanup = runtime.register_owner_cleanup(
+            "reentrant inline shutdown cleanup",
+            [&runtime, &retained_cleanup_returned](cubey::vulkan::GpuOwnerContext& owner) {
+                require(owner.is_owner_thread(), "inline cleanup must run on the GPU owner");
+                runtime.shutdown();
+                retained_cleanup_returned = true;
+            });
+
+        runtime.shutdown();
+        require(retained_cleanup_returned,
+                "outer inline shutdown should complete a reentrant retained cleanup");
+        require(!cleanup.registered(),
+                "outer inline shutdown should consume a reentrant retained cleanup registration");
+    }
+}
+
 void test_gpu_runtime_shutdown_closes_admission_before_queue_idle() {
     std::mutex mutex;
     std::condition_variable wait_started;
@@ -548,10 +781,21 @@ void test_gpu_runtime_shutdown_joins_owner_after_wait_failure() {
         reinterpret_cast<VkQueue>(0x56),
         [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
         [](VkQueue, const char*) { throw std::runtime_error("queue idle failed"); });
+    const cubey::vulkan::GpuSubmissionTicket submitted = submission.submit(
+        {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}}, "submitted before failure");
     cubey::vulkan::GpuRuntime runtime({
         .device = fake_device(),
         .submission = &submission,
     });
+    bool cleanup_on_owner = false;
+    bool deferred_cleanup_on_owner = false;
+    cubey::vulkan::GpuRuntimeOwnerCleanup cleanup = runtime.register_owner_cleanup(
+        "cleanup after queue idle failure", [&cleanup_on_owner, &deferred_cleanup_on_owner,
+                                             submitted](cubey::vulkan::GpuOwnerContext& owner) {
+            cleanup_on_owner = owner.is_owner_thread();
+            owner.defer_destruction_after(
+                submitted, [&deferred_cleanup_on_owner] { deferred_cleanup_on_owner = true; });
+        });
 
     bool propagated = false;
     try {
@@ -561,6 +805,12 @@ void test_gpu_runtime_shutdown_joins_owner_after_wait_failure() {
     }
 
     require(propagated, "GPU runtime shutdown should propagate queue-idle failure after joining");
+    require(cleanup_on_owner,
+            "queue-idle failure should still run retained cleanup actions on the GPU owner");
+    require(deferred_cleanup_on_owner,
+            "queue-idle failure should force-retire retained deferred cleanup on the GPU owner");
+    require(!cleanup.registered(),
+            "queue-idle failure should consume retained cleanup registrations before stopping");
     runtime.shutdown();
 }
 
@@ -574,14 +824,15 @@ void test_gpu_runtime_rejects_shutdown_from_owner_thread() {
     bool rejected = false;
     static_cast<void>(runtime.submit_and_wait({
         .label = "owner shutdown",
-        .work = [&runtime, &rejected](cubey::vulkan::GpuOwnerContext&) {
-            try {
-                runtime.shutdown();
-            } catch (const std::runtime_error& error) {
-                rejected =
-                    std::string(error.what()) == "GPU runtime owner thread cannot shut itself down";
-            }
-        },
+        .work =
+            [&runtime, &rejected](cubey::vulkan::GpuOwnerContext&) {
+                try {
+                    runtime.shutdown();
+                } catch (const std::runtime_error& error) {
+                    rejected = std::string(error.what()) ==
+                               "GPU runtime owner thread cannot shut itself down";
+                }
+            },
     }));
 
     require(rejected, "GPU runtime should reject owner-thread shutdown instead of deadlocking");

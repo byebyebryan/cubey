@@ -176,8 +176,10 @@ void test_transfer_helpers_describe_texture_and_readback_paths() {
             .mip_level = 2,
             .base_array_layer = 4,
             .layer_count = 1,
+            .image_offset = {0, 12, 0},
         });
     require(cube_copy.bufferOffset == 4096, "copy region should preserve buffer offset");
+    require(cube_copy.imageOffset.y == 12, "copy region should preserve image row offset");
     require(cube_copy.imageSubresource.mipLevel == 2, "copy region should preserve mip level");
     require(cube_copy.imageSubresource.baseArrayLayer == 4,
             "copy region should preserve base array layer");

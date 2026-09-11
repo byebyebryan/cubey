@@ -273,7 +273,8 @@ ImageConfig transfer_sampled_cube_image_config(std::uint32_t extent, std::uint32
     };
 }
 
-ImageConfig storage_sampled_cube_image_config(std::uint32_t extent, std::uint32_t mip_levels,
+ImageConfig storage_sampled_cube_image_config(std::uint32_t extent,
+                                              std::uint32_t mip_levels,
                                               VkFormat format) {
     return {
         .extent = {extent, extent, 1},
@@ -288,8 +289,7 @@ ImageConfig storage_sampled_cube_image_config(std::uint32_t extent, std::uint32_
 }
 
 ImageConfig color_attachment_sampled_cube_image_config(std::uint32_t extent,
-                                                       std::uint32_t mip_levels,
-                                                       VkFormat format) {
+                                                       std::uint32_t mip_levels, VkFormat format) {
     return {
         .extent = {extent, extent, 1},
         .format = format,
@@ -343,6 +343,7 @@ VkBufferImageCopy buffer_image_copy(const BufferImageCopyConfig& config) {
 
     VkBufferImageCopy copy{};
     copy.bufferOffset = config.buffer_offset;
+    copy.imageOffset = config.image_offset;
     copy.imageSubresource.aspectMask = config.aspect;
     copy.imageSubresource.mipLevel = config.mip_level;
     copy.imageSubresource.baseArrayLayer = config.base_array_layer;

@@ -1,5 +1,7 @@
 #include <cubey/render/pbr_material_resources.h>
 
+#include <cubey/vulkan/upload_batch.h>
+
 #include <stdexcept>
 
 namespace cubey::render {
@@ -129,6 +131,20 @@ constexpr std::array<PbrDefaultTextureSpec, 15> kDefaultTextureSpecs{
         });
 }
 
+[[nodiscard]] Texture2D create_pbr_default_texture(const cubey::vulkan::Device& device,
+                                                   cubey::vulkan::GpuUploadBatch& batch,
+                                                   const PbrDefaultTextureSpec& spec) {
+    return create_uploaded_texture_2d(
+        device, batch,
+        {
+            .extent = {1, 1},
+            .format = spec.format,
+            .rgba8 = std::span<const std::uint8_t>{spec.rgba8.data(), spec.rgba8.size()},
+            .create_sampler = true,
+            .sampler = {},
+        });
+}
+
 } // namespace
 
 std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept {
@@ -178,6 +194,51 @@ PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device&
         .anisotropy = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[12]),
         .iridescence = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[13]),
         .iridescence_thickness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[14]),
+    };
+}
+
+PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device& device,
+                                                    cubey::vulkan::GpuUploadBatch& batch) {
+    return {
+        .base_color = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[0]),
+        .metallic_roughness = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[1]),
+        .normal = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[2]),
+        .occlusion = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[3]),
+        .emissive = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[4]),
+        .specular = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[5]),
+        .specular_color = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[6]),
+        .clearcoat = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[7]),
+        .clearcoat_roughness = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[8]),
+        .clearcoat_normal = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[9]),
+        .sheen_color = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[10]),
+        .sheen_roughness = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[11]),
+        .anisotropy = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[12]),
+        .iridescence = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[13]),
+        .iridescence_thickness =
+            create_pbr_default_texture(device, batch, kDefaultTextureSpecs[14]),
+    };
+}
+
+PbrDefaultTextureSet make_pbr_default_texture_set(std::vector<Texture2D> textures) {
+    if (textures.size() != kDefaultTextureSpecs.size()) {
+        throw std::runtime_error("PBR default texture set requires every sampled binding");
+    }
+    return {
+        .base_color = std::move(textures[0]),
+        .metallic_roughness = std::move(textures[1]),
+        .normal = std::move(textures[2]),
+        .occlusion = std::move(textures[3]),
+        .emissive = std::move(textures[4]),
+        .specular = std::move(textures[5]),
+        .specular_color = std::move(textures[6]),
+        .clearcoat = std::move(textures[7]),
+        .clearcoat_roughness = std::move(textures[8]),
+        .clearcoat_normal = std::move(textures[9]),
+        .sheen_color = std::move(textures[10]),
+        .sheen_roughness = std::move(textures[11]),
+        .anisotropy = std::move(textures[12]),
+        .iridescence = std::move(textures[13]),
+        .iridescence_thickness = std::move(textures[14]),
     };
 }
 

@@ -51,6 +51,12 @@ create_pbr_default_texture_set(const cubey::vulkan::Device& device, cubey::vulka
 [[nodiscard]] PbrDefaultTextureSet
 create_pbr_default_texture_set(const cubey::vulkan::Device& device,
                                cubey::vulkan::GpuOwnerContext& gpu);
+[[nodiscard]] PbrDefaultTextureSet
+create_pbr_default_texture_set(const cubey::vulkan::Device& device,
+                               cubey::vulkan::GpuUploadBatch& batch);
+// Adopts the fifteen textures described by pbr_default_texture_specs(). This
+// lets resumable upload sessions create one destination texture at a time.
+[[nodiscard]] PbrDefaultTextureSet make_pbr_default_texture_set(std::vector<Texture2D> textures);
 [[nodiscard]] const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set,
                                                    PbrMaterialBinding binding);
 [[nodiscard]] std::vector<SampledImageMaterialBinding>

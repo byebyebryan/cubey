@@ -5,12 +5,17 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <vector>
 
 namespace cubey::vulkan {
+
+class GpuUploadBatch;
+class GpuOwnerContext;
+class GpuRuntime;
 
 struct BufferConfig {
     VkDeviceSize size = 0;
@@ -43,6 +48,10 @@ class Buffer {
 
     void upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offset = 0) const;
     void download(void* data, VkDeviceSize byte_size, VkDeviceSize offset = 0) const;
+    // Keeps host-visible coherent memory mapped until this buffer is destroyed.
+    // Persistent staging callers must stay on the GPU-owner lifecycle that owns
+    // the buffer.
+    [[nodiscard]] std::byte* map_persistent();
 
   private:
     void create(const BufferConfig& config);
@@ -53,6 +62,7 @@ class Buffer {
     VkDevice device_ = VK_NULL_HANDLE;
     VkBuffer buffer_ = VK_NULL_HANDLE;
     VkDeviceMemory memory_ = VK_NULL_HANDLE;
+    std::byte* mapped_ = nullptr;
     VkDeviceSize size_ = 0;
     VkMemoryPropertyFlags memory_properties_ = 0;
 };
@@ -73,8 +83,12 @@ void copy_buffer(GpuOwnerContext& context, VkBuffer source, VkBuffer destination
                                           VkDeviceSize byte_size, VkBufferUsageFlags usage);
 [[nodiscard]] Buffer upload_device_buffer(GpuRuntime& gpu, const void* data, VkDeviceSize byte_size,
                                           VkBufferUsageFlags usage);
+[[nodiscard]] Buffer upload_device_buffer(GpuUploadBatch& batch, const void* data,
+                                          VkDeviceSize byte_size, VkBufferUsageFlags usage);
 [[nodiscard]] DeviceBufferUploadBatch
 upload_device_buffers(GpuOwnerContext& context, std::span<const DeviceBufferUpload> uploads);
+[[nodiscard]] DeviceBufferUploadBatch
+upload_device_buffers(GpuUploadBatch& batch, std::span<const DeviceBufferUpload> uploads);
 [[nodiscard]] DeviceBufferUploadBatch
 upload_device_buffers(GpuRuntime& gpu, std::span<const DeviceBufferUpload> uploads,
                       std::string label = "upload device buffers");

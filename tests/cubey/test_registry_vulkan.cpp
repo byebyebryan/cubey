@@ -17,11 +17,16 @@ void test_gpu_runtime_accepts_cross_thread_enqueue_but_rejects_cross_thread_drai
 void test_gpu_runtime_defaults_to_threaded_execution();
 void test_gpu_runtime_drains_inline_on_owner_thread();
 void test_gpu_runtime_defers_destruction_until_submission_completion();
+void test_gpu_owner_completion_retires_ticket_without_advancing_later_tickets();
 void test_gpu_runtime_collects_retirement_after_owner_work_advances_completion();
 void test_gpu_runtime_mark_submission_completed_updates_completed_ticket();
+void test_gpu_runtime_owner_cleanup_is_move_only_and_runs_on_owner();
+void test_gpu_runtime_owner_cleanup_move_assignment_retires_replaced_registration();
 void test_gpu_runtime_preserves_pending_work_after_callback_failure();
 void test_gpu_runtime_shutdown_rejects_new_work();
+void test_gpu_runtime_shutdown_runs_remaining_owner_cleanups_before_teardown();
 void test_gpu_runtime_shutdown_closes_admission_before_queue_idle();
+void test_gpu_runtime_inline_shutdown_allows_reentrant_owner_callbacks();
 void test_gpu_runtime_shutdown_joins_owner_after_wait_failure();
 void test_gpu_runtime_rejects_shutdown_from_owner_thread();
 void test_gpu_runtime_rejects_unsubmitted_destruction_ticket();
@@ -32,6 +37,9 @@ void test_gpu_runtime_typed_jobs_capture_failures_without_stopping_queue();
 void test_gpu_runtime_typed_jobs_execute_on_threaded_owner();
 void test_gpu_runtime_typed_jobs_return_results_inline();
 void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread();
+void test_gpu_upload_batch_is_non_movable_lexical_owner_scope();
+void test_gpu_upload_step_is_non_movable_lexical_owner_scope();
+void test_gpu_runtime_default_staging_pool_is_explicitly_disabled();
 void test_gpu_submission_ticket_issuer_returns_monotonic_tickets();
 void test_gpu_work_queue_drains_fifo_and_owns_requests();
 void test_image_transitions_describe_layout_barriers();
@@ -63,6 +71,10 @@ void test_transfer_helpers_describe_texture_and_readback_paths();
 void test_device_buffer_upload_batch_empty_is_a_noop();
 void test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work();
 void test_device_buffer_upload_plan_splits_large_unaligned_requests();
+void test_staging_pool_plan_aligns_reclaims_and_wraps_ranges();
+void test_staging_pool_plan_commit_many_validates_before_mutating();
+void test_staging_pool_plan_grows_to_cap_then_reports_backpressure();
+void test_gpu_staging_reservation_is_move_only_and_inerts_the_source();
 
 namespace cubey::tests {
 
@@ -83,6 +95,9 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_frame_resources_expose_slot_based_contract),
         CUBEY_TEST(test_gpu_submission_ticket_issuer_returns_monotonic_tickets),
         CUBEY_TEST(test_gpu_work_queue_drains_fifo_and_owns_requests),
+        CUBEY_TEST(test_gpu_upload_batch_is_non_movable_lexical_owner_scope),
+        CUBEY_TEST(test_gpu_upload_step_is_non_movable_lexical_owner_scope),
+        CUBEY_TEST(test_gpu_runtime_default_staging_pool_is_explicitly_disabled),
         CUBEY_TEST(test_gpu_runtime_defaults_to_threaded_execution),
         CUBEY_TEST(test_gpu_runtime_submit_and_wait_propagates_threaded_failures),
         CUBEY_TEST(test_gpu_runtime_threaded_submit_and_wait_handles_owner_thread_calls),
@@ -91,12 +106,17 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_gpu_runtime_typed_jobs_execute_on_threaded_owner),
         CUBEY_TEST(test_gpu_runtime_wait_queue_idle_runs_on_owner_thread),
         CUBEY_TEST(test_gpu_runtime_mark_submission_completed_updates_completed_ticket),
+        CUBEY_TEST(test_gpu_runtime_owner_cleanup_is_move_only_and_runs_on_owner),
+        CUBEY_TEST(test_gpu_runtime_owner_cleanup_move_assignment_retires_replaced_registration),
         CUBEY_TEST(test_gpu_runtime_defers_destruction_until_submission_completion),
+        CUBEY_TEST(test_gpu_owner_completion_retires_ticket_without_advancing_later_tickets),
         CUBEY_TEST(test_gpu_runtime_collects_retirement_after_owner_work_advances_completion),
         CUBEY_TEST(test_gpu_runtime_retires_completed_and_queue_idle_destruction),
         CUBEY_TEST(test_gpu_runtime_rejects_unsubmitted_destruction_ticket),
         CUBEY_TEST(test_gpu_runtime_shutdown_rejects_new_work),
+        CUBEY_TEST(test_gpu_runtime_shutdown_runs_remaining_owner_cleanups_before_teardown),
         CUBEY_TEST(test_gpu_runtime_shutdown_closes_admission_before_queue_idle),
+        CUBEY_TEST(test_gpu_runtime_inline_shutdown_allows_reentrant_owner_callbacks),
         CUBEY_TEST(test_gpu_runtime_shutdown_joins_owner_after_wait_failure),
         CUBEY_TEST(test_gpu_runtime_rejects_shutdown_from_owner_thread),
         CUBEY_TEST(test_gpu_runtime_drains_inline_on_owner_thread),
@@ -131,6 +151,10 @@ std::span<const TestCase> vulkan_test_cases() {
         CUBEY_TEST(test_device_buffer_upload_batch_empty_is_a_noop),
         CUBEY_TEST(test_device_buffer_upload_batch_rejects_invalid_requests_before_gpu_work),
         CUBEY_TEST(test_device_buffer_upload_plan_splits_large_unaligned_requests),
+        CUBEY_TEST(test_staging_pool_plan_aligns_reclaims_and_wraps_ranges),
+        CUBEY_TEST(test_staging_pool_plan_commit_many_validates_before_mutating),
+        CUBEY_TEST(test_staging_pool_plan_grows_to_cap_then_reports_backpressure),
+        CUBEY_TEST(test_gpu_staging_reservation_is_move_only_and_inerts_the_source),
     };
     return tests;
 }
