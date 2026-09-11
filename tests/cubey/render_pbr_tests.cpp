@@ -556,6 +556,12 @@ void test_pbr_shaders_use_gltf_material_remap() {
         read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr_post.frag");
     const std::string furnace =
         read_source_file(source_root / "projects/pbr_furnace/shaders/pbr_furnace.frag");
+    const std::string furnace_header =
+        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_app_internal.h");
+    const std::string furnace_render =
+        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_render.cpp");
+    const std::string furnace_resources =
+        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_resources.cpp");
     const std::string gltf =
         read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr.frag");
     const std::string gltf_vertex =
@@ -595,6 +601,15 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "anisotropic IBL should retain the Khronos bent-normal cross-product scale");
     require_contains(pbr, "cubey_pbr_apply_display_transform",
                      "PBR shader should expose a final display transform helper");
+    require_contains(pbr, "cubey_pbr_iridescence_sensitivity",
+                     "PBR shader should expose the Khronos thin-film sensitivity fit");
+    require_contains(
+        pbr, "cubey_pbr_iridescence_fresnel(float outside_ior, float film_ior, float cos_theta1",
+        "PBR shader should expose angle-dependent thin-film Fresnel");
+    require_contains(pbr, "for (int order = 1; order <= 2; ++order)",
+                     "thin-film Fresnel should retain the two-order Khronos interference series");
+    require_contains(pbr, "if (thickness_nm <= 0.0)",
+                     "thin-film Fresnel should preserve a zero-thickness identity guard");
     require_contains(post, "cubey_pbr_apply_display_transform(color, post.display_transform)",
                      "PBR post shader should apply display transform to the HDR scene color");
     require_contains(post, "uniform sampler2D scene_color",
@@ -610,6 +625,23 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR furnace should exercise anisotropic IBL bent-normal lookup");
     require_contains(furnace, "scene.light_color_intensity.a > 0.0",
                      "PBR furnace anisotropy witness should add fixed directional lighting");
+    require_contains(
+        furnace, "vec3 base_direct = (diffuse_direct + specular_direct) * clearcoat_attenuation",
+        "PBR furnace clearcoat should attenuate its direct base response");
+    require_contains(furnace, "cubey_pbr_clearcoat_direct(",
+                     "PBR furnace clearcoat should evaluate its outer direct lobe");
+    require_contains(furnace, "(base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)",
+                     "PBR furnace clearcoat should compose base and coat direct lobes separately");
+    require_not_contains(furnace, "dot(-normal, view_direction)",
+                         "PBR furnace should not invert normals for thin-film evaluation");
+    require_contains(furnace_header, "pbr_furnace_forward_pass_info",
+                     "PBR furnace should centralize its double-sided material pass");
+    require_contains(furnace_header, "pass.cull_mode = VK_CULL_MODE_NONE",
+                     "PBR furnace should retain both primitive windings for depth selection");
+    require_contains(furnace_render, ".material_pass = pbr_furnace_forward_pass_info()",
+                     "PBR furnace pipeline should use its double-sided material pass");
+    require_contains(furnace_resources, ".material_pass = pbr_furnace_forward_pass_info()",
+                     "PBR furnace descriptors should use the same double-sided material pass");
 
     require_not_contains(gltf, "cubey_pbr_apply_display_transform",
                          "glTF PBR shader should leave display transform to the post pass");
@@ -727,6 +759,13 @@ void test_pbr_shaders_use_gltf_material_remap() {
     require_contains(gltf_materials,
                      "source.anisotropy_texture, asset::GltfTextureColorSpace::Linear",
                      "glTF anisotropy texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.iridescence_texture, asset::GltfTextureColorSpace::Linear",
+                     "glTF iridescence factor texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.iridescence_thickness_texture,\n"
+                     "                                 asset::GltfTextureColorSpace::Linear",
+                     "glTF iridescence thickness texture should preserve linear color space");
     require_contains(gltf, "cubey_pbr_sheen_direct",
                      "glTF PBR shader should evaluate sheen direct lighting");
     require_contains(gltf, "cubey_pbr_distribution_ggx_anisotropic",
@@ -744,8 +783,28 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF anisotropy should preserve the isotropic IBL normal at zero strength");
     require_contains(gltf, "cubey_pbr_anisotropic_bent_normal",
                      "glTF anisotropy should use the shared bent-normal IBL heuristic");
-    require_contains(gltf, "cubey_pbr_iridescence_f0",
-                     "glTF PBR shader should evaluate iridescence Fresnel tint");
+    require_contains(gltf, "material.iridescence_transform)).r",
+                     "glTF iridescence factor texture should use its linear red channel");
+    require_contains(gltf, "material.iridescence_thickness_transform)).g",
+                     "glTF iridescence thickness texture should use its linear green channel");
+    require_contains(gltf, "if (iridescence_thickness <= 0.0)",
+                     "glTF iridescence should make zero thickness neutral");
+    require_contains(gltf, "iridescence_fresnel_dielectric = cubey_pbr_iridescence_fresnel",
+                     "glTF iridescence should evaluate the specular-adjusted dielectric interface");
+    require_contains(gltf, "iridescence_thickness, dielectric_f0)",
+                     "glTF dielectric thin-film Fresnel should use the adjusted dielectric F0");
+    require_contains(gltf, "iridescence_thickness, albedo)",
+                     "glTF metallic thin-film Fresnel should use base color");
+    require_contains(gltf, "mix(ordinary_fresnel, thin_film_fresnel, iridescence_factor)",
+                     "glTF direct iridescence should mix ordinary and thin-film Fresnel by factor");
+    require_contains(gltf,
+                     "diffuse_ibl_base, prefiltered * specular_occlusion,\n"
+                     "            iridescence_fresnel_dielectric",
+                     "glTF iridescence IBL should apply dielectric thin-film Fresnel once");
+    require_contains(gltf, "base_ibl = mix(base_ibl, thin_film_base_ibl, iridescence_factor)",
+                     "glTF iridescence IBL should blend the existing ordinary response by factor");
+    require_contains(gltf, "base_ibl + sheen_ibl) * clearcoat_attenuation",
+                     "glTF clearcoat should remain outside the iridescence base response");
     require_contains(gltf_vertex, "orthogonalizeTangent",
                      "glTF PBR vertex shader should re-orthogonalize normal-map tangent frames");
     require_contains(gltf_vertex, "mat3(model) * in_tangent.xyz",
@@ -879,6 +938,8 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover the default PBR sample");
     require_contains(cmake, "AnisotropyBarnLamp/glTF-KTX-BasisU/AnisotropyBarnLamp.gltf",
                      "glTF viewer sample smoke tests should cover required KTX2 BasisU textures");
+    require_contains(cmake, "CompareIridescence/glTF/CompareIridescence.gltf",
+                     "glTF viewer sample smoke tests should cover required iridescence materials");
     require_contains(cmake, "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf",
                      "glTF viewer sample smoke tests should cover KTX2 alpha/emissive textures");
     require_contains(cmake, "--no-clouds",

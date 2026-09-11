@@ -1351,6 +1351,128 @@ void test_gltf_asset_closes_anisotropy_material_contract() {
     std::filesystem::remove_all(dir);
 }
 
+void test_gltf_asset_closes_iridescence_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_iridescence_contract");
+    const std::filesystem::path path = dir / "iridescence_contract.gltf";
+    constexpr std::string_view kTinyPng =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/"
+        "x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+
+    write_text_file(path, std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_iridescence", "KHR_texture_transform"],
+  "extensionsRequired": ["KHR_materials_iridescence", "KHR_texture_transform"],
+  "materials": [
+    {"extensions": {"KHR_materials_iridescence": {}}},
+    {"extensions": {"KHR_materials_iridescence": {
+      "iridescenceFactor": 0.65,
+      "iridescenceTexture": {"index": 0, "texCoord": 1, "extensions": {
+        "KHR_texture_transform": {
+          "offset": [0.2, 0.3], "rotation": 0.5, "scale": [0.4, 0.5], "texCoord": 0
+        }
+      }},
+      "iridescenceIor": 1.4,
+      "iridescenceThicknessMinimum": 520.0,
+      "iridescenceThicknessMaximum": 120.0,
+      "iridescenceThicknessTexture": {"index": 1, "extensions": {
+        "KHR_texture_transform": {"offset": [0.6, 0.7], "scale": [0.8, 0.9]}
+      }}
+    }}}
+  ],
+  "textures": [{"source": 0}, {"source": 0}],
+  "images": [{"uri": ")JSON") +
+                              std::string{kTinyPng} + R"JSON("}]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+    require(asset.materials.size() == 3,
+            "required iridescence fixture should retain implicit and authored materials");
+    const cubey::asset::GltfMaterial& defaults = asset.materials[1];
+    require_close(defaults.iridescence_factor, 0.0F,
+                  "iridescenceFactor should default to a disabled interface");
+    require_close(defaults.iridescence_ior, 1.3F,
+                  "iridescenceIor should preserve the glTF default");
+    require_close(defaults.iridescence_thickness_minimum, 100.0F,
+                  "iridescence thickness minimum should preserve the glTF default");
+    require_close(defaults.iridescence_thickness_maximum, 400.0F,
+                  "iridescence thickness maximum should preserve the glTF default");
+    require(!defaults.iridescence_texture.has_value() &&
+                !defaults.iridescence_thickness_texture.has_value(),
+            "default iridescence material should not invent texture references");
+
+    const cubey::asset::GltfMaterial& material = asset.materials[2];
+    require_close(material.iridescence_factor, 0.65F,
+                  "iridescenceFactor should preserve its linear multiplier");
+    require_close(material.iridescence_ior, 1.4F,
+                  "iridescenceIor should preserve its authored value");
+    require_close(material.iridescence_thickness_minimum, 520.0F,
+                  "iridescence thickness minimum should preserve authored values");
+    require_close(material.iridescence_thickness_maximum, 120.0F,
+                  "iridescence thickness maximum should preserve authored values");
+    require(material.iridescence_texture.texture_index == 0 &&
+                material.iridescence_thickness_texture.texture_index == 1,
+            "iridescence channels should preserve their independent source textures");
+    require(material.iridescence_texture.texcoord == 0,
+            "iridescence texture transform should override the source texture coordinate set");
+    require_close(material.iridescence_texture.offset.x, 0.2F,
+                  "iridescence texture transform should preserve offset x");
+    require_close(material.iridescence_texture.rotation, 0.5F,
+                  "iridescence texture transform should preserve rotation");
+    require_close(material.iridescence_thickness_texture.offset.y, 0.7F,
+                  "iridescence thickness transform should preserve offset y");
+    require_close(material.iridescence_thickness_texture.scale.x, 0.8F,
+                  "iridescence thickness transform should preserve scale x");
+
+    const auto require_invalid = [&path](std::string_view field, std::string_view value) {
+        write_text_file(
+            path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                      "  \"extensionsUsed\": [\"KHR_materials_iridescence\"],\n" +
+                      "  \"materials\": [{\"extensions\": {\"KHR_materials_iridescence\": {\"" +
+                      std::string{field} + "\": " + std::string{value} + "}}}]\n}\n");
+        require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); }, field,
+                                    "invalid iridescence field should identify its rejected field");
+    };
+    require_invalid("iridescenceFactor", "-0.01");
+    require_invalid("iridescenceFactor", "1.01");
+    require_invalid("iridescenceFactor", "1e999");
+    require_invalid("iridescenceIor", "0.99");
+    require_invalid("iridescenceIor", "1e999");
+    require_invalid("iridescenceThicknessMinimum", "-0.01");
+    require_invalid("iridescenceThicknessMinimum", "1e999");
+    require_invalid("iridescenceThicknessMaximum", "-0.01");
+    require_invalid("iridescenceThicknessMaximum", "1e999");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_iridescence", "KHR_materials_unlit"],
+  "materials": [{"extensions": {
+    "KHR_materials_iridescence": {},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_iridescence",
+        "iridescence and unlit should be rejected as an invalid material combination");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_iridescence",
+    "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_iridescence": {},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); },
+                                "KHR_materials_iridescence",
+                                "iridescence and specular-glossiness should be rejected as an "
+                                "invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
 void test_gltf_asset_enforces_anisotropy_tangent_space_contract() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_anisotropy_tangent_contract");
     const std::filesystem::path generated_uv1 =
@@ -1845,6 +1967,7 @@ void test_gltf_asset_accepts_closed_required_extensions() {
     "KHR_materials_unlit",
     "KHR_materials_clearcoat",
     "KHR_materials_anisotropy",
+    "KHR_materials_iridescence",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -1853,6 +1976,7 @@ void test_gltf_asset_accepts_closed_required_extensions() {
     "KHR_materials_unlit",
     "KHR_materials_clearcoat",
     "KHR_materials_anisotropy",
+    "KHR_materials_iridescence",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -1877,12 +2001,20 @@ void test_gltf_asset_accepts_closed_required_extensions() {
       "anisotropyStrength": 0.5,
       "anisotropyRotation": 0.25
     }}
+  },
+  {
+    "extensions": {"KHR_materials_iridescence": {
+      "iridescenceFactor": 0.5,
+      "iridescenceIor": 1.4,
+      "iridescenceThicknessMinimum": 520.0,
+      "iridescenceThicknessMaximum": 120.0
+    }}
   }]
 })JSON");
 
     const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
 
-    require(asset.materials.size() == 5, "loader should preserve required-extension materials");
+    require(asset.materials.size() == 6, "loader should preserve required-extension materials");
     require_close(asset.materials[1].emissive_factor.g, 0.9F,
                   "closed required emissive-strength extension should load");
     require(asset.materials[2].unlit, "closed required unlit extension should load");
@@ -1890,15 +2022,18 @@ void test_gltf_asset_accepts_closed_required_extensions() {
                   "closed required clearcoat extension should load its factor");
     require_close(asset.materials[4].anisotropy_strength, 0.5F,
                   "closed required anisotropy extension should load its factor");
+    require_close(asset.materials[5].iridescence_factor, 0.5F,
+                  "closed required iridescence extension should load its factor");
+    require_close(asset.materials[5].iridescence_thickness_minimum, 520.0F,
+                  "closed required iridescence should permit minimum above maximum");
     std::filesystem::remove_all(dir);
 }
 
 void test_gltf_asset_rejects_partial_required_extensions() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_partial_required_extensions");
     const std::filesystem::path path = dir / "partial_required_extensions.gltf";
-    constexpr std::array<std::string_view, 2> kPartialExtensions{
+    constexpr std::array<std::string_view, 1> kPartialExtensions{
         "KHR_materials_sheen",
-        "KHR_materials_iridescence",
     };
     for (const std::string_view extension : kPartialExtensions) {
         write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +

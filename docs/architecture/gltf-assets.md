@@ -64,7 +64,8 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_materials_specular` | supported | Factor and color inputs are validated before import, including factor-only and texture/transform paths; F0/F90 feed direct and split-sum IBL response, with deterministic furnace and Khronos `SpecularTest` capture coverage. |
 | `KHR_materials_clearcoat` | supported | Factor and roughness are validated as finite values in `[0, 1]`; factor, roughness, normal scale, texture channels, texture transforms, and linear color spaces reach a fixed-IOR coat above the full base response. Deterministic furnace coverage closes zero-factor neutrality and roughness/layering response, while the pinned Khronos `ClearCoatTest` exercises the real viewer path. |
 | `KHR_materials_anisotropy` | supported | Strength and rotation are validated; required tangent space is authored or generated from the effective normal/anisotropy UV set. Direct lighting uses anisotropic GGX distribution and visibility, while IBL uses the Khronos-style bent-normal approximation. A deterministic furnace checks zero-strength neutrality and rotated response, and the pinned Khronos `AnisotropyBarnLamp` exercises texture channels through the staged viewer path. |
-| `KHR_materials_sheen`, `KHR_materials_iridescence` | partial | Their current texture/factor plumbing and approximate lobes remain available only for optional extension use. |
+| `KHR_materials_iridescence` | supported | Factor, IOR, and thickness bounds are validated while independently transformed linear factor/thickness textures preserve their red/green channel contracts. Direct and image-based lighting use the Khronos thin-film interference model for dielectric and metallic bases, with exact factor-zero and zero-thickness fallbacks. A deterministic furnace checks neutrality and chromatic response, while pinned Khronos `CompareIridescence` coverage exercises the staged viewer path. |
+| `KHR_materials_sheen` | partial | Its current texture/factor plumbing and approximate lobe remain available only for optional extension use. |
 
 Partial extensions remain useful for renderer development and optional asset
 inspection, but Cubey rejects them when an asset declares them required. Each
@@ -72,8 +73,9 @@ extension is promoted independently after analytic and deterministic rendered
 coverage closes its semantics. Loader and analytic witnesses live in focused
 core tests, while the material-conformance CTest label separates rendered
 checks from ordinary smoke: the opt-in `pbr_furnace --conformance-case` layouts
-capture fixed 512px IOR, specular, clearcoat, or anisotropy specimens and inspect
-foreground region/channel relationships rather than byte-identical images. The
+capture fixed 512px IOR, specular, clearcoat, anisotropy, or iridescence
+specimens and inspect foreground region/channel relationships rather than
+byte-identical images. The
 pinned Khronos `SpecularTest` lane adds fixed manual directional lighting plus
 half-intensity static IBL, no clouds, explicit exposure, and a front-on camera
 for end-to-end model-grid/chromatic-response evidence through the shared forward
@@ -86,6 +88,10 @@ base-normal interaction through the actual staged viewer/importer path.
 The anisotropy furnace isolates zero-strength neutrality and orthogonal
 directional response, while the existing pinned `AnisotropyBarnLamp` BasisU
 capture exercises its transformed linear texture path end to end.
+The iridescence furnace keeps two factor-zero controls neutral and checks
+chromatic thin-film response over dielectric and metallic bases. The pinned
+`CompareIridescence` capture complements it with authored factors, IORs,
+thicknesses, and textures through the common staged importer and renderer.
 
 Unsupported features fail early instead of being silently ignored:
 unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate

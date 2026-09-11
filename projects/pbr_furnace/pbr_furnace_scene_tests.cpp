@@ -131,6 +131,35 @@ int main() {
                     anisotropy_layout.materials[2].anisotropy_rotation,
             "anisotropy conformance should preserve its orthogonal rotation witnesses");
 
+    const auto iridescence_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("iridescence");
+    require(iridescence_layout.materials.size() == 4,
+            "iridescence conformance should expose four independently inspectable specimens");
+    require_close(iridescence_layout.materials[0].iridescence_factor, 0.0F,
+                  "iridescence conformance should begin with a factor-zero control");
+    require_close(iridescence_layout.materials[1].iridescence_factor, 0.0F,
+                  "iridescence zero-factor control should retain the second thickness");
+    require(iridescence_layout.materials[0].iridescence_thickness_maximum !=
+                iridescence_layout.materials[1].iridescence_thickness_maximum,
+            "iridescence zero-factor controls should vary thickness only");
+    require(iridescence_layout.materials[2].iridescence_factor > 0.0F &&
+                iridescence_layout.materials[3].iridescence_factor > 0.0F,
+            "iridescence conformance should include enabled specimens");
+    for (const auto& material : iridescence_layout.materials) {
+        require_close(material.base_color_factor.x, 0.08F,
+                      "iridescence conformance should retain a dark neutral base");
+        require_close(material.base_color_factor.y, material.base_color_factor.x,
+                      "iridescence conformance base should be neutral");
+        require_close(material.base_color_factor.z, material.base_color_factor.x,
+                      "iridescence conformance base should be neutral");
+    }
+    require_close(iridescence_layout.materials[2].metallic, 0.0F,
+                  "iridescence conformance should include an enabled dielectric specimen");
+    require_close(iridescence_layout.materials[3].metallic, 1.0F,
+                  "iridescence conformance should include an enabled metallic specimen");
+    require(iridescence_layout.materials[2].iridescence_thickness_maximum !=
+                iridescence_layout.materials[3].iridescence_thickness_maximum,
+            "enabled iridescence specimens should retain distinct film thicknesses");
+
     bool rejected_unknown_case = false;
     try {
         static_cast<void>(cubey::projects::pbr_furnace::pbr_furnace_layout("unknown"));

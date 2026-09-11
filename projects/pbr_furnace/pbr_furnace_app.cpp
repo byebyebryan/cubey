@@ -105,7 +105,7 @@ WhitePbrEnvironment create_white_pbr_environment(const cubey::vulkan::Device& de
         .prefiltered_cube = std::move(prefiltered),
         .brdf_lut = std::move(brdf_lut),
         .prefiltered_mip_levels = kIblPrefilteredMipLevels,
-        .intensity = 1.0F,
+        .intensity = 0.25F,
     };
 }
 

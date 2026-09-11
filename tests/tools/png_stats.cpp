@@ -157,6 +157,28 @@ struct CircleStats {
     return stats;
 }
 
+[[nodiscard]] double maximum_foreground_chroma_vertical_region(const LoadedImage& image, int region,
+                                                               int region_count,
+                                                               double background_luma) {
+    const int x_begin = (image.width * region) / region_count;
+    const int x_end = (image.width * (region + 1)) / region_count;
+    const int y_begin = image.height / 8;
+    const int y_end = image.height - y_begin;
+    double maximum_chroma = 0.0;
+    for (int y = y_begin; y < y_end; ++y) {
+        for (int x = x_begin; x < x_end; ++x) {
+            const Rgb color = pixel_rgb(image, x, y);
+            if (luma(color) <= background_luma + 0.04) {
+                continue;
+            }
+            maximum_chroma =
+                std::max(maximum_chroma, std::max({color.red, color.green, color.blue}) -
+                                             std::min({color.red, color.green, color.blue}));
+        }
+    }
+    return maximum_chroma;
+}
+
 [[nodiscard]] CircleStats normalized_circle_region(const LoadedImage& image, float center_x,
                                                    float center_y, float radius) {
     const float image_scale = static_cast<float>(std::min(image.width, image.height));
@@ -226,10 +248,13 @@ void check_furnace_ior(const LoadedImage& image) {
             foreground_vertical_region(image, index, 4, background_luma);
     }
     require_furnace_regions(regions, "furnace-ior");
-    require(
-        regions[0].luma + 0.001 < regions[1].luma && regions[1].luma + 0.001 < regions[2].luma &&
-            regions[2].luma + 0.001 < regions[3].luma,
-        "IOR conformance specimens should retain the authored 1.0 < 1.5 < 2.42 < 0 response order");
+    // This fixed, neutral direct-plus-IBL fixture deterministically exposes a
+    // descending response as its dielectric IOR sweep removes diffuse energy.
+    // It is a furnace witness, not a general ordering rule for glTF assets.
+    require(regions[0].luma > regions[1].luma + 0.001 &&
+                regions[1].luma > regions[2].luma + 0.001 &&
+                regions[2].luma > regions[3].luma + 0.001,
+            "IOR conformance should retain the valid-surface 1.0 > 1.5 > 2.42 > 0 response order");
     for (const RegionStats& region : regions) {
         require(std::abs(region.color.red - region.color.green) < 0.025 &&
                     std::abs(region.color.green - region.color.blue) < 0.025,
@@ -291,6 +316,38 @@ void check_furnace_anisotropy(const LoadedImage& image) {
             "enabled anisotropy should change the isotropic directional response");
 }
 
+void check_furnace_iridescence(const LoadedImage& image) {
+    const double background_luma = luma(corner_background(image));
+    std::array<RegionStats, 4> regions{};
+    for (int index = 0; index < 4; ++index) {
+        regions[static_cast<std::size_t>(index)] =
+            foreground_vertical_region(image, index, 4, background_luma);
+    }
+    require_furnace_regions(regions, "furnace-iridescence");
+    // The left controls differ only in a film thickness that must be inert at
+    // zero factor. The enabled right pair exercises thin-film response over
+    // both dielectric and metallic bases with distinct thicknesses.
+    require(std::abs(regions[0].luma - regions[1].luma) < 0.01,
+            "iridescence factor zero should leave film thickness inert");
+    const auto chroma = [](const RegionStats& region) {
+        return std::max({region.color.red, region.color.green, region.color.blue}) -
+               std::min({region.color.red, region.color.green, region.color.blue});
+    };
+    const double dielectric_maximum_chroma =
+        maximum_foreground_chroma_vertical_region(image, 2, 4, background_luma);
+    const double metallic_maximum_chroma =
+        maximum_foreground_chroma_vertical_region(image, 3, 4, background_luma);
+    std::printf("material_conformance: furnace-iridescence maximum_chroma=(%.4f,%.4f)\n",
+                dielectric_maximum_chroma, metallic_maximum_chroma);
+    require(dielectric_maximum_chroma > 0.01,
+            "enabled dielectric iridescence should produce a visible chromatic response");
+    require(metallic_maximum_chroma > 0.01,
+            "enabled metallic iridescence should produce a visible chromatic response");
+    require(std::abs(regions[2].luma - regions[3].luma) > 0.005 ||
+                std::abs(chroma(regions[2]) - chroma(regions[3])) > 0.005,
+            "enabled iridescence bases and film thicknesses should retain a visible difference");
+}
+
 void check_gltf_specular_test(const LoadedImage& image) {
     // This is the fixed front-on capture layout in projects/gltf_viewer. Sampling the sphere
     // centers, rather than a foreground mask, prevents the atmosphere background from acting as
@@ -346,6 +403,8 @@ void check_material_conformance(const std::filesystem::path& path, std::string_v
             check_furnace_clearcoat(image);
         } else if (case_name == "furnace-anisotropy") {
             check_furnace_anisotropy(image);
+        } else if (case_name == "furnace-iridescence") {
+            check_furnace_iridescence(image);
         } else if (case_name == "gltf-specular-test") {
             check_gltf_specular_test(image);
         } else {

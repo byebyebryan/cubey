@@ -61,8 +61,9 @@ Radiance HDR equirectangular environment assets:
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment. Its default grid is unchanged; opt-in `ior`,
-  `specular`, `clearcoat`, and `anisotropy` conformance layouts fix camera,
-  lighting, linear output, and material specimens for relational capture checks;
+  `specular`, `clearcoat`, `anisotropy`, and `iridescence` conformance layouts
+  fix camera, lighting, linear output, and material specimens for relational
+  capture checks;
 - optional Filament sample HDR environments can be fetched by CMake for local
   inspection, with `lightroom_14b.hdr` as the default viewer environment when
   available;
@@ -167,6 +168,31 @@ light above white IBL to verify zero-strength rotation neutrality and an enabled
 orthogonal response. The pinned Khronos `AnisotropyBarnLamp` BasisU smoke covers
 the staged importer and textured renderer path without acting as a pixel golden.
 
+## Iridescence Contract
+
+`KHR_materials_iridescence` is closed for required use on the fixed material
+descriptor layout. The importer validates a finite factor in `[0, 1]`, a finite
+IOR of at least one, and finite nonnegative minimum and maximum thicknesses. It
+preserves independently transformed linear textures: the factor reads red and
+the thickness interpolation reads green. Minimum above maximum remains valid,
+matching the extension's interpolation contract. The prohibited combinations
+with unlit and specular-glossiness materials are rejected.
+
+The shared shader evaluates the Khronos thin-film interference model at the
+normal/view angle. Dielectrics use the specular-adjusted dielectric F0 and
+metals use base color for the film/base interface. Direct lighting replaces the
+ordinary Fresnel mix with the thin-film response by factor; IBL performs the
+corresponding RGB diffuse/specular mix exactly once. The result remains below
+the clearcoat layer and preserves anisotropy's bent reflection direction.
+Factor zero and zero thickness retain the pre-existing base response exactly.
+
+Focused tests cover defaults, ranges, exclusions, required-use acceptance,
+texture channels/transforms, and shader composition. A four-specimen furnace
+checks zero-factor thickness neutrality plus visible dielectric and metallic
+chromatic response under a fixed direct-plus-IBL fixture. The pinned Khronos
+`CompareIridescence` sample adds an end-to-end staged importer/viewer smoke;
+neither rendered lane is a byte-identical cross-GPU golden.
+
 ## IOR And Specular Conformance
 
 `KHR_materials_ior` accepts only IOR zero (the glTF compatibility sentinel) or
@@ -223,10 +249,10 @@ renderer-wide material management explicit future work.
   ticks, and atomically publishes complete replacement generations. The same
   runtime advances its cloud environment so time-of-day changes do not reset the
   cloud probe's previous/current interpolation.
-- The current sheen and iridescence lobes remain pragmatic real-time
-  approximations and are not accepted from `extensionsRequired`.
-  Transmission, refraction, volume absorption, dispersion, and OIT-quality
-  transparent material behavior remain future work.
+- The current sheen lobe remains a pragmatic real-time approximation and is not
+  accepted from `extensionsRequired`. Transmission, refraction, volume
+  absorption, dispersion, and OIT-quality transparent material behavior remain
+  future work.
 
 ## Non-Goals
 

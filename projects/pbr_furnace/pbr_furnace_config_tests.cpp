@@ -46,6 +46,12 @@ void test_conformance_case_config() {
     require(anisotropy.conformance_case == "anisotropy",
             "PBR furnace should select its opt-in anisotropy conformance layout");
 
+    const char* iridescence_arguments[] = {"pbr_furnace", "--conformance-case", "iridescence"};
+    const auto iridescence = cubey::projects::pbr_furnace::parse_pbr_furnace_config(
+        3, const_cast<char**>(iridescence_arguments));
+    require(iridescence.conformance_case == "iridescence",
+            "PBR furnace should select its opt-in iridescence conformance layout");
+
     cubey::projects::pbr_furnace::PbrFurnaceConfig deferred;
     const auto schema = cubey::projects::pbr_furnace::pbr_furnace_config_schema(deferred);
     schema.set("conformance_case", "ior");

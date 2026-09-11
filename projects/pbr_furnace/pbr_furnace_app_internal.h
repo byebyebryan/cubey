@@ -44,6 +44,14 @@ struct WhitePbrEnvironment {
 };
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename);
+[[nodiscard]] inline cubey::render::MaterialPassInfo pbr_furnace_forward_pass_info() {
+    cubey::render::MaterialPassInfo pass = cubey::render::pbr_forward_pass_info();
+    // The furnace's closed primitive must retain both windings so depth selects
+    // the nearest outward-facing surface independently of the shared mesh
+    // winding convention.
+    pass.cull_mode = VK_CULL_MODE_NONE;
+    return pass;
+}
 [[nodiscard]] WhitePbrEnvironment create_white_pbr_environment(const cubey::vulkan::Device& device,
                                                                cubey::vulkan::GpuRuntime& gpu);
 [[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_sphere_mesh();

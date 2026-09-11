@@ -39,7 +39,7 @@ void PbrFurnaceApp::create_scene_material(const cubey::vulkan::Device& device,
     const WhitePbrEnvironment& environment = white_environment();
     scene_material_.emplace(
         device, cubey::render::FrameUniformMaterialInstanceConfig{
-                    .material_pass = cubey::render::pbr_forward_pass_info(),
+                    .material_pass = pbr_furnace_forward_pass_info(),
                     .descriptor_set = 0,
                     .frame_slot_count = frame_slot_count,
                     .uniform_binding = binding(cubey::render::PbrSceneBinding::SceneUniforms),
@@ -82,21 +82,26 @@ void PbrFurnaceApp::create_materials(const cubey::vulkan::Device& device,
             });
         material_handles_.push_back(material);
         materials_.set_factors(
-            material, cubey::render::PbrMaterialFactors{
-                          .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
-                          .metallic_factor = furnace_material.metallic,
-                          .roughness_factor = furnace_material.roughness,
-                          .specular_color_factor = furnace_material.specular_color_factor,
-                          .specular_factor = furnace_material.specular_factor,
-                          .dielectric_ior = furnace_material.ior,
-                          .clearcoat_factor = furnace_material.clearcoat_factor,
-                          .clearcoat_roughness_factor = furnace_material.clearcoat_roughness,
-                          .anisotropy_strength = furnace_material.anisotropy_strength,
-                          .anisotropy_rotation = furnace_material.anisotropy_rotation,
-                      });
+            material,
+            cubey::render::PbrMaterialFactors{
+                .base_color_factor = {furnace_material.base_color_factor, 1.0F},
+                .metallic_factor = furnace_material.metallic,
+                .roughness_factor = furnace_material.roughness,
+                .specular_color_factor = furnace_material.specular_color_factor,
+                .specular_factor = furnace_material.specular_factor,
+                .dielectric_ior = furnace_material.ior,
+                .clearcoat_factor = furnace_material.clearcoat_factor,
+                .clearcoat_roughness_factor = furnace_material.clearcoat_roughness,
+                .anisotropy_strength = furnace_material.anisotropy_strength,
+                .anisotropy_rotation = furnace_material.anisotropy_rotation,
+                .iridescence_factor = furnace_material.iridescence_factor,
+                .iridescence_ior = furnace_material.iridescence_ior,
+                .iridescence_thickness_minimum = furnace_material.iridescence_thickness_minimum,
+                .iridescence_thickness_maximum = furnace_material.iridescence_thickness_maximum,
+            });
         materials_.emplace_instance(material, device,
                                     cubey::render::FrameUniformMaterialInstanceConfig{
-                                        .material_pass = cubey::render::pbr_forward_pass_info(),
+                                        .material_pass = pbr_furnace_forward_pass_info(),
                                         .descriptor_set = 1,
                                         .frame_slot_count = frame_slot_count,
                                         .uniform_binding = static_cast<std::uint32_t>(

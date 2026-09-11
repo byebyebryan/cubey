@@ -112,6 +112,24 @@ void main() {
         specular_color_factor, specular_strength, material.material_model.x);
     vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);
     vec3 f90 = mix(vec3(cubey_pbr_saturate(specular_strength)), vec3(1.0), metallic);
+    float iridescence_factor = clamp(material.anisotropy_iridescence.w, 0.0, 1.0);
+    float iridescence_thickness = material.iridescence_ior_thickness.z;
+    if (iridescence_thickness <= 0.0) {
+        iridescence_factor = 0.0;
+    }
+    vec3 iridescence_fresnel_dielectric = cubey_pbr_iridescence_fresnel(
+        1.0, material.iridescence_ior_thickness.x, ndotv, iridescence_thickness,
+        dielectric_f0);
+    vec3 iridescence_fresnel_metallic = cubey_pbr_iridescence_fresnel(
+        1.0, material.iridescence_ior_thickness.x, ndotv, iridescence_thickness,
+        albedo);
+    float clearcoat_factor = clamp(material.clearcoat_factor_roughness_normal.x, 0.0, 1.0);
+    float clearcoat_roughness =
+        clamp(material.clearcoat_factor_roughness_normal.y, 0.04, 1.0);
+    float clearcoat_ndotv = max(dot(geometric_normal, view_direction), 0.0);
+    float clearcoat_layer_weight =
+        cubey_pbr_clearcoat_layer_weight(clearcoat_factor, clearcoat_ndotv);
+    float clearcoat_attenuation = 1.0 - clearcoat_layer_weight;
 
     float anisotropy_strength = clamp(material.anisotropy_iridescence.x, 0.0, 1.0);
     vec2 anisotropy_direction = normalize(material.anisotropy_iridescence.yz);
@@ -143,6 +161,18 @@ void main() {
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
     vec3 specular_ibl =
         prefiltered * cubey_pbr_indirect_specular(f0, f90, dfg) * specular_occlusion;
+    vec3 base_ibl = (diffuse_ibl * occlusion) + specular_ibl;
+    if (iridescence_factor > 0.0) {
+        vec3 diffuse_ibl_base = irradiance * diffuse_color * occlusion;
+        vec3 dielectric_thin_film_ibl = mix(
+            diffuse_ibl_base, prefiltered * specular_occlusion,
+            iridescence_fresnel_dielectric);
+        vec3 metallic_thin_film_ibl =
+            prefiltered * iridescence_fresnel_metallic * specular_occlusion;
+        vec3 thin_film_base_ibl =
+            mix(dielectric_thin_film_ibl, metallic_thin_film_ibl, metallic);
+        base_ibl = mix(base_ibl, thin_film_base_ibl, iridescence_factor);
+    }
     vec3 direct = vec3(0.0);
     if (scene.light_color_intensity.a > 0.0) {
         vec3 light_direction = normalize(scene.light_direction.xyz);
@@ -168,35 +198,38 @@ void main() {
                                 dot(anisotropy_bitangent, light_direction),
                                 anisotropy_alpha_roughness, alpha_roughness)
                           : cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
-            vec3 f = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
+            vec3 ordinary_fresnel = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
+            vec3 thin_film_fresnel = mix(iridescence_fresnel_dielectric,
+                                          iridescence_fresnel_metallic, metallic);
+            vec3 f = mix(ordinary_fresnel, thin_film_fresnel, iridescence_factor);
             vec3 diffuse_direct = cubey_pbr_lambert_diffuse(diffuse_color) *
                                   (1.0 - max(max(f.r, f.g), f.b));
             vec3 specular_direct = d * v * f * energy_compensation;
-            direct = (diffuse_direct + specular_direct) * ndotl *
+            float clearcoat_ndotl = max(dot(geometric_normal, light_direction), 0.0);
+            float clearcoat_ndoth = max(dot(geometric_normal, half_vector), 0.0);
+            vec3 base_direct = (diffuse_direct + specular_direct) * clearcoat_attenuation;
+            vec3 clearcoat_direct =
+                vec3(clearcoat_layer_weight * cubey_pbr_clearcoat_direct(
+                                               clearcoat_ndotv, clearcoat_ndotl,
+                                               clearcoat_ndoth, clearcoat_roughness));
+            direct = ((base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)) *
                      scene.light_color_intensity.rgb * scene.light_color_intensity.a;
         }
     }
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
-    float clearcoat_factor = clamp(material.clearcoat_factor_roughness_normal.x, 0.0, 1.0);
-    float clearcoat_roughness =
-        clamp(material.clearcoat_factor_roughness_normal.y, 0.04, 1.0);
-    float clearcoat_layer_weight =
-        cubey_pbr_clearcoat_layer_weight(clearcoat_factor, ndotv);
-    float clearcoat_attenuation = 1.0 - clearcoat_layer_weight;
     vec3 clearcoat_reflection = reflect(-view_direction, geometric_normal);
     vec3 clearcoat_prefiltered = textureLod(prefiltered_cube, clearcoat_reflection,
                                             clearcoat_roughness * max_prefiltered_lod)
                                     .rgb;
-    vec3 clearcoat_dfg = texture(brdf_lut, vec2(ndotv, clearcoat_roughness)).rgb;
+    vec3 clearcoat_dfg = texture(brdf_lut, vec2(clearcoat_ndotv, clearcoat_roughness)).rgb;
     float clearcoat_specular_occlusion =
-        cubey_pbr_specular_ao(ndotv, occlusion, clearcoat_roughness) *
+        cubey_pbr_specular_ao(clearcoat_ndotv, occlusion, clearcoat_roughness) *
         cubey_pbr_horizon_specular_occlusion(clearcoat_reflection, geometric_normal);
     vec3 clearcoat_ibl = clearcoat_layer_weight * clearcoat_prefiltered *
                          cubey_pbr_clearcoat_indirect(clearcoat_dfg) *
                          clearcoat_specular_occlusion;
-    vec3 color = ((((diffuse_ibl * occlusion) + specular_ibl) * clearcoat_attenuation) +
-                  clearcoat_ibl) *
+    vec3 color = ((base_ibl * clearcoat_attenuation) + clearcoat_ibl) *
                      scene.environment_intensity_mip_count.x +
                  direct + (emissive * clearcoat_attenuation);
     out_color = vec4(cubey_pbr_apply_display_transform(color, scene.display_transform),

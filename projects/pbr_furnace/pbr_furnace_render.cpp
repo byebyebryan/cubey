@@ -45,7 +45,7 @@ void PbrFurnaceApp::create_forward_pass(const cubey::vulkan::Device& device, VkE
                     .vertex_bindings = vertex_input.bindings(),
                     .vertex_attributes = vertex_input.attribute_descriptions(),
                     .descriptor_set_layouts = set_layouts,
-                    .material_pass = cubey::render::pbr_forward_pass_info(),
+                    .material_pass = pbr_furnace_forward_pass_info(),
                 },
             .clear =
                 {

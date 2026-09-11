@@ -336,8 +336,15 @@ void main() {
         iridescence_thickness = mix(material.iridescence_ior_thickness.y,
                                    material.iridescence_ior_thickness.z, thickness_sample);
     }
-    f0 = cubey_pbr_iridescence_f0(f0, iridescence_factor,
-                                  material.iridescence_ior_thickness.x, iridescence_thickness);
+    if (iridescence_thickness <= 0.0) {
+        // The thin-film model becomes the ordinary interface at zero thickness.
+        // Keep the full existing base path exactly neutral in that case.
+        iridescence_factor = 0.0;
+    }
+    vec3 iridescence_fresnel_dielectric = cubey_pbr_iridescence_fresnel(
+        1.0, material.iridescence_ior_thickness.x, ndotv, iridescence_thickness, dielectric_f0);
+    vec3 iridescence_fresnel_metallic = cubey_pbr_iridescence_fresnel(
+        1.0, material.iridescence_ior_thickness.x, ndotv, iridescence_thickness, albedo);
 
     vec3 anisotropy_tangent = tangent;
     vec3 anisotropy_bitangent = bitangent;
@@ -397,7 +404,10 @@ void main() {
                         dot(anisotropy_bitangent, light_direction),
                         anisotropy_alpha_roughness, alpha_roughness)
                   : cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
-    vec3 f = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
+    vec3 ordinary_fresnel = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
+    vec3 thin_film_fresnel = mix(iridescence_fresnel_dielectric,
+                                  iridescence_fresnel_metallic, metallic);
+    vec3 f = mix(ordinary_fresnel, thin_film_fresnel, iridescence_factor);
     vec3 specular = d * v * f * energy_compensation;
     vec3 diffuse_direct = cubey_pbr_lambert_diffuse(diffuse_color) *
                           (1.0 - max(max(f.r, f.g), f.b));
@@ -447,6 +457,21 @@ void main() {
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
     vec3 specular_ibl =
         prefiltered * cubey_pbr_indirect_specular(f0, f90, dfg) * specular_occlusion;
+    vec3 base_ibl = (diffuse_ibl * occlusion) + specular_ibl;
+    if (iridescence_factor > 0.0) {
+        // Follow the Khronos glTF Sample Renderer composition: the ordinary
+        // base response is blended with a thin-film response that performs one
+        // RGB diffuse/specular Fresnel mix per dielectric or metallic base.
+        vec3 diffuse_ibl_base = irradiance * diffuse_color * occlusion;
+        vec3 dielectric_thin_film_ibl = mix(
+            diffuse_ibl_base, prefiltered * specular_occlusion,
+            iridescence_fresnel_dielectric);
+        vec3 metallic_thin_film_ibl =
+            prefiltered * iridescence_fresnel_metallic * specular_occlusion;
+        vec3 thin_film_base_ibl =
+            mix(dielectric_thin_film_ibl, metallic_thin_film_ibl, metallic);
+        base_ibl = mix(base_ibl, thin_film_base_ibl, iridescence_factor);
+    }
     vec3 sheen_ibl = irradiance * sheen_color * occlusion * 0.25;
     vec3 clearcoat_reflection = reflect(-view_direction, clearcoat_normal);
     vec3 clearcoat_prefiltered = cubey_pbr_prefiltered_environment(
@@ -460,8 +485,7 @@ void main() {
         clearcoat_layer_weight * clearcoat_prefiltered *
         cubey_pbr_clearcoat_indirect(clearcoat_dfg) *
         clearcoat_specular_occlusion;
-    vec3 ambient = (((diffuse_ibl * occlusion) + specular_ibl + sheen_ibl) *
-                        clearcoat_attenuation +
+    vec3 ambient = ((base_ibl + sheen_ibl) * clearcoat_attenuation +
                     clearcoat_ibl) *
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *

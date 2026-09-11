@@ -323,6 +323,27 @@ void require_valid_anisotropy_rotation(float rotation) {
     }
 }
 
+void require_valid_iridescence_factor(float factor) {
+    if (!std::isfinite(factor) || factor < 0.0F || factor > 1.0F) {
+        throw gltf_error(
+            "KHR_materials_iridescence iridescenceFactor must be finite and in [0, 1]");
+    }
+}
+
+void require_valid_iridescence_ior(float ior) {
+    if (!std::isfinite(ior) || ior < 1.0F) {
+        throw gltf_error("KHR_materials_iridescence iridescenceIor must be finite and greater than "
+                         "or equal to 1");
+    }
+}
+
+void require_valid_iridescence_thickness(float thickness, const char* field) {
+    if (!std::isfinite(thickness) || thickness < 0.0F) {
+        throw gltf_error(std::string("KHR_materials_iridescence ") + field +
+                         " must be finite and greater than or equal to 0");
+    }
+}
+
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
@@ -362,6 +383,15 @@ void require_valid_anisotropy_rotation(float rotation) {
         require_valid_anisotropy_strength(material.anisotropy.anisotropy_strength);
         require_valid_anisotropy_rotation(material.anisotropy.anisotropy_rotation);
         require_lit_material_extension_compatibility(material, "KHR_materials_anisotropy");
+    }
+    if (material.has_iridescence != 0) {
+        require_valid_iridescence_factor(material.iridescence.iridescence_factor);
+        require_valid_iridescence_ior(material.iridescence.iridescence_ior);
+        require_valid_iridescence_thickness(material.iridescence.iridescence_thickness_min,
+                                            "iridescenceThicknessMinimum");
+        require_valid_iridescence_thickness(material.iridescence.iridescence_thickness_max,
+                                            "iridescenceThicknessMaximum");
+        require_lit_material_extension_compatibility(material, "KHR_materials_iridescence");
     }
     return {
         .label = label_or_empty(material.name),
@@ -1511,15 +1541,10 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
     // This is intentionally stricter than the set of extensions that the
     // importer can parse. An extension is accepted from extensionsRequired
     // only after its data path and rendered semantics have both been closed.
-    static constexpr std::array<std::string_view, 8> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength",
-        "KHR_materials_ior",
-        "KHR_materials_specular",
-        "KHR_materials_clearcoat",
-        "KHR_materials_anisotropy",
-        "KHR_texture_transform",
-        "KHR_texture_basisu",
-        "KHR_materials_unlit",
+    static constexpr std::array<std::string_view, 9> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength", "KHR_materials_ior",        "KHR_materials_specular",
+        "KHR_materials_clearcoat",         "KHR_materials_anisotropy", "KHR_materials_iridescence",
+        "KHR_texture_transform",           "KHR_texture_basisu",       "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

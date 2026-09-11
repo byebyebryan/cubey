@@ -141,15 +141,96 @@ vec3 cubey_pbr_sheen_direct(vec3 sheen_color, float sheen_roughness, float ndotv
     return sheen_color * d * v;
 }
 
-vec3 cubey_pbr_iridescence_f0(vec3 base_f0, float factor, float ior, float thickness_nm) {
-    float strength = cubey_pbr_saturate(factor);
-    float clamped_ior = max(ior, 1.0);
-    float root_f0 = (clamped_ior - 1.0) / (clamped_ior + 1.0);
-    float film_f0 = root_f0 * root_f0;
-    vec3 phase = vec3(0.0, 2.0943951, 4.1887902) + (thickness_nm * 0.024);
-    vec3 film_color = 0.5 + (0.5 * cos(phase));
-    vec3 iridescent_f0 = cubey_pbr_saturate(base_f0 + (film_color * film_f0));
-    return mix(base_f0, iridescent_f0, strength);
+// Khronos glTF Sample Renderer thin-film model. The XYZ sensitivity fit is
+// evaluated in Fourier space, then converted to Rec.709 linear RGB.
+const mat3 CUBEY_PBR_IRIDESCENCE_XYZ_TO_REC709 = mat3(
+     3.2404542, -0.9692660,  0.0556434,
+    -1.5371385,  1.8760108, -0.2040259,
+    -0.4985314,  0.0415560,  1.0572252
+);
+
+float cubey_pbr_square(float value) {
+    return value * value;
+}
+
+vec3 cubey_pbr_iridescence_fresnel0_to_ior(vec3 fresnel0) {
+    vec3 sqrt_fresnel0 = sqrt(clamp(fresnel0, vec3(0.0), vec3(0.9999)));
+    return (vec3(1.0) + sqrt_fresnel0) / max(vec3(1.0) - sqrt_fresnel0, vec3(0.0001));
+}
+
+float cubey_pbr_iridescence_ior_to_fresnel0(float transmitted_ior, float incident_ior) {
+    float denominator = max(transmitted_ior + incident_ior, 0.0001);
+    return cubey_pbr_square((transmitted_ior - incident_ior) / denominator);
+}
+
+vec3 cubey_pbr_iridescence_sensitivity(float optical_path_difference, vec3 shift) {
+    float phase = 2.0 * CUBEY_PBR_PI * optical_path_difference * 1.0e-9;
+    vec3 value = vec3(5.4856e-13, 4.4201e-13, 5.2481e-13);
+    vec3 position = vec3(1.6810e+06, 1.7953e+06, 2.2084e+06);
+    vec3 variance = vec3(4.3278e+09, 9.3046e+09, 6.6121e+09);
+    float phase_squared = cubey_pbr_square(phase);
+
+    vec3 xyz = value * sqrt(2.0 * CUBEY_PBR_PI * variance) *
+               cos((position * phase) + shift) * exp(-phase_squared * variance);
+    xyz.x += 9.7470e-14 * sqrt(2.0 * CUBEY_PBR_PI * 4.5282e+09) *
+             cos((2.2399e+06 * phase) + shift.x) * exp(-4.5282e+09 * phase_squared);
+    return CUBEY_PBR_IRIDESCENCE_XYZ_TO_REC709 * (xyz / 1.0685e-7);
+}
+
+vec3 cubey_pbr_iridescence_fresnel(float outside_ior, float film_ior, float cos_theta1,
+                                    float thickness_nm, vec3 base_f0) {
+    if (thickness_nm <= 0.0) {
+        return cubey_pbr_saturate(base_f0);
+    }
+
+    float clamped_outside_ior = max(outside_ior, 1.0);
+    float iridescence_ior = mix(clamped_outside_ior, max(film_ior, clamped_outside_ior),
+                                smoothstep(0.0, 0.03, thickness_nm));
+    float clamped_cos_theta1 = cubey_pbr_saturate(cos_theta1);
+    float sin_theta2_squared = cubey_pbr_square(clamped_outside_ior / iridescence_ior) *
+                               (1.0 - cubey_pbr_square(clamped_cos_theta1));
+    float cos_theta2_squared = 1.0 - sin_theta2_squared;
+    if (cos_theta2_squared < 0.0) {
+        return vec3(1.0);
+    }
+    float cos_theta2 = sqrt(max(cos_theta2_squared, 0.0));
+
+    float r0 = cubey_pbr_iridescence_ior_to_fresnel0(iridescence_ior, clamped_outside_ior);
+    float r12 = cubey_pbr_fresnel_schlick(clamped_cos_theta1, vec3(r0)).r;
+    float t121 = 1.0 - r12;
+    float phi12 = iridescence_ior < clamped_outside_ior ? CUBEY_PBR_PI : 0.0;
+    float phi21 = CUBEY_PBR_PI - phi12;
+
+    vec3 base_ior = cubey_pbr_iridescence_fresnel0_to_ior(base_f0);
+    vec3 r1 = pow((base_ior - vec3(iridescence_ior)) /
+                      max(base_ior + vec3(iridescence_ior), vec3(0.0001)),
+                  vec3(2.0));
+    vec3 r23 = cubey_pbr_fresnel_schlick(cos_theta2, r1);
+    vec3 phi23 = vec3(0.0);
+    if (base_ior.r < iridescence_ior) {
+        phi23.r = CUBEY_PBR_PI;
+    }
+    if (base_ior.g < iridescence_ior) {
+        phi23.g = CUBEY_PBR_PI;
+    }
+    if (base_ior.b < iridescence_ior) {
+        phi23.b = CUBEY_PBR_PI;
+    }
+
+    float optical_path_difference = 2.0 * iridescence_ior * thickness_nm * cos_theta2;
+    vec3 phase_shift = vec3(phi21) + phi23;
+    vec3 r123 = clamp(vec3(r12) * r23, vec3(1.0e-5), vec3(0.9999));
+    vec3 r123_sqrt = sqrt(r123);
+    vec3 rs = (t121 * t121) * r23 / max(vec3(1.0) - r123, vec3(0.0001));
+    vec3 iridescence = vec3(r12) + rs;
+    vec3 cm = rs - vec3(t121);
+    for (int order = 1; order <= 2; ++order) {
+        cm *= r123_sqrt;
+        iridescence += cm * 2.0 * cubey_pbr_iridescence_sensitivity(
+                                           float(order) * optical_path_difference,
+                                           float(order) * phase_shift);
+    }
+    return max(iridescence, vec3(0.0));
 }
 
 vec3 cubey_pbr_fresnel_schlick_roughness(float cos_theta, vec3 f0, float roughness) {

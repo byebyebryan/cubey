@@ -29,9 +29,10 @@ async-ready runtime boundary.
 ## Current Readiness Checkpoint
 
 Status: the first glTF conformance—including required-use IOR, specular,
-clearcoat, and anisotropy—plus staged-loading and incremental GPU-upload
-responsiveness checkpoints are complete; the next asset-pipeline work should be
-selected from a concrete product need rather than presumed unfinished plumbing.
+clearcoat, anisotropy, and iridescence—plus staged-loading and incremental
+GPU-upload responsiveness checkpoints are complete; the next asset-pipeline
+work should be selected from a concrete product need rather than presumed
+unfinished plumbing.
 
 The recent foundation push landed shared runtime, renderer, shader,
 environment, UI, and project-owned configuration infrastructure. Retired
@@ -134,15 +135,18 @@ the spent session shell to the asset worker after atomic activation. The public
 blocking importer now drains that same session instead of retaining a separate
 glTF one-batch path.
 
-The material-extension checkpoint now promotes `KHR_materials_clearcoat` and
-`KHR_materials_anisotropy` for required use alongside IOR and specular. Clearcoat
-validates and layers one fixed-1.5-IOR Fresnel coat over the complete base
-response. Anisotropy validates strength/rotation and tangent-space availability,
-uses anisotropic GGX distribution and visibility for direct light, and bends the
-isotropic environment lookup as a bounded IBL approximation. Focused loader and
-shader witnesses, tolerant deterministic furnace cases, and pinned Khronos
-viewer smokes back both claims. Sheen and iridescence remain optional partial
-implementations.
+The material-extension checkpoint now promotes `KHR_materials_clearcoat`,
+`KHR_materials_anisotropy`, and `KHR_materials_iridescence` for required use
+alongside IOR and specular. Clearcoat validates and layers one fixed-1.5-IOR
+Fresnel coat over the complete base response. Anisotropy validates
+strength/rotation and tangent-space availability, uses anisotropic GGX
+distribution and visibility for direct light, and bends the isotropic
+environment lookup as a bounded IBL approximation. Iridescence validates its
+factor, IOR, and thickness inputs and uses the Khronos thin-film interference
+model for dielectric and metallic direct/IBL response. Focused loader and shader
+witnesses, tolerant deterministic furnace cases, and pinned Khronos viewer
+smokes back all three claims. Sheen remains the only optional partial material
+extension in this checkpoint.
 
 Recommended next feature or foundation streams:
 
@@ -160,9 +164,8 @@ Recommended next feature or foundation streams:
   real multi-asset streaming creates queueing pressure, design loader
   concurrency and scheduling from that workload. Do not add a dedicated
   transfer queue, partial scene visibility, or a device-local allocator without
-  new evidence. For material conformance, select sheen or iridescence as a
-  separate promotion slice; do not treat their current optional
-  lobes as required-use support.
+  new evidence. For material conformance, close sheen as a separate promotion
+  slice; do not treat its current optional lobe as required-use support.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
@@ -525,9 +528,9 @@ Current checkpoint:
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
   rows, uniform white IBL cubemaps, glTF base-color/IOR/specular remapping,
-  fixed-IOR clearcoat layering, anisotropic GGX validation, DFG-based energy
-  compensation, reusable PBR material uniform descriptors, and windowed plus
-  headless capture output.
+  fixed-IOR clearcoat layering, anisotropic GGX validation, thin-film
+  iridescence, DFG-based energy compensation, reusable PBR material uniform
+  descriptors, and windowed plus headless capture output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.

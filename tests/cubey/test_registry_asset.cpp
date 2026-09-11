@@ -11,6 +11,7 @@ void test_gltf_asset_preserves_ior_special_and_high_values();
 void test_gltf_asset_validates_ior_and_specular_material_values();
 void test_gltf_asset_closes_clearcoat_material_contract();
 void test_gltf_asset_closes_anisotropy_material_contract();
+void test_gltf_asset_closes_iridescence_material_contract();
 void test_gltf_asset_enforces_anisotropy_tangent_space_contract();
 void test_gltf_asset_marks_nodes_authored_with_matrix();
 void test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs();
@@ -43,7 +44,7 @@ void test_terrain_raster_height_source_rejects_invalid_contracts();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 37> tests{
+    static constexpr std::array<TestCase, 38> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
         CUBEY_TEST(test_gltf_asset_collects_exclusive_load_phase_timings),
         CUBEY_TEST(test_gltf_asset_probes_transformed_scene_bounds_without_loading_buffers),
@@ -53,6 +54,7 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_validates_ior_and_specular_material_values),
         CUBEY_TEST(test_gltf_asset_closes_clearcoat_material_contract),
         CUBEY_TEST(test_gltf_asset_closes_anisotropy_material_contract),
+        CUBEY_TEST(test_gltf_asset_closes_iridescence_material_contract),
         CUBEY_TEST(test_gltf_asset_enforces_anisotropy_tangent_space_contract),
         CUBEY_TEST(test_gltf_asset_marks_nodes_authored_with_matrix),
         CUBEY_TEST(test_gltf_asset_generates_tangent_handedness_from_mirrored_uvs),

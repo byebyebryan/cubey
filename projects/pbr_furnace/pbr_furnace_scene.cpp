@@ -214,6 +214,56 @@ PbrFurnaceLayout pbr_furnace_layout(std::string_view conformance_case) {
             .camera_distance = 8.0F,
         };
     }
+    if (conformance_case == "iridescence") {
+        // The left pair is a factor-zero control whose varying thickness must
+        // be inert. The enabled right pair differs in dielectric/metal base and
+        // film thickness, making the thin-film chromatic response inspectable
+        // under the fixed white-IBL and directional conformance fixture.
+        return {
+            .materials =
+                {
+                    {.row = 0,
+                     .column = 0,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .iridescence_factor = 0.0F,
+                     .iridescence_thickness_minimum = 100.0F,
+                     .iridescence_thickness_maximum = 100.0F,
+                     .position = {-3.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 1,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .iridescence_factor = 0.0F,
+                     .iridescence_thickness_minimum = 800.0F,
+                     .iridescence_thickness_maximum = 800.0F,
+                     .position = {-1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 2,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.24F,
+                     .iridescence_factor = 1.0F,
+                     .iridescence_ior = 1.3F,
+                     .iridescence_thickness_minimum = 240.0F,
+                     .iridescence_thickness_maximum = 240.0F,
+                     .position = {1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 3,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 1.0F,
+                     .roughness = 0.24F,
+                     .iridescence_factor = 1.0F,
+                     .iridescence_ior = 1.3F,
+                     .iridescence_thickness_minimum = 620.0F,
+                     .iridescence_thickness_maximum = 620.0F,
+                     .position = {3.0F, 0.0F, 0.0F}},
+                },
+            .camera_distance = 8.0F,
+        };
+    }
     throw std::invalid_argument("unknown PBR furnace conformance case");
 }
 

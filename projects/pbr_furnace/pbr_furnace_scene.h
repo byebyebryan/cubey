@@ -19,6 +19,7 @@ inline constexpr std::size_t kPbrFurnaceMaterialCount =
 struct PbrFurnaceMaterial {
     std::uint32_t row = 0;
     std::uint32_t column = 0;
+    math::Vec3 base_color_factor{1.0F, 1.0F, 1.0F};
     float metallic = 0.0F;
     float roughness = 1.0F;
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
@@ -28,6 +29,10 @@ struct PbrFurnaceMaterial {
     float clearcoat_roughness = 0.0F;
     float anisotropy_strength = 0.0F;
     float anisotropy_rotation = 0.0F;
+    float iridescence_factor = 0.0F;
+    float iridescence_ior = 1.3F;
+    float iridescence_thickness_minimum = 100.0F;
+    float iridescence_thickness_maximum = 400.0F;
     math::Vec3 position{0.0F, 0.0F, 0.0F};
 };
 

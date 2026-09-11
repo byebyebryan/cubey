@@ -14,16 +14,17 @@ struct PbrFurnaceConfig {
 inline cubey::config::Schema pbr_furnace_config_schema(PbrFurnaceConfig& config) {
     return cubey::config::Schema::builder()
         .compose(cubey::host::common_run_config_schema(config.common))
-        .bind({.path = "conformance_case",
-               .cli_name = "--conformance-case",
-               .negative_cli_name = {},
-               .label = "Conformance Case",
-               .group_path = "Conformance",
-               .help = "Opt-in deterministic material conformance layout.",
-               .type = cubey::config::ValueType::Enum,
-               .range = {},
-               .enum_values = {"none", "ior", "specular", "clearcoat", "anisotropy"}},
-              config.conformance_case)
+        .bind(
+            {.path = "conformance_case",
+             .cli_name = "--conformance-case",
+             .negative_cli_name = {},
+             .label = "Conformance Case",
+             .group_path = "Conformance",
+             .help = "Opt-in deterministic material conformance layout.",
+             .type = cubey::config::ValueType::Enum,
+             .range = {},
+             .enum_values = {"none", "ior", "specular", "clearcoat", "anisotropy", "iridescence"}},
+            config.conformance_case)
         .build();
 }
 

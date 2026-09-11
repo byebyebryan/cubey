@@ -392,6 +392,17 @@ if (BUILD_TESTING)
         "gltf-viewer-anisotropy-barn-lamp-ktx-basisu-smoke.png"
     )
     cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_compare_iridescence_headless_writes_png
+        "CompareIridescence/glTF/CompareIridescence.gltf"
+        "gltf-viewer-compare-iridescence-smoke.png"
+        --capture-camera-distance-scale
+        0.5
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_stained_glass_lamp_ktx_basisu_headless_writes_png
         "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf"
         "gltf-viewer-stained-glass-lamp-ktx-basisu-smoke.png"
