@@ -89,11 +89,21 @@ clean pinned Sample Assets checkout and a fresh output directory; summary-only
 replay instead uses the retained manifest/profile CSVs without requiring that
 checkout or a viewer binary.
 
-The runner requires one complete 19-metric `gltf_loading` generation set per
+The runner requires one complete 46-metric `gltf_loading` generation set per
 profile and writes `runs.csv`, `summary.csv`, metadata, and a deterministic
-observation manifest. Its first observation is not a cold-cache claim.
-Interpret the stage timings in
-the [glTF loading profile note](gltf-loading-profile.md): correctness failures
-precede optimization, and the measured dominant phase (asset load, scene
-preparation, or residency) chooses the next bounded investigation. This lane
-does not by itself justify streaming or transfer-queue infrastructure.
+observation manifest. Alongside the existing staged-envelope values, the set
+contains exclusive CPU timings for document parse, buffer load, validation,
+image payload, image decode, and remaining asset assembly, plus incremental
+upload work, owner-step, staging-pool, completion-latency, and frame-correlation
+metrics, including the configured physical-step byte cap and logical-copy byte
+target. Its first observation is not a cold-cache claim. Metric definitions,
+capture environment, and recorded results are in the
+[glTF loading profile note](gltf-loading-profile.md).
+
+Use `projects/gltf_viewer/profile_gltf_windowed_upload_jitter.sh` for a
+windowed upload-jitter comparison. It delays the initial import after warmup and
+summarizes p50/p95/p99/max frame deltas plus host update, GPU-drain, and draw
+spans. It also reports nested glTF update spans for session polling and
+adoption, scene activation and retirement, activation reporting and CPU-payload
+disposal enqueue, atmosphere/animation work, and camera updates. Compare raw
+profile paths and recorded hashes rather than GUI FPS.

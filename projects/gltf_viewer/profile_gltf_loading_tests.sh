@@ -36,10 +36,20 @@ write_metrics() {
         local index=1
         local metric
         for metric in generation_id source_file_bytes metadata_probe_ms asset_load_ms \
-            scene_prepare_ms staged_worker_prepare_ms gltf_residency_ms \
+            document_parse_ms buffer_load_ms asset_validate_ms image_payload_ms \
+            image_decode_ms asset_assembly_ms scene_prepare_ms staged_worker_prepare_ms gltf_residency_ms \
             staged_gpu_install_ms activation_ms triangle_count node_count material_count \
             texture_count prepared_texture_count basisu_encoded_image_bytes decoded_rgba_bytes \
-            prepared_texture_upload_bytes mesh_upload_bytes mesh_upload_transfer_submission_count; do
+            prepared_texture_upload_bytes mesh_upload_bytes mesh_upload_transfer_submission_count \
+            gpu_upload_bytes gpu_upload_copy_count gpu_upload_owner_advance_count \
+            gpu_upload_step_count gpu_upload_submission_count gpu_upload_owner_submit_ms gpu_upload_owner_max_step_ms \
+            gpu_upload_owner_target_ms gpu_upload_step_byte_cap gpu_upload_copy_byte_target \
+            gpu_upload_owner_over_target_step_count \
+            gpu_upload_completion_latency_ms gpu_upload_pool_initial_capacity_bytes \
+            gpu_upload_pool_final_capacity_bytes gpu_upload_pool_peak_capacity_bytes \
+            gpu_upload_pool_reserved_at_final_submission_bytes gpu_upload_pool_growth_count \
+            gpu_upload_backpressure_count gpu_upload_first_step_to_final_completion_ms \
+            gpu_upload_submission_frame gpu_upload_completion_frame; do
             printf '0,gltf_loading,%s,%s.000000\n' "$metric" "$((value_offset + index))"
             index=$((index + 1))
         done
@@ -142,5 +152,13 @@ printf '%s\n' "$duplicate_metric_row" \
 expect_failure duplicate-profile-metric \
     env -u REPEATS APP="$TEST_ROOT/missing-viewer" ASSET_ROOT="$TEST_ROOT/missing-sample-assets" \
     SUMMARIZE_ONLY=1 "$RUNNER" "$duplicate_profile_out"
+
+missing_phase_out="$TEST_ROOT/missing-phase-profile"
+cp -a "$valid_out" "$missing_phase_out"
+sed -i '/,asset_assembly_ms,/d' \
+    "$missing_phase_out/profiles/fixture-lane-first.metrics.csv"
+expect_failure missing-profile-phase \
+    env -u REPEATS APP="$TEST_ROOT/missing-viewer" ASSET_ROOT="$TEST_ROOT/missing-sample-assets" \
+    SUMMARIZE_ONLY=1 "$RUNNER" "$missing_phase_out"
 
 printf 'gltf loading profile script tests passed\n'

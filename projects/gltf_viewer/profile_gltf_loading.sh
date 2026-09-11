@@ -9,6 +9,8 @@ REPEATS="${REPEATS:-5}"
 WIDTH="${WIDTH:-320}"
 HEIGHT="${HEIGHT:-180}"
 SUMMARIZE_ONLY="${SUMMARIZE_ONLY:-0}"
+UPLOAD_OWNER_TARGET_MS="${UPLOAD_OWNER_TARGET_MS:-2}"
+UPLOAD_STEP_BYTE_CAP="${UPLOAD_STEP_BYTE_CAP:-33554432}"
 
 SAMPLE_ASSETS_PIN="2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf"
 MANIFEST_SCHEMA="gltf_loading_profile_v1"
@@ -40,6 +42,12 @@ METRIC_NAMES=(
     source_file_bytes
     metadata_probe_ms
     asset_load_ms
+    document_parse_ms
+    buffer_load_ms
+    asset_validate_ms
+    image_payload_ms
+    image_decode_ms
+    asset_assembly_ms
     scene_prepare_ms
     staged_worker_prepare_ms
     gltf_residency_ms
@@ -55,6 +63,27 @@ METRIC_NAMES=(
     prepared_texture_upload_bytes
     mesh_upload_bytes
     mesh_upload_transfer_submission_count
+    gpu_upload_bytes
+    gpu_upload_copy_count
+    gpu_upload_owner_advance_count
+    gpu_upload_step_count
+    gpu_upload_submission_count
+    gpu_upload_owner_submit_ms
+    gpu_upload_owner_max_step_ms
+    gpu_upload_owner_target_ms
+    gpu_upload_step_byte_cap
+    gpu_upload_copy_byte_target
+    gpu_upload_owner_over_target_step_count
+    gpu_upload_completion_latency_ms
+    gpu_upload_pool_initial_capacity_bytes
+    gpu_upload_pool_final_capacity_bytes
+    gpu_upload_pool_peak_capacity_bytes
+    gpu_upload_pool_reserved_at_final_submission_bytes
+    gpu_upload_pool_growth_count
+    gpu_upload_backpressure_count
+    gpu_upload_first_step_to_final_completion_ms
+    gpu_upload_submission_frame
+    gpu_upload_completion_frame
 )
 
 declare -a MANIFEST_LANES=()
@@ -190,6 +219,9 @@ write_metadata() {
         printf 'height=%s\n' "${HEIGHT}"
         printf 'warm_repeats=%s\n' "${REPEATS}"
         printf 'profile_warmup_frames=0\n'
+        printf 'profile_upload_owner_target_ms=%s\n' "${UPLOAD_OWNER_TARGET_MS}"
+        printf 'profile_upload_step_byte_cap=%s\n' "${UPLOAD_STEP_BYTE_CAP}"
+        printf 'profile_upload_copy_byte_target=2097152\n'
         printf 'environment=static_pbr_generated_ibl\n'
         printf 'clouds=disabled\n'
         printf 'terrain=disabled\n'
@@ -552,6 +584,8 @@ run_observation() {
         --pbr-environment-source static
         --no-clouds
         --no-ocean-backdrop
+        --profile-upload-owner-target-ms "${UPLOAD_OWNER_TARGET_MS}"
+        --profile-upload-step-byte-cap "${UPLOAD_STEP_BYTE_CAP}"
         --profile-output "${prefix}"
         --profile-warmup-frames 0
     )

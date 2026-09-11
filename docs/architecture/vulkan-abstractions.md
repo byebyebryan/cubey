@@ -140,6 +140,11 @@ Current state:
   points. It is the public boundary for host/project setup-time GPU work;
   `ImmediateCommands` remains the low-level one-shot command helper used inside
   owner-context callbacks and transfer helpers.
+- Move-only `GpuRuntimeOwnerCleanup` registrations let asynchronous products
+  retain an owner-only cleanup action without keeping a raw runtime pointer.
+  A request is nonblocking; if it cannot be admitted before shutdown, the
+  runtime consumes the retained action after queue idle and before staging-pool
+  teardown.
 - `copy_buffer`, `upload_device_buffer`, and bounded device-buffer batches cover
   current setup-time transfers into device-local buffers. A batch validates all
   requests before allocation, creates destination buffers transactionally, and

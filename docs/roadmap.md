@@ -28,9 +28,9 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
-Status: the first glTF conformance and staged-loading evidence checkpoint is
-complete; the next bounded asset-pipeline investigation is selected from
-measured release data.
+Status: the first glTF conformance, staged-loading, and incremental GPU-upload
+responsiveness checkpoints are complete; the next asset-pipeline work should be
+selected from a concrete product need rather than presumed unfinished plumbing.
 
 The recent foundation push landed shared runtime, renderer, shader,
 environment, UI, and project-owned configuration infrastructure. Retired
@@ -50,9 +50,17 @@ Current stable foundation pieces:
   products, generated atmosphere atlases, and complete glTF scene generations
   with placeholder-first windowed presentation, deterministic headless
   completion, atomic activation, deferred retirement, and per-generation
-  probe/load/prepare/residency/activation evidence, plus a bounded worktree-local
-  generated-artifact cache that removes repeat night-sky, lunar atlas,
-  planet-surface, and terrain backdrop-product generation;
+  probe/load/prepare/residency/activation evidence. glTF residency now advances
+  one logical generation through bounded owner-side destination creation and
+  graphics-queue upload steps. The GPU runtime owns a persistently mapped
+  32 MiB staging pool that grows in 32 MiB blocks to a 128 MiB cap, reclaims
+  ranges and command/fence resources by ticket, and reports explicit
+  backpressure. Physical steps stage at most 32 MiB, individual buffer or
+  block-row-aligned texture copies stay within 2 MiB, and owner advances use a
+  soft 2 ms CPU target. Activation still occurs only after the complete
+  generation's final ticket. A bounded worktree-local
+  generated-artifact cache removes repeat night-sky, lunar atlas, planet-surface,
+  and terrain backdrop-product generation;
 - shared config descriptors and ImGui option controls for nested project UI,
   config templates, CLI overrides, and option help text;
 - composable `cubey::config::Schema`, the typed host-owned
@@ -97,12 +105,33 @@ future editorial work.
 
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, terrain products, and glTF Viewer
-scene generations. The first pinned five-asset glTF release profile shows a
-negligible metadata probe, asset-load-dominated DamagedHelmet/Sponza paths,
-BasisU-dominated scene preparation for AnisotropyBarnLamp, and measurable but
-smaller GPU-residency costs. General asset streaming, partial terrain
-residency, split-queue scheduling, and per-frame upload budgets remain deferred;
-the evidence does not yet justify those runtime designs.
+scene generations. The pinned five-asset glTF release profile now decomposes
+the CPU asset-load phase: warm PNG/JPEG decode plus RGBA materialization takes
+462.152 of Sponza's 474.929 ms, 91.689 of DamagedHelmet's 94.197 ms, and 10.985
+of CesiumMan's 11.587 ms. AnisotropyBarnLamp remains dominated by BasisU scene
+preparation, while document parsing, buffer loading, validation, image-payload
+acquisition, and remaining asset assembly are not material Sponza bottlenecks.
+
+The exact-matched windowed Sponza lane reduced worst `host.gpu_drain` from
+140.602 ms in the legacy path and 100.516 ms in the one-batch path to 2.222 ms
+with the incremental session; worst frame time is 3.751 ms. It uploads the same
+302,219,712 bytes through 45 owner advances and 43 submissions, preserves whole-
+generation atomic activation, and stays within the startup 32 MiB pool in the
+paced windowed run. DamagedHelmet records 2.119 ms worst `host.gpu_drain` and
+3.425 ms worst frame time. The upload responsiveness target is closed. General
+multi-asset streaming, partial residency, split-queue scheduling, and CPU decode
+concurrency remain deferred until a product supplies concrete pressure.
+
+A matched 8/16/32 MiB policy sweep then selected 32 MiB while retaining the
+2 ms owner target and 2 MiB copy target. On Sponza it remained within 5% of the
+fastest unpaced whole-session result and was the fastest explicit 60 Hz result;
+all upload-attributable frame work stayed below 16.7 ms and every
+`host.gpu_drain` maximum stayed below 10 ms. Completion-edge attribution also
+found and removed a main-thread free of Sponza's roughly 285 MiB prepared CPU
+payload: three corrected 60 Hz runs keep `host.update` below 0.23 ms by handing
+the spent session shell to the asset worker after atomic activation. The public
+blocking importer now drains that same session instead of retaining a separate
+glTF one-batch path.
 
 Recommended next feature or foundation streams:
 
@@ -114,12 +143,13 @@ Recommended next feature or foundation streams:
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated
   project need.
-- glTF/asset pipeline: use the pinned release workflow to decompose Sponza's
-  roughly 465 ms warm asset-load phase into document parsing, referenced-buffer
-  and image I/O, and image decode work. Optimize only the dominant measured
-  subphase and require a same-corpus before/after result. Keep transfer queues,
-  upload budgets, partial residency, and wider asset-system abstractions
-  deferred unless later evidence selects them.
+- glTF/asset pipeline: upload responsiveness is closed for the current single-
+  asset viewer. If total load latency becomes a product priority, PNG/JPEG
+  decode and RGBA materialization are the next measured throughput target. If
+  real multi-asset streaming creates queueing pressure, design loader
+  concurrency and scheduling from that workload. Do not add a dedicated
+  transfer queue, partial scene visibility, or a device-local allocator without
+  new evidence.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.

@@ -97,16 +97,18 @@ instance service:
 - `prepare_gltf_scene()` is CPU-only: it validates and copies material, texture,
   mesh, node, morph, and skin data into a self-contained prepared product,
   including BasisU transcoding, bounds, and triangle counts;
-- `build_gltf_scene_resident()` runs on the GPU owner and creates textures,
-  material instances, static meshes, and deformation buffers without mutating
-  `Engine` or `Scene` state;
+- `GltfSceneUploadSession` is the canonical residency path. It divides destination
+  creation and uploads into later owner advances, aggregates copies into
+  bounded `GpuUploadStep` submissions, and publishes a resident product only
+  after the final same-queue ticket completes;
 - `activate_gltf_scene()` adopts one complete resident product into registry-
   issued mesh/material handles and maps glTF nodes into scene entities, 3D
   transforms, renderables, and per-node output mesh handles. Nodes authored
   with a glTF `matrix` activate as explicit affine `Transform3D` values so
   hierarchy evaluation and bounds use the authored matrix;
-- `import_gltf_scene()` remains the blocking compatibility wrapper over those
-  three phases for callers that do not need staged activation;
+- `import_gltf_scene()` remains the blocking convenience wrapper for callers
+  that do not need staged activation, but it prepares, drains, and takes the
+  same upload session rather than maintaining a second one-batch glTF path;
 - glTF alpha modes map into explicit render material alpha policy: `MASK`
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
   renders forward-only with premultiplied source-over alpha blending and no
@@ -165,14 +167,38 @@ loading cage framed from those authored rest-pose bounds. It falls back to a
 neutral unit cage if probing fails; with no resolved input it retains the
 generated solid PBR cube generation. The full asset then loads through the
 shared staged lifecycle.
-File loading and import preparation run on a CPU worker, residency runs on the
-GPU owner, and the app atomically activates the complete scene generation at a
-frame boundary. The previous generation remains renderable until activation and
-retires only after its latest submission ticket. Optional terrain preparation
+File loading and import preparation run on a CPU worker. The GPU owner advances
+the upload session at most once per application poll, while a non-waiting poll
+returns immediately if that advance is still running. Each physical upload
+step stages at most 32 MiB into the runtime-owned persistently mapped pool and
+uses a 2 ms owner-CPU target; indivisible buffer or block-row-aligned texture
+copies are capped at 2 MiB. The pool starts at 32 MiB, grows in 32 MiB blocks
+to 128 MiB, and returns explicit backpressure when in-flight ranges consume the
+cap. Ranges, command pools, and fences are reusable only after their ticket
+retires on the graphics queue. Starting either the staged or blocking glTF
+path requires that pool to be configured; a missing pool is a diagnosed
+configuration error rather than a fallback to transient staging.
+
+Each live upload session also registers a move-only cleanup action with its
+`GpuRuntime`. Taking a completed resident scene unregisters that action;
+abandoning or superseding a session requests it without blocking the caller.
+The runtime retains any action that has not run and executes it on the GPU
+owner after queue idle and before staging-pool teardown during shutdown. This
+keeps partial-session Vulkan resources and their latest submission ticket out
+of caller-thread destruction paths without making the session retain a raw
+runtime pointer.
+
+The app stays in `AwaitingGpu` until the session's final ticket signals. It
+atomically activates the complete scene generation at a frame boundary only
+after that signal. The previous generation remains renderable until activation
+and retires only after its latest submission ticket. Optional terrain preparation
 and residency travel with the asset generation so scene and backdrop publish
-together. Headless capture uses the same path but calls `finish()` before frame
-zero. If no input or configured sample is available, the generated cube remains
-active. The viewer can use
+together. After activation has adopted all live Engine and Vulkan state, the
+viewer moves the spent upload-session shell and prepared CPU payload to its
+asset worker for destruction; freeing a large decoded scene therefore does not
+extend the activation frame. Headless capture uses the same path but calls
+`finish()` before frame zero. If no input or configured sample is available,
+the generated cube remains active. The viewer can use
 `--environment path/to/env.hdr` or the optional fetched Filament
 `lightroom_14b.hdr` sample for static HDR-backed IBL; by default it renders the
 procedural atmosphere as the visible background and captures that atmosphere
@@ -221,9 +247,16 @@ checks. The release-only
 `projects/gltf_viewer/profile_gltf_loading.sh` workflow profiles the staged
 metadata probe, asset load, scene preparation, GPU residency, and activation
 boundaries against a pinned five-asset Sample Assets corpus. It emits a
-complete 19-metric `gltf_loading` generation set per observation and keeps
+complete 46-metric `gltf_loading` generation set per observation, including
+six exclusive loader CPU phases (document parse, buffer load, validation,
+image payload, image decode, and remaining asset assembly), incremental upload
+bytes/copies/advances/submissions, the configured step/copy byte policy,
+owner-step timings, staging-pool capacity and backpressure, completion latency,
+and app-frame correlation markers. A separate
+windowed upload-jitter runner starts the import after a fixed warmup to compare
+the same graphics-queue workload. Both keep
 first-observation, warm-repetition, and cold-cache claims distinct. The current
-baseline and decision rules live in
+baseline and metric definitions live in
 [`docs/notes/gltf-loading-profile.md`](../notes/gltf-loading-profile.md).
 
 Cubey's tangent-space policy is validate-first. glTF recommends MikkTSpace for
