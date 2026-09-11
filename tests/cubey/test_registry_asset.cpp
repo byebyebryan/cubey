@@ -10,6 +10,7 @@ void test_gltf_asset_probe_rejects_malformed_glb_headers();
 void test_gltf_asset_preserves_ior_special_and_high_values();
 void test_gltf_asset_validates_ior_and_specular_material_values();
 void test_gltf_asset_closes_clearcoat_material_contract();
+void test_gltf_asset_closes_sheen_material_contract();
 void test_gltf_asset_closes_anisotropy_material_contract();
 void test_gltf_asset_closes_iridescence_material_contract();
 void test_gltf_asset_enforces_anisotropy_tangent_space_contract();
@@ -27,7 +28,6 @@ void test_gltf_asset_loads_skinning_and_morph_data();
 void test_gltf_asset_ignores_unknown_optional_extensions();
 void test_gltf_asset_rejects_unknown_required_extensions();
 void test_gltf_asset_accepts_closed_required_extensions();
-void test_gltf_asset_rejects_partial_required_extensions();
 void test_gltf_asset_loads_required_basisu_texture_source();
 void test_gltf_asset_rejects_layered_basisu_material_images();
 void test_gltf_asset_rejects_formatted_ktx2_basisu_sources();
@@ -53,6 +53,7 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_preserves_ior_special_and_high_values),
         CUBEY_TEST(test_gltf_asset_validates_ior_and_specular_material_values),
         CUBEY_TEST(test_gltf_asset_closes_clearcoat_material_contract),
+        CUBEY_TEST(test_gltf_asset_closes_sheen_material_contract),
         CUBEY_TEST(test_gltf_asset_closes_anisotropy_material_contract),
         CUBEY_TEST(test_gltf_asset_closes_iridescence_material_contract),
         CUBEY_TEST(test_gltf_asset_enforces_anisotropy_tangent_space_contract),
@@ -70,7 +71,6 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_ignores_unknown_optional_extensions),
         CUBEY_TEST(test_gltf_asset_rejects_unknown_required_extensions),
         CUBEY_TEST(test_gltf_asset_accepts_closed_required_extensions),
-        CUBEY_TEST(test_gltf_asset_rejects_partial_required_extensions),
         CUBEY_TEST(test_gltf_asset_loads_required_basisu_texture_source),
         CUBEY_TEST(test_gltf_asset_rejects_layered_basisu_material_images),
         CUBEY_TEST(test_gltf_asset_rejects_formatted_ktx2_basisu_sources),

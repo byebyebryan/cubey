@@ -205,8 +205,8 @@ full engine architecture.
   uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
   push constants, a skybox environment set, a fullscreen post set, dielectric
   IOR plus `KHR_materials_specular` factors/textures, and the current opaque
-  glTF extension lobes: required-use clearcoat, anisotropy, and iridescence plus
-  optional sheen. Extension texture slots stay fixed in the descriptor
+  glTF extension lobes: required-use clearcoat, anisotropy, iridescence, and
+  sheen. Extension texture slots stay fixed in the descriptor
   layout, while material texture flags gate shader fetches for absent textures.
   The scene set includes irradiance, previous/current prefiltered cubes, and
   the DFG/BRDF lookup.
@@ -247,8 +247,9 @@ full engine architecture.
   GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
   generated radiance or equirectangular HDR image data. The shared PBR shader
   helpers remap base color into diffuse color plus material-derived F0 before
-  lighting. The DFG lookup stores scale/bias terms plus a white-conductor
-  energy term used for Filament-style specular energy compensation. It is a
+  lighting. The DFG lookup stores scale/bias terms, a white-conductor energy
+  term used for Filament-style specular energy compensation, and Charlie sheen
+  directional albedo. It is a
   checkpoint helper for PBR quality and descriptor shape, not a replacement for
   future prefiltered KTX/KTX2 environment assets and offline filtering.
 - `cubey::render::MaterialInstance` owns the descriptor set layout, pool, and

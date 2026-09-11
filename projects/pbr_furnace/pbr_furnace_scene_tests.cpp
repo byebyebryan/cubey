@@ -160,6 +160,29 @@ int main() {
                 iridescence_layout.materials[3].iridescence_thickness_maximum,
             "enabled iridescence specimens should retain distinct film thicknesses");
 
+    const auto sheen_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("sheen");
+    require(sheen_layout.materials.size() == 4,
+            "sheen conformance should expose four independently inspectable specimens");
+    require_close(sheen_layout.materials[0].sheen_color_factor.x, 0.0F,
+                  "sheen conformance should begin with a zero-color control");
+    require_close(sheen_layout.materials[1].sheen_color_factor.y, 0.0F,
+                  "sheen zero-color control should retain the second roughness");
+    require(sheen_layout.materials[0].sheen_roughness != sheen_layout.materials[1].sheen_roughness,
+            "sheen zero-color controls should vary roughness only");
+    require(sheen_layout.materials[2].sheen_color_factor.y > 0.0F &&
+                sheen_layout.materials[3].sheen_color_factor.y > 0.0F,
+            "sheen conformance should include enabled specimens");
+    require(sheen_layout.materials[2].sheen_roughness < sheen_layout.materials[3].sheen_roughness,
+            "enabled sheen specimens should retain distinct roughness values");
+    for (const auto& material : sheen_layout.materials) {
+        require_close(material.base_color_factor.x, 0.08F,
+                      "sheen conformance should retain a dark neutral base");
+        require_close(material.base_color_factor.y, material.base_color_factor.x,
+                      "sheen conformance base should be neutral");
+        require_close(material.base_color_factor.z, material.base_color_factor.x,
+                      "sheen conformance base should be neutral");
+    }
+
     bool rejected_unknown_case = false;
     try {
         static_cast<void>(cubey::projects::pbr_furnace::pbr_furnace_layout("unknown"));

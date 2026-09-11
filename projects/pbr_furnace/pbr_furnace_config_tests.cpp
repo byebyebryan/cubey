@@ -52,6 +52,12 @@ void test_conformance_case_config() {
     require(iridescence.conformance_case == "iridescence",
             "PBR furnace should select its opt-in iridescence conformance layout");
 
+    const char* sheen_arguments[] = {"pbr_furnace", "--conformance-case", "sheen"};
+    const auto sheen = cubey::projects::pbr_furnace::parse_pbr_furnace_config(
+        3, const_cast<char**>(sheen_arguments));
+    require(sheen.conformance_case == "sheen",
+            "PBR furnace should select its opt-in sheen conformance layout");
+
     cubey::projects::pbr_furnace::PbrFurnaceConfig deferred;
     const auto schema = cubey::projects::pbr_furnace::pbr_furnace_config_schema(deferred);
     schema.set("conformance_case", "ior");

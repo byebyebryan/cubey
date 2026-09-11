@@ -197,7 +197,7 @@ void test_capture_orbit_controls() {
                    "glTF capture orbit should reject negative degrees");
     require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "180.1"); },
                    "glTF capture orbit should reject unbounded degrees");
-    require_throws([&] { schema.set("gltf.capture.camera_distance_scale", "0.49"); },
+    require_throws([&] { schema.set("gltf.capture.camera_distance_scale", "0.09"); },
                    "glTF capture distance scale should reject values below its bound");
     require_throws([&] { schema.set("gltf.capture.camera_distance_scale", "2.01"); },
                    "glTF capture distance scale should reject values above its bound");

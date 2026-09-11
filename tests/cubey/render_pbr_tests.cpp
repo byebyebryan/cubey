@@ -610,6 +610,12 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "thin-film Fresnel should retain the two-order Khronos interference series");
     require_contains(pbr, "if (thickness_nm <= 0.0)",
                      "thin-film Fresnel should preserve a zero-thickness identity guard");
+    require_contains(pbr, "cubey_pbr_lambda_sheen_numeric_helper",
+                     "PBR shader should expose the Estevez-Kulla sheen visibility fit");
+    require_contains(pbr, "21.5473",
+                     "PBR sheen visibility should retain the ratified Khronos fit coefficients");
+    require_contains(pbr, "cubey_pbr_visibility_sheen",
+                     "PBR shader should use full Charlie sheen visibility");
     require_contains(post, "cubey_pbr_apply_display_transform(color, post.display_transform)",
                      "PBR post shader should apply display transform to the HDR scene color");
     require_contains(post, "uniform sampler2D scene_color",
@@ -625,9 +631,12 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR furnace should exercise anisotropic IBL bent-normal lookup");
     require_contains(furnace, "scene.light_color_intensity.a > 0.0",
                      "PBR furnace anisotropy witness should add fixed directional lighting");
-    require_contains(
-        furnace, "vec3 base_direct = (diffuse_direct + specular_direct) * clearcoat_attenuation",
-        "PBR furnace clearcoat should attenuate its direct base response");
+    require_contains(furnace, "base_direct *= clearcoat_attenuation",
+                     "PBR furnace clearcoat should attenuate its layered direct base response");
+    require_contains(furnace, "sheen_direct + (base_direct * sheen_direct_attenuation)",
+                     "PBR furnace should mirror direct sheen energy layering");
+    require_contains(furnace, "sheen_prefiltered * sheen_color * sheen_view_energy",
+                     "PBR furnace should mirror the DFG-backed sheen IBL response");
     require_contains(furnace, "cubey_pbr_clearcoat_direct(",
                      "PBR furnace clearcoat should evaluate its outer direct lobe");
     require_contains(furnace, "(base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)",
@@ -741,8 +750,10 @@ void test_pbr_shaders_use_gltf_material_remap() {
                          "glTF clearcoat IBL should not apply a second integrated Fresnel term");
     require_contains(gltf, "(emissive * clearcoat_attenuation)",
                      "glTF clearcoat should attenuate emission below the coat layer");
-    require_contains(gltf, "diffuse_ibl_attenuation * clearcoat_attenuation * occlusion",
-                     "glTF clearcoat should attenuate ambient diffuse below the coat layer");
+    require_contains(gltf,
+                     "diffuse_ibl_attenuation * sheen_view_attenuation *\n"
+                     "               clearcoat_attenuation * occlusion",
+                     "glTF sheen and clearcoat should attenuate ambient diffuse below both layers");
     require_contains(gltf, "if (clearcoat_factor > 0.0)",
                      "glTF clearcoat factor zero should skip its normal and roughness path");
     require_contains(gltf_materials,
@@ -766,8 +777,28 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "source.iridescence_thickness_texture,\n"
                      "                                 asset::GltfTextureColorSpace::Linear",
                      "glTF iridescence thickness texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.sheen_color_texture, asset::GltfTextureColorSpace::Srgb",
+                     "glTF sheen color texture should preserve sRGB transfer semantics");
+    require_contains(gltf_materials,
+                     "source.sheen_roughness_texture,\n"
+                     "                                 asset::GltfTextureColorSpace::Linear",
+                     "glTF sheen roughness texture should preserve linear alpha semantics");
     require_contains(gltf, "cubey_pbr_sheen_direct",
                      "glTF PBR shader should evaluate sheen direct lighting");
+    require_contains(gltf, "if (sheen_color_max > 0.0)",
+                     "glTF PBR shader should preserve an exact zero-color base path");
+    require_contains(gltf, "texture(brdf_lut, vec2(ndotv, sheen_roughness)).a",
+                     "glTF PBR shader should source sheen directional albedo from DFG alpha");
+    require_contains(gltf, "sheen_direct + (base_direct * sheen_direct_attenuation)",
+                     "glTF PBR shader should energy-layer direct sheen over its full base");
+    require_contains(
+        gltf, "sheen_prefiltered * sheen_color * sheen_view_energy",
+        "glTF PBR shader should use roughness-filtered environment radiance for sheen");
+    require_contains(gltf, "vec3 sheen_reflection = reflect(-view_direction, normal)",
+                     "glTF sheen IBL should use the isotropic material-normal reflection");
+    require_contains(gltf, "base_ibl *= sheen_view_attenuation",
+                     "glTF sheen IBL should energy-scale the complete iridescent base response");
     require_contains(gltf, "cubey_pbr_distribution_ggx_anisotropic",
                      "glTF PBR shader should evaluate anisotropic specular");
     require_contains(gltf, "cubey_pbr_visibility_smith_ggx_correlated_anisotropic",
@@ -940,6 +971,18 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover required KTX2 BasisU textures");
     require_contains(cmake, "CompareIridescence/glTF/CompareIridescence.gltf",
                      "glTF viewer sample smoke tests should cover required iridescence materials");
+    require_contains(cmake, "SheenTestGrid/glTF/SheenTestGrid.gltf",
+                     "glTF viewer sample smoke tests should cover required sheen materials");
+    require_contains(cmake,
+                     "\"SheenTestGrid/glTF/SheenTestGrid.gltf\"\n"
+                     "        \"gltf-viewer-sheen-test-grid-smoke.png\"\n"
+                     "        --capture-camera-distance-scale\n"
+                     "        0.2\n"
+                     "        --capture-camera-yaw\n"
+                     "        0\n"
+                     "        --capture-camera-pitch\n"
+                     "        0",
+                     "SheenTestGrid smoke should retain useful front-on 64-pixel framing");
     require_contains(cmake, "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf",
                      "glTF viewer sample smoke tests should cover KTX2 alpha/emissive textures");
     require_contains(cmake, "--no-clouds",

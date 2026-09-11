@@ -403,6 +403,17 @@ if (BUILD_TESTING)
         0
     )
     cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_sheen_test_grid_headless_writes_png
+        "SheenTestGrid/glTF/SheenTestGrid.gltf"
+        "gltf-viewer-sheen-test-grid-smoke.png"
+        --capture-camera-distance-scale
+        0.2
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_stained_glass_lamp_ktx_basisu_headless_writes_png
         "StainedGlassLamp/glTF-KTX-BasisU/StainedGlassLamp.gltf"
         "gltf-viewer-stained-glass-lamp-ktx-basisu-smoke.png"

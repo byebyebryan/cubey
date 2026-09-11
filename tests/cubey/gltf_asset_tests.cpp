@@ -1286,6 +1286,118 @@ void test_gltf_asset_closes_clearcoat_material_contract() {
     std::filesystem::remove_all(dir);
 }
 
+void test_gltf_asset_closes_sheen_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_sheen_contract");
+    const std::filesystem::path path = dir / "sheen_contract.gltf";
+    constexpr std::string_view kTinyPng =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/"
+        "x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+
+    write_text_file(path, std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_sheen", "KHR_texture_transform"],
+  "extensionsRequired": ["KHR_materials_sheen", "KHR_texture_transform"],
+  "materials": [
+    {"extensions": {"KHR_materials_sheen": {}}},
+    {"extensions": {"KHR_materials_sheen": {
+      "sheenColorFactor": [0.2, 0.3, 0.4],
+      "sheenColorTexture": {"index": 0, "texCoord": 1, "extensions": {
+        "KHR_texture_transform": {
+          "offset": [0.2, 0.3], "rotation": 0.5, "scale": [0.4, 0.5], "texCoord": 0
+        }
+      }},
+      "sheenRoughnessFactor": 0.65,
+      "sheenRoughnessTexture": {"index": 1, "extensions": {
+        "KHR_texture_transform": {"offset": [0.6, 0.7], "scale": [0.8, 0.9]}
+      }}
+    }}}
+  ],
+  "textures": [{"source": 0}, {"source": 0}],
+  "images": [{"uri": ")JSON") +
+                              std::string{kTinyPng} + R"JSON("}]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+    require(asset.materials.size() == 3,
+            "required sheen fixture should retain implicit and authored materials");
+    const cubey::asset::GltfMaterial& defaults = asset.materials[1];
+    require_close(defaults.sheen_color_factor.r, 0.0F,
+                  "sheenColorFactor should default to a disabled layer");
+    require_close(defaults.sheen_roughness_factor, 0.0F,
+                  "sheenRoughnessFactor should preserve the glTF default");
+    require(!defaults.sheen_color_texture.has_value() &&
+                !defaults.sheen_roughness_texture.has_value(),
+            "default sheen material should not invent texture references");
+
+    const cubey::asset::GltfMaterial& material = asset.materials[2];
+    require_close(material.sheen_color_factor.r, 0.2F,
+                  "sheen color red should preserve its authored factor");
+    require_close(material.sheen_color_factor.g, 0.3F,
+                  "sheen color green should preserve its authored factor");
+    require_close(material.sheen_color_factor.b, 0.4F,
+                  "sheen color blue should preserve its authored factor");
+    require_close(material.sheen_roughness_factor, 0.65F,
+                  "sheen roughness should preserve its authored factor");
+    require(material.sheen_color_texture.texture_index == 0 &&
+                material.sheen_roughness_texture.texture_index == 1,
+            "sheen channels should preserve their independent source textures");
+    require(material.sheen_color_texture.texcoord == 0,
+            "sheen color transform should override the source texture coordinate set");
+    require_close(material.sheen_color_texture.offset.x, 0.2F,
+                  "sheen color transform should preserve offset x");
+    require_close(material.sheen_color_texture.rotation, 0.5F,
+                  "sheen color transform should preserve rotation");
+    require_close(material.sheen_roughness_texture.offset.y, 0.7F,
+                  "sheen roughness transform should preserve offset y");
+    require_close(material.sheen_roughness_texture.scale.x, 0.8F,
+                  "sheen roughness transform should preserve scale x");
+
+    const auto require_invalid = [&path](std::string_view field, std::string_view value) {
+        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                                  "  \"extensionsUsed\": [\"KHR_materials_sheen\"],\n" +
+                                  "  \"materials\": [{\"extensions\": "
+                                  "{\"KHR_materials_sheen\": {\"" +
+                                  std::string{field} + "\": " + std::string{value} + "}}}]\n}\n");
+        require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); }, field,
+                                    "invalid sheen field should identify its rejected field");
+    };
+    require_invalid("sheenColorFactor", "[-0.01, 0.0, 0.0]");
+    require_invalid("sheenColorFactor", "[0.0, 1.01, 0.0]");
+    require_invalid("sheenColorFactor", "[0.0, 0.0, 1e999]");
+    require_invalid("sheenRoughnessFactor", "-0.01");
+    require_invalid("sheenRoughnessFactor", "1.01");
+    require_invalid("sheenRoughnessFactor", "1e999");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_sheen", "KHR_materials_unlit"],
+  "materials": [{"extensions": {
+    "KHR_materials_sheen": {},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_sheen",
+        "sheen and unlit should be rejected as an invalid material combination");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_sheen",
+    "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_sheen": {},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_sheen",
+        "sheen and specular-glossiness should be rejected as an invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
 void test_gltf_asset_closes_anisotropy_material_contract() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_anisotropy_contract");
     const std::filesystem::path path = dir / "anisotropy_contract.gltf";
@@ -1968,6 +2080,7 @@ void test_gltf_asset_accepts_closed_required_extensions() {
     "KHR_materials_clearcoat",
     "KHR_materials_anisotropy",
     "KHR_materials_iridescence",
+    "KHR_materials_sheen",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -1977,6 +2090,7 @@ void test_gltf_asset_accepts_closed_required_extensions() {
     "KHR_materials_clearcoat",
     "KHR_materials_anisotropy",
     "KHR_materials_iridescence",
+    "KHR_materials_sheen",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -2009,12 +2123,18 @@ void test_gltf_asset_accepts_closed_required_extensions() {
       "iridescenceThicknessMinimum": 520.0,
       "iridescenceThicknessMaximum": 120.0
     }}
+  },
+  {
+    "extensions": {"KHR_materials_sheen": {
+      "sheenColorFactor": [0.2, 0.3, 0.4],
+      "sheenRoughnessFactor": 0.6
+    }}
   }]
 })JSON");
 
     const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
 
-    require(asset.materials.size() == 6, "loader should preserve required-extension materials");
+    require(asset.materials.size() == 7, "loader should preserve required-extension materials");
     require_close(asset.materials[1].emissive_factor.g, 0.9F,
                   "closed required emissive-strength extension should load");
     require(asset.materials[2].unlit, "closed required unlit extension should load");
@@ -2026,23 +2146,8 @@ void test_gltf_asset_accepts_closed_required_extensions() {
                   "closed required iridescence extension should load its factor");
     require_close(asset.materials[5].iridescence_thickness_minimum, 520.0F,
                   "closed required iridescence should permit minimum above maximum");
-    std::filesystem::remove_all(dir);
-}
-
-void test_gltf_asset_rejects_partial_required_extensions() {
-    const std::filesystem::path dir = test_dir("cubey_gltf_asset_partial_required_extensions");
-    const std::filesystem::path path = dir / "partial_required_extensions.gltf";
-    constexpr std::array<std::string_view, 1> kPartialExtensions{
-        "KHR_materials_sheen",
-    };
-    for (const std::string_view extension : kPartialExtensions) {
-        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
-                                  "  \"extensionsUsed\": [\"" + std::string{extension} + "\"],\n" +
-                                  "  \"extensionsRequired\": [\"" + std::string{extension} +
-                                  "\"]\n}\n");
-        require_throws([&path] { (void)cubey::asset::load_gltf_asset(path); },
-                       "loader should reject every material extension not closed for required use");
-    }
+    require_close(asset.materials[6].sheen_roughness_factor, 0.6F,
+                  "closed required sheen extension should load its roughness factor");
     std::filesystem::remove_all(dir);
 }
 

@@ -299,6 +299,21 @@ void require_valid_clearcoat_factor(float factor, const char* field) {
     }
 }
 
+void require_valid_sheen_color(const math::Vec3& color) {
+    if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+        color.r < 0.0F || color.r > 1.0F || color.g < 0.0F || color.g > 1.0F || color.b < 0.0F ||
+        color.b > 1.0F) {
+        throw gltf_error(
+            "KHR_materials_sheen sheenColorFactor must contain finite values in [0, 1]");
+    }
+}
+
+void require_valid_sheen_roughness(float roughness) {
+    if (!std::isfinite(roughness) || roughness < 0.0F || roughness > 1.0F) {
+        throw gltf_error("KHR_materials_sheen sheenRoughnessFactor must be finite and in [0, 1]");
+    }
+}
+
 void require_lit_material_extension_compatibility(const cgltf_material& material,
                                                   const char* extension) {
     if (material.unlit != 0) {
@@ -378,6 +393,11 @@ void require_valid_iridescence_thickness(float thickness, const char* field) {
         require_valid_clearcoat_factor(material.clearcoat.clearcoat_roughness_factor,
                                        "clearcoatRoughnessFactor");
         require_lit_material_extension_compatibility(material, "KHR_materials_clearcoat");
+    }
+    if (material.has_sheen != 0) {
+        require_valid_sheen_color(sheen_color);
+        require_valid_sheen_roughness(material.sheen.sheen_roughness_factor);
+        require_lit_material_extension_compatibility(material, "KHR_materials_sheen");
     }
     if (material.has_anisotropy != 0) {
         require_valid_anisotropy_strength(material.anisotropy.anisotropy_strength);
@@ -1541,10 +1561,17 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
     // This is intentionally stricter than the set of extensions that the
     // importer can parse. An extension is accepted from extensionsRequired
     // only after its data path and rendered semantics have both been closed.
-    static constexpr std::array<std::string_view, 9> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength", "KHR_materials_ior",        "KHR_materials_specular",
-        "KHR_materials_clearcoat",         "KHR_materials_anisotropy", "KHR_materials_iridescence",
-        "KHR_texture_transform",           "KHR_texture_basisu",       "KHR_materials_unlit",
+    static constexpr std::array<std::string_view, 10> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength",
+        "KHR_materials_ior",
+        "KHR_materials_specular",
+        "KHR_materials_clearcoat",
+        "KHR_materials_anisotropy",
+        "KHR_materials_iridescence",
+        "KHR_materials_sheen",
+        "KHR_texture_transform",
+        "KHR_texture_basisu",
+        "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

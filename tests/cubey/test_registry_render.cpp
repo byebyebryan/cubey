@@ -21,6 +21,7 @@ void test_frame_uniform_buffer_contract_is_slot_based_and_move_only();
 void test_generated_pbr_environment_config_rejects_zero_dimensions();
 void test_generated_pbr_environment_data_is_deterministic_and_sized();
 void test_generated_pbr_dfg_lut_stores_energy_compensation_term();
+void test_generated_pbr_dfg_lut_stores_sheen_directional_albedo();
 void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix();
 void test_pbr_environment_texture_bindings_validate_required_views();
 void test_pbr_environment_data_can_be_generated_from_equirectangular_hdr();
@@ -370,6 +371,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases),
         CUBEY_TEST(test_generated_pbr_environment_data_is_deterministic_and_sized),
         CUBEY_TEST(test_generated_pbr_dfg_lut_stores_energy_compensation_term),
+        CUBEY_TEST(test_generated_pbr_dfg_lut_stores_sheen_directional_albedo),
         CUBEY_TEST(test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix),
         CUBEY_TEST(test_pbr_environment_texture_bindings_validate_required_views),
         CUBEY_TEST(test_pbr_equirectangular_sampling_maps_cardinal_directions),

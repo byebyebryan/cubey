@@ -161,7 +161,10 @@ void test_generated_pbr_environment_data_is_deterministic_and_sized() {
             "generated irradiance alpha should be one");
     require(std::isfinite(read_float(data.brdf_lut_rgba32f, 0)),
             "generated DFG LUT should contain finite floats");
-    require(read_float(data.brdf_lut_rgba32f, 3) == 1.0F, "generated DFG LUT alpha should be one");
+    const float sheen_directional_albedo = read_float(data.brdf_lut_rgba32f, 3);
+    require(std::isfinite(sheen_directional_albedo) && sheen_directional_albedo >= 0.0F &&
+                sheen_directional_albedo <= 1.0F,
+            "generated DFG LUT alpha should contain bounded sheen directional albedo");
 }
 
 void test_generated_pbr_environment_config_rejects_zero_dimensions() {
@@ -210,15 +213,16 @@ void test_generated_pbr_dfg_lut_stores_energy_compensation_term() {
                                             grazing_to_mid_view, high_roughness, 1);
     const float white_conductor_energy = read_lut_channel(
         data.brdf_lut_rgba32f, config.brdf_lut_extent, grazing_to_mid_view, high_roughness, 2);
-    const float alpha = read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
-                                         grazing_to_mid_view, high_roughness, 3);
+    const float sheen_directional_albedo = read_lut_channel(
+        data.brdf_lut_rgba32f, config.brdf_lut_extent, grazing_to_mid_view, high_roughness, 3);
 
     require(std::isfinite(dfg_scale) && std::isfinite(dfg_bias) &&
-                std::isfinite(white_conductor_energy),
+                std::isfinite(white_conductor_energy) && std::isfinite(sheen_directional_albedo),
             "DFG LUT should contain finite energy terms");
     require(dfg_scale >= 0.0F && dfg_scale <= 1.0F, "DFG scale should stay normalized");
     require(dfg_bias >= 0.0F && dfg_bias <= 1.0F, "DFG bias should stay normalized");
-    require(alpha == 1.0F, "DFG LUT alpha should remain opaque");
+    require(sheen_directional_albedo >= 0.0F && sheen_directional_albedo <= 1.0F,
+            "DFG alpha should store bounded sheen directional albedo");
 
     const float single_scatter_energy = dfg_scale + dfg_bias;
     require(single_scatter_energy > 0.05F,
@@ -229,6 +233,94 @@ void test_generated_pbr_dfg_lut_stores_energy_compensation_term() {
             "DFG blue channel should store white-conductor single-scatter energy");
     require(std::fabs((single_scatter_energy / white_conductor_energy) - 1.0F) < 0.0001F,
             "stored DFG energy should support exact white-conductor compensation");
+    require(std::fabs(dfg_scale - 0.584076881F) < 0.00001F &&
+                std::fabs(dfg_bias - 0.010429758F) < 0.00001F &&
+                std::fabs(white_conductor_energy - 0.594506621F) < 0.00001F,
+            "adding sheen directional albedo should preserve the existing RGB DFG result");
+}
+
+void test_generated_pbr_dfg_lut_stores_sheen_directional_albedo() {
+    const cubey::render::GeneratedPbrEnvironmentConfig config{
+        .irradiance_extent = 1,
+        .prefiltered_extent = 1,
+        .prefiltered_mip_levels = 1,
+        .brdf_lut_extent = 24,
+        .intensity = 1.0F,
+    };
+    const cubey::render::GeneratedPbrEnvironmentData data =
+        cubey::render::generate_pbr_environment_data(config);
+
+    float minimum = 1.0F;
+    float maximum = 0.0F;
+    for (std::uint32_t y = 0; y < config.brdf_lut_extent; ++y) {
+        for (std::uint32_t x = 0; x < config.brdf_lut_extent; ++x) {
+            const float value =
+                read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent, x, y, 3);
+            require(std::isfinite(value), "sheen directional albedo should remain finite");
+            require(value >= 0.0F && value <= 1.0F,
+                    "sheen directional albedo should remain normalized");
+            minimum = std::min(minimum, value);
+            maximum = std::max(maximum, value);
+        }
+    }
+    require(maximum - minimum > 0.03F,
+            "sheen directional albedo should retain a nonconstant integrated response");
+
+    const std::uint32_t grazing_view = config.brdf_lut_extent / 8U;
+    const std::uint32_t face_on_view = config.brdf_lut_extent - 2U;
+    const std::uint32_t low_roughness = config.brdf_lut_extent / 5U;
+    const std::uint32_t high_roughness = config.brdf_lut_extent - 2U;
+    const float grazing_low = read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
+                                               grazing_view, low_roughness, 3);
+    const float face_on_low = read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
+                                               face_on_view, low_roughness, 3);
+    const float grazing_high = read_lut_channel(data.brdf_lut_rgba32f, config.brdf_lut_extent,
+                                                grazing_view, high_roughness, 3);
+    require(std::fabs(grazing_low - face_on_low) > 0.005F,
+            "sheen directional albedo should vary with view angle");
+    require(std::fabs(grazing_low - grazing_high) > 0.005F,
+            "sheen directional albedo should vary with roughness");
+
+    const cubey::render::GeneratedPbrEnvironmentConfig reference_config{
+        .irradiance_extent = 1,
+        .prefiltered_extent = 1,
+        .prefiltered_mip_levels = 1,
+        .brdf_lut_extent = 64,
+        .intensity = 1.0F,
+    };
+    const auto reference = cubey::render::generate_pbr_environment_data(reference_config);
+    struct ReferenceProbe {
+        std::uint32_t x;
+        std::uint32_t y;
+        float directional_albedo_512;
+    };
+    // Frozen 512-sample cosine-QMC reference points span near-grazing,
+    // mid-view, near-face-on and low/mid/high roughness. The runtime generator
+    // uses a documented 128-sample budget and must remain close to this result.
+    constexpr std::array<ReferenceProbe, 9> kReferenceProbes{{
+        {0U, 3U, 1.0F},
+        {31U, 3U, 0.000000170F},
+        {63U, 3U, 0.0F},
+        {0U, 31U, 0.688764572F},
+        {31U, 31U, 0.187346429F},
+        {63U, 31U, 0.026549103F},
+        {0U, 60U, 0.767466307F},
+        {31U, 60U, 0.354817867F},
+        {63U, 60U, 0.155324712F},
+    }};
+    float maximum_error = 0.0F;
+    float mean_error = 0.0F;
+    for (const ReferenceProbe& probe : kReferenceProbes) {
+        const float actual = read_lut_channel(reference.brdf_lut_rgba32f, 64, probe.x, probe.y, 3);
+        const float error = std::fabs(actual - probe.directional_albedo_512);
+        maximum_error = std::max(maximum_error, error);
+        mean_error += error;
+    }
+    mean_error /= static_cast<float>(kReferenceProbes.size());
+    require(maximum_error <= 0.02F,
+            "128-sample sheen directional albedo should remain within its 512-sample error bound");
+    require(mean_error <= 0.005F,
+            "128-sample sheen directional albedo should retain low mean reference error");
 }
 
 void test_generated_pbr_prefilter_uses_ggx_convolution_not_legacy_average_mix() {

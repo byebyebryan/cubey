@@ -29,7 +29,7 @@ async-ready runtime boundary.
 ## Current Readiness Checkpoint
 
 Status: the first glTF conformance—including required-use IOR, specular,
-clearcoat, anisotropy, and iridescence—plus staged-loading and incremental
+clearcoat, anisotropy, iridescence, and sheen—plus staged-loading and incremental
 GPU-upload responsiveness checkpoints are complete; the next asset-pipeline
 work should be selected from a concrete product need rather than presumed
 unfinished plumbing.
@@ -136,17 +136,20 @@ blocking importer now drains that same session instead of retaining a separate
 glTF one-batch path.
 
 The material-extension checkpoint now promotes `KHR_materials_clearcoat`,
-`KHR_materials_anisotropy`, and `KHR_materials_iridescence` for required use
-alongside IOR and specular. Clearcoat validates and layers one fixed-1.5-IOR
-Fresnel coat over the complete base response. Anisotropy validates
+`KHR_materials_anisotropy`, `KHR_materials_iridescence`, and
+`KHR_materials_sheen` for required use alongside IOR and specular. Clearcoat
+validates and layers one fixed-1.5-IOR Fresnel coat over the complete base
+response. Anisotropy validates
 strength/rotation and tangent-space availability, uses anisotropic GGX
 distribution and visibility for direct light, and bends the isotropic
 environment lookup as a bounded IBL approximation. Iridescence validates its
 factor, IOR, and thickness inputs and uses the Khronos thin-film interference
-model for dielectric and metallic direct/IBL response. Focused loader and shader
-witnesses, tolerant deterministic furnace cases, and pinned Khronos viewer
-smokes back all three claims. Sheen remains the only optional partial material
-extension in this checkpoint.
+model for dielectric and metallic direct/IBL response. Sheen validates color and
+roughness inputs, uses full Charlie/Estevez-Kulla direct lighting, and applies
+DFG-backed directional-albedo scaling to the underlying response. Focused loader
+and shader witnesses, tolerant deterministic furnace cases, and pinned Khronos
+viewer smokes back all four claims. Every glTF material extension represented in
+Cubey's current material contract is now closed for required use.
 
 Recommended next feature or foundation streams:
 
@@ -164,8 +167,9 @@ Recommended next feature or foundation streams:
   real multi-asset streaming creates queueing pressure, design loader
   concurrency and scheduling from that workload. Do not add a dedicated
   transfer queue, partial scene visibility, or a device-local allocator without
-  new evidence. For material conformance, close sheen as a separate promotion
-  slice; do not treat its current optional lobe as required-use support.
+  new evidence. For material conformance, add a dedicated Charlie-prefiltered
+  environment only if a real sheen asset demonstrates that the current
+  GGX-prefilter reuse causes a material directional-quality problem.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
@@ -529,8 +533,9 @@ Current checkpoint:
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
   rows, uniform white IBL cubemaps, glTF base-color/IOR/specular remapping,
   fixed-IOR clearcoat layering, anisotropic GGX validation, thin-film
-  iridescence, DFG-based energy compensation, reusable PBR material uniform
-  descriptors, and windowed plus headless capture output.
+  iridescence, energy-scaled Charlie sheen, DFG-based energy compensation,
+  reusable PBR material uniform descriptors, and windowed plus headless capture
+  output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.

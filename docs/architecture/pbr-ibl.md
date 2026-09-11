@@ -61,9 +61,9 @@ Radiance HDR equirectangular environment assets:
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment. Its default grid is unchanged; opt-in `ior`,
-  `specular`, `clearcoat`, `anisotropy`, and `iridescence` conformance layouts
-  fix camera, lighting, linear output, and material specimens for relational
-  capture checks;
+  `specular`, `clearcoat`, `anisotropy`, `iridescence`, and `sheen` conformance
+  layouts fix camera, lighting, linear output, and material specimens for
+  relational capture checks;
 - optional Filament sample HDR environments can be fetched by CMake for local
   inspection, with `lightroom_14b.hdr` as the default viewer environment when
   available;
@@ -80,7 +80,7 @@ The first IBL contract is:
   radiance environment or an equirectangular HDR image;
 - DFG LUT: 2D lookup sampled by `NdotV` and roughness. Red/green store
   split-sum scale/bias terms, blue stores white-conductor single-scatter energy
-  for compensation, and alpha remains one;
+  for compensation, and alpha stores Charlie sheen directional albedo;
 - scene uniforms: environment intensity and prefiltered mip count;
 - post uniforms: final exposure, tone-map, and output-encoding controls applied
   to the HDR scene color before writing the caller's target;
@@ -168,6 +168,35 @@ light above white IBL to verify zero-strength rotation neutrality and an enabled
 orthogonal response. The pinned Khronos `AnisotropyBarnLamp` BasisU smoke covers
 the staged importer and textured renderer path without acting as a pixel golden.
 
+## Sheen Contract
+
+`KHR_materials_sheen` is closed for required use on the fixed material
+descriptor layout. The importer validates finite color components and roughness
+in `[0, 1]`, and rejects the prohibited combinations with unlit and
+specular-glossiness materials. It preserves independently transformed textures:
+the sheen color texture is sRGB RGB data and the sheen roughness texture reads
+linear alpha. Authored zero roughness is preserved in material data; shader
+evaluation applies only a numerical floor.
+
+Direct lighting uses the Charlie distribution and full Estevez-Kulla
+visibility. The DFG LUT alpha channel stores Charlie directional albedo `E` from
+a deterministic 128-sample cosine-QMC integration; against the retained
+512-sample reference points its maximum and mean absolute errors are bounded by
+`0.02` and `0.005`. The direct base response is scaled by the minimum of its
+view and light attenuation, while IBL and ambient fill use view attenuation.
+The sheen IBL response reuses the existing GGX-prefiltered environment at sheen
+roughness as a resource-constrained radiance approximation rather than adding a
+second prefiltered cube.
+
+Zero sheen color takes the previous base path exactly. Enabled sheen remains
+beneath clearcoat and does not attenuate emission. Focused tests cover ranges,
+exclusions, required-use acceptance, texture channels and transforms, the full
+visibility function, DFG integration, and composition. A four-specimen furnace
+checks zero-color roughness neutrality plus bounded enabled color and roughness
+response. The pinned Khronos `SheenTestGrid` sample adds an end-to-end staged
+importer/viewer smoke; neither rendered lane is a byte-identical cross-GPU
+golden.
+
 ## Iridescence Contract
 
 `KHR_materials_iridescence` is closed for required use on the fixed material
@@ -249,10 +278,12 @@ renderer-wide material management explicit future work.
   ticks, and atomically publishes complete replacement generations. The same
   runtime advances its cloud environment so time-of-day changes do not reset the
   cloud probe's previous/current interpolation.
-- The current sheen lobe remains a pragmatic real-time approximation and is not
-  accepted from `extensionsRequired`. Transmission, refraction, volume
-  absorption, dispersion, and OIT-quality transparent material behavior remain
-  future work.
+- Sheen IBL reuses the existing GGX-prefiltered environment instead of a
+  dedicated Charlie-prefiltered cube. Its uniform-environment energy is covered,
+  but directional quality remains an explicit approximation; add the extra
+  resource only if a real asset demonstrates the need.
+- Transmission, refraction, volume absorption, dispersion, and OIT-quality
+  transparent material behavior remain future work.
 
 ## Non-Goals
 

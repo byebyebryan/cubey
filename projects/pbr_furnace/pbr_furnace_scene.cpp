@@ -214,6 +214,50 @@ PbrFurnaceLayout pbr_furnace_layout(std::string_view conformance_case) {
             .camera_distance = 8.0F,
         };
     }
+    if (conformance_case == "sheen") {
+        // The left pair differs only in roughness while a zero color disables
+        // the layer. The enabled right pair keeps a cyan sheen color and dark
+        // neutral base fixed while varying roughness, exposing both its direct
+        // and image-based response without permitting unbounded base energy.
+        return {
+            .materials =
+                {
+                    {.row = 0,
+                     .column = 0,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.36F,
+                     .sheen_color_factor = {0.0F, 0.0F, 0.0F},
+                     .sheen_roughness = 0.08F,
+                     .position = {-3.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 1,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.36F,
+                     .sheen_color_factor = {0.0F, 0.0F, 0.0F},
+                     .sheen_roughness = 0.92F,
+                     .position = {-1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 2,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.36F,
+                     .sheen_color_factor = {0.0F, 0.75F, 0.9F},
+                     .sheen_roughness = 0.08F,
+                     .position = {1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 3,
+                     .base_color_factor = {0.08F, 0.08F, 0.08F},
+                     .metallic = 0.0F,
+                     .roughness = 0.36F,
+                     .sheen_color_factor = {0.0F, 0.75F, 0.9F},
+                     .sheen_roughness = 0.92F,
+                     .position = {3.0F, 0.0F, 0.0F}},
+                },
+            .camera_distance = 8.0F,
+        };
+    }
     if (conformance_case == "iridescence") {
         // The left pair is a factor-zero control whose varying thickness must
         // be inert. The enabled right pair differs in dielectric/metal base and

@@ -348,6 +348,38 @@ void check_furnace_iridescence(const LoadedImage& image) {
             "enabled iridescence bases and film thicknesses should retain a visible difference");
 }
 
+void check_furnace_sheen(const LoadedImage& image) {
+    const double background_luma = luma(corner_background(image));
+    std::array<RegionStats, 4> regions{};
+    for (int index = 0; index < 4; ++index) {
+        regions[static_cast<std::size_t>(index)] =
+            foreground_vertical_region(image, index, 4, background_luma);
+    }
+    require_furnace_regions(regions, "furnace-sheen");
+    require(std::abs(regions[0].luma - regions[1].luma) < 0.01,
+            "sheen color zero should leave roughness and the full base response inert");
+    const auto chroma = [](const RegionStats& region) {
+        return std::max({region.color.red, region.color.green, region.color.blue}) -
+               std::min({region.color.red, region.color.green, region.color.blue});
+    };
+    const double low_roughness_maximum_chroma =
+        maximum_foreground_chroma_vertical_region(image, 2, 4, background_luma);
+    const double high_roughness_maximum_chroma =
+        maximum_foreground_chroma_vertical_region(image, 3, 4, background_luma);
+    std::printf("material_conformance: furnace-sheen maximum_chroma=(%.4f,%.4f)\n",
+                low_roughness_maximum_chroma, high_roughness_maximum_chroma);
+    require(low_roughness_maximum_chroma > 0.02 && high_roughness_maximum_chroma > 0.02,
+            "enabled cyan sheen specimens should retain a visible layered response");
+    require(std::abs(regions[2].luma - regions[3].luma) > 0.005 ||
+                std::abs(chroma(regions[2]) - chroma(regions[3])) > 0.005,
+            "enabled sheen roughness should change the layered direct-plus-IBL response");
+    for (const RegionStats& region : regions) {
+        require(region.luma < 0.95 && region.color.red < 0.98 && region.color.green < 0.98 &&
+                    region.color.blue < 0.98,
+                "sheen furnace response should remain bounded below display saturation");
+    }
+}
+
 void check_gltf_specular_test(const LoadedImage& image) {
     // This is the fixed front-on capture layout in projects/gltf_viewer. Sampling the sphere
     // centers, rather than a foreground mask, prevents the atmosphere background from acting as
@@ -405,6 +437,8 @@ void check_material_conformance(const std::filesystem::path& path, std::string_v
             check_furnace_anisotropy(image);
         } else if (case_name == "furnace-iridescence") {
             check_furnace_iridescence(image);
+        } else if (case_name == "furnace-sheen") {
+            check_furnace_sheen(image);
         } else if (case_name == "gltf-specular-test") {
             check_gltf_specular_test(image);
         } else {

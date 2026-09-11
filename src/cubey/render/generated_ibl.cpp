@@ -17,6 +17,10 @@ namespace {
 
 constexpr std::uint32_t kCubeFaceCount = 6;
 constexpr std::uint32_t kDfgSampleCount = 512;
+// A separate deterministic QMC budget keeps full Charlie D/V directional-albedo
+// generation practical at startup. Tests bound this 128-sample result against
+// a 512-sample reference.
+constexpr std::uint32_t kSheenDfgSampleCount = 128;
 constexpr std::uint32_t kIrradianceSampleCount = 64;
 constexpr std::uint32_t kPrefilterSampleCount = 128;
 constexpr VkFormat kIblTextureFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -165,6 +169,37 @@ sample_pbr_equirectangular_radiance_unchecked(const PbrEquirectangularImage& ima
     return 0.5F / std::max(lambda_v + lambda_l, 0.00001F);
 }
 
+[[nodiscard]] float lambda_sheen_numeric_helper(float x, float alpha_g) {
+    const float one_minus_alpha_squared = (1.0F - alpha_g) * (1.0F - alpha_g);
+    const float a = std::lerp(21.5473F, 25.3245F, one_minus_alpha_squared);
+    const float b = std::lerp(3.82987F, 3.32435F, one_minus_alpha_squared);
+    const float c = std::lerp(0.19823F, 0.16801F, one_minus_alpha_squared);
+    const float d = std::lerp(-1.97760F, -1.27393F, one_minus_alpha_squared);
+    const float e = std::lerp(-4.32054F, -4.85967F, one_minus_alpha_squared);
+    return (a / (1.0F + b * std::pow(x, c))) + (d * x) + e;
+}
+
+[[nodiscard]] float lambda_sheen(float cos_theta, float alpha_g) {
+    if (std::fabs(cos_theta) < 0.5F) {
+        return std::exp(lambda_sheen_numeric_helper(cos_theta, alpha_g));
+    }
+    return std::exp((2.0F * lambda_sheen_numeric_helper(0.5F, alpha_g)) -
+                    lambda_sheen_numeric_helper(1.0F - cos_theta, alpha_g));
+}
+
+[[nodiscard]] float visibility_sheen(float ndotl, float ndotv, float lambda_l, float lambda_v) {
+    const float denominator = (1.0F + lambda_v + lambda_l) * (4.0F * ndotv * ndotl);
+    return std::clamp(1.0F / std::max(denominator, 0.000001F), 0.0F, 1.0F);
+}
+
+[[nodiscard]] float distribution_charlie(float ndoth, float roughness) {
+    const float evaluated_roughness = std::max(roughness, 0.000001F);
+    const float alpha_g = evaluated_roughness * evaluated_roughness;
+    const float inverse_roughness = 1.0F / alpha_g;
+    const float sin2h = std::max(1.0F - (ndoth * ndoth), 0.0F);
+    return ((2.0F + inverse_roughness) * std::pow(sin2h, inverse_roughness * 0.5F)) / (2.0F * kPi);
+}
+
 [[nodiscard]] math::Vec3 tangent_to_world(math::Vec3 sample, math::Vec3 normal) {
     const math::Vec3 up =
         std::fabs(normal.z) < 0.999F ? math::Vec3{0.0F, 0.0F, 1.0F} : math::Vec3{0.0F, 1.0F, 0.0F};
@@ -276,8 +311,21 @@ void append_cube(std::vector<std::uint8_t>& bytes, std::uint32_t extent, std::ui
 }
 
 void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
+    static const std::array<math::Vec3, kSheenDfgSampleCount> kCosineHemisphereSamples = [] {
+        std::array<math::Vec3, kSheenDfgSampleCount> samples{};
+        for (std::uint32_t sample = 0; sample < kSheenDfgSampleCount; ++sample) {
+            samples[sample] = sample_cosine_hemisphere(hammersley(sample, kSheenDfgSampleCount));
+        }
+        return samples;
+    }();
     for (std::uint32_t y = 0; y < extent; ++y) {
         const float roughness = (static_cast<float>(y) + 0.5F) / static_cast<float>(extent);
+        const float evaluated_roughness = std::max(roughness, 0.000001F);
+        const float alpha_g = evaluated_roughness * evaluated_roughness;
+        std::array<float, kSheenDfgSampleCount> sheen_lambda_light{};
+        for (std::uint32_t sample = 0; sample < kSheenDfgSampleCount; ++sample) {
+            sheen_lambda_light[sample] = lambda_sheen(kCosineHemisphereSamples[sample].z, alpha_g);
+        }
         for (std::uint32_t x = 0; x < extent; ++x) {
             const float ndotv = (static_cast<float>(x) + 0.5F) / static_cast<float>(extent);
             const math::Vec3 view{
@@ -307,7 +355,23 @@ void append_brdf_lut(std::vector<std::uint8_t>& bytes, std::uint32_t extent) {
             scale /= static_cast<float>(kDfgSampleCount);
             bias /= static_cast<float>(kDfgSampleCount);
             const float white_conductor_energy = std::max(scale + bias, kDfgEnergyEpsilon);
-            append_rgba32f(bytes, {scale, bias, white_conductor_energy, 1.0F});
+            float sheen_directional_albedo = 0.0F;
+            const float sheen_lambda_view = lambda_sheen(ndotv, alpha_g);
+            for (std::uint32_t sample = 0; sample < kSheenDfgSampleCount; ++sample) {
+                const math::Vec3 light = kCosineHemisphereSamples[sample];
+                const math::Vec3 half_vector = glm::normalize(view + light);
+                const float ndotl = light.z;
+                const float ndoth = std::max(half_vector.z, 0.0F);
+                const float sheen_visibility =
+                    visibility_sheen(ndotl, ndotv, sheen_lambda_light[sample], sheen_lambda_view);
+                // Cosine-weighted hemisphere sampling has pdf=NdotL/pi, so the
+                // BRDF directional-albedo contribution reduces to D*V*pi.
+                sheen_directional_albedo +=
+                    distribution_charlie(ndoth, roughness) * sheen_visibility * kPi;
+            }
+            sheen_directional_albedo = std::clamp(
+                sheen_directional_albedo / static_cast<float>(kSheenDfgSampleCount), 0.0F, 1.0F);
+            append_rgba32f(bytes, {scale, bias, white_conductor_energy, sheen_directional_albedo});
         }
     }
 }

@@ -125,10 +125,38 @@ vec3 cubey_pbr_clearcoat_indirect(vec3 dfg) {
 }
 
 float cubey_pbr_distribution_charlie(float ndoth, float roughness) {
-    float alpha_g = max(roughness * roughness, 0.0001);
+    float evaluated_roughness = max(roughness, 0.000001);
+    float alpha_g = evaluated_roughness * evaluated_roughness;
     float inv_r = 1.0 / alpha_g;
     float sin2h = max(1.0 - (ndoth * ndoth), 0.0);
     return ((2.0 + inv_r) * pow(sin2h, inv_r * 0.5)) / (2.0 * CUBEY_PBR_PI);
+}
+
+float cubey_pbr_lambda_sheen_numeric_helper(float x, float alpha_g) {
+    float one_minus_alpha_squared = (1.0 - alpha_g) * (1.0 - alpha_g);
+    float a = mix(21.5473, 25.3245, one_minus_alpha_squared);
+    float b = mix(3.82987, 3.32435, one_minus_alpha_squared);
+    float c = mix(0.19823, 0.16801, one_minus_alpha_squared);
+    float d = mix(-1.97760, -1.27393, one_minus_alpha_squared);
+    float e = mix(-4.32054, -4.85967, one_minus_alpha_squared);
+    return (a / (1.0 + b * pow(x, c))) + (d * x) + e;
+}
+
+float cubey_pbr_lambda_sheen(float cos_theta, float alpha_g) {
+    if (abs(cos_theta) < 0.5) {
+        return exp(cubey_pbr_lambda_sheen_numeric_helper(cos_theta, alpha_g));
+    }
+    return exp((2.0 * cubey_pbr_lambda_sheen_numeric_helper(0.5, alpha_g)) -
+               cubey_pbr_lambda_sheen_numeric_helper(1.0 - cos_theta, alpha_g));
+}
+
+float cubey_pbr_visibility_sheen(float ndotl, float ndotv, float roughness) {
+    float evaluated_roughness = max(roughness, 0.000001);
+    float alpha_g = evaluated_roughness * evaluated_roughness;
+    float denominator =
+        (1.0 + cubey_pbr_lambda_sheen(ndotv, alpha_g) + cubey_pbr_lambda_sheen(ndotl, alpha_g)) *
+        (4.0 * ndotv * ndotl);
+    return clamp(1.0 / max(denominator, 0.000001), 0.0, 1.0);
 }
 
 vec3 cubey_pbr_sheen_direct(vec3 sheen_color, float sheen_roughness, float ndotv, float ndotl,
@@ -136,8 +164,8 @@ vec3 cubey_pbr_sheen_direct(vec3 sheen_color, float sheen_roughness, float ndotv
     if (ndotv <= 0.0 || ndotl <= 0.0) {
         return vec3(0.0);
     }
-    float d = cubey_pbr_distribution_charlie(ndoth, clamp(sheen_roughness, 0.01, 1.0));
-    float v = 1.0 / max(4.0 * (ndotl + ndotv - (ndotl * ndotv)), 0.00001);
+    float d = cubey_pbr_distribution_charlie(ndoth, sheen_roughness);
+    float v = cubey_pbr_visibility_sheen(ndotl, ndotv, sheen_roughness);
     return sheen_color * d * v;
 }
 

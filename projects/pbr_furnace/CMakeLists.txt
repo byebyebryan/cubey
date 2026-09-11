@@ -138,6 +138,23 @@ if (BUILD_TESTING)
         "${CUBEY_PBR_FURNACE_IRIDESCENCE_CONFORMANCE_OUTPUT}"
         furnace-iridescence
     )
+    set(CUBEY_PBR_FURNACE_SHEEN_CONFORMANCE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-sheen-conformance.png"
+    )
+    cubey_add_png_capture_test(
+        pbr_furnace_sheen_conformance_writes_png
+        cubey_project_pbr_furnace
+        "${CUBEY_PBR_FURNACE_SHEEN_CONFORMANCE_OUTPUT}"
+        512
+        512
+        --conformance-case
+        sheen
+    )
+    cubey_add_png_material_conformance_test(
+        pbr_furnace_sheen_conformance_writes_png
+        "${CUBEY_PBR_FURNACE_SHEEN_CONFORMANCE_OUTPUT}"
+        furnace-sheen
+    )
     cubey_label_tests(
         conformance
         pbr_furnace_ior_conformance_writes_png
@@ -150,6 +167,8 @@ if (BUILD_TESTING)
         pbr_furnace_anisotropy_conformance_writes_png_material_conformance
         pbr_furnace_iridescence_conformance_writes_png
         pbr_furnace_iridescence_conformance_writes_png_material_conformance
+        pbr_furnace_sheen_conformance_writes_png
+        pbr_furnace_sheen_conformance_writes_png_material_conformance
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_PBR_FURNACE_HEADLESS_VIDEO_SMOKE_OUTPUT

@@ -22,7 +22,7 @@
 namespace cubey::projects::gltf_viewer {
 
 inline constexpr float kGltfViewerMaximumCaptureOrbitDegrees = 180.0F;
-inline constexpr float kGltfViewerMinimumCaptureCameraDistanceScale = 0.5F;
+inline constexpr float kGltfViewerMinimumCaptureCameraDistanceScale = 0.1F;
 inline constexpr float kGltfViewerMaximumCaptureCameraDistanceScale = 2.0F;
 inline constexpr float kGltfViewerMinimumCaptureCameraYawDegrees = -180.0F;
 inline constexpr float kGltfViewerMaximumCaptureCameraYawDegrees = 180.0F;

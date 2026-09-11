@@ -65,15 +65,14 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_materials_clearcoat` | supported | Factor and roughness are validated as finite values in `[0, 1]`; factor, roughness, normal scale, texture channels, texture transforms, and linear color spaces reach a fixed-IOR coat above the full base response. Deterministic furnace coverage closes zero-factor neutrality and roughness/layering response, while the pinned Khronos `ClearCoatTest` exercises the real viewer path. |
 | `KHR_materials_anisotropy` | supported | Strength and rotation are validated; required tangent space is authored or generated from the effective normal/anisotropy UV set. Direct lighting uses anisotropic GGX distribution and visibility, while IBL uses the Khronos-style bent-normal approximation. A deterministic furnace checks zero-strength neutrality and rotated response, and the pinned Khronos `AnisotropyBarnLamp` exercises texture channels through the staged viewer path. |
 | `KHR_materials_iridescence` | supported | Factor, IOR, and thickness bounds are validated while independently transformed linear factor/thickness textures preserve their red/green channel contracts. Direct and image-based lighting use the Khronos thin-film interference model for dielectric and metallic bases, with exact factor-zero and zero-thickness fallbacks. A deterministic furnace checks neutrality and chromatic response, while pinned Khronos `CompareIridescence` coverage exercises the staged viewer path. |
-| `KHR_materials_sheen` | partial | Its current texture/factor plumbing and approximate lobe remain available only for optional extension use. |
+| `KHR_materials_sheen` | supported | Color and roughness inputs are validated as finite values in `[0, 1]`; the sRGB color and linear roughness textures preserve their RGB/alpha channel and transform contracts. Direct lighting uses the Charlie distribution with Estevez-Kulla visibility, while DFG-backed albedo scaling bounds the direct, IBL, and ambient base response. A deterministic furnace checks zero-color neutrality and enabled roughness response, while pinned Khronos `SheenTestGrid` coverage exercises the staged viewer path. |
 
-Partial extensions remain useful for renderer development and optional asset
-inspection, but Cubey rejects them when an asset declares them required. Each
-extension is promoted independently after analytic and deterministic rendered
-coverage closes its semantics. Loader and analytic witnesses live in focused
+An extension is accepted from `extensionsRequired` only after analytic and
+deterministic rendered coverage closes its loader and shading semantics. Loader
+and analytic witnesses live in focused
 core tests, while the material-conformance CTest label separates rendered
 checks from ordinary smoke: the opt-in `pbr_furnace --conformance-case` layouts
-capture fixed 512px IOR, specular, clearcoat, anisotropy, or iridescence
+capture fixed 512px IOR, specular, clearcoat, anisotropy, iridescence, or sheen
 specimens and inspect foreground region/channel relationships rather than
 byte-identical images. The
 pinned Khronos `SpecularTest` lane adds fixed manual directional lighting plus
@@ -92,6 +91,10 @@ The iridescence furnace keeps two factor-zero controls neutral and checks
 chromatic thin-film response over dielectric and metallic bases. The pinned
 `CompareIridescence` capture complements it with authored factors, IORs,
 thicknesses, and textures through the common staged importer and renderer.
+The sheen furnace keeps zero-color controls neutral across roughness and checks
+the bounded color and roughness response of enabled specimens. The pinned
+`SheenTestGrid` capture complements it with authored factors and textures
+through the common staged importer and renderer.
 
 Unsupported features fail early instead of being silently ignored:
 unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate
@@ -228,8 +231,8 @@ scene color and uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, dielectric IOR/specular controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion. The glTF PBR shader also evaluates required-use
-clearcoat and anisotropic GGX, plus an optional sheen lobe and a lightweight
-iridescence Fresnel tint. Material texture and factor alpha remain
+clearcoat, anisotropic GGX, thin-film iridescence, and energy-scaled Charlie
+sheen. Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
 transform is applied by the shared post shader. Unlit glTF materials preserve
@@ -245,14 +248,16 @@ records a compute deformation pass before shadow and PBR scene passes.
 When Khronos Sample Assets are configured, optional headless compatibility
 smokes cover material, texture transform, alpha, and tangent-space validation
 scenes, including `SpecularTest`, `ClearCoatTest`, `AnisotropyBarnLamp`,
-`TextureTransformTest`, `TextureTransformMultiTest`, `NormalTangentTest`,
+`CompareIridescence`, `SheenTestGrid`, `TextureTransformTest`,
+`TextureTransformMultiTest`, `NormalTangentTest`,
 `NormalTangentMirrorTest`, and `DamagedHelmet`. These tests carry the
 `gltf_sample` and `compatibility` labels and only assert that the viewer can load
 and produce a valid PNG; they are not golden-pixel comparisons. The
 `dev-gltf-conformance` test preset also selects the `gltf` core/viewer evidence
 and `conformance` checks, including the deterministic furnace
-IOR/specular/clearcoat/anisotropy captures and the semantic Khronos `SpecularTest`
-capture when registered. It excludes tests labeled `windowed`.
+IOR/specular/clearcoat/anisotropy/iridescence/sheen captures and the semantic
+Khronos `SpecularTest` capture when registered. It excludes tests labeled
+`windowed`.
 The configured sample inventory checks every referenced path at configure time
 and fails if the lane would otherwise register no sample tests. Downloaded
 assets and generated captures stay under the isolated build tree.

@@ -376,13 +376,20 @@ void main() {
         sheen_color *= texture(sheen_color_texture,
                                cubey_pbr_transformed_uv(material.sheen_color_transform)).rgb;
     }
-    float sheen_roughness = clamp(material.sheen_color_roughness.w, 0.01, 1.0);
+    float sheen_roughness = clamp(material.sheen_color_roughness.w, 0.0, 1.0);
     if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SHEEN_ROUGHNESS)) {
         sheen_roughness =
             clamp(sheen_roughness *
                       texture(sheen_roughness_texture,
                               cubey_pbr_transformed_uv(material.sheen_roughness_transform)).a,
-                  0.01, 1.0);
+                  0.0, 1.0);
+    }
+    float sheen_color_max = max(max(sheen_color.r, sheen_color.g), sheen_color.b);
+    float sheen_view_attenuation = 1.0;
+    float sheen_view_energy = 0.0;
+    if (sheen_color_max > 0.0) {
+        sheen_view_energy = texture(brdf_lut, vec2(ndotv, sheen_roughness)).a;
+        sheen_view_attenuation = clamp(1.0 - (sheen_color_max * sheen_view_energy), 0.0, 1.0);
     }
 
     vec3 dfg = texture(brdf_lut, vec2(ndotv, roughness)).rgb;
@@ -429,9 +436,16 @@ void main() {
     float clearcoat_layer_weight =
         cubey_pbr_clearcoat_layer_weight(clearcoat_factor, clearcoat_ndotv);
     float clearcoat_attenuation = 1.0 - clearcoat_layer_weight;
-    vec3 sheen_direct =
-        cubey_pbr_sheen_direct(sheen_color, sheen_roughness, ndotv, ndotl, ndoth);
-    vec3 base_direct = (diffuse_direct + specular + sheen_direct) * clearcoat_attenuation;
+    vec3 base_direct = diffuse_direct + specular;
+    if (sheen_color_max > 0.0) {
+        float sheen_light_energy = texture(brdf_lut, vec2(ndotl, sheen_roughness)).a;
+        float sheen_direct_attenuation = min(
+            sheen_view_attenuation, clamp(1.0 - (sheen_color_max * sheen_light_energy), 0.0, 1.0));
+        vec3 sheen_direct =
+            cubey_pbr_sheen_direct(sheen_color, sheen_roughness, ndotv, ndotl, ndoth);
+        base_direct = sheen_direct + (base_direct * sheen_direct_attenuation);
+    }
+    base_direct *= clearcoat_attenuation;
     vec3 clearcoat_direct =
         vec3(clearcoat_layer_weight *
              cubey_pbr_clearcoat_direct(clearcoat_ndotv, clearcoat_ndotl, clearcoat_ndoth,
@@ -472,7 +486,17 @@ void main() {
             mix(dielectric_thin_film_ibl, metallic_thin_film_ibl, metallic);
         base_ibl = mix(base_ibl, thin_film_base_ibl, iridescence_factor);
     }
-    vec3 sheen_ibl = irradiance * sheen_color * occlusion * 0.25;
+    vec3 sheen_ibl = vec3(0.0);
+    if (sheen_color_max > 0.0) {
+        vec3 sheen_reflection = reflect(-view_direction, normal);
+        vec3 sheen_prefiltered = cubey_pbr_prefiltered_environment(
+            sheen_reflection, sheen_roughness * max_prefiltered_lod);
+        float sheen_occlusion =
+            cubey_pbr_specular_ao(ndotv, occlusion, sheen_roughness) *
+            cubey_pbr_horizon_specular_occlusion(sheen_reflection, geometric_normal);
+        sheen_ibl = sheen_prefiltered * sheen_color * sheen_view_energy * sheen_occlusion;
+        base_ibl *= sheen_view_attenuation;
+    }
     vec3 clearcoat_reflection = reflect(-view_direction, clearcoat_normal);
     vec3 clearcoat_prefiltered = cubey_pbr_prefiltered_environment(
         clearcoat_reflection, clearcoat_roughness * max_prefiltered_lod);
@@ -489,7 +513,8 @@ void main() {
                     clearcoat_ibl) *
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
-               diffuse_color * diffuse_ibl_attenuation * clearcoat_attenuation * occlusion;
+               diffuse_color * diffuse_ibl_attenuation * sheen_view_attenuation *
+               clearcoat_attenuation * occlusion;
     vec3 color = ambient + direct + (emissive * clearcoat_attenuation);
     out_color = vec4(color * output_alpha, output_alpha);
 }

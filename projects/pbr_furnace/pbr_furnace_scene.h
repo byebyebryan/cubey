@@ -27,6 +27,8 @@ struct PbrFurnaceMaterial {
     float ior = 1.5F;
     float clearcoat_factor = 0.0F;
     float clearcoat_roughness = 0.0F;
+    math::Vec3 sheen_color_factor{0.0F, 0.0F, 0.0F};
+    float sheen_roughness = 0.0F;
     float anisotropy_strength = 0.0F;
     float anisotropy_rotation = 0.0F;
     float iridescence_factor = 0.0F;
