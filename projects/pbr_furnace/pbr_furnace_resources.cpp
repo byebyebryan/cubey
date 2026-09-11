@@ -91,6 +91,8 @@ void PbrFurnaceApp::create_materials(const cubey::vulkan::Device& device,
                           .dielectric_ior = furnace_material.ior,
                           .clearcoat_factor = furnace_material.clearcoat_factor,
                           .clearcoat_roughness_factor = furnace_material.clearcoat_roughness,
+                          .anisotropy_strength = furnace_material.anisotropy_strength,
+                          .anisotropy_rotation = furnace_material.anisotropy_rotation,
                       });
         materials_.emplace_instance(material, device,
                                     cubey::render::FrameUniformMaterialInstanceConfig{

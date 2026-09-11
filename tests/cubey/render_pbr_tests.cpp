@@ -585,6 +585,14 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR shader should expose the fixed-IOR clearcoat layering helper");
     require_contains(pbr, "return vec3(dfg.b);",
                      "clearcoat IBL should use the Fresnel-free DFG single-scatter channel");
+    require_contains(pbr, "cubey_pbr_visibility_smith_ggx_correlated_anisotropic",
+                     "PBR shader should expose anisotropic GGX visibility");
+    require_contains(pbr, "return clamp(visibility, 0.0, 1.0);",
+                     "anisotropic GGX visibility should remain bounded at grazing angles");
+    require_contains(pbr, "cubey_pbr_anisotropic_bent_normal",
+                     "PBR shader should expose the anisotropic IBL bent-normal heuristic");
+    require_contains(pbr, "Preserve its raw intermediate\n    // cross-product scale",
+                     "anisotropic IBL should retain the Khronos bent-normal cross-product scale");
     require_contains(pbr, "cubey_pbr_apply_display_transform",
                      "PBR shader should expose a final display transform helper");
     require_contains(post, "cubey_pbr_apply_display_transform(color, post.display_transform)",
@@ -596,6 +604,12 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR furnace should keep direct display transform controls");
     require_contains(furnace, "cubey_pbr_apply_display_transform(color, scene.display_transform)",
                      "PBR furnace should keep direct display transform output");
+    require_contains(furnace, "cubey_pbr_visibility_smith_ggx_correlated_anisotropic",
+                     "PBR furnace should exercise anisotropic GGX visibility");
+    require_contains(furnace, "cubey_pbr_anisotropic_bent_normal",
+                     "PBR furnace should exercise anisotropic IBL bent-normal lookup");
+    require_contains(furnace, "scene.light_color_intensity.a > 0.0",
+                     "PBR furnace anisotropy witness should add fixed directional lighting");
 
     require_not_contains(gltf, "cubey_pbr_apply_display_transform",
                          "glTF PBR shader should leave display transform to the post pass");
@@ -710,10 +724,26 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "source.clearcoat_normal_texture,\n"
                      "                                 asset::GltfTextureColorSpace::Linear",
                      "glTF clearcoat normal texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.anisotropy_texture, asset::GltfTextureColorSpace::Linear",
+                     "glTF anisotropy texture should preserve linear color space");
     require_contains(gltf, "cubey_pbr_sheen_direct",
                      "glTF PBR shader should evaluate sheen direct lighting");
     require_contains(gltf, "cubey_pbr_distribution_ggx_anisotropic",
                      "glTF PBR shader should evaluate anisotropic specular");
+    require_contains(gltf, "cubey_pbr_visibility_smith_ggx_correlated_anisotropic",
+                     "glTF PBR shader should evaluate anisotropic GGX visibility");
+    require_contains(gltf, "mix(alpha_roughness, 1.0, anisotropy_strength * anisotropy_strength)",
+                     "glTF PBR shader should derive tangent roughness from anisotropy strength");
+    require_contains(
+        gltf, "texture_direction = (anisotropy_sample.rg * 2.0) - 1.0",
+        "glTF anisotropy texture should map red-green direction from [0, 1] to [-1, 1]");
+    require_contains(gltf, "anisotropy_strength *= anisotropy_sample.b",
+                     "glTF anisotropy texture blue channel should modulate strength");
+    require_contains(gltf, "vec3 ibl_normal = anisotropy_strength > 0.0",
+                     "glTF anisotropy should preserve the isotropic IBL normal at zero strength");
+    require_contains(gltf, "cubey_pbr_anisotropic_bent_normal",
+                     "glTF anisotropy should use the shared bent-normal IBL heuristic");
     require_contains(gltf, "cubey_pbr_iridescence_f0",
                      "glTF PBR shader should evaluate iridescence Fresnel tint");
     require_contains(gltf_vertex, "orthogonalizeTangent",

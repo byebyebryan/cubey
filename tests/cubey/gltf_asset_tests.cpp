@@ -625,6 +625,104 @@ std::filesystem::path write_uv1_normal_map_tangent_gltf(const std::filesystem::p
     return gltf_path;
 }
 
+std::filesystem::path write_anisotropy_tangent_contract_gltf(
+    const std::filesystem::path& dir, bool include_tangent, bool include_texcoord0,
+    bool include_texcoord1, bool include_normal_texture, std::uint32_t normal_texcoord,
+    bool include_anisotropy_texture, std::uint32_t anisotropy_texcoord) {
+    std::vector<std::uint8_t> bytes;
+    const std::size_t position_offset = bytes.size();
+    append_vec3(bytes, 0.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 1.0F, 0.0F, 0.0F);
+    append_vec3(bytes, 0.0F, 1.0F, 0.0F);
+    const std::size_t normal_offset = bytes.size();
+    for (std::size_t index = 0; index < 3; ++index) {
+        append_vec3(bytes, 0.0F, 0.0F, 1.0F);
+    }
+    const std::size_t texcoord0_offset = bytes.size();
+    append_vec2(bytes, 0.0F, 0.0F);
+    append_vec2(bytes, 1.0F, 0.0F);
+    append_vec2(bytes, 0.0F, 1.0F);
+    const std::size_t texcoord1_offset = bytes.size();
+    append_vec2(bytes, 0.0F, 0.0F);
+    append_vec2(bytes, 0.0F, 1.0F);
+    append_vec2(bytes, 1.0F, 0.0F);
+    const std::size_t tangent_offset = bytes.size();
+    for (std::size_t index = 0; index < 3; ++index) {
+        append_vec4(bytes, 1.0F, 0.0F, 0.0F, 1.0F);
+    }
+    const std::size_t index_offset = bytes.size();
+    append_u16(bytes, 0);
+    append_u16(bytes, 1);
+    append_u16(bytes, 2);
+    cubey::write_binary_file(dir / "anisotropy_tangent.bin", bytes);
+
+    std::string attributes = "\"POSITION\": 0, \"NORMAL\": 1";
+    if (include_texcoord0) {
+        attributes += ", \"TEXCOORD_0\": 2";
+    }
+    if (include_texcoord1) {
+        attributes += ", \"TEXCOORD_1\": 3";
+    }
+    if (include_tangent) {
+        attributes += ", \"TANGENT\": 4";
+    }
+
+    std::string material = "{\"extensions\": {\"KHR_materials_anisotropy\": {";
+    if (include_anisotropy_texture) {
+        material += "\"anisotropyTexture\": {\"index\": 0, \"texCoord\": " +
+                    std::to_string(anisotropy_texcoord) + "}";
+    }
+    material += "}}";
+    if (include_normal_texture) {
+        material +=
+            ", \"normalTexture\": {\"index\": 0, \"texCoord\": " + std::to_string(normal_texcoord) +
+            "}";
+    }
+    material += "}";
+
+    const std::string gltf = std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_anisotropy"],
+  "extensionsRequired": ["KHR_materials_anisotropy"],
+  "scene": 0,
+  "scenes": [{"nodes": [0]}],
+  "nodes": [{"mesh": 0}],
+  "meshes": [{"primitives": [{"attributes": {)JSON") +
+                             attributes + R"JSON(}, "indices": 5, "material": 0}]}],
+  "buffers": [{"uri": "anisotropy_tangent.bin", "byteLength": )JSON" +
+                             std::to_string(bytes.size()) + R"JSON(}],
+  "bufferViews": [
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(position_offset) + R"JSON(, "byteLength": 36},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(normal_offset) + R"JSON(, "byteLength": 36},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(texcoord0_offset) + R"JSON(, "byteLength": 24},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(texcoord1_offset) + R"JSON(, "byteLength": 24},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(tangent_offset) + R"JSON(, "byteLength": 48},
+    {"buffer": 0, "byteOffset": )JSON" +
+                             std::to_string(index_offset) + R"JSON(, "byteLength": 6}
+  ],
+  "accessors": [
+    {"bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3"},
+    {"bufferView": 1, "componentType": 5126, "count": 3, "type": "VEC3"},
+    {"bufferView": 2, "componentType": 5126, "count": 3, "type": "VEC2"},
+    {"bufferView": 3, "componentType": 5126, "count": 3, "type": "VEC2"},
+    {"bufferView": 4, "componentType": 5126, "count": 3, "type": "VEC4"},
+    {"bufferView": 5, "componentType": 5123, "count": 3, "type": "SCALAR"}
+  ],
+  "materials": [)JSON" + material +
+                             R"JSON(],
+  "textures": [{"source": 0}],
+  "images": [{"uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="}]
+})JSON";
+    const std::filesystem::path path = dir / "anisotropy_tangent.gltf";
+    write_text_file(path, gltf);
+    return path;
+}
+
 std::filesystem::path write_missing_normal_wedge_gltf(const std::filesystem::path& dir) {
     std::vector<std::uint8_t> bytes;
     const std::size_t position_offset = bytes.size();
@@ -1170,6 +1268,136 @@ void test_gltf_asset_closes_clearcoat_material_contract() {
         [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_clearcoat",
         "clearcoat and unlit should be rejected as an invalid material combination");
 
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_clearcoat",
+    "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_clearcoat": {"clearcoatFactor": 0.5},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_clearcoat",
+        "clearcoat and specular-glossiness should be rejected as an invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_closes_anisotropy_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_anisotropy_contract");
+    const std::filesystem::path path = dir / "anisotropy_contract.gltf";
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_anisotropy"],
+  "extensionsRequired": ["KHR_materials_anisotropy"],
+  "materials": [{"extensions": {"KHR_materials_anisotropy": {
+    "anisotropyStrength": 0.55,
+    "anisotropyRotation": 1.25
+  }}}]
+})JSON");
+    const cubey::asset::GltfAsset valid = cubey::asset::load_gltf_asset(path);
+    require(valid.materials.size() == 2,
+            "required anisotropy material should load after renderer closure");
+    require_close(valid.materials[1].anisotropy_strength, 0.55F,
+                  "anisotropy strength should preserve its linear factor");
+    require_close(valid.materials[1].anisotropy_rotation, 1.25F,
+                  "anisotropy rotation should preserve its radian value");
+
+    const auto require_invalid = [&path](std::string_view field, std::string_view value) {
+        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                                  "  \"extensionsUsed\": [\"KHR_materials_anisotropy\"],\n" +
+                                  "  \"materials\": [{\"extensions\": "
+                                  "{\"KHR_materials_anisotropy\": {\"" +
+                                  std::string{field} + "\": " + std::string{value} + "}}}]\n}\n");
+        require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); }, field,
+                                    "invalid anisotropy field should identify its rejected field");
+    };
+    require_invalid("anisotropyStrength", "-0.01");
+    require_invalid("anisotropyStrength", "1.01");
+    require_invalid("anisotropyStrength", "1e999");
+    require_invalid("anisotropyRotation", "1e999");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_anisotropy", "KHR_materials_unlit"],
+  "materials": [{"extensions": {
+    "KHR_materials_anisotropy": {},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_anisotropy",
+        "anisotropy and unlit should be rejected as an invalid material combination");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_anisotropy",
+    "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_anisotropy": {},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_anisotropy",
+        "anisotropy and specular-glossiness should be rejected as an invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_enforces_anisotropy_tangent_space_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_anisotropy_tangent_contract");
+    const std::filesystem::path generated_uv1 =
+        write_anisotropy_tangent_contract_gltf(dir, false, true, true, false, 0U, true, 1U);
+    const cubey::asset::GltfAsset generated_asset = cubey::asset::load_gltf_asset(generated_uv1);
+    const cubey::asset::GltfMeshPrimitive& generated = generated_asset.meshes[0].primitives[0];
+    require_close(
+        generated.vertices[0].tangent.x, 0.0F,
+        "anisotropy tangent generation should not use TEXCOORD_0 when the texture selects UV1");
+    require_close(
+        generated.vertices[0].tangent.y, 1.0F,
+        "anisotropy tangent generation should use the effective anisotropy texture UV set");
+
+    cubey::asset::GltfLoadConfig disabled_generation;
+    disabled_generation.generate_missing_tangents = false;
+    require_throws_with_message(
+        [&generated_uv1, disabled_generation] {
+            static_cast<void>(cubey::asset::load_gltf_asset(generated_uv1, disabled_generation));
+        },
+        "KHR_materials_anisotropy",
+        "anisotropy should reject absent TANGENT when generation is disabled");
+
+    const std::filesystem::path missing_uv =
+        write_anisotropy_tangent_contract_gltf(dir, false, false, false, false, 0U, false, 0U);
+    require_throws_with_message(
+        [&missing_uv] { static_cast<void>(cubey::asset::load_gltf_asset(missing_uv)); },
+        "TEXCOORD_0",
+        "anisotropy should reject generated tangent space without its required texture "
+        "coordinates");
+
+    const std::filesystem::path mismatched_generated =
+        write_anisotropy_tangent_contract_gltf(dir, false, true, true, true, 0U, true, 1U);
+    require_throws_with_message(
+        [&mismatched_generated] {
+            static_cast<void>(cubey::asset::load_gltf_asset(mismatched_generated));
+        },
+        "matching normalTexture and anisotropyTexture texCoord",
+        "anisotropy should reject generated tangent frames that cannot satisfy both texture UV "
+        "sets");
+
+    const std::filesystem::path authored_tangent =
+        write_anisotropy_tangent_contract_gltf(dir, true, true, true, true, 0U, true, 1U);
+    const cubey::asset::GltfAsset authored_asset =
+        cubey::asset::load_gltf_asset(authored_tangent, disabled_generation);
+    require_close(authored_asset.meshes[0].primitives[0].vertices[0].tangent.x, 1.0F,
+                  "authored tangents should satisfy anisotropy even when generation is disabled");
+
     std::filesystem::remove_all(dir);
 }
 
@@ -1616,6 +1844,7 @@ void test_gltf_asset_accepts_closed_required_extensions() {
     "KHR_materials_emissive_strength",
     "KHR_materials_unlit",
     "KHR_materials_clearcoat",
+    "KHR_materials_anisotropy",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -1623,6 +1852,7 @@ void test_gltf_asset_accepts_closed_required_extensions() {
     "KHR_materials_emissive_strength",
     "KHR_materials_unlit",
     "KHR_materials_clearcoat",
+    "KHR_materials_anisotropy",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -1641,26 +1871,33 @@ void test_gltf_asset_accepts_closed_required_extensions() {
       "clearcoatFactor": 0.5,
       "clearcoatRoughnessFactor": 0.2
     }}
+  },
+  {
+    "extensions": {"KHR_materials_anisotropy": {
+      "anisotropyStrength": 0.5,
+      "anisotropyRotation": 0.25
+    }}
   }]
 })JSON");
 
     const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
 
-    require(asset.materials.size() == 4, "loader should preserve required-extension materials");
+    require(asset.materials.size() == 5, "loader should preserve required-extension materials");
     require_close(asset.materials[1].emissive_factor.g, 0.9F,
                   "closed required emissive-strength extension should load");
     require(asset.materials[2].unlit, "closed required unlit extension should load");
     require_close(asset.materials[3].clearcoat_factor, 0.5F,
                   "closed required clearcoat extension should load its factor");
+    require_close(asset.materials[4].anisotropy_strength, 0.5F,
+                  "closed required anisotropy extension should load its factor");
     std::filesystem::remove_all(dir);
 }
 
 void test_gltf_asset_rejects_partial_required_extensions() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_partial_required_extensions");
     const std::filesystem::path path = dir / "partial_required_extensions.gltf";
-    constexpr std::array<std::string_view, 3> kPartialExtensions{
+    constexpr std::array<std::string_view, 2> kPartialExtensions{
         "KHR_materials_sheen",
-        "KHR_materials_anisotropy",
         "KHR_materials_iridescence",
     };
     for (const std::string_view extension : kPartialExtensions) {

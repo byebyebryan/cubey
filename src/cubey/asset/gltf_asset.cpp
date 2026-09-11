@@ -299,6 +299,30 @@ void require_valid_clearcoat_factor(float factor, const char* field) {
     }
 }
 
+void require_lit_material_extension_compatibility(const cgltf_material& material,
+                                                  const char* extension) {
+    if (material.unlit != 0) {
+        throw gltf_error(std::string(extension) + " must not be used with KHR_materials_unlit");
+    }
+    if (material.has_pbr_specular_glossiness != 0) {
+        throw gltf_error(std::string(extension) +
+                         " must not be used with KHR_materials_pbrSpecularGlossiness");
+    }
+}
+
+void require_valid_anisotropy_strength(float strength) {
+    if (!std::isfinite(strength) || strength < 0.0F || strength > 1.0F) {
+        throw gltf_error(
+            "KHR_materials_anisotropy anisotropyStrength must be finite and in [0, 1]");
+    }
+}
+
+void require_valid_anisotropy_rotation(float rotation) {
+    if (!std::isfinite(rotation)) {
+        throw gltf_error("KHR_materials_anisotropy anisotropyRotation must be finite");
+    }
+}
+
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
@@ -332,9 +356,12 @@ void require_valid_clearcoat_factor(float factor, const char* field) {
         require_valid_clearcoat_factor(material.clearcoat.clearcoat_factor, "clearcoatFactor");
         require_valid_clearcoat_factor(material.clearcoat.clearcoat_roughness_factor,
                                        "clearcoatRoughnessFactor");
-        if (material.unlit != 0) {
-            throw gltf_error("KHR_materials_clearcoat must not be used with KHR_materials_unlit");
-        }
+        require_lit_material_extension_compatibility(material, "KHR_materials_clearcoat");
+    }
+    if (material.has_anisotropy != 0) {
+        require_valid_anisotropy_strength(material.anisotropy.anisotropy_strength);
+        require_valid_anisotropy_rotation(material.anisotropy.anisotropy_rotation);
+        require_lit_material_extension_compatibility(material, "KHR_materials_anisotropy");
     }
     return {
         .label = label_or_empty(material.name),
@@ -814,6 +841,63 @@ void require_supported_morph_target_attributes(const cgltf_morph_target& target)
     return static_cast<std::uint32_t>(texcoord);
 }
 
+[[nodiscard]] std::uint32_t texture_texcoord_set(const cgltf_texture_view& view,
+                                                 const char* texture_label) {
+    cgltf_int texcoord = view.texcoord;
+    if (view.has_transform != 0 && view.transform.has_texcoord != 0) {
+        texcoord = view.transform.texcoord;
+    }
+    if (texcoord < 0 || texcoord > 1) {
+        throw gltf_error(std::string(texture_label) + " texCoord must be TEXCOORD_0 or TEXCOORD_1");
+    }
+    return static_cast<std::uint32_t>(texcoord);
+}
+
+[[nodiscard]] std::uint32_t anisotropy_tangent_texcoord_set(const cgltf_primitive& primitive) {
+    if (primitive.material == nullptr || primitive.material->has_anisotropy == 0) {
+        return normal_texture_texcoord_set(primitive);
+    }
+
+    const cgltf_material& material = *primitive.material;
+    const bool has_normal_texture = material.normal_texture.texture != nullptr;
+    const bool has_anisotropy_texture = material.anisotropy.anisotropy_texture.texture != nullptr;
+    const std::uint32_t normal_texcoord =
+        has_normal_texture ? texture_texcoord_set(material.normal_texture, "normalTexture") : 0U;
+    const std::uint32_t anisotropy_texcoord =
+        has_anisotropy_texture ? texture_texcoord_set(material.anisotropy.anisotropy_texture,
+                                                      "KHR_materials_anisotropy anisotropyTexture")
+                               : 0U;
+    if (has_normal_texture && has_anisotropy_texture && normal_texcoord != anisotropy_texcoord) {
+        throw gltf_error("KHR_materials_anisotropy requires matching normalTexture and "
+                         "anisotropyTexture texCoord sets when generating TANGENT");
+    }
+    return has_normal_texture ? normal_texcoord
+                              : (has_anisotropy_texture ? anisotropy_texcoord : 0U);
+}
+
+void require_anisotropy_tangent_space(const cgltf_primitive& primitive,
+                                      const cgltf_accessor* tangents,
+                                      const cgltf_accessor* texcoord0,
+                                      const cgltf_accessor* texcoord1, const GltfLoadConfig& config,
+                                      GltfMeshPrimitive& result) {
+    if (primitive.material == nullptr || primitive.material->has_anisotropy == 0 ||
+        tangents != nullptr) {
+        return;
+    }
+
+    if (!config.generate_missing_tangents) {
+        throw gltf_error("KHR_materials_anisotropy requires a TANGENT attribute when "
+                         "generate_missing_tangents is disabled");
+    }
+    const std::uint32_t texcoord_set = anisotropy_tangent_texcoord_set(primitive);
+    const bool has_texcoords = texcoord_set == 1U ? texcoord1 != nullptr : texcoord0 != nullptr;
+    if (!has_texcoords) {
+        throw gltf_error(std::string("KHR_materials_anisotropy requires TEXCOORD_") +
+                         std::to_string(texcoord_set) + " to generate the required tangent space");
+    }
+    generate_tangents(result, texcoord_set);
+}
+
 void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if (primitive.vertices.empty() || primitive.morph_targets.empty()) {
         return;
@@ -965,11 +1049,15 @@ void expand_bounds_for_morph_targets(GltfMeshPrimitive& primitive) {
     if (normals == nullptr) {
         generate_flat_normals(result);
     }
-    const std::uint32_t tangent_texcoord_set = normal_texture_texcoord_set(primitive);
-    const bool has_tangent_texcoords =
-        tangent_texcoord_set == 1U ? texcoord1 != nullptr : texcoord0 != nullptr;
-    if (tangents == nullptr && config.generate_missing_tangents && has_tangent_texcoords) {
-        generate_tangents(result, tangent_texcoord_set);
+    if (primitive.material != nullptr && primitive.material->has_anisotropy != 0) {
+        require_anisotropy_tangent_space(primitive, tangents, texcoord0, texcoord1, config, result);
+    } else {
+        const std::uint32_t tangent_texcoord_set = normal_texture_texcoord_set(primitive);
+        const bool has_tangent_texcoords =
+            tangent_texcoord_set == 1U ? texcoord1 != nullptr : texcoord0 != nullptr;
+        if (tangents == nullptr && config.generate_missing_tangents && has_tangent_texcoords) {
+            generate_tangents(result, tangent_texcoord_set);
+        }
     }
     result.local_bounds = bounds_for_positions(result.vertices);
     expand_bounds_for_morph_targets(result);
@@ -1423,11 +1511,12 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
     // This is intentionally stricter than the set of extensions that the
     // importer can parse. An extension is accepted from extensionsRequired
     // only after its data path and rendered semantics have both been closed.
-    static constexpr std::array<std::string_view, 7> kSupportedRequiredExtensions{
+    static constexpr std::array<std::string_view, 8> kSupportedRequiredExtensions{
         "KHR_materials_emissive_strength",
         "KHR_materials_ior",
         "KHR_materials_specular",
         "KHR_materials_clearcoat",
+        "KHR_materials_anisotropy",
         "KHR_texture_transform",
         "KHR_texture_basisu",
         "KHR_materials_unlit",

@@ -113,6 +113,24 @@ int main() {
                 clearcoat_layout.materials[3].clearcoat_roughness,
             "clearcoat conformance should sweep coat roughness independently of the base");
 
+    const auto anisotropy_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("anisotropy");
+    require(anisotropy_layout.materials.size() == 4,
+            "anisotropy conformance should expose four independently inspectable specimens");
+    require_close(anisotropy_layout.materials[0].anisotropy_strength, 0.0F,
+                  "anisotropy conformance should begin with a zero-strength control");
+    require_close(anisotropy_layout.materials[1].anisotropy_strength, 0.0F,
+                  "anisotropy zero-strength control should retain the second rotation");
+    require(anisotropy_layout.materials[2].anisotropy_strength > 0.0F &&
+                anisotropy_layout.materials[3].anisotropy_strength > 0.0F,
+            "anisotropy conformance should include enabled specimens");
+    require_close(anisotropy_layout.materials[0].anisotropy_rotation, 0.0F,
+                  "anisotropy conformance should begin at the unrotated direction");
+    require(anisotropy_layout.materials[1].anisotropy_rotation >
+                    anisotropy_layout.materials[0].anisotropy_rotation &&
+                anisotropy_layout.materials[3].anisotropy_rotation >
+                    anisotropy_layout.materials[2].anisotropy_rotation,
+            "anisotropy conformance should preserve its orthogonal rotation witnesses");
+
     bool rejected_unknown_case = false;
     try {
         static_cast<void>(cubey::projects::pbr_furnace::pbr_furnace_layout("unknown"));

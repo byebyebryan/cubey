@@ -22,7 +22,7 @@ inline cubey::config::Schema pbr_furnace_config_schema(PbrFurnaceConfig& config)
                .help = "Opt-in deterministic material conformance layout.",
                .type = cubey::config::ValueType::Enum,
                .range = {},
-               .enum_values = {"none", "ior", "specular", "clearcoat"}},
+               .enum_values = {"none", "ior", "specular", "clearcoat", "anisotropy"}},
               config.conformance_case)
         .build();
 }

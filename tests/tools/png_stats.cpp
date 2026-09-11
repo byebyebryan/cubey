@@ -272,6 +272,25 @@ void check_furnace_clearcoat(const LoadedImage& image) {
             "enabled clearcoat should change the layered base response");
 }
 
+void check_furnace_anisotropy(const LoadedImage& image) {
+    const double background_luma = luma(corner_background(image));
+    std::array<RegionStats, 4> regions{};
+    for (int index = 0; index < 4; ++index) {
+        regions[static_cast<std::size_t>(index)] =
+            foreground_vertical_region(image, index, 4, background_luma);
+    }
+    require_furnace_regions(regions, "furnace-anisotropy");
+    // The left pair differs only in rotation while strength is zero. The right
+    // pair enables the same strength at orthogonal rotations under the fixed
+    // conformance light.
+    require(std::abs(regions[0].luma - regions[1].luma) < 0.01,
+            "anisotropy strength zero should leave rotation inert");
+    require(std::abs(regions[2].luma - regions[3].luma) > 0.01,
+            "enabled anisotropy rotation should change the directional response");
+    require(std::abs(regions[0].luma - regions[2].luma) > 0.01,
+            "enabled anisotropy should change the isotropic directional response");
+}
+
 void check_gltf_specular_test(const LoadedImage& image) {
     // This is the fixed front-on capture layout in projects/gltf_viewer. Sampling the sphere
     // centers, rather than a foreground mask, prevents the atmosphere background from acting as
@@ -325,6 +344,8 @@ void check_material_conformance(const std::filesystem::path& path, std::string_v
             check_furnace_specular(image);
         } else if (case_name == "furnace-clearcoat") {
             check_furnace_clearcoat(image);
+        } else if (case_name == "furnace-anisotropy") {
+            check_furnace_anisotropy(image);
         } else if (case_name == "gltf-specular-test") {
             check_gltf_specular_test(image);
         } else {

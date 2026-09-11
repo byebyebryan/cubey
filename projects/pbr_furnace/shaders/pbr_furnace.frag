@@ -89,7 +89,9 @@ void main() {
     float occlusion_strength = material.metallic_roughness_normal_occlusion.w;
 
     vec3 geometric_normal = normalize(frag_normal);
-    mat3 tbn = mat3(normalize(frag_tangent), normalize(frag_bitangent), geometric_normal);
+    vec3 tangent = normalize(frag_tangent);
+    vec3 bitangent = normalize(frag_bitangent);
+    mat3 tbn = mat3(tangent, bitangent, geometric_normal);
     vec3 sampled_normal = texture(normal_texture, frag_uv0).xyz * 2.0 - 1.0;
     sampled_normal.xy *= normal_scale;
     vec3 normal = normalize(tbn * sampled_normal);
@@ -111,22 +113,69 @@ void main() {
     vec3 f0 = cubey_pbr_f0(albedo, metallic, dielectric_f0);
     vec3 f90 = mix(vec3(cubey_pbr_saturate(specular_strength)), vec3(1.0), metallic);
 
+    float anisotropy_strength = clamp(material.anisotropy_iridescence.x, 0.0, 1.0);
+    vec2 anisotropy_direction = normalize(material.anisotropy_iridescence.yz);
+    vec3 anisotropy_tangent =
+        normalize((tangent * anisotropy_direction.x) + (bitangent * anisotropy_direction.y));
+    anisotropy_tangent = normalize(anisotropy_tangent -
+                                   (normal * dot(normal, anisotropy_tangent)));
+    vec3 anisotropy_bitangent = normalize(cross(normal, anisotropy_tangent));
+
     vec3 irradiance = texture(irradiance_cube, normal).rgb;
     vec3 ibl_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90);
     float diffuse_ibl_attenuation = 1.0 - max(max(ibl_fresnel.r, ibl_fresnel.g), ibl_fresnel.b);
     vec3 diffuse_ibl = irradiance * diffuse_color * diffuse_ibl_attenuation;
-    vec3 reflection = reflect(-view_direction, normal);
+    vec3 ibl_normal = anisotropy_strength > 0.0
+                          ? cubey_pbr_anisotropic_bent_normal(
+                                normal, view_direction, anisotropy_bitangent, roughness,
+                                anisotropy_strength)
+                          : normal;
+    vec3 reflection = reflect(-view_direction, ibl_normal);
     float max_prefiltered_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
     vec3 prefiltered = textureLod(prefiltered_cube, reflection,
                                   roughness * max_prefiltered_lod)
                            .rgb;
     vec3 dfg = texture(brdf_lut, vec2(ndotv, roughness)).rgb;
+    vec3 energy_compensation = cubey_pbr_energy_compensation(f0, dfg.b);
     float occlusion = mix(1.0, texture(occlusion_texture, frag_uv0).r, occlusion_strength);
     float specular_occlusion =
         cubey_pbr_specular_ao(ndotv, occlusion, roughness) *
         cubey_pbr_horizon_specular_occlusion(reflection, geometric_normal);
     vec3 specular_ibl =
         prefiltered * cubey_pbr_indirect_specular(f0, f90, dfg) * specular_occlusion;
+    vec3 direct = vec3(0.0);
+    if (scene.light_color_intensity.a > 0.0) {
+        vec3 light_direction = normalize(scene.light_direction.xyz);
+        vec3 half_vector = normalize(view_direction + light_direction);
+        float ndotl = max(dot(normal, light_direction), 0.0);
+        if (ndotl > 0.0) {
+            float ndoth = max(dot(normal, half_vector), 0.0);
+            float vdoth = max(dot(view_direction, half_vector), 0.0);
+            float alpha_roughness = roughness * roughness;
+            float anisotropy_alpha_roughness =
+                mix(alpha_roughness, 1.0, anisotropy_strength * anisotropy_strength);
+            float d = anisotropy_strength > 0.0
+                          ? cubey_pbr_distribution_ggx_anisotropic(
+                                dot(anisotropy_tangent, half_vector),
+                                dot(anisotropy_bitangent, half_vector), ndoth,
+                                anisotropy_alpha_roughness, alpha_roughness)
+                          : cubey_pbr_distribution_ggx(ndoth, roughness);
+            float v = anisotropy_strength > 0.0
+                          ? cubey_pbr_visibility_smith_ggx_correlated_anisotropic(
+                                ndotv, ndotl, dot(anisotropy_tangent, view_direction),
+                                dot(anisotropy_bitangent, view_direction),
+                                dot(anisotropy_tangent, light_direction),
+                                dot(anisotropy_bitangent, light_direction),
+                                anisotropy_alpha_roughness, alpha_roughness)
+                          : cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
+            vec3 f = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
+            vec3 diffuse_direct = cubey_pbr_lambert_diffuse(diffuse_color) *
+                                  (1.0 - max(max(f.r, f.g), f.b));
+            vec3 specular_direct = d * v * f * energy_compensation;
+            direct = (diffuse_direct + specular_direct) * ndotl *
+                     scene.light_color_intensity.rgb * scene.light_color_intensity.a;
+        }
+    }
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
     float clearcoat_factor = clamp(material.clearcoat_factor_roughness_normal.x, 0.0, 1.0);
@@ -149,7 +198,7 @@ void main() {
     vec3 color = ((((diffuse_ibl * occlusion) + specular_ibl) * clearcoat_attenuation) +
                   clearcoat_ibl) *
                      scene.environment_intensity_mip_count.x +
-                 (emissive * clearcoat_attenuation);
+                 direct + (emissive * clearcoat_attenuation);
     out_color = vec4(cubey_pbr_apply_display_transform(color, scene.display_transform),
                      base_color.a);
 }

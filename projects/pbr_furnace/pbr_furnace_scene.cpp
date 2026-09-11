@@ -174,6 +174,46 @@ PbrFurnaceLayout pbr_furnace_layout(std::string_view conformance_case) {
             .camera_distance = 8.0F,
         };
     }
+    if (conformance_case == "anisotropy") {
+        // The left pair is a zero-strength control: rotation must be inert.
+        // The right pair enables the same material at orthogonal
+        // rotations under fixed directional light, exposing the anisotropic
+        // direct-BRDF response while retaining white IBL as the baseline.
+        return {
+            .materials =
+                {
+                    {.row = 0,
+                     .column = 0,
+                     .metallic = 1.0F,
+                     .roughness = 0.32F,
+                     .anisotropy_strength = 0.0F,
+                     .anisotropy_rotation = 0.0F,
+                     .position = {-3.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 1,
+                     .metallic = 1.0F,
+                     .roughness = 0.32F,
+                     .anisotropy_strength = 0.0F,
+                     .anisotropy_rotation = 1.570796F,
+                     .position = {-1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 2,
+                     .metallic = 1.0F,
+                     .roughness = 0.32F,
+                     .anisotropy_strength = 0.85F,
+                     .anisotropy_rotation = 0.0F,
+                     .position = {1.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 3,
+                     .metallic = 1.0F,
+                     .roughness = 0.32F,
+                     .anisotropy_strength = 0.85F,
+                     .anisotropy_rotation = 1.570796F,
+                     .position = {3.0F, 0.0F, 0.0F}},
+                },
+            .camera_distance = 8.0F,
+        };
+    }
     throw std::invalid_argument("unknown PBR furnace conformance case");
 }
 

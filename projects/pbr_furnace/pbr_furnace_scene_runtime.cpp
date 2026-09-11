@@ -74,12 +74,13 @@ PbrFurnaceApp::scene_uniforms(const cubey::SceneReadView& scene_view,
                               const cubey::scene::RenderFramePlan3D& plan,
                               VkFormat color_format) const {
     const cubey::math::Vec3 camera_position = camera_world_position(scene_view);
+    const bool anisotropy_conformance = config_.conformance_case == "anisotropy";
     return {
         .view_projection = plan.view_projection_matrix,
         .light_view_projection = cubey::math::Mat4{1.0F},
         .camera_position = {camera_position, 1.0F},
-        .light_direction = {0.0F, -1.0F, 0.0F, 0.0F},
-        .light_color_intensity = {1.0F, 1.0F, 1.0F, 0.0F},
+        .light_direction = {0.6F, 0.4F, 1.0F, 0.0F},
+        .light_color_intensity = {1.0F, 1.0F, 1.0F, anisotropy_conformance ? 3.0F : 0.0F},
         .ambient_color_intensity = {0.0F, 0.0F, 0.0F, 0.0F},
         .environment_intensity_mip_count =
             {

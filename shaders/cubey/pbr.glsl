@@ -61,6 +61,39 @@ float cubey_pbr_visibility_smith_ggx_correlated(float ndotv, float ndotl, float 
     return 0.5 / max(lambda_v + lambda_l, 0.00001);
 }
 
+float cubey_pbr_visibility_smith_ggx_correlated_anisotropic(
+    float ndotv, float ndotl, float tdotv, float bdotv, float tdotl, float bdotl,
+    float alpha_t, float alpha_b) {
+    float at = max(alpha_t, 0.001);
+    float ab = max(alpha_b, 0.001);
+    float lambda_v = ndotl * length(vec3(at * tdotv, ab * bdotv, ndotv));
+    float lambda_l = ndotv * length(vec3(at * tdotl, ab * bdotl, ndotl));
+    float visibility = 0.5 / max(lambda_v + lambda_l, 0.00001);
+    return clamp(visibility, 0.0, 1.0);
+}
+
+vec3 cubey_pbr_anisotropic_bent_normal(vec3 normal, vec3 view_direction,
+                                        vec3 anisotropy_bitangent, float roughness,
+                                        float anisotropy_strength) {
+    // The prefiltered environment is GGX-isotropic. This Khronos sample-renderer
+    // heuristic bends its lookup normal toward the anisotropy direction instead of
+    // requiring a second anisotropic prefilter. Preserve its raw intermediate
+    // cross-product scale before the final normalization. Strength zero returns
+    // exactly the isotropic normal.
+    if (anisotropy_strength <= 0.0) {
+        return normal;
+    }
+    vec3 anisotropic_tangent = cross(anisotropy_bitangent, view_direction);
+    vec3 anisotropic_normal = cross(anisotropic_tangent, anisotropy_bitangent);
+    float bend_factor = 1.0 - (anisotropy_strength * (1.0 - roughness));
+    float bend_factor_pow4 = bend_factor * bend_factor * bend_factor * bend_factor;
+    vec3 bent_normal = mix(anisotropic_normal, normal, bend_factor_pow4);
+    if (dot(bent_normal, bent_normal) <= 1.0e-8) {
+        return normal;
+    }
+    return normalize(bent_normal);
+}
+
 vec3 cubey_pbr_fresnel_schlick(float cos_theta, vec3 f0) {
     return f0 + (1.0 - f0) * pow(cubey_pbr_saturate(1.0 - cos_theta), 5.0);
 }

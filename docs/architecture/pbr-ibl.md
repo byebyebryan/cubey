@@ -61,8 +61,8 @@ Radiance HDR equirectangular environment assets:
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment. Its default grid is unchanged; opt-in `ior`,
-  `specular`, and `clearcoat` conformance layouts fix camera, white IBL, linear
-  output, and material specimens for relational capture checks;
+  `specular`, `clearcoat`, and `anisotropy` conformance layouts fix camera,
+  lighting, linear output, and material specimens for relational capture checks;
 - optional Filament sample HDR environments can be fetched by CMake for local
   inspection, with `lightroom_14b.hdr` as the default viewer environment when
   available;
@@ -112,13 +112,13 @@ common path does not sample absent extension textures.
 
 `KHR_materials_clearcoat` is closed for required use without introducing a
 material graph or shader permutation. The importer rejects non-finite or
-out-of-range factor and roughness values and the prohibited combination with
-`KHR_materials_unlit`. It preserves independent factor, roughness, and normal
-texture references, per-slot UV transforms, and authored normal scale. All
-three textures are linear data; the factor reads red, roughness reads green,
-and the normal texture supplies its own tangent-space coat normal. Without a
-coat-normal texture, the layer uses the geometric normal rather than inheriting
-the base normal map.
+out-of-range factor and roughness values and the prohibited combinations with
+`KHR_materials_unlit` and `KHR_materials_pbrSpecularGlossiness`. It preserves
+independent factor, roughness, and normal texture references, per-slot UV
+transforms, and authored normal scale. All three textures are linear data; the
+factor reads red, roughness reads green, and the normal texture supplies its own
+tangent-space coat normal. Without a coat-normal texture, the layer uses the
+geometric normal rather than inheriting the base normal map.
 
 The renderer models one fixed-IOR 1.5 layer (`F0 = 0.04`). A single Schlick
 coat weight at the coat normal/view angle attenuates the complete underlying
@@ -140,6 +140,32 @@ enabled-coat roughness/layering response with tolerant region comparisons. The
 pinned Khronos `ClearCoatTest` adds an end-to-end staged importer/viewer smoke
 covering factor, roughness, coat texture and normal-map interactions; neither
 rendered lane is a byte-identical cross-GPU golden.
+
+## Anisotropy Contract
+
+`KHR_materials_anisotropy` is closed for required use on the existing fixed
+material descriptor layout. The importer validates finite strength in `[0, 1]`
+and finite rotation, and rejects the same unlit and specular-glossiness
+combinations as the specification. A primitive using the extension must provide
+an authored tangent or allow Cubey to generate one. Generation selects the
+effective normal-texture UV set first, then the anisotropy-texture UV set, then
+UV0; missing UVs or conflicting normal/anisotropy UV sets are rejected instead
+of producing a tangent frame that cannot satisfy both textures.
+
+The linear anisotropy texture maps red/green from `[0, 1]` to a tangent-space
+direction and uses blue to scale strength. Rotation composes with that direction.
+Direct lighting uses the anisotropic GGX distribution and correlated Smith
+visibility. The current isotropically prefiltered environment is sampled with a
+Khronos-style bent-normal approximation, avoiding a second environment prefilter
+or descriptor. Strength zero takes the original isotropic direct and IBL paths
+exactly.
+
+Focused loader and shader tests cover validation, exclusions, required-use
+acceptance, UV-aware tangent generation, texture channel/transform plumbing, and
+the explicit isotropic fallback. A deterministic furnace adds fixed directional
+light above white IBL to verify zero-strength rotation neutrality and an enabled
+orthogonal response. The pinned Khronos `AnisotropyBarnLamp` BasisU smoke covers
+the staged importer and textured renderer path without acting as a pixel golden.
 
 ## IOR And Specular Conformance
 
@@ -197,8 +223,8 @@ renderer-wide material management explicit future work.
   ticks, and atomically publishes complete replacement generations. The same
   runtime advances its cloud environment so time-of-day changes do not reset the
   cloud probe's previous/current interpolation.
-- The current sheen, anisotropy, and iridescence lobes remain pragmatic
-  real-time approximations and are not accepted from `extensionsRequired`.
+- The current sheen and iridescence lobes remain pragmatic real-time
+  approximations and are not accepted from `extensionsRequired`.
   Transmission, refraction, volume absorption, dispersion, and OIT-quality
   transparent material behavior remain future work.
 
