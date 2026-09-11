@@ -205,10 +205,11 @@ full engine architecture.
   uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
   push constants, a skybox environment set, a fullscreen post set, dielectric
   IOR plus `KHR_materials_specular` factors/textures, and the current opaque
-  glTF extension lobes: clearcoat, sheen, anisotropy, and iridescence. Optional
-  extension texture slots stay fixed in the descriptor layout, while material
-  texture flags gate shader fetches for absent textures. The scene set includes
-  irradiance, previous/current prefiltered cubes, and the DFG/BRDF lookup.
+  glTF extension lobes: required-use clearcoat plus optional sheen, anisotropy,
+  and iridescence. Extension texture slots stay fixed in the descriptor layout,
+  while material texture flags gate shader fetches for absent textures. The
+  scene set includes irradiance, previous/current prefiltered cubes, and the
+  DFG/BRDF lookup.
   `PbrEnvironmentTextureBindings` carries the generation blend, and
   `ForwardPbrRenderer3D::update_environment` updates one safe frame-slot set so
   dynamic atmosphere/cloud probes crossfade without rebuilding the renderer or

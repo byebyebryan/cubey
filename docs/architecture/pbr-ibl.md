@@ -60,9 +60,9 @@ Radiance HDR equirectangular environment assets:
   bespoke ocean shader remains outside the full PBR material path;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
-  uniform white environment. Its default grid is unchanged; opt-in `ior` and
-  `specular` conformance layouts fix camera, white IBL, linear output, and
-  material specimens for relational capture checks;
+  uniform white environment. Its default grid is unchanged; opt-in `ior`,
+  `specular`, and `clearcoat` conformance layouts fix camera, white IBL, linear
+  output, and material specimens for relational capture checks;
 - optional Filament sample HDR environments can be fetched by CMake for local
   inspection, with `lightroom_14b.hdr` as the default viewer environment when
   available;
@@ -107,6 +107,39 @@ live in the material descriptor set.
 Optional extension textures still use fixed descriptor slots with default
 fallback textures, but shader fetches are gated by per-material flags so the
 common path does not sample absent extension textures.
+
+## Clearcoat Contract
+
+`KHR_materials_clearcoat` is closed for required use without introducing a
+material graph or shader permutation. The importer rejects non-finite or
+out-of-range factor and roughness values and the prohibited combination with
+`KHR_materials_unlit`. It preserves independent factor, roughness, and normal
+texture references, per-slot UV transforms, and authored normal scale. All
+three textures are linear data; the factor reads red, roughness reads green,
+and the normal texture supplies its own tangent-space coat normal. Without a
+coat-normal texture, the layer uses the geometric normal rather than inheriting
+the base normal map.
+
+The renderer models one fixed-IOR 1.5 layer (`F0 = 0.04`). A single Schlick
+coat weight at the coat normal/view angle attenuates the complete underlying
+response—including direct diffuse/specular/sheen, diffuse and specular IBL,
+ambient fill, and emission—and weights the coat GGX response. Direct lighting
+uses the coat's `D * V` lobe under that weight. Indirect lighting uses the DFG
+LUT blue channel, which already stores the Fresnel-free white-conductor
+single-scatter integral, so it does not apply a second Fresnel term. A zero
+factor bypasses coat roughness/normal texture work and leaves the underlying
+material unchanged. Authored roughness remains preserved in CPU/material data;
+the shader applies the same `0.04` numerical evaluation floor used by the base
+GGX path.
+
+Focused tests cover defaults, finite range validation, the unlit exclusion,
+required-extension acceptance, channel selection, linear color spaces, normal
+scale, UV transforms, uniform packing, and the direct/IBL layering structure.
+The opt-in deterministic furnace verifies zero-factor neutrality and distinct
+enabled-coat roughness/layering response with tolerant region comparisons. The
+pinned Khronos `ClearCoatTest` adds an end-to-end staged importer/viewer smoke
+covering factor, roughness, coat texture and normal-map interactions; neither
+rendered lane is a byte-identical cross-GPU golden.
 
 ## IOR And Specular Conformance
 
@@ -164,9 +197,10 @@ renderer-wide material management explicit future work.
   ticks, and atomically publishes complete replacement generations. The same
   runtime advances its cloud environment so time-of-day changes do not reset the
   cloud probe's previous/current interpolation.
-- The current clearcoat, sheen, anisotropy, and iridescence lobes are pragmatic
-  real-time approximations. Transmission, refraction, volume absorption,
-  dispersion, and OIT-quality transparent material behavior remain future work.
+- The current sheen, anisotropy, and iridescence lobes remain pragmatic
+  real-time approximations and are not accepted from `extensionsRequired`.
+  Transmission, refraction, volume absorption, dispersion, and OIT-quality
+  transparent material behavior remain future work.
 
 ## Non-Goals
 

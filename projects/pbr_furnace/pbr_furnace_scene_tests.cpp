@@ -98,6 +98,21 @@ int main() {
                 specular_layout.materials[3].specular_color_factor.r,
             "specular conformance should include a blue material F0 witness");
 
+    const auto clearcoat_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("clearcoat");
+    require(clearcoat_layout.materials.size() == 4,
+            "clearcoat conformance should expose four independently inspectable specimens");
+    require_close(clearcoat_layout.materials[0].clearcoat_factor, 0.0F,
+                  "clearcoat conformance should begin with a disabled coat");
+    require_close(clearcoat_layout.materials[1].clearcoat_factor, 0.0F,
+                  "clearcoat zero-factor control should keep the coat disabled");
+    require_close(clearcoat_layout.materials[2].clearcoat_factor, 1.0F,
+                  "clearcoat conformance should include an enabled smooth coat");
+    require_close(clearcoat_layout.materials[3].clearcoat_factor, 1.0F,
+                  "clearcoat conformance should include an enabled rough coat");
+    require(clearcoat_layout.materials[2].clearcoat_roughness <
+                clearcoat_layout.materials[3].clearcoat_roughness,
+            "clearcoat conformance should sweep coat roughness independently of the base");
+
     bool rejected_unknown_case = false;
     try {
         static_cast<void>(cubey::projects::pbr_furnace::pbr_furnace_layout("unknown"));

@@ -34,6 +34,12 @@ void test_conformance_case_config() {
     require(named.conformance_case == "specular",
             "PBR furnace should select its opt-in specular conformance layout");
 
+    const char* clearcoat_arguments[] = {"pbr_furnace", "--conformance-case", "clearcoat"};
+    const auto clearcoat = cubey::projects::pbr_furnace::parse_pbr_furnace_config(
+        3, const_cast<char**>(clearcoat_arguments));
+    require(clearcoat.conformance_case == "clearcoat",
+            "PBR furnace should select its opt-in clearcoat conformance layout");
+
     cubey::projects::pbr_furnace::PbrFurnaceConfig deferred;
     const auto schema = cubey::projects::pbr_furnace::pbr_furnace_config_schema(deferred);
     schema.set("conformance_case", "ior");

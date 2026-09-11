@@ -24,6 +24,8 @@ struct PbrFurnaceMaterial {
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
     float specular_factor = 1.0F;
     float ior = 1.5F;
+    float clearcoat_factor = 0.0F;
+    float clearcoat_roughness = 0.0F;
     math::Vec3 position{0.0F, 0.0F, 0.0F};
 };
 

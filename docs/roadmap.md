@@ -28,9 +28,10 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
-Status: the first glTF conformance, staged-loading, and incremental GPU-upload
-responsiveness checkpoints are complete; the next asset-pipeline work should be
-selected from a concrete product need rather than presumed unfinished plumbing.
+Status: the first glTF conformance—including required-use IOR, specular, and
+clearcoat—plus staged-loading and incremental GPU-upload responsiveness
+checkpoints are complete; the next asset-pipeline work should be selected from
+a concrete product need rather than presumed unfinished plumbing.
 
 The recent foundation push landed shared runtime, renderer, shader,
 environment, UI, and project-owned configuration infrastructure. Retired
@@ -133,6 +134,15 @@ the spent session shell to the asset worker after atomic activation. The public
 blocking importer now drains that same session instead of retaining a separate
 glTF one-batch path.
 
+The material-extension checkpoint now promotes `KHR_materials_clearcoat` for
+required use alongside IOR and specular. Its closed contract validates authored
+factors, preserves linear texture channels/transforms and independent coat
+normals, applies one fixed-1.5-IOR Fresnel layer above the complete base response,
+and avoids double Fresnel in IBL through the DFG white-conductor channel. Focused
+loader/shader witnesses, a tolerant deterministic clearcoat furnace, and the
+pinned Khronos `ClearCoatTest` viewer smoke back the claim. Sheen, anisotropy,
+and iridescence remain optional partial implementations.
+
 Recommended next feature or foundation streams:
 
 - public visual showcase: maintain the four-highlight package and provenance
@@ -149,7 +159,9 @@ Recommended next feature or foundation streams:
   real multi-asset streaming creates queueing pressure, design loader
   concurrency and scheduling from that workload. Do not add a dedicated
   transfer queue, partial scene visibility, or a device-local allocator without
-  new evidence.
+  new evidence. For material conformance, select sheen, anisotropy, or
+  iridescence as a separate promotion slice; do not treat their current optional
+  lobes as required-use support.
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
@@ -512,8 +524,8 @@ Current checkpoint:
 - `projects/pbr_furnace` links against `cubey` and renders a white-furnace PBR
   validation grid: shared UV-sphere primitive mesh, roughness columns, metallic
   rows, uniform white IBL cubemaps, glTF base-color/IOR/specular remapping,
-  DFG-based energy compensation, reusable PBR material uniform
-  descriptors, and windowed plus headless capture output.
+  fixed-IOR clearcoat layering, DFG-based energy compensation, reusable PBR
+  material uniform descriptors, and windowed plus headless capture output.
 - `examples/instanced_cubes` links against `cubey` and draws a cube grid through
   a single renderable packet, real instance-rate vertex input, one shared cube
   mesh, and `instance_count` propagation from scene primitive to Vulkan draw.

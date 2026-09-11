@@ -292,6 +292,13 @@ void require_valid_specular_color(const math::Vec3& color) {
     }
 }
 
+void require_valid_clearcoat_factor(float factor, const char* field) {
+    if (!std::isfinite(factor) || factor < 0.0F || factor > 1.0F) {
+        throw gltf_error(std::string("KHR_materials_clearcoat ") + field +
+                         " must be finite and in [0, 1]");
+    }
+}
+
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
@@ -320,6 +327,14 @@ void require_valid_specular_color(const math::Vec3& color) {
     if (material.has_specular != 0) {
         require_valid_specular_factor(material.specular.specular_factor);
         require_valid_specular_color(specular_color);
+    }
+    if (material.has_clearcoat != 0) {
+        require_valid_clearcoat_factor(material.clearcoat.clearcoat_factor, "clearcoatFactor");
+        require_valid_clearcoat_factor(material.clearcoat.clearcoat_roughness_factor,
+                                       "clearcoatRoughnessFactor");
+        if (material.unlit != 0) {
+            throw gltf_error("KHR_materials_clearcoat must not be used with KHR_materials_unlit");
+        }
     }
     return {
         .label = label_or_empty(material.name),
@@ -354,7 +369,10 @@ void require_valid_specular_color(const math::Vec3& color) {
         .clearcoat_roughness_factor =
             material.has_clearcoat != 0 ? material.clearcoat.clearcoat_roughness_factor : 0.0F,
         .clearcoat_normal_scale =
-            material.has_clearcoat != 0 ? material.clearcoat.clearcoat_normal_texture.scale : 1.0F,
+            material.has_clearcoat != 0 &&
+                    material.clearcoat.clearcoat_normal_texture.texture != nullptr
+                ? material.clearcoat.clearcoat_normal_texture.scale
+                : 1.0F,
         .clearcoat_texture = material.has_clearcoat != 0
                                  ? load_texture_ref(material.clearcoat.clearcoat_texture,
                                                     texture_base, texture_count)
@@ -1405,9 +1423,14 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
     // This is intentionally stricter than the set of extensions that the
     // importer can parse. An extension is accepted from extensionsRequired
     // only after its data path and rendered semantics have both been closed.
-    static constexpr std::array<std::string_view, 6> kSupportedRequiredExtensions{
-        "KHR_materials_emissive_strength", "KHR_materials_ior",  "KHR_materials_specular",
-        "KHR_texture_transform",           "KHR_texture_basisu", "KHR_materials_unlit",
+    static constexpr std::array<std::string_view, 7> kSupportedRequiredExtensions{
+        "KHR_materials_emissive_strength",
+        "KHR_materials_ior",
+        "KHR_materials_specular",
+        "KHR_materials_clearcoat",
+        "KHR_texture_transform",
+        "KHR_texture_basisu",
+        "KHR_materials_unlit",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

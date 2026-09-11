@@ -69,15 +69,26 @@ vec3 cubey_pbr_fresnel_schlick(float cos_theta, vec3 f0, vec3 f90) {
     return f0 + (f90 - f0) * pow(cubey_pbr_saturate(1.0 - cos_theta), 5.0);
 }
 
-float cubey_pbr_clearcoat_direct(float ndotv, float ndotl, float ndoth, float vdoth,
-                                 float roughness) {
+float cubey_pbr_clearcoat_direct(float ndotv, float ndotl, float ndoth, float roughness) {
     if (ndotv <= 0.0 || ndotl <= 0.0) {
         return 0.0;
     }
     float d = cubey_pbr_distribution_ggx(ndoth, roughness);
     float v = cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
-    float f = cubey_pbr_fresnel_schlick(vdoth, vec3(0.04)).r;
-    return d * v * f;
+    return d * v;
+}
+
+float cubey_pbr_clearcoat_layer_weight(float clearcoat, float ndotv) {
+    // KHR_materials_clearcoat fixes the coating IOR at 1.5 (F0 = 0.04) and
+    // layers its BRDF over the complete base BSDF with this one view Fresnel.
+    float fresnel = cubey_pbr_fresnel_schlick(cubey_pbr_saturate(ndotv), vec3(0.04)).r;
+    return cubey_pbr_saturate(clearcoat) * fresnel;
+}
+
+vec3 cubey_pbr_clearcoat_indirect(vec3 dfg) {
+    // The layer Fresnel is applied by cubey_pbr_clearcoat_layer_weight. The
+    // .b term stores the Fresnel-free white-conductor single-scatter lobe.
+    return vec3(dfg.b);
 }
 
 float cubey_pbr_distribution_charlie(float ndoth, float roughness) {

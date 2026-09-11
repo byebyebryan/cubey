@@ -81,15 +81,17 @@ void PbrFurnaceApp::create_materials(const cubey::vulkan::Device& device,
                     (furnace_material.row * kPbrFurnaceColumnCount) + furnace_material.column,
             });
         material_handles_.push_back(material);
-        materials_.set_factors(material,
-                               cubey::render::PbrMaterialFactors{
-                                   .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
-                                   .metallic_factor = furnace_material.metallic,
-                                   .roughness_factor = furnace_material.roughness,
-                                   .specular_color_factor = furnace_material.specular_color_factor,
-                                   .specular_factor = furnace_material.specular_factor,
-                                   .dielectric_ior = furnace_material.ior,
-                               });
+        materials_.set_factors(
+            material, cubey::render::PbrMaterialFactors{
+                          .base_color_factor = {1.0F, 1.0F, 1.0F, 1.0F},
+                          .metallic_factor = furnace_material.metallic,
+                          .roughness_factor = furnace_material.roughness,
+                          .specular_color_factor = furnace_material.specular_color_factor,
+                          .specular_factor = furnace_material.specular_factor,
+                          .dielectric_ior = furnace_material.ior,
+                          .clearcoat_factor = furnace_material.clearcoat_factor,
+                          .clearcoat_roughness_factor = furnace_material.clearcoat_roughness,
+                      });
         materials_.emplace_instance(material, device,
                                     cubey::render::FrameUniformMaterialInstanceConfig{
                                         .material_pass = cubey::render::pbr_forward_pass_info(),

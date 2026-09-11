@@ -1052,6 +1052,127 @@ void test_gltf_asset_validates_ior_and_specular_material_values() {
     std::filesystem::remove_all(dir);
 }
 
+void test_gltf_asset_closes_clearcoat_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_clearcoat_contract");
+    const std::filesystem::path path = dir / "clearcoat_contract.gltf";
+    constexpr std::string_view kTinyPng =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/"
+        "x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+
+    write_text_file(path, std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_clearcoat", "KHR_texture_transform"],
+  "extensionsRequired": ["KHR_materials_clearcoat", "KHR_texture_transform"],
+  "materials": [
+    {"extensions": {"KHR_materials_clearcoat": {}}},
+    {"extensions": {"KHR_materials_clearcoat": {
+      "clearcoatFactor": 0.6,
+      "clearcoatTexture": {
+        "index": 0,
+        "texCoord": 1,
+        "extensions": {"KHR_texture_transform": {
+          "offset": [0.2, 0.3], "rotation": 0.5, "scale": [0.4, 0.5], "texCoord": 0
+        }}
+      },
+      "clearcoatRoughnessFactor": 0.25,
+      "clearcoatRoughnessTexture": {"index": 1, "extensions": {
+        "KHR_texture_transform": {"offset": [0.6, 0.7], "scale": [0.8, 0.9]}
+      }},
+      "clearcoatNormalTexture": {"index": 2, "scale": 0.8, "extensions": {
+        "KHR_texture_transform": {"offset": [0.1, 0.9], "rotation": 0.25}
+      }}
+    }}}
+  ],
+  "textures": [{"source": 0}, {"source": 0}, {"source": 0}],
+  "images": [{"uri": ")JSON") +
+                              std::string{kTinyPng} + R"JSON("}]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+    require(asset.materials.size() == 3,
+            "clearcoat fixture should retain its implicit and authored materials");
+    const cubey::asset::GltfMaterial& defaults = asset.materials[1];
+    require_close(defaults.clearcoat_factor, 0.0F,
+                  "clearcoatFactor should default to a disabled layer");
+    require_close(defaults.clearcoat_roughness_factor, 0.0F,
+                  "clearcoatRoughnessFactor should default to zero");
+    require_close(defaults.clearcoat_normal_scale, 1.0F,
+                  "clearcoat normal texture scale should default to one");
+    require(!defaults.clearcoat_texture.has_value() &&
+                !defaults.clearcoat_roughness_texture.has_value() &&
+                !defaults.clearcoat_normal_texture.has_value(),
+            "default clearcoat material should not invent texture references");
+
+    const cubey::asset::GltfMaterial& material = asset.materials[2];
+    require_close(material.clearcoat_factor, 0.6F,
+                  "clearcoatFactor should preserve the authored linear multiplier");
+    require_close(material.clearcoat_roughness_factor, 0.25F,
+                  "clearcoatRoughnessFactor should preserve the authored linear multiplier");
+    require(material.clearcoat_texture.texture_index == 0 &&
+                material.clearcoat_roughness_texture.texture_index == 1 &&
+                material.clearcoat_normal_texture.texture_index == 2,
+            "clearcoat channels should preserve their independent source textures");
+    require(material.clearcoat_texture.texcoord == 0,
+            "clearcoat texture transform should override the source texture coordinate set");
+    require_close(material.clearcoat_texture.offset.x, 0.2F,
+                  "clearcoat texture transform should preserve offset x");
+    require_close(material.clearcoat_texture.offset.y, 0.3F,
+                  "clearcoat texture transform should preserve offset y");
+    require_close(material.clearcoat_texture.rotation, 0.5F,
+                  "clearcoat texture transform should preserve rotation");
+    require_close(material.clearcoat_texture.scale.x, 0.4F,
+                  "clearcoat texture transform should preserve scale x");
+    require_close(material.clearcoat_texture.scale.y, 0.5F,
+                  "clearcoat texture transform should preserve scale y");
+    require_close(material.clearcoat_roughness_texture.offset.x, 0.6F,
+                  "clearcoat roughness transform should preserve offset x");
+    require_close(material.clearcoat_roughness_texture.offset.y, 0.7F,
+                  "clearcoat roughness transform should preserve offset y");
+    require_close(material.clearcoat_roughness_texture.scale.x, 0.8F,
+                  "clearcoat roughness transform should preserve scale x");
+    require_close(material.clearcoat_roughness_texture.scale.y, 0.9F,
+                  "clearcoat roughness transform should preserve scale y");
+    require_close(material.clearcoat_normal_texture.offset.x, 0.1F,
+                  "clearcoat normal transform should preserve offset x");
+    require_close(material.clearcoat_normal_texture.offset.y, 0.9F,
+                  "clearcoat normal transform should preserve offset y");
+    require_close(material.clearcoat_normal_texture.rotation, 0.25F,
+                  "clearcoat normal transform should preserve rotation");
+    require_close(material.clearcoat_normal_scale, 0.8F,
+                  "clearcoat normal texture should preserve its authored scale");
+
+    const auto require_invalid = [&path](std::string_view field, std::string_view value) {
+        write_text_file(path,
+                        std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                            "  \"extensionsUsed\": [\"KHR_materials_clearcoat\"],\n" +
+                            "  \"materials\": [{\"extensions\": {\"KHR_materials_clearcoat\": {\"" +
+                            std::string{field} + "\": " + std::string{value} + "}}}]\n}\n");
+        require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); }, field,
+                                    "invalid clearcoat factor should identify its rejected field");
+    };
+    require_invalid("clearcoatFactor", "-0.01");
+    require_invalid("clearcoatFactor", "1.01");
+    require_invalid("clearcoatFactor", "1e999");
+    require_invalid("clearcoatRoughnessFactor", "-0.01");
+    require_invalid("clearcoatRoughnessFactor", "1.01");
+    require_invalid("clearcoatRoughnessFactor", "1e999");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_clearcoat", "KHR_materials_unlit"],
+  "extensionsRequired": ["KHR_materials_clearcoat", "KHR_materials_unlit"],
+  "materials": [{"extensions": {
+    "KHR_materials_clearcoat": {"clearcoatFactor": 0.5},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_clearcoat",
+        "clearcoat and unlit should be rejected as an invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
 void test_gltf_asset_marks_nodes_authored_with_matrix() {
     const std::filesystem::path dir = test_dir("cubey-gltf-matrix-node");
     const std::filesystem::path path = dir / "matrix_node.gltf";
@@ -1494,12 +1615,14 @@ void test_gltf_asset_accepts_closed_required_extensions() {
   "extensionsUsed": [
     "KHR_materials_emissive_strength",
     "KHR_materials_unlit",
+    "KHR_materials_clearcoat",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
   "extensionsRequired": [
     "KHR_materials_emissive_strength",
     "KHR_materials_unlit",
+    "KHR_materials_clearcoat",
     "KHR_texture_transform",
     "KHR_texture_basisu"
   ],
@@ -1512,23 +1635,30 @@ void test_gltf_asset_accepts_closed_required_extensions() {
   },
   {
     "extensions": {"KHR_materials_unlit": {}}
+  },
+  {
+    "extensions": {"KHR_materials_clearcoat": {
+      "clearcoatFactor": 0.5,
+      "clearcoatRoughnessFactor": 0.2
+    }}
   }]
 })JSON");
 
     const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
 
-    require(asset.materials.size() == 3, "loader should preserve required-extension materials");
+    require(asset.materials.size() == 4, "loader should preserve required-extension materials");
     require_close(asset.materials[1].emissive_factor.g, 0.9F,
                   "closed required emissive-strength extension should load");
     require(asset.materials[2].unlit, "closed required unlit extension should load");
+    require_close(asset.materials[3].clearcoat_factor, 0.5F,
+                  "closed required clearcoat extension should load its factor");
     std::filesystem::remove_all(dir);
 }
 
 void test_gltf_asset_rejects_partial_required_extensions() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_partial_required_extensions");
     const std::filesystem::path path = dir / "partial_required_extensions.gltf";
-    constexpr std::array<std::string_view, 4> kPartialExtensions{
-        "KHR_materials_clearcoat",
+    constexpr std::array<std::string_view, 3> kPartialExtensions{
         "KHR_materials_sheen",
         "KHR_materials_anisotropy",
         "KHR_materials_iridescence",

@@ -332,6 +332,7 @@ if (BUILD_TESTING)
             --input "${CUBEY_GLTF_VIEWER_SAMPLE_PATH}"
             --pbr-environment-source static
             --no-clouds
+            ${ARGN}
         )
         set_property(
             TEST "${test_name}"
@@ -362,6 +363,28 @@ if (BUILD_TESTING)
         gltf_viewer_emissive_strength_test_headless_writes_png
         "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf"
         "gltf-viewer-emissive-strength-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_clearcoat_test_headless_writes_png
+        "ClearCoatTest/glTF/ClearCoatTest.gltf"
+        "gltf-viewer-clearcoat-test-smoke.png"
+        --ibl-intensity
+        0.5
+        --exposure
+        0
+        --capture-camera-distance-scale
+        0.55
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+        --time-of-day-mode
+        manual
+        --sun-elevation
+        14
+        --sun-azimuth
+        180
+        --pause-time
     )
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_anisotropy_barn_lamp_ktx_basisu_headless_writes_png

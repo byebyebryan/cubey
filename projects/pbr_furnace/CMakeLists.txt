@@ -87,12 +87,31 @@ if (BUILD_TESTING)
         "${CUBEY_PBR_FURNACE_SPECULAR_CONFORMANCE_OUTPUT}"
         furnace-specular
     )
+    set(CUBEY_PBR_FURNACE_CLEARCOAT_CONFORMANCE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-clearcoat-conformance.png"
+    )
+    cubey_add_png_capture_test(
+        pbr_furnace_clearcoat_conformance_writes_png
+        cubey_project_pbr_furnace
+        "${CUBEY_PBR_FURNACE_CLEARCOAT_CONFORMANCE_OUTPUT}"
+        512
+        512
+        --conformance-case
+        clearcoat
+    )
+    cubey_add_png_material_conformance_test(
+        pbr_furnace_clearcoat_conformance_writes_png
+        "${CUBEY_PBR_FURNACE_CLEARCOAT_CONFORMANCE_OUTPUT}"
+        furnace-clearcoat
+    )
     cubey_label_tests(
         conformance
         pbr_furnace_ior_conformance_writes_png
         pbr_furnace_ior_conformance_writes_png_material_conformance
         pbr_furnace_specular_conformance_writes_png
         pbr_furnace_specular_conformance_writes_png_material_conformance
+        pbr_furnace_clearcoat_conformance_writes_png
+        pbr_furnace_clearcoat_conformance_writes_png_material_conformance
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_PBR_FURNACE_HEADLESS_VIDEO_SMOKE_OUTPUT

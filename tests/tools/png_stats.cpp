@@ -253,6 +253,25 @@ void check_furnace_specular(const LoadedImage& image) {
             "blue specular-color specimen should retain a blue F0 response");
 }
 
+void check_furnace_clearcoat(const LoadedImage& image) {
+    const double background_luma = luma(corner_background(image));
+    std::array<RegionStats, 4> regions{};
+    for (int index = 0; index < 4; ++index) {
+        regions[static_cast<std::size_t>(index)] =
+            foreground_vertical_region(image, index, 4, background_luma);
+    }
+    require_furnace_regions(regions, "furnace-clearcoat");
+    // The left pair keeps the underlying material fixed while clearcoatFactor
+    // is zero, so a clearcoat roughness change must be inert. The right pair
+    // enables the layer and isolates its roughness under the same white IBL.
+    require(std::abs(regions[0].luma - regions[1].luma) < 0.01,
+            "clearcoat factor zero should leave roughness and the full underlying material inert");
+    require(std::abs(regions[2].luma - regions[3].luma) > 0.005,
+            "enabled clearcoat roughness should change the layered IBL response");
+    require(std::abs(regions[0].luma - regions[2].luma) > 0.005,
+            "enabled clearcoat should change the layered base response");
+}
+
 void check_gltf_specular_test(const LoadedImage& image) {
     // This is the fixed front-on capture layout in projects/gltf_viewer. Sampling the sphere
     // centers, rather than a foreground mask, prevents the atmosphere background from acting as
@@ -304,6 +323,8 @@ void check_material_conformance(const std::filesystem::path& path, std::string_v
             check_furnace_ior(image);
         } else if (case_name == "furnace-specular") {
             check_furnace_specular(image);
+        } else if (case_name == "furnace-clearcoat") {
+            check_furnace_clearcoat(image);
         } else if (case_name == "gltf-specular-test") {
             check_gltf_specular_test(image);
         } else {

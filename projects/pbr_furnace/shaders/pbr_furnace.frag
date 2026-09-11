@@ -129,9 +129,27 @@ void main() {
         prefiltered * cubey_pbr_indirect_specular(f0, f90, dfg) * specular_occlusion;
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;
-    vec3 color = (((diffuse_ibl * occlusion) + specular_ibl) *
-                  scene.environment_intensity_mip_count.x) +
-                 emissive;
+    float clearcoat_factor = clamp(material.clearcoat_factor_roughness_normal.x, 0.0, 1.0);
+    float clearcoat_roughness =
+        clamp(material.clearcoat_factor_roughness_normal.y, 0.04, 1.0);
+    float clearcoat_layer_weight =
+        cubey_pbr_clearcoat_layer_weight(clearcoat_factor, ndotv);
+    float clearcoat_attenuation = 1.0 - clearcoat_layer_weight;
+    vec3 clearcoat_reflection = reflect(-view_direction, geometric_normal);
+    vec3 clearcoat_prefiltered = textureLod(prefiltered_cube, clearcoat_reflection,
+                                            clearcoat_roughness * max_prefiltered_lod)
+                                    .rgb;
+    vec3 clearcoat_dfg = texture(brdf_lut, vec2(ndotv, clearcoat_roughness)).rgb;
+    float clearcoat_specular_occlusion =
+        cubey_pbr_specular_ao(ndotv, occlusion, clearcoat_roughness) *
+        cubey_pbr_horizon_specular_occlusion(clearcoat_reflection, geometric_normal);
+    vec3 clearcoat_ibl = clearcoat_layer_weight * clearcoat_prefiltered *
+                         cubey_pbr_clearcoat_indirect(clearcoat_dfg) *
+                         clearcoat_specular_occlusion;
+    vec3 color = ((((diffuse_ibl * occlusion) + specular_ibl) * clearcoat_attenuation) +
+                  clearcoat_ibl) *
+                     scene.environment_intensity_mip_count.x +
+                 (emissive * clearcoat_attenuation);
     out_color = vec4(cubey_pbr_apply_display_transform(color, scene.display_transform),
                      base_color.a);
 }

@@ -62,22 +62,26 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_materials_emissive_strength` | supported | Strength is folded into HDR emissive radiance. |
 | `KHR_materials_ior` | supported | Authored IOR is validated as exactly zero or finite and at least one, preserved through material packing, and checked by analytic loader coverage plus the deterministic white-IBL furnace. |
 | `KHR_materials_specular` | supported | Factor and color inputs are validated before import, including factor-only and texture/transform paths; F0/F90 feed direct and split-sum IBL response, with deterministic furnace and Khronos `SpecularTest` capture coverage. |
-| `KHR_materials_clearcoat`, `KHR_materials_sheen`, `KHR_materials_anisotropy`, `KHR_materials_iridescence` | partial | Their current texture/factor plumbing and approximate lobes remain available only for optional extension use. |
+| `KHR_materials_clearcoat` | supported | Factor and roughness are validated as finite values in `[0, 1]`; factor, roughness, normal scale, texture channels, texture transforms, and linear color spaces reach a fixed-IOR coat above the full base response. Deterministic furnace coverage closes zero-factor neutrality and roughness/layering response, while the pinned Khronos `ClearCoatTest` exercises the real viewer path. |
+| `KHR_materials_sheen`, `KHR_materials_anisotropy`, `KHR_materials_iridescence` | partial | Their current texture/factor plumbing and approximate lobes remain available only for optional extension use. |
 
 Partial extensions remain useful for renderer development and optional asset
 inspection, but Cubey rejects them when an asset declares them required. Each
-extension is promoted independently after analytic and deterministic sample
+extension is promoted independently after analytic and deterministic rendered
 coverage closes its semantics. Loader and analytic witnesses live in focused
 core tests, while the material-conformance CTest label separates rendered
 checks from ordinary smoke: the opt-in `pbr_furnace --conformance-case` layouts
-capture fixed 512px white-IBL IOR or specular specimens and inspect foreground
-region/channel relationships rather than byte-identical images. The
+capture fixed 512px white-IBL IOR, specular, or clearcoat specimens and inspect
+foreground region/channel relationships rather than byte-identical images. The
 pinned Khronos `SpecularTest` lane adds fixed manual directional lighting plus
 half-intensity static IBL, no clouds, explicit exposure, and a front-on camera
 for end-to-end model-grid/chromatic-response evidence through the shared forward
 renderer; it is not a pixel oracle for the asset. Its bounded sphere-grid
 samples cannot be satisfied by the sky/background. Failed semantic checks leave
-their PNG artifact in the build tree for inspection.
+their PNG artifact in the build tree for inspection. The pinned Khronos
+`ClearCoatTest` compatibility capture complements the deterministic clearcoat
+furnace with factors, roughness, coat textures, independent coat normals, and
+base-normal interaction through the actual staged viewer/importer path.
 
 Unsupported features fail early instead of being silently ignored:
 unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate
@@ -213,9 +217,9 @@ forward-PBR shader package under `shaders/cubey/forward_pbr` writes linear HDR
 scene color and uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, dielectric IOR/specular controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
-indirect specular occlusion. The glTF PBR shader also evaluates the current
-opaque material extension lobes: clearcoat, sheen, anisotropic GGX, and a
-lightweight iridescence Fresnel tint. Material texture and factor alpha remain
+indirect specular occlusion. The glTF PBR shader also evaluates required-use
+clearcoat plus the optional sheen and anisotropic GGX lobes and a lightweight
+iridescence Fresnel tint. Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
 transform is applied by the shared post shader. Unlit glTF materials preserve
@@ -230,13 +234,13 @@ scene transforms, uploads morph weights and skin joint palettes per frame, and
 records a compute deformation pass before shadow and PBR scene passes.
 When Khronos Sample Assets are configured, optional headless compatibility
 smokes cover material, texture transform, alpha, and tangent-space validation
-scenes, including `SpecularTest`, `TextureTransformTest`,
+scenes, including `SpecularTest`, `ClearCoatTest`, `TextureTransformTest`,
 `TextureTransformMultiTest`, `NormalTangentTest`, `NormalTangentMirrorTest`,
 and `DamagedHelmet`. These tests carry the `gltf_sample` and `compatibility`
 labels and only assert that the viewer can load and produce a valid PNG; they
 are not golden-pixel comparisons. The `dev-gltf-conformance` test preset also
 selects the `gltf` core/viewer evidence and `conformance` checks, including the
-deterministic furnace IOR/specular captures and the semantic Khronos
+deterministic furnace IOR/specular/clearcoat captures and the semantic Khronos
 `SpecularTest` capture when registered. It excludes tests labeled `windowed`.
 The configured sample inventory checks every referenced path at configure time
 and fails if the lane would otherwise register no sample tests. Downloaded

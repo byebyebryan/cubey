@@ -564,6 +564,8 @@ void test_pbr_shaders_use_gltf_material_remap() {
         read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr_skybox.frag");
     const std::string gltf_shadow =
         read_source_file(source_root / "shaders/cubey/forward_pbr/forward_pbr_shadow_depth.frag");
+    const std::string gltf_materials =
+        read_source_file(source_root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
 
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
@@ -579,6 +581,10 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR shader should use the material F90 endpoint for indirect specular");
     require_contains(pbr, "cubey_pbr_lambert_diffuse",
                      "PBR shader should expose a Lambert diffuse helper");
+    require_contains(pbr, "cubey_pbr_clearcoat_layer_weight",
+                     "PBR shader should expose the fixed-IOR clearcoat layering helper");
+    require_contains(pbr, "return vec3(dfg.b);",
+                     "clearcoat IBL should use the Fresnel-free DFG single-scatter channel");
     require_contains(pbr, "cubey_pbr_apply_display_transform",
                      "PBR shader should expose a final display transform helper");
     require_contains(post, "cubey_pbr_apply_display_transform(color, post.display_transform)",
@@ -659,6 +665,10 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF PBR shader should bind KHR_materials_clearcoat roughness texture");
     require_contains(gltf, "uniform sampler2D clearcoat_normal_texture",
                      "glTF PBR shader should bind KHR_materials_clearcoat normal texture");
+    require_contains(gltf, "material.clearcoat_transform)).r",
+                     "glTF clearcoat factor texture should use its linear red channel");
+    require_contains(gltf, "material.clearcoat_roughness_transform)).g",
+                     "glTF clearcoat roughness texture should use its linear green channel");
     require_contains(gltf, "uniform sampler2D sheen_color_texture",
                      "glTF PBR shader should bind KHR_materials_sheen color texture");
     require_contains(gltf, "uniform sampler2D sheen_roughness_texture",
@@ -675,6 +685,31 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF PBR shader should sample specular color through transformed UVs");
     require_contains(gltf, "cubey_pbr_clearcoat_direct",
                      "glTF PBR shader should evaluate clearcoat direct lighting");
+    require_contains(gltf, "float clearcoat_layer_weight =",
+                     "glTF PBR shader should evaluate one clearcoat Fresnel layer weight");
+    require_contains(gltf, "cubey_pbr_clearcoat_layer_weight(clearcoat_factor, clearcoat_ndotv)",
+                     "glTF PBR shader should share its clearcoat Fresnel between base and layer");
+    require_contains(gltf, "cubey_pbr_clearcoat_indirect(clearcoat_dfg)",
+                     "glTF PBR shader should use the Fresnel-free clearcoat IBL lobe");
+    require_not_contains(gltf, "cubey_pbr_indirect_specular(vec3(0.04)",
+                         "glTF clearcoat IBL should not apply a second integrated Fresnel term");
+    require_contains(gltf, "(emissive * clearcoat_attenuation)",
+                     "glTF clearcoat should attenuate emission below the coat layer");
+    require_contains(gltf, "diffuse_ibl_attenuation * clearcoat_attenuation * occlusion",
+                     "glTF clearcoat should attenuate ambient diffuse below the coat layer");
+    require_contains(gltf, "if (clearcoat_factor > 0.0)",
+                     "glTF clearcoat factor zero should skip its normal and roughness path");
+    require_contains(gltf_materials,
+                     "source.clearcoat_texture, asset::GltfTextureColorSpace::Linear",
+                     "glTF clearcoat factor texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.clearcoat_roughness_texture,\n"
+                     "                                 asset::GltfTextureColorSpace::Linear",
+                     "glTF clearcoat roughness texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.clearcoat_normal_texture,\n"
+                     "                                 asset::GltfTextureColorSpace::Linear",
+                     "glTF clearcoat normal texture should preserve linear color space");
     require_contains(gltf, "cubey_pbr_sheen_direct",
                      "glTF PBR shader should evaluate sheen direct lighting");
     require_contains(gltf, "cubey_pbr_distribution_ggx_anisotropic",
@@ -774,6 +809,34 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover unlit materials");
     require_contains(cmake, "EmissiveStrengthTest/glTF/EmissiveStrengthTest.gltf",
                      "glTF viewer sample smoke tests should cover emissive strength");
+    require_contains(cmake, "ClearCoatTest/glTF/ClearCoatTest.gltf",
+                     "glTF viewer sample smoke tests should cover clearcoat factors and textures");
+    require_contains(cmake,
+                     "--pbr-environment-source static\n"
+                     "            --no-clouds\n"
+                     "            ${ARGN}",
+                     "glTF sample smoke helper should forward opt-in per-sample capture controls");
+    require_contains(cmake,
+                     "\"ClearCoatTest/glTF/ClearCoatTest.gltf\"\n"
+                     "        \"gltf-viewer-clearcoat-test-smoke.png\"\n"
+                     "        --ibl-intensity\n"
+                     "        0.5\n"
+                     "        --exposure\n"
+                     "        0\n"
+                     "        --capture-camera-distance-scale\n"
+                     "        0.55\n"
+                     "        --capture-camera-yaw\n"
+                     "        0\n"
+                     "        --capture-camera-pitch\n"
+                     "        0\n"
+                     "        --time-of-day-mode\n"
+                     "        manual\n"
+                     "        --sun-elevation\n"
+                     "        14\n"
+                     "        --sun-azimuth\n"
+                     "        180\n"
+                     "        --pause-time",
+                     "ClearCoatTest smoke should keep its reviewable fixed capture framing");
     require_contains(cmake, "TextureTransformTest/glTF/TextureTransformTest.gltf",
                      "glTF viewer sample smoke tests should cover texture transforms");
     require_contains(cmake, "TextureTransformMultiTest/glTF/TextureTransformMultiTest.gltf",

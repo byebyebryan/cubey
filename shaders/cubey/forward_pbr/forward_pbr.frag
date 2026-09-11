@@ -277,23 +277,25 @@ void main() {
         clearcoat_factor *=
             texture(clearcoat_texture, cubey_pbr_transformed_uv(material.clearcoat_transform)).r;
     }
-    float clearcoat_roughness = clamp(material.clearcoat_factor_roughness_normal.y, 0.04, 1.0);
-    if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_CLEARCOAT_ROUGHNESS)) {
-        clearcoat_roughness =
-            clamp(clearcoat_roughness *
-                      texture(clearcoat_roughness_texture,
-                              cubey_pbr_transformed_uv(material.clearcoat_roughness_transform)).g,
-                  0.04, 1.0);
-    }
     vec3 clearcoat_normal = geometric_normal;
-    if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_CLEARCOAT_NORMAL)) {
-        vec3 sampled_clearcoat_normal =
-            texture(clearcoat_normal_texture,
-                    cubey_pbr_transformed_uv(material.clearcoat_normal_transform)).xyz *
-                2.0 -
-            1.0;
-        sampled_clearcoat_normal.xy *= material.clearcoat_factor_roughness_normal.z;
-        clearcoat_normal = normalize(tbn * sampled_clearcoat_normal);
+    float clearcoat_roughness = 0.04;
+    if (clearcoat_factor > 0.0) {
+        clearcoat_roughness = material.clearcoat_factor_roughness_normal.y;
+        if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_CLEARCOAT_ROUGHNESS)) {
+            clearcoat_roughness *=
+                texture(clearcoat_roughness_texture,
+                        cubey_pbr_transformed_uv(material.clearcoat_roughness_transform)).g;
+        }
+        clearcoat_roughness = clamp(clearcoat_roughness, 0.04, 1.0);
+        if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_CLEARCOAT_NORMAL)) {
+            vec3 sampled_clearcoat_normal =
+                texture(clearcoat_normal_texture,
+                        cubey_pbr_transformed_uv(material.clearcoat_normal_transform)).xyz *
+                    2.0 -
+                1.0;
+            sampled_clearcoat_normal.xy *= material.clearcoat_factor_roughness_normal.z;
+            clearcoat_normal = normalize(tbn * sampled_clearcoat_normal);
+        }
     }
 
     vec3 view_direction = normalize(scene.camera_position.xyz - frag_world_position);
@@ -407,15 +409,15 @@ void main() {
     float clearcoat_ndotv = max(dot(clearcoat_normal, view_direction), 0.0);
     float clearcoat_ndotl = max(dot(clearcoat_normal, light_direction), 0.0);
     float clearcoat_ndoth = max(dot(clearcoat_normal, half_vector), 0.0);
-    float clearcoat_fresnel =
-        cubey_pbr_fresnel_schlick(clearcoat_ndotv, vec3(0.04)).r * clearcoat_factor;
-    float clearcoat_attenuation = 1.0 - clearcoat_fresnel;
+    float clearcoat_layer_weight =
+        cubey_pbr_clearcoat_layer_weight(clearcoat_factor, clearcoat_ndotv);
+    float clearcoat_attenuation = 1.0 - clearcoat_layer_weight;
     vec3 sheen_direct =
         cubey_pbr_sheen_direct(sheen_color, sheen_roughness, ndotv, ndotl, ndoth);
     vec3 base_direct = (diffuse_direct + specular + sheen_direct) * clearcoat_attenuation;
     vec3 clearcoat_direct =
-        vec3(clearcoat_factor *
-             cubey_pbr_clearcoat_direct(clearcoat_ndotv, clearcoat_ndotl, clearcoat_ndoth, vdoth,
+        vec3(clearcoat_layer_weight *
+             cubey_pbr_clearcoat_direct(clearcoat_ndotv, clearcoat_ndotl, clearcoat_ndoth,
                                         clearcoat_roughness));
     vec3 direct = ((base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)) * radiance *
                   visibility;
@@ -443,15 +445,15 @@ void main() {
         cubey_pbr_specular_ao(clearcoat_ndotv, occlusion, clearcoat_roughness) *
         cubey_pbr_horizon_specular_occlusion(clearcoat_reflection, geometric_normal);
     vec3 clearcoat_ibl =
-        clearcoat_factor * clearcoat_prefiltered *
-        cubey_pbr_indirect_specular(vec3(0.04), vec3(1.0), clearcoat_dfg) *
+        clearcoat_layer_weight * clearcoat_prefiltered *
+        cubey_pbr_clearcoat_indirect(clearcoat_dfg) *
         clearcoat_specular_occlusion;
     vec3 ambient = (((diffuse_ibl * occlusion) + specular_ibl + sheen_ibl) *
                         clearcoat_attenuation +
                     clearcoat_ibl) *
                    scene.environment_intensity_mip_count.x;
     ambient += scene.ambient_color_intensity.rgb * scene.ambient_color_intensity.a *
-               diffuse_color * diffuse_ibl_attenuation * occlusion;
-    vec3 color = ambient + direct + emissive;
+               diffuse_color * diffuse_ibl_attenuation * clearcoat_attenuation * occlusion;
+    vec3 color = ambient + direct + (emissive * clearcoat_attenuation);
     out_color = vec4(color * output_alpha, output_alpha);
 }
