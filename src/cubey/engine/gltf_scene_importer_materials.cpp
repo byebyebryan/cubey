@@ -19,11 +19,6 @@
 namespace cubey {
 namespace {
 
-struct TextureBinding {
-    VkSampler sampler = VK_NULL_HANDLE;
-    VkImageView view = VK_NULL_HANDLE;
-};
-
 struct TextureCacheKey {
     std::uint32_t texture_index = asset::kInvalidAssetIndex;
     asset::GltfTextureColorSpace color_space = asset::GltfTextureColorSpace::Linear;
@@ -228,50 +223,9 @@ void prepare_material_texture(GltfPreparedMaterial& material, GltfPreparedScene&
     });
 }
 
-[[nodiscard]] const render::Texture2D& default_texture(const GltfSceneImportResources& resources,
-                                                       render::PbrMaterialBinding binding) {
-    if (!resources.default_textures.has_value()) {
-        throw std::runtime_error("default PBR texture is not initialized");
-    }
-    return render::pbr_default_texture(resources.default_textures.value(), binding);
-}
-
-[[nodiscard]] TextureBinding texture_binding(const render::Texture2D& texture) {
-    return {.sampler = texture.sampler().handle(), .view = texture.view()};
-}
-
-[[nodiscard]] std::vector<render::SampledImageMaterialBinding>
-material_sampled_image_bindings(const GltfSceneImportResources& resources,
-                                const GltfPreparedMaterial& material) {
-    std::vector<render::SampledImageMaterialBinding> bindings;
-    bindings.reserve(material.textures.size());
-    for (const GltfPreparedMaterialTexture& texture_ref : material.textures) {
-        const render::Texture2D* texture = nullptr;
-        if (texture_ref.texture_index == asset::kInvalidAssetIndex) {
-            texture = &default_texture(resources, texture_ref.binding);
-        } else {
-            if (texture_ref.texture_index >= resources.textures.size()) {
-                throw std::runtime_error("prepared glTF texture index is out of range");
-            }
-            texture = &resources.textures[texture_ref.texture_index];
-        }
-        const TextureBinding binding = texture_binding(*texture);
-        bindings.push_back({
-            .binding = static_cast<std::uint32_t>(texture_ref.binding),
-            .sampler = binding.sampler,
-            .image_view = binding.view,
-        });
-    }
-    return bindings;
-}
-
 [[nodiscard]] std::string import_label(const GltfSceneImportConfig& config, const char* kind,
                                        std::size_t index) {
     return config.label_prefix + "." + kind + "." + std::to_string(index);
-}
-
-[[nodiscard]] render::MaterialHandle staging_material_handle(std::size_t index) {
-    return {.index = static_cast<std::uint32_t>(index + 1U), .generation = 0U};
 }
 
 } // namespace
@@ -382,49 +336,6 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
     }
     if (prepared.materials.empty()) {
         throw std::runtime_error("glTF scene import requires at least one material");
-    }
-}
-
-void build_gltf_material_resources(vulkan::GpuOwnerContext& gpu, const GltfPreparedScene& prepared,
-                                   const GltfSceneImportConfig& config,
-                                   GltfSceneResident& resident) {
-    gpu.require_owner_thread("glTF material residency requires the GPU owner thread");
-    GltfSceneImportResources& resources = resident.resources;
-    resources.default_textures.emplace(render::create_pbr_default_texture_set(gpu.device(), gpu));
-    resources.textures.reserve(prepared.textures.size());
-    for (const GltfPreparedTexture& texture : prepared.textures) {
-        const std::span<const std::uint8_t> bytes{texture.bytes.data(), texture.bytes.size()};
-        resources.textures.push_back(render::create_uploaded_texture_2d(
-            gpu.device(), gpu,
-            {
-                .extent = texture.extent,
-                .mip_levels = texture.mip_levels,
-                .format = texture.format,
-                .rgba8 = texture.rgba8 ? bytes : std::span<const std::uint8_t>{},
-                .bytes = texture.rgba8 ? std::span<const std::uint8_t>{} : bytes,
-                .mips = std::span<const render::UploadedTexture2DMip>{texture.mips.data(),
-                                                                      texture.mips.size()},
-                .create_sampler = true,
-                .sampler = texture.sampler,
-            }));
-    }
-
-    const render::MaterialPassInfo pass = render::pbr_forward_pass_info();
-    resident.material_handles.reserve(prepared.materials.size());
-    for (std::size_t index = 0; index < prepared.materials.size(); ++index) {
-        const GltfPreparedMaterial& material = prepared.materials[index];
-        const render::MaterialHandle handle = staging_material_handle(index);
-        resources.materials.set_factors(handle, material.factors);
-        resources.materials.emplace_instance(
-            handle, gpu.device(),
-            render::FrameUniformMaterialInstanceConfig{
-                .material_pass = pass,
-                .descriptor_set = 1,
-                .frame_slot_count = config.frame_slot_count,
-                .uniform_binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Uniforms),
-                .sampled_images = material_sampled_image_bindings(resources, material),
-            });
-        resident.material_handles.push_back(handle);
     }
 }
 

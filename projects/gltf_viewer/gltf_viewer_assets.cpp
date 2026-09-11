@@ -25,12 +25,31 @@ using Clock = std::chrono::steady_clock;
     return std::chrono::duration<double, std::milli>(Clock::now() - started).count();
 }
 
-[[nodiscard]] cubey::GltfSceneImportConfig gltf_import_config(std::uint32_t frame_slot_count) {
-    return {
+// This only clears the post-activation shell.  All Engine/Scene state and
+// live Vulkan resources were moved into their owning runtimes before it runs.
+void dispose_completed_import_cpu_shell(GltfViewerResidentGeneration& spent) noexcept {
+    spent.gltf.reset();
+    spent.terrain.reset();
+    spent.gltf_upload.reset();
+    spent.prepared.reset();
+}
+
+[[nodiscard]] cubey::GltfSceneImportConfig
+gltf_import_config(std::uint32_t frame_slot_count, const GltfViewerProfileOptions& profile) {
+    cubey::GltfSceneImportConfig config{
         .frame_slot_count = frame_slot_count,
         .deformation_compute_shader = shader_path("gltf_deform.comp.spv"),
         .label_prefix = "gltf_viewer",
     };
+    if (profile.upload_owner_cpu_target_milliseconds.has_value()) {
+        config.upload_policy.owner_cpu_target_milliseconds =
+            profile.upload_owner_cpu_target_milliseconds.value();
+    }
+    if (profile.upload_step_byte_cap.has_value()) {
+        config.upload_policy.step_byte_cap =
+            static_cast<VkDeviceSize>(profile.upload_step_byte_cap.value());
+    }
+    return config;
 }
 
 } // namespace
@@ -112,11 +131,29 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     // Loading a valid file starts only after fallback/global rendering
     // resources are available.
     if (!requested_input_path_.empty()) {
-        request_imported_asset_build(
-            requested_input_path_,
-            {.supports_texture_compression_bc = device.supports_texture_compression_bc()},
-            frame_slot_count, std::move(requested_loading_metrics));
+        const cubey::GltfSceneImportCapabilities capabilities{
+            .supports_texture_compression_bc = device.supports_texture_compression_bc()};
+        if (!config_.common.headless && config_.profile.import_delay_frames > 0U) {
+            deferred_import_.emplace(
+                DeferredImport{.capabilities = capabilities,
+                               .frame_slot_count = frame_slot_count,
+                               .loading_metrics = std::move(requested_loading_metrics)});
+        } else {
+            request_imported_asset_build(requested_input_path_, capabilities, frame_slot_count,
+                                         std::move(requested_loading_metrics));
+        }
     }
+}
+
+void GltfViewerApp::start_deferred_import_if_due(std::uint64_t frame_index) {
+    if (!deferred_import_.has_value() ||
+        frame_index < static_cast<std::uint64_t>(config_.profile.import_delay_frames)) {
+        return;
+    }
+    DeferredImport request = std::move(deferred_import_.value());
+    deferred_import_.reset();
+    request_imported_asset_build(requested_input_path_, request.capabilities,
+                                 request.frame_slot_count, std::move(request.loading_metrics));
 }
 
 void GltfViewerApp::create_terrain_backdrop_resources(const cubey::vulkan::Device& device,
@@ -146,7 +183,9 @@ void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
                                                  cubey::GltfSceneImportCapabilities capabilities,
                                                  std::uint32_t frame_slot_count,
                                                  GltfViewerLoadingMetrics loading_metrics) {
-    const cubey::GltfSceneImportConfig import_config = gltf_import_config(frame_slot_count);
+    asset_upload_submission_frame_.reset();
+    const cubey::GltfSceneImportConfig import_config =
+        gltf_import_config(frame_slot_count, config_.profile);
     const std::optional<std::filesystem::path> terrain_path = config_.terrain.heightfield_path;
     const std::uint32_t terrain_stride = config_.terrain.render_stride.value_or(3U);
     const std::string label = input.filename().empty() ? input.string() : input.filename().string();
@@ -158,10 +197,13 @@ void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
             prepared.source_path = input;
             prepared.loading_metrics = std::move(loading_metrics);
             const Clock::time_point asset_load_started = Clock::now();
-            prepared.asset = cubey::asset::load_gltf_asset(input);
+            cubey::asset::GltfAssetLoadProfile asset_load_profile;
+            prepared.asset = cubey::asset::load_gltf_asset(input, {}, &asset_load_profile);
             prepared.loading_metrics.gltf_asset_load_milliseconds =
                 elapsed_milliseconds(asset_load_started);
             collect_gltf_viewer_asset_loading_metrics(prepared.loading_metrics, prepared.asset);
+            collect_gltf_viewer_asset_load_phase_metrics(prepared.loading_metrics,
+                                                         asset_load_profile);
             const Clock::time_point scene_prepare_started = Clock::now();
             prepared.gltf = cubey::prepare_gltf_scene(prepared.asset, import_config, capabilities);
             prepared.loading_metrics.gltf_scene_prepare_milliseconds =
@@ -180,28 +222,70 @@ void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
         [this, import_config](cubey::vulkan::GpuOwnerContext& owner,
                               GltfViewerPreparedGeneration&& prepared) {
             GltfViewerResidentGeneration resident;
-            resident.loading_metrics = prepared.loading_metrics;
+            resident.prepared = std::make_shared<GltfViewerPreparedGeneration>(std::move(prepared));
+            resident.loading_metrics = resident.prepared->loading_metrics;
+            // Terrain does not participate in this generation's glTF upload
+            // session. Build it first so StagedResource owns the complete
+            // resident product before the session begins to advance.
+            if (resident.prepared->terrain.has_value()) {
+                resident.terrain.emplace(terrain_runtime_.build_resident_product(
+                    owner, resident.prepared->terrain->product));
+            }
             const Clock::time_point gltf_residency_started = Clock::now();
-            resident.gltf = cubey::build_gltf_scene_resident(owner, prepared.gltf, import_config);
+            resident.gltf_upload = cubey::begin_gltf_scene_upload_session(
+                std::shared_ptr<const cubey::GltfPreparedScene>(resident.prepared,
+                                                                &resident.prepared->gltf),
+                import_config, owner.runtime());
             resident.loading_metrics.gltf_scene_residency_milliseconds =
                 elapsed_milliseconds(gltf_residency_started);
-            collect_gltf_viewer_resident_loading_metrics(resident.loading_metrics, resident.gltf);
-            if (prepared.terrain.has_value()) {
-                resident.terrain.emplace(
-                    terrain_runtime_.build_resident_product(owner, prepared.terrain->product));
-            }
-            resident.prepared = std::move(prepared);
             return resident;
+        },
+        [](cubey::vulkan::GpuRuntime& gpu, GltfViewerResidentGeneration& resident, bool wait) {
+            // StagedResource's explicit finish path probes AwaitingGpu once
+            // while waiting and then polls that same stage to transition it.
+            // Keep the adopted resident idempotent across those two calls.
+            if (resident.gltf.has_value()) {
+                return true;
+            }
+            if (!resident.gltf_upload->poll(gpu, wait)) {
+                return false;
+            }
+            resident.gltf.emplace(resident.gltf_upload->take_resident());
+            collect_gltf_viewer_resident_loading_metrics(resident.loading_metrics,
+                                                         resident.gltf.value());
+            return true;
         }));
 }
 
 void GltfViewerApp::poll_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
-                                              cubey::vulkan::GpuSubmissionTicket retire_after) {
+                                              cubey::vulkan::GpuSubmissionTicket retire_after,
+                                              std::uint64_t frame_index,
+                                              cubey::profiling::ProfileRecorder* profile_recorder) {
     while (asset_builds_.poll(gpu)) {
+    }
+    const cubey::StagedResourcePhase phase = asset_builds_.status().phase;
+    if ((phase == cubey::StagedResourcePhase::Installing ||
+         phase == cubey::StagedResourcePhase::AwaitingGpu) &&
+        !asset_upload_submission_frame_.has_value()) {
+        asset_upload_submission_frame_ = frame_index;
     }
     if (asset_builds_.ready()) {
         try {
-            activate_imported_asset_generation(gpu, retire_after, asset_builds_.take_ready());
+            cubey::StagedResourceResult<GltfViewerResidentGeneration> resident;
+            {
+                auto span = gltf_viewer_update_profile_span(profile_recorder, frame_index,
+                                                            "gltf.session_completion_adoption");
+                resident = asset_builds_.take_ready();
+                resident.resident.loading_metrics.gpu_upload_submission_frame =
+                    asset_upload_submission_frame_.value_or(frame_index);
+                resident.resident.loading_metrics.gpu_upload_completion_frame = frame_index;
+            }
+            {
+                auto span = gltf_viewer_update_profile_span(profile_recorder, frame_index,
+                                                            "gltf.scene_activation");
+                activate_imported_asset_generation(gpu, retire_after, std::move(resident),
+                                                   profile_recorder, frame_index);
+            }
             asset_activation_error_.clear();
         } catch (const std::exception& error) {
             asset_activation_error_ = error.what();
@@ -223,30 +307,41 @@ void GltfViewerApp::finish_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
     if (!asset_builds_.ready()) {
         throw std::runtime_error("glTF staged asset build completed without a resident generation");
     }
-    activate_imported_asset_generation(gpu, retire_after, asset_builds_.take_ready());
+    cubey::StagedResourceResult<GltfViewerResidentGeneration> resident = asset_builds_.take_ready();
+    resident.resident.loading_metrics.gpu_upload_submission_frame =
+        asset_upload_submission_frame_.value_or(0U);
+    resident.resident.loading_metrics.gpu_upload_completion_frame = 0U;
+    activate_imported_asset_generation(gpu, retire_after, std::move(resident));
     asset_activation_error_.clear();
 }
 
 void GltfViewerApp::activate_imported_asset_generation(
     cubey::vulkan::GpuRuntime& gpu, cubey::vulkan::GpuSubmissionTicket retire_after,
-    cubey::StagedResourceResult<GltfViewerResidentGeneration> resident) {
+    cubey::StagedResourceResult<GltfViewerResidentGeneration> resident,
+    cubey::profiling::ProfileRecorder* profile_recorder, std::uint64_t profile_frame_index) {
     const Clock::time_point started = Clock::now();
     GltfViewerResidentGeneration& product = resident.resident;
-    if (!product.prepared.asset.animations.empty() &&
-        config_.gltf.animation_index >= product.prepared.asset.animations.size()) {
+    if (product.prepared == nullptr || !product.gltf.has_value()) {
+        throw std::runtime_error("glTF staged resident generation is incomplete");
+    }
+    if (!product.prepared->asset.animations.empty() &&
+        config_.gltf.animation_index >= product.prepared->asset.animations.size()) {
         throw std::runtime_error("requested glTF animation index is out of range");
     }
-    if (terrain_backdrop_enabled() != product.prepared.terrain.has_value() ||
+    if (terrain_backdrop_enabled() != product.prepared->terrain.has_value() ||
         terrain_backdrop_enabled() != product.terrain.has_value()) {
         throw std::runtime_error("glTF terrain staged product is incomplete");
     }
+    // take_resident() is the sole completion gate: a session cannot hand out
+    // partial GPU residency. Metrics are final at this point as well.
+    collect_gltf_viewer_resident_loading_metrics(product.loading_metrics, product.gltf.value());
 
     auto next = std::make_shared<GltfViewerSceneGeneration>();
     next->source = resident.generation;
-    next->source_path = product.prepared.source_path;
+    next->source_path = product.prepared->source_path;
     next->fallback = false;
-    next->bounds = product.prepared.gltf.bounds;
-    next->triangle_count = product.prepared.gltf.triangle_count;
+    next->bounds = product.prepared->gltf.bounds;
+    next->triangle_count = product.prepared->gltf.triangle_count;
     next->loading_metrics = product.loading_metrics;
     next->animation_playback = {
         .animation_index = config_.gltf.animation_index,
@@ -272,12 +367,12 @@ void GltfViewerApp::activate_imported_asset_generation(
         {
             cubey::SceneTransaction setup = next->scene->begin_transaction();
             next->import_result = cubey::activate_gltf_scene(
-                engine_, setup, product.prepared.gltf, std::move(product.gltf),
-                next->import_resources, gltf_import_config(frame_slot_count_));
+                engine_, setup, product.prepared->gltf, std::move(product.gltf.value()),
+                next->import_resources, gltf_import_config(frame_slot_count_, config_.profile));
             create_camera_and_light(*next, setup);
             setup.commit();
         }
-        next->asset.emplace(std::move(product.prepared.asset));
+        next->asset.emplace(std::move(product.prepared->asset));
         if (!next->asset->animations.empty()) {
             const cubey::asset::GltfAnimation& animation =
                 next->asset->animations[next->animation_playback.animation_index];
@@ -288,12 +383,12 @@ void GltfViewerApp::activate_imported_asset_generation(
                 edits, next->asset.value(), next->import_result, next->animation_sample.value());
             next->scene->commit(edits);
         }
-        if (product.prepared.terrain.has_value()) {
+        if (product.prepared->terrain.has_value()) {
             next->terrain_surface = cubey::render::BackdropSurfaceEnvelope{
                 .nominal_local_height_m =
-                    product.prepared.terrain->foreground_surface.nominal_local_height_m,
+                    product.prepared->terrain->foreground_surface.nominal_local_height_m,
                 .maximum_local_height_m =
-                    product.prepared.terrain->foreground_surface.maximum_local_height_m,
+                    product.prepared->terrain->foreground_surface.maximum_local_height_m,
             };
             const cubey::render::BackdropSurfacePlacement placement =
                 cubey::render::resolve_backdrop_surface_placement({
@@ -326,6 +421,8 @@ void GltfViewerApp::activate_imported_asset_generation(
 
     std::shared_ptr<GltfViewerSceneGeneration> previous = std::move(active_generation_);
     try {
+        auto span = gltf_viewer_update_profile_span(profile_recorder, profile_frame_index,
+                                                    "gltf.scene_retirement");
         retire_scene_generation(gpu, retire_after, previous);
     } catch (...) {
         active_generation_ = std::move(previous);
@@ -337,23 +434,61 @@ void GltfViewerApp::activate_imported_asset_generation(
     active_generation_ = std::move(next);
     asset_activation_milliseconds_ = elapsed_milliseconds(started);
     GltfViewerLoadingMetrics& loading_metrics = active_generation().loading_metrics.value();
-    loading_metrics.generation_id = active_generation().source.id;
-    loading_metrics.staged_worker_prepare_milliseconds = resident.prepare_milliseconds;
-    loading_metrics.staged_gpu_install_milliseconds = resident.install_milliseconds;
-    loading_metrics.activation_milliseconds = asset_activation_milliseconds_;
-    pending_loading_metrics_.push_back(loading_metrics);
-    std::printf(
-        "gltf_viewer: activated generation %llu (%s), probe %.1f ms, load %.1f ms, "
-        "prepare %.1f ms, residency %.1f ms, CPU %.1f ms, GPU %.1f ms, activation %.1f ms, "
-        "%u triangles, %llu upload bytes\n",
-        static_cast<unsigned long long>(active_generation().source.id),
-        active_generation().source.label.c_str(), loading_metrics.metadata_probe_milliseconds,
-        loading_metrics.gltf_asset_load_milliseconds,
-        loading_metrics.gltf_scene_prepare_milliseconds,
-        loading_metrics.gltf_scene_residency_milliseconds, resident.prepare_milliseconds,
-        resident.install_milliseconds, asset_activation_milliseconds_,
-        active_generation().triangle_count,
-        static_cast<unsigned long long>(active_generation().import_result.mesh_upload_byte_count));
+    {
+        auto span = gltf_viewer_update_profile_span(profile_recorder, profile_frame_index,
+                                                    "gltf.activation_metric_queue");
+        loading_metrics.generation_id = active_generation().source.id;
+        loading_metrics.staged_worker_prepare_milliseconds = resident.prepare_milliseconds;
+        loading_metrics.staged_gpu_install_milliseconds = resident.install_milliseconds;
+        loading_metrics.activation_milliseconds = asset_activation_milliseconds_;
+        pending_loading_metrics_.push_back(loading_metrics);
+    }
+    {
+        auto span = gltf_viewer_update_profile_span(profile_recorder, profile_frame_index,
+                                                    "gltf.activation_log");
+        std::printf(
+            "gltf_viewer: activated generation %llu (%s), probe %.1f ms, load %.1f ms, "
+            "prepare %.1f ms, residency %.1f ms, CPU %.1f ms, GPU %.1f ms, activation %.1f ms, "
+            "%u triangles, %llu upload bytes\n",
+            static_cast<unsigned long long>(active_generation().source.id),
+            active_generation().source.label.c_str(), loading_metrics.metadata_probe_milliseconds,
+            loading_metrics.gltf_asset_load_milliseconds,
+            loading_metrics.gltf_scene_prepare_milliseconds,
+            loading_metrics.gltf_scene_residency_milliseconds, resident.prepare_milliseconds,
+            resident.install_milliseconds, asset_activation_milliseconds_,
+            active_generation().triangle_count,
+            static_cast<unsigned long long>(
+                active_generation().import_result.mesh_upload_byte_count));
+    }
+    {
+        auto span = gltf_viewer_update_profile_span(profile_recorder, profile_frame_index,
+                                                    "gltf.activation_cpu_disposal_enqueue");
+        dispose_spent_imported_asset_generation(std::move(resident.resident));
+    }
+}
+
+void GltfViewerApp::dispose_spent_imported_asset_generation(
+    GltfViewerResidentGeneration spent) noexcept {
+    // activate_gltf_scene and TerrainBackdropRuntime have already adopted every
+    // GPU resource before this handoff.  The remainder is the completed upload
+    // session plus its shared prepared CPU data; destroy that shell on the
+    // asset worker so vector/session teardown cannot extend host.update.
+    // The activation has already committed, so a shutdown race or allocation
+    // failure must not turn this best-effort scheduling into an activation
+    // error. Keep a local owner so rejected work can be synchronously cleared
+    // here, with the same CPU-only destruction boundary.
+    std::shared_ptr<GltfViewerResidentGeneration> disposal;
+    try {
+        disposal = std::make_shared<GltfViewerResidentGeneration>(std::move(spent));
+        static_cast<void>(
+            asset_jobs_.submit([disposal] { dispose_completed_import_cpu_shell(*disposal); }));
+    } catch (...) {
+        if (disposal != nullptr) {
+            dispose_completed_import_cpu_shell(*disposal);
+        } else {
+            dispose_completed_import_cpu_shell(spent);
+        }
+    }
 }
 
 void GltfViewerApp::retire_scene_generation(

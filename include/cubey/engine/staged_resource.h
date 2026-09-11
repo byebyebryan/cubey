@@ -23,6 +23,7 @@ enum class StagedResourcePhase {
     Preparing,
     QueuedForGpu,
     Installing,
+    AwaitingGpu,
     Ready,
     Failed,
     Superseded,
@@ -41,6 +42,8 @@ staged_resource_phase_name(StagedResourcePhase phase) noexcept {
         return "queued-for-gpu";
     case StagedResourcePhase::Installing:
         return "installing";
+    case StagedResourcePhase::AwaitingGpu:
+        return "awaiting-gpu";
     case StagedResourcePhase::Ready:
         return "ready";
     case StagedResourcePhase::Failed:
@@ -75,6 +78,7 @@ template <typename Prepared, typename Resident> class StagedResource {
   public:
     using PrepareFunction = std::function<Prepared()>;
     using InstallFunction = std::function<Resident(vulkan::GpuOwnerContext&, Prepared&&)>;
+    using AwaitFunction = std::function<bool(vulkan::GpuRuntime&, Resident&, bool)>;
     using Result = StagedResourceResult<Resident>;
 
     explicit StagedResource(jobs::JobSystem& jobs) : jobs_(&jobs) {
@@ -91,6 +95,13 @@ template <typename Prepared, typename Resident> class StagedResource {
     template <typename Prepare, typename Install>
     [[nodiscard]] StagedResourceGeneration request(std::string label, Prepare&& prepare,
                                                    Install&& install) {
+        return request(std::move(label), std::forward<Prepare>(prepare),
+                       std::forward<Install>(install), AwaitFunction{});
+    }
+
+    template <typename Prepare, typename Install, typename Await>
+    [[nodiscard]] StagedResourceGeneration request(std::string label, Prepare&& prepare,
+                                                   Install&& install, Await&& await) {
         if (!accepting_) {
             throw std::runtime_error("staged resource is shut down");
         }
@@ -102,6 +113,7 @@ template <typename Prepared, typename Resident> class StagedResource {
             .generation = {.id = next_generation_id_++, .label = std::move(label)},
             .prepare = PrepareFunction(std::forward<Prepare>(prepare)),
             .install = InstallFunction(std::forward<Install>(install)),
+            .await = AwaitFunction(std::forward<Await>(await)),
         };
         const StagedResourceGeneration generation = request.generation;
         queue_ready_for_disposal();
@@ -131,6 +143,9 @@ template <typename Prepared, typename Resident> class StagedResource {
             break;
         case ActiveStage::Installing:
             progressed = poll_installation();
+            break;
+        case ActiveStage::AwaitingGpu:
+            progressed = poll_gpu_completion(gpu);
             break;
         }
         return disposed || progressed;
@@ -206,12 +221,14 @@ template <typename Prepared, typename Resident> class StagedResource {
         Preparing,
         ReadyForGpu,
         Installing,
+        AwaitingGpu,
     };
 
     struct Request {
         StagedResourceGeneration generation{};
         PrepareFunction prepare{};
         InstallFunction install{};
+        AwaitFunction await{};
     };
 
     struct ResidentHolder {
@@ -228,6 +245,7 @@ template <typename Prepared, typename Resident> class StagedResource {
     struct Active {
         StagedResourceGeneration generation{};
         InstallFunction install{};
+        AwaitFunction await{};
         jobs::JobHandle<Prepared> preparation;
         std::optional<Prepared> prepared{};
         std::optional<vulkan::GpuJobHandle<void>> installation{};
@@ -240,9 +258,11 @@ template <typename Prepared, typename Resident> class StagedResource {
         bool superseded = false;
 
         Active(StagedResourceGeneration generation_value, InstallFunction install_value,
-               jobs::JobHandle<Prepared> preparation_value, Clock::time_point started)
+               AwaitFunction await_value, jobs::JobHandle<Prepared> preparation_value,
+               Clock::time_point started)
             : generation(std::move(generation_value)), install(std::move(install_value)),
-              preparation(std::move(preparation_value)), prepare_started(started) {}
+              await(std::move(await_value)), preparation(std::move(preparation_value)),
+              prepare_started(started) {}
     };
 
     [[nodiscard]] static double elapsed_milliseconds(Clock::time_point start) {
@@ -274,7 +294,7 @@ template <typename Prepared, typename Resident> class StagedResource {
             jobs_->submit([prepare = std::move(request.prepare)]() mutable { return prepare(); });
         const StagedResourceGeneration generation = request.generation;
         active_.emplace(std::move(request.generation), std::move(request.install),
-                        std::move(preparation), started);
+                        std::move(request.await), std::move(preparation), started);
         set_status(generation, StagedResourcePhase::Preparing);
     }
 
@@ -347,7 +367,32 @@ template <typename Prepared, typename Resident> class StagedResource {
 
         try {
             static_cast<void>(active_->installation->get());
-            active_->install_milliseconds = elapsed_milliseconds(active_->install_started);
+            if (active_->resident == nullptr || !active_->resident->resident.has_value()) {
+                throw std::runtime_error("GPU installation produced no resident");
+            }
+            if (active_->superseded) {
+                // The installed product may contain a generation-scoped async
+                // upload session. Discard it now instead of continuing to
+                // advance an obsolete generation from later app polls.
+                discard_active();
+                return true;
+            }
+            if (active_->await) {
+                active_->stage = ActiveStage::AwaitingGpu;
+                set_active_status(StagedResourcePhase::AwaitingGpu);
+                return true;
+            }
+            complete_active_resident();
+        } catch (const std::exception& error) {
+            fail_active(error.what());
+        } catch (...) {
+            fail_active("unknown staged resource installation failure");
+        }
+        return true;
+    }
+
+    [[nodiscard]] bool poll_gpu_completion(vulkan::GpuRuntime& gpu) {
+        try {
             if (active_->resident == nullptr || !active_->resident->resident.has_value()) {
                 throw std::runtime_error("GPU installation produced no resident");
             }
@@ -355,25 +400,37 @@ template <typename Prepared, typename Resident> class StagedResource {
                 discard_active();
                 return true;
             }
-            const StagedResourceGeneration generation = active_->generation;
-            const double prepare_milliseconds = active_->prepare_milliseconds;
-            const double install_milliseconds = active_->install_milliseconds;
-            std::shared_ptr<ResidentHolder> resident = std::move(active_->resident);
-            active_.reset();
-            ready_.emplace(Ready{
-                .generation = generation,
-                .resident = std::move(resident),
-                .prepare_milliseconds = prepare_milliseconds,
-                .install_milliseconds = install_milliseconds,
-            });
-            set_status(generation, StagedResourcePhase::Ready, prepare_milliseconds,
-                       install_milliseconds);
+            if (!active_->await(gpu, active_->resident->resident.value(), false)) {
+                return false;
+            }
+            complete_active_resident();
         } catch (const std::exception& error) {
             fail_active(error.what());
         } catch (...) {
-            fail_active("unknown staged resource installation failure");
+            fail_active("unknown staged resource GPU completion failure");
         }
         return true;
+    }
+
+    void complete_active_resident() {
+        active_->install_milliseconds = elapsed_milliseconds(active_->install_started);
+        if (active_->superseded) {
+            discard_active();
+            return;
+        }
+        const StagedResourceGeneration generation = active_->generation;
+        const double prepare_milliseconds = active_->prepare_milliseconds;
+        const double install_milliseconds = active_->install_milliseconds;
+        std::shared_ptr<ResidentHolder> resident = std::move(active_->resident);
+        active_.reset();
+        ready_.emplace(Ready{
+            .generation = generation,
+            .resident = std::move(resident),
+            .prepare_milliseconds = prepare_milliseconds,
+            .install_milliseconds = install_milliseconds,
+        });
+        set_status(generation, StagedResourcePhase::Ready, prepare_milliseconds,
+                   install_milliseconds);
     }
 
     void fail_active(std::string error) {
@@ -466,6 +523,20 @@ template <typename Prepared, typename Resident> class StagedResource {
                 }
             } else {
                 active_->installation->wait();
+            }
+            break;
+        case ActiveStage::AwaitingGpu:
+            if (active_->resident == nullptr || !active_->resident->resident.has_value()) {
+                throw std::runtime_error("GPU completion wait has no resident");
+            }
+            try {
+                if (!active_->await(gpu, active_->resident->resident.value(), true)) {
+                    throw std::runtime_error("GPU completion wait returned incomplete");
+                }
+            } catch (const std::exception& error) {
+                fail_active(error.what());
+            } catch (...) {
+                fail_active("unknown staged resource GPU completion wait failure");
             }
             break;
         }

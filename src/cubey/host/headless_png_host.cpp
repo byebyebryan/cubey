@@ -353,6 +353,7 @@ void HeadlessPngHost::create_gpu_runtime() {
         .device = &device(),
         .submission = &submission(),
         .execution_mode = config_.gpu_execution_mode,
+        .staging_pool = config_.staging_pool,
     });
 }
 

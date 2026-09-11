@@ -38,8 +38,16 @@ void test_defaults_named_flags_and_typed_runtime() {
     char arg10[] = "--no-clouds";
     char arg11[] = "--terrain-surface-detail";
     char arg12[] = "flat";
-    char* argv[] = {arg0, arg1, arg2, arg3,  arg4,  arg5, arg6,
-                    arg7, arg8, arg9, arg10, arg11, arg12};
+    char arg13[] = "--profile-import-delay-frames";
+    char arg14[] = "120";
+    char arg15[] = "--profile-upload-owner-target-ms";
+    char arg16[] = "1.5";
+    char arg17[] = "--profile-upload-step-byte-cap";
+    char arg18[] = "4194304";
+    char arg19[] = "--profile-frame-pace-hz";
+    char arg20[] = "60";
+    char* argv[] = {arg0,  arg1,  arg2,  arg3,  arg4,  arg5,  arg6,  arg7,  arg8,  arg9, arg10,
+                    arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20};
     const auto config = cubey::projects::gltf_viewer::parse_gltf_viewer_project_config(
         static_cast<int>(std::size(argv)), argv);
     require(config.common.width == 1280U && config.common.height == 720U,
@@ -53,6 +61,11 @@ void test_defaults_named_flags_and_typed_runtime() {
                 !*config.clouds.enabled,
             "glTF cloud options should bind aliases and negative bools");
     require(config.terrain.surface_detail == "flat", "glTF terrain option should bind");
+    require(config.profile.import_delay_frames == 120U &&
+                config.profile.upload_owner_cpu_target_milliseconds == 1.5 &&
+                config.profile.upload_step_byte_cap == 4194304U &&
+                config.profile.windowed_frame_pacing_hertz == 60.0,
+            "glTF profile controls should bind their explicit measurement policy");
     const auto ocean = cubey::projects::gltf_viewer::gltf_viewer_ocean_config_from_options(config);
     require(ocean.map_size == 128U && ocean.sea_state == cubey::render::OceanSeaState::Calm,
             "glTF typed ocean runtime should consume startup options");
@@ -75,11 +88,20 @@ void test_set_json_template_and_unknown_scope() {
     cubey::projects::gltf_viewer::GltfViewerProjectConfig json_config;
     auto schema = cubey::projects::gltf_viewer::gltf_viewer_project_config_schema(json_config);
     schema.apply_json({{"gltf", {{"animation_index", 3}}},
+                       {"profile",
+                        {{"import_delay_frames", 60},
+                         {"upload_owner_cpu_target_ms", 1.25},
+                         {"upload_step_byte_cap", 2097152},
+                         {"windowed_frame_pacing_hz", 60.0}}},
                        {"ocean", {{"map_size", 128}}},
                        {"pbr", {{"environment_source", "static"}}}});
-    require(json_config.gltf.animation_index == 3U && json_config.ocean.map_size == 128U &&
-                json_config.pbr.environment_source == "static",
-            "glTF JSON paths should bind");
+    require(
+        json_config.gltf.animation_index == 3U && json_config.profile.import_delay_frames == 60U &&
+            json_config.profile.upload_owner_cpu_target_milliseconds == 1.25 &&
+            json_config.profile.upload_step_byte_cap == 2097152U &&
+            json_config.profile.windowed_frame_pacing_hertz == 60.0 &&
+            json_config.ocean.map_size == 128U && json_config.pbr.environment_source == "static",
+        "glTF JSON paths should bind");
 
     const auto path = std::filesystem::temp_directory_path() / "cubey-gltf-viewer-template-v2.json";
     schema.write_template(path);

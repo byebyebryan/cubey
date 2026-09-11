@@ -119,18 +119,6 @@ void accumulate_node_bounds(const GltfPreparedScene& prepared, std::uint32_t nod
     }
 }
 
-[[nodiscard]] render::MeshHandle staging_mesh_handle(std::size_t index) {
-    return {.index = static_cast<std::uint32_t>(index + 1U), .generation = 0U};
-}
-
-[[nodiscard]] render::MaterialHandle material_handle_for_index(const GltfSceneResident& resident,
-                                                               std::uint32_t index) {
-    if (index >= resident.material_handles.size()) {
-        throw std::runtime_error("glTF primitive material index is out of range");
-    }
-    return resident.material_handles[index];
-}
-
 [[nodiscard]] const GltfDeformablePrimitive3D*
 deformable_primitive(const GltfSceneImportResources& resources, std::uint32_t node_index,
                      std::uint32_t mesh_index, std::uint32_t primitive_index) {
@@ -211,68 +199,6 @@ Entity create_node(SceneTransaction& transaction, const GltfPreparedScene& prepa
     return entity;
 }
 
-void build_static_mesh_resources(vulkan::GpuOwnerContext& gpu, const GltfPreparedScene& prepared,
-                                 GltfSceneResident& resident) {
-    GltfSceneImportResources& resources = resident.resources;
-    resources.mesh_primitives.clear();
-    resources.mesh_primitives.resize(prepared.meshes.size());
-    for (std::size_t mesh_index = 0; mesh_index < prepared.meshes.size(); ++mesh_index) {
-        const GltfPreparedMesh& mesh = prepared.meshes[mesh_index];
-        std::vector<render::MeshConfig> configs;
-        configs.reserve(mesh.primitives.size());
-        for (const GltfPreparedMeshPrimitive& primitive : mesh.primitives) {
-            configs.push_back(
-                render::indexed_mesh_config(std::span<const render::PbrVertex>{primitive.vertices},
-                                            std::span<const std::uint32_t>{primitive.indices}));
-        }
-        render::MeshUploadBatch batch = render::upload_meshes(gpu, configs);
-        resident.mesh_upload_byte_count += batch.uploaded_byte_count;
-        resident.mesh_upload_transfer_submission_count += batch.transfer_submission_count;
-        std::vector<GltfImportedPrimitive3D>& primitives = resources.mesh_primitives[mesh_index];
-        primitives.reserve(mesh.primitives.size());
-        for (std::size_t primitive_index = 0; primitive_index < mesh.primitives.size();
-             ++primitive_index) {
-            const GltfPreparedMeshPrimitive& prepared_primitive = mesh.primitives[primitive_index];
-            const render::MeshHandle handle =
-                staging_mesh_handle(resident.static_mesh_handles.size());
-            resources.meshes.emplace(handle, std::move(batch.meshes[primitive_index]));
-            resident.static_mesh_handles.push_back(handle);
-            primitives.push_back({
-                .mesh = handle,
-                .material = material_handle_for_index(resident, prepared_primitive.material_index),
-                .local_bounds = prepared_primitive.local_bounds,
-                .mesh_index = static_cast<std::uint32_t>(mesh_index),
-                .primitive_index = static_cast<std::uint32_t>(primitive_index),
-                .deformation = GltfPrimitiveDeformationKind::Static,
-            });
-        }
-    }
-
-    resources.deformable_primitives.reserve(prepared.deformable_primitives.size());
-    for (const GltfPreparedDeformationPrimitive& primitive : prepared.deformable_primitives) {
-        if (primitive.mesh_index >= resources.mesh_primitives.size() ||
-            primitive.primitive_index >= resources.mesh_primitives[primitive.mesh_index].size()) {
-            throw std::runtime_error("prepared glTF deformation mesh primitive is out of range");
-        }
-        const GltfImportedPrimitive3D& source =
-            resources.mesh_primitives[primitive.mesh_index][primitive.primitive_index];
-        const render::MeshHandle output = staging_mesh_handle(
-            resident.static_mesh_handles.size() + resident.deformation_mesh_handles.size());
-        resident.deformation_mesh_handles.push_back(output);
-        resources.deformable_primitives.push_back({
-            .node_index = primitive.node_index,
-            .mesh_index = primitive.mesh_index,
-            .primitive_index = primitive.primitive_index,
-            .skin_index = primitive.skin_index,
-            .deformation = primitive.deformation,
-            .source_mesh = source.mesh,
-            .output_mesh = output,
-            .material = source.material,
-            .local_bounds = source.local_bounds,
-        });
-    }
-}
-
 } // namespace
 
 GltfPrimitiveDeformationKind
@@ -339,20 +265,6 @@ GltfPreparedScene prepare_gltf_scene(const asset::GltfAsset& asset, GltfSceneImp
     prepared.bounds = bounds.bounds_or_default();
     prepare_gltf_deformation_primitives(prepared, asset);
     return prepared;
-}
-
-GltfSceneResident build_gltf_scene_resident(vulkan::GpuOwnerContext& gpu,
-                                            const GltfPreparedScene& prepared,
-                                            const GltfSceneImportConfig& config) {
-    gpu.require_owner_thread("glTF residency requires the GPU owner thread");
-    if (config.frame_slot_count == 0) {
-        throw std::runtime_error("glTF scene import requires at least one frame slot");
-    }
-    GltfSceneResident resident;
-    build_gltf_material_resources(gpu, prepared, config, resident);
-    build_static_mesh_resources(gpu, prepared, resident);
-    build_gltf_deformation_resources(gpu, prepared, config, resident);
-    return resident;
 }
 
 GltfSceneImportResult activate_gltf_scene(Engine& engine, SceneTransaction& transaction,
@@ -465,19 +377,24 @@ GltfSceneImportResult import_gltf_scene(Engine& engine, SceneTransaction& transa
                                         vulkan::GpuRuntime& gpu,
                                         GltfSceneImportResources& resources,
                                         GltfSceneImportConfig config) {
-    const GltfPreparedScene prepared = prepare_gltf_scene(
+    auto prepared = std::make_shared<GltfPreparedScene>(prepare_gltf_scene(
         asset, config,
-        {.supports_texture_compression_bc = device.supports_texture_compression_bc()});
-    std::optional<GltfSceneResident> resident;
-    static_cast<void>(gpu.submit_and_wait({
-        .label = config.label_prefix + ".gltf-residency",
-        .work =
-            [&resident, &prepared, &config](vulkan::GpuOwnerContext& context) {
-                resident.emplace(build_gltf_scene_resident(context, prepared, config));
-            },
-    }));
-    return activate_gltf_scene(engine, transaction, prepared, std::move(resident.value()),
-                               resources, config);
+        {.supports_texture_compression_bc = device.supports_texture_compression_bc()}));
+    std::shared_ptr<GltfSceneUploadSession> session =
+        begin_gltf_scene_upload_session(prepared, config, gpu);
+    try {
+        while (!session->poll(gpu, true)) {
+        }
+        GltfSceneResident resident = session->take_resident();
+        return activate_gltf_scene(engine, transaction, *prepared, std::move(resident), resources,
+                                   config);
+    } catch (...) {
+        // Dropping an untaken session queues owner-only destruction after its
+        // final same-queue ticket. The blocking poll path has already waited
+        // that ticket on a failed generation before reaching here.
+        session.reset();
+        throw;
+    }
 }
 
 void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resources,

@@ -244,8 +244,21 @@ struct GltfLoadConfig {
     bool generate_missing_normals = true;
 };
 
+// Optional CPU-stage timing output for one load_gltf_asset invocation. Values
+// accumulate only work attempted before a failure; callers should discard
+// partial results when the load throws.
+struct GltfAssetLoadProfile {
+    double document_parse_milliseconds = 0.0;
+    double buffer_load_milliseconds = 0.0;
+    double asset_validate_milliseconds = 0.0;
+    double image_payload_milliseconds = 0.0;
+    double image_decode_milliseconds = 0.0;
+    double asset_assembly_milliseconds = 0.0;
+};
+
 [[nodiscard]] GltfAsset load_gltf_asset(const std::filesystem::path& path,
-                                        GltfLoadConfig config = {});
+                                        GltfLoadConfig config = {},
+                                        GltfAssetLoadProfile* profile = nullptr);
 // Reads only glTF scene/node/accessor metadata. The returned bounds describe
 // the authored rest pose; animated skin and morph extremes are intentionally
 // outside this probe's contract.

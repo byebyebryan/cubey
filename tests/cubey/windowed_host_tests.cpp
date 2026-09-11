@@ -24,6 +24,8 @@ void test_windowed_host_config_defaults_to_two_frame_slots() {
     require(config.frame_slot_count == 2, "windowed host config should default to two frame slots");
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "windowed host config should default to threaded GPU runtime");
+    require(!config.profile_pacing.has_value(),
+            "windowed host should keep profiling frame pacing inert by default");
     static_assert(std::is_same_v<decltype(config.frame_slot_count), std::uint32_t>);
     static_assert(!HasSubmissionAccessor<cubey::host::WindowedAppContext>);
     static_assert(
@@ -43,6 +45,8 @@ void test_windowed_app_config_preserves_windowed_host_defaults() {
     require(config.frame_slot_count == 2, "windowed app config should default to two frame slots");
     require(config.gpu_execution_mode == cubey::vulkan::GpuRuntimeExecutionMode::Threaded,
             "windowed app config should default to threaded GPU runtime");
+    require(!config.profile_pacing.has_value(),
+            "windowed app config should not pace ordinary interactive frames");
     require(!config.close_on_escape, "windowed app config should not force escape handling");
     require(!callbacks.draw_ui, "windowed app callbacks should default to no UI callback");
     require(!host_callbacks.draw_ui, "windowed host callbacks should default to no UI callback");

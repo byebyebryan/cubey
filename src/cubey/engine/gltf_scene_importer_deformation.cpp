@@ -4,12 +4,9 @@
 #include <cubey/render/deformation.h>
 #include <cubey/render/pbr.h>
 #include <cubey/scene/scene.h>
-#include <cubey/vulkan/descriptors.h>
-
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -18,10 +15,6 @@
 
 namespace cubey {
 namespace {
-
-[[nodiscard]] std::uint32_t binding(render::GpuDeformationBinding value) {
-    return static_cast<std::uint32_t>(value);
-}
 
 [[nodiscard]] VkDeviceSize byte_size(std::size_t count, std::size_t element_size) {
     if (count == 0 || element_size == 0) {
@@ -32,19 +25,6 @@ namespace {
 
 template <typename T> [[nodiscard]] VkDeviceSize span_byte_size(std::span<const T> values) {
     return byte_size(values.size(), sizeof(T));
-}
-
-template <typename T>
-[[nodiscard]] vulkan::Buffer create_host_storage_buffer(const vulkan::Device& device,
-                                                        std::span<const T> initial_values) {
-    vulkan::Buffer buffer(device, vulkan::BufferConfig{
-                                      .size = span_byte_size(initial_values),
-                                      .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                      .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                  });
-    buffer.upload(initial_values.data(), span_byte_size(initial_values));
-    return buffer;
 }
 
 [[nodiscard]] std::vector<render::PbrVertex>
@@ -191,52 +171,9 @@ void require_morph_weight_count(std::span<const float> weights, std::uint32_t mo
     return std::vector<math::Mat4>(std::max(1U, joint_count), math::Mat4{1.0F});
 }
 
-[[nodiscard]] std::uint32_t deformation_flags(GltfPrimitiveDeformationKind kind) {
-    std::uint32_t flags = 0;
-    if (kind == GltfPrimitiveDeformationKind::Morph ||
-        kind == GltfPrimitiveDeformationKind::MorphSkin) {
-        flags |= static_cast<std::uint32_t>(render::GpuDeformationFlags::Morph);
-    }
-    if (kind == GltfPrimitiveDeformationKind::Skin ||
-        kind == GltfPrimitiveDeformationKind::MorphSkin) {
-        flags |= static_cast<std::uint32_t>(render::GpuDeformationFlags::Skin);
-    }
-    return flags;
-}
-
 [[nodiscard]] bool deformation_has_skin(GltfPrimitiveDeformationKind kind) {
     return kind == GltfPrimitiveDeformationKind::Skin ||
            kind == GltfPrimitiveDeformationKind::MorphSkin;
-}
-
-void update_deformation_descriptors(const vulkan::Device& device,
-                                    GltfDeformationPrimitiveResources& resource) {
-    if (!resource.base_vertices || !resource.morph_targets || !resource.skin_influences ||
-        resource.descriptor_sets == nullptr) {
-        throw std::runtime_error("glTF deformation descriptors require initialized buffers");
-    }
-    for (std::uint32_t frame_index = 0; frame_index < resource.descriptor_sets->size();
-         ++frame_index) {
-        const VkDescriptorSet set = resource.descriptor_sets->set(frame_index);
-        vulkan::DescriptorWriteBatch writes;
-        writes
-            .storage_buffer(set, binding(render::GpuDeformationBinding::BaseVertices),
-                            resource.base_vertices->handle(), resource.base_vertices->size())
-            .storage_buffer(set, binding(render::GpuDeformationBinding::MorphTargets),
-                            resource.morph_targets->handle(), resource.morph_targets->size())
-            .storage_buffer(set, binding(render::GpuDeformationBinding::MorphWeights),
-                            resource.morph_weights.at(frame_index).handle(),
-                            resource.morph_weights.at(frame_index).size())
-            .storage_buffer(set, binding(render::GpuDeformationBinding::SkinInfluences),
-                            resource.skin_influences->handle(), resource.skin_influences->size())
-            .storage_buffer(set, binding(render::GpuDeformationBinding::JointPalette),
-                            resource.joint_palettes.at(frame_index).handle(),
-                            resource.joint_palettes.at(frame_index).size())
-            .storage_buffer(set, binding(render::GpuDeformationBinding::OutputVertices),
-                            resource.output_meshes.at(frame_index).vertex_buffer().handle(),
-                            resource.output_meshes.at(frame_index).vertex_buffer().size());
-        writes.update(device);
-    }
 }
 
 void prepare_deformation_node(GltfPreparedScene& prepared, const asset::GltfAsset& asset,
@@ -293,54 +230,6 @@ void prepare_deformation_node(GltfPreparedScene& prepared, const asset::GltfAsse
     }
 }
 
-void create_deformation_primitive_resources(vulkan::GpuOwnerContext& gpu,
-                                            const GltfPreparedDeformationPrimitive& prepared,
-                                            GltfDeformationPrimitiveResources& resource,
-                                            const GltfSceneImportConfig& config) {
-    resource.push_constants = {
-        .vertex_count = static_cast<std::uint32_t>(prepared.base_vertices.size()),
-        .morph_target_count =
-            prepared.morph_targets.empty()
-                ? 0U
-                : static_cast<std::uint32_t>(prepared.morph_targets.size() /
-                                             (prepared.base_vertices.size() * 9U)),
-        .joint_count = deformation_has_skin(prepared.deformation)
-                           ? static_cast<std::uint32_t>(prepared.initial_joint_palette.size())
-                           : 0U,
-        .flags = deformation_flags(prepared.deformation),
-    };
-    resource.base_vertices = vulkan::upload_device_buffer(
-        gpu, prepared.base_vertices.data(), span_byte_size(std::span{prepared.base_vertices}),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    resource.morph_targets = vulkan::upload_device_buffer(
-        gpu, prepared.morph_targets.data(), span_byte_size(std::span{prepared.morph_targets}),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    resource.skin_influences = vulkan::upload_device_buffer(
-        gpu, prepared.skin_influences.data(), span_byte_size(std::span{prepared.skin_influences}),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-
-    std::vector<render::PbrVertex> output_vertices(prepared.base_vertices.size());
-    resource.morph_weights.reserve(config.frame_slot_count);
-    resource.joint_palettes.reserve(config.frame_slot_count);
-    resource.output_meshes.reserve(config.frame_slot_count);
-    for (std::uint32_t frame_index = 0; frame_index < config.frame_slot_count; ++frame_index) {
-        resource.morph_weights.push_back(create_host_storage_buffer(
-            gpu.device(), std::span<const float>{prepared.initial_morph_weights}));
-        resource.joint_palettes.push_back(create_host_storage_buffer(
-            gpu.device(), std::span<const math::Mat4>{prepared.initial_joint_palette}));
-        const render::MeshConfig output_config = render::indexed_mesh_config(
-            std::span<const render::PbrVertex>{output_vertices},
-            std::span<const std::uint32_t>{prepared.indices},
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-        render::MeshUploadBatch output_batch =
-            render::upload_meshes(gpu, std::span<const render::MeshConfig>{&output_config, 1});
-        resource.output_meshes.push_back(std::move(output_batch.meshes.front()));
-    }
-    resource.descriptor_sets = std::make_unique<vulkan::DescriptorSetArray>(
-        gpu.device(), render::gpu_deformation_descriptor_set_info(config.frame_slot_count));
-    update_deformation_descriptors(gpu.device(), resource);
-}
-
 [[nodiscard]] std::vector<math::Mat4> node_world_matrices(const asset::GltfAsset& asset,
                                                           const GltfSceneImportResult& result,
                                                           const SceneReadView& scene_view) {
@@ -379,44 +268,6 @@ void prepare_gltf_deformation_primitives(GltfPreparedScene& prepared,
     for (const std::uint32_t root : prepared.root_nodes) {
         prepare_deformation_node(prepared, asset, root);
     }
-}
-
-void build_gltf_deformation_resources(vulkan::GpuOwnerContext& gpu,
-                                      const GltfPreparedScene& prepared,
-                                      const GltfSceneImportConfig& config,
-                                      GltfSceneResident& resident) {
-    gpu.require_owner_thread("glTF deformation residency requires the GPU owner thread");
-    GltfSceneImportResources& resources = resident.resources;
-    resources.deformation = {};
-    if (prepared.deformable_primitives.empty()) {
-        return;
-    }
-    if (resources.deformable_primitives.size() != prepared.deformable_primitives.size()) {
-        throw std::runtime_error("glTF deformation residency does not match prepared primitives");
-    }
-    resources.deformation.frame_meshes.resize(config.frame_slot_count);
-    resources.deformation.primitives.reserve(resources.deformable_primitives.size());
-    for (std::size_t index = 0; index < prepared.deformable_primitives.size(); ++index) {
-        GltfDeformationPrimitiveResources& resource =
-            resources.deformation.primitives.emplace_back();
-        resource.primitive = resources.deformable_primitives[index];
-        create_deformation_primitive_resources(gpu, prepared.deformable_primitives[index], resource,
-                                               config);
-        for (std::uint32_t frame_index = 0; frame_index < config.frame_slot_count; ++frame_index) {
-            resources.deformation.frame_meshes.bind(
-                {.index = frame_index, .count = config.frame_slot_count},
-                resource.primitive.output_mesh, &resource.output_meshes.at(frame_index));
-        }
-    }
-    if (config.deformation_compute_shader.empty()) {
-        throw std::runtime_error("glTF deformation resources require a compute shader");
-    }
-    const std::array<VkDescriptorSetLayout, 1> layouts{
-        resources.deformation.primitives.front().descriptor_sets->layout(),
-    };
-    resources.deformation.pipeline = std::make_unique<render::ComputePipelineResource>(
-        gpu.device(),
-        render::gpu_deformation_pipeline_config(config.deformation_compute_shader, layouts));
 }
 
 void rebuild_gltf_deformation_frame_meshes(GltfSceneImportResources& resources,

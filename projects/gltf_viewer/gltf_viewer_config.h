@@ -9,6 +9,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -34,6 +36,16 @@ struct GltfViewerCaptureOptions {
     std::optional<float> camera_pitch_degrees{};
 };
 
+// This is deliberately a profiling trigger rather than an asset-loading
+// policy. It lets a windowed measurement start the requested import after the
+// renderer has reached a stable cadence.
+struct GltfViewerProfileOptions {
+    std::uint32_t import_delay_frames = 0U;
+    std::optional<double> upload_owner_cpu_target_milliseconds{};
+    std::optional<std::uint64_t> upload_step_byte_cap{};
+    std::optional<double> windowed_frame_pacing_hertz{};
+};
+
 struct GltfViewerStartupOptions {
     struct Gltf {
         std::filesystem::path input_path{};
@@ -50,6 +62,7 @@ struct GltfViewerStartupOptions {
     cubey::AtmosphereEnvironmentOptions atmosphere;
     cubey::CloudEnvironmentOptions clouds;
     GltfViewerCaptureOptions capture{};
+    GltfViewerProfileOptions profile{};
     struct Pbr : cubey::PbrStaticIblOptions {
         std::optional<std::string> environment_source{};
     } pbr;
@@ -147,6 +160,30 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                  .max = kGltfViewerMaximumCaptureCameraPitchDegrees}),
                  config.capture.camera_pitch_degrees);
 
+    builder.bind(detail::option("profile.import_delay_frames", "--profile-import-delay-frames",
+                                "Import Delay Frames", "Profiling",
+                                "Delay the initial windowed glTF import until this frame; "
+                                "profiling-only and ignored by ordinary runs when zero.",
+                                ValueType::UInt32),
+                 config.profile.import_delay_frames);
+    builder.bind(detail::option("profile.upload_owner_cpu_target_ms",
+                                "--profile-upload-owner-target-ms", "Upload Owner Target",
+                                "Profiling",
+                                "Profiling-only glTF upload owner CPU target in milliseconds.",
+                                ValueType::Float, {.has_min = true, .min = 0.001}),
+                 config.profile.upload_owner_cpu_target_milliseconds);
+    builder.bind(detail::option("profile.upload_step_byte_cap", "--profile-upload-step-byte-cap",
+                                "Upload Step Byte Cap", "Profiling",
+                                "Profiling-only glTF physical upload-step cap in bytes.",
+                                ValueType::UInt64, {.has_min = true, .min = 1.0}),
+                 config.profile.upload_step_byte_cap);
+    builder.bind(detail::option("profile.windowed_frame_pacing_hz", "--profile-frame-pace-hz",
+                                "Windowed Frame Pace", "Profiling",
+                                "Profiling-only whole-frame windowed pacing frequency in hertz.",
+                                ValueType::Float,
+                                {.has_min = true, .has_max = true, .min = 1.0, .max = 1000.0}),
+                 config.profile.windowed_frame_pacing_hertz);
+
     builder.compose(cubey::pbr_static_ibl_schema(config.pbr));
     builder.bind(detail::option("pbr.environment_source", "--pbr-environment-source",
                                 "Environment Source", "PBR",
@@ -215,6 +252,16 @@ parse_gltf_viewer_project_config(int argc, char** argv, config::ParseResult* res
         argc, argv, gltf_viewer_project_config_schema, result);
     validate_atmosphere_environment_options(config.atmosphere);
     validate_cloud_environment_options(config.clouds);
+    if (config.profile.upload_owner_cpu_target_milliseconds.has_value() &&
+        (!std::isfinite(config.profile.upload_owner_cpu_target_milliseconds.value()) ||
+         config.profile.upload_owner_cpu_target_milliseconds.value() <= 0.0)) {
+        throw std::runtime_error("glTF profile upload owner target must be finite and positive");
+    }
+    if (config.profile.windowed_frame_pacing_hertz.has_value() &&
+        (!std::isfinite(config.profile.windowed_frame_pacing_hertz.value()) ||
+         config.profile.windowed_frame_pacing_hertz.value() <= 0.0)) {
+        throw std::runtime_error("glTF profile frame pacing must be finite and positive");
+    }
     return config;
 }
 

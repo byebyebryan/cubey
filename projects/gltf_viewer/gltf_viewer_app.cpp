@@ -13,6 +13,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <numbers>
@@ -31,6 +32,23 @@ using cubey::host::FrameStatsSample;
 namespace {
 
 constexpr float kHeadlessVideoOrbitSpeed = 0.32F;
+
+[[nodiscard]] std::optional<cubey::host::WindowedProfilePacingConfig>
+windowed_profile_pacing(const GltfViewerProfileOptions& profile) {
+    if (!profile.windowed_frame_pacing_hertz.has_value()) {
+        return std::nullopt;
+    }
+    const double hertz = profile.windowed_frame_pacing_hertz.value();
+    if (!std::isfinite(hertz) || hertz <= 0.0) {
+        throw std::runtime_error("glTF profile frame pacing must be finite and positive");
+    }
+    const std::chrono::nanoseconds interval = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::duration<double>(1.0 / hertz));
+    if (interval <= std::chrono::nanoseconds::zero()) {
+        throw std::runtime_error("glTF profile frame pacing interval must be positive");
+    }
+    return cubey::host::WindowedProfilePacingConfig{.frame_interval = interval};
+}
 
 [[nodiscard]] float direction_elevation_degrees(cubey::math::Vec3 direction) {
     return cubey::render::atmosphere_environment_radians_to_degrees(
@@ -291,6 +309,12 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
 
 int GltfViewerApp::run() {
     if (config_.common.headless) {
+        if (config_.profile.import_delay_frames != 0U) {
+            throw std::runtime_error("--profile-import-delay-frames requires windowed mode");
+        }
+        if (config_.profile.windowed_frame_pacing_hertz.has_value()) {
+            throw std::runtime_error("--profile-frame-pace-hz requires windowed mode");
+        }
         return run_headless();
     }
     return run_windowed();
@@ -311,23 +335,46 @@ int GltfViewerApp::run_windowed() {
         destroy_swapchain_resources();
     };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
-        poll_imported_asset_build(context.gpu(),
-                                  context.frame_resources().latest_submitted_ticket());
-        poll_atmosphere_background_atlases(context.device(), context.gpu(),
-                                           context.frame_resources());
-        update_animation(static_cast<float>(timing.delta_seconds));
-        if (update_atmosphere_time(timing.delta_seconds)) {
-            refresh_atmosphere_lighting_scene();
+        start_deferred_import_if_due(timing.frame_index);
+        cubey::profiling::ProfileRecorder* const profile_recorder = context.profile_recorder();
+        {
+            auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
+                                                        "gltf.asset_build_poll");
+            poll_imported_asset_build(context.gpu(),
+                                      context.frame_resources().latest_submitted_ticket(),
+                                      timing.frame_index, profile_recorder);
         }
-        atmosphere_runtime_.advance(timing.delta_seconds);
+        {
+            auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
+                                                        "gltf.atmosphere_atlas_poll");
+            poll_atmosphere_background_atlases(context.device(), context.gpu(),
+                                               context.frame_resources());
+        }
+        {
+            auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
+                                                        "gltf.animation_update");
+            update_animation(static_cast<float>(timing.delta_seconds));
+        }
+        {
+            auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
+                                                        "gltf.atmosphere_update");
+            if (update_atmosphere_time(timing.delta_seconds)) {
+                refresh_atmosphere_lighting_scene();
+            }
+            atmosphere_runtime_.advance(timing.delta_seconds);
+        }
         ocean_delta_seconds_ = timing.delta_seconds > 0.0 ? timing.delta_seconds : (1.0 / 60.0);
         ocean_elapsed_seconds_ += ocean_delta_seconds_;
-        const auto input = context.filtered_input();
-        if (input.key_pressed(cubey::input::Key::D)) {
-            debug_view_ = render::next_pbr_debug_view(debug_view_);
+        {
+            auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
+                                                        "gltf.camera_update");
+            const auto input = context.filtered_input();
+            if (input.key_pressed(cubey::input::Key::D)) {
+                debug_view_ = render::next_pbr_debug_view(debug_view_);
+            }
+            orbit_controller_.update_from_input(input, timing.delta_seconds);
+            update_camera_transform();
         }
-        orbit_controller_.update_from_input(input, timing.delta_seconds);
-        update_camera_transform();
     };
     callbacks.draw_ui = [this](cubey::host::WindowedAppContext& context) { draw_ui(context); };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -357,6 +404,8 @@ int GltfViewerApp::run_windowed() {
             .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
             .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .require_dynamic_rendering = true,
+            .staging_pool = cubey::vulkan::GpuStagingPoolConfig{},
+            .profile_pacing = windowed_profile_pacing(config_.profile),
             .close_on_escape = true,
         },
         std::move(callbacks));
@@ -368,6 +417,7 @@ int GltfViewerApp::run_headless() {
     host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
     host_config.output_format = VK_FORMAT_R8G8B8A8_UNORM;
     host_config.require_dynamic_rendering = true;
+    host_config.staging_pool = cubey::vulkan::GpuStagingPoolConfig{};
 
     cubey::host::HeadlessPngHostCallbacks callbacks;
     callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {

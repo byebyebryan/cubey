@@ -25,6 +25,8 @@ struct WindowedAppConfig {
     bool require_tessellation_shader = false;
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
+    std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};
+    std::optional<WindowedProfilePacingConfig> profile_pacing{};
     bool close_on_escape = false;
 };
 

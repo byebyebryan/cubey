@@ -11,17 +11,8 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
                             const GltfSceneImportConfig& config,
                             GltfSceneImportCapabilities capabilities);
 
-void build_gltf_material_resources(vulkan::GpuOwnerContext& gpu, const GltfPreparedScene& prepared,
-                                   const GltfSceneImportConfig& config,
-                                   GltfSceneResident& resident);
-
 void prepare_gltf_deformation_primitives(GltfPreparedScene& prepared,
                                          const asset::GltfAsset& asset);
-
-void build_gltf_deformation_resources(vulkan::GpuOwnerContext& gpu,
-                                      const GltfPreparedScene& prepared,
-                                      const GltfSceneImportConfig& config,
-                                      GltfSceneResident& resident);
 
 void rebuild_gltf_deformation_frame_meshes(GltfSceneImportResources& resources,
                                            const GltfSceneImportConfig& config);

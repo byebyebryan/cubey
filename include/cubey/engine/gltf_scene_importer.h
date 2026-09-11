@@ -13,6 +13,7 @@
 #include <cubey/scene/transform_3d.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
+#include <cubey/vulkan/upload_step.h>
 
 #include <array>
 #include <cstdint>
@@ -89,11 +90,20 @@ struct GltfDeformationResources {
     std::vector<GltfDeformationPrimitiveResources> primitives{};
 };
 
+// Plain upload scheduling policy for a complete glTF generation. The session
+// applies the target only between indivisible destination operations.
+struct GltfSceneUploadPolicy {
+    double owner_cpu_target_milliseconds = 2.0;
+    VkDeviceSize step_byte_cap = 32ULL * 1024ULL * 1024ULL;
+    VkDeviceSize copy_byte_target = 2ULL * 1024ULL * 1024ULL;
+};
+
 struct GltfSceneImportConfig {
     std::uint32_t scene_index = asset::kInvalidAssetIndex;
     std::uint32_t frame_slot_count = 1;
     std::filesystem::path deformation_compute_shader{};
     std::string label_prefix = "gltf";
+    GltfSceneUploadPolicy upload_policy{};
 };
 
 // Device capability values captured by the caller before CPU preparation begins.
@@ -192,6 +202,40 @@ struct GltfSceneImportResources {
     bool active = false;
 };
 
+struct GltfSceneUploadSessionMetrics {
+    // Owner advances include allocation-only callbacks. Physical steps and
+    // submissions count only graphics-queue uploads containing copies.
+    std::uint32_t owner_advance_count = 0;
+    std::uint32_t step_count = 0;
+    std::uint32_t submission_count = 0;
+    std::uint64_t uploaded_byte_count = 0;
+    std::uint32_t copy_count = 0;
+    // Owner CPU time includes destination creation, staging/copy recording,
+    // and queue submission; it is not GPU completion latency.
+    double owner_total_milliseconds = 0.0;
+    double owner_max_step_milliseconds = 0.0;
+    double owner_target_milliseconds = 2.0;
+    // Counted against owner_advance_count after a completed owner advance.
+    std::uint32_t owner_over_target_step_count = 0;
+    std::uint32_t backpressure_count = 0;
+    // Capacity is physical host-visible staging capacity. Reserved capacity
+    // includes leases which have not yet retired on the graphics queue.
+    std::uint64_t pool_initial_capacity_byte_count = 0;
+    std::uint64_t pool_final_capacity_byte_count = 0;
+    std::uint64_t pool_peak_capacity_byte_count = 0;
+    // Snapshot while recording the final physical upload submission, before
+    // its ticket completes and returns those leases to the staging pool.
+    std::uint64_t pool_reserved_at_final_submission_byte_count = 0;
+    std::uint32_t pool_growth_count = 0;
+    // Wall-clock duration from the first successful copy submission until
+    // the final same-queue ticket was observed complete.
+    double first_step_to_final_completion_milliseconds = 0.0;
+    // Appended to retain positional aggregate compatibility for existing
+    // metrics consumers while preserving the configured policy evidence.
+    std::uint64_t step_byte_cap = 32ULL * 1024ULL * 1024ULL;
+    std::uint64_t copy_byte_target = 2ULL * 1024ULL * 1024ULL;
+};
+
 // GPU-resident import product. Handles are local staging handles until
 // activate_gltf_scene adopts them into Engine's resource registry.
 struct GltfSceneResident {
@@ -201,12 +245,52 @@ struct GltfSceneResident {
     std::vector<render::MeshHandle> deformation_mesh_handles{};
     std::uint64_t mesh_upload_byte_count = 0;
     std::uint32_t mesh_upload_transfer_submission_count = 0;
+    vulkan::GpuUploadStepTicket final_upload_step{};
+    // The session copies the generation aggregate here before handing resident
+    // ownership off for atomic activation.
+    GltfSceneUploadSessionMetrics upload_session_metrics{};
 
     GltfSceneResident() = default;
     GltfSceneResident(const GltfSceneResident&) = delete;
     GltfSceneResident& operator=(const GltfSceneResident&) = delete;
     GltfSceneResident(GltfSceneResident&&) noexcept = default;
     GltfSceneResident& operator=(GltfSceneResident&&) noexcept = default;
+};
+
+// A generation-scoped, owner-thread upload driver. Normal callers advance it
+// once from a later application poll; headless callers may use finish(). The
+// shared prepared scene keeps decoder-owned bytes stable while staged copies
+// are in flight.
+class GltfSceneUploadSession;
+[[nodiscard]] std::shared_ptr<GltfSceneUploadSession>
+begin_gltf_scene_upload_session(std::shared_ptr<const GltfPreparedScene> prepared,
+                                GltfSceneImportConfig config, vulkan::GpuRuntime& gpu);
+
+class GltfSceneUploadSession {
+  public:
+    ~GltfSceneUploadSession();
+
+    GltfSceneUploadSession(const GltfSceneUploadSession&) = delete;
+    GltfSceneUploadSession& operator=(const GltfSceneUploadSession&) = delete;
+
+    // Returns true only after the final same-queue step is complete. `wait`
+    // advances the same work state machine synchronously for headless finish.
+    [[nodiscard]] bool poll(vulkan::GpuRuntime& gpu, bool wait);
+    [[nodiscard]] bool complete() const;
+    [[nodiscard]] bool failed() const;
+    [[nodiscard]] std::string failure_message() const;
+    [[nodiscard]] GltfSceneUploadSessionMetrics metrics() const;
+    [[nodiscard]] GltfSceneResident take_resident();
+
+  private:
+    struct Impl;
+    explicit GltfSceneUploadSession(std::shared_ptr<Impl> impl);
+
+    std::shared_ptr<Impl> impl_;
+
+    friend std::shared_ptr<GltfSceneUploadSession>
+    begin_gltf_scene_upload_session(std::shared_ptr<const GltfPreparedScene>, GltfSceneImportConfig,
+                                    vulkan::GpuRuntime&);
 };
 
 [[nodiscard]] GltfPrimitiveDeformationKind
@@ -226,10 +310,6 @@ void update_gltf_deformation_frame(GltfSceneImportResources& resources,
 [[nodiscard]] GltfPreparedScene prepare_gltf_scene(const asset::GltfAsset& asset,
                                                    GltfSceneImportConfig config,
                                                    GltfSceneImportCapabilities capabilities = {});
-
-[[nodiscard]] GltfSceneResident build_gltf_scene_resident(vulkan::GpuOwnerContext& gpu,
-                                                          const GltfPreparedScene& prepared,
-                                                          const GltfSceneImportConfig& config);
 
 [[nodiscard]] GltfSceneImportResult
 activate_gltf_scene(Engine& engine, SceneTransaction& transaction,

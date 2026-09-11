@@ -6,10 +6,12 @@
 #include <cubey/vulkan/render_context.h>
 #include <cubey/vulkan/vk_check.h>
 
+#include <chrono>
 #include <cstdio>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -29,9 +31,23 @@ void validate_config(const WindowedHostConfig& config, const WindowedHostCallbac
     if (config.frame_slot_count == 0) {
         throw std::runtime_error("windowed host requires at least one frame slot");
     }
+    if (config.profile_pacing.has_value() &&
+        config.profile_pacing->frame_interval <= std::chrono::nanoseconds::zero()) {
+        throw std::runtime_error("windowed profile pacing requires a positive frame interval");
+    }
     if (!callbacks.record_frame) {
         throw std::runtime_error("windowed host requires a record_frame callback");
     }
+}
+
+void apply_profile_pacing(const WindowedHostConfig& config,
+                          std::chrono::steady_clock::time_point frame_started) {
+    if (!config.profile_pacing.has_value()) {
+        return;
+    }
+    // The deadline is anchored to the frame start, not the end of its work.
+    // This provides a whole-frame cadence while remaining outside all spans.
+    std::this_thread::sleep_until(frame_started + config.profile_pacing->frame_interval);
 }
 
 } // namespace
@@ -106,6 +122,8 @@ int WindowedHost::run() {
     cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
     while (!window().should_close() &&
            (config_.run_config.frames == 0 || frame < config_.run_config.frames)) {
+        const std::chrono::steady_clock::time_point frame_started =
+            std::chrono::steady_clock::now();
         input_state_.begin_frame();
         {
             [[maybe_unused]] auto span = profile_span(frame, "host.poll_events");
@@ -195,6 +213,7 @@ int WindowedHost::run() {
         } else {
             record_profile_frame(frame, timing, std::nullopt);
         }
+        apply_profile_pacing(config_, frame_started);
         ++frame;
     }
 
@@ -259,6 +278,7 @@ void WindowedHost::create_gpu_runtime() {
         .device = &device(),
         .submission = &submission(),
         .execution_mode = config_.gpu_execution_mode,
+        .staging_pool = config_.staging_pool,
     });
 }
 

@@ -2,10 +2,14 @@
 #include <cubey/engine/gltf_scene_importer.h>
 #include <cubey/render/resource_registry.h>
 #include <cubey/scene/scene.h>
+#include <cubey/vulkan/gpu_runtime.h>
 
 #include <glm/gtc/constants.hpp>
+#include <vulkan/vulkan.h>
 
 #include <filesystem>
+#include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -243,22 +247,17 @@ void test_gltf_scene_importer_reserves_provisional_handle_generation() {
             "replacement mesh registry handles must not collide with provisional handles");
 
     const std::filesystem::path root = CUBEY_SOURCE_DIR;
-    const std::string importer =
-        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer.cpp");
-    const std::string materials =
-        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
+    const std::string session =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_upload_session.cpp");
     cubey::tests::require_contains(
-        importer, "staging_mesh_handle(std::size_t index)",
-        "glTF mesh residency should construct explicit provisional handles");
+        session, "staging_mesh_handle(std::size_t index)",
+        "glTF upload session should construct explicit provisional mesh handles");
     cubey::tests::require_contains(
-        importer, ".generation = 0U};",
-        "glTF mesh residency should reserve generation zero for provisional handles");
+        session, "staging_material_handle(std::size_t index)",
+        "glTF upload session should construct explicit provisional material handles");
     cubey::tests::require_contains(
-        materials, "staging_material_handle(std::size_t index)",
-        "glTF material residency should construct explicit provisional handles");
-    cubey::tests::require_contains(
-        materials, ".generation = 0U};",
-        "glTF material residency should reserve generation zero for provisional handles");
+        session, ".generation = 0U};",
+        "glTF upload session should reserve generation zero for provisional handles");
 }
 
 void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy() {
@@ -277,4 +276,108 @@ void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy() 
     cubey::tests::require_contains(
         importer, ".culling_enabled = !has_deformable_primitive",
         "glTF deformable renderables should opt out of static bounds frustum culling");
+}
+
+void test_gltf_scene_upload_policy_rejects_invalid_bounds() {
+    const auto prepared = std::make_shared<cubey::GltfPreparedScene>();
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x661),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [](VkQueue, const char*) {});
+    cubey::vulkan::GpuRuntime gpu({
+        .device = reinterpret_cast<cubey::vulkan::Device*>(0x662),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    const cubey::GltfSceneUploadPolicy defaults;
+    require(defaults.owner_cpu_target_milliseconds == 2.0 &&
+                defaults.step_byte_cap == 32ULL * 1024ULL * 1024ULL &&
+                defaults.copy_byte_target == 2ULL * 1024ULL * 1024ULL,
+            "glTF upload policy should preserve the reviewed default tuning");
+
+    cubey::GltfSceneImportConfig config;
+    config.upload_policy.owner_cpu_target_milliseconds = std::numeric_limits<double>::infinity();
+    bool rejected_target = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, config, gpu));
+    } catch (const std::runtime_error&) {
+        rejected_target = true;
+    }
+    require(rejected_target, "glTF upload policy should reject a non-finite owner target");
+
+    config = {};
+    config.upload_policy.step_byte_cap = 0U;
+    bool rejected_step_cap = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, config, gpu));
+    } catch (const std::runtime_error&) {
+        rejected_step_cap = true;
+    }
+    require(rejected_step_cap, "glTF upload policy should reject a zero step cap");
+
+    config = {};
+    config.upload_policy.copy_byte_target = 0U;
+    bool rejected_copy_target = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, config, gpu));
+    } catch (const std::runtime_error&) {
+        rejected_copy_target = true;
+    }
+    require(rejected_copy_target, "glTF upload policy should reject a zero copy target");
+
+    config = {};
+    config.upload_policy.copy_byte_target = config.upload_policy.step_byte_cap + 1U;
+    bool rejected_incompatible_caps = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, config, gpu));
+    } catch (const std::runtime_error&) {
+        rejected_incompatible_caps = true;
+    }
+    require(rejected_incompatible_caps,
+            "glTF upload policy should reject copy targets larger than a physical step");
+
+    bool rejected_missing_pool = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, {}, gpu));
+    } catch (const std::runtime_error& error) {
+        rejected_missing_pool = std::string(error.what()) ==
+                                "glTF upload session requires a configured GPU staging pool";
+    }
+    require(rejected_missing_pool,
+            "glTF upload sessions should diagnose a missing configured staging pool");
+}
+
+void test_gltf_scene_importer_blocking_path_uses_upload_session() {
+    const std::filesystem::path root = CUBEY_SOURCE_DIR;
+    const std::string importer =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer.cpp");
+    const std::string session =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_upload_session.cpp");
+    cubey::tests::require_contains(importer,
+                                   "begin_gltf_scene_upload_session(prepared, config, gpu)",
+                                   "blocking glTF import should create the shared upload session");
+    cubey::tests::require_contains(
+        importer, "session->poll(gpu, true)",
+        "blocking glTF import should advance the session through its wait path");
+    cubey::tests::require_contains(
+        importer, "session->take_resident()",
+        "blocking glTF import should activate only the completed session resident");
+    cubey::tests::require_contains(
+        session, "retire abandoned glTF upload session",
+        "abandoned glTF sessions should retain a runtime-owned cleanup registration");
+    cubey::tests::require_contains(
+        session, "register_owner_cleanup",
+        "abandoned glTF sessions should register owner-only retirement with their runtime");
+    cubey::tests::require_contains(
+        session, "owner.defer_destruction_after(ticket->submission_ticket()",
+        "abandoned glTF sessions should retire after their final upload ticket");
+    cubey::tests::require_contains(
+        session, "if (abandoned || phase == Phase::Failed",
+        "abandoned glTF sessions should stop issuing later owner advances");
+    cubey::tests::require_contains(
+        session, "std::shared_ptr<Impl::QueuedOwnerStep>",
+        "waiting polls should retain a stable owner-job handle outside the session mutex");
+    cubey::tests::require_contains(
+        session, "owner_cleanup.reset()",
+        "successful resident adoption should unregister the runtime cleanup action");
 }

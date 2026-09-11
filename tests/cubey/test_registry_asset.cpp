@@ -3,6 +3,7 @@
 #include <array>
 
 void test_gltf_asset_loads_static_pbr_triangle();
+void test_gltf_asset_collects_exclusive_load_phase_timings();
 void test_gltf_asset_probes_transformed_scene_bounds_without_loading_buffers();
 void test_gltf_asset_probes_glb_json_without_reading_embedded_bin();
 void test_gltf_asset_probe_rejects_malformed_glb_headers();
@@ -39,8 +40,9 @@ void test_terrain_raster_height_source_rejects_invalid_contracts();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 33> tests{
+    static constexpr std::array<TestCase, 34> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
+        CUBEY_TEST(test_gltf_asset_collects_exclusive_load_phase_timings),
         CUBEY_TEST(test_gltf_asset_probes_transformed_scene_bounds_without_loading_buffers),
         CUBEY_TEST(test_gltf_asset_probes_glb_json_without_reading_embedded_bin),
         CUBEY_TEST(test_gltf_asset_probe_rejects_malformed_glb_headers),

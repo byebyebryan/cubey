@@ -19,6 +19,7 @@ namespace cubey::asset::gltf_internal {
 [[nodiscard]] std::string percent_decode(std::string_view uri);
 [[nodiscard]] std::vector<std::uint8_t> decode_data_uri(std::string_view uri);
 [[nodiscard]] GltfImage decode_image(const cgltf_image& source,
-                                     const std::filesystem::path& source_path);
+                                     const std::filesystem::path& source_path,
+                                     GltfAssetLoadProfile* profile);
 
 } // namespace cubey::asset::gltf_internal

@@ -19,6 +19,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -29,6 +30,13 @@
 namespace cubey::host {
 
 class ImGuiOverlay;
+
+// An opt-in profiling-only cadence control. Sleeping occurs after all frame
+// measurements, so it affects the next frame delta without joining host work
+// spans such as update, GPU drain, or draw.
+struct WindowedProfilePacingConfig {
+    std::chrono::nanoseconds frame_interval{};
+};
 
 class WindowedAppContext {
   public:
@@ -107,6 +115,8 @@ struct WindowedHostConfig {
     bool require_tessellation_shader = false;
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
+    std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};
+    std::optional<WindowedProfilePacingConfig> profile_pacing{};
 };
 
 struct WindowedRenderFrame {

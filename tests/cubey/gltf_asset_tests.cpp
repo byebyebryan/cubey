@@ -2,6 +2,7 @@
 #include <cubey/core/file_io.h>
 
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -783,6 +784,74 @@ void test_gltf_asset_loads_static_pbr_triangle() {
     require_close(primitive.vertices[0].tangent.x, 1.0F, "loader should generate missing tangents");
     require_close(primitive.local_bounds.center.x, 0.5F, "bounds center should be computed");
 
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_collects_exclusive_load_phase_timings() {
+    using Clock = std::chrono::steady_clock;
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_load_profile");
+    const std::filesystem::path path = write_triangle_gltf(dir);
+    cubey::asset::GltfAssetLoadProfile profile{
+        .document_parse_milliseconds = -1.0,
+        .buffer_load_milliseconds = -1.0,
+        .asset_validate_milliseconds = -1.0,
+        .image_payload_milliseconds = -1.0,
+        .image_decode_milliseconds = -1.0,
+        .asset_assembly_milliseconds = -1.0,
+    };
+    const Clock::time_point started = Clock::now();
+    const cubey::asset::GltfAsset profiled_asset =
+        cubey::asset::load_gltf_asset(path, {}, &profile);
+    const double inclusive_milliseconds =
+        std::chrono::duration<double, std::milli>(Clock::now() - started).count();
+    const cubey::asset::GltfAsset unprofiled_asset = cubey::asset::load_gltf_asset(path);
+
+    const std::array<double, 6> phases{
+        profile.document_parse_milliseconds, profile.buffer_load_milliseconds,
+        profile.asset_validate_milliseconds, profile.image_payload_milliseconds,
+        profile.image_decode_milliseconds,   profile.asset_assembly_milliseconds,
+    };
+    double phase_total = 0.0;
+    for (const double phase : phases) {
+        require(phase >= 0.0, "every glTF load profile phase should be nonnegative");
+        phase_total += phase;
+    }
+    require(phase_total <= inclusive_milliseconds + 1.0,
+            "exclusive glTF load phases should not materially exceed inclusive wall time");
+    require(profiled_asset.meshes.size() == unprofiled_asset.meshes.size() &&
+                profiled_asset.images.size() == unprofiled_asset.images.size() &&
+                profiled_asset.materials.size() == unprofiled_asset.materials.size(),
+            "optional profiling output should not change glTF asset construction");
+
+    const std::filesystem::path malformed_path = dir / "malformed.gltf";
+    write_text_file(malformed_path, "not JSON");
+    require_throws(
+        [&] { static_cast<void>(cubey::asset::load_gltf_asset(malformed_path, {}, &profile)); },
+        "profiled parser failure should retain existing loader failure behavior");
+    for (const double phase : std::array<double, 6>{
+             profile.document_parse_milliseconds,
+             profile.buffer_load_milliseconds,
+             profile.asset_validate_milliseconds,
+             profile.image_payload_milliseconds,
+             profile.image_decode_milliseconds,
+             profile.asset_assembly_milliseconds,
+         }) {
+        require(phase >= 0.0,
+                "failed profiled loads should reset output to nonnegative partial timings");
+    }
+
+    const std::filesystem::path ktx_path = dir / "profile-ktx2.gltf";
+    cubey::write_binary_file(dir / "profile-ktx2.ktx2", minimal_ktx2_header(4, 4, 1));
+    write_text_file(ktx_path, R"JSON({
+  "asset": {"version": "2.0"},
+  "images": [{"uri": "profile-ktx2.ktx2", "mimeType": "image/ktx2"}]
+})JSON");
+    const cubey::asset::GltfAsset ktx_asset = cubey::asset::load_gltf_asset(ktx_path, {}, &profile);
+    require(ktx_asset.images.size() == 1 &&
+                ktx_asset.images[0].encoding == cubey::asset::GltfImageEncoding::Ktx2Basisu,
+            "KTX2 profiling fixture should remain encoded");
+    require(profile.image_decode_milliseconds == 0.0,
+            "KTX2 header validation must not be reported as image decode time");
     std::filesystem::remove_all(dir);
 }
 

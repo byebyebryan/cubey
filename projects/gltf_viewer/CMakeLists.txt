@@ -189,7 +189,7 @@ if (BUILD_TESTING)
         NAME gltf_viewer_stages_import_after_fallback
         COMMAND
             /bin/sh -c
-            "grep -q 'callbacks.create_global_resources' \"$1\" && grep -q 'create_fallback_scene' \"$2\" && grep -q 'asset_builds_\.request' \"$2\" && grep -q 'callbacks.create_swapchain_resources' \"$1\" && grep -q 'poll_imported_asset_build' \"$1\" && grep -q 'std::shared_ptr<GltfViewerSceneGeneration> previous' \"$2\" && grep -q 'active_generation_ = std::move(next)' \"$2\" && grep -q 'asset_activation_error_' \"$2\""
+            "grep -q 'callbacks.create_global_resources' \"$1\" && grep -q 'create_fallback_scene' \"$2\" && grep -q 'asset_builds_\.request' \"$2\" && grep -q 'callbacks.create_swapchain_resources' \"$1\" && grep -q 'poll_imported_asset_build' \"$1\" && grep -q 'std::shared_ptr<GltfViewerSceneGeneration> previous' \"$2\" && grep -q 'active_generation_ = std::move(next)' \"$2\" && grep -q 'dispose_spent_imported_asset_generation' \"$2\" && grep -q 'GltfViewerResidentGeneration spent) noexcept' \"$2\" && grep -q 'asset_jobs_\.submit' \"$2\" && grep -q 'dispose_completed_import_cpu_shell' \"$2\" && grep -q 'catch (...)' \"$2\" && grep -q 'asset_activation_error_' \"$2\""
             gltf_viewer_stages_import_after_fallback
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_app.cpp"
             "${CMAKE_CURRENT_SOURCE_DIR}/gltf_viewer_assets.cpp"

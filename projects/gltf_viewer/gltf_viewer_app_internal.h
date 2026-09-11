@@ -7,6 +7,7 @@
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
 #include <cubey/core/math.h>
+#include <cubey/core/profiling.h>
 #include <cubey/engine/atmosphere_background_atlas_runtime.h>
 #include <cubey/engine/atmosphere_environment_config.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
@@ -46,6 +47,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace cubey::projects::gltf_viewer {
@@ -53,6 +55,18 @@ namespace cubey::projects::gltf_viewer {
 constexpr std::uint32_t kShadowMapSize = 2048;
 constexpr std::uint32_t kFallbackCubeTriangleCount = 12;
 extern const cubey::math::Vec3 kLightDirection;
+
+// Windowed host.update profiling is opt-in: the viewer does not construct a
+// recorder or allocate span labels unless --profile-output created one.  These
+// nested labels split the import completion edge from the rest of host.update.
+[[nodiscard]] inline cubey::profiling::ScopedCpuProfileSpan
+gltf_viewer_update_profile_span(cubey::profiling::ProfileRecorder* recorder,
+                                std::uint64_t frame_index, std::string_view label) {
+    if (recorder == nullptr) {
+        return {};
+    }
+    return recorder->cpu_span(frame_index, label);
+}
 
 [[nodiscard]] std::filesystem::path shader_path(const char* filename);
 [[nodiscard]] std::filesystem::path bundled_sample_asset_path();
@@ -98,9 +112,10 @@ struct GltfViewerPreparedGeneration {
 // GPU residency carries the CPU semantic product forward so activation can
 // construct a complete scene atomically on the application thread.
 struct GltfViewerResidentGeneration {
-    GltfViewerPreparedGeneration prepared{};
+    std::shared_ptr<GltfViewerPreparedGeneration> prepared{};
     GltfViewerLoadingMetrics loading_metrics{};
-    cubey::GltfSceneResident gltf{};
+    std::shared_ptr<cubey::GltfSceneUploadSession> gltf_upload{};
+    std::optional<cubey::GltfSceneResident> gltf{};
     std::optional<cubey::TerrainBackdropResidentProduct> terrain{};
 };
 
@@ -129,13 +144,19 @@ class GltfViewerApp {
                                       cubey::GltfSceneImportCapabilities capabilities,
                                       std::uint32_t frame_slot_count,
                                       GltfViewerLoadingMetrics loading_metrics);
+    void start_deferred_import_if_due(std::uint64_t frame_index);
     void poll_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
-                                   cubey::vulkan::GpuSubmissionTicket retire_after);
+                                   cubey::vulkan::GpuSubmissionTicket retire_after,
+                                   std::uint64_t frame_index,
+                                   cubey::profiling::ProfileRecorder* profile_recorder = nullptr);
     void finish_imported_asset_build(cubey::vulkan::GpuRuntime& gpu,
                                      cubey::vulkan::GpuSubmissionTicket retire_after);
     void activate_imported_asset_generation(
         cubey::vulkan::GpuRuntime& gpu, cubey::vulkan::GpuSubmissionTicket retire_after,
-        cubey::StagedResourceResult<GltfViewerResidentGeneration> resident);
+        cubey::StagedResourceResult<GltfViewerResidentGeneration> resident,
+        cubey::profiling::ProfileRecorder* profile_recorder = nullptr,
+        std::uint64_t profile_frame_index = 0U);
+    void dispose_spent_imported_asset_generation(GltfViewerResidentGeneration spent) noexcept;
     void retire_scene_generation(cubey::vulkan::GpuRuntime& gpu,
                                  cubey::vulkan::GpuSubmissionTicket retire_after,
                                  const std::shared_ptr<GltfViewerSceneGeneration>& generation);
@@ -233,7 +254,14 @@ class GltfViewerApp {
     cubey::StagedResource<GltfViewerPreparedGeneration, GltfViewerResidentGeneration> asset_builds_;
     std::shared_ptr<GltfViewerSceneGeneration> active_generation_{};
     std::filesystem::path requested_input_path_{};
+    struct DeferredImport {
+        cubey::GltfSceneImportCapabilities capabilities{};
+        std::uint32_t frame_slot_count = 0U;
+        GltfViewerLoadingMetrics loading_metrics{};
+    };
+    std::optional<DeferredImport> deferred_import_{};
     std::vector<GltfViewerLoadingMetrics> pending_loading_metrics_{};
+    std::optional<std::uint64_t> asset_upload_submission_frame_{};
     double asset_activation_milliseconds_ = 0.0;
     std::string asset_activation_error_{};
     bool global_resources_created_ = false;

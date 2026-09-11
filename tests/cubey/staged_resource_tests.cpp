@@ -155,6 +155,155 @@ void test_staged_resource_poll_does_not_wait_for_cpu_preparation() {
             "resource should remain finishable after a nonblocking poll");
 }
 
+void test_staged_resource_awaits_gpu_completion_before_activation() {
+    cubey::jobs::JobSystem jobs(1);
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime gpu({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    cubey::StagedResource<int, int> resource(jobs);
+    bool gpu_complete = false;
+    std::size_t poll_count = 0U;
+
+    static_cast<void>(resource.request(
+        "await completion", [] { return 9; },
+        [](cubey::vulkan::GpuOwnerContext& owner, int&& prepared) {
+            require(owner.is_owner_thread(), "installation should use the GPU owner");
+            return prepared * 2;
+        },
+        [&gpu_complete, &poll_count](cubey::vulkan::GpuRuntime&, int& resident, bool wait) {
+            require(resident == 18, "await callback should observe the installed resident");
+            if (wait) {
+                gpu_complete = true;
+                return true;
+            }
+            ++poll_count;
+            return gpu_complete;
+        }));
+
+    while (resource.status().phase != cubey::StagedResourcePhase::AwaitingGpu) {
+        static_cast<void>(resource.poll(gpu));
+        static_cast<void>(gpu.drain_inline());
+    }
+    require(!resource.ready(), "owner callback completion must not activate the resident");
+    require(!resource.poll(gpu) && poll_count > 0U,
+            "nonblocking completion polling must retain an unfinished resident");
+    require(resource.status().phase == cubey::StagedResourcePhase::AwaitingGpu,
+            "unfinished GPU work should remain in the explicit awaiting state");
+
+    gpu_complete = true;
+    static_cast<void>(resource.poll(gpu));
+    require(resource.ready(), "resident should activate only after GPU completion reports ready");
+    require(resource.take_ready().resident == 18,
+            "completed resident should preserve its installed value");
+}
+
+void test_staged_resource_supersession_waits_for_gpu_completion_before_disposal() {
+    cubey::jobs::JobSystem jobs(1);
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime gpu({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    cubey::StagedResource<int, MoveOnlyResidentTracker> resource(jobs);
+    const auto original = std::make_shared<ResidentTrackerState>();
+    const auto replacement = std::make_shared<ResidentTrackerState>();
+    bool gpu_complete = false;
+
+    static_cast<void>(resource.request(
+        "first awaiting generation", [] { return 1; },
+        [original](cubey::vulkan::GpuOwnerContext&, int&&) {
+            return MoveOnlyResidentTracker(original);
+        },
+        [&gpu_complete](cubey::vulkan::GpuRuntime&, MoveOnlyResidentTracker&, bool wait) {
+            if (wait) {
+                gpu_complete = true;
+                return true;
+            }
+            return gpu_complete;
+        }));
+    while (resource.status().phase != cubey::StagedResourcePhase::AwaitingGpu) {
+        static_cast<void>(resource.poll(gpu));
+        static_cast<void>(gpu.drain_inline());
+    }
+
+    static_cast<void>(resource.request(
+        "replacement", [] { return 2; },
+        [replacement](cubey::vulkan::GpuOwnerContext&, int&&) {
+            return MoveOnlyResidentTracker(replacement);
+        }));
+    static_cast<void>(resource.poll(gpu));
+    {
+        std::scoped_lock lock(original->mutex);
+        require(!original->destroyed,
+                "supersession must retain an in-flight resident until its GPU completion");
+    }
+
+    gpu_complete = true;
+    resource.finish(gpu);
+    {
+        std::scoped_lock lock(original->mutex);
+        require(original->destroyed,
+                "completed superseded resident should be retired after its GPU completion");
+    }
+    require(resource.ready() && resource.take_ready().generation.label == "replacement",
+            "the replacement should activate after the superseded upload is safely retired");
+}
+
+void test_staged_resource_shutdown_waits_for_gpu_completion_before_disposal() {
+    cubey::jobs::JobSystem jobs(1);
+    cubey::vulkan::SubmissionCoordinator submission = fake_submission();
+    cubey::vulkan::GpuRuntime gpu({
+        .device = fake_device(),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+    cubey::StagedResource<int, MoveOnlyResidentTracker> resource(jobs);
+    const auto state = std::make_shared<ResidentTrackerState>();
+    bool wait_called = false;
+
+    static_cast<void>(resource.request(
+        "shutdown awaiting generation", [] { return 1; },
+        [state](cubey::vulkan::GpuOwnerContext&, int&&) { return MoveOnlyResidentTracker(state); },
+        [&wait_called](cubey::vulkan::GpuRuntime&, MoveOnlyResidentTracker&, bool wait) {
+            require(!wait_called || wait,
+                    "nonblocking completion polling should not report an unfinished upload ready");
+            if (!wait) {
+                return false;
+            }
+            wait_called = true;
+            return true;
+        }));
+    while (resource.status().phase != cubey::StagedResourcePhase::AwaitingGpu) {
+        static_cast<void>(resource.poll(gpu));
+        static_cast<void>(gpu.drain_inline());
+    }
+
+    resource.shutdown(gpu);
+    {
+        std::scoped_lock lock(state->mutex);
+        require(wait_called, "shutdown must use the blocking GPU completion path for AwaitingGpu");
+        require(state->destroyed,
+                "shutdown must dispose an awaiting resident after its completion wait");
+    }
+    require(!resource.accepting() && !resource.busy() && !resource.ready(),
+            "shutdown should leave no awaiting generation available for activation");
+    bool rejected = false;
+    try {
+        static_cast<void>(resource.request(
+            "after awaiting shutdown", [] { return 2; },
+            [](cubey::vulkan::GpuOwnerContext&, int&&) {
+                return MoveOnlyResidentTracker(nullptr);
+            }));
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "shutdown must reject later requests after awaiting GPU completion");
+}
+
 void test_staged_resource_keeps_only_latest_pending_generation() {
     cubey::jobs::JobSystem jobs(1);
     cubey::vulkan::SubmissionCoordinator submission = fake_submission();
@@ -390,6 +539,23 @@ void test_staged_resource_reports_prepare_and_install_failures() {
     require(install_propagated &&
                 install_failure.status().phase == cubey::StagedResourcePhase::Failed,
             "install failure should be reported through status and finish");
+
+    cubey::StagedResource<int, int> completion_failure(jobs);
+    static_cast<void>(completion_failure.request(
+        "completion failure", [] { return 7; },
+        [](cubey::vulkan::GpuOwnerContext&, int&& prepared) { return prepared; },
+        [](cubey::vulkan::GpuRuntime&, int&, bool) -> bool {
+            throw std::runtime_error("completion failed");
+        }));
+    bool completion_propagated = false;
+    try {
+        completion_failure.finish(gpu);
+    } catch (const std::runtime_error& error) {
+        completion_propagated = std::string(error.what()) == "completion failed";
+    }
+    require(completion_propagated &&
+                completion_failure.status().phase == cubey::StagedResourcePhase::Failed,
+            "GPU completion failure should preserve the staged failure contract");
 }
 
 void test_staged_resource_shutdown_discards_work_and_rejects_requests() {

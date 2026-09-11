@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
@@ -39,6 +40,60 @@
 namespace cubey::asset {
 using namespace gltf_internal;
 namespace {
+
+class ScopedLoadProfilePhase {
+  public:
+    ScopedLoadProfilePhase(GltfAssetLoadProfile* profile, double GltfAssetLoadProfile::* field)
+        : profile_(profile), field_(field), started_(Clock::now()) {}
+
+    ~ScopedLoadProfilePhase() {
+        if (profile_ != nullptr) {
+            profile_->*field_ +=
+                std::chrono::duration<double, std::milli>(Clock::now() - started_).count();
+        }
+    }
+
+    ScopedLoadProfilePhase(const ScopedLoadProfilePhase&) = delete;
+    ScopedLoadProfilePhase& operator=(const ScopedLoadProfilePhase&) = delete;
+
+  private:
+    using Clock = std::chrono::steady_clock;
+
+    GltfAssetLoadProfile* profile_ = nullptr;
+    double GltfAssetLoadProfile::* field_ = nullptr;
+    Clock::time_point started_{};
+};
+
+class ScopedAssetAssemblyProfile {
+  public:
+    explicit ScopedAssetAssemblyProfile(GltfAssetLoadProfile* profile)
+        : profile_(profile), started_(Clock::now()),
+          image_payload_before_(profile != nullptr ? profile->image_payload_milliseconds : 0.0),
+          image_decode_before_(profile != nullptr ? profile->image_decode_milliseconds : 0.0) {}
+
+    ~ScopedAssetAssemblyProfile() {
+        if (profile_ == nullptr) {
+            return;
+        }
+        const double elapsed =
+            std::chrono::duration<double, std::milli>(Clock::now() - started_).count();
+        const double nested_image_work =
+            (profile_->image_payload_milliseconds - image_payload_before_) +
+            (profile_->image_decode_milliseconds - image_decode_before_);
+        profile_->asset_assembly_milliseconds += std::max(0.0, elapsed - nested_image_work);
+    }
+
+    ScopedAssetAssemblyProfile(const ScopedAssetAssemblyProfile&) = delete;
+    ScopedAssetAssemblyProfile& operator=(const ScopedAssetAssemblyProfile&) = delete;
+
+  private:
+    using Clock = std::chrono::steady_clock;
+
+    GltfAssetLoadProfile* profile_ = nullptr;
+    Clock::time_point started_{};
+    double image_payload_before_ = 0.0;
+    double image_decode_before_ = 0.0;
+};
 
 [[nodiscard]] std::uint32_t checked_index(std::ptrdiff_t index, const char* label) {
     if (index < 0 || static_cast<std::uint64_t>(index) >
@@ -1509,28 +1564,45 @@ constexpr std::uint64_t kGlbChunkHeaderSize = 8U;
 
 } // namespace
 
-GltfAsset load_gltf_asset(const std::filesystem::path& path, GltfLoadConfig config) {
+GltfAsset load_gltf_asset(const std::filesystem::path& path, GltfLoadConfig config,
+                          GltfAssetLoadProfile* profile) {
+    if (profile != nullptr) {
+        *profile = {};
+    }
     cgltf_options options{};
     cgltf_data* raw_data = nullptr;
     const std::string path_string = path.string();
-    cgltf_result result = cgltf_parse_file(&options, path_string.c_str(), &raw_data);
+    cgltf_result result = cgltf_result_success;
+    {
+        const ScopedLoadProfilePhase document_parse(
+            profile, &GltfAssetLoadProfile::document_parse_milliseconds);
+        result = cgltf_parse_file(&options, path_string.c_str(), &raw_data);
+    }
     if (result != cgltf_result_success) {
         throw gltf_error("failed to parse " + path_string);
     }
     CgltfDataPtr data(raw_data);
 
-    result = cgltf_load_buffers(&options, data.get(), path_string.c_str());
+    {
+        const ScopedLoadProfilePhase buffer_load(profile,
+                                                 &GltfAssetLoadProfile::buffer_load_milliseconds);
+        result = cgltf_load_buffers(&options, data.get(), path_string.c_str());
+    }
     if (result != cgltf_result_success) {
         throw gltf_error("failed to load buffers for " + path_string);
     }
 
-    result = cgltf_validate(data.get());
-    if (result != cgltf_result_success) {
-        throw gltf_error("validation failed for " + path_string);
+    {
+        const ScopedLoadProfilePhase asset_validate(
+            profile, &GltfAssetLoadProfile::asset_validate_milliseconds);
+        result = cgltf_validate(data.get());
+        if (result != cgltf_result_success) {
+            throw gltf_error("validation failed for " + path_string);
+        }
+        reject_unsupported_features(*data);
     }
 
-    reject_unsupported_features(*data);
-
+    const ScopedAssetAssemblyProfile asset_assembly(profile);
     GltfAsset asset{
         .source_path = path,
     };
@@ -1542,7 +1614,7 @@ GltfAsset load_gltf_asset(const std::filesystem::path& path, GltfLoadConfig conf
 
     asset.images.reserve(data->images_count);
     for (cgltf_size i = 0; i < data->images_count; ++i) {
-        asset.images.push_back(decode_image(data->images[i], path));
+        asset.images.push_back(decode_image(data->images[i], path, profile));
     }
 
     asset.textures.reserve(data->textures_count);

@@ -90,6 +90,7 @@ struct HeadlessPngHostConfig {
     bool require_tessellation_shader = false;
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
+    std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};
 };
 
 struct HeadlessPngHostCallbacks {

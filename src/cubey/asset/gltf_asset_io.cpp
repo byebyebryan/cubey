@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <span>
@@ -26,6 +27,32 @@
 #include <utility>
 
 namespace cubey::asset::gltf_internal {
+namespace {
+
+class ScopedLoadProfilePhase {
+  public:
+    ScopedLoadProfilePhase(GltfAssetLoadProfile* profile, double GltfAssetLoadProfile::* field)
+        : profile_(profile), field_(field), started_(Clock::now()) {}
+
+    ~ScopedLoadProfilePhase() {
+        if (profile_ != nullptr) {
+            profile_->*field_ +=
+                std::chrono::duration<double, std::milli>(Clock::now() - started_).count();
+        }
+    }
+
+    ScopedLoadProfilePhase(const ScopedLoadProfilePhase&) = delete;
+    ScopedLoadProfilePhase& operator=(const ScopedLoadProfilePhase&) = delete;
+
+  private:
+    using Clock = std::chrono::steady_clock;
+
+    GltfAssetLoadProfile* profile_ = nullptr;
+    double GltfAssetLoadProfile::* field_ = nullptr;
+    Clock::time_point started_{};
+};
+
+} // namespace
 
 std::runtime_error gltf_error(const std::string& message) {
     return std::runtime_error("glTF asset: " + message);
@@ -242,12 +269,20 @@ std::vector<std::uint8_t> decode_data_uri(std::string_view uri) {
     return read_binary_file(source_path.parent_path() / percent_decode(uri));
 }
 
-GltfImage decode_image(const cgltf_image& source, const std::filesystem::path& source_path) {
-    std::vector<std::uint8_t> bytes = image_bytes(source, source_path);
+GltfImage decode_image(const cgltf_image& source, const std::filesystem::path& source_path,
+                       GltfAssetLoadProfile* profile) {
+    std::vector<std::uint8_t> bytes;
+    {
+        const ScopedLoadProfilePhase payload_phase(
+            profile, &GltfAssetLoadProfile::image_payload_milliseconds);
+        bytes = image_bytes(source, source_path);
+    }
     if (is_ktx2_image(source)) {
         return load_ktx2_image(source, std::move(bytes));
     }
 
+    const ScopedLoadProfilePhase decode_phase(profile,
+                                              &GltfAssetLoadProfile::image_decode_milliseconds);
     int width = 0;
     int height = 0;
     int channels = 0;
