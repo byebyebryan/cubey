@@ -19,6 +19,7 @@ namespace cubey::scene {
 struct RenderPacketFilter3D {
     std::optional<render::MaterialPassKind> material_pass{};
     std::optional<render::MaterialAlphaMode> alpha_mode{};
+    std::optional<render::MaterialOpticalMode> optical_mode{};
     std::optional<render::MaterialBlendMode> blend_mode{};
     std::optional<VkCullModeFlags> cull_mode{};
     bool require_shadow_caster = false;
@@ -35,6 +36,10 @@ struct RenderPacketFilter3D {
     }
     if (filter.alpha_mode.has_value() &&
         packet.material_info.alpha_mode != filter.alpha_mode.value()) {
+        return false;
+    }
+    if (filter.optical_mode.has_value() &&
+        packet.material_info.optical_mode != filter.optical_mode.value()) {
         return false;
     }
     if (filter.blend_mode.has_value() && packet.material_info.blend != filter.blend_mode.value()) {

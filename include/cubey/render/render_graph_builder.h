@@ -25,6 +25,7 @@ class RenderGraphPassBuilder {
     RenderGraphPassBuilder& read_write_storage_texture(RenderGraphTextureHandle handle,
                                                        VkPipelineStageFlags stage_mask = 0);
     RenderGraphPassBuilder& write_color(RenderGraphTextureHandle handle);
+    RenderGraphPassBuilder& read_write_color(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& write_depth(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& transfer_read_texture(RenderGraphTextureHandle handle);
     RenderGraphPassBuilder& transfer_write_texture(RenderGraphTextureHandle handle);

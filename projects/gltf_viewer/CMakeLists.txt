@@ -387,6 +387,80 @@ if (BUILD_TESTING)
         --pause-time
     )
     cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_transmission_test_headless_writes_png
+        "TransmissionTest/glTF/TransmissionTest.gltf"
+        "gltf-viewer-transmission-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_transmission_roughness_test_headless_writes_png
+        "TransmissionRoughnessTest/glTF/TransmissionRoughnessTest.gltf"
+        "gltf-viewer-transmission-roughness-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_transmission_order_test_headless_writes_png
+        "TransmissionOrderTest/glTF/TransmissionOrderTest.gltf"
+        "gltf-viewer-transmission-order-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_transmission_thinwall_volume_grid_headless_writes_png
+        "TransmissionThinwallTestGrid/glTF/TransmissionThinwallTestGrid.gltf"
+        "gltf-viewer-transmission-thinwall-volume-grid-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_dragon_attenuation_volume_headless_writes_png
+        "DragonAttenuation/glTF/DragonAttenuation.gltf"
+        "gltf-viewer-dragon-attenuation-volume-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_dispersion_test_headless_writes_png
+        "DispersionTest/glTF/DispersionTest.gltf"
+        "gltf-viewer-dispersion-test-smoke.png"
+    )
+    cubey_add_gltf_viewer_sample_smoke_test(
+        gltf_viewer_dragon_dispersion_headless_writes_png
+        "DragonDispersion/glTF/DragonDispersion.gltf"
+        "gltf-viewer-dragon-dispersion-smoke.png"
+    )
+    if (CUBEY_GLTF_SAMPLE_ASSETS_DIR)
+        set(CUBEY_GLTF_VIEWER_DRAGON_DISPERSION_DIAGNOSTIC_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-dragon-dispersion-atmosphere-diagnostic.png"
+        )
+        cubey_add_png_capture_test(
+            gltf_viewer_dragon_dispersion_atmosphere_diagnostic_writes_png
+            cubey_project_gltf_viewer
+            "${CUBEY_GLTF_VIEWER_DRAGON_DISPERSION_DIAGNOSTIC_OUTPUT}"
+            512
+            512
+            --input
+            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/DragonDispersion/glTF/DragonDispersion.gltf"
+            --pbr-environment-source
+            atmosphere
+            --no-clouds
+            --ibl-intensity
+            1
+            --exposure
+            0
+            --capture-camera-distance-scale
+            0.25
+            --capture-camera-yaw
+            0
+            --capture-camera-pitch
+            0
+            --time-of-day-mode
+            manual
+            --sun-elevation
+            35
+            --sun-azimuth
+            180
+            --pause-time
+        )
+        set_property(
+            TEST gltf_viewer_dragon_dispersion_atmosphere_diagnostic_writes_png
+            APPEND
+            PROPERTY LABELS "gltf;gltf_sample;dispersion;diagnostic"
+        )
+    endif()
+    cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_anisotropy_barn_lamp_ktx_basisu_headless_writes_png
         "AnisotropyBarnLamp/glTF-KTX-BasisU/AnisotropyBarnLamp.gltf"
         "gltf-viewer-anisotropy-barn-lamp-ktx-basisu-smoke.png"

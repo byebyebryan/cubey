@@ -204,12 +204,14 @@ full engine architecture.
   `pbr_post_pass_info()` define the current PBR contract: one scene
   uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
   push constants, a skybox environment set, a fullscreen post set, dielectric
-  IOR plus `KHR_materials_specular` factors/textures, and the current opaque
-  glTF extension lobes: required-use clearcoat, anisotropy, iridescence, and
-  sheen. Extension texture slots stay fixed in the descriptor
+  IOR plus `KHR_materials_specular` factors/textures, the opaque clearcoat,
+  anisotropy, iridescence, and sheen lobes, and required-use transmission,
+  volume, and dispersion. Extension texture slots stay fixed in the descriptor
   layout, while material texture flags gate shader fetches for absent textures.
-  The scene set includes irradiance, previous/current prefiltered cubes, and
-  the DFG/BRDF lookup.
+  The scene set includes irradiance, previous/current prefiltered cubes, the
+  DFG/BRDF lookup, and a same-frame HDR refraction-radiance binding. The latter
+  uses a valid neutral fallback for ordinary draws and a per-frame-slot pyramid
+  for the explicit transmission stage.
   `PbrEnvironmentTextureBindings` carries the generation blend, and
   `ForwardPbrRenderer3D::update_environment` updates one safe frame-slot set so
   dynamic atmosphere/cloud probes crossfade without rebuilding the renderer or
@@ -226,7 +228,11 @@ full engine architecture.
   layer above scene/render/vulkan. It owns the repeated shadow map, skybox,
   forward PBR pipelines, HDR scene-color graph target, post pipeline,
   scene/skybox/post material descriptors, depth attachment, and render-graph
-  recording for a 3D PBR view. The reusable GLSL package lives under
+  recording for a 3D PBR view. Frames without visible optical transmission keep
+  the original scene-to-post graph. Transmissive frames explicitly stage
+  opaque geometry, surface clouds, an HDR radiance pyramid, transmission,
+  ordinary alpha, and display post so attachment lifetime and refraction input
+  stay visible in the graph. The reusable GLSL package lives under
   `shaders/cubey/forward_pbr`, the shared atmosphere background shaders live
   under `shaders/cubey/atmosphere`, shared sky/celestial shaders live under
   `shaders/cubey/sky`, and the shader-directory config helper maps those

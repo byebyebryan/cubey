@@ -64,6 +64,7 @@ cubey::ForwardPbrRenderer3DConfig valid_forward_pbr_renderer_config() {
         .skybox_fragment_shader = "skybox.frag.spv",
         .post_vertex_shader = "post.vert.spv",
         .post_fragment_shader = "post.frag.spv",
+        .refraction_pyramid_fragment_shader = "hdr_color_pyramid.frag.spv",
         .shadow_depth_vertex_shader = "shadow.vert.spv",
         .shadow_depth_fragment_shader = "shadow.frag.spv",
     };

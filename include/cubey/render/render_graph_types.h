@@ -54,6 +54,8 @@ enum class RenderGraphTextureUsage : std::uint8_t {
     StorageWrite,
     StorageReadWrite,
     ColorAttachment,
+    // A dynamic-rendering color attachment with LOAD/STORE semantics.
+    ColorAttachmentReadWrite,
     DepthAttachment,
     TransferRead,
     TransferWrite,

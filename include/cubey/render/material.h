@@ -29,6 +29,14 @@ enum class MaterialAlphaMode : std::uint8_t {
     Blend,
 };
 
+// Optical transmission is independent from alpha coverage. The PBR renderer
+// uses this to route refractive surfaces after the opaque scene radiance has
+// been captured, without changing glTF alpha-mode semantics.
+enum class MaterialOpticalMode : std::uint8_t {
+    Opaque,
+    Transmission,
+};
+
 enum class MaterialPassKind : std::uint8_t {
     DepthOnly,
     ForwardColor,
@@ -58,11 +66,16 @@ struct MaterialInfo {
     std::string label{};
     MaterialDomain domain = MaterialDomain::Surface3D;
     MaterialAlphaMode alpha_mode = MaterialAlphaMode::Opaque;
+    MaterialOpticalMode optical_mode = MaterialOpticalMode::Opaque;
     MaterialBlendMode blend = MaterialBlendMode::Opaque;
     VkCullModeFlags cull_mode = VK_CULL_MODE_BACK_BIT;
     std::uint32_t sort_key = 0;
     MaterialPassMask pass_mask = default_material_pass_mask();
 };
+
+[[nodiscard]] constexpr bool material_uses_transmission(const MaterialInfo& material) noexcept {
+    return material.optical_mode == MaterialOpticalMode::Transmission;
+}
 
 [[nodiscard]] constexpr MaterialBlendMode
 material_blend_mode_for_alpha_mode(MaterialAlphaMode mode) noexcept {

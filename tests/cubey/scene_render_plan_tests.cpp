@@ -260,6 +260,15 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
                 .blend = cubey::render::MaterialBlendMode::AlphaBlend,
             },
     };
+    const cubey::scene::RenderDrawPacket3D transmission_alpha_packet{
+        .material_info =
+            cubey::render::MaterialInfo{
+                .label = "transmission alpha",
+                .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
+                .optical_mode = cubey::render::MaterialOpticalMode::Transmission,
+                .blend = cubey::render::MaterialBlendMode::AlphaBlend,
+            },
+    };
 
     require(cubey::scene::render_packet_matches_filter(
                 depth_caster,
@@ -285,6 +294,19 @@ void test_render_plan_filters_draw_packets_for_recording_policy() {
     require(!cubey::scene::render_packet_matches_filter(
                 alpha_blend_packet, {.blend_mode = cubey::render::MaterialBlendMode::Opaque}),
             "recording filter should reject packets with a different blend mode");
+    require(cubey::scene::render_packet_matches_filter(
+                alpha_blend_packet, {.optical_mode = cubey::render::MaterialOpticalMode::Opaque}),
+            "alpha coverage should remain independently classified as optically opaque");
+    require(cubey::render::material_uses_transmission(transmission_alpha_packet.material_info),
+            "transmission should be an explicit material optical classification");
+    require(cubey::scene::render_packet_matches_filter(
+                transmission_alpha_packet,
+                {.optical_mode = cubey::render::MaterialOpticalMode::Transmission}),
+            "recording filter should route transmissive packets independently of alpha coverage");
+    require(!cubey::scene::render_packet_matches_filter(
+                transmission_alpha_packet,
+                {.optical_mode = cubey::render::MaterialOpticalMode::Opaque}),
+            "opaque recording filter should exclude explicitly transmissive packets");
 }
 
 void test_render_recording_rejects_ambiguous_material_binding_sources() {

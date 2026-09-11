@@ -66,15 +66,20 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_materials_anisotropy` | supported | Strength and rotation are validated; required tangent space is authored or generated from the effective normal/anisotropy UV set. Direct lighting uses anisotropic GGX distribution and visibility, while IBL uses the Khronos-style bent-normal approximation. A deterministic furnace checks zero-strength neutrality and rotated response, and the pinned Khronos `AnisotropyBarnLamp` exercises texture channels through the staged viewer path. |
 | `KHR_materials_iridescence` | supported | Factor, IOR, and thickness bounds are validated while independently transformed linear factor/thickness textures preserve their red/green channel contracts. Direct and image-based lighting use the Khronos thin-film interference model for dielectric and metallic bases, with exact factor-zero and zero-thickness fallbacks. A deterministic furnace checks neutrality and chromatic response, while pinned Khronos `CompareIridescence` coverage exercises the staged viewer path. |
 | `KHR_materials_sheen` | supported | Color and roughness inputs are validated as finite values in `[0, 1]`; the sRGB color and linear roughness textures preserve their RGB/alpha channel and transform contracts. Direct lighting uses the Charlie distribution with Estevez-Kulla visibility, while DFG-backed albedo scaling bounds the direct, IBL, and ambient base response. A deterministic furnace checks zero-color neutrality and enabled roughness response, while pinned Khronos `SheenTestGrid` coverage exercises the staged viewer path. |
+| `KHR_materials_transmission` | supported | Factor and linear red-channel texture inputs are independent from alpha coverage. Positive transmission uses a staged same-frame HDR radiance pyramid after opaque geometry and clouds, with the current procedural or static environment as the off-screen fallback; zero factor keeps the ordinary opaque path. |
+| `KHR_materials_volume` | supported | Nonnegative mesh-space thickness, linear green-channel texture, world-space attenuation distance, and attenuation color are validated and preserved. Nonzero thickness projects a refracted, model-scaled exit point into the HDR pyramid and applies Beer-Lambert absorption; zero thickness keeps thin transmission exactly. |
+| `KHR_materials_dispersion` | supported | The finite nonnegative factor is preserved without an artificial upper cap and requires the volume path. Nonzero dispersion performs stable Khronos-style RGB IOR sampling without temporal jitter; zero remains the one-sample volume path. |
 
-An extension is accepted from `extensionsRequired` only after analytic and
-deterministic rendered coverage closes its loader and shading semantics. Loader
-and analytic witnesses live in focused
-core tests, while the material-conformance CTest label separates rendered
-checks from ordinary smoke: the opt-in `pbr_furnace --conformance-case` layouts
-capture fixed 512px IOR, specular, clearcoat, anisotropy, iridescence, or sheen
-specimens and inspect foreground region/channel relationships rather than
-byte-identical images. The
+An extension is accepted from `extensionsRequired` only after focused loader,
+analytic, shader-contract, and end-to-end rendered evidence closes its supported
+semantics. Deterministic rendered checks are used when the feature fits the
+isolated furnace; screen-space features instead use pinned Khronos scene smokes
+and explicit diagnostic captures without presenting them as pixel goldens. The
+material-conformance CTest label separates deterministic rendered checks from
+ordinary smoke: the opt-in `pbr_furnace --conformance-case` layouts capture
+fixed 512px IOR, specular, clearcoat, anisotropy, iridescence, or sheen specimens
+and inspect foreground region/channel relationships rather than byte-identical
+images. The
 pinned Khronos `SpecularTest` lane adds fixed manual directional lighting plus
 half-intensity static IBL, no clouds, explicit exposure, and a front-on camera
 for end-to-end model-grid/chromatic-response evidence through the shared forward
@@ -95,15 +100,22 @@ The sheen furnace keeps zero-color controls neutral across roughness and checks
 the bounded color and roughness response of enabled specimens. The pinned
 `SheenTestGrid` capture complements it with authored factors and textures
 through the common staged importer and renderer.
+Transmission, thin-wall/volume, attenuation, and dispersion use the pinned
+`TransmissionTest`, `TransmissionRoughnessTest`, `TransmissionOrderTest`,
+`TransmissionThinwallTestGrid`, `DragonAttenuation`, `DispersionTest`, and
+`DragonDispersion` scenes. A 512px atmosphere-backed `DragonDispersion`
+diagnostic additionally exercises the procedural-environment product path;
+these captures prove load, staging, descriptor, and runtime validity rather
+than cross-GPU pixel identity.
 
 Unsupported features fail early instead of being silently ignored:
 unknown `extensionsRequired`, non-triangle primitive modes, texture coordinate
 sets above UV1, additional skin influence sets, unsupported morph target
 attributes, sparse index accessors, and extension-only animation paths are
 rejected by the loader. Arbitrary additional UV/color sets, material variants,
-non-Basis KTX2 payloads, Draco/meshopt compression, transmission, volume,
-dispersion, glTF cameras/lights, glTF environment extensions, advanced
-animation runtime features, and streaming remain future slices.
+non-Basis KTX2 payloads, Draco/meshopt compression, glTF cameras/lights, glTF
+environment extensions, advanced animation runtime features, and streaming
+remain future slices.
 
 `cubey::engine` owns the current staged asset-to-scene bridge and renderer
 instance service:
@@ -231,8 +243,9 @@ scene color and uses the shared Cubey PBR helper include for
 base-color-to-diffuse/F0 remapping, dielectric IOR/specular controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion. The glTF PBR shader also evaluates required-use
-clearcoat, anisotropic GGX, thin-film iridescence, and energy-scaled Charlie
-sheen. Material texture and factor alpha remain
+clearcoat, anisotropic GGX, thin-film iridescence, energy-scaled Charlie sheen,
+screen-space transmission, volume absorption, and stable RGB dispersion.
+Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
 transform is applied by the shared post shader. Unlit glTF materials preserve
@@ -248,8 +261,11 @@ records a compute deformation pass before shadow and PBR scene passes.
 When Khronos Sample Assets are configured, optional headless compatibility
 smokes cover material, texture transform, alpha, and tangent-space validation
 scenes, including `SpecularTest`, `ClearCoatTest`, `AnisotropyBarnLamp`,
-`CompareIridescence`, `SheenTestGrid`, `TextureTransformTest`,
-`TextureTransformMultiTest`, `NormalTangentTest`,
+`CompareIridescence`, `SheenTestGrid`, `TransmissionTest`,
+`TransmissionRoughnessTest`, `TransmissionOrderTest`,
+`TransmissionThinwallTestGrid`, `DragonAttenuation`, `DispersionTest`,
+`DragonDispersion`, `TextureTransformTest`, `TextureTransformMultiTest`,
+`NormalTangentTest`,
 `NormalTangentMirrorTest`, and `DamagedHelmet`. These tests carry the
 `gltf_sample` and `compatibility` labels and only assert that the viewer can load
 and produce a valid PNG; they are not golden-pixel comparisons. The
@@ -319,11 +335,12 @@ and render settings.
 
 The render layer exposes contracts and helpers, not a full material system.
 Texture lifetime, descriptor writes, shader selection, and environment
-selection still belong to the project or future renderer layer. Transparency V1
-supports glTF alpha mask and alpha blend, but not refraction, transmission,
-transparent shadow opacity, weighted blended transparency, or order-independent
-transparency. Transmission, volume absorption, dispersion, and other
-transmissive glTF material extension lobes remain future slices.
+selection still belong to the project or future renderer layer. Alpha mode
+remains a coverage policy independent from optical transmission. Transparency
+V1 now supports alpha mask/blend plus screen-space transmission, approximate
+volume refraction and absorption, and stable RGB dispersion, but not transparent
+shadow opacity, exact back-face exit depth, multiple internal refraction,
+weighted blended transparency, or order-independent transparency.
 
 ## Next Slices
 

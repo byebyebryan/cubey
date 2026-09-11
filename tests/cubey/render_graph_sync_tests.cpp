@@ -43,6 +43,44 @@ void test_render_graph_derives_depth_to_sampled_texture_barrier() {
             "sampled consumer should request shader read access");
 }
 
+void test_render_graph_derives_color_attachment_load_barriers() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle scene_color =
+        graph.create_texture(color_texture_desc("scene color"));
+
+    graph.add_pass("opaque", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(scene_color);
+    graph.add_pass("transmission", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_write_color(scene_color);
+    graph.add_pass("alpha", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_write_color(scene_color);
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    require(compiled.passes()[1].texture_accesses[0].usage ==
+                cubey::render::RenderGraphTextureUsage::ColorAttachmentReadWrite,
+            "transmission continuation should declare a load/read-write color attachment");
+    require(compiled.passes()[1].before_texture_barriers.size() == 1,
+            "transmission continuation should synchronize opaque color output");
+    const cubey::render::RenderGraphTextureBarrier& transmission_barrier =
+        compiled.passes()[1].before_texture_barriers[0];
+    require(transmission_barrier.source_usage ==
+                cubey::render::RenderGraphTextureUsage::ColorAttachment,
+            "transmission barrier should start from opaque color attachment output");
+    require(transmission_barrier.destination_usage ==
+                cubey::render::RenderGraphTextureUsage::ColorAttachmentReadWrite,
+            "transmission barrier should preserve its load/read-write attachment usage");
+    require(transmission_barrier.destination_state.access_mask ==
+                (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT),
+            "transmission load attachment should synchronize color attachment reads and writes");
+
+    require(compiled.passes()[2].before_texture_barriers.size() == 1,
+            "alpha continuation should synchronize transmission color output");
+    require(compiled.passes()[2].before_texture_barriers[0].destination_state.access_mask ==
+                (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT),
+            "alpha load attachment should synchronize color attachment reads and writes");
+}
+
 void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle field =

@@ -13,6 +13,7 @@ namespace {
     return usage == RenderGraphTextureUsage::SampledRead ||
            usage == RenderGraphTextureUsage::StorageRead ||
            usage == RenderGraphTextureUsage::StorageReadWrite ||
+           usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
            usage == RenderGraphTextureUsage::TransferRead;
 }
 
@@ -20,6 +21,7 @@ namespace {
     return usage == RenderGraphTextureUsage::StorageWrite ||
            usage == RenderGraphTextureUsage::StorageReadWrite ||
            usage == RenderGraphTextureUsage::ColorAttachment ||
+           usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
            usage == RenderGraphTextureUsage::DepthAttachment ||
            usage == RenderGraphTextureUsage::TransferWrite;
 }
@@ -86,6 +88,13 @@ texture_usage_state(const RenderGraphCompiledPass& pass, const RenderGraphTextur
         return {
             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        };
+    case RenderGraphTextureUsage::ColorAttachmentReadWrite:
+        return {
+            .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .access_mask =
+                VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         };
     case RenderGraphTextureUsage::DepthAttachment:

@@ -1,6 +1,8 @@
 #include "source_file_test_helpers.h"
 
 #include <cubey/engine/forward_pbr_renderer_3d.h>
+#include <cubey/render/hdr_color_pyramid.h>
+#include <cubey/render/texture.h>
 
 #include <vulkan/vulkan.h>
 
@@ -46,6 +48,7 @@ cubey::ForwardPbrRenderer3DConfig valid_config() {
         .skybox_fragment_shader = "skybox.frag.spv",
         .post_vertex_shader = "post.vert.spv",
         .post_fragment_shader = "post.frag.spv",
+        .refraction_pyramid_fragment_shader = "hdr_color_pyramid.frag.spv",
         .shadow_depth_vertex_shader = "shadow.vert.spv",
         .shadow_depth_fragment_shader = "shadow.frag.spv",
     };
@@ -193,6 +196,12 @@ void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent
                    "forward PBR renderer config should reject missing post fragment shader");
 
     config = valid_config();
+    config.refraction_pyramid_fragment_shader.clear();
+    require_throws(
+        [&config] { cubey::validate_forward_pbr_renderer_3d_config(config); },
+        "forward PBR renderer config should reject missing refraction pyramid fragment shader");
+
+    config = valid_config();
     config.shadow_extent = 0;
     require_throws([&config] { cubey::validate_forward_pbr_renderer_3d_config(config); },
                    "forward PBR renderer config should reject zero shadow extent");
@@ -241,6 +250,9 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_pat
     require(config.post_fragment_shader ==
                 std::filesystem::path{"build/shaders"} / "forward_pbr_post.frag.spv",
             "forward PBR shader directory helper should fill the post fragment shader path");
+    require(config.refraction_pyramid_fragment_shader ==
+                std::filesystem::path{"build/shaders"} / "hdr_color_pyramid.frag.spv",
+            "forward PBR shader directory helper should fill the refraction pyramid shader path");
     require(config.shadow_depth_vertex_shader ==
                 std::filesystem::path{"build/shaders"} / "forward_pbr_shadow_depth.vert.spv",
             "forward PBR shader directory helper should fill the shadow vertex shader path");
@@ -259,6 +271,42 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_dir
     require_throws(
         [] { static_cast<void>(cubey::forward_pbr_renderer_3d_config_from_shader_directory({})); },
         "forward PBR shader directory helper should reject an empty shader directory");
+}
+
+void test_forward_pbr_renderer_3d_refraction_pyramid_policy_is_hdr_and_bounded() {
+    cubey::render::HdrColorPyramidConfig config{
+        .extent = {1280U, 720U},
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+        .frame_slot_count = 2U,
+        .minimum_mip_extent = 16U,
+    };
+    cubey::render::validate_hdr_color_pyramid_config(config);
+    require(cubey::render::hdr_color_pyramid_mip_levels(config) == 8U,
+            "HDR color pyramid should end at a roughly sixteen-pixel maximum dimension");
+    const VkExtent2D final_extent = cubey::render::texture_2d_mip_extent(config.extent, 7U);
+    require(final_extent.width == 10U && final_extent.height == 5U,
+            "HDR color pyramid final mip should clamp each dimension independently");
+
+    config.extent = {17U, 1U};
+    require(cubey::render::hdr_color_pyramid_mip_levels(config) == 2U,
+            "HDR color pyramid should retain a usable base and one downsample for narrow targets");
+    const VkExtent2D narrow_final = cubey::render::texture_2d_mip_extent(config.extent, 1U);
+    require(narrow_final.width == 8U && narrow_final.height == 1U,
+            "HDR color pyramid mip extents should never collapse a narrow dimension to zero");
+
+    const cubey::render::MaterialPassInfo pass =
+        cubey::render::hdr_color_pyramid_filter_pass_info();
+    require(pass.label == "hdr.color_pyramid.filter" && pass.descriptor_sets.size() == 1U,
+            "HDR color pyramid should declare a reusable sampled-radiance filter pass");
+
+    const auto* texture = reinterpret_cast<const cubey::render::Texture2D*>(0x1);
+    const cubey::render::HdrColorPyramidSnapshot pending{
+        .texture = texture,
+        .max_lod = 7.0F,
+        .valid = false,
+    };
+    require(pending.bindable() && !pending.valid,
+            "same-command pyramid output should be bindable before its first recording completes");
 }
 
 void test_forward_pbr_renderer_3d_target_resources_use_material_table() {
@@ -616,6 +664,14 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
     const std::string recording =
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
+    const std::string graph =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
+    const std::string material = read_source_file(root / "include/cubey/render/material.h");
+    const std::string pyramid_header =
+        read_source_file(root / "include/cubey/render/hdr_color_pyramid.h");
+    const std::string pyramid = read_source_file(root / "src/cubey/render/hdr_color_pyramid.cpp");
+    const std::string pyramid_shader =
+        read_source_file(root / "shaders/cubey/forward_pbr/hdr_color_pyramid.frag");
     const std::string importer =
         read_source_file(root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
 
@@ -667,9 +723,67 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
     require_contains(
         importer, "const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode)",
         "glTF importer should map source alpha modes into render material policy");
-    require_contains(importer,
-                     ".cull_mode = source.double_sided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT",
-                     "glTF importer should map doubleSided into render culling policy");
+    require_contains(importer, "source.double_sided ? VK_CULL_MODE_NONE",
+                     "glTF importer should preserve doubleSided for non-volume render policy");
+    require_contains(importer, "const bool volume_boundary",
+                     "glTF importer should select a separate closed-volume boundary cull policy");
+    require_contains(importer, ".dispersion = source.dispersion",
+                     "glTF importer should carry dispersion into the shared PBR factors");
+    require_contains(material, "enum class MaterialOpticalMode",
+                     "forward staging should classify optical transmission separately from alpha");
+    require_contains(
+        graph, "if (!has_transmission)",
+        "forward graph should retain its original shape when no transmission is visible");
+    require_contains(graph, "graph.add_pass(\"refraction pyramid\"",
+                     "forward graph should profile the post-cloud HDR refraction capture");
+    require_contains(graph, "graph.add_pass(\"transmission\"",
+                     "forward graph should expose a distinct transmission stage boundary");
+    require_contains(graph, "graph.add_pass(\"alpha\"",
+                     "forward graph should move ordinary alpha after the transmission boundary");
+    require_contains(recording, "vulkan::load_store_attachment_ops()",
+                     "forward staged recording should preserve color and depth across boundaries");
+    require_contains(graph, ".read_write_color(post_scene_color)",
+                     "staged continuation passes should synchronize attachment loads explicitly");
+    require_contains(
+        recording, "vulkan::clear_store_attachment_ops()",
+        "forward opaque recording should preserve depth for cloud and transmission reads");
+    require_contains(pyramid_header, "minimum_mip_extent = 16U",
+                     "HDR refraction radiance should stop at a bounded roughness mip extent");
+    require_contains(pyramid_shader, "filter_options.copy_source > 0.0",
+                     "pyramid mip zero should faithfully copy linear HDR scene color");
+    require_contains(pyramid_shader, "luminance_weight",
+                     "HDR refraction radiance should resist bright procedural highlights");
+    require_contains(
+        pyramid, ".valid = slot.valid",
+        "pyramid snapshots should distinguish a bindable image from produced contents");
+    require_contains(resources, "existing.resources_created() && existing.pipeline_created()",
+                     "refraction pyramid reuse should reject partial initialization");
+    require_contains(resources, "PbrSceneBinding::RefractionRadiance",
+                     "every forward scene descriptor should declare refraction radiance");
+    require_contains(
+        resources, "global_.environment.brdf_lut_view",
+        "the no-transmission scene descriptor should bind a valid sampled 2D fallback");
+    require_contains(
+        graph, "refraction_pyramid().snapshot(target.frame_slot)",
+        "staged transmission should bind the current frame-slot pyramid before recording");
+    require_contains(graph, "radiance.bindable()",
+                     "staged transmission should require a bindable current-command pyramid image");
+    require_contains(graph, "transmission_scene_material().upload",
+                     "staged transmission should upload matching scene uniforms to its descriptor");
+    require_contains(
+        graph, "MaterialDescriptorWriter(transmission_scene_material().set",
+        "staged transmission should bind its pyramid only in the transmission descriptor");
+    require_contains(internal_header, "transmission_scene_material",
+                     "the pyramid descriptor should have an isolated swapchain-lifetime scene set");
+    require_contains(recording, "record_transmission_stage",
+                     "forward recording should own a dedicated transmission draw stage");
+    require_contains(recording, ".material = &transmission_scene_material().material()",
+                     "only transmission draws should consume the same-command pyramid descriptor");
+    require_contains(
+        recording, ".optical_mode = render::MaterialOpticalMode::Transmission",
+        "the transmission stage should filter independent optical packet classification");
+    require_contains(recording, "render::MaterialOpticalMode::Opaque",
+                     "ordinary shadow and alpha recording should reject transmissive packets");
 }
 
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {

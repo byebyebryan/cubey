@@ -56,6 +56,7 @@ void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent
 void test_forward_pbr_renderer_3d_config_defaults_to_hdr_scene_color();
 void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths();
 void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory();
+void test_forward_pbr_renderer_3d_refraction_pyramid_policy_is_hdr_and_bounded();
 void test_forward_pbr_renderer_3d_target_resources_use_material_table();
 void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info();
 void test_forward_pbr_renderer_3d_record_accepts_frame_request_info();
@@ -85,6 +86,7 @@ void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes(
 void test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs();
 void test_gltf_scene_importer_classifies_deformable_primitives();
 void test_gltf_scene_importer_prepares_owned_cpu_scene_without_engine_or_gpu();
+void test_gltf_scene_importer_routes_transmission_independently_of_alpha_and_shadows();
 void test_gltf_scene_importer_reserves_provisional_handle_generation();
 void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy();
 void test_gltf_scene_upload_policy_rejects_invalid_bounds();
@@ -165,6 +167,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_paths),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_refraction_pyramid_policy_is_hdr_and_bounded),
         CUBEY_TEST(test_forward_pbr_renderer_3d_target_resources_use_material_table),
         CUBEY_TEST(test_forward_pbr_renderer_3d_builds_render_request_from_frame_info),
         CUBEY_TEST(test_forward_pbr_renderer_3d_record_accepts_frame_request_info),
@@ -197,6 +200,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs),
         CUBEY_TEST(test_gltf_scene_importer_classifies_deformable_primitives),
         CUBEY_TEST(test_gltf_scene_importer_prepares_owned_cpu_scene_without_engine_or_gpu),
+        CUBEY_TEST(test_gltf_scene_importer_routes_transmission_independently_of_alpha_and_shadows),
         CUBEY_TEST(test_gltf_scene_importer_reserves_provisional_handle_generation),
         CUBEY_TEST(test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy),
         CUBEY_TEST(test_gltf_scene_upload_policy_rejects_invalid_bounds),

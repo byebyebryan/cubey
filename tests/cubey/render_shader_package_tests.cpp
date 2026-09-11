@@ -124,6 +124,7 @@ void test_shader_package_dependencies_track_forward_pbr_includes() {
             "shaders/cubey/atmosphere_reflection_prefilter.frag",
             "shaders/cubey/forward_pbr/forward_pbr_post.vert",
             "shaders/cubey/forward_pbr/forward_pbr_post.frag",
+            "shaders/cubey/forward_pbr/hdr_color_pyramid.frag",
             "shaders/cubey/forward_pbr/forward_pbr_shadow_depth.vert",
             "shaders/cubey/forward_pbr/forward_pbr_shadow_depth.frag",
         },

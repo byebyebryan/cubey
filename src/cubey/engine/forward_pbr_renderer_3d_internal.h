@@ -5,6 +5,7 @@
 #include <cubey/render/deformation.h>
 #include <cubey/render/frame_data.h>
 #include <cubey/render/generated_ibl.h>
+#include <cubey/render/hdr_color_pyramid.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/mesh.h>
 #include <cubey/render/pbr.h>
@@ -97,6 +98,7 @@ struct ForwardPbrRenderer3D::Impl {
         render::RenderGraphTextureHandle cloud_scene_color;
         render::CloudLayerRuntimeFrame cloud;
         bool clouds_enabled = false;
+        bool has_transmission = false;
     };
     enum class ForwardPbrPipelineVariant : std::uint8_t {
         Opaque,
@@ -109,20 +111,19 @@ struct ForwardPbrRenderer3D::Impl {
         Count,
     };
 
-    [[nodiscard]] CompiledGraph
-    current_render_graph(render::ColorTargetView color_target, render::FrameSlot frame_slot,
-                         render::RenderGraphTextureState color_initial_state,
-                         render::RenderGraphTextureState color_final_state,
-                         const scene::RenderFramePlan3D& shadow_plan,
-                         const scene::RenderFramePlan3D& scene_plan,
-                         const render::MeshResourceTable<render::Mesh>& meshes,
-                         const render::FrameMeshResourceTable* frame_meshes,
-                         std::span<const render::GpuDeformationCommand> deformation_commands,
-                         const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
-                         ForwardPbrRenderer3DBackgroundMode background_mode,
-                         const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
-                         const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
-                         const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean);
+    [[nodiscard]] CompiledGraph current_render_graph(
+        render::ColorTargetView color_target, render::FrameSlot frame_slot,
+        render::RenderGraphTextureState color_initial_state,
+        render::RenderGraphTextureState color_final_state,
+        const scene::RenderFramePlan3D& shadow_plan, const scene::RenderFramePlan3D& scene_plan,
+        const render::MeshResourceTable<render::Mesh>& meshes,
+        const render::FrameMeshResourceTable* frame_meshes,
+        std::span<const render::GpuDeformationCommand> deformation_commands,
+        const render::PbrMaterialTable& materials, render::PbrDebugView debug_view,
+        ForwardPbrRenderer3DBackgroundMode background_mode,
+        const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
+        const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
+        const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean, bool has_transmission);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
@@ -134,7 +135,26 @@ struct ForwardPbrRenderer3D::Impl {
                            const render::PbrMaterialTable& materials,
                            render::PbrDebugView debug_view,
                            ForwardPbrRenderer3DBackgroundMode background_mode,
-                           TerrainBackdropRuntime* terrain, OceanSurfaceRuntime* ocean) const;
+                           TerrainBackdropRuntime* terrain, OceanSurfaceRuntime* ocean,
+                           bool preserve_scene_depth) const;
+    void record_scene_opaque_pass(
+        const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
+        const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
+        const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials,
+        render::PbrDebugView debug_view, ForwardPbrRenderer3DBackgroundMode background_mode,
+        TerrainBackdropRuntime* terrain, OceanSurfaceRuntime* ocean) const;
+    void record_transmission_stage(const vulkan::CommandRecorder& recorder,
+                                   render::ColorTargetView color_target,
+                                   const scene::RenderFramePlan3D& scene_plan,
+                                   render::FrameSlot frame_slot,
+                                   const render::MeshResolver& mesh_resolver,
+                                   const render::PbrMaterialTable& materials) const;
+    void record_scene_alpha_pass(const vulkan::CommandRecorder& recorder,
+                                 render::ColorTargetView color_target,
+                                 const scene::RenderFramePlan3D& scene_plan,
+                                 render::FrameSlot frame_slot,
+                                 const render::MeshResolver& mesh_resolver,
+                                 const render::PbrMaterialTable& materials) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
@@ -145,6 +165,8 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const render::ShadowMapPass3D& shadow_pass() const;
     [[nodiscard]] const render::FrameUniformMaterialInstance<render::PbrSceneUniforms>&
     scene_material() const;
+    [[nodiscard]] const render::FrameUniformMaterialInstance<render::PbrSceneUniforms>&
+    transmission_scene_material() const;
     [[nodiscard]] const render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>&
     skybox_material() const;
     [[nodiscard]] const render::FrameUniformMaterialInstance<render::PbrPostUniforms>&
@@ -164,6 +186,11 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const render::GraphicsPipelineResource& post_pipeline() const;
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
     [[nodiscard]] const vulkan::DepthAttachment& depth_attachment() const;
+    [[nodiscard]] bool
+    has_transmission_packets(const scene::RenderFramePlan3D& scene_plan) const noexcept;
+    void ensure_refraction_pyramid(const vulkan::Device& device);
+    [[nodiscard]] render::HdrColorPyramid& refraction_pyramid();
+    [[nodiscard]] const render::HdrColorPyramid& refraction_pyramid() const;
 
     struct GlobalResources {
         render::PbrEnvironmentTextureBindings environment{};
@@ -188,6 +215,10 @@ struct ForwardPbrRenderer3D::Impl {
         std::optional<render::GraphicsPipelineResource> post_pipeline{};
         std::optional<vulkan::Sampler> post_sampler{};
         std::optional<vulkan::DepthAttachment> depth_attachment{};
+        std::optional<render::HdrColorPyramid> refraction_pyramid{};
+        std::optional<render::FrameUniformMaterialInstance<render::PbrSceneUniforms>>
+            transmission_scene_material{};
+        VkExtent2D target_extent{};
         bool shadow_depth_is_sampled = false;
     };
 

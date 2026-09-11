@@ -99,13 +99,18 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
             "PBR forward pass should cull back faces by default");
     require(pass.descriptor_sets.size() == 2, "PBR pass should declare scene and material sets");
     require(pass.descriptor_sets[0].set == 0, "PBR scene descriptors should use set 0");
-    require(pass.descriptor_sets[0].bindings.size() == 6,
-            "PBR scene descriptors should include uniform, shadow map, and blended IBL textures");
+    require(pass.descriptor_sets[0].bindings.size() == 7,
+            "PBR scene descriptors should include uniform, IBL, and refraction radiance textures");
     require(pass.descriptor_sets[0].bindings[5].binding ==
                 static_cast<std::uint32_t>(cubey::render::PbrSceneBinding::PreviousPrefilteredCube),
             "PBR scene descriptors should retain the previous environment cube");
+    require(
+        pass.descriptor_sets[0].bindings[6].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrSceneBinding::RefractionRadiance) &&
+            pass.descriptor_sets[0].bindings[6].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        "PBR scene descriptors should reserve a sampled same-frame refraction radiance slot");
     require(pass.descriptor_sets[1].set == 1, "PBR material descriptors should use set 1");
-    require(pass.descriptor_sets[1].bindings.size() == 16,
+    require(pass.descriptor_sets[1].bindings.size() == 18,
             "PBR material descriptors should include base and extension textures plus uniforms");
     require(pass.descriptor_sets[1].bindings[5].binding ==
                 static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Specular),
@@ -146,6 +151,12 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
     require(pass.descriptor_sets[1].bindings[15].binding ==
                 static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::IridescenceThickness),
             "PBR iridescence thickness texture should use binding 15");
+    require(pass.descriptor_sets[1].bindings[16].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Transmission),
+            "PBR transmission texture should use binding 16");
+    require(pass.descriptor_sets[1].bindings[17].binding ==
+                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::VolumeThickness),
+            "PBR volume thickness texture should use binding 17");
     for (std::size_t i = 8; i < pass.descriptor_sets[1].bindings.size(); ++i) {
         require(pass.descriptor_sets[1].bindings[i].type ==
                     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -207,6 +218,11 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.iridescence_ior = 1.4F;
     factors.iridescence_thickness_minimum = 120.0F;
     factors.iridescence_thickness_maximum = 520.0F;
+    factors.transmission_factor = 0.75F;
+    factors.volume_thickness_factor = 0.35F;
+    factors.volume_attenuation_color = {0.2F, 0.4F, 0.6F};
+    factors.volume_attenuation_distance = 3.5F;
+    factors.dispersion = 2.04F;
     factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
     factors.unlit = true;
     factors.texture_flags =
@@ -228,6 +244,10 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
             cubey::render::PbrMaterialTextureFlag::Iridescence) |
         cubey::render::pbr_material_texture_flag(
             cubey::render::PbrMaterialTextureFlag::IridescenceThickness);
+    factors.texture_flags |= cubey::render::pbr_material_texture_flag(
+        cubey::render::PbrMaterialTextureFlag::Transmission);
+    factors.texture_flags |= cubey::render::pbr_material_texture_flag(
+        cubey::render::PbrMaterialTextureFlag::VolumeThickness);
     factors.texture_transforms.base_color.offset_scale = {0.25F, 0.5F, 2.0F, 3.0F};
     factors.texture_transforms.base_color.rotation_texcoord = {0.0F, 1.0F, 1.0F, 0.0F};
     factors.texture_transforms.normal.offset_scale = {0.1F, 0.2F, 0.5F, 0.75F};
@@ -235,6 +255,8 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.texture_transforms.clearcoat.offset_scale = {0.3F, 0.4F, 0.5F, 0.6F};
     factors.texture_transforms.sheen_color.rotation_texcoord = {0.0F, 1.0F, 0.0F, 0.0F};
     factors.texture_transforms.iridescence_thickness.offset_scale = {0.7F, 0.8F, 0.9F, 1.0F};
+    factors.texture_transforms.transmission.rotation_texcoord = {0.0F, 1.0F, 1.0F, 0.0F};
+    factors.texture_transforms.volume_thickness.offset_scale = {0.8F, 0.7F, 0.6F, 0.5F};
 
     const cubey::render::PbrMaterialUniforms uniforms =
         cubey::render::pbr_material_uniforms(factors);
@@ -288,6 +310,17 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
                 uniforms.iridescence_ior_thickness.y == factors.iridescence_thickness_minimum &&
                 uniforms.iridescence_ior_thickness.z == factors.iridescence_thickness_maximum,
             "PBR material uniforms should pack iridescence IOR and thickness range");
+    require(uniforms.transmission_factor.x == factors.transmission_factor &&
+                uniforms.transmission_factor.y == factors.dispersion,
+            "PBR material uniforms should pack transmission and dispersion in the stable block");
+    require(uniforms.volume_thickness_attenuation_distance.x == factors.volume_thickness_factor &&
+                uniforms.volume_thickness_attenuation_distance.y ==
+                    factors.volume_attenuation_distance,
+            "PBR material uniforms should pack volume thickness and attenuation distance");
+    require(uniforms.volume_attenuation_color.x == factors.volume_attenuation_color.x &&
+                uniforms.volume_attenuation_color.y == factors.volume_attenuation_color.y &&
+                uniforms.volume_attenuation_color.z == factors.volume_attenuation_color.z,
+            "PBR material uniforms should pack RGB volume attenuation color");
     require(uniforms.texture_transforms.base_color.offset_scale ==
                 factors.texture_transforms.base_color.offset_scale,
             "PBR material uniforms should pack base color texture offset and scale");
@@ -309,6 +342,12 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     require(uniforms.texture_transforms.iridescence_thickness.offset_scale ==
                 factors.texture_transforms.iridescence_thickness.offset_scale,
             "PBR material uniforms should pack iridescence texture transform");
+    require(uniforms.texture_transforms.transmission.rotation_texcoord ==
+                factors.texture_transforms.transmission.rotation_texcoord,
+            "PBR material uniforms should pack transmission texture transform");
+    require(uniforms.texture_transforms.volume_thickness.offset_scale ==
+                factors.texture_transforms.volume_thickness.offset_scale,
+            "PBR material uniforms should pack independent volume thickness texture transforms");
     const cubey::render::PbrMaterialUniforms opaque_uniforms =
         cubey::render::pbr_material_uniforms(factors, cubey::render::MaterialAlphaMode::Opaque);
     require(opaque_uniforms.material_model.y == 0.0F,
@@ -326,7 +365,7 @@ void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
     const std::span<const cubey::render::PbrDefaultTextureSpec> specs =
         cubey::render::pbr_default_texture_specs();
 
-    require(bindings.size() == 15, "PBR should expose every sampled material binding");
+    require(bindings.size() == 17, "PBR should expose every sampled material binding");
     require(specs.size() == bindings.size(), "PBR default specs should cover every texture slot");
     for (std::size_t i = 0; i < bindings.size(); ++i) {
         require(specs[i].binding == bindings[i],
@@ -358,6 +397,14 @@ void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
             "emissive default should be sampled as sRGB");
     require(specs[4].rgba8 == std::array<std::uint8_t, 4>{0, 0, 0, 255},
             "emissive default should be black");
+    require(specs[15].binding == cubey::render::PbrMaterialBinding::Transmission &&
+                specs[15].format == VK_FORMAT_R8G8B8A8_UNORM &&
+                specs[15].rgba8 == std::array<std::uint8_t, 4>{255, 255, 255, 255},
+            "transmission default should be a linear white scalar multiplier");
+    require(specs[16].binding == cubey::render::PbrMaterialBinding::VolumeThickness &&
+                specs[16].format == VK_FORMAT_R8G8B8A8_UNORM &&
+                specs[16].rgba8 == std::array<std::uint8_t, 4>{255, 255, 255, 255},
+            "volume thickness default should be a linear white green-channel multiplier");
 }
 
 void test_pbr_material_table_groups_factors_and_supports_lifetime_operations() {
@@ -573,6 +620,12 @@ void test_pbr_shaders_use_gltf_material_remap() {
     const std::string gltf_materials =
         read_source_file(source_root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
 
+    for (const std::string* shader : {&gltf, &gltf_shadow, &furnace}) {
+        require_contains(
+            *shader, "vec4 transmission_factor;",
+            "all PBR shader variants should preserve the shared transmission ABI block");
+    }
+
     require_contains(pbr, "cubey_pbr_diffuse_color",
                      "PBR shader should expose a baseColor-to-diffuse remap helper");
     require_contains(pbr, "cubey_pbr_f0",
@@ -734,6 +787,99 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF PBR shader should bind KHR_materials_iridescence texture");
     require_contains(gltf, "uniform sampler2D iridescence_thickness_texture",
                      "glTF PBR shader should bind KHR_materials_iridescence thickness texture");
+    require_contains(gltf, "uniform sampler2D refraction_radiance",
+                     "glTF PBR shader should bind same-frame HDR refraction radiance");
+    require_contains(gltf, "uniform sampler2D transmission_texture",
+                     "glTF PBR shader should bind the KHR_materials_transmission texture");
+    require_contains(gltf, "transmission *= texture(transmission_texture",
+                     "glTF transmission should multiply factor by texture red");
+    require_contains(gltf, "transmission *= 1.0 - metallic",
+                     "glTF transmission should suppress metallic base interfaces");
+    require_contains(gltf, "cubey_pbr_apply_ior_to_transmission_roughness",
+                     "glTF transmission should use a dedicated Khronos IOR roughness remap");
+    require_contains(gltf,
+                     "return perceptual_roughness * clamp((dielectric_ior * 2.0) - 2.0, 0.0, "
+                     "1.0);",
+                     "glTF transmission should use the Khronos IOR roughness mapping exactly");
+    require_contains(gltf, "float perceptual_roughness = clamp(",
+                     "glTF transmission should retain authored perceptual roughness before BRDF "
+                     "flooring");
+    require_contains(gltf, "float roughness = max(perceptual_roughness, 0.04);",
+                     "the BRDF roughness floor should not erase smooth transmission mip zero");
+    require_contains(gltf, "cubey_pbr_transmission_pyramid_lod(perceptual_roughness",
+                     "glTF transmission should map raw perceptual roughness into the HDR pyramid");
+    require_contains(gltf, "return transmission_roughness * max_lod;",
+                     "transmission LOD should not square perceptual roughness");
+    require_not_contains(gltf, "roughness * roughness * ior_roughness_scale",
+                         "transmission must not retain the pre-Khronos squared roughness mapping");
+    require_contains(gltf, "textureLod(refraction_radiance",
+                     "glTF transmission should sample the same-frame HDR pyramid directly");
+    require_contains(
+        gltf, "cubey_pbr_transmission_environment_lod(perceptual_roughness",
+        "glTF transmission should map fallback roughness in the environment LOD domain");
+    require_contains(gltf, "cubey_pbr_prefiltered_environment(fallback_direction, environment_lod)",
+                     "glTF transmission should not reuse a screen-pyramid LOD for the environment");
+    require_not_contains(
+        gltf, "cubey_pbr_prefiltered_environment(fallback_direction, pyramid_lod)",
+        "glTF transmission fallback should keep screen and cube mip domains separate");
+    require_contains(gltf, "return mix(fallback_radiance, screen_radiance, screen_weight)",
+                     "glTF transmission should smoothly fade toward the edge fallback");
+    require_contains(gltf, "transmitted_radiance * base_color.rgb * transmission",
+                     "glTF transmission should tint transmitted body radiance by base color");
+    require_contains(gltf, "uniform sampler2D volume_thickness_texture",
+                     "glTF PBR shader should bind the KHR_materials_volume thickness texture");
+    require_contains(
+        gltf, "material.volume_thickness_transform)).g",
+        "glTF volume thickness should read its linear green channel through its own transform");
+    require_contains(gltf, "cubey_pbr_volume_transmission_ray",
+                     "glTF volume should construct a Khronos-style refracted transmission ray");
+    require_contains(gltf, "refract(-view_direction, normalize(normal)",
+                     "glTF volume refraction should use the material IOR at the interface");
+    require_contains(gltf, "thickness * max(model_scale, vec3(0.0))",
+                     "glTF volume thickness should be scaled from mesh to world space");
+    require_contains(gltf, "cubey_pbr_project_refraction_exit",
+                     "glTF volume should project its refracted exit into same-frame screen space");
+    require_contains(gltf, "frag_world_position + volume_transmission_ray",
+                     "glTF volume should project the refracted world-space exit point");
+    require_contains(gltf,
+                     "refraction_fallback_direction = volume_transmission_ray / volume_ray_length",
+                     "glTF volume should use the refracted ray for environment fallback");
+    require_contains(gltf, "cubey_pbr_apply_volume_attenuation",
+                     "glTF volume should apply Beer-Lambert attenuation after radiance lookup");
+    require_contains(gltf, "pow(clamp(attenuation_color, 0.0, 1.0)",
+                     "glTF volume attenuation should preserve per-channel attenuation color");
+    require_contains(gltf, "if (volume_thickness > 0.0)",
+                     "glTF thickness zero should preserve the existing thin transmission path");
+    require_contains(gltf, "float half_spread = max(base_ior - 1.0, 0.0) * 0.025 * dispersion",
+                     "glTF dispersion should use the stable Khronos half-spread approximation");
+    require_contains(gltf, "vec3 channel_iors = vec3(max(1.0, base_ior - half_spread), base_ior,",
+                     "glTF dispersion should keep the red IOR at or above the air interface");
+    require_contains(gltf, "channel_radiance[channel]",
+                     "glTF dispersion should select each channel from its own refracted lookup");
+    require_contains(gltf, "if (material.transmission_factor.y > 0.0)",
+                     "glTF dispersion should be opt-in within the thick-volume branch");
+    require_contains(gltf, "if (volume_thickness <= 0.0 || material.transmission_factor.y <= 0.0)",
+                     "zero dispersion should preserve the one-sample volume path exactly");
+    require_contains(gltf, "volume_ray_length = length(volume_transmission_ray)",
+                     "glTF dispersion should retain the green/base ray length for attenuation");
+    require_contains(gltf, "view_facing_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90)",
+                     "glTF transmission should derive its interface Fresnel from the view angle");
+    require_contains(gltf,
+                     "view_interface_fresnel = mix(view_facing_fresnel, thin_film_fresnel, "
+                     "iridescence_factor)",
+                     "glTF transmission should retain the iridescent view-facing interface");
+    require_contains(gltf, "vec3 interface_transmittance = vec3(1.0) - view_interface_fresnel",
+                     "glTF transmission should preserve per-channel RGB interface transmittance");
+    require_contains(
+        gltf, "diffuse_direct_contribution",
+        "glTF transmission should identify direct diffuse independently from specular");
+    require_contains(gltf, "base_diffuse_ibl",
+                     "glTF transmission should identify diffuse IBL independently from specular");
+    require_contains(gltf, "legacy_ambient_diffuse",
+                     "glTF transmission should identify legacy ambient diffuse independently");
+    require_contains(
+        gltf, "color += transmission_layer - (transmission * replaced_diffuse)",
+        "glTF transmission should replace only diffuse sources while preserving layers");
     require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_transform)",
                      "glTF PBR shader should sample specular strength through transformed UVs");
     require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_color_transform)",
@@ -752,7 +898,7 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF clearcoat should attenuate emission below the coat layer");
     require_contains(gltf,
                      "diffuse_ibl_attenuation * sheen_view_attenuation *\n"
-                     "               clearcoat_attenuation * occlusion",
+                     "                                  clearcoat_attenuation * occlusion",
                      "glTF sheen and clearcoat should attenuate ambient diffuse below both layers");
     require_contains(gltf, "if (clearcoat_factor > 0.0)",
                      "glTF clearcoat factor zero should skip its normal and roughness path");
@@ -777,6 +923,14 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "source.iridescence_thickness_texture,\n"
                      "                                 asset::GltfTextureColorSpace::Linear",
                      "glTF iridescence thickness texture should preserve linear color space");
+    require_contains(gltf_materials,
+                     "source.transmission_texture, asset::GltfTextureColorSpace::Linear",
+                     "glTF transmission texture should preserve linear red-channel semantics");
+    require_contains(
+        gltf_materials,
+        "source.volume_thickness_texture,\n"
+        "                                 asset::GltfTextureColorSpace::Linear",
+        "glTF volume thickness texture should preserve linear green-channel semantics");
     require_contains(gltf_materials,
                      "source.sheen_color_texture, asset::GltfTextureColorSpace::Srgb",
                      "glTF sheen color texture should preserve sRGB transfer semantics");
@@ -840,6 +994,8 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF PBR vertex shader should re-orthogonalize normal-map tangent frames");
     require_contains(gltf_vertex, "mat3(model) * in_tangent.xyz",
                      "glTF PBR vertex shader should transform tangents with the model linear part");
+    require_contains(gltf_vertex, "frag_model_scale = vec3(length(push_constants.model[0].xyz)",
+                     "glTF PBR vertex shader should provide model scale for volume thickness");
     require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR))",
                      "glTF PBR shader should skip specular strength texture when absent");
     require_contains(gltf, "if (cubey_pbr_has_material_texture(CUBEY_PBR_TEXTURE_SPECULAR_COLOR))",
@@ -902,7 +1058,7 @@ void test_forward_pbr_shader_package_uses_renderer_names() {
         require_not_contains(entry.path().filename().string(), "gltf_",
                              "shared forward PBR shader filenames should be renderer-named");
     }
-    require(shader_count == 8, "shared forward PBR package should contain eight shader files");
+    require(shader_count == 9, "shared forward PBR package should contain nine shader files");
 }
 
 void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases() {
@@ -931,6 +1087,13 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
                      "glTF viewer sample smoke tests should cover emissive strength");
     require_contains(cmake, "ClearCoatTest/glTF/ClearCoatTest.gltf",
                      "glTF viewer sample smoke tests should cover clearcoat factors and textures");
+    require_contains(cmake, "TransmissionTest/glTF/TransmissionTest.gltf",
+                     "glTF viewer sample smoke tests should cover required transmission materials");
+    require_contains(
+        cmake, "TransmissionRoughnessTest/glTF/TransmissionRoughnessTest.gltf",
+        "glTF viewer sample smoke tests should cover transmission roughness mip selection");
+    require_contains(cmake, "TransmissionOrderTest/glTF/TransmissionOrderTest.gltf",
+                     "glTF viewer sample smoke tests should cover transmission ordering");
     require_contains(cmake,
                      "--pbr-environment-source static\n"
                      "            --no-clouds\n"

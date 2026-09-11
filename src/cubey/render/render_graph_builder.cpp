@@ -105,6 +105,7 @@ void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
         throw std::runtime_error("render graph transfer pass can only use transfer texture usages");
     }
     if ((usage == RenderGraphTextureUsage::ColorAttachment ||
+         usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
          usage == RenderGraphTextureUsage::DepthAttachment) &&
         pass.queue_domain != RenderGraphQueueDomain::Graphics) {
         throw std::runtime_error("render graph attachment usage requires a graphics pass");
@@ -114,6 +115,7 @@ void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
         throw std::runtime_error("render graph depth attachment requires a depth texture");
     }
     if ((usage == RenderGraphTextureUsage::ColorAttachment ||
+         usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
          usage == RenderGraphTextureUsage::StorageRead ||
          usage == RenderGraphTextureUsage::StorageWrite ||
          usage == RenderGraphTextureUsage::StorageReadWrite) &&
@@ -185,6 +187,12 @@ RenderGraphPassBuilder::read_write_storage_texture(RenderGraphTextureHandle hand
 
 RenderGraphPassBuilder& RenderGraphPassBuilder::write_color(RenderGraphTextureHandle handle) {
     graph_->add_texture_access(pass_index_, handle, RenderGraphTextureUsage::ColorAttachment);
+    return *this;
+}
+
+RenderGraphPassBuilder& RenderGraphPassBuilder::read_write_color(RenderGraphTextureHandle handle) {
+    graph_->add_texture_access(pass_index_, handle,
+                               RenderGraphTextureUsage::ColorAttachmentReadWrite);
     return *this;
 }
 

@@ -111,6 +111,8 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
         .anisotropy = pbr_texture_transform(material.anisotropy_texture),
         .iridescence = pbr_texture_transform(material.iridescence_texture),
         .iridescence_thickness = pbr_texture_transform(material.iridescence_thickness_texture),
+        .transmission = pbr_texture_transform(material.transmission_texture),
+        .volume_thickness = pbr_texture_transform(material.volume_thickness_texture),
     };
 }
 
@@ -135,6 +137,9 @@ pbr_texture_transforms(const asset::GltfMaterial& material) {
     set(material.iridescence_texture.has_value(), render::PbrMaterialTextureFlag::Iridescence);
     set(material.iridescence_thickness_texture.has_value(),
         render::PbrMaterialTextureFlag::IridescenceThickness);
+    set(material.transmission_texture.has_value(), render::PbrMaterialTextureFlag::Transmission);
+    set(material.volume_thickness_texture.has_value(),
+        render::PbrMaterialTextureFlag::VolumeThickness);
     return flags;
 }
 
@@ -238,16 +243,32 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
     for (std::size_t index = 0; index < asset.materials.size(); ++index) {
         const asset::GltfMaterial& source = asset.materials[index];
         const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode);
+        const bool optical_transmission = source.transmission_factor > 0.0F;
+        // A nonzero volume thickness defines a closed-medium boundary even
+        // when transmissionFactor makes that optical contribution neutral.
+        const bool volume_boundary = source.volume_thickness_factor > 0.0F;
         GltfPreparedMaterial material{
             .info =
                 {
                     .label = source.label.empty() ? import_label(config, "material", index)
                                                   : source.label,
                     .alpha_mode = alpha_mode,
+                    .optical_mode = optical_transmission ? render::MaterialOpticalMode::Transmission
+                                                         : render::MaterialOpticalMode::Opaque,
                     .blend = render::material_blend_mode_for_alpha_mode(alpha_mode),
-                    .cull_mode = source.double_sided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT,
+                    // KHR_materials_volume defines a closed volume boundary,
+                    // and doubleSided does not alter that boundary. This
+                    // first thick-volume approximation renders its exterior
+                    // face only; a later exact entry/exit implementation can
+                    // supply the matching back-face information.
+                    .cull_mode = volume_boundary ? VK_CULL_MODE_BACK_BIT
+                                                 : (source.double_sided ? VK_CULL_MODE_NONE
+                                                                        : VK_CULL_MODE_BACK_BIT),
                     .sort_key = static_cast<std::uint32_t>(index),
-                    .pass_mask = render::material_pass_mask_for_alpha_mode(alpha_mode),
+                    .pass_mask =
+                        optical_transmission
+                            ? render::material_pass_mask(render::MaterialPassKind::ForwardColor)
+                            : render::material_pass_mask_for_alpha_mode(alpha_mode),
                 },
             .factors =
                 {
@@ -264,6 +285,11 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
                     .specular_color_factor = source.specular_color_factor,
                     .specular_factor = source.specular_factor,
                     .dielectric_ior = source.ior,
+                    .transmission_factor = source.transmission_factor,
+                    .volume_thickness_factor = source.volume_thickness_factor,
+                    .volume_attenuation_color = source.volume_attenuation_color,
+                    .volume_attenuation_distance = source.volume_attenuation_distance,
+                    .dispersion = source.dispersion,
                     .clearcoat_factor = source.clearcoat_factor,
                     .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
                     .clearcoat_normal_scale = source.clearcoat_normal_scale,
@@ -331,6 +357,14 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
         prepare_material_texture(material, prepared, asset,
                                  render::PbrMaterialBinding::IridescenceThickness,
                                  source.iridescence_thickness_texture,
+                                 asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::Transmission,
+                                 source.transmission_texture, asset::GltfTextureColorSpace::Linear,
+                                 capabilities, texture_cache);
+        prepare_material_texture(material, prepared, asset,
+                                 render::PbrMaterialBinding::VolumeThickness,
+                                 source.volume_thickness_texture,
                                  asset::GltfTextureColorSpace::Linear, capabilities, texture_cache);
         prepared.materials.push_back(std::move(material));
     }

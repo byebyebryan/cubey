@@ -14,6 +14,7 @@ namespace {
     case RenderGraphTextureUsage::StorageReadWrite:
         return VK_IMAGE_USAGE_STORAGE_BIT;
     case RenderGraphTextureUsage::ColorAttachment:
+    case RenderGraphTextureUsage::ColorAttachmentReadWrite:
         return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     case RenderGraphTextureUsage::DepthAttachment:
         return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;

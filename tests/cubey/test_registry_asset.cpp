@@ -10,6 +10,9 @@ void test_gltf_asset_probe_rejects_malformed_glb_headers();
 void test_gltf_asset_preserves_ior_special_and_high_values();
 void test_gltf_asset_validates_ior_and_specular_material_values();
 void test_gltf_asset_closes_clearcoat_material_contract();
+void test_gltf_asset_closes_transmission_material_contract();
+void test_gltf_asset_closes_volume_material_contract();
+void test_gltf_asset_closes_dispersion_material_contract();
 void test_gltf_asset_closes_sheen_material_contract();
 void test_gltf_asset_closes_anisotropy_material_contract();
 void test_gltf_asset_closes_iridescence_material_contract();
@@ -44,7 +47,7 @@ void test_terrain_raster_height_source_rejects_invalid_contracts();
 namespace cubey::tests {
 
 std::span<const TestCase> asset_test_cases() {
-    static constexpr std::array<TestCase, 38> tests{
+    static constexpr std::array<TestCase, 41> tests{
         CUBEY_TEST(test_gltf_asset_loads_static_pbr_triangle),
         CUBEY_TEST(test_gltf_asset_collects_exclusive_load_phase_timings),
         CUBEY_TEST(test_gltf_asset_probes_transformed_scene_bounds_without_loading_buffers),
@@ -53,6 +56,9 @@ std::span<const TestCase> asset_test_cases() {
         CUBEY_TEST(test_gltf_asset_preserves_ior_special_and_high_values),
         CUBEY_TEST(test_gltf_asset_validates_ior_and_specular_material_values),
         CUBEY_TEST(test_gltf_asset_closes_clearcoat_material_contract),
+        CUBEY_TEST(test_gltf_asset_closes_transmission_material_contract),
+        CUBEY_TEST(test_gltf_asset_closes_volume_material_contract),
+        CUBEY_TEST(test_gltf_asset_closes_dispersion_material_contract),
         CUBEY_TEST(test_gltf_asset_closes_sheen_material_contract),
         CUBEY_TEST(test_gltf_asset_closes_anisotropy_material_contract),
         CUBEY_TEST(test_gltf_asset_closes_iridescence_material_contract),

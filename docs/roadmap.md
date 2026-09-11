@@ -29,10 +29,12 @@ async-ready runtime boundary.
 ## Current Readiness Checkpoint
 
 Status: the first glTF conformance—including required-use IOR, specular,
-clearcoat, anisotropy, iridescence, and sheen—plus staged-loading and incremental
-GPU-upload responsiveness checkpoints are complete; the next asset-pipeline
-work should be selected from a concrete product need rather than presumed
-unfinished plumbing.
+clearcoat, anisotropy, iridescence, sheen, transmission, volume, and
+dispersion—plus staged-loading and incremental GPU-upload responsiveness
+checkpoints are complete. Transmissive materials use an opt-in staged
+same-frame HDR refraction path with the procedural environment as the primary
+fallback. The next asset-pipeline work should be selected from a concrete
+product need rather than presumed unfinished plumbing.
 
 The recent foundation push landed shared runtime, renderer, shader,
 environment, UI, and project-owned configuration infrastructure. Retired

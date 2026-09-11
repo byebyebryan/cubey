@@ -7,7 +7,7 @@
 namespace cubey::render {
 namespace {
 
-constexpr std::array<PbrMaterialBinding, 15> kSampledMaterialBindings{
+constexpr std::array<PbrMaterialBinding, 17> kSampledMaterialBindings{
     PbrMaterialBinding::BaseColor,
     PbrMaterialBinding::MetallicRoughness,
     PbrMaterialBinding::Normal,
@@ -23,9 +23,11 @@ constexpr std::array<PbrMaterialBinding, 15> kSampledMaterialBindings{
     PbrMaterialBinding::Anisotropy,
     PbrMaterialBinding::Iridescence,
     PbrMaterialBinding::IridescenceThickness,
+    PbrMaterialBinding::Transmission,
+    PbrMaterialBinding::VolumeThickness,
 };
 
-constexpr std::array<PbrDefaultTextureSpec, 15> kDefaultTextureSpecs{
+constexpr std::array<PbrDefaultTextureSpec, 17> kDefaultTextureSpecs{
     PbrDefaultTextureSpec{
         .binding = PbrMaterialBinding::BaseColor,
         .rgba8 = {255, 255, 255, 255},
@@ -101,6 +103,18 @@ constexpr std::array<PbrDefaultTextureSpec, 15> kDefaultTextureSpecs{
         .rgba8 = {255, 255, 255, 255},
         .format = VK_FORMAT_R8G8B8A8_UNORM,
     },
+    PbrDefaultTextureSpec{
+        .binding = PbrMaterialBinding::Transmission,
+        .rgba8 = {255, 255, 255, 255},
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+    },
+    PbrDefaultTextureSpec{
+        .binding = PbrMaterialBinding::VolumeThickness,
+        // KHR_materials_volume reads the G channel. White preserves authored
+        // thickness when no texture was supplied.
+        .rgba8 = {255, 255, 255, 255},
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+    },
 };
 
 [[nodiscard]] Texture2D create_pbr_default_texture(const cubey::vulkan::Device& device,
@@ -173,6 +187,8 @@ PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device&
         .anisotropy = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[12]),
         .iridescence = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[13]),
         .iridescence_thickness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[14]),
+        .transmission = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[15]),
+        .volume_thickness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[16]),
     };
 }
 
@@ -194,6 +210,8 @@ PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device&
         .anisotropy = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[12]),
         .iridescence = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[13]),
         .iridescence_thickness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[14]),
+        .transmission = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[15]),
+        .volume_thickness = create_pbr_default_texture(device, gpu, kDefaultTextureSpecs[16]),
     };
 }
 
@@ -216,6 +234,8 @@ PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device&
         .iridescence = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[13]),
         .iridescence_thickness =
             create_pbr_default_texture(device, batch, kDefaultTextureSpecs[14]),
+        .transmission = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[15]),
+        .volume_thickness = create_pbr_default_texture(device, batch, kDefaultTextureSpecs[16]),
     };
 }
 
@@ -239,6 +259,8 @@ PbrDefaultTextureSet make_pbr_default_texture_set(std::vector<Texture2D> texture
         .anisotropy = std::move(textures[12]),
         .iridescence = std::move(textures[13]),
         .iridescence_thickness = std::move(textures[14]),
+        .transmission = std::move(textures[15]),
+        .volume_thickness = std::move(textures[16]),
     };
 }
 
@@ -274,6 +296,10 @@ const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set, PbrMateria
         return set.iridescence;
     case PbrMaterialBinding::IridescenceThickness:
         return set.iridescence_thickness;
+    case PbrMaterialBinding::Transmission:
+        return set.transmission;
+    case PbrMaterialBinding::VolumeThickness:
+        return set.volume_thickness;
     case PbrMaterialBinding::Uniforms:
         break;
     }

@@ -92,6 +92,7 @@ void test_render_graph_declares_shadow_map_then_scene_sample_flow();
 void test_render_graph_derives_compute_to_graphics_storage_buffer_barrier();
 void test_render_graph_derives_compute_to_graphics_storage_texture_barrier();
 void test_render_graph_derives_compute_to_vertex_buffer_barrier();
+void test_render_graph_derives_color_attachment_load_barriers();
 void test_render_graph_derives_depth_to_sampled_texture_barrier();
 void test_render_graph_honors_explicit_graphics_shader_stage_masks();
 void test_render_graph_derives_imported_buffer_acquire_and_release_barriers();
@@ -228,6 +229,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_imports_color_and_depth_targets),
         CUBEY_TEST(test_render_graph_creates_transient_texture_and_preserves_pass_order),
         CUBEY_TEST(test_render_graph_declares_shadow_map_then_scene_sample_flow),
+        CUBEY_TEST(test_render_graph_derives_color_attachment_load_barriers),
         CUBEY_TEST(test_render_graph_derives_depth_to_sampled_texture_barrier),
         CUBEY_TEST(test_render_graph_derives_compute_to_graphics_storage_buffer_barrier),
         CUBEY_TEST(test_render_graph_derives_compute_to_graphics_storage_texture_barrier),

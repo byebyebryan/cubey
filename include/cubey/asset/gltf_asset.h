@@ -110,6 +110,22 @@ struct GltfMaterial {
     // bounded reflectance control. Zero is the glTF specular-glossiness
     // compatibility sentinel; otherwise the value is an index of refraction.
     float ior = 1.5F;
+    // KHR_materials_transmission is independent from alpha coverage. A zero
+    // factor remains a neutral authored extension even when a texture exists.
+    float transmission_factor = 0.0F;
+    GltfTextureRef transmission_texture{};
+    // KHR_materials_volume is an optional thick-medium refinement of
+    // transmission. A zero thickness deliberately preserves thin-wall
+    // transmission. attenuation_distance == 0 is Cubey's internal infinity
+    // sentinel; glTF itself requires an authored value greater than zero.
+    float volume_thickness_factor = 0.0F;
+    GltfTextureRef volume_thickness_texture{};
+    math::Vec3 volume_attenuation_color{1.0F, 1.0F, 1.0F};
+    float volume_attenuation_distance = 0.0F;
+    // KHR_materials_dispersion is a thick-volume refinement. Cubey keeps the
+    // authored factor unbounded above and only enables its three-channel
+    // approximation when the volume path has a nonzero thickness.
+    float dispersion = 0.0F;
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
     float clearcoat_factor = 0.0F;
     float clearcoat_roughness_factor = 0.0F;

@@ -222,6 +222,44 @@ chromatic response under a fixed direct-plus-IBL fixture. The pinned Khronos
 `CompareIridescence` sample adds an end-to-end staged importer/viewer smoke;
 neither rendered lane is a byte-identical cross-GPU golden.
 
+## Transmission, Volume, And Dispersion Contract
+
+`KHR_materials_transmission` is independent from glTF alpha coverage. A positive
+factor routes the material through an explicit transmission stage after opaque
+geometry and surface clouds; ordinary alpha-blended geometry remains later in
+the frame. The renderer snapshots the pre-transmission linear HDR scene into a
+per-frame-slot radiance pyramid only when a visible transmissive packet needs
+it. Thin transmission replaces the material's diffuse contribution with
+base-color-tinted scene radiance while preserving reflected specular, sheen,
+clearcoat, iridescence, emissive, AO, and premultiplied alpha behavior. Near or
+beyond screen edges, the current procedural atmosphere/cloud probe is the
+primary product fallback; static prefiltered environments use the same binding.
+
+`KHR_materials_volume` adds a linear green-channel thickness texture,
+mesh-space thickness, world-space attenuation distance, and attenuation color.
+A nonzero thickness derives a Khronos-style refracted ray, scales it by the
+model basis, projects the estimated exit point into the same HDR pyramid, and
+applies Beer-Lambert absorption over the world-space ray length. Zero thickness
+retains the thin one-sample path exactly. A nonzero thickness is treated as an
+exterior closed-volume boundary, so glTF `doubleSided` does not alter its
+back-face culling policy.
+
+`KHR_materials_dispersion` performs the stable Khronos three-channel
+approximation only for nonzero dispersion on the thick-volume path. Red, green,
+and blue use separate fixed IORs and screen/environment samples; the base green
+ray supplies the attenuation distance. There is no temporal jitter, and a zero
+factor preserves the one-sample volume path.
+
+Focused tests cover defaults, ranges, prohibited/dependent extension
+combinations, texture channels/transforms, descriptor and uniform ABI, optical
+routing, attachment synchronization, and shader composition. Pinned Khronos
+transmission, thin-wall, attenuation, and dispersion scenes provide end-to-end
+runtime smokes. A required-validation 512px `DragonDispersion` capture exercises
+the atmosphere-backed product path. These screen-space captures are diagnostic
+evidence rather than cross-GPU pixel goldens. The intentional first version has
+no back-face exit-depth reconstruction, multiple internal reflection, punctual
+BTDF, transparent shadows, or order-independent transparency.
+
 ## IOR And Specular Conformance
 
 `KHR_materials_ior` accepts only IOR zero (the glTF compatibility sentinel) or
@@ -282,15 +320,16 @@ renderer-wide material management explicit future work.
   dedicated Charlie-prefiltered cube. Its uniform-environment energy is covered,
   but directional quality remains an explicit approximation; add the extra
   resource only if a real asset demonstrates the need.
-- Transmission, refraction, volume absorption, dispersion, and OIT-quality
-  transparent material behavior remain future work.
+- Transmission remains a screen-space approximation. Exact back-face exit
+  depth, internal reflection, punctual transmitted-light BTDF, transparent
+  shadows, and OIT-quality transparent composition remain future work.
 
 ## Non-Goals
 
 - Do not add KTX loading or an offline IBL baking pipeline to the direct-HDR
   checkpoint.
-- Do not add transmission, volume, dispersion, or other transmissive extension
-  textures to the material descriptor set yet.
+- Do not fold exact refraction-depth reconstruction, ray tracing, or an OIT
+  redesign into the first screen-space transmission contract.
 - Do not turn `cubey::render` into a renderer singleton or material manager.
 - Do not hide Vulkan layout transitions, descriptor writes, or pass ordering.
 - Do not add glTF animation, skinning, or additional material extensions as

@@ -58,6 +58,8 @@ enum class PbrMaterialTextureFlag : std::uint32_t {
     Anisotropy = 1U << 7U,
     Iridescence = 1U << 8U,
     IridescenceThickness = 1U << 9U,
+    Transmission = 1U << 10U,
+    VolumeThickness = 1U << 11U,
 };
 
 [[nodiscard]] constexpr std::uint32_t
@@ -92,6 +94,8 @@ struct PbrMaterialTextureTransforms {
     PbrTextureTransform anisotropy{};
     PbrTextureTransform iridescence{};
     PbrTextureTransform iridescence_thickness{};
+    PbrTextureTransform transmission{};
+    PbrTextureTransform volume_thickness{};
 };
 
 struct PbrSceneUniforms {
@@ -135,6 +139,14 @@ struct PbrMaterialFactors {
     // Zero is the glTF specular-glossiness compatibility sentinel. Other
     // values are dielectric indices of refraction.
     float dielectric_ior = 1.5F;
+    float transmission_factor = 0.0F;
+    float volume_thickness_factor = 0.0F;
+    math::Vec3 volume_attenuation_color{1.0F, 1.0F, 1.0F};
+    // Zero is Cubey's internal representation of glTF's infinite default.
+    float volume_attenuation_distance = 0.0F;
+    // KHR_materials_dispersion is meaningful only inside the thick-volume
+    // transmission path. Keep it scalar and unbounded above per glTF.
+    float dispersion = 0.0F;
     float clearcoat_factor = 0.0F;
     float clearcoat_roughness_factor = 0.0F;
     float clearcoat_normal_scale = 1.0F;
@@ -161,6 +173,9 @@ struct PbrMaterialUniforms {
     math::Vec4 sheen_color_roughness{0.0F, 0.0F, 0.0F, 0.0F};
     math::Vec4 anisotropy_iridescence{0.0F, 1.0F, 0.0F, 0.0F};
     math::Vec4 iridescence_ior_thickness{1.3F, 100.0F, 400.0F, 0.0F};
+    math::Vec4 transmission_factor{0.0F, 0.0F, 0.0F, 0.0F};
+    math::Vec4 volume_thickness_attenuation_distance{0.0F, 0.0F, 0.0F, 0.0F};
+    math::Vec4 volume_attenuation_color{1.0F, 1.0F, 1.0F, 0.0F};
     PbrMaterialTextureTransforms texture_transforms{};
 };
 
@@ -169,10 +184,10 @@ struct PbrPushConstants {
 };
 
 static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
-static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 30U);
+static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 34U);
 static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
 static_assert(sizeof(PbrSceneUniforms) == (sizeof(math::Mat4) * 2U) + (sizeof(math::Vec4) * 19U));
-static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 39U);
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 46U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));
@@ -185,6 +200,7 @@ enum class PbrSceneBinding : std::uint32_t {
     PrefilteredCube = 3,
     BrdfLut = 4,
     PreviousPrefilteredCube = 5,
+    RefractionRadiance = 6,
 };
 
 enum class PbrMaterialBinding : std::uint32_t {
@@ -204,6 +220,8 @@ enum class PbrMaterialBinding : std::uint32_t {
     Anisotropy = 13,
     Iridescence = 14,
     IridescenceThickness = 15,
+    Transmission = 16,
+    VolumeThickness = 17,
 };
 
 enum class PbrSkyboxBinding : std::uint32_t {

@@ -42,6 +42,8 @@ struct PbrDefaultTextureSet {
     Texture2D anisotropy;
     Texture2D iridescence;
     Texture2D iridescence_thickness;
+    Texture2D transmission;
+    Texture2D volume_thickness;
 };
 
 [[nodiscard]] std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept;
@@ -54,7 +56,7 @@ create_pbr_default_texture_set(const cubey::vulkan::Device& device,
 [[nodiscard]] PbrDefaultTextureSet
 create_pbr_default_texture_set(const cubey::vulkan::Device& device,
                                cubey::vulkan::GpuUploadBatch& batch);
-// Adopts the fifteen textures described by pbr_default_texture_specs(). This
+// Adopts the sampled textures described by pbr_default_texture_specs(). This
 // lets resumable upload sessions create one destination texture at a time.
 [[nodiscard]] PbrDefaultTextureSet make_pbr_default_texture_set(std::vector<Texture2D> textures);
 [[nodiscard]] const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set,

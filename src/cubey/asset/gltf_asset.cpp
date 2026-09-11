@@ -359,6 +359,49 @@ void require_valid_iridescence_thickness(float thickness, const char* field) {
     }
 }
 
+void require_valid_transmission_factor(float factor) {
+    if (!std::isfinite(factor) || factor < 0.0F || factor > 1.0F) {
+        throw gltf_error(
+            "KHR_materials_transmission transmissionFactor must be finite and in [0, 1]");
+    }
+}
+
+void require_valid_volume_thickness_factor(float thickness) {
+    if (!std::isfinite(thickness) || thickness < 0.0F) {
+        throw gltf_error(
+            "KHR_materials_volume thicknessFactor must be finite and greater than or equal to 0");
+    }
+}
+
+void require_valid_dispersion(float dispersion) {
+    if (!std::isfinite(dispersion) || dispersion < 0.0F) {
+        throw gltf_error(
+            "KHR_materials_dispersion dispersion must be finite and greater than or equal to 0");
+    }
+}
+
+void require_valid_volume_attenuation_color(const math::Vec3& color) {
+    if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+        color.r < 0.0F || color.r > 1.0F || color.g < 0.0F || color.g > 1.0F || color.b < 0.0F ||
+        color.b > 1.0F) {
+        throw gltf_error(
+            "KHR_materials_volume attenuationColor must contain finite values in [0, 1]");
+    }
+}
+
+[[nodiscard]] float load_volume_attenuation_distance(const cgltf_volume& volume) {
+    // cgltf uses FLT_MAX to represent the glTF default of +infinity. Cubey
+    // carries that as zero so shader attenuation can cheaply no-op.
+    if (volume.attenuation_distance == std::numeric_limits<float>::max()) {
+        return 0.0F;
+    }
+    if (!std::isfinite(volume.attenuation_distance) || volume.attenuation_distance <= 0.0F) {
+        throw gltf_error(
+            "KHR_materials_volume attenuationDistance must be finite and greater than 0");
+    }
+    return volume.attenuation_distance;
+}
+
 [[nodiscard]] GltfMaterial load_material(const cgltf_material& material,
                                          const cgltf_texture* texture_base,
                                          cgltf_size texture_count) {
@@ -381,6 +424,14 @@ void require_valid_iridescence_thickness(float thickness, const char* field) {
                   material.sheen.sheen_color_factor[2],
               }
             : math::Vec3{0.0F, 0.0F, 0.0F};
+    const math::Vec3 volume_attenuation_color =
+        material.has_volume != 0
+            ? math::Vec3{
+                  material.volume.attenuation_color[0],
+                  material.volume.attenuation_color[1],
+                  material.volume.attenuation_color[2],
+              }
+            : math::Vec3{1.0F, 1.0F, 1.0F};
     if (material.has_ior != 0) {
         require_valid_material_ior(material.ior.ior);
     }
@@ -413,6 +464,29 @@ void require_valid_iridescence_thickness(float thickness, const char* field) {
                                             "iridescenceThicknessMaximum");
         require_lit_material_extension_compatibility(material, "KHR_materials_iridescence");
     }
+    if (material.has_transmission != 0) {
+        require_valid_transmission_factor(material.transmission.transmission_factor);
+    }
+    if (material.has_dispersion != 0) {
+        if (material.has_volume == 0) {
+            throw gltf_error("KHR_materials_dispersion requires KHR_materials_volume");
+        }
+        require_valid_dispersion(material.dispersion.dispersion);
+        require_lit_material_extension_compatibility(material, "KHR_materials_dispersion");
+    }
+    const float volume_attenuation_distance =
+        material.has_volume != 0 ? load_volume_attenuation_distance(material.volume) : 0.0F;
+    if (material.has_volume != 0) {
+        if (material.has_transmission == 0) {
+            throw gltf_error("KHR_materials_volume requires KHR_materials_transmission");
+        }
+        require_valid_volume_thickness_factor(material.volume.thickness_factor);
+        require_valid_volume_attenuation_color(volume_attenuation_color);
+        require_lit_material_extension_compatibility(material, "KHR_materials_volume");
+    }
+    if (material.has_transmission != 0) {
+        require_lit_material_extension_compatibility(material, "KHR_materials_transmission");
+    }
     return {
         .label = label_or_empty(material.name),
         .base_color_factor =
@@ -435,6 +509,21 @@ void require_valid_iridescence_thickness(float thickness, const char* field) {
                                                          texture_base, texture_count)
                                       : GltfTextureRef{},
         .ior = material.has_ior != 0 ? material.ior.ior : 1.5F,
+        .transmission_factor =
+            material.has_transmission != 0 ? material.transmission.transmission_factor : 0.0F,
+        .transmission_texture = material.has_transmission != 0
+                                    ? load_texture_ref(material.transmission.transmission_texture,
+                                                       texture_base, texture_count)
+                                    : GltfTextureRef{},
+        .volume_thickness_factor =
+            material.has_volume != 0 ? material.volume.thickness_factor : 0.0F,
+        .volume_thickness_texture =
+            material.has_volume != 0
+                ? load_texture_ref(material.volume.thickness_texture, texture_base, texture_count)
+                : GltfTextureRef{},
+        .volume_attenuation_color = volume_attenuation_color,
+        .volume_attenuation_distance = volume_attenuation_distance,
+        .dispersion = material.has_dispersion != 0 ? material.dispersion.dispersion : 0.0F,
         .emissive_factor =
             {
                 material.emissive_factor[0] * emissive_strength,
@@ -1561,7 +1650,7 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
     // This is intentionally stricter than the set of extensions that the
     // importer can parse. An extension is accepted from extensionsRequired
     // only after its data path and rendered semantics have both been closed.
-    static constexpr std::array<std::string_view, 10> kSupportedRequiredExtensions{
+    static constexpr std::array<std::string_view, 13> kSupportedRequiredExtensions{
         "KHR_materials_emissive_strength",
         "KHR_materials_ior",
         "KHR_materials_specular",
@@ -1572,6 +1661,9 @@ void require_animation_output_shape(const cgltf_animation_sampler& source,
         "KHR_texture_transform",
         "KHR_texture_basisu",
         "KHR_materials_unlit",
+        "KHR_materials_transmission",
+        "KHR_materials_volume",
+        "KHR_materials_dispersion",
     };
     return std::ranges::find(kSupportedRequiredExtensions, extension) !=
            kSupportedRequiredExtensions.end();

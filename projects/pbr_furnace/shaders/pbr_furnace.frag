@@ -44,6 +44,9 @@ layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     vec4 sheen_color_roughness;
     vec4 anisotropy_iridescence;
     vec4 iridescence_ior_thickness;
+    vec4 transmission_factor;
+    vec4 volume_thickness_attenuation_distance;
+    vec4 volume_attenuation_color;
     PbrTextureTransform base_color_transform;
     PbrTextureTransform metallic_roughness_transform;
     PbrTextureTransform normal_transform;
@@ -59,6 +62,8 @@ layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     PbrTextureTransform anisotropy_transform;
     PbrTextureTransform iridescence_transform;
     PbrTextureTransform iridescence_thickness_transform;
+    PbrTextureTransform transmission_transform;
+    PbrTextureTransform volume_thickness_transform;
 } material;
 
 const uint CUBEY_PBR_TEXTURE_SPECULAR = 1u;

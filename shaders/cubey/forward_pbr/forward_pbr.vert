@@ -35,6 +35,7 @@ layout(location = 4) out vec2 frag_uv0;
 layout(location = 5) out vec2 frag_uv1;
 layout(location = 6) out vec4 frag_color0;
 layout(location = 7) out vec4 frag_shadow_position;
+layout(location = 8) out vec3 frag_model_scale;
 
 vec3 safeNormalize(vec3 value, vec3 fallback) {
     const float length_squared = dot(value, value);
@@ -62,4 +63,7 @@ void main() {
     frag_uv1 = in_uv1;
     frag_color0 = in_color0;
     frag_shadow_position = scene.light_view_projection * world_position;
+    frag_model_scale = vec3(length(push_constants.model[0].xyz),
+                            length(push_constants.model[1].xyz),
+                            length(push_constants.model[2].xyz));
 }

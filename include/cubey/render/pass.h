@@ -182,12 +182,20 @@ void record_fullscreen_pipeline_draw(const cubey::vulkan::CommandRecorder& recor
 template <typename RecordCallback>
 void record_render_target_pass(const cubey::vulkan::CommandRecorder& recorder,
                                const RenderTargetView& target, const RenderClearValues& clear,
-                               RecordCallback&& record_callback) {
-    const RenderTargetRenderingInfo rendering(target, clear);
+                               RenderTargetAttachmentOps ops, RecordCallback&& record_callback) {
+    const RenderTargetRenderingInfo rendering(target, clear, ops);
     recorder.begin_rendering(rendering.info());
     recorder.set_viewport_and_scissor(target.color.extent);
     std::forward<RecordCallback>(record_callback)(recorder);
     recorder.end_rendering();
+}
+
+template <typename RecordCallback>
+void record_render_target_pass(const cubey::vulkan::CommandRecorder& recorder,
+                               const RenderTargetView& target, const RenderClearValues& clear,
+                               RecordCallback&& record_callback) {
+    record_render_target_pass(recorder, target, clear, RenderTargetAttachmentOps{},
+                              std::forward<RecordCallback>(record_callback));
 }
 
 template <typename RecordCallback>

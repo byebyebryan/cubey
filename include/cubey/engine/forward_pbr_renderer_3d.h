@@ -46,6 +46,7 @@ struct ForwardPbrRenderer3DConfig {
     std::filesystem::path atmosphere_fragment_shader{};
     std::filesystem::path post_vertex_shader{};
     std::filesystem::path post_fragment_shader{};
+    std::filesystem::path refraction_pyramid_fragment_shader{};
     std::filesystem::path shadow_depth_vertex_shader{};
     std::filesystem::path shadow_depth_fragment_shader{};
     std::uint32_t shadow_extent = 2048;

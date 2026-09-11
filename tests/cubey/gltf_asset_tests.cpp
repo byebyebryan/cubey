@@ -1286,6 +1286,343 @@ void test_gltf_asset_closes_clearcoat_material_contract() {
     std::filesystem::remove_all(dir);
 }
 
+void test_gltf_asset_closes_transmission_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_transmission_contract");
+    const std::filesystem::path path = dir / "transmission_contract.gltf";
+    constexpr std::string_view kTinyPng =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/"
+        "x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+
+    write_text_file(path, std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_transmission", "KHR_texture_transform"],
+  "extensionsRequired": ["KHR_materials_transmission", "KHR_texture_transform"],
+  "materials": [
+    {"extensions": {"KHR_materials_transmission": {}}},
+    {"extensions": {"KHR_materials_transmission": {
+      "transmissionFactor": 0.6,
+      "transmissionTexture": {
+        "index": 0, "texCoord": 1,
+        "extensions": {"KHR_texture_transform": {
+          "offset": [0.2, 0.3], "rotation": 0.5, "scale": [0.4, 0.5], "texCoord": 0
+        }}
+      }
+    }}}
+  ],
+  "textures": [{"source": 0}],
+  "images": [{"uri": ")JSON") +
+                              std::string{kTinyPng} + R"JSON("}]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+    require(asset.materials.size() == 3,
+            "transmission fixture should retain its implicit and authored materials");
+    const cubey::asset::GltfMaterial& defaults = asset.materials[1];
+    require_close(defaults.transmission_factor, 0.0F,
+                  "transmissionFactor should default to a neutral zero factor");
+    require(!defaults.transmission_texture.has_value(),
+            "a default transmission extension should not invent a texture reference");
+
+    const cubey::asset::GltfMaterial& material = asset.materials[2];
+    require_close(material.transmission_factor, 0.6F,
+                  "transmissionFactor should preserve its authored linear multiplier");
+    require(material.transmission_texture.texture_index == 0,
+            "transmission texture should preserve its source texture");
+    require(material.transmission_texture.texcoord == 0,
+            "transmission texture transform should override the source texture coordinate set");
+    require_close(material.transmission_texture.offset.x, 0.2F,
+                  "transmission texture transform should preserve offset x");
+    require_close(material.transmission_texture.offset.y, 0.3F,
+                  "transmission texture transform should preserve offset y");
+    require_close(material.transmission_texture.rotation, 0.5F,
+                  "transmission texture transform should preserve rotation");
+    require_close(material.transmission_texture.scale.x, 0.4F,
+                  "transmission texture transform should preserve scale x");
+    require_close(material.transmission_texture.scale.y, 0.5F,
+                  "transmission texture transform should preserve scale y");
+
+    const auto require_invalid = [&path](std::string_view value) {
+        write_text_file(path,
+                        std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                            "  \"extensionsUsed\": [\"KHR_materials_transmission\"],\n" +
+                            "  \"materials\": [{\"extensions\": {\"KHR_materials_transmission\": "
+                            "{\"transmissionFactor\": " +
+                            std::string{value} + "}}}]\n}\n");
+        require_throws_with_message(
+            [&path] { (void)cubey::asset::load_gltf_asset(path); }, "transmissionFactor",
+            "invalid transmission factor should identify its rejected field");
+    };
+    require_invalid("-0.01");
+    require_invalid("1.01");
+    require_invalid("1e999");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_transmission", "KHR_materials_unlit"],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_transmission",
+        "transmission and unlit should be rejected as an invalid material combination");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_transmission",
+    "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); },
+                                "KHR_materials_transmission",
+                                "transmission and specular-glossiness should be rejected as an "
+                                "invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_closes_volume_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_volume_contract");
+    const std::filesystem::path path = dir / "volume_contract.gltf";
+    constexpr std::string_view kTinyPng =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/"
+        "x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+
+    write_text_file(path, std::string(R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_transmission", "KHR_materials_volume", "KHR_texture_transform"
+  ],
+  "extensionsRequired": ["KHR_materials_transmission", "KHR_materials_volume"],
+  "materials": [
+    {"extensions": {
+      "KHR_materials_transmission": {"transmissionFactor": 0.8},
+      "KHR_materials_volume": {}
+    }},
+    {"extensions": {
+      "KHR_materials_transmission": {"transmissionFactor": 0.6},
+      "KHR_materials_volume": {
+        "thicknessFactor": 0.75,
+        "thicknessTexture": {"index": 0, "texCoord": 1, "extensions": {
+          "KHR_texture_transform": {
+            "offset": [0.2, 0.3], "rotation": 0.5, "scale": [0.4, 0.5], "texCoord": 0
+          }
+        }},
+        "attenuationColor": [0.2, 0.4, 0.6],
+        "attenuationDistance": 2.5
+      }
+    }}
+  ],
+  "textures": [{"source": 0}],
+  "images": [{"uri": ")JSON") +
+                              std::string{kTinyPng} + R"JSON("}]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+    require(asset.materials.size() == 3,
+            "volume fixture should retain its implicit and authored materials");
+    const cubey::asset::GltfMaterial& defaults = asset.materials[1];
+    require_close(defaults.volume_thickness_factor, 0.0F,
+                  "volume thickness should default to a neutral thin-wall path");
+    require(!defaults.volume_thickness_texture.has_value(),
+            "default volume should not invent a thickness texture reference");
+    require_close(defaults.volume_attenuation_color.r, 1.0F,
+                  "volume attenuation color should default to no attenuation");
+    require_close(defaults.volume_attenuation_distance, 0.0F,
+                  "volume default attenuation distance should use the internal infinite sentinel");
+
+    const cubey::asset::GltfMaterial& material = asset.materials[2];
+    require_close(material.volume_thickness_factor, 0.75F,
+                  "volume thickness factor should preserve the authored mesh-space multiplier");
+    require(material.volume_thickness_texture.texture_index == 0,
+            "volume thickness texture should preserve its source texture");
+    require(material.volume_thickness_texture.texcoord == 0,
+            "volume thickness transform should independently override the UV set");
+    require_close(material.volume_thickness_texture.offset.x, 0.2F,
+                  "volume thickness transform should preserve offset x");
+    require_close(material.volume_thickness_texture.offset.y, 0.3F,
+                  "volume thickness transform should preserve offset y");
+    require_close(material.volume_thickness_texture.rotation, 0.5F,
+                  "volume thickness transform should preserve rotation");
+    require_close(material.volume_thickness_texture.scale.x, 0.4F,
+                  "volume thickness transform should preserve scale x");
+    require_close(material.volume_thickness_texture.scale.y, 0.5F,
+                  "volume thickness transform should preserve scale y");
+    require_close(material.volume_attenuation_color.r, 0.2F,
+                  "volume attenuation color should preserve red");
+    require_close(material.volume_attenuation_color.g, 0.4F,
+                  "volume attenuation color should preserve green");
+    require_close(material.volume_attenuation_color.b, 0.6F,
+                  "volume attenuation color should preserve blue");
+    require_close(material.volume_attenuation_distance, 2.5F,
+                  "volume attenuation distance should preserve its world-space authored value");
+
+    const auto require_invalid = [&path](std::string_view extension_json,
+                                         std::string_view expected_field) {
+        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                                  "  \"extensionsUsed\": [\"KHR_materials_transmission\", "
+                                  "\"KHR_materials_volume\"],\n"
+                                  "  \"materials\": [{\"extensions\": {"
+                                  "\"KHR_materials_transmission\": {\"transmissionFactor\": 0.5}, "
+                                  "\"KHR_materials_volume\": " +
+                                  std::string{extension_json} + "}}]\n}\n");
+        require_throws_with_message(
+            [&path] { (void)cubey::asset::load_gltf_asset(path); }, expected_field,
+            "invalid volume material field should identify its rejected field");
+    };
+    require_invalid("{\"thicknessFactor\": -0.01}", "thicknessFactor");
+    require_invalid("{\"thicknessFactor\": 1e999}", "thicknessFactor");
+    require_invalid("{\"attenuationColor\": [1.1, 0.5, 0.5]}", "attenuationColor");
+    require_invalid("{\"attenuationColor\": [0.5, 1e999, 0.5]}", "attenuationColor");
+    require_invalid("{\"attenuationDistance\": 0}", "attenuationDistance");
+    require_invalid("{\"attenuationDistance\": 1e999}", "attenuationDistance");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_volume"],
+  "materials": [{"extensions": {"KHR_materials_volume": {"thicknessFactor": 0.5}}}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); },
+        "requires KHR_materials_transmission",
+        "volume should reject a material missing its required transmission extension");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_transmission", "KHR_materials_volume", "KHR_materials_unlit"],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_volume": {"thicknessFactor": 0.5},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_volume",
+        "volume and unlit should be rejected as an invalid material combination");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_transmission", "KHR_materials_volume", "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_volume": {"thicknessFactor": 0.5},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_volume",
+        "volume and specular-glossiness should be rejected as an invalid material combination");
+
+    std::filesystem::remove_all(dir);
+}
+
+void test_gltf_asset_closes_dispersion_material_contract() {
+    const std::filesystem::path dir = test_dir("cubey_gltf_asset_dispersion_contract");
+    const std::filesystem::path path = dir / "dispersion_contract.gltf";
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_transmission", "KHR_materials_volume", "KHR_materials_dispersion"
+  ],
+  "extensionsRequired": [
+    "KHR_materials_transmission", "KHR_materials_volume", "KHR_materials_dispersion"
+  ],
+  "materials": [
+    {"extensions": {
+      "KHR_materials_transmission": {"transmissionFactor": 0.8},
+      "KHR_materials_volume": {"thicknessFactor": 0.5},
+      "KHR_materials_dispersion": {}
+    }},
+    {"extensions": {
+      "KHR_materials_transmission": {"transmissionFactor": 0.8},
+      "KHR_materials_volume": {"thicknessFactor": 0.5},
+      "KHR_materials_dispersion": {"dispersion": 2.04}
+    }}
+  ]
+})JSON");
+
+    const cubey::asset::GltfAsset asset = cubey::asset::load_gltf_asset(path);
+    require(asset.materials.size() == 3,
+            "dispersion fixture should retain its implicit and authored materials");
+    require_close(asset.materials[1].dispersion, 0.0F,
+                  "dispersion should default to a neutral zero factor");
+    require_close(asset.materials[2].dispersion, 2.04F,
+                  "dispersion should preserve an authored value without upper clipping");
+
+    const auto require_invalid = [&path](std::string_view value) {
+        write_text_file(path, std::string{"{\n  \"asset\": {\"version\": \"2.0\"},\n"} +
+                                  "  \"extensionsUsed\": [\"KHR_materials_transmission\", "
+                                  "\"KHR_materials_volume\", \"KHR_materials_dispersion\"],\n"
+                                  "  \"materials\": [{\"extensions\": {"
+                                  "\"KHR_materials_transmission\": {\"transmissionFactor\": 0.5}, "
+                                  "\"KHR_materials_volume\": {\"thicknessFactor\": 0.5}, "
+                                  "\"KHR_materials_dispersion\": {\"dispersion\": " +
+                                  std::string{value} + "}}}]\n}\n");
+        require_throws_with_message([&path] { (void)cubey::asset::load_gltf_asset(path); },
+                                    "dispersion",
+                                    "invalid dispersion should identify its rejected field");
+    };
+    require_invalid("-0.01");
+    require_invalid("1e999");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": ["KHR_materials_transmission", "KHR_materials_dispersion"],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_dispersion": {"dispersion": 0.5}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "requires KHR_materials_volume",
+        "dispersion should reject a material missing its required volume extension");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_transmission", "KHR_materials_volume", "KHR_materials_dispersion",
+    "KHR_materials_unlit"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_volume": {"thicknessFactor": 0.5},
+    "KHR_materials_dispersion": {"dispersion": 0.5},
+    "KHR_materials_unlit": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_dispersion",
+        "dispersion and unlit should be rejected as an invalid material combination");
+
+    write_text_file(path, R"JSON({
+  "asset": {"version": "2.0"},
+  "extensionsUsed": [
+    "KHR_materials_transmission", "KHR_materials_volume", "KHR_materials_dispersion",
+    "KHR_materials_pbrSpecularGlossiness"
+  ],
+  "materials": [{"extensions": {
+    "KHR_materials_transmission": {"transmissionFactor": 0.5},
+    "KHR_materials_volume": {"thicknessFactor": 0.5},
+    "KHR_materials_dispersion": {"dispersion": 0.5},
+    "KHR_materials_pbrSpecularGlossiness": {}
+  }}]
+})JSON");
+    require_throws_with_message(
+        [&path] { (void)cubey::asset::load_gltf_asset(path); }, "KHR_materials_dispersion",
+        "dispersion and specular-glossiness should be rejected as an invalid combination");
+
+    std::filesystem::remove_all(dir);
+}
+
 void test_gltf_asset_closes_sheen_material_contract() {
     const std::filesystem::path dir = test_dir("cubey_gltf_asset_sheen_contract");
     const std::filesystem::path path = dir / "sheen_contract.gltf";

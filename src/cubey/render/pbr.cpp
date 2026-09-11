@@ -105,6 +105,12 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                     .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                                 },
+                                cubey::vulkan::DescriptorSetBindingConfig{
+                                    .binding = static_cast<std::uint32_t>(
+                                        PbrSceneBinding::RefractionRadiance),
+                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                                },
                             },
                     },
                     MaterialDescriptorSetLayout{
@@ -212,6 +218,18 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                     .binding =
                                         static_cast<std::uint32_t>(
                                             PbrMaterialBinding::IridescenceThickness),
+                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                                },
+                                cubey::vulkan::DescriptorSetBindingConfig{
+                                    .binding = static_cast<std::uint32_t>(
+                                        PbrMaterialBinding::Transmission),
+                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                                },
+                                cubey::vulkan::DescriptorSetBindingConfig{
+                                    .binding = static_cast<std::uint32_t>(
+                                        PbrMaterialBinding::VolumeThickness),
                                     .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                     .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
                                 },
@@ -448,6 +466,23 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
                 factors.iridescence_ior,
                 factors.iridescence_thickness_minimum,
                 factors.iridescence_thickness_maximum,
+                0.0F,
+            },
+        // Keep dispersion in the existing transmission block so the material
+        // descriptor ABI remains stable across all PBR shader variants.
+        .transmission_factor = {factors.transmission_factor, factors.dispersion, 0.0F, 0.0F},
+        .volume_thickness_attenuation_distance =
+            {
+                factors.volume_thickness_factor,
+                factors.volume_attenuation_distance,
+                0.0F,
+                0.0F,
+            },
+        .volume_attenuation_color =
+            {
+                factors.volume_attenuation_color.r,
+                factors.volume_attenuation_color.g,
+                factors.volume_attenuation_color.b,
                 0.0F,
             },
         .texture_transforms = factors.texture_transforms,

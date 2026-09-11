@@ -4,6 +4,7 @@
 
 #include <cubey/render/pass.h>
 
+#include <algorithm>
 #include <array>
 #include <span>
 #include <stdexcept>
@@ -139,53 +140,65 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     }
 
     const render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
-    global_.scene_material.emplace(
-        device,
-        render::FrameUniformMaterialInstanceConfig{
-            .material_pass = render::pbr_forward_pass_info(),
-            .descriptor_set = 0,
-            .frame_slot_count = info.frame_slot_count,
-            .uniform_binding =
-                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::SceneUniforms),
-            .sampled_images =
-                {
-                    render::SampledImageMaterialBinding{
-                        .binding =
-                            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::ShadowMap),
-                        .sampler = shadow_texture.sampler().handle(),
-                        .image_view = shadow_texture.view(),
-                        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                    },
-                    render::SampledImageMaterialBinding{
-                        .binding = forward_pbr_renderer_3d_binding(
-                            render::PbrSceneBinding::IrradianceCube),
-                        .sampler = global_.environment.irradiance_sampler,
-                        .image_view = global_.environment.irradiance_view,
-                        .layout = global_.environment.irradiance_layout,
-                    },
-                    render::SampledImageMaterialBinding{
-                        .binding = forward_pbr_renderer_3d_binding(
-                            render::PbrSceneBinding::PrefilteredCube),
-                        .sampler = global_.environment.prefiltered_sampler,
-                        .image_view = global_.environment.prefiltered_view,
-                        .layout = global_.environment.prefiltered_layout,
-                    },
-                    render::SampledImageMaterialBinding{
-                        .binding =
-                            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
-                        .sampler = global_.environment.brdf_lut_sampler,
-                        .image_view = global_.environment.brdf_lut_view,
-                        .layout = global_.environment.brdf_lut_layout,
-                    },
-                    render::SampledImageMaterialBinding{
-                        .binding = forward_pbr_renderer_3d_binding(
-                            render::PbrSceneBinding::PreviousPrefilteredCube),
-                        .sampler = global_.environment.previous_prefiltered_sampler,
-                        .image_view = global_.environment.previous_prefiltered_view,
-                        .layout = global_.environment.previous_prefiltered_layout,
-                    },
-                },
-        });
+    global_.scene_material
+        .emplace(device, render::FrameUniformMaterialInstanceConfig{
+                             .material_pass = render::pbr_forward_pass_info(),
+                             .descriptor_set = 0,
+                             .frame_slot_count = info.frame_slot_count,
+                             .uniform_binding = forward_pbr_renderer_3d_binding(
+                                 render::PbrSceneBinding::SceneUniforms),
+                             .sampled_images =
+                                 {
+                                     render::SampledImageMaterialBinding{
+                                         .binding = forward_pbr_renderer_3d_binding(
+                                             render::PbrSceneBinding::ShadowMap),
+                                         .sampler = shadow_texture.sampler().handle(),
+                                         .image_view = shadow_texture.view(),
+                                         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                     },
+                                     render::SampledImageMaterialBinding{
+                                         .binding = forward_pbr_renderer_3d_binding(
+                                             render::PbrSceneBinding::IrradianceCube),
+                                         .sampler = global_.environment.irradiance_sampler,
+                                         .image_view = global_.environment.irradiance_view,
+                                         .layout = global_.environment.irradiance_layout,
+                                     },
+                                     render::SampledImageMaterialBinding{
+                                         .binding = forward_pbr_renderer_3d_binding(
+                                             render::PbrSceneBinding::PrefilteredCube),
+                                         .sampler = global_.environment.prefiltered_sampler,
+                                         .image_view = global_.environment.prefiltered_view,
+                                         .layout = global_.environment.prefiltered_layout,
+                                     },
+                                     render::SampledImageMaterialBinding{
+                                         .binding = forward_pbr_renderer_3d_binding(
+                                             render::PbrSceneBinding::BrdfLut),
+                                         .sampler = global_.environment.brdf_lut_sampler,
+                                         .image_view = global_.environment.brdf_lut_view,
+                                         .layout = global_.environment.brdf_lut_layout,
+                                     },
+                                     render::SampledImageMaterialBinding{
+                                         .binding = forward_pbr_renderer_3d_binding(
+                                             render::PbrSceneBinding::PreviousPrefilteredCube),
+                                         .sampler =
+                                             global_.environment.previous_prefiltered_sampler,
+                                         .image_view =
+                                             global_.environment.previous_prefiltered_view,
+                                         .layout = global_.environment.previous_prefiltered_layout,
+                                     },
+                                     // Ordinary forward PBR draws own this descriptor statically.
+                                     // The BRDF LUT is a compatible sampled-2D fallback; the
+                                     // staged path binds its pyramid in a separate descriptor.
+                                     render::SampledImageMaterialBinding{
+                                         .binding =
+                                             forward_pbr_renderer_3d_binding(
+                                                 render::PbrSceneBinding::RefractionRadiance),
+                                         .sampler = global_.environment.brdf_lut_sampler,
+                                         .image_view = global_.environment.brdf_lut_view,
+                                         .layout = global_.environment.brdf_lut_layout,
+                                     },
+                                 },
+                         });
     global_.post_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
                                               .material_pass = render::pbr_post_pass_info(),
                                               .descriptor_set = 0,
@@ -218,6 +231,18 @@ void ForwardPbrRenderer3D::Impl::update_environment(
             environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
             environment.previous_prefiltered_layout)
         .update(device);
+    if (swapchain_.transmission_scene_material.has_value()) {
+        render::MaterialDescriptorWriter(transmission_scene_material().set(frame_slot))
+            .combined_image_sampler(
+                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
+                environment.prefiltered_sampler, environment.prefiltered_view,
+                environment.prefiltered_layout)
+            .combined_image_sampler(
+                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PreviousPrefilteredCube),
+                environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
+                environment.previous_prefiltered_layout)
+            .update(device);
+    }
     render::MaterialDescriptorWriter(skybox_material().set(frame_slot))
         .combined_image_sampler(
             forward_pbr_renderer_3d_binding(render::PbrSkyboxBinding::EnvironmentCube),
@@ -262,6 +287,7 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     require_global_resources();
     require_no_swapchain_resources();
     validate_scene_color_format(device, config_.scene_color_format);
+    swapchain_.target_extent = info.extent;
 
     swapchain_.depth_attachment.emplace(device, info.extent, true);
     swapchain_.post_sampler.emplace(device,
@@ -431,6 +457,10 @@ void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
         global_.graph_executor.resize(frame_slot_count);
     }
     swapchain_.post_pipeline.reset();
+    // This descriptor set owns pyramid image references. Release it before
+    // destroying the per-slot pyramid images it can sample.
+    swapchain_.transmission_scene_material.reset();
+    swapchain_.refraction_pyramid.reset();
     swapchain_.post_sampler.reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadowDoubleSided).reset();
     pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow).reset();
@@ -441,6 +471,7 @@ void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
     global_.atmosphere_background.destroy_pipeline();
     swapchain_.skybox_pipeline.reset();
     swapchain_.depth_attachment.reset();
+    swapchain_.target_extent = {};
 }
 
 void ForwardPbrRenderer3D::destroy_all_resources() {
@@ -476,6 +507,118 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     global_.environment = {};
     global_.environment_initialized = false;
     swapchain_.shadow_depth_is_sampled = false;
+}
+
+bool ForwardPbrRenderer3D::Impl::has_transmission_packets(
+    const scene::RenderFramePlan3D& scene_plan) const noexcept {
+    return std::any_of(scene_plan.draw_packets.begin(), scene_plan.draw_packets.end(),
+                       [](const scene::RenderDrawPacket3D& packet) {
+                           return render::material_uses_transmission(packet.material_info);
+                       });
+}
+
+void ForwardPbrRenderer3D::Impl::ensure_refraction_pyramid(const vulkan::Device& device) {
+    if (swapchain_.refraction_pyramid.has_value() &&
+        swapchain_.transmission_scene_material.has_value()) {
+        const render::HdrColorPyramid& existing = swapchain_.refraction_pyramid.value();
+        if (existing.resources_created() && existing.pipeline_created()) {
+            return;
+        }
+    }
+    if (swapchain_.target_extent.width == 0U || swapchain_.target_extent.height == 0U) {
+        throw std::runtime_error("forward PBR renderer has no refraction pyramid target extent");
+    }
+    swapchain_.transmission_scene_material.reset();
+    swapchain_.refraction_pyramid.reset();
+    swapchain_.refraction_pyramid.emplace();
+    try {
+        render::HdrColorPyramid& pyramid = swapchain_.refraction_pyramid.value();
+        pyramid.create_resources(device,
+                                 {
+                                     .extent = swapchain_.target_extent,
+                                     .format = config_.scene_color_format,
+                                     .frame_slot_count = global_.graph_executor.frame_slot_count(),
+                                 });
+        pyramid.create_pipeline(
+            device, {
+                        .vertex = render::vertex_shader_file(config_.post_vertex_shader),
+                        .fragment = render::fragment_shader_file(
+                            config_.refraction_pyramid_fragment_shader),
+                    });
+        const render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
+        swapchain_.transmission_scene_material.emplace(
+            device,
+            render::FrameUniformMaterialInstanceConfig{
+                .material_pass = render::pbr_forward_pass_info(),
+                .descriptor_set = 0U,
+                .frame_slot_count = global_.graph_executor.frame_slot_count(),
+                .uniform_binding =
+                    forward_pbr_renderer_3d_binding(render::PbrSceneBinding::SceneUniforms),
+                .sampled_images =
+                    {
+                        render::SampledImageMaterialBinding{
+                            .binding =
+                                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::ShadowMap),
+                            .sampler = shadow_texture.sampler().handle(),
+                            .image_view = shadow_texture.view(),
+                            .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                        },
+                        render::SampledImageMaterialBinding{
+                            .binding = forward_pbr_renderer_3d_binding(
+                                render::PbrSceneBinding::IrradianceCube),
+                            .sampler = global_.environment.irradiance_sampler,
+                            .image_view = global_.environment.irradiance_view,
+                            .layout = global_.environment.irradiance_layout,
+                        },
+                        render::SampledImageMaterialBinding{
+                            .binding = forward_pbr_renderer_3d_binding(
+                                render::PbrSceneBinding::PrefilteredCube),
+                            .sampler = global_.environment.prefiltered_sampler,
+                            .image_view = global_.environment.prefiltered_view,
+                            .layout = global_.environment.prefiltered_layout,
+                        },
+                        render::SampledImageMaterialBinding{
+                            .binding =
+                                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
+                            .sampler = global_.environment.brdf_lut_sampler,
+                            .image_view = global_.environment.brdf_lut_view,
+                            .layout = global_.environment.brdf_lut_layout,
+                        },
+                        render::SampledImageMaterialBinding{
+                            .binding = forward_pbr_renderer_3d_binding(
+                                render::PbrSceneBinding::PreviousPrefilteredCube),
+                            .sampler = global_.environment.previous_prefiltered_sampler,
+                            .image_view = global_.environment.previous_prefiltered_view,
+                            .layout = global_.environment.previous_prefiltered_layout,
+                        },
+                        render::SampledImageMaterialBinding{
+                            .binding = forward_pbr_renderer_3d_binding(
+                                render::PbrSceneBinding::RefractionRadiance),
+                            .sampler = global_.environment.brdf_lut_sampler,
+                            .image_view = global_.environment.brdf_lut_view,
+                            .layout = global_.environment.brdf_lut_layout,
+                        },
+                    },
+            });
+    } catch (...) {
+        swapchain_.transmission_scene_material.reset();
+        swapchain_.refraction_pyramid.reset();
+        throw;
+    }
+}
+
+render::HdrColorPyramid& ForwardPbrRenderer3D::Impl::refraction_pyramid() {
+    if (!swapchain_.refraction_pyramid.has_value()) {
+        throw std::runtime_error("forward PBR refraction pyramid is not initialized");
+    }
+    return swapchain_.refraction_pyramid.value();
+}
+
+const render::HdrColorPyramid& ForwardPbrRenderer3D::Impl::refraction_pyramid() const {
+    if (!swapchain_.refraction_pyramid.has_value()) {
+        throw std::runtime_error("forward PBR refraction pyramid is not initialized");
+    }
+    return swapchain_.refraction_pyramid.value();
 }
 
 } // namespace cubey

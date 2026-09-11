@@ -33,6 +33,10 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
     if (config.post_fragment_shader.empty()) {
         throw std::runtime_error("forward PBR renderer requires a post fragment shader");
     }
+    if (config.refraction_pyramid_fragment_shader.empty()) {
+        throw std::runtime_error(
+            "forward PBR renderer requires a refraction pyramid fragment shader");
+    }
     if (config.shadow_depth_vertex_shader.empty()) {
         throw std::runtime_error("forward PBR renderer requires a shadow depth vertex shader");
     }
@@ -61,6 +65,7 @@ forward_pbr_renderer_3d_config_from_shader_directory(std::filesystem::path shade
     base.atmosphere_fragment_shader = shader_directory / "atmosphere.frag.spv";
     base.post_vertex_shader = shader_directory / "forward_pbr_post.vert.spv";
     base.post_fragment_shader = shader_directory / "forward_pbr_post.frag.spv";
+    base.refraction_pyramid_fragment_shader = shader_directory / "hdr_color_pyramid.frag.spv";
     base.shadow_depth_vertex_shader = shader_directory / "forward_pbr_shadow_depth.vert.spv";
     base.shadow_depth_fragment_shader = shader_directory / "forward_pbr_shadow_depth.frag.spv";
     return base;
@@ -288,7 +293,8 @@ bool ForwardPbrRenderer3D::Impl::has_global_resources() const {
 
 bool ForwardPbrRenderer3D::Impl::has_swapchain_resources() const {
     if (swapchain_.depth_attachment.has_value() || swapchain_.post_sampler.has_value() ||
-        swapchain_.skybox_pipeline.has_value() || swapchain_.post_pipeline.has_value()) {
+        swapchain_.skybox_pipeline.has_value() || swapchain_.post_pipeline.has_value() ||
+        swapchain_.transmission_scene_material.has_value()) {
         return true;
     }
     for (std::size_t index = 0; index < swapchain_.pipeline_variants.size(); ++index) {
@@ -358,6 +364,14 @@ ForwardPbrRenderer3D::Impl::scene_material() const {
         throw std::runtime_error("forward PBR renderer scene material is not initialized");
     }
     return global_.scene_material.value();
+}
+
+const render::FrameUniformMaterialInstance<render::PbrSceneUniforms>&
+ForwardPbrRenderer3D::Impl::transmission_scene_material() const {
+    if (!swapchain_.transmission_scene_material.has_value()) {
+        throw std::runtime_error("forward PBR transmission scene material is not initialized");
+    }
+    return swapchain_.transmission_scene_material.value();
 }
 
 const render::FrameUniformMaterialInstance<render::PbrSkyboxUniforms>&
