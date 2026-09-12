@@ -90,6 +90,8 @@ void main() {
     float roughness = clamp(material.metallic_roughness_normal_occlusion.y *
                                 metallic_roughness_sample.g,
                             0.04, 1.0);
+    float transmission = clamp(material.transmission_factor.x, 0.0, 1.0) * (1.0 - metallic);
+    float volume_thickness = max(material.volume_thickness_attenuation_distance.x, 0.0);
     float normal_scale = material.metallic_roughness_normal_occlusion.z;
     float occlusion_strength = material.metallic_roughness_normal_occlusion.w;
 
@@ -128,6 +130,11 @@ void main() {
     vec3 iridescence_fresnel_metallic = cubey_pbr_iridescence_fresnel(
         1.0, material.iridescence_ior_thickness.x, ndotv, iridescence_thickness,
         albedo);
+    vec3 view_facing_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90);
+    vec3 thin_film_fresnel = mix(iridescence_fresnel_dielectric,
+                                  iridescence_fresnel_metallic, metallic);
+    vec3 view_interface_fresnel = mix(view_facing_fresnel, thin_film_fresnel,
+                                      iridescence_factor);
     float clearcoat_factor = clamp(material.clearcoat_factor_roughness_normal.x, 0.0, 1.0);
     float clearcoat_roughness =
         clamp(material.clearcoat_factor_roughness_normal.y, 0.04, 1.0);
@@ -201,6 +208,7 @@ void main() {
         base_ibl *= sheen_view_attenuation;
     }
     vec3 direct = vec3(0.0);
+    vec3 diffuse_direct_contribution = vec3(0.0);
     if (scene.light_color_intensity.a > 0.0) {
         vec3 light_direction = normalize(scene.light_direction.xyz);
         vec3 half_vector = normalize(view_direction + light_direction);
@@ -226,8 +234,6 @@ void main() {
                                 anisotropy_alpha_roughness, alpha_roughness)
                           : cubey_pbr_visibility_smith_ggx_correlated(ndotv, ndotl, roughness);
             vec3 ordinary_fresnel = cubey_pbr_fresnel_schlick(vdoth, f0, f90);
-            vec3 thin_film_fresnel = mix(iridescence_fresnel_dielectric,
-                                          iridescence_fresnel_metallic, metallic);
             vec3 f = mix(ordinary_fresnel, thin_film_fresnel, iridescence_factor);
             vec3 diffuse_direct = cubey_pbr_lambert_diffuse(diffuse_color) *
                                   (1.0 - max(max(f.r, f.g), f.b));
@@ -235,9 +241,10 @@ void main() {
             float clearcoat_ndotl = max(dot(geometric_normal, light_direction), 0.0);
             float clearcoat_ndoth = max(dot(geometric_normal, half_vector), 0.0);
             vec3 base_direct = diffuse_direct + specular_direct;
+            float sheen_direct_attenuation = 1.0;
             if (sheen_color_max > 0.0) {
                 float sheen_light_energy = texture(brdf_lut, vec2(ndotl, sheen_roughness)).a;
-                float sheen_direct_attenuation =
+                sheen_direct_attenuation =
                     min(sheen_view_attenuation,
                         clamp(1.0 - (sheen_color_max * sheen_light_energy), 0.0, 1.0));
                 vec3 sheen_direct =
@@ -251,7 +258,29 @@ void main() {
                                                clearcoat_ndoth, clearcoat_roughness));
             direct = ((base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)) *
                      scene.light_color_intensity.rgb * scene.light_color_intensity.a;
+            diffuse_direct_contribution = diffuse_direct * sheen_direct_attenuation *
+                                          clearcoat_attenuation * ndotl *
+                                          scene.light_color_intensity.rgb *
+                                          scene.light_color_intensity.a;
         }
+    }
+    if (transmission > 0.0) {
+        vec3 direct_transmitted_radiance = cubey_pbr_direct_transmission_btdf(
+            normal, view_direction, scene.light_direction.xyz, roughness, base_color.rgb,
+            material.material_model.x);
+        direct_transmitted_radiance *=
+            scene.light_color_intensity.rgb * scene.light_color_intensity.a;
+        // The deterministic furnace specimens are unit-scale spheres viewed
+        // face-on, so authored thickness is their representative world path.
+        direct_transmitted_radiance = cubey_pbr_apply_volume_attenuation(
+            direct_transmitted_radiance, volume_thickness, material.volume_attenuation_color.rgb,
+            material.volume_thickness_attenuation_distance.y);
+        vec3 direct_transmission_layer = direct_transmitted_radiance * transmission *
+                                         (vec3(1.0) - view_interface_fresnel) *
+                                         sheen_view_attenuation * clearcoat_attenuation;
+        // Match the production replacement contract: backlit BTDF replaces
+        // only the transmission-weighted direct diffuse budget.
+        direct += direct_transmission_layer - (transmission * diffuse_direct_contribution);
     }
     vec3 emissive = texture(emissive_texture, frag_uv0).rgb *
                     material.emissive_alpha_cutoff.rgb;

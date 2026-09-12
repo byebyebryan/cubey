@@ -544,6 +544,53 @@ void check_furnace_sheen(const LoadedImage& image) {
     }
 }
 
+void check_furnace_transmission(const LoadedImage& image) {
+    constexpr std::array<float, 5> kCentersX{{0.150F, 0.325F, 0.500F, 0.675F, 0.850F}};
+    constexpr float kCenterY = 0.500F;
+    constexpr float kRadius = 0.050F;
+
+    require(image.width == 512 && image.height == 512,
+            "transmission furnace conformance requires its calibrated 512x512 capture");
+    const Rgb background = corner_background(image);
+    std::array<CircleStats, 5> specimens{};
+    for (std::size_t index = 0; index < specimens.size(); ++index) {
+        specimens[index] = normalized_circle_region(image, kCentersX[index], kCenterY, kRadius);
+        require(specimens[index].pixel_count >= 1'000U,
+                "transmission furnace capture should retain every specimen center");
+        require(std::isfinite(specimens[index].luma) &&
+                    std::isfinite(specimens[index].color.red) &&
+                    std::isfinite(specimens[index].color.green) &&
+                    std::isfinite(specimens[index].color.blue) &&
+                    specimens[index].luma >= 0.0 && specimens[index].luma <= 1.0 &&
+                    specimens[index].color.red >= 0.0 && specimens[index].color.red <= 1.0 &&
+                    specimens[index].color.green >= 0.0 && specimens[index].color.green <= 1.0 &&
+                    specimens[index].color.blue >= 0.0 && specimens[index].color.blue <= 1.0,
+                "transmission furnace direct-BTDF output should remain finite and display bounded");
+    }
+
+    std::printf("material_conformance: furnace-transmission background=%.4f", luma(background));
+    for (const CircleStats& specimen : specimens) {
+        std::printf(" luma=%.4f rgb=(%.4f,%.4f,%.4f)", specimen.luma, specimen.color.red,
+                    specimen.color.green, specimen.color.blue);
+    }
+    std::printf("\n");
+
+    // The first face-on sphere sees only the back light with transmission
+    // disabled and no IBL, retaining the old dark result. The remaining
+    // witnesses are bright only through the direct microfacet BTDF.
+    require(specimens[0].luma <= luma(background) + 0.012,
+            "transmission factor zero should retain the unlit back-face control");
+    require(specimens[1].luma >= specimens[0].luma + 0.10,
+            "enabled smooth transmission should receive visible direct BTDF radiance");
+    require(std::abs(specimens[1].luma - specimens[2].luma) >= 0.030,
+            "enabled transmission roughness should change direct BTDF response");
+    require(std::abs(specimens[1].luma - specimens[3].luma) >= 0.030,
+            "enabled transmission IOR should change direct BTDF response");
+    require(specimens[4].color.green >= specimens[4].color.red + 0.080 &&
+                specimens[4].color.green >= specimens[4].color.blue + 0.080,
+            "thick transmission should retain the authored green Beer-Lambert attenuation trend");
+}
+
 void check_gltf_specular_test(const LoadedImage& image) {
     // This is the fixed front-on capture layout in projects/gltf_viewer. Sampling the sphere
     // centers, rather than a foreground mask, prevents the atmosphere background from acting as
@@ -1059,6 +1106,8 @@ void check_material_conformance(const std::filesystem::path& path, std::string_v
             check_furnace_iridescence(image);
         } else if (case_name == "furnace-sheen") {
             check_furnace_sheen(image);
+        } else if (case_name == "furnace-transmission") {
+            check_furnace_transmission(image);
         } else if (case_name == "gltf-specular-test") {
             check_gltf_specular_test(image);
         } else if (case_name == "gltf-attenuation-test") {

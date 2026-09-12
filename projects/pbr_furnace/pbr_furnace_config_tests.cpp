@@ -58,6 +58,12 @@ void test_conformance_case_config() {
     require(sheen.conformance_case == "sheen",
             "PBR furnace should select its opt-in sheen conformance layout");
 
+    const char* transmission_arguments[] = {"pbr_furnace", "--conformance-case", "transmission"};
+    const auto transmission = cubey::projects::pbr_furnace::parse_pbr_furnace_config(
+        3, const_cast<char**>(transmission_arguments));
+    require(transmission.conformance_case == "transmission",
+            "PBR furnace should select its opt-in transmission conformance layout");
+
     cubey::projects::pbr_furnace::PbrFurnaceConfig deferred;
     const auto schema = cubey::projects::pbr_furnace::pbr_furnace_config_schema(deferred);
     schema.set("conformance_case", "ior");

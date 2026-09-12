@@ -25,6 +25,10 @@ struct PbrFurnaceMaterial {
     math::Vec3 specular_color_factor{1.0F, 1.0F, 1.0F};
     float specular_factor = 1.0F;
     float ior = 1.5F;
+    float transmission_factor = 0.0F;
+    float volume_thickness_factor = 0.0F;
+    math::Vec3 volume_attenuation_color{1.0F, 1.0F, 1.0F};
+    float volume_attenuation_distance = 0.0F;
     float clearcoat_factor = 0.0F;
     float clearcoat_roughness = 0.0F;
     math::Vec3 sheen_color_factor{0.0F, 0.0F, 0.0F};

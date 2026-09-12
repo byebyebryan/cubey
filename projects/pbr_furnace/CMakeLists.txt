@@ -155,6 +155,24 @@ if (BUILD_TESTING)
         "${CUBEY_PBR_FURNACE_SHEEN_CONFORMANCE_OUTPUT}"
         furnace-sheen
     )
+    set(CUBEY_PBR_FURNACE_TRANSMISSION_CONFORMANCE_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/pbr-furnace-transmission-conformance.png"
+    )
+    cubey_add_png_capture_test(
+        pbr_furnace_transmission_conformance_writes_png
+        cubey_project_pbr_furnace
+        "${CUBEY_PBR_FURNACE_TRANSMISSION_CONFORMANCE_OUTPUT}"
+        512
+        512
+        --require-validation
+        --conformance-case
+        transmission
+    )
+    cubey_add_png_material_conformance_test(
+        pbr_furnace_transmission_conformance_writes_png
+        "${CUBEY_PBR_FURNACE_TRANSMISSION_CONFORMANCE_OUTPUT}"
+        furnace-transmission
+    )
     cubey_label_tests(
         conformance
         pbr_furnace_ior_conformance_writes_png
@@ -169,6 +187,8 @@ if (BUILD_TESTING)
         pbr_furnace_iridescence_conformance_writes_png_material_conformance
         pbr_furnace_sheen_conformance_writes_png
         pbr_furnace_sheen_conformance_writes_png_material_conformance
+        pbr_furnace_transmission_conformance_writes_png
+        pbr_furnace_transmission_conformance_writes_png_material_conformance
     )
     if (CUBEY_HAS_LIBAV)
         set(CUBEY_PBR_FURNACE_HEADLESS_VIDEO_SMOKE_OUTPUT

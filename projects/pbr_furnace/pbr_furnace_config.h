@@ -23,7 +23,7 @@ inline cubey::config::Schema pbr_furnace_config_schema(PbrFurnaceConfig& config)
                .type = cubey::config::ValueType::Enum,
                .range = {},
                .enum_values = {"none", "ior", "specular", "clearcoat", "anisotropy", "iridescence",
-                               "sheen"}},
+                               "sheen", "transmission"}},
               config.conformance_case)
         .build();
 }

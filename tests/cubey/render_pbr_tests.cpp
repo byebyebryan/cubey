@@ -641,6 +641,28 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR shader should use the material F90 endpoint for indirect specular");
     require_contains(pbr, "cubey_pbr_lambert_diffuse",
                      "PBR shader should expose a Lambert diffuse helper");
+    require_contains(pbr, "cubey_pbr_direct_transmission_btdf",
+                     "PBR shader should expose the reusable direct transmission BTDF helper");
+    require_contains(pbr, "vec3 mirrored_light = l - (2.0 * n * dot(l, n));",
+                     "direct transmission should use Khronos mirrored-light construction");
+    require_contains(pbr, "cubey_pbr_transmission_screen_perceptual_roughness",
+                     "PBR shader should retain its explicit screen-pyramid perceptual mapping");
+    require_contains(pbr, "cubey_pbr_direct_transmission_perceptual_roughness",
+                     "direct transmission should expose an alpha-domain IOR conversion");
+    require_contains(pbr,
+                     "float scaled_alpha = clamped_perceptual_roughness * "
+                     "clamped_perceptual_roughness * ior_scale;",
+                     "direct transmission should apply IOR scale once to Khronos alpha roughness");
+    require_contains(pbr, "return sqrt(scaled_alpha);",
+                     "direct transmission should convert scaled alpha back for Cubey GGX helpers");
+    require_contains(pbr, "cubey_pbr_distribution_ggx(ndoth, direct_perceptual_roughness)",
+                     "direct transmission should use isotropic GGX distribution");
+    require_contains(pbr,
+                     "cubey_pbr_visibility_smith_ggx_correlated(\n        ndotv, ndotl, "
+                     "direct_perceptual_roughness)",
+                     "direct transmission should use correlated GGX visibility");
+    require_contains(pbr, "cubey_pbr_apply_volume_attenuation",
+                     "PBR shader should share the Beer-Lambert attenuation helper");
     require_contains(pbr, "cubey_pbr_clearcoat_layer_weight",
                      "PBR shader should expose the fixed-IOR clearcoat layering helper");
     require_contains(pbr, "return vec3(dfg.b);",
@@ -695,6 +717,10 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "PBR furnace clearcoat should evaluate its outer direct lobe");
     require_contains(furnace, "(base_direct * ndotl) + (clearcoat_direct * clearcoat_ndotl)",
                      "PBR furnace clearcoat should compose base and coat direct lobes separately");
+    require_contains(furnace, "cubey_pbr_direct_transmission_btdf",
+                     "PBR furnace should exercise the shared direct transmission BTDF");
+    require_contains(furnace, "direct += direct_transmission_layer - (transmission * diffuse_direct_contribution)",
+                     "PBR furnace should replace rather than add transmission-weighted diffuse light");
     require_not_contains(furnace, "dot(-normal, view_direction)",
                          "PBR furnace should not invert normals for thin-film evaluation");
     require_contains(furnace_header, "pbr_furnace_forward_pass_info",
@@ -796,12 +822,12 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF transmission should multiply factor by texture red");
     require_contains(gltf, "transmission *= 1.0 - metallic",
                      "glTF transmission should suppress metallic base interfaces");
-    require_contains(gltf, "cubey_pbr_apply_ior_to_transmission_roughness",
-                     "glTF transmission should use a dedicated Khronos IOR roughness remap");
-    require_contains(gltf,
+    require_contains(gltf, "cubey_pbr_transmission_screen_perceptual_roughness",
+                     "glTF screen transmission should use its dedicated perceptual IOR mapping");
+    require_contains(pbr,
                      "return perceptual_roughness * clamp((dielectric_ior * 2.0) - 2.0, 0.0, "
                      "1.0);",
-                     "glTF transmission should use the Khronos IOR roughness mapping exactly");
+                     "glTF screen transmission should preserve its established perceptual IOR mapping");
     require_contains(gltf, "float perceptual_roughness = clamp(",
                      "glTF transmission should retain authored perceptual roughness before BRDF "
                      "flooring");
@@ -809,7 +835,7 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "the BRDF roughness floor should not erase smooth transmission mip zero");
     require_contains(gltf, "cubey_pbr_transmission_pyramid_lod(perceptual_roughness",
                      "glTF transmission should map raw perceptual roughness into the HDR pyramid");
-    require_contains(gltf, "float q = clamp(transmission_roughness, 0.0, 1.0);",
+    require_contains(gltf, "float q = clamp(screen_perceptual_roughness, 0.0, 1.0);",
                      "transmission pyramid LOD should clamp its remapped roughness input");
     require_contains(gltf,
                      "float max_lod = float(max(textureQueryLevels(refraction_radiance) - 1, 0));",
@@ -841,6 +867,18 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "glTF transmission should smoothly fade toward the edge fallback");
     require_contains(gltf, "transmitted_radiance * base_color.rgb * transmission",
                      "glTF transmission should tint transmitted body radiance by base color");
+    require_contains(gltf, "vec3 direct_transmitted_radiance = cubey_pbr_direct_transmission_btdf(",
+                     "glTF transmission should evaluate direct BTDF through the shared helper");
+    require_contains(gltf, "direct_transmitted_radiance *= radiance * visibility;",
+                     "glTF direct BTDF should use the selected light and opaque-shadow visibility");
+    require_contains(
+        gltf,
+        "vec3 direct_transmission_layer = direct_transmitted_radiance * transmission *\n"
+        "                                         interface_transmittance * sheen_view_attenuation *\n"
+        "                                         clearcoat_attenuation;",
+        "glTF direct BTDF should apply transmission, interface, and layered attenuation once");
+    require_contains(gltf, "color += transmission_layer + direct_transmission_layer - (transmission * replaced_diffuse);",
+                     "glTF transmission should replace the diffuse budget instead of adding direct BTDF energy");
     require_contains(gltf, "uniform sampler2D volume_thickness_texture",
                      "glTF PBR shader should bind the KHR_materials_volume thickness texture");
     require_contains(
@@ -891,10 +929,16 @@ void test_pbr_shaders_use_gltf_material_remap() {
         "glTF volume fallback should not reuse the screen-projection offset direction");
     require_contains(gltf, "cubey_pbr_apply_volume_attenuation",
                      "glTF volume should apply Beer-Lambert attenuation after radiance lookup");
-    require_contains(gltf, "pow(clamp(attenuation_color, 0.0, 1.0)",
+    require_contains(pbr, "pow(clamp(attenuation_color, 0.0, 1.0)",
                      "glTF volume attenuation should preserve per-channel attenuation color");
     require_contains(gltf, "if (volume_thickness > 0.0)",
                      "glTF thickness zero should preserve the existing thin transmission path");
+    require_contains(gltf, "out float representative_world_ray_length",
+                     "dispersion should expose its representative volume path to direct transmission");
+    require_contains(gltf, "representative_world_ray_length = r1.world_path_distance;",
+                     "direct transmission should reuse the 546.1nm representative volume path");
+    require_contains(gltf, "direct_transmitted_radiance, direct_volume_ray_length,",
+                     "direct transmission should attenuate through the shared representative path");
     require_contains(gltf, "const mat3 K0 = mat3(",
                      "glTF dispersion should use Filament's first spectral integration matrix");
     require_contains(gltf, "-0.45422013, 0.04493517, 0.98249798",
@@ -1020,7 +1064,7 @@ void test_pbr_shaders_use_gltf_material_remap() {
     require_contains(gltf, "legacy_ambient_diffuse",
                      "glTF transmission should identify legacy ambient diffuse independently");
     require_contains(
-        gltf, "color += transmission_layer - (transmission * replaced_diffuse)",
+        gltf, "color += transmission_layer + direct_transmission_layer - (transmission * replaced_diffuse);",
         "glTF transmission should replace only diffuse sources while preserving layers");
     require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_transform)",
                      "glTF PBR shader should sample specular strength through transformed UVs");

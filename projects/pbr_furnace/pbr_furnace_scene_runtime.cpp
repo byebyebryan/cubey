@@ -76,18 +76,23 @@ PbrFurnaceApp::scene_uniforms(const cubey::SceneReadView& scene_view,
     const cubey::math::Vec3 camera_position = camera_world_position(scene_view);
     // A sub-unit white IBL keeps the furnace in range; its energy-preserving
     // response alone cannot distinguish the material controls. Each opt-in
-    // conformance layout therefore adds this fixed neutral directional lobe.
+    // conformance layout therefore adds a deterministic neutral directional
+    // lobe; the transmission witness instead uses a back light with IBL off.
     const bool directional_conformance = config_.conformance_case != "none";
+    const bool transmission_conformance = config_.conformance_case == "transmission";
     return {
         .view_projection = plan.view_projection_matrix,
         .light_view_projection = cubey::math::Mat4{1.0F},
         .camera_position = {camera_position, 1.0F},
-        .light_direction = {0.6F, 0.4F, 1.0F, 0.0F},
-        .light_color_intensity = {1.0F, 1.0F, 1.0F, directional_conformance ? 0.75F : 0.0F},
+        .light_direction = transmission_conformance ? cubey::math::Vec4{0.35F, 0.0F, -1.0F, 0.0F}
+                                                    : cubey::math::Vec4{0.6F, 0.4F, 1.0F, 0.0F},
+        .light_color_intensity = {1.0F, 1.0F, 1.0F,
+                                  directional_conformance ? (transmission_conformance ? 0.30F : 0.75F)
+                                                          : 0.0F},
         .ambient_color_intensity = {0.0F, 0.0F, 0.0F, 0.0F},
         .environment_intensity_mip_count =
             {
-                white_environment().intensity,
+                transmission_conformance ? 0.0F : white_environment().intensity,
                 static_cast<float>(white_environment().prefiltered_mip_levels),
                 0.0F,
                 0.0F,

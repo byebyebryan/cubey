@@ -61,6 +61,83 @@ float cubey_pbr_visibility_smith_ggx_correlated(float ndotv, float ndotl, float 
     return 0.5 / max(lambda_v + lambda_l, 0.00001);
 }
 
+float cubey_pbr_transmission_screen_perceptual_roughness(float perceptual_roughness,
+                                                          float dielectric_ior) {
+    // Screen-pyramid and environment LOD are an intentionally perceptual
+    // roughness heuristic. Keep their existing mapping independent from the
+    // alpha-domain conversion used by the direct-light BTDF below.
+    return perceptual_roughness * clamp((dielectric_ior * 2.0) - 2.0, 0.0, 1.0);
+}
+
+float cubey_pbr_direct_transmission_perceptual_roughness(float perceptual_roughness,
+                                                          float dielectric_ior) {
+    // Khronos applies the IOR scale to alphaRoughness (perceptual squared),
+    // while Cubey's isotropic GGX helpers accept a perceptual roughness and
+    // square it internally. Convert back with sqrt so D/V see the same alpha.
+    float ior_scale = clamp((dielectric_ior * 2.0) - 2.0, 0.0, 1.0);
+    float clamped_perceptual_roughness = cubey_pbr_saturate(perceptual_roughness);
+    float scaled_alpha = clamped_perceptual_roughness * clamped_perceptual_roughness * ior_scale;
+    return sqrt(scaled_alpha);
+}
+
+vec3 cubey_pbr_direct_transmission_btdf(vec3 normal, vec3 view_direction,
+                                        vec3 point_to_light, float perceptual_roughness,
+                                        vec3 base_color, float dielectric_ior) {
+    // Khronos' punctual-transmission construction mirrors an incident light
+    // vector through the surface before evaluating the isotropic GGX D*V
+    // lobe. It is a BTDF replacement for front-side diffuse, not a reflected
+    // BRDF or an additional direct-light term.
+    float normal_length_squared = dot(normal, normal);
+    float view_length_squared = dot(view_direction, view_direction);
+    float light_length_squared = dot(point_to_light, point_to_light);
+    if (normal_length_squared <= 1.0e-10 || view_length_squared <= 1.0e-10 ||
+        light_length_squared <= 1.0e-10) {
+        return vec3(0.0);
+    }
+
+    vec3 n = normal * inversesqrt(normal_length_squared);
+    vec3 v = view_direction * inversesqrt(view_length_squared);
+    vec3 l = point_to_light * inversesqrt(light_length_squared);
+    vec3 mirrored_light = l - (2.0 * n * dot(l, n));
+    float mirrored_light_length_squared = dot(mirrored_light, mirrored_light);
+    if (mirrored_light_length_squared <= 1.0e-10) {
+        return vec3(0.0);
+    }
+    mirrored_light *= inversesqrt(mirrored_light_length_squared);
+
+    vec3 half_vector = mirrored_light + v;
+    float half_length_squared = dot(half_vector, half_vector);
+    if (half_length_squared <= 1.0e-10) {
+        return vec3(0.0);
+    }
+    half_vector *= inversesqrt(half_length_squared);
+
+    float ndoth = cubey_pbr_saturate(dot(n, half_vector));
+    float ndotv = cubey_pbr_saturate(dot(n, v));
+    float ndotl = cubey_pbr_saturate(dot(n, mirrored_light));
+    if (ndoth <= 0.0 || ndotv <= 0.0 || ndotl <= 0.0) {
+        return vec3(0.0);
+    }
+
+    float direct_perceptual_roughness =
+        cubey_pbr_direct_transmission_perceptual_roughness(perceptual_roughness, dielectric_ior);
+    float distribution = cubey_pbr_distribution_ggx(ndoth, direct_perceptual_roughness);
+    float visibility = cubey_pbr_visibility_smith_ggx_correlated(
+        ndotv, ndotl, direct_perceptual_roughness);
+    return cubey_pbr_saturate(base_color) * max(distribution * visibility, 0.0);
+}
+
+vec3 cubey_pbr_apply_volume_attenuation(vec3 radiance, float world_ray_length,
+                                        vec3 attenuation_color, float attenuation_distance) {
+    if (world_ray_length <= 0.0 || attenuation_distance <= 0.0) {
+        return radiance;
+    }
+    // Beer-Lambert, expressed in the glTF extension's attenuation-color form.
+    vec3 transmittance = pow(clamp(attenuation_color, 0.0, 1.0),
+                             vec3(world_ray_length / attenuation_distance));
+    return radiance * transmittance;
+}
+
 float cubey_pbr_visibility_smith_ggx_correlated_anisotropic(
     float ndotv, float ndotl, float tdotv, float bdotv, float tdotl, float bdotl,
     float alpha_t, float alpha_b) {

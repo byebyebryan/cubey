@@ -308,6 +308,61 @@ PbrFurnaceLayout pbr_furnace_layout(std::string_view conformance_case) {
             .camera_distance = 8.0F,
         };
     }
+    if (conformance_case == "transmission") {
+        // The fixed, face-on specimens are deliberately backlit with no IBL.
+        // They isolate the direct BTDF: a factor-zero control, smooth and
+        // rough response witnesses, a lower-IOR roughness witness, and a
+        // thick colored-medium Beer-Lambert witness.
+        return {
+            .materials =
+                {
+                    {.row = 0,
+                     .column = 0,
+                     .base_color_factor = {0.90F, 0.90F, 0.90F},
+                     .metallic = 0.0F,
+                     .roughness = 0.35F,
+                     .ior = 1.5F,
+                     .transmission_factor = 0.0F,
+                     .position = {-4.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 1,
+                     .base_color_factor = {0.90F, 0.90F, 0.90F},
+                     .metallic = 0.0F,
+                     .roughness = 0.35F,
+                     .ior = 1.5F,
+                     .transmission_factor = 1.0F,
+                     .position = {-2.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 2,
+                     .base_color_factor = {0.90F, 0.90F, 0.90F},
+                     .metallic = 0.0F,
+                     .roughness = 0.72F,
+                     .ior = 1.5F,
+                     .transmission_factor = 1.0F,
+                     .position = {0.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 3,
+                     .base_color_factor = {0.90F, 0.90F, 0.90F},
+                     .metallic = 0.0F,
+                     .roughness = 0.35F,
+                     .ior = 1.2F,
+                     .transmission_factor = 1.0F,
+                     .position = {2.0F, 0.0F, 0.0F}},
+                    {.row = 0,
+                     .column = 4,
+                     .base_color_factor = {0.95F, 0.95F, 0.95F},
+                     .metallic = 0.0F,
+                     .roughness = 0.42F,
+                     .ior = 1.5F,
+                     .transmission_factor = 1.0F,
+                     .volume_thickness_factor = 1.0F,
+                     .volume_attenuation_color = {0.15F, 0.85F, 0.25F},
+                     .volume_attenuation_distance = 0.42F,
+                     .position = {4.0F, 0.0F, 0.0F}},
+                },
+            .camera_distance = 10.0F,
+        };
+    }
     throw std::invalid_argument("unknown PBR furnace conformance case");
 }
 

@@ -155,17 +155,10 @@ vec3 cubey_pbr_prefiltered_environment(vec3 direction, float lod) {
     return mix(environment, scene.backdrop_reflection_radiance_strength.rgb, backdrop_strength);
 }
 
-float cubey_pbr_apply_ior_to_transmission_roughness(float perceptual_roughness,
-                                                     float dielectric_ior) {
-    // KHR_materials_transmission: keep an authored smooth interface at zero
-    // and apply the extension's IOR-dependent microfacet roughness scale.
-    return perceptual_roughness * clamp((dielectric_ior * 2.0) - 2.0, 0.0, 1.0);
-}
-
 float cubey_pbr_transmission_pyramid_lod(float perceptual_roughness, float dielectric_ior) {
-    float transmission_roughness =
-        cubey_pbr_apply_ior_to_transmission_roughness(perceptual_roughness, dielectric_ior);
-    float q = clamp(transmission_roughness, 0.0, 1.0);
+    float screen_perceptual_roughness =
+        cubey_pbr_transmission_screen_perceptual_roughness(perceptual_roughness, dielectric_ior);
+    float q = clamp(screen_perceptual_roughness, 0.0, 1.0);
     float max_lod = float(max(textureQueryLevels(refraction_radiance) - 1, 0));
     if (q <= 0.0 || max_lod <= 0.0) {
         return 0.0;
@@ -181,10 +174,10 @@ float cubey_pbr_transmission_pyramid_lod(float perceptual_roughness, float diele
 
 float cubey_pbr_transmission_environment_lod(float perceptual_roughness,
                                              float dielectric_ior) {
-    float transmission_roughness =
-        cubey_pbr_apply_ior_to_transmission_roughness(perceptual_roughness, dielectric_ior);
+    float screen_perceptual_roughness =
+        cubey_pbr_transmission_screen_perceptual_roughness(perceptual_roughness, dielectric_ior);
     float max_lod = max(scene.environment_intensity_mip_count.y - 1.0, 0.0);
-    return transmission_roughness * max_lod;
+    return screen_perceptual_roughness * max_lod;
 }
 
 vec3 cubey_pbr_transmission_radiance_at_lod(vec2 screen_uv, vec3 fallback_direction,
@@ -301,22 +294,12 @@ vec2 cubey_pbr_project_refraction_exit(vec3 world_position) {
     return (clip_position.xy / clip_position.w) * 0.5 + 0.5;
 }
 
-vec3 cubey_pbr_apply_volume_attenuation(vec3 radiance, float world_ray_length,
-                                        vec3 attenuation_color, float attenuation_distance) {
-    if (world_ray_length <= 0.0 || attenuation_distance <= 0.0) {
-        return radiance;
-    }
-    // Beer-Lambert, expressed in the glTF extension's attenuation-color form.
-    vec3 transmittance = pow(clamp(attenuation_color, 0.0, 1.0),
-                             vec3(world_ray_length / attenuation_distance));
-    return radiance * transmittance;
-}
-
 vec3 cubey_pbr_volume_dispersion_radiance(vec3 normal, vec3 view_direction, float thickness,
                                           float dielectric_ior, float perceptual_roughness,
                                           float dispersion, vec3 model_scale,
                                           vec3 world_position, vec3 attenuation_color,
-                                          float attenuation_distance) {
+                                          float attenuation_distance,
+                                          out float representative_world_ray_length) {
     // KHR_materials_dispersion uses Filament's four optimized wavelength samples and
     // color-matching matrices. Keep the wavelength samples on the same shared screen and
     // environment LOD derived from the authored base IOR; no temporal or spatial jitter is
@@ -366,6 +349,7 @@ vec3 cubey_pbr_volume_dispersion_radiance(vec3 normal, vec3 view_direction, floa
         normal, view_direction, thickness, ior2, model_scale);
     CubeyPbrVolumeTransmissionRay r3 = cubey_pbr_volume_transmission_ray(
         normal, view_direction, thickness, ior3, model_scale);
+    representative_world_ray_length = r1.world_path_distance;
 
     vec2 uv0 = cubey_pbr_project_refraction_exit(world_position + r0.world_offset);
     vec2 uv1 = cubey_pbr_project_refraction_exit(world_position + r1.world_offset);
@@ -797,6 +781,7 @@ void main() {
                                     max(vec2(textureSize(refraction_radiance, 0)), vec2(1.0));
         vec3 refraction_fallback_direction = -view_direction;
         float volume_ray_length = 0.0;
+        float direct_volume_ray_length = 0.0;
         bool volume_attenuation_pending = true;
         vec3 transmitted_radiance = vec3(0.0);
         if (volume_thickness > 0.0) {
@@ -805,6 +790,7 @@ void main() {
                 normal, view_direction, volume_thickness, material.material_model.x,
                 frag_model_scale);
             volume_ray_length = volume_transmission_ray.world_path_distance;
+            direct_volume_ray_length = volume_ray_length;
             if (volume_ray_length > 0.0) {
                 refraction_screen_uv = cubey_pbr_project_refraction_exit(
                     frag_world_position + volume_transmission_ray.world_offset);
@@ -820,7 +806,8 @@ void main() {
                     normal, view_direction, volume_thickness, material.material_model.x,
                     perceptual_roughness, material.transmission_factor.y, frag_model_scale,
                     frag_world_position, material.volume_attenuation_color.rgb,
-                    material.volume_thickness_attenuation_distance.y);
+                    material.volume_thickness_attenuation_distance.y,
+                    direct_volume_ray_length);
                 volume_attenuation_pending = false;
             }
         }
@@ -834,9 +821,20 @@ void main() {
                 transmitted_radiance, volume_ray_length, material.volume_attenuation_color.rgb,
                 material.volume_thickness_attenuation_distance.y);
         }
+        vec3 direct_transmitted_radiance = cubey_pbr_direct_transmission_btdf(
+            normal, view_direction, light_direction, perceptual_roughness, base_color.rgb,
+            material.material_model.x);
+        direct_transmitted_radiance *= radiance * visibility;
+        direct_transmitted_radiance = cubey_pbr_apply_volume_attenuation(
+            direct_transmitted_radiance, direct_volume_ray_length,
+            material.volume_attenuation_color.rgb,
+            material.volume_thickness_attenuation_distance.y);
         vec3 transmission_layer = transmitted_radiance * base_color.rgb * transmission *
                                   interface_transmittance * sheen_view_attenuation *
                                   clearcoat_attenuation;
+        vec3 direct_transmission_layer = direct_transmitted_radiance * transmission *
+                                         interface_transmittance * sheen_view_attenuation *
+                                         clearcoat_attenuation;
         vec3 replaced_diffuse = diffuse_direct_contribution +
                                 (base_diffuse_ibl * sheen_view_attenuation *
                                  clearcoat_attenuation *
@@ -844,7 +842,7 @@ void main() {
                                 legacy_ambient_diffuse;
         // Preserve reflected dielectric/metallic specular, sheen, clearcoat,
         // iridescence, emissive, AO, debug, and premultiplied output paths.
-        color += transmission_layer - (transmission * replaced_diffuse);
+        color += transmission_layer + direct_transmission_layer - (transmission * replaced_diffuse);
     }
     out_color = vec4(color * output_alpha, output_alpha);
 }

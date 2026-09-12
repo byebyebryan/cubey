@@ -183,6 +183,29 @@ int main() {
                       "sheen conformance base should be neutral");
     }
 
+    const auto transmission_layout = cubey::projects::pbr_furnace::pbr_furnace_layout("transmission");
+    require(transmission_layout.materials.size() == 5,
+            "transmission conformance should expose five independently inspectable specimens");
+    require_close(transmission_layout.materials[0].transmission_factor, 0.0F,
+                  "transmission conformance should begin with its factor-zero control");
+    require(transmission_layout.materials[1].transmission_factor > 0.0F &&
+                transmission_layout.materials[2].transmission_factor > 0.0F &&
+                transmission_layout.materials[3].transmission_factor > 0.0F &&
+                transmission_layout.materials[4].transmission_factor > 0.0F,
+            "transmission conformance should retain enabled BTDF specimens");
+    require(transmission_layout.materials[1].roughness < transmission_layout.materials[2].roughness,
+            "transmission conformance should include a roughness response witness");
+    require(transmission_layout.materials[1].ior != transmission_layout.materials[3].ior,
+            "transmission conformance should include an IOR response witness");
+    require(transmission_layout.materials[4].volume_thickness_factor > 0.0F &&
+                transmission_layout.materials[4].volume_attenuation_distance > 0.0F,
+            "transmission conformance should include a thick-medium attenuation witness");
+    require(transmission_layout.materials[4].volume_attenuation_color.g >
+                transmission_layout.materials[4].volume_attenuation_color.r &&
+                transmission_layout.materials[4].volume_attenuation_color.g >
+                    transmission_layout.materials[4].volume_attenuation_color.b,
+            "transmission attenuation witness should author a green-dominant medium");
+
     bool rejected_unknown_case = false;
     try {
         static_cast<void>(cubey::projects::pbr_furnace::pbr_furnace_layout("unknown"));
