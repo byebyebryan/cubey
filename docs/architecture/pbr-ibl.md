@@ -249,18 +249,27 @@ the same static generated/HDR environment in static mode.
 
 `KHR_materials_volume` adds a linear green-channel thickness texture,
 mesh-space thickness, world-space attenuation distance, and attenuation color.
-A nonzero thickness derives a Khronos-style refracted ray, scales it by the
-model basis, projects the estimated exit point into the same HDR pyramid, and
-applies Beer-Lambert absorption over the world-space ray length. Zero thickness
-retains the thin one-sample path exactly. A nonzero thickness is treated as an
-exterior closed-volume boundary, so glTF `doubleSided` does not alter its
-back-face culling policy.
+A nonzero thickness derives a refracted entry ray, advances through the authored
+mesh-space thickness, constructs a solid-volume/sphere-style approximation of a
+second interface, and projects the estimated exit point into the same HDR
+pyramid. Beer-Lambert absorption uses the resulting world-space path length;
+the representative 546.1nm ray supplies that distance for dispersion. If the
+approximate exit interface reaches total internal reflection, a reflected
+environment fallback keeps the sample finite. Zero thickness retains the thin
+one-sample path exactly. A nonzero thickness is treated as an exterior
+closed-volume boundary, so glTF `doubleSided` does not alter its back-face
+culling policy. This is an approximate exit model, not exact mesh back-face
+depth reconstruction.
 
-`KHR_materials_dispersion` performs the stable Khronos three-channel
-approximation only for nonzero dispersion on the thick-volume path. Red, green,
-and blue use separate fixed IORs and screen/environment samples; the base green
-ray supplies the attenuation distance. There is no temporal jitter, and a zero
-factor preserves the one-sample volume path.
+`KHR_materials_dispersion` performs deterministic four-wavelength integration
+only for nonzero dispersion on the thick-volume path. Four fixed wavelength
+samples use Filament-derived color-matching matrices and independent
+screen/environment lookups, with no temporal or spatial jitter; the 546.1nm
+sample supplies the representative attenuation distance. A zero factor
+preserves the one-sample volume path. Transmission roughness first applies the
+IOR-aware perceptual remapping, maps microfacet variance into the available 2x
+HDR-pyramid mip chain, and uses the same remapped roughness for the environment
+fallback. An authored smooth interface remains at exact mip zero.
 
 Focused tests cover defaults, ranges, prohibited/dependent extension
 combinations, texture channels/transforms, descriptor and uniform ABI, optical
@@ -332,9 +341,11 @@ renderer-wide material management explicit future work.
   dedicated Charlie-prefiltered cube. Its uniform-environment energy is covered,
   but directional quality remains an explicit approximation; add the extra
   resource only if a real asset demonstrates the need.
-- Transmission remains a screen-space approximation. Exact back-face exit
-  depth, internal reflection, punctual transmitted-light BTDF, transparent
-  shadows, and OIT-quality transparent composition remain future work.
+- Transmission remains a screen-space approximation. Its thick-volume path uses
+  a bounded solid-volume/sphere-style second-interface estimate rather than
+  exact mesh back-face exit depth, and it does not model multiple internal
+  reflection. Punctual transmitted-light BTDF, transparent shadows, and
+  OIT-quality transparent composition remain future work.
 
 ## Non-Goals
 

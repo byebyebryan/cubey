@@ -67,8 +67,8 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_materials_iridescence` | supported | Factor, IOR, and thickness bounds are validated while independently transformed linear factor/thickness textures preserve their red/green channel contracts. Direct and image-based lighting use the Khronos thin-film interference model for dielectric and metallic bases, with exact factor-zero and zero-thickness fallbacks. A deterministic furnace checks neutrality and chromatic response, while pinned Khronos `CompareIridescence` coverage exercises the staged viewer path. |
 | `KHR_materials_sheen` | supported | Color and roughness inputs are validated as finite values in `[0, 1]`; the sRGB color and linear roughness textures preserve their RGB/alpha channel and transform contracts. Direct lighting uses the Charlie distribution with Estevez-Kulla visibility, while DFG-backed albedo scaling bounds the direct, IBL, and ambient base response. A deterministic furnace checks zero-color neutrality and enabled roughness response, while pinned Khronos `SheenTestGrid` coverage exercises the staged viewer path. |
 | `KHR_materials_transmission` | supported | Factor and linear red-channel texture inputs are independent from alpha coverage. Positive transmission uses a staged same-frame HDR radiance pyramid after opaque geometry and clouds, with the current procedural or static environment as the off-screen fallback; zero factor keeps the ordinary opaque path. |
-| `KHR_materials_volume` | supported | Nonnegative mesh-space thickness, linear green-channel texture, world-space attenuation distance, and attenuation color are validated and preserved. Nonzero thickness projects a refracted, model-scaled exit point into the HDR pyramid and applies Beer-Lambert absorption; zero thickness keeps thin transmission exactly. |
-| `KHR_materials_dispersion` | supported | The finite nonnegative factor is preserved without an artificial upper cap and requires the volume path. Nonzero dispersion performs stable Khronos-style RGB IOR sampling without temporal jitter; zero remains the one-sample volume path. |
+| `KHR_materials_volume` | supported | Nonnegative mesh-space thickness, linear green-channel texture, world-space attenuation distance, and attenuation color are validated and preserved. Nonzero thickness refracts at entry, advances through the model-scaled mesh-space path, and uses a solid-volume/sphere-style approximate second interface before projecting the exit point into the HDR pyramid and applying Beer-Lambert absorption; zero thickness keeps thin transmission exactly. |
+| `KHR_materials_dispersion` | supported | The finite nonnegative factor is preserved without an artificial upper cap and requires the volume path. Nonzero dispersion performs deterministic four-wavelength IOR sampling with Filament-derived color-matching matrices and no temporal jitter; zero remains the one-sample volume path. |
 
 An extension is accepted from `extensionsRequired` only after focused loader,
 analytic, shader-contract, and end-to-end rendered evidence closes its supported
@@ -244,7 +244,13 @@ base-color-to-diffuse/F0 remapping, dielectric IOR/specular controls,
 correlated Smith direct visibility, DFG-based IBL energy compensation, and
 indirect specular occlusion. The glTF PBR shader also evaluates required-use
 clearcoat, anisotropic GGX, thin-film iridescence, energy-scaled Charlie sheen,
-screen-space transmission, volume absorption, and stable RGB dispersion.
+screen-space transmission, volume absorption, and deterministic four-wavelength
+dispersion integration. Thick-volume transmission uses a solid-volume,
+sphere-style approximation: it refracts at entry, advances through the
+authored mesh-space thickness, and constructs an approximate second interface
+for the exit ray. Transmission roughness applies the authored IOR-aware
+remapping to both the bounded screen-space pyramid LOD and environment fallback
+LOD, preserving exact pyramid mip zero for a smooth interface.
 Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
@@ -338,7 +344,8 @@ Texture lifetime, descriptor writes, shader selection, and environment
 selection still belong to the project or future renderer layer. Alpha mode
 remains a coverage policy independent from optical transmission. Transparency
 V1 now supports alpha mask/blend plus screen-space transmission, approximate
-volume refraction and absorption, and stable RGB dispersion, but not transparent
+solid-volume refraction and absorption with a second-interface exit estimate,
+and deterministic four-wavelength dispersion, but not transparent
 shadow opacity, exact back-face exit depth, multiple internal refraction,
 weighted blended transparency, or order-independent transparency.
 
