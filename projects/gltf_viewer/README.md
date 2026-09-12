@@ -26,7 +26,14 @@ uses the same staged path but waits for it to finish before frame zero.
 Useful options include `--animation-index`, `--animation-speed`,
 `--pause-animation`, `--pbr-environment-source static|atmosphere`,
 `--capture-camera-distance-scale`, `--capture-video-orbit-degrees`,
+`--capture-camera-fov-y-degrees`, `--pbr-tonemap linear|aces`,
 `--terrain-heightfield`, `--terrain-surface-detail`, and `--terrain-shadows`.
+
+The viewer preserves its established 60-degree vertical camera FOV and ACES
+display transform unless the capture-only FOV override or `--pbr-tonemap` is
+explicitly selected. `--pbr-tonemap linear` uses the existing linear, clamped
+final display path; it is intended for controlled diagnostics, not a new
+general presentation policy.
 
 `--pbr-environment-source atmosphere` is the default and selects Cubey's
 procedural sky, atmosphere SH diffuse lighting, atmosphere/cloud reflections,

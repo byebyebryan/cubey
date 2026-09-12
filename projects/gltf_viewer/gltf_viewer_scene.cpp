@@ -93,6 +93,8 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
                      orbit_controller_.pitch(),
         }),
         cubey::Camera3D({
+            .fovy_radians = gltf_viewer_capture_camera_fovy_radians(
+                config_.capture.camera_fov_y_degrees),
             .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled()
                           ? 0.1F
                           : std::max(radius * 0.001F, 0.01F),

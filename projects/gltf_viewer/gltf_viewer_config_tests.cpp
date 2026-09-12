@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 
@@ -165,13 +166,16 @@ void test_capture_orbit_controls() {
     require(!defaults.capture.camera_yaw_degrees.has_value() &&
                 !defaults.capture.camera_pitch_degrees.has_value(),
             "glTF capture camera angles should remain opt-in");
+    require(!defaults.capture.camera_fov_y_degrees.has_value(),
+            "glTF capture camera vertical FOV should remain opt-in");
+    require(!defaults.pbr.tonemap.has_value(), "glTF ACES tonemap should remain the default");
 
     const char* named_arguments[] = {
         "gltf_viewer", "--capture-video-orbit-degrees", "30", "--capture-camera-distance-scale",
         "0.75",        "--capture-camera-yaw",          "45", "--capture-camera-pitch",
-        "-15"};
+        "-15",         "--capture-camera-fov-y-degrees", "45", "--pbr-tonemap", "linear"};
     const gltf::GltfViewerProjectConfig named =
-        gltf::parse_gltf_viewer_project_config(9, const_cast<char**>(named_arguments));
+        gltf::parse_gltf_viewer_project_config(13, const_cast<char**>(named_arguments));
     require(named.capture.video_orbit_degrees == 30.0F,
             "glTF capture orbit should parse its total degree extent");
     require(named.capture.camera_distance_scale == 0.75F,
@@ -179,6 +183,9 @@ void test_capture_orbit_controls() {
     require(named.capture.camera_yaw_degrees == 45.0F &&
                 named.capture.camera_pitch_degrees == -15.0F,
             "glTF capture camera angles should parse their framing overrides");
+    require(named.capture.camera_fov_y_degrees == 45.0F,
+            "glTF capture camera vertical FOV should parse its framing override");
+    require(named.pbr.tonemap == "linear", "glTF linear tonemap should parse explicitly");
 
     gltf::GltfViewerProjectConfig deferred;
     const auto schema = gltf::gltf_viewer_project_config_schema(deferred);
@@ -186,6 +193,7 @@ void test_capture_orbit_controls() {
     schema.set("gltf.capture.camera_distance_scale", "1.25");
     schema.set("gltf.capture.camera_yaw_degrees", "90");
     schema.set("gltf.capture.camera_pitch_degrees", "-30");
+    schema.set("gltf.capture.camera_fov_y_degrees", "45");
     require(deferred.capture.video_orbit_degrees == 45.0F,
             "glTF capture orbit should bind through config v2 paths");
     require(deferred.capture.camera_distance_scale == 1.25F,
@@ -193,6 +201,8 @@ void test_capture_orbit_controls() {
     require(deferred.capture.camera_yaw_degrees == 90.0F &&
                 deferred.capture.camera_pitch_degrees == -30.0F,
             "glTF capture camera angles should bind through config v2 paths");
+    require(deferred.capture.camera_fov_y_degrees == 45.0F,
+            "glTF capture vertical FOV should bind through config v2 paths");
     require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "-0.1"); },
                    "glTF capture orbit should reject negative degrees");
     require_throws([&] { schema.set("gltf.capture.video_orbit_degrees", "180.1"); },
@@ -205,6 +215,10 @@ void test_capture_orbit_controls() {
                    "glTF capture yaw should reject values outside its bound");
     require_throws([&] { schema.set("gltf.capture.camera_pitch_degrees", "-89.1"); },
                    "glTF capture pitch should reject values outside its bound");
+    require_throws([&] { schema.set("gltf.capture.camera_fov_y_degrees", "0.9"); },
+                   "glTF capture vertical FOV should reject values below its bound");
+    require_throws([&] { schema.set("gltf.capture.camera_fov_y_degrees", "179.1"); },
+                   "glTF capture vertical FOV should reject values above its bound");
     const auto document = schema.template_json();
     require(document.at("gltf").at("capture").at("video_orbit_degrees").get<float>() == 45.0F,
             "glTF template should expose the configured capture orbit");
@@ -213,6 +227,34 @@ void test_capture_orbit_controls() {
     require(document.at("gltf").at("capture").at("camera_yaw_degrees").get<float>() == 90.0F &&
                 document.at("gltf").at("capture").at("camera_pitch_degrees").get<float>() == -30.0F,
             "glTF template should expose the configured capture camera angles");
+    require(document.at("gltf").at("capture").at("camera_fov_y_degrees").get<float>() ==
+                45.0F,
+            "glTF template should expose the configured capture vertical FOV");
+}
+
+void test_capture_fov_and_tonemap_resolve_to_runtime_values() {
+    namespace gltf = cubey::projects::gltf_viewer;
+
+    const float default_fovy = gltf::gltf_viewer_capture_camera_fovy_radians(std::nullopt);
+    const float forty_five_fovy =
+        gltf::gltf_viewer_capture_camera_fovy_radians(std::optional<float>{45.0F});
+    require(std::fabs(default_fovy - (std::numbers::pi_v<float> / 3.0F)) < 0.00001F,
+            "default capture vertical FOV should preserve the Camera3D 60-degree default");
+    require(std::fabs(forty_five_fovy - (std::numbers::pi_v<float> / 4.0F)) < 0.00001F,
+            "45-degree capture vertical FOV should resolve to Camera3D radians");
+    require(gltf::resolve_gltf_viewer_pbr_tonemap(std::nullopt) ==
+                cubey::render::PbrTonemap::Aces &&
+                gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"aces"}) ==
+                    cubey::render::PbrTonemap::Aces &&
+                gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"linear"}) ==
+                    cubey::render::PbrTonemap::Linear,
+            "capture tonemap choices should resolve to the forward renderer enum");
+    require_throws(
+        [] {
+            static_cast<void>(
+                gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"not-a-tonemap"}));
+        },
+        "capture tonemap resolver should reject a value outside the config enum");
 }
 
 void test_environment_source_resolves_one_coherent_policy() {
@@ -261,6 +303,7 @@ int main() {
         test_set_json_template_and_unknown_scope();
         test_shared_schema_validation_and_scope();
         test_capture_orbit_controls();
+        test_capture_fov_and_tonemap_resolve_to_runtime_values();
         test_environment_source_resolves_one_coherent_policy();
     } catch (const std::exception& error) {
         std::cerr << "gltf_viewer_config_tests: " << error.what() << '\n';

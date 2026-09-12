@@ -215,6 +215,7 @@ void GltfViewerApp::record_viewer_target(
             {
                 .environment_rotation_degrees = config_.pbr.environment_rotation_degrees,
                 .exposure = display_exposure(),
+                .tonemap = resolve_gltf_viewer_pbr_tonemap(config_.pbr.tonemap),
                 .debug_view = debug_view_,
                 .background_mode = environment_policy().uses_ibl_skybox()
                                        ? cubey::ForwardPbrRenderer3DBackgroundMode::IblSkybox

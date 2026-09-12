@@ -6,12 +6,14 @@
 #include <cubey/engine/ocean_surface_schema.h>
 #include <cubey/engine/pbr_environment_schema.h>
 #include <cubey/host/configured_app.h>
+#include <cubey/render/pbr.h>
 
 #include <nlohmann/json.hpp>
 
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -28,12 +30,16 @@ inline constexpr float kGltfViewerMinimumCaptureCameraYawDegrees = -180.0F;
 inline constexpr float kGltfViewerMaximumCaptureCameraYawDegrees = 180.0F;
 inline constexpr float kGltfViewerMinimumCaptureCameraPitchDegrees = -89.0F;
 inline constexpr float kGltfViewerMaximumCaptureCameraPitchDegrees = 89.0F;
+inline constexpr float kGltfViewerDefaultCaptureCameraFovYDegrees = 60.0F;
+inline constexpr float kGltfViewerMinimumCaptureCameraFovYDegrees = 1.0F;
+inline constexpr float kGltfViewerMaximumCaptureCameraFovYDegrees = 179.0F;
 
 struct GltfViewerCaptureOptions {
     std::optional<float> video_orbit_degrees{};
     std::optional<float> camera_distance_scale{};
     std::optional<float> camera_yaw_degrees{};
     std::optional<float> camera_pitch_degrees{};
+    std::optional<float> camera_fov_y_degrees{};
 };
 
 // This is deliberately a profiling trigger rather than an asset-loading
@@ -65,6 +71,7 @@ struct GltfViewerStartupOptions {
     GltfViewerProfileOptions profile{};
     struct Pbr : cubey::PbrStaticIblOptions {
         std::optional<std::string> environment_source{};
+        std::optional<std::string> tonemap{};
     } pbr;
 
     std::string debug_view{};
@@ -136,6 +143,31 @@ resolve_gltf_viewer_environment_policy(const std::optional<std::string>& environ
         return {.source = GltfViewerEnvironmentSource::StaticIbl};
     }
     throw std::runtime_error("glTF PBR environment source must be static or atmosphere");
+}
+
+// The viewer deliberately exposes only the two display transforms already
+// supported by the forward PBR renderer.  Keeping this opt-in avoids changing
+// the established ACES presentation while allowing controlled capture work to
+// request the linear, clamped post path explicitly.
+[[nodiscard]] inline cubey::render::PbrTonemap
+resolve_gltf_viewer_pbr_tonemap(const std::optional<std::string>& tonemap) {
+    if (!tonemap.has_value() || *tonemap == "aces") {
+        return cubey::render::PbrTonemap::Aces;
+    }
+    if (*tonemap == "linear") {
+        return cubey::render::PbrTonemap::Linear;
+    }
+    throw std::runtime_error("glTF PBR tonemap must be linear or aces");
+}
+
+[[nodiscard]] inline float gltf_viewer_capture_camera_fovy_radians(
+    const std::optional<float>& fov_y_degrees) {
+    const float degrees = fov_y_degrees.value_or(kGltfViewerDefaultCaptureCameraFovYDegrees);
+    if (!std::isfinite(degrees) || degrees < kGltfViewerMinimumCaptureCameraFovYDegrees ||
+        degrees > kGltfViewerMaximumCaptureCameraFovYDegrees) {
+        throw std::runtime_error("glTF capture camera vertical FOV is outside its supported range");
+    }
+    return degrees * (std::numbers::pi_v<float> / 180.0F);
 }
 
 namespace detail {
@@ -215,6 +247,16 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                  .min = kGltfViewerMinimumCaptureCameraPitchDegrees,
                                  .max = kGltfViewerMaximumCaptureCameraPitchDegrees}),
                  config.capture.camera_pitch_degrees);
+    builder.bind(detail::option("gltf.capture.camera_fov_y_degrees",
+                                "--capture-camera-fov-y-degrees", "Camera Vertical FOV",
+                                "Capture",
+                                "Optional capture camera vertical field of view in degrees.",
+                                ValueType::Float,
+                                {.has_min = true,
+                                 .has_max = true,
+                                 .min = kGltfViewerMinimumCaptureCameraFovYDegrees,
+                                 .max = kGltfViewerMaximumCaptureCameraFovYDegrees}),
+                 config.capture.camera_fov_y_degrees);
 
     builder.bind(detail::option("profile.import_delay_frames", "--profile-import-delay-frames",
                                 "Import Delay Frames", "Profiling",
@@ -246,6 +288,10 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                 "Choose static IBL or the procedural atmosphere environment.",
                                 ValueType::Enum, {}, {"static", "atmosphere"}),
                  config.pbr.environment_source);
+    builder.bind(detail::option("pbr.tonemap", "--pbr-tonemap", "Tone Map", "PBR",
+                                "Choose the final PBR display transform.", ValueType::Enum, {},
+                                {"linear", "aces"}),
+                 config.pbr.tonemap);
 
     builder.compose(cubey::atmosphere_environment_schema(config.atmosphere));
     builder.compose(cubey::cloud_environment_schema(config.clouds));
