@@ -66,7 +66,7 @@ to extensions whose loader path and rendered semantics are closed:
 | `KHR_materials_anisotropy` | supported | Strength and rotation are validated; required tangent space is authored or generated from the effective normal/anisotropy UV set. Direct lighting uses anisotropic GGX distribution and visibility, while IBL uses the Khronos-style bent-normal approximation. A deterministic furnace checks zero-strength neutrality and rotated response, and the pinned Khronos `AnisotropyBarnLamp` exercises texture channels through the staged viewer path. |
 | `KHR_materials_iridescence` | supported | Factor, IOR, and thickness bounds are validated while independently transformed linear factor/thickness textures preserve their red/green channel contracts. Direct and image-based lighting use the Khronos thin-film interference model for dielectric and metallic bases, with exact factor-zero and zero-thickness fallbacks. A deterministic furnace checks neutrality and chromatic response, while pinned Khronos `CompareIridescence` coverage exercises the staged viewer path. |
 | `KHR_materials_sheen` | supported | Color and roughness inputs are validated as finite values in `[0, 1]`; the sRGB color and linear roughness textures preserve their RGB/alpha channel and transform contracts. Direct lighting uses the Charlie distribution with Estevez-Kulla visibility, while DFG-backed albedo scaling bounds the direct, IBL, and ambient base response. A deterministic furnace checks zero-color neutrality and enabled roughness response, while pinned Khronos `SheenTestGrid` coverage exercises the staged viewer path. |
-| `KHR_materials_transmission` | supported | Factor and linear red-channel texture inputs are independent from alpha coverage. Positive transmission uses a staged same-frame HDR radiance pyramid after opaque geometry and clouds, with the current procedural or static environment as the off-screen fallback; zero factor keeps the ordinary opaque path. |
+| `KHR_materials_transmission` | supported | Factor and linear red-channel texture inputs are independent from alpha coverage. Positive transmission uses a staged same-frame HDR radiance pyramid after opaque geometry and clouds, with ordinary alpha injected into an isolated source mip before filtering and composited once more in the final alpha pass. The existing selected directional light also contributes a Khronos-style mirrored-light isotropic GGX direct BTDF with diffuse-budget replacement; zero factor keeps the ordinary opaque path. |
 | `KHR_materials_volume` | supported | Nonnegative mesh-space thickness, linear green-channel texture, world-space attenuation distance, and attenuation color are validated and preserved. Nonzero thickness refracts at entry, advances through the model-scaled mesh-space path, and uses a solid-volume/sphere-style approximate second interface before projecting the exit point into the HDR pyramid and applying Beer-Lambert absorption; zero thickness keeps thin transmission exactly. |
 | `KHR_materials_dispersion` | supported | The finite nonnegative factor is preserved without an artificial upper cap and requires the volume path. Nonzero dispersion performs deterministic four-wavelength IOR sampling with Filament-derived color-matching matrices and no temporal jitter; zero remains the one-sample volume path. |
 
@@ -142,6 +142,15 @@ instance service:
   stays depth-writing and shadow-casting with alpha cutoff, while `BLEND`
   renders forward-only with premultiplied source-over alpha blending and no
   depth writes;
+- When visible optical transmission requires a refraction source, ordinary
+  `BLEND` geometry is intentionally rendered into two targets: first into
+  isolated `HdrColorPyramid` mip zero after opaque/cloud radiance and before
+  the remaining mips are generated, then once into the main scene target in
+  the final alpha pass after transmission. This lets blended objects behind or
+  within a transmissive surface contribute to its screen-space radiance while
+  retaining the accepted front-object echo; the main target receives alpha
+  only once, and this is not exact front/behind classification or
+  order-independent transparency.
 - texture upload is deduplicated per glTF texture plus color space, sampler
   `wrapS` / `wrapT` are preserved through Vulkan sampler axes, and
   `KHR_texture_basisu` material textures transcode to BC7 when Vulkan BC
@@ -177,7 +186,10 @@ owns default textures, texture upload, and material instance creation.
   pass state;
 - `ForwardPbrRenderer3D` records opaque/masked PBR packets before blended
   packets; blended packets are sorted back-to-front by view-space depth for
-  basic source-over transparency;
+  basic source-over transparency. When transmission is visible, the graph
+  splits this into opaque/cloud radiance, isolated refraction-source alpha,
+  transmission, and final alpha stages while preserving the original graph
+  for non-transmissive scenes;
 - `pbr_post_pass_info()` declares the fullscreen post set that samples linear
   HDR scene color and applies display transform before writing the final target;
 - `create_uploaded_texture_2d()` and `create_uploaded_texture_cube()` handle
@@ -251,6 +263,17 @@ authored mesh-space thickness, and constructs an approximate second interface
 for the exit ray. Transmission roughness applies the authored IOR-aware
 remapping to both the bounded screen-space pyramid LOD and environment fallback
 LOD, preserving exact pyramid mip zero for a smooth interface.
+The direct transmission term uses the engine's existing selected directional
+light only: it mirrors the light vector and evaluates the Khronos-style
+isotropic GGX D*V construction. Its IOR scale is applied in the alpha
+roughness domain before converting back to the helper's perceptual roughness.
+The term replaces the transmission-weighted diffuse budget rather than adding
+energy on top of it, while reflected specular and other material layers remain
+in place. Base color, interface transmittance, sheen/clearcoat layer
+attenuation, opaque-occluder shadow visibility, and representative volume Beer
+attenuation are each applied at their existing single stage. This is not
+`KHR_lights_punctual` support: point/spot light arrays, spectral direct-light
+dispersion, and transparent or colored shadows remain outside this contract.
 Material texture and factor alpha remain
 straight/unassociated inputs; blended fragments emit premultiplied RGB at
 shader output, while opaque and kept masked fragments output alpha 1. Display
@@ -345,9 +368,11 @@ selection still belong to the project or future renderer layer. Alpha mode
 remains a coverage policy independent from optical transmission. Transparency
 V1 now supports alpha mask/blend plus screen-space transmission, approximate
 solid-volume refraction and absorption with a second-interface exit estimate,
-and deterministic four-wavelength dispersion, but not transparent
-shadow opacity, exact back-face exit depth, multiple internal refraction,
-weighted blended transparency, or order-independent transparency.
+and deterministic four-wavelength dispersion, plus a selected-directional-light
+direct BTDF. It does not support generalized `KHR_lights_punctual` point/spot
+arrays, transparent shadow opacity, exact back-face exit depth, multiple
+internal refraction, weighted blended transparency, or order-independent
+transparency.
 
 ## Next Slices
 

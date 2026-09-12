@@ -237,10 +237,19 @@ neither rendered lane is a byte-identical cross-GPU golden.
 
 `KHR_materials_transmission` is independent from glTF alpha coverage. A positive
 factor routes the material through an explicit transmission stage after opaque
-geometry and surface clouds; ordinary alpha-blended geometry remains later in
-the frame. The renderer snapshots the pre-transmission linear HDR scene into a
-per-frame-slot radiance pyramid only when a visible transmissive packet needs
-it. Thin transmission replaces the material's diffuse contribution with
+geometry and surface clouds. When transmission is visible, the render graph
+copies that post-opaque/cloud HDR radiance into mip zero of an isolated,
+per-frame-slot `HdrColorPyramid`, composites ordinary alpha into that isolated
+source, and only then generates the remaining mips. The main scene target is
+not modified by this source pass; after transmission, a final alpha pass
+composites ordinary alpha once into the scene target. This bounded two-pass
+alpha strategy makes blended objects behind or within transmission contribute to
+screen-space radiance, while accepting the front-object echo caused by showing
+the same alpha in both source and final composition. It does not provide exact
+front/behind classification or order-independent transparency. With no visible
+transmission, the original single scene path remains unchanged.
+
+Thin transmission replaces the material's diffuse contribution with
 base-color-tinted scene radiance while preserving reflected specular, sheen,
 clearcoat, iridescence, emissive, AO, and premultiplied alpha behavior. Near or
 beyond screen edges, transmission samples the selected environment's prefiltered
@@ -271,6 +280,17 @@ IOR-aware perceptual remapping, maps microfacet variance into the available 2x
 HDR-pyramid mip chain, and uses the same remapped roughness for the environment
 fallback. An authored smooth interface remains at exact mip zero.
 
+The direct transmission term is implemented for the engine's existing selected
+directional light. It follows the Khronos-style mirrored-light isotropic GGX
+construction, applying the IOR scale in the alpha-roughness domain before
+converting to Cubey's perceptual roughness helper. Direct transmission replaces
+the transmission-weighted diffuse budget instead of adding a second diffuse
+energy term. Base color, interface transmittance, sheen/clearcoat layer
+attenuation, existing opaque-occluder shadow visibility, and representative
+volume Beer attenuation are each applied once at their existing stage. This is
+not generalized `KHR_lights_punctual` support: point/spot arrays, spectral
+direct-light dispersion, and transparent or colored shadows are out of scope.
+
 Focused tests cover defaults, ranges, prohibited/dependent extension
 combinations, texture channels/transforms, descriptor and uniform ABI, optical
 routing, attachment synchronization, and shader composition. Pinned Khronos
@@ -278,8 +298,9 @@ transmission, thin-wall, attenuation, and dispersion scenes provide end-to-end
 runtime smokes. A required-validation 512px `DragonDispersion` capture exercises
 the atmosphere-backed product path. These screen-space captures are diagnostic
 evidence rather than cross-GPU pixel goldens. The intentional first version has
-no back-face exit-depth reconstruction, multiple internal reflection, punctual
-BTDF, transparent shadows, or order-independent transparency.
+no back-face exit-depth reconstruction, multiple internal reflection,
+generalized `KHR_lights_punctual` point/spot BTDFs, transparent shadows, or
+order-independent transparency.
 
 ## IOR And Specular Conformance
 
@@ -344,8 +365,9 @@ renderer-wide material management explicit future work.
 - Transmission remains a screen-space approximation. Its thick-volume path uses
   a bounded solid-volume/sphere-style second-interface estimate rather than
   exact mesh back-face exit depth, and it does not model multiple internal
-  reflection. Punctual transmitted-light BTDF, transparent shadows, and
-  OIT-quality transparent composition remain future work.
+  reflection. Generalized `KHR_lights_punctual` point/spot BTDFs, transparent
+  shadows, and OIT-quality transparent composition remain future work; the
+  selected-directional-light direct BTDF is covered by the current contract.
 
 ## Non-Goals
 
