@@ -174,7 +174,7 @@ class GltfViewerApp {
                                               cubey::vulkan::GpuRuntime& gpu);
     [[nodiscard]] cubey::render::AtmosphereBackgroundTextureBindings
     atmosphere_background_textures() const;
-    [[nodiscard]] bool use_atmosphere_environment_source() const;
+    [[nodiscard]] const GltfViewerEnvironmentPolicy& environment_policy() const noexcept;
     [[nodiscard]] cubey::render::PbrEnvironmentTextureBindings pbr_environment_bindings() const;
     void create_atmosphere_environment_runtime(const cubey::vulkan::Device& device,
                                                std::uint32_t frame_slot_count);
@@ -214,6 +214,7 @@ class GltfViewerApp {
     void update_camera_transform();
     [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
+    [[nodiscard]] cubey::scene::Environment3D scene_environment() const;
     [[nodiscard]] cubey::render::AtmosphereEnvironmentFrameUniforms
     atmosphere_background_uniforms(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
     [[nodiscard]] cubey::CloudEnvironmentConfig cloud_environment_config() const;
@@ -248,6 +249,7 @@ class GltfViewerApp {
                                const cubey::host::HeadlessRenderTarget& target);
 
     GltfViewerProjectConfig config_;
+    const GltfViewerEnvironmentPolicy environment_policy_;
     cubey::Engine engine_;
     cubey::ForwardPbrRenderer3D* forward_pbr_renderer_ = nullptr;
     cubey::jobs::JobSystem asset_jobs_{1U};

@@ -101,8 +101,17 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
                          : std::max(radius * 12.0F, 100.0F),
         }));
 
-    const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
-    const cubey::math::Vec3 light_direction = glm::normalize(lighting.primary_light_direction);
+    const bool use_procedural_direct_light = environment_policy().uses_procedural_direct_light();
+    cubey::math::Vec3 light_direction = kLightDirection;
+    cubey::math::Vec3 light_color{1.0F};
+    float light_intensity = 0.0F;
+    if (use_procedural_direct_light) {
+        const cubey::render::AtmosphereEnvironmentLighting& lighting =
+            atmosphere_runtime_.lighting();
+        light_direction = glm::normalize(lighting.primary_light_direction);
+        light_color = lighting.primary_light_color;
+        light_intensity = lighting.primary_light_intensity;
+    }
     const cubey::math::Vec3 light_eye =
         generation.bounds.center + (light_direction * std::max(radius * 4.0F, 6.0F));
     generation.light_camera_entity = cubey::scene::create_camera_entity_3d(
@@ -114,9 +123,9 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
             .far_z = std::max(radius * 10.0F, 16.0F),
         }));
 
-    cubey::Light3D sunlight = cubey::directional_light_3d(
-        light_direction, lighting.primary_light_color, lighting.primary_light_intensity);
-    sunlight.casts_shadows = true;
+    cubey::Light3D sunlight =
+        cubey::directional_light_3d(light_direction, light_color, light_intensity);
+    sunlight.casts_shadows = use_procedural_direct_light;
     generation.light_entity = cubey::scene::create_directional_light_entity_3d(setup, sunlight);
 }
 
@@ -148,6 +157,9 @@ void GltfViewerApp::update_animation(float delta_seconds) {
 }
 
 void GltfViewerApp::refresh_atmosphere_lighting_scene() {
+    if (!environment_policy().uses_procedural_direct_light()) {
+        return;
+    }
     if (!active_generation_ || !active_generation().light_entity ||
         !active_generation().light_camera_entity) {
         return;
@@ -201,7 +213,7 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
         .camera_entity = active_generation().camera_entity,
         .width = color_extent.width,
         .height = color_extent.height,
-        .environment = atmosphere_runtime_.scene_environment(),
+        .environment = scene_environment(),
     };
     return cubey::scene::FrameRenderPlan3D({
         cubey::scene::RenderPassPlan3D{
@@ -219,9 +231,24 @@ cubey::scene::FrameRenderPlan3D GltfViewerApp::current_frame_plan(const cubey::S
     });
 }
 
+cubey::scene::Environment3D GltfViewerApp::scene_environment() const {
+    if (environment_policy().uses_atmosphere_diffuse_irradiance()) {
+        return atmosphere_runtime_.scene_environment();
+    }
+    return {
+        .ambient_color = {0.0F, 0.0F, 0.0F},
+        .ambient_intensity = 0.0F,
+        .diffuse_irradiance_sh = {},
+        .diffuse_irradiance_sh_enabled = false,
+    };
+}
+
 cubey::render::AtmosphereEnvironmentFrameUniforms
 GltfViewerApp::atmosphere_background_uniforms(const cubey::SceneReadView& view,
                                               VkExtent2D color_extent) const {
+    if (!environment_policy().uses_atmosphere_background()) {
+        throw std::runtime_error("glTF viewer static IBL mode has no atmosphere background");
+    }
     if (color_extent.width == 0 || color_extent.height == 0) {
         throw std::runtime_error("glTF viewer atmosphere background requires a nonzero extent");
     }
@@ -408,6 +435,15 @@ GltfViewerApp::ocean_surface_frame(const cubey::SceneReadView& view, VkExtent2D 
 }
 
 cubey::LightPacket3D GltfViewerApp::fallback_light_packet() const {
+    if (!environment_policy().uses_procedural_direct_light()) {
+        return cubey::LightPacket3D{
+            .entity = active_generation().light_entity,
+            .kind = cubey::LightKind3D::Directional,
+            .color = {1.0F, 1.0F, 1.0F},
+            .intensity = 0.0F,
+            .direction = kLightDirection,
+        };
+    }
     const cubey::render::AtmosphereEnvironmentLighting& lighting = atmosphere_runtime_.lighting();
     return cubey::LightPacket3D{
         .entity = active_generation().light_entity,

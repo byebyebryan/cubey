@@ -153,16 +153,23 @@ std::vector<std::uint32_t> fallback_cube_indices() {
 }
 
 GltfViewerApp::GltfViewerApp(GltfViewerProjectConfig config)
-    : config_(std::move(config)), asset_builds_(asset_jobs_),
-      debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
-      atmosphere_state_(gltf_viewer_atmosphere_run_state(config_)),
-      clouds_config_(gltf_viewer_cloud_config(config_)),
+    : config_(std::move(config)),
+      environment_policy_(resolve_gltf_viewer_environment_policy(config_.pbr.environment_source)),
+      asset_builds_(asset_jobs_), debug_view_(render::pbr_debug_view_from_name(config_.debug_view)),
+      atmosphere_state_(environment_policy_.uses_atmosphere_resources()
+                            ? gltf_viewer_atmosphere_run_state(config_)
+                            : cubey::AtmosphereEnvironmentRunState{}),
+      clouds_config_(environment_policy_.uses_atmosphere_resources()
+                         ? gltf_viewer_cloud_config(config_)
+                         : cubey::CloudEnvironmentConfig{}),
       ocean_config_(gltf_viewer_ocean_config_from_options(config_)) {
     if (terrain_backdrop_enabled() && ocean_backdrop_enabled()) {
         throw std::runtime_error(
             "glTF viewer v1 accepts either terrain or ocean backdrop, not both");
     }
-    atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    if (environment_policy_.uses_atmosphere_resources()) {
+        atmosphere_runtime_.set_environment(atmosphere_state_.environment);
+    }
     if (config_.terrain.foreground_height_m) {
         terrain_foreground_height_m_ = *config_.terrain.foreground_height_m;
     }
@@ -177,6 +184,9 @@ GltfViewerApp::GltfViewerApp(GltfViewerProjectConfig config)
 }
 
 bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
+    if (!environment_policy().advances_atmosphere()) {
+        return false;
+    }
     if (!cubey::atmosphere_environment_advance_time(atmosphere_state_, delta_seconds)) {
         return false;
     }
@@ -186,13 +196,16 @@ bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
 }
 
 void GltfViewerApp::refresh_atmosphere_controls() {
+    if (!environment_policy().uses_atmosphere_resources()) {
+        return;
+    }
     atmosphere_runtime_.set_environment(atmosphere_state_.environment);
     refresh_atmosphere_lighting_scene();
 }
 
 void GltfViewerApp::refresh_cloud_controls(cubey::host::WindowedAppContext& context) {
     cubey::CloudEnvironmentRuntime& clouds = atmosphere_runtime_.clouds();
-    if (!use_atmosphere_environment_source() || !clouds.surface_resources_created()) {
+    if (!environment_policy().uses_atmosphere_resources() || !clouds.surface_resources_created()) {
         return;
     }
     clouds.set_config(cloud_environment_config());
@@ -236,13 +249,14 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
         ImGui::TextWrapped("Asset load error: %s", asset_activation_error_.c_str());
     }
 
-    if (cubey::host::draw_atmosphere_environment_controls(
+    if (environment_policy().shows_atmosphere_controls() &&
+        cubey::host::draw_atmosphere_environment_controls(
             atmosphere_state_, {.default_open = true,
                                 .help = "Shared procedural atmosphere used by the glTF viewer sky, "
                                         "lighting, PBR environment, and exposure."})) {
         refresh_atmosphere_controls();
     }
-    if (use_atmosphere_environment_source() &&
+    if (environment_policy().shows_atmosphere_controls() &&
         cubey::host::draw_cloud_environment_controls(
             clouds_config_,
             {.label = "Cloud Environment",
@@ -344,7 +358,7 @@ int GltfViewerApp::run_windowed() {
                                       context.frame_resources().latest_submitted_ticket(),
                                       timing.frame_index, profile_recorder);
         }
-        {
+        if (environment_policy().uses_atmosphere_resources()) {
             auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
                                                         "gltf.atmosphere_atlas_poll");
             poll_atmosphere_background_atlases(context.device(), context.gpu(),
@@ -358,10 +372,12 @@ int GltfViewerApp::run_windowed() {
         {
             auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
                                                         "gltf.atmosphere_update");
-            if (update_atmosphere_time(timing.delta_seconds)) {
-                refresh_atmosphere_lighting_scene();
+            if (environment_policy().advances_atmosphere()) {
+                if (update_atmosphere_time(timing.delta_seconds)) {
+                    refresh_atmosphere_lighting_scene();
+                }
+                atmosphere_runtime_.advance(timing.delta_seconds);
             }
-            atmosphere_runtime_.advance(timing.delta_seconds);
         }
         ocean_delta_seconds_ = timing.delta_seconds > 0.0 ? timing.delta_seconds : (1.0 / 60.0);
         ocean_elapsed_seconds_ += ocean_delta_seconds_;
@@ -425,7 +441,9 @@ int GltfViewerApp::run_headless() {
             context.device(), context.gpu(),
             cubey::host::headless_capture_frame_slot_count(config_.common));
         finish_imported_asset_build(context.gpu(), {});
-        finish_atmosphere_background_atlases(context.device(), context.gpu());
+        if (environment_policy().uses_atmosphere_resources()) {
+            finish_atmosphere_background_atlases(context.device(), context.gpu());
+        }
         create_frame_resources(context.device(), context.render_target().extent,
                                context.render_target().format,
                                cubey::host::headless_capture_frame_slot_count(config_.common));
@@ -437,10 +455,12 @@ int GltfViewerApp::run_headless() {
                                   authored_orbit](cubey::host::HeadlessPngContext&,
                                                   const cubey::host::HeadlessCaptureFrame& frame) {
             update_animation(static_cast<float>(frame.timing.delta_seconds));
-            if (update_atmosphere_time(frame.timing.delta_seconds)) {
-                refresh_atmosphere_lighting_scene();
+            if (environment_policy().advances_atmosphere()) {
+                if (update_atmosphere_time(frame.timing.delta_seconds)) {
+                    refresh_atmosphere_lighting_scene();
+                }
+                atmosphere_runtime_.advance(frame.timing.delta_seconds);
             }
-            atmosphere_runtime_.advance(frame.timing.delta_seconds);
             ocean_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
             ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;

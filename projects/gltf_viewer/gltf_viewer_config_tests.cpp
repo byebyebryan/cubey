@@ -215,6 +215,44 @@ void test_capture_orbit_controls() {
             "glTF template should expose the configured capture camera angles");
 }
 
+void test_environment_source_resolves_one_coherent_policy() {
+    namespace gltf = cubey::projects::gltf_viewer;
+
+    const gltf::GltfViewerEnvironmentPolicy defaults =
+        gltf::resolve_gltf_viewer_environment_policy(std::nullopt);
+    require(defaults.source == gltf::GltfViewerEnvironmentSource::Atmosphere &&
+                defaults.uses_atmosphere_resources() && defaults.uses_atmosphere_background() &&
+                defaults.uses_atmosphere_diffuse_irradiance() &&
+                defaults.uses_procedural_direct_light() &&
+                defaults.uses_atmosphere_auto_exposure() && defaults.advances_atmosphere() &&
+                defaults.shows_atmosphere_controls() && !defaults.uses_ibl_skybox(),
+            "missing environment source should preserve the atmosphere world");
+
+    const gltf::GltfViewerEnvironmentPolicy atmosphere =
+        gltf::resolve_gltf_viewer_environment_policy(std::string{"atmosphere"});
+    require(atmosphere.source == gltf::GltfViewerEnvironmentSource::Atmosphere &&
+                atmosphere.uses_atmosphere_resources(),
+            "explicit atmosphere source should preserve the atmosphere world");
+
+    const gltf::GltfViewerEnvironmentPolicy static_ibl =
+        gltf::resolve_gltf_viewer_environment_policy(std::string{"static"});
+    require(static_ibl.source == gltf::GltfViewerEnvironmentSource::StaticIbl &&
+                !static_ibl.uses_atmosphere_resources() &&
+                !static_ibl.uses_atmosphere_background() &&
+                !static_ibl.uses_atmosphere_diffuse_irradiance() &&
+                !static_ibl.uses_procedural_direct_light() &&
+                !static_ibl.uses_atmosphere_auto_exposure() && !static_ibl.advances_atmosphere() &&
+                !static_ibl.shows_atmosphere_controls() && static_ibl.uses_ibl_skybox(),
+            "static source should resolve to a complete IBL-only policy");
+
+    require_throws(
+        [] {
+            static_cast<void>(
+                gltf::resolve_gltf_viewer_environment_policy(std::string{"not-an-environment"}));
+        },
+        "environment policy should reject a source outside the config enum");
+}
+
 } // namespace
 
 int main() {
@@ -223,6 +261,7 @@ int main() {
         test_set_json_template_and_unknown_scope();
         test_shared_schema_validation_and_scope();
         test_capture_orbit_controls();
+        test_environment_source_resolves_one_coherent_policy();
     } catch (const std::exception& error) {
         std::cerr << "gltf_viewer_config_tests: " << error.what() << '\n';
         return EXIT_FAILURE;

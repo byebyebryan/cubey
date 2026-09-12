@@ -82,6 +82,62 @@ struct GltfViewerProjectConfig : GltfViewerStartupOptions {
     host::CommonRunConfig common;
 };
 
+// The selected PBR source is a viewer-wide rendering policy, not a collection
+// of independent background and lighting toggles.  Keeping the derived
+// behavior here makes static captures reproducible: no procedural atmosphere
+// product is allowed to leak into an otherwise HDR/generated IBL render.
+enum class GltfViewerEnvironmentSource : std::uint8_t {
+    StaticIbl,
+    Atmosphere,
+};
+
+struct GltfViewerEnvironmentPolicy {
+    GltfViewerEnvironmentSource source = GltfViewerEnvironmentSource::Atmosphere;
+
+    [[nodiscard]] bool uses_atmosphere_resources() const noexcept {
+        return source == GltfViewerEnvironmentSource::Atmosphere;
+    }
+
+    [[nodiscard]] bool uses_atmosphere_background() const noexcept {
+        return uses_atmosphere_resources();
+    }
+
+    [[nodiscard]] bool uses_atmosphere_diffuse_irradiance() const noexcept {
+        return uses_atmosphere_resources();
+    }
+
+    [[nodiscard]] bool uses_procedural_direct_light() const noexcept {
+        return uses_atmosphere_resources();
+    }
+
+    [[nodiscard]] bool uses_atmosphere_auto_exposure() const noexcept {
+        return uses_atmosphere_resources();
+    }
+
+    [[nodiscard]] bool advances_atmosphere() const noexcept {
+        return uses_atmosphere_resources();
+    }
+
+    [[nodiscard]] bool shows_atmosphere_controls() const noexcept {
+        return uses_atmosphere_resources();
+    }
+
+    [[nodiscard]] bool uses_ibl_skybox() const noexcept {
+        return source == GltfViewerEnvironmentSource::StaticIbl;
+    }
+};
+
+[[nodiscard]] inline GltfViewerEnvironmentPolicy
+resolve_gltf_viewer_environment_policy(const std::optional<std::string>& environment_source) {
+    if (!environment_source.has_value() || *environment_source == "atmosphere") {
+        return {.source = GltfViewerEnvironmentSource::Atmosphere};
+    }
+    if (*environment_source == "static") {
+        return {.source = GltfViewerEnvironmentSource::StaticIbl};
+    }
+    throw std::runtime_error("glTF PBR environment source must be static or atmosphere");
+}
+
 namespace detail {
 
 using config::OptionSpec;

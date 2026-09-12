@@ -28,6 +28,15 @@ Useful options include `--animation-index`, `--animation-speed`,
 `--capture-camera-distance-scale`, `--capture-video-orbit-degrees`,
 `--terrain-heightfield`, `--terrain-surface-detail`, and `--terrain-shadows`.
 
+`--pbr-environment-source atmosphere` is the default and selects Cubey's
+procedural sky, atmosphere SH diffuse lighting, atmosphere/cloud reflections,
+procedural direct light, and automatic exposure. `static` selects a coherent
+generated-or-HDR IBL-only world: its visible background is the IBL skybox,
+diffuse and specular lighting (including transmission fallback) use that same
+environment, and it has no procedural direct light, legacy ambient fill,
+atmosphere time updates, clouds, or atmosphere controls. Terrain and ocean
+backdrops remain atmosphere-only.
+
 ## Showcase highlight
 
 [![glTF + Terrain showcase poster](../../docs/media/showcase/gltf-terrain.png)](../../docs/media/showcase/gltf-terrain.mp4)

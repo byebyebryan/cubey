@@ -58,6 +58,17 @@ Radiance HDR equirectangular environment assets:
   display post. `projects/ocean` also
   consumes the runtime reflection probe directly for water reflection while its
   bespoke ocean shader remains outside the full PBR material path;
+- `gltf_viewer` resolves `pbr.environment_source` once into a project policy.
+  Missing or explicit `atmosphere` preserves the full procedural product:
+  visible atmosphere background, atmosphere SH diffuse lighting, atmosphere and
+  cloud reflections, direct light, automatic exposure, time advancement, and
+  atmosphere controls. Explicit `static` instead selects an IBL skybox with the
+  chosen generated/HDR irradiance and prefiltered cubes for diffuse, specular,
+  and transmission fallback. Static mode disables atmosphere SH, legacy ambient
+  fill, procedural direct light, automatic exposure, all atmosphere/cloud
+  resource lifecycle work, and atmosphere controls. Terrain and ocean backdrops
+  remain atmosphere-only. This makes static captures independent of atmosphere
+  time inputs while preserving environment rotation as a visible IBL operation;
 - `pbr_furnace` isolates the current IBL/specular behavior with a white sphere
   grid that sweeps roughness across columns and metallic across rows under a
   uniform white environment. Its default grid is unchanged; opt-in `ior`,
@@ -232,8 +243,9 @@ per-frame-slot radiance pyramid only when a visible transmissive packet needs
 it. Thin transmission replaces the material's diffuse contribution with
 base-color-tinted scene radiance while preserving reflected specular, sheen,
 clearcoat, iridescence, emissive, AO, and premultiplied alpha behavior. Near or
-beyond screen edges, the current procedural atmosphere/cloud probe is the
-primary product fallback; static prefiltered environments use the same binding.
+beyond screen edges, transmission samples the selected environment's prefiltered
+fallback: the current procedural atmosphere/cloud probe in atmosphere mode or
+the same static generated/HDR environment in static mode.
 
 `KHR_materials_volume` adds a linear green-channel thickness texture,
 mesh-space thickness, world-space attenuation distance, and attenuation color.

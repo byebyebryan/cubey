@@ -255,9 +255,105 @@ if (BUILD_TESTING)
         gltf_viewer_static_environment_headless_writes_png
         cubey_project_gltf_viewer
         "${CUBEY_GLTF_VIEWER_STATIC_ENV_HEADLESS_SMOKE_OUTPUT}"
+        --require-validation
         --pbr-environment-source
         static
     )
+    if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
+        set(CUBEY_GLTF_VIEWER_STATIC_TIME_DAY_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-static-time-day.png"
+        )
+        set(CUBEY_GLTF_VIEWER_STATIC_TIME_NIGHT_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-static-time-night.png"
+        )
+        set(CUBEY_GLTF_VIEWER_STATIC_ROTATED_OUTPUT
+            "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-static-rotated.png"
+        )
+        set(CUBEY_GLTF_VIEWER_STATIC_ENVIRONMENT_PATH
+            "${CUBEY_HDR_SAMPLE_ASSETS_DIR}/lightroom_14b.hdr"
+        )
+        cubey_add_png_capture_test(
+            gltf_viewer_static_environment_day_capture
+            cubey_project_gltf_viewer
+            "${CUBEY_GLTF_VIEWER_STATIC_TIME_DAY_OUTPUT}"
+            128
+            72
+            --require-validation
+            --pbr-environment-source
+            static
+            --environment
+            "${CUBEY_GLTF_VIEWER_STATIC_ENVIRONMENT_PATH}"
+            --time-of-day-mode
+            solar
+            --time-hours
+            6
+            --no-clouds
+        )
+        cubey_add_png_capture_test(
+            gltf_viewer_static_environment_night_capture
+            cubey_project_gltf_viewer
+            "${CUBEY_GLTF_VIEWER_STATIC_TIME_NIGHT_OUTPUT}"
+            128
+            72
+            --require-validation
+            --pbr-environment-source
+            static
+            --environment
+            "${CUBEY_GLTF_VIEWER_STATIC_ENVIRONMENT_PATH}"
+            --time-of-day-mode
+            solar
+            --time-hours
+            18
+            --no-clouds
+        )
+        cubey_add_png_capture_test(
+            gltf_viewer_static_environment_rotated_capture
+            cubey_project_gltf_viewer
+            "${CUBEY_GLTF_VIEWER_STATIC_ROTATED_OUTPUT}"
+            128
+            72
+            --require-validation
+            --pbr-environment-source
+            static
+            --environment
+            "${CUBEY_GLTF_VIEWER_STATIC_ENVIRONMENT_PATH}"
+            --environment-rotation-degrees
+            90
+            --time-of-day-mode
+            solar
+            --time-hours
+            6
+            --no-clouds
+        )
+        add_test(
+            NAME gltf_viewer_static_environment_is_time_invariant_and_rotatable
+            COMMAND
+                /bin/sh
+                -c
+                "day=$1; night=$2; rotated=$3; day_skip=$4; night_skip=$5; rotated_skip=$6; if test -f \"$day_skip\" || test -f \"$night_skip\" || test -f \"$rotated_skip\"; then printf 'static environment capture skipped because Vulkan is unavailable\\n'; exit 77; fi; test -s \"$day\" && test -s \"$night\" && test -s \"$rotated\"; if ! cmp -s \"$day\" \"$night\"; then printf 'static environment changed when only atmosphere time changed\\n'; exit 1; fi; if cmp -s \"$day\" \"$rotated\"; then printf 'static IBL rotation did not change the HDR capture\\n'; exit 1; fi"
+                gltf_viewer_static_environment_is_time_invariant_and_rotatable
+                "${CUBEY_GLTF_VIEWER_STATIC_TIME_DAY_OUTPUT}"
+                "${CUBEY_GLTF_VIEWER_STATIC_TIME_NIGHT_OUTPUT}"
+                "${CUBEY_GLTF_VIEWER_STATIC_ROTATED_OUTPUT}"
+                "${CUBEY_GLTF_VIEWER_STATIC_TIME_DAY_OUTPUT}.skip"
+                "${CUBEY_GLTF_VIEWER_STATIC_TIME_NIGHT_OUTPUT}.skip"
+                "${CUBEY_GLTF_VIEWER_STATIC_ROTATED_OUTPUT}.skip"
+        )
+        set_tests_properties(
+            gltf_viewer_static_environment_is_time_invariant_and_rotatable
+            PROPERTIES
+                TIMEOUT 10
+                DEPENDS
+                    "gltf_viewer_static_environment_day_capture;gltf_viewer_static_environment_night_capture;gltf_viewer_static_environment_rotated_capture"
+                SKIP_RETURN_CODE
+                    77
+        )
+        set_property(
+            TEST gltf_viewer_static_environment_is_time_invariant_and_rotatable
+            APPEND
+            PROPERTY LABELS "gltf;viewer;headless;gpu;artifact"
+        )
+    endif()
     set(
         CUBEY_GLTF_VIEWER_TERRAIN_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/gltf-viewer-terrain-backdrop-smoke.png"

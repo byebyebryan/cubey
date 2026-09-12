@@ -1269,6 +1269,8 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
                      "shared atmosphere UI should resolve edited run state through engine helpers");
     require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                      "glTF viewer should own a shared atmosphere environment runtime");
+    require_contains(gltf_header, "GltfViewerEnvironmentPolicy environment_policy_",
+                     "glTF viewer should resolve environment behavior once per run");
     require_not_contains(gltf_header, "AtmosphereDiffuseSource",
                          "glTF viewer should not expose multiple atmosphere diffuse paths");
     require_contains(gltf_app, "gltf_viewer_atmosphere_run_state",
@@ -1286,14 +1288,24 @@ void test_pbr_consumers_use_atmosphere_lighting_foundation() {
         "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
     require_contains(gltf_scene, "primary_light_direction",
                      "glTF viewer should use atmosphere primary light for direct lighting");
-    require_contains(gltf_scene, "atmosphere_runtime_.scene_environment()",
-                     "glTF viewer should feed runtime diffuse environment into Environment3D");
+    require_contains(gltf_scene, "uses_procedural_direct_light",
+                     "glTF viewer should disable procedural direct light for static IBL");
+    require_contains(gltf_scene, "uses_atmosphere_diffuse_irradiance",
+                     "glTF viewer should only use atmosphere SH in atmosphere mode");
+    require_contains(gltf_scene, ".ambient_intensity = 0.0F",
+                     "glTF viewer static IBL should not retain legacy ambient fill");
     require_contains(gltf_assets, "atmosphere_background_textures()",
                      "glTF viewer should provide atmosphere background texture bindings");
     require_contains(gltf_assets, "atmosphere_runtime_.pbr_environment_bindings",
                      "glTF viewer should route PBR environment bindings through the runtime");
+    require_contains(gltf_assets, "uses_atmosphere_resources",
+                     "glTF viewer should avoid atmosphere resource lifecycle work in static mode");
+    require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::IblSkybox",
+                     "glTF viewer should select an IBL skybox for static environments");
     require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
-                     "glTF viewer should select the procedural atmosphere background");
+                     "glTF viewer should preserve the procedural atmosphere background mode");
+    require_contains(gltf_render, "uses_atmosphere_auto_exposure",
+                     "glTF viewer should not apply atmosphere auto exposure in static mode");
     require_contains(gltf_render, "record_atmosphere_environment_if_needed",
                      "glTF viewer should update atmosphere runtime before the PBR pass");
     require_contains(gltf_scene, "atmosphere_background_uniforms",
