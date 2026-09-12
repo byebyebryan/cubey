@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <stdexcept>
@@ -808,8 +809,22 @@ void test_pbr_shaders_use_gltf_material_remap() {
                      "the BRDF roughness floor should not erase smooth transmission mip zero");
     require_contains(gltf, "cubey_pbr_transmission_pyramid_lod(perceptual_roughness",
                      "glTF transmission should map raw perceptual roughness into the HDR pyramid");
-    require_contains(gltf, "return transmission_roughness * max_lod;",
-                     "transmission LOD should not square perceptual roughness");
+    require_contains(gltf, "float q = clamp(transmission_roughness, 0.0, 1.0);",
+                     "transmission pyramid LOD should clamp its remapped roughness input");
+    require_contains(gltf,
+                     "float max_lod = float(max(textureQueryLevels(refraction_radiance) - 1, 0));",
+                     "transmission pyramid LOD should use the screen pyramid mip domain");
+    require_contains(gltf, "if (q <= 0.0 || max_lod <= 0.0)",
+                     "smooth transmission and a one-level pyramid should remain at exact mip zero");
+    require_contains(
+        gltf, "float chain_variance_span = max(exp2(2.0 * max_lod) - 1.0, 0.0);",
+        "transmission pyramid LOD should derive its variance span from the 2x mip chain");
+    require_contains(
+        gltf, "float variance_ratio = max(1.0 + (q * q * q * q) * chain_variance_span, 1.0);",
+        "transmission pyramid LOD should map microfacet alpha variance into the bounded chain");
+    require_contains(
+        gltf, "return clamp(0.5 * log2(variance_ratio), 0.0, max_lod);",
+        "transmission pyramid LOD should remain finite and bounded by the screen chain");
     require_not_contains(gltf, "roughness * roughness * ior_roughness_scale",
                          "transmission must not retain the pre-Khronos squared roughness mapping");
     require_contains(gltf, "textureLod(refraction_radiance",
@@ -831,37 +846,164 @@ void test_pbr_shaders_use_gltf_material_remap() {
     require_contains(
         gltf, "material.volume_thickness_transform)).g",
         "glTF volume thickness should read its linear green channel through its own transform");
+    require_contains(gltf, "struct CubeyPbrVolumeTransmissionRay",
+                     "glTF volume should return an explicit transmission-ray result");
+    require_contains(gltf, "vec3 world_offset;",
+                     "glTF volume ray results should carry the refracted world offset");
+    require_contains(gltf, "vec3 fallback_direction;",
+                     "glTF volume ray results should carry the fallback direction");
+    require_contains(gltf, "float world_path_distance;",
+                     "glTF volume ray results should carry the world optical distance");
     require_contains(gltf, "cubey_pbr_volume_transmission_ray",
-                     "glTF volume should construct a Khronos-style refracted transmission ray");
-    require_contains(gltf, "refract(-view_direction, normalize(normal)",
-                     "glTF volume refraction should use the material IOR at the interface");
-    require_contains(gltf, "thickness * max(model_scale, vec3(0.0))",
+                     "glTF volume should construct a Filament-inspired solid-volume refraction-ray "
+                     "representation");
+    require_contains(gltf, "float eta_ir = 1.0 / interface_ior",
+                     "glTF volume should derive the entry refraction ratio from the material IOR");
+    require_contains(gltf, "float entry_discriminant = 1.0 - (eta_ir * eta_ir * sin2_theta)",
+                     "glTF volume should guard degenerate entry refraction and TIR");
+    require_contains(gltf, "vec3 internal_direction =",
+                     "glTF volume should retain the refracted interior direction");
+    require_contains(gltf, "float mesh_path_distance = max(thickness, 0.0) *",
+                     "glTF volume should derive an interior path from the authored thickness");
+    require_contains(gltf, "vec3 mesh_exit_offset = internal_direction * mesh_path_distance",
+                     "glTF volume should advance to the approximate second interface");
+    require_contains(
+        gltf, "vec3 exit_direction = refract(internal_direction, exit_normal, interface_ior)",
+        "glTF volume should refract through the approximate second interface");
+    require_contains(gltf, "exit_direction = reflect(internal_direction, exit_normal)",
+                     "glTF volume should keep a finite fallback when the exit interface TIRs");
+    require_contains(gltf, "mesh_exit_offset * max(model_scale, vec3(0.0))",
                      "glTF volume thickness should be scaled from mesh to world space");
     require_contains(gltf, "cubey_pbr_project_refraction_exit",
                      "glTF volume should project its refracted exit into same-frame screen space");
-    require_contains(gltf, "frag_world_position + volume_transmission_ray",
+    require_contains(gltf, "frag_world_position + volume_transmission_ray.world_offset",
                      "glTF volume should project the refracted world-space exit point");
     require_contains(gltf,
-                     "refraction_fallback_direction = volume_transmission_ray / volume_ray_length",
+                     "refraction_fallback_direction = volume_transmission_ray.fallback_direction",
                      "glTF volume should use the refracted ray for environment fallback");
+    require_contains(gltf, "result.world_path_distance = length(result.world_offset)",
+                     "glTF volume should measure attenuation in world-space path distance");
+    require_contains(
+        gltf, "result.fallback_direction = exit_direction * inversesqrt(exit_length_squared)",
+        "glTF volume should use the second-interface direction for environment fallback");
+    require_not_contains(
+        gltf, "result.fallback_direction = result.world_offset / result.world_path_distance",
+        "glTF volume fallback should not reuse the screen-projection offset direction");
     require_contains(gltf, "cubey_pbr_apply_volume_attenuation",
                      "glTF volume should apply Beer-Lambert attenuation after radiance lookup");
     require_contains(gltf, "pow(clamp(attenuation_color, 0.0, 1.0)",
                      "glTF volume attenuation should preserve per-channel attenuation color");
     require_contains(gltf, "if (volume_thickness > 0.0)",
                      "glTF thickness zero should preserve the existing thin transmission path");
-    require_contains(gltf, "float half_spread = max(base_ior - 1.0, 0.0) * 0.025 * dispersion",
-                     "glTF dispersion should use the stable Khronos half-spread approximation");
-    require_contains(gltf, "vec3 channel_iors = vec3(max(1.0, base_ior - half_spread), base_ior,",
-                     "glTF dispersion should keep the red IOR at or above the air interface");
-    require_contains(gltf, "channel_radiance[channel]",
-                     "glTF dispersion should select each channel from its own refracted lookup");
+    require_contains(gltf, "const mat3 K0 = mat3(",
+                     "glTF dispersion should use Filament's first spectral integration matrix");
+    require_contains(gltf, "-0.45422013, 0.04493517, 0.98249798",
+                     "glTF dispersion K0 should preserve Filament's exact column-major literals");
+    require_contains(gltf, "const mat3 K1 = mat3(",
+                     "glTF dispersion should use Filament's second spectral integration matrix");
+    require_contains(gltf, "0.06839811, 0.02732891,  0.01602064",
+                     "glTF dispersion K1 should preserve Filament's exact column-major literals");
+    require_contains(gltf, "const mat3 K2 = mat3(",
+                     "glTF dispersion should use Filament's third spectral integration matrix");
+    require_contains(gltf, "0.31884400, -0.05627069, 0.00083808",
+                     "glTF dispersion K2 should preserve Filament's exact column-major literals");
+    require_contains(gltf, "const mat3 K3 = mat3(",
+                     "glTF dispersion should use Filament's fourth spectral integration matrix");
+    require_contains(gltf, "0.06697807, -0.01599341, 0.00064333",
+                     "glTF dispersion K3 should preserve Filament's exact column-major literals");
+    require_contains(
+        gltf, "const float offsets[4] = float[](0.70795215, 0.24790980, 0.00000000, -0.29204785);",
+        "glTF dispersion should preserve Filament's exact optimized wavelength offsets");
+    require_contains(gltf, "float dispersion_factor = (dispersion / 20.0) * (base_ior - 1.0);",
+                     "glTF dispersion should derive spectral IOR offsets from the base IOR");
+    require_contains(gltf, "float ior0 = max(1.0, base_ior + dispersion_factor * offsets[0]);",
+                     "glTF dispersion should clamp each spectral IOR to the air interface");
+    for (const char* ray_name : {"r0", "r1", "r2", "r3"}) {
+        require_contains(gltf,
+                         std::string("CubeyPbrVolumeTransmissionRay ") + ray_name +
+                             " = cubey_pbr_volume_transmission_ray(",
+                         "glTF dispersion should use four explicit Cubey volume rays");
+    }
+    require_contains(gltf, "cubey_pbr_transmission_radiance_at_lod",
+                     "glTF dispersion should share explicit screen and environment LODs");
+    require_contains(
+        gltf,
+        "float pyramid_lod = cubey_pbr_transmission_pyramid_lod(perceptual_roughness, base_ior);",
+        "glTF dispersion screen LOD should be derived from the base material IOR");
+    require_contains(
+        gltf,
+        "float environment_lod = cubey_pbr_transmission_environment_lod(perceptual_roughness, "
+        "base_ior);",
+        "glTF dispersion environment LOD should be derived from the base material IOR");
+    require_contains(gltf, "r1.world_path_distance / attenuation_distance",
+                     "glTF dispersion should use the 546.1nm ray for representative attenuation");
+    require_contains(
+        gltf, "s0 *= transmittance;",
+        "glTF dispersion should attenuate the first spectral RGB sample before integration");
+    require_contains(gltf, "s1 *= transmittance;",
+                     "glTF dispersion should attenuate the representative spectral RGB sample "
+                     "before integration");
+    require_contains(
+        gltf, "s2 *= transmittance;",
+        "glTF dispersion should attenuate the third spectral RGB sample before integration");
+    require_contains(
+        gltf, "s3 *= transmittance;",
+        "glTF dispersion should attenuate the fourth spectral RGB sample before integration");
+    require_contains(
+        gltf, "return max(K0 * s0 + K1 * s1 + K2 * s2 + K3 * s3, vec3(0.0));",
+        "glTF dispersion should integrate complete RGB samples with Filament's matrices");
+    require_not_contains(gltf, "channel_radiance[channel]",
+                         "glTF dispersion should not collapse spectral samples into one channel");
+    require_not_contains(gltf, "interleavedGradientNoise",
+                         "glTF dispersion should not introduce temporal or spatial jitter");
+    require_contains(gltf, "bool volume_attenuation_pending = true;",
+                     "glTF dispersion should track whether the caller still owes Beer attenuation");
+    require_contains(gltf, "volume_attenuation_pending = false;",
+                     "glTF dispersion should mark its in-branch Beer attenuation as complete");
+    require_contains(gltf, "if (volume_attenuation_pending)",
+                     "glTF dispersion should prevent caller-side double attenuation");
     require_contains(gltf, "if (material.transmission_factor.y > 0.0)",
                      "glTF dispersion should be opt-in within the thick-volume branch");
     require_contains(gltf, "if (volume_thickness <= 0.0 || material.transmission_factor.y <= 0.0)",
                      "zero dispersion should preserve the one-sample volume path exactly");
-    require_contains(gltf, "volume_ray_length = length(volume_transmission_ray)",
+    require_contains(gltf, "volume_ray_length = volume_transmission_ray.world_path_distance",
                      "glTF dispersion should retain the green/base ray length for attenuation");
+
+    // The four GLSL matrices are column-major. Transpose the constructor literals into row
+    // storage here and verify both their identity sum and white preservation. This catches a
+    // transposed/corrupted literal without asserting any raster output or fragile sample order.
+    using Matrix3 = std::array<std::array<double, 3>, 3>;
+    const Matrix3 k0{{{{0.00581637, -0.11782236, -0.45422013}},
+                      {{0.02312851, 0.11316202, 0.04493517}},
+                      {{0.01689631, 0.11098148, 0.98249798}}}};
+    const Matrix3 k1{{{{0.14291703, -0.27560148, 0.06839811}},
+                      {{0.10429778, 0.57678541, 0.02732891}},
+                      {{-0.01556522, -0.06412244, 0.01602064}}}};
+    const Matrix3 k2{{{{0.70106120, 0.29545674, 0.31884400}},
+                      {{-0.09440402, 0.29931852, -0.05627069}},
+                      {{-0.00241699, -0.04351961, 0.00083808}}}};
+    const Matrix3 k3{{{{0.15020522, 0.09796715, 0.06697807}},
+                      {{-0.03302213, 0.01073410, -0.01599341}},
+                      {{0.00108589, -0.00333946, 0.00064333}}}};
+    const std::array<Matrix3, 4> matrices{k0, k1, k2, k3};
+    Matrix3 matrix_sum{};
+    for (const Matrix3& matrix : matrices) {
+        for (std::size_t row = 0; row < 3; ++row) {
+            for (std::size_t column = 0; column < 3; ++column) {
+                matrix_sum[row][column] += matrix[row][column];
+            }
+        }
+    }
+    for (std::size_t row = 0; row < 3; ++row) {
+        for (std::size_t column = 0; column < 3; ++column) {
+            const double expected = row == column ? 1.0 : 0.0;
+            require(std::fabs(matrix_sum[row][column] - expected) < 2.0e-6,
+                    "glTF dispersion matrix sum should preserve the RGB identity transform");
+        }
+        const double white = matrix_sum[row][0] + matrix_sum[row][1] + matrix_sum[row][2];
+        require(std::fabs(white - 1.0) < 2.0e-6,
+                "glTF dispersion matrix sum should preserve white radiance");
+    }
     require_contains(gltf, "view_facing_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90)",
                      "glTF transmission should derive its interface Fresnel from the view angle");
     require_contains(gltf,
