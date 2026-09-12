@@ -354,11 +354,24 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         post_scene_color = cloud_scene_color;
     }
     if (has_transmission) {
-        graph.add_pass("refraction pyramid", render::RenderGraphQueueDomain::Graphics)
-            .read_texture(post_scene_color)
-            .execute([this, frame_slot](const render::RenderGraphExecutionContext& context) {
-                refraction_pyramid().record(context.recorder(), frame_slot);
-            });
+        auto refraction_source_pass =
+            graph.add_pass("refraction source", render::RenderGraphQueueDomain::Graphics)
+                .read_texture(post_scene_color)
+                .write_depth(scene_depth)
+                .material_pass(render::pbr_forward_pass_info(
+                    {.blend = render::MaterialBlendMode::AlphaBlend}));
+        declare_deformation_vertex_reads(refraction_source_pass, deformation_vertex_buffers);
+        refraction_source_pass.execute([this, frame_slot, &scene_plan, mesh_resolver, &materials](
+                                           const render::RenderGraphExecutionContext& context) {
+            // Mip zero is an isolated radiance source. Ordinary alpha is
+            // composited here for transmission lookup and later once into
+            // the final scene after transmissive geometry.
+            refraction_pyramid().record_source_copy(context.recorder(), frame_slot);
+            record_scene_alpha_pass(context.recorder(),
+                                    refraction_pyramid().source_target(frame_slot), scene_plan,
+                                    frame_slot, mesh_resolver, materials);
+            refraction_pyramid().record_remaining_mips(context.recorder(), frame_slot);
+        });
         graph.add_pass("transmission", render::RenderGraphQueueDomain::Graphics)
             .read_write_color(post_scene_color)
             .write_depth(scene_depth)

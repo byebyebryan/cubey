@@ -690,6 +690,36 @@ if (BUILD_TESTING)
         0
         --pause-time
     )
+
+    # This three-by-three layout places a shared alpha symbol behind, within, and in front of
+    # transmissive gems. Use a fixed, close, face-on camera so the semantic analyzer can inspect
+    # the authored alpha strokes through the left and center gems without depending on clouds or
+    # time-of-day lighting.
+    cubey_add_gltf_viewer_material_conformance_fixture(
+        transmission_order_test
+        "transmission order"
+        "TransmissionOrderTest/glTF-Binary/TransmissionOrderTest.glb"
+        d904b6cd6c83792fd4a4d9ad4f0366bde76a63e347541c465f2ad4c5baf22a21
+        "gltf-viewer-transmission-order-test-conformance.png"
+        gltf-transmission-order-test
+        --require-validation
+        --pbr-environment-source
+        static
+        --no-clouds
+        --exposure
+        0
+        --pbr-tonemap
+        linear
+        --capture-camera-fov-y-degrees
+        25
+        --capture-camera-distance-scale
+        0.55
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+        --pause-time
+    )
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_dragon_attenuation_volume_headless_writes_png
         "DragonAttenuation/glTF/DragonAttenuation.gltf"

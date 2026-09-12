@@ -3,6 +3,7 @@
 #include <cubey/render/frame_data.h>
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pipeline_resource.h>
+#include <cubey/render/target.h>
 #include <cubey/render/texture.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
@@ -71,6 +72,18 @@ class HdrColorPyramid {
     void update_source_descriptor(const cubey::vulkan::Device& device, FrameSlot frame_slot,
                                   VkSampler sampler, VkImageView source_view,
                                   VkImageLayout source_layout);
+
+    // Copy the externally supplied scene radiance into mip zero and retain the
+    // mip as a color attachment. Call source_target() to composite additional
+    // radiance into that isolated source, then call record_remaining_mips()
+    // before sampling the pyramid.
+    void record_source_copy(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot);
+    [[nodiscard]] ColorTargetView source_target(FrameSlot frame_slot) const;
+    void record_remaining_mips(const cubey::vulkan::CommandRecorder& recorder,
+                               FrameSlot frame_slot);
+
+    // Convenience path for callers that do not need to inject content into
+    // mip zero between the copy and downsample stages.
     void record(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot);
 
     [[nodiscard]] HdrColorPyramidSnapshot snapshot(FrameSlot frame_slot) const;
@@ -86,6 +99,7 @@ class HdrColorPyramid {
         std::vector<cubey::vulkan::ImageView> mip_views{};
         bool initialized = false;
         bool valid = false;
+        bool source_copy_pending = false;
     };
 
     void transition_mip(const cubey::vulkan::CommandRecorder& recorder, VkImage image,

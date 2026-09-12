@@ -967,6 +967,83 @@ void check_gltf_transmission_thinwall_test(const LoadedImage& image) {
             "TransmissionThinwallTestGrid high-IOR volume should depart from thin-wall checker geometry");
 }
 
+void check_gltf_transmission_order_test(const LoadedImage& image) {
+    // TransmissionOrderTest deliberately places the same alpha symbol behind,
+    // intersecting, and in front of transmissive gems. The top row is BLEND,
+    // followed by MASK and OPAQUE controls. This is a real-time semantic
+    // witness: the front symbol remains visible after transmission, while the
+    // left and center BLEND symbols must participate in the radiance sampled
+    // through the gems instead of disappearing from it.
+    constexpr std::array<float, 3> kColumnCenters{{0.2625F, 0.4875F, 0.7125F}};
+    constexpr std::array<float, 3> kRowCenters{{0.25F, 0.50F, 0.75F}};
+    constexpr float kHalfExtent = 0.040F;
+
+    require(image.width == 1920 && image.height == 1080,
+            "TransmissionOrderTest conformance requires its calibrated 1920x1080 capture");
+
+    std::array<std::array<ContrastStats, 3>, 3> cells{};
+    for (std::size_t row = 0; row < cells.size(); ++row) {
+        for (std::size_t column = 0; column < cells[row].size(); ++column) {
+            cells[row][column] = normalized_square_contrast_region(
+                image, kColumnCenters[column], kRowCenters[row], kHalfExtent, true);
+            require(cells[row][column].pixel_count >= 5'000U,
+                    "TransmissionOrderTest capture should retain every authored gem ROI");
+        }
+    }
+
+    std::printf("material_conformance: gltf-transmission-order-test\n");
+    for (std::size_t row = 0; row < cells.size(); ++row) {
+        std::printf("  row[%zu] center_luma=", row);
+        for (const ContrastStats& cell : cells[row]) {
+            std::printf(" %.4f", cell.mean_luma);
+        }
+        std::printf(" contrast=");
+        for (const ContrastStats& cell : cells[row]) {
+            std::printf(" %.4f", cell.standard_deviation);
+        }
+        std::printf("\n");
+    }
+    // Each probe sits on an authored alpha stroke rather than the blue gem's
+    // center. The fixed static-environment camera makes its linear red-minus-
+    // blue value a compact witness for the orange symbol reaching the sampled
+    // radiance source.
+    constexpr std::array<float, 3> kSourceProbeX{{0.2175F, 0.4650F, 0.7125F}};
+    std::array<std::array<CircleStats, 3>, 3> source_probes{};
+    for (std::size_t row = 0; row < kRowCenters.size(); ++row) {
+        std::printf("  row[%zu] source probes red_minus_blue=", row);
+        for (std::size_t column = 0; column < kSourceProbeX.size(); ++column) {
+            source_probes[row][column] = normalized_circle_region(image, kSourceProbeX[column],
+                                                                  kRowCenters[row], 0.012F, true);
+            std::printf(" %.4f", source_probes[row][column].color.red -
+                                     source_probes[row][column].color.blue);
+        }
+        std::printf("\n");
+    }
+
+    constexpr double kMinimumBlendSourceWarmth = -0.050;
+    constexpr double kMinimumControlWarmth = -0.055;
+    constexpr double kMinimumForegroundWarmthGain = 0.020;
+    require(source_probes[0][0].color.red - source_probes[0][0].color.blue >=
+                    kMinimumBlendSourceWarmth &&
+                source_probes[0][1].color.red - source_probes[0][1].color.blue >=
+                    kMinimumBlendSourceWarmth,
+            "TransmissionOrderTest BLEND symbols behind and within gems should remain in "
+            "refraction radiance");
+    require(
+        source_probes[1][0].color.red - source_probes[1][0].color.blue >= kMinimumControlWarmth &&
+            source_probes[1][1].color.red - source_probes[1][1].color.blue >=
+                kMinimumControlWarmth &&
+            source_probes[2][0].color.red - source_probes[2][0].color.blue >=
+                kMinimumControlWarmth &&
+            source_probes[2][1].color.red - source_probes[2][1].color.blue >= kMinimumControlWarmth,
+        "TransmissionOrderTest MASK and OPAQUE behind and within controls should remain visible");
+    require(source_probes[0][2].color.red - source_probes[0][2].color.blue >=
+                (source_probes[2][2].color.red - source_probes[2][2].color.blue) +
+                    kMinimumForegroundWarmthGain,
+            "TransmissionOrderTest foreground BLEND symbol should remain composited after "
+            "transmission");
+}
+
 void check_material_conformance(const std::filesystem::path& path, std::string_view case_name) {
     LoadedImage image = load_rgba_image(path);
     try {
@@ -992,6 +1069,8 @@ void check_material_conformance(const std::filesystem::path& path, std::string_v
             check_gltf_dispersion_test(image);
         } else if (case_name == "gltf-transmission-thinwall-test") {
             check_gltf_transmission_thinwall_test(image);
+        } else if (case_name == "gltf-transmission-order-test") {
+            check_gltf_transmission_order_test(image);
         } else {
             throw std::runtime_error("unknown material conformance case");
         }

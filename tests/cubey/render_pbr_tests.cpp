@@ -1236,6 +1236,14 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
         "glTF viewer sample smoke tests should cover transmission roughness mip selection");
     require_contains(cmake, "TransmissionOrderTest/glTF/TransmissionOrderTest.gltf",
                      "glTF viewer sample smoke tests should cover transmission ordering");
+    require_contains(cmake, "TransmissionOrderTest/glTF-Binary/TransmissionOrderTest.glb",
+                     "glTF viewer conformance fixtures should pin transmission ordering");
+    require_contains(
+        cmake, "gltf-transmission-order-test",
+        "glTF viewer conformance fixtures should semantically analyze transmission ordering");
+    require_contains(
+        cmake, "d904b6cd6c83792fd4a4d9ad4f0366bde76a63e347541c465f2ad4c5baf22a21",
+        "TransmissionOrderTest conformance should pin the exact Khronos asset payload");
     require_contains(cmake,
                      "--pbr-environment-source static\n"
                      "            --no-clouds\n"

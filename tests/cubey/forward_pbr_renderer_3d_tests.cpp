@@ -734,8 +734,8 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
     require_contains(
         graph, "if (!has_transmission)",
         "forward graph should retain its original shape when no transmission is visible");
-    require_contains(graph, "graph.add_pass(\"refraction pyramid\"",
-                     "forward graph should profile the post-cloud HDR refraction capture");
+    require_contains(graph, "graph.add_pass(\"refraction source\"",
+                     "forward graph should isolate the post-cloud HDR refraction source");
     require_contains(graph, "graph.add_pass(\"transmission\"",
                      "forward graph should expose a distinct transmission stage boundary");
     require_contains(graph, "graph.add_pass(\"alpha\"",
@@ -784,6 +784,37 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
         "the transmission stage should filter independent optical packet classification");
     require_contains(recording, "render::MaterialOpticalMode::Opaque",
                      "ordinary shadow and alpha recording should reject transmissive packets");
+    require_contains(pyramid_header, "void record_source_copy",
+                     "HDR refraction capture should expose a mip-zero copy stage");
+    require_contains(pyramid_header, "ColorTargetView source_target",
+                     "HDR refraction capture should expose its isolated mip-zero target");
+    require_contains(pyramid_header, "void record_remaining_mips",
+                     "HDR refraction capture should finish filtering after source composition");
+    require_contains(pyramid, "source_copy_pending",
+                     "HDR refraction capture should validate per-slot split-recording state");
+    require_contains(pyramid, "requires a source copy before filtering",
+                     "HDR refraction capture should reject filtering before mip-zero is ready");
+    require_contains(graph, "refraction_pyramid().record_source_copy",
+                     "forward graph should copy opaque and cloud radiance before source alpha");
+    require_contains(graph, "refraction_pyramid().source_target(frame_slot)",
+                     "ordinary alpha source composition should target isolated pyramid mip zero");
+    require_contains(graph, "refraction_pyramid().record_remaining_mips",
+                     "forward graph should generate refraction mips only after source alpha");
+
+    const std::size_t source_pass = graph.find("graph.add_pass(\"refraction source\"");
+    const std::size_t source_copy = graph.find("refraction_pyramid().record_source_copy");
+    const std::size_t source_alpha = graph.find("refraction_pyramid().source_target(frame_slot)");
+    const std::size_t source_filter = graph.find("refraction_pyramid().record_remaining_mips");
+    const std::size_t transmission = graph.find("graph.add_pass(\"transmission\"");
+    const std::size_t final_alpha = graph.find("graph.add_pass(\"alpha\"");
+    require(source_pass != std::string::npos && source_copy != std::string::npos &&
+                source_alpha != std::string::npos && source_filter != std::string::npos &&
+                transmission != std::string::npos && final_alpha != std::string::npos &&
+                source_pass < source_copy && source_copy < source_alpha &&
+                source_alpha < source_filter && source_filter < transmission &&
+                transmission < final_alpha,
+            "forward transmission should compose alpha into isolated radiance before filtering and "
+            "final alpha");
 }
 
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {

@@ -165,13 +165,70 @@ void HdrColorPyramid::update_source_descriptor(const cubey::vulkan::Device& devi
         .update(device);
 }
 
-void HdrColorPyramid::record(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot) {
+void HdrColorPyramid::record_source_copy(const cubey::vulkan::CommandRecorder& recorder,
+                                         FrameSlot frame_slot) {
     if (!resources_created() || !pipeline_created()) {
         throw std::runtime_error("HDR color pyramid is not initialized");
     }
     Buffer& slot = buffer(frame_slot);
+    if (slot.source_copy_pending) {
+        throw std::runtime_error("HDR color pyramid source copy is already pending");
+    }
+    transition_mip(
+        recorder, slot.texture->handle(), 0U,
+        slot.initialized ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, slot.initialized ? VK_ACCESS_SHADER_READ_BIT : 0U,
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        slot.initialized ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                         : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    MaterialInstance& material = filter_material(0U);
+    record_render_target_pass(
+        recorder,
+        render_target_view(color_target_view(config_.extent, config_.format, slot.texture->handle(),
+                                             slot.mip_views.front().handle())),
+        RenderClearValues{.color = color_clear_value(0.0F, 0.0F, 0.0F, 1.0F)},
+        [this, &material, frame_slot](const cubey::vulkan::CommandRecorder& pass_recorder) {
+            record_fullscreen_pipeline_draw(pass_recorder,
+                                            {
+                                                .pipeline = &filter_pipeline_.value(),
+                                                .descriptor_set = material.set(frame_slot),
+                                                .descriptor_set_index = 0U,
+                                            },
+                                            VK_SHADER_STAGE_FRAGMENT_BIT,
+                                            HdrColorPyramidFilterPushConstants{
+                                                .copy_source = 1.0F,
+                                                .bright_sample_resistance = 0.0F,
+                                            });
+        });
+    slot.source_copy_pending = true;
+    slot.valid = false;
+}
+
+ColorTargetView HdrColorPyramid::source_target(FrameSlot frame_slot) const {
+    const Buffer& slot = buffer(frame_slot);
+    if (!slot.texture.has_value() || !slot.source_copy_pending) {
+        throw std::runtime_error("HDR color pyramid source target is not writable");
+    }
+    return color_target_view(config_.extent, config_.format, slot.texture->handle(),
+                             slot.mip_views.front().handle());
+}
+
+void HdrColorPyramid::record_remaining_mips(const cubey::vulkan::CommandRecorder& recorder,
+                                            FrameSlot frame_slot) {
+    if (!resources_created() || !pipeline_created()) {
+        throw std::runtime_error("HDR color pyramid is not initialized");
+    }
+    Buffer& slot = buffer(frame_slot);
+    if (!slot.source_copy_pending) {
+        throw std::runtime_error("HDR color pyramid requires a source copy before filtering");
+    }
     const std::uint32_t mip_levels = hdr_color_pyramid_mip_levels(config_);
-    for (std::uint32_t mip = 0U; mip < mip_levels; ++mip) {
+    transition_mip(recorder, slot.texture->handle(), 0U, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                   VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    for (std::uint32_t mip = 1U; mip < mip_levels; ++mip) {
         transition_mip(
             recorder, slot.texture->handle(), mip,
             slot.initialized ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED,
@@ -198,7 +255,7 @@ void HdrColorPyramid::record(const cubey::vulkan::CommandRecorder& recorder, Fra
                     },
                     VK_SHADER_STAGE_FRAGMENT_BIT,
                     HdrColorPyramidFilterPushConstants{
-                        .copy_source = mip == 0U ? 1.0F : 0.0F,
+                        .copy_source = 0.0F,
                         .bright_sample_resistance = mip == 1U ? 1.0F : 0.0F,
                     });
             });
@@ -210,6 +267,12 @@ void HdrColorPyramid::record(const cubey::vulkan::CommandRecorder& recorder, Fra
     }
     slot.initialized = true;
     slot.valid = true;
+    slot.source_copy_pending = false;
+}
+
+void HdrColorPyramid::record(const cubey::vulkan::CommandRecorder& recorder, FrameSlot frame_slot) {
+    record_source_copy(recorder, frame_slot);
+    record_remaining_mips(recorder, frame_slot);
 }
 
 HdrColorPyramidSnapshot HdrColorPyramid::snapshot(FrameSlot frame_slot) const {
