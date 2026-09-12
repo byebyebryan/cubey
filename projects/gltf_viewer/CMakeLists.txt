@@ -502,6 +502,194 @@ if (BUILD_TESTING)
         "TransmissionThinwallTestGrid/glTF/TransmissionThinwallTestGrid.gltf"
         "gltf-viewer-transmission-thinwall-volume-grid-smoke.png"
     )
+    function(cubey_add_gltf_viewer_material_conformance_fixture
+        fixture_name
+        fixture_label
+        sample_relative_path
+        sample_sha256
+        output_name
+        conformance_case
+    )
+        if (NOT CUBEY_GLTF_SAMPLE_ASSETS_DIR)
+            return()
+        endif()
+
+        set(sample_path
+            "${CUBEY_GLTF_SAMPLE_ASSETS_DIR}/Models/${sample_relative_path}"
+        )
+        if (NOT EXISTS "${sample_path}")
+            message(
+                FATAL_ERROR
+                "Configured glTF ${fixture_label} fixture is missing: ${sample_path}"
+            )
+        endif()
+
+        set(asset_test_name "gltf_viewer_${fixture_name}_asset_is_pinned")
+        add_test(
+            NAME "${asset_test_name}"
+            COMMAND
+                /bin/sh
+                -c
+                "path=\$1; expected=\$2; actual=\$(sha256sum \"\$path\" | cut -d ' ' -f 1); printf '${fixture_label} fixture sha256: %s\\n' \"\$actual\"; test \"\$actual\" = \"\$expected\""
+                "${asset_test_name}"
+                "${sample_path}"
+                "${sample_sha256}"
+        )
+        set_tests_properties("${asset_test_name}" PROPERTIES TIMEOUT 10)
+        set_property(
+            TEST "${asset_test_name}"
+            APPEND
+            PROPERTY LABELS "gltf;gltf_sample;conformance"
+        )
+
+        set(output_path "${CMAKE_CURRENT_BINARY_DIR}/${output_name}")
+        set(capture_test_name "gltf_viewer_${fixture_name}_conformance_writes_png")
+        cubey_add_png_capture_test(
+            "${capture_test_name}"
+            cubey_project_gltf_viewer
+            "${output_path}"
+            1920
+            1080
+            --input
+            "${sample_path}"
+            ${ARGN}
+        )
+        cubey_add_png_material_conformance_test(
+            "${capture_test_name}"
+            "${output_path}"
+            "${conformance_case}"
+        )
+        set(conformance_test_name "${capture_test_name}_material_conformance")
+        set_tests_properties(
+            "${conformance_test_name}"
+            PROPERTIES
+                DEPENDS
+                    "${capture_test_name};${asset_test_name}"
+        )
+        cubey_label_tests(
+            conformance
+            "${capture_test_name}"
+            "${conformance_test_name}"
+        )
+        cubey_label_tests(
+            gltf
+            "${capture_test_name}"
+            "${conformance_test_name}"
+        )
+        cubey_label_tests(
+            gltf_sample
+            "${capture_test_name}"
+            "${conformance_test_name}"
+        )
+    endfunction()
+
+    # The semantic analyzer is calibrated to the authored five-by-five layout in the pinned
+    # 2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf checkout.
+    # The asset's oracle requires face-on viewing. Preserve the grid's framing with a long lens
+    # so per-cell screen refraction does not become a row-dependent presentation variable.
+    cubey_add_gltf_viewer_material_conformance_fixture(
+        attenuation_test
+        attenuation
+        "AttenuationTest/glTF-Binary/AttenuationTest.glb"
+        7ca161b7f8a9e4b2ac1f7f75816b5848bb31f3b4c226c4cb731b487c8809b756
+        "gltf-viewer-attenuation-test-conformance.png"
+        gltf-attenuation-test
+        --pbr-environment-source
+        static
+        --no-clouds
+        --exposure
+        0
+        --pbr-tonemap
+        linear
+        --capture-camera-fov-y-degrees
+        14.65
+        --capture-camera-distance-scale
+        2
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+        --pause-time
+    )
+
+    cubey_add_gltf_viewer_material_conformance_fixture(
+        transmission_roughness_test
+        "transmission roughness"
+        "TransmissionRoughnessTest/glTF-Binary/TransmissionRoughnessTest.glb"
+        43ace8f8dfe0b6148dc4668e6a768c8853ba37cf1f0fe7de76eaf0ea8e94bb73
+        "gltf-viewer-transmission-roughness-test-conformance.png"
+        gltf-transmission-roughness-test
+        --pbr-environment-source
+        static
+        --no-clouds
+        --exposure
+        0
+        --pbr-tonemap
+        linear
+        --capture-camera-fov-y-degrees
+        14.65
+        --capture-camera-distance-scale
+        2
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+        --pause-time
+    )
+
+    # Pitch the camera down slightly so the authored prisms expose their refractive edges while
+    # the complete five-by-five grid remains in frame.
+    cubey_add_gltf_viewer_material_conformance_fixture(
+        dispersion_test
+        dispersion
+        "DispersionTest/glTF-Binary/DispersionTest.glb"
+        bbac38386632b5a7a27289737963314c2f92095074dfdf0e8c0c1c25270b3e37
+        "gltf-viewer-dispersion-test-conformance.png"
+        gltf-dispersion-test
+        --pbr-environment-source
+        static
+        --no-clouds
+        --exposure
+        0
+        --pbr-tonemap
+        linear
+        --capture-camera-fov-y-degrees
+        20
+        --capture-camera-distance-scale
+        0.2
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        -25
+        --pause-time
+    )
+
+    # The authored grid is a face-on optical oracle. Preserve its complete checker layout with
+    # the same long-lens capture contract as the other transmission fixtures.
+    cubey_add_gltf_viewer_material_conformance_fixture(
+        transmission_thinwall_test
+        "transmission thin-wall"
+        "TransmissionThinwallTestGrid/glTF-Binary/TransmissionThinwallTestGrid.glb"
+        e4ee8e5a28f81f75ef40b264ad22725e9065470b8ee02f9a4c6fa96b669cbcc7
+        "gltf-viewer-transmission-thinwall-test-conformance.png"
+        gltf-transmission-thinwall-test
+        --pbr-environment-source
+        static
+        --no-clouds
+        --exposure
+        0
+        --pbr-tonemap
+        linear
+        --capture-camera-fov-y-degrees
+        14.65
+        --capture-camera-distance-scale
+        2
+        --capture-camera-yaw
+        0
+        --capture-camera-pitch
+        0
+        --pause-time
+    )
     cubey_add_gltf_viewer_sample_smoke_test(
         gltf_viewer_dragon_attenuation_volume_headless_writes_png
         "DragonAttenuation/glTF/DragonAttenuation.gltf"
