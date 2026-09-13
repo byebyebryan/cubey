@@ -3,6 +3,7 @@
 #include <cubey/asset/gltf_asset.h>
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
@@ -12,6 +13,7 @@
 
 struct cgltf_image;
 struct cgltf_data;
+struct cgltf_accessor;
 
 namespace cubey::asset::gltf_internal {
 
@@ -46,8 +48,13 @@ class ScopedLoadProfilePhase {
 [[nodiscard]] GltfImage decode_image(const cgltf_image& source,
                                      const std::filesystem::path& source_path,
                                      GltfAssetLoadProfile* profile);
+[[nodiscard]] std::vector<float> read_float_accessor_values(const cgltf_accessor* accessor,
+                                                            std::size_t component_count,
+                                                            const char* label);
 void assemble_gltf_material_data(GltfAsset& asset, const cgltf_data& data,
                                  const std::filesystem::path& source_path,
                                  GltfAssetLoadProfile* profile);
+void assemble_gltf_geometry_data(GltfAsset& asset, const cgltf_data& data,
+                                 const GltfLoadConfig& config);
 
 } // namespace cubey::asset::gltf_internal
