@@ -17,6 +17,12 @@ add_executable(cubey_core_tests
     file_io_tests.cpp
     frame_clock_tests.cpp
     gltf_asset_tests.cpp
+    gltf_asset_test_support.cpp
+    gltf_asset_probe_tests.cpp
+    gltf_asset_material_tests.cpp
+    gltf_asset_geometry_tests.cpp
+    gltf_asset_scene_animation_tests.cpp
+    gltf_asset_image_tests.cpp
     terrain_raster_height_source_tests.cpp
     gltf_scene_importer_animation_tests.cpp
     frame_resources_tests.cpp
