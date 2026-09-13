@@ -132,7 +132,9 @@ instance service:
   and per-import deformation resources;
 - `prepare_gltf_scene()` is CPU-only: it validates and copies material, texture,
   mesh, node, morph, and skin data into a self-contained prepared product,
-  including BasisU transcoding, bounds, and triangle counts;
+  including BasisU transcoding, bounds, and triangle counts. Per-instance
+  deformation payloads reference the prepared mesh's single vertex/index copy
+  instead of duplicating base geometry for every deformable node;
 - `GltfSceneUploadSession` is the canonical residency path. It divides destination
   creation and uploads into later owner advances, aggregates copies into
   bounded `GpuUploadStep` submissions, and publishes a resident product only

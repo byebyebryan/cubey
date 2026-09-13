@@ -89,10 +89,16 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         scene_plan.light_packets, view.light_entity, view.fallback_light);
 
     const bool uses_final_display_transform = settings.debug_view == render::PbrDebugView::Final;
+    const render::AtmosphereEnvironmentFrameUniforms* atmosphere_background =
+        settings.atmosphere_background.has_value() ? &*settings.atmosphere_background : nullptr;
     std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain;
     if (uses_final_display_transform && settings.terrain_backdrop.has_value()) {
+        if (atmosphere_background == nullptr) {
+            throw std::runtime_error(
+                "forward PBR terrain backdrop requires atmosphere frame uniforms");
+        }
         terrain = settings.terrain_backdrop;
-        terrain->frame.atmosphere = settings.atmosphere_background.value();
+        terrain->frame.atmosphere = *atmosphere_background;
         terrain->runtime->prepare_frame(target.frame_slot, terrain->frame);
     }
     std::optional<ForwardPbrRenderer3DOceanSurface> ocean;
@@ -104,6 +110,12 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         ocean->runtime->prepare_frame(target.frame_slot, ocean->frame);
     }
 
+    BackdropReflection backdrop_reflection;
+    if (terrain.has_value()) {
+        backdrop_reflection = terrain->runtime->reflection();
+    } else if (ocean.has_value()) {
+        backdrop_reflection = ocean->runtime->reflection();
+    }
     const render::PbrSceneUniforms scene_uniforms = forward_pbr_renderer_3d_scene_uniforms({
         .view_projection = scene_plan.view_projection_matrix,
         .light_view_projection = shadow_plan.view_projection_matrix,
@@ -115,9 +127,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         .environment_blend = global_.environment.prefiltered_blend,
         .environment_rotation_degrees = settings.environment_rotation_degrees,
         .debug_view = settings.debug_view,
-        .backdrop_reflection = terrain.has_value() ? terrain->runtime->reflection()
-                               : ocean.has_value() ? ocean->runtime->reflection()
-                                                   : BackdropReflection{},
+        .backdrop_reflection = backdrop_reflection,
     });
     scene_material().upload(target.frame_slot, scene_uniforms);
     if (has_transmission) {
@@ -145,8 +155,11 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .environment_rotation_degrees = settings.environment_rotation_degrees,
         }));
     if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
-        global_.atmosphere_background.upload(target.frame_slot,
-                                             settings.atmosphere_background.value());
+        if (atmosphere_background == nullptr) {
+            throw std::runtime_error(
+                "forward PBR atmosphere background requires atmosphere frame uniforms");
+        }
+        global_.atmosphere_background.upload(target.frame_slot, *atmosphere_background);
     }
     post_material().upload(
         target.frame_slot,
@@ -156,12 +169,11 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .tonemap = uses_final_display_transform ? settings.tonemap : render::PbrTonemap::Linear,
         }));
 
-    const CompiledGraph render_graph =
-        current_render_graph(target.color_target, target.frame_slot, target.color_initial_state,
-                             target.color_final_state, shadow_plan, scene_plan, *resources.meshes,
-                             resources.frame_meshes, resources.deformation_commands,
-                             *resources.materials, settings.debug_view, settings.background_mode,
-                             settings.atmosphere_clouds, terrain, ocean, has_transmission);
+    const CompiledGraph render_graph = current_render_graph(
+        target.color_target, target.frame_slot, target.color_initial_state,
+        target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
+        resources.deformation_commands, *resources.materials, settings.debug_view,
+        settings.background_mode, settings.atmosphere_clouds, terrain, ocean, has_transmission);
     CloudEnvironmentRuntime* cloud_runtime =
         settings.atmosphere_clouds.has_value() ? settings.atmosphere_clouds->runtime : nullptr;
     global_.graph_executor.record(
@@ -203,8 +215,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
 ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_render_graph(
     render::ColorTargetView color_target, render::FrameSlot frame_slot,
     render::RenderGraphTextureState color_initial_state,
-    render::RenderGraphTextureState color_final_state, const scene::RenderFramePlan3D& shadow_plan,
-    const scene::RenderFramePlan3D& scene_plan,
+    render::RenderGraphTextureState color_final_state,
+    const ForwardPbrRenderer3DFramePlans& frame_plans,
     const render::MeshResourceTable<render::Mesh>& meshes,
     const render::FrameMeshResourceTable* frame_meshes,
     std::span<const render::GpuDeformationCommand> deformation_commands,
@@ -213,6 +225,11 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
     const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
     const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean, bool has_transmission) {
+    if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
+        throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
+    }
+    const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
+    const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);

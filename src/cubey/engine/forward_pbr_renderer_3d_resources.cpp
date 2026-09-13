@@ -510,11 +510,11 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
 }
 
 bool ForwardPbrRenderer3D::Impl::has_transmission_packets(
-    const scene::RenderFramePlan3D& scene_plan) const noexcept {
-    return std::any_of(scene_plan.draw_packets.begin(), scene_plan.draw_packets.end(),
-                       [](const scene::RenderDrawPacket3D& packet) {
-                           return render::material_uses_transmission(packet.material_info);
-                       });
+    const scene::RenderFramePlan3D& scene_plan) noexcept {
+    return std::ranges::any_of(scene_plan.draw_packets,
+                               [](const scene::RenderDrawPacket3D& packet) {
+                                   return render::material_uses_transmission(packet.material_info);
+                               });
 }
 
 void ForwardPbrRenderer3D::Impl::ensure_refraction_pyramid(const vulkan::Device& device) {

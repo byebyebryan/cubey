@@ -19,40 +19,15 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
+#include <memory>
 #include <span>
 #include <string_view>
 #include <utility>
 
 namespace cubey::asset::gltf_internal {
-namespace {
-
-class ScopedLoadProfilePhase {
-  public:
-    ScopedLoadProfilePhase(GltfAssetLoadProfile* profile, double GltfAssetLoadProfile::* field)
-        : profile_(profile), field_(field), started_(Clock::now()) {}
-
-    ~ScopedLoadProfilePhase() {
-        if (profile_ != nullptr) {
-            profile_->*field_ +=
-                std::chrono::duration<double, std::milli>(Clock::now() - started_).count();
-        }
-    }
-
-    ScopedLoadProfilePhase(const ScopedLoadProfilePhase&) = delete;
-    ScopedLoadProfilePhase& operator=(const ScopedLoadProfilePhase&) = delete;
-
-  private:
-    using Clock = std::chrono::steady_clock;
-
-    GltfAssetLoadProfile* profile_ = nullptr;
-    double GltfAssetLoadProfile::* field_ = nullptr;
-    Clock::time_point started_{};
-};
-
-} // namespace
 
 std::runtime_error gltf_error(const std::string& message) {
     return std::runtime_error("glTF asset: " + message);
@@ -283,16 +258,20 @@ GltfImage decode_image(const cgltf_image& source, const std::filesystem::path& s
 
     const ScopedLoadProfilePhase decode_phase(profile,
                                               &GltfAssetLoadProfile::image_decode_milliseconds);
+    if (bytes.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+        throw gltf_error("encoded image exceeds stb_image input limits");
+    }
     int width = 0;
     int height = 0;
     int channels = 0;
-    stbi_uc* decoded = stbi_load_from_memory(bytes.data(), static_cast<int>(bytes.size()), &width,
-                                             &height, &channels, 4);
+    using StbiImage = std::unique_ptr<stbi_uc, decltype(&stbi_image_free)>;
+    StbiImage decoded(stbi_load_from_memory(bytes.data(), static_cast<int>(bytes.size()), &width,
+                                            &height, &channels, 4),
+                      &stbi_image_free);
     if (decoded == nullptr) {
         throw gltf_error("failed to decode image: " + std::string(stbi_failure_reason()));
     }
     if (width <= 0 || height <= 0) {
-        stbi_image_free(decoded);
         throw gltf_error("decoded image has invalid dimensions");
     }
 
@@ -304,9 +283,8 @@ GltfImage decode_image(const cgltf_image& source, const std::filesystem::path& s
         .width = static_cast<std::uint32_t>(width),
         .height = static_cast<std::uint32_t>(height),
         .mip_levels = 1,
-        .rgba8 = std::vector<std::uint8_t>(decoded, decoded + byte_count),
+        .rgba8 = std::vector<std::uint8_t>(decoded.get(), decoded.get() + byte_count),
     };
-    stbi_image_free(decoded);
     return image;
 }
 

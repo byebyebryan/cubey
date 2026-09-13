@@ -723,7 +723,7 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
     require_contains(
         importer, "const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode)",
         "glTF importer should map source alpha modes into render material policy");
-    require_contains(importer, "source.double_sided ? VK_CULL_MODE_NONE",
+    require_contains(importer, "volume_boundary || !source.double_sided",
                      "glTF importer should preserve doubleSided for non-volume render policy");
     require_contains(importer, "const bool volume_boundary",
                      "glTF importer should select a separate closed-volume boundary cull policy");
@@ -1084,7 +1084,7 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                      "forward PBR materials should crossfade prefiltered environment generations");
     require_contains(skybox_shader, "previous_environment_cube",
                      "forward PBR skybox should crossfade environment generations coherently");
-    require_contains(graph, "settings.atmosphere_background.value()",
+    require_contains(graph, "global_.atmosphere_background.upload",
                      "forward PBR record path should upload per-frame atmosphere uniforms");
     require_contains(header, "ForwardPbrRenderer3DAtmosphereClouds",
                      "forward PBR settings should accept a shared atmosphere cloud frame");

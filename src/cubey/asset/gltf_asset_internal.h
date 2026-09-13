@@ -2,6 +2,7 @@
 
 #include <cubey/asset/gltf_asset.h>
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
@@ -12,6 +13,29 @@
 struct cgltf_image;
 
 namespace cubey::asset::gltf_internal {
+
+class ScopedLoadProfilePhase {
+  public:
+    ScopedLoadProfilePhase(GltfAssetLoadProfile* profile, double GltfAssetLoadProfile::* field)
+        : profile_(profile), field_(field), started_(Clock::now()) {}
+
+    ~ScopedLoadProfilePhase() {
+        if (profile_ != nullptr) {
+            profile_->*field_ +=
+                std::chrono::duration<double, std::milli>(Clock::now() - started_).count();
+        }
+    }
+
+    ScopedLoadProfilePhase(const ScopedLoadProfilePhase&) = delete;
+    ScopedLoadProfilePhase& operator=(const ScopedLoadProfilePhase&) = delete;
+
+  private:
+    using Clock = std::chrono::steady_clock;
+
+    GltfAssetLoadProfile* profile_ = nullptr;
+    double GltfAssetLoadProfile::* field_ = nullptr;
+    Clock::time_point started_{};
+};
 
 [[nodiscard]] std::runtime_error gltf_error(const std::string& message);
 [[nodiscard]] std::string label_or_empty(const char* label);

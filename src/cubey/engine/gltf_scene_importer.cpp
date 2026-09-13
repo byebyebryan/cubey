@@ -122,8 +122,8 @@ void accumulate_node_bounds(const GltfPreparedScene& prepared, std::uint32_t nod
 [[nodiscard]] const GltfDeformablePrimitive3D*
 deformable_primitive(const GltfSceneImportResources& resources, std::uint32_t node_index,
                      std::uint32_t mesh_index, std::uint32_t primitive_index) {
-    const auto position = std::find_if(
-        resources.deformable_primitives.begin(), resources.deformable_primitives.end(),
+    const auto position = std::ranges::find_if(
+        resources.deformable_primitives,
         [node_index, mesh_index, primitive_index](const GltfDeformablePrimitive3D& primitive) {
             return primitive.node_index == node_index && primitive.mesh_index == mesh_index &&
                    primitive.primitive_index == primitive_index;
@@ -224,7 +224,8 @@ bool gltf_primitive_requires_deformation(GltfPrimitiveDeformationKind kind) {
     return kind != GltfPrimitiveDeformationKind::Static;
 }
 
-GltfPreparedScene prepare_gltf_scene(const asset::GltfAsset& asset, GltfSceneImportConfig config,
+GltfPreparedScene prepare_gltf_scene(const asset::GltfAsset& asset,
+                                     const GltfSceneImportConfig& config,
                                      GltfSceneImportCapabilities capabilities) {
     const std::uint32_t scene_index = scene_index_for_import(asset, config);
     GltfPreparedScene prepared;
@@ -339,18 +340,12 @@ GltfSceneImportResult activate_gltf_scene(Engine& engine, SceneTransaction& tran
             }
         }
         for (GltfDeformablePrimitive3D& primitive : resources.deformable_primitives) {
-            primitive.source_mesh =
-                remap_mesh_handle(primitive.source_mesh, activated_static.size(), activated_static,
-                                  activated_deformation);
             primitive.output_mesh =
                 remap_mesh_handle(primitive.output_mesh, activated_static.size(), activated_static,
                                   activated_deformation);
             primitive.material = remap_material_handle(primitive.material, activated_materials);
         }
         for (GltfDeformationPrimitiveResources& primitive : resources.deformation.primitives) {
-            primitive.primitive.source_mesh =
-                remap_mesh_handle(primitive.primitive.source_mesh, activated_static.size(),
-                                  activated_static, activated_deformation);
             primitive.primitive.output_mesh =
                 remap_mesh_handle(primitive.primitive.output_mesh, activated_static.size(),
                                   activated_static, activated_deformation);
@@ -376,7 +371,7 @@ GltfSceneImportResult import_gltf_scene(Engine& engine, SceneTransaction& transa
                                         const asset::GltfAsset& asset, const vulkan::Device& device,
                                         vulkan::GpuRuntime& gpu,
                                         GltfSceneImportResources& resources,
-                                        GltfSceneImportConfig config) {
+                                        const GltfSceneImportConfig& config) {
     auto prepared = std::make_shared<GltfPreparedScene>(prepare_gltf_scene(
         asset, config,
         {.supports_texture_compression_bc = device.supports_texture_compression_bc()}));

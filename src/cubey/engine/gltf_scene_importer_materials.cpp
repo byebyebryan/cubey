@@ -191,7 +191,6 @@ prepare_texture_for_ref(GltfPreparedScene& prepared, const asset::GltfAsset& ass
             .extent = transcoded.extent,
             .mip_levels = transcoded.mip_levels,
             .format = transcoded.format,
-            .rgba8 = false,
             .bytes = std::move(transcoded.bytes),
             .mips = std::move(transcoded.mips),
             .sampler = sampler_config_for_texture(asset, texture, transcoded.mip_levels),
@@ -201,7 +200,6 @@ prepare_texture_for_ref(GltfPreparedScene& prepared, const asset::GltfAsset& ass
             .extent = {image.width, image.height},
             .mip_levels = 1,
             .format = image_format_for_color_space(color_space),
-            .rgba8 = true,
             .bytes = image.rgba8,
             .sampler = sampler_config_for_texture(asset, texture),
         };
@@ -247,6 +245,8 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
         // A nonzero volume thickness defines a closed-medium boundary even
         // when transmissionFactor makes that optical contribution neutral.
         const bool volume_boundary = source.volume_thickness_factor > 0.0F;
+        const VkCullModeFlags cull_mode =
+            volume_boundary || !source.double_sided ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
         GltfPreparedMaterial material{
             .info =
                 {
@@ -261,9 +261,7 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
                     // first thick-volume approximation renders its exterior
                     // face only; a later exact entry/exit implementation can
                     // supply the matching back-face information.
-                    .cull_mode = volume_boundary ? VK_CULL_MODE_BACK_BIT
-                                                 : (source.double_sided ? VK_CULL_MODE_NONE
-                                                                        : VK_CULL_MODE_BACK_BIT),
+                    .cull_mode = cull_mode,
                     .sort_key = static_cast<std::uint32_t>(index),
                     .pass_mask =
                         optical_transmission

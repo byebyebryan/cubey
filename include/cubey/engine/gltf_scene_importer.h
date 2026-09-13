@@ -59,7 +59,6 @@ struct GltfDeformablePrimitive3D {
     std::uint32_t primitive_index = asset::kInvalidAssetIndex;
     std::uint32_t skin_index = asset::kInvalidAssetIndex;
     GltfPrimitiveDeformationKind deformation = GltfPrimitiveDeformationKind::Static;
-    render::MeshHandle source_mesh{};
     render::MeshHandle output_mesh{};
     render::MaterialHandle material{};
     Bounds3D local_bounds{};
@@ -116,7 +115,6 @@ struct GltfPreparedTexture {
     VkExtent2D extent{1, 1};
     std::uint32_t mip_levels = 1;
     VkFormat format = VK_FORMAT_UNDEFINED;
-    bool rgba8 = true;
     std::vector<std::uint8_t> bytes{};
     std::vector<render::UploadedTexture2DMip> mips{};
     vulkan::SamplerConfig sampler{};
@@ -153,13 +151,14 @@ struct GltfPreparedNode {
 };
 
 struct GltfPreparedDeformationPrimitive {
+    // Base vertices and indices remain owned once by meshes[mesh_index].
+    // Deformation preparation owns only the per-instance payloads layered on
+    // that geometry.
     std::uint32_t node_index = asset::kInvalidAssetIndex;
     std::uint32_t mesh_index = asset::kInvalidAssetIndex;
     std::uint32_t primitive_index = asset::kInvalidAssetIndex;
     std::uint32_t skin_index = asset::kInvalidAssetIndex;
     GltfPrimitiveDeformationKind deformation = GltfPrimitiveDeformationKind::Static;
-    std::vector<render::PbrVertex> base_vertices{};
-    std::vector<std::uint32_t> indices{};
     std::vector<float> morph_targets{};
     std::vector<GltfSkinInfluence> skin_influences{};
     std::vector<float> initial_morph_weights{};
@@ -308,7 +307,7 @@ void update_gltf_deformation_frame(GltfSceneImportResources& resources,
                                    const animation::GltfAnimationSample* sample = nullptr);
 
 [[nodiscard]] GltfPreparedScene prepare_gltf_scene(const asset::GltfAsset& asset,
-                                                   GltfSceneImportConfig config,
+                                                   const GltfSceneImportConfig& config,
                                                    GltfSceneImportCapabilities capabilities = {});
 
 [[nodiscard]] GltfSceneImportResult
@@ -319,7 +318,7 @@ activate_gltf_scene(Engine& engine, SceneTransaction& transaction,
 [[nodiscard]] GltfSceneImportResult
 import_gltf_scene(Engine& engine, SceneTransaction& transaction, const asset::GltfAsset& asset,
                   const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                  GltfSceneImportResources& resources, GltfSceneImportConfig config = {});
+                  GltfSceneImportResources& resources, const GltfSceneImportConfig& config = {});
 
 void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resources,
                                GltfSceneImportResult& result);

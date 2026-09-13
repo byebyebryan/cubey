@@ -27,23 +27,6 @@ template <typename T> [[nodiscard]] VkDeviceSize span_byte_size(std::span<const 
     return byte_size(values.size(), sizeof(T));
 }
 
-[[nodiscard]] std::vector<render::PbrVertex>
-to_pbr_vertices(std::span<const asset::GltfVertex> vertices) {
-    std::vector<render::PbrVertex> result;
-    result.reserve(vertices.size());
-    for (const asset::GltfVertex& vertex : vertices) {
-        result.push_back({
-            .position = vertex.position,
-            .normal = vertex.normal,
-            .tangent = vertex.tangent,
-            .uv0 = vertex.texcoord0,
-            .uv1 = vertex.texcoord1,
-            .color0 = vertex.color0,
-        });
-    }
-    return result;
-}
-
 void append_vec3(std::vector<float>& values, math::Vec3 value) {
     values.push_back(value.x);
     values.push_back(value.y);
@@ -131,16 +114,13 @@ void require_morph_weight_count(std::span<const float> weights, std::uint32_t mo
     }
 }
 
-[[nodiscard]] std::vector<float> default_morph_weights(const asset::GltfAsset& asset,
-                                                       std::uint32_t node_index,
-                                                       std::uint32_t mesh_index,
+[[nodiscard]] std::vector<float> default_morph_weights(const asset::GltfNode& node,
+                                                       const asset::GltfMesh& mesh,
                                                        std::uint32_t morph_target_count) {
     std::vector<float> weights(std::max(1U, morph_target_count), 0.0F);
     if (morph_target_count == 0) {
         return weights;
     }
-    const asset::GltfNode& node = asset.nodes.at(node_index);
-    const asset::GltfMesh& mesh = asset.meshes.at(mesh_index);
     const std::vector<float>& source_weights = node.weights.empty() ? mesh.weights : node.weights;
     require_morph_weight_count(source_weights, morph_target_count);
     const std::size_t count = std::min<std::size_t>(source_weights.size(), morph_target_count);
@@ -152,8 +132,9 @@ void require_morph_weight_count(std::span<const float> weights, std::uint32_t mo
                                                      const GltfDeformablePrimitive3D& primitive,
                                                      std::uint32_t morph_target_count,
                                                      const animation::GltfAnimationSample* sample) {
-    std::vector<float> weights = default_morph_weights(asset, primitive.node_index,
-                                                       primitive.mesh_index, morph_target_count);
+    std::vector<float> weights =
+        default_morph_weights(asset.nodes.at(primitive.node_index),
+                              asset.meshes.at(primitive.mesh_index), morph_target_count);
     if (sample == nullptr || primitive.node_index >= sample->nodes.size()) {
         return weights;
     }
@@ -213,14 +194,11 @@ void prepare_deformation_node(GltfPreparedScene& prepared, const asset::GltfAsse
                 .primitive_index = static_cast<std::uint32_t>(primitive_index),
                 .skin_index = node.skin_index,
                 .deformation = kind,
-                .base_vertices = to_pbr_vertices(primitive.vertices),
-                .indices = primitive.indices,
                 .morph_targets = pack_morph_targets(primitive),
                 .skin_influences =
                     pack_skin_influences(primitive, deformation_has_skin(kind), joint_count),
                 .initial_morph_weights = default_morph_weights(
-                    asset, node_index, node.mesh_index,
-                    static_cast<std::uint32_t>(primitive.morph_targets.size())),
+                    node, mesh, static_cast<std::uint32_t>(primitive.morph_targets.size())),
                 .initial_joint_palette = default_joint_palette(joint_count),
             });
         }

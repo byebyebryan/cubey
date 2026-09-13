@@ -52,7 +52,7 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
 }
 
 ForwardPbrRenderer3DConfig
-forward_pbr_renderer_3d_config_from_shader_directory(std::filesystem::path shader_directory,
+forward_pbr_renderer_3d_config_from_shader_directory(const std::filesystem::path& shader_directory,
                                                      ForwardPbrRenderer3DConfig base) {
     if (shader_directory.empty()) {
         throw std::runtime_error("forward PBR renderer requires a shader directory");

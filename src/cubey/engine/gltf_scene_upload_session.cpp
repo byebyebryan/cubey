@@ -216,6 +216,7 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         };
 
         const GltfPreparedDeformationPrimitive* source = nullptr;
+        const GltfPreparedMeshPrimitive* geometry = nullptr;
         std::size_t resource_index = 0;
         std::uint32_t frame_index = 0;
         std::optional<vulkan::Buffer> output_vertex{};
@@ -723,7 +724,6 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                 .primitive_index = source.primitive_index,
                 .skin_index = source.skin_index,
                 .deformation = source.deformation,
-                .source_mesh = static_source.mesh,
                 .output_mesh = output,
                 .material = static_source.material,
                 .local_bounds = static_source.local_bounds,
@@ -757,16 +757,27 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         if (!deformation_task.has_value()) {
             const GltfPreparedDeformationPrimitive& source =
                 prepared->deformable_primitives[deformation_index];
+            if (source.mesh_index >= prepared->meshes.size() ||
+                source.primitive_index >= prepared->meshes[source.mesh_index].primitives.size()) {
+                throw std::runtime_error(
+                    "prepared glTF deformation geometry primitive is out of range");
+            }
+            const GltfPreparedMeshPrimitive& geometry =
+                prepared->meshes[source.mesh_index].primitives[source.primitive_index];
+            if (geometry.vertices.empty() || geometry.indices.empty()) {
+                throw std::runtime_error(
+                    "prepared glTF deformation geometry requires indexed vertices");
+            }
             GltfDeformationPrimitiveResources& resource =
                 resident.resources.deformation.primitives.emplace_back();
             resource.primitive = resident.resources.deformable_primitives.at(deformation_index);
             resource.push_constants = {
-                .vertex_count = static_cast<std::uint32_t>(source.base_vertices.size()),
+                .vertex_count = static_cast<std::uint32_t>(geometry.vertices.size()),
                 .morph_target_count =
                     source.morph_targets.empty()
                         ? 0U
                         : static_cast<std::uint32_t>(source.morph_targets.size() /
-                                                     (source.base_vertices.size() * 9U)),
+                                                     (geometry.vertices.size() * 9U)),
                 .joint_count = deformation_has_skin(source.deformation)
                                    ? static_cast<std::uint32_t>(source.initial_joint_palette.size())
                                    : 0U,
@@ -774,6 +785,7 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             };
             deformation_task.emplace(DeformationTask{
                 .source = &source,
+                .geometry = &geometry,
                 .resource_index = resident.resources.deformation.primitives.size() - 1U,
             });
         }
@@ -786,6 +798,7 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         GltfDeformationPrimitiveResources& resource =
             resident.resources.deformation.primitives.at(task.resource_index);
         const GltfPreparedDeformationPrimitive& source = *task.source;
+        const GltfPreparedMeshPrimitive& geometry = *task.geometry;
         const auto upload = [&](std::span<const std::byte> bytes, vulkan::Buffer& destination,
                                 VkDeviceSize& offset) {
             return record_buffer_copy(step, bytes, destination, offset, false);
@@ -794,14 +807,14 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         case DeformationTask::Stage::CreateBaseVertices:
             resource.base_vertices.emplace(
                 owner.device(),
-                vulkan::device_local_buffer_config(span_byte_size(std::span{source.base_vertices}),
+                vulkan::device_local_buffer_config(span_byte_size(std::span{geometry.vertices}),
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadBaseVertices;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadBaseVertices: {
-            const VkDeviceSize total = span_byte_size(std::span{source.base_vertices});
+            const VkDeviceSize total = span_byte_size(std::span{geometry.vertices});
             const AdvanceResult result =
-                upload({reinterpret_cast<const std::byte*>(source.base_vertices.data()),
+                upload({reinterpret_cast<const std::byte*>(geometry.vertices.data()),
                         static_cast<std::size_t>(total)},
                        resource.base_vertices.value(), task.base_vertex_offset);
             if (result == AdvanceResult::Progress && task.base_vertex_offset == total) {
@@ -864,15 +877,15 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             }
             task.output_vertex.emplace(
                 owner.device(),
-                vulkan::device_local_buffer_config(span_byte_size(std::span{source.base_vertices}),
+                vulkan::device_local_buffer_config(span_byte_size(std::span{geometry.vertices}),
                                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadOutputVertex;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadOutputVertex: {
-            const VkDeviceSize total = span_byte_size(std::span{source.base_vertices});
+            const VkDeviceSize total = span_byte_size(std::span{geometry.vertices});
             const AdvanceResult result =
-                upload({reinterpret_cast<const std::byte*>(source.base_vertices.data()),
+                upload({reinterpret_cast<const std::byte*>(geometry.vertices.data()),
                         static_cast<std::size_t>(total)},
                        task.output_vertex.value(), task.output_vertex_offset);
             if (result == AdvanceResult::Progress && task.output_vertex_offset == total) {
@@ -881,15 +894,16 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             return result;
         }
         case DeformationTask::Stage::CreateOutputIndex:
-            task.output_index.emplace(owner.device(), vulkan::device_local_buffer_config(
-                                                          span_byte_size(std::span{source.indices}),
-                                                          VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+            task.output_index.emplace(
+                owner.device(),
+                vulkan::device_local_buffer_config(span_byte_size(std::span{geometry.indices}),
+                                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadOutputIndex;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadOutputIndex: {
-            const VkDeviceSize total = span_byte_size(std::span{source.indices});
+            const VkDeviceSize total = span_byte_size(std::span{geometry.indices});
             const AdvanceResult result =
-                upload({reinterpret_cast<const std::byte*>(source.indices.data()),
+                upload({reinterpret_cast<const std::byte*>(geometry.indices.data()),
                         static_cast<std::size_t>(total)},
                        task.output_index.value(), task.output_index_offset);
             if (result == AdvanceResult::Progress && task.output_index_offset == total) {
@@ -900,7 +914,7 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         case DeformationTask::Stage::FinishOutput:
             resource.output_meshes.push_back(render::Mesh::from_uploaded_buffers(
                 std::move(task.output_vertex.value()), std::move(task.output_index.value()),
-                VK_INDEX_TYPE_UINT32, static_cast<std::uint32_t>(source.indices.size())));
+                VK_INDEX_TYPE_UINT32, static_cast<std::uint32_t>(geometry.indices.size())));
             task.output_vertex.reset();
             task.output_index.reset();
             task.output_vertex_offset = 0;
