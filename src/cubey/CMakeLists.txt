@@ -120,6 +120,7 @@ target_link_libraries(
 add_library(cubey_asset STATIC
     asset/file_digest.cpp
     asset/gltf_asset.cpp
+    asset/gltf_asset_animation.cpp
     asset/gltf_asset_geometry.cpp
     asset/gltf_asset_io.cpp
     asset/gltf_asset_materials.cpp
