@@ -302,6 +302,13 @@ no back-face exit-depth reconstruction, multiple internal reflection,
 generalized `KHR_lights_punctual` point/spot BTDFs, transparent shadows, or
 order-independent transparency.
 
+The final V1 motion audit adds controlled 720p60 static-HDR and fixed-time
+procedural-atmosphere orbits plus decoded-frame-identical fixed-view dispersion
+repeats. Ordering, roughness, attenuation, dispersion, and environment behavior
+remained continuous; exact-yaw lossless recaptures cleared the sole marginal
+non-codec triage flag. The pinned closure decision and hashes are recorded in
+[glTF Viewer V1 closure](../notes/gltf-viewer-v1-closure.md).
+
 ## IOR And Specular Conformance
 
 `KHR_materials_ior` accepts only IOR zero (the glTF compatibility sentinel) or

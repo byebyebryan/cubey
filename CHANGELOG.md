@@ -132,6 +132,14 @@ versioned section and use that section as the release notes.
 - CPU-side glTF 2.0 asset loading through `cgltf`, including buffers, images,
   samplers, sparse accessors, morph target names, animations, skins, alpha
   modes, and common material extensions.
+- Required-use glTF material coverage for texture transform, BasisU, unlit,
+  emissive strength, IOR, specular, clearcoat, anisotropy, iridescence, sheen,
+  transmission, volume, and dispersion, backed by focused contracts,
+  deterministic material fixtures, and pinned Khronos Sample Assets smokes.
+- Same-frame HDR screen-space transmission with rough-refraction mips,
+  approximate solid-volume exit refraction, Beer-Lambert attenuation,
+  deterministic four-wavelength dispersion, bounded alpha participation, and
+  selected-directional-light direct transmission.
 - `KHR_texture_basisu` KTX2 material texture import through Basis Universal,
   with BC7 upload when supported and RGBA8 fallback.
 - Radiance HDR environment loading plus generated/HDR-backed PBR IBL resources
@@ -142,6 +150,10 @@ versioned section and use that section as the release notes.
 - Shared staged-resource lifecycle with typed CPU preparation/GPU installation,
   generation-safe frame-boundary activation, deterministic headless completion,
   and submission-ticket retirement, plus a bounded generated-artifact cache.
+- glTF metadata-only bounds probing and a wireframe loading cage, followed by
+  worker-side scene preparation, bounded incremental GPU-owner uploads through
+  a reusable persistently mapped staging pool, atomic complete-generation
+  reveal, and deferred old-generation/CPU-payload retirement.
 - Premultiplied-alpha blending policy for forward PBR alpha materials.
 - Optional in-process H.264 MP4 capture for headless runs when libav/FFmpeg
   development packages are available at configure time.

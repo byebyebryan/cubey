@@ -54,6 +54,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset
   corpus, repeatable first/warm staged-loading measurements, and the current
   performance decision gate.
+- [glTF Viewer V1 closure](gltf-viewer-v1-closure.md): reconciled loading,
+  material-conformance, dynamic-optics, validation, accepted limits, and reopen
+  decision for the closed single-asset viewer milestone.
 - [Ocean performance notes](ocean-performance.md): measured whole-renderer GPU
   baseline, spectral FFT cost model, map-size tradeoffs, and optimization
   guardrails.

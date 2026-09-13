@@ -6,6 +6,12 @@ runtime asset data, PBR material inputs, texture upload, scene import,
 animation/deformation, and a viewer project that keeps pressure on the
 renderer.
 
+Status: the first single-asset viewer milestone is closed as of 2026-09-12.
+Loading responsiveness, the current required-use material-extension set, and
+the bounded transmission/volume/dispersion model have passed their focused,
+conformance, and dynamic-review gates. Future work is trigger-driven rather
+than an assumed continuation of this milestone.
+
 ## Precedent
 
 - glTF 2.0 is the asset interchange target. Cubey follows core mesh, node,
@@ -39,7 +45,8 @@ renderer.
 - `KHR_materials_ior`, `KHR_materials_specular`, `KHR_materials_clearcoat`,
   `KHR_materials_sheen`, `KHR_materials_anisotropy`,
   `KHR_materials_iridescence`, `KHR_materials_emissive_strength`, and
-  `KHR_materials_unlit` controls;
+  `KHR_materials_unlit` controls, plus `KHR_materials_transmission`,
+  `KHR_materials_volume`, and `KHR_materials_dispersion`;
 - core glTF alpha modes: `OPAQUE`, `MASK`, and `BLEND`;
 - sampler filtering and per-axis wrapping metadata;
 - scene roots and node hierarchy with decomposed TRS transforms, plus explicit
@@ -337,6 +344,34 @@ UV-derivative bitangent sign.
 The `NormalTangentTest` and `NormalTangentMirrorTest` sample smokes are the
 current pressure for deciding when that integration is worth doing.
 
+## Closure Checkpoint
+
+The current milestone closes three related but independently evidenced paths:
+
+- asset loading performs a metadata-only bounds probe, prepares the complete
+  asset on a CPU worker, advances one bounded graphics-queue upload session over
+  application polls, and atomically publishes the complete generation;
+- every extension in the table above is accepted for required use only after
+  loader, contract, and rendered evidence, while unsupported required features
+  continue to fail early;
+- transmission, volume, attenuation, and dispersion retain stable ordering,
+  roughness, exit-shape, spectral, and environment behavior under controlled
+  motion as well as deterministic fixed-view repetition.
+
+The final clean-tree audit used 1280x720, 60 FPS captures of
+`TransmissionOrderTest`, `TransmissionRoughnessTest`, and `DragonDispersion`
+under coherent static HDR, plus a fixed-time procedural-atmosphere
+`DragonDispersion` lane and two decoded-frame-identical static repeats. No
+product-significant dynamic optics defect was found. H.264 GOP-boundary luma
+spikes were classified as codec artifacts, and the sole marginal non-GOP flag
+was continuous in exact-yaw lossless recaptures. See the
+[glTF Viewer V1 closure record](../notes/gltf-viewer-v1-closure.md) for the
+pinned revisions, clip hashes, test snapshot, and accepted limits.
+
+This closes glTF as a default active workstream. The boundaries below remain
+honest constraints, but they become work only when an asset or product exposes
+a visible failure or a measured throughput/streaming need.
+
 ## Boundaries
 
 The asset loader stays CPU-only. It does not create entities, renderable
@@ -374,12 +409,16 @@ arrays, transparent shadow opacity, exact back-face exit depth, multiple
 internal refraction, weighted blended transparency, or order-independent
 transparency.
 
-## Next Slices
+## Reopen Triggers
 
-- Add the next model-fidelity import only when it stays within the current
-  dependency boundary or clearly justifies a new one.
-- Add prefiltered KTX/KTX2 environment loading separately from glTF material
-  `KHR_texture_basisu`; IBL uses cubemaps and prefilter data, not the 2D
-  material-texture upload path.
-- Keep MikkTSpace tangent generation deferred until the tangent-space validation
-  scenes or authored normal-map assets show visible tangent-basis artifacts.
+- Add another model-fidelity import only when a target asset needs it and the
+  change stays within the current dependency boundary or clearly justifies a
+  new one.
+- Add prefiltered KTX/KTX2 environment loading only when environment
+  distribution becomes a product requirement; it is separate from the 2D
+  `KHR_texture_basisu` material-texture path.
+- Revisit MikkTSpace only when tangent-space validation scenes or authored
+  normal-map assets show visible tangent-basis artifacts.
+- Design loader concurrency, broader streaming, or a split transfer queue only
+  from a measured multi-asset workload. The current single-generation upload
+  responsiveness target is already closed.

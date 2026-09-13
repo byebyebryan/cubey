@@ -28,13 +28,13 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
-Status: the first glTF conformance—including required-use IOR, specular,
-clearcoat, anisotropy, iridescence, sheen, transmission, volume, and
-dispersion—plus staged-loading and incremental GPU-upload responsiveness
-checkpoints are complete. Transmissive materials use an opt-in staged
-same-frame HDR refraction path with the procedural environment as the primary
-fallback. The next asset-pipeline work should be selected from a concrete
-product need rather than presumed unfinished plumbing.
+Status: the first glTF Viewer milestone is closed. Its conformance—including
+required-use IOR, specular, clearcoat, anisotropy, iridescence, sheen,
+transmission, volume, and dispersion—plus staged-loading and incremental
+GPU-upload responsiveness checkpoints are complete. Transmissive materials use
+an opt-in staged same-frame HDR refraction path with the procedural environment
+as the primary fallback. The next asset-pipeline work should be selected from a
+concrete product need rather than presumed unfinished plumbing.
 
 The recent foundation push landed shared runtime, renderer, shader,
 environment, UI, and project-owned configuration infrastructure. Retired
@@ -153,6 +153,17 @@ and shader witnesses, tolerant deterministic furnace cases, and pinned Khronos
 viewer smokes back all four claims. Every glTF material extension represented in
 Cubey's current material contract is now closed for required use.
 
+The final dynamic-optics audit closes the remaining viewer-level uncertainty.
+Controlled 720p60 motion covered transmission/alpha ordering, rough-refraction
+mip stability, solid-volume exit and attenuation, deterministic dispersion, and
+fixed-time procedural-atmosphere coherence. Two independent static
+`DragonDispersion` sequences were decoded-frame identical; codec-aligned luma
+spikes and one marginal non-GOP signal produced no renderer discontinuity in
+labeled adjacent frames or exact-yaw lossless recaptures. The accepted
+screen-space, approximate-exit, front-object-echo, and broader transparency
+limits remain explicit rather than blocking closure. The pinned snapshot is in
+[glTF Viewer V1 closure](notes/gltf-viewer-v1-closure.md).
+
 Recommended next feature or foundation streams:
 
 - public visual showcase: maintain the four-highlight package and provenance
@@ -163,9 +174,10 @@ Recommended next feature or foundation streams:
   atmosphere/PBR consumers instead of adding project-local probe descriptors;
   deepen render-graph or command ownership only around a concrete repeated
   project need.
-- glTF/asset pipeline: upload responsiveness is closed for the current single-
-  asset viewer. If total load latency becomes a product priority, PNG/JPEG
-  decode and RGBA materialization are the next measured throughput target. If
+- glTF/asset pipeline (reopen only from product evidence): upload
+  responsiveness is closed for the current single-asset viewer. If total load
+  latency becomes a product priority, PNG/JPEG decode and RGBA materialization
+  are the next measured throughput target. If
   real multi-asset streaming creates queueing pressure, design loader
   concurrency and scheduling from that workload. Do not add a dedicated
   transfer queue, partial scene visibility, or a device-local allocator without

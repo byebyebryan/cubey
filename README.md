@@ -78,7 +78,7 @@ and keep domain-specific policy local.
 | [Ocean](projects/ocean/README.md) | Spectral FFT waves, clipmap LOD, persistent whitecaps, curved local horizon, and atmosphere/cloud lighting. |
 | [Terrain](projects/terrain/README.md) | External-raster far backdrop with cached sector geometry, placement, material detail, and self-shadowing. |
 | [Planet](projects/planet/README.md) | Orbital-only Earth-like globe with deterministic surface fields and shared celestial composition. |
-| [glTF Viewer](projects/gltf_viewer/README.md) | Imported PBR assets, animation and deformation, generated or HDR IBL, shadows, and optional terrain. |
+| [glTF Viewer](projects/gltf_viewer/README.md) | Staged glTF 2.0 PBR import, animation and deformation, required-use material extensions, procedural or HDR environments, shadows, and optional terrain. |
 | [Fractal 2D](projects/fractal_2d/) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
 
 Terrain, Planet, and Ocean deliberately represent different scales: far

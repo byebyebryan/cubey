@@ -4,6 +4,16 @@
 generated or HDR-backed image-based lighting, animation, the shared procedural
 atmosphere/cloud environment, and an optional Terrain V1 backdrop.
 
+Status: the first single-asset viewer milestone is closed. It covers staged CPU
+preparation, bounded incremental GPU residency, atomic scene activation, core
+animation/deformation, and every material extension represented by Cubey's
+current material contract. The exact supported-extension semantics live in
+[glTF assets and PBR](../../docs/architecture/gltf-assets.md); the final test and
+motion-review snapshot is recorded in the
+[glTF Viewer V1 closure](../../docs/notes/gltf-viewer-v1-closure.md).
+
+## Loading behavior
+
 Windowed runs resolve and probe the requested asset's metadata first, then
 publish a wireframe-style indexed loading cage at its authored scene bounds.
 The probe reads only textual glTF JSON or the JSON chunk of a GLB; external
@@ -43,6 +53,28 @@ diffuse and specular lighting (including transmission fallback) use that same
 environment, and it has no procedural direct light, legacy ambient fill,
 atmosphere time updates, clouds, or atmosphere controls. Terrain and ocean
 backdrops remain atmosphere-only.
+
+## Validation and boundary
+
+The normal development preset covers the viewer's project-local config,
+loading, renderer-routing, fallback, environment, backdrop, and capture paths.
+The opt-in conformance preset additionally uses the pinned Khronos Sample Assets
+checkout for loader, material, animation/deformation, and rendered semantic
+evidence:
+
+```sh
+cmake --preset dev-gltf-conformance
+cmake --build --preset dev-gltf-conformance
+ctest --preset dev-gltf-conformance
+```
+
+The closed milestone deliberately remains a single-asset viewer rather than a
+general scene streamer or DCC pipeline. Reopen the asset path when a product
+demonstrates a concrete need for broader compatibility, lower total decode
+latency, or concurrent multi-asset streaming. Exact back-face refraction,
+multiple internal bounces, generalized punctual-light transmission,
+transparent shadows, and order-independent transparency are separate renderer
+projects rather than incomplete viewer plumbing.
 
 ## Showcase highlight
 

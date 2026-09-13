@@ -1,16 +1,17 @@
 # Threading And Async Design
 
-This document captures Cubey's threading and asynchronous-work direction before
-the first real project starts shaping the runtime. The goal is to make project
-code fit a non-stalling Vulkan model early, without pretending the framework
-already needs a full threaded renderer, render graph, or split-queue scheduler.
+This document captures Cubey's current threading and asynchronous-work contract
+plus the triggers for expanding it. The runtime now has CPU workers, a strict
+GPU-owner queue, queued capture/readback, deferred destruction, and bounded
+staged glTF residency without pretending the framework needs a full threaded
+renderer, parallel command recording, or split-queue scheduler.
 
 ## Recommendation
 
-Start the threading work now as an architecture boundary:
+Retain the current architecture boundary:
 
-- Add a small CPU job layer behind `cubey` APIs.
-- Shape uploads, readbacks, captures, and destruction as queued work.
+- Keep the small CPU job layer behind `cubey` APIs.
+- Keep uploads, readbacks, captures, and destruction request-shaped and queued.
 - Keep Vulkan queue submission serialized through one render/GPU owner.
 - Keep examples simple and educational; require longer-lived `projects/` to use
   the async-ready structure.
@@ -152,14 +153,16 @@ workers:
   encode completed captures
 ```
 
-The first implementation can execute all GPU-owner work synchronously on the
-app thread. The important design constraint is that project code talks to
-queues, packets, and handles instead of calling every blocking path directly.
+Hosts run GPU-owner work on the dedicated `GpuRuntime` thread by default;
+deterministic tests and narrow bring-up paths can still drain it inline. The
+important design constraint is that project code talks to queues, packets, and
+handles instead of calling every blocking path directly.
 
 ## Job Layer
 
-Add `cubey::jobs` as a small facade over whichever executor Cubey chooses.
-Public code should depend on Cubey vocabulary:
+`cubey::jobs` is the small facade over Cubey's current standard-library worker
+pool and any future executor replacement. Public code should depend on Cubey
+vocabulary:
 
 - `JobSystem` or `Executor`
 - `JobHandle<T>` or future-like result wrapper
@@ -191,9 +194,9 @@ project-facing APIs.
 
 ## Uploads, Captures, And Readbacks
 
-Uploads should become queued requests even before they are truly asynchronous.
-This lets project code say what data it needs on the GPU without dictating when
-the staging copy and layout transitions happen.
+Uploads are queued requests even when a caller later waits for completion. This
+lets project code say what data it needs on the GPU without dictating when the
+staging copy and layout transitions happen.
 
 Capture/readback should avoid this shape as the default:
 
@@ -255,6 +258,16 @@ headless hosts run it threaded by default and use explicit drain/wait calls only
 at host-owned synchronization points. Direct `ImmediateCommands` remain a
 low-level building block inside owner-context callbacks and transfer helpers;
 host/project setup code should prefer host or project GPU services.
+
+Large glTF generations exercise the next layer of this contract.
+`GltfSceneUploadSession` advances destination creation and bounded copy work on
+the GPU owner, using the runtime's persistently mapped staging pool. The current
+policy starts at 32 MiB, can grow in 32 MiB blocks to 128 MiB, caps ordinary
+copy regions at 2 MiB, caps one physical step at 32 MiB, and treats 2 ms as a
+soft owner-CPU target. Windowed Sponza and DamagedHelmet evidence closes the
+single-generation responsiveness target; concurrent multi-asset streaming and
+split queues remain deferred until a product supplies a measured workload. See
+the [glTF staged-loading profile](../notes/gltf-loading-profile.md).
 
 ## Command Recording
 
