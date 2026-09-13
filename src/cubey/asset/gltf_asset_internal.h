@@ -56,5 +56,6 @@ void assemble_gltf_material_data(GltfAsset& asset, const cgltf_data& data,
                                  GltfAssetLoadProfile* profile);
 void assemble_gltf_geometry_data(GltfAsset& asset, const cgltf_data& data,
                                  const GltfLoadConfig& config);
+void assemble_gltf_scene_data(GltfAsset& asset, const cgltf_data& data);
 
 } // namespace cubey::asset::gltf_internal
