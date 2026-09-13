@@ -397,17 +397,17 @@ void test_gltf_scene_importer_reserves_provisional_handle_generation() {
             "replacement mesh registry handles must not collide with provisional handles");
 
     const std::filesystem::path root = CUBEY_SOURCE_DIR;
-    const std::string session =
-        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_upload_session.cpp");
+    const std::string builder =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_resident_builder.cpp");
     cubey::tests::require_contains(
-        session, "staging_mesh_handle(std::size_t index)",
-        "glTF upload session should construct explicit provisional mesh handles");
+        builder, "staging_mesh_handle(std::size_t index)",
+        "glTF resident builder should construct explicit provisional mesh handles");
     cubey::tests::require_contains(
-        session, "staging_material_handle(std::size_t index)",
-        "glTF upload session should construct explicit provisional material handles");
+        builder, "staging_material_handle(std::size_t index)",
+        "glTF resident builder should construct explicit provisional material handles");
     cubey::tests::require_contains(
-        session, ".generation = 0U};",
-        "glTF upload session should reserve generation zero for provisional handles");
+        builder, ".generation = 0U};",
+        "glTF resident builder should reserve generation zero for provisional handles");
 }
 
 void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy() {
@@ -564,6 +564,8 @@ void test_gltf_scene_importer_blocking_path_uses_upload_session() {
         cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_importer.cpp");
     const std::string session =
         cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_upload_session.cpp");
+    const std::string builder =
+        cubey::tests::read_source_file(root / "src/cubey/engine/gltf_scene_resident_builder.cpp");
     cubey::tests::require_contains(importer,
                                    "begin_gltf_scene_upload_session(prepared, config, gpu)",
                                    "blocking glTF import should create the shared upload session");
@@ -588,6 +590,15 @@ void test_gltf_scene_importer_blocking_path_uses_upload_session() {
     cubey::tests::require_contains(
         session, "std::shared_ptr<Impl::QueuedOwnerStep>",
         "waiting polls should retain a stable owner-job handle outside the session mutex");
+    cubey::tests::require_contains(
+        session, "std::unique_ptr<GltfSceneResidentBuilder>",
+        "the session should own lifecycle while the private builder owns resident construction");
+    cubey::tests::require_contains(
+        builder, "GltfSceneResidentBuilder::AdvanceResult",
+        "the resident builder should return explicit owner-advance progress to the session");
+    cubey::tests::require_contains(
+        builder, "outcome.submitted_ticket = std::move(ticket)",
+        "the resident builder should return submitted tickets for session lifetime handling");
     cubey::tests::require_contains(
         session, "owner_cleanup.reset()",
         "successful resident adoption should unregister the runtime cleanup action");

@@ -135,10 +135,11 @@ instance service:
   including BasisU transcoding, bounds, and triangle counts. Per-instance
   deformation payloads reference the prepared mesh's single vertex/index copy
   instead of duplicating base geometry for every deformable node;
-- `GltfSceneUploadSession` is the canonical residency path. It divides destination
-  creation and uploads into later owner advances, aggregates copies into
-  bounded `GpuUploadStep` submissions, and publishes a resident product only
-  after the final same-queue ticket completes;
+- `GltfSceneUploadSession` is the canonical residency path. It owns asynchronous
+  advancement, tickets, polling, and owner-thread cleanup, while its private
+  resident builder divides destination creation and uploads into later owner
+  advances, aggregates copies into bounded `GpuUploadStep` submissions, and
+  publishes a resident product only after the final same-queue ticket completes;
 - `activate_gltf_scene()` adopts one complete resident product into registry-
   issued mesh/material handles and maps glTF nodes into scene entities, 3D
   transforms, renderables, and per-node output mesh handles. Nodes authored
@@ -183,9 +184,10 @@ Implementation ownership follows the same boundary: `gltf_asset.cpp` owns
 `cgltf` parsing and CPU asset construction, while `gltf_asset_io.cpp` owns URI,
 data-URI, and image decode helpers. `gltf_scene_importer.cpp` owns CPU scene
 preparation and entity activation, `gltf_scene_importer_materials.cpp` owns
-prepared material and texture metadata, and `gltf_scene_upload_session.cpp`
-owns staged default-texture, texture, material-instance, mesh, and deformation
-GPU residency.
+prepared material and texture metadata, `gltf_scene_upload_session.cpp` owns
+the async session lifecycle and owner cleanup, and the private
+`gltf_scene_resident_builder.cpp` owns staged default-texture, texture,
+material-instance, mesh, and deformation GPU residency.
 
 `cubey::render` owns the reusable GPU-facing pieces:
 
