@@ -133,26 +133,27 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
 
 void GltfViewerApp::update_animation(float delta_seconds) {
     GltfViewerSceneGeneration& generation = active_generation();
-    if (!generation.asset.has_value() || generation.asset->animations.empty()) {
+    if (!generation.runtime_scene.has_value() || generation.runtime_scene->animations.empty()) {
         return;
     }
-    if (generation.animation_playback.animation_index >= generation.asset->animations.size()) {
+    if (generation.animation_playback.animation_index >=
+        generation.runtime_scene->animations.size()) {
         throw std::runtime_error("requested glTF animation index is out of range");
     }
     if (config_.gltf.animation_paused) {
         return;
     }
 
-    const cubey::asset::GltfAnimation& animation =
-        generation.asset->animations[generation.animation_playback.animation_index];
+    const cubey::asset::GltfRuntimeAnimation& animation =
+        generation.runtime_scene->animations[generation.animation_playback.animation_index];
     cubey::animation::advance_gltf_animation_playback(generation.animation_playback, delta_seconds,
                                                       animation.duration_seconds);
     const cubey::animation::GltfAnimationSample sample = cubey::animation::sample_gltf_animation(
-        generation.asset.value(), animation, generation.animation_playback.time_seconds);
+        generation.runtime_scene.value(), animation, generation.animation_playback.time_seconds);
     generation.animation_sample = sample;
 
     cubey::SceneEditQueue edits = scene().create_edit_queue();
-    cubey::apply_gltf_rigid_animation_sample(edits, generation.asset.value(),
+    cubey::apply_gltf_rigid_animation_sample(edits, generation.runtime_scene.value(),
                                              generation.import_result,
                                              generation.animation_sample.value());
     scene().commit(edits);

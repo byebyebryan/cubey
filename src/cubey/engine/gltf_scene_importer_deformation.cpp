@@ -136,27 +136,28 @@ void require_morph_weight_count(std::span<const float> weights, std::uint32_t mo
     }
 }
 
-[[nodiscard]] std::vector<float> default_morph_weights(const asset::GltfNode& node,
-                                                       const asset::GltfMesh& mesh,
+[[nodiscard]] std::vector<float> default_morph_weights(std::span<const float> node_weights,
+                                                       std::span<const float> mesh_weights,
                                                        std::uint32_t morph_target_count) {
     std::vector<float> weights(std::max(1U, morph_target_count), 0.0F);
     if (morph_target_count == 0) {
         return weights;
     }
-    const std::vector<float>& source_weights = node.weights.empty() ? mesh.weights : node.weights;
+    const std::span<const float> source_weights =
+        node_weights.empty() ? mesh_weights : node_weights;
     require_morph_weight_count(source_weights, morph_target_count);
     const std::size_t count = std::min<std::size_t>(source_weights.size(), morph_target_count);
     std::copy_n(source_weights.begin(), count, weights.begin());
     return weights;
 }
 
-[[nodiscard]] std::vector<float> frame_morph_weights(const asset::GltfAsset& asset,
+[[nodiscard]] std::vector<float> frame_morph_weights(const asset::GltfRuntimeSceneData& runtime,
                                                      const GltfDeformablePrimitive3D& primitive,
                                                      std::uint32_t morph_target_count,
                                                      const animation::GltfAnimationSample* sample) {
     std::vector<float> weights =
-        default_morph_weights(asset.nodes.at(primitive.node_index),
-                              asset.meshes.at(primitive.mesh_index), morph_target_count);
+        default_morph_weights(runtime.nodes.at(primitive.node_index).weights,
+                              runtime.meshes.at(primitive.mesh_index).weights, morph_target_count);
     if (sample == nullptr || primitive.node_index >= sample->nodes.size()) {
         return weights;
     }
@@ -224,7 +225,8 @@ void prepare_deformation_node(GltfPreparedScene& prepared, const asset::GltfAsse
                 .morph_targets = pack_morph_targets(primitive),
                 .skin_influences =
                     pack_skin_influences(primitive, deformation_has_skin(kind), joint_count),
-                .initial_morph_weights = default_morph_weights(node, mesh, morph_target_count),
+                .initial_morph_weights =
+                    default_morph_weights(node.weights, mesh.weights, morph_target_count),
                 .initial_joint_palette = default_joint_palette(joint_count),
             });
         }
@@ -234,11 +236,11 @@ void prepare_deformation_node(GltfPreparedScene& prepared, const asset::GltfAsse
     }
 }
 
-[[nodiscard]] std::vector<math::Mat4> node_world_matrices(const asset::GltfAsset& asset,
-                                                          const GltfSceneImportResult& result,
-                                                          const SceneReadView& scene_view) {
-    std::vector<math::Mat4> matrices(asset.nodes.size(), math::Mat4{1.0F});
-    const std::size_t count = std::min(asset.nodes.size(), result.node_entities.size());
+[[nodiscard]] std::vector<math::Mat4>
+node_world_matrices(const asset::GltfRuntimeSceneData& runtime, const GltfSceneImportResult& result,
+                    const SceneReadView& scene_view) {
+    std::vector<math::Mat4> matrices(runtime.nodes.size(), math::Mat4{1.0F});
+    const std::size_t count = std::min(runtime.nodes.size(), result.node_entities.size());
     for (std::size_t node_index = 0; node_index < count; ++node_index) {
         const Entity entity = result.node_entities[node_index];
         if (entity) {
@@ -319,7 +321,7 @@ gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
 }
 
 void update_gltf_deformation_frame(GltfSceneImportResources& resources,
-                                   const asset::GltfAsset& asset,
+                                   const asset::GltfRuntimeSceneData& runtime,
                                    const GltfSceneImportResult& result,
                                    const SceneReadView& scene_view, render::FrameSlot frame_slot,
                                    const animation::GltfAnimationSample* sample) {
@@ -327,19 +329,19 @@ void update_gltf_deformation_frame(GltfSceneImportResources& resources,
         return;
     }
     render::validate_frame_slot(frame_slot);
-    const std::vector<math::Mat4> worlds = node_world_matrices(asset, result, scene_view);
+    const std::vector<math::Mat4> worlds = node_world_matrices(runtime, result, scene_view);
     for (GltfDeformationPrimitiveResources& resource : resources.deformation.primitives) {
         if (frame_slot.count != resource.morph_weights.size() ||
             frame_slot.count != resource.joint_palettes.size()) {
             throw std::runtime_error("glTF deformation frame slot count does not match resources");
         }
         const std::vector<float> weights = frame_morph_weights(
-            asset, resource.primitive, resource.push_constants.morph_target_count, sample);
+            runtime, resource.primitive, resource.push_constants.morph_target_count, sample);
         upload_frame_morph_weights(resource, frame_slot, weights);
 
         std::vector<math::Mat4> joints = default_joint_palette(resource.push_constants.joint_count);
         if (deformation_has_skin(resource.primitive.deformation)) {
-            const asset::GltfSkin& skin = asset.skins.at(resource.primitive.skin_index);
+            const asset::GltfRuntimeSkin& skin = runtime.skins.at(resource.primitive.skin_index);
             joints =
                 animation::compute_gltf_joint_palette(skin, worlds, resource.primitive.node_index);
             if (joints.empty()) {

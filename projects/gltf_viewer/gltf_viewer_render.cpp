@@ -141,12 +141,12 @@ void GltfViewerApp::record_viewer_target(
     cubey::SceneReadView scene_view = scene().read();
     const cubey::scene::FrameRenderPlan3D frame_plan =
         current_frame_plan(scene_view, color_target.extent);
-    if (generation.asset.has_value()) {
-        cubey::update_gltf_deformation_frame(generation.import_resources, generation.asset.value(),
-                                             generation.import_result, scene_view, frame_slot,
-                                             generation.animation_sample.has_value()
-                                                 ? &generation.animation_sample.value()
-                                                 : nullptr);
+    if (generation.runtime_scene.has_value()) {
+        cubey::update_gltf_deformation_frame(
+            generation.import_resources, generation.runtime_scene.value(), generation.import_result,
+            scene_view, frame_slot,
+            generation.animation_sample.has_value() ? &generation.animation_sample.value()
+                                                    : nullptr);
     }
     const std::vector<cubey::render::GpuDeformationCommand> deformation_commands =
         cubey::gltf_deformation_commands_for_frame(generation.import_resources, frame_slot);

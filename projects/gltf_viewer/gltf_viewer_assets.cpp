@@ -373,15 +373,17 @@ void GltfViewerApp::activate_imported_asset_generation(
             create_camera_and_light(*next, setup);
             setup.commit();
         }
-        next->asset.emplace(std::move(product.prepared->asset));
-        if (!next->asset->animations.empty()) {
-            const cubey::asset::GltfAnimation& animation =
-                next->asset->animations[next->animation_playback.animation_index];
+        next->runtime_scene.emplace(
+            cubey::asset::consume_gltf_runtime_scene_data(std::move(product.prepared->asset)));
+        if (!next->runtime_scene->animations.empty()) {
+            const cubey::asset::GltfRuntimeAnimation& animation =
+                next->runtime_scene->animations[next->animation_playback.animation_index];
             next->animation_sample = cubey::animation::sample_gltf_animation(
-                next->asset.value(), animation, next->animation_playback.time_seconds);
+                next->runtime_scene.value(), animation, next->animation_playback.time_seconds);
             cubey::SceneEditQueue edits = next->scene->create_edit_queue();
-            cubey::apply_gltf_rigid_animation_sample(
-                edits, next->asset.value(), next->import_result, next->animation_sample.value());
+            cubey::apply_gltf_rigid_animation_sample(edits, next->runtime_scene.value(),
+                                                     next->import_result,
+                                                     next->animation_sample.value());
             next->scene->commit(edits);
         }
         if (product.prepared->terrain.has_value()) {

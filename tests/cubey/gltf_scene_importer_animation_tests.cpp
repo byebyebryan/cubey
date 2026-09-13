@@ -12,6 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 #include "source_file_test_helpers.h"
 
@@ -72,8 +73,10 @@ void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes(
     sample.nodes[0].rotation =
         cubey::math::angle_axis_quat(glm::half_pi<float>(), {0.0F, 1.0F, 0.0F});
 
+    const cubey::asset::GltfRuntimeSceneData runtime =
+        cubey::asset::consume_gltf_runtime_scene_data(std::move(asset));
     cubey::SceneEditQueue edits = scene.create_edit_queue();
-    cubey::apply_gltf_rigid_animation_sample(edits, asset, import_result, sample);
+    cubey::apply_gltf_rigid_animation_sample(edits, runtime, import_result, sample);
     scene.commit(edits);
 
     cubey::SceneReadView view = scene.read();
@@ -129,8 +132,10 @@ void test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_tr
     sample.nodes[0].has_translation = true;
     sample.nodes[0].translation = {8.0F, 9.0F, 10.0F};
 
+    const cubey::asset::GltfRuntimeSceneData runtime =
+        cubey::asset::consume_gltf_runtime_scene_data(std::move(asset));
     cubey::SceneEditQueue edits = scene.create_edit_queue();
-    cubey::apply_gltf_rigid_animation_sample(edits, asset, result, sample);
+    cubey::apply_gltf_rigid_animation_sample(edits, runtime, result, sample);
     scene.commit(edits);
 
     cubey::SceneReadView view = scene.read();

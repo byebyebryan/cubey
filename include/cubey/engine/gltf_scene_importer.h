@@ -305,7 +305,7 @@ gltf_primitive_deformation_kind(const asset::GltfNode& node,
 gltf_deformation_commands_for_frame(const GltfSceneImportResources& resources,
                                     render::FrameSlot frame_slot);
 void update_gltf_deformation_frame(GltfSceneImportResources& resources,
-                                   const asset::GltfAsset& asset,
+                                   const asset::GltfRuntimeSceneData& runtime,
                                    const GltfSceneImportResult& result,
                                    const SceneReadView& scene_view, render::FrameSlot frame_slot,
                                    const animation::GltfAnimationSample* sample = nullptr);
@@ -327,7 +327,8 @@ import_gltf_scene(Engine& engine, SceneTransaction& transaction, const asset::Gl
 void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resources,
                                GltfSceneImportResult& result);
 
-void apply_gltf_rigid_animation_sample(SceneEditQueue& edits, const asset::GltfAsset& asset,
+void apply_gltf_rigid_animation_sample(SceneEditQueue& edits,
+                                       const asset::GltfRuntimeSceneData& runtime,
                                        const GltfSceneImportResult& result,
                                        const animation::GltfAnimationSample& sample);
 

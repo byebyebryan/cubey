@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cubey/asset/gltf_asset.h>
+#include <cubey/asset/gltf_runtime_scene.h>
 #include <cubey/core/math.h>
 
 #include <cstdint>
@@ -37,12 +37,12 @@ struct GltfAnimationPlayback {
 void advance_gltf_animation_playback(GltfAnimationPlayback& playback, float delta_seconds,
                                      float duration_seconds);
 
-[[nodiscard]] GltfAnimationSample sample_gltf_animation(const asset::GltfAsset& asset,
-                                                        const asset::GltfAnimation& animation,
-                                                        float time_seconds);
+[[nodiscard]] GltfAnimationSample
+sample_gltf_animation(const asset::GltfRuntimeSceneData& runtime,
+                      const asset::GltfRuntimeAnimation& animation, float time_seconds);
 
 [[nodiscard]] std::vector<math::Mat4>
-compute_gltf_joint_palette(const asset::GltfSkin& skin, std::span<const math::Mat4> node_world,
-                           std::uint32_t mesh_node_index);
+compute_gltf_joint_palette(const asset::GltfRuntimeSkin& skin,
+                           std::span<const math::Mat4> node_world, std::uint32_t mesh_node_index);
 
 } // namespace cubey::animation

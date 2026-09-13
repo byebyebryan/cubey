@@ -55,6 +55,10 @@ struct BoundsAccumulator {
     return {.translation = node.translation, .rotation = node.rotation, .scale = node.scale};
 }
 
+[[nodiscard]] Transform3D trs_transform_from_node(const asset::GltfRuntimeNode& node) {
+    return {.translation = node.translation, .rotation = node.rotation, .scale = node.scale};
+}
+
 [[nodiscard]] std::vector<render::PbrVertex>
 to_pbr_vertices(std::span<const asset::GltfVertex> vertices) {
     std::vector<render::PbrVertex> result;
@@ -425,13 +429,14 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
     result = {};
 }
 
-void apply_gltf_rigid_animation_sample(SceneEditQueue& edits, const asset::GltfAsset& asset,
+void apply_gltf_rigid_animation_sample(SceneEditQueue& edits,
+                                       const asset::GltfRuntimeSceneData& runtime,
                                        const GltfSceneImportResult& result,
                                        const animation::GltfAnimationSample& sample) {
-    if (result.node_entities.size() < asset.nodes.size()) {
+    if (result.node_entities.size() < runtime.nodes.size()) {
         throw std::runtime_error("glTF import result does not contain node entity mapping");
     }
-    const std::size_t count = std::min(sample.nodes.size(), asset.nodes.size());
+    const std::size_t count = std::min(sample.nodes.size(), runtime.nodes.size());
     for (std::size_t node_index = 0; node_index < count; ++node_index) {
         const animation::GltfNodeAnimationSample& node_sample = sample.nodes[node_index];
         if (!node_sample.has_translation && !node_sample.has_rotation && !node_sample.has_scale) {
@@ -441,7 +446,7 @@ void apply_gltf_rigid_animation_sample(SceneEditQueue& edits, const asset::GltfA
         if (!entity) {
             continue;
         }
-        Transform3D transform = trs_transform_from_node(asset.nodes[node_index]);
+        Transform3D transform = trs_transform_from_node(runtime.nodes[node_index]);
         if (node_sample.has_translation) {
             transform.translation = node_sample.translation;
         }

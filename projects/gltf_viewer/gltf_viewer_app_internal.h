@@ -83,7 +83,7 @@ struct GltfViewerSceneGeneration {
     cubey::StagedResourceGeneration source{};
     std::filesystem::path source_path{};
     bool fallback = true;
-    std::optional<cubey::asset::GltfAsset> asset{};
+    std::optional<cubey::asset::GltfRuntimeSceneData> runtime_scene{};
     cubey::Scene* scene = nullptr;
     cubey::Entity camera_entity{};
     cubey::Entity light_camera_entity{};

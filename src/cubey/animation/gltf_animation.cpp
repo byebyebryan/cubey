@@ -224,11 +224,11 @@ void advance_gltf_animation_playback(GltfAnimationPlayback& playback, float delt
     playback.time_seconds = std::clamp(playback.time_seconds, 0.0F, duration_seconds);
 }
 
-GltfAnimationSample sample_gltf_animation(const asset::GltfAsset& asset,
-                                          const asset::GltfAnimation& animation,
+GltfAnimationSample sample_gltf_animation(const asset::GltfRuntimeSceneData& runtime,
+                                          const asset::GltfRuntimeAnimation& animation,
                                           float time_seconds) {
     GltfAnimationSample result;
-    result.nodes.resize(asset.nodes.size());
+    result.nodes.resize(runtime.nodes.size());
 
     for (const asset::GltfAnimationChannel& channel : animation.channels) {
         if (channel.node_index >= result.nodes.size()) {
@@ -245,7 +245,7 @@ GltfAnimationSample sample_gltf_animation(const asset::GltfAsset& asset,
     return result;
 }
 
-std::vector<math::Mat4> compute_gltf_joint_palette(const asset::GltfSkin& skin,
+std::vector<math::Mat4> compute_gltf_joint_palette(const asset::GltfRuntimeSkin& skin,
                                                    std::span<const math::Mat4> node_world,
                                                    std::uint32_t mesh_node_index) {
     if (mesh_node_index >= node_world.size()) {
