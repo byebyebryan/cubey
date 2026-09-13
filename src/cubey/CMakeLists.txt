@@ -124,6 +124,7 @@ add_library(cubey_asset STATIC
     asset/gltf_asset_geometry.cpp
     asset/gltf_asset_io.cpp
     asset/gltf_asset_materials.cpp
+    asset/gltf_asset_probe.cpp
     asset/gltf_asset_scene.cpp
     asset/hdr_image.cpp
     asset/terrain_height_source.cpp
