@@ -159,6 +159,10 @@ struct GltfPreparedDeformationPrimitive {
     std::uint32_t primitive_index = asset::kInvalidAssetIndex;
     std::uint32_t skin_index = asset::kInvalidAssetIndex;
     GltfPrimitiveDeformationKind deformation = GltfPrimitiveDeformationKind::Static;
+    // Counts are explicit so residency validates the packed payload rather
+    // than inferring shader-visible dimensions from sentinel-backed storage.
+    std::uint32_t morph_target_count = 0;
+    std::uint32_t joint_count = 0;
     std::vector<float> morph_targets{};
     std::vector<GltfSkinInfluence> skin_influences{};
     std::vector<float> initial_morph_weights{};

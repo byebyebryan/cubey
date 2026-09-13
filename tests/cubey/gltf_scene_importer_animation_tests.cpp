@@ -211,6 +211,14 @@ void test_gltf_scene_importer_prepares_owned_cpu_scene_without_engine_or_gpu() {
                 prepared.deformable_primitives[0].mesh_index == 0 &&
                 prepared.deformable_primitives[0].primitive_index == 0,
             "deformation preparation should reference geometry owned by the prepared mesh");
+    const cubey::GltfPreparedDeformationPrimitive& deformation = prepared.deformable_primitives[0];
+    require(deformation.morph_target_count == 1 && deformation.joint_count == 0,
+            "deformation preparation should carry explicit shader-visible morph and joint counts");
+    require(deformation.morph_targets.size() == primitive.vertices.size() * 9U &&
+                deformation.initial_morph_weights.size() == 1U &&
+                deformation.skin_influences.size() == 1U &&
+                deformation.initial_joint_palette.size() == 1U,
+            "deformation preparation should retain explicit morph payloads and non-skin sentinels");
     require(prepared.triangle_count == 1,
             "CPU preparation should report triangle metadata before GPU residency");
     require_close(prepared.bounds.center.x, 1.5F,
@@ -482,6 +490,67 @@ void test_gltf_scene_upload_policy_rejects_invalid_bounds() {
     }
     require(rejected_missing_pool,
             "glTF upload sessions should diagnose a missing configured staging pool");
+}
+
+void test_gltf_scene_upload_session_rejects_inconsistent_prepared_deformation() {
+    const auto prepared = std::make_shared<cubey::GltfPreparedScene>();
+    prepared->materials.emplace_back();
+    prepared->nodes.emplace_back();
+    cubey::GltfPreparedMeshPrimitive& geometry =
+        prepared->meshes.emplace_back().primitives.emplace_back();
+    geometry.vertices.resize(3);
+    geometry.indices = {0, 1, 2};
+    cubey::GltfPreparedDeformationPrimitive& deformation =
+        prepared->deformable_primitives.emplace_back();
+    deformation.node_index = 0;
+    deformation.mesh_index = 0;
+    deformation.primitive_index = 0;
+    deformation.deformation = cubey::GltfPrimitiveDeformationKind::Morph;
+    deformation.morph_target_count = 1;
+    deformation.morph_targets = {0.0F};
+    deformation.skin_influences = {cubey::GltfSkinInfluence{}};
+    deformation.initial_morph_weights = {0.0F};
+    deformation.initial_joint_palette = {cubey::math::Mat4{1.0F}};
+
+    cubey::vulkan::SubmissionCoordinator submission(
+        reinterpret_cast<VkQueue>(0x663),
+        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
+        [](VkQueue, const char*) {});
+    cubey::vulkan::GpuRuntime gpu({
+        .device = reinterpret_cast<cubey::vulkan::Device*>(0x664),
+        .submission = &submission,
+        .execution_mode = cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+    });
+
+    bool rejected_morph_payload = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, {}, gpu));
+    } catch (const std::runtime_error& error) {
+        rejected_morph_payload = std::string(error.what()) ==
+                                 "prepared glTF deformation morph payload size is inconsistent";
+    }
+    require(rejected_morph_payload,
+            "upload setup should reject inconsistent packed morph payloads before GPU residency");
+
+    deformation.morph_targets.resize(3U * 9U);
+    deformation.deformation = cubey::GltfPrimitiveDeformationKind::MorphSkin;
+    deformation.skin_index = 0;
+    deformation.joint_count = 2;
+    deformation.skin_influences.resize(3);
+    for (cubey::GltfSkinInfluence& influence : deformation.skin_influences) {
+        influence.joints = {0, 0, 0, 0};
+        influence.weights = {1.0F, 0.0F, 0.0F, 0.0F};
+    }
+
+    bool rejected_joint_metadata = false;
+    try {
+        static_cast<void>(cubey::begin_gltf_scene_upload_session(prepared, {}, gpu));
+    } catch (const std::runtime_error& error) {
+        rejected_joint_metadata =
+            std::string(error.what()) == "prepared glTF deformation skin metadata is inconsistent";
+    }
+    require(rejected_joint_metadata,
+            "upload setup should reject inconsistent joint metadata before GPU residency");
 }
 
 void test_gltf_scene_importer_blocking_path_uses_upload_session() {

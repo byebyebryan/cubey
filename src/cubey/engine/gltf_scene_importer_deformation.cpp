@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -20,11 +21,29 @@ namespace {
     if (count == 0 || element_size == 0) {
         throw std::runtime_error("glTF deformation buffer byte size must be positive");
     }
+    if (count > std::numeric_limits<std::size_t>::max() / element_size ||
+        count > std::numeric_limits<VkDeviceSize>::max() / element_size) {
+        throw std::runtime_error("glTF deformation buffer byte size overflows");
+    }
     return static_cast<VkDeviceSize>(count * element_size);
 }
 
 template <typename T> [[nodiscard]] VkDeviceSize span_byte_size(std::span<const T> values) {
     return byte_size(values.size(), sizeof(T));
+}
+
+[[nodiscard]] std::size_t checked_size_mul(std::size_t lhs, std::size_t rhs, const char* message) {
+    if (lhs != 0U && rhs > std::numeric_limits<std::size_t>::max() / lhs) {
+        throw std::runtime_error(message);
+    }
+    return lhs * rhs;
+}
+
+[[nodiscard]] std::uint32_t checked_u32_size(std::size_t value, const char* message) {
+    if (value > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error(message);
+    }
+    return static_cast<std::uint32_t>(value);
 }
 
 void append_vec3(std::vector<float>& values, math::Vec3 value) {
@@ -75,7 +94,10 @@ void validate_skin_influences(const asset::GltfMeshPrimitive& primitive,
         return {0.0F};
     }
     std::vector<float> result;
-    result.reserve(primitive.morph_targets.size() * primitive.vertices.size() * 9U);
+    result.reserve(
+        checked_size_mul(checked_size_mul(primitive.morph_targets.size(), primitive.vertices.size(),
+                                          "glTF packed morph target count overflows"),
+                         9U, "glTF packed morph target count overflows"));
     for (const asset::GltfMorphTarget& target : primitive.morph_targets) {
         for (std::size_t vertex_index = 0; vertex_index < primitive.vertices.size();
              ++vertex_index) {
@@ -185,20 +207,24 @@ void prepare_deformation_node(GltfPreparedScene& prepared, const asset::GltfAsse
                     throw std::runtime_error(
                         "glTF deformation primitive skin index is out of range");
                 }
-                joint_count =
-                    static_cast<std::uint32_t>(asset.skins[node.skin_index].joints.size());
+                joint_count = checked_u32_size(asset.skins[node.skin_index].joints.size(),
+                                               "glTF skin joint count exceeds uint32 range");
             }
+            const std::uint32_t morph_target_count = checked_u32_size(
+                primitive.morph_targets.size(), "glTF morph target count exceeds uint32 range");
             prepared.deformable_primitives.push_back({
                 .node_index = node_index,
                 .mesh_index = node.mesh_index,
-                .primitive_index = static_cast<std::uint32_t>(primitive_index),
+                .primitive_index = checked_u32_size(
+                    primitive_index, "glTF mesh primitive index exceeds uint32 range"),
                 .skin_index = node.skin_index,
                 .deformation = kind,
+                .morph_target_count = morph_target_count,
+                .joint_count = joint_count,
                 .morph_targets = pack_morph_targets(primitive),
                 .skin_influences =
                     pack_skin_influences(primitive, deformation_has_skin(kind), joint_count),
-                .initial_morph_weights = default_morph_weights(
-                    node, mesh, static_cast<std::uint32_t>(primitive.morph_targets.size())),
+                .initial_morph_weights = default_morph_weights(node, mesh, morph_target_count),
                 .initial_joint_palette = default_joint_palette(joint_count),
             });
         }

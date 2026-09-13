@@ -14,7 +14,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -23,6 +25,67 @@
 
 namespace cubey {
 namespace {
+
+[[nodiscard]] VkDeviceSize checked_device_size(std::size_t value, const char* message) {
+    if (value > std::numeric_limits<VkDeviceSize>::max()) {
+        throw std::runtime_error(message);
+    }
+    return static_cast<VkDeviceSize>(value);
+}
+
+[[nodiscard]] VkDeviceSize checked_device_size_mul(VkDeviceSize lhs, VkDeviceSize rhs,
+                                                   const char* message) {
+    if (lhs != 0U && rhs > std::numeric_limits<VkDeviceSize>::max() / lhs) {
+        throw std::runtime_error(message);
+    }
+    return lhs * rhs;
+}
+
+[[nodiscard]] VkDeviceSize checked_device_size_add(VkDeviceSize lhs, VkDeviceSize rhs,
+                                                   const char* message) {
+    if (lhs > std::numeric_limits<VkDeviceSize>::max() - rhs) {
+        throw std::runtime_error(message);
+    }
+    return lhs + rhs;
+}
+
+[[nodiscard]] std::size_t checked_size_t(VkDeviceSize value, const char* message) {
+    if (value > std::numeric_limits<std::size_t>::max()) {
+        throw std::runtime_error(message);
+    }
+    return static_cast<std::size_t>(value);
+}
+
+[[nodiscard]] std::uint32_t checked_u32_size(std::size_t value, const char* message) {
+    if (value > std::numeric_limits<std::uint32_t>::max()) {
+        throw std::runtime_error(message);
+    }
+    return static_cast<std::uint32_t>(value);
+}
+
+[[nodiscard]] std::uint32_t block_count(std::uint32_t extent, std::uint32_t block_extent,
+                                        const char* message) {
+    if (extent == 0U || block_extent == 0U) {
+        throw std::runtime_error(message);
+    }
+    return 1U + ((extent - 1U) / block_extent);
+}
+
+template <typename T>
+[[nodiscard]] T& required_state(std::optional<T>& value, const char* message) {
+    if (!value.has_value()) {
+        throw std::runtime_error(message);
+    }
+    return *value;
+}
+
+template <typename T>
+[[nodiscard]] const T& required_state(const std::optional<T>& value, const char* message) {
+    if (!value.has_value()) {
+        throw std::runtime_error(message);
+    }
+    return *value;
+}
 
 [[nodiscard]] render::MaterialHandle staging_material_handle(std::size_t index) {
     return {.index = static_cast<std::uint32_t>(index + 1U), .generation = 0U};
@@ -51,8 +114,10 @@ material_sampled_image_bindings(const GltfSceneImportResources& resources,
     for (const GltfPreparedMaterialTexture& texture_ref : material.textures) {
         const render::Texture2D* texture = nullptr;
         if (texture_ref.texture_index == asset::kInvalidAssetIndex) {
-            texture = &render::pbr_default_texture(resources.default_textures.value(),
-                                                   texture_ref.binding);
+            texture = &render::pbr_default_texture(
+                required_state(resources.default_textures,
+                               "glTF material upload requires default textures"),
+                texture_ref.binding);
         } else {
             if (texture_ref.texture_index >= resources.textures.size()) {
                 throw std::runtime_error("glTF material prepared texture index is out of range");
@@ -80,7 +145,10 @@ texture_mips(const GltfPreparedTexture& texture) {
         const VkExtent2D extent = render::texture_2d_mip_extent(texture.extent, mip);
         const std::size_t byte_count = render::texture_2d_byte_size(extent, 1, texture.format);
         mips.push_back({.extent = extent, .byte_offset = offset, .byte_count = byte_count});
-        offset += static_cast<VkDeviceSize>(byte_count);
+        offset = checked_device_size_add(
+            offset,
+            checked_device_size(byte_count, "glTF texture mip byte size exceeds device range"),
+            "glTF texture mip offsets overflow");
     }
     return mips;
 }
@@ -107,17 +175,22 @@ texture_mips(const GltfPreparedTexture& texture) {
            kind == GltfPrimitiveDeformationKind::MorphSkin;
 }
 
-template <typename T> [[nodiscard]] VkDeviceSize span_byte_size(std::span<const T> values) {
+template <typename T>
+[[nodiscard]] VkDeviceSize span_byte_size(std::span<const T> values, const char* message) {
     if (values.empty()) {
-        throw std::runtime_error("glTF deformation buffer byte size must be positive");
+        throw std::runtime_error(message);
     }
-    return static_cast<VkDeviceSize>(values.size() * sizeof(T));
+    const VkDeviceSize byte_count =
+        checked_device_size_mul(checked_device_size(values.size(), message), sizeof(T), message);
+    static_cast<void>(checked_size_t(byte_count, message));
+    return byte_count;
 }
 
 template <typename T>
 [[nodiscard]] vulkan::Buffer create_host_storage_buffer(const vulkan::Device& device,
                                                         std::span<const T> initial_values) {
-    const VkDeviceSize byte_count = span_byte_size(initial_values);
+    const VkDeviceSize byte_count = span_byte_size(
+        initial_values, "glTF deformation host storage buffer byte size must be positive");
     vulkan::Buffer buffer(device, vulkan::BufferConfig{
                                       .size = byte_count,
                                       .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -159,6 +232,160 @@ void update_deformation_descriptors(const vulkan::Device& device,
                             resource.output_meshes.at(frame_index).vertex_buffer().handle(),
                             resource.output_meshes.at(frame_index).vertex_buffer().size());
         writes.update(device);
+    }
+}
+
+[[nodiscard]] bool deformation_has_morph(GltfPrimitiveDeformationKind kind) {
+    return kind == GltfPrimitiveDeformationKind::Morph ||
+           kind == GltfPrimitiveDeformationKind::MorphSkin;
+}
+
+void validate_prepared_texture(const GltfPreparedTexture& texture) {
+    if (texture.extent.width == 0U || texture.extent.height == 0U || texture.mip_levels == 0U ||
+        texture.format == VK_FORMAT_UNDEFINED || texture.bytes.empty()) {
+        throw std::runtime_error("prepared glTF texture metadata is incomplete");
+    }
+    if (texture.mip_levels > render::texture_2d_mip_count(texture.extent)) {
+        throw std::runtime_error("prepared glTF texture mip count exceeds its extent");
+    }
+    const std::vector<render::UploadedTexture2DMip> mips = texture_mips(texture);
+    if (mips.size() != texture.mip_levels) {
+        throw std::runtime_error("prepared glTF texture mip count is inconsistent");
+    }
+    const VkDeviceSize source_size = checked_device_size(
+        texture.bytes.size(), "prepared glTF texture byte size exceeds device range");
+    for (std::uint32_t mip_index = 0; mip_index < texture.mip_levels; ++mip_index) {
+        const render::UploadedTexture2DMip& mip = mips[mip_index];
+        const VkExtent2D expected_extent = render::texture_2d_mip_extent(texture.extent, mip_index);
+        if (mip.extent.width != expected_extent.width ||
+            mip.extent.height != expected_extent.height) {
+            throw std::runtime_error("prepared glTF texture mip extent is inconsistent");
+        }
+        const std::size_t expected_byte_count =
+            render::texture_2d_byte_size(expected_extent, 1U, texture.format);
+        if (mip.byte_count != expected_byte_count) {
+            throw std::runtime_error("prepared glTF texture mip byte size is inconsistent");
+        }
+        const VkDeviceSize byte_count = checked_device_size(
+            mip.byte_count, "prepared glTF texture mip byte size exceeds device range");
+        if (mip.byte_offset > source_size || byte_count > source_size - mip.byte_offset) {
+            throw std::runtime_error("prepared glTF texture mip range exceeds source bytes");
+        }
+    }
+}
+
+void validate_prepared_deformation(const GltfPreparedScene& prepared,
+                                   const GltfPreparedDeformationPrimitive& source) {
+    if (!gltf_primitive_requires_deformation(source.deformation)) {
+        throw std::runtime_error("prepared glTF deformation primitive must be deformable");
+    }
+    if (source.node_index >= prepared.nodes.size() || source.mesh_index >= prepared.meshes.size() ||
+        source.primitive_index >= prepared.meshes[source.mesh_index].primitives.size()) {
+        throw std::runtime_error("prepared glTF deformation primitive index is out of range");
+    }
+    const GltfPreparedMeshPrimitive& geometry =
+        prepared.meshes[source.mesh_index].primitives[source.primitive_index];
+    if (geometry.vertices.empty() || geometry.indices.empty()) {
+        throw std::runtime_error("prepared glTF deformation geometry requires indexed vertices");
+    }
+    const std::size_t vertex_count = geometry.vertices.size();
+    static_cast<void>(checked_u32_size(
+        vertex_count, "prepared glTF deformation vertex count exceeds uint32 range"));
+    static_cast<void>(span_byte_size(std::span{geometry.vertices},
+                                     "prepared glTF deformation vertex byte size is invalid"));
+    static_cast<void>(span_byte_size(std::span{geometry.indices},
+                                     "prepared glTF deformation index byte size is invalid"));
+
+    const bool has_morph = deformation_has_morph(source.deformation);
+    if (has_morph) {
+        if (source.morph_target_count == 0U ||
+            source.initial_morph_weights.size() != source.morph_target_count) {
+            throw std::runtime_error("prepared glTF deformation morph metadata is inconsistent");
+        }
+        const VkDeviceSize expected = checked_device_size_mul(
+            checked_device_size_mul(source.morph_target_count, vertex_count,
+                                    "prepared glTF deformation morph payload size overflows"),
+            9U, "prepared glTF deformation morph payload size overflows");
+        if (source.morph_targets.size() !=
+            checked_size_t(expected,
+                           "prepared glTF deformation morph payload exceeds host range")) {
+            throw std::runtime_error(
+                "prepared glTF deformation morph payload size is inconsistent");
+        }
+    } else if (source.morph_target_count != 0U || source.morph_targets.size() != 1U ||
+               source.initial_morph_weights.size() != 1U) {
+        throw std::runtime_error("prepared glTF deformation morph sentinel is inconsistent");
+    }
+
+    const bool has_skin = deformation_has_skin(source.deformation);
+    if (has_skin) {
+        if (source.skin_index == asset::kInvalidAssetIndex || source.joint_count == 0U ||
+            source.skin_influences.size() != vertex_count ||
+            source.initial_joint_palette.size() != source.joint_count) {
+            throw std::runtime_error("prepared glTF deformation skin metadata is inconsistent");
+        }
+        for (const GltfSkinInfluence& influence : source.skin_influences) {
+            const float weight_sum = influence.weights.x + influence.weights.y +
+                                     influence.weights.z + influence.weights.w;
+            if (weight_sum <= 1.0e-6F) {
+                throw std::runtime_error("prepared glTF deformation skin weights are invalid");
+            }
+            for (std::size_t component = 0; component < influence.joints.size(); ++component) {
+                const float weight = influence.weights[static_cast<int>(component)];
+                if (weight < 0.0F) {
+                    throw std::runtime_error("prepared glTF deformation skin weights are invalid");
+                }
+                if (weight > 0.0F && influence.joints[component] >= source.joint_count) {
+                    throw std::runtime_error(
+                        "prepared glTF deformation skin joint index is out of range");
+                }
+            }
+        }
+    } else if (source.skin_index != asset::kInvalidAssetIndex || source.joint_count != 0U ||
+               source.skin_influences.size() != 1U || source.initial_joint_palette.size() != 1U) {
+        throw std::runtime_error("prepared glTF deformation skin sentinel is inconsistent");
+    }
+
+    static_cast<void>(span_byte_size(std::span{source.morph_targets},
+                                     "prepared glTF deformation morph byte size is invalid"));
+    static_cast<void>(span_byte_size(std::span{source.skin_influences},
+                                     "prepared glTF deformation skin byte size is invalid"));
+    static_cast<void>(span_byte_size(std::span{source.initial_morph_weights},
+                                     "prepared glTF deformation morph weights are invalid"));
+    static_cast<void>(span_byte_size(std::span{source.initial_joint_palette},
+                                     "prepared glTF deformation joint palette is invalid"));
+}
+
+void validate_prepared_scene(const GltfPreparedScene& prepared) {
+    for (const GltfPreparedTexture& texture : prepared.textures) {
+        validate_prepared_texture(texture);
+    }
+    for (const GltfPreparedMesh& mesh : prepared.meshes) {
+        for (const GltfPreparedMeshPrimitive& primitive : mesh.primitives) {
+            if (primitive.vertices.empty() || primitive.indices.empty()) {
+                throw std::runtime_error("prepared glTF mesh primitive requires indexed vertices");
+            }
+            if (primitive.material_index >= prepared.materials.size()) {
+                throw std::runtime_error(
+                    "prepared glTF mesh primitive material index is out of range");
+            }
+            static_cast<void>(span_byte_size(std::span{primitive.vertices},
+                                             "prepared glTF vertex byte size is invalid"));
+            static_cast<void>(span_byte_size(std::span{primitive.indices},
+                                             "prepared glTF index byte size is invalid"));
+            static_cast<void>(checked_u32_size(primitive.vertices.size(),
+                                               "prepared glTF vertex count exceeds uint32 range"));
+            static_cast<void>(checked_u32_size(primitive.indices.size(),
+                                               "prepared glTF index count exceeds uint32 range"));
+            for (const std::uint32_t index : primitive.indices) {
+                if (index >= primitive.vertices.size()) {
+                    throw std::runtime_error("prepared glTF mesh index is out of range");
+                }
+            }
+        }
+    }
+    for (const GltfPreparedDeformationPrimitive& source : prepared.deformable_primitives) {
+        validate_prepared_deformation(prepared, source);
     }
 }
 
@@ -255,8 +482,10 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
 
         [[nodiscard]] StagingAttempt try_stage(std::span<const std::byte> bytes,
                                                VkDeviceSize alignment) {
-            const VkDeviceSize byte_count = static_cast<VkDeviceSize>(bytes.size());
-            if (byte_count > config_.max_staged_byte_size - staged_byte_count_) {
+            const VkDeviceSize byte_count = checked_device_size(
+                bytes.size(), "glTF upload staging source size exceeds device range");
+            if (staged_byte_count_ > config_.max_staged_byte_size ||
+                byte_count > config_.max_staged_byte_size - staged_byte_count_) {
                 return {.result = StagingAttempt::Result::StepFull};
             }
             if (step_ == nullptr) {
@@ -274,7 +503,8 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                 return {.result = StagingAttempt::Result::Backpressure};
             }
             staged_byte_count_ += byte_count;
-            return {.result = StagingAttempt::Result::Staged, .slice = slice.value()};
+            return {.result = StagingAttempt::Result::Staged,
+                    .slice = required_state(slice, "glTF upload staging slice is missing")};
         }
 
         void add_copy_count() {
@@ -332,6 +562,7 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             throw std::runtime_error(
                 "glTF upload copy byte target must not exceed the step byte cap");
         }
+        validate_prepared_scene(*prepared);
         if (!runtime_value.has_staging_pool()) {
             throw std::runtime_error("glTF upload session requires a configured GPU staging pool");
         }
@@ -349,13 +580,25 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             });
     }
 
+    struct OwnerStepInFlightReset {
+        explicit OwnerStepInFlightReset(std::atomic<bool>& state) : state_(&state) {}
+
+        ~OwnerStepInFlightReset() {
+            state_->store(false, std::memory_order_release);
+        }
+
+      private:
+        std::atomic<bool>* state_ = nullptr;
+    };
+
     void record_one_owner_step(vulkan::GpuOwnerContext& owner) {
+        // Declare this before the lock so it publishes completion only after
+        // the lock is released during normal returns and exception unwinding.
+        OwnerStepInFlightReset reset_owner_step(owner_step_in_flight);
         owner.require_owner_thread("glTF upload session requires the GPU owner thread");
         std::unique_lock lock(mutex);
         if (abandoned || phase == Phase::Failed || phase == Phase::Complete ||
             phase == Phase::Abandoned || phase == Phase::FinishedRecording) {
-            lock.unlock();
-            owner_step_in_flight.store(false, std::memory_order_release);
             return;
         }
         const Clock::time_point started = Clock::now();
@@ -396,10 +639,6 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             ++metrics.owner_over_target_step_count;
         }
         resident.upload_session_metrics = metrics;
-        lock.unlock();
-        // The non-wait poll path reads this before taking `mutex`; publish it
-        // only after all owner state is stable and the mutex is released.
-        owner_step_in_flight.store(false, std::memory_order_release);
     }
 
     [[nodiscard]] AdvanceResult advance_one_owner_operation(vulkan::GpuOwnerContext& owner,
@@ -446,13 +685,16 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             });
         }
         bool texture_finished = false;
-        const AdvanceResult result =
-            record_texture_copy(owner, step, texture_task.value(), texture_finished);
+        const AdvanceResult result = record_texture_copy(
+            owner, step,
+            required_state(texture_task, "glTF default texture upload task is missing"),
+            texture_finished);
         if (result != AdvanceResult::Progress) {
             return result;
         }
         if (texture_finished) {
-            default_textures.push_back(std::move(texture_task->texture.value()));
+            default_textures.push_back(std::move(required_state(
+                texture_task->texture, "glTF default texture upload did not create a texture")));
             texture_task.reset();
             ++default_texture_index;
         }
@@ -477,13 +719,16 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             });
         }
         bool texture_finished = false;
-        const AdvanceResult result =
-            record_texture_copy(owner, step, texture_task.value(), texture_finished);
+        const AdvanceResult result = record_texture_copy(
+            owner, step,
+            required_state(texture_task, "glTF prepared texture upload task is missing"),
+            texture_finished);
         if (result != AdvanceResult::Progress) {
             return result;
         }
         if (texture_finished) {
-            resident.resources.textures.push_back(std::move(texture_task->texture.value()));
+            resident.resources.textures.push_back(std::move(required_state(
+                texture_task->texture, "glTF prepared texture upload did not create a texture")));
             texture_task.reset();
             ++prepared_texture_index;
         }
@@ -512,30 +757,52 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         }
         const render::UploadedTexture2DMip& mip = task.mips[task.mip_index];
         const render::TextureFormatLayout layout = render::texture_format_layout(task.format);
-        const std::uint32_t blocks_x =
-            (mip.extent.width + layout.block_width - 1U) / layout.block_width;
-        const std::uint32_t blocks_y =
-            (mip.extent.height + layout.block_height - 1U) / layout.block_height;
-        const VkDeviceSize bytes_per_row =
-            static_cast<VkDeviceSize>(blocks_x) * static_cast<VkDeviceSize>(layout.bytes_per_block);
-        if (bytes_per_row == 0) {
+        const std::uint32_t blocks_x = block_count(mip.extent.width, layout.block_width,
+                                                   "glTF texture upload block width is invalid");
+        const std::uint32_t blocks_y = block_count(mip.extent.height, layout.block_height,
+                                                   "glTF texture upload block height is invalid");
+        const VkDeviceSize bytes_per_row = checked_device_size_mul(
+            blocks_x,
+            checked_device_size(layout.bytes_per_block,
+                                "glTF texture upload block byte size exceeds device range"),
+            "glTF texture upload row size overflows");
+        if (bytes_per_row == 0U) {
             throw std::runtime_error("glTF texture upload row size is zero");
         }
+        if (task.block_row > blocks_y) {
+            throw std::runtime_error("glTF texture upload block row is out of range");
+        }
         const std::uint32_t remaining_rows = blocks_y - task.block_row;
-        const std::uint32_t target_rows = std::max(
-            1U, static_cast<std::uint32_t>(config.upload_policy.copy_byte_target / bytes_per_row));
-        const std::uint32_t row_count = std::min(remaining_rows, target_rows);
-        const VkDeviceSize byte_count = bytes_per_row * static_cast<VkDeviceSize>(row_count);
-        const VkDeviceSize byte_offset =
-            mip.byte_offset + bytes_per_row * static_cast<VkDeviceSize>(task.block_row);
-        if (byte_offset > task.source.size() || byte_count > task.source.size() - byte_offset) {
+        if (remaining_rows == 0U) {
+            throw std::runtime_error("glTF texture upload selected a completed mip");
+        }
+        const VkDeviceSize target_rows =
+            std::max<VkDeviceSize>(1U, config.upload_policy.copy_byte_target / bytes_per_row);
+        const std::uint32_t row_count =
+            static_cast<std::uint32_t>(std::min<VkDeviceSize>(remaining_rows, target_rows));
+        const VkDeviceSize byte_count = checked_device_size_mul(
+            bytes_per_row, row_count, "glTF texture upload chunk size overflows");
+        const VkDeviceSize byte_offset = checked_device_size_add(
+            mip.byte_offset,
+            checked_device_size_mul(bytes_per_row, task.block_row,
+                                    "glTF texture upload row offset overflows"),
+            "glTF texture upload byte offset overflows");
+        const std::size_t source_offset =
+            checked_size_t(byte_offset, "glTF texture upload byte offset exceeds host range");
+        const std::size_t source_byte_count =
+            checked_size_t(byte_count, "glTF texture upload chunk size exceeds host range");
+        if (source_offset > task.source.size() ||
+            source_byte_count > task.source.size() - source_offset) {
             throw std::runtime_error("glTF texture chunk exceeds prepared bytes");
         }
 
         const StagingAttempt attempt = step.try_stage(
-            {reinterpret_cast<const std::byte*>(task.source.data() + byte_offset),
-             static_cast<std::size_t>(byte_count)},
-            std::max<VkDeviceSize>(4U, static_cast<VkDeviceSize>(layout.bytes_per_block)));
+            {reinterpret_cast<const std::byte*>(task.source.data() + source_offset),
+             source_byte_count},
+            std::max<VkDeviceSize>(
+                4U,
+                checked_device_size(layout.bytes_per_block,
+                                    "glTF texture upload block alignment exceeds device range")));
         if (attempt.result == StagingAttempt::Result::StepFull) {
             return AdvanceResult::StepFull;
         }
@@ -548,9 +815,14 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                 vulkan::begin_transfer_dst_transition(task.texture->handle(), task.mip_levels, 1));
             task.transitioned = true;
         }
-        const std::uint32_t image_y = task.block_row * layout.block_height;
+        const std::uint32_t image_y = static_cast<std::uint32_t>(
+            static_cast<std::uint64_t>(task.block_row) * layout.block_height);
+        const std::uint32_t remaining_height = mip.extent.height - image_y;
         const std::uint32_t copy_height =
-            std::min(mip.extent.height - image_y, row_count * layout.block_height);
+            row_count == remaining_rows
+                ? remaining_height
+                : static_cast<std::uint32_t>(static_cast<std::uint64_t>(row_count) *
+                                             layout.block_height);
         const VkBufferImageCopy copy = vulkan::buffer_image_copy({
             .extent = {mip.extent.width, copy_height, 1},
             .buffer_offset = attempt.slice.offset,
@@ -614,34 +886,30 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         if (!mesh_task.has_value()) {
             mesh_task.emplace(MeshTask{.source = &source});
         }
-        MeshTask& task = mesh_task.value();
+        MeshTask& task = required_state(mesh_task, "glTF mesh upload task is missing");
+        const VkDeviceSize vertex_bytes = span_byte_size(
+            std::span{task.source->vertices}, "glTF mesh vertex buffer byte size is invalid");
+        const VkDeviceSize index_bytes = span_byte_size(
+            std::span{task.source->indices}, "glTF mesh index buffer byte size is invalid");
         if (!task.vertex.has_value()) {
             task.vertex.emplace(owner.device(),
                                 vulkan::device_local_buffer_config(
-                                    static_cast<VkDeviceSize>(task.source->vertices.size() *
-                                                              sizeof(render::PbrVertex)),
-                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
+                                    vertex_bytes, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
             return AdvanceResult::Progress;
         }
         if (!task.index.has_value()) {
-            task.index.emplace(
-                owner.device(),
-                vulkan::device_local_buffer_config(
-                    static_cast<VkDeviceSize>(task.source->indices.size() * sizeof(std::uint32_t)),
-                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+            task.index.emplace(owner.device(), vulkan::device_local_buffer_config(
+                                                   index_bytes, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
             return AdvanceResult::Progress;
         }
-        const VkDeviceSize vertex_bytes =
-            static_cast<VkDeviceSize>(task.source->vertices.size() * sizeof(render::PbrVertex));
-        const VkDeviceSize index_bytes =
-            static_cast<VkDeviceSize>(task.source->indices.size() * sizeof(std::uint32_t));
         if (task.vertex_offset < vertex_bytes) {
             return record_buffer_copy(
                 step,
                 std::span<const std::byte>{
                     reinterpret_cast<const std::byte*>(task.source->vertices.data()),
                     static_cast<std::size_t>(vertex_bytes)},
-                task.vertex.value(), task.vertex_offset, true);
+                required_state(task.vertex, "glTF mesh vertex buffer is missing"),
+                task.vertex_offset, true);
         }
         if (task.index_offset < index_bytes) {
             return record_buffer_copy(
@@ -649,14 +917,18 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                 std::span<const std::byte>{
                     reinterpret_cast<const std::byte*>(task.source->indices.data()),
                     static_cast<std::size_t>(index_bytes)},
-                task.index.value(), task.index_offset, true);
+                required_state(task.index, "glTF mesh index buffer is missing"), task.index_offset,
+                true);
         }
         const render::MeshHandle handle = staging_mesh_handle(resident.static_mesh_handles.size());
         resident.resources.meshes.emplace(
             handle,
             render::Mesh::from_uploaded_buffers(
-                std::move(task.vertex.value()), std::move(task.index.value()), VK_INDEX_TYPE_UINT32,
-                static_cast<std::uint32_t>(task.source->indices.size())));
+                std::move(required_state(task.vertex, "glTF mesh vertex buffer is missing")),
+                std::move(required_state(task.index, "glTF mesh index buffer is missing")),
+                VK_INDEX_TYPE_UINT32,
+                checked_u32_size(task.source->indices.size(),
+                                 "glTF mesh index count exceeds uint32 range")));
         resident.static_mesh_handles.push_back(handle);
         resident.resources.mesh_primitives[mesh_index].push_back({
             .mesh = handle,
@@ -676,10 +948,20 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                                                    vulkan::Buffer& destination,
                                                    VkDeviceSize& offset,
                                                    bool count_static_mesh_bytes) {
-        const VkDeviceSize remaining = static_cast<VkDeviceSize>(source.size()) - offset;
+        const VkDeviceSize source_size =
+            checked_device_size(source.size(), "glTF buffer copy source size exceeds device range");
+        if (offset > source_size) {
+            throw std::runtime_error("glTF buffer copy offset exceeds prepared source");
+        }
+        const VkDeviceSize remaining = source_size - offset;
+        if (remaining == 0U) {
+            throw std::runtime_error("glTF buffer copy selected an exhausted source");
+        }
         const VkDeviceSize byte_count = std::min(remaining, config.upload_policy.copy_byte_target);
         const StagingAttempt attempt = step.try_stage(
-            source.subspan(static_cast<std::size_t>(offset), static_cast<std::size_t>(byte_count)),
+            source.subspan(
+                checked_size_t(offset, "glTF buffer copy offset exceeds host range"),
+                checked_size_t(byte_count, "glTF buffer copy chunk size exceeds host range")),
             4U);
         if (attempt.result == StagingAttempt::Result::StepFull) {
             return AdvanceResult::StepFull;
@@ -772,15 +1054,10 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                 resident.resources.deformation.primitives.emplace_back();
             resource.primitive = resident.resources.deformable_primitives.at(deformation_index);
             resource.push_constants = {
-                .vertex_count = static_cast<std::uint32_t>(geometry.vertices.size()),
-                .morph_target_count =
-                    source.morph_targets.empty()
-                        ? 0U
-                        : static_cast<std::uint32_t>(source.morph_targets.size() /
-                                                     (geometry.vertices.size() * 9U)),
-                .joint_count = deformation_has_skin(source.deformation)
-                                   ? static_cast<std::uint32_t>(source.initial_joint_palette.size())
-                                   : 0U,
+                .vertex_count = checked_u32_size(
+                    geometry.vertices.size(), "glTF deformation vertex count exceeds uint32 range"),
+                .morph_target_count = source.morph_target_count,
+                .joint_count = source.joint_count,
                 .flags = deformation_flags(source.deformation),
             };
             deformation_task.emplace(DeformationTask{
@@ -789,7 +1066,9 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
                 .resource_index = resident.resources.deformation.primitives.size() - 1U,
             });
         }
-        return record_deformation_task(owner, step, deformation_task.value());
+        return record_deformation_task(
+            owner, step,
+            required_state(deformation_task, "glTF deformation upload task is missing"));
     }
 
     [[nodiscard]] AdvanceResult record_deformation_task(vulkan::GpuOwnerContext& owner,
@@ -807,16 +1086,21 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         case DeformationTask::Stage::CreateBaseVertices:
             resource.base_vertices.emplace(
                 owner.device(),
-                vulkan::device_local_buffer_config(span_byte_size(std::span{geometry.vertices}),
-                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+                vulkan::device_local_buffer_config(
+                    span_byte_size(std::span{geometry.vertices},
+                                   "glTF deformation base vertex byte size is invalid"),
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadBaseVertices;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadBaseVertices: {
-            const VkDeviceSize total = span_byte_size(std::span{geometry.vertices});
+            const VkDeviceSize total = span_byte_size(
+                std::span{geometry.vertices}, "glTF deformation base vertex byte size is invalid");
             const AdvanceResult result =
                 upload({reinterpret_cast<const std::byte*>(geometry.vertices.data()),
                         static_cast<std::size_t>(total)},
-                       resource.base_vertices.value(), task.base_vertex_offset);
+                       required_state(resource.base_vertices,
+                                      "glTF deformation base vertex buffer is missing"),
+                       task.base_vertex_offset);
             if (result == AdvanceResult::Progress && task.base_vertex_offset == total) {
                 task.stage = DeformationTask::Stage::CreateMorphTargets;
             }
@@ -825,34 +1109,46 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         case DeformationTask::Stage::CreateMorphTargets:
             resource.morph_targets.emplace(
                 owner.device(),
-                vulkan::device_local_buffer_config(span_byte_size(std::span{source.morph_targets}),
-                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+                vulkan::device_local_buffer_config(
+                    span_byte_size(std::span{source.morph_targets},
+                                   "glTF deformation morph target byte size is invalid"),
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadMorphTargets;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadMorphTargets: {
-            const VkDeviceSize total = span_byte_size(std::span{source.morph_targets});
+            const VkDeviceSize total =
+                span_byte_size(std::span{source.morph_targets},
+                               "glTF deformation morph target byte size is invalid");
             const AdvanceResult result =
                 upload({reinterpret_cast<const std::byte*>(source.morph_targets.data()),
                         static_cast<std::size_t>(total)},
-                       resource.morph_targets.value(), task.morph_target_offset);
+                       required_state(resource.morph_targets,
+                                      "glTF deformation morph target buffer is missing"),
+                       task.morph_target_offset);
             if (result == AdvanceResult::Progress && task.morph_target_offset == total) {
                 task.stage = DeformationTask::Stage::CreateSkinInfluences;
             }
             return result;
         }
         case DeformationTask::Stage::CreateSkinInfluences:
-            resource.skin_influences.emplace(owner.device(),
-                                             vulkan::device_local_buffer_config(
-                                                 span_byte_size(std::span{source.skin_influences}),
-                                                 VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+            resource.skin_influences.emplace(
+                owner.device(),
+                vulkan::device_local_buffer_config(
+                    span_byte_size(std::span{source.skin_influences},
+                                   "glTF deformation skin influence byte size is invalid"),
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadSkinInfluences;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadSkinInfluences: {
-            const VkDeviceSize total = span_byte_size(std::span{source.skin_influences});
+            const VkDeviceSize total =
+                span_byte_size(std::span{source.skin_influences},
+                               "glTF deformation skin influence byte size is invalid");
             const AdvanceResult result =
                 upload({reinterpret_cast<const std::byte*>(source.skin_influences.data()),
                         static_cast<std::size_t>(total)},
-                       resource.skin_influences.value(), task.skin_influence_offset);
+                       required_state(resource.skin_influences,
+                                      "glTF deformation skin influence buffer is missing"),
+                       task.skin_influence_offset);
             if (result == AdvanceResult::Progress && task.skin_influence_offset == total) {
                 task.stage = DeformationTask::Stage::CreateFrameStorage;
             }
@@ -877,17 +1173,22 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             }
             task.output_vertex.emplace(
                 owner.device(),
-                vulkan::device_local_buffer_config(span_byte_size(std::span{geometry.vertices}),
-                                                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+                vulkan::device_local_buffer_config(
+                    span_byte_size(std::span{geometry.vertices},
+                                   "glTF deformation output vertex byte size is invalid"),
+                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadOutputVertex;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadOutputVertex: {
-            const VkDeviceSize total = span_byte_size(std::span{geometry.vertices});
+            const VkDeviceSize total =
+                span_byte_size(std::span{geometry.vertices},
+                               "glTF deformation output vertex byte size is invalid");
             const AdvanceResult result =
                 upload({reinterpret_cast<const std::byte*>(geometry.vertices.data()),
                         static_cast<std::size_t>(total)},
-                       task.output_vertex.value(), task.output_vertex_offset);
+                       required_state(task.output_vertex,
+                                      "glTF deformation output vertex buffer is missing"),
+                       task.output_vertex_offset);
             if (result == AdvanceResult::Progress && task.output_vertex_offset == total) {
                 task.stage = DeformationTask::Stage::CreateOutputIndex;
             }
@@ -896,16 +1197,21 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         case DeformationTask::Stage::CreateOutputIndex:
             task.output_index.emplace(
                 owner.device(),
-                vulkan::device_local_buffer_config(span_byte_size(std::span{geometry.indices}),
-                                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+                vulkan::device_local_buffer_config(
+                    span_byte_size(std::span{geometry.indices},
+                                   "glTF deformation output index byte size is invalid"),
+                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
             task.stage = DeformationTask::Stage::UploadOutputIndex;
             return AdvanceResult::Progress;
         case DeformationTask::Stage::UploadOutputIndex: {
-            const VkDeviceSize total = span_byte_size(std::span{geometry.indices});
+            const VkDeviceSize total = span_byte_size(
+                std::span{geometry.indices}, "glTF deformation output index byte size is invalid");
             const AdvanceResult result =
                 upload({reinterpret_cast<const std::byte*>(geometry.indices.data()),
                         static_cast<std::size_t>(total)},
-                       task.output_index.value(), task.output_index_offset);
+                       required_state(task.output_index,
+                                      "glTF deformation output index buffer is missing"),
+                       task.output_index_offset);
             if (result == AdvanceResult::Progress && task.output_index_offset == total) {
                 task.stage = DeformationTask::Stage::FinishOutput;
             }
@@ -913,8 +1219,13 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         }
         case DeformationTask::Stage::FinishOutput:
             resource.output_meshes.push_back(render::Mesh::from_uploaded_buffers(
-                std::move(task.output_vertex.value()), std::move(task.output_index.value()),
-                VK_INDEX_TYPE_UINT32, static_cast<std::uint32_t>(geometry.indices.size())));
+                std::move(required_state(task.output_vertex,
+                                         "glTF deformation output vertex buffer is missing")),
+                std::move(required_state(task.output_index,
+                                         "glTF deformation output index buffer is missing")),
+                VK_INDEX_TYPE_UINT32,
+                checked_u32_size(geometry.indices.size(),
+                                 "glTF deformation index count exceeds uint32 range")));
             task.output_vertex.reset();
             task.output_index.reset();
             task.output_vertex_offset = 0;
@@ -960,7 +1271,8 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
             std::min<std::size_t>(std::numeric_limits<std::uint32_t>::max(),
                                   pool_stats.block_count - pool_initial_block_count));
         final_ticket = std::move(ticket);
-        resident.final_upload_step = final_ticket.value();
+        resident.final_upload_step =
+            required_state(final_ticket, "glTF upload step ticket is missing");
     }
 
     void fail(std::string message) {
@@ -986,7 +1298,8 @@ struct GltfSceneUploadSession::Impl : public std::enable_shared_from_this<Impl> 
         }
         if (first_submission_started.has_value()) {
             metrics.first_step_to_final_completion_milliseconds =
-                elapsed_milliseconds(first_submission_started.value());
+                elapsed_milliseconds(required_state(
+                    first_submission_started, "glTF upload completion start time is missing"));
         }
         resident.upload_session_metrics = metrics;
         phase = Phase::Complete;
@@ -1216,7 +1529,8 @@ bool GltfSceneUploadSession::poll(vulkan::GpuRuntime& gpu, bool wait) {
                     impl_->mark_complete();
                     return true;
                 }
-                vulkan::GpuUploadStepTicket ticket = impl_->final_ticket.value();
+                vulkan::GpuUploadStepTicket ticket = required_state(
+                    impl_->final_ticket, "glTF upload session final ticket is missing");
                 lock.unlock();
                 const bool complete = wait ? (ticket.wait(gpu), true) : ticket.poll(gpu);
                 if (!complete) {

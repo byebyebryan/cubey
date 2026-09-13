@@ -90,6 +90,7 @@ void test_gltf_scene_importer_routes_transmission_independently_of_alpha_and_sha
 void test_gltf_scene_importer_reserves_provisional_handle_generation();
 void test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy();
 void test_gltf_scene_upload_policy_rejects_invalid_bounds();
+void test_gltf_scene_upload_session_rejects_inconsistent_prepared_deformation();
 void test_gltf_scene_importer_blocking_path_uses_upload_session();
 void test_pointer_drag_tracks_active_cursor_and_accumulated_delta();
 void test_project_context_exposes_async_runtime_services();
@@ -204,6 +205,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_gltf_scene_importer_reserves_provisional_handle_generation),
         CUBEY_TEST(test_gltf_scene_importer_validates_deformation_inputs_and_culling_policy),
         CUBEY_TEST(test_gltf_scene_upload_policy_rejects_invalid_bounds),
+        CUBEY_TEST(test_gltf_scene_upload_session_rejects_inconsistent_prepared_deformation),
         CUBEY_TEST(test_gltf_scene_importer_blocking_path_uses_upload_session),
         CUBEY_TEST(test_headless_png_host_validates_capture_shape),
         CUBEY_TEST(test_headless_capture_frame_helpers_select_png_or_video_timing),

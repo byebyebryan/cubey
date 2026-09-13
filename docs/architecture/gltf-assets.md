@@ -181,9 +181,11 @@ instance service:
 
 Implementation ownership follows the same boundary: `gltf_asset.cpp` owns
 `cgltf` parsing and CPU asset construction, while `gltf_asset_io.cpp` owns URI,
-data-URI, and image decode helpers. `gltf_scene_importer.cpp` owns entity,
-transform, mesh, and scene import, while `gltf_scene_importer_materials.cpp`
-owns default textures, texture upload, and material instance creation.
+data-URI, and image decode helpers. `gltf_scene_importer.cpp` owns CPU scene
+preparation and entity activation, `gltf_scene_importer_materials.cpp` owns
+prepared material and texture metadata, and `gltf_scene_upload_session.cpp`
+owns staged default-texture, texture, material-instance, mesh, and deformation
+GPU residency.
 
 `cubey::render` owns the reusable GPU-facing pieces:
 
