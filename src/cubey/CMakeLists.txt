@@ -121,6 +121,7 @@ add_library(cubey_asset STATIC
     asset/file_digest.cpp
     asset/gltf_asset.cpp
     asset/gltf_asset_io.cpp
+    asset/gltf_asset_materials.cpp
     asset/hdr_image.cpp
     asset/terrain_height_source.cpp
     asset/terrain_raster_height_source.cpp

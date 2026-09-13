@@ -11,6 +11,7 @@
 #include <vector>
 
 struct cgltf_image;
+struct cgltf_data;
 
 namespace cubey::asset::gltf_internal {
 
@@ -45,5 +46,8 @@ class ScopedLoadProfilePhase {
 [[nodiscard]] GltfImage decode_image(const cgltf_image& source,
                                      const std::filesystem::path& source_path,
                                      GltfAssetLoadProfile* profile);
+void assemble_gltf_material_data(GltfAsset& asset, const cgltf_data& data,
+                                 const std::filesystem::path& source_path,
+                                 GltfAssetLoadProfile* profile);
 
 } // namespace cubey::asset::gltf_internal
