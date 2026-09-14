@@ -252,6 +252,7 @@ add_test(NAME procedural_gpu_parity_tests COMMAND cubey_procedural_gpu_parity_te
 set_tests_properties(
     procedural_gpu_parity_tests
     PROPERTIES
+        LABELS "gpu;sanitizer_external"
         TIMEOUT 20
         SKIP_RETURN_CODE 77
 )
