@@ -141,10 +141,11 @@ Reusable spatial types should stay explicit and narrow:
   owns renderer instance lifetime, and `ForwardPbrRenderer3D` owns the repeated
   shadow/skybox/PBR forward pass resources, HDR scene-color target, post pass,
   render-graph recording, and shared forward-PBR shader package wiring.
-  Per-frame renderer inputs are grouped by
-  `ForwardPbrRenderer3DFrameRequestInfo`, `ForwardPbrRenderer3DSceneResources`,
-  and `ForwardPbrRenderer3DRenderRequest`, while asset loading, environment
-  choice, and view setup stay project-owned.
+  Per-frame renderer inputs are submitted through one
+  `ForwardPbrRenderer3DRenderRequest`: target and view state are nested under
+  `.target` and `.view`, while mesh/material/deformation resources and renderer
+  settings remain explicit. Asset loading, environment choice, and view setup
+  stay project-owned.
 - `cubey::render::ForwardScenePass3D` remains a lower-level/simple pass helper.
   It is useful when an example or validation project needs direct control over
   pass recording; reusable PBR renderer policy belongs in

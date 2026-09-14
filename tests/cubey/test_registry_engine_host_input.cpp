@@ -60,9 +60,7 @@ void test_forward_pbr_renderer_3d_config_from_shader_directory_fills_package_pat
 void test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory();
 void test_forward_pbr_renderer_3d_refraction_pyramid_policy_is_hdr_and_bounded();
 void test_forward_pbr_renderer_3d_target_resources_use_material_table();
-void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info();
 void test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused();
-void test_forward_pbr_renderer_3d_record_accepts_frame_request_info();
 void test_forward_pbr_renderer_3d_record_requires_created_resources();
 void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering();
 void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout();
@@ -175,9 +173,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
             test_forward_pbr_renderer_3d_config_from_shader_directory_rejects_empty_directory),
         CUBEY_TEST(test_forward_pbr_renderer_3d_refraction_pyramid_policy_is_hdr_and_bounded),
         CUBEY_TEST(test_forward_pbr_renderer_3d_target_resources_use_material_table),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_builds_render_request_from_frame_info),
         CUBEY_TEST(test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_record_accepts_frame_request_info),
         CUBEY_TEST(test_forward_pbr_renderer_3d_record_requires_created_resources),
         CUBEY_TEST(test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering),
         CUBEY_TEST(test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout),

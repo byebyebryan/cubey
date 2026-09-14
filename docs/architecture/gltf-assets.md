@@ -176,9 +176,10 @@ instance service:
   `ForwardPbrRenderer3D` owns the reusable shadow map, skybox, forward PBR
   pipelines, HDR scene-color target, post pipeline, scene/skybox/post material
   descriptors, depth attachment, and render graph recording for a 3D PBR view.
-  Per-frame rendering enters through `ForwardPbrRenderer3DFrameRequestInfo` and
-  `ForwardPbrRenderer3DRenderRequest`, with mesh/material/deformation inputs
-  grouped as `ForwardPbrRenderer3DSceneResources`.
+  Per-frame rendering enters through one `ForwardPbrRenderer3DRenderRequest`.
+  Its `.target` and `.view` groups carry command-buffer/target and scene/view
+  state, while mesh/material/deformation inputs stay grouped as
+  `ForwardPbrRenderer3DSceneResources`.
 
 Implementation ownership follows the same boundary: `gltf_asset.cpp` owns
 `cgltf` parsing and CPU asset construction, while `gltf_asset_io.cpp` owns URI,

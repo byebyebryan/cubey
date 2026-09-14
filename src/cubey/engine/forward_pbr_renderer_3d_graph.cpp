@@ -55,10 +55,6 @@ void declare_deformation_vertex_reads(render::RenderGraphPassBuilder& pass,
 
 } // namespace
 
-void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DFrameRequestInfo& info) {
-    record(forward_pbr_renderer_3d_render_request(info));
-}
-
 void ForwardPbrRenderer3D::record(const ForwardPbrRenderer3DRenderRequest& request) {
     impl_->record(request);
 }

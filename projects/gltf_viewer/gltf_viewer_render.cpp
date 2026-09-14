@@ -191,20 +191,26 @@ void GltfViewerApp::record_viewer_target(
         ocean_surface = ocean_surface_frame(scene_view, color_target.extent);
     }
     forward_pbr_renderer().record({
-        .device = &device,
-        .command_buffer = command_buffer,
-        .color_target = color_target,
-        .frame_slot = frame_slot,
-        .color_initial_state = color_initial_state,
-        .color_final_state = color_final_state,
-        .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
-        .command_buffer_mode = pbr_command_buffer_mode,
-        .profiler = gpu_profiler_.has_value() ? &*gpu_profiler_ : nullptr,
-        .scene = &scene_view,
-        .frame_plan = &frame_plan,
-        .camera_entity = generation.camera_entity,
-        .light_entity = generation.light_entity,
-        .fallback_light = fallback_light_packet(),
+        .target =
+            {
+                .device = &device,
+                .command_buffer = command_buffer,
+                .color_target = color_target,
+                .frame_slot = frame_slot,
+                .color_initial_state = color_initial_state,
+                .color_final_state = color_final_state,
+                .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
+                .command_buffer_mode = pbr_command_buffer_mode,
+                .profiler = gpu_profiler_.has_value() ? &*gpu_profiler_ : nullptr,
+            },
+        .view =
+            {
+                .scene = &scene_view,
+                .frame_plan = &frame_plan,
+                .camera_entity = generation.camera_entity,
+                .light_entity = generation.light_entity,
+                .fallback_light = fallback_light_packet(),
+            },
         .scene_resources =
             {
                 .meshes = &generation.import_resources.meshes,

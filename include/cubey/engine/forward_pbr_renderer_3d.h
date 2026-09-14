@@ -195,27 +195,6 @@ struct ForwardPbrRenderer3DRenderRequest {
     ForwardPbrRenderer3DFrameMetrics* metrics = nullptr;
 };
 
-struct ForwardPbrRenderer3DFrameRequestInfo {
-    const vulkan::Device* device = nullptr;
-    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    render::ColorTargetView color_target{};
-    render::FrameSlot frame_slot{};
-    render::RenderGraphTextureState color_initial_state{};
-    render::RenderGraphTextureState color_final_state{};
-    const char* command_buffer_label = "vkEndCommandBuffer forward pbr renderer";
-    render::RenderGraphCommandBufferMode command_buffer_mode =
-        render::RenderGraphCommandBufferMode::BeginAndEnd;
-    vulkan::GpuTimestampProfiler* profiler = nullptr;
-    const SceneReadView* scene = nullptr;
-    const scene::FrameRenderPlan3D* frame_plan = nullptr;
-    Entity camera_entity{};
-    Entity light_entity{};
-    LightPacket3D fallback_light{};
-    ForwardPbrRenderer3DSceneResources scene_resources{};
-    ForwardPbrRenderer3DSettings settings{};
-    ForwardPbrRenderer3DFrameMetrics* metrics = nullptr;
-};
-
 struct ForwardPbrRenderer3DFramePlans {
     const scene::RenderFramePlan3D* shadow = nullptr;
     const scene::RenderFramePlan3D* scene = nullptr;
@@ -225,8 +204,6 @@ void validate_forward_pbr_renderer_3d_config(const ForwardPbrRenderer3DConfig& c
 [[nodiscard]] ForwardPbrRenderer3DConfig
 forward_pbr_renderer_3d_config_from_shader_directory(const std::filesystem::path& shader_directory,
                                                      ForwardPbrRenderer3DConfig base = {});
-[[nodiscard]] ForwardPbrRenderer3DRenderRequest
-forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInfo& info);
 void validate_forward_pbr_renderer_3d_render_request(
     const ForwardPbrRenderer3DRenderRequest& request);
 [[nodiscard]] ForwardPbrRenderer3DFramePlans
@@ -266,7 +243,6 @@ class ForwardPbrRenderer3D {
     void destroy_swapchain_resources();
     void destroy_all_resources();
     [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;
-    void record(const ForwardPbrRenderer3DFrameRequestInfo& info);
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 
   private:

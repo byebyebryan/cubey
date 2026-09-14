@@ -71,35 +71,6 @@ forward_pbr_renderer_3d_config_from_shader_directory(const std::filesystem::path
     return base;
 }
 
-ForwardPbrRenderer3DRenderRequest
-forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInfo& info) {
-    return {
-        .target =
-            {
-                .device = info.device,
-                .command_buffer = info.command_buffer,
-                .color_target = info.color_target,
-                .frame_slot = info.frame_slot,
-                .color_initial_state = info.color_initial_state,
-                .color_final_state = info.color_final_state,
-                .command_buffer_label = info.command_buffer_label,
-                .command_buffer_mode = info.command_buffer_mode,
-                .profiler = info.profiler,
-            },
-        .view =
-            {
-                .scene = info.scene,
-                .frame_plan = info.frame_plan,
-                .camera_entity = info.camera_entity,
-                .light_entity = info.light_entity,
-                .fallback_light = info.fallback_light,
-            },
-        .scene_resources = info.scene_resources,
-        .settings = info.settings,
-        .metrics = info.metrics,
-    };
-}
-
 void validate_forward_pbr_renderer_3d_render_request(
     const ForwardPbrRenderer3DRenderRequest& request) {
     if (request.target.device == nullptr || request.target.command_buffer == VK_NULL_HANDLE) {

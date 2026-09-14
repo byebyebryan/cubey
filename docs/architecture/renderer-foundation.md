@@ -264,12 +264,12 @@ full engine architecture.
   created/replaced/reused slot action and resource-preparation/recording
   durations. A null metrics pointer keeps the render path free of diagnostic
   clocks and storage; the renderer never retains a last-frame snapshot.
-- `ForwardPbrRenderer3DFrameRequestInfo`,
-  `ForwardPbrRenderer3DSceneResources`, and `ForwardPbrRenderer3DRenderRequest`
-  are the first explicit renderer request boundary. They group target state,
-  scene/view plans, mesh/material/deformation resources, and
-  display/environment settings so renderer call sites can submit one direct
-  frame request instead of depending on a long nested parameter list or raw
+- `ForwardPbrRenderer3DRenderRequest` is the explicit renderer request
+  boundary. Its `.target` and `.view` groups carry target/command-buffer and
+  scene/view plans, while `ForwardPbrRenderer3DSceneResources` and the settings
+  group carry mesh/material/deformation resources and display/environment
+  policy. Renderer call sites submit one direct grouped request instead of
+  depending on a flattened compatibility struct, a long parameter list, or raw
   material descriptor layout plumbing.
 - `GeneratedPbrEnvironment` creates setup-time irradiance cube,
   GGX-prefiltered radiance cube, and DFG LUT resources from either deterministic
@@ -400,10 +400,11 @@ scheduling, transient aliasing, and broader material systems remain future
 work. `shadow_cube` still uses the lower-level `ShadowMapPass3D` helper
 directly, while `gltf_viewer` now creates an engine-owned
 `ForwardPbrRenderer3D` through `RendererService` and records each frame through
-`ForwardPbrRenderer3DFrameRequestInfo` and `ForwardPbrRenderer3DRenderRequest`
-for reusable shadow, skybox, HDR scene color, PBR forward, and post-pass graph
-recording. Its implementation is split by responsibility: resource lifetime,
-graph declaration/execution, and pass recording stay in separate source files
+`ForwardPbrRenderer3DRenderRequest` for reusable shadow, skybox, HDR scene
+color, PBR forward, and post-pass graph recording. Its target/view/resource/
+settings groups make ownership explicit at the call site. Its implementation
+is split by responsibility: resource lifetime, graph declaration/execution,
+and pass recording stay in separate source files
 behind the public renderer/request contract. The PBR path now treats material
 alpha policy as render policy:
 masked materials still write depth and cast cutout shadows through an
