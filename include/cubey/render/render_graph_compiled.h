@@ -63,6 +63,22 @@ struct RenderGraphCompiledPass {
     RenderGraphExecuteCallback execute{};
 };
 
+// Structural counts derived from the immutable compiled graph. These values
+// describe the graph declaration and synchronization work without retaining
+// any profiler or execution state. CompiledRenderGraph::metrics() computes a
+// caller-owned value on demand.
+struct RenderGraphCompiledMetrics {
+    std::size_t pass_count = 0;
+    std::size_t texture_count = 0;
+    std::size_t buffer_count = 0;
+    std::size_t before_texture_barrier_count = 0;
+    std::size_t before_buffer_barrier_count = 0;
+    std::size_t after_texture_barrier_count = 0;
+    std::size_t after_buffer_barrier_count = 0;
+    std::size_t before_barrier_count = 0;
+    std::size_t after_barrier_count = 0;
+};
+
 class CompiledRenderGraph {
   public:
     CompiledRenderGraph() = default;
@@ -81,6 +97,8 @@ class CompiledRenderGraph {
     [[nodiscard]] const std::vector<RenderGraphCompiledPass>& passes() const noexcept {
         return passes_;
     }
+
+    [[nodiscard]] RenderGraphCompiledMetrics metrics() const noexcept;
 
     [[nodiscard]] const RenderGraphTextureResource& texture(RenderGraphTextureHandle handle) const;
     [[nodiscard]] const RenderGraphBufferResource& buffer(RenderGraphBufferHandle handle) const;

@@ -399,6 +399,37 @@ void test_forward_pbr_renderer_3d_builds_render_request_from_frame_info() {
                  "forward PBR request helper should copy display settings");
 }
 
+void test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused() {
+    cubey::ForwardPbrRenderer3DFrameMetrics metrics;
+    cubey::ForwardPbrRenderer3DFrameRequestInfo info = valid_frame_request_info();
+    info.metrics = &metrics;
+    const cubey::ForwardPbrRenderer3DRenderRequest request =
+        cubey::forward_pbr_renderer_3d_render_request(info);
+
+    require(request.metrics == &metrics,
+            "forward PBR request conversion should preserve the caller-owned metrics output");
+    metrics.draw_plan.scene_source_packet_count = 3U;
+    metrics.material_table.material_count = 4U;
+    metrics.render_graph.pass_count = 5U;
+    metrics.render_graph_frame.slot_action = cubey::render::RenderGraphFrameSlotAction::Reused;
+    require(metrics.draw_plan.scene_source_packet_count == 3U &&
+                metrics.material_table.material_count == 4U &&
+                metrics.render_graph.pass_count == 5U &&
+                metrics.render_graph_frame.slot_action ==
+                    cubey::render::RenderGraphFrameSlotAction::Reused,
+            "forward PBR frame metrics should expose plain caller-owned snapshots");
+
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string source =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
+    require_contains(source,
+                     "const ForwardPbrDrawPlanMetrics& draw_plan_metrics = draw_plan.metrics()",
+                     "forward PBR metrics should reuse the computed draw plan counts");
+    require(source.find("build_forward_pbr_draw_plan(frame_plans)") ==
+                source.rfind("build_forward_pbr_draw_plan(frame_plans)"),
+            "forward PBR recording should build the draw plan only once per frame");
+}
+
 void test_forward_pbr_renderer_3d_record_accepts_frame_request_info() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string header =

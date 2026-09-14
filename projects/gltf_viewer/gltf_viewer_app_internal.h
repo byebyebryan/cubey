@@ -3,6 +3,7 @@
 #include "gltf_viewer_app.h"
 #include "gltf_viewer_loading_cage.h"
 #include "gltf_viewer_loading_metrics.h"
+#include "gltf_viewer_render_metrics.h"
 
 #include <cubey/animation/gltf_animation.h>
 #include <cubey/asset/gltf_asset.h>
@@ -234,7 +235,8 @@ class GltfViewerApp {
                               cubey::render::FrameSlot frame_slot,
                               cubey::render::RenderGraphTextureState color_initial_state,
                               cubey::render::RenderGraphTextureState color_final_state,
-                              cubey::render::RenderGraphCommandBufferMode command_buffer_mode);
+                              cubey::render::RenderGraphCommandBufferMode command_buffer_mode,
+                              cubey::ForwardPbrRenderer3DFrameMetrics* metrics = nullptr);
     void record_atmosphere_environment_if_needed(const cubey::vulkan::CommandRecorder& recorder,
                                                  cubey::render::FrameSlot frame_slot);
     void record_cloud_environment_if_needed(const cubey::vulkan::CommandRecorder& recorder,

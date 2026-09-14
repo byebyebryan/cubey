@@ -9,6 +9,64 @@
 
 using namespace cubey::tests::render_graph;
 
+void test_render_graph_frame_executor_reports_slot_lifecycle_metrics() {
+    cubey::render::RenderGraphBuilder graph;
+    graph.add_pass("noop", cubey::render::RenderGraphQueueDomain::Graphics)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    cubey::render::RenderGraphBuilder changed_graph;
+    static_cast<void>(changed_graph.import_buffer(buffer_desc("changed"), buffer(0x9A)));
+    changed_graph.add_pass("noop", cubey::render::RenderGraphQueueDomain::Graphics)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph changed_compiled = changed_graph.compile();
+
+    cubey::render::RenderGraphFrameExecutor executor(1);
+    const auto* fake_device = reinterpret_cast<const cubey::vulkan::Device*>(0x9B);
+    const VkCommandBuffer command_buffer = reinterpret_cast<VkCommandBuffer>(0x9C);
+    cubey::render::RenderGraphFrameRecordMetrics metrics;
+    const cubey::render::FrameSlot slot{.index = 0, .count = 1};
+    cubey::render::RenderGraphFrameRecordInfo info{
+        .device = fake_device,
+        .command_buffer = command_buffer,
+        .frame_slot = slot,
+        .command_buffer_mode = cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+        .metrics = &metrics,
+    };
+
+    executor.record(info, compiled);
+    require(metrics.slot_action == cubey::render::RenderGraphFrameSlotAction::Created,
+            "first graph frame record should create a frame slot resource set");
+    require(metrics.resource_prepare_milliseconds >= 0.0 &&
+                metrics.graph_record_milliseconds >= 0.0,
+            "graph frame metrics should report nonnegative CPU durations");
+
+    metrics = {
+        .slot_action = cubey::render::RenderGraphFrameSlotAction::Replaced,
+        .resource_prepare_milliseconds = 17.0,
+        .graph_record_milliseconds = 18.0,
+    };
+    require_throws(
+        [&] {
+            executor.record(info, compiled, [](const cubey::render::RenderGraphResourceSet&) {
+                throw std::runtime_error("test prepare failure");
+            });
+        },
+        "graph frame executor should propagate prepare failures");
+    require(metrics.slot_action == cubey::render::RenderGraphFrameSlotAction::Unknown &&
+                metrics.resource_prepare_milliseconds == 0.0 &&
+                metrics.graph_record_milliseconds == 0.0,
+            "graph frame executor should reset caller metrics before a valid record attempt");
+
+    executor.record(info, compiled);
+    require(metrics.slot_action == cubey::render::RenderGraphFrameSlotAction::Reused,
+            "compatible graph frame record should reuse its frame slot resource set");
+
+    executor.record(info, changed_compiled);
+    require(metrics.slot_action == cubey::render::RenderGraphFrameSlotAction::Replaced,
+            "incompatible graph frame record should replace its frame slot resource set");
+}
+
 void test_render_graph_frame_resources_manage_frame_slots() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle transient =

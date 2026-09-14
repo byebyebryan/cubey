@@ -86,6 +86,17 @@ records each pass's before/after derived requirements through `CommandRecorder`
 around the pass callback; this is graph-owned synchronization, not hidden render
 policy.
 
+`CompiledRenderGraph::metrics()` returns caller-owned structural evidence
+computed on demand from the immutable compiled vectors: pass, texture, and
+buffer counts, plus before/after texture and buffer barrier counts and their
+phase totals. An optional
+`RenderGraphFrameRecordMetrics` output on `RenderGraphFrameRecordInfo` reports
+whether the selected frame slot was created, replaced, or reused, along with
+CPU durations for resource preparation and graph recording. Both contracts are
+caller-owned and write nothing when their output pointer is null; they do not
+alter graph topology, compatibility, synchronization, or command-buffer
+ownership modes.
+
 It does not allocate descriptors, reorder passes, cull passes, alias transient
 memory, or schedule async work. `examples/shadow_cube` was the first multipass
 reference migration, and `projects/fluid/smoke_2d` first exercised the coarse

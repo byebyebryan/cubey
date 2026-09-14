@@ -16,6 +16,25 @@ CompiledRenderGraph::CompiledRenderGraph(std::vector<RenderGraphTextureResource>
                                          std::vector<RenderGraphCompiledPass> passes)
     : textures_(std::move(textures)), buffers_(std::move(buffers)), passes_(std::move(passes)) {}
 
+RenderGraphCompiledMetrics CompiledRenderGraph::metrics() const noexcept {
+    RenderGraphCompiledMetrics result{
+        .pass_count = passes_.size(),
+        .texture_count = textures_.size(),
+        .buffer_count = buffers_.size(),
+    };
+    for (const RenderGraphCompiledPass& pass : passes_) {
+        result.before_texture_barrier_count += pass.before_texture_barriers.size();
+        result.before_buffer_barrier_count += pass.before_buffer_barriers.size();
+        result.after_texture_barrier_count += pass.after_texture_barriers.size();
+        result.after_buffer_barrier_count += pass.after_buffer_barriers.size();
+    }
+    result.before_barrier_count =
+        result.before_texture_barrier_count + result.before_buffer_barrier_count;
+    result.after_barrier_count =
+        result.after_texture_barrier_count + result.after_buffer_barrier_count;
+    return result;
+}
+
 RenderGraphExecutionContext::RenderGraphExecutionContext(
     const CompiledRenderGraph& graph, std::size_t pass_index,
     const RenderGraphResourceSet* resources, const cubey::vulkan::CommandRecorder* recorder)

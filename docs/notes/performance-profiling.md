@@ -36,6 +36,31 @@ is much lower than host frame time, inspect CPU spans and presentation/swapchain
 behavior before optimizing shaders. If one GPU pass dominates, optimize that
 pass in isolation and rerun the same script before/after.
 
+## Renderer foundation frame metrics
+
+The glTF Viewer requests renderer-foundation snapshots only on frames that its
+existing `ProfileRecorder` will retain. It emits the snapshot into two stable
+metric categories:
+
+- `forward_pbr`: draw-plan source/classification/reference counts, visible
+  unique-material count, transmission state, pooled PBR material-table counts
+  and byte sizes, plus the CPU spans
+  `forward_pbr.draw_plan_build` and
+  `forward_pbr.render_graph_build_compile`;
+- `render_graph`: compiled pass/texture/buffer counts, before/after texture and
+  buffer barrier counts with phase totals, created/replaced/reused frame-slot
+  indicators, plus the CPU spans `render_graph.resource_prepare` and
+  `render_graph.record`.
+
+These are structural diagnostics, not a second profiling store. A missing or
+warmup recorder frame emits neither foundation metrics nor foundation spans,
+and render/engine types do not retain the previous frame's values. Graph counts
+are calculated from already-compiled pass and barrier vectors. Use the draw
+plan counts to distinguish scene traversal/classification pressure from
+material-table residency, and use graph/barrier counts and CPU spans to decide
+whether later graph reuse work has a measured target. The instrumentation does
+not add graph caching, scheduling, aliasing, or compatibility changes.
+
 ## Atmosphere Sky Pass Checkpoint
 
 The current shared atmosphere sky pass is a brute-force physical scattering

@@ -11,6 +11,48 @@
 
 using namespace cubey::tests::render_graph;
 
+void test_render_graph_compiled_reports_structure_metrics() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle imported_color =
+        graph.import_texture(color_texture_desc("imported color"), image(0x71), view(0x72),
+                             cubey::render::render_graph_undefined_texture_state(),
+                             cubey::render::render_graph_present_texture_state());
+    const cubey::render::RenderGraphTextureHandle transient_color =
+        graph.create_texture(color_texture_desc("transient color"));
+    const cubey::render::RenderGraphBufferHandle imported_buffer = graph.import_buffer(
+        buffer_desc("imported buffer"), buffer(0x73), host_written_buffer_state(),
+        cubey::render::RenderGraphBufferState{
+            .access_mask = VK_ACCESS_TRANSFER_READ_BIT,
+            .stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+        });
+    const cubey::render::RenderGraphBufferHandle transient_buffer =
+        graph.create_buffer(buffer_desc("transient buffer"));
+
+    graph.add_pass("write", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(imported_color)
+        .write_color(transient_color)
+        .read_write_storage_buffer(imported_buffer)
+        .read_write_storage_buffer(transient_buffer)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    graph.add_pass("read", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(imported_color)
+        .read_texture(transient_color)
+        .read_storage_buffer(imported_buffer)
+        .read_storage_buffer(transient_buffer)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    const cubey::render::RenderGraphCompiledMetrics& metrics = compiled.metrics();
+    require(metrics.pass_count == 2U && metrics.texture_count == 2U && metrics.buffer_count == 2U,
+            "compiled graph metrics should count passes and resources");
+    require(metrics.before_texture_barrier_count == 4U && metrics.after_texture_barrier_count == 1U,
+            "compiled graph metrics should aggregate texture barriers by phase");
+    require(metrics.before_buffer_barrier_count == 3U && metrics.after_buffer_barrier_count == 1U,
+            "compiled graph metrics should aggregate buffer barriers by phase");
+    require(metrics.before_barrier_count == 7U && metrics.after_barrier_count == 2U,
+            "compiled graph metrics should expose aggregate phase barrier totals");
+}
+
 void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle color =

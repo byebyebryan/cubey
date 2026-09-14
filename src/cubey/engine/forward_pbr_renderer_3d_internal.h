@@ -64,6 +64,16 @@ forward_pbr_renderer_3d_camera_world_position(const SceneReadView& view, Entity 
     return static_cast<std::uint32_t>(value);
 }
 
+struct ForwardPbrDrawPlanMetrics {
+    std::size_t scene_source_packet_count = 0;
+    std::size_t scene_classification_count = 0;
+    std::size_t shadow_source_packet_count = 0;
+    std::size_t shadow_classification_count = 0;
+    std::size_t route_packet_reference_count = 0;
+    std::size_t visible_scene_unique_material_count = 0;
+    bool has_transmission = false;
+};
+
 enum class ForwardPbrDrawRoute : std::uint8_t {
     ShadowOpaqueBack,
     ShadowOpaqueNoCull,
@@ -78,16 +88,6 @@ enum class ForwardPbrDrawRoute : std::uint8_t {
     TransmissionAlphaBack,
     TransmissionAlphaNoCull,
     Count,
-};
-
-struct ForwardPbrDrawPlanMetrics {
-    std::size_t scene_source_packet_count = 0;
-    std::size_t scene_classification_count = 0;
-    std::size_t shadow_source_packet_count = 0;
-    std::size_t shadow_classification_count = 0;
-    std::size_t route_packet_reference_count = 0;
-    std::size_t visible_scene_unique_material_count = 0;
-    bool has_transmission = false;
 };
 
 // Renderer-private packet routing. Indices retain the source order within

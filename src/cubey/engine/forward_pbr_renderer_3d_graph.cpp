@@ -5,6 +5,7 @@
 #include <cubey/render/pass.h>
 
 #include <algorithm>
+#include <chrono>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -67,6 +68,11 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     require_swapchain_resources();
     validate_forward_pbr_renderer_3d_render_request(request);
 
+    ForwardPbrRenderer3DFrameMetrics* const metrics = request.metrics;
+    if (metrics != nullptr) {
+        *metrics = {};
+    }
+
     const ForwardPbrRenderer3DTargetInfo& target = request.target;
     const ForwardPbrRenderer3DViewInfo& view = request.view;
     const ForwardPbrRenderer3DSceneResources& resources = request.scene_resources;
@@ -75,7 +81,28 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
     const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
     const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
+    using Clock = std::chrono::steady_clock;
+    const Clock::time_point draw_plan_start =
+        metrics != nullptr ? Clock::now() : Clock::time_point{};
     const ForwardPbrDrawPlan draw_plan = build_forward_pbr_draw_plan(frame_plans);
+    const Clock::time_point draw_plan_end =
+        metrics != nullptr ? Clock::now() : Clock::time_point{};
+    if (metrics != nullptr) {
+        metrics->draw_plan_build_milliseconds =
+            std::chrono::duration<double, std::milli>(draw_plan_end - draw_plan_start).count();
+        const ForwardPbrDrawPlanMetrics& draw_plan_metrics = draw_plan.metrics();
+        metrics->draw_plan = {
+            .scene_source_packet_count = draw_plan_metrics.scene_source_packet_count,
+            .scene_classification_count = draw_plan_metrics.scene_classification_count,
+            .shadow_source_packet_count = draw_plan_metrics.shadow_source_packet_count,
+            .shadow_classification_count = draw_plan_metrics.shadow_classification_count,
+            .route_packet_reference_count = draw_plan_metrics.route_packet_reference_count,
+            .visible_scene_unique_material_count =
+                draw_plan_metrics.visible_scene_unique_material_count,
+            .has_transmission = draw_plan_metrics.has_transmission,
+        };
+        metrics->material_table = resources.materials->metrics();
+    }
     if (draw_plan.has_transmission()) {
         ensure_refraction_pyramid(*target.device);
     }
@@ -169,11 +196,21 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .tonemap = uses_final_display_transform ? settings.tonemap : render::PbrTonemap::Linear,
         }));
 
+    const Clock::time_point render_graph_start =
+        metrics != nullptr ? Clock::now() : Clock::time_point{};
     const CompiledGraph render_graph = current_render_graph(
         target.color_target, target.frame_slot, target.color_initial_state,
         target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
         resources.deformation_commands, *resources.materials, settings.debug_view,
         settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan);
+    const Clock::time_point render_graph_end =
+        metrics != nullptr ? Clock::now() : Clock::time_point{};
+    if (metrics != nullptr) {
+        metrics->render_graph_build_compile_milliseconds =
+            std::chrono::duration<double, std::milli>(render_graph_end - render_graph_start)
+                .count();
+        metrics->render_graph = render_graph.graph.metrics();
+    }
     CloudEnvironmentRuntime* cloud_runtime =
         settings.atmosphere_clouds.has_value() ? settings.atmosphere_clouds->runtime : nullptr;
     global_.graph_executor.record(
@@ -184,6 +221,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .label = target.command_buffer_label,
             .command_buffer_mode = target.command_buffer_mode,
             .profiler = target.profiler,
+            .metrics = metrics != nullptr ? &metrics->render_graph_frame : nullptr,
         },
         render_graph.graph,
         [this, device = target.device, frame_slot = target.frame_slot, cloud_runtime,

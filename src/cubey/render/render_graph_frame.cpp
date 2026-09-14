@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/command_recorder.h>
 
+#include <chrono>
 #include <stdexcept>
 
 namespace cubey::render {
@@ -27,27 +28,47 @@ std::uint32_t RenderGraphFrameResources::frame_slot_count() const {
 }
 
 RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
-                                                           const CompiledRenderGraph& graph) {
+                                                           const CompiledRenderGraph& graph,
+                                                           RenderGraphFrameSlotAction* action) {
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
     if (resources.has_value() && resources->compatible(graph)) {
         resources->reset(graph);
+        if (action != nullptr) {
+            *action = RenderGraphFrameSlotAction::Reused;
+        }
         return resources.value();
     }
+    const RenderGraphFrameSlotAction slot_action = resources.has_value()
+                                                       ? RenderGraphFrameSlotAction::Replaced
+                                                       : RenderGraphFrameSlotAction::Created;
     resources.emplace(graph);
+    if (action != nullptr) {
+        *action = slot_action;
+    }
     return resources.value();
 }
 
 RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
                                                            const cubey::vulkan::Device& device,
-                                                           const CompiledRenderGraph& graph) {
+                                                           const CompiledRenderGraph& graph,
+                                                           RenderGraphFrameSlotAction* action) {
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
     if (resources.has_value() && resources->compatible(graph)) {
         resources->reset(graph);
+        if (action != nullptr) {
+            *action = RenderGraphFrameSlotAction::Reused;
+        }
         return resources.value();
     }
+    const RenderGraphFrameSlotAction slot_action = resources.has_value()
+                                                       ? RenderGraphFrameSlotAction::Replaced
+                                                       : RenderGraphFrameSlotAction::Created;
     resources.emplace(device, graph);
+    if (action != nullptr) {
+        *action = slot_action;
+    }
     return resources.value();
 }
 
@@ -102,24 +123,45 @@ void RenderGraphFrameExecutor::record(const RenderGraphFrameRecordInfo& info,
         throw std::runtime_error("render graph frame executor requires a command buffer");
     }
     validate_frame_slot(info.frame_slot);
+    if (info.metrics != nullptr) {
+        *info.metrics = {};
+    }
 
-    RenderGraphResourceSet& resources = resources_.emplace(info.frame_slot, *info.device, graph);
+    using Clock = std::chrono::steady_clock;
+    const Clock::time_point resource_prepare_start =
+        info.metrics != nullptr ? Clock::now() : Clock::time_point{};
+    RenderGraphFrameSlotAction slot_action = RenderGraphFrameSlotAction::Unknown;
+    RenderGraphResourceSet& resources = resources_.emplace(
+        info.frame_slot, *info.device, graph, info.metrics != nullptr ? &slot_action : nullptr);
     if (prepare) {
         prepare(resources);
     }
+    if (info.metrics != nullptr) {
+        info.metrics->slot_action = slot_action;
+        info.metrics->resource_prepare_milliseconds =
+            std::chrono::duration<double, std::milli>(Clock::now() - resource_prepare_start)
+                .count();
+    }
 
     const cubey::vulkan::CommandRecorder recorder(info.command_buffer);
+    const Clock::time_point graph_record_start =
+        info.metrics != nullptr ? Clock::now() : Clock::time_point{};
     switch (info.command_buffer_mode) {
     case RenderGraphCommandBufferMode::BeginAndEnd:
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         graph.execute(resources, recorder, info.profiler, info.frame_slot.index);
         recorder.end(info.label != nullptr ? info.label : "vkEndCommandBuffer render graph");
-        return;
+        break;
     case RenderGraphCommandBufferMode::AlreadyRecording:
         graph.execute(resources, recorder, info.profiler, info.frame_slot.index);
-        return;
+        break;
+    default:
+        throw std::runtime_error("render graph command buffer mode is invalid");
     }
-    throw std::runtime_error("render graph command buffer mode is invalid");
+    if (info.metrics != nullptr) {
+        info.metrics->graph_record_milliseconds =
+            std::chrono::duration<double, std::milli>(Clock::now() - graph_record_start).count();
+    }
 }
 
 } // namespace cubey::render

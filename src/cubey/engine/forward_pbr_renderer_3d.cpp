@@ -96,6 +96,7 @@ forward_pbr_renderer_3d_render_request(const ForwardPbrRenderer3DFrameRequestInf
             },
         .scene_resources = info.scene_resources,
         .settings = info.settings,
+        .metrics = info.metrics,
     };
 }
 

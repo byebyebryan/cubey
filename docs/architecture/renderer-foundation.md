@@ -255,6 +255,15 @@ full engine architecture.
   implementation boundary. Projects still decide when to create the renderer
   and which frame plans, scene resources, targets, environment settings, and
   display settings to submit.
+- `ForwardPbrRenderer3DFrameMetrics` is an optional caller-owned snapshot for
+  renderer-foundation evidence. When requested, it reports the already-built
+  draw-plan source/classification/reference counts, visible unique-material and
+  transmission state, the current `PbrMaterialTableMetrics`, compiled graph
+  pass/resource/barrier counts, and CPU durations for draw-plan construction
+  and graph build/compile. The snapshot also carries the graph frame executor's
+  created/replaced/reused slot action and resource-preparation/recording
+  durations. A null metrics pointer keeps the render path free of diagnostic
+  clocks and storage; the renderer never retains a last-frame snapshot.
 - `ForwardPbrRenderer3DFrameRequestInfo`,
   `ForwardPbrRenderer3DSceneResources`, and `ForwardPbrRenderer3DRenderRequest`
   are the first explicit renderer request boundary. They group target state,

@@ -118,7 +118,8 @@ void GltfViewerApp::record_viewer_target(
     cubey::render::ColorTargetView color_target, cubey::render::FrameSlot frame_slot,
     cubey::render::RenderGraphTextureState color_initial_state,
     cubey::render::RenderGraphTextureState color_final_state,
-    cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
+    cubey::render::RenderGraphCommandBufferMode command_buffer_mode,
+    cubey::ForwardPbrRenderer3DFrameMetrics* metrics) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     cubey::render::RenderGraphCommandBufferMode pbr_command_buffer_mode = command_buffer_mode;
     bool owns_command_buffer = false;
@@ -225,6 +226,7 @@ void GltfViewerApp::record_viewer_target(
                 .terrain_backdrop = terrain_backdrop,
                 .ocean_surface = ocean_surface,
             },
+        .metrics = metrics,
     });
     if (owns_command_buffer) {
         recorder.end("vkEndCommandBuffer gltf_viewer");
@@ -308,13 +310,23 @@ void GltfViewerApp::record_cloud_environment_if_needed(
 
 void GltfViewerApp::record_viewer_frame(cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
-    static_cast<void>(emit_gltf_viewer_pending_loading_metrics(
-        context.profile_recorder(), frame.timing.frame_index, pending_loading_metrics_));
-    collect_gpu_timings(context.profile_recorder(), frame.timing.frame_index, frame.frame_slot);
+    cubey::profiling::ProfileRecorder* const recorder = context.profile_recorder();
+    static_cast<void>(emit_gltf_viewer_pending_loading_metrics(recorder, frame.timing.frame_index,
+                                                               pending_loading_metrics_));
+    collect_gpu_timings(recorder, frame.timing.frame_index, frame.frame_slot);
+    std::optional<cubey::ForwardPbrRenderer3DFrameMetrics> metrics;
+    if (recorder != nullptr && recorder->should_record_frame(frame.timing.frame_index)) {
+        metrics.emplace();
+    }
     record_viewer_target(context.device(), frame.command_buffer, frame.color_target,
                          frame.frame_slot, cubey::render::render_graph_undefined_texture_state(),
                          cubey::render::render_graph_present_texture_state(),
-                         cubey::render::RenderGraphCommandBufferMode::BeginAndEnd);
+                         cubey::render::RenderGraphCommandBufferMode::BeginAndEnd,
+                         metrics.has_value() ? &*metrics : nullptr);
+    if (metrics.has_value()) {
+        static_cast<void>(
+            emit_gltf_viewer_render_metrics(recorder, frame.timing.frame_index, *metrics));
+    }
 }
 
 void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& context,
@@ -324,13 +336,22 @@ void GltfViewerApp::record_viewer_capture(cubey::host::HeadlessPngContext& conte
     ocean_delta_seconds_ =
         frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
     ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;
-    static_cast<void>(emit_gltf_viewer_pending_loading_metrics(
-        context.profile_recorder(), frame.index, pending_loading_metrics_));
-    collect_gpu_timings(context.profile_recorder(), frame.index, frame.frame_slot);
+    cubey::profiling::ProfileRecorder* const recorder = context.profile_recorder();
+    static_cast<void>(
+        emit_gltf_viewer_pending_loading_metrics(recorder, frame.index, pending_loading_metrics_));
+    collect_gpu_timings(recorder, frame.index, frame.frame_slot);
+    std::optional<cubey::ForwardPbrRenderer3DFrameMetrics> metrics;
+    if (recorder != nullptr && recorder->should_record_frame(frame.index)) {
+        metrics.emplace();
+    }
     record_viewer_target(context.device(), command_buffer, target, frame.frame_slot,
                          cubey::render::render_graph_color_attachment_texture_state(),
                          cubey::render::render_graph_color_attachment_texture_state(),
-                         cubey::render::RenderGraphCommandBufferMode::AlreadyRecording);
+                         cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                         metrics.has_value() ? &*metrics : nullptr);
+    if (metrics.has_value()) {
+        static_cast<void>(emit_gltf_viewer_render_metrics(recorder, frame.index, *metrics));
+    }
 }
 
 } // namespace cubey::projects::gltf_viewer

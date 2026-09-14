@@ -159,6 +159,28 @@ struct ForwardPbrRenderer3DSettings {
     std::optional<ForwardPbrRenderer3DOceanSurface> ocean_surface{};
 };
 
+// Caller-owned per-frame renderer evidence. The renderer fills this snapshot
+// only when the request supplies a non-null output pointer; it never retains
+// profiling state or allocates storage solely for metrics.
+struct ForwardPbrRenderer3DFrameDrawMetrics {
+    std::size_t scene_source_packet_count = 0;
+    std::size_t scene_classification_count = 0;
+    std::size_t shadow_source_packet_count = 0;
+    std::size_t shadow_classification_count = 0;
+    std::size_t route_packet_reference_count = 0;
+    std::size_t visible_scene_unique_material_count = 0;
+    bool has_transmission = false;
+};
+
+struct ForwardPbrRenderer3DFrameMetrics {
+    ForwardPbrRenderer3DFrameDrawMetrics draw_plan{};
+    render::PbrMaterialTableMetrics material_table{};
+    render::RenderGraphCompiledMetrics render_graph{};
+    render::RenderGraphFrameRecordMetrics render_graph_frame{};
+    double draw_plan_build_milliseconds = 0.0;
+    double render_graph_build_compile_milliseconds = 0.0;
+};
+
 struct ForwardPbrRenderer3DSceneTargetInfo {
     VkExtent2D extent{};
     VkFormat color_format = VK_FORMAT_UNDEFINED;
@@ -170,6 +192,7 @@ struct ForwardPbrRenderer3DRenderRequest {
     ForwardPbrRenderer3DViewInfo view{};
     ForwardPbrRenderer3DSceneResources scene_resources{};
     ForwardPbrRenderer3DSettings settings{};
+    ForwardPbrRenderer3DFrameMetrics* metrics = nullptr;
 };
 
 struct ForwardPbrRenderer3DFrameRequestInfo {
@@ -190,6 +213,7 @@ struct ForwardPbrRenderer3DFrameRequestInfo {
     LightPacket3D fallback_light{};
     ForwardPbrRenderer3DSceneResources scene_resources{};
     ForwardPbrRenderer3DSettings settings{};
+    ForwardPbrRenderer3DFrameMetrics* metrics = nullptr;
 };
 
 struct ForwardPbrRenderer3DFramePlans {

@@ -17,6 +17,21 @@ class GpuTimestampProfiler;
 
 namespace cubey::render {
 
+enum class RenderGraphFrameSlotAction : std::uint8_t {
+    Unknown,
+    Created,
+    Replaced,
+    Reused,
+};
+
+// Caller-owned per-record evidence. The executor does not retain this data or
+// allocate storage for it when the output pointer is null.
+struct RenderGraphFrameRecordMetrics {
+    RenderGraphFrameSlotAction slot_action = RenderGraphFrameSlotAction::Unknown;
+    double resource_prepare_milliseconds = 0.0;
+    double graph_record_milliseconds = 0.0;
+};
+
 class RenderGraphFrameResources {
   public:
     RenderGraphFrameResources() = default;
@@ -27,9 +42,11 @@ class RenderGraphFrameResources {
 
     [[nodiscard]] std::uint32_t frame_slot_count() const;
 
-    RenderGraphResourceSet& emplace(FrameSlot slot, const CompiledRenderGraph& graph);
+    RenderGraphResourceSet& emplace(FrameSlot slot, const CompiledRenderGraph& graph,
+                                    RenderGraphFrameSlotAction* action = nullptr);
     RenderGraphResourceSet& emplace(FrameSlot slot, const cubey::vulkan::Device& device,
-                                    const CompiledRenderGraph& graph);
+                                    const CompiledRenderGraph& graph,
+                                    RenderGraphFrameSlotAction* action = nullptr);
 
     [[nodiscard]] RenderGraphResourceSet& resource_set(FrameSlot slot);
     [[nodiscard]] const RenderGraphResourceSet& resource_set(FrameSlot slot) const;
@@ -52,6 +69,7 @@ struct RenderGraphFrameRecordInfo {
     const char* label = "vkEndCommandBuffer render graph";
     RenderGraphCommandBufferMode command_buffer_mode = RenderGraphCommandBufferMode::BeginAndEnd;
     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr;
+    RenderGraphFrameRecordMetrics* metrics = nullptr;
 };
 
 using RenderGraphPrepareCallback = std::function<void(const RenderGraphResourceSet&)>;

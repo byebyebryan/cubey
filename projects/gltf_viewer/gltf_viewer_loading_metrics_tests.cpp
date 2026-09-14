@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+void test_gltf_viewer_render_metric_emission();
+
 namespace {
 
 void require(bool condition, const char* message) {
@@ -202,5 +204,6 @@ void test_loading_metric_emission_waits_for_a_recordable_frame() {
 int main() {
     test_loading_metric_aggregation();
     test_loading_metric_emission_waits_for_a_recordable_frame();
+    test_gltf_viewer_render_metric_emission();
     return 0;
 }

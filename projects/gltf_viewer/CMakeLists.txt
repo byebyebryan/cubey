@@ -18,6 +18,7 @@ cubey_add_app_target(
         gltf_viewer_assets.cpp
         gltf_viewer_loading_cage.cpp
         gltf_viewer_loading_metrics.cpp
+        gltf_viewer_render_metrics.cpp
         gltf_viewer_render.cpp
         gltf_viewer_scene.cpp
         main.cpp
@@ -127,6 +128,8 @@ if (BUILD_TESTING)
         cubey_project_gltf_viewer_loading_metrics_tests
         gltf_viewer_loading_metrics.cpp
         gltf_viewer_loading_metrics_tests.cpp
+        gltf_viewer_render_metrics.cpp
+        gltf_viewer_render_metrics_tests.cpp
     )
     target_link_libraries(
         cubey_project_gltf_viewer_loading_metrics_tests
