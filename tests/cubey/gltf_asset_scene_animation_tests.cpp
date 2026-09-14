@@ -190,6 +190,7 @@ void test_gltf_asset_loads_skinning_and_morph_data() {
     append_u16(bytes, 0);
     append_u16(bytes, 1);
     append_u16(bytes, 2);
+    pad_to_alignment(bytes, 4);
     const std::size_t inverse_bind_offset = bytes.size();
     append_mat4_identity(bytes);
 
