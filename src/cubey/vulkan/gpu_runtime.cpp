@@ -203,7 +203,18 @@ bool GpuRuntimeOwnerCleanup::belongs_to(const GpuRuntime& runtime) const noexcep
 
 GpuOwnerContext::GpuOwnerContext(Device& device, SubmissionCoordinator& submission,
                                  std::thread::id owner_thread, GpuRuntime* runtime)
-    : device_(&device), submission_(&submission), owner_thread_(owner_thread), runtime_(runtime) {}
+    : GpuOwnerContext(&device, &submission, owner_thread, runtime) {}
+
+GpuOwnerContext::GpuOwnerContext(Device* device, SubmissionCoordinator* submission,
+                                 std::thread::id owner_thread, GpuRuntime* runtime)
+    : device_(device), submission_(submission), owner_thread_(owner_thread), runtime_(runtime) {
+    if (device_ == nullptr) {
+        throw std::runtime_error("GPU owner context requires a device");
+    }
+    if (submission_ == nullptr) {
+        throw std::runtime_error("GPU owner context requires a submission coordinator");
+    }
+}
 
 Device& GpuOwnerContext::device() const {
     return *device_;
@@ -598,7 +609,7 @@ void GpuRuntime::shutdown() {
 }
 
 GpuOwnerContext GpuRuntime::owner_context() {
-    return {*device_, *submission_, owner_thread_, this};
+    return {device_, submission_, owner_thread_, this};
 }
 
 bool GpuRuntime::has_staging_pool() const noexcept {

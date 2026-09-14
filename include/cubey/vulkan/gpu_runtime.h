@@ -47,6 +47,11 @@ class GpuOwnerContext {
     [[nodiscard]] GpuRuntime& runtime() const;
 
   private:
+    friend class GpuRuntime;
+
+    GpuOwnerContext(Device* device, SubmissionCoordinator* submission, std::thread::id owner_thread,
+                    GpuRuntime* runtime);
+
     Device* device_ = nullptr;
     SubmissionCoordinator* submission_ = nullptr;
     std::thread::id owner_thread_{};
