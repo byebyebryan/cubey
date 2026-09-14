@@ -53,6 +53,13 @@ RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
                                                            const cubey::vulkan::Device& device,
                                                            const CompiledRenderGraph& graph,
                                                            RenderGraphFrameSlotAction* action) {
+    return emplace(slot, &device, graph, action);
+}
+
+RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
+                                                           const cubey::vulkan::Device* device,
+                                                           const CompiledRenderGraph& graph,
+                                                           RenderGraphFrameSlotAction* action) {
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
     if (resources.has_value() && resources->compatible(graph)) {
@@ -65,7 +72,14 @@ RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
     const RenderGraphFrameSlotAction slot_action = resources.has_value()
                                                        ? RenderGraphFrameSlotAction::Replaced
                                                        : RenderGraphFrameSlotAction::Created;
-    resources.emplace(device, graph);
+    if (RenderGraphResourceSet::has_allocatable_transients(graph)) {
+        if (device == nullptr) {
+            throw std::runtime_error("render graph transient allocation requires a device");
+        }
+        resources.emplace(*device, graph);
+    } else {
+        resources.emplace(graph);
+    }
     if (action != nullptr) {
         *action = slot_action;
     }
@@ -132,7 +146,7 @@ void RenderGraphFrameExecutor::record(const RenderGraphFrameRecordInfo& info,
         info.metrics != nullptr ? Clock::now() : Clock::time_point{};
     RenderGraphFrameSlotAction slot_action = RenderGraphFrameSlotAction::Unknown;
     RenderGraphResourceSet& resources = resources_.emplace(
-        info.frame_slot, *info.device, graph, info.metrics != nullptr ? &slot_action : nullptr);
+        info.frame_slot, info.device, graph, info.metrics != nullptr ? &slot_action : nullptr);
     if (prepare) {
         prepare(resources);
     }

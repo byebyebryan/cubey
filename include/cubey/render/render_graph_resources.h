@@ -43,6 +43,7 @@ class RenderGraphResourceSet {
 
     // RenderGraphFrameResources has already compared the signature before
     // taking this path. The public reset() retains the defensive comparison.
+    [[nodiscard]] static bool has_allocatable_transients(const CompiledRenderGraph& graph);
     void reset_compatible();
     void allocate_transients(const cubey::vulkan::Device& device, const CompiledRenderGraph& graph);
     void bind_transient_resources();

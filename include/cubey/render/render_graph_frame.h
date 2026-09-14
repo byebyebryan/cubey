@@ -17,6 +17,8 @@ class GpuTimestampProfiler;
 
 namespace cubey::render {
 
+class RenderGraphFrameExecutor;
+
 enum class RenderGraphFrameSlotAction : std::uint8_t {
     Unknown,
     Created,
@@ -52,6 +54,11 @@ class RenderGraphFrameResources {
     [[nodiscard]] const RenderGraphResourceSet& resource_set(FrameSlot slot) const;
 
   private:
+    friend class RenderGraphFrameExecutor;
+
+    RenderGraphResourceSet& emplace(FrameSlot slot, const cubey::vulkan::Device* device,
+                                    const CompiledRenderGraph& graph,
+                                    RenderGraphFrameSlotAction* action);
     void validate_slot(FrameSlot slot) const;
 
     std::vector<std::optional<RenderGraphResourceSet>> slots_{};

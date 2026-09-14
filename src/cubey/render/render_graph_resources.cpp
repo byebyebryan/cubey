@@ -14,6 +14,22 @@ RenderGraphResourceSet::RenderGraphResourceSet(const cubey::vulkan::Device& devi
     allocate_transients(device, graph);
 }
 
+bool RenderGraphResourceSet::has_allocatable_transients(const CompiledRenderGraph& graph) {
+    for (const RenderGraphTextureRequirement& requirement : graph.resource_signature().textures) {
+        if (requirement.lifetime == RenderGraphResourceLifetime::Transient &&
+            requirement.usage_flags != 0) {
+            return true;
+        }
+    }
+    for (const RenderGraphBufferRequirement& requirement : graph.resource_signature().buffers) {
+        if (requirement.lifetime == RenderGraphResourceLifetime::Transient &&
+            requirement.usage_flags != 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool RenderGraphResourceSet::compatible(const CompiledRenderGraph& graph) const {
     return resource_signature_ == graph.resource_signature();
 }
@@ -75,6 +91,9 @@ RenderGraphResourceSet::buffer(RenderGraphBufferHandle handle) const {
 
 void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& device,
                                                  const CompiledRenderGraph& graph) {
+    if (!has_allocatable_transients(graph)) {
+        return;
+    }
     for (std::size_t index = 0; index < graph.textures().size(); ++index) {
         const RenderGraphTextureResource& texture = graph.textures()[index];
         const RenderGraphTextureRequirement& requirement = resource_signature_.textures[index];
