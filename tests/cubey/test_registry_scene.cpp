@@ -41,6 +41,7 @@ void test_renderable_manager_updates_keep_epoch_local_snapshots();
 void test_scene_builder_creates_common_3d_entities();
 void test_scene_edit_queue_publishes_reserved_entities_on_commit();
 void test_scene_failed_commit_rolls_back_reserved_entities();
+void test_scene_rejected_mixed_commit_preserves_components_and_read_views();
 void test_scene_read_views_defer_destroyed_entity_reuse_until_release();
 void test_scene_read_view_release_serializes_retirement_with_commits();
 void test_stable_slot_store_rejects_stale_handles_without_moving_other_slots();
@@ -100,6 +101,7 @@ std::span<const TestCase> scene_test_cases() {
         CUBEY_TEST(test_scene_builder_creates_common_3d_entities),
         CUBEY_TEST(test_scene_edit_queue_publishes_reserved_entities_on_commit),
         CUBEY_TEST(test_scene_failed_commit_rolls_back_reserved_entities),
+        CUBEY_TEST(test_scene_rejected_mixed_commit_preserves_components_and_read_views),
         CUBEY_TEST(test_scene_read_views_defer_destroyed_entity_reuse_until_release),
         CUBEY_TEST(test_scene_read_view_release_serializes_retirement_with_commits),
         CUBEY_TEST(test_transform_manager_2d_publishes_parented_world_matrices),
