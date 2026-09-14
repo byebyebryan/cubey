@@ -79,6 +79,10 @@ struct GltfViewerLoadingMetrics {
     // Appended to keep aggregate initialization source-compatible.
     std::uint64_t gpu_upload_step_byte_cap = 0;
     std::uint64_t gpu_upload_copy_byte_target = 0;
+    // Explicit PBR fallback evidence: logical descriptor coverage remains 17,
+    // while resident generations physically upload five shared 1x1 textures.
+    std::uint32_t default_texture_logical_binding_count = 0;
+    std::uint32_t default_texture_physical_upload_count = 0;
 };
 
 [[nodiscard]] GltfViewerLoadingMetrics

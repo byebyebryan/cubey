@@ -108,6 +108,10 @@ void record_metrics(cubey::profiling::ProfileRecorder& recorder, std::uint64_t f
                   static_cast<double>(metrics.gpu_upload_submission_frame));
     record_metric(recorder, frame_index, "gpu_upload_completion_frame",
                   static_cast<double>(metrics.gpu_upload_completion_frame));
+    record_metric(recorder, frame_index, "default_texture_logical_binding_count",
+                  static_cast<double>(metrics.default_texture_logical_binding_count));
+    record_metric(recorder, frame_index, "default_texture_physical_upload_count",
+                  static_cast<double>(metrics.default_texture_physical_upload_count));
 }
 
 } // namespace
@@ -174,6 +178,8 @@ void collect_gltf_viewer_resident_loading_metrics(GltfViewerLoadingMetrics& metr
     metrics.gpu_upload_owner_target_milliseconds = upload.owner_target_milliseconds;
     metrics.gpu_upload_step_byte_cap = upload.step_byte_cap;
     metrics.gpu_upload_copy_byte_target = upload.copy_byte_target;
+    metrics.default_texture_logical_binding_count = upload.default_texture_logical_binding_count;
+    metrics.default_texture_physical_upload_count = upload.default_texture_physical_upload_count;
     metrics.gpu_upload_owner_over_target_step_count = upload.owner_over_target_step_count;
     metrics.gpu_upload_completion_latency_milliseconds =
         resident.final_upload_step.metrics().completion_latency_milliseconds;

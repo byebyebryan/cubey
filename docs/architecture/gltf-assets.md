@@ -189,6 +189,14 @@ the async session lifecycle and owner cleanup, and the private
 `gltf_scene_resident_builder.cpp` owns staged default-texture, texture,
 material-instance, mesh, and deformation GPU residency.
 
+PBR keeps the 17 sampled material bindings as its descriptor-facing contract,
+but each resident glTF generation owns only five physical 1x1 fallback
+textures: sRGB white, linear white, flat tangent normal, sRGB black, and the
+anisotropy default. The staged builder uploads those five physical specs and
+then maps each logical binding to its generation-local owner. No fallback image
+is shared across generations, so retirement remains coupled to the complete
+resident scene and its final upload ticket.
+
 `cubey::render` owns the reusable GPU-facing pieces:
 
 - `PbrVertex`, `PbrSceneUniforms`, `PbrPostUniforms`, `PbrMaterialFactors`,

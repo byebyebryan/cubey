@@ -56,6 +56,8 @@ cubey::projects::gltf_viewer::GltfViewerLoadingMetrics sample_metrics(std::uint6
         .first_step_to_final_completion_milliseconds = 97.0,
         .step_byte_cap = 63U,
         .copy_byte_target = 65U,
+        .default_texture_logical_binding_count = 17U,
+        .default_texture_physical_upload_count = 5U,
     };
 
     viewer::GltfViewerLoadingMetrics metrics;
@@ -111,11 +113,14 @@ void test_loading_metric_aggregation() {
                 metrics.gpu_upload_pool_growth_count == 89U &&
                 metrics.gpu_upload_first_step_to_final_completion_milliseconds == 97.0,
             "session residency should export its precise generation aggregate");
+    require(metrics.default_texture_logical_binding_count == 17U &&
+                metrics.default_texture_physical_upload_count == 5U,
+            "loading metrics should distinguish logical PBR defaults from physical uploads");
 }
 
 void test_loading_metric_emission_waits_for_a_recordable_frame() {
     namespace viewer = cubey::projects::gltf_viewer;
-    constexpr std::array<std::string_view, 46> kMetricNames{
+    constexpr std::array<std::string_view, 48> kMetricNames{
         "generation_id",
         "source_file_bytes",
         "metadata_probe_ms",
@@ -162,6 +167,8 @@ void test_loading_metric_emission_waits_for_a_recordable_frame() {
         "gpu_upload_first_step_to_final_completion_ms",
         "gpu_upload_submission_frame",
         "gpu_upload_completion_frame",
+        "default_texture_logical_binding_count",
+        "default_texture_physical_upload_count",
     };
     constexpr std::size_t kMetricsPerGeneration = kMetricNames.size();
     std::vector<viewer::GltfViewerLoadingMetrics> pending{sample_metrics(7U)};

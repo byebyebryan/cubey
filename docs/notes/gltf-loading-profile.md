@@ -123,7 +123,7 @@ monotonic clock. On a failed load the optional output is reset at entry and may
 contain only attempted work before the exception; no failed or superseded
 request reaches the viewer's successfully activated-generation metric emission.
 
-The exact 46-metric generation inventory is: `generation_id`,
+The exact 48-metric generation inventory is: `generation_id`,
 `source_file_bytes`, `metadata_probe_ms`, `asset_load_ms`,
 `document_parse_ms`, `buffer_load_ms`, `asset_validate_ms`,
 `image_payload_ms`, `image_decode_ms`, `asset_assembly_ms`,
@@ -144,7 +144,9 @@ The exact 46-metric generation inventory is: `generation_id`,
 `gpu_upload_pool_reserved_at_final_submission_bytes`,
 `gpu_upload_pool_growth_count`, `gpu_upload_backpressure_count`,
 `gpu_upload_first_step_to_final_completion_ms`,
-`gpu_upload_submission_frame`, and `gpu_upload_completion_frame`.
+`gpu_upload_submission_frame`, `gpu_upload_completion_frame`,
+`default_texture_logical_binding_count`, and
+`default_texture_physical_upload_count`.
 
 The upload values measure one logical generation session covering glTF
 textures, static mesh buffers, and deformation buffers. Owner advances also

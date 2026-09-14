@@ -7,6 +7,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -467,12 +468,35 @@ void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
         cubey::render::pbr_sampled_material_bindings();
     const std::span<const cubey::render::PbrDefaultTextureSpec> specs =
         cubey::render::pbr_default_texture_specs();
+    const std::span<const cubey::render::PbrDefaultTexturePhysicalSpec> physical_specs =
+        cubey::render::pbr_default_texture_physical_specs();
 
-    require(bindings.size() == 17, "PBR should expose every sampled material binding");
+    require(bindings.size() == cubey::render::kPbrDefaultTextureLogicalBindingCount,
+            "PBR should expose every sampled material binding");
     require(specs.size() == bindings.size(), "PBR default specs should cover every texture slot");
+    require(physical_specs.size() == cubey::render::kPbrDefaultTexturePhysicalCount,
+            "PBR defaults should own exactly five physical fallback textures");
     for (std::size_t i = 0; i < bindings.size(); ++i) {
         require(specs[i].binding == bindings[i],
                 "PBR default texture specs should follow sampled binding order");
+        require(specs[i].physical_id ==
+                    cubey::render::pbr_default_texture_physical_id(bindings[i]),
+                "each logical PBR binding should resolve through its declared physical fallback");
+        const auto physical = std::find_if(
+            physical_specs.begin(), physical_specs.end(), [&specs, i](const auto& candidate) {
+                return candidate.id == specs[i].physical_id;
+            });
+        require(physical != physical_specs.end() && physical->rgba8 == specs[i].rgba8 &&
+                    physical->format == specs[i].format,
+                "logical PBR default diagnostics should derive their value from physical residency");
+    }
+    for (std::size_t i = 0; i < physical_specs.size(); ++i) {
+        for (std::size_t j = i + 1U; j < physical_specs.size(); ++j) {
+            require(physical_specs[i].id != physical_specs[j].id &&
+                        (physical_specs[i].rgba8 != physical_specs[j].rgba8 ||
+                         physical_specs[i].format != physical_specs[j].format),
+                    "PBR physical fallback identities should have unique IDs and pixel-format pairs");
+        }
     }
 
     require(specs[0].binding == cubey::render::PbrMaterialBinding::BaseColor,
@@ -508,6 +532,63 @@ void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
                 specs[16].format == VK_FORMAT_R8G8B8A8_UNORM &&
                 specs[16].rgba8 == std::array<std::uint8_t, 4>{255, 255, 255, 255},
             "volume thickness default should be a linear white green-channel multiplier");
+
+    constexpr std::array<std::pair<cubey::render::PbrMaterialBinding,
+                                   cubey::render::PbrDefaultTexturePhysicalId>,
+                         cubey::render::kPbrDefaultTextureLogicalBindingCount>
+        kExpectedPhysicalFallbacks{{
+            {cubey::render::PbrMaterialBinding::BaseColor,
+             cubey::render::PbrDefaultTexturePhysicalId::SrgbWhite},
+            {cubey::render::PbrMaterialBinding::MetallicRoughness,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::Normal,
+             cubey::render::PbrDefaultTexturePhysicalId::FlatTangentNormal},
+            {cubey::render::PbrMaterialBinding::Occlusion,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::Emissive,
+             cubey::render::PbrDefaultTexturePhysicalId::SrgbBlack},
+            {cubey::render::PbrMaterialBinding::Specular,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::SpecularColor,
+             cubey::render::PbrDefaultTexturePhysicalId::SrgbWhite},
+            {cubey::render::PbrMaterialBinding::Clearcoat,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::ClearcoatRoughness,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::ClearcoatNormal,
+             cubey::render::PbrDefaultTexturePhysicalId::FlatTangentNormal},
+            {cubey::render::PbrMaterialBinding::SheenColor,
+             cubey::render::PbrDefaultTexturePhysicalId::SrgbWhite},
+            {cubey::render::PbrMaterialBinding::SheenRoughness,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::Anisotropy,
+             cubey::render::PbrDefaultTexturePhysicalId::AnisotropyDefault},
+            {cubey::render::PbrMaterialBinding::Iridescence,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::IridescenceThickness,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::Transmission,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+            {cubey::render::PbrMaterialBinding::VolumeThickness,
+             cubey::render::PbrDefaultTexturePhysicalId::LinearWhite},
+        }};
+    for (const auto [binding, physical_id] : kExpectedPhysicalFallbacks) {
+        require(cubey::render::pbr_default_texture_physical_id(binding) == physical_id,
+                "each PBR sampled binding should use its intended physical fallback");
+    }
+    require_throws(
+        [] { (void)cubey::render::pbr_default_texture_physical_id(
+              cubey::render::PbrMaterialBinding::Uniforms); },
+        "PBR uniforms should remain outside the sampled default texture contract");
+
+    const std::string resources = read_source_file(
+        std::filesystem::path{CUBEY_SOURCE_DIR} / "src/cubey/render/pbr_material_resources.cpp");
+    require_contains(resources,
+                     "const std::span<const PbrMaterialBinding> sampled_bindings = "
+                     "pbr_sampled_material_bindings();",
+                     "default sampled-image descriptors should preserve canonical binding order");
+    require_contains(resources, "bindings.reserve(sampled_bindings.size());",
+                     "default sampled-image descriptors should retain all canonical bindings");
 }
 
 void test_pbr_material_table_requires_complete_immutable_records() {
@@ -1587,17 +1668,19 @@ void test_gltf_viewer_sample_asset_smoke_tests_cover_material_and_tangent_cases(
 }
 
 void test_gltf_material_fallback_textures_preserve_pbr_factor_channels() {
-    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
-    const std::string resources =
-        read_source_file(source_root / "src/cubey/render/pbr_material_resources.cpp");
-
-    require_contains(resources, ".binding = PbrMaterialBinding::MetallicRoughness",
-                     "shared PBR defaults should create a metallic-roughness fallback texture");
-    require_contains(
-        resources,
-        ".binding = PbrMaterialBinding::MetallicRoughness,\n        .rgba8 = {255, 255, 255, "
-        "255},\n        .format = VK_FORMAT_R8G8B8A8_UNORM",
-        "metallic-roughness fallback should leave roughness and metallic channels at one");
+    const std::span<const cubey::render::PbrDefaultTextureSpec> logical_specs =
+        cubey::render::pbr_default_texture_specs();
+    const auto metallic_roughness = std::find_if(
+        logical_specs.begin(), logical_specs.end(), [](const auto& spec) {
+            return spec.binding == cubey::render::PbrMaterialBinding::MetallicRoughness;
+        });
+    require(metallic_roughness != logical_specs.end(),
+            "shared PBR defaults should expose a metallic-roughness fallback");
+    require(metallic_roughness->physical_id ==
+                cubey::render::PbrDefaultTexturePhysicalId::LinearWhite &&
+                metallic_roughness->rgba8 == std::array<std::uint8_t, 4>{255, 255, 255, 255} &&
+                metallic_roughness->format == VK_FORMAT_R8G8B8A8_UNORM,
+            "metallic-roughness fallback should leave roughness and metallic channels at one");
 }
 
 void test_pbr_examples_and_gltf_importer_share_material_resources() {
@@ -1638,6 +1721,18 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     require_contains(
         resident_builder, "render::pbr_default_texture(",
         "glTF resident builder should resolve missing textures through shared defaults");
+    require_contains(
+        resident_builder, "render::pbr_default_texture_physical_specs()",
+        "glTF staged residency should upload the five physical PBR fallback textures");
+    require_contains(
+        resident_builder, "metrics.default_texture_logical_binding_count",
+        "glTF staged residency should expose the logical default binding count explicitly");
+    require_contains(
+        resident_builder, "++metrics.default_texture_physical_upload_count",
+        "glTF staged residency should count completed physical default uploads explicitly");
+    require_not_contains(
+        resident_builder, "const render::PbrDefaultTextureSpec& spec",
+        "glTF staged residency should not upload every logical PBR binding separately");
     require_not_contains(importer_header, "material_factors",
                          "glTF import resources should not expose a parallel factor map");
     require_not_contains(importer_header, "base_color_default",

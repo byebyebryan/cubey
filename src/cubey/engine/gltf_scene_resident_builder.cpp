@@ -562,6 +562,9 @@ struct GltfSceneResidentBuilder::Impl {
         metrics.owner_target_milliseconds = config.upload_policy.owner_cpu_target_milliseconds;
         metrics.step_byte_cap = config.upload_policy.step_byte_cap;
         metrics.copy_byte_target = config.upload_policy.copy_byte_target;
+        metrics.default_texture_logical_binding_count =
+            static_cast<std::uint32_t>(render::pbr_default_texture_specs().size());
+        default_textures.reserve(render::pbr_default_texture_physical_specs().size());
         resident.resources.mesh_primitives.resize(prepared->meshes.size());
     }
 
@@ -628,16 +631,19 @@ struct GltfSceneResidentBuilder::Impl {
 
     [[nodiscard]] OperationResult record_default_texture(vulkan::GpuOwnerContext& owner,
                                                          OwnerStepAccumulator& step) {
-        const std::span<const render::PbrDefaultTextureSpec> specs =
-            render::pbr_default_texture_specs();
+        const std::span<const render::PbrDefaultTexturePhysicalSpec> specs =
+            render::pbr_default_texture_physical_specs();
         if (default_texture_index >= specs.size()) {
+            if (metrics.default_texture_physical_upload_count != specs.size()) {
+                throw std::runtime_error("glTF default texture upload count is incomplete");
+            }
             resident.resources.default_textures.emplace(
                 render::make_pbr_default_texture_set(std::move(default_textures)));
             phase = Phase::Textures;
             return OperationResult::Progress;
         }
         if (!texture_task.has_value()) {
-            const render::PbrDefaultTextureSpec& spec = specs[default_texture_index];
+            const render::PbrDefaultTexturePhysicalSpec& spec = specs[default_texture_index];
             texture_task.emplace(TextureTask{
                 .source = {spec.rgba8.data(), spec.rgba8.size()},
                 .extent = {1, 1},
@@ -660,6 +666,7 @@ struct GltfSceneResidentBuilder::Impl {
                 texture_task->texture, "glTF default texture upload did not create a texture")));
             texture_task.reset();
             ++default_texture_index;
+            ++metrics.default_texture_physical_upload_count;
         }
         return OperationResult::Progress;
     }

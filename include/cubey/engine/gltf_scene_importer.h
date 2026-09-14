@@ -236,6 +236,11 @@ struct GltfSceneUploadSessionMetrics {
     // metrics consumers while preserving the configured policy evidence.
     std::uint64_t step_byte_cap = 32ULL * 1024ULL * 1024ULL;
     std::uint64_t copy_byte_target = 2ULL * 1024ULL * 1024ULL;
+    // The PBR descriptor contract has 17 logical fallback bindings, but one
+    // resident generation uploads only five unique 1x1 physical textures.
+    // These are explicit rather than derived from aggregate copy counts.
+    std::uint32_t default_texture_logical_binding_count = 0;
+    std::uint32_t default_texture_physical_upload_count = 0;
 };
 
 // GPU-resident import product. Handles are local staging handles until

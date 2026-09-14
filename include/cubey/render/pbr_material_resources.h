@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -20,33 +21,54 @@
 
 namespace cubey::render {
 
+// The material descriptor contract exposes 17 logical sampled bindings, while
+// only five distinct 1x1 fallback images are physically resident per owning
+// generation. The identity is explicit so upload and descriptor code cannot
+// accidentally make the logical binding count the residency count again.
+enum class PbrDefaultTexturePhysicalId : std::uint8_t {
+    SrgbWhite,
+    LinearWhite,
+    FlatTangentNormal,
+    SrgbBlack,
+    AnisotropyDefault,
+};
+
+inline constexpr std::size_t kPbrDefaultTextureLogicalBindingCount = 17U;
+inline constexpr std::size_t kPbrDefaultTexturePhysicalCount = 5U;
+
 struct PbrDefaultTextureSpec {
     PbrMaterialBinding binding = PbrMaterialBinding::BaseColor;
+    std::array<std::uint8_t, 4> rgba8{255, 255, 255, 255};
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    // Appended so existing positional logical-spec diagnostics remain source
+    // compatible while gaining the physical ownership mapping.
+    PbrDefaultTexturePhysicalId physical_id = PbrDefaultTexturePhysicalId::SrgbWhite;
+};
+
+struct PbrDefaultTexturePhysicalSpec {
+    PbrDefaultTexturePhysicalId id = PbrDefaultTexturePhysicalId::SrgbWhite;
     std::array<std::uint8_t, 4> rgba8{255, 255, 255, 255};
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 };
 
 struct PbrDefaultTextureSet {
-    Texture2D base_color;
-    Texture2D metallic_roughness;
-    Texture2D normal;
-    Texture2D occlusion;
-    Texture2D emissive;
-    Texture2D specular;
-    Texture2D specular_color;
-    Texture2D clearcoat;
-    Texture2D clearcoat_roughness;
-    Texture2D clearcoat_normal;
-    Texture2D sheen_color;
-    Texture2D sheen_roughness;
-    Texture2D anisotropy;
-    Texture2D iridescence;
-    Texture2D iridescence_thickness;
-    Texture2D transmission;
-    Texture2D volume_thickness;
+    // One owning generation holds exactly these five move-only physical
+    // textures. Logical material bindings resolve through physical_id rather
+    // than duplicating ownership in every descriptor slot.
+    Texture2D srgb_white;
+    Texture2D linear_white;
+    Texture2D flat_tangent_normal;
+    Texture2D srgb_black;
+    Texture2D anisotropy_default;
 };
 
 [[nodiscard]] std::span<const PbrDefaultTextureSpec> pbr_default_texture_specs() noexcept;
+[[nodiscard]] std::span<const PbrDefaultTexturePhysicalSpec>
+pbr_default_texture_physical_specs() noexcept;
+// Resolves a canonical sampled material binding to its physical fallback.
+// Uniforms is intentionally not a sampled texture and throws.
+[[nodiscard]] PbrDefaultTexturePhysicalId
+pbr_default_texture_physical_id(PbrMaterialBinding binding);
 [[nodiscard]] PbrDefaultTextureSet
 create_pbr_default_texture_set(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
 [[nodiscard]] PbrDefaultTextureSet
@@ -55,8 +77,10 @@ create_pbr_default_texture_set(const cubey::vulkan::Device& device,
 [[nodiscard]] PbrDefaultTextureSet
 create_pbr_default_texture_set(const cubey::vulkan::Device& device,
                                cubey::vulkan::GpuUploadBatch& batch);
-// Adopts the sampled textures described by pbr_default_texture_specs(). This
-// lets resumable upload sessions create one destination texture at a time.
+// Adopts exactly one texture for every physical default identity, in
+// pbr_default_texture_physical_specs() order. This lets resumable upload
+// sessions create one destination texture at a time without changing the
+// 17-binding descriptor contract.
 [[nodiscard]] PbrDefaultTextureSet make_pbr_default_texture_set(std::vector<Texture2D> textures);
 [[nodiscard]] const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set,
                                                    PbrMaterialBinding binding);
