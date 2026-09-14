@@ -19,8 +19,9 @@ stable across the repo:
   input layouts matching current shader contracts;
 - CPU-side surface LOD planning helpers for the clipmap and adaptive patch
   shapes used by rendering projects;
-- material pass metadata, material descriptor instances, and small pipeline
-  recipe helpers for the descriptor/pipeline shapes already shared by examples;
+- material pass metadata, the canonical PBR material descriptor schema and
+  pooled residency, material descriptor instances, and small pipeline recipe
+  helpers for the descriptor/pipeline shapes already shared by examples;
 - explicit frame slots and per-frame uniform buffers for CPU-updated render
   data;
 - draw packet metadata for simple indexed draws;
@@ -64,8 +65,13 @@ The current renderer stack is intentionally split by ownership:
 Examples and projects still own render intent:
 
 - shader code and shader stage selection;
-- material pass declarations, descriptor resources, descriptor writes, and
-  binding order;
+- material pass declarations and project-owned scene/environment descriptor
+  resources, descriptor writes, and binding order for project-specific passes.
+  The shared PBR forward material set is renderer-owned: its descriptor schema,
+  immutable material definition, pooled uniforms, and static per-material
+  descriptors come from `pbr_material_descriptor_set_layout()` and
+  `PbrMaterialTable`; projects still own authored texture lifetime, image
+  layouts, and render intent;
 - graphics/compute pipeline target choice and shader selection;
 - pass/resource declarations and render intent; direct paths still own image
   transitions and barriers, while graph-backed paths delegate synchronization
@@ -199,7 +205,8 @@ full engine architecture.
   metadata contract. It describes pass kind, descriptor layout shape,
   push-constant ranges, and reusable graphics pipeline state.
 - `PbrVertex`, `PbrSceneUniforms`, `PbrSkyboxUniforms`, `PbrPostUniforms`,
-  `PbrMaterialFactors`, `PbrMaterialUniforms`, `PbrPushConstants`,
+  `PbrMaterialFactors`, `PbrMaterialDefinition`, `PbrMaterialUniforms`,
+  `PbrMaterialTable`, `PbrPushConstants`,
   `pbr_skybox_pass_info()`, `pbr_forward_pass_info()`, and
   `pbr_post_pass_info()` define the current PBR contract: one scene
   uniform/shadow/IBL set, one material texture/uniform set, model-only per-draw
@@ -208,6 +215,12 @@ full engine architecture.
   anisotropy, iridescence, and sheen lobes, and required-use transmission,
   volume, and dispersion. Extension texture slots stay fixed in the descriptor
   layout, while material texture flags gate shader fetches for absent textures.
+  `pbr_material_descriptor_set_layout()` is the sole authority for the forward
+  material set-one schema, and `PbrMaterialTable` validates every published
+  material against its complete 17-binding sampled-image inventory before
+  allocating pooled residency. Material definitions and descriptor sets are
+  immutable after publication; erase is logical and `clear()` retires the
+  complete table residency.
   The scene set includes irradiance, previous/current prefiltered cubes, the
   DFG/BRDF lookup, and a same-frame HDR refraction-radiance binding. The latter
   uses a valid neutral fallback for ordinary draws and a per-frame-slot pyramid

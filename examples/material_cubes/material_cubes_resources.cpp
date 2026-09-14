@@ -78,9 +78,7 @@ void MaterialCubesApp::create_global_resources_if_needed(const cubey::vulkan::De
     }
     create_default_textures(device, gpu);
     if (!materials_.initialized()) {
-        materials_.initialize(device, cubey::render::PbrMaterialTableConfig{
-                                          .material_pass = cubey::render::pbr_forward_pass_info(),
-                                      });
+        materials_.initialize(device, cubey::render::PbrMaterialTableConfig{});
     }
     create_materials();
     create_mesh(gpu);

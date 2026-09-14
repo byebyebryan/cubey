@@ -19,9 +19,7 @@ void PbrFurnaceApp::create_global_resources_if_needed(const cubey::vulkan::Devic
     white_environment_.emplace(create_white_pbr_environment(device, gpu));
     create_scene_material(device, frame_slot_count);
     if (!materials_.initialized()) {
-        materials_.initialize(device, cubey::render::PbrMaterialTableConfig{
-                                          .material_pass = pbr_furnace_forward_pass_info(),
-                                      });
+        materials_.initialize(device, cubey::render::PbrMaterialTableConfig{});
     }
     create_materials();
     create_mesh(gpu);

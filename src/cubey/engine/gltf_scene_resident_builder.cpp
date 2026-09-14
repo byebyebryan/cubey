@@ -569,9 +569,7 @@ struct GltfSceneResidentBuilder::Impl {
         owner.require_owner_thread("glTF upload session requires the GPU owner thread");
         if (!resident.resources.materials.initialized()) {
             resident.resources.materials.initialize(
-                owner.device(), render::PbrMaterialTableConfig{
-                                    .material_pass = render::pbr_forward_pass_info(),
-                                });
+                owner.device(), render::PbrMaterialTableConfig{});
         }
         const Clock::time_point started = Clock::now();
         GltfSceneResidentBuilder::AdvanceResult outcome{};

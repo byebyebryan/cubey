@@ -13,26 +13,6 @@
 namespace cubey::render {
 namespace {
 
-constexpr std::array<PbrMaterialBinding, 17> kSampledMaterialBindings{
-    PbrMaterialBinding::BaseColor,
-    PbrMaterialBinding::MetallicRoughness,
-    PbrMaterialBinding::Normal,
-    PbrMaterialBinding::Occlusion,
-    PbrMaterialBinding::Emissive,
-    PbrMaterialBinding::Specular,
-    PbrMaterialBinding::SpecularColor,
-    PbrMaterialBinding::Clearcoat,
-    PbrMaterialBinding::ClearcoatRoughness,
-    PbrMaterialBinding::ClearcoatNormal,
-    PbrMaterialBinding::SheenColor,
-    PbrMaterialBinding::SheenRoughness,
-    PbrMaterialBinding::Anisotropy,
-    PbrMaterialBinding::Iridescence,
-    PbrMaterialBinding::IridescenceThickness,
-    PbrMaterialBinding::Transmission,
-    PbrMaterialBinding::VolumeThickness,
-};
-
 constexpr std::array<PbrDefaultTextureSpec, 17> kDefaultTextureSpecs{
     PbrDefaultTextureSpec{
         .binding = PbrMaterialBinding::BaseColor,
@@ -167,12 +147,42 @@ constexpr std::array<PbrDefaultTextureSpec, 17> kDefaultTextureSpecs{
 
 } // namespace
 
-std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept {
-    return kSampledMaterialBindings;
-}
-
 std::span<const PbrDefaultTextureSpec> pbr_default_texture_specs() noexcept {
     return kDefaultTextureSpecs;
+}
+
+void validate_pbr_sampled_image_bindings(
+    std::span<const SampledImageMaterialBinding> sampled_images) {
+    const std::span<const PbrMaterialBinding> expected = pbr_sampled_material_bindings();
+    if (sampled_images.size() != expected.size()) {
+        throw std::runtime_error(
+            "PBR material publication requires every sampled texture binding exactly once");
+    }
+
+    std::array<bool, 17> seen{};
+    for (const SampledImageMaterialBinding& sampled : sampled_images) {
+        const auto expected_binding =
+            std::find_if(expected.begin(), expected.end(), [&sampled](PbrMaterialBinding binding) {
+                return sampled.binding == static_cast<std::uint32_t>(binding);
+            });
+        if (expected_binding == expected.end()) {
+            throw std::runtime_error(
+                "PBR material publication contains an unknown sampled binding");
+        }
+
+        const std::size_t expected_index =
+            static_cast<std::size_t>(expected_binding - expected.begin());
+        if (seen[expected_index]) {
+            throw std::runtime_error(
+                "PBR material publication contains a duplicate sampled binding");
+        }
+        seen[expected_index] = true;
+
+        if (sampled.sampler == VK_NULL_HANDLE || sampled.image_view == VK_NULL_HANDLE) {
+            throw std::runtime_error(
+                "PBR material publication requires sampled image sampler and view handles");
+        }
+    }
 }
 
 PbrDefaultTextureSet create_pbr_default_texture_set(const cubey::vulkan::Device& device,
@@ -315,8 +325,9 @@ const Texture2D& pbr_default_texture(const PbrDefaultTextureSet& set, PbrMateria
 std::vector<SampledImageMaterialBinding>
 pbr_default_sampled_image_bindings(const PbrDefaultTextureSet& set) {
     std::vector<SampledImageMaterialBinding> bindings;
-    bindings.reserve(kSampledMaterialBindings.size());
-    for (const PbrMaterialBinding binding : kSampledMaterialBindings) {
+    const std::span<const PbrMaterialBinding> sampled_bindings = pbr_sampled_material_bindings();
+    bindings.reserve(sampled_bindings.size());
+    for (const PbrMaterialBinding binding : sampled_bindings) {
         const Texture2D& texture = pbr_default_texture(set, binding);
         bindings.push_back({
             .binding = static_cast<std::uint32_t>(binding),
@@ -360,20 +371,6 @@ namespace {
 validated_pbr_material_table_config(PbrMaterialTableConfig config) {
     if (config.block_capacity == 0U) {
         throw std::runtime_error("PBR material table block capacity must be positive");
-    }
-
-    const MaterialDescriptorSetLayout& descriptor_set =
-        material_descriptor_set_layout(config.material_pass, config.descriptor_set);
-    const auto uniform_binding =
-        std::find_if(descriptor_set.bindings.begin(), descriptor_set.bindings.end(),
-                     [&config](const cubey::vulkan::DescriptorSetBindingConfig& binding) {
-                         return binding.binding == config.uniform_binding;
-                     });
-    if (uniform_binding == descriptor_set.bindings.end()) {
-        throw std::runtime_error("PBR material table uniform binding is not declared by its pass");
-    }
-    if (uniform_binding->type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-        throw std::runtime_error("PBR material table uniform binding must use uniform buffers");
     }
     return config;
 }
@@ -468,8 +465,8 @@ struct PbrMaterialTable::State {
           uniform_layout_(pbr_material_uniform_block_layout(
               sizeof(PbrMaterialUniforms),
               device.properties().limits.minUniformBufferOffsetAlignment, config_.block_capacity)),
-          descriptor_info_(material_descriptor_set_info(
-              config_.material_pass, config_.descriptor_set, config_.block_capacity)),
+          descriptor_schema_(pbr_material_descriptor_set_layout()),
+          descriptor_info_(descriptor_schema_.bindings, config_.block_capacity),
           descriptor_set_layout_(device, descriptor_info_.layout_info()) {}
 
     [[nodiscard]] Block& append_block() {
@@ -482,6 +479,7 @@ struct PbrMaterialTable::State {
     const cubey::vulkan::Device* device_ = nullptr;
     PbrMaterialTableConfig config_{};
     PbrMaterialUniformBlockLayout uniform_layout_{};
+    MaterialDescriptorSetLayout descriptor_schema_{};
     cubey::vulkan::DescriptorSetInfo descriptor_info_;
     cubey::vulkan::DescriptorSetLayout descriptor_set_layout_;
     std::vector<std::unique_ptr<Block>> blocks_{};
@@ -529,6 +527,7 @@ PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definit
     if (records_.contains(material)) {
         throw std::runtime_error("PBR material table already contains handle");
     }
+    validate_pbr_sampled_image_bindings(sampled_images);
 
     State& state = *state_;
     const bool needs_block = state.blocks_.empty() || state.blocks_.back()->full();
@@ -543,7 +542,8 @@ PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definit
         block.write_uniforms(uniforms, allocation.uniform_offset);
 
         cubey::vulkan::DescriptorWriteBatch writes;
-        writes.uniform_buffer(allocation.descriptor_set, state.config_.uniform_binding,
+        writes.uniform_buffer(allocation.descriptor_set,
+                              static_cast<std::uint32_t>(PbrMaterialBinding::Uniforms),
                               block.uniform_buffer(), sizeof(uniforms), allocation.uniform_offset);
         for (const SampledImageMaterialBinding& sampled : sampled_images) {
             writes.combined_image_sampler(allocation.descriptor_set, sampled.binding,
@@ -552,7 +552,7 @@ PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definit
         writes.update(*state.device_);
         PbrMaterialRecord& record =
             records_.emplace(material, std::move(definition), allocation.descriptor_set,
-                             state.config_.descriptor_set, allocation.uniform_offset);
+                             state.descriptor_schema_.set, allocation.uniform_offset);
         ++state.material_count_;
         return record;
     } catch (...) {

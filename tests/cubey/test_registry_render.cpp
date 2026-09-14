@@ -154,6 +154,7 @@ void test_atmosphere_reflection_probe_uses_per_subresource_uniform_materials();
 void test_pbr_vertex_layout_matches_shader_contract();
 void test_pbr_debug_view_names_parse_and_cycle();
 void test_pbr_forward_pass_declares_scene_and_material_sets();
+void test_pbr_material_schema_and_sampled_bindings_are_canonical();
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only();
 void test_pbr_default_texture_specs_cover_all_sampled_material_bindings();
 void test_pbr_material_table_requires_complete_immutable_records();
@@ -352,6 +353,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_vertex_layout_matches_shader_contract),
         CUBEY_TEST(test_pbr_debug_view_names_parse_and_cycle),
         CUBEY_TEST(test_pbr_forward_pass_declares_scene_and_material_sets),
+        CUBEY_TEST(test_pbr_material_schema_and_sampled_bindings_are_canonical),
         CUBEY_TEST(test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only),
         CUBEY_TEST(test_pbr_default_texture_specs_cover_all_sampled_material_bindings),
         CUBEY_TEST(test_pbr_material_table_requires_complete_immutable_records),

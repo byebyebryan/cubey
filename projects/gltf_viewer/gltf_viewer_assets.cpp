@@ -702,9 +702,7 @@ void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device
     try {
         if (!generation.import_resources.materials.initialized()) {
             generation.import_resources.materials.initialize(
-                device, cubey::render::PbrMaterialTableConfig{
-                            .material_pass = cubey::render::pbr_forward_pass_info(),
-                        });
+                device, cubey::render::PbrMaterialTableConfig{});
         }
         (void)generation.import_resources.materials.emplace(
             material, definition,

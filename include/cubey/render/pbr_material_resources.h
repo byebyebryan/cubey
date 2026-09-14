@@ -46,7 +46,6 @@ struct PbrDefaultTextureSet {
     Texture2D volume_thickness;
 };
 
-[[nodiscard]] std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept;
 [[nodiscard]] std::span<const PbrDefaultTextureSpec> pbr_default_texture_specs() noexcept;
 [[nodiscard]] PbrDefaultTextureSet
 create_pbr_default_texture_set(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu);
@@ -79,12 +78,16 @@ pbr_material_uniform_block_layout(VkDeviceSize uniform_byte_size,
                                   VkDeviceSize min_uniform_buffer_offset_alignment,
                                   std::uint32_t material_capacity);
 
+// The descriptor schema is fixed by pbr_material_descriptor_set_layout();
+// configuration only controls bounded pooled allocation.
 struct PbrMaterialTableConfig {
-    MaterialPassInfo material_pass{};
-    std::uint32_t descriptor_set = 1U;
-    std::uint32_t uniform_binding = static_cast<std::uint32_t>(PbrMaterialBinding::Uniforms);
     std::uint32_t block_capacity = kDefaultPbrMaterialBlockCapacity;
 };
+
+// Validates the complete sampled-image portion of the canonical PBR material
+// descriptor set before a table allocates any physical residency.
+void validate_pbr_sampled_image_bindings(
+    std::span<const SampledImageMaterialBinding> sampled_images);
 
 struct PbrMaterialTableMetrics {
     bool initialized = false;

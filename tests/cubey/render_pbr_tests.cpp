@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 namespace {
 
@@ -193,6 +194,70 @@ void test_pbr_forward_pass_declares_scene_and_material_sets() {
         });
     require(double_sided_pass.cull_mode == VK_CULL_MODE_NONE,
             "PBR pass config should allow double-sided material pipelines");
+}
+
+void test_pbr_material_schema_and_sampled_bindings_are_canonical() {
+    const cubey::render::MaterialDescriptorSetLayout canonical =
+        cubey::render::pbr_material_descriptor_set_layout();
+    const cubey::render::MaterialPassInfo pass = cubey::render::pbr_forward_pass_info();
+    const cubey::render::MaterialDescriptorSetLayout& pass_material_set = pass.descriptor_sets[1];
+    const std::span<const cubey::render::PbrMaterialBinding> sampled_bindings =
+        cubey::render::pbr_sampled_material_bindings();
+
+    require(canonical.set == 1U, "canonical PBR material descriptors should use set 1");
+    require(canonical.bindings.size() == sampled_bindings.size() + 1U,
+            "canonical PBR material schema should include sampled bindings and uniforms");
+    require(pass_material_set.set == canonical.set &&
+                pass_material_set.bindings.size() == canonical.bindings.size(),
+            "PBR forward pass should use the canonical material descriptor set");
+    for (std::size_t index = 0; index < canonical.bindings.size(); ++index) {
+        require(pass_material_set.bindings[index].binding == canonical.bindings[index].binding &&
+                    pass_material_set.bindings[index].type == canonical.bindings[index].type &&
+                    pass_material_set.bindings[index].stage_flags ==
+                        canonical.bindings[index].stage_flags,
+                "PBR forward pass material descriptors should match the canonical schema");
+    }
+    for (const cubey::render::PbrMaterialBinding binding : sampled_bindings) {
+        const std::uint32_t binding_number = static_cast<std::uint32_t>(binding);
+        require(canonical.bindings[binding_number].binding == binding_number &&
+                    canonical.bindings[binding_number].type ==
+                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                "canonical PBR material schema should expose every sampled binding");
+    }
+    const std::uint32_t uniform_binding =
+        static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms);
+    require(canonical.bindings[uniform_binding].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            "canonical PBR material schema should reserve the uniform binding");
+
+    std::vector<cubey::render::SampledImageMaterialBinding> valid_bindings;
+    valid_bindings.reserve(sampled_bindings.size());
+    for (std::size_t index = 0; index < sampled_bindings.size(); ++index) {
+        valid_bindings.push_back({
+            .binding = static_cast<std::uint32_t>(sampled_bindings[index]),
+            .sampler = reinterpret_cast<VkSampler>(0x100U + index),
+            .image_view = reinterpret_cast<VkImageView>(0x200U + index),
+        });
+    }
+    cubey::render::validate_pbr_sampled_image_bindings(valid_bindings);
+
+    auto rejects = [&valid_bindings](const char* message, auto mutate) {
+        std::vector<cubey::render::SampledImageMaterialBinding> invalid = valid_bindings;
+        mutate(invalid);
+        require_throws([&invalid] { cubey::render::validate_pbr_sampled_image_bindings(invalid); },
+                       message);
+    };
+    rejects("PBR sampled binding validation should reject missing entries",
+            [](auto& invalid) { invalid.pop_back(); });
+    rejects("PBR sampled binding validation should reject duplicate entries",
+            [](auto& invalid) { invalid.back().binding = invalid.front().binding; });
+    rejects("PBR sampled binding validation should reject the uniform binding", [](auto& invalid) {
+        invalid.back().binding =
+            static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms);
+    });
+    rejects("PBR sampled binding validation should reject null samplers",
+            [](auto& invalid) { invalid.front().sampler = VK_NULL_HANDLE; });
+    rejects("PBR sampled binding validation should reject null image views",
+            [](auto& invalid) { invalid.front().image_view = VK_NULL_HANDLE; });
 }
 
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() {
@@ -490,11 +555,8 @@ void test_pbr_material_table_requires_complete_immutable_records() {
 
 void test_pbr_material_uniform_block_layout_is_checked() {
     const cubey::render::PbrMaterialTableConfig default_config{};
-    require(default_config.descriptor_set == 1U &&
-                default_config.uniform_binding ==
-                    static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms) &&
-                default_config.block_capacity == cubey::render::kDefaultPbrMaterialBlockCapacity,
-            "PBR material table defaults should select the static material set and bounded blocks");
+    require(default_config.block_capacity == cubey::render::kDefaultPbrMaterialBlockCapacity,
+            "PBR material table defaults should retain bounded block capacity");
 
     const cubey::render::PbrMaterialUniformBlockLayout aligned =
         cubey::render::pbr_material_uniform_block_layout(sizeof(cubey::render::PbrMaterialUniforms),
@@ -535,6 +597,8 @@ void test_pbr_material_table_tracks_pooled_static_residency() {
 
     require_contains(header, "struct PbrMaterialTableConfig",
                      "PBR material table should expose its fixed descriptor schema contract");
+    require_contains(header, "validate_pbr_sampled_image_bindings",
+                     "PBR material table should expose sampled binding validation");
     require_contains(header, "kDefaultPbrMaterialBlockCapacity = 64U",
                      "PBR material table should retain bounded homogeneous block capacity");
     require_contains(header, "void initialize(const cubey::vulkan::Device& device",
@@ -563,6 +627,10 @@ void test_pbr_material_table_tracks_pooled_static_residency() {
                          "PBR material residency should not depend on frame slots");
     require_contains(source, "PbrMaterialTable::initialize",
                      "PBR material table should create its canonical layout before records");
+    require_contains(source, "pbr_material_descriptor_set_layout()",
+                     "PBR material table should consume the shared canonical material schema");
+    require_contains(source, "validate_pbr_sampled_image_bindings(sampled_images)",
+                     "PBR material publication should validate bindings before allocation");
     require_contains(source, "cubey::vulkan::DescriptorSetLayout descriptor_set_layout_",
                      "PBR material table should own one canonical descriptor layout");
     require_contains(source, "std::vector<std::unique_ptr<Block>> blocks_",
@@ -589,6 +657,13 @@ void test_pbr_material_table_tracks_pooled_static_residency() {
                      "PBR material metrics should describe table-owned residency");
     require_not_contains(header, "set_factors",
                          "PBR material table should not permit factor mutation after publication");
+    require_not_contains(header, "MaterialPassInfo material_pass",
+                         "PBR material table config should not accept an arbitrary pass schema");
+    require_not_contains(header, "std::uint32_t descriptor_set = 1U",
+                         "PBR material table config should not accept an arbitrary descriptor set");
+    require_not_contains(
+        header, "std::uint32_t uniform_binding",
+        "PBR material table config should not accept an arbitrary uniform binding");
     require_not_contains(header, "void upload(MaterialHandle",
                          "PBR material table should not expose per-draw uniform uploads");
     require_not_contains(header, "PbrMaterialFactors& factors",

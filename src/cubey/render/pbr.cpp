@@ -24,6 +24,28 @@ namespace {
     return static_cast<float>(static_cast<std::underlying_type_t<MaterialAlphaMode>>(mode));
 }
 
+constexpr std::array<PbrMaterialBinding, 17> kSampledMaterialBindings{
+    PbrMaterialBinding::BaseColor,
+    PbrMaterialBinding::MetallicRoughness,
+    PbrMaterialBinding::Normal,
+    PbrMaterialBinding::Occlusion,
+    PbrMaterialBinding::Emissive,
+    PbrMaterialBinding::Specular,
+    PbrMaterialBinding::SpecularColor,
+    PbrMaterialBinding::Clearcoat,
+    PbrMaterialBinding::ClearcoatRoughness,
+    PbrMaterialBinding::ClearcoatNormal,
+    PbrMaterialBinding::SheenColor,
+    PbrMaterialBinding::SheenRoughness,
+    PbrMaterialBinding::Anisotropy,
+    PbrMaterialBinding::Iridescence,
+    PbrMaterialBinding::IridescenceThickness,
+    PbrMaterialBinding::Transmission,
+    PbrMaterialBinding::VolumeThickness,
+};
+
+static_assert(static_cast<std::uint32_t>(PbrMaterialBinding::VolumeThickness) + 1U == 18U);
+
 } // namespace
 
 VertexInputLayout pbr_vertex_input_layout() {
@@ -44,6 +66,29 @@ VertexInputLayout pbr_vertex_input_layout() {
                                        offsetof(PbrVertex, color0)),
             },
     };
+}
+
+std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept {
+    return kSampledMaterialBindings;
+}
+
+MaterialDescriptorSetLayout pbr_material_descriptor_set_layout() {
+    MaterialDescriptorSetLayout layout{
+        .set = 1,
+    };
+    layout.bindings.reserve(static_cast<std::size_t>(PbrMaterialBinding::VolumeThickness) + 1U);
+    for (std::uint32_t binding = 0;
+         binding <= static_cast<std::uint32_t>(PbrMaterialBinding::VolumeThickness); ++binding) {
+        const PbrMaterialBinding material_binding = static_cast<PbrMaterialBinding>(binding);
+        layout.bindings.push_back({
+            .binding = binding,
+            .type = material_binding == PbrMaterialBinding::Uniforms
+                        ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                        : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        });
+    }
+    return layout;
 }
 
 MaterialPassInfo pbr_forward_pass_info() {
@@ -113,128 +158,7 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
                                 },
                             },
                     },
-                    MaterialDescriptorSetLayout{
-                        .set = 1,
-                        .bindings =
-                            {
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::BaseColor),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrMaterialBinding::MetallicRoughness),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::Normal),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::Occlusion),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::Emissive),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::Specular),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrMaterialBinding::SpecularColor),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::
-                                    vulkan::DescriptorSetBindingConfig{
-                                        .binding =
-                                            static_cast<std::uint32_t>(
-                                                PbrMaterialBinding::Uniforms),
-                                        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                    },
-                                cubey::
-                                    vulkan::DescriptorSetBindingConfig{
-                                        .binding =
-                                            static_cast<std::uint32_t>(
-                                                PbrMaterialBinding::Clearcoat),
-                                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                    },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(
-                                            PbrMaterialBinding::ClearcoatRoughness),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(
-                                            PbrMaterialBinding::ClearcoatNormal),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::SheenColor),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(
-                                            PbrMaterialBinding::SheenRoughness),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::Anisotropy),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrMaterialBinding::Iridescence),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(
-                                            PbrMaterialBinding::IridescenceThickness),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrMaterialBinding::Transmission),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrMaterialBinding::VolumeThickness),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                            },
-                    },
+                    pbr_material_descriptor_set_layout(),
                 },
             .push_constants = {push_constants},
             .cull_mode = config.cull_mode,

@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -252,6 +253,11 @@ struct PbrForwardPassConfig {
 };
 
 [[nodiscard]] VertexInputLayout pbr_vertex_input_layout();
+// The material descriptor set is shared by every forward PBR pipeline and by
+// PbrMaterialTable residency. Callers receive a value copy so the schema
+// remains immutable and cannot be edited through shared state.
+[[nodiscard]] MaterialDescriptorSetLayout pbr_material_descriptor_set_layout();
+[[nodiscard]] std::span<const PbrMaterialBinding> pbr_sampled_material_bindings() noexcept;
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info();
 [[nodiscard]] MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config);
 [[nodiscard]] MaterialPassInfo pbr_skybox_pass_info();
