@@ -126,8 +126,7 @@ struct GltfPreparedMaterialTexture {
 };
 
 struct GltfPreparedMaterial {
-    render::MaterialInfo info{};
-    render::PbrMaterialFactors factors{};
+    render::PbrMaterialDefinition definition{};
     std::vector<GltfPreparedMaterialTexture> textures{};
 };
 

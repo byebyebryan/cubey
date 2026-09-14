@@ -129,7 +129,6 @@ struct PbrMaterialFactors {
     math::Vec4 base_color_factor{1.0F, 1.0F, 1.0F, 1.0F};
     math::Vec3 emissive_factor{0.0F, 0.0F, 0.0F};
     float alpha_cutoff = 0.0F;
-    MaterialAlphaMode alpha_mode = MaterialAlphaMode::Opaque;
     float metallic_factor = 1.0F;
     float roughness_factor = 1.0F;
     float normal_scale = 1.0F;
@@ -161,6 +160,17 @@ struct PbrMaterialFactors {
     bool unlit = false;
     std::uint32_t texture_flags = 0U;
     PbrMaterialTextureTransforms texture_transforms{};
+};
+
+// Immutable PBR material input. Keep raster routing inputs alongside the
+// shader factors so the registry record and packed uniforms are derived from
+// this one published value.
+struct PbrMaterialDefinition {
+    std::string label{};
+    PbrMaterialFactors factors{};
+    MaterialAlphaMode alpha_mode = MaterialAlphaMode::Opaque;
+    VkCullModeFlags cull_mode = VK_CULL_MODE_BACK_BIT;
+    std::uint32_t sort_key = 0;
 };
 
 struct PbrMaterialUniforms {
@@ -254,9 +264,8 @@ pbr_display_transform_for_target(VkFormat target_format, float exposure = 0.0F,
                                  PbrTonemap tonemap = PbrTonemap::Aces);
 [[nodiscard]] math::Vec4 pbr_display_transform_uniform(const PbrDisplayTransform& transform);
 [[nodiscard]] float pbr_f0_from_ior(float ior);
-[[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
-                                                        MaterialAlphaMode alpha_mode);
-[[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors);
+[[nodiscard]] MaterialInfo pbr_material_info(const PbrMaterialDefinition& definition);
+[[nodiscard]] PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialDefinition& definition);
 [[nodiscard]] PbrPushConstants pbr_push_constants(math::Mat4 model);
 
 } // namespace cubey::render

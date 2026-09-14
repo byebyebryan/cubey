@@ -294,10 +294,11 @@ GltfSceneImportResult activate_gltf_scene(Engine& engine, SceneTransaction& tran
         activated_materials.reserve(resident.material_handles.size());
         result.material_handles.reserve(resident.material_handles.size());
         for (std::size_t index = 0; index < resident.material_handles.size(); ++index) {
-            const render::MaterialHandle actual =
-                engine.render_resources().create_material(prepared.materials.at(index).info);
+            const render::MaterialHandle provisional = resident.material_handles[index];
+            const render::MaterialHandle actual = engine.render_resources().create_material(
+                render::pbr_material_info(resources.materials.definition(provisional)));
             result.material_handles.push_back(actual);
-            resources.materials.rebind(resident.material_handles[index], actual);
+            resources.materials.rebind(provisional, actual);
             activated_materials.push_back(actual);
         }
         if (result.material_handles.empty()) {
@@ -402,8 +403,7 @@ void destroy_gltf_scene_import(Engine& engine, GltfSceneImportResources& resourc
         return;
     }
     for (const render::MaterialHandle material : result.material_handles) {
-        if (resources.materials.contains_instance(material) ||
-            resources.materials.contains_factors(material)) {
+        if (resources.materials.contains(material)) {
             resources.materials.erase(material);
         }
         if (engine.render_resources().is_alive(material)) {

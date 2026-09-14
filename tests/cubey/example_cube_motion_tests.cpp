@@ -313,8 +313,9 @@ void test_material_cubes_show_real_material_variant_grid() {
                      "material_cubes should use the shared forward PBR renderer");
     require_contains(app, "forward_pbr_renderer().record({",
                      "material_cubes should submit direct PBR renderer frame requests");
-    require_contains(app, "cubey::render::PbrMaterialFactors",
-                     "material_cubes should store variants as PBR material factors");
+    require_contains(
+        app, "cubey::render::PbrMaterialDefinition",
+        "material_cubes should publish variants as canonical PBR material definitions");
     require_contains(app, "cubey::render::PbrVertex",
                      "material_cubes should use the PBR vertex layout");
     require_contains(app, "create_generated_pbr_environment",

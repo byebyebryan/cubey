@@ -292,58 +292,68 @@ void test_gltf_scene_importer_routes_transmission_independently_of_alpha_and_sha
             "transmission material preparation should preserve every material");
 
     const cubey::GltfPreparedMaterial& neutral = prepared.materials[0];
-    require(neutral.info.optical_mode == cubey::render::MaterialOpticalMode::Opaque,
+    const cubey::render::MaterialInfo neutral_info =
+        cubey::render::pbr_material_info(neutral.definition);
+    require(neutral_info.optical_mode == cubey::render::MaterialOpticalMode::Opaque,
             "a zero authored transmission factor should remain on the opaque optical path");
-    require(cubey::render::material_supports_pass(neutral.info,
+    require(cubey::render::material_supports_pass(neutral_info,
                                                   cubey::render::MaterialPassKind::DepthOnly),
             "a neutral transmission factor should preserve the ordinary shadow/depth policy");
 
     const cubey::GltfPreparedMaterial& opaque = prepared.materials[1];
-    require(opaque.info.optical_mode == cubey::render::MaterialOpticalMode::Transmission,
+    const cubey::render::MaterialInfo opaque_info =
+        cubey::render::pbr_material_info(opaque.definition);
+    require(opaque_info.optical_mode == cubey::render::MaterialOpticalMode::Transmission,
             "a positive authored transmission factor should select the transmission stage");
-    require(opaque.info.alpha_mode == cubey::render::MaterialAlphaMode::Opaque &&
-                opaque.info.blend == cubey::render::MaterialBlendMode::Opaque,
+    require(opaque_info.alpha_mode == cubey::render::MaterialAlphaMode::Opaque &&
+                opaque_info.blend == cubey::render::MaterialBlendMode::Opaque,
             "transmission should retain opaque alpha coverage and depth-write policy");
-    require(!cubey::render::material_supports_pass(opaque.info,
+    require(!cubey::render::material_supports_pass(opaque_info,
                                                    cubey::render::MaterialPassKind::DepthOnly),
             "positive transmission should be excluded from the ordinary shadow/depth path");
-    require(cubey::render::material_supports_pass(opaque.info,
+    require(cubey::render::material_supports_pass(opaque_info,
                                                   cubey::render::MaterialPassKind::ForwardColor),
             "positive transmission should retain a forward-color draw path");
-    require_close(opaque.factors.transmission_factor, 0.8F,
+    require_close(opaque.definition.factors.transmission_factor, 0.8F,
                   "imported PBR factors should preserve authored transmission");
 
     const cubey::GltfPreparedMaterial& blend = prepared.materials[2];
-    require(blend.info.optical_mode == cubey::render::MaterialOpticalMode::Transmission &&
-                blend.info.alpha_mode == cubey::render::MaterialAlphaMode::Blend &&
-                blend.info.blend == cubey::render::MaterialBlendMode::AlphaBlend,
+    const cubey::render::MaterialInfo blend_info =
+        cubey::render::pbr_material_info(blend.definition);
+    require(blend_info.optical_mode == cubey::render::MaterialOpticalMode::Transmission &&
+                blend_info.alpha_mode == cubey::render::MaterialAlphaMode::Blend &&
+                blend_info.blend == cubey::render::MaterialBlendMode::AlphaBlend,
             "transmission optical routing should remain independent from blend coverage");
-    require(!cubey::render::material_supports_pass(blend.info,
+    require(!cubey::render::material_supports_pass(blend_info,
                                                    cubey::render::MaterialPassKind::DepthOnly),
             "blended transmission should not acquire a depth-only/shadow pass");
 
     const cubey::GltfPreparedMaterial& volume = prepared.materials[3];
-    require(volume.info.optical_mode == cubey::render::MaterialOpticalMode::Transmission,
+    const cubey::render::MaterialInfo volume_info =
+        cubey::render::pbr_material_info(volume.definition);
+    require(volume_info.optical_mode == cubey::render::MaterialOpticalMode::Transmission,
             "volume should retain the transmission optical classification independently of alpha");
-    require(volume.info.cull_mode == VK_CULL_MODE_BACK_BIT,
+    require(volume_info.cull_mode == VK_CULL_MODE_BACK_BIT,
             "a nonzero volume thickness should use an exterior boundary cull mode even when "
             "double-sided is authored");
-    require(!cubey::render::material_supports_pass(volume.info,
+    require(!cubey::render::material_supports_pass(volume_info,
                                                    cubey::render::MaterialPassKind::DepthOnly),
             "a volume boundary should remain excluded from ordinary opaque shadows");
-    require_close(volume.factors.volume_thickness_factor, 0.6F,
+    require_close(volume.definition.factors.volume_thickness_factor, 0.6F,
                   "imported factors should preserve volume thickness");
-    require_close(volume.factors.volume_attenuation_color.g, 0.4F,
+    require_close(volume.definition.factors.volume_attenuation_color.g, 0.4F,
                   "imported factors should preserve RGB volume attenuation color");
-    require_close(volume.factors.volume_attenuation_distance, 2.0F,
+    require_close(volume.definition.factors.volume_attenuation_distance, 2.0F,
                   "imported factors should preserve world-space attenuation distance");
-    require((volume.factors.texture_flags &
+    require((volume.definition.factors.texture_flags &
              cubey::render::pbr_material_texture_flag(
                  cubey::render::PbrMaterialTextureFlag::VolumeThickness)) != 0U,
             "imported volume thickness textures should set their independent material flag");
-    require_close(volume.factors.texture_transforms.volume_thickness.offset_scale.x, 0.2F,
+    require_close(volume.definition.factors.texture_transforms.volume_thickness.offset_scale.x,
+                  0.2F,
                   "imported volume thickness transforms should preserve their independent offset");
-    require_close(volume.factors.texture_transforms.volume_thickness.rotation_texcoord.z, 1.0F,
+    require_close(volume.definition.factors.texture_transforms.volume_thickness.rotation_texcoord.z,
+                  1.0F,
                   "imported volume thickness transforms should preserve their independent UV set");
     require(volume.textures.size() == 17,
             "prepared material should bind every default slot and authored volume texture");
@@ -352,9 +362,11 @@ void test_gltf_scene_importer_routes_transmission_independently_of_alpha_and_sha
             "prepared volume texture should use the linear thickness binding");
 
     const cubey::GltfPreparedMaterial& neutral_volume = prepared.materials[4];
-    require(neutral_volume.info.optical_mode == cubey::render::MaterialOpticalMode::Opaque,
+    const cubey::render::MaterialInfo neutral_volume_info =
+        cubey::render::pbr_material_info(neutral_volume.definition);
+    require(neutral_volume_info.optical_mode == cubey::render::MaterialOpticalMode::Opaque,
             "a factor-zero volume should retain the neutral opaque optical routing");
-    require(neutral_volume.info.cull_mode == VK_CULL_MODE_BACK_BIT,
+    require(neutral_volume_info.cull_mode == VK_CULL_MODE_BACK_BIT,
             "a nonzero volume thickness should select its boundary cull policy independently of "
             "neutral transmission");
 }

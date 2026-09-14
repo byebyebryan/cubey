@@ -224,7 +224,6 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.volume_attenuation_color = {0.2F, 0.4F, 0.6F};
     factors.volume_attenuation_distance = 3.5F;
     factors.dispersion = 2.04F;
-    factors.alpha_mode = cubey::render::MaterialAlphaMode::Blend;
     factors.unlit = true;
     factors.texture_flags =
         cubey::render::pbr_material_texture_flag(cubey::render::PbrMaterialTextureFlag::Specular) |
@@ -259,8 +258,15 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     factors.texture_transforms.transmission.rotation_texcoord = {0.0F, 1.0F, 1.0F, 0.0F};
     factors.texture_transforms.volume_thickness.offset_scale = {0.8F, 0.7F, 0.6F, 0.5F};
 
+    const cubey::render::PbrMaterialDefinition definition{
+        .label = "uniform-test",
+        .factors = factors,
+        .alpha_mode = cubey::render::MaterialAlphaMode::Blend,
+        .cull_mode = VK_CULL_MODE_NONE,
+        .sort_key = 37,
+    };
     const cubey::render::PbrMaterialUniforms uniforms =
-        cubey::render::pbr_material_uniforms(factors);
+        cubey::render::pbr_material_uniforms(definition);
     require(uniforms.base_color_factor == factors.base_color_factor,
             "PBR material uniforms should preserve base color factor");
     require(uniforms.emissive_alpha_cutoff.x == factors.emissive_factor.x &&
@@ -283,7 +289,7 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     require(uniforms.material_model.y ==
                 static_cast<float>(
                     static_cast<std::underlying_type_t<cubey::render::MaterialAlphaMode>>(
-                        factors.alpha_mode)),
+                        definition.alpha_mode)),
             "PBR material uniforms should pack alpha mode");
     require(uniforms.material_model.z == 1.0F, "PBR material uniforms should pack unlit flag");
     require(uniforms.material_model.w == static_cast<float>(factors.texture_flags),
@@ -349,10 +355,40 @@ void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only() 
     require(uniforms.texture_transforms.volume_thickness.offset_scale ==
                 factors.texture_transforms.volume_thickness.offset_scale,
             "PBR material uniforms should pack independent volume thickness texture transforms");
-    const cubey::render::PbrMaterialUniforms opaque_uniforms =
-        cubey::render::pbr_material_uniforms(factors, cubey::render::MaterialAlphaMode::Opaque);
-    require(opaque_uniforms.material_model.y == 0.0F,
-            "PBR material uniforms should allow render policy to override factor alpha mode");
+    const cubey::render::MaterialInfo info = cubey::render::pbr_material_info(definition);
+    require(info.label == definition.label && info.alpha_mode == definition.alpha_mode &&
+                info.cull_mode == definition.cull_mode && info.sort_key == definition.sort_key,
+            "PBR material info should preserve the definition's explicit routing inputs");
+    require(info.optical_mode == cubey::render::MaterialOpticalMode::Transmission &&
+                info.blend == cubey::render::MaterialBlendMode::AlphaBlend &&
+                !cubey::render::material_supports_pass(
+                    info, cubey::render::MaterialPassKind::DepthOnly) &&
+                cubey::render::material_supports_pass(
+                    info, cubey::render::MaterialPassKind::ForwardColor),
+            "positive transmission should derive optical routing independently from blend alpha");
+
+    const cubey::render::PbrMaterialDefinition mask_definition{
+        .label = "mask-test",
+        .factors = {},
+        .alpha_mode = cubey::render::MaterialAlphaMode::Mask,
+    };
+    const cubey::render::MaterialInfo mask_info = cubey::render::pbr_material_info(mask_definition);
+    require(mask_info.blend == cubey::render::MaterialBlendMode::Opaque &&
+                cubey::render::material_supports_pass(mask_info,
+                                                      cubey::render::MaterialPassKind::DepthOnly),
+            "masked materials should retain opaque blend and depth-only routing");
+
+    const cubey::render::PbrMaterialDefinition opaque_definition{
+        .label = "opaque-test",
+        .factors = {},
+    };
+    const cubey::render::MaterialInfo opaque_info =
+        cubey::render::pbr_material_info(opaque_definition);
+    require(opaque_info.blend == cubey::render::MaterialBlendMode::Opaque &&
+                opaque_info.optical_mode == cubey::render::MaterialOpticalMode::Opaque &&
+                cubey::render::material_supports_pass(opaque_info,
+                                                      cubey::render::MaterialPassKind::DepthOnly),
+            "opaque definitions should derive the ordinary depth and forward routing");
 
     const cubey::render::PbrPushConstants constants =
         cubey::render::pbr_push_constants(cubey::math::Mat4{1.0F});
@@ -408,24 +444,19 @@ void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
             "volume thickness default should be a linear white green-channel multiplier");
 }
 
-void test_pbr_material_table_groups_factors_and_supports_lifetime_operations() {
+void test_pbr_material_table_requires_complete_immutable_records() {
     cubey::render::PbrMaterialTable table;
     const cubey::render::MaterialHandle material{.index = 4, .generation = 2};
 
-    cubey::render::PbrMaterialFactors factors;
-    factors.base_color_factor = {0.2F, 0.3F, 0.4F, 0.5F};
-    table.set_factors(material, factors);
-
-    require(table.contains_factors(material), "PBR material table should store material factors");
-    require(table.factors(material).base_color_factor == factors.base_color_factor,
-            "PBR material table should retrieve material factors by handle");
-
-    table.erase(material);
-    require(!table.contains_factors(material), "PBR material erase should remove factors");
-
-    table.set_factors(material, factors);
+    require(!table.contains(material), "empty PBR material table should contain no records");
+    require_throws([&table, material] { (void)table.definition(material); },
+                   "PBR material table should not expose a definition without its instance");
+    require_throws([&table, material] { table.erase(material); },
+                   "PBR material table should reject erasing a partial or absent record");
+    require_throws([&table, material] { table.rebind(material, {.index = 7, .generation = 1}); },
+                   "PBR material table should reject rebinding a partial or absent record");
     table.clear();
-    require(!table.contains_factors(material), "PBR material clear should remove all factors");
+    require(!table.contains(material), "PBR material clear should preserve an empty table");
 }
 
 void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
@@ -437,10 +468,31 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
 
     require_contains(header, "VkDescriptorSetLayout descriptor_set_layout_",
                      "PBR material table should store a table-level descriptor layout");
-    require_contains(header, "register_descriptor_set_layout(instance.layout())",
-                     "PBR material table should register inserted instance layouts");
+    require_contains(header, "const PbrMaterialDefinition definition_",
+                     "PBR material records should retain immutable definitions");
     require_contains(source, "PbrMaterialTable::register_descriptor_set_layout",
                      "PBR material table should centralize descriptor layout registration");
+    require_contains(source, "PbrMaterialRecord& record =",
+                     "PBR material table should publish a definition and instance as one record");
+    require_contains(
+        source, "records_.emplace(material, std::move(definition), device, instance_config)",
+        "PBR material table should construct the immutable record in its atomic store");
+    require_contains(
+        source, "records_.erase(material)",
+        "PBR material table should roll back a published record when layout registration fails");
+    require_contains(source, "descriptor_set_layout_ = previous_layout",
+                     "PBR material table rollback should restore prior descriptor-layout state");
+    require_contains(source, "records_.rebind(from, to)",
+                     "PBR material rebind should move the complete resident record together");
+    require_contains(
+        source, "descriptor_set_layout_ = records_.first().instance().layout()",
+        "erasing the record that supplied the cached layout should select a surviving layout");
+    require_not_contains(header, "set_factors",
+                         "PBR material table should not permit factor mutation after publication");
+    require_not_contains(header, "PbrMaterialFactors& factors",
+                         "PBR material table should not expose mutable factors");
+    require_not_contains(header, "emplace_instance",
+                         "PBR material table should not permit separately publishing an instance");
     require_contains(source, "instance requires a descriptor set layout",
                      "PBR material table should reject null descriptor layouts");
     require_contains(source, "return descriptor_set_layout_;",
@@ -1395,10 +1447,12 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
                      "glTF import resources should expose a shared PBR material table");
     require_contains(importer_header, "std::optional<render::PbrDefaultTextureSet>",
                      "glTF import resources should own the shared PBR default texture set");
-    require_contains(resident_builder, "resources.materials.set_factors(",
-                     "glTF resident builder should store factors through the PBR material table");
-    require_contains(resident_builder, "resources.materials.emplace_instance(",
-                     "glTF resident builder should store instances through the PBR material table");
+    require_contains(
+        resident_builder, "resources.materials.emplace(",
+        "glTF resident builder should publish complete PBR material records atomically");
+    require_contains(
+        resident_builder, "material.definition",
+        "glTF resident builder should preserve the prepared canonical material definition");
     require_contains(
         resident_builder, "render::pbr_default_texture(",
         "glTF resident builder should resolve missing textures through shared defaults");

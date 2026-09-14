@@ -813,9 +813,8 @@ struct GltfSceneResidentBuilder::Impl {
         }
         const GltfPreparedMaterial& material = prepared->materials[material_index];
         const render::MaterialHandle handle = staging_material_handle(material_index);
-        resident.resources.materials.set_factors(handle, material.factors);
-        resident.resources.materials.emplace_instance(
-            handle, owner.device(),
+        (void)resident.resources.materials.emplace(
+            handle, material.definition, owner.device(),
             render::FrameUniformMaterialInstanceConfig{
                 .material_pass = render::pbr_forward_pass_info(),
                 .descriptor_set = 1,

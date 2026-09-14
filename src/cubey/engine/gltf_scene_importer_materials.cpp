@@ -241,21 +241,51 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
     for (std::size_t index = 0; index < asset.materials.size(); ++index) {
         const asset::GltfMaterial& source = asset.materials[index];
         const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode);
-        const bool optical_transmission = source.transmission_factor > 0.0F;
         // A nonzero volume thickness defines a closed-medium boundary even
         // when transmissionFactor makes that optical contribution neutral.
         const bool volume_boundary = source.volume_thickness_factor > 0.0F;
         const VkCullModeFlags cull_mode =
             volume_boundary || !source.double_sided ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
         GltfPreparedMaterial material{
-            .info =
+            .definition =
                 {
                     .label = source.label.empty() ? import_label(config, "material", index)
                                                   : source.label,
+                    .factors =
+                        {
+                            .base_color_factor = source.base_color_factor,
+                            .emissive_factor = source.emissive_factor,
+                            .alpha_cutoff = source.alpha_mode == asset::GltfAlphaMode::Mask
+                                                ? source.alpha_cutoff
+                                                : 0.0F,
+                            .metallic_factor = source.metallic_factor,
+                            .roughness_factor = source.roughness_factor,
+                            .normal_scale = source.normal_scale,
+                            .occlusion_strength = source.occlusion_strength,
+                            .specular_color_factor = source.specular_color_factor,
+                            .specular_factor = source.specular_factor,
+                            .dielectric_ior = source.ior,
+                            .transmission_factor = source.transmission_factor,
+                            .volume_thickness_factor = source.volume_thickness_factor,
+                            .volume_attenuation_color = source.volume_attenuation_color,
+                            .volume_attenuation_distance = source.volume_attenuation_distance,
+                            .dispersion = source.dispersion,
+                            .clearcoat_factor = source.clearcoat_factor,
+                            .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
+                            .clearcoat_normal_scale = source.clearcoat_normal_scale,
+                            .sheen_color_factor = source.sheen_color_factor,
+                            .sheen_roughness_factor = source.sheen_roughness_factor,
+                            .anisotropy_strength = source.anisotropy_strength,
+                            .anisotropy_rotation = source.anisotropy_rotation,
+                            .iridescence_factor = source.iridescence_factor,
+                            .iridescence_ior = source.iridescence_ior,
+                            .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
+                            .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
+                            .unlit = source.unlit,
+                            .texture_flags = pbr_texture_flags(source),
+                            .texture_transforms = pbr_texture_transforms(source),
+                        },
                     .alpha_mode = alpha_mode,
-                    .optical_mode = optical_transmission ? render::MaterialOpticalMode::Transmission
-                                                         : render::MaterialOpticalMode::Opaque,
-                    .blend = render::material_blend_mode_for_alpha_mode(alpha_mode),
                     // KHR_materials_volume defines a closed volume boundary,
                     // and doubleSided does not alter that boundary. This
                     // first thick-volume approximation renders its exterior
@@ -263,45 +293,6 @@ void prepare_gltf_materials(GltfPreparedScene& prepared, const asset::GltfAsset&
                     // supply the matching back-face information.
                     .cull_mode = cull_mode,
                     .sort_key = static_cast<std::uint32_t>(index),
-                    .pass_mask =
-                        optical_transmission
-                            ? render::material_pass_mask(render::MaterialPassKind::ForwardColor)
-                            : render::material_pass_mask_for_alpha_mode(alpha_mode),
-                },
-            .factors =
-                {
-                    .base_color_factor = source.base_color_factor,
-                    .emissive_factor = source.emissive_factor,
-                    .alpha_cutoff = source.alpha_mode == asset::GltfAlphaMode::Mask
-                                        ? source.alpha_cutoff
-                                        : 0.0F,
-                    .alpha_mode = alpha_mode,
-                    .metallic_factor = source.metallic_factor,
-                    .roughness_factor = source.roughness_factor,
-                    .normal_scale = source.normal_scale,
-                    .occlusion_strength = source.occlusion_strength,
-                    .specular_color_factor = source.specular_color_factor,
-                    .specular_factor = source.specular_factor,
-                    .dielectric_ior = source.ior,
-                    .transmission_factor = source.transmission_factor,
-                    .volume_thickness_factor = source.volume_thickness_factor,
-                    .volume_attenuation_color = source.volume_attenuation_color,
-                    .volume_attenuation_distance = source.volume_attenuation_distance,
-                    .dispersion = source.dispersion,
-                    .clearcoat_factor = source.clearcoat_factor,
-                    .clearcoat_roughness_factor = source.clearcoat_roughness_factor,
-                    .clearcoat_normal_scale = source.clearcoat_normal_scale,
-                    .sheen_color_factor = source.sheen_color_factor,
-                    .sheen_roughness_factor = source.sheen_roughness_factor,
-                    .anisotropy_strength = source.anisotropy_strength,
-                    .anisotropy_rotation = source.anisotropy_rotation,
-                    .iridescence_factor = source.iridescence_factor,
-                    .iridescence_ior = source.iridescence_ior,
-                    .iridescence_thickness_minimum = source.iridescence_thickness_minimum,
-                    .iridescence_thickness_maximum = source.iridescence_thickness_maximum,
-                    .unlit = source.unlit,
-                    .texture_flags = pbr_texture_flags(source),
-                    .texture_transforms = pbr_texture_transforms(source),
                 },
         };
         prepare_material_texture(material, prepared, asset, render::PbrMaterialBinding::BaseColor,

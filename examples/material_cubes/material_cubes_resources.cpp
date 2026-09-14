@@ -123,27 +123,34 @@ void MaterialCubesApp::create_materials(const cubey::vulkan::Device& device,
     material_handles_.reserve(kMaterialCubeCount);
     for (std::uint32_t index = 0; index < kMaterialCubeCount; ++index) {
         const MaterialVariant variant = material_variant_for_index(index);
-        const cubey::render::MaterialHandle material =
-            engine_.render_resources().create_material(cubey::render::MaterialInfo{
-                .label = "material_cubes.material." + std::to_string(index),
-                .sort_key = index,
-            });
+        const cubey::render::PbrMaterialDefinition definition{
+            .label = "material_cubes.material." + std::to_string(index),
+            .factors =
+                {
+                    .base_color_factor = variant.base_color,
+                    .metallic_factor = variant.metallic,
+                    .roughness_factor = variant.roughness,
+                    .dielectric_ior = 1.5F,
+                },
+            .sort_key = index,
+        };
+        const cubey::render::MaterialHandle material = engine_.render_resources().create_material(
+            cubey::render::pbr_material_info(definition));
+        try {
+            (void)materials_.emplace(material, definition, device,
+                                     cubey::render::FrameUniformMaterialInstanceConfig{
+                                         .material_pass = cubey::render::pbr_forward_pass_info(),
+                                         .descriptor_set = 1,
+                                         .frame_slot_count = frame_slot_count,
+                                         .uniform_binding = static_cast<std::uint32_t>(
+                                             cubey::render::PbrMaterialBinding::Uniforms),
+                                         .sampled_images = material_sampled_images(),
+                                     });
+        } catch (...) {
+            engine_.render_resources().destroy_material(material);
+            throw;
+        }
         material_handles_.push_back(material);
-        materials_.set_factors(material, cubey::render::PbrMaterialFactors{
-                                             .base_color_factor = variant.base_color,
-                                             .metallic_factor = variant.metallic,
-                                             .roughness_factor = variant.roughness,
-                                             .dielectric_ior = 1.5F,
-                                         });
-        materials_.emplace_instance(material, device,
-                                    cubey::render::FrameUniformMaterialInstanceConfig{
-                                        .material_pass = cubey::render::pbr_forward_pass_info(),
-                                        .descriptor_set = 1,
-                                        .frame_slot_count = frame_slot_count,
-                                        .uniform_binding = static_cast<std::uint32_t>(
-                                            cubey::render::PbrMaterialBinding::Uniforms),
-                                        .sampled_images = material_sampled_images(),
-                                    });
     }
 }
 
@@ -189,7 +196,7 @@ void MaterialCubesApp::create_ibl_resources(const cubey::vulkan::Device& device,
 
 void MaterialCubesApp::destroy_material_resources() {
     for (const cubey::render::MaterialHandle material : material_handles_) {
-        if (materials_.contains_instance(material) || materials_.contains_factors(material)) {
+        if (materials_.contains(material)) {
             materials_.erase(material);
         }
         if (engine_.render_resources().is_alive(material)) {

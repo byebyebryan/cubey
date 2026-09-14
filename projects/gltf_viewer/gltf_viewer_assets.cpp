@@ -684,32 +684,40 @@ void GltfViewerApp::create_cloud_environment_runtime(const cubey::vulkan::Device
 void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,
                                              std::uint32_t frame_slot_count, bool loading_cage,
                                              GltfViewerSceneGeneration& generation) {
-    const cubey::render::MaterialHandle material = engine_.render_resources().create_material(
-        loading_cage ? "gltf_viewer.loading_cage.material" : "gltf_viewer.fallback.material");
+    const cubey::render::PbrMaterialDefinition definition{
+        .label =
+            loading_cage ? "gltf_viewer.loading_cage.material" : "gltf_viewer.fallback.material",
+        .factors =
+            {
+                .base_color_factor = loading_cage ? cubey::math::Vec4{0.12F, 0.32F, 0.58F, 1.0F}
+                                                  : cubey::math::Vec4{0.86F, 0.82F, 0.72F, 1.0F},
+                .emissive_factor =
+                    loading_cage ? cubey::math::Vec3{0.08F, 0.18F, 0.32F} : cubey::math::Vec3{0.0F},
+                .metallic_factor = 0.0F,
+                .roughness_factor = 0.58F,
+                .unlit = loading_cage,
+            },
+    };
+    const cubey::render::MaterialHandle material =
+        engine_.render_resources().create_material(cubey::render::pbr_material_info(definition));
+    try {
+        (void)generation.import_resources.materials.emplace(
+            material, definition, device,
+            cubey::render::FrameUniformMaterialInstanceConfig{
+                .material_pass = cubey::render::pbr_forward_pass_info(),
+                .descriptor_set = 1,
+                .frame_slot_count = frame_slot_count,
+                .uniform_binding =
+                    static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
+                .sampled_images = cubey::render::pbr_default_sampled_image_bindings(
+                    generation.import_resources.default_textures.value()),
+            });
+    } catch (...) {
+        engine_.render_resources().destroy_material(material);
+        throw;
+    }
     generation.import_result.material_handles.push_back(material);
     generation.import_result.first_material_handle = material;
-    generation.import_resources.materials.set_factors(
-        material,
-        cubey::render::PbrMaterialFactors{
-            .base_color_factor = loading_cage ? cubey::math::Vec4{0.12F, 0.32F, 0.58F, 1.0F}
-                                              : cubey::math::Vec4{0.86F, 0.82F, 0.72F, 1.0F},
-            .emissive_factor =
-                loading_cage ? cubey::math::Vec3{0.08F, 0.18F, 0.32F} : cubey::math::Vec3{0.0F},
-            .metallic_factor = 0.0F,
-            .roughness_factor = 0.58F,
-            .unlit = loading_cage,
-        });
-    generation.import_resources.materials.emplace_instance(
-        material, device,
-        cubey::render::FrameUniformMaterialInstanceConfig{
-            .material_pass = cubey::render::pbr_forward_pass_info(),
-            .descriptor_set = 1,
-            .frame_slot_count = frame_slot_count,
-            .uniform_binding =
-                static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
-            .sampled_images = cubey::render::pbr_default_sampled_image_bindings(
-                generation.import_resources.default_textures.value()),
-        });
 }
 
 void GltfViewerApp::create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu, bool loading_cage,

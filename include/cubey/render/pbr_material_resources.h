@@ -14,7 +14,6 @@
 #include <array>
 #include <cstdint>
 #include <span>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -64,29 +63,42 @@ create_pbr_default_texture_set(const cubey::vulkan::Device& device,
 [[nodiscard]] std::vector<SampledImageMaterialBinding>
 pbr_default_sampled_image_bindings(const PbrDefaultTextureSet& set);
 
+class PbrMaterialRecord {
+  public:
+    PbrMaterialRecord(PbrMaterialDefinition definition, const cubey::vulkan::Device& device,
+                      const FrameUniformMaterialInstanceConfig& instance_config)
+        : definition_(std::move(definition)), instance_(device, instance_config) {}
+
+    PbrMaterialRecord(const PbrMaterialRecord&) = delete;
+    PbrMaterialRecord& operator=(const PbrMaterialRecord&) = delete;
+    PbrMaterialRecord(PbrMaterialRecord&&) = delete;
+    PbrMaterialRecord& operator=(PbrMaterialRecord&&) = delete;
+
+    [[nodiscard]] const PbrMaterialDefinition& definition() const noexcept {
+        return definition_;
+    }
+    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>& instance() noexcept {
+        return instance_;
+    }
+    [[nodiscard]] const FrameUniformMaterialInstance<PbrMaterialUniforms>&
+    instance() const noexcept {
+        return instance_;
+    }
+
+  private:
+    const PbrMaterialDefinition definition_;
+    FrameUniformMaterialInstance<PbrMaterialUniforms> instance_;
+};
+
 class PbrMaterialTable {
   public:
-    [[nodiscard]] bool contains_factors(MaterialHandle material) const;
-    [[nodiscard]] bool contains_instance(MaterialHandle material) const;
     [[nodiscard]] bool contains(MaterialHandle material) const;
 
-    void set_factors(MaterialHandle material, const PbrMaterialFactors& factors);
-    [[nodiscard]] PbrMaterialFactors& factors(MaterialHandle material);
-    [[nodiscard]] const PbrMaterialFactors& factors(MaterialHandle material) const;
-
-    template <typename... Args>
-    FrameUniformMaterialInstance<PbrMaterialUniforms>& emplace_instance(MaterialHandle material,
-                                                                        Args&&... args) {
-        FrameUniformMaterialInstance<PbrMaterialUniforms>& instance =
-            instances_.emplace(material, std::forward<Args>(args)...);
-        try {
-            register_descriptor_set_layout(instance.layout());
-        } catch (...) {
-            instances_.erase(material);
-            throw;
-        }
-        return instance;
-    }
+    [[nodiscard]] const PbrMaterialDefinition& definition(MaterialHandle material) const;
+    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>&
+    emplace(MaterialHandle material, PbrMaterialDefinition definition,
+            const cubey::vulkan::Device& device,
+            const FrameUniformMaterialInstanceConfig& instance_config);
 
     [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>&
     instance(MaterialHandle material);
@@ -95,7 +107,6 @@ class PbrMaterialTable {
     [[nodiscard]] VkDescriptorSetLayout descriptor_set_layout() const;
     [[nodiscard]] VkDescriptorSetLayout layout(MaterialHandle material) const;
     void upload(MaterialHandle material, FrameSlot frame_slot) const;
-    void upload(MaterialHandle material, FrameSlot frame_slot, MaterialAlphaMode alpha_mode) const;
     void rebind(MaterialHandle from, MaterialHandle to);
     void erase(MaterialHandle material);
     void clear();
@@ -103,8 +114,7 @@ class PbrMaterialTable {
   private:
     void register_descriptor_set_layout(VkDescriptorSetLayout layout);
 
-    MaterialResourceTable<FrameUniformMaterialInstance<PbrMaterialUniforms>> instances_{};
-    std::unordered_map<MaterialHandle, PbrMaterialFactors, MaterialHandleHash> factors_{};
+    MaterialResourceTable<PbrMaterialRecord> records_{};
     VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
 };
 

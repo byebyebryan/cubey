@@ -321,49 +321,50 @@ pbr_default_sampled_image_bindings(const PbrDefaultTextureSet& set) {
     return bindings;
 }
 
-bool PbrMaterialTable::contains_factors(MaterialHandle material) const {
-    return factors_.contains(material);
-}
-
-bool PbrMaterialTable::contains_instance(MaterialHandle material) const {
-    return instances_.contains(material);
-}
-
 bool PbrMaterialTable::contains(MaterialHandle material) const {
-    return contains_factors(material) && contains_instance(material);
+    return records_.contains(material);
 }
 
-void PbrMaterialTable::set_factors(MaterialHandle material, const PbrMaterialFactors& factors) {
+const PbrMaterialDefinition& PbrMaterialTable::definition(MaterialHandle material) const {
+    return records_.at(material).definition();
+}
+
+FrameUniformMaterialInstance<PbrMaterialUniforms>&
+PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definition,
+                          const cubey::vulkan::Device& device,
+                          const FrameUniformMaterialInstanceConfig& instance_config) {
     if (!material) {
-        throw std::runtime_error("PBR material table factors require a non-null handle");
+        throw std::runtime_error("PBR material table insert requires a non-null handle");
     }
-    factors_.insert_or_assign(material, factors);
-}
+    if (records_.contains(material)) {
+        throw std::runtime_error("PBR material table already contains handle");
+    }
 
-PbrMaterialFactors& PbrMaterialTable::factors(MaterialHandle material) {
-    const auto position = factors_.find(material);
-    if (position == factors_.end()) {
-        throw std::runtime_error("PBR material table does not contain factors");
+    const VkDescriptorSetLayout previous_layout = descriptor_set_layout_;
+    bool inserted = false;
+    try {
+        PbrMaterialRecord& record =
+            records_.emplace(material, std::move(definition), device, instance_config);
+        inserted = true;
+        register_descriptor_set_layout(record.instance().layout());
+        return record.instance();
+    } catch (...) {
+        if (inserted) {
+            records_.erase(material);
+        }
+        descriptor_set_layout_ = previous_layout;
+        throw;
     }
-    return position->second;
-}
-
-const PbrMaterialFactors& PbrMaterialTable::factors(MaterialHandle material) const {
-    const auto position = factors_.find(material);
-    if (position == factors_.end()) {
-        throw std::runtime_error("PBR material table does not contain factors");
-    }
-    return position->second;
 }
 
 FrameUniformMaterialInstance<PbrMaterialUniforms>&
 PbrMaterialTable::instance(MaterialHandle material) {
-    return instances_.at(material);
+    return records_.at(material).instance();
 }
 
 const FrameUniformMaterialInstance<PbrMaterialUniforms>&
 PbrMaterialTable::instance(MaterialHandle material) const {
-    return instances_.at(material);
+    return records_.at(material).instance();
 }
 
 void PbrMaterialTable::register_descriptor_set_layout(VkDescriptorSetLayout layout) {
@@ -387,13 +388,7 @@ VkDescriptorSetLayout PbrMaterialTable::layout(MaterialHandle material) const {
 }
 
 void PbrMaterialTable::upload(MaterialHandle material, FrameSlot frame_slot) const {
-    const PbrMaterialFactors& material_factors = factors(material);
-    upload(material, frame_slot, material_factors.alpha_mode);
-}
-
-void PbrMaterialTable::upload(MaterialHandle material, FrameSlot frame_slot,
-                              MaterialAlphaMode alpha_mode) const {
-    instance(material).upload(frame_slot, pbr_material_uniforms(factors(material), alpha_mode));
+    instance(material).upload(frame_slot, pbr_material_uniforms(definition(material)));
 }
 
 void PbrMaterialTable::rebind(MaterialHandle from, MaterialHandle to) {
@@ -403,33 +398,31 @@ void PbrMaterialTable::rebind(MaterialHandle from, MaterialHandle to) {
     if (from == to) {
         return;
     }
-    if (contains_factors(to) || contains_instance(to)) {
+    if (!to) {
+        throw std::runtime_error(
+            "PBR material table rebind requires a non-null destination handle");
+    }
+    if (contains(to)) {
         throw std::runtime_error("PBR material table rebind destination already exists");
     }
-    instances_.rebind(from, to);
-    auto factors = factors_.extract(from);
-    factors.key() = to;
-    factors_.insert(std::move(factors));
+    records_.rebind(from, to);
 }
 
 void PbrMaterialTable::erase(MaterialHandle material) {
-    bool erased = false;
-    if (instances_.contains(material)) {
-        instances_.erase(material);
-        if (instances_.empty()) {
-            descriptor_set_layout_ = VK_NULL_HANDLE;
-        }
-        erased = true;
-    }
-    erased = factors_.erase(material) > 0 || erased;
-    if (!erased) {
+    if (!contains(material)) {
         throw std::runtime_error("PBR material table erase requires an existing handle");
+    }
+    const VkDescriptorSetLayout erased_layout = instance(material).layout();
+    records_.erase(material);
+    if (records_.empty()) {
+        descriptor_set_layout_ = VK_NULL_HANDLE;
+    } else if (descriptor_set_layout_ == erased_layout) {
+        descriptor_set_layout_ = records_.first().instance().layout();
     }
 }
 
 void PbrMaterialTable::clear() {
-    instances_.clear();
-    factors_.clear();
+    records_.clear();
     descriptor_set_layout_ = VK_NULL_HANDLE;
 }
 

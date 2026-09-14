@@ -413,8 +413,24 @@ float pbr_f0_from_ior(float ior) {
     return root_f0 * root_f0;
 }
 
-PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
-                                          MaterialAlphaMode alpha_mode) {
+MaterialInfo pbr_material_info(const PbrMaterialDefinition& definition) {
+    const bool transmission = definition.factors.transmission_factor > 0.0F;
+    return {
+        .label = definition.label,
+        .domain = MaterialDomain::Surface3D,
+        .alpha_mode = definition.alpha_mode,
+        .optical_mode =
+            transmission ? MaterialOpticalMode::Transmission : MaterialOpticalMode::Opaque,
+        .blend = material_blend_mode_for_alpha_mode(definition.alpha_mode),
+        .cull_mode = definition.cull_mode,
+        .sort_key = definition.sort_key,
+        .pass_mask = transmission ? material_pass_mask(MaterialPassKind::ForwardColor)
+                                  : material_pass_mask_for_alpha_mode(definition.alpha_mode),
+    };
+}
+
+PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialDefinition& definition) {
+    const PbrMaterialFactors& factors = definition.factors;
     return {
         .base_color_factor = factors.base_color_factor,
         .emissive_alpha_cutoff =
@@ -438,7 +454,8 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
                 factors.specular_color_factor.b,
                 factors.specular_factor,
             },
-        .material_model = {factors.dielectric_ior, material_alpha_mode_uniform(alpha_mode),
+        .material_model = {factors.dielectric_ior,
+                           material_alpha_mode_uniform(definition.alpha_mode),
                            factors.unlit ? 1.0F : 0.0F, static_cast<float>(factors.texture_flags)},
         .clearcoat_factor_roughness_normal =
             {
@@ -487,10 +504,6 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors,
             },
         .texture_transforms = factors.texture_transforms,
     };
-}
-
-PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialFactors& factors) {
-    return pbr_material_uniforms(factors, factors.alpha_mode);
 }
 
 PbrPushConstants pbr_push_constants(math::Mat4 model) {
