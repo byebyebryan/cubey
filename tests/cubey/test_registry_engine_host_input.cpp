@@ -63,6 +63,8 @@ void test_forward_pbr_renderer_3d_target_resources_use_material_table();
 void test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused();
 void test_forward_pbr_renderer_3d_record_requires_created_resources();
 void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering();
+void test_forward_pbr_renderer_3d_global_creation_rejects_invalid_input_without_poisoning_retry();
+void test_forward_pbr_renderer_3d_target_creation_requires_initialized_material_table();
 void test_forward_pbr_renderer_3d_keeps_draw_routing_private_and_refraction_shader_contract();
 void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform();
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes();
@@ -176,6 +178,10 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused),
         CUBEY_TEST(test_forward_pbr_renderer_3d_record_requires_created_resources),
         CUBEY_TEST(test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering),
+        CUBEY_TEST(
+            test_forward_pbr_renderer_3d_global_creation_rejects_invalid_input_without_poisoning_retry),
+        CUBEY_TEST(
+            test_forward_pbr_renderer_3d_target_creation_requires_initialized_material_table),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_keeps_draw_routing_private_and_refraction_shader_contract),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_target_fields),

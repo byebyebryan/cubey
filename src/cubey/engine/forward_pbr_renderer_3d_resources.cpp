@@ -8,9 +8,29 @@
 #include <array>
 #include <span>
 #include <stdexcept>
+#include <utility>
 
 namespace cubey {
 namespace {
+
+template <typename Rollback> class RollbackOnFailure {
+  public:
+    explicit RollbackOnFailure(Rollback rollback) : rollback_(std::move(rollback)) {}
+
+    ~RollbackOnFailure() {
+        if (active_) {
+            rollback_();
+        }
+    }
+
+    void release() noexcept {
+        active_ = false;
+    }
+
+  private:
+    Rollback rollback_;
+    bool active_ = true;
+};
 
 void validate_scene_color_format(const vulkan::Device& device, VkFormat format) {
     if (format == VK_FORMAT_UNDEFINED) {
@@ -55,8 +75,15 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
         throw std::runtime_error("forward PBR renderer requires at least one frame slot");
     }
     require_no_global_resources();
+    require_no_swapchain_resources();
+    render::validate_pbr_environment_texture_bindings(info.environment_textures);
+    if (info.atmosphere_background_textures.has_value()) {
+        render::validate_atmosphere_background_texture_bindings(
+            info.atmosphere_background_textures.value());
+    }
+
+    RollbackOnFailure rollback{[this] { destroy_all_resources(); }};
     global_.environment = info.environment_textures;
-    render::validate_pbr_environment_texture_bindings(global_.environment);
     global_.environment_initialized = true;
     global_.graph_executor.resize(info.frame_slot_count);
 
@@ -206,6 +233,7 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
                                               .uniform_binding = forward_pbr_renderer_3d_binding(
                                                   render::PbrPostBinding::PostUniforms),
                                           });
+    rollback.release();
 }
 
 void ForwardPbrRenderer3D::update_environment(
@@ -284,9 +312,18 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
     if (info.materials == nullptr) {
         throw std::runtime_error("forward PBR renderer requires a PBR material table");
     }
+    if (!info.materials->initialized()) {
+        throw std::runtime_error("forward PBR renderer requires an initialized PBR material table");
+    }
     require_global_resources();
     require_no_swapchain_resources();
     validate_scene_color_format(device, config_.scene_color_format);
+    if (global_.atmosphere_background.materials_created() &&
+        (config_.atmosphere_vertex_shader.empty() || config_.atmosphere_fragment_shader.empty())) {
+        throw std::runtime_error("forward PBR atmosphere background requires atmosphere shaders");
+    }
+
+    RollbackOnFailure rollback{[this] { reset_swapchain_resources(); }};
     swapchain_.target_extent = info.extent;
 
     swapchain_.depth_attachment.emplace(device, info.extent, true);
@@ -313,11 +350,6 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
                                                .material_pass = render::pbr_skybox_pass_info(),
                                            }));
     if (global_.atmosphere_background.materials_created()) {
-        if (config_.atmosphere_vertex_shader.empty() ||
-            config_.atmosphere_fragment_shader.empty()) {
-            throw std::runtime_error(
-                "forward PBR atmosphere background requires atmosphere shaders");
-        }
         const std::array<render::ShaderStageFile, 2> atmosphere_shaders{
             render::vertex_shader_file(config_.atmosphere_vertex_shader),
             render::fragment_shader_file(config_.atmosphere_fragment_shader),
@@ -444,18 +476,14 @@ void ForwardPbrRenderer3D::Impl::create_swapchain_resources(
                                                      .descriptor_set_layouts = post_layouts,
                                                      .material_pass = render::pbr_post_pass_info(),
                                                  }));
+    rollback.release();
 }
 
 void ForwardPbrRenderer3D::destroy_swapchain_resources() {
     impl_->destroy_swapchain_resources();
 }
 
-void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
-    const std::uint32_t frame_slot_count = global_.graph_executor.frame_slot_count();
-    global_.graph_executor.clear();
-    if (frame_slot_count != 0) {
-        global_.graph_executor.resize(frame_slot_count);
-    }
+void ForwardPbrRenderer3D::Impl::reset_swapchain_resources() {
     swapchain_.post_pipeline.reset();
     // This descriptor set owns pyramid image references. Release it before
     // destroying the per-slot pyramid images it can sample.
@@ -472,6 +500,16 @@ void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
     swapchain_.skybox_pipeline.reset();
     swapchain_.depth_attachment.reset();
     swapchain_.target_extent = {};
+    swapchain_.shadow_depth_is_sampled = false;
+}
+
+void ForwardPbrRenderer3D::Impl::destroy_swapchain_resources() {
+    const std::uint32_t frame_slot_count = global_.graph_executor.frame_slot_count();
+    global_.graph_executor.clear();
+    if (frame_slot_count != 0) {
+        global_.graph_executor.resize(frame_slot_count);
+    }
+    reset_swapchain_resources();
 }
 
 void ForwardPbrRenderer3D::destroy_all_resources() {
@@ -493,8 +531,8 @@ ForwardPbrRenderer3DSceneTargetInfo ForwardPbrRenderer3D::Impl::scene_target_inf
 }
 
 void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
-    destroy_swapchain_resources();
     global_.graph_executor.clear();
+    reset_swapchain_resources();
     global_.post_material.reset();
     global_.atmosphere_background.destroy();
     global_.scene_material.reset();
@@ -506,7 +544,6 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     global_.shadow_pass.reset();
     global_.environment = {};
     global_.environment_initialized = false;
-    swapchain_.shadow_depth_is_sampled = false;
 }
 
 void ForwardPbrRenderer3D::Impl::ensure_refraction_pyramid(const vulkan::Device& device) {

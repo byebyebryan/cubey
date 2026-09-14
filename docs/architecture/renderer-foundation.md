@@ -252,9 +252,13 @@ full engine architecture.
   packages to compiled `.spv` paths. The public renderer header exposes
   config, resource, and request contracts while keeping shadow, pipeline,
   graph, sampler, and attachment runtime state behind the engine
-  implementation boundary. Projects still decide when to create the renderer
-  and which frame plans, scene resources, targets, environment settings, and
-  display settings to submit.
+  implementation boundary. Global and target resource creation prevalidates
+  caller-owned inputs and publishes only complete lifecycle phases: a failed
+  global create returns the renderer to empty state, while a failed target
+  create preserves the complete global phase and leaves target creation
+  retryable. Projects still decide when to create the renderer and which frame
+  plans, scene resources, targets, environment settings, and display settings
+  to submit.
 - `ForwardPbrRenderer3DFrameMetrics` is an optional caller-owned snapshot for
   renderer-foundation evidence. When requested, it reports the already-built
   draw-plan source/classification/reference counts, visible unique-material and

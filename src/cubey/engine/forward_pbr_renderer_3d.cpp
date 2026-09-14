@@ -280,26 +280,41 @@ bool ForwardPbrRenderer3D::Impl::has_swapchain_resources() const {
     return false;
 }
 
+bool ForwardPbrRenderer3D::Impl::global_resources_ready() const {
+    return global_.environment_initialized && global_.graph_executor.frame_slot_count() != 0 &&
+           global_.shadow_pass.has_value() && global_.shadow_double_sided_pipeline.has_value() &&
+           global_.scene_material.has_value() && global_.skybox_material.has_value() &&
+           global_.post_material.has_value();
+}
+
+bool ForwardPbrRenderer3D::Impl::swapchain_resources_ready() const {
+    const auto has_pipeline = [this](ForwardPbrPipelineVariant variant) {
+        return swapchain_.pipeline_variants[static_cast<std::size_t>(variant)].has_value();
+    };
+    return swapchain_.target_extent.width != 0 && swapchain_.target_extent.height != 0 &&
+           swapchain_.depth_attachment.has_value() && swapchain_.post_sampler.has_value() &&
+           swapchain_.skybox_pipeline.has_value() && swapchain_.post_pipeline.has_value() &&
+           has_pipeline(ForwardPbrPipelineVariant::Opaque) &&
+           has_pipeline(ForwardPbrPipelineVariant::OpaqueDoubleSided) &&
+           has_pipeline(ForwardPbrPipelineVariant::Alpha) &&
+           has_pipeline(ForwardPbrPipelineVariant::AlphaDoubleSided) &&
+           has_pipeline(ForwardPbrPipelineVariant::MaskShadow) &&
+           has_pipeline(ForwardPbrPipelineVariant::MaskShadowDoubleSided);
+}
+
 void ForwardPbrRenderer3D::Impl::require_global_resources() const {
-    if (!has_global_resources()) {
+    if (!global_resources_ready()) {
         throw std::runtime_error("forward PBR renderer global resources are not initialized");
     }
 }
 
 void ForwardPbrRenderer3D::Impl::require_swapchain_resources() const {
     require_global_resources();
-    const auto has_pipeline = [this](ForwardPbrPipelineVariant variant) {
-        return swapchain_.pipeline_variants[static_cast<std::size_t>(variant)].has_value();
-    };
-    if (!swapchain_.depth_attachment.has_value() || !swapchain_.post_sampler.has_value() ||
-        !swapchain_.skybox_pipeline.has_value() || !swapchain_.post_pipeline.has_value() ||
-        !has_pipeline(ForwardPbrPipelineVariant::Opaque) ||
-        !has_pipeline(ForwardPbrPipelineVariant::OpaqueDoubleSided) ||
-        !has_pipeline(ForwardPbrPipelineVariant::Alpha) ||
-        !has_pipeline(ForwardPbrPipelineVariant::AlphaDoubleSided) ||
-        !has_pipeline(ForwardPbrPipelineVariant::MaskShadow) ||
-        !has_pipeline(ForwardPbrPipelineVariant::MaskShadowDoubleSided)) {
+    if (!swapchain_resources_ready()) {
         throw std::runtime_error("forward PBR renderer swapchain resources are not initialized");
+    }
+    if (global_.atmosphere_background.materials_created()) {
+        require_atmosphere_background_resources();
     }
 }
 

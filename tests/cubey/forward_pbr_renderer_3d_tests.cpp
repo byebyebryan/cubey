@@ -39,6 +39,16 @@ void require_throws(auto&& action, const char* message) {
     throw std::runtime_error(message);
 }
 
+void require_throws_message(auto&& action, const char* expected, const char* message) {
+    try {
+        action();
+    } catch (const std::exception& error) {
+        require(std::string{error.what()} == expected, message);
+        return;
+    }
+    throw std::runtime_error(message);
+}
+
 using cubey::tests::read_source_file;
 using cubey::tests::require_contains;
 using cubey::tests::require_not_contains;
@@ -55,6 +65,12 @@ cubey::ForwardPbrRenderer3DConfig valid_config() {
         .shadow_depth_vertex_shader = "shadow.vert.spv",
         .shadow_depth_fragment_shader = "shadow.frag.spv",
     };
+}
+
+const cubey::vulkan::Device& unreached_device() {
+    // Lifecycle precondition tests fail before using the device. This avoids
+    // constructing a test-only Vulkan backend for CPU-only validation paths.
+    return *reinterpret_cast<const cubey::vulkan::Device*>(0x50);
 }
 
 const cubey::scene::FrameRenderPlan3D& valid_frame_plan() {
@@ -375,6 +391,56 @@ void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering() {
                      "forward PBR scene depth should support atmosphere cloud sampling");
     require_contains(graph, "require_swapchain_resources();",
                      "forward PBR record should require swapchain resources before recording");
+}
+
+void test_forward_pbr_renderer_3d_global_creation_rejects_invalid_input_without_poisoning_retry() {
+    cubey::ForwardPbrRenderer3D renderer(valid_config());
+    const cubey::ForwardPbrRenderer3DGlobalResourcesInfo invalid_info{
+        .frame_slot_count = 2U,
+    };
+
+    require_throws_message(
+        [&renderer, &invalid_info] {
+            renderer.create_global_resources(unreached_device(), invalid_info);
+        },
+        "PBR environment irradiance cube binding is not initialized",
+        "forward PBR global creation should validate environment bindings before GPU work");
+    require_throws_message(
+        [&renderer, &invalid_info] {
+            renderer.create_global_resources(unreached_device(), invalid_info);
+        },
+        "PBR environment irradiance cube binding is not initialized",
+        "forward PBR rejected global creation should remain retryable without explicit cleanup");
+    renderer.destroy_all_resources();
+    renderer.destroy_all_resources();
+}
+
+void test_forward_pbr_renderer_3d_target_creation_requires_initialized_material_table() {
+    cubey::ForwardPbrRenderer3D renderer(valid_config());
+    cubey::render::PbrMaterialTable materials;
+
+    require_throws_message(
+        [&renderer, &materials] {
+            renderer.create_swapchain_resources(unreached_device(),
+                                                {
+                                                    .extent = {640U, 360U},
+                                                    .color_format = VK_FORMAT_R8G8B8A8_UNORM,
+                                                    .materials = &materials,
+                                                });
+        },
+        "forward PBR renderer requires an initialized PBR material table",
+        "forward PBR target creation should reject an unpublished material table before GPU work");
+    require_throws_message(
+        [&renderer, &materials] {
+            renderer.create_swapchain_resources(unreached_device(),
+                                                {
+                                                    .extent = {640U, 360U},
+                                                    .color_format = VK_FORMAT_R8G8B8A8_UNORM,
+                                                    .materials = &materials,
+                                                });
+        },
+        "forward PBR renderer requires an initialized PBR material table",
+        "forward PBR rejected target creation should remain retryable without explicit cleanup");
 }
 
 void test_forward_pbr_renderer_3d_render_request_validates_required_target_fields() {

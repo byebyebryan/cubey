@@ -117,6 +117,7 @@ struct ForwardPbrRenderer3D::Impl {
                             const render::PbrEnvironmentTextureBindings& environment);
     void update_atmosphere_background_texture_bindings(
         const vulkan::Device& device, const render::AtmosphereBackgroundTextureBindings& textures);
+    void reset_swapchain_resources();
     void destroy_swapchain_resources();
     void destroy_all_resources();
     [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;
@@ -124,6 +125,8 @@ struct ForwardPbrRenderer3D::Impl {
 
     [[nodiscard]] bool has_global_resources() const;
     [[nodiscard]] bool has_swapchain_resources() const;
+    [[nodiscard]] bool global_resources_ready() const;
+    [[nodiscard]] bool swapchain_resources_ready() const;
     void require_global_resources() const;
     void require_swapchain_resources() const;
     void require_atmosphere_background_resources() const;
