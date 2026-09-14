@@ -1,0 +1,4 @@
+# FastNoiseLite v1.1.1 intentionally uses signed 32-bit multiplication for its
+# deterministic hash. Scope this one recoverable report to the fetched header;
+# Cubey's own signed-integer-overflow reports remain fatal in the ASan preset.
+signed-integer-overflow:fastnoise_lite-src/Cpp/FastNoiseLite.h

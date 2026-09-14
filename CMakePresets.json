@@ -144,10 +144,16 @@
     },
     {
       "name": "asan",
+      "displayName": "Owned-code ASan/UBSan",
+      "description": "Sanitizer gate for Cubey-owned non-windowed, non-GPU, non-artifact tests.",
       "configurePreset": "asan",
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=1:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=${sourceDir}/cmake/ubsan.supp"
+      },
       "filter": {
         "exclude": {
-          "label": "windowed"
+          "label": "^(windowed|gpu|artifact)$"
         }
       },
       "output": {

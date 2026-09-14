@@ -56,6 +56,22 @@ PNG and video tests deliberately run without desktop-session environment
 variables, so ordinary local and SSH validation does not depend on X11,
 Wayland, or SDDM. A usable Vulkan device is still required.
 
+For the owned-code AddressSanitizer/UBSan gate, configure and build the
+sanitized tree, then run its test preset:
+
+```bash
+cmake --preset asan
+cmake --build --preset asan
+ctest --preset asan
+```
+
+The `asan` test preset enables leak detection and stops on sanitizer errors. It
+selects Cubey-owned CPU/runtime coverage by excluding tests labeled `windowed`,
+`gpu`, or `artifact`; the ordinary `dev` preset remains the broader rendering
+and capture validation lane. Its only UBSan suppression is the recoverable
+signed-overflow report from the fetched FastNoiseLite header, whose hash uses
+intentional 32-bit wraparound; Cubey's own signed-overflow reports remain fatal.
+
 Run the GLFW/swapchain tests only when opening windows is intentional:
 
 ```bash
