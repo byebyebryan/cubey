@@ -54,6 +54,22 @@ struct PbrEnvironmentTextureBindings {
     float intensity = 1.0F;
 };
 
+// Per-frame environment state. Irradiance and BRDF LUT bindings are part of
+// the creation-time environment contract and intentionally do not appear
+// here; only the prefiltered probe transition may change for a safe frame
+// slot.
+struct PbrEnvironmentFrameBindings {
+    VkSampler prefiltered_sampler = VK_NULL_HANDLE;
+    VkImageView prefiltered_view = VK_NULL_HANDLE;
+    VkImageLayout prefiltered_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkSampler previous_prefiltered_sampler = VK_NULL_HANDLE;
+    VkImageView previous_prefiltered_view = VK_NULL_HANDLE;
+    VkImageLayout previous_prefiltered_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    std::uint32_t prefiltered_mip_levels = 1;
+    float prefiltered_blend = 1.0F;
+    float intensity = 1.0F;
+};
+
 struct PbrEquirectangularImage {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
@@ -61,10 +77,13 @@ struct PbrEquirectangularImage {
 };
 
 void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConfig& config);
+void validate_pbr_environment_frame_bindings(const PbrEnvironmentFrameBindings& bindings);
 void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindings& bindings);
 void validate_pbr_equirectangular_image(const PbrEquirectangularImage& image);
 [[nodiscard]] PbrEnvironmentTextureBindings
 pbr_environment_texture_bindings(const GeneratedPbrEnvironment& environment);
+[[nodiscard]] PbrEnvironmentFrameBindings
+pbr_environment_frame_bindings(const PbrEnvironmentTextureBindings& bindings);
 [[nodiscard]] math::Vec3 sample_pbr_equirectangular_radiance(const PbrEquirectangularImage& image,
                                                              math::Vec3 direction);
 [[nodiscard]] GeneratedPbrEnvironmentData

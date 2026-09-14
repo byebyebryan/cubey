@@ -113,8 +113,8 @@ struct ForwardPbrRenderer3D::Impl {
                                  const ForwardPbrRenderer3DGlobalResourcesInfo& info);
     void create_swapchain_resources(const vulkan::Device& device,
                                     const ForwardPbrRenderer3DTargetResourcesInfo& info);
-    void update_environment(const vulkan::Device& device, render::FrameSlot frame_slot,
-                            const render::PbrEnvironmentTextureBindings& environment);
+    void update_environment_frame(const vulkan::Device& device, render::FrameSlot frame_slot,
+                                  const render::PbrEnvironmentFrameBindings& environment);
     void update_atmosphere_background_texture_bindings(
         const vulkan::Device& device, const render::AtmosphereBackgroundTextureBindings& textures);
     void reset_swapchain_resources();

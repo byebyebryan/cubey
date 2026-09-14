@@ -1095,8 +1095,10 @@ void test_forward_pbr_renderer_3d_atmosphere_shader_package_and_public_contract(
                          "forward PBR globals should not expose a pointer-only environment path");
     require_contains(header, "std::optional<render::AtmosphereEnvironmentFrameUniforms>",
                      "forward PBR settings should carry atmosphere frame uniforms");
-    require_contains(header, "void update_environment",
+    require_contains(header, "void update_environment_frame",
                      "forward PBR renderer should expose a frame-slot environment handoff");
+    require_not_contains(header, "void update_environment(",
+                         "forward PBR renderer should not expose a full environment frame update");
     require_contains(fragment_shader, "cubey_pbr_prefiltered_environment",
                      "forward PBR materials should crossfade prefiltered environment generations");
     require_contains(skybox_shader, "previous_environment_cube",

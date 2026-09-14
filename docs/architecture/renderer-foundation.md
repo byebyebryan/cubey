@@ -225,10 +225,14 @@ full engine architecture.
   DFG/BRDF lookup, and a same-frame HDR refraction-radiance binding. The latter
   uses a valid neutral fallback for ordinary draws and a per-frame-slot pyramid
   for the explicit transmission stage.
-  `PbrEnvironmentTextureBindings` carries the generation blend, and
-  `ForwardPbrRenderer3D::update_environment` updates one safe frame-slot set so
-  dynamic atmosphere/cloud probes crossfade without rebuilding the renderer or
-  popping between captures.
+  `PbrEnvironmentTextureBindings` is the complete creation-time environment
+  identity, including immutable irradiance and DFG/BRDF resources.
+  `PbrEnvironmentFrameBindings` carries only the mutable current/previous
+  prefiltered probes, mip count, blend, and intensity;
+  `ForwardPbrRenderer3D::update_environment_frame` applies that transition to
+  one safe frame-slot set. Dynamic atmosphere/cloud probes can therefore
+  crossfade without rebuilding the renderer or changing the immutable diffuse
+  and lookup resources seen by ordinary versus transmissive draws.
   `PbrDisplayTransform`
   carries final exposure, tone-map, and output-encoding controls; the reusable
   forward PBR renderer applies it in the post pass after HDR scene-color

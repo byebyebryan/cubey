@@ -167,7 +167,9 @@ void GltfViewerApp::record_viewer_target(
     if (ocean_backdrop_enabled()) {
         update_ocean_environment_descriptors(device, frame_slot);
     }
-    forward_pbr_renderer().update_environment(device, frame_slot, pbr_environment_bindings());
+    forward_pbr_renderer().update_environment_frame(
+        device, frame_slot,
+        cubey::render::pbr_environment_frame_bindings(pbr_environment_bindings()));
     std::optional<cubey::ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds;
     if (cloud_frame.has_value()) {
         atmosphere_clouds = cubey::ForwardPbrRenderer3DAtmosphereClouds{

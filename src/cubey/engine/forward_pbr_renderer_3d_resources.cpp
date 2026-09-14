@@ -236,20 +236,36 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     rollback.release();
 }
 
-void ForwardPbrRenderer3D::update_environment(
+void ForwardPbrRenderer3D::update_environment_frame(
     const vulkan::Device& device, render::FrameSlot frame_slot,
-    const render::PbrEnvironmentTextureBindings& environment) {
-    impl_->update_environment(device, frame_slot, environment);
+    const render::PbrEnvironmentFrameBindings& environment) {
+    impl_->update_environment_frame(device, frame_slot, environment);
 }
 
-void ForwardPbrRenderer3D::Impl::update_environment(
+void ForwardPbrRenderer3D::Impl::update_environment_frame(
     const vulkan::Device& device, render::FrameSlot frame_slot,
-    const render::PbrEnvironmentTextureBindings& environment) {
+    const render::PbrEnvironmentFrameBindings& environment) {
     require_global_resources();
-    render::validate_pbr_environment_texture_bindings(environment);
-    global_.environment = environment;
+    render::validate_pbr_environment_frame_bindings(environment);
 
-    render::MaterialDescriptorWriter(scene_material().set(frame_slot))
+    const VkDescriptorSet scene_descriptor_set = scene_material().set(frame_slot);
+    const VkDescriptorSet skybox_descriptor_set = skybox_material().set(frame_slot);
+    std::optional<VkDescriptorSet> transmission_descriptor_set;
+    if (swapchain_.transmission_scene_material.has_value()) {
+        transmission_descriptor_set = transmission_scene_material().set(frame_slot);
+    }
+
+    global_.environment.prefiltered_sampler = environment.prefiltered_sampler;
+    global_.environment.prefiltered_view = environment.prefiltered_view;
+    global_.environment.prefiltered_layout = environment.prefiltered_layout;
+    global_.environment.previous_prefiltered_sampler = environment.previous_prefiltered_sampler;
+    global_.environment.previous_prefiltered_view = environment.previous_prefiltered_view;
+    global_.environment.previous_prefiltered_layout = environment.previous_prefiltered_layout;
+    global_.environment.prefiltered_mip_levels = environment.prefiltered_mip_levels;
+    global_.environment.prefiltered_blend = environment.prefiltered_blend;
+    global_.environment.intensity = environment.intensity;
+
+    render::MaterialDescriptorWriter(scene_descriptor_set)
         .combined_image_sampler(
             forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
             environment.prefiltered_sampler, environment.prefiltered_view,
@@ -259,8 +275,8 @@ void ForwardPbrRenderer3D::Impl::update_environment(
             environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
             environment.previous_prefiltered_layout)
         .update(device);
-    if (swapchain_.transmission_scene_material.has_value()) {
-        render::MaterialDescriptorWriter(transmission_scene_material().set(frame_slot))
+    if (transmission_descriptor_set.has_value()) {
+        render::MaterialDescriptorWriter(transmission_descriptor_set.value())
             .combined_image_sampler(
                 forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
                 environment.prefiltered_sampler, environment.prefiltered_view,
@@ -271,7 +287,7 @@ void ForwardPbrRenderer3D::Impl::update_environment(
                 environment.previous_prefiltered_layout)
             .update(device);
     }
-    render::MaterialDescriptorWriter(skybox_material().set(frame_slot))
+    render::MaterialDescriptorWriter(skybox_descriptor_set)
         .combined_image_sampler(
             forward_pbr_renderer_3d_binding(render::PbrSkyboxBinding::EnvironmentCube),
             environment.prefiltered_sampler, environment.prefiltered_view,

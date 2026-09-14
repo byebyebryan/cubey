@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -192,6 +193,88 @@ void test_pbr_environment_texture_bindings_validate_required_views() {
     bindings.prefiltered_view = VK_NULL_HANDLE;
     require_throws([&] { cubey::render::validate_pbr_environment_texture_bindings(bindings); },
                    "PBR environment bindings should reject missing prefiltered cube views");
+}
+
+void test_pbr_environment_frame_bindings_convert_creation_bindings() {
+    const cubey::render::PbrEnvironmentTextureBindings bindings{
+        .irradiance_sampler = reinterpret_cast<VkSampler>(0x10),
+        .irradiance_view = reinterpret_cast<VkImageView>(0x11),
+        .irradiance_layout = VK_IMAGE_LAYOUT_GENERAL,
+        .prefiltered_sampler = reinterpret_cast<VkSampler>(0x12),
+        .prefiltered_view = reinterpret_cast<VkImageView>(0x13),
+        .prefiltered_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .previous_prefiltered_sampler = reinterpret_cast<VkSampler>(0x14),
+        .previous_prefiltered_view = reinterpret_cast<VkImageView>(0x15),
+        .previous_prefiltered_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .brdf_lut_sampler = reinterpret_cast<VkSampler>(0x16),
+        .brdf_lut_view = reinterpret_cast<VkImageView>(0x17),
+        .brdf_lut_layout = VK_IMAGE_LAYOUT_GENERAL,
+        .prefiltered_mip_levels = 6,
+        .prefiltered_blend = 0.35F,
+        .intensity = 1.25F,
+    };
+
+    const cubey::render::PbrEnvironmentFrameBindings frame =
+        cubey::render::pbr_environment_frame_bindings(bindings);
+    require(frame.prefiltered_sampler == bindings.prefiltered_sampler &&
+                frame.prefiltered_view == bindings.prefiltered_view &&
+                frame.prefiltered_layout == bindings.prefiltered_layout &&
+                frame.previous_prefiltered_sampler == bindings.previous_prefiltered_sampler &&
+                frame.previous_prefiltered_view == bindings.previous_prefiltered_view &&
+                frame.previous_prefiltered_layout == bindings.previous_prefiltered_layout &&
+                frame.prefiltered_mip_levels == bindings.prefiltered_mip_levels &&
+                frame.prefiltered_blend == bindings.prefiltered_blend &&
+                frame.intensity == bindings.intensity,
+            "PBR environment frame conversion should preserve mutable frame state");
+    cubey::render::validate_pbr_environment_frame_bindings(frame);
+}
+
+void test_pbr_environment_frame_bindings_validate_transition_state() {
+    cubey::render::PbrEnvironmentFrameBindings frame{
+        .prefiltered_sampler = reinterpret_cast<VkSampler>(0x12),
+        .prefiltered_view = reinterpret_cast<VkImageView>(0x13),
+        .previous_prefiltered_sampler = reinterpret_cast<VkSampler>(0x14),
+        .previous_prefiltered_view = reinterpret_cast<VkImageView>(0x15),
+        .prefiltered_mip_levels = 4,
+        .prefiltered_blend = 0.5F,
+        .intensity = 1.0F,
+    };
+    cubey::render::validate_pbr_environment_frame_bindings(frame);
+
+    frame.prefiltered_sampler = VK_NULL_HANDLE;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject missing current prefiltered sampler");
+    frame.prefiltered_sampler = reinterpret_cast<VkSampler>(0x12);
+
+    frame.prefiltered_view = VK_NULL_HANDLE;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject missing current prefiltered view");
+    frame.prefiltered_view = reinterpret_cast<VkImageView>(0x13);
+
+    frame.previous_prefiltered_sampler = VK_NULL_HANDLE;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject missing previous prefiltered sampler");
+    frame.previous_prefiltered_sampler = reinterpret_cast<VkSampler>(0x14);
+
+    frame.previous_prefiltered_view = VK_NULL_HANDLE;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject missing previous prefiltered view");
+    frame.previous_prefiltered_view = reinterpret_cast<VkImageView>(0x15);
+
+    frame.prefiltered_mip_levels = 0;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject zero prefiltered mip levels");
+    frame.prefiltered_mip_levels = 4;
+
+    frame.prefiltered_blend = -0.01F;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject blend values below zero");
+    frame.prefiltered_blend = 1.01F;
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject blend values above one");
+    frame.prefiltered_blend = std::numeric_limits<float>::quiet_NaN();
+    require_throws([&] { cubey::render::validate_pbr_environment_frame_bindings(frame); },
+                   "PBR environment frame should reject non-finite blend values");
 }
 
 void test_generated_pbr_dfg_lut_stores_energy_compensation_term() {

@@ -439,11 +439,7 @@ void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConf
     }
 }
 
-void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindings& bindings) {
-    if (bindings.irradiance_sampler == VK_NULL_HANDLE ||
-        bindings.irradiance_view == VK_NULL_HANDLE) {
-        throw std::runtime_error("PBR environment irradiance cube binding is not initialized");
-    }
+void validate_pbr_environment_frame_bindings(const PbrEnvironmentFrameBindings& bindings) {
     if (bindings.prefiltered_sampler == VK_NULL_HANDLE ||
         bindings.prefiltered_view == VK_NULL_HANDLE) {
         throw std::runtime_error("PBR environment prefiltered cube binding is not initialized");
@@ -453,9 +449,6 @@ void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindin
         throw std::runtime_error(
             "PBR environment previous prefiltered cube binding is not initialized");
     }
-    if (bindings.brdf_lut_sampler == VK_NULL_HANDLE || bindings.brdf_lut_view == VK_NULL_HANDLE) {
-        throw std::runtime_error("PBR environment BRDF LUT binding is not initialized");
-    }
     if (bindings.prefiltered_mip_levels == 0) {
         throw std::runtime_error("PBR environment prefiltered mip count must be nonzero");
     }
@@ -463,6 +456,17 @@ void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindin
         bindings.prefiltered_blend > 1.0F) {
         throw std::runtime_error("PBR environment prefiltered blend must be within [0, 1]");
     }
+}
+
+void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindings& bindings) {
+    if (bindings.irradiance_sampler == VK_NULL_HANDLE ||
+        bindings.irradiance_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR environment irradiance cube binding is not initialized");
+    }
+    if (bindings.brdf_lut_sampler == VK_NULL_HANDLE || bindings.brdf_lut_view == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR environment BRDF LUT binding is not initialized");
+    }
+    validate_pbr_environment_frame_bindings(pbr_environment_frame_bindings(bindings));
 }
 
 void validate_pbr_equirectangular_image(const PbrEquirectangularImage& image) {
@@ -485,6 +489,21 @@ pbr_environment_texture_bindings(const GeneratedPbrEnvironment& environment) {
         .brdf_lut_view = environment.brdf_lut.view(),
         .prefiltered_mip_levels = environment.prefiltered_mip_levels,
         .intensity = environment.intensity,
+    };
+}
+
+PbrEnvironmentFrameBindings
+pbr_environment_frame_bindings(const PbrEnvironmentTextureBindings& bindings) {
+    return {
+        .prefiltered_sampler = bindings.prefiltered_sampler,
+        .prefiltered_view = bindings.prefiltered_view,
+        .prefiltered_layout = bindings.prefiltered_layout,
+        .previous_prefiltered_sampler = bindings.previous_prefiltered_sampler,
+        .previous_prefiltered_view = bindings.previous_prefiltered_view,
+        .previous_prefiltered_layout = bindings.previous_prefiltered_layout,
+        .prefiltered_mip_levels = bindings.prefiltered_mip_levels,
+        .prefiltered_blend = bindings.prefiltered_blend,
+        .intensity = bindings.intensity,
     };
 }
 
