@@ -140,6 +140,30 @@ add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
 set_property(TEST cubey_core_tests APPEND PROPERTY LABELS "gltf;core")
 
+if (CUBEY_ENABLE_TSAN_TESTS)
+    add_test(
+        NAME cubey_tsan_concurrency_tests
+        COMMAND
+            cubey_core_tests
+            --filter test_job_system_
+            --filter test_gpu_work_queue_
+            --filter test_gpu_runtime_
+            --filter test_capture_queue_
+            --filter test_capture_backlog_
+            --filter test_upload_queue_
+            --filter test_staged_resource_
+            --filter test_project_context_
+            --filter test_project_gpu_services_
+            --filter test_project_runtime_
+    )
+    set_tests_properties(
+        cubey_tsan_concurrency_tests
+        PROPERTIES
+            LABELS "core;tsan"
+            TIMEOUT 60
+    )
+endif()
+
 add_executable(cubey_config_v2_tests config_v2_tests.cpp)
 target_link_libraries(
     cubey_config_v2_tests

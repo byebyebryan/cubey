@@ -73,9 +73,9 @@ void CaptureBacklog::finish_all() {
 class QueuedVideoEncoder::Impl {
   public:
     Impl(std::unique_ptr<VideoEncoder> encoder, std::uint32_t width, std::uint32_t height)
-        : encoder_(checked_video_encoder(std::move(encoder))), width_(width), height_(height),
-          thread_([this] { run(); }) {
+        : encoder_(checked_video_encoder(std::move(encoder))), width_(width), height_(height) {
         static_cast<void>(video_frame_byte_size(width_, height_));
+        thread_ = std::thread([this] { run(); });
     }
 
     ~Impl() {
@@ -156,13 +156,13 @@ class QueuedVideoEncoder::Impl {
     std::unique_ptr<VideoEncoder> encoder_;
     std::uint32_t width_ = 0;
     std::uint32_t height_ = 0;
-    std::thread thread_;
     std::mutex mutex_;
     std::condition_variable condition_;
     std::deque<std::vector<std::uint8_t>> frames_;
     std::exception_ptr error_;
     bool closed_ = false;
     bool joined_ = false;
+    std::thread thread_;
 };
 
 QueuedVideoEncoder::QueuedVideoEncoder(std::unique_ptr<VideoEncoder> encoder,

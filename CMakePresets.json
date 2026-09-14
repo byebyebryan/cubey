@@ -44,6 +44,18 @@
       }
     },
     {
+      "name": "tsan",
+      "displayName": "Dev Debug + TSan",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/tsan",
+      "cacheVariables": {
+        "CUBEY_ENABLE_TSAN_TESTS": "ON",
+        "CMAKE_CXX_FLAGS_DEBUG": "-fsanitize=thread -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS_DEBUG": "-fsanitize=thread",
+        "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "-fsanitize=thread"
+      }
+    },
+    {
       "name": "tidy",
       "displayName": "Dev Debug + clang-tidy",
       "inherits": "dev",
@@ -83,6 +95,10 @@
     {
       "name": "asan",
       "configurePreset": "asan"
+    },
+    {
+      "name": "tsan",
+      "configurePreset": "tsan"
     },
     {
       "name": "tidy",
@@ -132,6 +148,22 @@
       "filter": {
         "exclude": {
           "label": "windowed"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "tsan",
+      "displayName": "ThreadSanitizer Core Runtime",
+      "configurePreset": "tsan",
+      "environment": {
+        "TSAN_OPTIONS": "halt_on_error=1"
+      },
+      "filter": {
+        "include": {
+          "name": "^cubey_tsan_concurrency_tests$"
         }
       },
       "output": {
