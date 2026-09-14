@@ -155,6 +155,8 @@ if (CUBEY_ENABLE_TSAN_TESTS)
             --filter test_project_context_
             --filter test_project_gpu_services_
             --filter test_project_runtime_
+            --filter test_entity_manager_concurrent_reservations_are_unique
+            --filter test_scene_concurrent_edit_queues_publish_through_serialized_commits
     )
     set_tests_properties(
         cubey_tsan_concurrency_tests

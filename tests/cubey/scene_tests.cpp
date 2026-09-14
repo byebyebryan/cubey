@@ -5,12 +5,15 @@
 #include <cubey/scene/stable_slot_store.h>
 #include <cubey/scene/transform_3d.h>
 
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 namespace {
 
@@ -132,6 +135,82 @@ void test_scene_edit_queue_publishes_reserved_entities_on_commit() {
     scene.commit(edits);
     require(scene.entities().is_alive(entity), "Committed edit-created entity should be alive");
     require(scene.epoch() == 1, "Scene commit should publish a new epoch");
+}
+
+void test_scene_concurrent_edit_queues_publish_through_serialized_commits() {
+    constexpr std::size_t kWorkerCount = 4;
+    struct WorkerEdits {
+        cubey::SceneEditQueue edits;
+        cubey::Entity entity;
+        cubey::Transform3D transform;
+    };
+
+    cubey::Scene scene;
+    std::array<std::optional<WorkerEdits>, kWorkerCount> built_edits;
+    std::array<std::thread, kWorkerCount> workers;
+
+    for (std::size_t worker_index = 0; worker_index < kWorkerCount; ++worker_index) {
+        workers[worker_index] = std::thread([&scene, &built_edits, worker_index] {
+            cubey::SceneEditQueue edits = scene.create_edit_queue();
+            const cubey::Entity entity = edits.create_entity();
+            const float marker = static_cast<float>(worker_index + 1U);
+            const cubey::Transform3D transform{
+                .translation = {marker, marker + 10.0F, marker + 20.0F},
+                .scale = {marker + 1.0F, marker + 2.0F, marker + 3.0F},
+            };
+            edits.transforms3d().create(entity, transform);
+            built_edits[worker_index].emplace(
+                WorkerEdits{.edits = std::move(edits), .entity = entity, .transform = transform});
+        });
+    }
+
+    for (std::thread& worker : workers) {
+        worker.join();
+    }
+
+    for (std::size_t worker_index = 0; worker_index < kWorkerCount; ++worker_index) {
+        require(built_edits[worker_index].has_value(),
+                "Each worker should publish exactly one completed edit queue slot");
+        const cubey::Entity entity = built_edits[worker_index]->entity;
+        require(scene.entities().is_reserved(entity),
+                "Worker-built edit entities should remain reserved before serialized commit");
+        for (std::size_t previous = 0; previous < worker_index; ++previous) {
+            require(entity != built_edits[previous]->entity,
+                    "Concurrent edit queues should reserve disjoint entity handles");
+        }
+    }
+
+    const std::uint64_t initial_epoch = scene.epoch();
+    for (std::optional<WorkerEdits>& built : built_edits) {
+        const std::uint64_t epoch_before_commit = scene.epoch();
+        scene.commit(built->edits);
+        require(scene.epoch() == epoch_before_commit + 1U,
+                "Each serialized worker edit queue commit should publish exactly one epoch");
+    }
+    require(scene.epoch() == initial_epoch + kWorkerCount,
+            "All serialized worker edit queue commits should advance the scene epoch once each");
+
+    cubey::SceneReadView view = scene.read();
+    require(view.epoch() == scene.epoch(),
+            "Final scene read view should observe the fully published worker edit epoch");
+    for (const std::optional<WorkerEdits>& built : built_edits) {
+        require(scene.entities().is_alive(built->entity),
+                "Serialized worker edit commit should publish every reserved entity");
+        const cubey::Transform3D& actual =
+            view.transforms3d().local_transform(view.transforms3d().instance(built->entity));
+        require_close(actual.translation.x, built->transform.translation.x,
+                      "Final read view should retain each worker transform x marker");
+        require_close(actual.translation.y, built->transform.translation.y,
+                      "Final read view should retain each worker transform y marker");
+        require_close(actual.translation.z, built->transform.translation.z,
+                      "Final read view should retain each worker transform z marker");
+        require_close(actual.scale.x, built->transform.scale.x,
+                      "Final read view should retain each worker transform scale marker");
+        require_close(actual.scale.y, built->transform.scale.y,
+                      "Final read view should retain each worker transform scale y marker");
+        require_close(actual.scale.z, built->transform.scale.z,
+                      "Final read view should retain each worker transform scale z marker");
+    }
 }
 
 void test_scene_failed_commit_rolls_back_reserved_entities() {

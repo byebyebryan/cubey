@@ -455,7 +455,7 @@ project that demonstrates a need for them.
 
 ## Testing Strategy
 
-Unit tests should cover:
+Current unit coverage includes:
 
 - entity creation, destruction, liveness, generation invalidation, and reuse;
 - component create/destroy and stale instance rejection;
@@ -467,9 +467,11 @@ Unit tests should cover:
 - strict child policy on transform destruction;
 - renderable packet extraction from committed transforms;
 - light packet extraction from committed lights and transforms;
-- concurrent edit-queue construction feeding a serialized commit;
+- concurrent worker edit-queue construction with entity reservation feeding a
+  serialized commit and final read-view publication;
 - the focused `tsan` preset's selected concurrent jobs, GPU-runtime,
-  upload/capture, staged-resource, and project-runtime/service paths;
+  upload/capture, staged-resource, project-runtime/service, scene edit-queue,
+  and entity-reservation paths;
 - fake/in-memory upload, capture, runtime, and project-GPU fixtures so these
   boundaries remain testable without a live Vulkan device.
 

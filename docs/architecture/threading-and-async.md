@@ -375,10 +375,13 @@ Current coverage:
   and a fake video encoder; runtime and project-GPU tests use fake device and
   submission fixtures so queue/status/owner-boundary behavior is testable
   without a live Vulkan device.
+- Scene coverage verifies concurrent worker edit-queue construction and entity
+  reservation, followed by caller-serialized commit and read-view publication.
 - The focused `tsan` configure/build/test preset runs
   `cubey_tsan_concurrency_tests` over jobs, GPU work/runtime, upload/capture,
-  staged-resource, and project-runtime/service paths. It is intentionally a
-  focused concurrency lane rather than a driver-backed or windowed gate.
+  staged-resource, project-runtime/service, scene edit-queue, and entity-
+  reservation paths. It is intentionally a focused concurrency lane rather
+  than a driver-backed or windowed gate.
 
 Runtime smoke strategy:
 
