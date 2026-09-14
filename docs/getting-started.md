@@ -72,6 +72,23 @@ and capture validation lane. Its only UBSan suppression is the recoverable
 signed-overflow report from the fetched FastNoiseLite header, whose hash uses
 intentional 32-bit wraparound; Cubey's own signed-overflow reports remain fatal.
 
+For headless Vulkan execution under the same AddressSanitizer/UBSan build, run:
+
+```bash
+cmake --preset asan
+cmake --build --preset asan
+ctest --preset asan-gpu
+```
+
+`asan-gpu` selects headless tests labeled `gpu`, excluding `windowed` and
+`sanitizer_external`. It keeps AddressSanitizer invalid-access detection and
+UBSan fatal, but disables only LeakSanitizer: driver, libdrm, and DBus process-
+lifetime allocations cannot be attributed to Cubey at process exit. Tests skip
+cleanly when no suitable Vulkan device is available. The ordinary `dev` lane
+continues to run `procedural_gpu_parity_tests`; that test is excluded here by
+its `sanitizer_external` label because FastNoiseLite exercises its known
+external signed-overflow behavior.
+
 Run the GLFW/swapchain tests only when opening windows is intentional:
 
 ```bash

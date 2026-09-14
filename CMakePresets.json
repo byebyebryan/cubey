@@ -161,6 +161,27 @@
       }
     },
     {
+      "name": "asan-gpu",
+      "displayName": "Headless GPU ASan/UBSan",
+      "description": "Headless GPU sanitizer lane with driver-bound leak detection disabled.",
+      "configurePreset": "asan",
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=${sourceDir}/cmake/ubsan.supp"
+      },
+      "filter": {
+        "include": {
+          "label": "^gpu$"
+        },
+        "exclude": {
+          "label": "^(windowed|sanitizer_external)$"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
       "name": "tsan",
       "displayName": "ThreadSanitizer Core Runtime",
       "configurePreset": "tsan",
