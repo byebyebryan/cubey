@@ -208,6 +208,22 @@ void require_route_indices(const cubey::ForwardPbrDrawPlan& plan, cubey::Forward
     require(std::equal(actual.begin(), actual.end(), expected.begin(), expected.end()), message);
 }
 
+void require_same_draw_routes(const cubey::ForwardPbrDrawPlan& first,
+                              const cubey::ForwardPbrDrawPlan& second, const char* message) {
+    for (std::size_t route_index = 0;
+         route_index < static_cast<std::size_t>(cubey::ForwardPbrDrawRoute::Count); ++route_index) {
+        const cubey::ForwardPbrDrawRoute route =
+            static_cast<cubey::ForwardPbrDrawRoute>(route_index);
+        const std::span<const std::uint32_t> first_indices = first.indices(route);
+        const std::span<const std::uint32_t> second_indices = second.indices(route);
+        require(first_indices.size() == second_indices.size(), message);
+        require(std::equal(first_indices.begin(), first_indices.end(), second_indices.begin(),
+                           second_indices.end()),
+                message);
+    }
+    require(first.has_transmission() == second.has_transmission(), message);
+}
+
 } // namespace
 
 void test_forward_pbr_renderer_3d_config_requires_shader_paths_and_shadow_extent() {
@@ -422,11 +438,10 @@ void test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string source =
         read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
-    require_contains(source,
-                     "const ForwardPbrDrawPlanMetrics& draw_plan_metrics = draw_plan.metrics()",
-                     "forward PBR metrics should reuse the computed draw plan counts");
-    require(source.find("build_forward_pbr_draw_plan(frame_plans)") ==
-                source.rfind("build_forward_pbr_draw_plan(frame_plans)"),
+    require_contains(source, "build_forward_pbr_draw_plan(\n        frame_plans,",
+                     "forward PBR metrics should be filled during draw-plan construction");
+    require(source.find("build_forward_pbr_draw_plan(\n        frame_plans,") ==
+                source.rfind("build_forward_pbr_draw_plan(\n        frame_plans,"),
             "forward PBR recording should build the draw plan only once per frame");
 }
 
@@ -691,10 +706,27 @@ void test_forward_pbr_draw_plan_routes_packets_in_source_order() {
             },
     };
 
-    const cubey::ForwardPbrDrawPlan plan = cubey::build_forward_pbr_draw_plan({
+    cubey::ForwardPbrRenderer3DFrameDrawMetrics metrics{
+        .scene_source_packet_count = 100U,
+        .scene_classification_count = 100U,
+        .shadow_source_packet_count = 100U,
+        .shadow_classification_count = 100U,
+        .route_packet_reference_count = 100U,
+        .visible_scene_unique_material_count = 100U,
+        .has_transmission = false,
+    };
+    const cubey::ForwardPbrDrawPlan plan = cubey::build_forward_pbr_draw_plan(
+        {
+            .shadow = &shadow_plan,
+            .scene = &scene_plan,
+        },
+        &metrics);
+    const cubey::ForwardPbrDrawPlan plan_without_metrics = cubey::build_forward_pbr_draw_plan({
         .shadow = &shadow_plan,
         .scene = &scene_plan,
     });
+    require_same_draw_routes(plan, plan_without_metrics,
+                             "forward PBR metrics should not change draw-plan routing");
 
     require_route_indices(plan, cubey::ForwardPbrDrawRoute::ShadowOpaqueBack, {0},
                           "forward PBR plan should retain opaque shadow back-cull source order");
@@ -721,7 +753,6 @@ void test_forward_pbr_draw_plan_routes_packets_in_source_order() {
     require_route_indices(plan, cubey::ForwardPbrDrawRoute::TransmissionAlphaNoCull, {7},
                           "forward PBR plan should route no-cull transmission alpha packets");
 
-    const cubey::ForwardPbrDrawPlanMetrics& metrics = plan.metrics();
     require(plan.has_transmission() && metrics.has_transmission,
             "forward PBR plan should preserve the transmission graph trigger");
     require(metrics.scene_source_packet_count == 14U && metrics.scene_classification_count == 14U &&
@@ -746,15 +777,18 @@ void test_forward_pbr_draw_plan_retains_transmission_trigger_for_unsupported_rou
                                   cubey::render::MaterialPassKind::ForwardColor)),
             },
     };
-    const cubey::ForwardPbrDrawPlan plan = cubey::build_forward_pbr_draw_plan({
-        .shadow = &shadow_plan,
-        .scene = &scene_plan,
-    });
+    cubey::ForwardPbrRenderer3DFrameDrawMetrics metrics;
+    const cubey::ForwardPbrDrawPlan plan = cubey::build_forward_pbr_draw_plan(
+        {
+            .shadow = &shadow_plan,
+            .scene = &scene_plan,
+        },
+        &metrics);
 
-    require(plan.has_transmission() && plan.metrics().has_transmission,
+    require(plan.has_transmission() && metrics.has_transmission,
             "unsupported transmission cull modes should retain the prior graph trigger");
-    require(plan.metrics().route_packet_reference_count == 0U &&
-                plan.metrics().visible_scene_unique_material_count == 0U,
+    require(metrics.route_packet_reference_count == 0U &&
+                metrics.visible_scene_unique_material_count == 0U,
             "unsupported cull routes should not enter renderer draw bins");
 
     const cubey::scene::RenderFramePlan3D opaque_scene_plan{
@@ -767,11 +801,14 @@ void test_forward_pbr_draw_plan_retains_transmission_trigger_for_unsupported_rou
                                   cubey::render::MaterialPassKind::ForwardColor)),
             },
     };
-    const cubey::ForwardPbrDrawPlan opaque_plan = cubey::build_forward_pbr_draw_plan({
-        .shadow = &shadow_plan,
-        .scene = &opaque_scene_plan,
-    });
-    require(!opaque_plan.has_transmission() && !opaque_plan.metrics().has_transmission,
+    cubey::ForwardPbrRenderer3DFrameDrawMetrics opaque_metrics;
+    const cubey::ForwardPbrDrawPlan opaque_plan = cubey::build_forward_pbr_draw_plan(
+        {
+            .shadow = &shadow_plan,
+            .scene = &opaque_scene_plan,
+        },
+        &opaque_metrics);
+    require(!opaque_plan.has_transmission() && !opaque_metrics.has_transmission,
             "ordinary-only scene packets should preserve the direct graph path");
 }
 
@@ -912,8 +949,10 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "forward PBR internals should group swapchain-lifetime renderer state");
     require_contains(internal_header, "pipeline_variants",
                      "forward PBR internals should store keyed pipeline variants together");
-    require_contains(internal_header, "struct ForwardPbrDrawPlanMetrics",
-                     "forward PBR internals should expose renderer-private plan metrics");
+    require_contains(internal_header, "ForwardPbrRenderer3DFrameDrawMetrics* metrics",
+                     "forward PBR draw planning should accept optional caller-owned metrics");
+    require_not_contains(internal_header, "struct ForwardPbrDrawPlanMetrics",
+                         "forward PBR draw plans should not retain a duplicate metrics snapshot");
     require_contains(internal_header, "class ForwardPbrDrawPlan",
                      "forward PBR internals should retain renderer-private routing state");
     require_contains(resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)",
@@ -964,7 +1003,7 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
     require_contains(
         graph, "if (!has_transmission)",
         "forward graph should retain its original shape when no transmission is visible");
-    require_contains(graph, "build_forward_pbr_draw_plan(frame_plans)",
+    require_contains(graph, "build_forward_pbr_draw_plan(\n        frame_plans,",
                      "forward graph should build one renderer-private draw plan per frame");
     require_contains(graph, "draw_plan.has_transmission()",
                      "forward graph should select staged transmission from the draw plan");

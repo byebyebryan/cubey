@@ -18,15 +18,16 @@ namespace {
 }
 
 [[nodiscard]] ForwardPbrDrawRoute route_for_cull(ForwardPbrDrawRoute back,
-                                                  ForwardPbrDrawRoute no_cull,
-                                                  VkCullModeFlags cull_mode) noexcept {
+                                                 ForwardPbrDrawRoute no_cull,
+                                                 VkCullModeFlags cull_mode) noexcept {
     return cull_mode == VK_CULL_MODE_BACK_BIT ? back : no_cull;
 }
 
 [[nodiscard]] std::optional<ForwardPbrDrawRoute>
 shadow_route(const scene::RenderDrawPacket3D& packet) noexcept {
     if (!packet.cast_shadows ||
-        !render::material_supports_pass(packet.material_info, render::MaterialPassKind::DepthOnly) ||
+        !render::material_supports_pass(packet.material_info,
+                                        render::MaterialPassKind::DepthOnly) ||
         packet.material_info.optical_mode != render::MaterialOpticalMode::Opaque ||
         !has_supported_cull_mode(packet)) {
         return std::nullopt;
@@ -49,7 +50,8 @@ shadow_route(const scene::RenderDrawPacket3D& packet) noexcept {
 
 [[nodiscard]] std::optional<ForwardPbrDrawRoute>
 scene_route(const scene::RenderDrawPacket3D& packet) noexcept {
-    if (!render::material_supports_pass(packet.material_info, render::MaterialPassKind::ForwardColor) ||
+    if (!render::material_supports_pass(packet.material_info,
+                                        render::MaterialPassKind::ForwardColor) ||
         !has_supported_cull_mode(packet)) {
         return std::nullopt;
     }
@@ -93,10 +95,14 @@ std::span<const std::uint32_t> ForwardPbrDrawPlan::indices(ForwardPbrDrawRoute r
     return route_indices_.at(route_index(route));
 }
 
-ForwardPbrDrawPlan
-build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans) {
+ForwardPbrDrawPlan build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans,
+                                               ForwardPbrRenderer3DFrameDrawMetrics* metrics) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR draw plan requires shadow and scene frame plans");
+    }
+
+    if (metrics != nullptr) {
+        *metrics = {};
     }
 
     ForwardPbrDrawPlan result;
@@ -104,37 +110,56 @@ build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans) {
     const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
     validate_packet_indexable(shadow_plan.draw_packets.size(), "shadow");
     validate_packet_indexable(scene_plan.draw_packets.size(), "scene");
-    result.metrics_.shadow_source_packet_count = shadow_plan.draw_packets.size();
-    result.metrics_.scene_source_packet_count = scene_plan.draw_packets.size();
+    if (metrics != nullptr) {
+        metrics->shadow_source_packet_count = shadow_plan.draw_packets.size();
+        metrics->scene_source_packet_count = scene_plan.draw_packets.size();
+    }
 
     for (std::uint32_t packet_index = 0;
-         packet_index < static_cast<std::uint32_t>(shadow_plan.draw_packets.size()); ++packet_index) {
-        ++result.metrics_.shadow_classification_count;
+         packet_index < static_cast<std::uint32_t>(shadow_plan.draw_packets.size());
+         ++packet_index) {
+        if (metrics != nullptr) {
+            ++metrics->shadow_classification_count;
+        }
         const std::optional<ForwardPbrDrawRoute> route =
             shadow_route(shadow_plan.draw_packets[packet_index]);
         if (!route.has_value()) {
             continue;
         }
         result.route_indices_[route_index(route.value())].push_back(packet_index);
-        ++result.metrics_.route_packet_reference_count;
+        if (metrics != nullptr) {
+            ++metrics->route_packet_reference_count;
+        }
     }
 
-    std::unordered_set<render::MaterialHandle, render::MaterialHandleHash> visible_materials;
+    std::optional<std::unordered_set<render::MaterialHandle, render::MaterialHandleHash>>
+        visible_materials;
+    if (metrics != nullptr) {
+        visible_materials.emplace();
+    }
     for (std::uint32_t packet_index = 0;
-         packet_index < static_cast<std::uint32_t>(scene_plan.draw_packets.size()); ++packet_index) {
-        ++result.metrics_.scene_classification_count;
+         packet_index < static_cast<std::uint32_t>(scene_plan.draw_packets.size());
+         ++packet_index) {
+        if (metrics != nullptr) {
+            ++metrics->scene_classification_count;
+        }
         const scene::RenderDrawPacket3D& packet = scene_plan.draw_packets[packet_index];
-        result.metrics_.has_transmission = result.metrics_.has_transmission ||
-                                           render::material_uses_transmission(packet.material_info);
+        result.has_transmission_ =
+            result.has_transmission_ || render::material_uses_transmission(packet.material_info);
         const std::optional<ForwardPbrDrawRoute> route = scene_route(packet);
         if (!route.has_value()) {
             continue;
         }
         result.route_indices_[route_index(route.value())].push_back(packet_index);
-        ++result.metrics_.route_packet_reference_count;
-        visible_materials.insert(packet.material);
+        if (metrics != nullptr) {
+            ++metrics->route_packet_reference_count;
+            visible_materials->insert(packet.material);
+        }
     }
-    result.metrics_.visible_scene_unique_material_count = visible_materials.size();
+    if (metrics != nullptr) {
+        metrics->visible_scene_unique_material_count = visible_materials->size();
+        metrics->has_transmission = result.has_transmission_;
+    }
     return result;
 }
 

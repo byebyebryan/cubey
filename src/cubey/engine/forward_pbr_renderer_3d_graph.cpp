@@ -84,23 +84,12 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
     using Clock = std::chrono::steady_clock;
     const Clock::time_point draw_plan_start =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
-    const ForwardPbrDrawPlan draw_plan = build_forward_pbr_draw_plan(frame_plans);
-    const Clock::time_point draw_plan_end =
-        metrics != nullptr ? Clock::now() : Clock::time_point{};
+    const ForwardPbrDrawPlan draw_plan = build_forward_pbr_draw_plan(
+        frame_plans, metrics != nullptr ? &metrics->draw_plan : nullptr);
+    const Clock::time_point draw_plan_end = metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
         metrics->draw_plan_build_milliseconds =
             std::chrono::duration<double, std::milli>(draw_plan_end - draw_plan_start).count();
-        const ForwardPbrDrawPlanMetrics& draw_plan_metrics = draw_plan.metrics();
-        metrics->draw_plan = {
-            .scene_source_packet_count = draw_plan_metrics.scene_source_packet_count,
-            .scene_classification_count = draw_plan_metrics.scene_classification_count,
-            .shadow_source_packet_count = draw_plan_metrics.shadow_source_packet_count,
-            .shadow_classification_count = draw_plan_metrics.shadow_classification_count,
-            .route_packet_reference_count = draw_plan_metrics.route_packet_reference_count,
-            .visible_scene_unique_material_count =
-                draw_plan_metrics.visible_scene_unique_material_count,
-            .has_transmission = draw_plan_metrics.has_transmission,
-        };
         metrics->material_table = resources.materials->metrics();
     }
     if (draw_plan.has_transmission()) {

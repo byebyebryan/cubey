@@ -64,16 +64,6 @@ forward_pbr_renderer_3d_camera_world_position(const SceneReadView& view, Entity 
     return static_cast<std::uint32_t>(value);
 }
 
-struct ForwardPbrDrawPlanMetrics {
-    std::size_t scene_source_packet_count = 0;
-    std::size_t scene_classification_count = 0;
-    std::size_t shadow_source_packet_count = 0;
-    std::size_t shadow_classification_count = 0;
-    std::size_t route_packet_reference_count = 0;
-    std::size_t visible_scene_unique_material_count = 0;
-    bool has_transmission = false;
-};
-
 enum class ForwardPbrDrawRoute : std::uint8_t {
     ShadowOpaqueBack,
     ShadowOpaqueNoCull,
@@ -95,24 +85,23 @@ enum class ForwardPbrDrawRoute : std::uint8_t {
 class ForwardPbrDrawPlan {
   public:
     [[nodiscard]] std::span<const std::uint32_t> indices(ForwardPbrDrawRoute route) const;
-    [[nodiscard]] const ForwardPbrDrawPlanMetrics& metrics() const noexcept {
-        return metrics_;
-    }
     [[nodiscard]] bool has_transmission() const noexcept {
-        return metrics_.has_transmission;
+        return has_transmission_;
     }
 
   private:
     friend ForwardPbrDrawPlan
-    build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans);
+    build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans,
+                                ForwardPbrRenderer3DFrameDrawMetrics* metrics);
 
     std::array<std::vector<std::uint32_t>, static_cast<std::size_t>(ForwardPbrDrawRoute::Count)>
         route_indices_{};
-    ForwardPbrDrawPlanMetrics metrics_{};
+    bool has_transmission_ = false;
 };
 
 [[nodiscard]] ForwardPbrDrawPlan
-build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans);
+build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans,
+                            ForwardPbrRenderer3DFrameDrawMetrics* metrics = nullptr);
 
 struct ForwardPbrRenderer3D::Impl {
     explicit Impl(ForwardPbrRenderer3DConfig config);
