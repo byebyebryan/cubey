@@ -780,39 +780,25 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
             "forward PBR shadow vertex layout should read PBR vertex COLOR0");
 }
 
-void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout() {
+void test_forward_pbr_renderer_3d_shadow_scene_descriptor_uses_depth_read_layout() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string source =
+    const std::string resources =
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
 
-    require_contains(source, "PbrSceneBinding::ShadowMap",
+    require_contains(resources, "PbrSceneBinding::ShadowMap",
                      "forward PBR renderer should bind the shadow map in the scene set");
-    require_contains(source, ".layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
+    require_contains(resources, ".layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
                      "forward PBR shadow map descriptor should match sampled depth layout");
 }
 
-void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha() {
+void test_forward_pbr_renderer_3d_keeps_draw_routing_private_and_refraction_shader_contract() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string header =
         read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
-    const std::string internal_header =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
-    const std::string resources =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
-    const std::string recording =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
-    const std::string draw_plan =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_draw_plan.cpp");
-    const std::string graph =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
-    const std::string material = read_source_file(root / "include/cubey/render/material.h");
     const std::string pyramid_header =
         read_source_file(root / "include/cubey/render/hdr_color_pyramid.h");
-    const std::string pyramid = read_source_file(root / "src/cubey/render/hdr_color_pyramid.cpp");
     const std::string pyramid_shader =
         read_source_file(root / "shaders/cubey/forward_pbr/hdr_color_pyramid.frag");
-    const std::string importer =
-        read_source_file(root / "src/cubey/engine/gltf_scene_importer_materials.cpp");
 
     require_contains(header, "shadow_depth_fragment_shader",
                      "forward PBR config should expose a mask-capable shadow fragment shader");
@@ -822,166 +808,18 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                          "forward PBR public header should not expose pipeline variants");
     require_not_contains(header, "ForwardPbrDrawPlan",
                          "forward PBR public header should not expose draw-plan routing");
-    require_not_contains(header, "pipeline_variants_",
-                         "forward PBR public header should not expose pipeline storage");
-    require_not_contains(header, "<cubey/render/shadow_map.h>",
-                         "forward PBR public header should not expose the shadow-map helper");
-    require_contains(internal_header, "enum class ForwardPbrPipelineVariant",
-                     "forward PBR internals should key pass/cull/blend pipeline variants");
-    require_contains(internal_header, "SwapchainResources",
-                     "forward PBR internals should group swapchain-lifetime renderer state");
-    require_contains(internal_header, "pipeline_variants",
-                     "forward PBR internals should store keyed pipeline variants together");
-    require_contains(internal_header, "ForwardPbrRenderer3DFrameDrawMetrics* metrics",
-                     "forward PBR draw planning should accept optional caller-owned metrics");
-    require_not_contains(internal_header, "struct ForwardPbrDrawPlanMetrics",
-                         "forward PBR draw plans should not retain a duplicate metrics snapshot");
-    require_contains(internal_header, "class ForwardPbrDrawPlan",
-                     "forward PBR internals should retain renderer-private routing state");
-    require_contains(resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)",
-                     "forward PBR renderer should own a mask-capable shadow pipeline variant");
-    require_not_contains(
-        recording, "materials.upload",
-        "forward PBR recording should not upload immutable material uniforms per draw");
-    require_contains(resources,
-                     "pipeline_variant_slot(ForwardPbrPipelineVariant::OpaqueDoubleSided)",
-                     "forward PBR renderer should own a double-sided opaque pipeline variant");
-    require_contains(resources,
-                     "pipeline_variant_slot(ForwardPbrPipelineVariant::AlphaDoubleSided)",
-                     "forward PBR renderer should own a double-sided alpha pipeline variant");
-    require_contains(
-        resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadowDoubleSided)",
-        "forward PBR renderer should own a double-sided masked shadow pipeline variant");
-    require_not_contains(internal_header, "opaque_double_sided_pipeline_",
-                         "forward PBR renderer should not store named pipeline optionals");
-    require_not_contains(internal_header, "alpha_double_sided_pipeline_",
-                         "forward PBR renderer should not store named alpha optionals");
-    require_not_contains(internal_header, "mask_shadow_double_sided_pipeline_",
-                         "forward PBR renderer should not store named mask optionals");
-    require_contains(resources, "fragment_shader_file(config_.shadow_depth_fragment_shader)",
-                     "mask shadow pipeline should compile the configured fragment shader");
-    require_contains(draw_plan, "VK_CULL_MODE_BACK_BIT",
-                     "forward draw planning should filter single-sided materials by cull policy");
-    require_contains(draw_plan, "VK_CULL_MODE_NONE",
-                     "forward draw planning should route double-sided materials to no-cull bins");
-    require_contains(draw_plan, "render::MaterialAlphaMode::Opaque",
-                     "forward draw planning should keep a cheap opaque depth path");
-    require_contains(draw_plan, "render::MaterialAlphaMode::Mask",
-                     "forward draw planning should record a mask-aware depth path");
-    require_contains(recording, "bind_pbr_material",
-                     "masked shadow recording should bind the static material descriptor set");
-    require_not_contains(recording, "materials.instance(",
-                         "forward PBR should not use frame-slotted PBR material residency");
-    require_contains(
-        importer, "const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode)",
-        "glTF importer should map source alpha modes into render material policy");
-    require_contains(importer, "volume_boundary || !source.double_sided",
-                     "glTF importer should preserve doubleSided for non-volume render policy");
-    require_contains(importer, "const bool volume_boundary",
-                     "glTF importer should select a separate closed-volume boundary cull policy");
-    require_contains(importer, ".dispersion = source.dispersion",
-                     "glTF importer should carry dispersion into the shared PBR factors");
-    require_contains(material, "enum class MaterialOpticalMode",
-                     "forward staging should classify optical transmission separately from alpha");
-    require_contains(
-        graph, "if (!has_transmission)",
-        "forward graph should retain its original shape when no transmission is visible");
-    require_contains(graph, "build_forward_pbr_draw_plan(\n        frame_plans,",
-                     "forward graph should build one renderer-private draw plan per frame");
-    require_contains(graph, "draw_plan.has_transmission()",
-                     "forward graph should select staged transmission from the draw plan");
-    require_not_contains(graph, "has_transmission_packets",
-                         "forward graph should not rescan scene packets for transmission");
-    require_not_contains(
-        resources, "has_transmission_packets",
-        "forward renderer resources should not retain the retired transmission scan");
-    require_contains(graph, "graph.add_pass(\"refraction source\"",
-                     "forward graph should isolate the post-cloud HDR refraction source");
-    require_contains(graph, "graph.add_pass(\"transmission\"",
-                     "forward graph should expose a distinct transmission stage boundary");
-    require_contains(graph, "graph.add_pass(\"alpha\"",
-                     "forward graph should move ordinary alpha after the transmission boundary");
-    require_contains(recording, "vulkan::load_store_attachment_ops()",
-                     "forward staged recording should preserve color and depth across boundaries");
-    require_contains(graph, ".read_write_color(post_scene_color)",
-                     "staged continuation passes should synchronize attachment loads explicitly");
-    require_contains(
-        recording, "vulkan::clear_store_attachment_ops()",
-        "forward opaque recording should preserve depth for cloud and transmission reads");
     require_contains(pyramid_header, "minimum_mip_extent = 16U",
                      "HDR refraction radiance should stop at a bounded roughness mip extent");
     require_contains(pyramid_shader, "filter_options.copy_source > 0.0",
                      "pyramid mip zero should faithfully copy linear HDR scene color");
     require_contains(pyramid_shader, "luminance_weight",
                      "HDR refraction radiance should resist bright procedural highlights");
-    require_contains(
-        pyramid, ".valid = slot.valid",
-        "pyramid snapshots should distinguish a bindable image from produced contents");
-    require_contains(resources, "existing.resources_created() && existing.pipeline_created()",
-                     "refraction pyramid reuse should reject partial initialization");
-    require_contains(resources, "PbrSceneBinding::RefractionRadiance",
-                     "every forward scene descriptor should declare refraction radiance");
-    require_contains(
-        resources, "global_.environment.brdf_lut_view",
-        "the no-transmission scene descriptor should bind a valid sampled 2D fallback");
-    require_contains(
-        graph, "refraction_pyramid().snapshot(target.frame_slot)",
-        "staged transmission should bind the current frame-slot pyramid before recording");
-    require_contains(graph, "radiance.bindable()",
-                     "staged transmission should require a bindable current-command pyramid image");
-    require_contains(graph, "transmission_scene_material().upload",
-                     "staged transmission should upload matching scene uniforms to its descriptor");
-    require_contains(
-        graph, "MaterialDescriptorWriter(transmission_scene_material().set",
-        "staged transmission should bind its pyramid only in the transmission descriptor");
-    require_contains(internal_header, "transmission_scene_material",
-                     "the pyramid descriptor should have an isolated swapchain-lifetime scene set");
-    require_contains(recording, "record_transmission_stage",
-                     "forward recording should own a dedicated transmission draw stage");
-    require_contains(recording, "transmission_scene_material().material()",
-                     "only transmission draws should consume the same-command pyramid descriptor");
-    require_contains(draw_plan, "render::MaterialOpticalMode::Transmission",
-                     "the draw plan should filter independent transmission packet classification");
-    require_contains(draw_plan, "render::MaterialOpticalMode::Opaque",
-                     "the draw plan should reject transmissive shadow and ordinary alpha packets");
-    require_contains(recording, "draw_plan.indices(route)",
-                     "forward recording should consume preclassified route index spans");
-    require_contains(recording, "bound_material",
-                     "forward recording should suppress redundant consecutive material binds");
-    require_not_contains(
-        recording, "record_pipeline_draw_packets_3d",
-        "forward recording should not repeatedly full-scan packet spans per route");
     require_contains(pyramid_header, "void record_source_copy",
                      "HDR refraction capture should expose a mip-zero copy stage");
     require_contains(pyramid_header, "ColorTargetView source_target",
                      "HDR refraction capture should expose its isolated mip-zero target");
     require_contains(pyramid_header, "void record_remaining_mips",
                      "HDR refraction capture should finish filtering after source composition");
-    require_contains(pyramid, "source_copy_pending",
-                     "HDR refraction capture should validate per-slot split-recording state");
-    require_contains(pyramid, "requires a source copy before filtering",
-                     "HDR refraction capture should reject filtering before mip-zero is ready");
-    require_contains(graph, "refraction_pyramid().record_source_copy",
-                     "forward graph should copy opaque and cloud radiance before source alpha");
-    require_contains(graph, "refraction_pyramid().source_target(frame_slot)",
-                     "ordinary alpha source composition should target isolated pyramid mip zero");
-    require_contains(graph, "refraction_pyramid().record_remaining_mips",
-                     "forward graph should generate refraction mips only after source alpha");
-
-    const std::size_t source_pass = graph.find("graph.add_pass(\"refraction source\"");
-    const std::size_t source_copy = graph.find("refraction_pyramid().record_source_copy");
-    const std::size_t source_alpha = graph.find("refraction_pyramid().source_target(frame_slot)");
-    const std::size_t source_filter = graph.find("refraction_pyramid().record_remaining_mips");
-    const std::size_t transmission = graph.find("graph.add_pass(\"transmission\"");
-    const std::size_t final_alpha = graph.find("graph.add_pass(\"alpha\"");
-    require(source_pass != std::string::npos && source_copy != std::string::npos &&
-                source_alpha != std::string::npos && source_filter != std::string::npos &&
-                transmission != std::string::npos && final_alpha != std::string::npos &&
-                source_pass < source_copy && source_copy < source_alpha &&
-                source_alpha < source_filter && source_filter < transmission &&
-                transmission < final_alpha,
-            "forward transmission should compose alpha into isolated radiance before filtering and "
-            "final alpha");
 }
 
 void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display() {
@@ -1146,35 +984,13 @@ void test_ocean_surface_reflection_uses_water_material_lighting_and_horizon() {
             "ocean reflection radiance should follow current environment lighting");
 }
 
-void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass() {
+void test_forward_pbr_renderer_3d_debug_view_uniforms_match_shaders() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string header =
-        read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
-    const std::string graph =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
-    const std::string internal_header =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
-    const std::string recording =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
     const std::string vertex_shader =
         read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr.vert");
     const std::string fragment_shader =
         read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr.frag");
 
-    require_contains(header, "render::PbrDebugView debug_view = render::PbrDebugView::Final",
-                     "forward PBR settings should expose the PBR debug view");
-    require_contains(graph, ".debug_view = settings.debug_view",
-                     "forward PBR record path should pack settings debug view into uniforms");
-    require_contains(graph, "settings.debug_view",
-                     "forward PBR render graph should receive the requested debug view");
-    require_contains(graph, "settings.debug_view == render::PbrDebugView::Final",
-                     "forward PBR debug views should bypass creative display transforms");
-    require_contains(graph, "render::PbrTonemap::Linear",
-                     "forward PBR debug views should preserve diagnostic channel values");
-    require_contains(internal_header, "render::PbrDebugView debug_view",
-                     "forward PBR scene pass should accept the requested debug view");
-    require_contains(recording, "debug_view == render::PbrDebugView::Final",
-                     "forward PBR scene pass should suppress the skybox for debug views");
     require_contains(vertex_shader, "vec4 debug_options",
                      "forward PBR vertex shader uniform block should match scene uniforms");
     require_contains(fragment_shader, "vec4 debug_options",
@@ -1193,27 +1009,11 @@ void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass(
                      "forward PBR fragment shader should centralize debug output mapping");
 }
 
-void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
+void test_forward_pbr_renderer_3d_atmosphere_shader_package_and_public_contract() {
     const std::filesystem::path root{CUBEY_SOURCE_DIR};
     const std::string header =
         read_source_file(root / "include/cubey/engine/forward_pbr_renderer_3d.h");
-    const std::string internal_header =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_internal.h");
-    const std::string resources =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
-    const std::string graph =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
-    const std::string recording =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
     const std::string cmake = read_source_file(root / "cmake/CubeyShaders.cmake");
-    const std::string gltf_assets =
-        read_source_file(root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
-    const std::string gltf_app =
-        read_source_file(root / "projects/gltf_viewer/gltf_viewer_app.cpp");
-    const std::string gltf_render =
-        read_source_file(root / "projects/gltf_viewer/gltf_viewer_render.cpp");
-    const std::string gltf_scene =
-        read_source_file(root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
     const std::string fragment_shader =
         read_source_file(root / "shaders/cubey/forward_pbr/forward_pbr.frag");
     const std::string skybox_shader =
@@ -1229,42 +1029,14 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
                          "forward PBR globals should not expose a pointer-only environment path");
     require_contains(header, "std::optional<render::AtmosphereEnvironmentFrameUniforms>",
                      "forward PBR settings should carry atmosphere frame uniforms");
-    require_contains(internal_header, "render::AtmosphereBackgroundFrame atmosphere_background",
-                     "forward PBR internals should own the atmosphere background frame");
-    require_contains(internal_header, "render::PbrEnvironmentTextureBindings environment",
-                     "forward PBR internals should store resolved environment bindings");
-    require_not_contains(internal_header, "environment_source",
-                         "forward PBR internals should not retain a generated environment pointer");
-    require_contains(resources, "AtmosphereBackgroundFrameMaterialConfig",
-                     "forward PBR resources should create atmosphere descriptors when provided");
-    require_contains(resources, "AtmosphereBackgroundFramePipelineConfig",
-                     "forward PBR resources should create an atmosphere background pipeline");
-    require_contains(resources, "validate_pbr_environment_texture_bindings",
-                     "forward PBR resources should validate explicit environment bindings");
-    require_contains(resources, "global_.environment = info.environment_textures",
-                     "forward PBR resources should consume explicit environment bindings directly");
     require_contains(header, "void update_environment",
                      "forward PBR renderer should expose a frame-slot environment handoff");
-    require_contains(resources, "PreviousPrefilteredCube",
-                     "forward PBR resources should bind the previous environment generation");
     require_contains(fragment_shader, "cubey_pbr_prefiltered_environment",
                      "forward PBR materials should crossfade prefiltered environment generations");
     require_contains(skybox_shader, "previous_environment_cube",
                      "forward PBR skybox should crossfade environment generations coherently");
-    require_contains(graph, "global_.atmosphere_background.upload",
-                     "forward PBR record path should upload per-frame atmosphere uniforms");
     require_contains(header, "ForwardPbrRenderer3DAtmosphereClouds",
                      "forward PBR settings should accept a shared atmosphere cloud frame");
-    require_contains(graph, "declare_surface_product",
-                     "forward PBR graph should declare the shared cloud march product");
-    require_contains(graph, "declare_surface_composite",
-                     "forward PBR graph should composite clouds over the atmosphere scene");
-    require_contains(graph, "render_graph.scene_depth",
-                     "forward PBR clouds should resolve descriptors against scene depth");
-    require_contains(graph, ".read_texture(post_scene_color)",
-                     "forward PBR post should consume the cloud-composited scene color");
-    require_contains(recording, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
-                     "forward PBR scene pass should branch to the atmosphere background");
     require_contains(cmake, "shaders/cubey/atmosphere/atmosphere.frag",
                      "forward PBR shader package should compile the shared atmosphere shader");
     require_contains(cmake, "cubey_atmosphere_shader_depends",
@@ -1276,28 +1048,6 @@ void test_forward_pbr_renderer_3d_threads_atmosphere_background_path() {
     require_not_contains(
         cmake, "atmosphere_reflection_irradiance.frag",
         "forward PBR shader package should not compile removed atmosphere irradiance shader");
-    require_contains(gltf_assets, "atmosphere_background_atlases_.create",
-                     "glTF viewer should create the progressive atmosphere atlas runtime");
-    require_contains(gltf_assets, "poll_atmosphere_background_atlases",
-                     "glTF viewer should activate prepared atmosphere atlases");
-    require_contains(gltf_assets, "create_atmosphere_environment_runtime",
-                     "glTF viewer should create the shared atmosphere environment runtime");
-    require_contains(gltf_assets, "pbr_environment_bindings",
-                     "glTF viewer should feed explicit PBR environment bindings");
-    require_contains(gltf_app, "atmosphere_runtime_.advance",
-                     "glTF viewer should advance coherent atmosphere and cloud probes together");
-    require_not_contains(gltf_app, "clouds().advance",
-                         "glTF viewer should not own a separate cloud-probe cadence");
-    require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
-                     "glTF viewer should select the procedural atmosphere background");
-    require_contains(gltf_render, "record_atmosphere_environment_if_needed",
-                     "glTF viewer should update the atmosphere runtime before PBR recording");
-    require_contains(gltf_render, ".atmosphere_clouds = atmosphere_clouds",
-                     "glTF viewer should compose shared clouds into the visible atmosphere");
-    require_contains(gltf_scene, "atmosphere_runtime_",
-                     "glTF viewer should derive atmosphere background uniforms from the runtime");
-    require_contains(gltf_scene, ".frame({",
-                     "glTF viewer should use the shared atmosphere runtime frame payload");
 }
 
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display() {

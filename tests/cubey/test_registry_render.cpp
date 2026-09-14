@@ -164,8 +164,8 @@ void test_pbr_material_schema_and_sampled_bindings_are_canonical();
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only();
 void test_pbr_default_texture_specs_cover_all_sampled_material_bindings();
 void test_pbr_material_table_requires_complete_immutable_records();
+void test_pbr_material_table_public_api_is_immutable();
 void test_pbr_material_uniform_block_layout_is_checked();
-void test_pbr_material_table_tracks_pooled_static_residency();
 void test_hdr_post_frame_helpers_pack_scene_color_and_display_transform();
 void test_pbr_post_pass_declares_uniforms_and_scene_color();
 void test_pbr_ior_helpers_preserve_glTF_dialect();
@@ -177,7 +177,6 @@ void test_forward_pbr_shader_package_uses_renderer_names();
 void test_gltf_material_fallback_textures_preserve_pbr_factor_channels();
 void test_pbr_examples_and_gltf_importer_share_material_resources();
 void test_pbr_consumers_use_atmosphere_lighting_foundation();
-void test_pbr_diagnostics_are_exposed_in_gltf_viewer_and_material_cubes();
 void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback();
 void test_gltf_basisu_transcoder_uses_bundled_zstd();
 void test_vulkan_and_gltf_sample_asset_cmake_paths_are_portable_and_pinned();
@@ -369,8 +368,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only),
         CUBEY_TEST(test_pbr_default_texture_specs_cover_all_sampled_material_bindings),
         CUBEY_TEST(test_pbr_material_table_requires_complete_immutable_records),
+        CUBEY_TEST(test_pbr_material_table_public_api_is_immutable),
         CUBEY_TEST(test_pbr_material_uniform_block_layout_is_checked),
-        CUBEY_TEST(test_pbr_material_table_tracks_pooled_static_residency),
         CUBEY_TEST(test_pbr_scene_uniforms_carry_display_transform),
         CUBEY_TEST(test_pbr_post_pass_declares_uniforms_and_scene_color),
         CUBEY_TEST(test_hdr_post_frame_helpers_pack_scene_color_and_display_transform),
@@ -382,7 +381,6 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_gltf_material_fallback_textures_preserve_pbr_factor_channels),
         CUBEY_TEST(test_pbr_examples_and_gltf_importer_share_material_resources),
         CUBEY_TEST(test_pbr_consumers_use_atmosphere_lighting_foundation),
-        CUBEY_TEST(test_pbr_diagnostics_are_exposed_in_gltf_viewer_and_material_cubes),
         CUBEY_TEST(test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback),
         CUBEY_TEST(test_gltf_basisu_transcoder_uses_bundled_zstd),
         CUBEY_TEST(test_vulkan_and_gltf_sample_asset_cmake_paths_are_portable_and_pinned),

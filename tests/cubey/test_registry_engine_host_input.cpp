@@ -63,8 +63,7 @@ void test_forward_pbr_renderer_3d_target_resources_use_material_table();
 void test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused();
 void test_forward_pbr_renderer_3d_record_requires_created_resources();
 void test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering();
-void test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout();
-void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha();
+void test_forward_pbr_renderer_3d_keeps_draw_routing_private_and_refraction_shader_contract();
 void test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform();
 void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes();
 void test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields();
@@ -80,9 +79,10 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
 void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback();
 void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform();
 void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices();
+void test_forward_pbr_renderer_3d_shadow_scene_descriptor_uses_depth_read_layout();
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
-void test_forward_pbr_renderer_3d_threads_atmosphere_background_path();
-void test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass();
+void test_forward_pbr_renderer_3d_atmosphere_shader_package_and_public_contract();
+void test_forward_pbr_renderer_3d_debug_view_uniforms_match_shaders();
 void test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes();
 void test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs();
 void test_gltf_scene_importer_classifies_deformable_primitives();
@@ -176,8 +176,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_frame_metrics_are_caller_owned_and_reused),
         CUBEY_TEST(test_forward_pbr_renderer_3d_record_requires_created_resources),
         CUBEY_TEST(test_forward_pbr_renderer_3d_lifecycle_guards_resource_ordering),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_binds_shadow_depth_with_depth_read_layout),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha),
+        CUBEY_TEST(
+            test_forward_pbr_renderer_3d_keeps_draw_routing_private_and_refraction_shader_contract),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_target_fields),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_view_fields),
         CUBEY_TEST(test_forward_pbr_renderer_3d_render_request_validates_required_resource_fields),
@@ -192,12 +192,13 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform),
         CUBEY_TEST(test_forward_pbr_renderer_3d_selects_requested_light_or_fallback),
         CUBEY_TEST(test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_shadow_scene_descriptor_uses_depth_read_layout),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_threads_atmosphere_background_path),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_threads_debug_view_into_shader_and_scene_pass),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_atmosphere_shader_package_and_public_contract),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_debug_view_uniforms_match_shaders),
         CUBEY_TEST(test_forward_pbr_renderer_3d_post_uniforms_pack_display_transform),
         CUBEY_TEST(test_gltf_scene_importer_applies_rigid_animation_samples_to_imported_nodes),
         CUBEY_TEST(test_gltf_scene_importer_preserves_matrix_nodes_and_animation_returns_to_trs),

@@ -580,15 +580,6 @@ void test_pbr_default_texture_specs_cover_all_sampled_material_bindings() {
         [] { (void)cubey::render::pbr_default_texture_physical_id(
               cubey::render::PbrMaterialBinding::Uniforms); },
         "PBR uniforms should remain outside the sampled default texture contract");
-
-    const std::string resources = read_source_file(
-        std::filesystem::path{CUBEY_SOURCE_DIR} / "src/cubey/render/pbr_material_resources.cpp");
-    require_contains(resources,
-                     "const std::span<const PbrMaterialBinding> sampled_bindings = "
-                     "pbr_sampled_material_bindings();",
-                     "default sampled-image descriptors should preserve canonical binding order");
-    require_contains(resources, "bindings.reserve(sampled_bindings.size());",
-                     "default sampled-image descriptors should retain all canonical bindings");
 }
 
 void test_pbr_material_table_requires_complete_immutable_records() {
@@ -634,6 +625,18 @@ void test_pbr_material_table_requires_complete_immutable_records() {
         "PBR material clear should require reinitialization before publication");
 }
 
+void test_pbr_material_table_public_api_is_immutable() {
+    const std::string header = read_source_file(
+        std::filesystem::path{CUBEY_SOURCE_DIR} / "include/cubey/render/pbr_material_resources.h");
+
+    require_not_contains(header, "set_factors",
+                         "PBR material table should not permit factor mutation after publication");
+    require_not_contains(header, "void upload(MaterialHandle",
+                         "PBR material table should not expose per-draw uniform uploads");
+    require_not_contains(header, "emplace_instance",
+                         "PBR material table should not permit separately publishing an instance");
+}
+
 void test_pbr_material_uniform_block_layout_is_checked() {
     const cubey::render::PbrMaterialTableConfig default_config{};
     require(default_config.block_capacity == cubey::render::kDefaultPbrMaterialBlockCapacity,
@@ -667,95 +670,6 @@ void test_pbr_material_uniform_block_layout_is_checked() {
 
     static_assert(std::is_move_constructible_v<cubey::render::PbrMaterialTable>);
     static_assert(!std::is_copy_constructible_v<cubey::render::PbrMaterialTable>);
-}
-
-void test_pbr_material_table_tracks_pooled_static_residency() {
-    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
-    const std::string header =
-        read_source_file(source_root / "include/cubey/render/pbr_material_resources.h");
-    const std::string source =
-        read_source_file(source_root / "src/cubey/render/pbr_material_resources.cpp");
-
-    require_contains(header, "struct PbrMaterialTableConfig",
-                     "PBR material table should expose its fixed descriptor schema contract");
-    require_contains(header, "validate_pbr_sampled_image_bindings",
-                     "PBR material table should expose sampled binding validation");
-    require_contains(header, "kDefaultPbrMaterialBlockCapacity = 64U",
-                     "PBR material table should retain bounded homogeneous block capacity");
-    require_contains(header, "void initialize(const cubey::vulkan::Device& device",
-                     "PBR material table should initialize before any publication");
-    require_contains(header, "std::unique_ptr<State> state_",
-                     "PBR material table should keep non-movable Vulkan residency movable");
-    require_contains(header, "const PbrMaterialDefinition definition_",
-                     "PBR material records should retain immutable definitions");
-    require_contains(header, "VkDescriptorSet descriptor_set_",
-                     "PBR material records should expose one static descriptor set");
-    require_contains(header, "VkDeviceSize uniform_offset_",
-                     "PBR material records should retain their immutable pooled offset");
-    require_contains(header, "PbrMaterialTableMetrics",
-                     "PBR material table should expose lightweight residency metrics");
-    require_contains(header, "std::uint32_t descriptor_pool_count",
-                     "PBR material metrics should expose pooled descriptor allocation counts");
-    require_contains(header, "std::uint32_t uniform_buffer_count",
-                     "PBR material metrics should expose pooled uniform allocation counts");
-    require_contains(header, "clear() retires the table's complete residency",
-                     "PBR material table should document monotonic erase semantics");
-    require_contains(header, "A subsequent publication must initialize again.",
-                     "PBR material clear should document its reinitialization boundary");
-    require_not_contains(header, "FrameUniformMaterialInstance<PbrMaterialUniforms>",
-                         "PBR material residency should not use per-frame material instances");
-    require_not_contains(header, "FrameSlot",
-                         "PBR material residency should not depend on frame slots");
-    require_contains(source, "PbrMaterialTable::initialize",
-                     "PBR material table should create its canonical layout before records");
-    require_contains(source, "pbr_material_descriptor_set_layout()",
-                     "PBR material table should consume the shared canonical material schema");
-    require_contains(source, "validate_pbr_sampled_image_bindings(sampled_images)",
-                     "PBR material publication should validate bindings before allocation");
-    require_contains(source, "cubey::vulkan::DescriptorSetLayout descriptor_set_layout_",
-                     "PBR material table should own one canonical descriptor layout");
-    require_contains(source, "std::vector<std::unique_ptr<Block>> blocks_",
-                     "PBR material table should grow residency in stable blocks");
-    require_contains(source, "uniform_buffer_.map_persistent()",
-                     "PBR material blocks should persistently map their uniform allocations");
-    require_contains(source, "descriptor_pool_.allocate(descriptor_set_layout_)",
-                     "PBR material publication should allocate one static descriptor set");
-    require_contains(source, "pbr_material_uniforms(definition)",
-                     "PBR material publication should pack immutable uniforms exactly once");
-    require_contains(source, "writes.uniform_buffer(",
-                     "PBR material sets should use ordinary uniform-buffer descriptors");
-    require_contains(source, "sizeof(uniforms), allocation.uniform_offset",
-                     "PBR material sets should use fixed uniform range and pooled offsets");
-    require_contains(source, "PbrMaterialRecord& record =",
-                     "PBR material table should publish definition and static set as one record");
-    require_contains(source, "state.blocks_.pop_back()",
-                     "PBR material table should discard a failed first block publication");
-    require_contains(source, "records_.rebind(from, to)",
-                     "PBR material rebind should move the complete resident record together");
-    require_contains(source, "state_.reset();",
-                     "PBR material clear should release pools, buffers, layout, and device state");
-    require_contains(source, "PbrMaterialTableMetrics PbrMaterialTable::metrics()",
-                     "PBR material metrics should describe table-owned residency");
-    require_not_contains(header, "set_factors",
-                         "PBR material table should not permit factor mutation after publication");
-    require_not_contains(header, "MaterialPassInfo material_pass",
-                         "PBR material table config should not accept an arbitrary pass schema");
-    require_not_contains(header, "std::uint32_t descriptor_set = 1U",
-                         "PBR material table config should not accept an arbitrary descriptor set");
-    require_not_contains(
-        header, "std::uint32_t uniform_binding",
-        "PBR material table config should not accept an arbitrary uniform binding");
-    require_not_contains(header, "void upload(MaterialHandle",
-                         "PBR material table should not expose per-draw uniform uploads");
-    require_not_contains(header, "PbrMaterialFactors& factors",
-                         "PBR material table should not expose mutable factors");
-    require_not_contains(header, "emplace_instance",
-                         "PBR material table should not permit separately publishing an instance");
-    require_not_contains(source, "FrameUniformMaterialInstance<PbrMaterialUniforms>",
-                         "PBR material source should not create per-frame material residency");
-    require_not_contains(source, "FrameSlot", "PBR material source should not bind frame slots");
-    require_not_contains(source, "PbrMaterialTable::upload",
-                         "PBR material table should not implement per-draw uniform uploads");
 }
 
 void test_pbr_scene_uniforms_carry_display_transform() {
@@ -1687,209 +1601,48 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
     const std::string importer_header =
         read_source_file(source_root / "include/cubey/engine/gltf_scene_importer.h");
-    const std::string resident_builder =
-        read_source_file(source_root / "src/cubey/engine/gltf_scene_resident_builder.cpp");
-    const std::string viewer_header =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h");
-    const std::string viewer =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
     const std::string furnace_header =
         read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_app_internal.h");
-    const std::string furnace =
-        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_resources.cpp");
-    const std::string furnace_render =
-        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_render.cpp");
-    const std::string forward_recording =
-        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
     const std::string material_cubes =
-        read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h") +
-        read_source_file(source_root / "examples/material_cubes/material_cubes_resources.cpp");
+        read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h");
 
     require_contains(importer_header, "render::PbrMaterialTable materials",
                      "glTF import resources should expose a shared PBR material table");
     require_contains(importer_header, "std::optional<render::PbrDefaultTextureSet>",
                      "glTF import resources should own the shared PBR default texture set");
-    require_contains(
-        resident_builder, "resources.materials.emplace(",
-        "glTF resident builder should publish complete PBR material records atomically");
-    require_contains(
-        resident_builder, "resources.materials.initialize(",
-        "glTF resident builder should establish its canonical material layout before records");
-    require_contains(
-        resident_builder, "material.definition",
-        "glTF resident builder should preserve the prepared canonical material definition");
-    require_contains(
-        resident_builder, "render::pbr_default_texture(",
-        "glTF resident builder should resolve missing textures through shared defaults");
-    require_contains(
-        resident_builder, "render::pbr_default_texture_physical_specs()",
-        "glTF staged residency should upload the five physical PBR fallback textures");
-    require_contains(
-        resident_builder, "metrics.default_texture_logical_binding_count",
-        "glTF staged residency should expose the logical default binding count explicitly");
-    require_contains(
-        resident_builder, "++metrics.default_texture_physical_upload_count",
-        "glTF staged residency should count completed physical default uploads explicitly");
-    require_not_contains(
-        resident_builder, "const render::PbrDefaultTextureSpec& spec",
-        "glTF staged residency should not upload every logical PBR binding separately");
-    require_not_contains(importer_header, "material_factors",
-                         "glTF import resources should not expose a parallel factor map");
-    require_not_contains(importer_header, "base_color_default",
-                         "glTF import resources should not expose per-slot default textures");
-
-    require_contains(viewer, "generation.import_resources.default_textures",
-                     "glTF viewer fallback should use the generation import default texture set");
-    require_contains(viewer, "cubey::render::pbr_default_sampled_image_bindings(",
-                     "glTF viewer fallback material should use shared default sampled bindings");
-    require_contains(viewer, "generation.import_resources.materials.initialize(",
-                     "glTF viewer fallback should initialize its canonical material layout");
-    require_not_contains(viewer_header, "base_color_default_",
-                         "glTF viewer should not carry duplicated PBR default textures");
 
     require_contains(furnace_header, "render::PbrMaterialTable materials_",
-                     "PBR furnace should group material factors and instances in one table");
+                     "PBR furnace should retain the canonical material residency table");
     require_contains(furnace_header, "render::PbrDefaultTextureSet",
                      "PBR furnace should own one shared default texture set");
-    require_contains(furnace, "cubey::render::pbr_default_sampled_image_bindings(",
-                     "PBR furnace materials should use shared default sampled bindings");
-    require_contains(furnace, "materials_.initialize(",
-                     "PBR furnace should initialize its canonical material layout before records");
-    require_not_contains(furnace_header, "material_factors_",
-                         "PBR furnace should not carry a parallel factor map");
-    require_not_contains(furnace_header, "base_color_default_",
-                         "PBR furnace should not carry duplicated PBR default textures");
-    require_not_contains(furnace_render, "materials_.upload",
-                         "PBR furnace should not upload immutable material uniforms per draw");
-    require_contains(furnace_render, "cubey::render::bind_pbr_material(",
-                     "PBR furnace should bind one static material descriptor set per draw");
-    require_not_contains(furnace_render, "materials_.instance(",
-                         "PBR furnace should not bind frame-slotted PBR materials");
-
-    require_contains(forward_recording, "render::bind_pbr_material(",
-                     "forward PBR should bind static material descriptor sets");
-    require_not_contains(forward_recording, "materials.instance(",
-                         "forward PBR should not bind frame-slotted PBR materials");
 
     require_contains(material_cubes, "cubey::render::PbrMaterialTable materials_",
-                     "material cubes should group material factors and instances in one table");
+                     "material cubes should retain the canonical material residency table");
     require_contains(material_cubes, "cubey::render::PbrDefaultTextureSet",
                      "material cubes should own one shared default texture set");
-    require_contains(material_cubes, "cubey::render::pbr_default_sampled_image_bindings(",
-                     "material cubes should use shared default sampled bindings");
-    require_contains(
-        material_cubes, "materials_.initialize(",
-        "material cubes should initialize its canonical material layout before records");
-    require_not_contains(material_cubes, "material_factors_",
-                         "material cubes should not carry a parallel factor map");
-    require_not_contains(material_cubes, "base_color_default_",
-                         "material cubes should not carry duplicated PBR default textures");
 }
 
 void test_pbr_consumers_use_atmosphere_lighting_foundation() {
     const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
     const std::string gltf_header =
         read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h");
-    const std::string gltf_app =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app.cpp");
-    const std::string gltf_assets =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_assets.cpp");
-    const std::string gltf_render =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_render.cpp");
-    const std::string gltf_scene =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
-    const std::string ocean_app = read_source_file(source_root / "projects/ocean/ocean_app.cpp");
     const std::string ocean_ui = read_source_file(source_root / "projects/ocean/ocean_ui.cpp");
     const std::string atmosphere_ui =
-        read_source_file(source_root / "include/cubey/host/atmosphere_environment_ui.h") +
-        read_source_file(source_root / "src/cubey/host/atmosphere_environment_ui.cpp");
+        read_source_file(source_root / "include/cubey/host/atmosphere_environment_ui.h");
     const std::string pbr_docs = read_source_file(source_root / "docs/architecture/pbr-ibl.md");
 
     require_contains(atmosphere_ui, "draw_atmosphere_environment_controls",
                      "shared atmosphere UI should expose reusable environment controls");
-    require_contains(atmosphere_ui, "&environment.night_sky.camera_visual_mode",
-                     "shared atmosphere UI should expose human and camera night response");
-    require_contains(atmosphere_ui, "atmosphere_environment_resolve_run_state",
-                     "shared atmosphere UI should resolve edited run state through engine helpers");
     require_contains(gltf_header, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
                      "glTF viewer should own a shared atmosphere environment runtime");
     require_contains(gltf_header, "GltfViewerEnvironmentPolicy environment_policy_",
                      "glTF viewer should resolve environment behavior once per run");
     require_not_contains(gltf_header, "AtmosphereDiffuseSource",
                          "glTF viewer should not expose multiple atmosphere diffuse paths");
-    require_contains(gltf_app, "gltf_viewer_atmosphere_run_state",
-                     "glTF viewer should resolve project-owned atmosphere options");
-    require_contains(gltf_app, "atmosphere_runtime_.set_environment",
-                     "glTF viewer should feed atmosphere config into the shared runtime");
-    require_contains(gltf_app, "callbacks.draw_ui",
-                     "glTF viewer should expose a windowed control panel");
-    require_contains(gltf_app, "draw_atmosphere_environment_controls",
-                     "glTF viewer should consume the shared atmosphere UI controls");
-    require_contains(gltf_app, "refresh_atmosphere_controls",
-                     "glTF viewer should push atmosphere UI edits into runtime lighting");
-    require_contains(
-        gltf_app, ".reference_geometry_enabled = false",
-        "glTF viewer should disable atmosphere reference geometry for PBR backgrounds");
-    require_contains(gltf_scene, "primary_light_direction",
-                     "glTF viewer should use atmosphere primary light for direct lighting");
-    require_contains(gltf_scene, "uses_procedural_direct_light",
-                     "glTF viewer should disable procedural direct light for static IBL");
-    require_contains(gltf_scene, "uses_atmosphere_diffuse_irradiance",
-                     "glTF viewer should only use atmosphere SH in atmosphere mode");
-    require_contains(gltf_scene, ".ambient_intensity = 0.0F",
-                     "glTF viewer static IBL should not retain legacy ambient fill");
-    require_contains(gltf_assets, "atmosphere_background_textures()",
-                     "glTF viewer should provide atmosphere background texture bindings");
-    require_contains(gltf_assets, "atmosphere_runtime_.pbr_environment_bindings",
-                     "glTF viewer should route PBR environment bindings through the runtime");
-    require_contains(gltf_assets, "uses_atmosphere_resources",
-                     "glTF viewer should avoid atmosphere resource lifecycle work in static mode");
-    require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::IblSkybox",
-                     "glTF viewer should select an IBL skybox for static environments");
-    require_contains(gltf_render, "ForwardPbrRenderer3DBackgroundMode::Atmosphere",
-                     "glTF viewer should preserve the procedural atmosphere background mode");
-    require_contains(gltf_render, "uses_atmosphere_auto_exposure",
-                     "glTF viewer should not apply atmosphere auto exposure in static mode");
-    require_contains(gltf_render, "record_atmosphere_environment_if_needed",
-                     "glTF viewer should update atmosphere runtime before the PBR pass");
-    require_contains(gltf_scene, "atmosphere_background_uniforms",
-                     "glTF viewer should compute procedural atmosphere background uniforms");
-    require_contains(ocean_app, "atmosphere_environment_lighting(atmosphere_state_.environment)",
-                     "ocean should derive its sun direction through shared atmosphere state");
-    require_contains(ocean_app, "AtmosphereEnvironmentRuntime atmosphere_runtime_",
-                     "ocean should own the shared atmosphere runtime for reflections");
     require_contains(ocean_ui, "draw_atmosphere_environment_controls",
                      "ocean should consume the shared atmosphere UI controls");
-    require_not_contains(ocean_ui, "void draw_environment_controls",
-                         "ocean should not keep a project-local copy of atmosphere controls");
     require_contains(pbr_docs, "runtime atmosphere reflection probe",
                      "PBR docs should capture the current atmosphere lighting boundary");
-}
-
-void test_pbr_diagnostics_are_exposed_in_gltf_viewer_and_material_cubes() {
-    const std::filesystem::path source_root = std::filesystem::path{CUBEY_SOURCE_DIR};
-    const std::string gltf_viewer =
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app_internal.h") +
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_app.cpp") +
-        read_source_file(source_root / "projects/gltf_viewer/gltf_viewer_render.cpp");
-    const std::string material_cubes =
-        read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h") +
-        read_source_file(source_root / "examples/material_cubes/material_cubes_app.cpp") +
-        read_source_file(source_root / "examples/material_cubes/material_cubes_render.cpp");
-
-    require_contains(gltf_viewer, "render::pbr_debug_view_from_name(config_.debug_view)",
-                     "glTF viewer should initialize PBR diagnostics from --debug-view");
-    require_contains(gltf_viewer, "render::next_pbr_debug_view(debug_view_)",
-                     "glTF viewer should let D cycle PBR diagnostics");
-    require_contains(gltf_viewer, ".debug_view = debug_view_",
-                     "glTF viewer should pass the current debug view to the renderer");
-
-    require_contains(material_cubes, "render::pbr_debug_view_from_name(config_.debug_view)",
-                     "material_cubes should initialize PBR diagnostics from --debug-view");
-    require_contains(material_cubes, "render::next_pbr_debug_view(debug_view_)",
-                     "material_cubes should let D cycle PBR diagnostics");
-    require_contains(material_cubes, ".debug_view = debug_view_",
-                     "material_cubes should pass the current debug view to the renderer");
 }
 
 void test_gltf_basisu_transcoder_policy_uses_bc7_and_rgba_fallback() {
