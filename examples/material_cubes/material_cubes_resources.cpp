@@ -77,7 +77,12 @@ void MaterialCubesApp::create_global_resources_if_needed(const cubey::vulkan::De
         return;
     }
     create_default_textures(device, gpu);
-    create_materials(device, frame_slot_count);
+    if (!materials_.initialized()) {
+        materials_.initialize(device, cubey::render::PbrMaterialTableConfig{
+                                          .material_pass = cubey::render::pbr_forward_pass_info(),
+                                      });
+    }
+    create_materials();
     create_mesh(gpu);
     create_scene();
     create_ibl_resources(device, gpu);
@@ -118,8 +123,7 @@ void MaterialCubesApp::create_default_textures(const cubey::vulkan::Device& devi
     default_textures_.emplace(cubey::render::create_pbr_default_texture_set(device, gpu));
 }
 
-void MaterialCubesApp::create_materials(const cubey::vulkan::Device& device,
-                                        std::uint32_t frame_slot_count) {
+void MaterialCubesApp::create_materials() {
     material_handles_.reserve(kMaterialCubeCount);
     for (std::uint32_t index = 0; index < kMaterialCubeCount; ++index) {
         const MaterialVariant variant = material_variant_for_index(index);
@@ -137,15 +141,7 @@ void MaterialCubesApp::create_materials(const cubey::vulkan::Device& device,
         const cubey::render::MaterialHandle material = engine_.render_resources().create_material(
             cubey::render::pbr_material_info(definition));
         try {
-            (void)materials_.emplace(material, definition, device,
-                                     cubey::render::FrameUniformMaterialInstanceConfig{
-                                         .material_pass = cubey::render::pbr_forward_pass_info(),
-                                         .descriptor_set = 1,
-                                         .frame_slot_count = frame_slot_count,
-                                         .uniform_binding = static_cast<std::uint32_t>(
-                                             cubey::render::PbrMaterialBinding::Uniforms),
-                                         .sampled_images = material_sampled_images(),
-                                     });
+            (void)materials_.emplace(material, definition, material_sampled_images());
         } catch (...) {
             engine_.render_resources().destroy_material(material);
             throw;

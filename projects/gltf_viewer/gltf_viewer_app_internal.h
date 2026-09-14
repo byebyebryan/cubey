@@ -181,8 +181,7 @@ class GltfViewerApp {
     void create_cloud_environment_runtime(const cubey::vulkan::Device& device,
                                           cubey::vulkan::GpuRuntime& gpu,
                                           std::uint32_t frame_slot_count);
-    void create_fallback_material(const cubey::vulkan::Device& device,
-                                  std::uint32_t frame_slot_count, bool loading_cage,
+    void create_fallback_material(const cubey::vulkan::Device& device, bool loading_cage,
                                   GltfViewerSceneGeneration& generation);
     void create_fallback_mesh(cubey::vulkan::GpuRuntime& gpu, bool loading_cage,
                               GltfViewerSceneGeneration& generation);

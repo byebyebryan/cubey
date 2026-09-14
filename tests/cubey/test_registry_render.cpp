@@ -157,7 +157,8 @@ void test_pbr_forward_pass_declares_scene_and_material_sets();
 void test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only();
 void test_pbr_default_texture_specs_cover_all_sampled_material_bindings();
 void test_pbr_material_table_requires_complete_immutable_records();
-void test_pbr_material_table_tracks_descriptor_layout_explicitly();
+void test_pbr_material_uniform_block_layout_is_checked();
+void test_pbr_material_table_tracks_pooled_static_residency();
 void test_hdr_post_frame_helpers_pack_scene_color_and_display_transform();
 void test_pbr_post_pass_declares_uniforms_and_scene_color();
 void test_pbr_ior_helpers_preserve_glTF_dialect();
@@ -354,7 +355,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_pbr_material_factors_are_uniforms_and_push_constants_are_model_only),
         CUBEY_TEST(test_pbr_default_texture_specs_cover_all_sampled_material_bindings),
         CUBEY_TEST(test_pbr_material_table_requires_complete_immutable_records),
-        CUBEY_TEST(test_pbr_material_table_tracks_descriptor_layout_explicitly),
+        CUBEY_TEST(test_pbr_material_uniform_block_layout_is_checked),
+        CUBEY_TEST(test_pbr_material_table_tracks_pooled_static_residency),
         CUBEY_TEST(test_pbr_scene_uniforms_carry_display_transform),
         CUBEY_TEST(test_pbr_post_pass_declares_uniforms_and_scene_color),
         CUBEY_TEST(test_hdr_post_frame_helpers_pack_scene_color_and_display_transform),

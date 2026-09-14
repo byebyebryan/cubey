@@ -567,6 +567,12 @@ struct GltfSceneResidentBuilder::Impl {
 
     [[nodiscard]] GltfSceneResidentBuilder::AdvanceResult advance(vulkan::GpuOwnerContext& owner) {
         owner.require_owner_thread("glTF upload session requires the GPU owner thread");
+        if (!resident.resources.materials.initialized()) {
+            resident.resources.materials.initialize(
+                owner.device(), render::PbrMaterialTableConfig{
+                                    .material_pass = render::pbr_forward_pass_info(),
+                                });
+        }
         const Clock::time_point started = Clock::now();
         GltfSceneResidentBuilder::AdvanceResult outcome{};
         try {
@@ -806,7 +812,7 @@ struct GltfSceneResidentBuilder::Impl {
         return OperationResult::Progress;
     }
 
-    [[nodiscard]] OperationResult record_material(vulkan::GpuOwnerContext& owner) {
+    [[nodiscard]] OperationResult record_material(vulkan::GpuOwnerContext&) {
         if (material_index >= prepared->materials.size()) {
             phase = Phase::Meshes;
             return OperationResult::Progress;
@@ -814,14 +820,8 @@ struct GltfSceneResidentBuilder::Impl {
         const GltfPreparedMaterial& material = prepared->materials[material_index];
         const render::MaterialHandle handle = staging_material_handle(material_index);
         (void)resident.resources.materials.emplace(
-            handle, material.definition, owner.device(),
-            render::FrameUniformMaterialInstanceConfig{
-                .material_pass = render::pbr_forward_pass_info(),
-                .descriptor_set = 1,
-                .frame_slot_count = config.frame_slot_count,
-                .uniform_binding = static_cast<std::uint32_t>(render::PbrMaterialBinding::Uniforms),
-                .sampled_images = material_sampled_image_bindings(resident.resources, material),
-            });
+            handle, material.definition,
+            material_sampled_image_bindings(resident.resources, material));
         resident.material_handles.push_back(handle);
         ++material_index;
         return OperationResult::Progress;

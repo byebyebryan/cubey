@@ -80,7 +80,7 @@ class PbrFurnaceApp {
     void create_default_textures(const cubey::vulkan::Device& device,
                                  cubey::vulkan::GpuRuntime& gpu);
     void create_scene_material(const cubey::vulkan::Device& device, std::uint32_t frame_slot_count);
-    void create_materials(const cubey::vulkan::Device& device, std::uint32_t frame_slot_count);
+    void create_materials();
     [[nodiscard]] std::vector<cubey::render::SampledImageMaterialBinding>
     material_sampled_images() const;
     void create_mesh(cubey::vulkan::GpuRuntime& gpu);

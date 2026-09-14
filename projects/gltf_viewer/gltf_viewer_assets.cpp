@@ -102,7 +102,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
         .half_extent = fallback_bounds.half_extent,
     };
     create_default_textures(device, gpu, fallback->import_resources);
-    create_fallback_material(device, frame_slot_count, loading_cage, *fallback);
+    create_fallback_material(device, loading_cage, *fallback);
     create_fallback_mesh(gpu, loading_cage, *fallback);
     create_fallback_scene(*fallback);
     active_generation_ = std::move(fallback);
@@ -681,8 +681,7 @@ void GltfViewerApp::create_cloud_environment_runtime(const cubey::vulkan::Device
                                     });
 }
 
-void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device,
-                                             std::uint32_t frame_slot_count, bool loading_cage,
+void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device, bool loading_cage,
                                              GltfViewerSceneGeneration& generation) {
     const cubey::render::PbrMaterialDefinition definition{
         .label =
@@ -701,17 +700,16 @@ void GltfViewerApp::create_fallback_material(const cubey::vulkan::Device& device
     const cubey::render::MaterialHandle material =
         engine_.render_resources().create_material(cubey::render::pbr_material_info(definition));
     try {
+        if (!generation.import_resources.materials.initialized()) {
+            generation.import_resources.materials.initialize(
+                device, cubey::render::PbrMaterialTableConfig{
+                            .material_pass = cubey::render::pbr_forward_pass_info(),
+                        });
+        }
         (void)generation.import_resources.materials.emplace(
-            material, definition, device,
-            cubey::render::FrameUniformMaterialInstanceConfig{
-                .material_pass = cubey::render::pbr_forward_pass_info(),
-                .descriptor_set = 1,
-                .frame_slot_count = frame_slot_count,
-                .uniform_binding =
-                    static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms),
-                .sampled_images = cubey::render::pbr_default_sampled_image_bindings(
-                    generation.import_resources.default_textures.value()),
-            });
+            material, definition,
+            cubey::render::pbr_default_sampled_image_bindings(
+                generation.import_resources.default_textures.value()));
     } catch (...) {
         engine_.render_resources().destroy_material(material);
         throw;

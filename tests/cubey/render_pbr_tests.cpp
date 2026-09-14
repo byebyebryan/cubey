@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -449,55 +450,143 @@ void test_pbr_material_table_requires_complete_immutable_records() {
     const cubey::render::MaterialHandle material{.index = 4, .generation = 2};
 
     require(!table.contains(material), "empty PBR material table should contain no records");
+    require(!table.initialized(), "empty PBR material table should start uninitialized");
+    require(!table.metrics().initialized,
+            "uninitialized PBR material table metrics should report no residency");
     require_throws([&table, material] { (void)table.definition(material); },
-                   "PBR material table should not expose a definition without its instance");
+                   "PBR material table should not expose a definition without its record");
+    require_throws([&table] { (void)table.descriptor_set_layout(); },
+                   "PBR material table should require initialization for its canonical layout");
+    require_throws(
+        [&table, material] {
+            (void)table.emplace(material, cubey::render::PbrMaterialDefinition{}, {});
+        },
+        "PBR material table should not publish a partial record before initialization");
     require_throws([&table, material] { table.erase(material); },
                    "PBR material table should reject erasing a partial or absent record");
     require_throws([&table, material] { table.rebind(material, {.index = 7, .generation = 1}); },
                    "PBR material table should reject rebinding a partial or absent record");
     table.clear();
     require(!table.contains(material), "PBR material clear should preserve an empty table");
+    require(!table.initialized(),
+            "PBR material clear should retire its canonical descriptor-layout residency");
+    const cubey::render::PbrMaterialTableMetrics cleared_metrics = table.metrics();
+    require(!cleared_metrics.initialized && cleared_metrics.material_count == 0U &&
+                cleared_metrics.allocated_descriptor_set_count == 0U &&
+                cleared_metrics.block_count == 0U && cleared_metrics.descriptor_pool_count == 0U &&
+                cleared_metrics.uniform_buffer_count == 0U &&
+                cleared_metrics.uniform_stride == 0U &&
+                cleared_metrics.uniform_block_byte_size == 0U &&
+                cleared_metrics.allocated_uniform_byte_size == 0U,
+            "PBR material clear should report no remaining pooled residency");
+    require_throws([&table] { (void)table.descriptor_set_layout(); },
+                   "PBR material clear should require reinitialization before layout access");
+    require_throws(
+        [&table, material] {
+            (void)table.emplace(material, cubey::render::PbrMaterialDefinition{}, {});
+        },
+        "PBR material clear should require reinitialization before publication");
 }
 
-void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
+void test_pbr_material_uniform_block_layout_is_checked() {
+    const cubey::render::PbrMaterialTableConfig default_config{};
+    require(default_config.descriptor_set == 1U &&
+                default_config.uniform_binding ==
+                    static_cast<std::uint32_t>(cubey::render::PbrMaterialBinding::Uniforms) &&
+                default_config.block_capacity == cubey::render::kDefaultPbrMaterialBlockCapacity,
+            "PBR material table defaults should select the static material set and bounded blocks");
+
+    const cubey::render::PbrMaterialUniformBlockLayout aligned =
+        cubey::render::pbr_material_uniform_block_layout(sizeof(cubey::render::PbrMaterialUniforms),
+                                                         256U, 64U);
+    require(aligned.uniform_stride == 768U,
+            "PBR material uniform stride should satisfy uniform-buffer alignment");
+    require(aligned.uniform_block_byte_size == 49'152U,
+            "PBR material uniform block should reserve one aligned slot per material");
+
+    const cubey::render::PbrMaterialUniformBlockLayout zero_alignment =
+        cubey::render::pbr_material_uniform_block_layout(sizeof(cubey::render::PbrMaterialUniforms),
+                                                         0U, 2U);
+    require(zero_alignment.uniform_stride == sizeof(cubey::render::PbrMaterialUniforms) &&
+                zero_alignment.uniform_block_byte_size ==
+                    2U * sizeof(cubey::render::PbrMaterialUniforms),
+            "zero uniform-buffer alignment should safely behave as alignment one");
+    require_throws([] { (void)cubey::render::pbr_material_uniform_block_layout(0U, 1U, 1U); },
+                   "PBR material pooled uniforms should reject zero-size records");
+    require_throws([] { (void)cubey::render::pbr_material_uniform_block_layout(1U, 1U, 0U); },
+                   "PBR material pooled uniforms should reject zero-capacity blocks");
+    require_throws(
+        [] {
+            (void)cubey::render::pbr_material_uniform_block_layout(
+                std::numeric_limits<VkDeviceSize>::max(), 1U, 2U);
+        },
+        "PBR material pooled uniforms should reject overflowing block byte sizes");
+
+    static_assert(std::is_move_constructible_v<cubey::render::PbrMaterialTable>);
+    static_assert(!std::is_copy_constructible_v<cubey::render::PbrMaterialTable>);
+}
+
+void test_pbr_material_table_tracks_pooled_static_residency() {
     const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
     const std::string header =
         read_source_file(source_root / "include/cubey/render/pbr_material_resources.h");
     const std::string source =
         read_source_file(source_root / "src/cubey/render/pbr_material_resources.cpp");
 
-    require_contains(header, "VkDescriptorSetLayout descriptor_set_layout_",
-                     "PBR material table should store a table-level descriptor layout");
+    require_contains(header, "struct PbrMaterialTableConfig",
+                     "PBR material table should expose its fixed descriptor schema contract");
+    require_contains(header, "kDefaultPbrMaterialBlockCapacity = 64U",
+                     "PBR material table should retain bounded homogeneous block capacity");
+    require_contains(header, "void initialize(const cubey::vulkan::Device& device",
+                     "PBR material table should initialize before any publication");
+    require_contains(header, "std::unique_ptr<State> state_",
+                     "PBR material table should keep non-movable Vulkan residency movable");
     require_contains(header, "const PbrMaterialDefinition definition_",
                      "PBR material records should retain immutable definitions");
-    require_contains(header,
-                     "const PbrMaterialUniforms uniforms = pbr_material_uniforms(definition_);",
-                     "PBR material records should pack immutable uniforms during publication");
-    require_contains(
-        header, "for (std::uint32_t slot_index = 0; slot_index < instance_config.frame_slot_count;",
-        "PBR material publication should iterate every configured frame slot");
-    require_contains(header,
-                     "FrameSlot{.index = slot_index, .count = instance_config.frame_slot_count}",
-                     "PBR material publication should cover every configured frame slot");
-    require_contains(header, "instance_.upload(",
-                     "PBR material publication should initialize resident uniforms");
-    require_contains(source, "PbrMaterialTable::register_descriptor_set_layout",
-                     "PBR material table should centralize descriptor layout registration");
+    require_contains(header, "VkDescriptorSet descriptor_set_",
+                     "PBR material records should expose one static descriptor set");
+    require_contains(header, "VkDeviceSize uniform_offset_",
+                     "PBR material records should retain their immutable pooled offset");
+    require_contains(header, "PbrMaterialTableMetrics",
+                     "PBR material table should expose lightweight residency metrics");
+    require_contains(header, "std::uint32_t descriptor_pool_count",
+                     "PBR material metrics should expose pooled descriptor allocation counts");
+    require_contains(header, "std::uint32_t uniform_buffer_count",
+                     "PBR material metrics should expose pooled uniform allocation counts");
+    require_contains(header, "clear() retires the table's complete residency",
+                     "PBR material table should document monotonic erase semantics");
+    require_contains(header, "A subsequent publication must initialize again.",
+                     "PBR material clear should document its reinitialization boundary");
+    require_not_contains(header, "FrameUniformMaterialInstance<PbrMaterialUniforms>",
+                         "PBR material residency should not use per-frame material instances");
+    require_not_contains(header, "FrameSlot",
+                         "PBR material residency should not depend on frame slots");
+    require_contains(source, "PbrMaterialTable::initialize",
+                     "PBR material table should create its canonical layout before records");
+    require_contains(source, "cubey::vulkan::DescriptorSetLayout descriptor_set_layout_",
+                     "PBR material table should own one canonical descriptor layout");
+    require_contains(source, "std::vector<std::unique_ptr<Block>> blocks_",
+                     "PBR material table should grow residency in stable blocks");
+    require_contains(source, "uniform_buffer_.map_persistent()",
+                     "PBR material blocks should persistently map their uniform allocations");
+    require_contains(source, "descriptor_pool_.allocate(descriptor_set_layout_)",
+                     "PBR material publication should allocate one static descriptor set");
+    require_contains(source, "pbr_material_uniforms(definition)",
+                     "PBR material publication should pack immutable uniforms exactly once");
+    require_contains(source, "writes.uniform_buffer(",
+                     "PBR material sets should use ordinary uniform-buffer descriptors");
+    require_contains(source, "sizeof(uniforms), allocation.uniform_offset",
+                     "PBR material sets should use fixed uniform range and pooled offsets");
     require_contains(source, "PbrMaterialRecord& record =",
-                     "PBR material table should publish a definition and instance as one record");
-    require_contains(
-        source, "records_.emplace(material, std::move(definition), device, instance_config)",
-        "PBR material table should construct the immutable record in its atomic store");
-    require_contains(
-        source, "records_.erase(material)",
-        "PBR material table should roll back a published record when layout registration fails");
-    require_contains(source, "descriptor_set_layout_ = previous_layout",
-                     "PBR material table rollback should restore prior descriptor-layout state");
+                     "PBR material table should publish definition and static set as one record");
+    require_contains(source, "state.blocks_.pop_back()",
+                     "PBR material table should discard a failed first block publication");
     require_contains(source, "records_.rebind(from, to)",
                      "PBR material rebind should move the complete resident record together");
-    require_contains(
-        source, "descriptor_set_layout_ = records_.first().instance().layout()",
-        "erasing the record that supplied the cached layout should select a surviving layout");
+    require_contains(source, "state_.reset();",
+                     "PBR material clear should release pools, buffers, layout, and device state");
+    require_contains(source, "PbrMaterialTableMetrics PbrMaterialTable::metrics()",
+                     "PBR material metrics should describe table-owned residency");
     require_not_contains(header, "set_factors",
                          "PBR material table should not permit factor mutation after publication");
     require_not_contains(header, "void upload(MaterialHandle",
@@ -506,15 +595,9 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
                          "PBR material table should not expose mutable factors");
     require_not_contains(header, "emplace_instance",
                          "PBR material table should not permit separately publishing an instance");
-    require_contains(source, "instance requires a descriptor set layout",
-                     "PBR material table should reject null descriptor layouts");
-    require_contains(source, "return descriptor_set_layout_;",
-                     "PBR material table descriptor layout should return the stored layout");
-    require_not_contains(
-        source, "descriptor_set_layout_ != layout",
-        "PBR material table should allow equivalent layouts with distinct handles");
-    require_not_contains(source, "instances_.first().layout()",
-                         "PBR material table descriptor layout should not depend on map order");
+    require_not_contains(source, "FrameUniformMaterialInstance<PbrMaterialUniforms>",
+                         "PBR material source should not create per-frame material residency");
+    require_not_contains(source, "FrameSlot", "PBR material source should not bind frame slots");
     require_not_contains(source, "PbrMaterialTable::upload",
                          "PBR material table should not implement per-draw uniform uploads");
 }
@@ -1131,7 +1214,9 @@ void test_pbr_shaders_use_gltf_material_remap() {
     require_contains(gltf, "legacy_ambient_diffuse",
                      "glTF transmission should identify legacy ambient diffuse independently");
     require_contains(
-        gltf, "color += transmission_layer + direct_transmission_layer - (transmission * replaced_diffuse);",
+        gltf,
+        "color += transmission_layer + direct_transmission_layer - (transmission * "
+        "replaced_diffuse);",
         "glTF transmission should replace only diffuse sources while preserving layers");
     require_contains(gltf, "cubey_pbr_transformed_uv(material.specular_transform)",
                      "glTF PBR shader should sample specular strength through transformed UVs");
@@ -1456,6 +1541,8 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
         read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_resources.cpp");
     const std::string furnace_render =
         read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_render.cpp");
+    const std::string forward_recording =
+        read_source_file(source_root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
     const std::string material_cubes =
         read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h") +
         read_source_file(source_root / "examples/material_cubes/material_cubes_resources.cpp");
@@ -1467,6 +1554,9 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
     require_contains(
         resident_builder, "resources.materials.emplace(",
         "glTF resident builder should publish complete PBR material records atomically");
+    require_contains(
+        resident_builder, "resources.materials.initialize(",
+        "glTF resident builder should establish its canonical material layout before records");
     require_contains(
         resident_builder, "material.definition",
         "glTF resident builder should preserve the prepared canonical material definition");
@@ -1482,6 +1572,8 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
                      "glTF viewer fallback should use the generation import default texture set");
     require_contains(viewer, "cubey::render::pbr_default_sampled_image_bindings(",
                      "glTF viewer fallback material should use shared default sampled bindings");
+    require_contains(viewer, "generation.import_resources.materials.initialize(",
+                     "glTF viewer fallback should initialize its canonical material layout");
     require_not_contains(viewer_header, "base_color_default_",
                          "glTF viewer should not carry duplicated PBR default textures");
 
@@ -1491,12 +1583,23 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
                      "PBR furnace should own one shared default texture set");
     require_contains(furnace, "cubey::render::pbr_default_sampled_image_bindings(",
                      "PBR furnace materials should use shared default sampled bindings");
+    require_contains(furnace, "materials_.initialize(",
+                     "PBR furnace should initialize its canonical material layout before records");
     require_not_contains(furnace_header, "material_factors_",
                          "PBR furnace should not carry a parallel factor map");
     require_not_contains(furnace_header, "base_color_default_",
                          "PBR furnace should not carry duplicated PBR default textures");
     require_not_contains(furnace_render, "materials_.upload",
                          "PBR furnace should not upload immutable material uniforms per draw");
+    require_contains(furnace_render, "cubey::render::bind_pbr_material(",
+                     "PBR furnace should bind one static material descriptor set per draw");
+    require_not_contains(furnace_render, "materials_.instance(",
+                         "PBR furnace should not bind frame-slotted PBR materials");
+
+    require_contains(forward_recording, "render::bind_pbr_material(",
+                     "forward PBR should bind static material descriptor sets");
+    require_not_contains(forward_recording, "materials.instance(",
+                         "forward PBR should not bind frame-slotted PBR materials");
 
     require_contains(material_cubes, "cubey::render::PbrMaterialTable materials_",
                      "material cubes should group material factors and instances in one table");
@@ -1504,6 +1607,9 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
                      "material cubes should own one shared default texture set");
     require_contains(material_cubes, "cubey::render::pbr_default_sampled_image_bindings(",
                      "material cubes should use shared default sampled bindings");
+    require_contains(
+        material_cubes, "materials_.initialize(",
+        "material cubes should initialize its canonical material layout before records");
     require_not_contains(material_cubes, "material_factors_",
                          "material cubes should not carry a parallel factor map");
     require_not_contains(material_cubes, "base_color_default_",

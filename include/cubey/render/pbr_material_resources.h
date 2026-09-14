@@ -13,6 +13,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <utility>
 #include <vector>
@@ -63,19 +64,47 @@ create_pbr_default_texture_set(const cubey::vulkan::Device& device,
 [[nodiscard]] std::vector<SampledImageMaterialBinding>
 pbr_default_sampled_image_bindings(const PbrDefaultTextureSet& set);
 
+inline constexpr std::uint32_t kDefaultPbrMaterialBlockCapacity = 64U;
+
+struct PbrMaterialUniformBlockLayout {
+    VkDeviceSize uniform_stride = 0;
+    VkDeviceSize uniform_block_byte_size = 0;
+};
+
+// Calculates the fixed per-material offsets in one pooled uniform buffer.
+// min_uniform_buffer_offset_alignment may be zero on a synthetic/test device;
+// that has the same effect as an alignment of one.
+[[nodiscard]] PbrMaterialUniformBlockLayout
+pbr_material_uniform_block_layout(VkDeviceSize uniform_byte_size,
+                                  VkDeviceSize min_uniform_buffer_offset_alignment,
+                                  std::uint32_t material_capacity);
+
+struct PbrMaterialTableConfig {
+    MaterialPassInfo material_pass{};
+    std::uint32_t descriptor_set = 1U;
+    std::uint32_t uniform_binding = static_cast<std::uint32_t>(PbrMaterialBinding::Uniforms);
+    std::uint32_t block_capacity = kDefaultPbrMaterialBlockCapacity;
+};
+
+struct PbrMaterialTableMetrics {
+    bool initialized = false;
+    std::uint32_t material_count = 0;
+    // Descriptor slots and uniform offsets are monotonic within a block. They
+    // are reclaimed only when clear() retires the table's complete residency.
+    std::uint32_t allocated_descriptor_set_count = 0;
+    std::uint32_t block_count = 0;
+    std::uint32_t descriptor_pool_count = 0;
+    std::uint32_t uniform_buffer_count = 0;
+    std::uint32_t block_capacity = 0;
+    VkDeviceSize uniform_stride = 0;
+    VkDeviceSize uniform_block_byte_size = 0;
+    VkDeviceSize allocated_uniform_byte_size = 0;
+};
+
 class PbrMaterialRecord {
   public:
-    PbrMaterialRecord(PbrMaterialDefinition definition, const cubey::vulkan::Device& device,
-                      const FrameUniformMaterialInstanceConfig& instance_config)
-        : definition_(std::move(definition)), instance_(device, instance_config) {
-        const PbrMaterialUniforms uniforms = pbr_material_uniforms(definition_);
-        for (std::uint32_t slot_index = 0; slot_index < instance_config.frame_slot_count;
-             ++slot_index) {
-            instance_.upload(
-                FrameSlot{.index = slot_index, .count = instance_config.frame_slot_count},
-                uniforms);
-        }
-    }
+    PbrMaterialRecord(PbrMaterialDefinition definition, VkDescriptorSet descriptor_set,
+                      std::uint32_t descriptor_set_index, VkDeviceSize uniform_offset);
 
     PbrMaterialRecord(const PbrMaterialRecord&) = delete;
     PbrMaterialRecord& operator=(const PbrMaterialRecord&) = delete;
@@ -85,44 +114,63 @@ class PbrMaterialRecord {
     [[nodiscard]] const PbrMaterialDefinition& definition() const noexcept {
         return definition_;
     }
-    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>& instance() noexcept {
-        return instance_;
+    [[nodiscard]] VkDescriptorSet descriptor_set() const noexcept {
+        return descriptor_set_;
     }
-    [[nodiscard]] const FrameUniformMaterialInstance<PbrMaterialUniforms>&
-    instance() const noexcept {
-        return instance_;
+    [[nodiscard]] std::uint32_t descriptor_set_index() const noexcept {
+        return descriptor_set_index_;
+    }
+    [[nodiscard]] VkDeviceSize uniform_offset() const noexcept {
+        return uniform_offset_;
     }
 
   private:
     const PbrMaterialDefinition definition_;
-    FrameUniformMaterialInstance<PbrMaterialUniforms> instance_;
+    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
+    std::uint32_t descriptor_set_index_ = 0;
+    VkDeviceSize uniform_offset_ = 0;
 };
 
 class PbrMaterialTable {
   public:
+    PbrMaterialTable();
+    ~PbrMaterialTable();
+
+    PbrMaterialTable(const PbrMaterialTable&) = delete;
+    PbrMaterialTable& operator=(const PbrMaterialTable&) = delete;
+    PbrMaterialTable(PbrMaterialTable&&) noexcept;
+    PbrMaterialTable& operator=(PbrMaterialTable&&) noexcept;
+
+    // Initialization fixes the sole descriptor schema for every PBR material
+    // in this table, including the valid zero-material state.
+    void initialize(const cubey::vulkan::Device& device, PbrMaterialTableConfig config);
+    [[nodiscard]] bool initialized() const noexcept;
     [[nodiscard]] bool contains(MaterialHandle material) const;
 
     [[nodiscard]] const PbrMaterialDefinition& definition(MaterialHandle material) const;
-    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>&
+    [[nodiscard]] PbrMaterialRecord&
     emplace(MaterialHandle material, PbrMaterialDefinition definition,
-            const cubey::vulkan::Device& device,
-            const FrameUniformMaterialInstanceConfig& instance_config);
-
-    [[nodiscard]] FrameUniformMaterialInstance<PbrMaterialUniforms>&
-    instance(MaterialHandle material);
-    [[nodiscard]] const FrameUniformMaterialInstance<PbrMaterialUniforms>&
-    instance(MaterialHandle material) const;
+            std::span<const SampledImageMaterialBinding> sampled_images);
+    [[nodiscard]] PbrMaterialRecord& record(MaterialHandle material);
+    [[nodiscard]] const PbrMaterialRecord& record(MaterialHandle material) const;
     [[nodiscard]] VkDescriptorSetLayout descriptor_set_layout() const;
-    [[nodiscard]] VkDescriptorSetLayout layout(MaterialHandle material) const;
+    [[nodiscard]] PbrMaterialTableMetrics metrics() const;
     void rebind(MaterialHandle from, MaterialHandle to);
+    // erase() removes the logical handle only. Immutable descriptor slots and
+    // uniform offsets stay reserved until clear() retires all table residency.
     void erase(MaterialHandle material);
+    // Retires records, pooled blocks, the canonical descriptor layout, and its
+    // device configuration. A subsequent publication must initialize again.
     void clear();
 
   private:
-    void register_descriptor_set_layout(VkDescriptorSetLayout layout);
+    struct State;
 
     MaterialResourceTable<PbrMaterialRecord> records_{};
-    VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
+    std::unique_ptr<State> state_{};
 };
+
+void bind_pbr_material(const cubey::vulkan::CommandRecorder& recorder,
+                       const GraphicsPipelineResource& pipeline, const PbrMaterialRecord& material);
 
 } // namespace cubey::render

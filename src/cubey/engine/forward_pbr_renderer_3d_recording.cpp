@@ -61,12 +61,11 @@ void ForwardPbrRenderer3D::Impl::record_shadow_pass(
                                     .require_shadow_caster = true,
                                 },
                         },
-                        [&pipeline, &shadow_plan, &materials,
-                         frame_slot](const vulkan::CommandRecorder& packet_recorder,
+                        [&pipeline, &shadow_plan,
+                         &materials](const vulkan::CommandRecorder& packet_recorder,
                                      const scene::RenderDrawPacket3D& packet) {
-                            const auto& material = materials.instance(packet.material);
-                            render::bind_material_instance(packet_recorder, pipeline,
-                                                           material.material(), frame_slot);
+                            render::bind_pbr_material(packet_recorder, pipeline,
+                                                      materials.record(packet.material));
                             packet_recorder.push_constants(
                                 pipeline.layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                                 ForwardPbrRenderer3DShadowPushConstants{
@@ -137,12 +136,10 @@ void ForwardPbrRenderer3D::Impl::record_scene_pass(
                                 .cull_mode = cull_mode,
                             },
                     },
-                    [&pipeline, &materials,
-                     frame_slot](const vulkan::CommandRecorder& packet_recorder,
-                                 const scene::RenderDrawPacket3D& packet) {
-                        const auto& material = materials.instance(packet.material);
-                        render::bind_material_instance(packet_recorder, pipeline,
-                                                       material.material(), frame_slot);
+                    [&pipeline, &materials](const vulkan::CommandRecorder& packet_recorder,
+                                            const scene::RenderDrawPacket3D& packet) {
+                        render::bind_pbr_material(packet_recorder, pipeline,
+                                                  materials.record(packet.material));
                         packet_recorder.push_constants(
                             pipeline.layout(),
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
@@ -216,12 +213,10 @@ void ForwardPbrRenderer3D::Impl::record_scene_opaque_pass(
                                     .cull_mode = cull_mode,
                                 },
                         },
-                        [&pipeline, &materials,
-                         frame_slot](const vulkan::CommandRecorder& packet_recorder,
-                                     const scene::RenderDrawPacket3D& packet) {
-                            const auto& material = materials.instance(packet.material);
-                            render::bind_material_instance(packet_recorder, pipeline,
-                                                           material.material(), frame_slot);
+                        [&pipeline, &materials](const vulkan::CommandRecorder& packet_recorder,
+                                                const scene::RenderDrawPacket3D& packet) {
+                            render::bind_pbr_material(packet_recorder, pipeline,
+                                                      materials.record(packet.material));
                             packet_recorder.push_constants(
                                 pipeline.layout(),
                                 VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
@@ -265,12 +260,10 @@ void ForwardPbrRenderer3D::Impl::record_transmission_stage(
                                 .cull_mode = cull_mode,
                             },
                     },
-                    [&pipeline, &materials,
-                     frame_slot](const vulkan::CommandRecorder& packet_recorder,
-                                 const scene::RenderDrawPacket3D& packet) {
-                        const auto& material = materials.instance(packet.material);
-                        render::bind_material_instance(packet_recorder, pipeline,
-                                                       material.material(), frame_slot);
+                    [&pipeline, &materials](const vulkan::CommandRecorder& packet_recorder,
+                                            const scene::RenderDrawPacket3D& packet) {
+                        render::bind_pbr_material(packet_recorder, pipeline,
+                                                  materials.record(packet.material));
                         packet_recorder.push_constants(
                             pipeline.layout(),
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
@@ -319,12 +312,10 @@ void ForwardPbrRenderer3D::Impl::record_scene_alpha_pass(
                                 .cull_mode = cull_mode,
                             },
                     },
-                    [&pipeline, &materials,
-                     frame_slot](const vulkan::CommandRecorder& packet_recorder,
-                                 const scene::RenderDrawPacket3D& packet) {
-                        const auto& material = materials.instance(packet.material);
-                        render::bind_material_instance(packet_recorder, pipeline,
-                                                       material.material(), frame_slot);
+                    [&pipeline, &materials](const vulkan::CommandRecorder& packet_recorder,
+                                            const scene::RenderDrawPacket3D& packet) {
+                        render::bind_pbr_material(packet_recorder, pipeline,
+                                                  materials.record(packet.material));
                         packet_recorder.push_constants(
                             pipeline.layout(),
                             VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,

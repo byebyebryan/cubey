@@ -1,7 +1,13 @@
 #include <cubey/render/pbr_material_resources.h>
 
+#include <cubey/vulkan/buffer.h>
+#include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/upload_batch.h>
 
+#include <algorithm>
+#include <limits>
+#include <memory>
 #include <stdexcept>
 
 namespace cubey::render {
@@ -321,6 +327,188 @@ pbr_default_sampled_image_bindings(const PbrDefaultTextureSet& set) {
     return bindings;
 }
 
+PbrMaterialUniformBlockLayout
+pbr_material_uniform_block_layout(VkDeviceSize uniform_byte_size,
+                                  VkDeviceSize min_uniform_buffer_offset_alignment,
+                                  std::uint32_t material_capacity) {
+    if (uniform_byte_size == 0U) {
+        throw std::runtime_error("PBR material uniform byte size must be positive");
+    }
+    if (material_capacity == 0U) {
+        throw std::runtime_error("PBR material block capacity must be positive");
+    }
+
+    const VkDeviceSize alignment = std::max<VkDeviceSize>(min_uniform_buffer_offset_alignment, 1U);
+    const VkDeviceSize remainder = uniform_byte_size % alignment;
+    const VkDeviceSize padding = remainder == 0U ? 0U : alignment - remainder;
+    if (uniform_byte_size > std::numeric_limits<VkDeviceSize>::max() - padding) {
+        throw std::runtime_error("PBR material uniform stride overflows device size");
+    }
+    const VkDeviceSize uniform_stride = uniform_byte_size + padding;
+    if (uniform_stride > std::numeric_limits<VkDeviceSize>::max() / material_capacity) {
+        throw std::runtime_error("PBR material uniform block byte size overflows device size");
+    }
+    return {
+        .uniform_stride = uniform_stride,
+        .uniform_block_byte_size = uniform_stride * material_capacity,
+    };
+}
+
+namespace {
+
+[[nodiscard]] PbrMaterialTableConfig
+validated_pbr_material_table_config(PbrMaterialTableConfig config) {
+    if (config.block_capacity == 0U) {
+        throw std::runtime_error("PBR material table block capacity must be positive");
+    }
+
+    const MaterialDescriptorSetLayout& descriptor_set =
+        material_descriptor_set_layout(config.material_pass, config.descriptor_set);
+    const auto uniform_binding =
+        std::find_if(descriptor_set.bindings.begin(), descriptor_set.bindings.end(),
+                     [&config](const cubey::vulkan::DescriptorSetBindingConfig& binding) {
+                         return binding.binding == config.uniform_binding;
+                     });
+    if (uniform_binding == descriptor_set.bindings.end()) {
+        throw std::runtime_error("PBR material table uniform binding is not declared by its pass");
+    }
+    if (uniform_binding->type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        throw std::runtime_error("PBR material table uniform binding must use uniform buffers");
+    }
+    return config;
+}
+
+void validate_pbr_uniform_range(const cubey::vulkan::Device& device) {
+    if (sizeof(PbrMaterialUniforms) > device.properties().limits.maxUniformBufferRange) {
+        throw std::runtime_error("PBR material uniforms exceed maxUniformBufferRange");
+    }
+}
+
+} // namespace
+
+PbrMaterialRecord::PbrMaterialRecord(PbrMaterialDefinition definition,
+                                     VkDescriptorSet descriptor_set,
+                                     std::uint32_t descriptor_set_index,
+                                     VkDeviceSize uniform_offset)
+    : definition_(std::move(definition)), descriptor_set_(descriptor_set),
+      descriptor_set_index_(descriptor_set_index), uniform_offset_(uniform_offset) {
+    if (descriptor_set_ == VK_NULL_HANDLE) {
+        throw std::runtime_error("PBR material record requires a static descriptor set");
+    }
+}
+
+struct PbrMaterialTable::State {
+    struct Block {
+        struct Allocation {
+            VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+            VkDeviceSize uniform_offset = 0;
+        };
+
+        Block(const cubey::vulkan::Device& device, const cubey::vulkan::DescriptorSetInfo& info,
+              VkDescriptorSetLayout descriptor_set_layout,
+              const PbrMaterialUniformBlockLayout& uniform_layout, std::uint32_t material_capacity)
+            : uniform_buffer_(device,
+                              cubey::vulkan::BufferConfig{
+                                  .size = uniform_layout.uniform_block_byte_size,
+                                  .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                  .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                              }),
+              descriptor_pool_(device, info.pool_info()),
+              descriptor_set_layout_(descriptor_set_layout), uniform_layout_(uniform_layout),
+              material_capacity_(material_capacity) {
+            static_cast<void>(uniform_buffer_.map_persistent());
+        }
+
+        [[nodiscard]] bool full() const noexcept {
+            return allocated_descriptor_set_count_ == material_capacity_;
+        }
+
+        [[nodiscard]] std::uint32_t allocated_descriptor_set_count() const noexcept {
+            return allocated_descriptor_set_count_;
+        }
+
+        [[nodiscard]] Allocation allocate() {
+            if (full()) {
+                throw std::runtime_error("PBR material block has no remaining descriptor slots");
+            }
+            const VkDescriptorSet descriptor_set =
+                descriptor_pool_.allocate(descriptor_set_layout_);
+            const VkDeviceSize uniform_offset =
+                uniform_layout_.uniform_stride * allocated_descriptor_set_count_;
+            ++allocated_descriptor_set_count_;
+            return {
+                .descriptor_set = descriptor_set,
+                .uniform_offset = uniform_offset,
+            };
+        }
+
+        void write_uniforms(const PbrMaterialUniforms& uniforms,
+                            VkDeviceSize uniform_offset) const {
+            uniform_buffer_.upload(&uniforms, sizeof(uniforms), uniform_offset);
+        }
+
+        [[nodiscard]] VkBuffer uniform_buffer() const noexcept {
+            return uniform_buffer_.handle();
+        }
+
+      private:
+        // Destruction is intentionally pool before buffer: both belong to the
+        // block, and all descriptor references die before their backing memory.
+        cubey::vulkan::Buffer uniform_buffer_;
+        cubey::vulkan::DescriptorPool descriptor_pool_;
+        VkDescriptorSetLayout descriptor_set_layout_ = VK_NULL_HANDLE;
+        PbrMaterialUniformBlockLayout uniform_layout_{};
+        std::uint32_t material_capacity_ = 0;
+        std::uint32_t allocated_descriptor_set_count_ = 0;
+    };
+
+    State(const cubey::vulkan::Device& device, PbrMaterialTableConfig config)
+        : device_(&device), config_(validated_pbr_material_table_config(std::move(config))),
+          uniform_layout_(pbr_material_uniform_block_layout(
+              sizeof(PbrMaterialUniforms),
+              device.properties().limits.minUniformBufferOffsetAlignment, config_.block_capacity)),
+          descriptor_info_(material_descriptor_set_info(
+              config_.material_pass, config_.descriptor_set, config_.block_capacity)),
+          descriptor_set_layout_(device, descriptor_info_.layout_info()) {}
+
+    [[nodiscard]] Block& append_block() {
+        blocks_.push_back(std::make_unique<Block>(*device_, descriptor_info_,
+                                                  descriptor_set_layout_.handle(), uniform_layout_,
+                                                  config_.block_capacity));
+        return *blocks_.back();
+    }
+
+    const cubey::vulkan::Device* device_ = nullptr;
+    PbrMaterialTableConfig config_{};
+    PbrMaterialUniformBlockLayout uniform_layout_{};
+    cubey::vulkan::DescriptorSetInfo descriptor_info_;
+    cubey::vulkan::DescriptorSetLayout descriptor_set_layout_;
+    std::vector<std::unique_ptr<Block>> blocks_{};
+    std::uint32_t material_count_ = 0;
+};
+
+PbrMaterialTable::PbrMaterialTable() = default;
+PbrMaterialTable::~PbrMaterialTable() = default;
+PbrMaterialTable::PbrMaterialTable(PbrMaterialTable&&) noexcept = default;
+PbrMaterialTable& PbrMaterialTable::operator=(PbrMaterialTable&&) noexcept = default;
+
+void PbrMaterialTable::initialize(const cubey::vulkan::Device& device,
+                                  PbrMaterialTableConfig config) {
+    if (state_ != nullptr) {
+        throw std::runtime_error("PBR material table is already initialized");
+    }
+    if (!records_.empty()) {
+        throw std::runtime_error("PBR material table cannot initialize after publication");
+    }
+    validate_pbr_uniform_range(device);
+    state_ = std::make_unique<State>(device, std::move(config));
+}
+
+bool PbrMaterialTable::initialized() const noexcept {
+    return state_ != nullptr;
+}
+
 bool PbrMaterialTable::contains(MaterialHandle material) const {
     return records_.contains(material);
 }
@@ -329,10 +517,12 @@ const PbrMaterialDefinition& PbrMaterialTable::definition(MaterialHandle materia
     return records_.at(material).definition();
 }
 
-FrameUniformMaterialInstance<PbrMaterialUniforms>&
+PbrMaterialRecord&
 PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definition,
-                          const cubey::vulkan::Device& device,
-                          const FrameUniformMaterialInstanceConfig& instance_config) {
+                          std::span<const SampledImageMaterialBinding> sampled_images) {
+    if (state_ == nullptr) {
+        throw std::runtime_error("PBR material table requires initialization before publication");
+    }
     if (!material) {
         throw std::runtime_error("PBR material table insert requires a non-null handle");
     }
@@ -340,51 +530,87 @@ PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definit
         throw std::runtime_error("PBR material table already contains handle");
     }
 
-    const VkDescriptorSetLayout previous_layout = descriptor_set_layout_;
-    bool inserted = false;
+    State& state = *state_;
+    const bool needs_block = state.blocks_.empty() || state.blocks_.back()->full();
+    if (needs_block) {
+        static_cast<void>(state.append_block());
+    }
+
     try {
-        PbrMaterialRecord& record =
-            records_.emplace(material, std::move(definition), device, instance_config);
-        inserted = true;
-        register_descriptor_set_layout(record.instance().layout());
-        return record.instance();
-    } catch (...) {
-        if (inserted) {
-            records_.erase(material);
+        State::Block& block = *state.blocks_.back();
+        const State::Block::Allocation allocation = block.allocate();
+        const PbrMaterialUniforms uniforms = pbr_material_uniforms(definition);
+        block.write_uniforms(uniforms, allocation.uniform_offset);
+
+        cubey::vulkan::DescriptorWriteBatch writes;
+        writes.uniform_buffer(allocation.descriptor_set, state.config_.uniform_binding,
+                              block.uniform_buffer(), sizeof(uniforms), allocation.uniform_offset);
+        for (const SampledImageMaterialBinding& sampled : sampled_images) {
+            writes.combined_image_sampler(allocation.descriptor_set, sampled.binding,
+                                          sampled.sampler, sampled.image_view, sampled.layout);
         }
-        descriptor_set_layout_ = previous_layout;
+        writes.update(*state.device_);
+        PbrMaterialRecord& record =
+            records_.emplace(material, std::move(definition), allocation.descriptor_set,
+                             state.config_.descriptor_set, allocation.uniform_offset);
+        ++state.material_count_;
+        return record;
+    } catch (...) {
+        // A freshly created block cannot contain another logical material, so
+        // discard it entirely on failed first publication. Existing blocks
+        // intentionally keep consumed physical slots until clear().
+        if (needs_block) {
+            state.blocks_.pop_back();
+        }
         throw;
     }
 }
 
-FrameUniformMaterialInstance<PbrMaterialUniforms>&
-PbrMaterialTable::instance(MaterialHandle material) {
-    return records_.at(material).instance();
+PbrMaterialRecord& PbrMaterialTable::record(MaterialHandle material) {
+    return records_.at(material);
 }
 
-const FrameUniformMaterialInstance<PbrMaterialUniforms>&
-PbrMaterialTable::instance(MaterialHandle material) const {
-    return records_.at(material).instance();
-}
-
-void PbrMaterialTable::register_descriptor_set_layout(VkDescriptorSetLayout layout) {
-    if (layout == VK_NULL_HANDLE) {
-        throw std::runtime_error("PBR material table instance requires a descriptor set layout");
-    }
-    if (descriptor_set_layout_ == VK_NULL_HANDLE) {
-        descriptor_set_layout_ = layout;
-    }
+const PbrMaterialRecord& PbrMaterialTable::record(MaterialHandle material) const {
+    return records_.at(material);
 }
 
 VkDescriptorSetLayout PbrMaterialTable::descriptor_set_layout() const {
-    if (descriptor_set_layout_ == VK_NULL_HANDLE) {
-        throw std::runtime_error("PBR material table requires at least one material instance");
+    if (state_ == nullptr) {
+        throw std::runtime_error("PBR material table requires initialization before layout access");
     }
-    return descriptor_set_layout_;
+    return state_->descriptor_set_layout_.handle();
 }
 
-VkDescriptorSetLayout PbrMaterialTable::layout(MaterialHandle material) const {
-    return instance(material).layout();
+PbrMaterialTableMetrics PbrMaterialTable::metrics() const {
+    if (state_ == nullptr) {
+        return {};
+    }
+
+    PbrMaterialTableMetrics result{
+        .initialized = true,
+        .material_count = state_->material_count_,
+        .allocated_descriptor_set_count = 0,
+        .block_count = static_cast<std::uint32_t>(state_->blocks_.size()),
+        .descriptor_pool_count = static_cast<std::uint32_t>(state_->blocks_.size()),
+        .uniform_buffer_count = static_cast<std::uint32_t>(state_->blocks_.size()),
+        .block_capacity = state_->config_.block_capacity,
+        .uniform_stride = state_->uniform_layout_.uniform_stride,
+        .uniform_block_byte_size = state_->uniform_layout_.uniform_block_byte_size,
+        .allocated_uniform_byte_size = 0,
+    };
+    for (const std::unique_ptr<State::Block>& block : state_->blocks_) {
+        if (result.allocated_descriptor_set_count >
+            std::numeric_limits<std::uint32_t>::max() - block->allocated_descriptor_set_count()) {
+            throw std::runtime_error("PBR material descriptor set metric overflows");
+        }
+        result.allocated_descriptor_set_count += block->allocated_descriptor_set_count();
+        if (result.allocated_uniform_byte_size >
+            std::numeric_limits<VkDeviceSize>::max() - result.uniform_block_byte_size) {
+            throw std::runtime_error("PBR material uniform byte metric overflows");
+        }
+        result.allocated_uniform_byte_size += result.uniform_block_byte_size;
+    }
+    return result;
 }
 
 void PbrMaterialTable::rebind(MaterialHandle from, MaterialHandle to) {
@@ -408,18 +634,20 @@ void PbrMaterialTable::erase(MaterialHandle material) {
     if (!contains(material)) {
         throw std::runtime_error("PBR material table erase requires an existing handle");
     }
-    const VkDescriptorSetLayout erased_layout = instance(material).layout();
     records_.erase(material);
-    if (records_.empty()) {
-        descriptor_set_layout_ = VK_NULL_HANDLE;
-    } else if (descriptor_set_layout_ == erased_layout) {
-        descriptor_set_layout_ = records_.first().instance().layout();
-    }
+    --state_->material_count_;
 }
 
 void PbrMaterialTable::clear() {
     records_.clear();
-    descriptor_set_layout_ = VK_NULL_HANDLE;
+    state_.reset();
+}
+
+void bind_pbr_material(const cubey::vulkan::CommandRecorder& recorder,
+                       const GraphicsPipelineResource& pipeline,
+                       const PbrMaterialRecord& material) {
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(),
+                                 material.descriptor_set_index(), material.descriptor_set());
 }
 
 } // namespace cubey::render

@@ -721,8 +721,10 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "shadow recording should keep a cheap opaque depth path");
     require_contains(recording, "render::MaterialAlphaMode::Mask",
                      "shadow recording should record a mask-aware depth path");
-    require_contains(recording, "bind_material_instance",
-                     "masked shadow recording should bind material textures and uniforms");
+    require_contains(recording, "bind_pbr_material",
+                     "masked shadow recording should bind the static material descriptor set");
+    require_not_contains(recording, "materials.instance(",
+                         "forward PBR should not use frame-slotted PBR material residency");
     require_contains(
         importer, "const render::MaterialAlphaMode alpha_mode = gltf_alpha_mode(source.alpha_mode)",
         "glTF importer should map source alpha modes into render material policy");

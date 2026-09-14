@@ -30,7 +30,7 @@ void PbrFurnaceApp::create_forward_pass(const cubey::vulkan::Device& device, VkE
     const cubey::render::VertexInputLayout vertex_input = pbr_furnace_vertex_input_layout();
     const std::array<VkDescriptorSetLayout, 2> set_layouts{
         scene_material().layout(),
-        materials_.layout(material_handles_.front()),
+        materials_.descriptor_set_layout(),
     };
     forward_pass_.emplace(
         device,
@@ -96,11 +96,10 @@ void PbrFurnaceApp::record_furnace_frame(VkCommandBuffer command_buffer,
                         .blend_mode = cubey::render::MaterialBlendMode::Opaque,
                     },
             },
-            [this, frame_slot](const cubey::vulkan::CommandRecorder& packet_recorder,
-                               const cubey::scene::RenderDrawPacket3D& packet) {
-                const auto& material = materials_.instance(packet.material);
-                cubey::render::bind_material_instance(packet_recorder, forward_pass().pipeline(),
-                                                      material.material(), frame_slot);
+            [this](const cubey::vulkan::CommandRecorder& packet_recorder,
+                   const cubey::scene::RenderDrawPacket3D& packet) {
+                cubey::render::bind_pbr_material(packet_recorder, forward_pass().pipeline(),
+                                                 materials_.record(packet.material));
                 packet_recorder.push_constants(
                     forward_pass().pipeline().layout(),
                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
