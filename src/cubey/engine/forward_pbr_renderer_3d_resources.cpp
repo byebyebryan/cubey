@@ -48,6 +48,67 @@ void validate_scene_color_format(const vulkan::Device& device, VkFormat format) 
 
 } // namespace
 
+std::vector<render::SampledImageMaterialBinding> forward_pbr_renderer_3d_scene_sampled_images(
+    VkSampler shadow_sampler, VkImageView shadow_view,
+    const render::PbrEnvironmentTextureBindings& environment) {
+    return {
+        render::SampledImageMaterialBinding{
+            .binding = forward_pbr_renderer_3d_binding(render::PbrSceneBinding::ShadowMap),
+            .sampler = shadow_sampler,
+            .image_view = shadow_view,
+            .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = forward_pbr_renderer_3d_binding(render::PbrSceneBinding::IrradianceCube),
+            .sampler = environment.irradiance_sampler,
+            .image_view = environment.irradiance_view,
+            .layout = environment.irradiance_layout,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
+            .sampler = environment.prefiltered_sampler,
+            .image_view = environment.prefiltered_view,
+            .layout = environment.prefiltered_layout,
+        },
+        render::SampledImageMaterialBinding{
+            .binding = forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
+            .sampler = environment.brdf_lut_sampler,
+            .image_view = environment.brdf_lut_view,
+            .layout = environment.brdf_lut_layout,
+        },
+        render::SampledImageMaterialBinding{
+            .binding =
+                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PreviousPrefilteredCube),
+            .sampler = environment.previous_prefiltered_sampler,
+            .image_view = environment.previous_prefiltered_view,
+            .layout = environment.previous_prefiltered_layout,
+        },
+        // Every scene material starts with a valid BRDF LUT fallback. Ordinary forward PBR keeps
+        // it, while the staged transmission path replaces it with the refraction pyramid.
+        render::SampledImageMaterialBinding{
+            .binding = forward_pbr_renderer_3d_binding(render::PbrSceneBinding::RefractionRadiance),
+            .sampler = environment.brdf_lut_sampler,
+            .image_view = environment.brdf_lut_view,
+            .layout = environment.brdf_lut_layout,
+        },
+    };
+}
+
+void update_forward_pbr_renderer_3d_scene_environment_descriptors(
+    const vulkan::Device& device, VkDescriptorSet scene_descriptor_set,
+    const render::PbrEnvironmentFrameBindings& environment) {
+    render::MaterialDescriptorWriter(scene_descriptor_set)
+        .combined_image_sampler(
+            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
+            environment.prefiltered_sampler, environment.prefiltered_view,
+            environment.prefiltered_layout)
+        .combined_image_sampler(
+            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PreviousPrefilteredCube),
+            environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
+            environment.previous_prefiltered_layout)
+        .update(device);
+}
+
 void ForwardPbrRenderer3D::create_global_resources(
     const vulkan::Device& device, const render::GeneratedPbrEnvironment& environment,
     std::uint32_t frame_slot_count) {
@@ -167,65 +228,17 @@ void ForwardPbrRenderer3D::Impl::create_global_resources(
     }
 
     const render::DepthTexture& shadow_texture = shadow_pass().depth_texture();
-    global_.scene_material
-        .emplace(device, render::FrameUniformMaterialInstanceConfig{
-                             .material_pass = render::pbr_forward_pass_info(),
-                             .descriptor_set = 0,
-                             .frame_slot_count = info.frame_slot_count,
-                             .uniform_binding = forward_pbr_renderer_3d_binding(
-                                 render::PbrSceneBinding::SceneUniforms),
-                             .sampled_images =
-                                 {
-                                     render::SampledImageMaterialBinding{
-                                         .binding = forward_pbr_renderer_3d_binding(
-                                             render::PbrSceneBinding::ShadowMap),
-                                         .sampler = shadow_texture.sampler().handle(),
-                                         .image_view = shadow_texture.view(),
-                                         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                     },
-                                     render::SampledImageMaterialBinding{
-                                         .binding = forward_pbr_renderer_3d_binding(
-                                             render::PbrSceneBinding::IrradianceCube),
-                                         .sampler = global_.environment.irradiance_sampler,
-                                         .image_view = global_.environment.irradiance_view,
-                                         .layout = global_.environment.irradiance_layout,
-                                     },
-                                     render::SampledImageMaterialBinding{
-                                         .binding = forward_pbr_renderer_3d_binding(
-                                             render::PbrSceneBinding::PrefilteredCube),
-                                         .sampler = global_.environment.prefiltered_sampler,
-                                         .image_view = global_.environment.prefiltered_view,
-                                         .layout = global_.environment.prefiltered_layout,
-                                     },
-                                     render::SampledImageMaterialBinding{
-                                         .binding = forward_pbr_renderer_3d_binding(
-                                             render::PbrSceneBinding::BrdfLut),
-                                         .sampler = global_.environment.brdf_lut_sampler,
-                                         .image_view = global_.environment.brdf_lut_view,
-                                         .layout = global_.environment.brdf_lut_layout,
-                                     },
-                                     render::SampledImageMaterialBinding{
-                                         .binding = forward_pbr_renderer_3d_binding(
-                                             render::PbrSceneBinding::PreviousPrefilteredCube),
-                                         .sampler =
-                                             global_.environment.previous_prefiltered_sampler,
-                                         .image_view =
-                                             global_.environment.previous_prefiltered_view,
-                                         .layout = global_.environment.previous_prefiltered_layout,
-                                     },
-                                     // Ordinary forward PBR draws own this descriptor statically.
-                                     // The BRDF LUT is a compatible sampled-2D fallback; the
-                                     // staged path binds its pyramid in a separate descriptor.
-                                     render::SampledImageMaterialBinding{
-                                         .binding =
-                                             forward_pbr_renderer_3d_binding(
-                                                 render::PbrSceneBinding::RefractionRadiance),
-                                         .sampler = global_.environment.brdf_lut_sampler,
-                                         .image_view = global_.environment.brdf_lut_view,
-                                         .layout = global_.environment.brdf_lut_layout,
-                                     },
-                                 },
-                         });
+    global_.scene_material.emplace(
+        device,
+        render::FrameUniformMaterialInstanceConfig{
+            .material_pass = render::pbr_forward_pass_info(),
+            .descriptor_set = 0,
+            .frame_slot_count = info.frame_slot_count,
+            .uniform_binding =
+                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::SceneUniforms),
+            .sampled_images = forward_pbr_renderer_3d_scene_sampled_images(
+                shadow_texture.sampler().handle(), shadow_texture.view(), global_.environment),
+        });
     global_.post_material.emplace(device, render::FrameUniformMaterialInstanceConfig{
                                               .material_pass = render::pbr_post_pass_info(),
                                               .descriptor_set = 0,
@@ -265,27 +278,11 @@ void ForwardPbrRenderer3D::Impl::update_environment_frame(
     global_.environment.prefiltered_blend = environment.prefiltered_blend;
     global_.environment.intensity = environment.intensity;
 
-    render::MaterialDescriptorWriter(scene_descriptor_set)
-        .combined_image_sampler(
-            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
-            environment.prefiltered_sampler, environment.prefiltered_view,
-            environment.prefiltered_layout)
-        .combined_image_sampler(
-            forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PreviousPrefilteredCube),
-            environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
-            environment.previous_prefiltered_layout)
-        .update(device);
+    update_forward_pbr_renderer_3d_scene_environment_descriptors(device, scene_descriptor_set,
+                                                                 environment);
     if (transmission_descriptor_set.has_value()) {
-        render::MaterialDescriptorWriter(transmission_descriptor_set.value())
-            .combined_image_sampler(
-                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PrefilteredCube),
-                environment.prefiltered_sampler, environment.prefiltered_view,
-                environment.prefiltered_layout)
-            .combined_image_sampler(
-                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::PreviousPrefilteredCube),
-                environment.previous_prefiltered_sampler, environment.previous_prefiltered_view,
-                environment.previous_prefiltered_layout)
-            .update(device);
+        update_forward_pbr_renderer_3d_scene_environment_descriptors(
+            device, transmission_descriptor_set.value(), environment);
     }
     render::MaterialDescriptorWriter(skybox_descriptor_set)
         .combined_image_sampler(
@@ -599,51 +596,8 @@ void ForwardPbrRenderer3D::Impl::ensure_refraction_pyramid(const vulkan::Device&
                 .frame_slot_count = global_.graph_executor.frame_slot_count(),
                 .uniform_binding =
                     forward_pbr_renderer_3d_binding(render::PbrSceneBinding::SceneUniforms),
-                .sampled_images =
-                    {
-                        render::SampledImageMaterialBinding{
-                            .binding =
-                                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::ShadowMap),
-                            .sampler = shadow_texture.sampler().handle(),
-                            .image_view = shadow_texture.view(),
-                            .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                        },
-                        render::SampledImageMaterialBinding{
-                            .binding = forward_pbr_renderer_3d_binding(
-                                render::PbrSceneBinding::IrradianceCube),
-                            .sampler = global_.environment.irradiance_sampler,
-                            .image_view = global_.environment.irradiance_view,
-                            .layout = global_.environment.irradiance_layout,
-                        },
-                        render::SampledImageMaterialBinding{
-                            .binding = forward_pbr_renderer_3d_binding(
-                                render::PbrSceneBinding::PrefilteredCube),
-                            .sampler = global_.environment.prefiltered_sampler,
-                            .image_view = global_.environment.prefiltered_view,
-                            .layout = global_.environment.prefiltered_layout,
-                        },
-                        render::SampledImageMaterialBinding{
-                            .binding =
-                                forward_pbr_renderer_3d_binding(render::PbrSceneBinding::BrdfLut),
-                            .sampler = global_.environment.brdf_lut_sampler,
-                            .image_view = global_.environment.brdf_lut_view,
-                            .layout = global_.environment.brdf_lut_layout,
-                        },
-                        render::SampledImageMaterialBinding{
-                            .binding = forward_pbr_renderer_3d_binding(
-                                render::PbrSceneBinding::PreviousPrefilteredCube),
-                            .sampler = global_.environment.previous_prefiltered_sampler,
-                            .image_view = global_.environment.previous_prefiltered_view,
-                            .layout = global_.environment.previous_prefiltered_layout,
-                        },
-                        render::SampledImageMaterialBinding{
-                            .binding = forward_pbr_renderer_3d_binding(
-                                render::PbrSceneBinding::RefractionRadiance),
-                            .sampler = global_.environment.brdf_lut_sampler,
-                            .image_view = global_.environment.brdf_lut_view,
-                            .layout = global_.environment.brdf_lut_layout,
-                        },
-                    },
+                .sampled_images = forward_pbr_renderer_3d_scene_sampled_images(
+                    shadow_texture.sampler().handle(), shadow_texture.view(), global_.environment),
             });
     } catch (...) {
         swapchain_.transmission_scene_material.reset();

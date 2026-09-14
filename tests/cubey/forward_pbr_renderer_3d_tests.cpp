@@ -846,15 +846,63 @@ void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices() {
             "forward PBR shadow vertex layout should read PBR vertex COLOR0");
 }
 
-void test_forward_pbr_renderer_3d_shadow_scene_descriptor_uses_depth_read_layout() {
-    const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string resources =
-        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
+void test_forward_pbr_renderer_3d_scene_sampled_images_preserve_descriptor_contract() {
+    const VkSampler shadow_sampler = reinterpret_cast<VkSampler>(0x10);
+    const VkImageView shadow_view = reinterpret_cast<VkImageView>(0x11);
+    const cubey::render::PbrEnvironmentTextureBindings environment{
+        .irradiance_sampler = reinterpret_cast<VkSampler>(0x12),
+        .irradiance_view = reinterpret_cast<VkImageView>(0x13),
+        .irradiance_layout = VK_IMAGE_LAYOUT_GENERAL,
+        .prefiltered_sampler = reinterpret_cast<VkSampler>(0x14),
+        .prefiltered_view = reinterpret_cast<VkImageView>(0x15),
+        .prefiltered_layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .previous_prefiltered_sampler = reinterpret_cast<VkSampler>(0x16),
+        .previous_prefiltered_view = reinterpret_cast<VkImageView>(0x17),
+        .previous_prefiltered_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .brdf_lut_sampler = reinterpret_cast<VkSampler>(0x18),
+        .brdf_lut_view = reinterpret_cast<VkImageView>(0x19),
+        .brdf_lut_layout = VK_IMAGE_LAYOUT_GENERAL,
+    };
+    const std::vector<cubey::render::SampledImageMaterialBinding> sampled_images =
+        cubey::forward_pbr_renderer_3d_scene_sampled_images(shadow_sampler, shadow_view,
+                                                            environment);
 
-    require_contains(resources, "PbrSceneBinding::ShadowMap",
-                     "forward PBR renderer should bind the shadow map in the scene set");
-    require_contains(resources, ".layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
-                     "forward PBR shadow map descriptor should match sampled depth layout");
+    require(sampled_images.size() == 6,
+            "forward PBR scene descriptor should contain exactly six sampled images");
+    require(sampled_images[0].binding ==
+                cubey::forward_pbr_renderer_3d_binding(cubey::render::PbrSceneBinding::ShadowMap),
+            "forward PBR scene descriptor should bind the shadow map first");
+    require(sampled_images[0].sampler == shadow_sampler &&
+                sampled_images[0].image_view == shadow_view &&
+                sampled_images[0].layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+            "forward PBR shadow descriptor should preserve sampled-depth state");
+
+    const auto require_environment_binding = [&](std::size_t index,
+                                                 cubey::render::PbrSceneBinding binding,
+                                                 VkSampler sampler, VkImageView view,
+                                                 VkImageLayout layout) {
+        require(sampled_images[index].binding == cubey::forward_pbr_renderer_3d_binding(binding) &&
+                    sampled_images[index].sampler == sampler &&
+                    sampled_images[index].image_view == view &&
+                    sampled_images[index].layout == layout,
+                "forward PBR scene descriptor should preserve environment binding state");
+    };
+    require_environment_binding(1, cubey::render::PbrSceneBinding::IrradianceCube,
+                                environment.irradiance_sampler, environment.irradiance_view,
+                                environment.irradiance_layout);
+    require_environment_binding(2, cubey::render::PbrSceneBinding::PrefilteredCube,
+                                environment.prefiltered_sampler, environment.prefiltered_view,
+                                environment.prefiltered_layout);
+    require_environment_binding(3, cubey::render::PbrSceneBinding::BrdfLut,
+                                environment.brdf_lut_sampler, environment.brdf_lut_view,
+                                environment.brdf_lut_layout);
+    require_environment_binding(4, cubey::render::PbrSceneBinding::PreviousPrefilteredCube,
+                                environment.previous_prefiltered_sampler,
+                                environment.previous_prefiltered_view,
+                                environment.previous_prefiltered_layout);
+    require_environment_binding(5, cubey::render::PbrSceneBinding::RefractionRadiance,
+                                environment.brdf_lut_sampler, environment.brdf_lut_view,
+                                environment.brdf_lut_layout);
 }
 
 void test_forward_pbr_renderer_3d_keeps_draw_routing_private_and_refraction_shader_contract() {

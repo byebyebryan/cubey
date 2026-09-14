@@ -81,7 +81,7 @@ void test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and
 void test_forward_pbr_renderer_3d_selects_requested_light_or_fallback();
 void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform();
 void test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices();
-void test_forward_pbr_renderer_3d_shadow_scene_descriptor_uses_depth_read_layout();
+void test_forward_pbr_renderer_3d_scene_sampled_images_preserve_descriptor_contract();
 void test_forward_pbr_renderer_3d_skybox_uniforms_pack_inverse_view_camera_environment_and_display();
 void test_forward_pbr_renderer_3d_atmosphere_shader_package_and_public_contract();
 void test_forward_pbr_renderer_3d_debug_view_uniforms_match_shaders();
@@ -198,7 +198,7 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform),
         CUBEY_TEST(test_forward_pbr_renderer_3d_selects_requested_light_or_fallback),
         CUBEY_TEST(test_forward_pbr_renderer_3d_shadow_vertex_layout_matches_pbr_vertices),
-        CUBEY_TEST(test_forward_pbr_renderer_3d_shadow_scene_descriptor_uses_depth_read_layout),
+        CUBEY_TEST(test_forward_pbr_renderer_3d_scene_sampled_images_preserve_descriptor_contract),
         CUBEY_TEST(
             test_forward_pbr_renderer_3d_scene_uniforms_pack_view_light_environment_and_display),
         CUBEY_TEST(

@@ -224,7 +224,9 @@ full engine architecture.
   The scene set includes irradiance, previous/current prefiltered cubes, the
   DFG/BRDF lookup, and a same-frame HDR refraction-radiance binding. The latter
   uses a valid neutral fallback for ordinary draws and a per-frame-slot pyramid
-  for the explicit transmission stage.
+  for the explicit transmission stage. One renderer-private binding builder
+  owns this six-image scene descriptor contract for both ordinary and
+  transmission material instances.
   `PbrEnvironmentTextureBindings` is the complete creation-time environment
   identity, including immutable irradiance and DFG/BRDF resources.
   `PbrEnvironmentFrameBindings` carries only the mutable current/previous

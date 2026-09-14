@@ -64,6 +64,15 @@ forward_pbr_renderer_3d_camera_world_position(const SceneReadView& view, Entity 
     return static_cast<std::uint32_t>(value);
 }
 
+[[nodiscard]] std::vector<render::SampledImageMaterialBinding>
+forward_pbr_renderer_3d_scene_sampled_images(
+    VkSampler shadow_sampler, VkImageView shadow_view,
+    const render::PbrEnvironmentTextureBindings& environment);
+
+void update_forward_pbr_renderer_3d_scene_environment_descriptors(
+    const vulkan::Device& device, VkDescriptorSet scene_descriptor_set,
+    const render::PbrEnvironmentFrameBindings& environment);
+
 enum class ForwardPbrDrawRoute : std::uint8_t {
     ShadowOpaqueBack,
     ShadowOpaqueNoCull,
