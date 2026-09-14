@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <vector>
 
 namespace cubey {
 
@@ -62,6 +63,56 @@ forward_pbr_renderer_3d_camera_world_position(const SceneReadView& view, Entity 
 [[nodiscard]] inline std::uint32_t forward_pbr_renderer_3d_binding(render::PbrPostBinding value) {
     return static_cast<std::uint32_t>(value);
 }
+
+enum class ForwardPbrDrawRoute : std::uint8_t {
+    ShadowOpaqueBack,
+    ShadowOpaqueNoCull,
+    ShadowMaskedBack,
+    ShadowMaskedNoCull,
+    SceneOpaqueBack,
+    SceneOpaqueNoCull,
+    SceneAlphaBack,
+    SceneAlphaNoCull,
+    TransmissionOpaqueBack,
+    TransmissionOpaqueNoCull,
+    TransmissionAlphaBack,
+    TransmissionAlphaNoCull,
+    Count,
+};
+
+struct ForwardPbrDrawPlanMetrics {
+    std::size_t scene_source_packet_count = 0;
+    std::size_t scene_classification_count = 0;
+    std::size_t shadow_source_packet_count = 0;
+    std::size_t shadow_classification_count = 0;
+    std::size_t route_packet_reference_count = 0;
+    std::size_t visible_scene_unique_material_count = 0;
+    bool has_transmission = false;
+};
+
+// Renderer-private packet routing. Indices retain the source order within
+// each route, so the recorder can bind route state without rescanning scenes.
+class ForwardPbrDrawPlan {
+  public:
+    [[nodiscard]] std::span<const std::uint32_t> indices(ForwardPbrDrawRoute route) const;
+    [[nodiscard]] const ForwardPbrDrawPlanMetrics& metrics() const noexcept {
+        return metrics_;
+    }
+    [[nodiscard]] bool has_transmission() const noexcept {
+        return metrics_.has_transmission;
+    }
+
+  private:
+    friend ForwardPbrDrawPlan
+    build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans);
+
+    std::array<std::vector<std::uint32_t>, static_cast<std::size_t>(ForwardPbrDrawRoute::Count)>
+        route_indices_{};
+    ForwardPbrDrawPlanMetrics metrics_{};
+};
+
+[[nodiscard]] ForwardPbrDrawPlan
+build_forward_pbr_draw_plan(const ForwardPbrRenderer3DFramePlans& frame_plans);
 
 struct ForwardPbrRenderer3D::Impl {
     explicit Impl(ForwardPbrRenderer3DConfig config);
@@ -124,17 +175,18 @@ struct ForwardPbrRenderer3D::Impl {
                          const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
                          const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
                          const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
-                         bool has_transmission);
+                         const ForwardPbrDrawPlan& draw_plan);
     void record_shadow_pass(const vulkan::CommandRecorder& recorder,
                             const scene::RenderFramePlan3D& shadow_plan,
                             render::FrameSlot frame_slot, const render::MeshResolver& mesh_resolver,
-                            const render::PbrMaterialTable& materials) const;
+                            const render::PbrMaterialTable& materials,
+                            const ForwardPbrDrawPlan& draw_plan) const;
     void record_scene_pass(const vulkan::CommandRecorder& recorder,
                            render::ColorTargetView color_target,
                            const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
                            const render::MeshResolver& mesh_resolver,
                            const render::PbrMaterialTable& materials,
-                           render::PbrDebugView debug_view,
+                           const ForwardPbrDrawPlan& draw_plan, render::PbrDebugView debug_view,
                            ForwardPbrRenderer3DBackgroundMode background_mode,
                            TerrainBackdropRuntime* terrain, OceanSurfaceRuntime* ocean,
                            bool preserve_scene_depth) const;
@@ -142,20 +194,23 @@ struct ForwardPbrRenderer3D::Impl {
         const vulkan::CommandRecorder& recorder, render::ColorTargetView color_target,
         const scene::RenderFramePlan3D& scene_plan, render::FrameSlot frame_slot,
         const render::MeshResolver& mesh_resolver, const render::PbrMaterialTable& materials,
-        render::PbrDebugView debug_view, ForwardPbrRenderer3DBackgroundMode background_mode,
-        TerrainBackdropRuntime* terrain, OceanSurfaceRuntime* ocean) const;
+        const ForwardPbrDrawPlan& draw_plan, render::PbrDebugView debug_view,
+        ForwardPbrRenderer3DBackgroundMode background_mode, TerrainBackdropRuntime* terrain,
+        OceanSurfaceRuntime* ocean) const;
     void record_transmission_stage(const vulkan::CommandRecorder& recorder,
                                    render::ColorTargetView color_target,
                                    const scene::RenderFramePlan3D& scene_plan,
                                    render::FrameSlot frame_slot,
                                    const render::MeshResolver& mesh_resolver,
-                                   const render::PbrMaterialTable& materials) const;
+                                   const render::PbrMaterialTable& materials,
+                                   const ForwardPbrDrawPlan& draw_plan) const;
     void record_scene_alpha_pass(const vulkan::CommandRecorder& recorder,
                                  render::ColorTargetView color_target,
                                  const scene::RenderFramePlan3D& scene_plan,
                                  render::FrameSlot frame_slot,
                                  const render::MeshResolver& mesh_resolver,
-                                 const render::PbrMaterialTable& materials) const;
+                                 const render::PbrMaterialTable& materials,
+                                 const ForwardPbrDrawPlan& draw_plan) const;
     void record_post_pass(const vulkan::CommandRecorder& recorder,
                           render::ColorTargetView color_target, render::FrameSlot frame_slot) const;
     void update_post_descriptor(const vulkan::Device& device, render::FrameSlot frame_slot,
@@ -187,8 +242,6 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const render::GraphicsPipelineResource& post_pipeline() const;
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
     [[nodiscard]] const vulkan::DepthAttachment& depth_attachment() const;
-    [[nodiscard]] static bool
-    has_transmission_packets(const scene::RenderFramePlan3D& scene_plan) noexcept;
     void ensure_refraction_pyramid(const vulkan::Device& device);
     [[nodiscard]] render::HdrColorPyramid& refraction_pyramid();
     [[nodiscard]] const render::HdrColorPyramid& refraction_pyramid() const;

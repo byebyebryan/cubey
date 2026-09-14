@@ -75,8 +75,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         forward_pbr_renderer_3d_frame_plans(*view.frame_plan);
     const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
     const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
-    const bool has_transmission = has_transmission_packets(scene_plan);
-    if (has_transmission) {
+    const ForwardPbrDrawPlan draw_plan = build_forward_pbr_draw_plan(frame_plans);
+    if (draw_plan.has_transmission()) {
         ensure_refraction_pyramid(*target.device);
     }
     if (settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere) {
@@ -130,7 +130,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         .backdrop_reflection = backdrop_reflection,
     });
     scene_material().upload(target.frame_slot, scene_uniforms);
-    if (has_transmission) {
+    if (draw_plan.has_transmission()) {
         transmission_scene_material().upload(target.frame_slot, scene_uniforms);
         const render::HdrColorPyramidSnapshot radiance =
             refraction_pyramid().snapshot(target.frame_slot);
@@ -173,7 +173,7 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         target.color_target, target.frame_slot, target.color_initial_state,
         target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
         resources.deformation_commands, *resources.materials, settings.debug_view,
-        settings.background_mode, settings.atmosphere_clouds, terrain, ocean, has_transmission);
+        settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan);
     CloudEnvironmentRuntime* cloud_runtime =
         settings.atmosphere_clouds.has_value() ? settings.atmosphere_clouds->runtime : nullptr;
     global_.graph_executor.record(
@@ -224,12 +224,14 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     ForwardPbrRenderer3DBackgroundMode background_mode,
     const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
     const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
-    const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean, bool has_transmission) {
+    const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
+    const ForwardPbrDrawPlan& draw_plan) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
     }
     const scene::RenderFramePlan3D& shadow_plan = *frame_plans.shadow;
     const scene::RenderFramePlan3D& scene_plan = *frame_plans.scene;
+    const bool has_transmission = draw_plan.has_transmission();
     render::RenderGraphBuilder graph;
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
@@ -314,9 +316,10 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                    .write_depth(shadow_depth)
                                    .material_pass(shadow_pass().material_pass());
     declare_deformation_vertex_reads(shadow_pass_builder, deformation_vertex_buffers);
-    shadow_pass_builder.execute([this, frame_slot, &shadow_plan, mesh_resolver,
+    shadow_pass_builder.execute([this, frame_slot, &shadow_plan, &draw_plan, mesh_resolver,
                                  &materials](const render::RenderGraphExecutionContext& context) {
-        record_shadow_pass(context.recorder(), shadow_plan, frame_slot, mesh_resolver, materials);
+        record_shadow_pass(context.recorder(), shadow_plan, frame_slot, mesh_resolver, materials,
+                           draw_plan);
     });
     if (!has_transmission) {
         // Preserve the original graph shape and work for all existing material
@@ -332,15 +335,16 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         }
         declare_deformation_vertex_reads(scene_pass_builder, deformation_vertex_buffers);
         scene_pass_builder.execute(
-            [this, scene_color, frame_slot, &scene_plan, mesh_resolver, &materials, debug_view,
-             background_mode, terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
+            [this, scene_color, frame_slot, &scene_plan, &draw_plan, mesh_resolver, &materials,
+             debug_view, background_mode,
+             terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
              ocean_runtime = ocean.has_value() ? ocean->runtime : nullptr,
              clouds_enabled](const render::RenderGraphExecutionContext& context) {
                 const render::ColorTargetView target =
                     render::resolved_color_target_view(context, scene_color);
                 record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
-                                  materials, debug_view, background_mode, terrain_runtime,
-                                  ocean_runtime, clouds_enabled);
+                                  materials, draw_plan, debug_view, background_mode,
+                                  terrain_runtime, ocean_runtime, clouds_enabled);
             });
     } else {
         auto opaque_pass_builder =
@@ -354,15 +358,16 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
         }
         declare_deformation_vertex_reads(opaque_pass_builder, deformation_vertex_buffers);
         opaque_pass_builder.execute(
-            [this, scene_color, frame_slot, &scene_plan, mesh_resolver, &materials, debug_view,
-             background_mode, terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
+            [this, scene_color, frame_slot, &scene_plan, &draw_plan, mesh_resolver, &materials,
+             debug_view, background_mode,
+             terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
              ocean_runtime = ocean.has_value() ? ocean->runtime : nullptr](
                 const render::RenderGraphExecutionContext& context) {
                 const render::ColorTargetView target =
                     render::resolved_color_target_view(context, scene_color);
                 record_scene_opaque_pass(context.recorder(), target, scene_plan, frame_slot,
-                                         mesh_resolver, materials, debug_view, background_mode,
-                                         terrain_runtime, ocean_runtime);
+                                         mesh_resolver, materials, draw_plan, debug_view,
+                                         background_mode, terrain_runtime, ocean_runtime);
             });
     }
     if (clouds_enabled) {
@@ -378,27 +383,28 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                 .material_pass(render::pbr_forward_pass_info(
                     {.blend = render::MaterialBlendMode::AlphaBlend}));
         declare_deformation_vertex_reads(refraction_source_pass, deformation_vertex_buffers);
-        refraction_source_pass.execute([this, frame_slot, &scene_plan, mesh_resolver, &materials](
-                                           const render::RenderGraphExecutionContext& context) {
-            // Mip zero is an isolated radiance source. Ordinary alpha is
-            // composited here for transmission lookup and later once into
-            // the final scene after transmissive geometry.
-            refraction_pyramid().record_source_copy(context.recorder(), frame_slot);
-            record_scene_alpha_pass(context.recorder(),
-                                    refraction_pyramid().source_target(frame_slot), scene_plan,
-                                    frame_slot, mesh_resolver, materials);
-            refraction_pyramid().record_remaining_mips(context.recorder(), frame_slot);
-        });
+        refraction_source_pass.execute(
+            [this, frame_slot, &scene_plan, &draw_plan, mesh_resolver,
+             &materials](const render::RenderGraphExecutionContext& context) {
+                // Mip zero is an isolated radiance source. Ordinary alpha is
+                // composited here for transmission lookup and later once into
+                // the final scene after transmissive geometry.
+                refraction_pyramid().record_source_copy(context.recorder(), frame_slot);
+                record_scene_alpha_pass(context.recorder(),
+                                        refraction_pyramid().source_target(frame_slot), scene_plan,
+                                        frame_slot, mesh_resolver, materials, draw_plan);
+                refraction_pyramid().record_remaining_mips(context.recorder(), frame_slot);
+            });
         graph.add_pass("transmission", render::RenderGraphQueueDomain::Graphics)
             .read_write_color(post_scene_color)
             .write_depth(scene_depth)
             .material_pass(render::pbr_forward_pass_info())
-            .execute([this, post_scene_color, frame_slot, &scene_plan, mesh_resolver,
+            .execute([this, post_scene_color, frame_slot, &scene_plan, &draw_plan, mesh_resolver,
                       &materials](const render::RenderGraphExecutionContext& context) {
                 const render::ColorTargetView target =
                     render::resolved_color_target_view(context, post_scene_color);
                 record_transmission_stage(context.recorder(), target, scene_plan, frame_slot,
-                                          mesh_resolver, materials);
+                                          mesh_resolver, materials, draw_plan);
             });
         auto alpha_pass_builder = graph.add_pass("alpha", render::RenderGraphQueueDomain::Graphics)
                                       .read_write_color(post_scene_color)
@@ -407,12 +413,12 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                           {.blend = render::MaterialBlendMode::AlphaBlend}));
         declare_deformation_vertex_reads(alpha_pass_builder, deformation_vertex_buffers);
         alpha_pass_builder.execute(
-            [this, post_scene_color, frame_slot, &scene_plan, mesh_resolver,
+            [this, post_scene_color, frame_slot, &scene_plan, &draw_plan, mesh_resolver,
              &materials](const render::RenderGraphExecutionContext& context) {
                 const render::ColorTargetView target =
                     render::resolved_color_target_view(context, post_scene_color);
                 record_scene_alpha_pass(context.recorder(), target, scene_plan, frame_slot,
-                                        mesh_resolver, materials);
+                                        mesh_resolver, materials, draw_plan);
             });
     }
     graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)

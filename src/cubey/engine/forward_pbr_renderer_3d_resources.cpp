@@ -509,14 +509,6 @@ void ForwardPbrRenderer3D::Impl::destroy_all_resources() {
     swapchain_.shadow_depth_is_sampled = false;
 }
 
-bool ForwardPbrRenderer3D::Impl::has_transmission_packets(
-    const scene::RenderFramePlan3D& scene_plan) noexcept {
-    return std::ranges::any_of(scene_plan.draw_packets,
-                               [](const scene::RenderDrawPacket3D& packet) {
-                                   return render::material_uses_transmission(packet.material_info);
-                               });
-}
-
 void ForwardPbrRenderer3D::Impl::ensure_refraction_pyramid(const vulkan::Device& device) {
     if (swapchain_.refraction_pyramid.has_value() &&
         swapchain_.transmission_scene_material.has_value()) {

@@ -1,3 +1,4 @@
+#include "../../src/cubey/engine/forward_pbr_renderer_3d_internal.h"
 #include "source_file_test_helpers.h"
 
 #include <cubey/engine/forward_pbr_renderer_3d.h>
@@ -6,12 +7,14 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -177,6 +180,32 @@ cubey::ForwardPbrRenderer3DFrameRequestInfo valid_frame_request_info() {
                 .exposure = 1.25F,
             },
     };
+}
+
+cubey::scene::RenderDrawPacket3D
+routed_packet(std::uint32_t material_index, cubey::render::MaterialAlphaMode alpha_mode,
+              cubey::render::MaterialOpticalMode optical_mode,
+              cubey::render::MaterialBlendMode blend, VkCullModeFlags cull_mode,
+              cubey::render::MaterialPassMask pass_mask, bool cast_shadows = true) {
+    return {
+        .material = cubey::render::MaterialHandle{.index = material_index, .generation = 1},
+        .material_info =
+            {
+                .alpha_mode = alpha_mode,
+                .optical_mode = optical_mode,
+                .blend = blend,
+                .cull_mode = cull_mode,
+                .pass_mask = pass_mask,
+            },
+        .cast_shadows = cast_shadows,
+    };
+}
+
+void require_route_indices(const cubey::ForwardPbrDrawPlan& plan, cubey::ForwardPbrDrawRoute route,
+                           std::initializer_list<std::uint32_t> expected, const char* message) {
+    const std::span<const std::uint32_t> actual = plan.indices(route);
+    require(actual.size() == expected.size(), message);
+    require(std::equal(actual.begin(), actual.end(), expected.begin(), expected.end()), message);
 }
 
 } // namespace
@@ -558,6 +587,163 @@ void test_forward_pbr_renderer_3d_frame_plan_selects_required_passes() {
         "forward PBR renderer should reject duplicate color passes");
 }
 
+void test_forward_pbr_draw_plan_routes_packets_in_source_order() {
+    const cubey::render::MaterialPassMask depth_and_color =
+        cubey::render::default_material_pass_mask();
+    const cubey::render::MaterialPassMask color_only =
+        cubey::render::material_pass_mask(cubey::render::MaterialPassKind::ForwardColor);
+    const cubey::render::MaterialPassMask depth_only =
+        cubey::render::material_pass_mask(cubey::render::MaterialPassKind::DepthOnly);
+    const auto opaque = cubey::render::MaterialAlphaMode::Opaque;
+    const auto mask = cubey::render::MaterialAlphaMode::Mask;
+    const auto blend = cubey::render::MaterialAlphaMode::Blend;
+    const auto opaque_optics = cubey::render::MaterialOpticalMode::Opaque;
+    const auto transmission = cubey::render::MaterialOpticalMode::Transmission;
+    const auto opaque_blend = cubey::render::MaterialBlendMode::Opaque;
+    const auto alpha_blend = cubey::render::MaterialBlendMode::AlphaBlend;
+
+    cubey::scene::RenderFramePlan3D shadow_plan{
+        .draw_packets =
+            {
+                routed_packet(20, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_and_color),
+                routed_packet(21, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_NONE,
+                              depth_and_color),
+                routed_packet(22, mask, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_and_color),
+                routed_packet(23, mask, opaque_optics, opaque_blend, VK_CULL_MODE_NONE,
+                              depth_and_color),
+                routed_packet(24, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_and_color, false),
+                routed_packet(25, opaque, transmission, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_and_color),
+                routed_packet(26, blend, opaque_optics, alpha_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_and_color),
+                routed_packet(27, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_FRONT_BIT,
+                              depth_and_color),
+                routed_packet(28, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(29, mask, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_and_color),
+                routed_packet(30, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_NONE,
+                              depth_and_color),
+            },
+    };
+    cubey::scene::RenderFramePlan3D scene_plan{
+        .draw_packets =
+            {
+                routed_packet(1, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(2, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_NONE,
+                              color_only),
+                routed_packet(3, blend, opaque_optics, alpha_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(4, blend, opaque_optics, alpha_blend, VK_CULL_MODE_NONE, color_only),
+                routed_packet(5, opaque, transmission, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(6, opaque, transmission, opaque_blend, VK_CULL_MODE_NONE, color_only),
+                routed_packet(7, blend, transmission, alpha_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(8, blend, transmission, alpha_blend, VK_CULL_MODE_NONE, color_only),
+                routed_packet(1, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(9, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_only),
+                routed_packet(10, opaque, opaque_optics, opaque_blend, VK_CULL_MODE_FRONT_BIT,
+                              color_only),
+                routed_packet(11, mask, opaque_optics, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              color_only),
+                routed_packet(12, opaque, transmission, opaque_blend, VK_CULL_MODE_FRONT_BIT,
+                              color_only),
+                routed_packet(13, opaque, transmission, opaque_blend, VK_CULL_MODE_BACK_BIT,
+                              depth_only),
+            },
+    };
+
+    const cubey::ForwardPbrDrawPlan plan = cubey::build_forward_pbr_draw_plan({
+        .shadow = &shadow_plan,
+        .scene = &scene_plan,
+    });
+
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::ShadowOpaqueBack, {0},
+                          "forward PBR plan should retain opaque shadow back-cull source order");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::ShadowOpaqueNoCull, {1, 10},
+                          "forward PBR plan should retain no-cull opaque shadow source order");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::ShadowMaskedBack, {2, 9},
+                          "forward PBR plan should retain masked shadow back-cull source order");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::ShadowMaskedNoCull, {3},
+                          "forward PBR plan should retain masked shadow no-cull source order");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::SceneOpaqueBack, {0, 8, 11},
+                          "forward PBR plan should preserve ordinary opaque source order");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::SceneOpaqueNoCull, {1},
+                          "forward PBR plan should route ordinary no-cull opaque packets");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::SceneAlphaBack, {2},
+                          "forward PBR plan should route ordinary back-cull alpha packets");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::SceneAlphaNoCull, {3},
+                          "forward PBR plan should route ordinary no-cull alpha packets");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::TransmissionOpaqueBack, {4},
+                          "forward PBR plan should route back-cull transmission opaque packets");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::TransmissionOpaqueNoCull, {5},
+                          "forward PBR plan should route no-cull transmission opaque packets");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::TransmissionAlphaBack, {6},
+                          "forward PBR plan should route back-cull transmission alpha packets");
+    require_route_indices(plan, cubey::ForwardPbrDrawRoute::TransmissionAlphaNoCull, {7},
+                          "forward PBR plan should route no-cull transmission alpha packets");
+
+    const cubey::ForwardPbrDrawPlanMetrics& metrics = plan.metrics();
+    require(plan.has_transmission() && metrics.has_transmission,
+            "forward PBR plan should preserve the transmission graph trigger");
+    require(metrics.scene_source_packet_count == 14U && metrics.scene_classification_count == 14U &&
+                metrics.shadow_source_packet_count == 11U &&
+                metrics.shadow_classification_count == 11U,
+            "forward PBR plan should classify each scene and shadow source exactly once");
+    require(metrics.route_packet_reference_count == 16U,
+            "forward PBR plan should count routed packet references across all passes");
+    require(metrics.visible_scene_unique_material_count == 9U,
+            "forward PBR plan should count unique visible scene materials only");
+}
+
+void test_forward_pbr_draw_plan_retains_transmission_trigger_for_unsupported_routes() {
+    const cubey::scene::RenderFramePlan3D shadow_plan{};
+    const cubey::scene::RenderFramePlan3D scene_plan{
+        .draw_packets =
+            {
+                routed_packet(1, cubey::render::MaterialAlphaMode::Opaque,
+                              cubey::render::MaterialOpticalMode::Transmission,
+                              cubey::render::MaterialBlendMode::Opaque, VK_CULL_MODE_FRONT_BIT,
+                              cubey::render::material_pass_mask(
+                                  cubey::render::MaterialPassKind::ForwardColor)),
+            },
+    };
+    const cubey::ForwardPbrDrawPlan plan = cubey::build_forward_pbr_draw_plan({
+        .shadow = &shadow_plan,
+        .scene = &scene_plan,
+    });
+
+    require(plan.has_transmission() && plan.metrics().has_transmission,
+            "unsupported transmission cull modes should retain the prior graph trigger");
+    require(plan.metrics().route_packet_reference_count == 0U &&
+                plan.metrics().visible_scene_unique_material_count == 0U,
+            "unsupported cull routes should not enter renderer draw bins");
+
+    const cubey::scene::RenderFramePlan3D opaque_scene_plan{
+        .draw_packets =
+            {
+                routed_packet(2, cubey::render::MaterialAlphaMode::Opaque,
+                              cubey::render::MaterialOpticalMode::Opaque,
+                              cubey::render::MaterialBlendMode::Opaque, VK_CULL_MODE_BACK_BIT,
+                              cubey::render::material_pass_mask(
+                                  cubey::render::MaterialPassKind::ForwardColor)),
+            },
+    };
+    const cubey::ForwardPbrDrawPlan opaque_plan = cubey::build_forward_pbr_draw_plan({
+        .shadow = &shadow_plan,
+        .scene = &opaque_scene_plan,
+    });
+    require(!opaque_plan.has_transmission() && !opaque_plan.metrics().has_transmission,
+            "ordinary-only scene packets should preserve the direct graph path");
+}
+
 void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform() {
     const cubey::ForwardPbrRenderer3DSettings settings;
 
@@ -664,6 +850,8 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_resources.cpp");
     const std::string recording =
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_recording.cpp");
+    const std::string draw_plan =
+        read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_draw_plan.cpp");
     const std::string graph =
         read_source_file(root / "src/cubey/engine/forward_pbr_renderer_3d_graph.cpp");
     const std::string material = read_source_file(root / "include/cubey/render/material.h");
@@ -681,6 +869,8 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "forward PBR public header should hide renderer runtime state behind Impl");
     require_not_contains(header, "enum class ForwardPbrPipelineVariant",
                          "forward PBR public header should not expose pipeline variants");
+    require_not_contains(header, "ForwardPbrDrawPlan",
+                         "forward PBR public header should not expose draw-plan routing");
     require_not_contains(header, "pipeline_variants_",
                          "forward PBR public header should not expose pipeline storage");
     require_not_contains(header, "<cubey/render/shadow_map.h>",
@@ -691,6 +881,10 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "forward PBR internals should group swapchain-lifetime renderer state");
     require_contains(internal_header, "pipeline_variants",
                      "forward PBR internals should store keyed pipeline variants together");
+    require_contains(internal_header, "struct ForwardPbrDrawPlanMetrics",
+                     "forward PBR internals should expose renderer-private plan metrics");
+    require_contains(internal_header, "class ForwardPbrDrawPlan",
+                     "forward PBR internals should retain renderer-private routing state");
     require_contains(resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)",
                      "forward PBR renderer should own a mask-capable shadow pipeline variant");
     require_not_contains(
@@ -713,14 +907,14 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                          "forward PBR renderer should not store named mask optionals");
     require_contains(resources, "fragment_shader_file(config_.shadow_depth_fragment_shader)",
                      "mask shadow pipeline should compile the configured fragment shader");
-    require_contains(recording, "VK_CULL_MODE_BACK_BIT",
-                     "forward recording should filter single-sided materials by cull policy");
-    require_contains(recording, "VK_CULL_MODE_NONE",
-                     "forward recording should route double-sided materials to no-cull pipelines");
-    require_contains(recording, "render::MaterialAlphaMode::Opaque",
-                     "shadow recording should keep a cheap opaque depth path");
-    require_contains(recording, "render::MaterialAlphaMode::Mask",
-                     "shadow recording should record a mask-aware depth path");
+    require_contains(draw_plan, "VK_CULL_MODE_BACK_BIT",
+                     "forward draw planning should filter single-sided materials by cull policy");
+    require_contains(draw_plan, "VK_CULL_MODE_NONE",
+                     "forward draw planning should route double-sided materials to no-cull bins");
+    require_contains(draw_plan, "render::MaterialAlphaMode::Opaque",
+                     "forward draw planning should keep a cheap opaque depth path");
+    require_contains(draw_plan, "render::MaterialAlphaMode::Mask",
+                     "forward draw planning should record a mask-aware depth path");
     require_contains(recording, "bind_pbr_material",
                      "masked shadow recording should bind the static material descriptor set");
     require_not_contains(recording, "materials.instance(",
@@ -739,6 +933,15 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
     require_contains(
         graph, "if (!has_transmission)",
         "forward graph should retain its original shape when no transmission is visible");
+    require_contains(graph, "build_forward_pbr_draw_plan(frame_plans)",
+                     "forward graph should build one renderer-private draw plan per frame");
+    require_contains(graph, "draw_plan.has_transmission()",
+                     "forward graph should select staged transmission from the draw plan");
+    require_not_contains(graph, "has_transmission_packets",
+                         "forward graph should not rescan scene packets for transmission");
+    require_not_contains(
+        resources, "has_transmission_packets",
+        "forward renderer resources should not retain the retired transmission scan");
     require_contains(graph, "graph.add_pass(\"refraction source\"",
                      "forward graph should isolate the post-cloud HDR refraction source");
     require_contains(graph, "graph.add_pass(\"transmission\"",
@@ -782,13 +985,19 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "the pyramid descriptor should have an isolated swapchain-lifetime scene set");
     require_contains(recording, "record_transmission_stage",
                      "forward recording should own a dedicated transmission draw stage");
-    require_contains(recording, ".material = &transmission_scene_material().material()",
+    require_contains(recording, "transmission_scene_material().material()",
                      "only transmission draws should consume the same-command pyramid descriptor");
-    require_contains(
-        recording, ".optical_mode = render::MaterialOpticalMode::Transmission",
-        "the transmission stage should filter independent optical packet classification");
-    require_contains(recording, "render::MaterialOpticalMode::Opaque",
-                     "ordinary shadow and alpha recording should reject transmissive packets");
+    require_contains(draw_plan, "render::MaterialOpticalMode::Transmission",
+                     "the draw plan should filter independent transmission packet classification");
+    require_contains(draw_plan, "render::MaterialOpticalMode::Opaque",
+                     "the draw plan should reject transmissive shadow and ordinary alpha packets");
+    require_contains(recording, "draw_plan.indices(route)",
+                     "forward recording should consume preclassified route index spans");
+    require_contains(recording, "bound_material",
+                     "forward recording should suppress redundant consecutive material binds");
+    require_not_contains(
+        recording, "record_pipeline_draw_packets_3d",
+        "forward recording should not repeatedly full-scan packet spans per route");
     require_contains(pyramid_header, "void record_source_copy",
                      "HDR refraction capture should expose a mip-zero copy stage");
     require_contains(pyramid_header, "ColorTargetView source_target",

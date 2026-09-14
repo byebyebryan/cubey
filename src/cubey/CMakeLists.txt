@@ -303,6 +303,7 @@ add_library(cubey_engine STATIC
     engine/gltf_scene_upload_session.cpp
     engine/ocean_surface_runtime.cpp
     engine/forward_pbr_renderer_3d.cpp
+    engine/forward_pbr_renderer_3d_draw_plan.cpp
     engine/forward_pbr_renderer_3d_graph.cpp
     engine/forward_pbr_renderer_3d_recording.cpp
     engine/forward_pbr_renderer_3d_resources.cpp
