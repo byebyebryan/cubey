@@ -1,6 +1,7 @@
 #include <cubey/render/render_graph_builder.h>
 
 #include "render_graph_private.h"
+#include "render_graph_usage_traits.h"
 
 #include <limits>
 #include <stdexcept>
@@ -42,30 +43,6 @@ void validate_next_resource_index(std::size_t resource_count, const char* messag
     }
 }
 
-[[nodiscard]] bool is_transfer_texture_usage(RenderGraphTextureUsage usage) {
-    return usage == RenderGraphTextureUsage::TransferRead ||
-           usage == RenderGraphTextureUsage::TransferWrite;
-}
-
-[[nodiscard]] bool is_transfer_buffer_usage(RenderGraphBufferUsage usage) {
-    return usage == RenderGraphBufferUsage::TransferRead ||
-           usage == RenderGraphBufferUsage::TransferWrite;
-}
-
-[[nodiscard]] bool is_shader_texture_usage(RenderGraphTextureUsage usage) {
-    return usage == RenderGraphTextureUsage::SampledRead ||
-           usage == RenderGraphTextureUsage::StorageRead ||
-           usage == RenderGraphTextureUsage::StorageWrite ||
-           usage == RenderGraphTextureUsage::StorageReadWrite;
-}
-
-[[nodiscard]] bool is_shader_buffer_usage(RenderGraphBufferUsage usage) {
-    return usage == RenderGraphBufferUsage::UniformRead ||
-           usage == RenderGraphBufferUsage::StorageRead ||
-           usage == RenderGraphBufferUsage::StorageWrite ||
-           usage == RenderGraphBufferUsage::StorageReadWrite;
-}
-
 [[nodiscard]] constexpr VkPipelineStageFlags graphics_shader_stage_mask() noexcept {
     return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
            VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
@@ -100,51 +77,49 @@ void validate_texture_usage_for_pass(const RenderGraphCompiledPass& pass,
                                      const RenderGraphTextureResource& resource,
                                      RenderGraphTextureUsage usage,
                                      VkPipelineStageFlags stage_mask) {
-    if (pass.queue_domain == RenderGraphQueueDomain::Transfer &&
-        !is_transfer_texture_usage(usage)) {
+    const detail::RenderGraphTextureUsageTraits& traits =
+        detail::render_graph_texture_usage_traits(usage);
+    if (pass.queue_domain == RenderGraphQueueDomain::Transfer && !traits.transfer_access) {
         throw std::runtime_error("render graph transfer pass can only use transfer texture usages");
     }
-    if ((usage == RenderGraphTextureUsage::ColorAttachment ||
-         usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
-         usage == RenderGraphTextureUsage::DepthAttachment) &&
-        pass.queue_domain != RenderGraphQueueDomain::Graphics) {
-        throw std::runtime_error("render graph attachment usage requires a graphics pass");
+    if (!detail::render_graph_usage_allows_queue(traits.allowed_domains, pass.queue_domain)) {
+        if (traits.attachment_access) {
+            throw std::runtime_error("render graph attachment usage requires a graphics pass");
+        }
+        throw std::runtime_error("render graph texture usage is not allowed in this queue domain");
     }
-    if (usage == RenderGraphTextureUsage::DepthAttachment &&
-        !detail::is_render_graph_depth_aspect(resource.desc.aspects)) {
-        throw std::runtime_error("render graph depth attachment requires a depth texture");
-    }
-    if ((usage == RenderGraphTextureUsage::ColorAttachment ||
-         usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
-         usage == RenderGraphTextureUsage::StorageRead ||
-         usage == RenderGraphTextureUsage::StorageWrite ||
-         usage == RenderGraphTextureUsage::StorageReadWrite) &&
-        !detail::is_render_graph_color_aspect(resource.desc.aspects)) {
+    if (!detail::render_graph_texture_usage_allows_aspects(traits, resource.desc.aspects)) {
+        if (usage == RenderGraphTextureUsage::DepthAttachment) {
+            throw std::runtime_error("render graph depth attachment requires a depth texture");
+        }
         throw std::runtime_error("render graph color/storage usage requires a color texture");
     }
-    if (stage_mask != 0 && !is_shader_texture_usage(usage)) {
+    if (stage_mask != 0 && !traits.shader_access) {
         throw std::runtime_error("render graph explicit texture stage mask requires shader usage");
     }
-    if (is_shader_texture_usage(usage)) {
+    if (traits.shader_access) {
         validate_shader_stage_mask_for_pass(pass, stage_mask);
     }
 }
 
 void validate_buffer_usage_for_pass(const RenderGraphCompiledPass& pass,
-                                    RenderGraphBufferUsage usage,
-                                    VkPipelineStageFlags stage_mask) {
-    if (pass.queue_domain == RenderGraphQueueDomain::Transfer && !is_transfer_buffer_usage(usage)) {
+                                    RenderGraphBufferUsage usage, VkPipelineStageFlags stage_mask) {
+    const detail::RenderGraphBufferUsageTraits& traits =
+        detail::render_graph_buffer_usage_traits(usage);
+    if (pass.queue_domain == RenderGraphQueueDomain::Transfer && !traits.transfer_access) {
         throw std::runtime_error("render graph transfer pass can only use transfer buffer usages");
     }
-    if ((usage == RenderGraphBufferUsage::VertexRead ||
-         usage == RenderGraphBufferUsage::IndexRead) &&
-        pass.queue_domain != RenderGraphQueueDomain::Graphics) {
-        throw std::runtime_error("render graph vertex/index buffer usage requires a graphics pass");
+    if (!detail::render_graph_usage_allows_queue(traits.allowed_domains, pass.queue_domain)) {
+        if (traits.vertex_input_access) {
+            throw std::runtime_error(
+                "render graph vertex/index buffer usage requires a graphics pass");
+        }
+        throw std::runtime_error("render graph buffer usage is not allowed in this queue domain");
     }
-    if (stage_mask != 0 && !is_shader_buffer_usage(usage)) {
+    if (stage_mask != 0 && !traits.shader_access) {
         throw std::runtime_error("render graph explicit buffer stage mask requires shader usage");
     }
-    if (is_shader_buffer_usage(usage)) {
+    if (traits.shader_access) {
         validate_shader_stage_mask_for_pass(pass, stage_mask);
     }
 }

@@ -161,8 +161,9 @@ resolved resources + explicit command recording through cubey::vulkan
   from graph declarations.
 - **Execute**: synchronous pass-callback invocation in compiled pass order.
   Callbacks receive declaration context and record Vulkan commands explicitly.
-- **Queue domain**: the queue class a pass expects, initially graphics or
-  compute. Split queues remain future work.
+- **Queue domain**: the queue class a pass expects: graphics, compute, or
+  transfer. Split-queue ownership and asynchronous scheduling remain future
+  work.
 
 ## Intended Shape
 

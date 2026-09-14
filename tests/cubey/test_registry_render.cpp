@@ -136,6 +136,8 @@ void test_render_graph_sampled_texture_view_rejects_unallocated_transient();
 void test_render_graph_storage_read_write_initializes_transient_buffers();
 void test_render_graph_storage_read_write_initializes_transient_textures();
 void test_render_graph_transfer_pass_accepts_only_transfer_usages();
+void test_render_graph_usage_traits_cover_every_usage_signature_and_dependencies();
+void test_render_graph_usage_traits_validate_domains_aspects_and_stages();
 void test_render_item_resolves_draw_item_fields();
 void test_render_item_resolves_draw_item_from_frame_mesh_override();
 void test_render_item_validates_required_draw_identity();
@@ -282,6 +284,8 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_rejects_incompatible_same_pass_resource_access),
         CUBEY_TEST(test_render_graph_declares_compute_storage_buffer_flow),
         CUBEY_TEST(test_render_graph_transfer_pass_accepts_only_transfer_usages),
+        CUBEY_TEST(test_render_graph_usage_traits_cover_every_usage_signature_and_dependencies),
+        CUBEY_TEST(test_render_graph_usage_traits_validate_domains_aspects_and_stages),
         CUBEY_TEST(test_render_graph_frame_executor_tracks_slots_and_rejects_invalid_record_info),
         CUBEY_TEST(test_render_graph_frame_record_info_separates_command_buffer_ownership),
         CUBEY_TEST(test_render_pipeline_resource_builds_layout_and_dynamic_pipeline_info),

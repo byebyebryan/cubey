@@ -4,7 +4,270 @@
 
 #include <vulkan/vulkan.h>
 
+#include <array>
+#include <stdexcept>
+
 using namespace cubey::tests::render_graph;
+
+namespace {
+
+using cubey::render::RenderGraphBufferHandle;
+using cubey::render::RenderGraphBufferUsage;
+using cubey::render::RenderGraphPassBuilder;
+using cubey::render::RenderGraphQueueDomain;
+using cubey::render::RenderGraphTextureHandle;
+using cubey::render::RenderGraphTextureUsage;
+
+struct TextureUsageCase {
+    RenderGraphTextureUsage usage{};
+    RenderGraphQueueDomain domain{};
+    RenderGraphQueueDomain alternate_domain{};
+    bool has_alternate_domain = false;
+    VkImageAspectFlags aspects = 0;
+    VkImageAspectFlags invalid_aspects = 0;
+    VkImageUsageFlags usage_flags = 0;
+    bool requires_prior_write = false;
+    bool shader_access = false;
+};
+
+struct BufferUsageCase {
+    RenderGraphBufferUsage usage{};
+    RenderGraphQueueDomain domain{};
+    RenderGraphQueueDomain alternate_domain{};
+    bool has_alternate_domain = false;
+    VkBufferUsageFlags usage_flags = 0;
+    bool requires_prior_write = false;
+    bool shader_access = false;
+};
+
+constexpr std::array k_texture_usage_cases{
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::SampledRead,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .alternate_domain = RenderGraphQueueDomain::Compute,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .usage_flags = VK_IMAGE_USAGE_SAMPLED_BIT,
+        .requires_prior_write = true,
+        .shader_access = true,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::StorageRead,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .usage_flags = VK_IMAGE_USAGE_STORAGE_BIT,
+        .requires_prior_write = true,
+        .shader_access = true,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::StorageWrite,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .usage_flags = VK_IMAGE_USAGE_STORAGE_BIT,
+        .shader_access = true,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::StorageReadWrite,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .usage_flags = VK_IMAGE_USAGE_STORAGE_BIT,
+        .shader_access = true,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::ColorAttachment,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::ColorAttachmentReadWrite,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::DepthAttachment,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .aspects = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .invalid_aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::TransferRead,
+        .domain = RenderGraphQueueDomain::Transfer,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .usage_flags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        .requires_prior_write = true,
+    },
+    TextureUsageCase{
+        .usage = RenderGraphTextureUsage::TransferWrite,
+        .domain = RenderGraphQueueDomain::Transfer,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+        .usage_flags = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+    },
+};
+
+constexpr std::array k_buffer_usage_cases{
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::UniformRead,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .alternate_domain = RenderGraphQueueDomain::Compute,
+        .has_alternate_domain = true,
+        .usage_flags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        .requires_prior_write = true,
+        .shader_access = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::StorageRead,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        .requires_prior_write = true,
+        .shader_access = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::StorageWrite,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        .shader_access = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::StorageReadWrite,
+        .domain = RenderGraphQueueDomain::Compute,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .usage_flags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        .shader_access = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::VertexRead,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .usage_flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .requires_prior_write = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::IndexRead,
+        .domain = RenderGraphQueueDomain::Graphics,
+        .usage_flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        .requires_prior_write = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::TransferRead,
+        .domain = RenderGraphQueueDomain::Transfer,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .usage_flags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .requires_prior_write = true,
+    },
+    BufferUsageCase{
+        .usage = RenderGraphBufferUsage::TransferWrite,
+        .domain = RenderGraphQueueDomain::Transfer,
+        .alternate_domain = RenderGraphQueueDomain::Graphics,
+        .has_alternate_domain = true,
+        .usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    },
+};
+
+[[nodiscard]] cubey::render::RenderGraphTextureDesc texture_desc(VkImageAspectFlags aspects,
+                                                                 const char* label) {
+    return aspects == VK_IMAGE_ASPECT_DEPTH_BIT ? depth_texture_desc(label)
+                                                : color_texture_desc(label);
+}
+
+void declare_texture_usage(RenderGraphPassBuilder& pass, RenderGraphTextureHandle handle,
+                           RenderGraphTextureUsage usage, VkPipelineStageFlags stage_mask = 0) {
+    switch (usage) {
+    case RenderGraphTextureUsage::SampledRead:
+        pass.read_texture(handle, stage_mask);
+        return;
+    case RenderGraphTextureUsage::StorageRead:
+        pass.read_storage_texture(handle, stage_mask);
+        return;
+    case RenderGraphTextureUsage::StorageWrite:
+        pass.write_storage_texture(handle, stage_mask);
+        return;
+    case RenderGraphTextureUsage::StorageReadWrite:
+        pass.read_write_storage_texture(handle, stage_mask);
+        return;
+    case RenderGraphTextureUsage::ColorAttachment:
+        pass.write_color(handle);
+        return;
+    case RenderGraphTextureUsage::ColorAttachmentReadWrite:
+        pass.read_write_color(handle);
+        return;
+    case RenderGraphTextureUsage::DepthAttachment:
+        pass.write_depth(handle);
+        return;
+    case RenderGraphTextureUsage::TransferRead:
+        pass.transfer_read_texture(handle);
+        return;
+    case RenderGraphTextureUsage::TransferWrite:
+        pass.transfer_write_texture(handle);
+        return;
+    }
+    throw std::runtime_error("render graph texture usage is invalid");
+}
+
+void declare_buffer_usage(RenderGraphPassBuilder& pass, RenderGraphBufferHandle handle,
+                          RenderGraphBufferUsage usage, VkPipelineStageFlags stage_mask = 0) {
+    switch (usage) {
+    case RenderGraphBufferUsage::UniformRead:
+        pass.read_uniform_buffer(handle, stage_mask);
+        return;
+    case RenderGraphBufferUsage::StorageRead:
+        pass.read_storage_buffer(handle, stage_mask);
+        return;
+    case RenderGraphBufferUsage::StorageWrite:
+        pass.write_storage_buffer(handle, stage_mask);
+        return;
+    case RenderGraphBufferUsage::StorageReadWrite:
+        pass.read_write_storage_buffer(handle, stage_mask);
+        return;
+    case RenderGraphBufferUsage::VertexRead:
+        pass.read_vertex_buffer(handle);
+        return;
+    case RenderGraphBufferUsage::IndexRead:
+        pass.read_index_buffer(handle);
+        return;
+    case RenderGraphBufferUsage::TransferRead:
+        pass.transfer_read_buffer(handle);
+        return;
+    case RenderGraphBufferUsage::TransferWrite:
+        pass.transfer_write_buffer(handle);
+        return;
+    }
+    throw std::runtime_error("render graph buffer usage is invalid");
+}
+
+[[nodiscard]] VkPipelineStageFlags valid_shader_stage(RenderGraphQueueDomain domain) {
+    return domain == RenderGraphQueueDomain::Compute ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+                                                     : VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+}
+
+[[nodiscard]] VkPipelineStageFlags invalid_shader_stage(RenderGraphQueueDomain domain) {
+    return domain == RenderGraphQueueDomain::Compute ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                                     : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+}
+
+} // namespace
 
 void test_render_graph_texture_state_helpers_describe_common_frame_states() {
     const cubey::render::RenderGraphTextureState undefined =
@@ -335,6 +598,250 @@ void test_render_graph_transfer_pass_accepts_only_transfer_usages() {
                 .read_texture(invalid_source);
         },
         "transfer passes should reject non-transfer texture usages");
+}
+
+void test_render_graph_usage_traits_cover_every_usage_signature_and_dependencies() {
+    const auto& texture_cases = k_texture_usage_cases;
+    const auto& buffer_cases = k_buffer_usage_cases;
+    for (const TextureUsageCase& usage_case : texture_cases) {
+        {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphTextureHandle texture = graph.import_texture(
+                texture_desc(usage_case.aspects, "imported texture"), image(0x601), view(0x602));
+            RenderGraphPassBuilder pass = graph.add_pass("signature", usage_case.domain);
+            declare_texture_usage(pass, texture, usage_case.usage);
+            const cubey::render::CompiledRenderGraph compiled = graph.compile();
+            require(compiled.resource_signature().textures[0].usage_flags == usage_case.usage_flags,
+                    "texture usage should contribute its allocation flag to the signature");
+        }
+        {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphTextureHandle texture =
+                graph.create_texture(texture_desc(usage_case.aspects, "transient texture"));
+            RenderGraphPassBuilder pass = graph.add_pass("dependency", usage_case.domain);
+            declare_texture_usage(pass, texture, usage_case.usage);
+            if (usage_case.requires_prior_write) {
+                require_throws([&graph] { (void)graph.compile(); },
+                               "read-only texture usage should require a prior transient write");
+            } else {
+                (void)graph.compile();
+            }
+        }
+    }
+
+    for (const BufferUsageCase& usage_case : buffer_cases) {
+        {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphBufferHandle buffer_handle =
+                graph.import_buffer(buffer_desc("imported buffer"), buffer(0x603));
+            RenderGraphPassBuilder pass = graph.add_pass("signature", usage_case.domain);
+            declare_buffer_usage(pass, buffer_handle, usage_case.usage);
+            const cubey::render::CompiledRenderGraph compiled = graph.compile();
+            require(compiled.resource_signature().buffers[0].usage_flags == usage_case.usage_flags,
+                    "buffer usage should contribute its allocation flag to the signature");
+        }
+        {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphBufferHandle buffer_handle =
+                graph.create_buffer(buffer_desc("transient buffer"));
+            RenderGraphPassBuilder pass = graph.add_pass("dependency", usage_case.domain);
+            declare_buffer_usage(pass, buffer_handle, usage_case.usage);
+            if (usage_case.requires_prior_write) {
+                require_throws([&graph] { (void)graph.compile(); },
+                               "read-only buffer usage should require a prior transient write");
+            } else {
+                (void)graph.compile();
+            }
+        }
+    }
+}
+
+void test_render_graph_usage_traits_validate_domains_aspects_and_stages() {
+    const auto& texture_cases = k_texture_usage_cases;
+    const auto& buffer_cases = k_buffer_usage_cases;
+    for (const TextureUsageCase& usage_case : texture_cases) {
+        if (usage_case.usage != RenderGraphTextureUsage::TransferRead &&
+            usage_case.usage != RenderGraphTextureUsage::TransferWrite) {
+            require_throws(
+                [&usage_case] {
+                    cubey::render::RenderGraphBuilder graph;
+                    const RenderGraphTextureHandle texture = graph.import_texture(
+                        texture_desc(usage_case.aspects, "invalid domain texture"), image(0x610),
+                        view(0x611));
+                    const RenderGraphQueueDomain invalid_domain =
+                        usage_case.shader_access ? RenderGraphQueueDomain::Transfer
+                                                 : RenderGraphQueueDomain::Compute;
+                    RenderGraphPassBuilder pass = graph.add_pass("invalid domain", invalid_domain);
+                    declare_texture_usage(pass, texture, usage_case.usage);
+                },
+                "texture usage should reject incompatible queue domains");
+        }
+        if (usage_case.has_alternate_domain) {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphTextureHandle texture = graph.import_texture(
+                texture_desc(usage_case.aspects, "alternate texture"), image(0x611), view(0x612));
+            RenderGraphPassBuilder pass = graph.add_pass("alternate", usage_case.alternate_domain);
+            declare_texture_usage(pass, texture, usage_case.usage);
+            (void)graph.compile();
+        }
+        if (usage_case.invalid_aspects != 0) {
+            require_throws(
+                [&usage_case] {
+                    cubey::render::RenderGraphBuilder graph;
+                    const RenderGraphTextureHandle texture = graph.import_texture(
+                        texture_desc(usage_case.invalid_aspects, "invalid texture"), image(0x613),
+                        view(0x614));
+                    RenderGraphPassBuilder pass =
+                        graph.add_pass("invalid aspect", usage_case.domain);
+                    declare_texture_usage(pass, texture, usage_case.usage);
+                },
+                "texture usage should reject incompatible aspects");
+        }
+        if (usage_case.shader_access) {
+            {
+                cubey::render::RenderGraphBuilder graph;
+                const RenderGraphTextureHandle texture = graph.import_texture(
+                    texture_desc(usage_case.aspects, "stage texture"), image(0x615), view(0x616));
+                RenderGraphPassBuilder pass = graph.add_pass("stage", usage_case.domain);
+                declare_texture_usage(pass, texture, usage_case.usage,
+                                      valid_shader_stage(usage_case.domain));
+                (void)graph.compile();
+            }
+            require_throws(
+                [&usage_case] {
+                    cubey::render::RenderGraphBuilder graph;
+                    const RenderGraphTextureHandle texture = graph.import_texture(
+                        texture_desc(usage_case.aspects, "invalid stage texture"), image(0x617),
+                        view(0x618));
+                    RenderGraphPassBuilder pass =
+                        graph.add_pass("invalid stage", usage_case.domain);
+                    declare_texture_usage(pass, texture, usage_case.usage,
+                                          invalid_shader_stage(usage_case.domain));
+                },
+                "shader texture usage should reject incompatible explicit stages");
+        }
+    }
+
+    for (const BufferUsageCase& usage_case : buffer_cases) {
+        if (usage_case.usage != RenderGraphBufferUsage::TransferRead &&
+            usage_case.usage != RenderGraphBufferUsage::TransferWrite) {
+            require_throws(
+                [&usage_case] {
+                    cubey::render::RenderGraphBuilder graph;
+                    const RenderGraphBufferHandle buffer_handle =
+                        graph.import_buffer(buffer_desc("invalid domain buffer"), buffer(0x619));
+                    const RenderGraphQueueDomain invalid_domain =
+                        usage_case.shader_access ? RenderGraphQueueDomain::Transfer
+                                                 : RenderGraphQueueDomain::Compute;
+                    RenderGraphPassBuilder pass = graph.add_pass("invalid domain", invalid_domain);
+                    declare_buffer_usage(pass, buffer_handle, usage_case.usage);
+                },
+                "buffer usage should reject incompatible queue domains");
+        }
+        if (usage_case.has_alternate_domain) {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphBufferHandle buffer_handle =
+                graph.import_buffer(buffer_desc("alternate buffer"), buffer(0x619));
+            RenderGraphPassBuilder pass = graph.add_pass("alternate", usage_case.alternate_domain);
+            declare_buffer_usage(pass, buffer_handle, usage_case.usage);
+            (void)graph.compile();
+        }
+        if (usage_case.shader_access) {
+            {
+                cubey::render::RenderGraphBuilder graph;
+                const RenderGraphBufferHandle buffer_handle =
+                    graph.import_buffer(buffer_desc("stage buffer"), buffer(0x61A));
+                RenderGraphPassBuilder pass = graph.add_pass("stage", usage_case.domain);
+                declare_buffer_usage(pass, buffer_handle, usage_case.usage,
+                                     valid_shader_stage(usage_case.domain));
+                (void)graph.compile();
+            }
+            require_throws(
+                [&usage_case] {
+                    cubey::render::RenderGraphBuilder graph;
+                    const RenderGraphBufferHandle buffer_handle =
+                        graph.import_buffer(buffer_desc("invalid stage buffer"), buffer(0x61B));
+                    RenderGraphPassBuilder pass =
+                        graph.add_pass("invalid stage", usage_case.domain);
+                    declare_buffer_usage(pass, buffer_handle, usage_case.usage,
+                                         invalid_shader_stage(usage_case.domain));
+                },
+                "shader buffer usage should reject incompatible explicit stages");
+        }
+    }
+
+    for (const RenderGraphTextureUsage usage :
+         {RenderGraphTextureUsage::SampledRead, RenderGraphTextureUsage::TransferRead,
+          RenderGraphTextureUsage::TransferWrite}) {
+        cubey::render::RenderGraphBuilder graph;
+        const RenderGraphTextureHandle texture =
+            graph.import_texture(depth_texture_desc("depth texture"), image(0x61C), view(0x61D));
+        const RenderGraphQueueDomain domain = usage == RenderGraphTextureUsage::SampledRead
+                                                  ? RenderGraphQueueDomain::Graphics
+                                                  : RenderGraphQueueDomain::Transfer;
+        RenderGraphPassBuilder pass = graph.add_pass("depth usage", domain);
+        declare_texture_usage(pass, texture, usage);
+        (void)graph.compile();
+    }
+
+    require_throws(
+        [] {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphTextureHandle texture = graph.import_texture(
+                color_texture_desc("invalid queue texture"), image(0x61E), view(0x61F));
+            RenderGraphPassBuilder pass =
+                graph.add_pass("invalid queue", static_cast<RenderGraphQueueDomain>(99));
+            pass.write_color(texture);
+        },
+        "texture usage should reject invalid queue domains deterministically");
+    require_throws(
+        [] {
+            cubey::render::RenderGraphBuilder graph;
+            const RenderGraphBufferHandle buffer_handle =
+                graph.import_buffer(buffer_desc("invalid queue buffer"), buffer(0x620));
+            RenderGraphPassBuilder pass =
+                graph.add_pass("invalid queue", static_cast<RenderGraphQueueDomain>(99));
+            pass.write_storage_buffer(buffer_handle);
+        },
+        "buffer usage should reject invalid queue domains deterministically");
+
+    const cubey::render::RenderGraphTextureResource texture{
+        .handle = RenderGraphTextureHandle{.index = 1},
+        .desc = color_texture_desc("invalid texture usage"),
+    };
+    const cubey::render::RenderGraphCompiledPass invalid_texture_pass{
+        .texture_accesses =
+            {
+                cubey::render::RenderGraphTextureAccess{
+                    .handle = texture.handle,
+                    .usage = static_cast<RenderGraphTextureUsage>(99),
+                },
+            },
+    };
+    require_throws(
+        [&texture, &invalid_texture_pass] {
+            (void)cubey::render::CompiledRenderGraph({texture}, {}, {invalid_texture_pass});
+        },
+        "invalid texture usage values should fail while deriving resource signatures");
+
+    const cubey::render::RenderGraphBufferResource buffer_resource{
+        .handle = RenderGraphBufferHandle{.index = 1},
+        .desc = buffer_desc("invalid buffer usage"),
+    };
+    const cubey::render::RenderGraphCompiledPass invalid_buffer_pass{
+        .buffer_accesses =
+            {
+                cubey::render::RenderGraphBufferAccess{
+                    .handle = buffer_resource.handle,
+                    .usage = static_cast<RenderGraphBufferUsage>(99),
+                },
+            },
+    };
+    require_throws(
+        [&buffer_resource, &invalid_buffer_pass] {
+            (void)cubey::render::CompiledRenderGraph({}, {buffer_resource}, {invalid_buffer_pass});
+        },
+        "invalid buffer usage values should fail while deriving resource signatures");
 }
 
 void test_render_graph_rejects_shader_stage_masks_outside_pass_domain() {

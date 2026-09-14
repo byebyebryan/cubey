@@ -1,6 +1,7 @@
 #include <cubey/render/render_graph.h>
 
 #include "render_graph_private.h"
+#include "render_graph_usage_traits.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -8,38 +9,6 @@
 
 namespace cubey::render {
 namespace {
-
-[[nodiscard]] bool is_texture_read(RenderGraphTextureUsage usage) {
-    return usage == RenderGraphTextureUsage::SampledRead ||
-           usage == RenderGraphTextureUsage::StorageRead ||
-           usage == RenderGraphTextureUsage::StorageReadWrite ||
-           usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
-           usage == RenderGraphTextureUsage::TransferRead;
-}
-
-[[nodiscard]] bool is_texture_write(RenderGraphTextureUsage usage) {
-    return usage == RenderGraphTextureUsage::StorageWrite ||
-           usage == RenderGraphTextureUsage::StorageReadWrite ||
-           usage == RenderGraphTextureUsage::ColorAttachment ||
-           usage == RenderGraphTextureUsage::ColorAttachmentReadWrite ||
-           usage == RenderGraphTextureUsage::DepthAttachment ||
-           usage == RenderGraphTextureUsage::TransferWrite;
-}
-
-[[nodiscard]] bool is_buffer_read(RenderGraphBufferUsage usage) {
-    return usage == RenderGraphBufferUsage::UniformRead ||
-           usage == RenderGraphBufferUsage::StorageRead ||
-           usage == RenderGraphBufferUsage::StorageReadWrite ||
-           usage == RenderGraphBufferUsage::VertexRead ||
-           usage == RenderGraphBufferUsage::IndexRead ||
-           usage == RenderGraphBufferUsage::TransferRead;
-}
-
-[[nodiscard]] bool is_buffer_write(RenderGraphBufferUsage usage) {
-    return usage == RenderGraphBufferUsage::StorageWrite ||
-           usage == RenderGraphBufferUsage::StorageReadWrite ||
-           usage == RenderGraphBufferUsage::TransferWrite;
-}
 
 [[nodiscard]] VkPipelineStageFlags shader_stage_for_pass(RenderGraphQueueDomain domain) {
     if (domain == RenderGraphQueueDomain::Compute) {
@@ -183,12 +152,14 @@ struct LastBufferAccess {
 
 [[nodiscard]] bool needs_texture_barrier(RenderGraphTextureUsage previous,
                                          RenderGraphTextureUsage next) {
-    return is_texture_write(previous) || is_texture_write(next);
+    return detail::render_graph_texture_usage_traits(previous).writes ||
+           detail::render_graph_texture_usage_traits(next).writes;
 }
 
 [[nodiscard]] bool needs_buffer_barrier(RenderGraphBufferUsage previous,
                                         RenderGraphBufferUsage next) {
-    return is_buffer_write(previous) || is_buffer_write(next);
+    return detail::render_graph_buffer_usage_traits(previous).writes ||
+           detail::render_graph_buffer_usage_traits(next).writes;
 }
 
 [[nodiscard]] RenderGraphTextureState transient_initial_texture_state() {
@@ -328,8 +299,9 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
         for (const RenderGraphTextureAccess& access : pass.texture_accesses) {
             const RenderGraphTextureResource& resource = texture_resource(access.handle);
             const std::size_t index = static_cast<std::size_t>(access.handle.index - 1U);
-            if (is_texture_read(access.usage) && !is_texture_write(access.usage) &&
-                !texture_available[index]) {
+            const detail::RenderGraphTextureUsageTraits& traits =
+                detail::render_graph_texture_usage_traits(access.usage);
+            if (traits.reads && !traits.writes && !texture_available[index]) {
                 throw std::runtime_error("render graph transient texture is read before write");
             }
             const LastTextureAccess& previous = last_texture_accesses[index];
@@ -347,7 +319,7 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
                     make_texture_acquire_barrier(access.handle, transient_initial_texture_state(),
                                                  pass, resource, access));
             }
-            if (is_texture_write(access.usage)) {
+            if (traits.writes) {
                 texture_writes.push_back(index);
             }
             last_texture_accesses[index] = LastTextureAccess{
@@ -360,8 +332,9 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
         for (const RenderGraphBufferAccess& access : pass.buffer_accesses) {
             const RenderGraphBufferResource& resource = buffer_resource(access.handle);
             const std::size_t index = static_cast<std::size_t>(access.handle.index - 1U);
-            if (is_buffer_read(access.usage) && !is_buffer_write(access.usage) &&
-                !buffer_available[index]) {
+            const detail::RenderGraphBufferUsageTraits& traits =
+                detail::render_graph_buffer_usage_traits(access.usage);
+            if (traits.reads && !traits.writes && !buffer_available[index]) {
                 throw std::runtime_error("render graph transient buffer is read before write");
             }
             const LastBufferAccess& previous = last_buffer_accesses[index];
@@ -375,7 +348,7 @@ CompiledRenderGraph RenderGraphBuilder::compile() const {
                 pass.before_buffer_barriers.push_back(make_buffer_acquire_barrier(
                     access.handle, resource.initial_state.value(), pass, access));
             }
-            if (is_buffer_write(access.usage)) {
+            if (traits.writes) {
                 buffer_writes.push_back(index);
             }
             last_buffer_accesses[index] = LastBufferAccess{
