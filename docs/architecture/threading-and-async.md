@@ -126,8 +126,10 @@ Vulkan wrapper policy:
   allocate command pools by frame and worker index.
 - `DescriptorPool` remains single-owner unless a future allocator explicitly
   shards pools per frame and worker.
-- Resource destruction should move toward deferred destruction once multiple
-  frames or async requests can keep GPU work alive beyond the immediate call.
+- `GpuRuntime` owns deferred destruction and retires resources by completed GPU
+  submission ticket. Broader fence/timeline completion remains an expansion
+  trigger only if ticket consumers need readiness semantics beyond the current
+  completion watermark.
 - Readback data should be copied into owned CPU buffers before worker-side
   encoding or comparison.
 
@@ -304,8 +306,9 @@ defined.
 
 ## Runtime Boundary
 
-Before the first real project gets large, introduce an async-ready project
-boundary. The exact names can change, but the shape should be:
+The async-ready project boundary below is now implemented. The exact names may
+still evolve, but this illustrative shape documents the current lifecycle
+contract:
 
 ```cpp
 struct ProjectFrame {
@@ -332,16 +335,18 @@ public:
 requests, timing, and eventually UI hooks. It should not expose raw queue
 submission as a casual escape hatch.
 
-Examples can stay explicit. Projects should use this boundary once it exists.
+Examples can stay explicit. Projects may use this boundary now when they need
+shared lifecycle or service ownership; they should not require examples to
+adopt a generic project host.
 
 Current implementation: `ProjectContext` exposes jobs, uploads, captures, and
 optionally `ProjectGpuServices`. `ProjectRuntimeServices` owns those CPU-side
 services and creates timing-only `ProjectFrame` values from `FrameTiming`.
 `ProjectRuntimeAdapter` adds same-frame reuse and project-context access.
 `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and the `ProjectLike` concept
-define the first compile-time checked lifecycle shape for future `projects/`
-code. `smoke_2d` now consumes `ProjectFrame` for simulation timing, but
-examples remain direct.
+define the first compile-time checked lifecycle shape for `projects/` code.
+`smoke_2d` now consumes `ProjectFrame` for simulation timing, while examples
+remain direct.
 
 ## Error Handling And Shutdown
 
@@ -357,17 +362,23 @@ examples remain direct.
 
 ## Testing
 
-Near-term test strategy:
+Current coverage:
 
-- Unit-test the `cubey::jobs` facade with an inline executor and the real
-  executor.
-- Test worker exception propagation.
-- Test shutdown behavior: accepted jobs complete, new jobs are rejected after
-  shutdown starts.
-- Keep no-session headless CTest coverage in the default suite and preserve
-  GLFW/swapchain coverage in the explicit `dev-windowed` suite.
-- Add a thread-sanitizer preset once the first real concurrent code lands.
-- Add a fake upload/capture queue test before threading it into Vulkan.
+- The `cubey::jobs` facade has unit coverage with an inline executor and the
+  real executor.
+- Worker exception propagation has unit coverage.
+- Shutdown coverage verifies that accepted jobs complete and new jobs are
+  rejected after shutdown starts.
+- The default suite includes no-session headless CTest coverage, while the
+  explicit `dev-windowed` suite covers GLFW and swapchain behavior.
+- CPU-side upload/capture tests use owned request data, the inline executor,
+  and a fake video encoder; runtime and project-GPU tests use fake device and
+  submission fixtures so queue/status/owner-boundary behavior is testable
+  without a live Vulkan device.
+- The focused `tsan` configure/build/test preset runs
+  `cubey_tsan_concurrency_tests` over jobs, GPU work/runtime, upload/capture,
+  staged-resource, and project-runtime/service paths. It is intentionally a
+  focused concurrency lane rather than a driver-backed or windowed gate.
 
 Runtime smoke strategy:
 

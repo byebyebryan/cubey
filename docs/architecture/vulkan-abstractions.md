@@ -1,7 +1,8 @@
 # Vulkan Abstraction Map
 
-This document maps the remaining Vulkan framework work for Cubey. It is a
-planning guide, not a promise to abstract every Vulkan concept. Add code to
+This document maps Cubey's current Vulkan foundation and the concrete triggers
+for expanding it. It is a planning guide, not a promise to abstract every
+Vulkan concept. Add code to
 `cubey::vulkan` when it creates a deliberate foundation contract, fixes a real
 lifetime or synchronization hazard, removes repeated setup, or gives projects a
 clearer vocabulary without hiding the constraints that matter.
@@ -18,14 +19,20 @@ The current boundary is:
 - `cubey::vulkan` owns Vulkan object lifetime and common create-info
   construction.
 - `cubey::render` owns renderer-facing vocabulary above Vulkan: target views,
-  narrow resource wrappers, and small draw helpers.
-- Examples and projects own rendering intent: shaders, meshes, descriptors,
-  command recording sequence, resize policy, and user interaction.
+  resource wrappers, material/pass metadata, graph declaration/execution, and
+  small draw helpers.
+- `cubey::engine` owns the scoped Engine root, project runtime services and GPU
+  bridge, render-resource identity, and shared renderer policy and instance
+  lifetime through `RendererService`.
+- Hosts own platform and device setup plus the host-visible `GpuRuntime`.
+  Examples and projects retain product render intent: which views and passes to
+  submit, authored asset/resource lifetime, project settings, and interaction
+  policy. App/window hosting lives outside `cubey::vulkan`.
 - Higher-level renderer, material, and render-graph concepts should be designed
-  from established graphics terminology and clear Cubey contracts. They do not
-  need duplicated project code as a prerequisite, but they do need a narrow
-  scope and an explicit reason to exist. App/window hosting lives outside
-  `cubey::vulkan`.
+  from established graphics terminology and clear Cubey contracts. They should
+  remain narrow, with current authoritative detail in the
+  [renderer foundation](renderer-foundation.md) and
+  [render graph direction](render-graph.md).
 
 ## Foundation Rules
 
@@ -69,13 +76,15 @@ Current state:
   execution explicit for tests, while `SubmissionCoordinator` serializes the
   actual queue submissions.
 
-Needed next:
+Expansion triggers:
 
-- Capability helpers for formats and optional features.
-- Queue-family model that can represent split graphics, compute, and present
-  queues.
-- Fence/timeline-backed completion once GPU submission tickets need to feed
-  project-runtime deferred destruction directly.
+- Add shared capability helpers when multiple consumers need the same optional
+  format or feature query.
+- Extend the queue-family model when a measured workload benefits from split
+  graphics, compute, or present queues.
+- Extend submission-ticket completion into a broader fence/timeline contract
+  only when project-runtime readback or destruction needs completion semantics
+  beyond the current binary-fence watermark.
 
 Defer:
 
@@ -101,17 +110,18 @@ Current state:
 - The host layer exposes the active render frame slot to callbacks. Frame slot,
   frame index, and swapchain image index are separate concepts.
 
-Needed next:
+Expansion triggers:
 
-- Frame tickets for deferred destruction and delayed readback/capture readiness.
-- A way to rebuild swapchain-sized resources consistently.
-- A reusable resize/recreate coordinator if example loops keep repeating.
+- Add a reusable swapchain-sized resource coordinator only if multiple hosts or
+  projects converge on the same rebuild ordering.
+- Extend frame-ticket APIs for nonblocking readback/capture polling only when an
+  interactive capture workflow needs it; per-slot submission tickets already
+  support current deferred retirement.
 
 Defer:
 
-- Renderer/material/scene abstractions until the contract is narrow and
-  terminology-aligned enough to be useful foundation code rather than a generic
-  engine layer.
+- Generalized renderer/material/scene abstractions beyond the current
+  `cubey::render` and `cubey::engine` contracts.
 
 ### 3. Commands And Submission
 
@@ -158,12 +168,13 @@ Current state:
   barriers, descriptor binding policy, and render intent, while using
   `CommandRecorder` for the repeated Vulkan call surface.
 
-Needed next:
+Expansion triggers:
 
 - Debug-label helpers once marker scope becomes useful during capture/debugging.
-- One-shot compute/transfer helper vocabulary.
-- Move remaining direct host/project transfer and capture requests toward
-  runtime-queued work and explicit completion tickets.
+- Add higher-level one-shot compute/transfer vocabulary only when a second
+  consumer repeats a stable shape.
+- Add another queued transfer or capture facade only when a project-facing
+  workflow needs a contract beyond `GpuRuntime` and `ProjectGpuServices`.
 - Per-frame/per-thread command-pool sharding before any parallel command
   recording.
 
@@ -205,26 +216,32 @@ Current state:
   readback are used.
 - Low-level upload/readback helpers remain synchronous building blocks.
   Batching reduces owner-thread round trips and queue submissions; it does not
-  introduce background transfer lifetime, staging persistence, or a split
-  transfer queue. The host-visible capture-record path now goes through
-  `GpuRuntime`, and
+  introduce a split transfer queue. The host-visible capture-record path now
+  goes through `GpuRuntime`, and
   project-facing RGBA8 image readback goes through `ProjectGpuServices`
   tickets.
+- A host-configured `GpuRuntime` owns a persistently mapped bounded staging
+  pool. It starts at 32 MiB, grows in 32 MiB blocks to a 128 MiB cap, reclaims
+  ranges and transfer resources by completed submission ticket, and reports
+  bounded-pool backpressure. Current glTF installation keeps physical steps
+  within 32 MiB, individual buffer or block-row-aligned texture copies within
+  2 MiB, and a soft 2 ms owner-CPU target.
 
-Needed next:
+Expansion triggers:
 
-- Queue-shaped upload and capture requests that can execute synchronously at
-  first, while keeping project code independent from blocking implementation
-  details.
-- GPU capture polling and ticket integration once interactive capture becomes a
-  real workflow.
+- Add GPU capture polling and broader ticket handoff once interactive capture
+  becomes a real workflow.
+- Add another staging policy or transfer path only if measured install stalls
+  exceed the current bounded owner-side contract.
 
 Defer:
 
 - VMA or another allocator until manual memory allocation becomes the limiting
   cost.
-- Persistent staging arenas, transfer overlap, and buffer suballocation until
-  measured setup-time allocation or copy cost justifies their lifetime model.
+- Transfer overlap and buffer suballocation until measured setup-time
+  allocation or copy cost justifies their lifetime model.
+- General multi-asset streaming and partial residency until a product supplies
+  measured pressure.
 - Prefiltered KTX/KTX2 environment import and offline filtering until direct
   HDR IBL resources expose enough quality and runtime-pressure evidence.
 
@@ -246,11 +263,11 @@ Current state:
 - `DescriptorWriteBatch` stages mixed descriptor writes in append order and
   owns the backing buffer/image info storage until the Vulkan update call.
 
-Needed next:
+Expansion triggers:
 
-- Sampled-image descriptor write helper if a sampled image without sampler gets
-  a concrete use case.
-- Resettable descriptor-pool helpers once descriptor reuse needs a stronger
+- Add a sampled-image descriptor write helper if a sampled image without
+  sampler gets a concrete use case.
+- Add resettable descriptor-pool helpers once descriptor reuse needs a stronger
   lifetime contract than the current owned bundle/array shapes.
 
 Defer:
@@ -274,15 +291,22 @@ Current state:
 - `PipelineLayoutInfo` builds pipeline layout create-info for descriptor set
   layouts and push constants.
 - `ComputePipelineInfo` builds the current compute pipeline create-info shape.
+- Render-level `MaterialPassInfo`, pipeline recipe helpers, and the canonical
+  PBR material/pass contracts sit above these Vulkan pipeline primitives; their
+  ownership and policy are documented in the
+  [renderer foundation](renderer-foundation.md).
 
-Needed next:
+Expansion triggers:
 
 - Optional graphics-state knobs only when examples need them.
 
 Defer:
 
-- Shader reflection, hot reload, pipeline cache, materials, and pipeline
-  libraries until Cubey has a narrow, terminology-aligned contract for them.
+- Shader reflection, hot reload, pipeline cache, and pipeline libraries until a
+  concrete project needs them.
+- Broader material-asset policy beyond the current
+  `cubey::render::MaterialPassInfo`, PBR descriptor contract, and
+  `ForwardPbrRenderer3D` ownership boundary.
 
 ### 7. Render Attachments And Render Targets
 
@@ -308,11 +332,16 @@ Current state:
   requirements and can allocate simple non-aliased transient color targets;
   `shadow_cube` uses that path for its scene color target before a fullscreen
   present pass samples it into the swapchain.
+- `RenderGraphBuilder` and `RenderGraphFrameExecutor` now provide the shared
+  declaration, validation, per-frame resource-set reuse, and graph-owned
+  boundary synchronization used by the forward-PBR and other multi-pass
+  consumers. The [render graph direction](render-graph.md) remains the
+  authoritative detail.
 
-Needed next:
+Expansion triggers:
 
-- Clear/load/store options if examples stop clearing every frame.
-- Additional target shape only when a concrete project needs multiple color
+- Add clear/load/store options if a project stops clearing every frame.
+- Add another target shape only when a concrete project needs multiple color
   targets or resolve attachments.
 
 Defer:
@@ -344,19 +373,34 @@ Current state:
 - `examples/particle_cubes` still defines particle storage-buffer layout,
   seeding, simulation parameters, cube instance interpretation, and compute
   barrier policy locally.
+- `cubey::render::MaterialPassInfo`, the canonical PBR descriptor/material
+  schema, pooled `PbrMaterialTable` residency, and material instances provide
+  the current shared material/pass vocabulary. `ForwardPbrRenderer3D` owns the
+  reusable forward-PBR policy; projects still own authored textures and render
+  intent. See the [renderer foundation](renderer-foundation.md) for the full
+  descriptor and environment contract.
+- `cubey::scene::RenderResourceRegistry`, `ResourceTable`, renderable packets,
+  and material/pass metadata provide the current CPU scene/resource identity
+  boundary. They do not own Vulkan resource lifetime.
+- `GltfSceneImporter` and `GltfSceneUploadSession` provide the current
+  CPU-prepare, GPU-owner residency, and frame-boundary activation path. The
+  closed glTF Viewer V1 scope keeps whole-generation activation and bounded
+  single-asset staging; general streaming and partial residency remain
+  deferred. See the [glTF asset direction](gltf-assets.md) and [Viewer V1
+  closure](../notes/gltf-viewer-v1-closure.md).
 
-Needed later:
+Expansion triggers:
 
 - Small geometry helpers once repeated examples or a clear primitive contract
   justify them.
-- Material/pipeline conventions once descriptor, shader, and parameter
-  contracts are narrow enough.
-- Storage-buffer or billboard helpers once the data layout and render contract
-  are clear enough to avoid baking in one particle demo's policy.
+- Add storage-buffer or billboard helpers once the data layout and render
+  contract are clear enough to avoid baking in one particle demo's policy.
 
 Defer:
 
-- Scene graph, material metadata, glTF import, and asset database.
+- General scene graph, material asset graph, and asset database policy.
+- Generalized multi-asset streaming or partial residency; the current glTF
+  importer and renderer integration are complete for the closed V1 scope.
 
 ### 9. App And Project Runtime
 
@@ -373,14 +417,20 @@ Current state:
   `HeadlessPngHost` remains as the legacy compatibility name.
 - Shared non-platform helpers cover frame timing, frame stats, and orbit
   control.
+- `Engine` owns project runtime services, the CPU-side render-resource registry,
+  created scenes, and `RendererService`/`ForwardPbrRenderer3D` instances. It
+  does not own platform or device setup.
+- `ProjectContext`, `ProjectRuntimeAdapter`, and `ProjectGpuServices` provide
+  the current project lifecycle, queued CPU/GPU work, and ticket handoff
+  vocabulary. Projects retain render intent and authored resource policy.
 
-Needed later:
+Expansion triggers:
 
-- Project runtime vocabulary: setup, update, render packet, resize, shutdown.
-- `ProjectContext` services for CPU jobs, uploads, capture requests, timing,
-  and eventually UI hooks.
 - Higher-level host lifecycle only if a second project repeats project-level
-  setup/update/render/shutdown structure.
+  setup/update/render/resize/shutdown structure beyond the current
+  `ProjectRuntimeAdapter` boundary.
+- Additional `ProjectContext` services only when a concrete project needs a
+  stable cross-project contract.
 
 Defer:
 
@@ -407,8 +457,9 @@ Current state:
   submission for frames and immediate work.
 - `GpuRuntime` provides the host-owned GPU work queue and owner-context boundary
   with a threaded default and explicit inline mode.
-- `Engine` is the first scoped root owner for project runtime services and
-  scene creation; it intentionally does not own host/device setup yet.
+- `Engine` is the scoped root owner for project runtime services, render
+  resource identity, scene creation, and renderer instance lifetime; it does
+  not own host/device setup.
 - `ProjectContext`, `ProjectFrame`, `ProjectExtent`, `RenderPacket`, and
   `ProjectRuntimeServices`, `ProjectRuntimeAdapter`, and `ProjectLike` provide
   the first async-ready project runtime vocabulary, service ownership bundle,
@@ -420,12 +471,14 @@ Current state:
 - `ImmediateCommands`, readback helpers, and PNG output are still synchronous
   where they wait for immediate GPU work or process completed pixels.
 
-Needed next:
+Expansion triggers:
 
-- GPU readback/capture polling APIs beyond explicit drain/take handoff.
-- Broader fence/timeline integration between GPU submission tickets and
-  asynchronous readback/capture readiness.
-- Vulkan timeline-semaphore integration if binary fences stop being enough.
+- GPU readback/capture polling APIs beyond explicit drain/take handoff when an
+  interactive workflow needs nonblocking completion.
+- Broader fence/timeline integration when binary frame-slot completion stops
+  being sufficient for asynchronous readback/capture readiness.
+- Vulkan timeline-semaphore integration only when that completion pressure is
+  measured.
 
 Defer:
 
@@ -443,18 +496,36 @@ Current state:
   optional MP4 artifact creation.
 - Shared CMake smoke helpers keep windowed no-display checks and headless
   capture validation consistent across examples.
+- `GpuTimestampProfiler` provides optional per-pass GPU timestamp queries when
+  the device exposes them, and the shared performance UI can display the latest
+  timings.
+- Renderer, render-graph, upload, and staged-resource paths expose optional
+  caller-owned CPU/GPU metrics without changing their ownership or execution
+  contracts.
+- The isolated `dev-gltf-conformance` preset runs the pinned Khronos
+  compatibility/conformance and headless evidence lane; the ordinary `dev`
+  suite remains independent of fetched external assets.
 
-Needed later:
+Expansion triggers:
 
-- Debug names and labels.
-- Timestamp queries and GPU timing.
-- Screenshot/readback comparisons built on the headless output path.
+- Debug names and labels once marker scope becomes useful during capture or
+  debugging.
+- Additional timestamp/query integration only when a consumer needs GPU timing
+  beyond the current `GpuTimestampProfiler` path.
+- Screenshot/readback comparisons when deterministic visual comparison becomes
+  a required validation workflow.
 
 Defer:
 
 - Heavy profiling UI.
 
-## Recommended Next Batches
+## Historical Implementation Record
+
+The batches below are retained as an implementation history. They describe
+completed slices and are not a current backlog or authority for foundation
+work. Use the layer-map `Current state`, `Expansion triggers`, and `Defer`
+sections above, together with the [roadmap](../roadmap.md), for current
+direction.
 
 ### Batch 1: Resource And Attachment Cleanup
 
@@ -697,11 +768,9 @@ remain deferred.
 
 ## Current Recommendation
 
-Batch 1 through Batch 11 have their first passes on `main`, and later work has
-added broad render-graph adoption, an engine-owned forward-PBR renderer,
-project-owned typed configuration, and staged whole-generation resources.
-Further Vulkan/renderer abstraction should now follow measured consumer
-pressure: reconcile repeated graph/resource setup first, or adopt staged glTF
-asset loading if profiling identifies startup as the next visible bottleneck.
-Do not default to split queues, automatic scheduling, descriptor abstraction,
-or a generic project host.
+The foundation layers and the historical batches above are now implemented for
+the current product scope. Further Vulkan or renderer abstraction should follow
+measured consumer pressure: extend graph/resource setup only for a repeated
+project need, and reopen glTF or staging work only from a measured product
+requirement. Do not default to split queues, automatic scheduling, descriptor
+abstraction, generalized streaming, or a generic project host.

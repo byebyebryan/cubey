@@ -1,15 +1,18 @@
 # Entity And Component Foundation
 
-This document captures Cubey's intended entity/component foundation before
-scene, renderable, camera, light, material, or asset ownership grows around
-ad hoc APIs. The goal is to establish the shape and threading contract first,
-then implement narrow slices against it.
+This document captures Cubey's implemented entity/component foundation and the
+contracts that keep scene, renderable, camera, light, and asset-facing code
+from growing around ad hoc APIs. New component work should follow these
+contracts and concrete consumer pressure rather than assume a generic ECS is
+needed.
 
 ## Direction
 
 Cubey should use a manager-oriented ECS-lite design:
 
-- `Engine` is the scoped root owner for engine services and scene creation.
+- `Engine` is the scoped root owner for engine services, render-resource
+  identity, scene creation, project runtime/GPU services, and renderer service
+  instances.
 - `Entity` is a small generational identity handle with no behavior.
 - `EntityManager` owns entity creation, destruction, liveness, and generation
   validation.
@@ -79,9 +82,9 @@ cross-manager destruction.
 
 `Engine`:
 The non-singleton root owner for engine-wide services and `Scene` instances.
-It creates and destroys scenes, owns render resource handle identity, exposes
-project runtime contexts, and gives future engine-wide managers a stable home
-without making access global.
+It creates and destroys scenes, owns render resource handle identity,
+project-runtime/GPU service attachment, and `RendererService` instances. Hosts
+still own platform/device setup and the host-visible `GpuRuntime`.
 
 `SceneEditQueue`:
 A thread-friendly list of requested structural changes and component writes.
@@ -110,6 +113,11 @@ Rules:
 - Read-view validation is epoch-local. A read view acquired before a later
   destroy commit can still read the component snapshot it published with, while
   latest-scene mutation APIs reject the stale handle after the destroy commit.
+- `Scene::commit` has an atomic semantic-rejection boundary: validation runs
+  before publication, and a rejected edit batch leaves the scene unchanged
+  while rolling back any reserved entities. After validation succeeds, the
+  complete publication phase is `noexcept` and non-recoverable; it either
+  completes or terminates, so partial scene state cannot escape to callers.
 - Mutating the same component from multiple threads still requires explicit
   synchronization or serialized edits. Cubey prevents unrelated structural
   changes from invalidating readers; it does not make same-slot writes
@@ -131,9 +139,9 @@ workers:
 scene owner:
   merge edit queues
   validate entity and component handles
-  apply structural changes to stable slots
+  publish validated structural changes to stable slots
   update transform world matrices and other dirty data
-  publish a new read view epoch
+  publish a new read view epoch as one non-recoverable phase
   retire slots whose epoch is older than every active read view
 
 render/build workers:
@@ -291,6 +299,14 @@ Commit should be responsible for:
 - updating dirty transform world matrices;
 - publishing a read epoch.
 
+The commit contract is deliberately two-phase. Semantic validation and
+rejection happen before any scene publication; invalid edits roll back worker
+reservations and preserve the current epoch, managers, and read views. Once
+validation succeeds, `Scene` enters a complete `noexcept` publication phase.
+That phase is non-recoverable infrastructure work: it must not return a
+recoverable exception after mutation begins, so callers can never observe a
+partially published scene.
+
 ## Transform Manager Shape
 
 `Transform2D` and `Transform3D` remain local affine values. `Transform3D` can
@@ -400,17 +416,17 @@ entity-backed 2D/3D camera managers, the first 3D renderable manager, and the
 first 3D light manager. The older transform-only hierarchy has been retired in
 favor of the manager shape described here.
 
-`Engine` now provides the first Filament-style root ownership boundary, but it
-does not own renderer/device setup yet. Windowed and headless hosts remain the
-GPU/platform owners until Cubey defines a higher-level renderer ownership
-contract.
+`Engine` now provides the scoped root ownership boundary. It owns project
+runtime services and GPU attachment, render-resource handle identity, scenes,
+and `RendererService`/`ForwardPbrRenderer3D` instances. Windowed and headless
+hosts still own platform/device setup and the host-visible `GpuRuntime`.
 
 `cubey::render` should continue to own low-level renderer-facing resources,
 opaque resource handles, and draw metadata. It should not become the scene
-owner. Scene/component managers can build renderable packets that reference
+owner. Scene/component managers build renderable packets that reference
 `cubey::render` resource handles plus light packets that carry CPU-side light
-data, and the GPU owner resolves or interprets those packets during command
-recording.
+data, and the Engine-owned renderer policy or project GPU owner resolves or
+interprets those packets during command recording.
 
 The existing threading direction still applies: one GPU owner serializes
 Vulkan mutation and submission, while worker threads prepare CPU-side data and
@@ -433,9 +449,9 @@ Public debug/development APIs should fail loudly on invalid structural edits:
 - creating or updating a light with a zero directional vector, negative
   color/intensity, or a non-positive point-light range.
 
-The first implementation can use exceptions consistently with current Cubey
-tests. Later hot paths can add no-throw validation or result-code variants if a
-project needs them.
+Current debug/development validation uses exceptions consistently with Cubey
+tests. No-throw validation or result-code variants remain trigger-driven for a
+project that demonstrates a need for them.
 
 ## Testing Strategy
 
@@ -452,7 +468,10 @@ Unit tests should cover:
 - renderable packet extraction from committed transforms;
 - light packet extraction from committed lights and transforms;
 - concurrent edit-queue construction feeding a serialized commit;
-- thread sanitizer coverage once real concurrent access lands.
+- the focused `tsan` preset's selected concurrent jobs, GPU-runtime,
+  upload/capture, staged-resource, and project-runtime/service paths;
+- fake/in-memory upload, capture, runtime, and project-GPU fixtures so these
+  boundaries remain testable without a live Vulkan device.
 
 Integration tests should prove:
 
@@ -529,7 +548,15 @@ The smallest useful substrate is now in place:
 4. Shared transform-manager template used by 2D/3D.
 5. Migration of transform hierarchy behavior to the manager shape.
 
-Camera, renderable, and light managers now build on this contract. Material,
-bounds/culling, environment, and resource-registry-adjacent managers should
-follow the same pattern instead of reintroducing project-local ownership
-patterns.
+Camera, renderable, and light managers now build on this contract. Renderable
+bounds and CPU frustum culling are part of the current renderable/view-planning
+path, and `RenderResourceRegistry` plus `ResourceTable` provide current
+resource identity and draw-resolution integration. Material/pass metadata,
+environment state, and PBR renderer policy remain in their render/engine
+ownership boundaries rather than being implied as ECS managers.
+
+Add another component manager only when a durable cross-project component has a
+clear owner, read-view/edit-queue contract, storage shape, and concrete
+consumer. Do not introduce material, bounds/culling, environment, or
+resource-registry-adjacent managers merely to mirror existing render/engine
+services.
