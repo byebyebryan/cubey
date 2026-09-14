@@ -269,11 +269,9 @@ bool ForwardPbrRenderer3D::Impl::has_swapchain_resources() const {
         swapchain_.transmission_scene_material.has_value()) {
         return true;
     }
-    for (std::size_t index = 0; index < swapchain_.pipeline_variants.size(); ++index) {
-        if (index == static_cast<std::size_t>(ForwardPbrPipelineVariant::ShadowDoubleSided)) {
-            continue;
-        }
-        if (swapchain_.pipeline_variants[index].has_value()) {
+    for (const std::optional<render::GraphicsPipelineResource>& pipeline :
+         swapchain_.pipeline_variants) {
+        if (pipeline.has_value()) {
             return true;
         }
     }
@@ -288,18 +286,18 @@ bool ForwardPbrRenderer3D::Impl::global_resources_ready() const {
 }
 
 bool ForwardPbrRenderer3D::Impl::swapchain_resources_ready() const {
-    const auto has_pipeline = [this](ForwardPbrPipelineVariant variant) {
+    const auto has_pipeline = [this](ForwardPbrTargetPipelineVariant variant) {
         return swapchain_.pipeline_variants[static_cast<std::size_t>(variant)].has_value();
     };
     return swapchain_.target_extent.width != 0 && swapchain_.target_extent.height != 0 &&
            swapchain_.depth_attachment.has_value() && swapchain_.post_sampler.has_value() &&
            swapchain_.skybox_pipeline.has_value() && swapchain_.post_pipeline.has_value() &&
-           has_pipeline(ForwardPbrPipelineVariant::Opaque) &&
-           has_pipeline(ForwardPbrPipelineVariant::OpaqueDoubleSided) &&
-           has_pipeline(ForwardPbrPipelineVariant::Alpha) &&
-           has_pipeline(ForwardPbrPipelineVariant::AlphaDoubleSided) &&
-           has_pipeline(ForwardPbrPipelineVariant::MaskShadow) &&
-           has_pipeline(ForwardPbrPipelineVariant::MaskShadowDoubleSided);
+           has_pipeline(ForwardPbrTargetPipelineVariant::Opaque) &&
+           has_pipeline(ForwardPbrTargetPipelineVariant::OpaqueDoubleSided) &&
+           has_pipeline(ForwardPbrTargetPipelineVariant::Alpha) &&
+           has_pipeline(ForwardPbrTargetPipelineVariant::AlphaDoubleSided) &&
+           has_pipeline(ForwardPbrTargetPipelineVariant::MaskShadow) &&
+           has_pipeline(ForwardPbrTargetPipelineVariant::MaskShadowDoubleSided);
 }
 
 void ForwardPbrRenderer3D::Impl::require_global_resources() const {
@@ -378,53 +376,47 @@ ForwardPbrRenderer3D::Impl::post_material() const {
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::Impl::opaque_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::Opaque);
+    return target_pipeline(ForwardPbrTargetPipelineVariant::Opaque);
 }
 
 const render::GraphicsPipelineResource&
 ForwardPbrRenderer3D::Impl::opaque_double_sided_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::OpaqueDoubleSided);
+    return target_pipeline(ForwardPbrTargetPipelineVariant::OpaqueDoubleSided);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::Impl::alpha_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::Alpha);
+    return target_pipeline(ForwardPbrTargetPipelineVariant::Alpha);
 }
 
 const render::GraphicsPipelineResource&
 ForwardPbrRenderer3D::Impl::alpha_double_sided_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::AlphaDoubleSided);
+    return target_pipeline(ForwardPbrTargetPipelineVariant::AlphaDoubleSided);
 }
 
 const render::GraphicsPipelineResource& ForwardPbrRenderer3D::Impl::mask_shadow_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::MaskShadow);
+    return target_pipeline(ForwardPbrTargetPipelineVariant::MaskShadow);
 }
 
 const render::GraphicsPipelineResource&
 ForwardPbrRenderer3D::Impl::mask_shadow_double_sided_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::MaskShadowDoubleSided);
+    return target_pipeline(ForwardPbrTargetPipelineVariant::MaskShadowDoubleSided);
 }
 
 const render::GraphicsPipelineResource&
 ForwardPbrRenderer3D::Impl::shadow_double_sided_pipeline() const {
-    return pipeline_variant(ForwardPbrPipelineVariant::ShadowDoubleSided);
+    if (!global_.shadow_double_sided_pipeline.has_value()) {
+        throw std::runtime_error("forward PBR renderer shadow pipeline is not initialized");
+    }
+    return global_.shadow_double_sided_pipeline.value();
 }
 
 std::optional<render::GraphicsPipelineResource>&
-ForwardPbrRenderer3D::Impl::pipeline_variant_slot(ForwardPbrPipelineVariant variant) {
-    if (variant == ForwardPbrPipelineVariant::ShadowDoubleSided) {
-        return global_.shadow_double_sided_pipeline;
-    }
+ForwardPbrRenderer3D::Impl::target_pipeline_slot(ForwardPbrTargetPipelineVariant variant) {
     return swapchain_.pipeline_variants[static_cast<std::size_t>(variant)];
 }
 
 const render::GraphicsPipelineResource&
-ForwardPbrRenderer3D::Impl::pipeline_variant(ForwardPbrPipelineVariant variant) const {
-    if (variant == ForwardPbrPipelineVariant::ShadowDoubleSided) {
-        if (!global_.shadow_double_sided_pipeline.has_value()) {
-            throw std::runtime_error("forward PBR renderer pipeline variant is not initialized");
-        }
-        return global_.shadow_double_sided_pipeline.value();
-    }
+ForwardPbrRenderer3D::Impl::target_pipeline(ForwardPbrTargetPipelineVariant variant) const {
     const std::optional<render::GraphicsPipelineResource>& pipeline =
         swapchain_.pipeline_variants[static_cast<std::size_t>(variant)];
     if (!pipeline.has_value()) {

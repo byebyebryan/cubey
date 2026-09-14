@@ -152,14 +152,13 @@ struct ForwardPbrRenderer3D::Impl {
         bool clouds_enabled = false;
         bool has_transmission = false;
     };
-    enum class ForwardPbrPipelineVariant : std::uint8_t {
+    enum class ForwardPbrTargetPipelineVariant : std::uint8_t {
         Opaque,
         OpaqueDoubleSided,
         Alpha,
         AlphaDoubleSided,
         MaskShadow,
         MaskShadowDoubleSided,
-        ShadowDoubleSided,
         Count,
     };
 
@@ -236,9 +235,9 @@ struct ForwardPbrRenderer3D::Impl {
     [[nodiscard]] const render::GraphicsPipelineResource& mask_shadow_double_sided_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& shadow_double_sided_pipeline() const;
     [[nodiscard]] std::optional<render::GraphicsPipelineResource>&
-    pipeline_variant_slot(ForwardPbrPipelineVariant variant);
+    target_pipeline_slot(ForwardPbrTargetPipelineVariant variant);
     [[nodiscard]] const render::GraphicsPipelineResource&
-    pipeline_variant(ForwardPbrPipelineVariant variant) const;
+    target_pipeline(ForwardPbrTargetPipelineVariant variant) const;
     [[nodiscard]] const render::GraphicsPipelineResource& skybox_pipeline() const;
     [[nodiscard]] const render::GraphicsPipelineResource& post_pipeline() const;
     [[nodiscard]] const vulkan::Sampler& post_sampler() const;
@@ -264,7 +263,7 @@ struct ForwardPbrRenderer3D::Impl {
 
     struct SwapchainResources {
         std::array<std::optional<render::GraphicsPipelineResource>,
-                   static_cast<std::size_t>(ForwardPbrPipelineVariant::Count)>
+                   static_cast<std::size_t>(ForwardPbrTargetPipelineVariant::Count)>
             pipeline_variants{};
         std::optional<render::GraphicsPipelineResource> skybox_pipeline{};
         std::optional<render::GraphicsPipelineResource> post_pipeline{};
