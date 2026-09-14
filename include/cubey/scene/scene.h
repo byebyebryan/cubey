@@ -183,6 +183,8 @@ class Scene {
   private:
     friend class SceneReadView;
 
+    void validate_edits(const SceneEditQueue& edits) const;
+    void publish_validated_edits(SceneEditQueue& edits) noexcept;
     void release_read_view(std::uint64_t epoch) noexcept;
     void retire_safe_entities() noexcept;
 

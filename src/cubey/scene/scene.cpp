@@ -1,7 +1,6 @@
 #include <cubey/scene/scene.h>
 
 #include <algorithm>
-#include <exception>
 #include <stdexcept>
 #include <utility>
 
@@ -67,7 +66,7 @@ void SceneEditQueue::rollback_reserved_entities() noexcept {
             if (entities_->is_reserved(entity)) {
                 entities_->rollback_reserved(entity);
             }
-        } catch (const std::exception&) {
+        } catch (...) {
         }
     }
     reserved_entities_.clear();
@@ -197,54 +196,62 @@ void Scene::commit(SceneEditQueue& edits) {
     }
 
     try {
-        for (const Entity entity : edits.destroyed_entities_) {
-            if (!entities_.is_alive(entity)) {
-                throw std::runtime_error("scene destroy edit requires a live entity");
-            }
-            transforms2d_.validate_destroy_entity(entity);
-            transforms3d_.validate_destroy_entity(entity);
-        }
-        transforms2d_.validate(edits.transforms2d_, entities_);
-        transforms3d_.validate(edits.transforms3d_, entities_);
-        cameras2d_.validate(edits.cameras2d_, entities_);
-        cameras3d_.validate(edits.cameras3d_, entities_);
-        renderables3d_.validate(edits.renderables3d_, entities_, render_resources_);
-        lights3d_.validate(edits.lights3d_, entities_);
-
-        ++current_epoch_;
-
-        for (const Entity entity : edits.reserved_entities_) {
-            entities_.publish(entity);
-        }
-        transforms2d_.apply(edits.transforms2d_, current_epoch_);
-        transforms3d_.apply(edits.transforms3d_, current_epoch_);
-        cameras2d_.apply(edits.cameras2d_, current_epoch_);
-        cameras3d_.apply(edits.cameras3d_, current_epoch_);
-        renderables3d_.apply(edits.renderables3d_, current_epoch_);
-        lights3d_.apply(edits.lights3d_, current_epoch_);
-        for (const Entity entity : edits.destroyed_entities_) {
-            transforms2d_.destroy_entity_if_exists(entity, current_epoch_);
-            transforms3d_.destroy_entity_if_exists(entity, current_epoch_);
-            cameras2d_.destroy_entity_if_exists(entity, current_epoch_);
-            cameras3d_.destroy_entity_if_exists(entity, current_epoch_);
-            renderables3d_.destroy_entity_if_exists(entity, current_epoch_);
-            lights3d_.destroy_entity_if_exists(entity, current_epoch_);
-            entities_.destroy(entity, current_epoch_);
-        }
-        transforms2d_.update_world_matrices();
-        transforms3d_.update_world_matrices();
-        transforms2d_.publish_snapshot();
-        transforms3d_.publish_snapshot();
-        cameras2d_.publish_snapshot();
-        cameras3d_.publish_snapshot();
-        renderables3d_.publish_snapshot();
-        lights3d_.publish_snapshot();
-        edits.mark_committed();
-        retire_safe_entities();
-    } catch (const std::exception&) {
+        validate_edits(edits);
+    } catch (...) {
         edits.rollback_reserved_entities();
         throw;
     }
+
+    publish_validated_edits(edits);
+}
+
+void Scene::validate_edits(const SceneEditQueue& edits) const {
+    for (const Entity entity : edits.destroyed_entities_) {
+        if (!entities_.is_alive(entity)) {
+            throw std::runtime_error("scene destroy edit requires a live entity");
+        }
+        transforms2d_.validate_destroy_entity(entity);
+        transforms3d_.validate_destroy_entity(entity);
+    }
+    transforms2d_.validate(edits.transforms2d_, entities_);
+    transforms3d_.validate(edits.transforms3d_, entities_);
+    cameras2d_.validate(edits.cameras2d_, entities_);
+    cameras3d_.validate(edits.cameras3d_, entities_);
+    renderables3d_.validate(edits.renderables3d_, entities_, render_resources_);
+    lights3d_.validate(edits.lights3d_, entities_);
+}
+
+void Scene::publish_validated_edits(SceneEditQueue& edits) noexcept {
+    ++current_epoch_;
+
+    for (const Entity entity : edits.reserved_entities_) {
+        entities_.publish(entity);
+    }
+    transforms2d_.apply(edits.transforms2d_, current_epoch_);
+    transforms3d_.apply(edits.transforms3d_, current_epoch_);
+    cameras2d_.apply(edits.cameras2d_, current_epoch_);
+    cameras3d_.apply(edits.cameras3d_, current_epoch_);
+    renderables3d_.apply(edits.renderables3d_, current_epoch_);
+    lights3d_.apply(edits.lights3d_, current_epoch_);
+    for (const Entity entity : edits.destroyed_entities_) {
+        transforms2d_.destroy_entity_if_exists(entity, current_epoch_);
+        transforms3d_.destroy_entity_if_exists(entity, current_epoch_);
+        cameras2d_.destroy_entity_if_exists(entity, current_epoch_);
+        cameras3d_.destroy_entity_if_exists(entity, current_epoch_);
+        renderables3d_.destroy_entity_if_exists(entity, current_epoch_);
+        lights3d_.destroy_entity_if_exists(entity, current_epoch_);
+        entities_.destroy(entity, current_epoch_);
+    }
+    transforms2d_.update_world_matrices();
+    transforms3d_.update_world_matrices();
+    transforms2d_.publish_snapshot();
+    transforms3d_.publish_snapshot();
+    cameras2d_.publish_snapshot();
+    cameras3d_.publish_snapshot();
+    renderables3d_.publish_snapshot();
+    lights3d_.publish_snapshot();
+    edits.mark_committed();
+    retire_safe_entities();
 }
 
 void Scene::release_read_view(std::uint64_t epoch) noexcept {
