@@ -67,7 +67,15 @@ class PbrMaterialRecord {
   public:
     PbrMaterialRecord(PbrMaterialDefinition definition, const cubey::vulkan::Device& device,
                       const FrameUniformMaterialInstanceConfig& instance_config)
-        : definition_(std::move(definition)), instance_(device, instance_config) {}
+        : definition_(std::move(definition)), instance_(device, instance_config) {
+        const PbrMaterialUniforms uniforms = pbr_material_uniforms(definition_);
+        for (std::uint32_t slot_index = 0; slot_index < instance_config.frame_slot_count;
+             ++slot_index) {
+            instance_.upload(
+                FrameSlot{.index = slot_index, .count = instance_config.frame_slot_count},
+                uniforms);
+        }
+    }
 
     PbrMaterialRecord(const PbrMaterialRecord&) = delete;
     PbrMaterialRecord& operator=(const PbrMaterialRecord&) = delete;
@@ -106,7 +114,6 @@ class PbrMaterialTable {
     instance(MaterialHandle material) const;
     [[nodiscard]] VkDescriptorSetLayout descriptor_set_layout() const;
     [[nodiscard]] VkDescriptorSetLayout layout(MaterialHandle material) const;
-    void upload(MaterialHandle material, FrameSlot frame_slot) const;
     void rebind(MaterialHandle from, MaterialHandle to);
     void erase(MaterialHandle material);
     void clear();

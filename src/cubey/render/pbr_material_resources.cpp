@@ -387,10 +387,6 @@ VkDescriptorSetLayout PbrMaterialTable::layout(MaterialHandle material) const {
     return instance(material).layout();
 }
 
-void PbrMaterialTable::upload(MaterialHandle material, FrameSlot frame_slot) const {
-    instance(material).upload(frame_slot, pbr_material_uniforms(definition(material)));
-}
-
 void PbrMaterialTable::rebind(MaterialHandle from, MaterialHandle to) {
     if (!contains(from)) {
         throw std::runtime_error("PBR material table rebind requires an existing source handle");

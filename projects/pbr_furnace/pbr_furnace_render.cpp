@@ -99,7 +99,6 @@ void PbrFurnaceApp::record_furnace_frame(VkCommandBuffer command_buffer,
             [this, frame_slot](const cubey::vulkan::CommandRecorder& packet_recorder,
                                const cubey::scene::RenderDrawPacket3D& packet) {
                 const auto& material = materials_.instance(packet.material);
-                materials_.upload(packet.material, frame_slot);
                 cubey::render::bind_material_instance(packet_recorder, forward_pass().pipeline(),
                                                       material.material(), frame_slot);
                 packet_recorder.push_constants(

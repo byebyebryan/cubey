@@ -470,6 +470,17 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
                      "PBR material table should store a table-level descriptor layout");
     require_contains(header, "const PbrMaterialDefinition definition_",
                      "PBR material records should retain immutable definitions");
+    require_contains(header,
+                     "const PbrMaterialUniforms uniforms = pbr_material_uniforms(definition_);",
+                     "PBR material records should pack immutable uniforms during publication");
+    require_contains(
+        header, "for (std::uint32_t slot_index = 0; slot_index < instance_config.frame_slot_count;",
+        "PBR material publication should iterate every configured frame slot");
+    require_contains(header,
+                     "FrameSlot{.index = slot_index, .count = instance_config.frame_slot_count}",
+                     "PBR material publication should cover every configured frame slot");
+    require_contains(header, "instance_.upload(",
+                     "PBR material publication should initialize resident uniforms");
     require_contains(source, "PbrMaterialTable::register_descriptor_set_layout",
                      "PBR material table should centralize descriptor layout registration");
     require_contains(source, "PbrMaterialRecord& record =",
@@ -489,6 +500,8 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
         "erasing the record that supplied the cached layout should select a surviving layout");
     require_not_contains(header, "set_factors",
                          "PBR material table should not permit factor mutation after publication");
+    require_not_contains(header, "void upload(MaterialHandle",
+                         "PBR material table should not expose per-draw uniform uploads");
     require_not_contains(header, "PbrMaterialFactors& factors",
                          "PBR material table should not expose mutable factors");
     require_not_contains(header, "emplace_instance",
@@ -502,6 +515,8 @@ void test_pbr_material_table_tracks_descriptor_layout_explicitly() {
         "PBR material table should allow equivalent layouts with distinct handles");
     require_not_contains(source, "instances_.first().layout()",
                          "PBR material table descriptor layout should not depend on map order");
+    require_not_contains(source, "PbrMaterialTable::upload",
+                         "PBR material table should not implement per-draw uniform uploads");
 }
 
 void test_pbr_scene_uniforms_carry_display_transform() {
@@ -1439,6 +1454,8 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
         read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_app_internal.h");
     const std::string furnace =
         read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_resources.cpp");
+    const std::string furnace_render =
+        read_source_file(source_root / "projects/pbr_furnace/pbr_furnace_render.cpp");
     const std::string material_cubes =
         read_source_file(source_root / "examples/material_cubes/material_cubes_app_internal.h") +
         read_source_file(source_root / "examples/material_cubes/material_cubes_resources.cpp");
@@ -1478,6 +1495,8 @@ void test_pbr_examples_and_gltf_importer_share_material_resources() {
                          "PBR furnace should not carry a parallel factor map");
     require_not_contains(furnace_header, "base_color_default_",
                          "PBR furnace should not carry duplicated PBR default textures");
+    require_not_contains(furnace_render, "materials_.upload",
+                         "PBR furnace should not upload immutable material uniforms per draw");
 
     require_contains(material_cubes, "cubey::render::PbrMaterialTable materials_",
                      "material cubes should group material factors and instances in one table");

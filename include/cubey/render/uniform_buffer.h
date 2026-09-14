@@ -32,6 +32,7 @@ class FrameUniformBuffer {
             frame_uniform_buffer_config(uniform_byte_size());
         for (std::uint32_t slot = 0; slot < frame_slot_count; ++slot) {
             buffers_.emplace_back(device, config);
+            static_cast<void>(buffers_.back().map_persistent());
         }
     }
 

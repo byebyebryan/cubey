@@ -1,8 +1,11 @@
+#include "source_file_test_helpers.h"
+
 #include <cubey/render/uniform_buffer.h>
 
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <filesystem>
 #include <stdexcept>
 #include <type_traits>
 
@@ -62,4 +65,13 @@ void test_frame_uniform_buffer_contract_is_slot_based_and_move_only() {
             "frame uniform buffer should expose its uniform byte size");
     require_throws([] { (void)cubey::render::frame_uniform_buffer_config(0); },
                    "frame uniform buffer config should reject zero byte size");
+
+    const std::filesystem::path source_root{CUBEY_SOURCE_DIR};
+    const std::string header =
+        cubey::tests::read_source_file(source_root / "include/cubey/render/uniform_buffer.h");
+    cubey::tests::require_contains(
+        header,
+        "buffers_.emplace_back(device, config);\n            "
+        "static_cast<void>(buffers_.back().map_persistent());",
+        "frame uniform buffers should persistently map every frame-slot buffer");
 }

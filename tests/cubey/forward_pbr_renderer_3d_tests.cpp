@@ -693,6 +693,9 @@ void test_forward_pbr_renderer_3d_records_masked_shadow_path_with_material_alpha
                      "forward PBR internals should store keyed pipeline variants together");
     require_contains(resources, "pipeline_variant_slot(ForwardPbrPipelineVariant::MaskShadow)",
                      "forward PBR renderer should own a mask-capable shadow pipeline variant");
+    require_not_contains(
+        recording, "materials.upload",
+        "forward PBR recording should not upload immutable material uniforms per draw");
     require_contains(resources,
                      "pipeline_variant_slot(ForwardPbrPipelineVariant::OpaqueDoubleSided)",
                      "forward PBR renderer should own a double-sided opaque pipeline variant");
