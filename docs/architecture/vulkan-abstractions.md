@@ -303,9 +303,11 @@ Current state:
   scope and layout ownership.
 - `image_transitions` covers depth-attachment-to-sampled and
   sampled-depth-to-depth-attachment transitions for repeated shadow-map writes.
-- `RenderGraphResourceSet` can allocate simple non-aliased transient color
-  targets, and `shadow_cube` now uses that path for its scene color target
-  before a fullscreen present pass samples it into the swapchain.
+- `CompiledRenderGraph` precomputes immutable allocation requirements from
+  declared graph accesses. `RenderGraphResourceSet` compares those
+  requirements and can allocate simple non-aliased transient color targets;
+  `shadow_cube` uses that path for its scene color target before a fullscreen
+  present pass samples it into the swapchain.
 
 Needed next:
 

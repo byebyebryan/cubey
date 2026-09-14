@@ -323,9 +323,13 @@ full engine architecture.
   compiles declarations and `CompiledRenderGraph::execute()` invokes pass
   callbacks synchronously in compiled order. It now derives in-graph
   texture-transition and buffer-barrier requirements, imported acquire/release
-  barriers, and transient first-use barriers. `RenderGraphResourceSet` resolves
-  imported resources and can allocate simple non-aliased transient resources.
-  `RenderGraphFrameResources` owns one resource set per frame slot, and graph
+  barriers, and transient first-use barriers. Compiled graphs also retain an
+  immutable physical resource signature (lifetime, allocation shape, and
+  aggregate usage), which `RenderGraphResourceSet` compares and consumes for
+  simple non-aliased transient allocation without rescanning every pass.
+  Labels, imported handles, and imported synchronization state stay outside
+  that allocation identity. `RenderGraphFrameResources` owns one resource set
+  per frame slot, and graph
   texture resolution helpers expose dynamic-rendering color targets and
   descriptor-ready sampled image/view/layout triples. Shared texture-state
   helpers cover common imported undefined, present, color-attachment, and

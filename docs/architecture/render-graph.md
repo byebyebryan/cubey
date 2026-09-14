@@ -72,10 +72,15 @@ declaration-only tests and diagnostics can still compile a graph without
 recording work. Recorder-less execution remains valid until a pass asks for
 `context.recorder()`, which fails clearly.
 
-`RenderGraphResourceSet` can bind resolved resources and create simple
-non-aliased transient textures/buffers for graph-created resources.
-`RenderGraphFrameResources` owns one resource set per frame slot so examples
-can replace only the slot whose fence has already been waited.
+`CompiledRenderGraph` derives one immutable physical resource signature while
+it compiles: lifetime, texture extent/format/aspects or buffer size, and the
+union of every declared Vulkan usage bit. `RenderGraphResourceSet` compares
+that signature without rebuilding pass-derived requirements, then binds
+resolved resources and creates simple non-aliased transient textures/buffers
+from it. Diagnostic labels, imported Vulkan handles, and imported
+initial/final synchronization state are deliberately outside that allocation
+identity. `RenderGraphFrameResources` owns one resource set per frame slot so
+examples can replace only the slot whose fence has already been waited.
 `RenderGraphFrameExecutor` wraps that slot ownership with command-buffer
 begin/end and recorder-aware graph execution. Its prepare hook runs after graph
 resources are allocated and before command recording, so descriptor updates can

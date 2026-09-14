@@ -3,93 +3,10 @@
 #include <stdexcept>
 
 namespace cubey::render {
-namespace {
-
-[[nodiscard]] VkImageUsageFlags image_usage_flags(RenderGraphTextureUsage usage) {
-    switch (usage) {
-    case RenderGraphTextureUsage::SampledRead:
-        return VK_IMAGE_USAGE_SAMPLED_BIT;
-    case RenderGraphTextureUsage::StorageRead:
-    case RenderGraphTextureUsage::StorageWrite:
-    case RenderGraphTextureUsage::StorageReadWrite:
-        return VK_IMAGE_USAGE_STORAGE_BIT;
-    case RenderGraphTextureUsage::ColorAttachment:
-    case RenderGraphTextureUsage::ColorAttachmentReadWrite:
-        return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    case RenderGraphTextureUsage::DepthAttachment:
-        return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    case RenderGraphTextureUsage::TransferRead:
-        return VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    case RenderGraphTextureUsage::TransferWrite:
-        return VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-    throw std::runtime_error("render graph texture usage is invalid");
-}
-
-[[nodiscard]] VkBufferUsageFlags buffer_usage_flags(RenderGraphBufferUsage usage) {
-    switch (usage) {
-    case RenderGraphBufferUsage::UniformRead:
-        return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    case RenderGraphBufferUsage::StorageRead:
-    case RenderGraphBufferUsage::StorageWrite:
-    case RenderGraphBufferUsage::StorageReadWrite:
-        return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    case RenderGraphBufferUsage::VertexRead:
-        return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    case RenderGraphBufferUsage::IndexRead:
-        return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    case RenderGraphBufferUsage::TransferRead:
-        return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    case RenderGraphBufferUsage::TransferWrite:
-        return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    }
-    throw std::runtime_error("render graph buffer usage is invalid");
-}
-
-[[nodiscard]] VkImageUsageFlags transient_image_usage_flags(const CompiledRenderGraph& graph,
-                                                            RenderGraphTextureHandle handle) {
-    VkImageUsageFlags usage_flags = 0;
-    for (const RenderGraphCompiledPass& pass : graph.passes()) {
-        for (const RenderGraphTextureAccess& access : pass.texture_accesses) {
-            if (access.handle == handle) {
-                usage_flags |= image_usage_flags(access.usage);
-            }
-        }
-    }
-    return usage_flags;
-}
-
-[[nodiscard]] VkBufferUsageFlags transient_buffer_usage_flags(const CompiledRenderGraph& graph,
-                                                              RenderGraphBufferHandle handle) {
-    VkBufferUsageFlags usage_flags = 0;
-    for (const RenderGraphCompiledPass& pass : graph.passes()) {
-        for (const RenderGraphBufferAccess& access : pass.buffer_accesses) {
-            if (access.handle == handle) {
-                usage_flags |= buffer_usage_flags(access.usage);
-            }
-        }
-    }
-    return usage_flags;
-}
-
-[[nodiscard]] bool texture_desc_equal(const RenderGraphTextureDesc& lhs,
-                                      const RenderGraphTextureDesc& rhs) {
-    return lhs.label == rhs.label && lhs.extent.width == rhs.extent.width &&
-           lhs.extent.height == rhs.extent.height && lhs.extent.depth == rhs.extent.depth &&
-           lhs.format == rhs.format && lhs.aspects == rhs.aspects;
-}
-
-[[nodiscard]] bool buffer_desc_equal(const RenderGraphBufferDesc& lhs,
-                                     const RenderGraphBufferDesc& rhs) {
-    return lhs.label == rhs.label && lhs.byte_size == rhs.byte_size;
-}
-
-} // namespace
 
 RenderGraphResourceSet::RenderGraphResourceSet(const CompiledRenderGraph& graph)
-    : textures_(graph.textures().size()), buffers_(graph.buffers().size()) {
-    capture_resource_keys(graph);
-}
+    : textures_(graph.textures().size()), buffers_(graph.buffers().size()),
+      resource_signature_(graph.resource_signature()) {}
 
 RenderGraphResourceSet::RenderGraphResourceSet(const cubey::vulkan::Device& device,
                                                const CompiledRenderGraph& graph)
@@ -98,54 +15,19 @@ RenderGraphResourceSet::RenderGraphResourceSet(const cubey::vulkan::Device& devi
 }
 
 bool RenderGraphResourceSet::compatible(const CompiledRenderGraph& graph) const {
-    std::vector<TextureResourceKey> texture_keys;
-    texture_keys.reserve(graph.textures().size());
-    for (const RenderGraphTextureResource& texture : graph.textures()) {
-        texture_keys.push_back(TextureResourceKey{
-            .lifetime = texture.lifetime,
-            .desc = texture.desc,
-            .usage_flags = transient_image_usage_flags(graph, texture.handle),
-        });
-    }
-
-    std::vector<BufferResourceKey> buffer_keys;
-    buffer_keys.reserve(graph.buffers().size());
-    for (const RenderGraphBufferResource& buffer : graph.buffers()) {
-        buffer_keys.push_back(BufferResourceKey{
-            .lifetime = buffer.lifetime,
-            .desc = buffer.desc,
-            .usage_flags = transient_buffer_usage_flags(graph, buffer.handle),
-        });
-    }
-
-    if (texture_keys.size() != texture_keys_.size() || buffer_keys.size() != buffer_keys_.size()) {
-        return false;
-    }
-    for (std::size_t index = 0; index < texture_keys.size(); ++index) {
-        const TextureResourceKey& lhs = texture_keys[index];
-        const TextureResourceKey& rhs = texture_keys_[index];
-        if (lhs.lifetime != rhs.lifetime || !texture_desc_equal(lhs.desc, rhs.desc) ||
-            lhs.usage_flags != rhs.usage_flags) {
-            return false;
-        }
-    }
-    for (std::size_t index = 0; index < buffer_keys.size(); ++index) {
-        const BufferResourceKey& lhs = buffer_keys[index];
-        const BufferResourceKey& rhs = buffer_keys_[index];
-        if (lhs.lifetime != rhs.lifetime || !buffer_desc_equal(lhs.desc, rhs.desc) ||
-            lhs.usage_flags != rhs.usage_flags) {
-            return false;
-        }
-    }
-    return true;
+    return resource_signature_ == graph.resource_signature();
 }
 
 void RenderGraphResourceSet::reset(const CompiledRenderGraph& graph) {
     if (!compatible(graph)) {
         throw std::runtime_error("render graph resource set cannot reset to incompatible graph");
     }
-    textures_.assign(graph.textures().size(), std::nullopt);
-    buffers_.assign(graph.buffers().size(), std::nullopt);
+    reset_compatible();
+}
+
+void RenderGraphResourceSet::reset_compatible() {
+    textures_.assign(resource_signature_.textures.size(), std::nullopt);
+    buffers_.assign(resource_signature_.buffers.size(), std::nullopt);
     bind_transient_resources();
 }
 
@@ -169,7 +51,7 @@ void RenderGraphResourceSet::bind_buffer(RenderGraphBufferHandle handle,
         throw std::runtime_error("render graph resolved buffer requires buffer and byte size");
     }
     const std::size_t index = static_cast<std::size_t>(handle.index - 1U);
-    if (buffer.byte_size < buffer_keys_[index].desc.byte_size) {
+    if (buffer.byte_size < resource_signature_.buffers[index].byte_size) {
         throw std::runtime_error("render graph resolved buffer is smaller than graph declaration");
     }
     buffers_[index] = buffer;
@@ -193,24 +75,25 @@ RenderGraphResourceSet::buffer(RenderGraphBufferHandle handle) const {
 
 void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& device,
                                                  const CompiledRenderGraph& graph) {
-    for (const RenderGraphTextureResource& texture : graph.textures()) {
-        if (texture.lifetime != RenderGraphResourceLifetime::Transient) {
+    for (std::size_t index = 0; index < graph.textures().size(); ++index) {
+        const RenderGraphTextureResource& texture = graph.textures()[index];
+        const RenderGraphTextureRequirement& requirement = resource_signature_.textures[index];
+        if (requirement.lifetime != RenderGraphResourceLifetime::Transient) {
             continue;
         }
-        const VkImageUsageFlags usage_flags = transient_image_usage_flags(graph, texture.handle);
-        if (usage_flags == 0) {
+        if (requirement.usage_flags == 0) {
             continue;
         }
         transient_textures_.emplace_back(
             device,
             cubey::vulkan::ImageConfig{
-                .extent = texture.desc.extent,
-                .format = texture.desc.format,
-                .usage = usage_flags,
-                .aspect = texture.desc.aspects,
-                .image_type = texture.desc.extent.depth > 1U ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D,
+                .extent = requirement.extent,
+                .format = requirement.format,
+                .usage = requirement.usage_flags,
+                .aspect = requirement.aspects,
+                .image_type = requirement.extent.depth > 1U ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D,
                 .view_type =
-                    texture.desc.extent.depth > 1U ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D,
+                    requirement.extent.depth > 1U ? VK_IMAGE_VIEW_TYPE_3D : VK_IMAGE_VIEW_TYPE_2D,
             });
         const cubey::vulkan::Image& image = transient_textures_.back();
         const RenderGraphResolvedTexture resolved{
@@ -221,18 +104,19 @@ void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& de
         bind_texture(texture.handle, resolved);
     }
 
-    for (const RenderGraphBufferResource& buffer : graph.buffers()) {
-        if (buffer.lifetime != RenderGraphResourceLifetime::Transient) {
+    for (std::size_t index = 0; index < graph.buffers().size(); ++index) {
+        const RenderGraphBufferResource& buffer = graph.buffers()[index];
+        const RenderGraphBufferRequirement& requirement = resource_signature_.buffers[index];
+        if (requirement.lifetime != RenderGraphResourceLifetime::Transient) {
             continue;
         }
-        const VkBufferUsageFlags usage_flags = transient_buffer_usage_flags(graph, buffer.handle);
-        if (usage_flags == 0) {
+        if (requirement.usage_flags == 0) {
             continue;
         }
         transient_buffers_.emplace_back(
             device, cubey::vulkan::BufferConfig{
-                        .size = buffer.desc.byte_size,
-                        .usage = usage_flags,
+                        .size = requirement.byte_size,
+                        .usage = requirement.usage_flags,
                         .memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                     });
         const cubey::vulkan::Buffer& vk_buffer = transient_buffers_.back();
@@ -242,28 +126,6 @@ void RenderGraphResourceSet::allocate_transients(const cubey::vulkan::Device& de
         };
         transient_buffer_bindings_.emplace_back(buffer.handle, resolved);
         bind_buffer(buffer.handle, resolved);
-    }
-}
-
-void RenderGraphResourceSet::capture_resource_keys(const CompiledRenderGraph& graph) {
-    texture_keys_.clear();
-    texture_keys_.reserve(graph.textures().size());
-    for (const RenderGraphTextureResource& texture : graph.textures()) {
-        texture_keys_.push_back(TextureResourceKey{
-            .lifetime = texture.lifetime,
-            .desc = texture.desc,
-            .usage_flags = transient_image_usage_flags(graph, texture.handle),
-        });
-    }
-
-    buffer_keys_.clear();
-    buffer_keys_.reserve(graph.buffers().size());
-    for (const RenderGraphBufferResource& buffer : graph.buffers()) {
-        buffer_keys_.push_back(BufferResourceKey{
-            .lifetime = buffer.lifetime,
-            .desc = buffer.desc,
-            .usage_flags = transient_buffer_usage_flags(graph, buffer.handle),
-        });
     }
 }
 

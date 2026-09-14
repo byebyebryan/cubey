@@ -14,6 +14,8 @@ class Device;
 
 namespace cubey::render {
 
+class RenderGraphFrameResources;
+
 class RenderGraphResourceSet {
   public:
     explicit RenderGraphResourceSet(const CompiledRenderGraph& graph);
@@ -37,19 +39,11 @@ class RenderGraphResourceSet {
     buffer(RenderGraphBufferHandle handle) const;
 
   private:
-    struct TextureResourceKey {
-        RenderGraphResourceLifetime lifetime = RenderGraphResourceLifetime::Transient;
-        RenderGraphTextureDesc desc{};
-        VkImageUsageFlags usage_flags = 0;
-    };
+    friend class RenderGraphFrameResources;
 
-    struct BufferResourceKey {
-        RenderGraphResourceLifetime lifetime = RenderGraphResourceLifetime::Transient;
-        RenderGraphBufferDesc desc{};
-        VkBufferUsageFlags usage_flags = 0;
-    };
-
-    void capture_resource_keys(const CompiledRenderGraph& graph);
+    // RenderGraphFrameResources has already compared the signature before
+    // taking this path. The public reset() retains the defensive comparison.
+    void reset_compatible();
     void allocate_transients(const cubey::vulkan::Device& device, const CompiledRenderGraph& graph);
     void bind_transient_resources();
 
@@ -61,8 +55,7 @@ class RenderGraphResourceSet {
         transient_texture_bindings_{};
     std::vector<std::pair<RenderGraphBufferHandle, RenderGraphResolvedBuffer>>
         transient_buffer_bindings_{};
-    std::vector<TextureResourceKey> texture_keys_{};
-    std::vector<BufferResourceKey> buffer_keys_{};
+    RenderGraphResourceSignature resource_signature_{};
 };
 
 } // namespace cubey::render

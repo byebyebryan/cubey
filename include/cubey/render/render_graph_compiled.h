@@ -79,6 +79,42 @@ struct RenderGraphCompiledMetrics {
     std::size_t after_barrier_count = 0;
 };
 
+// Allocation-relevant requirements derived from immutable graph declarations.
+// Labels, imported Vulkan handles, and imported synchronization state remain
+// graph diagnostics/execution data rather than resource-set identity.
+struct RenderGraphTextureRequirement {
+    RenderGraphResourceLifetime lifetime = RenderGraphResourceLifetime::Transient;
+    VkExtent3D extent{};
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    VkImageAspectFlags aspects = 0;
+    VkImageUsageFlags usage_flags = 0;
+
+    friend bool operator==(RenderGraphTextureRequirement lhs,
+                           RenderGraphTextureRequirement rhs) noexcept {
+        return lhs.lifetime == rhs.lifetime && lhs.extent.width == rhs.extent.width &&
+               lhs.extent.height == rhs.extent.height && lhs.extent.depth == rhs.extent.depth &&
+               lhs.format == rhs.format && lhs.aspects == rhs.aspects &&
+               lhs.usage_flags == rhs.usage_flags;
+    }
+};
+
+struct RenderGraphBufferRequirement {
+    RenderGraphResourceLifetime lifetime = RenderGraphResourceLifetime::Transient;
+    VkDeviceSize byte_size = 0;
+    VkBufferUsageFlags usage_flags = 0;
+
+    friend bool operator==(RenderGraphBufferRequirement lhs,
+                           RenderGraphBufferRequirement rhs) = default;
+};
+
+struct RenderGraphResourceSignature {
+    std::vector<RenderGraphTextureRequirement> textures{};
+    std::vector<RenderGraphBufferRequirement> buffers{};
+
+    friend bool operator==(const RenderGraphResourceSignature& lhs,
+                           const RenderGraphResourceSignature& rhs) = default;
+};
+
 class CompiledRenderGraph {
   public:
     CompiledRenderGraph() = default;
@@ -96,6 +132,12 @@ class CompiledRenderGraph {
 
     [[nodiscard]] const std::vector<RenderGraphCompiledPass>& passes() const noexcept {
         return passes_;
+    }
+
+    // The signature is computed once with graph compilation and records only
+    // physical resource requirements used to allocate/reuse resource sets.
+    [[nodiscard]] const RenderGraphResourceSignature& resource_signature() const noexcept {
+        return resource_signature_;
     }
 
     [[nodiscard]] RenderGraphCompiledMetrics metrics() const noexcept;
@@ -120,6 +162,7 @@ class CompiledRenderGraph {
     std::vector<RenderGraphTextureResource> textures_{};
     std::vector<RenderGraphBufferResource> buffers_{};
     std::vector<RenderGraphCompiledPass> passes_{};
+    RenderGraphResourceSignature resource_signature_{};
 };
 
 } // namespace cubey::render

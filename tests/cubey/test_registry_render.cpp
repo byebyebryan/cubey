@@ -99,6 +99,7 @@ void test_render_graph_derives_imported_buffer_acquire_and_release_barriers();
 void test_render_graph_derives_imported_texture_acquire_and_release_barriers();
 void test_render_graph_derives_transient_texture_first_use_barrier();
 void test_render_graph_compiled_reports_structure_metrics();
+void test_render_graph_compiled_precomputes_resource_usage_signature();
 void test_render_graph_execute_propagates_callback_exceptions();
 void test_render_graph_execute_rejects_missing_callbacks_but_compile_allows_declarations();
 void test_render_graph_execute_rejects_incompatible_resource_set();
@@ -111,6 +112,7 @@ void test_render_graph_frame_record_info_separates_command_buffer_ownership();
 void test_render_graph_frame_resources_manage_frame_slots();
 void test_render_graph_frame_resources_reuse_compatible_slots();
 void test_render_graph_resource_set_rejects_incompatible_shapes();
+void test_render_graph_resource_set_rejects_incompatible_texture_requirements();
 void test_render_graph_resource_set_rejects_undersized_bound_buffers();
 void test_render_graph_frame_resources_reject_invalid_slots();
 void test_render_graph_frame_resources_replace_one_slot_without_disturbing_another();
@@ -243,6 +245,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_derives_transient_texture_first_use_barrier),
         CUBEY_TEST(test_render_graph_derives_imported_buffer_acquire_and_release_barriers),
         CUBEY_TEST(test_render_graph_compiled_reports_structure_metrics),
+        CUBEY_TEST(test_render_graph_compiled_precomputes_resource_usage_signature),
         CUBEY_TEST(test_render_graph_omits_read_after_read_barriers),
         CUBEY_TEST(test_render_graph_storage_read_write_initializes_transient_buffers),
         CUBEY_TEST(test_render_graph_storage_read_write_initializes_transient_textures),
@@ -258,6 +261,7 @@ std::span<const TestCase> render_test_cases() {
         CUBEY_TEST(test_render_graph_frame_resources_reuse_compatible_slots),
         CUBEY_TEST(test_render_graph_frame_executor_reports_slot_lifecycle_metrics),
         CUBEY_TEST(test_render_graph_resource_set_rejects_incompatible_shapes),
+        CUBEY_TEST(test_render_graph_resource_set_rejects_incompatible_texture_requirements),
         CUBEY_TEST(test_render_graph_resource_set_rejects_undersized_bound_buffers),
         CUBEY_TEST(test_render_graph_frame_resources_reject_invalid_slots),
         CUBEY_TEST(test_render_graph_frame_resources_replace_one_slot_without_disturbing_another),

@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include <optional>
+#include <utility>
 
 using namespace cubey::tests::render_graph;
 
@@ -108,11 +109,31 @@ void test_render_graph_frame_resources_manage_frame_slots() {
 void test_render_graph_frame_resources_reuse_compatible_slots() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphBufferHandle buffer_handle =
-        graph.import_buffer(buffer_desc("slot buffer"), buffer(0x921));
+        graph.import_buffer(buffer_desc("slot buffer"), buffer(0x921), host_written_buffer_state());
     graph.add_pass("read", cubey::render::RenderGraphQueueDomain::Compute)
         .read_storage_buffer(buffer_handle)
         .execute([](const cubey::render::RenderGraphExecutionContext&) {});
     const cubey::render::CompiledRenderGraph compiled = graph.compile();
+
+    cubey::render::RenderGraphBuilder renamed_graph;
+    const cubey::render::RenderGraphBufferHandle renamed_buffer = renamed_graph.import_buffer(
+        buffer_desc("renamed slot buffer"), buffer(0x921), host_written_buffer_state());
+    renamed_graph.add_pass("read", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_storage_buffer(renamed_buffer)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph renamed_compiled = renamed_graph.compile();
+
+    cubey::render::RenderGraphBuilder rebound_graph;
+    const cubey::render::RenderGraphBufferHandle rebound_buffer =
+        rebound_graph.import_buffer(buffer_desc("renamed slot buffer"), buffer(0x923), std::nullopt,
+                                    cubey::render::RenderGraphBufferState{
+                                        .access_mask = VK_ACCESS_TRANSFER_READ_BIT,
+                                        .stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                    });
+    rebound_graph.add_pass("read", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_storage_buffer(rebound_buffer)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph rebound_compiled = rebound_graph.compile();
 
     cubey::render::RenderGraphFrameResources frame_resources(1);
     const cubey::render::FrameSlot slot{
@@ -125,12 +146,17 @@ void test_render_graph_frame_resources_reuse_compatible_slots() {
                                          .byte_size = buffer_desc("slot buffer").byte_size,
                                      });
 
-    cubey::render::RenderGraphResourceSet& second = frame_resources.emplace(slot, compiled);
+    cubey::render::RenderGraphResourceSet& second = frame_resources.emplace(slot, renamed_compiled);
     require(&first == &second, "compatible graph frame resources should reuse the slot object");
     require(!second.buffer(buffer_handle).has_value(),
             "reused graph frame resources should reset imported bindings before prepare");
-    require(second.compatible(compiled),
-            "reused graph frame resources should stay compatible with the compiled graph");
+    require(second.compatible(renamed_compiled),
+            "label-only graph resource renames should reuse graph resources");
+
+    cubey::render::RenderGraphResourceSet& third = frame_resources.emplace(slot, rebound_compiled);
+    require(&second == &third && third.compatible(rebound_compiled),
+            "imported handles and synchronization state should not replace allocation-compatible "
+            "slots");
 }
 
 void test_render_graph_resource_set_rejects_incompatible_shapes() {
@@ -158,6 +184,69 @@ void test_render_graph_resource_set_rejects_incompatible_shapes() {
             "resource set should report compatible with the graph that created it");
     require(!resources.compatible(changed_compiled),
             "resource set should reject incompatible graph resource descriptors");
+
+    cubey::render::RenderGraphBuilder changed_usage_graph;
+    const cubey::render::RenderGraphBufferHandle changed_usage =
+        changed_usage_graph.create_buffer(buffer_desc("slot buffer"));
+    changed_usage_graph.add_pass("copy", cubey::render::RenderGraphQueueDomain::Transfer)
+        .transfer_write_buffer(changed_usage)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph changed_usage_compiled = changed_usage_graph.compile();
+    require(!resources.compatible(changed_usage_compiled),
+            "resource set should reject changed aggregate buffer usage requirements");
+
+    cubey::render::RenderGraphBuilder changed_lifetime_graph;
+    const cubey::render::RenderGraphBufferHandle changed_lifetime =
+        changed_lifetime_graph.import_buffer(buffer_desc("slot buffer"), buffer(0x933));
+    changed_lifetime_graph.add_pass("write", cubey::render::RenderGraphQueueDomain::Compute)
+        .write_storage_buffer(changed_lifetime)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph changed_lifetime_compiled =
+        changed_lifetime_graph.compile();
+    require(!resources.compatible(changed_lifetime_compiled),
+            "resource set should reject changed resource lifetimes");
+}
+
+void test_render_graph_resource_set_rejects_incompatible_texture_requirements() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle original =
+        graph.create_texture(color_texture_desc("scene color"));
+    graph.add_pass("draw", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_color(original)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    const cubey::render::RenderGraphResourceSet resources(compiled);
+
+    auto compile_color_target = [](cubey::render::RenderGraphTextureDesc desc) {
+        cubey::render::RenderGraphBuilder changed_graph;
+        const cubey::render::RenderGraphTextureHandle texture =
+            changed_graph.create_texture(std::move(desc));
+        changed_graph.add_pass("draw", cubey::render::RenderGraphQueueDomain::Graphics)
+            .write_color(texture)
+            .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+        return changed_graph.compile();
+    };
+
+    cubey::render::RenderGraphTextureDesc changed_extent = color_texture_desc("scene color");
+    ++changed_extent.extent.width;
+    require(!resources.compatible(compile_color_target(changed_extent)),
+            "resource set should reject changed texture extents");
+
+    cubey::render::RenderGraphTextureDesc changed_format = color_texture_desc("scene color");
+    changed_format.format = VK_FORMAT_B8G8R8A8_UNORM;
+    require(!resources.compatible(compile_color_target(changed_format)),
+            "resource set should reject changed texture formats");
+
+    cubey::render::RenderGraphBuilder changed_aspects_graph;
+    cubey::render::RenderGraphTextureDesc changed_aspects = color_texture_desc("scene color");
+    changed_aspects.aspects = VK_IMAGE_ASPECT_DEPTH_BIT;
+    const cubey::render::RenderGraphTextureHandle changed_aspects_texture =
+        changed_aspects_graph.create_texture(changed_aspects);
+    changed_aspects_graph.add_pass("draw", cubey::render::RenderGraphQueueDomain::Graphics)
+        .write_depth(changed_aspects_texture)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    require(!resources.compatible(changed_aspects_graph.compile()),
+            "resource set should reject changed texture aspects");
 }
 
 void test_render_graph_resource_set_rejects_undersized_bound_buffers() {
@@ -254,11 +343,27 @@ void test_render_graph_frame_resources_replace_one_slot_without_disturbing_anoth
                                     .buffer = buffer(0x912),
                                     .byte_size = buffer_desc("slot buffer").byte_size,
                                 });
-    frame_resources.emplace(slot_zero, compiled)
-        .bind_buffer(transient, cubey::render::RenderGraphResolvedBuffer{
-                                    .buffer = buffer(0x913),
-                                    .byte_size = buffer_desc("slot buffer").byte_size,
-                                });
+    cubey::render::RenderGraphBuilder changed_graph;
+    const cubey::render::RenderGraphBufferHandle changed =
+        changed_graph.create_buffer(cubey::render::RenderGraphBufferDesc{
+            .label = "slot buffer",
+            .byte_size = buffer_desc("slot buffer").byte_size + 4,
+        });
+    changed_graph.add_pass("simulate", cubey::render::RenderGraphQueueDomain::Compute)
+        .read_write_storage_buffer(changed)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    const cubey::render::CompiledRenderGraph changed_compiled = changed_graph.compile();
+
+    cubey::render::RenderGraphFrameSlotAction action =
+        cubey::render::RenderGraphFrameSlotAction::Unknown;
+    frame_resources.emplace(slot_zero, changed_compiled, &action)
+        .bind_buffer(changed, cubey::render::RenderGraphResolvedBuffer{
+                                  .buffer = buffer(0x913),
+                                  .byte_size = buffer_desc("slot buffer").byte_size + 4,
+                              });
+
+    require(action == cubey::render::RenderGraphFrameSlotAction::Replaced,
+            "changed graph shape should replace only the active frame slot");
 
     require(frame_resources.resource_set(slot_zero).buffer(transient)->buffer == buffer(0x913),
             "replacing one frame slot should update that slot");

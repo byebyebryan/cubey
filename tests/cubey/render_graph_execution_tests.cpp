@@ -53,6 +53,44 @@ void test_render_graph_compiled_reports_structure_metrics() {
             "compiled graph metrics should expose aggregate phase barrier totals");
 }
 
+void test_render_graph_compiled_precomputes_resource_usage_signature() {
+    cubey::render::RenderGraphBuilder graph;
+    const cubey::render::RenderGraphTextureHandle transient_texture =
+        graph.create_texture(color_texture_desc("staging image"));
+    const cubey::render::RenderGraphBufferHandle transient_buffer =
+        graph.create_buffer(buffer_desc("staging buffer"));
+
+    graph.add_pass("upload", cubey::render::RenderGraphQueueDomain::Transfer)
+        .transfer_write_texture(transient_texture)
+        .transfer_write_buffer(transient_buffer)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+    graph.add_pass("consume", cubey::render::RenderGraphQueueDomain::Graphics)
+        .read_texture(transient_texture)
+        .read_storage_buffer(transient_buffer)
+        .execute([](const cubey::render::RenderGraphExecutionContext&) {});
+
+    const cubey::render::CompiledRenderGraph compiled = graph.compile();
+    const cubey::render::RenderGraphResourceSignature& signature = compiled.resource_signature();
+
+    require(signature.textures.size() == 1U && signature.buffers.size() == 1U,
+            "compiled resource signature should preserve resource counts");
+    const cubey::render::RenderGraphTextureRequirement& texture = signature.textures[0];
+    require(texture.lifetime == cubey::render::RenderGraphResourceLifetime::Transient &&
+                texture.extent.width == 640U && texture.extent.height == 360U &&
+                texture.extent.depth == 1U && texture.format == VK_FORMAT_R8G8B8A8_UNORM &&
+                texture.aspects == VK_IMAGE_ASPECT_COLOR_BIT,
+            "compiled texture signature should retain physical allocation requirements");
+    require(texture.usage_flags == (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+            "compiled texture signature should union every declared texture usage");
+    const cubey::render::RenderGraphBufferRequirement& buffer_requirement = signature.buffers[0];
+    require(buffer_requirement.lifetime == cubey::render::RenderGraphResourceLifetime::Transient &&
+                buffer_requirement.byte_size == buffer_desc("unused").byte_size,
+            "compiled buffer signature should retain physical allocation requirements");
+    require(buffer_requirement.usage_flags ==
+                (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT),
+            "compiled buffer signature should union every declared buffer usage");
+}
+
 void test_render_graph_executes_callbacks_in_pass_order_and_exposes_context() {
     cubey::render::RenderGraphBuilder graph;
     const cubey::render::RenderGraphTextureHandle color =

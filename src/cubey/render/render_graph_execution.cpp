@@ -10,11 +10,105 @@
 #include <utility>
 
 namespace cubey::render {
+namespace {
+
+[[nodiscard]] VkImageUsageFlags image_usage_flags(RenderGraphTextureUsage usage) {
+    switch (usage) {
+    case RenderGraphTextureUsage::SampledRead:
+        return VK_IMAGE_USAGE_SAMPLED_BIT;
+    case RenderGraphTextureUsage::StorageRead:
+    case RenderGraphTextureUsage::StorageWrite:
+    case RenderGraphTextureUsage::StorageReadWrite:
+        return VK_IMAGE_USAGE_STORAGE_BIT;
+    case RenderGraphTextureUsage::ColorAttachment:
+    case RenderGraphTextureUsage::ColorAttachmentReadWrite:
+        return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    case RenderGraphTextureUsage::DepthAttachment:
+        return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    case RenderGraphTextureUsage::TransferRead:
+        return VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    case RenderGraphTextureUsage::TransferWrite:
+        return VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+    throw std::runtime_error("render graph texture usage is invalid");
+}
+
+[[nodiscard]] VkBufferUsageFlags buffer_usage_flags(RenderGraphBufferUsage usage) {
+    switch (usage) {
+    case RenderGraphBufferUsage::UniformRead:
+        return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    case RenderGraphBufferUsage::StorageRead:
+    case RenderGraphBufferUsage::StorageWrite:
+    case RenderGraphBufferUsage::StorageReadWrite:
+        return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    case RenderGraphBufferUsage::VertexRead:
+        return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    case RenderGraphBufferUsage::IndexRead:
+        return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    case RenderGraphBufferUsage::TransferRead:
+        return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    case RenderGraphBufferUsage::TransferWrite:
+        return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+    throw std::runtime_error("render graph buffer usage is invalid");
+}
+
+[[nodiscard]] std::size_t resource_index(RenderGraphTextureHandle handle, std::size_t count) {
+    if (!handle || handle.index > count) {
+        throw std::runtime_error("render graph texture handle is invalid");
+    }
+    return static_cast<std::size_t>(handle.index - 1U);
+}
+
+[[nodiscard]] std::size_t resource_index(RenderGraphBufferHandle handle, std::size_t count) {
+    if (!handle || handle.index > count) {
+        throw std::runtime_error("render graph buffer handle is invalid");
+    }
+    return static_cast<std::size_t>(handle.index - 1U);
+}
+
+[[nodiscard]] RenderGraphResourceSignature
+make_resource_signature(const std::vector<RenderGraphTextureResource>& textures,
+                        const std::vector<RenderGraphBufferResource>& buffers,
+                        const std::vector<RenderGraphCompiledPass>& passes) {
+    RenderGraphResourceSignature signature;
+    signature.textures.reserve(textures.size());
+    for (const RenderGraphTextureResource& texture : textures) {
+        signature.textures.push_back(RenderGraphTextureRequirement{
+            .lifetime = texture.lifetime,
+            .extent = texture.desc.extent,
+            .format = texture.desc.format,
+            .aspects = texture.desc.aspects,
+        });
+    }
+    signature.buffers.reserve(buffers.size());
+    for (const RenderGraphBufferResource& buffer : buffers) {
+        signature.buffers.push_back(RenderGraphBufferRequirement{
+            .lifetime = buffer.lifetime,
+            .byte_size = buffer.desc.byte_size,
+        });
+    }
+
+    for (const RenderGraphCompiledPass& pass : passes) {
+        for (const RenderGraphTextureAccess& access : pass.texture_accesses) {
+            signature.textures[resource_index(access.handle, signature.textures.size())]
+                .usage_flags |= image_usage_flags(access.usage);
+        }
+        for (const RenderGraphBufferAccess& access : pass.buffer_accesses) {
+            signature.buffers[resource_index(access.handle, signature.buffers.size())]
+                .usage_flags |= buffer_usage_flags(access.usage);
+        }
+    }
+    return signature;
+}
+
+} // namespace
 
 CompiledRenderGraph::CompiledRenderGraph(std::vector<RenderGraphTextureResource> textures,
                                          std::vector<RenderGraphBufferResource> buffers,
                                          std::vector<RenderGraphCompiledPass> passes)
-    : textures_(std::move(textures)), buffers_(std::move(buffers)), passes_(std::move(passes)) {}
+    : textures_(std::move(textures)), buffers_(std::move(buffers)), passes_(std::move(passes)),
+      resource_signature_(make_resource_signature(textures_, buffers_, passes_)) {}
 
 RenderGraphCompiledMetrics CompiledRenderGraph::metrics() const noexcept {
     RenderGraphCompiledMetrics result{

@@ -33,7 +33,7 @@ RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
     if (resources.has_value() && resources->compatible(graph)) {
-        resources->reset(graph);
+        resources->reset_compatible();
         if (action != nullptr) {
             *action = RenderGraphFrameSlotAction::Reused;
         }
@@ -56,7 +56,7 @@ RenderGraphResourceSet& RenderGraphFrameResources::emplace(FrameSlot slot,
     validate_slot(slot);
     std::optional<RenderGraphResourceSet>& resources = slots_[static_cast<std::size_t>(slot.index)];
     if (resources.has_value() && resources->compatible(graph)) {
-        resources->reset(graph);
+        resources->reset_compatible();
         if (action != nullptr) {
             *action = RenderGraphFrameSlotAction::Reused;
         }
