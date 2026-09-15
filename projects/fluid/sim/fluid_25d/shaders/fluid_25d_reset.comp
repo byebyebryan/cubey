@@ -1,0 +1,44 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer InitialDepthField {
+    float values[];
+} initial_depth;
+layout(set = 0, binding = 1, std430) buffer DepthAField {
+    float values[];
+} depth_a;
+layout(set = 0, binding = 2, std430) buffer DepthBField {
+    float values[];
+} depth_b;
+layout(set = 0, binding = 3, std430) buffer FluxField {
+    vec4 values[];
+} face_flux;
+layout(set = 0, binding = 4, std430) buffer VelocityField {
+    vec4 values[];
+} velocity;
+layout(set = 0, binding = 5, std430) buffer LedgerField {
+    vec2 values[];
+} ledger;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+    uint index = y * width + x;
+    float depth = initial_depth.values[index];
+    depth_a.values[index] = depth;
+    depth_b.values[index] = depth;
+    face_flux.values[index] = vec4(0.0);
+    velocity.values[index] = vec4(0.0, 0.0, depth > params.physics.z ? 1.0 : 0.0, 0.0);
+    ledger.values[index] = vec2(0.0);
+}

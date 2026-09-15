@@ -1,0 +1,111 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer TerrainField {
+    float values[];
+} terrain;
+layout(set = 0, binding = 1, std430) readonly buffer SourceRateField {
+    float values[];
+} source_rate;
+layout(set = 0, binding = 2, std430) readonly buffer SinkRateField {
+    float values[];
+} sink_rate;
+layout(set = 0, binding = 3, std430) readonly buffer DepthField {
+    float values[];
+} depth;
+layout(set = 0, binding = 4, std430) buffer FluxField {
+    vec4 values[];
+} face_flux;
+layout(set = 0, binding = 5, std430) buffer LedgerField {
+    vec2 values[];
+} ledger;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+const uint LEFT = 0u;
+const uint RIGHT = 1u;
+const uint DOWN = 2u;
+const uint UP = 3u;
+
+float post_source_sink_depth(uint index, float delta_seconds) {
+    float old_depth = depth.values[index];
+    float sourced_depth = old_depth + source_rate.values[index] * delta_seconds;
+    return sourced_depth - min(sourced_depth, sink_rate.values[index] * delta_seconds);
+}
+
+uint cell_index(uint x, uint y, uint width) {
+    return y * width + x;
+}
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = cell_index(x, y, width);
+    float dt = params.grid_dt_cell.z;
+    float cell_size = params.grid_dt_cell.w;
+    float gravity = params.physics.x;
+    float damping = exp(-params.physics.y * dt);
+    float minimum_wet_depth = params.physics.z;
+    float cell_area = cell_size * cell_size;
+
+    float old_depth = depth.values[index];
+    float sourced_depth = old_depth + source_rate.values[index] * dt;
+    float removed_depth = min(sourced_depth, sink_rate.values[index] * dt);
+    float available_depth = sourced_depth - removed_depth;
+    // This per-cell write is race-free.  The depth pass consumes the same
+    // source/sink expression; the ledger records the representable state
+    // change once per solver substep.
+    ledger.values[index] += vec2((sourced_depth - old_depth) * cell_area,
+                                 (sourced_depth - available_depth) * cell_area);
+
+    vec4 outgoing = face_flux.values[index];
+    if (available_depth <= minimum_wet_depth) {
+        face_flux.values[index] = vec4(0.0);
+        return;
+    }
+
+    float surface = terrain.values[index] + available_depth;
+    for (uint face = LEFT; face <= UP; ++face) {
+        bool has_neighbor = (face == LEFT && x > 0u) ||
+                            (face == RIGHT && x + 1u < width) ||
+                            (face == DOWN && y > 0u) ||
+                            (face == UP && y + 1u < height);
+        if (!has_neighbor) {
+            outgoing[face] = 0.0;
+            continue;
+        }
+        uint neighbor_x = x;
+        uint neighbor_y = y;
+        if (face == LEFT) {
+            neighbor_x -= 1u;
+        } else if (face == RIGHT) {
+            neighbor_x += 1u;
+        } else if (face == DOWN) {
+            neighbor_y -= 1u;
+        } else {
+            neighbor_y += 1u;
+        }
+        uint neighbor = cell_index(neighbor_x, neighbor_y, width);
+        float neighbor_surface = terrain.values[neighbor] + post_source_sink_depth(neighbor, dt);
+        float updated = damping * outgoing[face] +
+                        dt * cell_area * gravity * (surface - neighbor_surface) / cell_size;
+        outgoing[face] = max(0.0, updated);
+    }
+
+    float requested_volume = dt * (outgoing.x + outgoing.y + outgoing.z + outgoing.w);
+    float available_volume = available_depth * cell_area;
+    if (requested_volume > available_volume && requested_volume > 0.0) {
+        outgoing *= available_volume / requested_volume;
+    }
+    face_flux.values[index] = outgoing;
+}

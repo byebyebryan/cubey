@@ -10,16 +10,17 @@ The broader technique map lives in
 
 ## Status
 
-River V0 is currently in the numerical-contract phase. The project has a
-project-local CPU virtual-pipes oracle and deterministic dry-bed,
-lake-at-rest, and river source/sink fixtures. No windowed application, Vulkan
-resources, shaders, or renderer target exists yet.
+River V0 has a project-local GPU checkpoint. `fluid_25d` is a windowed and
+headless Vulkan application with a GPU-resident virtual-pipes solve and compact
+top-down diagnostics. It has deterministic dry-bed, lake-at-rest, and river
+source/sink fixtures; the headless lake and river lanes compare the GPU depth,
+face flux, and source/sink ledger against the CPU oracle.
 
 The Config V2 default grid (`32x16`) is intentionally an oracle-phase fixture,
 not an eventual runtime product default. The bounded runtime direction remains
 a separate roughly `256x128` catchment decision after GPU evidence.
 
-The CPU target is a reference for the later GPU implementation, not a shared
+The CPU target remains a reference for the GPU implementation, not a shared
 fluid framework and not a claim of scientific Saint-Venant fidelity.
 
 ## Product boundary
@@ -37,7 +38,11 @@ River V0 includes:
 - virtual-pipes shallow-water evolution;
 - water depth, surface height, outgoing face flux, velocity, and wet/dry state;
 - explicit source/sink volume accounting;
-- numerical fixtures that can be compared across CPU and future GPU paths.
+- a GPU-resident steady-state solve with no per-frame readback in normal use;
+- top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
+  diagnostics;
+- opt-in headless CPU/GPU fixtures that read back only at their final evidence
+  point.
 
 It deliberately excludes erosion, sediment, rainfall, interactive editing,
 spray, breaking waves, open or periodic outer boundaries, and high-order flood
@@ -115,10 +120,31 @@ schema and currently exposes:
 - `--fluid25d-gravity-m-per-s2`;
 - `--fluid25d-flow-damping-per-second`;
 - `--fluid25d-minimum-wet-depth-m`.
+- `--debug-view terrain|depth|surface|flow|direction|wet-dry`;
+- `--fluid25d-gpu-oracle-validation` (headless-only; performs final-state
+  readback against the CPU oracle).
 
-The facade is exercised by the CPU target even though no runtime target exists
-yet. Common host options are accepted only as part of the eventual project
-boundary; they do not imply a working windowed or headless application today.
+Normal headless capture keeps the simulation GPU-resident:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --width 512 --height 256 --output fluid-25d.png
+```
+
+The two focused evidence lanes are intentionally opt-in:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 12 \
+  --grid-width 12 --grid-height 8 --fluid25d-scenario lake-at-rest \
+  --fluid25d-gpu-oracle-validation --output fluid-25d-lake.png
+
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 24 \
+  --grid-width 24 --grid-height 9 --fluid25d-scenario river-catchment \
+  --fluid25d-gpu-oracle-validation --output fluid-25d-river.png
+```
+
+In a window, `Space` pauses, `R` resets the deterministic scenario, and `D`
+cycles the compact diagnostic views.
 
 ## Source layout
 
@@ -133,8 +159,8 @@ contract is demonstrated.
 
 ## Next implementation gate
 
-The next slice can add GPU resources and a compute schedule only after this CPU
-contract is treated as the acceptance oracle. The first GPU checkpoint should
-match the small fixtures, keep steady-state state on the GPU, and expose depth
-and flow diagnostics. Any shared helper or foundation change should wait for a
-second independent consumer or a measured bottleneck.
+The next slice is a River V0 product-surface decision: establish the bounded
+runtime catchment resolution and an oblique terrain/water presentation, or
+record a concrete numerical limitation that warrants a project-local
+finite-volume comparison. Any shared helper or foundation change still waits
+for a second independent consumer or a measured bottleneck.

@@ -85,6 +85,10 @@ void test_config_defaults_and_parsing() {
             "fluid 2.5D should retain the short dry scenario alias");
     require_throws([] { static_cast<void>(fluid_25d_scenario_from_name("unknown")); },
                    "fluid 2.5D should reject unknown scenario names");
+    require(fluid_25d_debug_view_from_name("flow") == Fluid25DDebugView::FlowMagnitude,
+            "fluid 2.5D should parse the flow diagnostic view");
+    require_throws([] { static_cast<void>(fluid_25d_debug_view_from_name("unknown")); },
+                   "fluid 2.5D should reject unknown diagnostic views");
 
     const Fluid25DProjectConfig parsed = parse_project(
         {"fluid_25d", "--grid-width", "10", "--grid-height", "6", "--fluid25d-scenario",
@@ -107,6 +111,16 @@ void test_config_defaults_and_parsing() {
                   "fluid 2.5D parser should bind flow damping");
     require_close(parsed.simulation.minimum_wet_depth_m, 0.002, kDepthToleranceM,
                   "fluid 2.5D parser should bind wet depth threshold");
+
+    const Fluid25DProjectConfig validation = parse_project(
+        {"fluid_25d", "--headless", "--debug-view", "wet-dry", "--fluid25d-gpu-oracle-validation"});
+    require(validation.gpu_oracle_validation,
+            "fluid 2.5D parser should retain the explicit GPU oracle switch");
+    require(validation.debug_view == "wet-dry",
+            "fluid 2.5D parser should retain the selected diagnostic view");
+    require_throws(
+        [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-gpu-oracle-validation"})); },
+        "fluid 2.5D should reject GPU oracle validation outside headless operation");
 
     const Fluid25DProjectConfig deferred =
         parse_project({"fluid_25d", "--set", "grid.size=7", "--set", "fluid25d.scenario=dry-bed",

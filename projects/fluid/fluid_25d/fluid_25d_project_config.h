@@ -13,6 +13,8 @@ namespace cubey::projects::fluid::fluid_25d {
 struct Fluid25DProjectConfig {
     host::CommonRunConfig common{};
     common::FluidGridOptions grid{};
+    std::string debug_view{};
+    bool gpu_oracle_validation = false;
     Fluid25DStartupOptions fluid{};
     Fluid25DConfig simulation{};
 };
@@ -42,6 +44,18 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
     builder.compose(common::fluid_grid_schema(config.grid, common::FluidGridSchemaMode::TwoD));
     builder
+        .bind(option(
+                  "fluid25d.debug_view", "--debug-view", "Debug View",
+                  "Top-down diagnostic view: terrain, depth, surface, flow, direction, or wet-dry.",
+                  ValueType::Enum, {},
+                  {"terrain", "depth", "surface", "flow", "direction", "wet-dry"}),
+              config.debug_view)
+        .bind(
+            option("fluid25d.gpu_oracle_validation", "--fluid25d-gpu-oracle-validation",
+                   "GPU Oracle Validation",
+                   "Headless-only opt-in CPU/GPU solver comparison with simulation-state readback.",
+                   ValueType::Bool),
+            config.gpu_oracle_validation)
         .bind(option("fluid25d.scenario", "--fluid25d-scenario", "Scenario",
                      "Deterministic River V0 scenario.", ValueType::Enum, {},
                      {"dry-bed", "lake-at-rest", "river-catchment"}),
@@ -87,6 +101,11 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
                                           project_config.common.output_path != "cubey-output.png");
     project_config.simulation =
         fluid_25d_config_from_options(project_config.grid, project_config.fluid);
+    static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
+    if (project_config.gpu_oracle_validation && !project_config.common.headless) {
+        throw std::runtime_error(
+            "fluid 2.5D GPU oracle validation is headless-only; pass --headless");
+    }
     if (parsed.write_config_template_path.has_value()) {
         schema.write_template(parsed.write_config_template_path.value());
     }

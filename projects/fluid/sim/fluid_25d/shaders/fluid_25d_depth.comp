@@ -1,0 +1,92 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer SourceRateField {
+    float values[];
+} source_rate;
+layout(set = 0, binding = 1, std430) readonly buffer SinkRateField {
+    float values[];
+} sink_rate;
+layout(set = 0, binding = 2, std430) readonly buffer DepthField {
+    float values[];
+} source_depth;
+layout(set = 0, binding = 3, std430) readonly buffer FluxField {
+    vec4 values[];
+} face_flux;
+layout(set = 0, binding = 4, std430) buffer NextDepthField {
+    float values[];
+} destination_depth;
+layout(set = 0, binding = 5, std430) buffer VelocityField {
+    vec4 values[];
+} velocity;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+const uint LEFT = 0u;
+const uint RIGHT = 1u;
+const uint DOWN = 2u;
+const uint UP = 3u;
+
+uint cell_index(uint x, uint y, uint width) {
+    return y * width + x;
+}
+
+float post_source_sink_depth(uint index, float delta_seconds) {
+    float old_depth = source_depth.values[index];
+    float sourced_depth = old_depth + source_rate.values[index] * delta_seconds;
+    return sourced_depth - min(sourced_depth, sink_rate.values[index] * delta_seconds);
+}
+
+float opposite_face_flux(uint x, uint y, uint width, uint height, uint face) {
+    if (face == LEFT) {
+        return x > 0u ? face_flux.values[cell_index(x - 1u, y, width)][RIGHT] : 0.0;
+    }
+    if (face == RIGHT) {
+        return x + 1u < width ? face_flux.values[cell_index(x + 1u, y, width)][LEFT] : 0.0;
+    }
+    if (face == DOWN) {
+        return y > 0u ? face_flux.values[cell_index(x, y - 1u, width)][UP] : 0.0;
+    }
+    return y + 1u < height ? face_flux.values[cell_index(x, y + 1u, width)][DOWN] : 0.0;
+}
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    uint index = cell_index(x, y, width);
+    float dt = params.grid_dt_cell.z;
+    float cell_size = params.grid_dt_cell.w;
+    float cell_area = cell_size * cell_size;
+    float minimum_wet_depth = params.physics.z;
+    vec4 outgoing = face_flux.values[index];
+    float incoming = opposite_face_flux(x, y, width, height, LEFT) +
+                     opposite_face_flux(x, y, width, height, RIGHT) +
+                     opposite_face_flux(x, y, width, height, DOWN) +
+                     opposite_face_flux(x, y, width, height, UP);
+    float updated_depth = max(0.0, post_source_sink_depth(index, dt) +
+                                       dt / cell_area *
+                                           (incoming - outgoing.x - outgoing.y - outgoing.z - outgoing.w));
+    destination_depth.values[index] = updated_depth;
+
+    vec2 derived_velocity = vec2(0.0);
+    if (updated_depth > minimum_wet_depth) {
+        float right_flow = outgoing[RIGHT] - opposite_face_flux(x, y, width, height, RIGHT);
+        float left_flow = -outgoing[LEFT] + opposite_face_flux(x, y, width, height, LEFT);
+        float up_flow = outgoing[UP] - opposite_face_flux(x, y, width, height, UP);
+        float down_flow = -outgoing[DOWN] + opposite_face_flux(x, y, width, height, DOWN);
+        derived_velocity = 0.5 * vec2(right_flow + left_flow, up_flow + down_flow) /
+                           (updated_depth * cell_size);
+    }
+    velocity.values[index] = vec4(derived_velocity, updated_depth > minimum_wet_depth ? 1.0 : 0.0,
+                                  0.0);
+}

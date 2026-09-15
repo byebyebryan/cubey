@@ -25,6 +25,17 @@ enum class Fluid25DScenario : std::uint32_t {
     RiverCatchment = 2,
 };
 
+// Presentation-only diagnostic views. They never alter the River V0 solver
+// contract or its persistent GPU state.
+enum class Fluid25DDebugView : std::uint32_t {
+    Terrain = 0,
+    WaterDepth = 1,
+    SurfaceHeight = 2,
+    FlowMagnitude = 3,
+    FlowDirection = 4,
+    WetDry = 5,
+};
+
 // This compact 2:1 grid is for the numerical/oracle phase only.  A future
 // River V0 runtime should choose its bounded product grid independently (a
 // roughly 256x128 catchment is the current direction).
@@ -84,6 +95,47 @@ struct Fluid25DStartupOptions {
     }
     throw std::runtime_error(
         "fluid 2.5D scenario must be dry-bed, lake-at-rest, or river-catchment");
+}
+
+[[nodiscard]] inline Fluid25DDebugView fluid_25d_debug_view_from_name(std::string_view name) {
+    if (name.empty() || name == "terrain") {
+        return Fluid25DDebugView::Terrain;
+    }
+    if (name == "depth" || name == "water-depth") {
+        return Fluid25DDebugView::WaterDepth;
+    }
+    if (name == "surface" || name == "surface-height") {
+        return Fluid25DDebugView::SurfaceHeight;
+    }
+    if (name == "flow" || name == "flow-magnitude") {
+        return Fluid25DDebugView::FlowMagnitude;
+    }
+    if (name == "direction" || name == "flow-direction") {
+        return Fluid25DDebugView::FlowDirection;
+    }
+    if (name == "wet-dry" || name == "wetdry") {
+        return Fluid25DDebugView::WetDry;
+    }
+    throw std::runtime_error("fluid 2.5D debug view must be terrain, depth, surface, flow, "
+                             "direction, or wet-dry");
+}
+
+[[nodiscard]] inline const char* fluid_25d_debug_view_name(Fluid25DDebugView view) {
+    switch (view) {
+    case Fluid25DDebugView::Terrain:
+        return "Terrain";
+    case Fluid25DDebugView::WaterDepth:
+        return "Water Depth";
+    case Fluid25DDebugView::SurfaceHeight:
+        return "Surface Height";
+    case Fluid25DDebugView::FlowMagnitude:
+        return "Flow Magnitude";
+    case Fluid25DDebugView::FlowDirection:
+        return "Flow Direction";
+    case Fluid25DDebugView::WetDry:
+        return "Wet / Dry";
+    }
+    return "Terrain";
 }
 
 [[nodiscard]] inline std::size_t fluid_25d_cell_count(const Fluid25DConfig& config) {
