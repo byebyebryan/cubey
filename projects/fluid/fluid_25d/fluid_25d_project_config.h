@@ -13,6 +13,7 @@ namespace cubey::projects::fluid::fluid_25d {
 struct Fluid25DProjectConfig {
     host::CommonRunConfig common{};
     common::FluidGridOptions grid{};
+    std::string view{};
     std::string debug_view{};
     bool gpu_oracle_validation = false;
     Fluid25DStartupOptions fluid{};
@@ -44,6 +45,10 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
     builder.compose(common::fluid_grid_schema(config.grid, common::FluidGridSchemaMode::TwoD));
     builder
+        .bind(option("fluid25d.view", "--fluid25d-view", "View",
+                     "River V0 presentation: catchment or diagnostics.", ValueType::Enum, {},
+                     {"catchment", "diagnostics"}),
+              config.view)
         .bind(option(
                   "fluid25d.debug_view", "--debug-view", "Debug View",
                   "Top-down diagnostic view: terrain, depth, surface, flow, direction, or wet-dry.",
@@ -101,6 +106,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
                                           project_config.common.output_path != "cubey-output.png");
     project_config.simulation =
         fluid_25d_config_from_options(project_config.grid, project_config.fluid);
+    static_cast<void>(fluid_25d_presentation_view_from_name(project_config.view));
     static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
     if (project_config.gpu_oracle_validation && !project_config.common.headless) {
         throw std::runtime_error(

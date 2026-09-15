@@ -9,6 +9,8 @@
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
+#include <cubey/input/orbit_controller.h>
+#include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/gpu_runtime.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -22,6 +24,7 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <numbers>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -34,6 +37,8 @@ namespace {
 inline constexpr float kDepthToleranceM = 0.0005F;
 inline constexpr float kFluxToleranceM3PerS = 0.002F;
 inline constexpr double kLedgerToleranceM3 = 0.003;
+inline constexpr float kCatchmentCameraBaseYaw = -0.52F;
+inline constexpr float kCatchmentCameraBasePitch = -0.92F;
 
 [[nodiscard]] std::uint32_t headless_frame_count(const host::CommonRunConfig& config) {
     return config.frames == 0U ? 120U : config.frames;
@@ -83,7 +88,9 @@ class Fluid25DApp {
           scenario_(make_fluid_25d_scenario(
               config_.simulation.scenario, config_.simulation.grid_width,
               config_.simulation.grid_height, config_.simulation.cell_size_m)),
+          presentation_view_(fluid_25d_presentation_view_from_name(config_.view)),
           debug_view_(fluid_25d_debug_view_from_name(config_.debug_view)) {
+        configure_catchment_camera();
         if (config_.gpu_oracle_validation) {
             oracle_.emplace(config_.simulation, scenario_);
         }
@@ -103,8 +110,8 @@ class Fluid25DApp {
             create_global_resources_if_needed(context.device(), context.gpu());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
-            resources_.create_render_pipeline(context.device(), context.swapchain().format(),
-                                              context.swapchain().extent());
+            resources_.create_render_pipelines(context.device(), context.swapchain().format(),
+                                               VK_FORMAT_D32_SFLOAT, context.swapchain().extent());
             graph_executor_.clear();
             graph_executor_.resize(context.frame_slot_count());
         };
@@ -112,8 +119,10 @@ class Fluid25DApp {
             graph_executor_.clear();
             resources_.destroy_swapchain_resources();
         };
-        callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming&) {
+        callbacks.update = [this](cubey::host::WindowedAppContext& context,
+                                  const FrameTiming& timing) {
             const auto input = context.filtered_input();
+            orbit_controller_.update_pointer_input(input, timing.delta_seconds);
             if (input.key_pressed(cubey::input::Key::Space)) {
                 paused_ = !paused_;
             }
@@ -123,6 +132,11 @@ class Fluid25DApp {
             if (input.key_pressed(cubey::input::Key::D)) {
                 debug_view_ = static_cast<Fluid25DDebugView>(
                     (static_cast<std::uint32_t>(debug_view_) + 1U) % 6U);
+            }
+            if (input.key_pressed(cubey::input::Key::A)) {
+                presentation_view_ = presentation_view_ == Fluid25DPresentationView::Catchment
+                                         ? Fluid25DPresentationView::Diagnostics
+                                         : Fluid25DPresentationView::Catchment;
             }
         };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -139,7 +153,7 @@ class Fluid25DApp {
             {
                 .run_config = config_.common,
                 .app_name = "fluid_25d",
-                .ready_status = "rendering River V0 terrain-water diagnostics",
+                .ready_status = "rendering River V0 terrain-water catchment",
                 .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                 .swapchain_image_usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 .require_dynamic_rendering = true,
@@ -158,9 +172,10 @@ class Fluid25DApp {
     void record_windowed_frame(cubey::host::WindowedAppContext& context,
                                const cubey::host::WindowedRenderFrame& render_frame) {
         static_cast<void>(runtime_.frame_for_timing(render_frame.timing));
-        const cubey::render::CompiledRenderGraph graph =
-            build_fluid_25d_frame_graph(render_frame.color_target, resources_, config_.simulation,
-                                        debug_view_, paused_, reset_requested_);
+        const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
+            render_frame.color_target, resources_, config_.simulation, presentation_view_,
+            debug_view_, render_camera(render_frame.color_target.extent),
+            Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         graph_executor_.record(
@@ -174,6 +189,51 @@ class Fluid25DApp {
             },
             graph);
         recorder.end("vkEndCommandBuffer fluid_25d");
+    }
+
+    void configure_catchment_camera() {
+        const auto [terrain_minimum, terrain_maximum] = std::minmax_element(
+            scenario_.terrain_height_m.begin(), scenario_.terrain_height_m.end());
+        const float world_width =
+            static_cast<float>(config_.simulation.grid_width - 1U) * config_.simulation.cell_size_m;
+        const float world_height = static_cast<float>(config_.simulation.grid_height - 1U) *
+                                   config_.simulation.cell_size_m;
+        const float horizontal_extent = std::max(world_width, world_height);
+        const float scaled_terrain_span =
+            (*terrain_maximum - *terrain_minimum) * kFluid25DCatchmentHeightScale;
+        catchment_target_ = {
+            0.0F,
+            (*terrain_minimum + *terrain_maximum) * 0.5F * kFluid25DCatchmentHeightScale,
+            0.0F,
+        };
+        const float camera_distance =
+            std::max(horizontal_extent * 1.05F, scaled_terrain_span * 6.0F + 16.0F);
+        orbit_controller_.set_distance_limits(std::max(8.0F, horizontal_extent * 0.30F),
+                                              std::max(48.0F, horizontal_extent * 4.0F));
+        orbit_controller_.set_pitch_limits(-0.38F, 0.38F);
+        orbit_controller_.set_home_distance(camera_distance);
+        camera_.set_projection(std::numbers::pi_v<float> / 3.0F, 0.1F,
+                               camera_distance * 5.0F + scaled_terrain_span + 64.0F);
+    }
+
+    [[nodiscard]] cubey::Transform3D render_camera_transform() const {
+        return cubey::orbit_camera_transform({
+            .target = catchment_target_,
+            .distance = orbit_controller_.distance(),
+            .yaw = kCatchmentCameraBaseYaw + orbit_controller_.yaw(),
+            .pitch = kCatchmentCameraBasePitch + orbit_controller_.pitch(),
+        });
+    }
+
+    [[nodiscard]] Fluid25DRenderCamera render_camera(VkExtent2D extent) const {
+        const cubey::Transform3D transform = render_camera_transform();
+        const float aspect = extent.height == 0U ? 1.0F
+                                                 : static_cast<float>(extent.width) /
+                                                       static_cast<float>(extent.height);
+        return {
+            .view_projection = camera_.view_projection_matrix(transform, aspect),
+            .position = transform.translation,
+        };
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
@@ -273,7 +333,10 @@ class Fluid25DApp {
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
             create_global_resources_if_needed(context.device(), context.gpu());
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
-            resources_.create_render_pipeline(context.device(), target.format, target.extent);
+            resources_.create_render_pipelines(context.device(), target.format,
+                                               VK_FORMAT_D32_SFLOAT, target.extent);
+            graph_executor_.clear();
+            graph_executor_.resize(1U);
         };
         cubey::host::install_headless_simulation_driver(
             callbacks, config_.common,
@@ -294,11 +357,23 @@ class Fluid25DApp {
                                           VkCommandBuffer command_buffer,
                                           const cubey::host::HeadlessRenderTarget& target) {
             validate_gpu_oracle(runtime_.gpu());
-            record_fluid_25d_fullscreen_draw(command_buffer, resources_, config_.simulation,
-                                             debug_view_, target);
-            (void)context;
+            const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
+                target, resources_, config_.simulation, presentation_view_, debug_view_,
+                render_camera(target.extent), Fluid25DRenderTargetMode::ColorAttachment, false,
+                false, reset_requested_);
+            graph_executor_.record(
+                {
+                    .device = &context.device(),
+                    .command_buffer = command_buffer,
+                    .frame_slot = {.index = 0U, .count = 1U},
+                    .label = "vkEndCommandBuffer fluid_25d headless graph",
+                    .command_buffer_mode =
+                        cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
+                },
+                graph);
         };
         callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
+            graph_executor_.clear();
             resources_.destroy_all_resources();
             runtime_.detach_gpu_if_attached();
         };
@@ -311,6 +386,10 @@ class Fluid25DApp {
     cubey::ProjectRuntimeAdapter runtime_{1};
     Fluid25DGpuResources resources_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
+    cubey::Camera3D camera_;
+    cubey::OrbitController orbit_controller_;
+    cubey::math::Vec3 catchment_target_{0.0F, 0.0F, 0.0F};
+    Fluid25DPresentationView presentation_view_ = Fluid25DPresentationView::Catchment;
     Fluid25DDebugView debug_view_ = Fluid25DDebugView::Terrain;
     std::optional<Fluid25DOracle> oracle_;
     double expected_source_volume_m3_ = 0.0;

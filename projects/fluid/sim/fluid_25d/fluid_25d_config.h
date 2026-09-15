@@ -36,11 +36,18 @@ enum class Fluid25DDebugView : std::uint32_t {
     WetDry = 5,
 };
 
-// This compact 2:1 grid is for the numerical/oracle phase only.  A future
-// River V0 runtime should choose its bounded product grid independently (a
-// roughly 256x128 catchment is the current direction).
-inline constexpr std::uint32_t kDefaultFluid25DGridWidth = 32;
-inline constexpr std::uint32_t kDefaultFluid25DGridHeight = 16;
+// River V0 has one product-facing view and a deliberately separate top-down
+// diagnostics surface. Keeping this as an enum makes headless captures and
+// windowed interaction reproducible without a hidden presentation toggle.
+enum class Fluid25DPresentationView : std::uint32_t {
+    Catchment = 0,
+    Diagnostics = 1,
+};
+
+// The River V0 product default is a bounded 2:1 catchment. Focused CPU/GPU
+// oracle fixtures deliberately override this with much smaller grids.
+inline constexpr std::uint32_t kDefaultFluid25DGridWidth = 256;
+inline constexpr std::uint32_t kDefaultFluid25DGridHeight = 128;
 inline constexpr std::uint32_t kMaxFluid25DSubsteps = 64;
 
 struct Fluid25DConfig {
@@ -120,6 +127,27 @@ struct Fluid25DStartupOptions {
                              "direction, or wet-dry");
 }
 
+[[nodiscard]] inline Fluid25DPresentationView
+fluid_25d_presentation_view_from_name(std::string_view name) {
+    if (name.empty() || name == "catchment") {
+        return Fluid25DPresentationView::Catchment;
+    }
+    if (name == "diagnostics" || name == "diagnostic") {
+        return Fluid25DPresentationView::Diagnostics;
+    }
+    throw std::runtime_error("fluid 2.5D view must be catchment or diagnostics");
+}
+
+[[nodiscard]] inline const char* fluid_25d_presentation_view_name(Fluid25DPresentationView view) {
+    switch (view) {
+    case Fluid25DPresentationView::Catchment:
+        return "Catchment";
+    case Fluid25DPresentationView::Diagnostics:
+        return "Diagnostics";
+    }
+    return "Catchment";
+}
+
 [[nodiscard]] inline const char* fluid_25d_debug_view_name(Fluid25DDebugView view) {
     switch (view) {
     case Fluid25DDebugView::Terrain:
@@ -150,8 +178,25 @@ struct Fluid25DStartupOptions {
     return width * height;
 }
 
+[[nodiscard]] inline std::size_t fluid_25d_mesh_vertex_count(const Fluid25DConfig& config) {
+    if (config.grid_width < 2U || config.grid_height < 2U) {
+        throw std::runtime_error("fluid 2.5D product mesh requires grid dimensions of at least 2");
+    }
+    const std::size_t cells_x = static_cast<std::size_t>(config.grid_width - 1U);
+    const std::size_t cells_y = static_cast<std::size_t>(config.grid_height - 1U);
+    if (cells_x > std::numeric_limits<std::size_t>::max() / cells_y) {
+        throw std::runtime_error("fluid 2.5D product mesh cell count is too large");
+    }
+    const std::size_t quad_count = cells_x * cells_y;
+    if (quad_count > std::numeric_limits<std::size_t>::max() / 6U) {
+        throw std::runtime_error("fluid 2.5D product mesh vertex count is too large");
+    }
+    return quad_count * 6U;
+}
+
 inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
     static_cast<void>(fluid_25d_cell_count(config));
+    static_cast<void>(fluid_25d_mesh_vertex_count(config));
     if (config.scenario != Fluid25DScenario::DryBed &&
         config.scenario != Fluid25DScenario::LakeAtRest &&
         config.scenario != Fluid25DScenario::RiverCatchment) {

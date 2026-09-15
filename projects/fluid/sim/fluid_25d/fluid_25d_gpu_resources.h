@@ -39,8 +39,8 @@ class Fluid25DGpuResources {
                                            cubey::ProjectGpuServices& gpu,
                                            const Fluid25DConfig& config,
                                            const Fluid25DScenarioData& scenario);
-    void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
-                                VkExtent2D extent);
+    void create_render_pipelines(cubey::vulkan::Device& device, VkFormat color_format,
+                                 VkFormat depth_format, VkExtent2D extent);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -57,7 +57,9 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& flux_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& depth_pipeline() const;
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& render_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& diagnostic_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& terrain_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& water_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet reset_descriptor_set() const noexcept {
         return reset_descriptors_.has_value() ? reset_descriptors_->set() : VK_NULL_HANDLE;
@@ -111,7 +113,9 @@ class Fluid25DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> flux_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> depth_pipeline_;
-    std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> diagnostic_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> terrain_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> water_pipeline_;
     bool current_depth_is_a_ = true;
 };
 

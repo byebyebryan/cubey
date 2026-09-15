@@ -11,14 +11,15 @@ The broader technique map lives in
 ## Status
 
 River V0 has a project-local GPU checkpoint. `fluid_25d` is a windowed and
-headless Vulkan application with a GPU-resident virtual-pipes solve and compact
-top-down diagnostics. It has deterministic dry-bed, lake-at-rest, and river
-source/sink fixtures; the headless lake and river lanes compare the GPU depth,
-face flux, and source/sink ledger against the CPU oracle.
+headless Vulkan application with a GPU-resident virtual-pipes solve and a
+deterministic oblique terrain-and-water catchment presentation. Top-down
+diagnostics remain explicitly selectable. It has deterministic dry-bed,
+lake-at-rest, and river source/sink fixtures; the headless lake and river lanes
+compare GPU depth, face flux, and source/sink ledger against the CPU oracle.
 
-The Config V2 default grid (`32x16`) is intentionally an oracle-phase fixture,
-not an eventual runtime product default. The bounded runtime direction remains
-a separate roughly `256x128` catchment decision after GPU evidence.
+The Config V2 product default is a bounded `256x128` catchment. Focused
+CPU/GPU oracle fixtures intentionally set smaller dimensions so their evidence
+stays quick and inspectable.
 
 The CPU target remains a reference for the GPU implementation, not a shared
 fluid framework and not a claim of scientific Saint-Venant fidelity.
@@ -39,8 +40,10 @@ River V0 includes:
 - water depth, surface height, outgoing face flux, velocity, and wet/dry state;
 - explicit source/sink volume accounting;
 - a GPU-resident steady-state solve with no per-frame readback in normal use;
+- an implicit oblique grid (no uploaded mesh) with opaque terrain, translucent
+  premultiplied-alpha water, depth testing, restrained lighting, and flow cues;
 - top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
-  diagnostics;
+  diagnostics as an explicit alternate presentation mode;
 - opt-in headless CPU/GPU fixtures that read back only at their final evidence
   point.
 
@@ -113,6 +116,7 @@ River V0 uses a project-owned Config V2 facade. It composes the shared 2D grid
 schema and currently exposes:
 
 - `--grid-width`, `--grid-height`, and `--grid-size`;
+- `--fluid25d-view catchment|diagnostics` (default: `catchment`);
 - `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment`;
 - `--fluid25d-cell-size-m`;
 - `--fluid25d-fixed-delta-seconds`;
@@ -131,6 +135,15 @@ build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
   --width 512 --height 256 --output fluid-25d.png
 ```
 
+The normal headless command produces the same static oblique catchment framing
+as the windowed default and does not read back simulation state. To capture a
+top-down numerical diagnostic instead, select it deliberately:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --fluid25d-view diagnostics --debug-view flow --output fluid-25d-flow.png
+```
+
 The two focused evidence lanes are intentionally opt-in:
 
 ```sh
@@ -143,8 +156,9 @@ build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 24 \
   --fluid25d-gpu-oracle-validation --output fluid-25d-river.png
 ```
 
-In a window, `Space` pauses, `R` resets the deterministic scenario, and `D`
-cycles the compact diagnostic views.
+In a window, left-drag or scroll orbits/zooms the catchment, `Space` pauses,
+`R` resets the deterministic scenario, `A` switches between catchment and
+diagnostics, and `D` cycles diagnostic contents.
 
 ## Source layout
 
@@ -159,8 +173,8 @@ contract is demonstrated.
 
 ## Next implementation gate
 
-The next slice is a River V0 product-surface decision: establish the bounded
-runtime catchment resolution and an oblique terrain/water presentation, or
-record a concrete numerical limitation that warrants a project-local
-finite-volume comparison. Any shared helper or foundation change still waits
-for a second independent consumer or a measured bottleneck.
+The next slice should gather bounded capture and timing evidence from the
+product surface, then decide whether River V0 needs better visual legibility,
+more scenario variety, or a numerical comparison. Any shared helper or
+foundation change still waits for a second independent consumer or a measured
+bottleneck.

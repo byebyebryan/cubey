@@ -27,7 +27,10 @@ uint cell_index(vec2 uv, uint width, uint height) {
 }
 
 vec3 terrain_color(float value) {
-    float height = clamp((value + 0.2) * 0.24, 0.0, 1.0);
+    // River V0 spans a shallow center channel and high quadratic banks. A
+    // logarithmic presentation ramp keeps both legible without changing the
+    // metre-scale terrain values used by the solver.
+    float height = clamp(log2(max(value + 1.0, 0.001)) / 8.5, 0.0, 1.0);
     return mix(vec3(0.05, 0.12, 0.07), vec3(0.64, 0.47, 0.25), height);
 }
 

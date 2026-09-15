@@ -74,6 +74,8 @@ void test_config_defaults_and_parsing() {
             "fluid 2.5D should expose the River V0 default grid width");
     require(defaults.grid_height == kDefaultFluid25DGridHeight,
             "fluid 2.5D should expose the River V0 default grid height");
+    require(defaults.grid_width == 256U && defaults.grid_height == 128U,
+            "fluid 2.5D should retain the bounded 256 by 128 product grid");
     require(defaults.cell_size_m == 1.0F, "fluid 2.5D should default to one metre cells");
     require(defaults.simulation_substeps == 2,
             "fluid 2.5D should default to two fixed solver substeps");
@@ -89,6 +91,27 @@ void test_config_defaults_and_parsing() {
             "fluid 2.5D should parse the flow diagnostic view");
     require_throws([] { static_cast<void>(fluid_25d_debug_view_from_name("unknown")); },
                    "fluid 2.5D should reject unknown diagnostic views");
+    require(fluid_25d_presentation_view_from_name("catchment") ==
+                Fluid25DPresentationView::Catchment,
+            "fluid 2.5D should select the product catchment view explicitly");
+    require(fluid_25d_presentation_view_from_name("diagnostics") ==
+                Fluid25DPresentationView::Diagnostics,
+            "fluid 2.5D should retain an explicit diagnostic presentation mode");
+    require_throws([] { static_cast<void>(fluid_25d_presentation_view_from_name("unknown")); },
+                   "fluid 2.5D should reject unknown presentation views");
+    require(fluid_25d_mesh_vertex_count(Fluid25DConfig{
+                .grid_width = 2U,
+                .grid_height = 2U,
+            }) == 6U,
+            "fluid 2.5D should generate six procedural vertices per grid quad");
+    require_throws(
+        [] {
+            static_cast<void>(fluid_25d_mesh_vertex_count(Fluid25DConfig{
+                .grid_width = 1U,
+                .grid_height = 2U,
+            }));
+        },
+        "fluid 2.5D should reject product meshes with fewer than two cells per axis");
 
     const Fluid25DProjectConfig parsed = parse_project(
         {"fluid_25d", "--grid-width", "10", "--grid-height", "6", "--fluid25d-scenario",
@@ -111,6 +134,15 @@ void test_config_defaults_and_parsing() {
                   "fluid 2.5D parser should bind flow damping");
     require_close(parsed.simulation.minimum_wet_depth_m, 0.002, kDepthToleranceM,
                   "fluid 2.5D parser should bind wet depth threshold");
+    require(parsed.view.empty(),
+            "fluid 2.5D should default the CLI view name to the catchment enum default");
+    require(!parsed.gpu_oracle_validation,
+            "fluid 2.5D should keep solver readback disabled unless explicitly requested");
+
+    const Fluid25DProjectConfig diagnostic_presentation =
+        parse_project({"fluid_25d", "--fluid25d-view", "diagnostics", "--debug-view", "wet-dry"});
+    require(diagnostic_presentation.view == "diagnostics",
+            "fluid 2.5D parser should preserve the selected presentation view");
 
     const Fluid25DProjectConfig validation = parse_project(
         {"fluid_25d", "--headless", "--debug-view", "wet-dry", "--fluid25d-gpu-oracle-validation"});
@@ -144,6 +176,10 @@ void test_config_defaults_and_parsing() {
     invalid.scenario = static_cast<Fluid25DScenario>(99U);
     require_throws([&] { validate_fluid_25d_config(invalid); },
                    "fluid 2.5D should reject an invalid scenario enum");
+    invalid = defaults;
+    invalid.grid_height = 1U;
+    require_throws([&] { validate_fluid_25d_config(invalid); },
+                   "fluid 2.5D should reject product grids with fewer than two rows");
 }
 
 void test_deterministic_scenarios() {
@@ -291,7 +327,7 @@ void test_dynamic_closed_domain_conservation() {
 
 void test_retained_flux_inertia() {
     using namespace cubey::projects::fluid::fluid_25d;
-    Fluid25DConfig config = test_config(2, 1, Fluid25DScenario::DryBed);
+    Fluid25DConfig config = test_config(2, 2, Fluid25DScenario::DryBed);
     config.fixed_delta_seconds = 0.5F;
     config.simulation_substeps = 1;
     config.gravity_m_per_s2 = 2.5F;
@@ -301,6 +337,8 @@ void test_retained_flux_inertia() {
                                                             config.grid_height, config.cell_size_m);
     scenario.terrain_height_m[0] = 0.0F;
     scenario.terrain_height_m[1] = 0.0F;
+    scenario.terrain_height_m[2] = 10.0F;
+    scenario.terrain_height_m[3] = 10.0F;
     scenario.initial_water_depth_m[0] = 1.0F;
     scenario.initial_water_depth_m[1] = 0.0F;
     Fluid25DOracle oracle(config, scenario);

@@ -28,7 +28,7 @@ inline constexpr VkDeviceSize kSimulationPushConstantBytes = sizeof(float) * 8U;
     };
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo render_pass_info() {
+[[nodiscard]] cubey::render::MaterialPassInfo diagnostic_pass_info() {
     const VkPushConstantRange push_constant{
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
@@ -38,6 +38,36 @@ inline constexpr VkDeviceSize kSimulationPushConstantBytes = sizeof(float) * 8U;
         .label = "fluid_25d.render",
         .push_constants = {push_constant},
     };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo terrain_pass_info() {
+    const VkPushConstantRange push_constant{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 0,
+        .size = sizeof(float) * 24U,
+    };
+    return {
+        .label = "fluid_25d.catchment_terrain",
+        .push_constants = {push_constant},
+        .cull_mode = VK_CULL_MODE_NONE,
+        .depth_test = true,
+        .depth_write = true,
+        .depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL,
+    };
+}
+
+[[nodiscard]] cubey::render::MaterialPassInfo water_pass_info() {
+    cubey::render::MaterialPassInfo pass = terrain_pass_info();
+    pass.label = "fluid_25d.catchment_water";
+    pass.depth_write = false;
+    pass.blend_enable = true;
+    // The water fragment shader writes premultiplied color: straight lighting
+    // is multiplied by alpha before source-over compositing.
+    pass.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    pass.dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    pass.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+    pass.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    return pass;
 }
 
 void emplace_compute_pipeline(std::optional<cubey::render::ComputePipelineResource>& destination,
@@ -139,7 +169,7 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     depth_b_to_a_descriptors_.emplace(device, depth_info);
 
     const cubey::vulkan::DescriptorSetInfo render_info =
-        storage_set_info(3U, VK_SHADER_STAGE_FRAGMENT_BIT);
+        storage_set_info(3U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     render_a_descriptors_.emplace(device, render_info);
     render_b_descriptors_.emplace(device, render_info);
 
@@ -198,24 +228,53 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
                              depth_a_to_b_descriptors_->layout());
 }
 
-void Fluid25DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
-                                                  VkFormat color_format, VkExtent2D extent) {
-    const std::array<cubey::render::ShaderStageFile, 2> shader_stages{
+void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device,
+                                                   VkFormat color_format, VkFormat depth_format,
+                                                   VkExtent2D extent) {
+    const std::array<cubey::render::ShaderStageFile, 2> diagnostic_shader_stages{
         cubey::render::vertex_shader_file(shader_path("fluid_25d.vert.spv")),
         cubey::render::fragment_shader_file(shader_path("fluid_25d_render.frag.spv")),
     };
     const std::array<VkDescriptorSetLayout, 1> layouts{render_a_descriptors_->layout()};
-    render_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                         .extent = extent,
-                                         .color_format = color_format,
-                                         .shader_stage_files = shader_stages,
-                                         .descriptor_set_layouts = layouts,
-                                         .material_pass = render_pass_info(),
-                                     });
+    diagnostic_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                             .extent = extent,
+                                             .color_format = color_format,
+                                             .shader_stage_files = diagnostic_shader_stages,
+                                             .descriptor_set_layouts = layouts,
+                                             .material_pass = diagnostic_pass_info(),
+                                         });
+
+    const std::array<cubey::render::ShaderStageFile, 2> terrain_shader_stages{
+        cubey::render::vertex_shader_file(shader_path("fluid_25d_terrain.vert.spv")),
+        cubey::render::fragment_shader_file(shader_path("fluid_25d_terrain.frag.spv")),
+    };
+    terrain_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                          .extent = extent,
+                                          .color_format = color_format,
+                                          .depth_format = depth_format,
+                                          .shader_stage_files = terrain_shader_stages,
+                                          .descriptor_set_layouts = layouts,
+                                          .material_pass = terrain_pass_info(),
+                                      });
+
+    const std::array<cubey::render::ShaderStageFile, 2> water_shader_stages{
+        cubey::render::vertex_shader_file(shader_path("fluid_25d_water.vert.spv")),
+        cubey::render::fragment_shader_file(shader_path("fluid_25d_water.frag.spv")),
+    };
+    water_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                        .extent = extent,
+                                        .color_format = color_format,
+                                        .depth_format = depth_format,
+                                        .shader_stage_files = water_shader_stages,
+                                        .descriptor_set_layouts = layouts,
+                                        .material_pass = water_pass_info(),
+                                    });
 }
 
 void Fluid25DGpuResources::destroy_swapchain_resources() {
-    render_pipeline_.reset();
+    water_pipeline_.reset();
+    terrain_pipeline_.reset();
+    diagnostic_pipeline_.reset();
 }
 
 void Fluid25DGpuResources::destroy_all_resources() {
@@ -279,11 +338,25 @@ CUBEY_FLUID25D_PIPELINE_ACCESSOR(depth_pipeline, depth_pipeline_, "depth pipelin
 
 #undef CUBEY_FLUID25D_PIPELINE_ACCESSOR
 
-const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::render_pipeline() const {
-    if (!render_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 2.5D render pipeline is not initialized");
+const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::diagnostic_pipeline() const {
+    if (!diagnostic_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 2.5D diagnostic pipeline is not initialized");
     }
-    return render_pipeline_.value();
+    return diagnostic_pipeline_.value();
+}
+
+const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::terrain_pipeline() const {
+    if (!terrain_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 2.5D terrain pipeline is not initialized");
+    }
+    return terrain_pipeline_.value();
+}
+
+const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::water_pipeline() const {
+    if (!water_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 2.5D water pipeline is not initialized");
+    }
+    return water_pipeline_.value();
 }
 
 } // namespace cubey::projects::fluid::fluid_25d

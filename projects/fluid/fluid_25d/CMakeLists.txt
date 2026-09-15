@@ -13,6 +13,10 @@ cubey_add_app_target(
     SHADERS
         ../sim/fluid_25d/shaders/fluid_25d.vert
         ../sim/fluid_25d/shaders/fluid_25d_render.frag
+        ../sim/fluid_25d/shaders/fluid_25d_terrain.vert
+        ../sim/fluid_25d/shaders/fluid_25d_terrain.frag
+        ../sim/fluid_25d/shaders/fluid_25d_water.vert
+        ../sim/fluid_25d/shaders/fluid_25d_water.frag
         ../sim/fluid_25d/shaders/fluid_25d_reset.comp
         ../sim/fluid_25d/shaders/fluid_25d_flux.comp
         ../sim/fluid_25d/shaders/fluid_25d_depth.comp
@@ -59,12 +63,33 @@ if (BUILD_TESTING)
         cubey_project_fluid_25d
         "${CUBEY_FLUID_25D_HEADLESS_SMOKE_OUTPUT}"
         --frames 8
+        --width 512
+        --height 256
     )
     cubey_add_png_stats_test(
         fluid_25d_headless_writes_png
         "${CUBEY_FLUID_25D_HEADLESS_SMOKE_OUTPUT}"
+        0.18
+        0.12
+    )
+    set(CUBEY_FLUID_25D_DIAGNOSTIC_HEADLESS_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-diagnostics-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        fluid_25d_diagnostics_writes_png
+        cubey_project_fluid_25d
+        "${CUBEY_FLUID_25D_DIAGNOSTIC_HEADLESS_OUTPUT}"
+        --frames 8
+        --width 512
+        --height 256
+        --fluid25d-view diagnostics
+        --debug-view terrain
+    )
+    cubey_add_png_stats_test(
+        fluid_25d_diagnostics_writes_png
+        "${CUBEY_FLUID_25D_DIAGNOSTIC_HEADLESS_OUTPUT}"
         0.20
-        0.10
+        0.20
     )
     cubey_add_png_smoke_test(
         fluid_25d_gpu_oracle_lake_at_rest
