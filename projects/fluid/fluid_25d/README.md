@@ -21,6 +21,12 @@ The Config V2 product default is a bounded `256x128` catchment. Focused
 CPU/GPU oracle fixtures intentionally set smaller dimensions so their evidence
 stays quick and inspectable.
 
+The project-local GPU timing lane records one aggregate `fluid_25d solver`
+span per profiled simulation frame and reuses the common `--profile-output` and
+`--profile-warmup-frames` options. The dated Release artifact and evidence
+boundary are recorded in
+[`docs/notes/fluid-25d-river-v0-checkpoint.md`](../../../docs/notes/fluid-25d-river-v0-checkpoint.md).
+
 The CPU target remains a reference for the GPU implementation, not a shared
 fluid framework and not a claim of scientific Saint-Venant fidelity.
 
@@ -125,6 +131,8 @@ schema and currently exposes:
 - `--fluid25d-flow-damping-per-second`;
 - `--fluid25d-minimum-wet-depth-m`.
 - `--debug-view terrain|depth|surface|flow|direction|wet-dry`;
+- `--profile-output` and `--profile-warmup-frames` (common GPU/CPU profiling
+  output; solver rows are not full-frame or FPS measurements);
 - `--fluid25d-gpu-oracle-validation` (headless-only; performs final-state
   readback against the CPU oracle).
 
@@ -173,8 +181,7 @@ contract is demonstrated.
 
 ## Next implementation gate
 
-The next slice should gather bounded capture and timing evidence from the
-product surface, then decide whether River V0 needs better visual legibility,
-more scenario variety, or a numerical comparison. Any shared helper or
-foundation change still waits for a second independent consumer or a measured
-bottleneck.
+The next slice should review the bounded artifact and solver timing evidence,
+then decide whether River V0 needs better visual legibility, more scenario
+variety, or a numerical comparison. Any shared helper or foundation change
+still waits for a second independent consumer or a measured bottleneck.

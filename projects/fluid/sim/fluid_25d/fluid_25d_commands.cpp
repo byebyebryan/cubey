@@ -4,6 +4,7 @@
 #include <cubey/render/render_graph.h>
 #include <cubey/render/render_graph_resolve.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/memory_barriers.h>
 
 #include <array>
@@ -93,8 +94,15 @@ void record_reset(VkCommandBuffer command_buffer, Fluid25DGpuResources& resource
 
 void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                               const Fluid25DConfig& config, bool paused, bool& reset_requested,
-                              bool include_render_visibility_barrier) {
+                              bool include_render_visibility_barrier,
+                              cubey::vulkan::GpuTimestampProfiler* profiler,
+                              std::uint32_t frame_slot_index) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    // Keep every fixed substep inside one aggregate solve span. This is the
+    // product budget used by both windowed and headless evidence lanes, rather
+    // than a per-dispatch or per-substep trace.
+    cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot_index,
+                                                   "fluid_25d solver");
     const SimulationPushConstants push_constants = simulation_push_constants(config);
     const cubey::render::ComputeDispatchGroups groups = dispatch_groups(config);
 
@@ -191,13 +199,13 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         });
 }
 
-[[nodiscard]] cubey::render::CompiledRenderGraph
-build_fluid_25d_frame_graph(cubey::render::ColorTargetView color_target,
-                            Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-                            Fluid25DPresentationView presentation_view,
-                            Fluid25DDebugView debug_view, const Fluid25DRenderCamera& camera,
-                            Fluid25DRenderTargetMode target_mode, bool include_simulation,
-                            bool paused, bool& reset_requested) {
+[[nodiscard]] cubey::render::CompiledRenderGraph build_fluid_25d_frame_graph(
+    cubey::render::ColorTargetView color_target, Fluid25DGpuResources& resources,
+    const Fluid25DConfig& config, Fluid25DPresentationView presentation_view,
+    Fluid25DDebugView debug_view, const Fluid25DRenderCamera& camera,
+    Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
+    bool& reset_requested, cubey::vulkan::GpuTimestampProfiler* profiler,
+    std::uint32_t frame_slot_index) {
     Fluid25DGpuResources* resource_ptr = &resources;
     const Fluid25DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
@@ -245,10 +253,11 @@ build_fluid_25d_frame_graph(cubey::render::ColorTargetView color_target,
             .read_write_storage_buffer(flux)
             .read_write_storage_buffer(velocity)
             .read_write_storage_buffer(ledger)
-            .execute([resource_ptr, config_ptr, paused, reset_requested_ptr](
-                         const cubey::render::RenderGraphExecutionContext& context) {
+            .execute([resource_ptr, config_ptr, paused, reset_requested_ptr, profiler,
+                      frame_slot_index](const cubey::render::RenderGraphExecutionContext& context) {
                 record_fluid_25d_compute(context.recorder().handle(), *resource_ptr, *config_ptr,
-                                         paused, *reset_requested_ptr, false);
+                                         paused, *reset_requested_ptr, false, profiler,
+                                         frame_slot_index);
             });
     }
 

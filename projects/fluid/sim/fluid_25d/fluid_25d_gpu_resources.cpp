@@ -103,11 +103,16 @@ void emplace_compute_pipeline(std::optional<cubey::render::ComputePipelineResour
 void Fluid25DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
                                                              cubey::ProjectGpuServices& gpu,
                                                              const Fluid25DConfig& config,
-                                                             const Fluid25DScenarioData& scenario) {
+                                                             const Fluid25DScenarioData& scenario,
+                                                             std::uint32_t frame_slot_count) {
     if (terrain_.has_value()) {
         return;
     }
+    if (frame_slot_count == 0U) {
+        throw std::runtime_error("fluid 2.5D resources require at least one frame slot");
+    }
     create_buffers(gpu, config, scenario);
+    profiler_.emplace(device, frame_slot_count, kFluid25DGpuProfilerPassCapacity);
     create_descriptors(device);
     create_compute_pipelines(device);
 }
@@ -292,6 +297,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     flux_b_descriptors_.reset();
     flux_a_descriptors_.reset();
     reset_descriptors_.reset();
+    profiler_.reset();
     ledger_.reset();
     velocity_.reset();
     flux_.reset();
@@ -323,6 +329,14 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(velocity, velocity_, "velocity buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(ledger, ledger_, "ledger buffer")
 
 #undef CUBEY_FLUID25D_RESOURCE_ACCESSOR
+
+const std::vector<cubey::vulkan::GpuPassTiming>& Fluid25DGpuResources::latest_timings() const {
+    static const std::vector<cubey::vulkan::GpuPassTiming> kEmptyTimings;
+    if (!profiler_.has_value()) {
+        return kEmptyTimings;
+    }
+    return profiler_->latest_timings();
+}
 
 #define CUBEY_FLUID25D_PIPELINE_ACCESSOR(name, member, label)                                      \
     const cubey::render::ComputePipelineResource& Fluid25DGpuResources::name() const {             \

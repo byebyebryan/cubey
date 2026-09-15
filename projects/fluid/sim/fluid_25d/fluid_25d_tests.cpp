@@ -1,4 +1,5 @@
 #include "../../fluid_25d/fluid_25d_project_config.h"
+#include "fluid_25d_diagnostics.h"
 #include "fluid_25d_oracle.h"
 
 #include <algorithm>
@@ -230,6 +231,21 @@ void test_deterministic_scenarios() {
             "river fixture sink should start dry");
 }
 
+void test_profile_frame_slot_attribution() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const cubey::ProjectFrame first_frame{.frame_index = 1U};
+    const cubey::render::FrameSlot first_slot{.index = 0U, .count = 2U};
+    require(profile_frame_index(first_frame) == 0U,
+            "profile frame indexing should convert runtime frame one to profile frame zero");
+    require(collected_profile_frame_index(first_frame, first_slot) == 0U,
+            "first collected frame should retain profile frame zero attribution");
+
+    const cubey::ProjectFrame delayed_frame{.frame_index = 4U};
+    const cubey::render::FrameSlot delayed_slot{.index = 1U, .count = 2U};
+    require(collected_profile_frame_index(delayed_frame, delayed_slot) == 1U,
+            "collected GPU timing should attribute the completed slot to its delayed frame");
+}
+
 void test_dry_bed_stability() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(10, 6, Fluid25DScenario::DryBed);
@@ -422,6 +438,7 @@ int main() {
     try {
         test_config_defaults_and_parsing();
         test_deterministic_scenarios();
+        test_profile_frame_slot_attribution();
         test_dry_bed_stability();
         test_lake_at_rest();
         test_dynamic_closed_domain_conservation();

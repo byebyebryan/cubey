@@ -7,6 +7,7 @@ cubey_add_app_target(
     SOURCES
         ../sim/fluid_25d/fluid_25d_app.cpp
         ../sim/fluid_25d/fluid_25d_commands.cpp
+        ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_gpu_resources.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
         main.cpp
@@ -35,6 +36,7 @@ target_include_directories(
 
 if (BUILD_TESTING)
     add_executable(cubey_project_fluid_25d_tests
+        ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
         ../sim/fluid_25d/fluid_25d_tests.cpp
     )

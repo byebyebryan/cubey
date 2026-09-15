@@ -8,14 +8,18 @@
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/descriptors.h>
 #include <cubey/vulkan/device.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
+
+inline constexpr std::uint32_t kFluid25DGpuProfilerPassCapacity = 1U;
 
 // std430-compatible project-local cells. Flux faces are left, right, down,
 // up. The third velocity component is the wet-state bit (0 or 1).
@@ -38,7 +42,8 @@ class Fluid25DGpuResources {
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::ProjectGpuServices& gpu,
                                            const Fluid25DConfig& config,
-                                           const Fluid25DScenarioData& scenario);
+                                           const Fluid25DScenarioData& scenario,
+                                           std::uint32_t frame_slot_count);
     void create_render_pipelines(cubey::vulkan::Device& device, VkFormat color_format,
                                  VkFormat depth_format, VkExtent2D extent);
     void destroy_swapchain_resources();
@@ -53,6 +58,10 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& flux() const;
     [[nodiscard]] const cubey::vulkan::Buffer& velocity() const;
     [[nodiscard]] const cubey::vulkan::Buffer& ledger() const;
+    [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
+        return profiler_.has_value() ? &profiler_.value() : nullptr;
+    }
+    [[nodiscard]] const std::vector<cubey::vulkan::GpuPassTiming>& latest_timings() const;
 
     [[nodiscard]] const cubey::render::ComputePipelineResource& reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& flux_pipeline() const;
@@ -101,6 +110,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::Buffer> flux_;
     std::optional<cubey::vulkan::Buffer> velocity_;
     std::optional<cubey::vulkan::Buffer> ledger_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 
     std::optional<cubey::vulkan::DescriptorSetBundle> reset_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> flux_a_descriptors_;

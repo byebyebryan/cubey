@@ -1,6 +1,7 @@
 #include "fluid_25d_app.h"
 
 #include "fluid_25d_commands.h"
+#include "fluid_25d_diagnostics.h"
 #include "fluid_25d_gpu_resources.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_scenarios.h"
@@ -13,6 +14,7 @@
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/gpu_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/immediate_commands.h>
 
 #include <vulkan/vulkan.h>
@@ -107,7 +109,8 @@ class Fluid25DApp {
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
-            create_global_resources_if_needed(context.device(), context.gpu());
+            create_global_resources_if_needed(context.device(), context.gpu(),
+                                              context.frame_slot_count());
         };
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             resources_.create_render_pipelines(context.device(), context.swapchain().format(),
@@ -163,21 +166,34 @@ class Fluid25DApp {
     }
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
-                                           cubey::vulkan::GpuRuntime& gpu) {
+                                           cubey::vulkan::GpuRuntime& gpu,
+                                           std::uint32_t frame_slot_count) {
         runtime_.attach_gpu_if_needed(gpu);
         resources_.create_global_resources_if_needed(device, runtime_.gpu(), config_.simulation,
-                                                     scenario_);
+                                                     scenario_, frame_slot_count);
     }
 
     void record_windowed_frame(cubey::host::WindowedAppContext& context,
                                const cubey::host::WindowedRenderFrame& render_frame) {
-        static_cast<void>(runtime_.frame_for_timing(render_frame.timing));
+        const ProjectFrame project_frame = runtime_.frame_for_timing(render_frame.timing);
+        cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+        if (profiler != nullptr) {
+            profiler->collect(render_frame.frame_slot.index);
+            record_gpu_timings(
+                context.profile_recorder(),
+                collected_profile_frame_index(project_frame, render_frame.frame_slot),
+                resources_.latest_timings());
+        }
         const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             debug_view_, render_camera(render_frame.color_target.extent),
-            Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_);
+            Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_, profiler,
+            render_frame.frame_slot.index);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        if (profiler != nullptr) {
+            profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
+        }
         graph_executor_.record(
             cubey::render::RenderGraphFrameRecordInfo{
                 .device = &context.device(),
@@ -237,16 +253,29 @@ class Fluid25DApp {
     }
 
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
-                                          const cubey::host::HeadlessCaptureFrame& frame) {
-        static_cast<void>(runtime_.frame_for_timing(frame.timing));
+                                          const cubey::host::HeadlessCaptureFrame& frame,
+                                          cubey::profiling::ProfileRecorder* profile_recorder) {
+        const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
+        const std::uint64_t frame_index = profile_frame_index(project_frame);
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_25d headless simulation frame",
             .work =
-                [this](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, frame, profile_recorder,
+                 frame_index](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
+                    cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
+                    if (profiler != nullptr) {
+                        profiler->begin_frame(commands.command_buffer(), frame.frame_slot.index);
+                    }
                     record_fluid_25d_compute(commands.command_buffer(), resources_,
-                                             config_.simulation, false, reset_requested_, false);
+                                             config_.simulation, false, reset_requested_, false,
+                                             profiler, frame.frame_slot.index);
                     commands.submit_and_wait();
+                    if (profiler != nullptr) {
+                        profiler->collect(frame.frame_slot.index);
+                        record_gpu_timings(profile_recorder, frame_index,
+                                           resources_.latest_timings());
+                    }
                 },
         }));
         if (oracle_.has_value()) {
@@ -331,12 +360,14 @@ class Fluid25DApp {
 
         cubey::host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [this](cubey::host::HeadlessPngContext& context) {
-            create_global_resources_if_needed(context.device(), context.gpu());
+            const std::uint32_t frame_slot_count =
+                cubey::host::headless_capture_frame_slot_count(config_.common);
+            create_global_resources_if_needed(context.device(), context.gpu(), frame_slot_count);
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
             resources_.create_render_pipelines(context.device(), target.format,
                                                VK_FORMAT_D32_SFLOAT, target.extent);
             graph_executor_.clear();
-            graph_executor_.resize(1U);
+            graph_executor_.resize(frame_slot_count);
         };
         cubey::host::install_headless_simulation_driver(
             callbacks, config_.common,
@@ -349,13 +380,14 @@ class Fluid25DApp {
                 .simulate_frame =
                     [this](cubey::host::HeadlessPngContext& context,
                            const cubey::host::HeadlessCaptureFrame& frame) {
-                        record_headless_simulation_frame(runtime_.gpu(), frame);
-                        (void)context;
+                        record_headless_simulation_frame(runtime_.gpu(), frame,
+                                                         context.profile_recorder());
                     },
             });
-        callbacks.record_capture = [this](cubey::host::HeadlessPngContext& context,
-                                          VkCommandBuffer command_buffer,
-                                          const cubey::host::HeadlessRenderTarget& target) {
+        callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
+                                        const cubey::host::HeadlessCaptureFrame& frame,
+                                        VkCommandBuffer command_buffer,
+                                        const cubey::host::HeadlessRenderTarget& target) {
             validate_gpu_oracle(runtime_.gpu());
             const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
                 target, resources_, config_.simulation, presentation_view_, debug_view_,
@@ -365,7 +397,7 @@ class Fluid25DApp {
                 {
                     .device = &context.device(),
                     .command_buffer = command_buffer,
-                    .frame_slot = {.index = 0U, .count = 1U},
+                    .frame_slot = frame.frame_slot,
                     .label = "vkEndCommandBuffer fluid_25d headless graph",
                     .command_buffer_mode =
                         cubey::render::RenderGraphCommandBufferMode::AlreadyRecording,
