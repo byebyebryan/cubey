@@ -24,6 +24,7 @@ if (BUILD_TESTING)
     add_test(NAME fluid_common_tests COMMAND cubey_project_fluid_common_tests)
 endif()
 
+add_subdirectory(fluid_25d)
 add_subdirectory(smoke_2d)
 add_subdirectory(water_2d)
 add_subdirectory(water_3d)

@@ -109,7 +109,7 @@ white-furnace validation target, not a public demo.
 
 ### Studies and retained references
 
-- [Fluid 2.5D](projects/fluid_25d/README.md) is a design-only direction for
+- [Fluid 2.5D](projects/fluid/fluid_25d/README.md) is a design-first direction for
   terrain-bound rivers, flooding, sources, and sinks.
 - [Terrain Hydrology](studies/terrain/hydrology/README.md) is a paused snapshot
   of the earlier regional terrain and landscape-evolution work.

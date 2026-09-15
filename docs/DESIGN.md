@@ -586,6 +586,15 @@ cubey/
           main.cpp          -- fire app wrapper over sim/pyro_3d
         explosion_3d/
           main.cpp          -- explosion app wrapper over sim/pyro_3d
+        fluid_25d/
+          CMakeLists.txt
+          README.md          -- River V0 contract and CPU-oracle authority
+          fluid_25d_project_config.h
+        sim/fluid_25d/
+          fluid_25d_config.h
+          fluid_25d_scenarios.h
+          fluid_25d_oracle.*
+          fluid_25d_tests.cpp
       gltf_viewer/
         CMakeLists.txt
         main.cpp
@@ -610,7 +619,6 @@ cubey/
           ocean.frag      -- water, foam, shared environment lighting, diagnostics
       planet/             -- orbital globe, cached surface fields, and sky composition
       terrain/            -- raster heightfield backdrop product and review app
-      fluid_25d/          -- design-only terrain-bound shallow-water direction
       pbr_furnace/
         CMakeLists.txt
         main.cpp

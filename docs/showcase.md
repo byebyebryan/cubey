@@ -50,7 +50,7 @@ status change:
   than the project gallery;
 - retained terrain studies under `studies/terrain/reference` and
   `studies/terrain/shadertoy`;
-- `fluid_25d`, which is a design-only direction;
+- `fluid_25d`, which is a design-first River V0 CPU contract without a runtime;
 - archived or retired applications and studies.
 
 The active/reference inventory remains documented in the [root

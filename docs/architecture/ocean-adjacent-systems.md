@@ -21,7 +21,7 @@ ocean renderer through small data and shader contracts:
   bathymetry or shoreline products.
 - `studies/terrain/hydrology`: paused regional terrain-product evidence for
   exported fields, routing, and future shoreline/bathymetry work.
-- `projects/fluid_25d`: shallow-water simulation over heightfields for rivers,
+- `projects/fluid/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
 - `projects/planet`: orbital-only globe and whole-world visual reference. It
   does not own surface LOD, a landed frame, or ocean integration; those require
@@ -126,7 +126,7 @@ Ocean integration target:
 products such as drainage, shoreline distance, and exported bathymetry belong
 in a resumed product-generation track based on the paused
 `studies/terrain/hydrology`; dynamic gameplay water belongs in
-`projects/fluid_25d`. The earlier coastal field contract is preserved in
+`projects/fluid/fluid_25d`. The earlier coastal field contract is preserved in
 [`terrain-ocean-field-contract.md`](../archive/terrain/terrain-ocean-field-contract.md),
 not as an implementation target.
 
@@ -148,7 +148,7 @@ Current foundation checkpoint:
 
 ## Fluid 2.5D Relationship
 
-`projects/fluid_25d` is still the right home for terrain-bound water simulation.
+`projects/fluid/fluid_25d` is still the right home for terrain-bound water simulation.
 It should not block the first terrain or ocean presentation work. Static
 bathymetry and shoreline masks are cheaper and provide clearer visual signal for
 the ocean renderer.

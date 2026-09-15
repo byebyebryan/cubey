@@ -20,7 +20,7 @@ is a small set of focused projects, each with different scaling assumptions:
   camera-relative mesh, GodotOceanWaves-style spectrum/FFT waves, foam/debug
   views, and future hooks for wakes and shorelines. It is rendering-first, not a
   fluid solver.
-- `projects/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
+- `projects/fluid/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
   baselines with shared 3D storage textures, compute

@@ -113,7 +113,7 @@ Reference projects:
 Paused labs and design-only projects:
 
 - [Terrain Hydrology Lab](../studies/terrain/hydrology/README.md)
-- [Fluid 2.5D design](../projects/fluid_25d/README.md)
+- [Fluid 2.5D design and CPU contract](../projects/fluid/fluid_25d/README.md)
 
 Legacy material:
 
