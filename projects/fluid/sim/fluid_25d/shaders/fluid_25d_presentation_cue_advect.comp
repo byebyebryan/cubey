@@ -1,0 +1,101 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer DepthField {
+    float values[];
+} depth;
+layout(set = 0, binding = 1, std430) readonly buffer VelocityField {
+    vec4 values[];
+} velocity;
+layout(set = 0, binding = 2, std430) readonly buffer PresentationCueSourceField {
+    float values[];
+} source_cue;
+layout(set = 0, binding = 3, std430) buffer PresentationCueDestinationField {
+    float values[];
+} destination_cue;
+layout(set = 0, binding = 4, std430) readonly buffer PresentationStatusField {
+    uvec4 values[];
+} status;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+uint cue_hash(uint x, uint y, uint salt) {
+    uint value = x * 0x8da6b343u ^ y * 0xd8163841u ^ salt;
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    value ^= value >> 16u;
+    return value;
+}
+
+float cue_random(uint x, uint y, uint salt) {
+    return float(cue_hash(x, y, salt) & 0x00ffffffu) / 16777215.0;
+}
+
+float smooth_unit(float value) {
+    float clamped = clamp(value, 0.0, 1.0);
+    return clamped * clamped * (3.0 - 2.0 * clamped);
+}
+
+float cue_lattice(vec2 coordinate, float cell_span, uint salt) {
+    vec2 scaled = coordinate / cell_span;
+    uvec2 lower = uvec2(floor(scaled));
+    vec2 fraction = vec2(smooth_unit(fract(scaled).x), smooth_unit(fract(scaled).y));
+    float lower_value = mix(cue_random(lower.x, lower.y, salt),
+                            cue_random(lower.x + 1u, lower.y, salt), fraction.x);
+    float upper_value = mix(cue_random(lower.x, lower.y + 1u, salt),
+                            cue_random(lower.x + 1u, lower.y + 1u, salt), fraction.x);
+    return mix(lower_value, upper_value, fraction.y);
+}
+
+float cue_seed(uvec2 coordinate) {
+    vec2 position = vec2(coordinate);
+    float primary = cue_lattice(position, 23.0, 0x68bc21ebu);
+    float secondary = cue_lattice(position, 11.0, 0x02e5be93u);
+    return clamp(0.5 + (primary - 0.5) * 0.70 + (secondary - 0.5) * 0.24, 0.0, 1.0);
+}
+
+float sample_cue_bilinear(vec2 coordinate, uint width, uint height) {
+    vec2 bounded = clamp(coordinate, vec2(0.0), vec2(float(width - 1u), float(height - 1u)));
+    uvec2 lower = uvec2(floor(bounded));
+    uvec2 upper = min(lower + uvec2(1u), uvec2(width - 1u, height - 1u));
+    vec2 fraction = fract(bounded);
+    float lower_value = mix(source_cue.values[lower.y * width + lower.x],
+                            source_cue.values[lower.y * width + upper.x], fraction.x);
+    float upper_value = mix(source_cue.values[upper.y * width + lower.x],
+                            source_cue.values[upper.y * width + upper.x], fraction.x);
+    return mix(lower_value, upper_value, fraction.y);
+}
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uvec2 coordinate = gl_GlobalInvocationID.xy;
+    if (coordinate.x >= width || coordinate.y >= height) {
+        return;
+    }
+    uint index = coordinate.y * width + coordinate.x;
+    if (status.values[0].x != 0u) {
+        destination_cue.values[index] = source_cue.values[index];
+        return;
+    }
+
+    float seed = cue_seed(coordinate);
+    float water_depth = depth.values[index];
+    vec2 flow = velocity.values[index].xy;
+    if (water_depth <= params.physics.z || any(isnan(flow)) || any(isinf(flow))) {
+        destination_cue.values[index] = seed;
+        return;
+    }
+
+    float dt = params.grid_dt_cell.z;
+    vec2 backtrace = vec2(coordinate) - flow * (dt / params.grid_dt_cell.w);
+    float advected = sample_cue_bilinear(backtrace, width, height);
+    float relaxation = clamp(dt * 0.0015, 0.0, 0.05);
+    destination_cue.values[index] = clamp(mix(advected, seed, relaxation), 0.0, 1.0);
+}

@@ -2,6 +2,7 @@
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_finite_volume_oracle.h"
 #include "fluid_25d_oracle.h"
+#include "fluid_25d_presentation.h"
 
 #include <cubey/asset/file_digest.h>
 
@@ -996,6 +997,114 @@ void test_windowed_pacing() {
         "fluid 2.5D windowed pacing should reject a nonfinite wall delta");
 }
 
+void test_presentation_cue_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+
+    require(kFluid25DPresentationCueRelaxationPerSecond > 0.0F &&
+                kFluid25DPresentationCueRelaxationPerSecond < 0.01F,
+            "presentation cue relaxation should remain a mild render-only stabilization");
+    const float repeat_a = fluid_25d_presentation_cue_seed(37U, 19U);
+    const float repeat_b = fluid_25d_presentation_cue_seed(37U, 19U);
+    require(repeat_a == repeat_b && repeat_a >= 0.0F && repeat_a <= 1.0F,
+            "presentation cue seed should be deterministic and normalized");
+
+    float minimum = 1.0F;
+    float maximum = 0.0F;
+    float maximum_neighbor_delta = 0.0F;
+    for (std::uint32_t y = 0U; y < 64U; ++y) {
+        for (std::uint32_t x = 0U; x < 128U; ++x) {
+            const float value = fluid_25d_presentation_cue_seed(x, y);
+            minimum = std::min(minimum, value);
+            maximum = std::max(maximum, value);
+            if (x != 0U) {
+                maximum_neighbor_delta =
+                    std::max(maximum_neighbor_delta,
+                             std::abs(value - fluid_25d_presentation_cue_seed(x - 1U, y)));
+            }
+            if (y != 0U) {
+                maximum_neighbor_delta =
+                    std::max(maximum_neighbor_delta,
+                             std::abs(value - fluid_25d_presentation_cue_seed(x, y - 1U)));
+            }
+        }
+    }
+    require(maximum - minimum > 0.20F && maximum_neighbor_delta < 0.12F,
+            "presentation cue seed should vary broadly without cell-scale white noise");
+
+    Fluid25DPresentationCueParity parity;
+    require(parity.source_is_a(), "presentation cue parity should begin on A after startup/reset");
+    parity.advance();
+    require(!parity.source_is_a(),
+            "presentation cue parity should advance exactly once per update");
+    parity.advance();
+    require(parity.source_is_a(), "presentation cue parity should ping-pong deterministically");
+    parity.reset();
+    require(parity.source_is_a(), "presentation cue reset should restore the deterministic source");
+
+    const std::filesystem::path shader_directory =
+        std::filesystem::path(__FILE__).parent_path() / "shaders";
+    const auto read_shader = [](const std::filesystem::path& path) {
+        std::ifstream stream(path);
+        if (!stream) {
+            throw std::runtime_error("failed to read presentation cue shader");
+        }
+        return std::string(std::istreambuf_iterator<char>(stream),
+                           std::istreambuf_iterator<char>());
+    };
+    const std::string reset =
+        read_shader(shader_directory / "fluid_25d_presentation_cue_reset.comp");
+    const std::string advect =
+        read_shader(shader_directory / "fluid_25d_presentation_cue_advect.comp");
+    const std::string water = read_shader(shader_directory / "fluid_25d_water.frag");
+    const std::string commands =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
+    const std::string app =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
+    require(reset.find("cue_lattice") != std::string::npos &&
+                reset.find("cue_a.values[index] = seed;") != std::string::npos &&
+                reset.find("cue_b.values[index] = seed;") != std::string::npos,
+            "presentation cue reset shader should restore both ping-pong fields from one seed");
+    require(advect.find("sample_cue_bilinear") != std::string::npos &&
+                advect.find("status.values[0].x != 0u") != std::string::npos &&
+                advect.find("destination_cue.values[index] = source_cue.values[index];") !=
+                    std::string::npos,
+            "presentation cue advection should backtrace bilinearly and freeze on solver failure");
+    require(water.find("presentation_cue") != std::string::npos &&
+                water.find("params.animation") == std::string::npos &&
+                water.find("sin(") == std::string::npos && water.find("cos(") == std::string::npos,
+            "water shading should consume the persistent cue without procedural time bands");
+    const std::size_t substep_loop = commands.find("for (std::uint32_t substep");
+    const std::size_t cue_update =
+        commands.find("record_presentation_cue_advection(", substep_loop);
+    const std::size_t pause_return = commands.find("if (paused) {\n        return;");
+    const std::size_t direct_batch = commands.find("void record_fluid_25d_compute_batch(");
+    const std::size_t direct_compute = commands.find("void record_fluid_25d_compute(");
+    const std::size_t frame_graph = commands.find("build_fluid_25d_frame_graph(");
+    const std::size_t diagnostics_pass = commands.find("fluid_25d diagnostics");
+    const std::size_t catchment_pass = commands.find("fluid_25d catchment");
+    const std::size_t catchment_cue_a =
+        commands.find(".read_storage_buffer(presentation_cue_a)", catchment_pass);
+    const std::size_t catchment_cue_b =
+        commands.find(".read_storage_buffer(presentation_cue_b)", catchment_pass);
+    require(substep_loop != std::string::npos && cue_update != std::string::npos &&
+                substep_loop < cue_update && pause_return != std::string::npos &&
+                pause_return < substep_loop,
+            "presentation cue should advance after complete fixed steps and never while paused");
+    require(direct_batch != std::string::npos && direct_compute != std::string::npos &&
+                frame_graph != std::string::npos && direct_batch < direct_compute &&
+                commands.find("Fluid25DComputeRecordingPolicy{}", direct_batch) < direct_compute &&
+                commands.find("Fluid25DPresentationCuePolicy::WindowedPresentation", frame_graph) !=
+                    std::string::npos &&
+                app.find("bool reset_requested_ = false;") != std::string::npos &&
+                app.find("bool presentation_cue_reset_requested_ = true;") != std::string::npos,
+            "direct headless compute should keep the solver-only path while frame-graph presentation owns the cue");
+    require(diagnostics_pass != std::string::npos && catchment_pass != std::string::npos &&
+                diagnostics_pass < catchment_pass && catchment_cue_a != std::string::npos &&
+                catchment_cue_b != std::string::npos && catchment_cue_a > catchment_pass &&
+                catchment_cue_b > catchment_pass,
+            "the catchment pass should declare the cue buffers read by the water shader");
+}
+
 void test_retained_flux_inertia() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(2, 2, Fluid25DScenario::DryBed);
@@ -1387,6 +1496,7 @@ int main() {
         test_boundary_mask_validation_and_helper();
         test_source_rate_scale_and_schedule();
         test_windowed_pacing();
+        test_presentation_cue_contract();
         test_retained_flux_inertia();
         test_river_mass_and_positivity();
         test_finite_volume_dry_bed_and_uneven_lake_at_rest();

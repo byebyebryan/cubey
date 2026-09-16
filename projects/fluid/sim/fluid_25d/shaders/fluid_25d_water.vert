@@ -9,18 +9,25 @@ layout(set = 0, binding = 1, std430) readonly buffer DepthField {
 layout(set = 0, binding = 2, std430) readonly buffer VelocityField {
     vec4 values[];
 } velocity;
+layout(set = 0, binding = 3, std430) readonly buffer PresentationCueAField {
+    float values[];
+} cue_a;
+layout(set = 0, binding = 4, std430) readonly buffer PresentationCueBField {
+    float values[];
+} cue_b;
 
 layout(push_constant) uniform CatchmentParams {
     mat4 view_projection;
     vec4 grid_cell;
     vec4 camera_wet;
-    vec4 animation;
+    vec4 presentation;
 } params;
 
 layout(location = 0) out vec3 world_position;
 layout(location = 1) out vec3 world_normal;
 layout(location = 2) out float water_depth;
 layout(location = 3) out vec3 water_flow;
+layout(location = 4) out float presentation_cue;
 
 // The catchment keeps metre-scale X/Z but compresses elevation for a readable
 // overview. Even with its scale-derived near plane, a 5 cm physical sheet can
@@ -75,6 +82,8 @@ void main() {
     world_position = vec3(centered.x, surface_height(coordinate, width, height), centered.y);
     world_normal = surface_normal(coordinate, width, height, cell_size);
     water_flow = velocity.values[index].xyz;
+    presentation_cue =
+        params.presentation.x > 0.5 ? cue_a.values[index] : cue_b.values[index];
     gl_Position = params.view_projection * vec4(world_position, 1.0);
     gl_Position.z -= kWaterClipDepthBias * gl_Position.w;
 }

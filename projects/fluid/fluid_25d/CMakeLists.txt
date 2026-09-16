@@ -27,6 +27,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_fv_cfl_finalize.comp
         ../sim/fluid_25d/shaders/fluid_25d_fv_update.comp
         ../sim/fluid_25d/shaders/fluid_25d_fv_commit.comp
+        ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_reset.comp
+        ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_advect.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS

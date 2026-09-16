@@ -178,6 +178,8 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
 
     const std::vector<Fluid25DVelocityGpu> zero_velocity(cells);
     const std::vector<Fluid25DLedgerGpu> zero_ledger(cells);
+    const std::vector<float> zero_presentation_cue(cells);
+    const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_presentation_status(1U);
     if (config.solver == Fluid25DSolver::VirtualPipes) {
         const std::vector<Fluid25DFluxGpu> zero_flux(cells);
         flux_.emplace(upload(zero_flux, static_buffer_usage(), "fluid_25d face flux upload"));
@@ -199,14 +201,32 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     }
     velocity_.emplace(upload(zero_velocity, static_buffer_usage(), "fluid_25d velocity upload"));
     ledger_.emplace(upload(zero_ledger, static_buffer_usage(), "fluid_25d ledger upload"));
+    presentation_cue_a_.emplace(upload(zero_presentation_cue, static_buffer_usage(),
+                                       "fluid_25d presentation cue A upload"));
+    presentation_cue_b_.emplace(upload(zero_presentation_cue, static_buffer_usage(),
+                                       "fluid_25d presentation cue B upload"));
+    presentation_cue_virtual_status_.emplace(upload(zero_presentation_status, static_buffer_usage(),
+                                                    "fluid_25d presentation cue status upload"));
     current_depth_is_a_ = true;
+    presentation_cue_parity_.reset();
 }
 
 void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     const cubey::vulkan::DescriptorSetInfo render_info =
-        storage_set_info(3U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        storage_set_info(5U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     render_a_descriptors_.emplace(device, render_info);
     render_b_descriptors_.emplace(device, render_info);
+
+    presentation_cue_reset_descriptors_.emplace(device,
+                                                storage_set_info(2U, VK_SHADER_STAGE_COMPUTE_BIT));
+    presentation_cue_depth_a_a_to_b_descriptors_.emplace(
+        device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
+    presentation_cue_depth_a_b_to_a_descriptors_.emplace(
+        device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
+    presentation_cue_depth_b_a_to_b_descriptors_.emplace(
+        device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
+    presentation_cue_depth_b_b_to_a_descriptors_.emplace(
+        device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
 
     cubey::vulkan::DescriptorWriteBatch writes;
     if (solver_ == Fluid25DSolver::VirtualPipes) {
@@ -371,10 +391,37 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
                                               const cubey::vulkan::Buffer& depth) {
         writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
             .storage_buffer(set, 1, depth.handle(), depth.size())
-            .storage_buffer(set, 2, velocity().handle(), velocity().size());
+            .storage_buffer(set, 2, velocity().handle(), velocity().size())
+            .storage_buffer(set, 3, presentation_cue_a().handle(), presentation_cue_a().size())
+            .storage_buffer(set, 4, presentation_cue_b().handle(), presentation_cue_b().size());
     };
     write_render(render_a_descriptors_->set(), depth_a());
     write_render(render_b_descriptors_->set(), depth_b());
+
+    writes
+        .storage_buffer(presentation_cue_reset_descriptors_->set(), 0,
+                        presentation_cue_a().handle(), presentation_cue_a().size())
+        .storage_buffer(presentation_cue_reset_descriptors_->set(), 1,
+                        presentation_cue_b().handle(), presentation_cue_b().size());
+    const cubey::vulkan::Buffer& cue_status = presentation_cue_status();
+    const auto write_presentation_cue_advection =
+        [this, &writes, &cue_status](VkDescriptorSet set, const cubey::vulkan::Buffer& depth,
+                                     const cubey::vulkan::Buffer& source_cue,
+                                     const cubey::vulkan::Buffer& destination_cue) {
+            writes.storage_buffer(set, 0, depth.handle(), depth.size())
+                .storage_buffer(set, 1, velocity().handle(), velocity().size())
+                .storage_buffer(set, 2, source_cue.handle(), source_cue.size())
+                .storage_buffer(set, 3, destination_cue.handle(), destination_cue.size())
+                .storage_buffer(set, 4, cue_status.handle(), cue_status.size());
+        };
+    write_presentation_cue_advection(presentation_cue_depth_a_a_to_b_descriptors_->set(), depth_a(),
+                                     presentation_cue_a(), presentation_cue_b());
+    write_presentation_cue_advection(presentation_cue_depth_a_b_to_a_descriptors_->set(), depth_a(),
+                                     presentation_cue_b(), presentation_cue_a());
+    write_presentation_cue_advection(presentation_cue_depth_b_a_to_b_descriptors_->set(), depth_b(),
+                                     presentation_cue_a(), presentation_cue_b());
+    write_presentation_cue_advection(presentation_cue_depth_b_b_to_a_descriptors_->set(), depth_b(),
+                                     presentation_cue_b(), presentation_cue_a());
     writes.update(device);
 }
 
@@ -402,6 +449,12 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
                                  "fluid_25d_fv_commit.comp.spv",
                                  finite_volume_commit_a_to_b_descriptors_->layout());
     }
+    emplace_compute_pipeline(presentation_cue_reset_pipeline_, device,
+                             "fluid_25d_presentation_cue_reset.comp.spv",
+                             presentation_cue_reset_descriptors_->layout());
+    emplace_compute_pipeline(presentation_cue_advection_pipeline_, device,
+                             "fluid_25d_presentation_cue_advect.comp.spv",
+                             presentation_cue_depth_a_a_to_b_descriptors_->layout());
 }
 
 void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device,
@@ -463,9 +516,16 @@ void Fluid25DGpuResources::destroy_all_resources() {
     finite_volume_cfl_finalize_pipeline_.reset();
     finite_volume_cfl_pipeline_.reset();
     finite_volume_reset_pipeline_.reset();
+    presentation_cue_advection_pipeline_.reset();
+    presentation_cue_reset_pipeline_.reset();
     depth_pipeline_.reset();
     flux_pipeline_.reset();
     reset_pipeline_.reset();
+    presentation_cue_depth_b_b_to_a_descriptors_.reset();
+    presentation_cue_depth_b_a_to_b_descriptors_.reset();
+    presentation_cue_depth_a_b_to_a_descriptors_.reset();
+    presentation_cue_depth_a_a_to_b_descriptors_.reset();
+    presentation_cue_reset_descriptors_.reset();
     render_b_descriptors_.reset();
     render_a_descriptors_.reset();
     depth_b_to_a_descriptors_.reset();
@@ -482,6 +542,9 @@ void Fluid25DGpuResources::destroy_all_resources() {
     finite_volume_cfl_finalize_descriptors_.reset();
     finite_volume_reset_descriptors_.reset();
     profiler_.reset();
+    presentation_cue_virtual_status_.reset();
+    presentation_cue_b_.reset();
+    presentation_cue_a_.reset();
     ledger_.reset();
     velocity_.reset();
     flux_.reset();
@@ -498,6 +561,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     source_rate_.reset();
     terrain_.reset();
     current_depth_is_a_ = true;
+    presentation_cue_parity_.reset();
     solver_ = Fluid25DSolver::VirtualPipes;
 }
 
@@ -530,8 +594,22 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_status, finite_volume_status_,
                                  "finite-volume status buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(velocity, velocity_, "velocity buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(ledger, ledger_, "ledger buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_a, presentation_cue_a_,
+                                 "presentation cue A buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_b, presentation_cue_b_,
+                                 "presentation cue B buffer")
 
 #undef CUBEY_FLUID25D_RESOURCE_ACCESSOR
+
+const cubey::vulkan::Buffer& Fluid25DGpuResources::presentation_cue_status() const {
+    if (solver_ == Fluid25DSolver::FiniteVolume) {
+        return finite_volume_status();
+    }
+    if (!presentation_cue_virtual_status_.has_value()) {
+        throw std::runtime_error("fluid 2.5D presentation cue status buffer is not initialized");
+    }
+    return presentation_cue_virtual_status_.value();
+}
 
 const std::vector<cubey::vulkan::GpuPassTiming>& Fluid25DGpuResources::latest_timings() const {
     static const std::vector<cubey::vulkan::GpuPassTiming> kEmptyTimings;
@@ -570,6 +648,11 @@ CUBEY_FLUID25D_PIPELINE_ACCESSOR(finite_volume_candidate_pipeline,
                                  "finite-volume candidate pipeline")
 CUBEY_FLUID25D_PIPELINE_ACCESSOR(finite_volume_commit_pipeline, finite_volume_commit_pipeline_,
                                  "finite-volume commit pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_reset_pipeline, presentation_cue_reset_pipeline_,
+                                 "presentation cue reset pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_advection_pipeline,
+                                 presentation_cue_advection_pipeline_,
+                                 "presentation cue advection pipeline")
 
 #undef CUBEY_FLUID25D_PIPELINE_ACCESSOR
 

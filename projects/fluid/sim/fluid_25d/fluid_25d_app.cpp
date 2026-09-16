@@ -26,7 +26,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <limits>
 #include <numbers>
 #include <optional>
 #include <stdexcept>
@@ -180,6 +179,7 @@ class Fluid25DApp {
             }
             if (input.key_pressed(cubey::input::Key::R)) {
                 reset_requested_ = true;
+                presentation_cue_reset_requested_ = true;
                 windowed_pacing_.reset();
             }
             if (input.key_pressed(cubey::input::Key::D)) {
@@ -241,11 +241,6 @@ class Fluid25DApp {
         const Fluid25DWindowedPacingFrame pacing =
             windowed_pacing_.advance(render_frame.timing.delta_seconds, paused_);
         const std::uint32_t fixed_step_count = pacing.fixed_step_count;
-        const std::uint64_t completed_steps = source_schedule_.completed_steps();
-        if (fixed_step_count >
-            std::numeric_limits<std::uint64_t>::max() - completed_steps) {
-            throw std::runtime_error("fluid 2.5D render step count overflowed");
-        }
         Fluid25DSourceRateSchedule next_source_schedule = source_schedule_;
         std::vector<float> source_rate_scales;
         source_rate_scales.reserve(fixed_step_count);
@@ -254,17 +249,15 @@ class Fluid25DApp {
                 next_source_schedule.source_rate_scale(config_.simulation));
             next_source_schedule.advance_fixed_step();
         }
-        // The windowed graph records one solve and then draws from its result
-        // in the same command buffer. Include the complete pending batch in
-        // the visual clock so the water detail describes the state being
-        // rendered.
-        const float render_elapsed_seconds = fluid_25d_elapsed_seconds(
-            config_.simulation, completed_steps + static_cast<std::uint64_t>(fixed_step_count));
+        // The windowed graph records every pending fixed step and then draws
+        // from the resulting state in one command buffer. The cue update is
+        // recorded after each outer step, never once per presented frame.
         const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             debug_view_, render_camera(render_frame.color_target.extent),
             Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
-            render_elapsed_seconds, profiler, render_frame.frame_slot.index, source_rate_scales);
+            presentation_cue_reset_requested_, profiler, render_frame.frame_slot.index,
+            source_rate_scales);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         if (profiler != nullptr) {
@@ -650,7 +643,7 @@ class Fluid25DApp {
             const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
                 target, resources_, config_.simulation, presentation_view_, debug_view_,
                 render_camera(target.extent), Fluid25DRenderTargetMode::ColorAttachment, false,
-                false, reset_requested_, source_schedule_.elapsed_seconds(config_.simulation));
+                false, reset_requested_, presentation_cue_reset_requested_);
             graph_executor_.record(
                 {
                     .device = &context.device(),
@@ -690,7 +683,11 @@ class Fluid25DApp {
     double expected_boundary_outflow_volume_m3_ = 0.0;
     double initial_water_volume_m3_ = 0.0;
     bool paused_ = false;
+    // Headless simulation keeps the uploaded initial numerical state and
+    // solver dispatch stream unchanged. Windowed presentation initializes its
+    // render-only cue separately on the first frame or an explicit reset.
     bool reset_requested_ = false;
+    bool presentation_cue_reset_requested_ = true;
 };
 
 } // namespace

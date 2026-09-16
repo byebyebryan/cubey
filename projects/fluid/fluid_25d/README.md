@@ -69,7 +69,8 @@ River V0 includes:
 - explicit source/sink/boundary-outflow volume accounting;
 - a GPU-resident steady-state solve with no per-frame readback in normal use;
 - an implicit oblique grid (no uploaded mesh) with opaque terrain, translucent
-  premultiplied-alpha water, depth testing, restrained lighting, and flow cues;
+  premultiplied-alpha water, depth testing, restrained lighting, and a
+  deterministic render-only advected flow cue;
 - top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
   diagnostics as an explicit alternate presentation mode;
 - opt-in headless CPU/GPU fixtures that read back only at their final evidence
@@ -84,6 +85,14 @@ rainfall is a bounded source-field protocol, not climate or a flooding product.
 Outflow-only perimeter faces are a bounded numerical primitive, not a flooding
 product. Flooding and an interactive terrain/water toy are later products, not
 hidden requirements of River V0.
+
+The windowed visual cue is a project-local ping-pong scalar field at the
+fluid-grid resolution. Reset restores the same broad seeded field; an accepted
+outer fixed step backtraces it with the final physical velocity after all
+solver substeps, while a rejected finite-volume status leaves it unchanged. It
+is not solver state and never enters depth, momentum, CFL, ledgers, or
+oracle/diagnostic readback. Pausing performs no cue update; calm water uses
+the stable base shade rather than a time-driven pattern.
 
 ## Numerical contract
 
