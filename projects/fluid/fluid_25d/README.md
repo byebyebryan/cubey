@@ -213,6 +213,10 @@ schema and currently exposes:
 
 - `--grid-width`, `--grid-height`, and `--grid-size`;
 - `--fluid25d-view catchment|diagnostics` (default: `catchment`);
+- `--fluid25d-presentation-time-scale <0.125..8>` (windowed-only; defaults to
+  `1`, with `4` and `8` useful for review playback). Fast requested playback is
+  best-effort: slow or stalled rendering can hit the four-step catch-up cap and
+  drop excess backlog;
 - `--fluid25d-solver virtual-pipes|finite-volume` (default: `virtual-pipes`;
   finite-volume is an opt-in numerical comparison);
 - `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|terrain-case|boundary-drain-fixture`;

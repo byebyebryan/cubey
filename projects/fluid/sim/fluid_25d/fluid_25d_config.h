@@ -68,6 +68,131 @@ enum class Fluid25DPresentationView : std::uint32_t {
 inline constexpr std::uint32_t kDefaultFluid25DGridWidth = 256;
 inline constexpr std::uint32_t kDefaultFluid25DGridHeight = 128;
 inline constexpr std::uint32_t kMaxFluid25DSubsteps = 64;
+inline constexpr float kFluid25DDefaultWindowedPresentationTimeScale = 1.0F;
+inline constexpr float kFluid25DMinWindowedPresentationTimeScale = 0.125F;
+inline constexpr float kFluid25DMaxWindowedPresentationTimeScale = 8.0F;
+inline constexpr std::uint32_t kFluid25DWindowedMaxFixedStepsPerFrame = 4U;
+
+struct Fluid25DWindowedPacingFrame {
+    std::uint32_t fixed_step_count = 0U;
+    bool dropped_backlog = false;
+};
+
+inline void validate_fluid_25d_windowed_presentation_time_scale(float time_scale) {
+    if (!std::isfinite(time_scale) || time_scale < kFluid25DMinWindowedPresentationTimeScale ||
+        time_scale > kFluid25DMaxWindowedPresentationTimeScale) {
+        throw std::runtime_error(
+            "fluid 2.5D windowed presentation time scale must be finite and within the inclusive "
+            "0.125..8.0 range");
+    }
+}
+
+// Windowed rendering is driven by a wall-time accumulator, while headless
+// captures continue to use one deterministic fixed step per requested frame.
+// Keeping this scheduler project-local makes the presentation time scale
+// impossible to leak into the numerical configuration or headless timing.
+class Fluid25DWindowedPacing {
+  public:
+    explicit Fluid25DWindowedPacing(
+        float fixed_delta_seconds = 1.0F / 60.0F,
+        float presentation_time_scale = kFluid25DDefaultWindowedPresentationTimeScale) {
+        configure(fixed_delta_seconds, presentation_time_scale);
+    }
+
+    void configure(float fixed_delta_seconds, float presentation_time_scale) {
+        if (!std::isfinite(fixed_delta_seconds) || fixed_delta_seconds <= 0.0F) {
+            throw std::runtime_error(
+                "fluid 2.5D windowed pacing fixed delta must be finite and positive");
+        }
+        validate_fluid_25d_windowed_presentation_time_scale(presentation_time_scale);
+        fixed_delta_seconds_ = static_cast<long double>(fixed_delta_seconds);
+        presentation_time_scale_ = static_cast<long double>(presentation_time_scale);
+        reset();
+    }
+
+    void set_presentation_time_scale(float presentation_time_scale) {
+        validate_fluid_25d_windowed_presentation_time_scale(presentation_time_scale);
+        presentation_time_scale_ = static_cast<long double>(presentation_time_scale);
+    }
+
+    [[nodiscard]] float presentation_time_scale() const noexcept {
+        return static_cast<float>(presentation_time_scale_);
+    }
+
+    [[nodiscard]] double accumulator_seconds() const noexcept {
+        return static_cast<double>(accumulator_seconds_);
+    }
+
+    [[nodiscard]] std::uint64_t dropped_backlog_frames() const noexcept {
+        return dropped_backlog_frames_;
+    }
+
+    [[nodiscard]] Fluid25DWindowedPacingFrame advance(double wall_delta_seconds,
+                                                       bool paused) {
+        if (!std::isfinite(wall_delta_seconds) || wall_delta_seconds < 0.0) {
+            throw std::runtime_error(
+                "fluid 2.5D windowed pacing wall delta must be finite and nonnegative");
+        }
+        if (paused || wall_delta_seconds == 0.0) {
+            return {};
+        }
+
+        const long double scaled_delta_seconds =
+            static_cast<long double>(wall_delta_seconds) * presentation_time_scale_;
+        if (!std::isfinite(scaled_delta_seconds)) {
+            throw std::runtime_error("fluid 2.5D windowed pacing scaled wall delta overflowed");
+        }
+        accumulator_seconds_ += scaled_delta_seconds;
+        if (!std::isfinite(accumulator_seconds_)) {
+            throw std::runtime_error("fluid 2.5D windowed pacing accumulator overflowed");
+        }
+
+        // A tiny relative tolerance keeps repeated rational frame deltas such
+        // as 1/144 from losing a fixed step to floating-point roundoff, while
+        // remaining far below any meaningful simulation interval.
+        constexpr long double kStepCountEpsilon = 1.0e-6L;
+        const long double available_steps =
+            std::floor(accumulator_seconds_ / fixed_delta_seconds_ + kStepCountEpsilon);
+        if (available_steps <= 0.0L) {
+            return {};
+        }
+
+        if (available_steps > static_cast<long double>(kFluid25DWindowedMaxFixedStepsPerFrame)) {
+            accumulator_seconds_ = std::fmod(accumulator_seconds_, fixed_delta_seconds_);
+            if (accumulator_seconds_ < 0.0L) {
+                accumulator_seconds_ = 0.0L;
+            }
+            if (dropped_backlog_frames_ != std::numeric_limits<std::uint64_t>::max()) {
+                ++dropped_backlog_frames_;
+            }
+            return {
+                .fixed_step_count = kFluid25DWindowedMaxFixedStepsPerFrame,
+                .dropped_backlog = true,
+            };
+        }
+
+        const std::uint32_t fixed_step_count = static_cast<std::uint32_t>(available_steps);
+        accumulator_seconds_ -=
+            static_cast<long double>(fixed_step_count) * fixed_delta_seconds_;
+        if (accumulator_seconds_ < 0.0L &&
+            accumulator_seconds_ > -kStepCountEpsilon * fixed_delta_seconds_) {
+            accumulator_seconds_ = 0.0L;
+        }
+        return {.fixed_step_count = fixed_step_count, .dropped_backlog = false};
+    }
+
+    void reset() noexcept {
+        accumulator_seconds_ = 0.0L;
+        dropped_backlog_frames_ = 0U;
+    }
+
+  private:
+    long double fixed_delta_seconds_ = 1.0L / 60.0L;
+    long double presentation_time_scale_ =
+        static_cast<long double>(kFluid25DDefaultWindowedPresentationTimeScale);
+    long double accumulator_seconds_ = 0.0L;
+    std::uint64_t dropped_backlog_frames_ = 0U;
+};
 
 struct Fluid25DConfig {
     std::uint32_t grid_width = kDefaultFluid25DGridWidth;

@@ -26,6 +26,7 @@ struct Fluid25DProjectConfig {
     common::FluidGridOptions grid{};
     std::string view{};
     std::string debug_view{};
+    float presentation_time_scale = kFluid25DDefaultWindowedPresentationTimeScale;
     bool gpu_oracle_validation = false;
     Fluid25DStartupOptions fluid{};
     Fluid25DTerrainOptions terrain{};
@@ -51,6 +52,8 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
 } // namespace fluid_25d_project_config_detail
 
 inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& project_config) {
+    validate_fluid_25d_windowed_presentation_time_scale(
+        project_config.presentation_time_scale);
     const bool terrain_case = project_config.simulation.scenario == Fluid25DScenario::TerrainCase;
     const bool has_heightfield = project_config.terrain.heightfield_path.has_value();
     const bool has_nonempty_heightfield =
@@ -146,6 +149,15 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "River V0 presentation: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
               config.view)
+        .bind(option("fluid25d.presentation_time_scale", "--fluid25d-presentation-time-scale",
+                     "Presentation Time Scale",
+                     "Windowed-only simulation playback speed; 1, 4, and 8 are review-friendly.",
+                     ValueType::Float,
+                     {.has_min = true,
+                      .has_max = true,
+                      .min = static_cast<double>(kFluid25DMinWindowedPresentationTimeScale),
+                      .max = static_cast<double>(kFluid25DMaxWindowedPresentationTimeScale)}),
+              config.presentation_time_scale)
         .bind(option(
                   "fluid25d.debug_view", "--debug-view", "Debug View",
                   "Top-down diagnostic view: terrain, depth, surface, flow, direction, or wet-dry.",
@@ -239,6 +251,11 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     project_config.simulation =
         fluid_25d_config_from_options(project_config.grid, project_config.fluid);
     validate_fluid_25d_project_config(project_config);
+    if (project_config.common.headless &&
+        parsed.path_was_assigned("fluid25d.presentation_time_scale")) {
+        throw std::runtime_error(
+            "fluid 2.5D presentation time scale is windowed-only; omit it in headless mode");
+    }
     static_cast<void>(fluid_25d_presentation_view_from_name(project_config.view));
     static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
     if (project_config.gpu_oracle_validation && !project_config.common.headless) {

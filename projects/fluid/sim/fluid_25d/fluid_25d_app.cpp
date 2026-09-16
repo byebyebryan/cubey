@@ -114,7 +114,10 @@ template <typename Value>
 class Fluid25DApp {
   public:
     explicit Fluid25DApp(Fluid25DProjectConfig config)
-        : config_(std::move(config)), scenario_(make_startup_scenario(config_)),
+        : config_(std::move(config)),
+          windowed_pacing_(config_.simulation.fixed_delta_seconds,
+                           config_.presentation_time_scale),
+          scenario_(make_startup_scenario(config_)),
           presentation_view_(fluid_25d_presentation_view_from_name(config_.view)),
           debug_view_(fluid_25d_debug_view_from_name(config_.debug_view)) {
         initial_water_volume_m3_ =
@@ -170,6 +173,7 @@ class Fluid25DApp {
             }
             if (input.key_pressed(cubey::input::Key::R)) {
                 reset_requested_ = true;
+                windowed_pacing_.reset();
             }
             if (input.key_pressed(cubey::input::Key::D)) {
                 debug_view_ = static_cast<Fluid25DDebugView>(
@@ -225,22 +229,35 @@ class Fluid25DApp {
         }
         if (reset_requested_) {
             source_schedule_.reset();
+            windowed_pacing_.reset();
         }
-        const float source_rate_scale = source_schedule_.source_rate_scale(config_.simulation);
+        const Fluid25DWindowedPacingFrame pacing =
+            windowed_pacing_.advance(render_frame.timing.delta_seconds, paused_);
+        const std::uint32_t fixed_step_count = pacing.fixed_step_count;
         const std::uint64_t completed_steps = source_schedule_.completed_steps();
-        if (!paused_ && completed_steps == std::numeric_limits<std::uint64_t>::max()) {
+        if (fixed_step_count >
+            std::numeric_limits<std::uint64_t>::max() - completed_steps) {
             throw std::runtime_error("fluid 2.5D render step count overflowed");
         }
+        Fluid25DSourceRateSchedule next_source_schedule = source_schedule_;
+        std::vector<float> source_rate_scales;
+        source_rate_scales.reserve(fixed_step_count);
+        for (std::uint32_t step = 0U; step < fixed_step_count; ++step) {
+            source_rate_scales.push_back(
+                next_source_schedule.source_rate_scale(config_.simulation));
+            next_source_schedule.advance_fixed_step();
+        }
         // The windowed graph records one solve and then draws from its result
-        // in the same command buffer. Include that pending step in the visual
-        // clock so the water detail describes the state being rendered.
-        const float render_elapsed_seconds =
-            fluid_25d_elapsed_seconds(config_.simulation, completed_steps + (paused_ ? 0U : 1U));
+        // in the same command buffer. Include the complete pending batch in
+        // the visual clock so the water detail describes the state being
+        // rendered.
+        const float render_elapsed_seconds = fluid_25d_elapsed_seconds(
+            config_.simulation, completed_steps + static_cast<std::uint64_t>(fixed_step_count));
         const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             debug_view_, render_camera(render_frame.color_target.extent),
             Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
-            render_elapsed_seconds, profiler, render_frame.frame_slot.index, source_rate_scale);
+            render_elapsed_seconds, profiler, render_frame.frame_slot.index, source_rate_scales);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         if (profiler != nullptr) {
@@ -257,9 +274,7 @@ class Fluid25DApp {
             },
             graph);
         recorder.end("vkEndCommandBuffer fluid_25d");
-        if (!paused_) {
-            source_schedule_.advance_fixed_step();
-        }
+        source_schedule_ = std::move(next_source_schedule);
     }
 
     void configure_catchment_camera() {
@@ -647,6 +662,7 @@ class Fluid25DApp {
     }
 
     Fluid25DProjectConfig config_;
+    Fluid25DWindowedPacing windowed_pacing_;
     Fluid25DScenarioData scenario_;
     cubey::ProjectRuntimeAdapter runtime_{1};
     Fluid25DGpuResources resources_;

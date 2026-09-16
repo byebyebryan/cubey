@@ -11,6 +11,7 @@
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <span>
 
 namespace cubey::projects::fluid::fluid_25d {
 
@@ -35,6 +36,13 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
                               cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
                               std::uint32_t frame_slot_index = 0U, float source_rate_scale = 1.0F);
 
+void record_fluid_25d_compute_batch(
+    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    std::span<const float> source_rate_scales, bool paused, bool& reset_requested,
+    bool include_render_visibility_barrier = true,
+    cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
+    std::uint32_t frame_slot_index = 0U);
+
 void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
                                       const Fluid25DGpuResources& resources,
                                       const Fluid25DConfig& config, Fluid25DDebugView debug_view,
@@ -55,6 +63,7 @@ build_fluid_25d_frame_graph(cubey::render::ColorTargetView color_target,
                             Fluid25DRenderTargetMode target_mode, bool include_simulation,
                             bool paused, bool& reset_requested, float elapsed_seconds,
                             cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-                            std::uint32_t frame_slot_index = 0U, float source_rate_scale = 1.0F);
+                            std::uint32_t frame_slot_index = 0U,
+                            std::span<const float> source_rate_scales = {});
 
 } // namespace cubey::projects::fluid::fluid_25d

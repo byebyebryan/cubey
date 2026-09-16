@@ -243,6 +243,8 @@ void test_config_defaults_and_parsing() {
                   "fluid 2.5D parser should bind flow damping");
     require_close(parsed.simulation.minimum_wet_depth_m, 0.002, kDepthToleranceM,
                   "fluid 2.5D parser should bind wet depth threshold");
+    require(parsed.presentation_time_scale == kFluid25DDefaultWindowedPresentationTimeScale,
+            "fluid 2.5D should default windowed presentation playback to 1x");
     require(parsed.view.empty(),
             "fluid 2.5D should default the CLI view name to the catchment enum default");
     require(!parsed.gpu_oracle_validation,
@@ -261,6 +263,32 @@ void test_config_defaults_and_parsing() {
         parse_project({"fluid_25d", "--fluid25d-source-active-duration-seconds", "0.05"});
     require(scheduled.simulation.source_active_duration_seconds == 0.05F,
             "fluid 2.5D parser should retain an optional source active duration");
+
+    const Fluid25DProjectConfig playback = parse_project(
+        {"fluid_25d", "--fluid25d-presentation-time-scale", "4"});
+    require(playback.presentation_time_scale == 4.0F,
+            "fluid 2.5D parser should bind the windowed presentation time scale");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--headless", "--fluid25d-presentation-time-scale", "4"}));
+        },
+        "fluid 2.5D presentation time scale should be rejected in headless mode");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-presentation-time-scale", "0"}));
+        },
+        "fluid 2.5D presentation time scale should reject zero");
+    require_throws(
+        [] { validate_fluid_25d_windowed_presentation_time_scale(0.1F); },
+        "fluid 2.5D presentation time scale should reject values below the named minimum");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-presentation-time-scale", "9"}));
+        },
+        "fluid 2.5D presentation time scale should reject values above the review bound");
 
     const Fluid25DProjectConfig terrain = parse_project(
         {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
@@ -877,11 +905,95 @@ void test_source_rate_scale_and_schedule() {
     require_close(schedule.elapsed_seconds(config), 0.0, kDepthToleranceM,
                   "reset should return the elapsed time to zero");
 
+    std::array<float, 3U> batch_source_scales{};
+    for (float& source_rate_scale : batch_source_scales) {
+        source_rate_scale = schedule.source_rate_scale(config);
+        schedule.advance_fixed_step();
+    }
+    require(batch_source_scales == std::array<float, 3U>{1.0F, 1.0F, 0.0F},
+            "batched fixed steps should evaluate source scale at each step boundary");
+
     Fluid25DConfig unrepresentable = config;
     unrepresentable.fixed_delta_seconds = std::numeric_limits<float>::max();
     require_throws(
         [&] { static_cast<void>(fluid_25d_elapsed_seconds(unrepresentable, 2U)); },
         "elapsed time should reject values that cannot be represented by the render timestamp");
+}
+
+void test_windowed_pacing() {
+    using namespace cubey::projects::fluid::fluid_25d;
+
+    const auto count_steps = [](double refresh_hz, float presentation_time_scale,
+                                std::uint32_t frame_count) {
+        Fluid25DWindowedPacing pacing(1.0F / 60.0F, presentation_time_scale);
+        std::uint64_t step_count = 0U;
+        for (std::uint32_t frame = 0U; frame < frame_count; ++frame) {
+            step_count += pacing.advance(1.0 / refresh_hz, false).fixed_step_count;
+        }
+        require(pacing.accumulator_seconds() >= 0.0 &&
+                    pacing.accumulator_seconds() < 1.0 / 60.0 + 1.0e-12,
+                "fluid 2.5D windowed pacing should retain only a substep remainder");
+        return std::pair<std::uint64_t, std::uint64_t>{step_count,
+                                                       pacing.dropped_backlog_frames()};
+    };
+
+    const auto [steps_144, drops_144] = count_steps(144.0, 1.0F, 144U);
+    require(steps_144 == 60U && drops_144 == 0U,
+            "fluid 2.5D windowed pacing should match one second at 144 Hz");
+
+    const auto [steps_60, drops_60] = count_steps(60.0, 1.0F, 60U);
+    require(steps_60 == 60U && drops_60 == 0U,
+            "fluid 2.5D windowed pacing should match one second at 60 Hz");
+
+    const auto [steps_30, drops_30] = count_steps(30.0, 1.0F, 30U);
+    require(steps_30 == 60U && drops_30 == 0U,
+            "fluid 2.5D windowed pacing should catch up two steps at 30 Hz");
+
+    const auto [steps_4x, drops_4x] = count_steps(60.0, 4.0F, 60U);
+    require(steps_4x == 240U && drops_4x == 0U,
+            "fluid 2.5D windowed pacing should support 4x at 60 Hz within its cap");
+
+    const auto [steps_8x, drops_8x] = count_steps(144.0, 8.0F, 144U);
+    require(steps_8x == 480U && drops_8x == 0U,
+            "fluid 2.5D windowed pacing should support 8x at 144 Hz within its cap");
+
+    Fluid25DWindowedPacing paused(1.0F / 60.0F, 1.0F);
+    require(paused.advance(1.0 / 120.0, false).fixed_step_count == 0U,
+            "fluid 2.5D pacing should retain a fractional step");
+    const double fractional_remainder = paused.accumulator_seconds();
+    require(paused.advance(30.0, true).fixed_step_count == 0U &&
+                paused.accumulator_seconds() == fractional_remainder,
+            "fluid 2.5D paused pacing should not accumulate wall-time backlog");
+    require(paused.advance(1.0 / 120.0, false).fixed_step_count == 1U,
+            "fluid 2.5D pacing should resume from the pre-pause remainder");
+
+    Fluid25DWindowedPacing stalled(1.0F / 60.0F, 1.0F);
+    const Fluid25DWindowedPacingFrame catch_up = stalled.advance(1.0, false);
+    require(catch_up.fixed_step_count == kFluid25DWindowedMaxFixedStepsPerFrame &&
+                catch_up.dropped_backlog && stalled.dropped_backlog_frames() == 1U,
+            "fluid 2.5D pacing should cap and report a long-frame backlog drop");
+    require(stalled.accumulator_seconds() >= 0.0 &&
+                stalled.accumulator_seconds() < 1.0 / 60.0 + 1.0e-12 &&
+                stalled.advance(0.0, false).fixed_step_count == 0U,
+            "fluid 2.5D pacing should discard excess backlog while retaining no burst");
+
+    static_cast<void>(stalled.advance(1.0 / 120.0, false));
+    stalled.reset();
+    require(stalled.accumulator_seconds() == 0.0 && stalled.dropped_backlog_frames() == 0U &&
+                stalled.advance(1.0 / 120.0, false).fixed_step_count == 0U,
+            "fluid 2.5D pacing reset should clear backlog and drop history");
+    require_throws(
+        [] { static_cast<void>(Fluid25DWindowedPacing(0.0F, 1.0F)); },
+        "fluid 2.5D windowed pacing should reject a nonpositive fixed delta");
+    require_throws(
+        [] { static_cast<void>(Fluid25DWindowedPacing(1.0F / 60.0F, 0.0F)); },
+        "fluid 2.5D windowed pacing should reject a nonpositive presentation scale");
+    require_throws(
+        [] {
+            Fluid25DWindowedPacing pacing;
+            static_cast<void>(pacing.advance(std::numeric_limits<double>::infinity(), false));
+        },
+        "fluid 2.5D windowed pacing should reject a nonfinite wall delta");
 }
 
 void test_retained_flux_inertia() {
@@ -1274,6 +1386,7 @@ int main() {
         test_boundary_outflow_contract();
         test_boundary_mask_validation_and_helper();
         test_source_rate_scale_and_schedule();
+        test_windowed_pacing();
         test_retained_flux_inertia();
         test_river_mass_and_positivity();
         test_finite_volume_dry_bed_and_uneven_lake_at_rest();
