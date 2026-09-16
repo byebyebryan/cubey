@@ -37,7 +37,7 @@ uint cell_index(uint x, uint y, uint width) {
 
 float post_source_sink_depth(uint index, float delta_seconds) {
     float old_depth = source_depth.values[index];
-    float sourced_depth = old_depth + source_rate.values[index] * delta_seconds;
+    float sourced_depth = old_depth + source_rate.values[index] * params.physics.w * delta_seconds;
     return sourced_depth - min(sourced_depth, sink_rate.values[index] * delta_seconds);
 }
 

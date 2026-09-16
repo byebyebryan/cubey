@@ -42,6 +42,9 @@ namespace {
 
 void validate_scenario(const Fluid25DConfig& config, const Fluid25DScenarioData& scenario) {
     validate_fluid_25d_config(config);
+    if (config.solver != Fluid25DSolver::VirtualPipes) {
+        throw std::runtime_error("fluid 2.5D virtual-pipes oracle requires solver virtual-pipes");
+    }
     if (scenario.width != config.grid_width || scenario.height != config.grid_height) {
         throw std::runtime_error("fluid 2.5D scenario dimensions do not match config");
     }
@@ -52,9 +55,12 @@ void validate_scenario(const Fluid25DConfig& config, const Fluid25DScenarioData&
     if (scenario.terrain_height_m.size() != cell_count ||
         scenario.initial_water_depth_m.size() != cell_count ||
         scenario.source_depth_rate_m_per_s.size() != cell_count ||
-        scenario.sink_depth_rate_m_per_s.size() != cell_count) {
+        scenario.sink_depth_rate_m_per_s.size() != cell_count ||
+        scenario.boundary_outflow_face_mask.size() != cell_count) {
         throw std::runtime_error("fluid 2.5D scenario field sizes do not match config");
     }
+    validate_fluid_25d_boundary_outflow_face_mask(config.grid_width, config.grid_height,
+                                                  scenario.boundary_outflow_face_mask);
     for (std::size_t index = 0; index < cell_count; ++index) {
         if (!std::isfinite(scenario.terrain_height_m[index])) {
             throw std::runtime_error("fluid 2.5D terrain contains a nonfinite value");
@@ -111,21 +117,26 @@ double Fluid25DOracle::total_water_volume_m3() const {
     return volume_m3;
 }
 
-Fluid25DStepLedger Fluid25DOracle::step() {
+Fluid25DStepLedger Fluid25DOracle::step(float source_rate_scale) {
+    if (!std::isfinite(source_rate_scale) || source_rate_scale < 0.0F) {
+        throw std::runtime_error("fluid 2.5D source rate scale must be finite and nonnegative");
+    }
     Fluid25DStepLedger ledger;
     ledger.volume_before_m3 = total_water_volume_m3();
     const float substep_delta_seconds =
         config_.fixed_delta_seconds / static_cast<float>(config_.simulation_substeps);
     for (std::uint32_t substep = 0; substep < config_.simulation_substeps; ++substep) {
-        const Fluid25DStepLedger substep_ledger = step_substep(substep_delta_seconds);
+        const Fluid25DStepLedger substep_ledger =
+            step_substep(substep_delta_seconds, source_rate_scale);
         ledger.source_volume_m3 += substep_ledger.source_volume_m3;
         ledger.sink_volume_m3 += substep_ledger.sink_volume_m3;
+        ledger.boundary_outflow_volume_m3 += substep_ledger.boundary_outflow_volume_m3;
     }
     ledger.volume_after_m3 = total_water_volume_m3();
     return ledger;
 }
 
-Fluid25DStepLedger Fluid25DOracle::step_substep(float delta_seconds) {
+Fluid25DStepLedger Fluid25DOracle::step_substep(float delta_seconds, float source_rate_scale) {
     const double cell_area_m2 =
         static_cast<double>(config_.cell_size_m) * static_cast<double>(config_.cell_size_m);
     Fluid25DStepLedger ledger;
@@ -136,7 +147,7 @@ Fluid25DStepLedger Fluid25DOracle::step_substep(float delta_seconds) {
     for (std::size_t index = 0; index < water_depth_m_.size(); ++index) {
         const float old_depth_m = water_depth_m_[index];
         const float source_depth_delta_m =
-            scenario_.source_depth_rate_m_per_s[index] * delta_seconds;
+            scenario_.source_depth_rate_m_per_s[index] * source_rate_scale * delta_seconds;
         const float sourced_depth_m = old_depth_m + source_depth_delta_m;
         if (!std::isfinite(sourced_depth_m) || sourced_depth_m < 0.0F) {
             throw std::runtime_error("fluid 2.5D source update produced an invalid depth");
@@ -192,13 +203,18 @@ Fluid25DStepLedger Fluid25DOracle::step_substep(float delta_seconds) {
             for (const Fluid25DFace face : faces) {
                 const std::size_t neighbor =
                     neighbor_index(config_.grid_width, config_.grid_height, x, y, face);
-                if (neighbor == kFluid25DNoCell) {
-                    outgoing[static_cast<std::size_t>(face)] =
-                        0.0F; // River V0 has closed outer boundaries.
+                const std::size_t face_index = static_cast<std::size_t>(face);
+                if (neighbor == kFluid25DNoCell && (scenario_.boundary_outflow_face_mask[index] &
+                                                    fluid_25d_boundary_outflow_bit(face)) == 0U) {
+                    outgoing[face_index] = 0.0F;
                     continue;
                 }
+                // An opened exterior is dry at the same bed elevation as the
+                // edge cell, so only the interior water depth drives it.
                 const float neighbor_surface_height_m =
-                    scenario_.terrain_height_m[neighbor] + water_depth_m_[neighbor];
+                    neighbor == kFluid25DNoCell
+                        ? scenario_.terrain_height_m[index]
+                        : scenario_.terrain_height_m[neighbor] + water_depth_m_[neighbor];
                 if (!std::isfinite(neighbor_surface_height_m)) {
                     throw std::runtime_error("fluid 2.5D neighbor surface height is nonfinite");
                 }
@@ -206,7 +222,6 @@ Fluid25DStepLedger Fluid25DOracle::step_substep(float delta_seconds) {
                 if (!std::isfinite(height_difference_m)) {
                     throw std::runtime_error("fluid 2.5D surface difference is nonfinite");
                 }
-                const std::size_t face_index = static_cast<std::size_t>(face);
                 const float previous_flux_m3_per_s = outgoing[face_index];
                 if (previous_flux_m3_per_s < 0.0F || !std::isfinite(previous_flux_m3_per_s)) {
                     throw std::runtime_error("fluid 2.5D previous face flux is invalid");
@@ -236,6 +251,16 @@ Fluid25DStepLedger Fluid25DOracle::step_substep(float delta_seconds) {
                 const float scale = static_cast<float>(available_volume_m3 / requested_volume_m3);
                 for (float& flux_m3_per_s : outgoing) {
                     flux_m3_per_s *= scale;
+                }
+            }
+            for (const Fluid25DFace face : faces) {
+                if (neighbor_index(config_.grid_width, config_.grid_height, x, y, face) ==
+                        kFluid25DNoCell &&
+                    (scenario_.boundary_outflow_face_mask[index] &
+                     fluid_25d_boundary_outflow_bit(face)) != 0U) {
+                    ledger.boundary_outflow_volume_m3 +=
+                        static_cast<double>(outgoing[static_cast<std::size_t>(face)]) *
+                        static_cast<double>(delta_seconds);
                 }
             }
         }

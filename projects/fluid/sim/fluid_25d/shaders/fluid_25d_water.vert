@@ -14,6 +14,7 @@ layout(push_constant) uniform CatchmentParams {
     mat4 view_projection;
     vec4 grid_cell;
     vec4 camera_wet;
+    vec4 animation;
 } params;
 
 layout(location = 0) out vec3 world_position;

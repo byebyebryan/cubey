@@ -49,6 +49,9 @@ the detailed foundation notes under `docs/architecture/`.
   for replacing hand-stamped Milky Way landmarks with procedural structure.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
+- [Fluid 2.5D Terrain-Water Audition V2](fluid-25d-terrain-water-audition-v2.md):
+  finite-volume real-terrain evidence, retained shortlist, and no-promotion
+  boundary.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset

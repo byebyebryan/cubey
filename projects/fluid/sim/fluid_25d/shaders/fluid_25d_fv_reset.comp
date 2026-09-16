@@ -4,27 +4,45 @@ layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(set = 0, binding = 0, std430) readonly buffer InitialDepthField {
     float values[];
-} initial_depth;
+}
+initial_depth;
 layout(set = 0, binding = 1, std430) buffer DepthAField {
     float values[];
-} depth_a;
+}
+depth_a;
 layout(set = 0, binding = 2, std430) buffer DepthBField {
     float values[];
-} depth_b;
-layout(set = 0, binding = 3, std430) buffer FluxField {
+}
+depth_b;
+layout(set = 0, binding = 3, std430) buffer MomentumAField {
     vec4 values[];
-} face_flux;
-layout(set = 0, binding = 4, std430) buffer VelocityField {
+}
+momentum_a;
+layout(set = 0, binding = 4, std430) buffer MomentumBField {
     vec4 values[];
-} velocity;
-layout(set = 0, binding = 5, std430) buffer LedgerField {
+}
+momentum_b;
+layout(set = 0, binding = 5, std430) buffer VelocityField {
     vec4 values[];
-} ledger;
+}
+velocity;
+layout(set = 0, binding = 6, std430) buffer LedgerField {
+    vec4 values[];
+}
+ledger;
+layout(set = 0, binding = 7, std430) buffer StatusField {
+    uint flags;
+    uint max_x_speed_bits;
+    uint max_y_speed_bits;
+    uint reserved;
+}
+status;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
     vec4 physics;
-} params;
+}
+params;
 
 void main() {
     uint width = uint(params.grid_dt_cell.x);
@@ -38,7 +56,14 @@ void main() {
     float depth = initial_depth.values[index];
     depth_a.values[index] = depth;
     depth_b.values[index] = depth;
-    face_flux.values[index] = vec4(0.0);
+    momentum_a.values[index] = vec4(0.0);
+    momentum_b.values[index] = vec4(0.0);
     velocity.values[index] = vec4(0.0, 0.0, depth > params.physics.z ? 1.0 : 0.0, 0.0);
     ledger.values[index] = vec4(0.0);
+    if (index == 0u) {
+        status.flags = 0u;
+        status.max_x_speed_bits = 0u;
+        status.max_y_speed_bits = 0u;
+        status.reserved = 0u;
+    }
 }

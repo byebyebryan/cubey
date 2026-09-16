@@ -1,0 +1,78 @@
+#version 450
+
+// Publish the complete finite-volume candidate only after the preceding
+// candidate dispatch has made its global sticky status visible. No validation
+// is performed here: candidate already verified its h/q/velocity/ledger delta
+// and the prospective cumulative ledger, so this dispatch cannot partially
+// publish because it discovers a late error.
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer SourceDepthField {
+    float values[];
+}
+source_depth;
+layout(set = 0, binding = 1, std430) readonly buffer SourceMomentumField {
+    vec4 values[];
+}
+source_momentum;
+layout(set = 0, binding = 2, std430) readonly buffer CandidateVelocityField {
+    vec4 values[];
+}
+candidate_velocity;
+layout(set = 0, binding = 3, std430) buffer LedgerField {
+    vec4 values[];
+}
+ledger;
+layout(set = 0, binding = 4, std430) readonly buffer CandidateLedgerDeltaField {
+    vec4 values[];
+}
+candidate_ledger_delta;
+layout(set = 0, binding = 5, std430) readonly buffer StatusField {
+    uint flags;
+    uint max_x_speed_bits;
+    uint max_y_speed_bits;
+    uint reserved;
+}
+status;
+layout(set = 0, binding = 6, std430) buffer NextDepthField {
+    float values[];
+}
+next_depth;
+layout(set = 0, binding = 7, std430) buffer NextMomentumField {
+    vec4 values[];
+}
+next_momentum;
+layout(set = 0, binding = 8, std430) buffer VelocityField {
+    vec4 values[];
+}
+velocity;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+}
+params;
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+    uint index = y * width + x;
+    if (status.flags != 0u) {
+        // Global rejection is fail-closed: destination parity advances, but
+        // its canonical h/q is a byte-for-byte source copy and presentation
+        // state/cumulative ledger remain at the last accepted substep.
+        next_depth.values[index] = source_depth.values[index];
+        next_momentum.values[index] = source_momentum.values[index];
+        return;
+    }
+    // Candidate h/hu/hv were written to this inactive ping-pong destination.
+    // Leaving them untouched is the success-path publication and avoids
+    // descriptor aliasing/self-copies in the commit layout.
+    velocity.values[index] = candidate_velocity.values[index];
+    ledger.values[index] += candidate_ledger_delta.values[index];
+}

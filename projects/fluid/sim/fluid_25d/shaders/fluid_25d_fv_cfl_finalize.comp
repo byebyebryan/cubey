@@ -1,0 +1,42 @@
+#version 450
+
+// The CFL prepass records global per-axis wave-speed maxima as positive IEEE
+// float bits. This single invocation applies the CPU oracle's unsplit 2-D
+// condition before the update can mutate h/hu/hv.
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) buffer StatusField {
+    uint flags;
+    uint max_x_speed_bits;
+    uint max_y_speed_bits;
+    uint reserved;
+}
+status;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+}
+params;
+
+const uint CFL_REJECTED = 1u << 0u;
+const uint INVALID_STATE = 1u << 1u;
+const float TARGET_CFL = 0.45;
+
+bool finite_float(float value) {
+    return !isnan(value) && !isinf(value);
+}
+
+void main() {
+    if (gl_GlobalInvocationID.x != 0u || gl_GlobalInvocationID.y != 0u) {
+        return;
+    }
+    float max_x_speed = uintBitsToFloat(status.max_x_speed_bits);
+    float max_y_speed = uintBitsToFloat(status.max_y_speed_bits);
+    float cfl = params.grid_dt_cell.z / params.grid_dt_cell.w * (max_x_speed + max_y_speed);
+    if (!finite_float(cfl)) {
+        atomicOr(status.flags, INVALID_STATE);
+    } else if (cfl > TARGET_CFL) {
+        atomicOr(status.flags, CFL_REJECTED);
+    }
+}

@@ -18,8 +18,11 @@ layout(set = 0, binding = 4, std430) buffer FluxField {
     vec4 values[];
 } face_flux;
 layout(set = 0, binding = 5, std430) buffer LedgerField {
-    vec2 values[];
+    vec4 values[];
 } ledger;
+layout(set = 0, binding = 6, std430) readonly buffer BoundaryOutflowMaskField {
+    uint values[];
+} boundary_outflow_mask;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
@@ -33,7 +36,7 @@ const uint UP = 3u;
 
 float post_source_sink_depth(uint index, float delta_seconds) {
     float old_depth = depth.values[index];
-    float sourced_depth = old_depth + source_rate.values[index] * delta_seconds;
+    float sourced_depth = old_depth + source_rate.values[index] * params.physics.w * delta_seconds;
     return sourced_depth - min(sourced_depth, sink_rate.values[index] * delta_seconds);
 }
 
@@ -59,14 +62,14 @@ void main() {
     float cell_area = cell_size * cell_size;
 
     float old_depth = depth.values[index];
-    float sourced_depth = old_depth + source_rate.values[index] * dt;
+    float sourced_depth = old_depth + source_rate.values[index] * params.physics.w * dt;
     float removed_depth = min(sourced_depth, sink_rate.values[index] * dt);
     float available_depth = sourced_depth - removed_depth;
     // This per-cell write is race-free.  The depth pass consumes the same
     // source/sink expression; the ledger records the representable state
     // change once per solver substep.
-    ledger.values[index] += vec2((sourced_depth - old_depth) * cell_area,
-                                 (sourced_depth - available_depth) * cell_area);
+    ledger.values[index] += vec4((sourced_depth - old_depth) * cell_area,
+                                 (sourced_depth - available_depth) * cell_area, 0.0, 0.0);
 
     vec4 outgoing = face_flux.values[index];
     if (available_depth <= minimum_wet_depth) {
@@ -80,23 +83,29 @@ void main() {
                             (face == RIGHT && x + 1u < width) ||
                             (face == DOWN && y > 0u) ||
                             (face == UP && y + 1u < height);
-        if (!has_neighbor) {
+        bool opened_boundary =
+            !has_neighbor && (boundary_outflow_mask.values[index] & (1u << face)) != 0u;
+        if (!has_neighbor && !opened_boundary) {
             outgoing[face] = 0.0;
             continue;
         }
-        uint neighbor_x = x;
-        uint neighbor_y = y;
-        if (face == LEFT) {
-            neighbor_x -= 1u;
-        } else if (face == RIGHT) {
-            neighbor_x += 1u;
-        } else if (face == DOWN) {
-            neighbor_y -= 1u;
-        } else {
-            neighbor_y += 1u;
+        // A marked edge face sees dry exterior at this cell's bed elevation.
+        float neighbor_surface = terrain.values[index];
+        if (has_neighbor) {
+            uint neighbor_x = x;
+            uint neighbor_y = y;
+            if (face == LEFT) {
+                neighbor_x -= 1u;
+            } else if (face == RIGHT) {
+                neighbor_x += 1u;
+            } else if (face == DOWN) {
+                neighbor_y -= 1u;
+            } else {
+                neighbor_y += 1u;
+            }
+            uint neighbor = cell_index(neighbor_x, neighbor_y, width);
+            neighbor_surface = terrain.values[neighbor] + post_source_sink_depth(neighbor, dt);
         }
-        uint neighbor = cell_index(neighbor_x, neighbor_y, width);
-        float neighbor_surface = terrain.values[neighbor] + post_source_sink_depth(neighbor, dt);
         float updated = damping * outgoing[face] +
                         dt * cell_area * gravity * (surface - neighbor_surface) / cell_size;
         outgoing[face] = max(0.0, updated);
@@ -107,5 +116,16 @@ void main() {
     if (requested_volume > available_volume && requested_volume > 0.0) {
         outgoing *= available_volume / requested_volume;
     }
+    float boundary_outflow_volume = 0.0;
+    for (uint face = LEFT; face <= UP; ++face) {
+        bool has_neighbor = (face == LEFT && x > 0u) ||
+                            (face == RIGHT && x + 1u < width) ||
+                            (face == DOWN && y > 0u) ||
+                            (face == UP && y + 1u < height);
+        if (!has_neighbor && (boundary_outflow_mask.values[index] & (1u << face)) != 0u) {
+            boundary_outflow_volume += outgoing[face] * dt;
+        }
+    }
+    ledger.values[index].z += boundary_outflow_volume;
     face_flux.values[index] = outgoing;
 }

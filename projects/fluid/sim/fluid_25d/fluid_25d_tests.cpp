@@ -1,13 +1,22 @@
 #include "../../fluid_25d/fluid_25d_project_config.h"
 #include "fluid_25d_diagnostics.h"
+#include "fluid_25d_finite_volume_oracle.h"
 #include "fluid_25d_oracle.h"
+
+#include <cubey/asset/file_digest.h>
+
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <exception>
+#include <filesystem>
+#include <fstream>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -43,6 +52,66 @@ template <typename Callable> void require_throws(Callable&& callable, const char
     require(threw, message);
 }
 
+struct TerrainFixture {
+    TerrainFixture() {
+        const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
+        root = std::filesystem::temp_directory_path() /
+               ("cubey-fluid-25d-terrain-" + std::to_string(suffix));
+        std::filesystem::create_directories(root);
+        elevation.resize(5U * 4U);
+        for (std::uint32_t z = 0U; z < 4U; ++z) {
+            for (std::uint32_t x = 0U; x < 5U; ++x) {
+                elevation[static_cast<std::size_t>(z) * 5U + x] = static_cast<float>(z * 5U + x);
+            }
+        }
+        const std::string hash = cubey::asset::sha256_hex(std::as_bytes(std::span{elevation}));
+        manifest = {
+            {"schema", "cubey.terrain.heightfield.v1"},
+            {"source", {{"id", "fluid-25d-test-terrain"}}},
+            {"seed", 731U},
+            {"grid",
+             {{"width", 5U},
+              {"height", 4U},
+              {"sample_spacing_m", 3.5F},
+              {"sample_origin_x_m", -10.0F},
+              {"sample_origin_z_m", 25.0F}}},
+            {"height", {{"offset_m", 10.0F}, {"scale", 1.5F}, {"relief_scale_m", 100.0F}}},
+            {"files",
+             {{"elevation",
+               {{"path", "elevation.f32"},
+                {"dtype", "float32-le"},
+                {"layout", "row-major-zx"},
+                {"shape", {4U, 5U}},
+                {"byte_count", elevation.size() * sizeof(float)},
+                {"sha256", hash}}}}},
+        };
+        write();
+    }
+
+    ~TerrainFixture() {
+        std::error_code error;
+        std::filesystem::remove_all(root, error);
+    }
+
+    void write() const {
+        std::ofstream elevation_stream(root / "elevation.f32", std::ios::binary);
+        elevation_stream.write(reinterpret_cast<const char*>(elevation.data()),
+                               static_cast<std::streamsize>(elevation.size() * sizeof(float)));
+        if (!elevation_stream) {
+            throw std::runtime_error("failed to write fluid 2.5D terrain fixture payload");
+        }
+        std::ofstream manifest_stream(root / "heightfield.json");
+        manifest_stream << manifest.dump(2) << '\n';
+        if (!manifest_stream) {
+            throw std::runtime_error("failed to write fluid 2.5D terrain fixture manifest");
+        }
+    }
+
+    std::filesystem::path root{};
+    std::vector<float> elevation{};
+    nlohmann::json manifest{};
+};
+
 [[nodiscard]] cubey::projects::fluid::fluid_25d::Fluid25DProjectConfig
 parse_project(std::vector<std::string> arguments) {
     std::vector<char*> argv;
@@ -66,6 +135,15 @@ test_config(std::uint32_t width, std::uint32_t height,
     return config;
 }
 
+[[nodiscard]] cubey::projects::fluid::fluid_25d::Fluid25DConfig
+finite_volume_test_config(std::uint32_t width, std::uint32_t height,
+                          cubey::projects::fluid::fluid_25d::Fluid25DScenario scenario) {
+    auto config = test_config(width, height, scenario);
+    config.solver = cubey::projects::fluid::fluid_25d::Fluid25DSolver::FiniteVolume;
+    cubey::projects::fluid::fluid_25d::validate_fluid_25d_config(config);
+    return config;
+}
+
 void test_config_defaults_and_parsing() {
     using namespace cubey::projects::fluid::fluid_25d;
 
@@ -82,10 +160,40 @@ void test_config_defaults_and_parsing() {
             "fluid 2.5D should default to two fixed solver substeps");
     require(defaults.scenario == Fluid25DScenario::RiverCatchment,
             "fluid 2.5D should default to the river catchment scenario");
+    require(defaults.solver == Fluid25DSolver::VirtualPipes,
+            "fluid 2.5D should retain virtual-pipes as the product default");
+    require(std::string(fluid_25d_solver_name(Fluid25DSolver::FiniteVolume)) == "finite-volume" &&
+                fluid_25d_solver_from_name("finite-volume") == Fluid25DSolver::FiniteVolume &&
+                fluid_25d_solver_from_name("") == Fluid25DSolver::VirtualPipes,
+            "fluid 2.5D finite-volume comparison solver names should be stable");
+    require_throws([] { static_cast<void>(fluid_25d_solver_from_name("unknown")); },
+                   "fluid 2.5D should reject unknown solver names");
+    Fluid25DConfig invalid_solver = defaults;
+    invalid_solver.solver = static_cast<Fluid25DSolver>(42U);
+    require_throws([&] { validate_fluid_25d_config(invalid_solver); },
+                   "fluid 2.5D should reject invalid solver enum values");
     require(std::string(fluid_25d_scenario_name(Fluid25DScenario::LakeAtRest)) == "lake-at-rest",
             "fluid 2.5D scenario names should be stable");
     require(fluid_25d_scenario_from_name("dry") == Fluid25DScenario::DryBed,
             "fluid 2.5D should retain the short dry scenario alias");
+    require(fluid_25d_scenario_from_name("terrain-case") == Fluid25DScenario::TerrainCase,
+            "fluid 2.5D should parse the explicit terrain case scenario");
+    require(fluid_25d_scenario_from_name("boundary-drain-fixture") ==
+                Fluid25DScenario::BoundaryDrainFixture,
+            "fluid 2.5D should parse the numerical boundary drain fixture");
+    require(fluid_25d_terrain_water_protocol_from_name("rain-pulse") ==
+                Fluid25DTerrainWaterProtocol::RainPulse,
+            "fluid 2.5D should parse the rain-pulse terrain-water protocol");
+    require(fluid_25d_terrain_water_protocol_from_name("sheet-release") ==
+                Fluid25DTerrainWaterProtocol::SheetRelease,
+            "fluid 2.5D should parse the sheet-release terrain-water protocol");
+    require_throws([] { static_cast<void>(fluid_25d_terrain_water_protocol_from_name("inflow")); },
+                   "fluid 2.5D should reject unsupported terrain-water protocols");
+    require_close(fluid_25d_rainfall_depth_rate_m_per_s_from_mm_per_hour(3600.0F), 0.001,
+                  kDepthToleranceM, "fluid 2.5D should convert rainfall mm/hour to depth rate m/s");
+    require_throws(
+        [] { static_cast<void>(fluid_25d_rainfall_depth_rate_m_per_s_from_mm_per_hour(-1.0F)); },
+        "fluid 2.5D should reject negative rainfall conversion inputs");
     require_throws([] { static_cast<void>(fluid_25d_scenario_from_name("unknown")); },
                    "fluid 2.5D should reject unknown scenario names");
     require(fluid_25d_debug_view_from_name("flow") == Fluid25DDebugView::FlowMagnitude,
@@ -139,6 +247,80 @@ void test_config_defaults_and_parsing() {
             "fluid 2.5D should default the CLI view name to the catchment enum default");
     require(!parsed.gpu_oracle_validation,
             "fluid 2.5D should keep solver readback disabled unless explicitly requested");
+    const Fluid25DProjectConfig finite_volume =
+        parse_project({"fluid_25d", "--fluid25d-solver", "finite-volume"});
+    require(finite_volume.simulation.solver == Fluid25DSolver::FiniteVolume,
+            "fluid 2.5D parser should opt into the finite-volume comparison solver");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-solver", "not-a-solver"}));
+        },
+        "fluid 2.5D parser should reject an unknown solver");
+
+    const Fluid25DProjectConfig scheduled =
+        parse_project({"fluid_25d", "--fluid25d-source-active-duration-seconds", "0.05"});
+    require(scheduled.simulation.source_active_duration_seconds == 0.05F,
+            "fluid 2.5D parser should retain an optional source active duration");
+
+    const Fluid25DProjectConfig terrain = parse_project(
+        {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+         "terrain-fixture", "--fluid25d-terrain-crop-x", "12", "--fluid25d-terrain-crop-z", "7"});
+    require(terrain.simulation.scenario == Fluid25DScenario::TerrainCase,
+            "fluid 2.5D parser should bind the terrain case scenario");
+    require(terrain.terrain.heightfield_path == "terrain-fixture" &&
+                terrain.terrain.crop_x == 12U && terrain.terrain.crop_z == 7U,
+            "fluid 2.5D parser should retain the terrain path and native crop coordinates");
+    require_throws(
+        [] { static_cast<void>(parse_project({"fluid_25d", "--terrain-heightfield", "terrain"})); },
+        "fluid 2.5D should reject a terrain path with an analytic scenario");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case"}));
+        },
+        "fluid 2.5D should reject terrain-case without a terrain path");
+    require_throws(
+        [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-terrain-crop-x", "1"})); },
+        "fluid 2.5D should reject terrain crop options for an analytic scenario");
+
+    const Fluid25DProjectConfig rain_pulse =
+        parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+                       "terrain-fixture", "--fluid25d-terrain-water-protocol", "rain-pulse",
+                       "--fluid25d-rainfall-rate-mm-per-hour", "720",
+                       "--fluid25d-source-active-duration-seconds", "2.5"});
+    require(rain_pulse.simulation.terrain_water_protocol ==
+                    Fluid25DTerrainWaterProtocol::RainPulse &&
+                rain_pulse.simulation.rainfall_depth_rate_m_per_s > 0.0F &&
+                rain_pulse.simulation.source_active_duration_seconds == 2.5F,
+            "fluid 2.5D should retain the complete rain-pulse contract");
+    const Fluid25DProjectConfig sheet_release =
+        parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+                       "terrain-fixture", "--fluid25d-terrain-water-protocol", "sheet-release",
+                       "--fluid25d-sheet-depth-m", "0.025"});
+    require(sheet_release.simulation.terrain_water_protocol ==
+                    Fluid25DTerrainWaterProtocol::SheetRelease &&
+                sheet_release.simulation.sheet_initial_depth_m == 0.025F,
+            "fluid 2.5D should retain the complete sheet-release contract");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case",
+                                             "--terrain-heightfield", "terrain-fixture",
+                                             "--fluid25d-terrain-water-protocol", "rain-pulse",
+                                             "--fluid25d-rainfall-rate-mm-per-hour", "720"}));
+        },
+        "fluid 2.5D should require a fixed source duration for rain-pulse");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-terrain-water-protocol", "none"}));
+        },
+        "fluid 2.5D should reject explicit terrain-water protocol outside terrain-case");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case",
+                                             "--terrain-heightfield", "terrain-fixture",
+                                             "--fluid25d-sheet-depth-m", "0.025"}));
+        },
+        "fluid 2.5D should reject forcing parameters with terrain protocol none");
 
     const Fluid25DProjectConfig diagnostic_presentation =
         parse_project({"fluid_25d", "--fluid25d-view", "diagnostics", "--debug-view", "wet-dry"});
@@ -154,6 +336,12 @@ void test_config_defaults_and_parsing() {
     require_throws(
         [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-gpu-oracle-validation"})); },
         "fluid 2.5D should reject GPU oracle validation outside headless operation");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--profile-output", "fluid-profile", "--profile-diagnostics"}));
+        },
+        "fluid 2.5D should reject profile diagnostics outside headless operation");
 
     const Fluid25DProjectConfig deferred =
         parse_project({"fluid_25d", "--set", "grid.size=7", "--set", "fluid25d.scenario=dry-bed",
@@ -181,6 +369,10 @@ void test_config_defaults_and_parsing() {
     invalid.grid_height = 1U;
     require_throws([&] { validate_fluid_25d_config(invalid); },
                    "fluid 2.5D should reject product grids with fewer than two rows");
+    invalid = defaults;
+    invalid.source_active_duration_seconds = -0.1F;
+    require_throws([&] { validate_fluid_25d_config(invalid); },
+                   "fluid 2.5D should reject a negative source active duration");
 }
 
 void test_deterministic_scenarios() {
@@ -229,6 +421,217 @@ void test_deterministic_scenarios() {
             "river fixture should carry one positive sink rate");
     require(river.initial_water_depth_m[river.sink_cell] == 0.0F,
             "river fixture sink should start dry");
+    require(!dry_a.terrain_provenance.has_value() && !lake.terrain_provenance.has_value() &&
+                !river.terrain_provenance.has_value(),
+            "analytic fixtures should not acquire terrain-case provenance");
+    require(std::all_of(dry_a.boundary_outflow_face_mask.begin(),
+                        dry_a.boundary_outflow_face_mask.end(),
+                        [](std::uint32_t mask) { return mask == 0U; }) &&
+                std::all_of(lake.boundary_outflow_face_mask.begin(),
+                            lake.boundary_outflow_face_mask.end(),
+                            [](std::uint32_t mask) { return mask == 0U; }) &&
+                std::all_of(river.boundary_outflow_face_mask.begin(),
+                            river.boundary_outflow_face_mask.end(),
+                            [](std::uint32_t mask) { return mask == 0U; }),
+            "analytic fixtures should retain closed outer boundaries by default");
+}
+
+void test_terrain_case_ingestion() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    TerrainFixture fixture;
+    Fluid25DConfig config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
+    config.cell_size_m = 3.5F;
+    validate_fluid_25d_config(config);
+
+    Fluid25DProjectConfig near_equal_project{};
+    near_equal_project.simulation = config;
+    near_equal_project.fluid.cell_size_m = std::nextafter(3.5F, 4.0F);
+    resolve_fluid_25d_terrain_cell_size(near_equal_project, 3.5F);
+    require(near_equal_project.simulation.cell_size_m == 3.5F,
+            "terrain startup should canonicalize an explicitly near-equal cell size");
+
+    const Fluid25DScenarioData terrain =
+        load_fluid_25d_terrain_scenario(config, fixture.root, 1U, 1U);
+    require(terrain.width == 3U && terrain.height == 2U,
+            "terrain case should retain the configured crop dimensions");
+    require_close(terrain.cell_size_m, 3.5, kDepthToleranceM,
+                  "terrain case should propagate native sample spacing");
+    const std::vector<float> expected{24.0F, 25.5F, 27.0F, 31.5F, 33.0F, 34.5F};
+    require(terrain.terrain_height_m == expected,
+            "terrain case should apply the manifest height transform at native samples");
+    require(std::all_of(terrain.initial_water_depth_m.begin(), terrain.initial_water_depth_m.end(),
+                        [](float value) { return value == 0.0F; }) &&
+                std::all_of(terrain.source_depth_rate_m_per_s.begin(),
+                            terrain.source_depth_rate_m_per_s.end(),
+                            [](float value) { return value == 0.0F; }) &&
+                std::all_of(terrain.sink_depth_rate_m_per_s.begin(),
+                            terrain.sink_depth_rate_m_per_s.end(),
+                            [](float value) { return value == 0.0F; }),
+            "terrain case should begin with zero water and no source or sink rates");
+    require(terrain.source_cell == kFluid25DNoCell && terrain.sink_cell == kFluid25DNoCell,
+            "terrain case should not invent source or sink cells");
+    require(terrain.terrain_provenance.has_value(),
+            "terrain case should expose provenance for inspection");
+    const Fluid25DTerrainCaseProvenance& provenance = terrain.terrain_provenance.value();
+    require(provenance.source_id == "fluid-25d-test-terrain" && provenance.crop_x == 1U &&
+                provenance.crop_z == 1U && provenance.crop_width == 3U &&
+                provenance.crop_height == 2U,
+            "terrain case provenance should retain source and crop identity fields");
+    require(provenance.elevation_sha256 ==
+                fixture.manifest["files"]["elevation"]["sha256"].get<std::string>(),
+            "terrain case provenance should retain the elevation SHA-256");
+    require(provenance.transformed_crop_sha256.size() == 64U &&
+                provenance.identity.find("elevation-sha256=" + provenance.elevation_sha256) !=
+                    std::string::npos &&
+                provenance.identity.find("crop-sha256=" + provenance.transformed_crop_sha256) !=
+                    std::string::npos &&
+                provenance.identity.find("crop=1,1,3x2") != std::string::npos &&
+                provenance.identity.find("spacing-m=3.500000") != std::string::npos,
+            "terrain case identity should include source/crop digests, crop, and spacing");
+    require(provenance.manifest_path ==
+                std::filesystem::absolute(fixture.root / "heightfield.json").lexically_normal(),
+            "terrain case provenance should expose the normalized manifest path");
+
+    const Fluid25DTerrainCaseProvenance baseline_provenance = provenance;
+    fixture.manifest["height"]["offset_m"] = 11.0F;
+    fixture.write();
+    const Fluid25DScenarioData transformed =
+        load_fluid_25d_terrain_scenario(config, fixture.root, 1U, 1U);
+    require(transformed.terrain_provenance.has_value(),
+            "terrain case should retain provenance after a source transform change");
+    require(transformed.terrain_provenance->elevation_sha256 ==
+                baseline_provenance.elevation_sha256,
+            "terrain transform changes should retain the original elevation SHA-256");
+    require(transformed.terrain_provenance->transformed_crop_sha256 !=
+                    baseline_provenance.transformed_crop_sha256 &&
+                transformed.terrain_provenance->identity != baseline_provenance.identity,
+            "terrain transform changes should change the transformed crop digest and identity");
+
+    require_throws(
+        [&] { static_cast<void>(load_fluid_25d_terrain_scenario(config, fixture.root, 3U, 1U)); },
+        "terrain case should reject an x crop that exceeds the source bounds");
+    require_throws(
+        [&] { static_cast<void>(load_fluid_25d_terrain_scenario(config, fixture.root, 1U, 3U)); },
+        "terrain case should reject a z crop that exceeds the source bounds");
+    Fluid25DConfig conflicting = config;
+    conflicting.cell_size_m = 1.0F;
+    require_throws(
+        [&] {
+            static_cast<void>(load_fluid_25d_terrain_scenario(conflicting, fixture.root, 1U, 1U));
+        },
+        "terrain case should reject an explicit cell size that conflicts with native spacing");
+    require_throws(
+        [&] {
+            static_cast<void>(load_fluid_25d_terrain_scenario(
+                config, fixture.root / "missing-heightfield", 0U, 0U));
+        },
+        "terrain case should reject a missing heightfield path");
+    require_throws(
+        [&] {
+            static_cast<void>(
+                load_fluid_25d_terrain_scenario(config, fixture.root / "invalid.txt", 0U, 0U));
+        },
+        "terrain case should reject an invalid heightfield path");
+}
+
+void test_terrain_water_protocol_construction() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    TerrainFixture fixture;
+    Fluid25DConfig rain_config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
+    rain_config.cell_size_m = 3.5F;
+    rain_config.terrain_water_protocol = Fluid25DTerrainWaterProtocol::RainPulse;
+    rain_config.rainfall_depth_rate_m_per_s =
+        fluid_25d_rainfall_depth_rate_m_per_s_from_mm_per_hour(900.0F);
+    rain_config.source_active_duration_seconds = 1.0F;
+    const Fluid25DScenarioData rain =
+        load_fluid_25d_terrain_scenario(rain_config, fixture.root, 1U, 1U);
+    require(std::all_of(rain.initial_water_depth_m.begin(), rain.initial_water_depth_m.end(),
+                        [](float value) { return value == 0.0F; }) &&
+                std::all_of(rain.source_depth_rate_m_per_s.begin(),
+                            rain.source_depth_rate_m_per_s.end(),
+                            [&rain_config](float value) {
+                                return value == rain_config.rainfall_depth_rate_m_per_s;
+                            }),
+            "rain-pulse should construct one uniform source field over immutable terrain");
+    require(rain.boundary_outflow_face_mask ==
+                make_fluid_25d_all_outward_boundary_outflow_mask(rain.width, rain.height),
+            "rain-pulse should open every outward perimeter face");
+
+    Fluid25DConfig sheet_config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
+    sheet_config.cell_size_m = 3.5F;
+    sheet_config.terrain_water_protocol = Fluid25DTerrainWaterProtocol::SheetRelease;
+    sheet_config.sheet_initial_depth_m = 0.03F;
+    const Fluid25DScenarioData sheet =
+        load_fluid_25d_terrain_scenario(sheet_config, fixture.root, 1U, 1U);
+    require(std::all_of(sheet.initial_water_depth_m.begin(), sheet.initial_water_depth_m.end(),
+                        [&sheet_config](float value) {
+                            return value == sheet_config.sheet_initial_depth_m;
+                        }) &&
+                std::all_of(sheet.source_depth_rate_m_per_s.begin(),
+                            sheet.source_depth_rate_m_per_s.end(),
+                            [](float value) { return value == 0.0F; }),
+            "sheet-release should construct one uniform initial-depth field with no source");
+    require(sheet.boundary_outflow_face_mask ==
+                make_fluid_25d_all_outward_boundary_outflow_mask(sheet.width, sheet.height),
+            "sheet-release should open every outward perimeter face");
+
+    Fluid25DConfig invalid = sheet_config;
+    invalid.sheet_initial_depth_m = 0.0F;
+    require_throws(
+        [&] { static_cast<void>(load_fluid_25d_terrain_scenario(invalid, fixture.root, 1U, 1U)); },
+        "sheet-release construction should fail closed for zero depth");
+}
+
+void test_profile_diagnostic_metric_math() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = test_config(2U, 2U, Fluid25DScenario::TerrainCase);
+    config.cell_size_m = 2.0F;
+    config.minimum_wet_depth_m = 0.10F;
+    const std::array<float, 4> depth{0.05F, 0.20F, 0.40F, 0.10F};
+    const std::array<Fluid25DVelocityGpu, 4> velocity{{
+        {.velocity_wet = {0.0F, 0.0F, 0.0F, 0.0F}},
+        {.velocity_wet = {0.01F, 0.0F, 1.0F, 0.0F}},
+        {.velocity_wet = {0.03F, 0.04F, 1.0F, 0.0F}},
+        {.velocity_wet = {0.0F, 0.0F, 0.0F, 0.0F}},
+    }};
+    const std::array<Fluid25DLedgerGpu, 4> ledger{{
+        {.source_sink_boundary_reserved_m3 = {0.25F, 0.0F, 0.0F, 0.0F}},
+        {.source_sink_boundary_reserved_m3 = {0.75F, 0.25F, 0.10F, 0.0F}},
+        {.source_sink_boundary_reserved_m3 = {0.0F, 0.0F, 0.15F, 0.0F}},
+        {.source_sink_boundary_reserved_m3 = {0.0F, 0.0F, 0.0F, 0.0F}},
+    }};
+    const Fluid25DProfileDiagnostics diagnostics =
+        compute_fluid_25d_profile_diagnostics(config, depth, velocity, ledger, 2.0);
+    require(diagnostics.wet_cell_count == 2U && diagnostics.active_flow_cell_count == 1U,
+            "profile diagnostics should classify wet and active cells from physical thresholds");
+    require_close(diagnostics.total_water_volume_m3, 3.0, kDepthToleranceM,
+                  "profile diagnostics should integrate stored volume by physical cell area");
+    require_close(diagnostics.wet_cell_ratio, 0.5, kDepthToleranceM,
+                  "profile diagnostics should compute wet ratio");
+    require_close(diagnostics.wet_mean_depth_m, 0.3, kDepthToleranceM,
+                  "profile diagnostics should compute wet mean depth");
+    require_close(diagnostics.maximum_speed_m_per_s, 0.05, kDepthToleranceM,
+                  "profile diagnostics should compute maximum wet speed");
+    require_close(diagnostics.active_mean_speed_m_per_s, 0.05, kDepthToleranceM,
+                  "profile diagnostics should compute active mean speed");
+    require_close(diagnostics.slow_pooled_wet_fraction, 0.5, kDepthToleranceM,
+                  "profile diagnostics should classify slow wet water as pooled");
+    require_close(diagnostics.cumulative_source_volume_m3, 1.0, kDepthToleranceM,
+                  "profile diagnostics should sum source ledger volume");
+    require_close(diagnostics.cumulative_sink_volume_m3, 0.25, kDepthToleranceM,
+                  "profile diagnostics should sum sink ledger volume");
+    require_close(diagnostics.cumulative_boundary_outflow_volume_m3, 0.25, kDepthToleranceM,
+                  "profile diagnostics should sum boundary ledger volume");
+    require_close(diagnostics.conservation_residual_m3, 0.5, kDepthToleranceM,
+                  "profile diagnostics should expose, not hide, conservation residual");
+    require_throws(
+        [&] {
+            std::array<float, 4> invalid_depth = depth;
+            invalid_depth[0] = -0.01F;
+            static_cast<void>(compute_fluid_25d_profile_diagnostics(config, invalid_depth, velocity,
+                                                                    ledger, 2.0));
+        },
+        "profile diagnostics should reject invalid readback depth");
 }
 
 void test_profile_frame_slot_attribution() {
@@ -341,6 +744,146 @@ void test_dynamic_closed_domain_conservation() {
                   "closed dynamic fixture should conserve total volume");
 }
 
+void test_boundary_outflow_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = test_config(3U, 2U, Fluid25DScenario::DryBed);
+    config.fixed_delta_seconds = 0.05F;
+    config.simulation_substeps = 1U;
+    config.minimum_wet_depth_m = 0.000001F;
+    validate_fluid_25d_config(config);
+
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(config.scenario, config.grid_width,
+                                                            config.grid_height, config.cell_size_m);
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+    const std::size_t draining_cell = fluid_25d_scenario_index(3U, 2U, 2U, 1U);
+    scenario.initial_water_depth_m[draining_cell] = 0.50F;
+    scenario.boundary_outflow_face_mask[draining_cell] = kFluid25DBoundaryOutflowRight;
+
+    Fluid25DOracle oracle(config, scenario);
+    double previous_volume_m3 = oracle.total_water_volume_m3();
+    double accumulated_boundary_m3 = 0.0;
+    for (int frame = 0; frame < 40; ++frame) {
+        const Fluid25DStepLedger ledger = oracle.step();
+        require_close(ledger.source_volume_m3, 0.0, kDepthToleranceM,
+                      "boundary-drain fixture should have no source volume");
+        require_close(ledger.sink_volume_m3, 0.0, kDepthToleranceM,
+                      "boundary-drain fixture should have no explicit sink volume");
+        require(ledger.boundary_outflow_volume_m3 >= 0.0,
+                "boundary outflow ledger must never record external inflow");
+        require_close(ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "boundary outflow ledger should reconcile the removed water");
+        const double current_volume_m3 = oracle.total_water_volume_m3();
+        require(current_volume_m3 <= previous_volume_m3 + kVolumeToleranceM3,
+                "an open boundary cell should drain monotonically");
+        require(std::all_of(oracle.water_depth_m().begin(), oracle.water_depth_m().end(),
+                            [](float value) { return std::isfinite(value) && value >= 0.0F; }),
+                "open boundary drainage should keep depths finite and nonnegative");
+        accumulated_boundary_m3 += ledger.boundary_outflow_volume_m3;
+        previous_volume_m3 = current_volume_m3;
+    }
+    require(accumulated_boundary_m3 > 0.0,
+            "a marked boundary face should record post-limiter outflow volume");
+
+    Fluid25DScenarioData empty = scenario;
+    std::fill(empty.initial_water_depth_m.begin(), empty.initial_water_depth_m.end(), 0.0F);
+    Fluid25DOracle empty_oracle(config, empty);
+    const Fluid25DStepLedger empty_ledger = empty_oracle.step();
+    require_close(empty_ledger.boundary_outflow_volume_m3, 0.0, kDepthToleranceM,
+                  "an open dry exterior must not introduce water");
+    require_close(empty_oracle.total_water_volume_m3(), 0.0, kDepthToleranceM,
+                  "an open dry exterior must retain an empty domain");
+    for (const Fluid25DFaceFlux& flux : empty_oracle.outgoing_flux_m3_per_s()) {
+        require(std::all_of(flux.begin(), flux.end(), [](float value) { return value == 0.0F; }),
+                "a dry open boundary must not generate incoming or outgoing pipes");
+    }
+}
+
+void test_boundary_mask_validation_and_helper() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = test_config(4U, 3U, Fluid25DScenario::DryBed);
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(config.scenario, config.grid_width,
+                                                            config.grid_height, config.cell_size_m);
+    open_fluid_25d_all_outward_boundary_faces(scenario);
+    const std::size_t lower_left = fluid_25d_scenario_index(4U, 3U, 0U, 0U);
+    const std::size_t upper_right = fluid_25d_scenario_index(4U, 3U, 3U, 2U);
+    const std::size_t interior = fluid_25d_scenario_index(4U, 3U, 1U, 1U);
+    require(scenario.boundary_outflow_face_mask[lower_left] ==
+                    (kFluid25DBoundaryOutflowLeft | kFluid25DBoundaryOutflowDown) &&
+                scenario.boundary_outflow_face_mask[upper_right] ==
+                    (kFluid25DBoundaryOutflowRight | kFluid25DBoundaryOutflowUp) &&
+                scenario.boundary_outflow_face_mask[interior] == 0U,
+            "all-outward helper should open only actual perimeter faces deterministically");
+    static_cast<void>(Fluid25DOracle(config, scenario));
+
+    Fluid25DScenarioData interior_bit = scenario;
+    interior_bit.boundary_outflow_face_mask[interior] = kFluid25DBoundaryOutflowLeft;
+    require_throws([&] { static_cast<void>(Fluid25DOracle(config, interior_bit)); },
+                   "boundary masks should reject interior faces");
+    Fluid25DScenarioData inward_bit = scenario;
+    inward_bit.boundary_outflow_face_mask[lower_left] |= kFluid25DBoundaryOutflowRight;
+    require_throws([&] { static_cast<void>(Fluid25DOracle(config, inward_bit)); },
+                   "boundary masks should reject a non-outward edge face");
+    Fluid25DScenarioData unknown_bit = scenario;
+    unknown_bit.boundary_outflow_face_mask[lower_left] |= 1U << 12U;
+    require_throws([&] { static_cast<void>(Fluid25DOracle(config, unknown_bit)); },
+                   "boundary masks should reject unknown bits");
+}
+
+void test_source_rate_scale_and_schedule() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = test_config(2U, 2U, Fluid25DScenario::DryBed);
+    config.fixed_delta_seconds = 0.25F;
+    config.simulation_substeps = 1U;
+    config.gravity_m_per_s2 = 1.0F;
+    config.source_active_duration_seconds = 0.50F;
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(config.scenario, config.grid_width,
+                                                            config.grid_height, config.cell_size_m);
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+    scenario.source_depth_rate_m_per_s[0] = 0.40F;
+    Fluid25DOracle oracle(config, scenario);
+    const Fluid25DStepLedger active = oracle.step(1.0F);
+    require_close(active.source_volume_m3, 0.10, kLedgerToleranceM3,
+                  "source scale one should record the full source volume");
+    const double after_active_m3 = oracle.total_water_volume_m3();
+    const Fluid25DStepLedger inactive = oracle.step(0.0F);
+    require_close(inactive.source_volume_m3, 0.0, kDepthToleranceM,
+                  "source scale zero should stop source volume exactly");
+    require_close(oracle.total_water_volume_m3(), after_active_m3, kVolumeToleranceM3,
+                  "a closed source-scale-zero step should not add water");
+    require_throws([&] { static_cast<void>(oracle.step(-0.01F)); },
+                   "source scale should reject negative values");
+    require_throws([&] { static_cast<void>(oracle.step(std::numeric_limits<float>::infinity())); },
+                   "source scale should reject nonfinite values");
+
+    Fluid25DSourceRateSchedule schedule;
+    require(schedule.source_rate_scale(config) == 1.0F && schedule.completed_steps() == 0U,
+            "a fresh finite source schedule should begin active");
+    require_close(schedule.elapsed_seconds(config), 0.0, kDepthToleranceM,
+                  "a fresh source schedule should report zero elapsed time");
+    schedule.advance_fixed_step();
+    require(schedule.source_rate_scale(config) == 1.0F && schedule.completed_steps() == 1U,
+            "the source should stay active strictly before the configured duration");
+    require_close(schedule.elapsed_seconds(config), 0.25, kDepthToleranceM,
+                  "elapsed time should advance by one configured fixed step");
+    schedule.advance_fixed_step();
+    require(schedule.source_rate_scale(config) == 0.0F,
+            "the source should switch off at the configured fixed-step duration");
+    require_close(schedule.elapsed_seconds(config), 0.50, kDepthToleranceM,
+                  "elapsed time should describe the completed fixed-step count");
+    schedule.reset();
+    require(schedule.source_rate_scale(config) == 1.0F && schedule.completed_steps() == 0U,
+            "reset should restart the source schedule without advancing simulated time");
+    require_close(schedule.elapsed_seconds(config), 0.0, kDepthToleranceM,
+                  "reset should return the elapsed time to zero");
+
+    Fluid25DConfig unrepresentable = config;
+    unrepresentable.fixed_delta_seconds = std::numeric_limits<float>::max();
+    require_throws(
+        [&] { static_cast<void>(fluid_25d_elapsed_seconds(unrepresentable, 2U)); },
+        "elapsed time should reject values that cannot be represented by the render timestamp");
+}
+
 void test_retained_flux_inertia() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(2, 2, Fluid25DScenario::DryBed);
@@ -432,18 +975,313 @@ void test_river_mass_and_positivity() {
             "river per-frame ledger error should stay below the explicit tolerance");
 }
 
+void test_finite_volume_dry_bed_and_uneven_lake_at_rest() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig dry_config = finite_volume_test_config(6U, 4U, Fluid25DScenario::DryBed);
+    dry_config.fixed_delta_seconds = 0.01F;
+    dry_config.simulation_substeps = 1U;
+    dry_config.flow_damping_per_second = 0.0F;
+    validate_fluid_25d_config(dry_config);
+    const Fluid25DScenarioData dry_scenario = make_fluid_25d_scenario(
+        dry_config.scenario, dry_config.grid_width, dry_config.grid_height, dry_config.cell_size_m);
+    Fluid25DFiniteVolumeOracle dry_oracle(dry_config, dry_scenario);
+    for (int step = 0; step < 40; ++step) {
+        const Fluid25DStepLedger ledger = dry_oracle.step();
+        require_close(ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "finite-volume dry uneven bed should remain conserved");
+    }
+    require_close(dry_oracle.total_water_volume_m3(), 0.0, kDepthToleranceM,
+                  "finite-volume dry uneven bed should remain dry");
+    require(std::all_of(dry_oracle.momentum_m2_per_s().begin(),
+                        dry_oracle.momentum_m2_per_s().end(),
+                        [](const Fluid25DMomentum& momentum) {
+                            return momentum.x_m2_per_s == 0.0F && momentum.y_m2_per_s == 0.0F;
+                        }),
+            "finite-volume dry uneven bed should retain zero momentum");
+
+    Fluid25DConfig lake_config = finite_volume_test_config(5U, 5U, Fluid25DScenario::DryBed);
+    lake_config.fixed_delta_seconds = 0.01F;
+    lake_config.simulation_substeps = 1U;
+    lake_config.flow_damping_per_second = 0.0F;
+    lake_config.minimum_wet_depth_m = 0.000001F;
+    validate_fluid_25d_config(lake_config);
+    Fluid25DScenarioData lake =
+        make_fluid_25d_scenario(lake_config.scenario, lake_config.grid_width,
+                                lake_config.grid_height, lake_config.cell_size_m);
+    constexpr float surface_height_m = 0.25F;
+    for (std::uint32_t y = 0U; y < lake.height; ++y) {
+        for (std::uint32_t x = 0U; x < lake.width; ++x) {
+            const float distance = static_cast<float>(std::abs(static_cast<int>(x) - 2) +
+                                                      std::abs(static_cast<int>(y) - 2));
+            const std::size_t index = fluid_25d_scenario_index(lake.width, lake.height, x, y);
+            lake.terrain_height_m[index] = 0.15F * distance;
+            lake.initial_water_depth_m[index] =
+                std::max(0.0F, surface_height_m - lake.terrain_height_m[index]);
+        }
+    }
+    Fluid25DFiniteVolumeOracle lake_oracle(lake_config, lake);
+    const std::vector<float> initial_depth = lake_oracle.water_depth_m();
+    for (int step = 0; step < 80; ++step) {
+        const Fluid25DStepLedger ledger = lake_oracle.step();
+        require_close(ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "finite-volume closed lake ledger should remain conserved");
+    }
+    for (std::size_t index = 0; index < initial_depth.size(); ++index) {
+        require_close(lake_oracle.water_depth_m()[index], initial_depth[index], kDepthToleranceM,
+                      "finite-volume hydrostatic reconstruction should preserve wet/dry lake rest");
+        require_close(lake_oracle.momentum_m2_per_s()[index].x_m2_per_s, 0.0, kDepthToleranceM,
+                      "finite-volume lake at rest should retain zero x momentum");
+        require_close(lake_oracle.momentum_m2_per_s()[index].y_m2_per_s, 0.0, kDepthToleranceM,
+                      "finite-volume lake at rest should retain zero y momentum");
+    }
+}
+
+void test_finite_volume_high_absolute_elevation_shallow_film() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = finite_volume_test_config(3U, 3U, Fluid25DScenario::DryBed);
+    config.fixed_delta_seconds = 0.01F;
+    config.simulation_substeps = 1U;
+    config.flow_damping_per_second = 0.0F;
+    config.minimum_wet_depth_m = 0.000001F;
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(config.scenario, config.grid_width,
+                                                            config.grid_height, config.cell_size_m);
+    // At this elevation an f32 `h + z - z` loses a 1 mm film completely.
+    // Difference-first hydrostatic reconstruction must still expose the wet
+    // center to its dry same-bed neighbours.
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 100000.0F);
+    const std::size_t center = fluid_25d_scenario_index(3U, 3U, 1U, 1U);
+    scenario.initial_water_depth_m[center] = 0.001F;
+    Fluid25DFiniteVolumeOracle oracle(config, scenario);
+    const double initial_volume_m3 = oracle.total_water_volume_m3();
+    const Fluid25DStepLedger ledger = oracle.step();
+    require(oracle.water_depth_m()[center] < scenario.initial_water_depth_m[center],
+            "finite-volume shallow film must not disappear from high absolute terrain elevation");
+    bool spread_to_neighbor = false;
+    for (std::size_t index = 0; index < oracle.water_depth_m().size(); ++index) {
+        spread_to_neighbor =
+            spread_to_neighbor || (index != center && oracle.water_depth_m()[index] > 0.0F);
+    }
+    require(spread_to_neighbor,
+            "finite-volume high-elevation shallow film must transport to a dry same-bed neighbour");
+    require_close(ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                  "finite-volume high-elevation shallow-film ledger should remain conserved");
+    require_close(oracle.total_water_volume_m3(), initial_volume_m3, kVolumeToleranceM3,
+                  "finite-volume high-elevation shallow film should conserve closed-domain volume");
+}
+
+void test_finite_volume_symmetric_dam_break() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = finite_volume_test_config(9U, 9U, Fluid25DScenario::DryBed);
+    config.fixed_delta_seconds = 0.002F;
+    config.simulation_substeps = 1U;
+    config.flow_damping_per_second = 0.0F;
+    config.minimum_wet_depth_m = 0.000001F;
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(config.scenario, config.grid_width,
+                                                            config.grid_height, config.cell_size_m);
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+    scenario.initial_water_depth_m[fluid_25d_scenario_index(9U, 9U, 4U, 4U)] = 1.0F;
+    Fluid25DFiniteVolumeOracle oracle(config, scenario);
+    const double initial_volume_m3 = oracle.total_water_volume_m3();
+    for (int step = 0; step < 120; ++step) {
+        const Fluid25DStepLedger ledger = oracle.step();
+        require_close(ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "finite-volume closed dam-break ledger should remain conserved");
+        require(oracle.last_cfl_number() <= Fluid25DFiniteVolumeOracle::kTargetCfl,
+                "finite-volume accepted dam-break substeps should satisfy the CFL target");
+        require(
+            std::all_of(oracle.water_depth_m().begin(), oracle.water_depth_m().end(),
+                        [](float depth_m) { return std::isfinite(depth_m) && depth_m >= 0.0F; }),
+            "finite-volume dam break should keep depth finite and nonnegative");
+        for (std::size_t index = 0; index < oracle.water_depth_m().size(); ++index) {
+            const float depth_m = oracle.water_depth_m()[index];
+            if (depth_m <= config.minimum_wet_depth_m) {
+                continue;
+            }
+            require_close(oracle.velocity_m_per_s()[index].x_m_per_s,
+                          oracle.momentum_m2_per_s()[index].x_m2_per_s / depth_m, kDepthToleranceM,
+                          "finite-volume velocity should derive from x momentum and depth");
+            require_close(oracle.velocity_m_per_s()[index].y_m_per_s,
+                          oracle.momentum_m2_per_s()[index].y_m2_per_s / depth_m, kDepthToleranceM,
+                          "finite-volume velocity should derive from y momentum and depth");
+        }
+    }
+    require_close(oracle.total_water_volume_m3(), initial_volume_m3, kVolumeToleranceM3,
+                  "finite-volume closed dam break should conserve total volume");
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const std::size_t index =
+                fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+            const std::size_t mirror_x = fluid_25d_scenario_index(
+                config.grid_width, config.grid_height, config.grid_width - 1U - x, y);
+            const std::size_t mirror_y = fluid_25d_scenario_index(
+                config.grid_width, config.grid_height, x, config.grid_height - 1U - y);
+            require_close(oracle.water_depth_m()[index], oracle.water_depth_m()[mirror_x],
+                          kDepthToleranceM,
+                          "finite-volume centered dam break should remain left-right symmetric");
+            require_close(oracle.water_depth_m()[index], oracle.water_depth_m()[mirror_y],
+                          kDepthToleranceM,
+                          "finite-volume centered dam break should remain down-up symmetric");
+        }
+    }
+}
+
+void test_finite_volume_open_boundary_and_source_sink_ledgers() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig drain_config = finite_volume_test_config(3U, 3U, Fluid25DScenario::DryBed);
+    drain_config.fixed_delta_seconds = 0.01F;
+    drain_config.simulation_substeps = 1U;
+    drain_config.flow_damping_per_second = 0.0F;
+    drain_config.minimum_wet_depth_m = 0.000001F;
+    validate_fluid_25d_config(drain_config);
+    Fluid25DScenarioData drain =
+        make_fluid_25d_scenario(drain_config.scenario, drain_config.grid_width,
+                                drain_config.grid_height, drain_config.cell_size_m);
+    std::fill(drain.terrain_height_m.begin(), drain.terrain_height_m.end(), 0.0F);
+    const std::size_t edge = fluid_25d_scenario_index(3U, 3U, 2U, 1U);
+    drain.initial_water_depth_m[edge] = 0.50F;
+    drain.boundary_outflow_face_mask[edge] = kFluid25DBoundaryOutflowRight;
+    Fluid25DFiniteVolumeOracle drain_oracle(drain_config, drain);
+    double previous_volume_m3 = drain_oracle.total_water_volume_m3();
+    double boundary_outflow_m3 = 0.0;
+    for (int step = 0; step < 60; ++step) {
+        const Fluid25DStepLedger ledger = drain_oracle.step();
+        require(ledger.boundary_outflow_volume_m3 >= 0.0,
+                "finite-volume open boundary must never report external inflow");
+        require_close(ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "finite-volume open boundary ledger should reconcile removed water");
+        const double volume_m3 = drain_oracle.total_water_volume_m3();
+        require(volume_m3 <= previous_volume_m3 + kVolumeToleranceM3,
+                "finite-volume dry exterior should drain monotonically");
+        boundary_outflow_m3 += ledger.boundary_outflow_volume_m3;
+        previous_volume_m3 = volume_m3;
+    }
+    require(boundary_outflow_m3 > 0.0,
+            "finite-volume marked open face should record positive outflow");
+
+    Fluid25DScenarioData empty = drain;
+    std::fill(empty.initial_water_depth_m.begin(), empty.initial_water_depth_m.end(), 0.0F);
+    Fluid25DFiniteVolumeOracle empty_oracle(drain_config, empty);
+    const Fluid25DStepLedger empty_ledger = empty_oracle.step();
+    require_close(empty_ledger.boundary_outflow_volume_m3, 0.0, kDepthToleranceM,
+                  "finite-volume dry exterior must not introduce water");
+    require_close(empty_oracle.total_water_volume_m3(), 0.0, kDepthToleranceM,
+                  "finite-volume empty open domain should remain empty");
+
+    Fluid25DConfig source_sink_config = finite_volume_test_config(2U, 2U, Fluid25DScenario::DryBed);
+    source_sink_config.fixed_delta_seconds = 0.10F;
+    source_sink_config.simulation_substeps = 1U;
+    source_sink_config.gravity_m_per_s2 = 0.00000001F;
+    source_sink_config.flow_damping_per_second = 0.0F;
+    source_sink_config.minimum_wet_depth_m = 0.000000001F;
+    validate_fluid_25d_config(source_sink_config);
+    Fluid25DScenarioData source_sink =
+        make_fluid_25d_scenario(source_sink_config.scenario, source_sink_config.grid_width,
+                                source_sink_config.grid_height, source_sink_config.cell_size_m);
+    std::fill(source_sink.terrain_height_m.begin(), source_sink.terrain_height_m.end(), 0.0F);
+    source_sink.source_depth_rate_m_per_s[0] = 0.50F;
+    source_sink.sink_depth_rate_m_per_s[0] = 0.20F;
+    Fluid25DFiniteVolumeOracle source_sink_oracle(source_sink_config, source_sink);
+    const Fluid25DStepLedger source_sink_ledger = source_sink_oracle.step();
+    require_close(source_sink_ledger.source_volume_m3, 0.05, kLedgerToleranceM3,
+                  "finite-volume source ledger should use source depth rate and cell area");
+    require_close(source_sink_ledger.sink_volume_m3, 0.02, kLedgerToleranceM3,
+                  "finite-volume sink ledger should use actual removed depth and cell area");
+    require_close(source_sink_oracle.total_water_volume_m3(), 0.03, kLedgerToleranceM3,
+                  "finite-volume source and sink ledger should reconcile stored water");
+    require_close(source_sink_ledger.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                  "finite-volume source and sink ledger should remain conserved");
+}
+
+void test_finite_volume_cfl_fails_closed() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = finite_volume_test_config(2U, 2U, Fluid25DScenario::DryBed);
+    config.fixed_delta_seconds = 0.25F;
+    config.simulation_substeps = 1U;
+    config.flow_damping_per_second = 0.0F;
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(config.scenario, config.grid_width,
+                                                            config.grid_height, config.cell_size_m);
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+    scenario.initial_water_depth_m[0] = 1.0F;
+    Fluid25DFiniteVolumeOracle oracle(config, scenario);
+    const std::vector<float> initial_depth = oracle.water_depth_m();
+    require_throws([&] { static_cast<void>(oracle.step()); },
+                   "finite-volume CFL above the conservative target should fail closed");
+    require(oracle.water_depth_m() == initial_depth && oracle.last_cfl_number() == 0.0F,
+            "a rejected finite-volume CFL step should not mutate persistent state");
+
+    Fluid25DConfig virtual_pipe_config = config;
+    virtual_pipe_config.solver = Fluid25DSolver::VirtualPipes;
+    validate_fluid_25d_config(virtual_pipe_config);
+    require_throws([&] { static_cast<void>(Fluid25DOracle(config, scenario)); },
+                   "virtual-pipes oracle construction should reject the finite-volume comparison "
+                   "configuration");
+    require_throws(
+        [&] { static_cast<void>(Fluid25DFiniteVolumeOracle(virtual_pipe_config, scenario)); },
+        "finite-volume oracle construction should reject the virtual-pipes product configuration");
+}
+
+void test_finite_volume_gpu_candidate_commit_shader_contract() {
+    // Invalid GPU candidate-state injection is deliberately not a user-facing
+    // scenario knob. Keep a small structural test on the shipped shaders in
+    // addition to the direct GPU CFL rejection lane: candidate must zero its
+    // isolated ledger delta and validate the prospective cumulative ledger;
+    // commit must be the sole writer of the shared ledger/velocity state.
+    const std::filesystem::path shader_directory =
+        std::filesystem::path(__FILE__).parent_path() / "shaders";
+    const auto read_shader = [](const std::filesystem::path& path) {
+        std::ifstream stream(path);
+        if (!stream) {
+            throw std::runtime_error("failed to read finite-volume transaction shader");
+        }
+        return std::string(std::istreambuf_iterator<char>(stream),
+                           std::istreambuf_iterator<char>());
+    };
+    const std::string candidate = read_shader(shader_directory / "fluid_25d_fv_update.comp");
+    const std::string commit = read_shader(shader_directory / "fluid_25d_fv_commit.comp");
+    require(
+        candidate.find("candidate_ledger_delta.values[index] = vec4(0.0);") != std::string::npos &&
+            candidate.find("vec4 prospective_ledger = cumulative_ledger.values[index] + "
+                           "ledger_delta;") != std::string::npos &&
+            candidate.find("!finite_nonnegative_ledger(prospective_ledger)") != std::string::npos &&
+            candidate.find("ledger.values[index] +=") == std::string::npos,
+        "finite-volume candidate shader must isolate and validate ledger deltas");
+    require(commit.find("if (status.flags != 0u)") != std::string::npos &&
+                commit.find("next_depth.values[index] = source_depth.values[index];") !=
+                    std::string::npos &&
+                commit.find("next_momentum.values[index] = source_momentum.values[index];") !=
+                    std::string::npos &&
+                commit.find("ledger.values[index] += candidate_ledger_delta.values[index];") !=
+                    std::string::npos,
+            "finite-volume commit shader must copy through rejected state and publish ledger once");
+}
+
 } // namespace
 
 int main() {
     try {
         test_config_defaults_and_parsing();
         test_deterministic_scenarios();
+        test_terrain_case_ingestion();
+        test_terrain_water_protocol_construction();
         test_profile_frame_slot_attribution();
+        test_profile_diagnostic_metric_math();
         test_dry_bed_stability();
         test_lake_at_rest();
         test_dynamic_closed_domain_conservation();
+        test_boundary_outflow_contract();
+        test_boundary_mask_validation_and_helper();
+        test_source_rate_scale_and_schedule();
         test_retained_flux_inertia();
         test_river_mass_and_positivity();
+        test_finite_volume_dry_bed_and_uneven_lake_at_rest();
+        test_finite_volume_high_absolute_elevation_shallow_film();
+        test_finite_volume_symmetric_dam_break();
+        test_finite_volume_open_boundary_and_source_sink_ledgers();
+        test_finite_volume_cfl_fails_closed();
+        test_finite_volume_gpu_candidate_commit_shader_contract();
     } catch (const std::exception& error) {
         std::fprintf(stderr, "fluid_25d_tests: %s\n", error.what());
         return 1;

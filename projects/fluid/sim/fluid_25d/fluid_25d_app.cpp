@@ -2,6 +2,7 @@
 
 #include "fluid_25d_commands.h"
 #include "fluid_25d_diagnostics.h"
+#include "fluid_25d_finite_volume_oracle.h"
 #include "fluid_25d_gpu_resources.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_scenarios.h"
@@ -38,6 +39,8 @@ namespace {
 
 inline constexpr float kDepthToleranceM = 0.0005F;
 inline constexpr float kFluxToleranceM3PerS = 0.002F;
+inline constexpr float kMomentumToleranceM2PerS = 0.002F;
+inline constexpr float kVelocityToleranceMPerS = 0.002F;
 inline constexpr double kLedgerToleranceM3 = 0.003;
 inline constexpr float kCatchmentCameraBaseYaw = -0.52F;
 inline constexpr float kCatchmentCameraBasePitch = -0.92F;
@@ -83,18 +86,54 @@ template <typename Value>
     return std::isfinite(value);
 }
 
+[[nodiscard]] Fluid25DScenarioData make_startup_scenario(Fluid25DProjectConfig& config) {
+    validate_fluid_25d_project_config(config);
+    if (config.simulation.scenario != Fluid25DScenario::TerrainCase) {
+        return make_fluid_25d_scenario(config.simulation.scenario, config.simulation.grid_width,
+                                       config.simulation.grid_height,
+                                       config.simulation.cell_size_m);
+    }
+
+    cubey::asset::TerrainRasterHeightSource source(config.terrain.heightfield_path.value());
+    const float source_spacing_m = source.sample_spacing_m();
+    resolve_fluid_25d_terrain_cell_size(config, source_spacing_m);
+
+    Fluid25DScenarioData scenario = make_fluid_25d_terrain_scenario(
+        config.simulation, source, config.terrain.crop_x.value_or(0U),
+        config.terrain.crop_z.value_or(0U));
+    if (!scenario.terrain_provenance.has_value()) {
+        throw std::runtime_error("fluid 2.5D terrain case did not produce provenance");
+    }
+    std::printf("fluid_25d: terrain case identity=%s source=%s manifest=%s\n",
+                scenario.terrain_provenance->identity.c_str(),
+                scenario.terrain_provenance->source_id.c_str(),
+                scenario.terrain_provenance->manifest_path.string().c_str());
+    return scenario;
+}
+
 class Fluid25DApp {
   public:
     explicit Fluid25DApp(Fluid25DProjectConfig config)
-        : config_(std::move(config)),
-          scenario_(make_fluid_25d_scenario(
-              config_.simulation.scenario, config_.simulation.grid_width,
-              config_.simulation.grid_height, config_.simulation.cell_size_m)),
+        : config_(std::move(config)), scenario_(make_startup_scenario(config_)),
           presentation_view_(fluid_25d_presentation_view_from_name(config_.view)),
           debug_view_(fluid_25d_debug_view_from_name(config_.debug_view)) {
+        initial_water_volume_m3_ =
+            fluid_25d_water_volume_m3(config_.simulation, scenario_.initial_water_depth_m);
+        if (config_.simulation.scenario == Fluid25DScenario::TerrainCase) {
+            std::printf(
+                "fluid_25d: terrain-water protocol=%s rainfall_m_per_s=%.9f "
+                "sheet_depth_m=%.6f\n",
+                fluid_25d_terrain_water_protocol_name(config_.simulation.terrain_water_protocol),
+                config_.simulation.rainfall_depth_rate_m_per_s,
+                config_.simulation.sheet_initial_depth_m);
+        }
         configure_catchment_camera();
         if (config_.gpu_oracle_validation) {
-            oracle_.emplace(config_.simulation, scenario_);
+            if (config_.simulation.solver == Fluid25DSolver::FiniteVolume) {
+                finite_volume_oracle_.emplace(config_.simulation, scenario_);
+            } else {
+                oracle_.emplace(config_.simulation, scenario_);
+            }
         }
     }
 
@@ -184,11 +223,24 @@ class Fluid25DApp {
                 collected_profile_frame_index(project_frame, render_frame.frame_slot),
                 resources_.latest_timings());
         }
+        if (reset_requested_) {
+            source_schedule_.reset();
+        }
+        const float source_rate_scale = source_schedule_.source_rate_scale(config_.simulation);
+        const std::uint64_t completed_steps = source_schedule_.completed_steps();
+        if (!paused_ && completed_steps == std::numeric_limits<std::uint64_t>::max()) {
+            throw std::runtime_error("fluid 2.5D render step count overflowed");
+        }
+        // The windowed graph records one solve and then draws from its result
+        // in the same command buffer. Include that pending step in the visual
+        // clock so the water detail describes the state being rendered.
+        const float render_elapsed_seconds =
+            fluid_25d_elapsed_seconds(config_.simulation, completed_steps + (paused_ ? 0U : 1U));
         const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             debug_view_, render_camera(render_frame.color_target.extent),
-            Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_, profiler,
-            render_frame.frame_slot.index);
+            Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
+            render_elapsed_seconds, profiler, render_frame.frame_slot.index, source_rate_scale);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         if (profiler != nullptr) {
@@ -205,6 +257,9 @@ class Fluid25DApp {
             },
             graph);
         recorder.end("vkEndCommandBuffer fluid_25d");
+        if (!paused_) {
+            source_schedule_.advance_fixed_step();
+        }
     }
 
     void configure_catchment_camera() {
@@ -257,10 +312,23 @@ class Fluid25DApp {
                                           cubey::profiling::ProfileRecorder* profile_recorder) {
         const ProjectFrame project_frame = runtime_.frame_for_timing(frame.timing);
         const std::uint64_t frame_index = profile_frame_index(project_frame);
+        if (reset_requested_) {
+            source_schedule_.reset();
+            expected_source_volume_m3_ = 0.0;
+            expected_sink_volume_m3_ = 0.0;
+            expected_boundary_outflow_volume_m3_ = 0.0;
+            if (oracle_.has_value()) {
+                oracle_->reset();
+            }
+            if (finite_volume_oracle_.has_value()) {
+                finite_volume_oracle_->reset();
+            }
+        }
+        const float source_rate_scale = source_schedule_.source_rate_scale(config_.simulation);
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_25d headless simulation frame",
             .work =
-                [this, frame, profile_recorder,
+                [this, frame, profile_recorder, source_rate_scale,
                  frame_index](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
@@ -269,7 +337,7 @@ class Fluid25DApp {
                     }
                     record_fluid_25d_compute(commands.command_buffer(), resources_,
                                              config_.simulation, false, reset_requested_, false,
-                                             profiler, frame.frame_slot.index);
+                                             profiler, frame.frame_slot.index, source_rate_scale);
                     commands.submit_and_wait();
                     if (profiler != nullptr) {
                         profiler->collect(frame.frame_slot.index);
@@ -278,15 +346,70 @@ class Fluid25DApp {
                     }
                 },
         }));
-        if (oracle_.has_value()) {
-            const Fluid25DStepLedger step_ledger = oracle_->step();
+        record_headless_profile_diagnostics_if_requested(gpu, profile_recorder, frame_index);
+        if (oracle_.has_value() || finite_volume_oracle_.has_value()) {
+            const Fluid25DStepLedger step_ledger =
+                oracle_.has_value() ? oracle_->step(source_rate_scale)
+                                    : finite_volume_oracle_->step(source_rate_scale);
             expected_source_volume_m3_ += step_ledger.source_volume_m3;
             expected_sink_volume_m3_ += step_ledger.sink_volume_m3;
+            expected_boundary_outflow_volume_m3_ += step_ledger.boundary_outflow_volume_m3;
         }
+        source_schedule_.advance_fixed_step();
+    }
+
+    void record_headless_profile_diagnostics_if_requested(
+        cubey::ProjectGpuServices& gpu, cubey::profiling::ProfileRecorder* profile_recorder,
+        std::uint64_t frame_index) {
+        if (!should_record_fluid_25d_profile_diagnostics(profile_recorder, config_.common,
+                                                         frame_index)) {
+            return;
+        }
+        const std::size_t cells = fluid_25d_cell_count(config_.simulation);
+        const cubey::vulkan::Buffer& current_depth =
+            resources_.current_depth_is_a() ? resources_.depth_a() : resources_.depth_b();
+        const std::vector<float> depth_m =
+            readback_values<float>(gpu, current_depth, cells, "profile diagnostic depth");
+        const std::vector<Fluid25DVelocityGpu> velocity = readback_values<Fluid25DVelocityGpu>(
+            gpu, resources_.velocity(), cells, "profile diagnostic velocity");
+        const std::vector<Fluid25DLedgerGpu> ledger = readback_values<Fluid25DLedgerGpu>(
+            gpu, resources_.ledger(), cells, "profile diagnostic ledger");
+        if (config_.simulation.solver == Fluid25DSolver::FiniteVolume) {
+            const std::uint32_t status_flags = read_finite_volume_status(gpu, "profile diagnostic");
+            profile_recorder->record_metric(frame_index, "fluid_25d.solver",
+                                            "finite_volume_status_flags",
+                                            static_cast<double>(status_flags));
+        }
+        const Fluid25DProfileDiagnostics diagnostics = compute_fluid_25d_profile_diagnostics(
+            config_.simulation, depth_m, velocity, ledger, initial_water_volume_m3_);
+        record_fluid_25d_profile_diagnostics(*profile_recorder, frame_index, diagnostics);
+    }
+
+    [[nodiscard]] std::uint32_t read_finite_volume_status(cubey::ProjectGpuServices& gpu,
+                                                          const char* context) const {
+        const std::vector<Fluid25DFiniteVolumeStatusGpu> status =
+            readback_values<Fluid25DFiniteVolumeStatusGpu>(gpu, resources_.finite_volume_status(),
+                                                           1U, context);
+        const Fluid25DFiniteVolumeStatusGpu& value = status.front();
+        if (value.flags_reserved[3] != 0U) {
+            throw std::runtime_error("fluid 2.5D finite-volume GPU status padding is nonzero");
+        }
+        if (value.flags_reserved[0] != 0U) {
+            throw std::runtime_error("fluid 2.5D finite-volume GPU status is nonzero: flags=" +
+                                     std::to_string(value.flags_reserved[0]));
+        }
+        return value.flags_reserved[0];
     }
 
     void validate_gpu_oracle(cubey::ProjectGpuServices& gpu) {
-        if (!oracle_.has_value()) {
+        if (!oracle_.has_value() && !finite_volume_oracle_.has_value()) {
+            // Ordinary headless finite-volume capture still surfaces a sticky
+            // device failure at its one final capture boundary. Windowed use
+            // deliberately remains GPU-resident and therefore cannot report
+            // the flag to the host without an explicit diagnostic mode.
+            if (config_.simulation.solver == Fluid25DSolver::FiniteVolume) {
+                static_cast<void>(read_finite_volume_status(gpu, "headless final status"));
+            }
             return;
         }
         const std::size_t cells = fluid_25d_cell_count(config_.simulation);
@@ -294,8 +417,6 @@ class Fluid25DApp {
             resources_.current_depth_is_a() ? resources_.depth_a() : resources_.depth_b();
         const std::vector<float> actual_depth =
             readback_values<float>(gpu, current_depth, cells, "oracle depth");
-        const std::vector<Fluid25DFluxGpu> actual_flux =
-            readback_values<Fluid25DFluxGpu>(gpu, resources_.flux(), cells, "oracle flux");
         const std::vector<Fluid25DLedgerGpu> actual_ledger =
             readback_values<Fluid25DLedgerGpu>(gpu, resources_.ledger(), cells, "oracle ledger");
         const std::vector<Fluid25DVelocityGpu> actual_velocity =
@@ -303,25 +424,16 @@ class Fluid25DApp {
                                                  "oracle velocity");
 
         float maximum_depth_error = 0.0F;
+        float maximum_velocity_error = 0.0F;
         float maximum_flux_error = 0.0F;
+        float maximum_momentum_error = 0.0F;
         double actual_source_volume_m3 = 0.0;
         double actual_sink_volume_m3 = 0.0;
+        double actual_boundary_outflow_volume_m3 = 0.0;
         for (std::size_t index = 0; index < cells; ++index) {
             if (!finite(actual_depth[index]) || actual_depth[index] < 0.0F) {
                 throw std::runtime_error(
                     "fluid 2.5D GPU oracle observed nonfinite or negative depth");
-            }
-            maximum_depth_error =
-                std::max(maximum_depth_error,
-                         std::abs(actual_depth[index] - oracle_->water_depth_m()[index]));
-            for (std::size_t face = 0; face < 4U; ++face) {
-                const float actual = actual_flux[index].faces_m3_per_s[face];
-                if (!finite(actual) || actual < 0.0F) {
-                    throw std::runtime_error("fluid 2.5D GPU oracle observed invalid face flux");
-                }
-                maximum_flux_error =
-                    std::max(maximum_flux_error,
-                             std::abs(actual - oracle_->outgoing_flux_m3_per_s()[index][face]));
             }
             for (const float component : actual_velocity[index].velocity_wet) {
                 if (!finite(component)) {
@@ -329,30 +441,151 @@ class Fluid25DApp {
                         "fluid 2.5D GPU oracle observed nonfinite velocity state");
                 }
             }
-            actual_source_volume_m3 += actual_ledger[index].source_sink_m3[0];
-            actual_sink_volume_m3 += actual_ledger[index].source_sink_m3[1];
+            if (actual_velocity[index].velocity_wet[2] != 0.0F &&
+                actual_velocity[index].velocity_wet[2] != 1.0F) {
+                throw std::runtime_error("fluid 2.5D GPU oracle observed invalid wet-state bit");
+            }
+            actual_source_volume_m3 += actual_ledger[index].source_sink_boundary_reserved_m3[0];
+            actual_sink_volume_m3 += actual_ledger[index].source_sink_boundary_reserved_m3[1];
+            actual_boundary_outflow_volume_m3 +=
+                actual_ledger[index].source_sink_boundary_reserved_m3[2];
+            for (const float component : actual_ledger[index].source_sink_boundary_reserved_m3) {
+                if (!finite(component)) {
+                    throw std::runtime_error("fluid 2.5D GPU oracle observed nonfinite ledger");
+                }
+            }
+            if (actual_ledger[index].source_sink_boundary_reserved_m3[0] < 0.0F ||
+                actual_ledger[index].source_sink_boundary_reserved_m3[1] < 0.0F ||
+                actual_ledger[index].source_sink_boundary_reserved_m3[2] < 0.0F ||
+                actual_ledger[index].source_sink_boundary_reserved_m3[3] != 0.0F) {
+                throw std::runtime_error("fluid 2.5D GPU oracle observed invalid ledger state");
+            }
         }
         const double source_ledger_error =
             std::abs(actual_source_volume_m3 - expected_source_volume_m3_);
         const double sink_ledger_error = std::abs(actual_sink_volume_m3 - expected_sink_volume_m3_);
-        if (maximum_depth_error > kDepthToleranceM || maximum_flux_error > kFluxToleranceM3PerS ||
-            source_ledger_error > kLedgerToleranceM3 || sink_ledger_error > kLedgerToleranceM3) {
-            throw std::runtime_error(
-                "fluid 2.5D GPU oracle mismatch: max_depth=" + std::to_string(maximum_depth_error) +
-                " max_flux=" + std::to_string(maximum_flux_error) +
-                " source_ledger=" + std::to_string(source_ledger_error) +
-                " sink_ledger=" + std::to_string(sink_ledger_error));
+        const double boundary_ledger_error =
+            std::abs(actual_boundary_outflow_volume_m3 - expected_boundary_outflow_volume_m3_);
+        if (oracle_.has_value()) {
+            const std::vector<Fluid25DFluxGpu> actual_flux =
+                readback_values<Fluid25DFluxGpu>(gpu, resources_.flux(), cells, "oracle flux");
+            for (std::size_t index = 0; index < cells; ++index) {
+                maximum_depth_error =
+                    std::max(maximum_depth_error,
+                             std::abs(actual_depth[index] - oracle_->water_depth_m()[index]));
+                for (std::size_t component = 0; component < 2U; ++component) {
+                    const float actual = actual_velocity[index].velocity_wet[component];
+                    const float expected = component == 0U
+                                               ? oracle_->velocity_m_per_s()[index].x_m_per_s
+                                               : oracle_->velocity_m_per_s()[index].y_m_per_s;
+                    maximum_velocity_error =
+                        std::max(maximum_velocity_error, std::abs(actual - expected));
+                }
+                const float expected_wet = oracle_->wet_mask()[index] == 0U ? 0.0F : 1.0F;
+                maximum_velocity_error =
+                    std::max(maximum_velocity_error,
+                             std::abs(actual_velocity[index].velocity_wet[2] - expected_wet));
+                for (std::size_t face = 0; face < 4U; ++face) {
+                    const float actual = actual_flux[index].faces_m3_per_s[face];
+                    if (!finite(actual) || actual < 0.0F) {
+                        throw std::runtime_error(
+                            "fluid 2.5D GPU oracle observed invalid face flux");
+                    }
+                    maximum_flux_error =
+                        std::max(maximum_flux_error,
+                                 std::abs(actual - oracle_->outgoing_flux_m3_per_s()[index][face]));
+                }
+            }
+            if (maximum_depth_error > kDepthToleranceM ||
+                maximum_flux_error > kFluxToleranceM3PerS ||
+                maximum_velocity_error > kVelocityToleranceMPerS ||
+                source_ledger_error > kLedgerToleranceM3 ||
+                sink_ledger_error > kLedgerToleranceM3 ||
+                boundary_ledger_error > kLedgerToleranceM3) {
+                throw std::runtime_error(
+                    "fluid 2.5D GPU oracle mismatch: max_depth=" +
+                    std::to_string(maximum_depth_error) +
+                    " max_flux=" + std::to_string(maximum_flux_error) +
+                    " max_velocity=" + std::to_string(maximum_velocity_error) +
+                    " source_ledger=" + std::to_string(source_ledger_error) +
+                    " sink_ledger=" + std::to_string(sink_ledger_error) +
+                    " boundary_ledger=" + std::to_string(boundary_ledger_error));
+            }
+            std::printf("fluid_25d_gpu_oracle: PASS solver=virtual-pipes scenario=%s "
+                        "max_depth=%.7f max_flux=%.7f max_velocity=%.7f source_ledger=%.7f "
+                        "sink_ledger=%.7f boundary_ledger=%.7f\n",
+                        fluid_25d_scenario_name(config_.simulation.scenario), maximum_depth_error,
+                        maximum_flux_error, maximum_velocity_error, source_ledger_error,
+                        sink_ledger_error, boundary_ledger_error);
+            return;
         }
-        std::printf("fluid_25d_gpu_oracle: PASS scenario=%s max_depth=%.7f max_flux=%.7f "
-                    "source_ledger=%.7f sink_ledger=%.7f\n",
-                    fluid_25d_scenario_name(config_.simulation.scenario), maximum_depth_error,
-                    maximum_flux_error, source_ledger_error, sink_ledger_error);
+
+        const std::uint32_t status_flags = read_finite_volume_status(gpu, "oracle status");
+        const std::vector<Fluid25DMomentumGpu> actual_momentum =
+            readback_values<Fluid25DMomentumGpu>(
+                gpu,
+                resources_.current_depth_is_a() ? resources_.momentum_a() : resources_.momentum_b(),
+                cells, "oracle finite-volume momentum");
+        for (std::size_t index = 0; index < cells; ++index) {
+            maximum_depth_error = std::max(
+                maximum_depth_error,
+                std::abs(actual_depth[index] - finite_volume_oracle_->water_depth_m()[index]));
+            const Fluid25DMomentum expected_momentum =
+                finite_volume_oracle_->momentum_m2_per_s()[index];
+            for (std::size_t component = 0; component < 2U; ++component) {
+                const float actual = actual_momentum[index].momentum_xy_reserved[component];
+                const float expected =
+                    component == 0U ? expected_momentum.x_m2_per_s : expected_momentum.y_m2_per_s;
+                if (!finite(actual)) {
+                    throw std::runtime_error(
+                        "fluid 2.5D GPU oracle observed invalid finite-volume momentum");
+                }
+                maximum_momentum_error =
+                    std::max(maximum_momentum_error, std::abs(actual - expected));
+                const float expected_velocity =
+                    component == 0U ? finite_volume_oracle_->velocity_m_per_s()[index].x_m_per_s
+                                    : finite_volume_oracle_->velocity_m_per_s()[index].y_m_per_s;
+                maximum_velocity_error = std::max(
+                    maximum_velocity_error,
+                    std::abs(actual_velocity[index].velocity_wet[component] - expected_velocity));
+            }
+            if (actual_momentum[index].momentum_xy_reserved[2] != 0.0F ||
+                actual_momentum[index].momentum_xy_reserved[3] != 0.0F) {
+                throw std::runtime_error(
+                    "fluid 2.5D GPU oracle observed nonzero finite-volume padding");
+            }
+            const float expected_wet = finite_volume_oracle_->wet_mask()[index] == 0U ? 0.0F : 1.0F;
+            maximum_velocity_error =
+                std::max(maximum_velocity_error,
+                         std::abs(actual_velocity[index].velocity_wet[2] - expected_wet));
+        }
+        if (status_flags != 0U || maximum_depth_error > kDepthToleranceM ||
+            maximum_momentum_error > kMomentumToleranceM2PerS ||
+            maximum_velocity_error > kVelocityToleranceMPerS ||
+            source_ledger_error > kLedgerToleranceM3 || sink_ledger_error > kLedgerToleranceM3 ||
+            boundary_ledger_error > kLedgerToleranceM3) {
+            throw std::runtime_error("fluid 2.5D finite-volume GPU oracle mismatch: status=" +
+                                     std::to_string(status_flags) +
+                                     " max_depth=" + std::to_string(maximum_depth_error) +
+                                     " max_momentum=" + std::to_string(maximum_momentum_error) +
+                                     " max_velocity=" + std::to_string(maximum_velocity_error) +
+                                     " source_ledger=" + std::to_string(source_ledger_error) +
+                                     " sink_ledger=" + std::to_string(sink_ledger_error) +
+                                     " boundary_ledger=" + std::to_string(boundary_ledger_error));
+        }
+        std::printf("fluid_25d_gpu_oracle: PASS solver=finite-volume scenario=%s status=%u "
+                    "max_depth=%.7f max_momentum=%.7f max_velocity=%.7f source_ledger=%.7f "
+                    "sink_ledger=%.7f boundary_ledger=%.7f\n",
+                    fluid_25d_scenario_name(config_.simulation.scenario), status_flags,
+                    maximum_depth_error, maximum_momentum_error, maximum_velocity_error,
+                    source_ledger_error, sink_ledger_error, boundary_ledger_error);
     }
 
     int run_headless() {
         if (!config_.gpu_oracle_validation) {
-            std::printf("fluid_25d: GPU oracle validation disabled; simulation state remains "
-                        "GPU-resident\n");
+            std::printf(
+                "fluid_25d: GPU oracle validation disabled; simulation state remains "
+                "GPU-resident except finite-volume checks sticky status at final capture\n");
         }
         cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = config_.common;
@@ -392,7 +625,7 @@ class Fluid25DApp {
             const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
                 target, resources_, config_.simulation, presentation_view_, debug_view_,
                 render_camera(target.extent), Fluid25DRenderTargetMode::ColorAttachment, false,
-                false, reset_requested_);
+                false, reset_requested_, source_schedule_.elapsed_seconds(config_.simulation));
             graph_executor_.record(
                 {
                     .device = &context.device(),
@@ -424,8 +657,12 @@ class Fluid25DApp {
     Fluid25DPresentationView presentation_view_ = Fluid25DPresentationView::Catchment;
     Fluid25DDebugView debug_view_ = Fluid25DDebugView::Terrain;
     std::optional<Fluid25DOracle> oracle_;
+    std::optional<Fluid25DFiniteVolumeOracle> finite_volume_oracle_;
+    Fluid25DSourceRateSchedule source_schedule_;
     double expected_source_volume_m3_ = 0.0;
     double expected_sink_volume_m3_ = 0.0;
+    double expected_boundary_outflow_volume_m3_ = 0.0;
+    double initial_water_volume_m3_ = 0.0;
     bool paused_ = false;
     bool reset_requested_ = false;
 };

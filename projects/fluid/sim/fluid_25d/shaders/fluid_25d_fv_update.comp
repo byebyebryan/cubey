@@ -1,0 +1,306 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer TerrainField {
+    float values[];
+}
+terrain;
+layout(set = 0, binding = 1, std430) readonly buffer SourceRateField {
+    float values[];
+}
+source_rate;
+layout(set = 0, binding = 2, std430) readonly buffer SinkRateField {
+    float values[];
+}
+sink_rate;
+layout(set = 0, binding = 3, std430) readonly buffer BoundaryMaskField {
+    uint values[];
+}
+boundary_mask;
+layout(set = 0, binding = 4, std430) readonly buffer DepthField {
+    float values[];
+}
+depth;
+layout(set = 0, binding = 5, std430) readonly buffer MomentumField {
+    vec4 values[];
+}
+momentum;
+// Candidate h/hu/hv are the inactive ping-pong buffers. They are not
+// published until the following commit dispatch observes a clean global
+// status word.
+layout(set = 0, binding = 6, std430) buffer CandidateDepthField {
+    float values[];
+}
+candidate_depth;
+layout(set = 0, binding = 7, std430) buffer CandidateMomentumField {
+    vec4 values[];
+}
+candidate_momentum;
+layout(set = 0, binding = 8, std430) buffer CandidateVelocityField {
+    vec4 values[];
+}
+candidate_velocity;
+layout(set = 0, binding = 9, std430) readonly buffer CumulativeLedgerField {
+    vec4 values[];
+}
+cumulative_ledger;
+layout(set = 0, binding = 10, std430) buffer CandidateLedgerDeltaField {
+    vec4 values[];
+}
+candidate_ledger_delta;
+layout(set = 0, binding = 11, std430) buffer StatusField {
+    uint flags;
+    uint max_x_speed_bits;
+    uint max_y_speed_bits;
+    uint reserved;
+}
+status;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+}
+params;
+
+const uint LEFT = 0u;
+const uint RIGHT = 1u;
+const uint DOWN = 2u;
+const uint UP = 3u;
+const uint CFL_REJECTED = 1u << 0u;
+const uint INVALID_STATE = 1u << 1u;
+const uint CLOSED_BOUNDARY_MASS = 1u << 2u;
+const uint OPEN_BOUNDARY_INFLOW = 1u << 3u;
+const float DEPTH_ROUNDING_RESIDUE = 1.0e-7;
+
+struct State {
+    float h;
+    vec2 q;
+};
+struct SourceSinkState {
+    State state;
+    float source_added_h;
+    float removed_h;
+};
+struct FaceFlux {
+    State homogeneous;
+    State left_pressure_correction;
+    State right_pressure_correction;
+};
+
+bool finite_float(float value) {
+    return !isnan(value) && !isinf(value);
+}
+bool finite_state(State value) {
+    return finite_float(value.h) && value.h >= 0.0 && finite_float(value.q.x) &&
+           finite_float(value.q.y);
+}
+bool finite_flux(State value) {
+    return finite_float(value.h) && finite_float(value.q.x) && finite_float(value.q.y);
+}
+bool finite_nonnegative_ledger(vec4 value) {
+    return finite_float(value.x) && finite_float(value.y) && finite_float(value.z) &&
+           finite_float(value.w) && value.x >= 0.0 && value.y >= 0.0 && value.z >= 0.0 &&
+           value.w == 0.0;
+}
+uint cell_index(uint x, uint y, uint width) {
+    return y * width + x;
+}
+State add_state(State left, State right) {
+    return State(left.h + right.h, left.q + right.q);
+}
+float normal_velocity(State value, vec2 normal) {
+    return value.h == 0.0 ? 0.0 : dot(value.q, normal) / value.h;
+}
+State physical_flux(State value, vec2 normal, float gravity) {
+    float normal_speed = normal_velocity(value, normal);
+    float pressure = 0.5 * gravity * value.h * value.h;
+    return State(value.h * normal_speed, value.q * normal_speed + pressure * normal);
+}
+FaceFlux hydrostatic_rusanov_flux(State left, State right, float left_bed, float right_bed,
+                                  vec2 normal, float gravity) {
+    // Difference-first reconstruction avoids cancelling a shallow film
+    // against a large absolute terrain elevation in float arithmetic.
+    float left_h_star = max(0.0, left.h - max(0.0, right_bed - left_bed));
+    float right_h_star = max(0.0, right.h - max(0.0, left_bed - right_bed));
+    vec2 tangent = vec2(-normal.y, normal.x);
+    float left_vn = normal_velocity(left, normal);
+    float left_vt = normal_velocity(left, tangent);
+    float right_vn = normal_velocity(right, normal);
+    float right_vt = normal_velocity(right, tangent);
+    State left_star = State(left_h_star, left_h_star * (left_vn * normal + left_vt * tangent));
+    State right_star = State(right_h_star, right_h_star * (right_vn * normal + right_vt * tangent));
+    State left_flux = physical_flux(left_star, normal, gravity);
+    State right_flux = physical_flux(right_star, normal, gravity);
+    float left_wave = abs(normal_velocity(left_star, normal)) + sqrt(gravity * left_star.h);
+    float right_wave = abs(normal_velocity(right_star, normal)) + sqrt(gravity * right_star.h);
+    float wave = max(left_wave, right_wave);
+    FaceFlux result;
+    result.homogeneous =
+        State(0.5 * (left_flux.h + right_flux.h) - 0.5 * wave * (right_star.h - left_star.h),
+              0.5 * (left_flux.q + right_flux.q) - 0.5 * wave * (right_star.q - left_star.q));
+    float left_pressure = 0.5 * gravity * (left.h * left.h - left_h_star * left_h_star);
+    float right_pressure = 0.5 * gravity * (right.h * right.h - right_h_star * right_h_star);
+    result.left_pressure_correction = State(0.0, left_pressure * normal);
+    result.right_pressure_correction = State(0.0, right_pressure * normal);
+    return result;
+}
+SourceSinkState source_sink_state(uint index, float dt) {
+    float old_h = depth.values[index];
+    vec2 old_q = momentum.values[index].xy;
+    float source_added_h = source_rate.values[index] * params.physics.w * dt;
+    float sourced_h = old_h + source_added_h;
+    float removed_h = min(sourced_h, sink_rate.values[index] * dt);
+    float h = sourced_h - removed_h;
+    vec2 q = old_q;
+    if (sourced_h > 0.0) {
+        q *= h / sourced_h;
+    } else {
+        q = vec2(0.0);
+    }
+    if (h <= params.physics.z) {
+        q = vec2(0.0);
+    }
+    return SourceSinkState(State(h, q), source_added_h, removed_h);
+}
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+    uint index = cell_index(x, y, width);
+    // Every candidate invocation writes a complete default transaction. An
+    // invalid path leaves a source-state/zero-ledger candidate that commit
+    // will ignore once the global sticky flag is observed.
+    candidate_depth.values[index] = depth.values[index];
+    candidate_momentum.values[index] = momentum.values[index];
+    candidate_velocity.values[index] = vec4(0.0);
+    candidate_ledger_delta.values[index] = vec4(0.0);
+    if (status.flags != 0u) {
+        return;
+    }
+
+    float dt = params.grid_dt_cell.z;
+    float cell_size = params.grid_dt_cell.w;
+    float gravity = params.physics.x;
+    float minimum_wet_depth = params.physics.z;
+    SourceSinkState center_source_sink = source_sink_state(index, dt);
+    State center = center_source_sink.state;
+    if (!finite_state(center)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+
+    State delta = State(0.0, vec2(0.0));
+    float boundary_outflow_volume = 0.0;
+    for (uint face = LEFT; face <= UP; ++face) {
+        bool has_neighbor = (face == LEFT && x > 0u) || (face == RIGHT && x + 1u < width) ||
+                            (face == DOWN && y > 0u) || (face == UP && y + 1u < height);
+        vec2 normal = face == LEFT    ? vec2(-1.0, 0.0)
+                      : face == RIGHT ? vec2(1.0, 0.0)
+                      : face == DOWN  ? vec2(0.0, -1.0)
+                                      : vec2(0.0, 1.0);
+        State exterior;
+        bool open_outflow = false;
+        if (has_neighbor) {
+            uint neighbor_x = x;
+            uint neighbor_y = y;
+            if (face == LEFT) {
+                neighbor_x -= 1u;
+            } else if (face == RIGHT) {
+                neighbor_x += 1u;
+            } else if (face == DOWN) {
+                neighbor_y -= 1u;
+            } else {
+                neighbor_y += 1u;
+            }
+            exterior = source_sink_state(cell_index(neighbor_x, neighbor_y, width), dt).state;
+        } else {
+            open_outflow = (boundary_mask.values[index] & (1u << face)) != 0u;
+            if (open_outflow) {
+                exterior = State(0.0, vec2(0.0));
+            } else {
+                float outward_velocity = normal_velocity(center, normal);
+                exterior = State(center.h, center.q - 2.0 * center.h * outward_velocity * normal);
+            }
+        }
+        if (!finite_state(exterior)) {
+            atomicOr(status.flags, INVALID_STATE);
+            return;
+        }
+        FaceFlux face_flux = hydrostatic_rusanov_flux(
+            center, exterior, terrain.values[index],
+            has_neighbor ? terrain.values[cell_index(face == LEFT    ? x - 1u
+                                                     : face == RIGHT ? x + 1u
+                                                                     : x,
+                                                     face == DOWN ? y - 1u
+                                                     : face == UP ? y + 1u
+                                                                  : y,
+                                                     width)]
+                         : terrain.values[index],
+            normal, gravity);
+        State outward = add_state(face_flux.homogeneous, face_flux.left_pressure_correction);
+        // Internal Rusanov mass flux is signed relative to the current cell;
+        // a negative outward flux is valid incoming transport. Only finiteness
+        // is an invariant here.
+        if (!finite_flux(outward)) {
+            atomicOr(status.flags, INVALID_STATE);
+            return;
+        }
+        if (!has_neighbor) {
+            if (!open_outflow) {
+                if (abs(outward.h) > DEPTH_ROUNDING_RESIDUE) {
+                    atomicOr(status.flags, CLOSED_BOUNDARY_MASS);
+                }
+                outward.h = 0.0;
+            } else {
+                if (outward.h < -DEPTH_ROUNDING_RESIDUE) {
+                    atomicOr(status.flags, OPEN_BOUNDARY_INFLOW);
+                }
+                outward.h = max(0.0, outward.h);
+                boundary_outflow_volume += outward.h * cell_size * dt;
+            }
+        }
+        delta.h -= outward.h;
+        delta.q -= outward.q;
+    }
+
+    float transport_scale = dt / cell_size;
+    float updated_h = center.h + transport_scale * delta.h;
+    vec2 updated_q = (center.q + transport_scale * delta.q) * exp(-params.physics.y * dt);
+    if (!finite_float(updated_h) || updated_h < -DEPTH_ROUNDING_RESIDUE ||
+        !finite_float(updated_q.x) || !finite_float(updated_q.y)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+    updated_h = max(0.0, updated_h);
+    if (updated_h <= minimum_wet_depth) {
+        updated_q = vec2(0.0);
+    }
+    vec2 derived_velocity = updated_h > minimum_wet_depth ? updated_q / updated_h : vec2(0.0);
+    if (!finite_float(derived_velocity.x) || !finite_float(derived_velocity.y)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+    float cell_area = cell_size * cell_size;
+    vec4 ledger_delta = vec4(center_source_sink.source_added_h * cell_area,
+                             center_source_sink.removed_h * cell_area,
+                             boundary_outflow_volume, 0.0);
+    vec4 prospective_ledger = cumulative_ledger.values[index] + ledger_delta;
+    // Commit must not find a late validation error after some cells publish:
+    // check both the delta and the prospective cumulative value here.
+    if (!finite_nonnegative_ledger(ledger_delta) ||
+        !finite_nonnegative_ledger(prospective_ledger)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+    candidate_depth.values[index] = updated_h;
+    candidate_momentum.values[index] = vec4(updated_q, 0.0, 0.0);
+    candidate_velocity.values[index] =
+        vec4(derived_velocity, updated_h > minimum_wet_depth ? 1.0 : 0.0, 0.0);
+    candidate_ledger_delta.values[index] = ledger_delta;
+}

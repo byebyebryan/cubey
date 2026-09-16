@@ -8,6 +8,7 @@
 #include <cubey/vulkan/memory_barriers.h>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -28,20 +29,25 @@ struct CatchmentPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
     cubey::math::Vec4 grid_cell{};
     cubey::math::Vec4 camera_wet{};
+    cubey::math::Vec4 animation{};
 };
 
 static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
-static_assert(sizeof(CatchmentPushConstants) == sizeof(float) * 24U);
+static_assert(sizeof(CatchmentPushConstants) == sizeof(float) * 28U);
 
-[[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid25DConfig& config) {
+[[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid25DConfig& config,
+                                                                float source_rate_scale) {
+    if (!std::isfinite(source_rate_scale) || source_rate_scale < 0.0F) {
+        throw std::runtime_error("fluid 2.5D source rate scale must be finite and nonnegative");
+    }
     const float substep_delta =
         config.fixed_delta_seconds / static_cast<float>(config.simulation_substeps);
     return {
         .grid_dt_cell = {static_cast<float>(config.grid_width),
                          static_cast<float>(config.grid_height), substep_delta, config.cell_size_m},
         .physics = {config.gravity_m_per_s2, config.flow_damping_per_second,
-                    config.minimum_wet_depth_m, 0.0F},
+                    config.minimum_wet_depth_m, source_rate_scale},
     };
 }
 
@@ -70,14 +76,68 @@ void record_reset(VkCommandBuffer command_buffer, Fluid25DGpuResources& resource
     resources.reset_depth_parity();
 }
 
+void record_finite_volume_substep(VkCommandBuffer command_buffer,
+                                  const cubey::vulkan::CommandRecorder& recorder,
+                                  Fluid25DGpuResources& resources,
+                                  const cubey::render::ComputeDispatchGroups& groups,
+                                  const SimulationPushConstants& push_constants) {
+    // Status flags are sticky until explicit solver reset, but each substep
+    // has fresh CFL maxima. The previous update has shader-written this buffer;
+    // establish compute-to-transfer ordering before clearing only those two
+    // scratch words, then make the transfer visible to both compute dispatches.
+    cubey::vulkan::record_memory_barrier(
+        command_buffer, {
+                            .src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            .dst_access = VK_ACCESS_TRANSFER_WRITE_BIT,
+                        });
+    vkCmdFillBuffer(command_buffer, resources.finite_volume_status().handle(),
+                    static_cast<VkDeviceSize>(sizeof(std::uint32_t)),
+                    static_cast<VkDeviceSize>(sizeof(std::uint32_t) * 2U), 0U);
+    cubey::vulkan::record_transfer_write_barrier(
+        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+    const bool source_is_a = resources.current_depth_is_a();
+    record_dispatch(recorder, resources.finite_volume_cfl_pipeline(),
+                    resources.finite_volume_cfl_descriptor_set(source_is_a), groups,
+                    push_constants);
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
+    // The reduction-free prepass atomically records separate global x/y wave
+    // maxima. A one-invocation finalize dispatch applies the same unsplit
+    // dt/dx * (max_x + max_y) test as the CPU oracle before any state write.
+    record_dispatch(recorder, resources.finite_volume_cfl_finalize_pipeline(),
+                    resources.finite_volume_cfl_finalize_descriptor_set(),
+                    {.x = 1U, .y = 1U, .z = 1U}, push_constants);
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
+    // Candidate writes only inactive h/q and isolated velocity/ledger-delta
+    // buffers. This barrier makes every candidate flag/output visible before
+    // commit makes the all-or-nothing publication decision.
+    record_dispatch(recorder, resources.finite_volume_candidate_pipeline(),
+                    resources.finite_volume_candidate_descriptor_set(source_is_a), groups,
+                    push_constants);
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
+    record_dispatch(recorder, resources.finite_volume_commit_pipeline(),
+                    resources.finite_volume_commit_descriptor_set(source_is_a), groups,
+                    push_constants);
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
+    resources.advance_depth_parity();
+}
+
 [[nodiscard]] CatchmentPushConstants catchment_push_constants(const Fluid25DConfig& config,
-                                                              const Fluid25DRenderCamera& camera) {
+                                                              const Fluid25DRenderCamera& camera,
+                                                              float elapsed_seconds) {
+    if (!std::isfinite(elapsed_seconds) || elapsed_seconds < 0.0F) {
+        throw std::runtime_error(
+            "fluid 2.5D catchment elapsed time must be finite and nonnegative");
+    }
     return {
         .view_projection = camera.view_projection,
         .grid_cell = {static_cast<float>(config.grid_width), static_cast<float>(config.grid_height),
                       config.cell_size_m, kFluid25DCatchmentHeightScale},
         .camera_wet = {camera.position.x, camera.position.y, camera.position.z,
                        config.minimum_wet_depth_m},
+        .animation = {elapsed_seconds, 0.0F, 0.0F, 0.0F},
     };
 }
 
@@ -96,14 +156,15 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
                               const Fluid25DConfig& config, bool paused, bool& reset_requested,
                               bool include_render_visibility_barrier,
                               cubey::vulkan::GpuTimestampProfiler* profiler,
-                              std::uint32_t frame_slot_index) {
+                              std::uint32_t frame_slot_index, float source_rate_scale) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     // Keep every fixed substep inside one aggregate solve span. This is the
     // product budget used by both windowed and headless evidence lanes, rather
     // than a per-dispatch or per-substep trace.
     cubey::vulkan::GpuTimestampScope profile_scope(profiler, command_buffer, frame_slot_index,
                                                    "fluid_25d solver");
-    const SimulationPushConstants push_constants = simulation_push_constants(config);
+    const SimulationPushConstants push_constants =
+        simulation_push_constants(config, source_rate_scale);
     const cubey::render::ComputeDispatchGroups groups = dispatch_groups(config);
 
     if (reset_requested) {
@@ -115,11 +176,16 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
     }
 
     for (std::uint32_t substep = 0; substep < config.simulation_substeps; ++substep) {
+        if (config.solver == Fluid25DSolver::FiniteVolume) {
+            record_finite_volume_substep(command_buffer, recorder, resources, groups,
+                                         push_constants);
+            continue;
+        }
         const bool source_is_a = resources.current_depth_is_a();
         record_dispatch(recorder, resources.flux_pipeline(),
                         resources.flux_descriptor_set(source_is_a), groups, push_constants);
-        // The flux solve writes directed faces and the source/sink ledger;
-        // the next dispatch gathers those faces without scatter writes.
+        // The flux solve writes directed faces and the source/sink/boundary
+        // ledger; the next dispatch gathers those faces without scatter writes.
         cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
         record_dispatch(recorder, resources.depth_pipeline(),
                         resources.depth_descriptor_set(source_is_a), groups, push_constants);
@@ -161,7 +227,7 @@ void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
 void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
                                      const Fluid25DGpuResources& resources,
                                      const Fluid25DConfig& config,
-                                     const Fluid25DRenderCamera& camera,
+                                     const Fluid25DRenderCamera& camera, float elapsed_seconds,
                                      cubey::render::ColorTargetView color_target,
                                      cubey::render::DepthTargetView depth_target) {
     const std::size_t vertex_count = fluid_25d_mesh_vertex_count(config);
@@ -169,7 +235,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         throw std::runtime_error("fluid 2.5D product mesh vertex count exceeds Vulkan draw range");
     }
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    const CatchmentPushConstants push_constants = catchment_push_constants(config, camera);
+    const CatchmentPushConstants push_constants =
+        catchment_push_constants(config, camera, elapsed_seconds);
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
@@ -204,8 +271,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     const Fluid25DConfig& config, Fluid25DPresentationView presentation_view,
     Fluid25DDebugView debug_view, const Fluid25DRenderCamera& camera,
     Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
-    bool& reset_requested, cubey::vulkan::GpuTimestampProfiler* profiler,
-    std::uint32_t frame_slot_index) {
+    bool& reset_requested, float elapsed_seconds, cubey::vulkan::GpuTimestampProfiler* profiler,
+    std::uint32_t frame_slot_index, float source_rate_scale) {
     Fluid25DGpuResources* resource_ptr = &resources;
     const Fluid25DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
@@ -219,14 +286,14 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         import("fluid 2.5D source rate", resources.source_rate());
     const cubey::render::RenderGraphBufferHandle sink =
         import("fluid 2.5D sink rate", resources.sink_rate());
+    const cubey::render::RenderGraphBufferHandle boundary_outflow_mask =
+        import("fluid 2.5D boundary outflow mask", resources.boundary_outflow_mask());
     const cubey::render::RenderGraphBufferHandle initial =
         import("fluid 2.5D initial depth", resources.initial_depth());
     const cubey::render::RenderGraphBufferHandle depth_a =
         import("fluid 2.5D depth A", resources.depth_a());
     const cubey::render::RenderGraphBufferHandle depth_b =
         import("fluid 2.5D depth B", resources.depth_b());
-    const cubey::render::RenderGraphBufferHandle flux =
-        import("fluid 2.5D face flux", resources.flux());
     const cubey::render::RenderGraphBufferHandle velocity =
         import("fluid 2.5D velocity", resources.velocity());
     const cubey::render::RenderGraphBufferHandle ledger =
@@ -243,21 +310,46 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         "fluid 2.5D backbuffer", color_target, initial_state, final_state);
 
     if (include_simulation) {
-        graph.add_pass("fluid_25d simulation", cubey::render::RenderGraphQueueDomain::Compute)
-            .read_storage_buffer(terrain)
+        auto simulation =
+            graph.add_pass("fluid_25d simulation", cubey::render::RenderGraphQueueDomain::Compute);
+        simulation.read_storage_buffer(terrain)
             .read_storage_buffer(source)
             .read_storage_buffer(sink)
+            .read_storage_buffer(boundary_outflow_mask)
             .read_storage_buffer(initial)
             .read_write_storage_buffer(depth_a)
             .read_write_storage_buffer(depth_b)
-            .read_write_storage_buffer(flux)
             .read_write_storage_buffer(velocity)
-            .read_write_storage_buffer(ledger)
-            .execute([resource_ptr, config_ptr, paused, reset_requested_ptr, profiler,
-                      frame_slot_index](const cubey::render::RenderGraphExecutionContext& context) {
+            .read_write_storage_buffer(ledger);
+        if (config.solver == Fluid25DSolver::VirtualPipes) {
+            const cubey::render::RenderGraphBufferHandle flux =
+                import("fluid 2.5D face flux", resources.flux());
+            simulation.read_write_storage_buffer(flux);
+        } else {
+            const cubey::render::RenderGraphBufferHandle momentum_a =
+                import("fluid 2.5D finite-volume momentum A", resources.momentum_a());
+            const cubey::render::RenderGraphBufferHandle momentum_b =
+                import("fluid 2.5D finite-volume momentum B", resources.momentum_b());
+            const cubey::render::RenderGraphBufferHandle candidate_velocity =
+                import("fluid 2.5D finite-volume candidate velocity",
+                       resources.finite_volume_candidate_velocity());
+            const cubey::render::RenderGraphBufferHandle candidate_ledger_delta =
+                import("fluid 2.5D finite-volume candidate ledger delta",
+                       resources.finite_volume_candidate_ledger_delta());
+            const cubey::render::RenderGraphBufferHandle status =
+                import("fluid 2.5D finite-volume status", resources.finite_volume_status());
+            simulation.read_write_storage_buffer(momentum_a)
+                .read_write_storage_buffer(momentum_b)
+                .read_write_storage_buffer(candidate_velocity)
+                .read_write_storage_buffer(candidate_ledger_delta)
+                .read_write_storage_buffer(status);
+        }
+        simulation.execute(
+            [resource_ptr, config_ptr, source_rate_scale, paused, reset_requested_ptr, profiler,
+             frame_slot_index](const cubey::render::RenderGraphExecutionContext& context) {
                 record_fluid_25d_compute(context.recorder().handle(), *resource_ptr, *config_ptr,
                                          paused, *reset_requested_ptr, false, profiler,
-                                         frame_slot_index);
+                                         frame_slot_index, source_rate_scale);
             });
     }
 
@@ -286,11 +378,11 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
             .read_storage_buffer(velocity)
             .write_color(backbuffer)
             .write_depth(catchment_depth)
-            .execute([resource_ptr, config_ptr, camera, backbuffer,
+            .execute([resource_ptr, config_ptr, camera, elapsed_seconds, backbuffer,
                       catchment_depth](const cubey::render::RenderGraphExecutionContext& context) {
                 record_fluid_25d_catchment_draw(
                     context.recorder().handle(), *resource_ptr, *config_ptr, camera,
-                    cubey::render::resolved_color_target_view(context, backbuffer),
+                    elapsed_seconds, cubey::render::resolved_color_target_view(context, backbuffer),
                     cubey::render::resolved_depth_target_view(context, catchment_depth));
             });
     }

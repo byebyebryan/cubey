@@ -2,6 +2,7 @@
 
 #include "fluid_25d_config.h"
 #include "fluid_25d_scenarios.h"
+#include "fluid_25d_solver_state.h"
 
 #include <array>
 #include <cstddef>
@@ -10,30 +11,7 @@
 
 namespace cubey::projects::fluid::fluid_25d {
 
-enum class Fluid25DFace : std::uint32_t {
-    Left = 0,
-    Right = 1,
-    Down = 2,
-    Up = 3,
-};
-
 using Fluid25DFaceFlux = std::array<float, 4>;
-
-struct Fluid25DVelocity {
-    float x_m_per_s = 0.0F;
-    float y_m_per_s = 0.0F;
-};
-
-struct Fluid25DStepLedger {
-    double volume_before_m3 = 0.0;
-    double source_volume_m3 = 0.0;
-    double sink_volume_m3 = 0.0;
-    double volume_after_m3 = 0.0;
-
-    [[nodiscard]] double conservation_error_m3() const noexcept {
-        return volume_after_m3 - volume_before_m3 - source_volume_m3 + sink_volume_m3;
-    }
-};
 
 // A small deterministic CPU reference for the River V0 virtual-pipes scheme.
 // Each cell owns four persistent outgoing discharge rates (m3/s).  Each rate
@@ -46,7 +24,9 @@ class Fluid25DOracle {
   public:
     Fluid25DOracle(Fluid25DConfig config, Fluid25DScenarioData scenario);
 
-    [[nodiscard]] Fluid25DStepLedger step();
+    // `source_rate_scale` multiplies only source fields for this public fixed
+    // step. Sinks and outflow boundaries retain their physical rates.
+    [[nodiscard]] Fluid25DStepLedger step(float source_rate_scale = 1.0F);
     void reset();
 
     [[nodiscard]] const Fluid25DConfig& config() const noexcept {
@@ -73,7 +53,7 @@ class Fluid25DOracle {
     [[nodiscard]] double total_water_volume_m3() const;
 
   private:
-    [[nodiscard]] Fluid25DStepLedger step_substep(float delta_seconds);
+    [[nodiscard]] Fluid25DStepLedger step_substep(float delta_seconds, float source_rate_scale);
     void derive_velocity_and_wet_state();
 
     Fluid25DConfig config_{};

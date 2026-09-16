@@ -1,0 +1,86 @@
+#version 450
+
+layout(local_size_x = 8, local_size_y = 8) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer DepthField {
+    float values[];
+}
+depth;
+layout(set = 0, binding = 1, std430) readonly buffer MomentumField {
+    vec4 values[];
+}
+momentum;
+layout(set = 0, binding = 2, std430) readonly buffer SourceRateField {
+    float values[];
+}
+source_rate;
+layout(set = 0, binding = 3, std430) readonly buffer SinkRateField {
+    float values[];
+}
+sink_rate;
+layout(set = 0, binding = 4, std430) buffer StatusField {
+    uint flags;
+    uint max_x_speed_bits;
+    uint max_y_speed_bits;
+    uint reserved;
+}
+status;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+}
+params;
+
+const uint INVALID_STATE = 1u << 1u;
+
+bool finite_float(float value) {
+    return !isnan(value) && !isinf(value);
+}
+
+void main() {
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    if (x >= width || y >= height) {
+        return;
+    }
+    uint index = y * width + x;
+    float dt = params.grid_dt_cell.z;
+    float minimum_wet_depth = params.physics.z;
+    float old_depth = depth.values[index];
+    vec2 old_momentum = momentum.values[index].xy;
+    float sourced_depth = old_depth + source_rate.values[index] * params.physics.w * dt;
+    float removed_depth = min(sourced_depth, sink_rate.values[index] * dt);
+    float source_sink_depth = sourced_depth - removed_depth;
+    vec2 source_sink_momentum = old_momentum;
+    if (sourced_depth > 0.0) {
+        source_sink_momentum *= source_sink_depth / sourced_depth;
+    } else {
+        source_sink_momentum = vec2(0.0);
+    }
+    if (source_sink_depth <= minimum_wet_depth) {
+        source_sink_momentum = vec2(0.0);
+    }
+    if (!finite_float(old_depth) || old_depth < 0.0 || !finite_float(old_momentum.x) ||
+        !finite_float(old_momentum.y) || !finite_float(sourced_depth) || sourced_depth < 0.0 ||
+        !finite_float(source_sink_depth) || source_sink_depth < 0.0 ||
+        !finite_float(source_sink_momentum.x) || !finite_float(source_sink_momentum.y)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+    float wave_speed = sqrt(params.physics.x * source_sink_depth);
+    float velocity_x =
+        source_sink_depth > minimum_wet_depth ? source_sink_momentum.x / source_sink_depth : 0.0;
+    float velocity_y =
+        source_sink_depth > minimum_wet_depth ? source_sink_momentum.y / source_sink_depth : 0.0;
+    float x_speed = abs(velocity_x) + wave_speed;
+    float y_speed = abs(velocity_y) + wave_speed;
+    if (!finite_float(x_speed) || !finite_float(y_speed)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+    atomicMax(status.max_x_speed_bits, floatBitsToUint(x_speed));
+    atomicMax(status.max_y_speed_bits, floatBitsToUint(y_speed));
+}
