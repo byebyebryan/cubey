@@ -44,6 +44,13 @@ inline constexpr float kVelocityToleranceMPerS = 0.002F;
 inline constexpr double kLedgerToleranceM3 = 0.003;
 inline constexpr float kCatchmentCameraBaseYaw = -0.52F;
 inline constexpr float kCatchmentCameraBasePitch = -0.92F;
+// The terrain-and-water presentation spans kilometres in X/Z while deliberately
+// compressing elevation. A conventional 0.1 m near plane leaves too little
+// forward-Z precision to distinguish a valid shallow sheet from its bed at the
+// far side of the catchment. This stays safely inside the closest permitted
+// orbit (30% of the horizontal extent) while scaling with every terrain crop.
+inline constexpr float kCatchmentCameraNearExtentFraction = 0.10F;
+inline constexpr float kCatchmentCameraMinimumNearPlaneM = 8.0F;
 
 [[nodiscard]] std::uint32_t headless_frame_count(const host::CommonRunConfig& config) {
     return config.frames == 0U ? 120U : config.frames;
@@ -298,7 +305,10 @@ class Fluid25DApp {
                                               std::max(48.0F, horizontal_extent * 4.0F));
         orbit_controller_.set_pitch_limits(-0.38F, 0.38F);
         orbit_controller_.set_home_distance(camera_distance);
-        camera_.set_projection(std::numbers::pi_v<float> / 3.0F, 0.1F,
+        const float near_plane = std::max(kCatchmentCameraMinimumNearPlaneM,
+                                          horizontal_extent *
+                                              kCatchmentCameraNearExtentFraction);
+        camera_.set_projection(std::numbers::pi_v<float> / 3.0F, near_plane,
                                camera_distance * 5.0F + scaled_terrain_span + 64.0F);
     }
 

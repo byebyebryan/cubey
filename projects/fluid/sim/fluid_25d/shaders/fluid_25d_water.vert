@@ -22,6 +22,17 @@ layout(location = 1) out vec3 world_normal;
 layout(location = 2) out float water_depth;
 layout(location = 3) out vec3 water_flow;
 
+// The catchment keeps metre-scale X/Z but compresses elevation for a readable
+// overview. Even with its scale-derived near plane, a 5 cm physical sheet can
+// land within the same forward-Z representable interval as its terrain bed at
+// the far side. Move only the raster depth by a few D32 intervals; world-space
+// shading and the physical surface height stay unchanged. Together with the
+// project-local camera near plane this remains below a decimetre at the
+// farthest default catchment samples, so genuinely foreground terrain retains
+// its occlusion. Eight float depth intervals are enough once the near plane no
+// longer spans metres to fractions of a millimetre.
+const float kWaterClipDepthBias = 8.0 * 1.19209290e-7;
+
 uint cell_index(uvec2 coordinate, uint width) {
     return coordinate.y * width + coordinate.x;
 }
@@ -65,4 +76,5 @@ void main() {
     world_normal = surface_normal(coordinate, width, height, cell_size);
     water_flow = velocity.values[index].xyz;
     gl_Position = params.view_projection * vec4(world_position, 1.0);
+    gl_Position.z -= kWaterClipDepthBias * gl_Position.w;
 }
