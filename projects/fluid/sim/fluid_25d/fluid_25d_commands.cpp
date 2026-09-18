@@ -149,7 +149,8 @@ void record_streamlet_reset(VkCommandBuffer command_buffer,
                             const cubey::render::ComputeDispatchGroups& groups,
                             const SimulationPushConstants& push_constants) {
     record_dispatch(recorder, resources.streamlet_reset_pipeline(),
-                    resources.streamlet_reset_descriptor_set(), groups, push_constants);
+                    resources.streamlet_reset_descriptor_set(resources.current_depth_is_a()), groups,
+                    push_constants);
     cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
 }
 
@@ -341,6 +342,18 @@ void record_flow_inspection_streamlets_internal(
     cubey::vulkan::record_compute_render_shader_write_barrier(command_buffer);
 }
 
+void record_flow_inspection_streamlet_reset_internal(
+    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    bool& streamlet_reset_requested) {
+    if (!streamlet_reset_requested) {
+        return;
+    }
+    const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    record_streamlet_reset(command_buffer, recorder, resources, streamlet_dispatch_groups(),
+                           presentation_cue_push_constants(config));
+    streamlet_reset_requested = false;
+}
+
 } // namespace
 
 void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
@@ -371,6 +384,13 @@ void record_fluid_25d_flow_inspection_streamlet_step(
     bool& streamlet_reset_requested) {
     record_flow_inspection_streamlets_internal(command_buffer, resources, config,
                                                streamlet_reset_requested);
+}
+
+void record_fluid_25d_flow_inspection_streamlet_reset(
+    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    bool& streamlet_reset_requested) {
+    record_flow_inspection_streamlet_reset_internal(command_buffer, resources, config,
+                                                    streamlet_reset_requested);
 }
 
 void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,

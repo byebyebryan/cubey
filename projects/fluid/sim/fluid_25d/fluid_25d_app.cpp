@@ -389,6 +389,19 @@ class Fluid25DApp {
                     if (profiler != nullptr) {
                         profiler->begin_frame(commands.command_buffer(), frame.frame_slot.index);
                     }
+                    if (record_flow_inspection_streamlets && streamlet_reset_requested_ &&
+                        !reset_requested_) {
+                        // Seed from the capture's current initial state before
+                        // the first numerical update. The reset is still
+                        // presentation-only and outside the solver timestamp;
+                        // later updates remain after each completed solver
+                        // record below. An explicit solver reset instead stays
+                        // queued for that post-solver step, where it observes
+                        // the reset numerical field.
+                        record_fluid_25d_flow_inspection_streamlet_reset(
+                            commands.command_buffer(), resources_, config_.simulation,
+                            streamlet_reset_requested_);
+                    }
                     record_fluid_25d_compute(commands.command_buffer(), resources_,
                                              config_.simulation, false, reset_requested_, false,
                                              profiler, frame.frame_slot.index, source_rate_scale);

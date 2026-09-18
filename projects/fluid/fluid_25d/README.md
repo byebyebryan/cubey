@@ -101,25 +101,34 @@ oracle/diagnostic readback. Pausing performs no cue update; calm water uses
 the stable base shade rather than a time-driven pattern.
 
 Flow Inspection has a separate project-local streamlet state buffer. A mark
-advects only after an accepted outer fixed step using final published velocity;
-it is hidden unless the sampled cell is wet and faster than the `0.02 m/s`
-active-flow inspection boundary. That boundary is a presentation gate, not a
-solver wetness-policy change. Dry beds and lakes at rest therefore have no
-marks. Deterministic,
-per-streamlet reset seeds begin in a steady-state age distribution; subsequent
-respawns use staggered activation and jittered lifetimes expressed in accepted
-fixed steps rather than wall time, preserving a coherent reading over the slow
-30 m terrain audition without a synchronized expiry band. A sticky
-finite-volume status is a strict no-write boundary for
-both streamlet reset and advection. This state never enters solver descriptors,
-wet/dry policy, diagnostics, profiler diagnostics, or CPU/GPU oracle readback.
-Composite, Water Isolation, and top-down Diagnostics never dispatch or draw
-streamlets. Flow Inspection also suppresses Composite's broad scalar-cue
-highlight so its streamlets are the only motion/direction language. Windowed
+advects only after an accepted outer fixed step using final published velocity.
+Inactive seeds require `0.025 m/s` to appear, while an established mark holds
+through speeds down to `0.013 m/s`; it then fades over eight simulation
+seconds before a single deterministic, staggered reseed attempt. A failed
+attempt consumes one cooldown and moves to the next deterministic seed, never
+repeating a dry or slow sample every accepted step. A mark that begins a
+speed-driven fade but recovers to the sustain threshold before disappearing
+smoothly restores; lifetime retirement remains terminal. Stored
+headings are smoothed in simulation time, and the renderer uses those headings
+and persistent opacity rather than a draw-time velocity cutoff. This makes the
+narrow pale head readable as a persistent downstream tracer rather than a
+field of blinking points. The current wet/finite/domain guard remains hard, so
+dry beds and lakes at rest have no marks. Reset samples the current
+parity-selected depth and velocity, allowing an established paused flow to be
+immediately legible without a host readback. These are presentation gates, not
+solver wetness-policy changes. A sticky finite-volume status is a strict
+no-write boundary for both streamlet reset and advection. This state never
+enters solver descriptors, wet/dry policy, diagnostics, profiler diagnostics,
+or CPU/GPU oracle readback. Composite, Water Isolation, and top-down
+Diagnostics never dispatch or draw streamlets. Flow Inspection also suppresses
+Composite's broad scalar-cue highlight so its streamlets are the only
+motion/direction language. Windowed
 Flow Inspection includes its optional render work in the existing aggregate
 presentation command span; explicitly selected headless Flow Inspection steps
 streamlets after each solver record, outside the solver-only timestamp/oracle
-lane.
+lane. Its initial reset is recorded before the first headless solver step, so
+the first capture remains the truthful unanimated initial state; this changes
+only presentation state and does not change solver dispatches or timestamps.
 
 ## Numerical contract
 

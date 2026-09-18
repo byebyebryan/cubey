@@ -1,5 +1,12 @@
 #version 450
 
+struct StreamletState {
+    // cell.xy, signed age, deterministic generation
+    vec4 cell_age_generation;
+    // smoothed heading.xy, opacity, retirement seconds remaining
+    vec4 direction_opacity_retire_seconds;
+};
+
 layout(set = 0, binding = 0, std430) readonly buffer TerrainField {
     float values[];
 } terrain;
@@ -10,7 +17,7 @@ layout(set = 0, binding = 2, std430) readonly buffer VelocityField {
     vec4 values[];
 } velocity;
 layout(set = 0, binding = 3, std430) readonly buffer StreamletField {
-    vec4 values[];
+    StreamletState values[];
 } streamlets;
 
 layout(push_constant) uniform CatchmentParams {
@@ -21,15 +28,15 @@ layout(push_constant) uniform CatchmentParams {
 } params;
 
 layout(location = 0) out vec2 frag_local;
-layout(location = 1) out float frag_visibility;
+layout(location = 1) out float frag_opacity;
 
-const float kMinimumStreamletSpeedMPerS = 0.02;
 // A streamlet spans independently projected, locally draped ribbon segments.
 // Keep a conservative D32 separation from the separately rasterized water
 // triangles so its sparse directional silhouette does not dissolve into
 // z-fighting along a rough imported bed.
 const float kWaterClipDepthBias = 256.0 * 1.19209290e-7;
 const uint kStreamletSegmentCount = 8u;
+const float kDirectionEpsilon = 1.0e-5;
 
 vec2 quad_corner(uint index) {
     const vec2 corners[6] = vec2[](vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
@@ -64,28 +71,33 @@ float sample_surface_height(vec2 cell, uint width, uint height) {
 void main() {
     uint width = uint(params.grid_cell.x);
     uint height = uint(params.grid_cell.y);
-    vec4 state = streamlets.values[uint(gl_InstanceIndex)];
-    if (state.z < 0.0 || !finite_vec2(state.xy)) {
+    StreamletState state = streamlets.values[uint(gl_InstanceIndex)];
+    if (state.cell_age_generation.z < 0.0 ||
+        state.direction_opacity_retire_seconds.z <= 0.0 ||
+        !finite_vec2(state.cell_age_generation.xy) ||
+        !finite_vec2(state.direction_opacity_retire_seconds.xy)) {
         frag_local = vec2(0.0);
-        frag_visibility = 0.0;
+        frag_opacity = 0.0;
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
         return;
     }
 
-    uvec2 coordinate = sample_coordinate(state.xy, width, height);
+    uvec2 coordinate = sample_coordinate(state.cell_age_generation.xy, width, height);
     uint index = coordinate.y * width + coordinate.x;
     float water_depth = depth.values[index];
-    vec2 flow = velocity.values[index].xy;
-    float speed = length(flow);
-    if (!finite_vec2(flow) || isnan(water_depth) || isinf(water_depth) ||
-        water_depth <= params.camera_wet.w || speed < kMinimumStreamletSpeedMPerS) {
+    vec2 current_flow = velocity.values[index].xy;
+    float direction_length = length(state.direction_opacity_retire_seconds.xy);
+    // This is a strict current wet/finite guard only. Do not reapply a draw-
+    // time speed cutoff: the lifecycle already owns hysteresis and retirement.
+    if (!finite_vec2(current_flow) || isnan(water_depth) || isinf(water_depth) ||
+        water_depth <= params.camera_wet.w || direction_length < kDirectionEpsilon) {
         frag_local = vec2(0.0);
-        frag_visibility = 0.0;
+        frag_opacity = 0.0;
         gl_Position = vec4(2.0, 2.0, 0.0, 1.0);
         return;
     }
 
-    vec2 direction = flow / speed;
+    vec2 direction = state.direction_opacity_retire_seconds.xy / direction_length;
     vec2 side = vec2(-direction.y, direction.x);
     uint segment = uint(gl_VertexIndex) / 6u;
     vec2 corner = quad_corner(uint(gl_VertexIndex));
@@ -94,23 +106,21 @@ void main() {
     float headness = clamp((along + 0.5 * float(kStreamletSegmentCount)) /
                                float(kStreamletSegmentCount),
                            0.0, 1.0);
-    // The narrow downstream end gives each sparse mark an unambiguous head;
-    // fragment alpha/color reinforce that direction without a busy texture.
-    // Collapse the pale downstream end to a point. This is a streamlet, not
-    // a particle sprite: its asymmetric silhouette makes flow direction legible.
-    float half_width = mix(0.50, 0.0, headness) * params.grid_cell.z;
+    // A slightly broader tail survives the overview camera, while the pale
+    // downstream end remains a point so direction stays unmistakable.
+    float half_width = mix(0.64, 0.0, headness) * params.grid_cell.z;
     // Eight one-cell ribbon segments trace the same eight-cell mark. Sampling
     // every segment vertex against the procedural surface keeps the mark on
     // steep imported terrain instead of depth-hiding a long flat quad.
     vec2 cell_offset = direction * (along * params.grid_cell.z) +
                        side * (corner.y * half_width);
-    vec2 streamlet_cell = state.xy + cell_offset / params.grid_cell.z;
+    vec2 streamlet_cell = state.cell_age_generation.xy + cell_offset / params.grid_cell.z;
     vec2 centered = (streamlet_cell - 0.5 * vec2(float(width - 1u), float(height - 1u))) *
                     params.grid_cell.z;
     float surface = sample_surface_height(streamlet_cell, width, height) * params.grid_cell.w;
     vec3 world_position = vec3(centered.x, surface + 0.005, centered.y);
     frag_local = vec2(headness * 2.0 - 1.0, corner.y);
-    frag_visibility = smoothstep(kMinimumStreamletSpeedMPerS, 0.065, speed);
+    frag_opacity = state.direction_opacity_retire_seconds.z;
     gl_Position = params.view_projection * vec4(world_position, 1.0);
     gl_Position.z -= kWaterClipDepthBias * gl_Position.w;
 }

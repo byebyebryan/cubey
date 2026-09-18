@@ -1088,8 +1088,11 @@ void test_presentation_cue_contract() {
                 kFluid25DStreamletVertexCount == 48U &&
                 kFluid25DStreamletLifetimeAcceptedSteps >= 72U &&
                 kFluid25DStreamletWarmupAcceptedSteps < kFluid25DStreamletLifetimeAcceptedSteps &&
-                kFluid25DStreamletFullSpeedMPerS > kFluid25DStreamletMinimumSpeedMPerS,
-            "Flow Inspection should keep a sparse, long-lived, staggered streamlet field");
+                kFluid25DStreamletActivationSpeedMPerS > 0.019828F &&
+                kFluid25DStreamletSustainSpeedMPerS < kFluid25DStreamletActivationSpeedMPerS &&
+                kFluid25DStreamletFadeSeconds >= 4.0F &&
+                kFluid25DStreamletCooldownAcceptedSteps > 0U,
+            "Flow Inspection should keep a sparse, hysteretic, long-lived streamlet field");
     const Fluid25DStreamletSeed streamlet_seed_a = fluid_25d_streamlet_seed(37U, 5U);
     const Fluid25DStreamletSeed streamlet_seed_b = fluid_25d_streamlet_seed(37U, 5U);
     require(streamlet_seed_a.normalized_x == streamlet_seed_b.normalized_x &&
@@ -1111,12 +1114,27 @@ void test_presentation_cue_contract() {
                 fixture_lifetime_seconds >= (1.0F / 60.0F) * 72.0F &&
                 fixture_lifetime_seconds <= (1.0F / 60.0F) * 120.0F,
             "streamlet lifetime should remain O(100) accepted steps across terrain and fixture timing");
+    const float cooldown_a = fluid_25d_streamlet_cooldown_seconds(2.0F, 37U, 5U);
+    const float cooldown_b = fluid_25d_streamlet_cooldown_seconds(2.0F, 37U, 5U);
     require(fluid_25d_streamlet_warmup_seconds(2.0F, 37U, 5U) <= 20.0F &&
-                !fluid_25d_streamlet_is_meaningful_flow(0.0F, 1.0F, 0.001F) &&
-                !fluid_25d_streamlet_is_meaningful_flow(1.0F, 0.0F, 0.001F) &&
-                !fluid_25d_streamlet_is_meaningful_flow(1.0F, 0.019F, 0.001F) &&
-                fluid_25d_streamlet_is_meaningful_flow(0.01F, 0.05F, 0.001F),
-            "streamlets should stay absent for dry/still water and gate on meaningful velocity");
+                cooldown_a == cooldown_b && cooldown_a >= 16.0F && cooldown_a <= 36.0F &&
+                fluid_25d_streamlet_fade_fraction(2.0F) == 0.25F &&
+                fluid_25d_streamlet_direction_blend(2.0F) > 0.0F &&
+                fluid_25d_streamlet_direction_blend(2.0F) < 1.0F &&
+                !fluid_25d_streamlet_has_safe_water(0.0F, 1.0F, 0.001F) &&
+                fluid_25d_streamlet_has_safe_water(1.0F, 0.0F, 0.001F) &&
+                !fluid_25d_streamlet_can_activate(1.0F, 0.019828F, 0.001F) &&
+                !fluid_25d_streamlet_can_activate(1.0F, 0.024F, 0.001F) &&
+                fluid_25d_streamlet_can_activate(1.0F, 0.05F, 0.001F) &&
+                !fluid_25d_streamlet_can_sustain(1.0F, 0.012F, 0.001F) &&
+                fluid_25d_streamlet_can_sustain(1.0F, 0.014F, 0.001F) &&
+                !fluid_25d_streamlet_lifetime_expired(20.0F, 20.0F) &&
+                fluid_25d_streamlet_lifetime_expired(20.1F, 20.0F) &&
+                fluid_25d_streamlet_should_retire(0.012F, 10.0F, 20.0F) &&
+                !fluid_25d_streamlet_should_retire(0.014F, 10.0F, 20.0F) &&
+                fluid_25d_streamlet_can_cancel_speed_retirement(0.014F, 10.0F, 20.0F) &&
+                !fluid_25d_streamlet_can_cancel_speed_retirement(0.014F, 20.1F, 20.0F),
+            "streamlets should have deterministic cooldown plus a strict entry, lower sustain, and recoverable speed retirement band");
 
     const std::filesystem::path shader_directory =
         std::filesystem::path(__FILE__).parent_path() / "shaders";
@@ -1176,6 +1194,9 @@ void test_presentation_cue_contract() {
         commands.find("record_streamlet_advection(", substep_loop);
     const std::size_t headless_streamlets =
         commands.find("record_fluid_25d_flow_inspection_streamlet_step(");
+    const std::size_t headless_streamlet_reset =
+        app.find("record_fluid_25d_flow_inspection_streamlet_reset(");
+    const std::size_t headless_compute = app.find("record_fluid_25d_compute(");
     require(substep_loop != std::string::npos && cue_update != std::string::npos &&
                 substep_loop < cue_update && pause_return != std::string::npos &&
                 pause_return < substep_loop,
@@ -1193,33 +1214,52 @@ void test_presentation_cue_contract() {
                 catchment_cue_b != std::string::npos && catchment_cue_a > catchment_pass &&
                 catchment_cue_b > catchment_pass,
             "the catchment pass should declare the cue buffers read by the water shader");
+    const std::size_t dormant_branch =
+        streamlet_advect.find("if (state.cell_age_generation.z < 0.0)");
+    const std::size_t dormant_activation_sample =
+        streamlet_advect.find("if (!has_safe_water", dormant_branch);
     require(streamlet_reset.find("streamlet_initial_state(index, 0u") != std::string::npos &&
                 streamlet_reset.find("status.values[0].x != 0u") != std::string::npos &&
-                streamlet_reset.find("deterministic steady-state distribution") !=
-                    std::string::npos &&
+                streamlet_reset.find("layout(set = 0, binding = 2") != std::string::npos &&
+                streamlet_reset.find("kActivationSpeedMPerS = 0.025") != std::string::npos &&
+                streamlet_reset.find("-streamlet_cooldown_seconds") != std::string::npos &&
                 streamlet_advect.find("status.values[0].x != 0u") != std::string::npos &&
                 streamlet_advect.find("streamlet_lifetime_seconds") != std::string::npos &&
+                streamlet_advect.find("kSustainSpeedMPerS = 0.013") != std::string::npos &&
+                dormant_branch != std::string::npos &&
+                dormant_activation_sample != std::string::npos &&
+                dormant_branch < dormant_activation_sample &&
+                streamlet_advect.find("if (!has_safe_water") == dormant_activation_sample &&
+                streamlet_advect.find("dormant_state(index, generation + 1u", dormant_branch) !=
+                    std::string::npos &&
+                streamlet_advect.find("!lifetime_expired && speed >= kSustainSpeedMPerS") !=
+                    std::string::npos &&
+                streamlet_advect.find("smoothed_direction") != std::string::npos &&
+                streamlet_advect.find("blended_length < kDirectionEpsilon") != std::string::npos &&
+                streamlet_advect.find("kFadeSeconds = 8.0") != std::string::npos &&
                 streamlet_advect.find("params.physics.w") != std::string::npos,
-            "streamlet compute should reset deterministically, freeze on rejected status, and scale lifetime by accepted-step timing");
+            "streamlet compute should reset from current flow, freeze on rejected status, and retain hysteretic lifecycle state");
     require(streamlet_vertex.find("gl_InstanceIndex") != std::string::npos &&
                 streamlet_vertex.find("const uint kStreamletSegmentCount = 8u") !=
                     std::string::npos &&
-                streamlet_vertex.find("mix(0.50, 0.0, headness)") != std::string::npos &&
+                streamlet_vertex.find("mix(0.64, 0.0, headness)") != std::string::npos &&
                 streamlet_vertex.find("uint segment = uint(gl_VertexIndex) / 6u") !=
                     std::string::npos &&
-                streamlet_vertex.find("speed < kMinimumStreamletSpeedMPerS") !=
-                    std::string::npos &&
-                streamlet_vertex.find("smoothstep(kMinimumStreamletSpeedMPerS, 0.065, speed)") !=
-                    std::string::npos &&
+                streamlet_vertex.find("direction_opacity_retire_seconds") != std::string::npos &&
+                streamlet_vertex.find("time speed cutoff") != std::string::npos &&
+                streamlet_fragment.find("fwidth(lateral_distance)") != std::string::npos &&
                 streamlet_fragment.find("mix(tail, head, headness)") != std::string::npos &&
                 streamlet_fragment.find("color * alpha") != std::string::npos,
-            "Flow Inspection should render sparse instanced tapered, premultiplied directional marks");
+            "Flow Inspection should render sparse stored-heading, antialiased, premultiplied directional marks");
     require(streamlet_update != std::string::npos && streamlet_update > substep_loop &&
                 headless_streamlets != std::string::npos &&
+                headless_streamlet_reset != std::string::npos &&
+                headless_compute != std::string::npos &&
+                headless_streamlet_reset < headless_compute &&
                 app.find("record_fluid_25d_flow_inspection_streamlet_step") !=
                     std::string::npos &&
                 app.find("bool streamlet_reset_requested_ = true;") != std::string::npos,
-            "streamlets should follow completed outer steps and use a separate explicit headless Flow Inspection step");
+            "streamlets should seed the initial headless field before solving, then follow completed outer steps separately");
 }
 
 void test_retained_flux_inertia() {

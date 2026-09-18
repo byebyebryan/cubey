@@ -24,11 +24,20 @@ inline constexpr std::uint32_t kFluid25DStreamletCount = 48U;
 inline constexpr std::uint32_t kFluid25DStreamletSegmentCount = 8U;
 inline constexpr std::uint32_t kFluid25DStreamletVertexCount =
     kFluid25DStreamletSegmentCount * 6U;
-// Match the retained diagnostics' active-flow boundary. This is deliberately
-// independent of the broader surface-cue gate: streamlets are sparse explicit
-// direction glyphs, not a request to animate pooled water.
-inline constexpr float kFluid25DStreamletMinimumSpeedMPerS = 0.02F;
-inline constexpr float kFluid25DStreamletFullSpeedMPerS = 0.065F;
+// Streamlets deliberately use a presentation-only hysteresis band. An
+// inactive seed must see decisively moving water before it can appear, while
+// an established mark is allowed to remain through the quieter parts of the
+// same coherent run. Both thresholds stay above/below the retained initial
+// mountain-sheet maximum (~0.019828 m/s) respectively, so the initial state
+// remains an empty, honest inspection surface.
+inline constexpr float kFluid25DStreamletActivationSpeedMPerS = 0.025F;
+inline constexpr float kFluid25DStreamletSustainSpeedMPerS = 0.013F;
+// Fade, cooldown, and heading response are all simulation-time quantities.
+// They are deliberately long enough to span several 2 s terrain steps while
+// still behaving proportionally on the smaller fixed-step fixtures.
+inline constexpr float kFluid25DStreamletFadeSeconds = 8.0F;
+inline constexpr float kFluid25DStreamletDirectionSmoothingSeconds = 6.0F;
+inline constexpr std::uint32_t kFluid25DStreamletCooldownAcceptedSteps = 8U;
 // Lifetime is expressed in accepted outer fixed steps rather than wall time.
 // That keeps a 30 m / 2 s terrain audition coherent for roughly one hundred
 // samples while remaining responsive on the 1 m product fixtures.
@@ -127,6 +136,30 @@ struct Fluid25DStreamletSeed {
            fluid_25d_presentation_cue_random(streamlet_index, generation, 0xbb67ae85U);
 }
 
+[[nodiscard]] inline float fluid_25d_streamlet_cooldown_seconds(
+    float fixed_delta_seconds, std::uint32_t streamlet_index, std::uint32_t generation) {
+    // The fixed base prevents an all-at-once retry, while the deterministic
+    // tail prevents an artificial pulse when an entire patch becomes active.
+    return fixed_delta_seconds *
+           (static_cast<float>(kFluid25DStreamletCooldownAcceptedSteps) +
+            fluid_25d_presentation_cue_random(streamlet_index, generation, 0x510e527fU) *
+                static_cast<float>(kFluid25DStreamletWarmupAcceptedSteps));
+}
+
+[[nodiscard]] inline float fluid_25d_streamlet_fade_fraction(float delta_seconds) {
+    if (!std::isfinite(delta_seconds) || delta_seconds <= 0.0F) {
+        return 0.0F;
+    }
+    return std::clamp(delta_seconds / kFluid25DStreamletFadeSeconds, 0.0F, 1.0F);
+}
+
+[[nodiscard]] inline float fluid_25d_streamlet_direction_blend(float delta_seconds) {
+    if (!std::isfinite(delta_seconds) || delta_seconds <= 0.0F) {
+        return 0.0F;
+    }
+    return 1.0F - std::exp(-delta_seconds / kFluid25DStreamletDirectionSmoothingSeconds);
+}
+
 [[nodiscard]] inline Fluid25DStreamletSeed
 fluid_25d_streamlet_seed(std::uint32_t streamlet_index, std::uint32_t generation) {
     return {
@@ -142,12 +175,49 @@ fluid_25d_streamlet_seed(std::uint32_t streamlet_index, std::uint32_t generation
     };
 }
 
-[[nodiscard]] inline bool fluid_25d_streamlet_is_meaningful_flow(float water_depth_m,
-                                                                   float speed_m_per_s,
-                                                                   float minimum_wet_depth_m) {
+[[nodiscard]] inline bool fluid_25d_streamlet_has_safe_water(float water_depth_m,
+                                                              float speed_m_per_s,
+                                                              float minimum_wet_depth_m) {
     return std::isfinite(water_depth_m) && std::isfinite(speed_m_per_s) &&
-           std::isfinite(minimum_wet_depth_m) && water_depth_m > minimum_wet_depth_m &&
-           speed_m_per_s >= kFluid25DStreamletMinimumSpeedMPerS;
+           std::isfinite(minimum_wet_depth_m) && water_depth_m > minimum_wet_depth_m;
+}
+
+[[nodiscard]] inline bool fluid_25d_streamlet_can_activate(float water_depth_m,
+                                                            float speed_m_per_s,
+                                                            float minimum_wet_depth_m) {
+    return fluid_25d_streamlet_has_safe_water(water_depth_m, speed_m_per_s, minimum_wet_depth_m) &&
+           speed_m_per_s >= kFluid25DStreamletActivationSpeedMPerS;
+}
+
+[[nodiscard]] inline bool fluid_25d_streamlet_can_sustain(float water_depth_m,
+                                                           float speed_m_per_s,
+                                                           float minimum_wet_depth_m) {
+    return fluid_25d_streamlet_has_safe_water(water_depth_m, speed_m_per_s, minimum_wet_depth_m) &&
+           speed_m_per_s >= kFluid25DStreamletSustainSpeedMPerS;
+}
+
+// A speed-driven retirement can be cancelled when the same finite, wet mark
+// recovers to the sustain threshold. Lifetime retirement is terminal, so it
+// does not oscillate with noisy speed samples near the lower threshold.
+[[nodiscard]] inline bool fluid_25d_streamlet_lifetime_expired(float age_seconds,
+                                                                float lifetime_seconds) {
+    return std::isfinite(age_seconds) && std::isfinite(lifetime_seconds) &&
+           age_seconds > lifetime_seconds;
+}
+
+[[nodiscard]] inline bool fluid_25d_streamlet_should_retire(float speed_m_per_s,
+                                                             float age_seconds,
+                                                             float lifetime_seconds) {
+    return !std::isfinite(speed_m_per_s) ||
+           fluid_25d_streamlet_lifetime_expired(age_seconds, lifetime_seconds) ||
+           speed_m_per_s < kFluid25DStreamletSustainSpeedMPerS;
+}
+
+[[nodiscard]] inline bool fluid_25d_streamlet_can_cancel_speed_retirement(
+    float speed_m_per_s, float age_seconds, float lifetime_seconds) {
+    return std::isfinite(speed_m_per_s) &&
+           !fluid_25d_streamlet_lifetime_expired(age_seconds, lifetime_seconds) &&
+           speed_m_per_s >= kFluid25DStreamletSustainSpeedMPerS;
 }
 
 } // namespace cubey::projects::fluid::fluid_25d

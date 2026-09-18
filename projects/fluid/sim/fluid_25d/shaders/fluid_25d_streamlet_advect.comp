@@ -2,6 +2,13 @@
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
+struct StreamletState {
+    // cell.xy, signed age, deterministic generation
+    vec4 cell_age_generation;
+    // smoothed heading.xy, opacity, retirement seconds remaining
+    vec4 direction_opacity_retire_seconds;
+};
+
 layout(set = 0, binding = 0, std430) readonly buffer DepthField {
     float values[];
 } depth;
@@ -12,7 +19,7 @@ layout(set = 0, binding = 2, std430) readonly buffer PresentationStatusField {
     uvec4 values[];
 } status;
 layout(set = 0, binding = 3, std430) buffer StreamletField {
-    vec4 values[];
+    StreamletState values[];
 } streamlets;
 
 layout(push_constant) uniform SimulationParams {
@@ -20,7 +27,16 @@ layout(push_constant) uniform SimulationParams {
     vec4 physics;
 } params;
 
-const float kMinimumStreamletSpeedMPerS = 0.02;
+// Keep these presentation-lifecycle constants synchronized with
+// fluid_25d_presentation.h and the reset shader. They never enter solver
+// descriptors, diagnostics, or oracle state.
+const float kActivationSpeedMPerS = 0.025;
+const float kSustainSpeedMPerS = 0.013;
+const float kFadeSeconds = 8.0;
+const float kDirectionSmoothingSeconds = 6.0;
+const float kDirectionEpsilon = 1.0e-5;
+const float kCooldownAcceptedSteps = 8.0;
+const float kWarmupAcceptedSteps = 10.0;
 
 uint streamlet_hash(uint x, uint y, uint salt) {
     uint value = x * 0x8da6b343u ^ y * 0xd8163841u ^ salt;
@@ -36,15 +52,18 @@ float streamlet_random(uint index, uint generation, uint salt) {
     return float(streamlet_hash(index, generation, salt) & 0x00ffffffu) / 16777215.0;
 }
 
-vec4 streamlet_seed(uint index, uint generation, uint width, uint height) {
+vec2 streamlet_seed_cell(uint index, uint generation, uint width, uint height) {
     vec2 interior_extent = vec2(max(0.0, float(width) - 2.0),
                                 max(0.0, float(height) - 2.0));
-    vec2 cell = vec2(0.5) + vec2(streamlet_random(index, generation, 0x7f4a7c15u),
-                                  streamlet_random(index, generation, 0x6a09e667u)) *
-                                  interior_extent;
-    float delay = streamlet_random(index, generation, 0xbb67ae85u) *
-                  params.physics.w * (10.0 / 96.0);
-    return vec4(cell, -delay, float(generation));
+    return vec2(0.5) + vec2(streamlet_random(index, generation, 0x7f4a7c15u),
+                             streamlet_random(index, generation, 0x6a09e667u)) *
+                             interior_extent;
+}
+
+float streamlet_cooldown_seconds(uint index, uint generation) {
+    return params.grid_dt_cell.z *
+           (kCooldownAcceptedSteps +
+            streamlet_random(index, generation, 0x510e527fu) * kWarmupAcceptedSteps);
 }
 
 float streamlet_lifetime_seconds(uint index, uint generation) {
@@ -65,12 +84,44 @@ uvec2 sample_coordinate(vec2 cell, uint width, uint height) {
     return uvec2(floor(bounded + vec2(0.5)));
 }
 
-bool meaningful_flow(uvec2 coordinate, uint width) {
+bool has_safe_water(uvec2 coordinate, uint width, out vec2 flow, out float speed) {
     uint field_index = coordinate.y * width + coordinate.x;
     float water_depth = depth.values[field_index];
-    vec2 flow = velocity.values[field_index].xy;
+    flow = velocity.values[field_index].xy;
+    speed = length(flow);
     return !isnan(water_depth) && !isinf(water_depth) && finite_vec2(flow) &&
-           water_depth > params.physics.z && length(flow) >= kMinimumStreamletSpeedMPerS;
+           water_depth > params.physics.z;
+}
+
+bool can_activate(float speed) {
+    return speed >= kActivationSpeedMPerS;
+}
+
+StreamletState dormant_state(uint index, uint generation, uint width, uint height) {
+    StreamletState state;
+    state.cell_age_generation = vec4(streamlet_seed_cell(index, generation, width, height),
+                                     -streamlet_cooldown_seconds(index, generation),
+                                     float(generation));
+    state.direction_opacity_retire_seconds = vec4(0.0);
+    return state;
+}
+
+vec2 smoothed_direction(vec2 stored_direction, vec2 flow, float speed, float delta_seconds) {
+    if (speed < kDirectionEpsilon) {
+        return stored_direction;
+    }
+    vec2 target_direction = flow / speed;
+    float stored_length = length(stored_direction);
+    if (!finite_vec2(stored_direction) || stored_length < kDirectionEpsilon) {
+        return target_direction;
+    }
+    float blend = 1.0 - exp(-delta_seconds / kDirectionSmoothingSeconds);
+    vec2 blended_direction = mix(stored_direction / stored_length, target_direction, blend);
+    float blended_length = length(blended_direction);
+    if (!finite_vec2(blended_direction) || blended_length < kDirectionEpsilon) {
+        return target_direction;
+    }
+    return blended_direction / blended_length;
 }
 
 void main() {
@@ -86,30 +137,91 @@ void main() {
 
     uint width = uint(params.grid_dt_cell.x);
     uint height = uint(params.grid_dt_cell.y);
-    vec4 state = streamlets.values[index];
-    uint generation = (!isnan(state.w) && !isinf(state.w) && state.w >= 0.0)
-                          ? uint(state.w + 0.5)
+    float delta_seconds = params.grid_dt_cell.z;
+    StreamletState state = streamlets.values[index];
+    uint generation = (!isnan(state.cell_age_generation.w) &&
+                       !isinf(state.cell_age_generation.w) &&
+                       state.cell_age_generation.w >= 0.0)
+                          ? uint(state.cell_age_generation.w + 0.5)
                           : 0u;
-    if (!inside_cell_domain(state.xy, width, height) || isnan(state.z) || isinf(state.z) ||
-        state.z > streamlet_lifetime_seconds(index, generation)) {
-        streamlets.values[index] = streamlet_seed(index, generation + 1u, width, height);
+    if (!inside_cell_domain(state.cell_age_generation.xy, width, height) ||
+        isnan(state.cell_age_generation.z) || isinf(state.cell_age_generation.z)) {
+        streamlets.values[index] = dormant_state(index, generation + 1u, width, height);
         return;
     }
 
-    uvec2 coordinate = sample_coordinate(state.xy, width, height);
-    if (!meaningful_flow(coordinate, width)) {
-        streamlets.values[index] = streamlet_seed(index, generation + 1u, width, height);
+    if (state.cell_age_generation.z < 0.0) {
+        state.cell_age_generation.z += delta_seconds;
+        if (state.cell_age_generation.z < 0.0) {
+            streamlets.values[index] = state;
+            return;
+        }
+        // A dormant mark does not read the field or re-roll while its
+        // staggered cooldown remains. On expiry it gets one deterministic
+        // activation sample; a failed sample advances one generation and
+        // starts a fresh cooldown rather than retrying every accepted step.
+        uvec2 coordinate = sample_coordinate(state.cell_age_generation.xy, width, height);
+        vec2 flow;
+        float speed;
+        if (!has_safe_water(coordinate, width, flow, speed) || !can_activate(speed)) {
+            streamlets.values[index] = dormant_state(index, generation + 1u, width, height);
+            return;
+        }
+        state.cell_age_generation.z = 0.0;
+        state.direction_opacity_retire_seconds = vec4(flow / speed, 0.0, 0.0);
+        streamlets.values[index] = state;
         return;
     }
 
-    uint field_index = coordinate.y * width + coordinate.x;
-    state.xy += velocity.values[field_index].xy *
-                (params.grid_dt_cell.z / params.grid_dt_cell.w);
-    state.z += params.grid_dt_cell.z;
-    if (!inside_cell_domain(state.xy, width, height) ||
-        state.z > streamlet_lifetime_seconds(index, generation)) {
-        streamlets.values[index] = streamlet_seed(index, generation + 1u, width, height);
+    uvec2 coordinate = sample_coordinate(state.cell_age_generation.xy, width, height);
+    vec2 flow;
+    float speed;
+    // This is deliberately a hard current-state safety guard. A dry or
+    // nonfinite field never displays a retired arrow over empty terrain.
+    if (!has_safe_water(coordinate, width, flow, speed)) {
+        streamlets.values[index] = dormant_state(index, generation + 1u, width, height);
         return;
+    }
+
+    state.cell_age_generation.z += delta_seconds;
+    state.direction_opacity_retire_seconds.xy = smoothed_direction(
+        state.direction_opacity_retire_seconds.xy, flow, speed, delta_seconds);
+    // Advect positions from the real accepted velocity even while a mark is
+    // retiring. Rendering uses the stored heading, eliminating draw-time
+    // direction snaps from locally noisy samples.
+    state.cell_age_generation.xy += flow * (delta_seconds / params.grid_dt_cell.w);
+    if (!inside_cell_domain(state.cell_age_generation.xy, width, height)) {
+        streamlets.values[index] = dormant_state(index, generation + 1u, width, height);
+        return;
+    }
+
+    bool lifetime_expired =
+        state.cell_age_generation.z > streamlet_lifetime_seconds(index, generation);
+    if (!lifetime_expired && speed >= kSustainSpeedMPerS &&
+        state.direction_opacity_retire_seconds.w > 0.0) {
+        // This retirement was speed-driven. Restore the established mark if
+        // the live flow recovers before it has faded out.
+        state.direction_opacity_retire_seconds.w = 0.0;
+    }
+    if (state.direction_opacity_retire_seconds.w <= 0.0 &&
+        (speed < kSustainSpeedMPerS || lifetime_expired)) {
+        state.direction_opacity_retire_seconds.w = kFadeSeconds;
+    }
+    float fade_fraction = clamp(delta_seconds / kFadeSeconds, 0.0, 1.0);
+    if (state.direction_opacity_retire_seconds.w > 0.0) {
+        state.direction_opacity_retire_seconds.z =
+            max(0.0, state.direction_opacity_retire_seconds.z - fade_fraction);
+        state.direction_opacity_retire_seconds.w =
+            max(0.0, state.direction_opacity_retire_seconds.w - delta_seconds);
+        if (state.direction_opacity_retire_seconds.z <= 0.0) {
+            // The old mark has fully faded before this single deterministic
+            // reseed. Future accepted steps only advance its cooldown.
+            streamlets.values[index] = dormant_state(index, generation + 1u, width, height);
+            return;
+        }
+    } else {
+        state.direction_opacity_retire_seconds.z =
+            min(1.0, state.direction_opacity_retire_seconds.z + fade_fraction);
     }
     streamlets.values[index] = state;
 }

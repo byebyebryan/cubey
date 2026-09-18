@@ -248,8 +248,13 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
         device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
     presentation_cue_depth_b_b_to_a_descriptors_.emplace(
         device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
-    streamlet_reset_descriptors_.emplace(device,
-                                         storage_set_info(2U, VK_SHADER_STAGE_COMPUTE_BIT));
+    // Reset samples the parity-selected published depth/velocity so Flow
+    // Inspection can become immediately useful while paused, without a host
+    // readback or a solver-state write.
+    streamlet_reset_a_descriptors_.emplace(device,
+                                           storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    streamlet_reset_b_descriptors_.emplace(device,
+                                           storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
     streamlet_advection_a_descriptors_.emplace(
         device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
     streamlet_advection_b_descriptors_.emplace(
@@ -455,10 +460,16 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
                                      presentation_cue_b(), presentation_cue_a());
 
     const cubey::vulkan::Buffer& streamlet_status = presentation_cue_status();
-    writes.storage_buffer(streamlet_reset_descriptors_->set(), 0, streamlets().handle(),
-                          streamlets().size())
-        .storage_buffer(streamlet_reset_descriptors_->set(), 1, streamlet_status.handle(),
-                        streamlet_status.size());
+    const auto write_streamlet_reset = [this, &writes, &streamlet_status](
+                                           VkDescriptorSet set,
+                                           const cubey::vulkan::Buffer& depth) {
+        writes.storage_buffer(set, 0, streamlets().handle(), streamlets().size())
+            .storage_buffer(set, 1, streamlet_status.handle(), streamlet_status.size())
+            .storage_buffer(set, 2, depth.handle(), depth.size())
+            .storage_buffer(set, 3, velocity().handle(), velocity().size());
+    };
+    write_streamlet_reset(streamlet_reset_a_descriptors_->set(), depth_a());
+    write_streamlet_reset(streamlet_reset_b_descriptors_->set(), depth_b());
     const auto write_streamlet_advection =
         [this, &writes, &streamlet_status](VkDescriptorSet set,
                                            const cubey::vulkan::Buffer& depth) {
@@ -512,7 +523,7 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
                              "fluid_25d_presentation_cue_advect.comp.spv",
                              presentation_cue_depth_a_a_to_b_descriptors_->layout());
     emplace_compute_pipeline(streamlet_reset_pipeline_, device, "fluid_25d_streamlet_reset.comp.spv",
-                             streamlet_reset_descriptors_->layout());
+                             streamlet_reset_a_descriptors_->layout());
     emplace_compute_pipeline(streamlet_advection_pipeline_, device,
                              "fluid_25d_streamlet_advect.comp.spv",
                              streamlet_advection_a_descriptors_->layout());
@@ -609,7 +620,8 @@ void Fluid25DGpuResources::destroy_all_resources() {
     streamlet_render_a_descriptors_.reset();
     streamlet_advection_b_descriptors_.reset();
     streamlet_advection_a_descriptors_.reset();
-    streamlet_reset_descriptors_.reset();
+    streamlet_reset_b_descriptors_.reset();
+    streamlet_reset_a_descriptors_.reset();
     render_b_descriptors_.reset();
     render_a_descriptors_.reset();
     depth_b_to_a_descriptors_.reset();

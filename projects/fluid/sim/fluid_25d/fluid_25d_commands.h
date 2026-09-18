@@ -36,6 +36,14 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
                               cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
                               std::uint32_t frame_slot_index = 0U, float source_rate_scale = 1.0F);
 
+// An opt-in presentation-only reset for headless Flow Inspection. Call this
+// before the fixed solver record when a headless capture starts so its initial
+// empty field cannot be mistaken for one completed flow step. It remains
+// outside numerical profiler/oracle paths and is status-gated.
+void record_fluid_25d_flow_inspection_streamlet_reset(
+    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    bool& streamlet_reset_requested);
+
 // An opt-in presentation-only step for headless Flow Inspection. Call it
 // after the fixed solver step has returned so numerical profiler/oracle paths
 // remain untouched; the implementation is status-gated and never reads back.

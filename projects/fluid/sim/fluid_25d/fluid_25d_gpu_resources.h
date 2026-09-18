@@ -49,11 +49,13 @@ struct Fluid25DFiniteVolumeStatusGpu {
     std::array<std::uint32_t, 4> flags_reserved{};
 };
 // Flow Inspection-only persistent render state. `cell_xy_age_generation`
-// stores raster-cell coordinates, a signed age (negative during a staggered
-// warmup), and a deterministic respawn generation. It is intentionally not a
-// numerical particle/state representation.
+// stores raster-cell coordinates, a signed age (negative during a deterministic
+// cooldown), and a respawn generation. The second vec4 carries the smoothed
+// reading direction, opacity, and remaining retirement time. It is
+// intentionally not a numerical particle/state representation.
 struct Fluid25DStreamletGpu {
     std::array<float, 4> cell_xy_age_generation{};
+    std::array<float, 4> direction_xy_opacity_retire_seconds{};
 };
 
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusCflRejected = 1U << 0U;
@@ -66,7 +68,7 @@ static_assert(sizeof(Fluid25DMomentumGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DVelocityGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DFiniteVolumeStatusGpu) == sizeof(std::uint32_t) * 4U);
-static_assert(sizeof(Fluid25DStreamletGpu) == sizeof(float) * 4U);
+static_assert(sizeof(Fluid25DStreamletGpu) == sizeof(float) * 8U);
 
 class Fluid25DGpuResources {
   public:
@@ -209,9 +211,12 @@ class Fluid25DGpuResources {
                    ? presentation_cue_depth_b_b_to_a_descriptors_->set()
                    : VK_NULL_HANDLE;
     }
-    [[nodiscard]] VkDescriptorSet streamlet_reset_descriptor_set() const noexcept {
-        return streamlet_reset_descriptors_.has_value() ? streamlet_reset_descriptors_->set()
-                                                         : VK_NULL_HANDLE;
+    [[nodiscard]] VkDescriptorSet streamlet_reset_descriptor_set(bool depth_is_a) const noexcept {
+        return depth_is_a && streamlet_reset_a_descriptors_.has_value()
+                   ? streamlet_reset_a_descriptors_->set()
+                   : (!depth_is_a && streamlet_reset_b_descriptors_.has_value()
+                          ? streamlet_reset_b_descriptors_->set()
+                          : VK_NULL_HANDLE);
     }
     [[nodiscard]] VkDescriptorSet
     streamlet_advection_descriptor_set(bool depth_is_a) const noexcept {
@@ -299,7 +304,8 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_depth_a_b_to_a_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_depth_b_a_to_b_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_depth_b_b_to_a_descriptors_;
-    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_reset_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_reset_a_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_reset_b_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_advection_a_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_advection_b_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_render_a_descriptors_;
