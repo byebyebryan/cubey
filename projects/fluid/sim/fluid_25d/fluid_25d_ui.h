@@ -14,6 +14,7 @@ struct Fluid25DUiContext {
     bool& paused;
     bool& reset_requested;
     bool& presentation_cue_reset_requested;
+    bool& streamlet_reset_requested;
 };
 
 void draw_fluid_25d_ui(Fluid25DUiContext ui);

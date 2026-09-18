@@ -36,9 +36,11 @@ void main() {
     float sparse_highlight = smoothstep(0.58, 0.78, clamp(presentation_cue, 0.0, 1.0)) *
                              motion_strength;
     bool water_isolation = params.presentation.y > 0.5 && params.presentation.y < 1.5;
-    if (water_isolation) {
-        // Isolation is for finding the wet footprint, not reading the
-        // advected motion texture; leave that cue completely out of this mode.
+    bool flow_inspection = params.presentation.y > 1.5;
+    if (water_isolation || flow_inspection) {
+        // Isolation finds the wet footprint; Flow Inspection reserves its
+        // motion language for sparse directional streamlets. Neither reading
+        // mode should compete with the broad advected surface highlight.
         sparse_highlight = 0.0;
     }
     vec3 normal = normalize(world_normal);

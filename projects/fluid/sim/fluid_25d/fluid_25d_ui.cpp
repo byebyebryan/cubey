@@ -29,6 +29,7 @@ constexpr std::array<Fluid25DDebugView, 6> kDebugViews{
 void request_reset(Fluid25DUiContext& ui) {
     ui.reset_requested = true;
     ui.presentation_cue_reset_requested = true;
+    ui.streamlet_reset_requested = true;
     ui.windowed_pacing.reset();
 }
 
@@ -76,10 +77,13 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     ImGui::SeparatorText("How to read it");
     ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
                       "darker blue is deeper water.");
-    ImGui::TextWrapped("The moving highlight is a passive render-only marker advected by "
-                      "velocity; it is not waves or a depth cue.");
+    ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "
+                      "by velocity; it is not waves or a depth cue.");
     ImGui::TextWrapped("Water Isolation quiets the bed to expose the wet edge. "
-                      "Flow Inspection reserves the explicit flow-reading view.");
+                      "Flow Inspection suppresses that broad highlight and adds sparse tapered "
+                      "streamlets: the narrow, pale head "
+                      "points downstream. They are render-only velocity tracers, not water "
+                      "particles or waves.");
     ImGui::TextDisabled("Space pause/resume  R reset  A diagnostics  D field  drag orbit");
     ImGui::End();
 }

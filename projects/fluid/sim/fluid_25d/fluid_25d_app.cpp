@@ -174,6 +174,7 @@ class Fluid25DApp {
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
                                   const FrameTiming& timing) {
+            const bool was_flow_inspection_active = flow_inspection_active();
             const auto input = context.filtered_input();
             orbit_controller_.update_pointer_input(input, timing.delta_seconds);
             if (input.key_pressed(cubey::input::Key::Space)) {
@@ -182,6 +183,7 @@ class Fluid25DApp {
             if (input.key_pressed(cubey::input::Key::R)) {
                 reset_requested_ = true;
                 presentation_cue_reset_requested_ = true;
+                streamlet_reset_requested_ = true;
                 windowed_pacing_.reset();
             }
             if (input.key_pressed(cubey::input::Key::D)) {
@@ -192,6 +194,9 @@ class Fluid25DApp {
                 presentation_view_ = presentation_view_ == Fluid25DPresentationView::Diagnostics
                                          ? Fluid25DPresentationView::Catchment
                                          : Fluid25DPresentationView::Diagnostics;
+            }
+            if (!was_flow_inspection_active && flow_inspection_active()) {
+                streamlet_reset_requested_ = true;
             }
         };
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
@@ -219,6 +224,7 @@ class Fluid25DApp {
     }
 
     void draw_ui() {
+        const bool was_flow_inspection_active = flow_inspection_active();
         draw_fluid_25d_ui({
             .title = "Fluid 2.5D",
             .presentation_view = presentation_view_,
@@ -229,7 +235,13 @@ class Fluid25DApp {
             .paused = paused_,
             .reset_requested = reset_requested_,
             .presentation_cue_reset_requested = presentation_cue_reset_requested_,
+            .streamlet_reset_requested = streamlet_reset_requested_,
         });
+        if (!was_flow_inspection_active && flow_inspection_active()) {
+            // Flow Inspection starts from a deterministic render-only field;
+            // changing the reading mode never changes solver state.
+            streamlet_reset_requested_ = true;
+        }
     }
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
@@ -273,7 +285,8 @@ class Fluid25DApp {
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             catchment_view_, debug_view_, render_camera(render_frame.color_target.extent),
             Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
-            presentation_cue_reset_requested_, profiler, render_frame.frame_slot.index,
+            presentation_cue_reset_requested_, streamlet_reset_requested_, profiler,
+            render_frame.frame_slot.index,
             source_rate_scales);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -342,6 +355,11 @@ class Fluid25DApp {
         };
     }
 
+    [[nodiscard]] bool flow_inspection_active() const noexcept {
+        return presentation_view_ == Fluid25DPresentationView::Catchment &&
+               catchment_view_ == Fluid25DCatchmentView::FlowInspection;
+    }
+
     void record_headless_simulation_frame(cubey::ProjectGpuServices& gpu,
                                           const cubey::host::HeadlessCaptureFrame& frame,
                                           cubey::profiling::ProfileRecorder* profile_recorder) {
@@ -360,11 +378,12 @@ class Fluid25DApp {
             }
         }
         const float source_rate_scale = source_schedule_.source_rate_scale(config_.simulation);
+        const bool record_flow_inspection_streamlets = flow_inspection_active();
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_25d headless simulation frame",
             .work =
-                [this, frame, profile_recorder, source_rate_scale,
-                 frame_index](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                [this, frame, profile_recorder, source_rate_scale, frame_index,
+                 record_flow_inspection_streamlets](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
                     if (profiler != nullptr) {
@@ -373,6 +392,14 @@ class Fluid25DApp {
                     record_fluid_25d_compute(commands.command_buffer(), resources_,
                                              config_.simulation, false, reset_requested_, false,
                                              profiler, frame.frame_slot.index, source_rate_scale);
+                    if (record_flow_inspection_streamlets) {
+                        // This runs after the direct solver recorder returns,
+                        // so headless numerical timestamps and oracle command
+                        // streams remain solver-only.
+                        record_fluid_25d_flow_inspection_streamlet_step(
+                            commands.command_buffer(), resources_, config_.simulation,
+                            streamlet_reset_requested_);
+                    }
                     commands.submit_and_wait();
                     if (profiler != nullptr) {
                         profiler->collect(frame.frame_slot.index);
@@ -661,7 +688,7 @@ class Fluid25DApp {
                 target, resources_, config_.simulation, presentation_view_, catchment_view_,
                 debug_view_, render_camera(target.extent),
                 Fluid25DRenderTargetMode::ColorAttachment, false, false, reset_requested_,
-                presentation_cue_reset_requested_);
+                presentation_cue_reset_requested_, streamlet_reset_requested_);
             graph_executor_.record(
                 {
                     .device = &context.device(),
@@ -707,6 +734,7 @@ class Fluid25DApp {
     // render-only cue separately on the first frame or an explicit reset.
     bool reset_requested_ = false;
     bool presentation_cue_reset_requested_ = true;
+    bool streamlet_reset_requested_ = true;
 };
 
 } // namespace

@@ -71,6 +71,19 @@ inline constexpr VkDeviceSize kSimulationPushConstantBytes = sizeof(float) * 8U;
     return pass;
 }
 
+[[nodiscard]] cubey::render::MaterialPassInfo streamlet_pass_info() {
+    cubey::render::MaterialPassInfo pass = terrain_pass_info();
+    pass.label = "fluid_25d.catchment_streamlets";
+    pass.depth_write = false;
+    pass.blend_enable = true;
+    // Flow Inspection streamlets also write premultiplied source-over color.
+    pass.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
+    pass.dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    pass.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
+    pass.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    return pass;
+}
+
 void emplace_compute_pipeline(std::optional<cubey::render::ComputePipelineResource>& destination,
                               cubey::vulkan::Device& device, const char* filename,
                               VkDescriptorSetLayout descriptor_layout) {
@@ -180,6 +193,12 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<Fluid25DLedgerGpu> zero_ledger(cells);
     const std::vector<float> zero_presentation_cue(cells);
     const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_presentation_status(1U);
+    std::vector<Fluid25DStreamletGpu> inactive_streamlets(kFluid25DStreamletCount);
+    for (Fluid25DStreamletGpu& streamlet : inactive_streamlets) {
+        // A failed status-gated reset must remain visibly inert rather than
+        // rendering the value-initialized origin as a stack of false marks.
+        streamlet.cell_xy_age_generation[2] = -1.0F;
+    }
     if (config.solver == Fluid25DSolver::VirtualPipes) {
         const std::vector<Fluid25DFluxGpu> zero_flux(cells);
         flux_.emplace(upload(zero_flux, static_buffer_usage(), "fluid_25d face flux upload"));
@@ -207,6 +226,8 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
                                        "fluid_25d presentation cue B upload"));
     presentation_cue_virtual_status_.emplace(upload(zero_presentation_status, static_buffer_usage(),
                                                     "fluid_25d presentation cue status upload"));
+    streamlets_.emplace(upload(inactive_streamlets, static_buffer_usage(),
+                               "fluid_25d flow inspection streamlets"));
     current_depth_is_a_ = true;
     presentation_cue_parity_.reset();
 }
@@ -227,6 +248,16 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
         device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
     presentation_cue_depth_b_b_to_a_descriptors_.emplace(
         device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
+    streamlet_reset_descriptors_.emplace(device,
+                                         storage_set_info(2U, VK_SHADER_STAGE_COMPUTE_BIT));
+    streamlet_advection_a_descriptors_.emplace(
+        device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    streamlet_advection_b_descriptors_.emplace(
+        device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    streamlet_render_a_descriptors_.emplace(
+        device, storage_set_info(4U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
+    streamlet_render_b_descriptors_.emplace(
+        device, storage_set_info(4U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
 
     cubey::vulkan::DescriptorWriteBatch writes;
     if (solver_ == Fluid25DSolver::VirtualPipes) {
@@ -422,6 +453,31 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
                                      presentation_cue_a(), presentation_cue_b());
     write_presentation_cue_advection(presentation_cue_depth_b_b_to_a_descriptors_->set(), depth_b(),
                                      presentation_cue_b(), presentation_cue_a());
+
+    const cubey::vulkan::Buffer& streamlet_status = presentation_cue_status();
+    writes.storage_buffer(streamlet_reset_descriptors_->set(), 0, streamlets().handle(),
+                          streamlets().size())
+        .storage_buffer(streamlet_reset_descriptors_->set(), 1, streamlet_status.handle(),
+                        streamlet_status.size());
+    const auto write_streamlet_advection =
+        [this, &writes, &streamlet_status](VkDescriptorSet set,
+                                           const cubey::vulkan::Buffer& depth) {
+            writes.storage_buffer(set, 0, depth.handle(), depth.size())
+                .storage_buffer(set, 1, velocity().handle(), velocity().size())
+                .storage_buffer(set, 2, streamlet_status.handle(), streamlet_status.size())
+                .storage_buffer(set, 3, streamlets().handle(), streamlets().size());
+        };
+    write_streamlet_advection(streamlet_advection_a_descriptors_->set(), depth_a());
+    write_streamlet_advection(streamlet_advection_b_descriptors_->set(), depth_b());
+    const auto write_streamlet_render =
+        [this, &writes](VkDescriptorSet set, const cubey::vulkan::Buffer& depth) {
+            writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
+                .storage_buffer(set, 1, depth.handle(), depth.size())
+                .storage_buffer(set, 2, velocity().handle(), velocity().size())
+                .storage_buffer(set, 3, streamlets().handle(), streamlets().size());
+        };
+    write_streamlet_render(streamlet_render_a_descriptors_->set(), depth_a());
+    write_streamlet_render(streamlet_render_b_descriptors_->set(), depth_b());
     writes.update(device);
 }
 
@@ -455,6 +511,11 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
     emplace_compute_pipeline(presentation_cue_advection_pipeline_, device,
                              "fluid_25d_presentation_cue_advect.comp.spv",
                              presentation_cue_depth_a_a_to_b_descriptors_->layout());
+    emplace_compute_pipeline(streamlet_reset_pipeline_, device, "fluid_25d_streamlet_reset.comp.spv",
+                             streamlet_reset_descriptors_->layout());
+    emplace_compute_pipeline(streamlet_advection_pipeline_, device,
+                             "fluid_25d_streamlet_advect.comp.spv",
+                             streamlet_advection_a_descriptors_->layout());
 }
 
 void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device,
@@ -498,9 +559,25 @@ void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device
                                         .descriptor_set_layouts = layouts,
                                         .material_pass = water_pass_info(),
                                     });
+
+    const std::array<cubey::render::ShaderStageFile, 2> streamlet_shader_stages{
+        cubey::render::vertex_shader_file(shader_path("fluid_25d_streamlet.vert.spv")),
+        cubey::render::fragment_shader_file(shader_path("fluid_25d_streamlet.frag.spv")),
+    };
+    const std::array<VkDescriptorSetLayout, 1> streamlet_layouts{
+        streamlet_render_a_descriptors_->layout()};
+    streamlet_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                            .extent = extent,
+                                            .color_format = color_format,
+                                            .depth_format = depth_format,
+                                            .shader_stage_files = streamlet_shader_stages,
+                                            .descriptor_set_layouts = streamlet_layouts,
+                                            .material_pass = streamlet_pass_info(),
+                                        });
 }
 
 void Fluid25DGpuResources::destroy_swapchain_resources() {
+    streamlet_pipeline_.reset();
     water_pipeline_.reset();
     terrain_pipeline_.reset();
     diagnostic_pipeline_.reset();
@@ -516,6 +593,8 @@ void Fluid25DGpuResources::destroy_all_resources() {
     finite_volume_cfl_finalize_pipeline_.reset();
     finite_volume_cfl_pipeline_.reset();
     finite_volume_reset_pipeline_.reset();
+    streamlet_advection_pipeline_.reset();
+    streamlet_reset_pipeline_.reset();
     presentation_cue_advection_pipeline_.reset();
     presentation_cue_reset_pipeline_.reset();
     depth_pipeline_.reset();
@@ -526,6 +605,11 @@ void Fluid25DGpuResources::destroy_all_resources() {
     presentation_cue_depth_a_b_to_a_descriptors_.reset();
     presentation_cue_depth_a_a_to_b_descriptors_.reset();
     presentation_cue_reset_descriptors_.reset();
+    streamlet_render_b_descriptors_.reset();
+    streamlet_render_a_descriptors_.reset();
+    streamlet_advection_b_descriptors_.reset();
+    streamlet_advection_a_descriptors_.reset();
+    streamlet_reset_descriptors_.reset();
     render_b_descriptors_.reset();
     render_a_descriptors_.reset();
     depth_b_to_a_descriptors_.reset();
@@ -545,6 +629,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     presentation_cue_virtual_status_.reset();
     presentation_cue_b_.reset();
     presentation_cue_a_.reset();
+    streamlets_.reset();
     ledger_.reset();
     velocity_.reset();
     flux_.reset();
@@ -598,6 +683,7 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_a, presentation_cue_a_,
                                  "presentation cue A buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_b, presentation_cue_b_,
                                  "presentation cue B buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(streamlets, streamlets_, "flow inspection streamlet buffer")
 
 #undef CUBEY_FLUID25D_RESOURCE_ACCESSOR
 
@@ -653,6 +739,10 @@ CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_reset_pipeline, presentation_c
 CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_advection_pipeline,
                                  presentation_cue_advection_pipeline_,
                                  "presentation cue advection pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(streamlet_reset_pipeline, streamlet_reset_pipeline_,
+                                 "flow inspection streamlet reset pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(streamlet_advection_pipeline, streamlet_advection_pipeline_,
+                                 "flow inspection streamlet advection pipeline")
 
 #undef CUBEY_FLUID25D_PIPELINE_ACCESSOR
 
@@ -675,6 +765,13 @@ const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::water_pipel
         throw std::runtime_error("fluid 2.5D water pipeline is not initialized");
     }
     return water_pipeline_.value();
+}
+
+const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::streamlet_pipeline() const {
+    if (!streamlet_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 2.5D flow inspection streamlet pipeline is not initialized");
+    }
+    return streamlet_pipeline_.value();
 }
 
 } // namespace cubey::projects::fluid::fluid_25d

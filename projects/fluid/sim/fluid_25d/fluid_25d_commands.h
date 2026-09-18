@@ -36,6 +36,13 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
                               cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
                               std::uint32_t frame_slot_index = 0U, float source_rate_scale = 1.0F);
 
+// An opt-in presentation-only step for headless Flow Inspection. Call it
+// after the fixed solver step has returned so numerical profiler/oracle paths
+// remain untouched; the implementation is status-gated and never reads back.
+void record_fluid_25d_flow_inspection_streamlet_step(
+    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    bool& streamlet_reset_requested);
+
 void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                                     const Fluid25DConfig& config,
                                     std::span<const float> source_rate_scales, bool paused,
@@ -64,6 +71,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     const Fluid25DRenderCamera& camera,
     Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
     bool& reset_requested, bool& presentation_cue_reset_requested,
+    bool& streamlet_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
     std::uint32_t frame_slot_index = 0U, std::span<const float> source_rate_scales = {});
 

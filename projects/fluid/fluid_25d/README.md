@@ -16,8 +16,8 @@ opt-in GPU finite-volume comparison solve, plus a
 deterministic oblique terrain-and-water catchment presentation. Top-down
 diagnostics remain explicitly selectable. The default Composite catchment
 view preserves the original terrain-and-water shading; Water Isolation
-quiets the bed to expose the wet edge, and Flow Inspection reserves the
-explicit flow-reading surface. It has deterministic dry-bed,
+quiets the bed to expose the wet edge, and Flow Inspection adds sparse,
+directional velocity streamlets to the explicit flow-reading surface. It has deterministic dry-bed,
 lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
 virtual-pipes depth/face-flux/velocity/ledger and finite-volume
 depth/momentum/velocity/ledger against their corresponding CPU oracle.
@@ -74,6 +74,9 @@ River V0 includes:
 - an implicit oblique grid (no uploaded mesh) with opaque terrain, translucent
   premultiplied-alpha water, depth testing, restrained lighting, and a
   deterministic render-only advected flow cue;
+- a Flow Inspection-only, fixed sparse set of persistent GPU streamlets. Their
+  narrow pale head points downstream; they are velocity tracers rather than
+  waves, foam, water mass, or solver particles;
 - top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
   diagnostics as an explicit alternate presentation mode;
 - opt-in headless CPU/GPU fixtures that read back only at their final evidence
@@ -96,6 +99,27 @@ solver substeps, while a rejected finite-volume status leaves it unchanged. It
 is not solver state and never enters depth, momentum, CFL, ledgers, or
 oracle/diagnostic readback. Pausing performs no cue update; calm water uses
 the stable base shade rather than a time-driven pattern.
+
+Flow Inspection has a separate project-local streamlet state buffer. A mark
+advects only after an accepted outer fixed step using final published velocity;
+it is hidden unless the sampled cell is wet and faster than the `0.02 m/s`
+active-flow inspection boundary. That boundary is a presentation gate, not a
+solver wetness-policy change. Dry beds and lakes at rest therefore have no
+marks. Deterministic,
+per-streamlet reset seeds begin in a steady-state age distribution; subsequent
+respawns use staggered activation and jittered lifetimes expressed in accepted
+fixed steps rather than wall time, preserving a coherent reading over the slow
+30 m terrain audition without a synchronized expiry band. A sticky
+finite-volume status is a strict no-write boundary for
+both streamlet reset and advection. This state never enters solver descriptors,
+wet/dry policy, diagnostics, profiler diagnostics, or CPU/GPU oracle readback.
+Composite, Water Isolation, and top-down Diagnostics never dispatch or draw
+streamlets. Flow Inspection also suppresses Composite's broad scalar-cue
+highlight so its streamlets are the only motion/direction language. Windowed
+Flow Inspection includes its optional render work in the existing aggregate
+presentation command span; explicitly selected headless Flow Inspection steps
+streamlets after each solver record, outside the solver-only timestamp/oracle
+lane.
 
 ## Numerical contract
 

@@ -48,6 +48,13 @@ struct Fluid25DLedgerGpu {
 struct Fluid25DFiniteVolumeStatusGpu {
     std::array<std::uint32_t, 4> flags_reserved{};
 };
+// Flow Inspection-only persistent render state. `cell_xy_age_generation`
+// stores raster-cell coordinates, a signed age (negative during a staggered
+// warmup), and a deterministic respawn generation. It is intentionally not a
+// numerical particle/state representation.
+struct Fluid25DStreamletGpu {
+    std::array<float, 4> cell_xy_age_generation{};
+};
 
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusCflRejected = 1U << 0U;
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusInvalidState = 1U << 1U;
@@ -59,6 +66,7 @@ static_assert(sizeof(Fluid25DMomentumGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DVelocityGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DFiniteVolumeStatusGpu) == sizeof(std::uint32_t) * 4U);
+static_assert(sizeof(Fluid25DStreamletGpu) == sizeof(float) * 4U);
 
 class Fluid25DGpuResources {
   public:
@@ -96,6 +104,7 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_b() const;
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_status() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& streamlets() const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
     }
@@ -115,9 +124,12 @@ class Fluid25DGpuResources {
     presentation_cue_reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     presentation_cue_advection_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& streamlet_reset_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& streamlet_advection_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& diagnostic_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& terrain_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& water_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& streamlet_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet reset_descriptor_set() const noexcept {
         if (solver_ == Fluid25DSolver::FiniteVolume) {
@@ -197,6 +209,22 @@ class Fluid25DGpuResources {
                    ? presentation_cue_depth_b_b_to_a_descriptors_->set()
                    : VK_NULL_HANDLE;
     }
+    [[nodiscard]] VkDescriptorSet streamlet_reset_descriptor_set() const noexcept {
+        return streamlet_reset_descriptors_.has_value() ? streamlet_reset_descriptors_->set()
+                                                         : VK_NULL_HANDLE;
+    }
+    [[nodiscard]] VkDescriptorSet
+    streamlet_advection_descriptor_set(bool depth_is_a) const noexcept {
+        return depth_is_a && streamlet_advection_a_descriptors_.has_value()
+                   ? streamlet_advection_a_descriptors_->set()
+                   : (!depth_is_a && streamlet_advection_b_descriptors_.has_value()
+                          ? streamlet_advection_b_descriptors_->set()
+                          : VK_NULL_HANDLE);
+    }
+    [[nodiscard]] VkDescriptorSet streamlet_render_descriptor_set() const noexcept {
+        return current_depth_is_a_ ? streamlet_render_a_descriptors_.value().set()
+                                   : streamlet_render_b_descriptors_.value().set();
+    }
     [[nodiscard]] VkDescriptorSet render_descriptor_set() const noexcept {
         return current_depth_is_a_ ? render_a_descriptors_.value().set()
                                    : render_b_descriptors_.value().set();
@@ -248,6 +276,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::Buffer> presentation_cue_a_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_b_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_virtual_status_;
+    std::optional<cubey::vulkan::Buffer> streamlets_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 
     std::optional<cubey::vulkan::DescriptorSetBundle> reset_descriptors_;
@@ -270,6 +299,11 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_depth_a_b_to_a_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_depth_b_a_to_b_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_depth_b_b_to_a_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_reset_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_advection_a_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_advection_b_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_render_a_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> streamlet_render_b_descriptors_;
 
     std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> flux_pipeline_;
@@ -281,9 +315,12 @@ class Fluid25DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> finite_volume_commit_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> presentation_cue_reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> presentation_cue_advection_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> streamlet_reset_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> streamlet_advection_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> diagnostic_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> terrain_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> water_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> streamlet_pipeline_;
     bool current_depth_is_a_ = true;
     Fluid25DPresentationCueParity presentation_cue_parity_;
     Fluid25DSolver solver_ = Fluid25DSolver::VirtualPipes;

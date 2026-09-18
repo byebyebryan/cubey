@@ -20,6 +20,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_terrain.frag
         ../sim/fluid_25d/shaders/fluid_25d_water.vert
         ../sim/fluid_25d/shaders/fluid_25d_water.frag
+        ../sim/fluid_25d/shaders/fluid_25d_streamlet.vert
+        ../sim/fluid_25d/shaders/fluid_25d_streamlet.frag
         ../sim/fluid_25d/shaders/fluid_25d_reset.comp
         ../sim/fluid_25d/shaders/fluid_25d_flux.comp
         ../sim/fluid_25d/shaders/fluid_25d_depth.comp
@@ -30,6 +32,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_fv_commit.comp
         ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_reset.comp
         ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_advect.comp
+        ../sim/fluid_25d/shaders/fluid_25d_streamlet_reset.comp
+        ../sim/fluid_25d/shaders/fluid_25d_streamlet_advect.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS

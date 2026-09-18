@@ -1,0 +1,62 @@
+#version 450
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) buffer StreamletField {
+    vec4 values[];
+} streamlets;
+layout(set = 0, binding = 1, std430) readonly buffer PresentationStatusField {
+    uvec4 values[];
+} status;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+uint streamlet_hash(uint x, uint y, uint salt) {
+    uint value = x * 0x8da6b343u ^ y * 0xd8163841u ^ salt;
+    value ^= value >> 16u;
+    value *= 0x7feb352du;
+    value ^= value >> 15u;
+    value *= 0x846ca68bu;
+    value ^= value >> 16u;
+    return value;
+}
+
+float streamlet_random(uint index, uint generation, uint salt) {
+    return float(streamlet_hash(index, generation, salt) & 0x00ffffffu) / 16777215.0;
+}
+
+vec4 streamlet_initial_state(uint index, uint generation, uint width, uint height) {
+    // Keep seeds inside the cell-centre domain so an immediate respawn neither
+    // sits on an outflow edge nor needs host-side placement data.
+    vec2 interior_extent = vec2(max(0.0, float(width) - 2.0),
+                                max(0.0, float(height) - 2.0));
+    vec2 cell = vec2(0.5) + vec2(streamlet_random(index, generation, 0x7f4a7c15u),
+                                  streamlet_random(index, generation, 0x6a09e667u)) *
+                                  interior_extent;
+    // A reset is immediately legible even while paused: ages cover a
+    // deterministic steady-state distribution across the jittered lifetime.
+    // Later dry/slow respawns use a separate negative warmup in the advection
+    // shader, so neither lifecycle phase creates a synchronized pulse.
+    float lifetime = params.physics.w *
+                     (0.75 + streamlet_random(index, generation, 0x3c6ef372u) * 0.50);
+    float age = streamlet_random(index, generation, 0xa54ff53au) * lifetime;
+    return vec4(cell, age, float(generation));
+}
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= uint(streamlets.values.length())) {
+        return;
+    }
+    // Match advection's strict fail-closed boundary. In particular, entering
+    // Flow Inspection after a sticky finite-volume failure cannot rewrite
+    // presentation state until an explicit solver reset clears the status.
+    if (status.values[0].x != 0u) {
+        return;
+    }
+    streamlets.values[index] = streamlet_initial_state(index, 0u, uint(params.grid_dt_cell.x),
+                                                        uint(params.grid_dt_cell.y));
+}
