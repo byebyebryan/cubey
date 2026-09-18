@@ -6,6 +6,7 @@
 #include "fluid_25d_gpu_resources.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_scenarios.h"
+#include "fluid_25d_ui.h"
 
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/engine/project_runtime.h>
@@ -125,6 +126,7 @@ class Fluid25DApp {
                            config_.presentation_time_scale),
           scenario_(make_startup_scenario(config_)),
           presentation_view_(fluid_25d_presentation_view_from_name(config_.view)),
+          catchment_view_(fluid_25d_catchment_view_from_name(config_.catchment_view)),
           debug_view_(fluid_25d_debug_view_from_name(config_.debug_view)) {
         initial_water_volume_m3_ =
             fluid_25d_water_volume_m3(config_.simulation, scenario_.initial_water_depth_m);
@@ -187,11 +189,12 @@ class Fluid25DApp {
                     (static_cast<std::uint32_t>(debug_view_) + 1U) % 6U);
             }
             if (input.key_pressed(cubey::input::Key::A)) {
-                presentation_view_ = presentation_view_ == Fluid25DPresentationView::Catchment
-                                         ? Fluid25DPresentationView::Diagnostics
-                                         : Fluid25DPresentationView::Catchment;
+                presentation_view_ = presentation_view_ == Fluid25DPresentationView::Diagnostics
+                                         ? Fluid25DPresentationView::Catchment
+                                         : Fluid25DPresentationView::Diagnostics;
             }
         };
+        callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
         callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
                                         const cubey::host::WindowedRenderFrame& frame) {
             record_windowed_frame(context, frame);
@@ -213,6 +216,20 @@ class Fluid25DApp {
                 .close_on_escape = true,
             },
             std::move(callbacks));
+    }
+
+    void draw_ui() {
+        draw_fluid_25d_ui({
+            .title = "Fluid 2.5D",
+            .presentation_view = presentation_view_,
+            .catchment_view = catchment_view_,
+            .debug_view = debug_view_,
+            .presentation_time_scale = config_.presentation_time_scale,
+            .windowed_pacing = windowed_pacing_,
+            .paused = paused_,
+            .reset_requested = reset_requested_,
+            .presentation_cue_reset_requested = presentation_cue_reset_requested_,
+        });
     }
 
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
@@ -254,7 +271,7 @@ class Fluid25DApp {
         // recorded after each outer step, never once per presented frame.
         const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
-            debug_view_, render_camera(render_frame.color_target.extent),
+            catchment_view_, debug_view_, render_camera(render_frame.color_target.extent),
             Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
             presentation_cue_reset_requested_, profiler, render_frame.frame_slot.index,
             source_rate_scales);
@@ -641,9 +658,10 @@ class Fluid25DApp {
                                         const cubey::host::HeadlessRenderTarget& target) {
             validate_gpu_oracle(runtime_.gpu());
             const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
-                target, resources_, config_.simulation, presentation_view_, debug_view_,
-                render_camera(target.extent), Fluid25DRenderTargetMode::ColorAttachment, false,
-                false, reset_requested_, presentation_cue_reset_requested_);
+                target, resources_, config_.simulation, presentation_view_, catchment_view_,
+                debug_view_, render_camera(target.extent),
+                Fluid25DRenderTargetMode::ColorAttachment, false, false, reset_requested_,
+                presentation_cue_reset_requested_);
             graph_executor_.record(
                 {
                     .device = &context.device(),
@@ -674,6 +692,7 @@ class Fluid25DApp {
     cubey::OrbitController orbit_controller_;
     cubey::math::Vec3 catchment_target_{0.0F, 0.0F, 0.0F};
     Fluid25DPresentationView presentation_view_ = Fluid25DPresentationView::Catchment;
+    Fluid25DCatchmentView catchment_view_ = Fluid25DCatchmentView::Composite;
     Fluid25DDebugView debug_view_ = Fluid25DDebugView::Terrain;
     std::optional<Fluid25DOracle> oracle_;
     std::optional<Fluid25DFiniteVolumeOracle> finite_volume_oracle_;

@@ -204,9 +204,29 @@ void test_config_defaults_and_parsing() {
     require(fluid_25d_presentation_view_from_name("catchment") ==
                 Fluid25DPresentationView::Catchment,
             "fluid 2.5D should select the product catchment view explicitly");
+    require(fluid_25d_catchment_view_from_name("composite") ==
+                Fluid25DCatchmentView::Composite,
+            "fluid 2.5D should retain Composite as the default catchment presentation");
+    require_throws(
+        [] { static_cast<void>(fluid_25d_presentation_view_from_name("composite")); },
+        "fluid 2.5D surface selector should keep catchment modes in their own enum");
+    require(fluid_25d_catchment_view_from_name("water-isolation") ==
+                Fluid25DCatchmentView::WaterIsolation,
+            "fluid 2.5D should parse the water-isolation presentation mode");
+    require(fluid_25d_catchment_view_from_name("flow-inspection") ==
+                Fluid25DCatchmentView::FlowInspection,
+            "fluid 2.5D should parse the flow-inspection presentation mode");
     require(fluid_25d_presentation_view_from_name("diagnostics") ==
                 Fluid25DPresentationView::Diagnostics,
             "fluid 2.5D should retain an explicit diagnostic presentation mode");
+    require(std::string(fluid_25d_presentation_view_name(Fluid25DPresentationView::Catchment)) ==
+                "Catchment" &&
+                std::string(fluid_25d_catchment_view_name(Fluid25DCatchmentView::Composite)) ==
+                    "Composite",
+            "fluid 2.5D surface and catchment presentation names should stay distinct");
+    require_throws(
+        [] { static_cast<void>(fluid_25d_catchment_view_from_name("diagnostics")); },
+        "fluid 2.5D catchment presentation should reject diagnostics");
     require_throws([] { static_cast<void>(fluid_25d_presentation_view_from_name("unknown")); },
                    "fluid 2.5D should reject unknown presentation views");
     require(fluid_25d_mesh_vertex_count(Fluid25DConfig{
@@ -248,6 +268,8 @@ void test_config_defaults_and_parsing() {
             "fluid 2.5D should default windowed presentation playback to 1x");
     require(parsed.view.empty(),
             "fluid 2.5D should default the CLI view name to the catchment enum default");
+    require(parsed.catchment_view.empty(),
+            "fluid 2.5D should default the catchment presentation to Composite");
     require(!parsed.gpu_oracle_validation,
             "fluid 2.5D should keep solver readback disabled unless explicitly requested");
     const Fluid25DProjectConfig finite_volume =
@@ -290,6 +312,27 @@ void test_config_defaults_and_parsing() {
                 {"fluid_25d", "--fluid25d-presentation-time-scale", "9"}));
         },
         "fluid 2.5D presentation time scale should reject values above the review bound");
+
+    const Fluid25DProjectConfig water_isolation = parse_project(
+        {"fluid_25d", "--fluid25d-catchment-view", "water-isolation"});
+    require(water_isolation.catchment_view == "water-isolation",
+            "fluid 2.5D parser should propagate the water-isolation presentation mode");
+    const Fluid25DProjectConfig flow_inspection = parse_project(
+        {"fluid_25d", "--fluid25d-catchment-view", "flow-inspection"});
+    require(flow_inspection.catchment_view == "flow-inspection",
+            "fluid 2.5D parser should propagate the flow-inspection presentation mode");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-catchment-view",
+                                              "not-a-catchment-view"}));
+        },
+        "fluid 2.5D parser should reject an unknown catchment presentation mode");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-view", "diagnostics",
+                                              "--fluid25d-catchment-view", "composite"}));
+        },
+        "fluid 2.5D parser should reject diagnostics combined with a catchment mode");
 
     const Fluid25DProjectConfig terrain = parse_project(
         {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",

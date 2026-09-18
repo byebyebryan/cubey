@@ -11,6 +11,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_gpu_resources.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
+        ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
         ../sim/fluid_25d/shaders/fluid_25d.vert

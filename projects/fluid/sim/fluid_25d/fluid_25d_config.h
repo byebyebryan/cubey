@@ -55,12 +55,18 @@ enum class Fluid25DDebugView : std::uint32_t {
     WetDry = 5,
 };
 
-// River V0 has one product-facing view and a deliberately separate top-down
-// diagnostics surface. Keeping this as an enum makes headless captures and
-// windowed interaction reproducible without a hidden presentation toggle.
+// River V0 keeps the surface selector separate from its catchment reading
+// modes. Catchment/Diagnostics is the stable top-level presentation boundary;
+// the selected catchment mode remains latched while that boundary is toggled.
 enum class Fluid25DPresentationView : std::uint32_t {
     Catchment = 0,
     Diagnostics = 1,
+};
+
+enum class Fluid25DCatchmentView : std::uint32_t {
+    Composite = 0,
+    WaterIsolation = 1,
+    FlowInspection = 2,
 };
 
 // The River V0 product default is a bounded 2:1 catchment. Focused CPU/GPU
@@ -367,6 +373,21 @@ fluid_25d_presentation_view_from_name(std::string_view name) {
     throw std::runtime_error("fluid 2.5D view must be catchment or diagnostics");
 }
 
+[[nodiscard]] inline Fluid25DCatchmentView
+fluid_25d_catchment_view_from_name(std::string_view name) {
+    if (name.empty() || name == "composite") {
+        return Fluid25DCatchmentView::Composite;
+    }
+    if (name == "water-isolation" || name == "water_isolation") {
+        return Fluid25DCatchmentView::WaterIsolation;
+    }
+    if (name == "flow-inspection" || name == "flow_inspection") {
+        return Fluid25DCatchmentView::FlowInspection;
+    }
+    throw std::runtime_error(
+        "fluid 2.5D catchment view must be composite, water-isolation, or flow-inspection");
+}
+
 [[nodiscard]] inline const char* fluid_25d_presentation_view_name(Fluid25DPresentationView view) {
     switch (view) {
     case Fluid25DPresentationView::Catchment:
@@ -375,6 +396,18 @@ fluid_25d_presentation_view_from_name(std::string_view name) {
         return "Diagnostics";
     }
     return "Catchment";
+}
+
+[[nodiscard]] inline const char* fluid_25d_catchment_view_name(Fluid25DCatchmentView view) {
+    switch (view) {
+    case Fluid25DCatchmentView::Composite:
+        return "Composite";
+    case Fluid25DCatchmentView::WaterIsolation:
+        return "Water Isolation";
+    case Fluid25DCatchmentView::FlowInspection:
+        return "Flow Inspection";
+    }
+    return "Composite";
 }
 
 [[nodiscard]] inline const char* fluid_25d_debug_view_name(Fluid25DDebugView view) {

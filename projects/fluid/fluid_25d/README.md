@@ -14,7 +14,10 @@ River V0 has a project-local GPU checkpoint. `fluid_25d` is a windowed and
 headless Vulkan application with a GPU-resident virtual-pipes default and an
 opt-in GPU finite-volume comparison solve, plus a
 deterministic oblique terrain-and-water catchment presentation. Top-down
-diagnostics remain explicitly selectable. It has deterministic dry-bed,
+diagnostics remain explicitly selectable. The default Composite catchment
+view preserves the original terrain-and-water shading; Water Isolation
+quiets the bed to expose the wet edge, and Flow Inspection reserves the
+explicit flow-reading surface. It has deterministic dry-bed,
 lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
 virtual-pipes depth/face-flux/velocity/ledger and finite-volume
 depth/momentum/velocity/ledger against their corresponding CPU oracle.
@@ -221,7 +224,11 @@ River V0 uses a project-owned Config V2 facade. It composes the shared 2D grid
 schema and currently exposes:
 
 - `--grid-width`, `--grid-height`, and `--grid-size`;
-- `--fluid25d-view catchment|diagnostics` (default: `catchment`);
+- `--fluid25d-view catchment|diagnostics` (top-level surface selector; default:
+  `catchment`);
+- `--fluid25d-catchment-view composite|water-isolation|flow-inspection`
+  (windowed or headless catchment presentation; default: `composite`; cannot
+  be combined with `--fluid25d-view diagnostics`);
 - `--fluid25d-presentation-time-scale <0.125..8>` (windowed-only; defaults to
   `1`, with `4` and `8` useful for review playback). Fast requested playback is
   best-effort: slow or stalled rendering can hit the four-step catch-up cap and
@@ -261,8 +268,19 @@ build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
   --width 512 --height 256 --output fluid-25d.png
 ```
 
-The normal headless command produces the same static oblique catchment framing
-as the windowed default. Virtual-pipes does not read back simulation state;
+The normal headless command produces the same static oblique Composite
+catchment framing as the windowed default. To compare the reading aids in
+reproducible captures, select the catchment presentation explicitly:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --fluid25d-catchment-view water-isolation --output fluid-25d-water-isolation.png
+
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --fluid25d-catchment-view flow-inspection --output fluid-25d-flow-inspection.png
+```
+
+Virtual-pipes does not read back simulation state;
 finite-volume reads only its final sticky status. To capture a top-down
 numerical diagnostic instead, select it deliberately:
 
@@ -325,9 +343,17 @@ sees dry exterior at its own bed elevation, permits no external inflow, and
 records its post-limiter discharged volume separately from source and sink
 ledgers. It is not a product scenario or terrain audition policy.
 
-In a window, left-drag or scroll orbits/zooms the catchment, `Space` pauses,
-`R` resets the deterministic scenario, `A` switches between catchment and
-diagnostics, and `D` cycles diagnostic contents.
+In a window, the compact Fluid 2.5D panel selects the Catchment or Diagnostics
+surface; while Catchment is selected, a second control chooses Composite, Water
+Isolation, or Flow Inspection. The catchment choice is retained when `A`
+switches to Diagnostics and back. The panel also exposes Pause/Resume, Reset,
+and the supported `0.125..8x` windowed playback speed. The legend reads the
+terrain as the matte bed, bright cyan as shallower water, and darker blue as
+deeper water. The moving highlight is a passive render-only marker advected by
+velocity; it is not waves or a depth cue. Left-drag or scroll orbits/zooms the
+catchment; `Space` pauses, `R` resets the deterministic scenario, and `D`
+cycles diagnostic contents. UI controls only affect presentation/pacing; solver
+fixed delta, headless timing, and numerical evidence remain unchanged.
 
 ## Source layout
 

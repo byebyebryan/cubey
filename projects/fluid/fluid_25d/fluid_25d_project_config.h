@@ -25,6 +25,7 @@ struct Fluid25DProjectConfig {
     host::CommonRunConfig common{};
     common::FluidGridOptions grid{};
     std::string view{};
+    std::string catchment_view{};
     std::string debug_view{};
     float presentation_time_scale = kFluid25DDefaultWindowedPresentationTimeScale;
     bool gpu_oracle_validation = false;
@@ -146,9 +147,13 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
     builder.compose(common::fluid_grid_schema(config.grid, common::FluidGridSchemaMode::TwoD));
     builder
         .bind(option("fluid25d.view", "--fluid25d-view", "View",
-                     "River V0 presentation: catchment or diagnostics.", ValueType::Enum, {},
+                     "Top-level River V0 surface: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
               config.view)
+        .bind(option("fluid25d.catchment_view", "--fluid25d-catchment-view", "Catchment View",
+                     "Catchment presentation: composite, water-isolation, or flow-inspection.",
+                     ValueType::Enum, {}, {"composite", "water-isolation", "flow-inspection"}),
+              config.catchment_view)
         .bind(option("fluid25d.presentation_time_scale", "--fluid25d-presentation-time-scale",
                      "Presentation Time Scale",
                      "Windowed-only simulation playback speed; 1, 4, and 8 are review-friendly.",
@@ -257,6 +262,11 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
             "fluid 2.5D presentation time scale is windowed-only; omit it in headless mode");
     }
     static_cast<void>(fluid_25d_presentation_view_from_name(project_config.view));
+    static_cast<void>(fluid_25d_catchment_view_from_name(project_config.catchment_view));
+    if (!project_config.catchment_view.empty() && project_config.view == "diagnostics") {
+        throw std::runtime_error(
+            "fluid 2.5D --fluid25d-catchment-view cannot be combined with --fluid25d-view diagnostics");
+    }
     static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
     if (project_config.gpu_oracle_validation && !project_config.common.headless) {
         throw std::runtime_error(

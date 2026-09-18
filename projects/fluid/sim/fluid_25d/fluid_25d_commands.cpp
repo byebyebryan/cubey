@@ -175,6 +175,7 @@ void record_finite_volume_substep(VkCommandBuffer command_buffer,
 
 [[nodiscard]] CatchmentPushConstants catchment_push_constants(const Fluid25DConfig& config,
                                                               const Fluid25DGpuResources& resources,
+                                                              Fluid25DCatchmentView catchment_view,
                                                               const Fluid25DRenderCamera& camera) {
     return {
         .view_projection = camera.view_projection,
@@ -182,7 +183,9 @@ void record_finite_volume_substep(VkCommandBuffer command_buffer,
                       config.cell_size_m, kFluid25DCatchmentHeightScale},
         .camera_wet = {camera.position.x, camera.position.y, camera.position.z,
                        config.minimum_wet_depth_m},
-        .presentation = {resources.current_presentation_cue_is_a() ? 1.0F : 0.0F, 0.0F, 0.0F, 0.0F},
+        .presentation = {resources.current_presentation_cue_is_a() ? 1.0F : 0.0F,
+                         static_cast<float>(static_cast<std::uint32_t>(catchment_view)), 0.0F,
+                         0.0F},
     };
 }
 
@@ -321,6 +324,7 @@ void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
 void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
                                      const Fluid25DGpuResources& resources,
                                      const Fluid25DConfig& config,
+                                     Fluid25DCatchmentView catchment_view,
                                      const Fluid25DRenderCamera& camera,
                                      cubey::render::ColorTargetView color_target,
                                      cubey::render::DepthTargetView depth_target) {
@@ -330,7 +334,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     }
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const CatchmentPushConstants push_constants =
-        catchment_push_constants(config, resources, camera);
+        catchment_push_constants(config, resources, catchment_view, camera);
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
@@ -363,7 +367,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
 [[nodiscard]] cubey::render::CompiledRenderGraph build_fluid_25d_frame_graph(
     cubey::render::ColorTargetView color_target, Fluid25DGpuResources& resources,
     const Fluid25DConfig& config, Fluid25DPresentationView presentation_view,
-    Fluid25DDebugView debug_view, const Fluid25DRenderCamera& camera,
+    Fluid25DCatchmentView catchment_view, Fluid25DDebugView debug_view,
+    const Fluid25DRenderCamera& camera,
     Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
     bool& reset_requested, bool& presentation_cue_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler,
@@ -486,10 +491,11 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
             .read_storage_buffer(presentation_cue_b)
             .write_color(backbuffer)
             .write_depth(catchment_depth)
-            .execute([resource_ptr, config_ptr, camera, backbuffer,
+            .execute([resource_ptr, config_ptr, catchment_view, camera, backbuffer,
                       catchment_depth](const cubey::render::RenderGraphExecutionContext& context) {
                 record_fluid_25d_catchment_draw(
-                    context.recorder().handle(), *resource_ptr, *config_ptr, camera,
+                    context.recorder().handle(), *resource_ptr, *config_ptr, catchment_view,
+                    camera,
                     cubey::render::resolved_color_target_view(context, backbuffer),
                     cubey::render::resolved_depth_target_view(context, catchment_depth));
             });
