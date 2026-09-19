@@ -1,4 +1,5 @@
 #include "../../fluid_25d/fluid_25d_project_config.h"
+#include "fluid_25d_commands.h"
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_finite_volume_oracle.h"
 #include "fluid_25d_oracle.h"
@@ -507,7 +508,7 @@ void test_deterministic_scenarios() {
             "River V0 should retain its narrow initially dry-outlet fixture");
 
     const Fluid25DScenarioData readable_river =
-        make_fluid_25d_scenario(Fluid25DScenario::SourceOutletDemo, 64U, 32U, 1.0F);
+        make_fluid_25d_scenario(Fluid25DScenario::SourceOutletDemo, 128U, 64U, 1.0F);
     require(readable_river.source_cell != kFluid25DNoCell &&
                 readable_river.sink_cell != kFluid25DNoCell &&
                 readable_river.source_cell != readable_river.sink_cell,
@@ -515,6 +516,10 @@ void test_deterministic_scenarios() {
     require(readable_river.initial_water_depth_m[readable_river.source_cell] > 0.0F &&
                 readable_river.initial_water_depth_m[readable_river.sink_cell] > 0.0F,
             "source-outlet demo should seed a visible route through both endpoint regions");
+    require(
+        readable_river.initial_water_depth_m[readable_river.sink_cell] >
+            readable_river.initial_water_depth_m[readable_river.source_cell],
+        "source-outlet demo should prime its terminal basin without changing endpoint capacity");
     std::uint32_t source_region_cells = 0U;
     std::uint32_t sink_region_cells = 0U;
     float source_rate_sum = 0.0F;
@@ -541,9 +546,41 @@ void test_deterministic_scenarios() {
         static_cast<std::uint32_t>(readable_river.source_cell % readable_river.width);
     const std::uint32_t readable_sink_x =
         static_cast<std::uint32_t>(readable_river.sink_cell % readable_river.width);
+    require(readable_source_x == 14U && readable_sink_x == 110U &&
+                readable_sink_x - readable_source_x == 96U,
+            "source-outlet demo should retain its long 128 by 64 endpoint route");
+    require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::RiverCatchment), 0.08,
+                  kDepthToleranceM,
+                  "River V0 should retain the shared restrained render height scale");
+    require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::SourceOutletDemo), 0.65,
+                  kDepthToleranceM,
+                  "source-outlet demo should select its render-only relief scale");
+    require_close(
+        fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario::RiverCatchment, 127.0F, 96.0F),
+        127.0, kDepthToleranceM,
+        "River V0 home camera should retain its full-domain framing contract");
+    require_close(fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario::SourceOutletDemo,
+                                                             127.0F, 96.0F),
+                  120.0, kDepthToleranceM,
+                  "source-outlet demo home camera should fit its long route without empty margins");
+    require_close(fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::RiverCatchment), -0.92,
+                  kDepthToleranceM,
+                  "River V0 home camera should retain its original oblique pitch");
+    require_close(fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::SourceOutletDemo), -0.72,
+                  kDepthToleranceM,
+                  "source-outlet demo home camera should expose its render-only relief");
+    require_close(fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::RiverCatchment), 0.0,
+                  kDepthToleranceM, "River V0 should retain the shared terrain material");
+    require_close(fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::SourceOutletDemo), 1.0,
+                  kDepthToleranceM,
+                  "source-outlet demo should select its render-only terrain height and slope cue");
     const float outlet_bed_height_m = readable_river.terrain_height_m[readable_river.sink_cell];
+    const float source_bed_height_m = readable_river.terrain_height_m[readable_river.source_cell];
     float minimum_ribbon_center_y = std::numeric_limits<float>::infinity();
     float maximum_ribbon_center_y = -std::numeric_limits<float>::infinity();
+    float maximum_transverse_terrain_relief_m = 0.0F;
+    std::uint32_t narrowest_ribbon_cells = std::numeric_limits<std::uint32_t>::max();
+    std::uint32_t widest_ribbon_cells = 0U;
     for (std::uint32_t x = readable_source_x; x <= readable_sink_x; ++x) {
         std::uint32_t wet_cells = 0U;
         float weighted_y_sum = 0.0F;
@@ -559,12 +596,30 @@ void test_deterministic_scenarios() {
         }
         require(wet_cells >= 4U && depth_sum > 0.0F,
                 "river fixture should seed a broad connected water ribbon in every route column");
+        narrowest_ribbon_cells = std::min(narrowest_ribbon_cells, wet_cells);
+        widest_ribbon_cells = std::max(widest_ribbon_cells, wet_cells);
         const float ribbon_center_y = weighted_y_sum / depth_sum;
         minimum_ribbon_center_y = std::min(minimum_ribbon_center_y, ribbon_center_y);
         maximum_ribbon_center_y = std::max(maximum_ribbon_center_y, ribbon_center_y);
+        float transverse_minimum = std::numeric_limits<float>::infinity();
+        float transverse_maximum = -std::numeric_limits<float>::infinity();
+        for (std::uint32_t y = 0U; y < readable_river.height; ++y) {
+            const float terrain = readable_river.terrain_height_m[fluid_25d_scenario_index(
+                readable_river.width, readable_river.height, x, y)];
+            transverse_minimum = std::min(transverse_minimum, terrain);
+            transverse_maximum = std::max(transverse_maximum, terrain);
+        }
+        maximum_transverse_terrain_relief_m =
+            std::max(maximum_transverse_terrain_relief_m, transverse_maximum - transverse_minimum);
     }
-    require(maximum_ribbon_center_y - minimum_ribbon_center_y > 4.0F,
-            "river fixture should visibly meander instead of retaining a straight wet line");
+    require(maximum_ribbon_center_y - minimum_ribbon_center_y > 12.0F,
+            "source-outlet demo should retain multiple broad terrain-guided bends");
+    require(widest_ribbon_cells >= narrowest_ribbon_cells + 4U,
+            "source-outlet demo should retain visible width variation and one constriction");
+    require(maximum_transverse_terrain_relief_m > 2.8F,
+            "source-outlet demo should retain readable broad dry-bank relief");
+    require(source_bed_height_m > outlet_bed_height_m + 2.0F,
+            "source-outlet demo should keep a meaningful smooth fall into its outlet basin");
     for (std::uint32_t x = readable_sink_x + 1U; x < readable_river.width; ++x) {
         float downstream_valley_floor_m = std::numeric_limits<float>::infinity();
         for (std::uint32_t y = 0U; y < readable_river.height; ++y) {
@@ -575,7 +630,7 @@ void test_deterministic_scenarios() {
             require(readable_river.initial_water_depth_m[index] == 0.0F,
                     "source-outlet demo should not seed water beyond its terminal outlet");
         }
-        require(downstream_valley_floor_m > outlet_bed_height_m,
+        require(downstream_valley_floor_m > outlet_bed_height_m + 0.05F,
                 "source-outlet demo should raise the closed downstream shoulder above the outlet");
     }
     require(!dry_a.terrain_provenance.has_value() && !lake.terrain_provenance.has_value() &&

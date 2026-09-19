@@ -219,12 +219,12 @@ void record_finite_volume_substep(VkCommandBuffer command_buffer,
     return {
         .view_projection = camera.view_projection,
         .grid_cell = {static_cast<float>(config.grid_width), static_cast<float>(config.grid_height),
-                      config.cell_size_m, kFluid25DCatchmentHeightScale},
+                      config.cell_size_m, fluid_25d_catchment_height_scale(config.scenario)},
         .camera_wet = {camera.position.x, camera.position.y, camera.position.z,
                        config.minimum_wet_depth_m},
         .presentation = {resources.current_presentation_cue_is_a() ? 1.0F : 0.0F,
                          static_cast<float>(static_cast<std::uint32_t>(catchment_view)), 0.0F,
-                         0.0F},
+                         fluid_25d_catchment_terrain_material_cue(config.scenario)},
     };
 }
 

@@ -19,6 +19,37 @@ namespace cubey::projects::fluid::fluid_25d {
 // view uses a restrained vertical presentation scale so the bounded River V0
 // catchment remains readable from one deterministic orbit.
 inline constexpr float kFluid25DCatchmentHeightScale = 0.08F;
+// The authored source-to-outlet explanation scene has a compact, deliberately
+// varied terrain profile. It needs more render-only vertical relief than the
+// broad River V0 overview, while keeping every numerical terrain height and
+// solver quantity unchanged.
+inline constexpr float kFluid25DSourceOutletDemoHeightScale = 0.65F;
+inline constexpr float kFluid25DSourceOutletDemoHomePitch = -0.72F;
+
+[[nodiscard]] constexpr float fluid_25d_catchment_height_scale(Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::SourceOutletDemo ? kFluid25DSourceOutletDemoHeightScale
+                                                          : kFluid25DCatchmentHeightScale;
+}
+
+[[nodiscard]] constexpr float
+fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
+                                           float domain_horizontal_extent, float route_span) {
+    return scenario == Fluid25DScenario::SourceOutletDemo ? (route_span * 1.25F)
+                                                          : domain_horizontal_extent;
+}
+
+[[nodiscard]] constexpr float fluid_25d_catchment_home_pitch(float default_pitch,
+                                                             Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::SourceOutletDemo ? kFluid25DSourceOutletDemoHomePitch
+                                                          : default_pitch;
+}
+
+// The demonstration scene alone uses a modest terrain height/slope tint. It
+// complements its render-only relief scale without changing shared material
+// behavior, numerical terrain, or any solver data.
+[[nodiscard]] constexpr float fluid_25d_catchment_terrain_material_cue(Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::SourceOutletDemo ? 1.0F : 0.0F;
+}
 
 struct Fluid25DRenderCamera {
     cubey::math::Mat4 view_projection{1.0F};

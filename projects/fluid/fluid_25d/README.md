@@ -137,13 +137,24 @@ terminal outlet basin. The bed falls from the green SOURCE along the winding
 channel to the amber OUTLET, then rises across a broad downstream containment
 shoulder; there is no implied drain beyond the scene edge.
 
+This is deliberately stylized authored relief, not an imported real-world DEM.
+On the recommended `128x64` grid the representative centroids are at columns
+`14` and `110`. Between them, two broad S-bends, changing valley width, and a
+single constriction make the route read as terrain-guided rather than as a
+straight wet line. A scene-only height/slope tint and render-only relief scale
+make the dry banks legible from the home camera; numerical terrain heights,
+water depths, and every other scenario's material and camera are unchanged.
+The compact OUTLET-rate mask is the wet core of the visible terminal basin, so
+its configured capacity is not assigned to dry shoulder cells.
+
 The ribbon is intentionally present at reset so the full route is legible
 before transport crosses it. It does not claim that the same water first
 injected at SOURCE reaches OUTLET in the initial seconds. In the finite-volume
 demo, configured source input and outlet capacity are each `0.03 m3/s`; actual
-outlet removal remains limited by water available in its region. The terminal
-basin keeps the sustained sink supplied rather than treating the initial fill
-as a hidden outlet reservoir. The first home camera frames the
+outlet removal remains limited by water available in its region and must be
+measured from the ledger rather than assumed from the configured capacity. The
+terminal basin keeps the sustained sink supplied without a bypass beyond its
+marker. The first home camera frames the
 two endpoints and route with modest terrain context, while later user orbit
 and zoom remain unchanged. Ring words live in the control-panel legend rather
 than in-scene text so they stay readable at every camera distance.
@@ -164,17 +175,18 @@ use the headless profile command:
 
 ```sh
 build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture png \
-  --frames 18001 --width 1280 --height 720 --grid-width 128 --grid-height 64 \
+  --frames 54001 --width 1280 --height 720 --grid-width 128 --grid-height 64 \
   --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
   --profile-output outputs/fluid/source-outlet-demo-profile --profile-diagnostics \
   --profile-diagnostic-interval 600 --output outputs/fluid/source-outlet-demo.png
 ```
 
-The `200 s` and `300 s` profile rows are the acceptance checkpoints: finite-
-volume status must remain zero; source and sink increments over a recent
-interval should both be about `0.03 m3/s`; stored water must remain bounded;
-and boundary outflow must stay zero. Capture Composite plus Depth/Flow
-diagnostics when changing this local scene geometry.
+Use early checkpoints for reset/mature continuity and a late interval (for
+example `890–900 s`) for the sustained-flow acceptance check: finite-volume
+status must remain zero; source and *actual* sink-removal increments over the
+recent interval should both be about `0.03 m3/s`; stored water must remain
+bounded; and boundary outflow must stay zero. Capture Composite plus
+Depth/Flow diagnostics when changing this local scene geometry.
 
 ## Numerical contract
 

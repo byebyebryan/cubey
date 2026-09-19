@@ -40,6 +40,21 @@ void main() {
     vec3 highland = cubey_srgb_to_linear(vec3(0.46, 0.31, 0.16));
     float elevation = clamp((world_position.y + 2.0) * 0.035, 0.0, 1.0);
     vec3 albedo = mix(lowland, highland, elevation) + vec3(contour);
+    if (params.presentation.w > 0.5) {
+        // Source-to-outlet is an authored explanatory scene with deliberately
+        // broad dry banks. Its numerical heights are unchanged; this limited
+        // height/slope cue only makes the valley, ridges, and constriction
+        // legible from its longer home view.
+        float demo_elevation = pow(smoothstep(0.55, 5.60, world_position.y), 1.35);
+        float slope = 1.0 - normal.y;
+        float slope_cue = smoothstep(0.002, 0.028, slope);
+        float terrain_cue = max(0.20 * demo_elevation, 0.85 * slope_cue);
+        vec3 demo_valley = cubey_srgb_to_linear(vec3(0.055, 0.160, 0.090));
+        vec3 demo_ridge = cubey_srgb_to_linear(vec3(0.62, 0.43, 0.20));
+        albedo = mix(demo_valley, demo_ridge, terrain_cue);
+        albedo = mix(albedo, cubey_srgb_to_linear(vec3(0.36, 0.27, 0.12)),
+                     0.24 * slope_cue);
+    }
     vec3 lighting = vec3(0.26) + vec3(0.74) * diffuse;
     vec3 color = max(albedo * lighting, vec3(0.0));
     // Water Isolation is a presentation-only reading aid: make the bed quiet

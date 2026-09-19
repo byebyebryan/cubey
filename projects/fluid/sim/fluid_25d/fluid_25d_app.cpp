@@ -316,12 +316,14 @@ class Fluid25DApp {
         const float world_height = static_cast<float>(config_.simulation.grid_height - 1U) *
                                    config_.simulation.cell_size_m;
         const float horizontal_extent = std::max(world_width, world_height);
+        const float render_height_scale =
+            fluid_25d_catchment_height_scale(config_.simulation.scenario);
         const float scaled_terrain_span =
-            (*terrain_maximum - *terrain_minimum) * kFluid25DCatchmentHeightScale;
+            (*terrain_maximum - *terrain_minimum) * render_height_scale;
         float framing_horizontal_extent = horizontal_extent;
         catchment_target_ = {
             0.0F,
-            (*terrain_minimum + *terrain_maximum) * 0.5F * kFluid25DCatchmentHeightScale,
+            (*terrain_minimum + *terrain_maximum) * 0.5F * render_height_scale,
             0.0F,
         };
         if (config_.simulation.scenario == Fluid25DScenario::SourceOutletDemo) {
@@ -345,7 +347,9 @@ class Fluid25DApp {
             const float route_span =
                 std::max(std::abs(world_x(scenario_.sink_cell) - world_x(scenario_.source_cell)),
                          std::abs(world_z(scenario_.sink_cell) - world_z(scenario_.source_cell)));
-            framing_horizontal_extent = std::max(32.0F, route_span * 1.70F);
+            framing_horizontal_extent =
+                std::max(32.0F, fluid_25d_catchment_home_horizontal_extent(
+                                    config_.simulation.scenario, horizontal_extent, route_span));
             catchment_target_.x =
                 0.5F * (world_x(scenario_.source_cell) + world_x(scenario_.sink_cell));
             catchment_target_.z =
@@ -369,7 +373,9 @@ class Fluid25DApp {
             .target = catchment_target_,
             .distance = orbit_controller_.distance(),
             .yaw = kCatchmentCameraBaseYaw + orbit_controller_.yaw(),
-            .pitch = kCatchmentCameraBasePitch + orbit_controller_.pitch(),
+            .pitch = fluid_25d_catchment_home_pitch(kCatchmentCameraBasePitch,
+                                                    config_.simulation.scenario) +
+                     orbit_controller_.pitch(),
         });
     }
 
