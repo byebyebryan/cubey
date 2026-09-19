@@ -17,7 +17,7 @@ void main() {
     // distinct triangular head remain stable at overview resolution.
     float lateral_limit = frag_part == 0u
                               ? 0.10
-                              : 0.27 * clamp((0.70 - frag_local.x) / (0.70 - 0.04), 0.0, 1.0);
+                              : 0.34 * clamp((0.70 - frag_local.x) / (0.70 + 0.02), 0.0, 1.0);
     float normalized_edge = abs(frag_local.y) / max(lateral_limit, 1.0e-4);
     float edge_aa = max(fwidth(normalized_edge), 0.015);
     float coverage = 1.0 - smoothstep(1.0 - edge_aa, 1.0 + edge_aa, normalized_edge);
@@ -25,6 +25,13 @@ void main() {
     vec3 slow = cubey_srgb_to_linear(vec3(0.38, 0.73, 1.0));
     vec3 fast = cubey_srgb_to_linear(vec3(1.0, 0.95, 0.62));
     vec3 color = mix(slow, fast, speed);
-    float alpha = coverage * frag_opacity * mix(0.58, 0.90, speed);
+    // A restrained warm lift on the triangular head separates its silhouette
+    // from the thin shaft at the wider overview camera without making it a
+    // second direction cue.
+    if (frag_part != 0u) {
+        color = mix(color, cubey_srgb_to_linear(vec3(1.0, 0.98, 0.78)), 0.28);
+    }
+    float alpha = coverage * frag_opacity * mix(0.58, 0.90, speed) *
+                  (frag_part == 0u ? 1.0 : 1.08);
     out_color = vec4(color * alpha, alpha);
 }

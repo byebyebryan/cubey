@@ -27,9 +27,9 @@ layout(push_constant) uniform SimulationParams {
     vec4 physics;
 } params;
 
-const uint kMaxColumns = 32u;
-const uint kMaxRows = 16u;
-const uint kMinimumPitchCells = 4u;
+const uint kMaxColumns = 64u;
+const uint kMaxRows = 32u;
+const uint kMinimumPitchCells = 2u;
 const uint kNeighborhoodRadius = 1u;
 const float kMinimumSpeedMPerS = 0.025;
 const float kDirectionEpsilon = 1.0e-5;
@@ -47,7 +47,10 @@ uint axis_count(uint cell_count, uint maximum_count) {
 }
 
 float anchor_axis(uint coordinate, uint count, uint cell_count) {
-    float centre = 0.5 * float(cell_count - 1u);
+    if (cell_count == 0u) {
+        return 0.0;
+    }
+    float centre = 0.5 * (float(cell_count) - 1.0);
     if (count <= 1u || cell_count <= 2u) {
         return centre;
     }

@@ -95,8 +95,9 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                       "by velocity; it is not waves or a depth cue.");
     ImGui::TextWrapped("Water Isolation quiets the bed to expose the wet edge. "
                       "Flow Inspection adds fixed-grid arrows: their angle shows local flow "
-                      "direction, while length and brightness show speed. The arrows are "
-                      "velocity samples, not water particles or waves.");
+                      "direction, while length and brightness show speed (blue is slower; "
+                      "yellow is faster). They are pitch-scaled velocity samples, not water "
+                      "particles or waves.");
     ImGui::TextDisabled("Space pause/resume  R reset  A diagnostics  D field  drag orbit");
     ImGui::End();
 }

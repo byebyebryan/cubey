@@ -101,21 +101,26 @@ oracle/diagnostic readback. Pausing performs no cue update; calm water uses
 the stable base shade rather than a time-driven pattern.
 
 Flow Inspection has a separate project-local quiver-state buffer. Every state
-element owns one deterministic, fixed anchor in a regular 32 by 16 lattice on
+element owns one deterministic, fixed anchor in a regular 64 by 32 lattice on
 the default 256 by 128 product grid and the 128 by 64 source-to-outlet demo;
-small fixtures reduce that count rather than producing duplicate anchors. A
-three-by-three wet/finite-aware neighborhood average samples the published
-physical velocity around each anchor after an accepted outer fixed step.
-Direction, strength, and opacity smooth in simulation time, but anchor
-coordinates never advect, reseed, or retire. `0.025 m/s` is the visibility
-threshold, intentionally above the retained initial terrain-sheet maximum, so
-the dry bed, lake at rest, and honest initial terrain state remain arrow-free.
-Current dry or nonfinite data hides an arrow immediately; calm valid water
-fades it through the same presentation-only state. Reset samples the current
-parity-selected field, allowing an established paused flow to be read without
-a host readback. A sticky finite-volume status is a strict no-write boundary
-for reset and update. This state never enters solver descriptors, wet/dry
-policy, diagnostics, profiler diagnostics, or CPU/GPU oracle readback.
+the compact demo therefore has about two cells between anchors, while the
+product grid has about four. Small fixtures reduce that count rather than
+producing duplicate anchors. A three-by-three wet/finite-aware neighborhood
+average samples the published physical velocity around each anchor after an
+accepted outer fixed step. Direction, strength, and opacity smooth in
+simulation time, but anchor coordinates never advect, reseed, or retire.
+`0.025 m/s` is the visibility threshold, intentionally above the retained
+initial terrain-sheet maximum, so the dry bed, lake at rest, and honest initial
+terrain state remain arrow-free. Arrow silhouette length follows local lattice
+pitch (about 60--73% of the pitch), while blue-to-yellow color and length use
+the fixed `0.025..0.80 m/s` physical range; this keeps the dense demo field
+readable without making larger-grid arrows disappear. Current dry or
+nonfinite data hides an arrow immediately; calm valid water fades it through
+the same presentation-only state. Reset samples the current parity-selected
+field, allowing an established paused flow to be read without a host readback.
+A sticky finite-volume status is a strict no-write boundary for reset and
+update. This state never enters solver descriptors, wet/dry policy,
+diagnostics, profiler diagnostics, or CPU/GPU oracle readback.
 Composite, Water Isolation, and top-down Diagnostics never dispatch or draw
 the quiver. Flow Inspection suppresses Composite's broad scalar-cue highlight
 so its fixed arrows are the only direction language. Windowed Flow Inspection

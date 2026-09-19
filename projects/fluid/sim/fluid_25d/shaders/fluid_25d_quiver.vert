@@ -32,9 +32,27 @@ layout(location = 3) out float frag_opacity;
 
 const float kWaterClipDepthBias = 256.0 * 1.19209290e-7;
 const float kDirectionEpsilon = 1.0e-5;
+const uint kMaxColumns = 64u;
+const uint kMaxRows = 32u;
+const uint kMinimumPitchCells = 2u;
+const float kMinimumSpeedMPerS = 0.025;
+const float kSpeedUpperMPerS = 0.80;
+const float kMinimumSilhouettePitchFraction = 0.60;
+const float kMaximumSilhouettePitchFraction = 0.73;
+const float kSilhouetteLengthUnits = 1.26;
 
 bool finite_vec2(vec2 value) {
     return !any(isnan(value)) && !any(isinf(value));
+}
+
+uint axis_count(uint cell_count, uint maximum_count) {
+    return min(maximum_count, max(1u, cell_count / kMinimumPitchCells));
+}
+
+float lattice_pitch(uint cell_count, uint sample_count) {
+    return sample_count > 1u && cell_count > 2u
+               ? float(cell_count - 2u) / float(sample_count - 1u)
+               : 1.0;
 }
 
 uvec2 sample_coordinate(vec2 cell, uint width, uint height) {
@@ -64,8 +82,10 @@ vec2 shaft_vertex(uint vertex_index) {
 }
 
 vec2 head_vertex(uint vertex_index) {
-    const vec2 vertices[3] = vec2[](vec2(0.04, -0.27), vec2(0.70, 0.0),
-                                    vec2(0.04, 0.27));
+    // A broad, short-base triangle keeps the tip readable at the dense demo
+    // pitch without extending the 1.26-unit total silhouette.
+    const vec2 vertices[3] = vec2[](vec2(-0.02, -0.34), vec2(0.70, 0.0),
+                                    vec2(-0.02, 0.34));
     return vertices[vertex_index];
 }
 
@@ -105,11 +125,22 @@ void main() {
 
     vec2 direction = stored_direction / direction_length;
     vec2 side = vec2(-direction.y, direction.x);
-    float speed_fraction = clamp((stored_strength - 0.025) / 0.20, 0.0, 1.0);
-    // The complete silhouette is 1.26 units long, so this 1.20--2.35-cell
-    // scale caps it below 75% of the compact demo's ~4-cell lattice pitch.
-    // That leaves a clear spatial gap while still carrying a speed difference.
-    float length_cells = mix(1.20, 2.35, sqrt(speed_fraction));
+    float speed_fraction = clamp(
+        (stored_strength - kMinimumSpeedMPerS) /
+            (kSpeedUpperMPerS - kMinimumSpeedMPerS),
+        0.0, 1.0);
+    uint columns = axis_count(width, kMaxColumns);
+    uint rows = axis_count(height, kMaxRows);
+    float pitch_x = lattice_pitch(width, columns);
+    float pitch_y = lattice_pitch(height, rows);
+    float local_pitch = min(pitch_x, pitch_y);
+    // Scale the complete 1.26-unit silhouette from 60--73% of the local
+    // lattice pitch. This yields approximately 1.2--1.46 cells on the 2-cell
+    // demo lattice and 2.4--2.94 cells on the 4-cell product lattice.
+    float silhouette_fraction = mix(kMinimumSilhouettePitchFraction,
+                                    kMaximumSilhouettePitchFraction,
+                                    sqrt(speed_fraction));
+    float length_cells = max(0.25, local_pitch * silhouette_fraction / kSilhouetteLengthUnits);
     uint vertex_index = uint(gl_VertexIndex);
     bool is_head = vertex_index >= 6u;
     vec2 local = is_head ? head_vertex(vertex_index - 6u) : shaft_vertex(vertex_index);

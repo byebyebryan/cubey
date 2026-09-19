@@ -1227,25 +1227,34 @@ void test_presentation_cue_contract() {
     const Fluid25DQuiverLattice product_lattice = fluid_25d_quiver_lattice(256U, 128U);
     const Fluid25DQuiverLattice demo_lattice = fluid_25d_quiver_lattice(128U, 64U);
     const Fluid25DQuiverLattice tiny_lattice = fluid_25d_quiver_lattice(3U, 2U);
-    require(product_lattice.columns == 32U && product_lattice.rows == 16U &&
-                demo_lattice.columns == 32U && demo_lattice.rows == 16U &&
-                fluid_25d_quiver_count(256U, 128U) == 512U &&
-                fluid_25d_quiver_count(128U, 64U) == 512U && tiny_lattice.columns == 1U &&
-                tiny_lattice.rows == 1U,
-            "Flow Inspection should retain a regular 32 by 16 field on product and demo grids while reducing tiny fixtures");
+    const Fluid25DQuiverLattice degenerate_lattice = fluid_25d_quiver_lattice(0U, 1U);
+    require(product_lattice.columns == 64U && product_lattice.rows == 32U &&
+                demo_lattice.columns == 64U && demo_lattice.rows == 32U &&
+                fluid_25d_quiver_count(256U, 128U) == 2048U &&
+                fluid_25d_quiver_count(128U, 64U) == 2048U && tiny_lattice.columns == 1U &&
+                tiny_lattice.rows == 1U && degenerate_lattice.columns == 1U &&
+                degenerate_lattice.rows == 1U &&
+                fluid_25d_quiver_anchor(0U, 0U, 1U).cell_x == 0.0F &&
+                fluid_25d_quiver_anchor(0U, 0U, 1U).cell_y == 0.0F,
+            "Flow Inspection should use a regular 64 by 32 field on product and demo grids while reducing tiny fixtures");
     const Fluid25DQuiverAnchor demo_first = fluid_25d_quiver_anchor(0U, 128U, 64U);
     const Fluid25DQuiverAnchor demo_second = fluid_25d_quiver_anchor(1U, 128U, 64U);
-    const Fluid25DQuiverAnchor demo_next_row = fluid_25d_quiver_anchor(32U, 128U, 64U);
-    const Fluid25DQuiverAnchor demo_repeat = fluid_25d_quiver_anchor(32U, 128U, 64U);
+    const Fluid25DQuiverAnchor demo_next_row = fluid_25d_quiver_anchor(64U, 128U, 64U);
+    const Fluid25DQuiverAnchor demo_repeat = fluid_25d_quiver_anchor(64U, 128U, 64U);
     require(demo_first.cell_x == 0.5F && demo_first.cell_y == 0.5F &&
                 demo_second.cell_x > demo_first.cell_x && demo_second.cell_y == demo_first.cell_y &&
                 demo_next_row.cell_x == demo_first.cell_x && demo_next_row.cell_y > demo_first.cell_y &&
                 demo_next_row.cell_x == demo_repeat.cell_x && demo_next_row.cell_y == demo_repeat.cell_y &&
                 std::abs((demo_second.cell_x - demo_first.cell_x) -
-                         (126.0F / 31.0F)) < 0.0001F,
-            "quiver anchors should be deterministic, fixed, and regularly spaced near four cells on the demo");
+                         (126.0F / 63.0F)) < 0.0001F,
+            "quiver anchors should be deterministic, fixed, and regularly spaced near two cells on the demo");
     require(kFluid25DQuiverVertexCount == 9U &&
                 kFluid25DQuiverMinimumSpeedMPerS > 0.019828F &&
+                kFluid25DQuiverSpeedUpperMPerS > 0.79F &&
+                kFluid25DQuiverSpeedUpperMPerS < 0.81F &&
+                kFluid25DQuiverMinimumSilhouettePitchFraction > 0.59F &&
+                kFluid25DQuiverMaximumSilhouettePitchFraction > 0.72F &&
+                kFluid25DQuiverMaximumSilhouettePitchFraction < 0.75F &&
                 kFluid25DQuiverNeighborhoodRadiusCells == 1U &&
                 fluid_25d_quiver_smoothing_blend(2.0F, kFluid25DQuiverDirectionSmoothingSeconds) >
                     0.0F &&
@@ -1335,6 +1344,9 @@ void test_presentation_cue_contract() {
                 catchment_cue_b > catchment_pass,
             "the catchment pass should declare the cue buffers read by the water shader");
     require(quiver_reset.find("anchor_axis") != std::string::npos &&
+                quiver_reset.find("kMaxColumns = 64u") != std::string::npos &&
+                quiver_reset.find("kMaxRows = 32u") != std::string::npos &&
+                quiver_reset.find("kMinimumPitchCells = 2u") != std::string::npos &&
                 quiver_reset.find("sample_average_velocity") != std::string::npos &&
                 quiver_reset.find("status.values[0].x != 0u") != std::string::npos &&
                 quiver_reset.find("velocity_sample.z < 0.5") != std::string::npos &&
@@ -1349,10 +1361,14 @@ void test_presentation_cue_contract() {
     require(quiver_vertex.find("gl_InstanceIndex") != std::string::npos &&
                 quiver_vertex.find("shaft_vertex") != std::string::npos &&
                 quiver_vertex.find("head_vertex") != std::string::npos &&
+                quiver_vertex.find("lattice_pitch") != std::string::npos &&
+                quiver_vertex.find("kSpeedUpperMPerS = 0.80") != std::string::npos &&
+                quiver_vertex.find("kMaximumSilhouettePitchFraction") != std::string::npos &&
                 quiver_vertex.find("current_velocity.z < 0.5") != std::string::npos &&
                 quiver_vertex.find("current_velocity.xy") != std::string::npos &&
                 quiver_vertex.find("length(current_velocity.xy)") == std::string::npos &&
                 quiver_fragment.find("fwidth(normalized_edge)") != std::string::npos &&
+                quiver_fragment.find("frag_part != 0u") != std::string::npos &&
                 quiver_fragment.find("color * alpha") != std::string::npos,
             "Flow Inspection should render fixed conventional antialiased arrow glyphs without a draw-time speed cutoff");
     require(quiver_update_call != std::string::npos && quiver_update_call > substep_loop &&
