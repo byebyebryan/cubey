@@ -40,16 +40,16 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
 // before the fixed solver record when a headless capture starts so its initial
 // empty field cannot be mistaken for one completed flow step. It remains
 // outside numerical profiler/oracle paths and is status-gated.
-void record_fluid_25d_flow_inspection_streamlet_reset(
+void record_fluid_25d_flow_inspection_quiver_reset(
     VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& streamlet_reset_requested);
+    bool& quiver_reset_requested);
 
 // An opt-in presentation-only step for headless Flow Inspection. Call it
 // after the fixed solver step has returned so numerical profiler/oracle paths
 // remain untouched; the implementation is status-gated and never reads back.
-void record_fluid_25d_flow_inspection_streamlet_step(
+void record_fluid_25d_flow_inspection_quiver_step(
     VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& streamlet_reset_requested);
+    bool& quiver_reset_requested);
 
 void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                                     const Fluid25DConfig& config,
@@ -79,7 +79,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     const Fluid25DRenderCamera& camera,
     Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
     bool& reset_requested, bool& presentation_cue_reset_requested,
-    bool& streamlet_reset_requested,
+    bool& quiver_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
     std::uint32_t frame_slot_index = 0U, std::span<const float> source_rate_scales = {});
 

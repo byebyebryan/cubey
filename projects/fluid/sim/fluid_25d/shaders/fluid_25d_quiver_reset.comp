@@ -1,0 +1,124 @@
+#version 450
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+struct QuiverState {
+    // Fixed raster-cell anchor.xy; reserved values stay zero.
+    vec4 anchor_xy_reserved;
+    // Smoothed direction.xy, physical speed, opacity.
+    vec4 direction_xy_strength_opacity;
+};
+
+layout(set = 0, binding = 0, std430) buffer QuiverField {
+    QuiverState values[];
+} quiver;
+layout(set = 0, binding = 1, std430) readonly buffer PresentationStatusField {
+    uvec4 values[];
+} status;
+layout(set = 0, binding = 2, std430) readonly buffer DepthField {
+    float values[];
+} depth;
+layout(set = 0, binding = 3, std430) readonly buffer VelocityField {
+    vec4 values[];
+} velocity;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+const uint kMaxColumns = 32u;
+const uint kMaxRows = 16u;
+const uint kMinimumPitchCells = 4u;
+const uint kNeighborhoodRadius = 1u;
+const float kMinimumSpeedMPerS = 0.025;
+const float kDirectionEpsilon = 1.0e-5;
+
+bool finite_float(float value) {
+    return !isnan(value) && !isinf(value);
+}
+
+bool finite_vec2(vec2 value) {
+    return !any(isnan(value)) && !any(isinf(value));
+}
+
+uint axis_count(uint cell_count, uint maximum_count) {
+    return min(maximum_count, max(1u, cell_count / kMinimumPitchCells));
+}
+
+float anchor_axis(uint coordinate, uint count, uint cell_count) {
+    float centre = 0.5 * float(cell_count - 1u);
+    if (count <= 1u || cell_count <= 2u) {
+        return centre;
+    }
+    return mix(0.5, float(cell_count) - 1.5, float(coordinate) / float(count - 1u));
+}
+
+bool sample_average_velocity(uvec2 anchor, uint width, uint height, out vec2 average_flow) {
+    vec2 sum = vec2(0.0);
+    uint samples = 0u;
+    for (int offset_y = -int(kNeighborhoodRadius); offset_y <= int(kNeighborhoodRadius);
+         ++offset_y) {
+        for (int offset_x = -int(kNeighborhoodRadius); offset_x <= int(kNeighborhoodRadius);
+             ++offset_x) {
+            ivec2 coordinate = ivec2(anchor) + ivec2(offset_x, offset_y);
+            if (coordinate.x < 0 || coordinate.y < 0 || coordinate.x >= int(width) ||
+                coordinate.y >= int(height)) {
+                continue;
+            }
+            uint field_index = uint(coordinate.y) * width + uint(coordinate.x);
+            float water_depth = depth.values[field_index];
+            vec4 velocity_sample = velocity.values[field_index];
+            vec2 flow = velocity_sample.xy;
+            if (!finite_float(water_depth) || !finite_vec2(flow) ||
+                !finite_float(velocity_sample.z) || water_depth <= params.physics.z ||
+                velocity_sample.z < 0.5) {
+                continue;
+            }
+            sum += flow;
+            ++samples;
+        }
+    }
+    if (samples == 0u) {
+        average_flow = vec2(0.0);
+        return false;
+    }
+    average_flow = sum / float(samples);
+    return finite_vec2(average_flow);
+}
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= uint(quiver.values.length())) {
+        return;
+    }
+    // A rejected/sticky finite-volume status is a strict no-write boundary for
+    // this optional presentation state too.
+    if (status.values[0].x != 0u) {
+        return;
+    }
+
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    uint columns = axis_count(width, kMaxColumns);
+    uint rows = axis_count(height, kMaxRows);
+    uint expected_count = columns * rows;
+    if (index >= expected_count) {
+        return;
+    }
+    uvec2 lattice_coordinate = uvec2(index % columns, index / columns);
+    vec2 anchor = vec2(anchor_axis(lattice_coordinate.x, columns, width),
+                       anchor_axis(lattice_coordinate.y, rows, height));
+    uvec2 sample_coordinate = uvec2(floor(anchor + vec2(0.5)));
+    vec2 average_flow;
+    QuiverState state;
+    state.anchor_xy_reserved = vec4(anchor, 0.0, 0.0);
+    state.direction_xy_strength_opacity = vec4(0.0);
+    if (sample_average_velocity(sample_coordinate, width, height, average_flow)) {
+        float speed = length(average_flow);
+        if (finite_float(speed) && speed >= kMinimumSpeedMPerS && speed >= kDirectionEpsilon) {
+            state.direction_xy_strength_opacity = vec4(average_flow / speed, speed, 1.0);
+        }
+    }
+    quiver.values[index] = state;
+}

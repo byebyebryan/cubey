@@ -51,7 +51,7 @@ void main() {
     bool flow_inspection = params.presentation.y > 1.5;
     if (water_isolation || flow_inspection) {
         // Isolation finds the wet footprint; Flow Inspection reserves its
-        // motion language for sparse directional streamlets. Neither reading
+        // motion language for fixed directional quiver arrows. Neither reading
         // mode should compete with the broad advected surface highlight.
         sparse_highlight = 0.0;
     }

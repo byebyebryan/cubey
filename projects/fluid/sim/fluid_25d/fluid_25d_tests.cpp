@@ -1169,57 +1169,37 @@ void test_presentation_cue_contract() {
     parity.reset();
     require(parity.source_is_a(), "presentation cue reset should restore the deterministic source");
 
-    require(kFluid25DStreamletCount == 48U && kFluid25DStreamletSegmentCount == 8U &&
-                kFluid25DStreamletVertexCount == 48U &&
-                kFluid25DStreamletLifetimeAcceptedSteps >= 72U &&
-                kFluid25DStreamletWarmupAcceptedSteps < kFluid25DStreamletLifetimeAcceptedSteps &&
-                kFluid25DStreamletActivationSpeedMPerS > 0.019828F &&
-                kFluid25DStreamletSustainSpeedMPerS < kFluid25DStreamletActivationSpeedMPerS &&
-                kFluid25DStreamletFadeSeconds >= 4.0F &&
-                kFluid25DStreamletCooldownAcceptedSteps > 0U,
-            "Flow Inspection should keep a sparse, hysteretic, long-lived streamlet field");
-    const Fluid25DStreamletSeed streamlet_seed_a = fluid_25d_streamlet_seed(37U, 5U);
-    const Fluid25DStreamletSeed streamlet_seed_b = fluid_25d_streamlet_seed(37U, 5U);
-    require(streamlet_seed_a.normalized_x == streamlet_seed_b.normalized_x &&
-                streamlet_seed_a.normalized_y == streamlet_seed_b.normalized_y &&
-                streamlet_seed_a.initial_age_fraction == streamlet_seed_b.initial_age_fraction &&
-                streamlet_seed_a.activation_delay_steps == streamlet_seed_b.activation_delay_steps &&
-                streamlet_seed_a.normalized_x >= 0.0F && streamlet_seed_a.normalized_x <= 1.0F &&
-                streamlet_seed_a.normalized_y >= 0.0F && streamlet_seed_a.normalized_y <= 1.0F &&
-                streamlet_seed_a.initial_age_fraction >= 0.0F &&
-                streamlet_seed_a.initial_age_fraction <= 1.0F &&
-                streamlet_seed_a.activation_delay_steps >= 0.0F &&
-                streamlet_seed_a.activation_delay_steps <=
-                    static_cast<float>(kFluid25DStreamletWarmupAcceptedSteps),
-            "Flow Inspection streamlet seeds should be deterministic interior samples with staggered warmup");
-    const float terrain_lifetime_seconds = fluid_25d_streamlet_lifetime_seconds(2.0F, 37U, 5U);
-    const float fixture_lifetime_seconds =
-        fluid_25d_streamlet_lifetime_seconds(1.0F / 60.0F, 37U, 5U);
-    require(terrain_lifetime_seconds >= 2.0F * 72.0F && terrain_lifetime_seconds <= 2.0F * 120.0F &&
-                fixture_lifetime_seconds >= (1.0F / 60.0F) * 72.0F &&
-                fixture_lifetime_seconds <= (1.0F / 60.0F) * 120.0F,
-            "streamlet lifetime should remain O(100) accepted steps across terrain and fixture timing");
-    const float cooldown_a = fluid_25d_streamlet_cooldown_seconds(2.0F, 37U, 5U);
-    const float cooldown_b = fluid_25d_streamlet_cooldown_seconds(2.0F, 37U, 5U);
-    require(fluid_25d_streamlet_warmup_seconds(2.0F, 37U, 5U) <= 20.0F &&
-                cooldown_a == cooldown_b && cooldown_a >= 16.0F && cooldown_a <= 36.0F &&
-                fluid_25d_streamlet_fade_fraction(2.0F) == 0.25F &&
-                fluid_25d_streamlet_direction_blend(2.0F) > 0.0F &&
-                fluid_25d_streamlet_direction_blend(2.0F) < 1.0F &&
-                !fluid_25d_streamlet_has_safe_water(0.0F, 1.0F, 0.001F) &&
-                fluid_25d_streamlet_has_safe_water(1.0F, 0.0F, 0.001F) &&
-                !fluid_25d_streamlet_can_activate(1.0F, 0.019828F, 0.001F) &&
-                !fluid_25d_streamlet_can_activate(1.0F, 0.024F, 0.001F) &&
-                fluid_25d_streamlet_can_activate(1.0F, 0.05F, 0.001F) &&
-                !fluid_25d_streamlet_can_sustain(1.0F, 0.012F, 0.001F) &&
-                fluid_25d_streamlet_can_sustain(1.0F, 0.014F, 0.001F) &&
-                !fluid_25d_streamlet_lifetime_expired(20.0F, 20.0F) &&
-                fluid_25d_streamlet_lifetime_expired(20.1F, 20.0F) &&
-                fluid_25d_streamlet_should_retire(0.012F, 10.0F, 20.0F) &&
-                !fluid_25d_streamlet_should_retire(0.014F, 10.0F, 20.0F) &&
-                fluid_25d_streamlet_can_cancel_speed_retirement(0.014F, 10.0F, 20.0F) &&
-                !fluid_25d_streamlet_can_cancel_speed_retirement(0.014F, 20.1F, 20.0F),
-            "streamlets should have deterministic cooldown plus a strict entry, lower sustain, and recoverable speed retirement band");
+    const Fluid25DQuiverLattice product_lattice = fluid_25d_quiver_lattice(256U, 128U);
+    const Fluid25DQuiverLattice demo_lattice = fluid_25d_quiver_lattice(128U, 64U);
+    const Fluid25DQuiverLattice tiny_lattice = fluid_25d_quiver_lattice(3U, 2U);
+    require(product_lattice.columns == 32U && product_lattice.rows == 16U &&
+                demo_lattice.columns == 32U && demo_lattice.rows == 16U &&
+                fluid_25d_quiver_count(256U, 128U) == 512U &&
+                fluid_25d_quiver_count(128U, 64U) == 512U && tiny_lattice.columns == 1U &&
+                tiny_lattice.rows == 1U,
+            "Flow Inspection should retain a regular 32 by 16 field on product and demo grids while reducing tiny fixtures");
+    const Fluid25DQuiverAnchor demo_first = fluid_25d_quiver_anchor(0U, 128U, 64U);
+    const Fluid25DQuiverAnchor demo_second = fluid_25d_quiver_anchor(1U, 128U, 64U);
+    const Fluid25DQuiverAnchor demo_next_row = fluid_25d_quiver_anchor(32U, 128U, 64U);
+    const Fluid25DQuiverAnchor demo_repeat = fluid_25d_quiver_anchor(32U, 128U, 64U);
+    require(demo_first.cell_x == 0.5F && demo_first.cell_y == 0.5F &&
+                demo_second.cell_x > demo_first.cell_x && demo_second.cell_y == demo_first.cell_y &&
+                demo_next_row.cell_x == demo_first.cell_x && demo_next_row.cell_y > demo_first.cell_y &&
+                demo_next_row.cell_x == demo_repeat.cell_x && demo_next_row.cell_y == demo_repeat.cell_y &&
+                std::abs((demo_second.cell_x - demo_first.cell_x) -
+                         (126.0F / 31.0F)) < 0.0001F,
+            "quiver anchors should be deterministic, fixed, and regularly spaced near four cells on the demo");
+    require(kFluid25DQuiverVertexCount == 9U &&
+                kFluid25DQuiverMinimumSpeedMPerS > 0.019828F &&
+                kFluid25DQuiverNeighborhoodRadiusCells == 1U &&
+                fluid_25d_quiver_smoothing_blend(2.0F, kFluid25DQuiverDirectionSmoothingSeconds) >
+                    0.0F &&
+                fluid_25d_quiver_smoothing_blend(2.0F, kFluid25DQuiverDirectionSmoothingSeconds) <
+                    1.0F &&
+                !fluid_25d_quiver_sample_is_visible(0.0F, 1.0F, 0.001F) &&
+                !fluid_25d_quiver_sample_is_visible(1.0F, 0.019828F, 0.001F) &&
+                fluid_25d_quiver_sample_is_visible(1.0F, 0.05F, 0.001F),
+            "quiver field should use simulation-time smoothing and keep dry, still, and initial terrain flow absent");
 
     const std::filesystem::path shader_directory =
         std::filesystem::path(__FILE__).parent_path() / "shaders";
@@ -1236,14 +1216,14 @@ void test_presentation_cue_contract() {
     const std::string advect =
         read_shader(shader_directory / "fluid_25d_presentation_cue_advect.comp");
     const std::string water = read_shader(shader_directory / "fluid_25d_water.frag");
-    const std::string streamlet_reset =
-        read_shader(shader_directory / "fluid_25d_streamlet_reset.comp");
-    const std::string streamlet_advect =
-        read_shader(shader_directory / "fluid_25d_streamlet_advect.comp");
-    const std::string streamlet_vertex =
-        read_shader(shader_directory / "fluid_25d_streamlet.vert");
-    const std::string streamlet_fragment =
-        read_shader(shader_directory / "fluid_25d_streamlet.frag");
+    const std::string quiver_reset =
+        read_shader(shader_directory / "fluid_25d_quiver_reset.comp");
+    const std::string quiver_update =
+        read_shader(shader_directory / "fluid_25d_quiver_update.comp");
+    const std::string quiver_vertex =
+        read_shader(shader_directory / "fluid_25d_quiver.vert");
+    const std::string quiver_fragment =
+        read_shader(shader_directory / "fluid_25d_quiver.frag");
     const std::string commands =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
     const std::string app =
@@ -1275,12 +1255,12 @@ void test_presentation_cue_contract() {
         commands.find(".read_storage_buffer(presentation_cue_a)", catchment_pass);
     const std::size_t catchment_cue_b =
         commands.find(".read_storage_buffer(presentation_cue_b)", catchment_pass);
-    const std::size_t streamlet_update =
-        commands.find("record_streamlet_advection(", substep_loop);
-    const std::size_t headless_streamlets =
-        commands.find("record_fluid_25d_flow_inspection_streamlet_step(");
-    const std::size_t headless_streamlet_reset =
-        app.find("record_fluid_25d_flow_inspection_streamlet_reset(");
+    const std::size_t quiver_update_call =
+        commands.find("record_quiver_update(", substep_loop);
+    const std::size_t headless_quiver =
+        commands.find("record_fluid_25d_flow_inspection_quiver_step(");
+    const std::size_t headless_quiver_reset =
+        app.find("record_fluid_25d_flow_inspection_quiver_reset(");
     const std::size_t headless_compute = app.find("record_fluid_25d_compute(");
     require(substep_loop != std::string::npos && cue_update != std::string::npos &&
                 substep_loop < cue_update && pause_return != std::string::npos &&
@@ -1299,52 +1279,35 @@ void test_presentation_cue_contract() {
                 catchment_cue_b != std::string::npos && catchment_cue_a > catchment_pass &&
                 catchment_cue_b > catchment_pass,
             "the catchment pass should declare the cue buffers read by the water shader");
-    const std::size_t dormant_branch =
-        streamlet_advect.find("if (state.cell_age_generation.z < 0.0)");
-    const std::size_t dormant_activation_sample =
-        streamlet_advect.find("if (!has_safe_water", dormant_branch);
-    require(streamlet_reset.find("streamlet_initial_state(index, 0u") != std::string::npos &&
-                streamlet_reset.find("status.values[0].x != 0u") != std::string::npos &&
-                streamlet_reset.find("layout(set = 0, binding = 2") != std::string::npos &&
-                streamlet_reset.find("kActivationSpeedMPerS = 0.025") != std::string::npos &&
-                streamlet_reset.find("-streamlet_cooldown_seconds") != std::string::npos &&
-                streamlet_advect.find("status.values[0].x != 0u") != std::string::npos &&
-                streamlet_advect.find("streamlet_lifetime_seconds") != std::string::npos &&
-                streamlet_advect.find("kSustainSpeedMPerS = 0.013") != std::string::npos &&
-                dormant_branch != std::string::npos &&
-                dormant_activation_sample != std::string::npos &&
-                dormant_branch < dormant_activation_sample &&
-                streamlet_advect.find("if (!has_safe_water") == dormant_activation_sample &&
-                streamlet_advect.find("dormant_state(index, generation + 1u", dormant_branch) !=
-                    std::string::npos &&
-                streamlet_advect.find("!lifetime_expired && speed >= kSustainSpeedMPerS") !=
-                    std::string::npos &&
-                streamlet_advect.find("smoothed_direction") != std::string::npos &&
-                streamlet_advect.find("blended_length < kDirectionEpsilon") != std::string::npos &&
-                streamlet_advect.find("kFadeSeconds = 8.0") != std::string::npos &&
-                streamlet_advect.find("params.physics.w") != std::string::npos,
-            "streamlet compute should reset from current flow, freeze on rejected status, and retain hysteretic lifecycle state");
-    require(streamlet_vertex.find("gl_InstanceIndex") != std::string::npos &&
-                streamlet_vertex.find("const uint kStreamletSegmentCount = 8u") !=
-                    std::string::npos &&
-                streamlet_vertex.find("mix(0.64, 0.0, headness)") != std::string::npos &&
-                streamlet_vertex.find("uint segment = uint(gl_VertexIndex) / 6u") !=
-                    std::string::npos &&
-                streamlet_vertex.find("direction_opacity_retire_seconds") != std::string::npos &&
-                streamlet_vertex.find("time speed cutoff") != std::string::npos &&
-                streamlet_fragment.find("fwidth(lateral_distance)") != std::string::npos &&
-                streamlet_fragment.find("mix(tail, head, headness)") != std::string::npos &&
-                streamlet_fragment.find("color * alpha") != std::string::npos,
-            "Flow Inspection should render sparse stored-heading, antialiased, premultiplied directional marks");
-    require(streamlet_update != std::string::npos && streamlet_update > substep_loop &&
-                headless_streamlets != std::string::npos &&
-                headless_streamlet_reset != std::string::npos &&
+    require(quiver_reset.find("anchor_axis") != std::string::npos &&
+                quiver_reset.find("sample_average_velocity") != std::string::npos &&
+                quiver_reset.find("status.values[0].x != 0u") != std::string::npos &&
+                quiver_reset.find("velocity_sample.z < 0.5") != std::string::npos &&
+                quiver_update.find("sample_average_velocity") != std::string::npos &&
+                quiver_update.find("status.values[0].x != 0u") != std::string::npos &&
+                quiver_update.find("state.anchor_xy_reserved =") == std::string::npos &&
+                quiver_update.find("smoothed_direction") != std::string::npos &&
+                quiver_update.find("mixed_length < kDirectionEpsilon") != std::string::npos &&
+                quiver_update.find("state.direction_xy_strength_opacity = vec4(0.0)") !=
+                    std::string::npos,
+            "quiver compute should use fixed wet-aware local samples, smooth safely, and freeze on rejected status");
+    require(quiver_vertex.find("gl_InstanceIndex") != std::string::npos &&
+                quiver_vertex.find("shaft_vertex") != std::string::npos &&
+                quiver_vertex.find("head_vertex") != std::string::npos &&
+                quiver_vertex.find("current_velocity.z < 0.5") != std::string::npos &&
+                quiver_vertex.find("current_velocity.xy") != std::string::npos &&
+                quiver_vertex.find("length(current_velocity.xy)") == std::string::npos &&
+                quiver_fragment.find("fwidth(normalized_edge)") != std::string::npos &&
+                quiver_fragment.find("color * alpha") != std::string::npos,
+            "Flow Inspection should render fixed conventional antialiased arrow glyphs without a draw-time speed cutoff");
+    require(quiver_update_call != std::string::npos && quiver_update_call > substep_loop &&
+                headless_quiver != std::string::npos &&
+                headless_quiver_reset != std::string::npos &&
                 headless_compute != std::string::npos &&
-                headless_streamlet_reset < headless_compute &&
-                app.find("record_fluid_25d_flow_inspection_streamlet_step") !=
-                    std::string::npos &&
-                app.find("bool streamlet_reset_requested_ = true;") != std::string::npos,
-            "streamlets should seed the initial headless field before solving, then follow completed outer steps separately");
+                headless_quiver_reset < headless_compute &&
+                app.find("record_fluid_25d_flow_inspection_quiver_step") != std::string::npos &&
+                app.find("bool quiver_reset_requested_ = true;") != std::string::npos,
+            "quiver should seed the initial headless field before solving, then follow completed outer steps separately");
 }
 
 void test_retained_flux_inertia() {

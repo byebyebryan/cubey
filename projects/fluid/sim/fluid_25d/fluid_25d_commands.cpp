@@ -18,7 +18,7 @@ namespace cubey::projects::fluid::fluid_25d {
 namespace {
 
 inline constexpr std::uint32_t kFluid25DComputeGroupSize = 8U;
-inline constexpr std::uint32_t kFluid25DStreamletComputeGroupSize = 64U;
+inline constexpr std::uint32_t kFluid25DQuiverComputeGroupSize = 64U;
 
 struct SimulationPushConstants {
     std::array<float, 4> grid_dt_cell{};
@@ -42,7 +42,7 @@ enum class Fluid25DPresentationCuePolicy : std::uint8_t {
     WindowedPresentation,
 };
 
-enum class Fluid25DStreamletPolicy : std::uint8_t {
+enum class Fluid25DQuiverPolicy : std::uint8_t {
     Disabled,
     FlowInspection,
 };
@@ -50,8 +50,8 @@ enum class Fluid25DStreamletPolicy : std::uint8_t {
 struct Fluid25DComputeRecordingPolicy {
     Fluid25DPresentationCuePolicy presentation_cue = Fluid25DPresentationCuePolicy::Disabled;
     bool* presentation_cue_reset_requested = nullptr;
-    Fluid25DStreamletPolicy streamlets = Fluid25DStreamletPolicy::Disabled;
-    bool* streamlet_reset_requested = nullptr;
+    Fluid25DQuiverPolicy quiver = Fluid25DQuiverPolicy::Disabled;
+    bool* quiver_reset_requested = nullptr;
 };
 
 static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 8U);
@@ -79,11 +79,9 @@ presentation_cue_push_constants(const Fluid25DConfig& config) {
     // The presentation field advances once per outer fixed step, after all
     // solver substeps have published their final velocity/depth state.
     push_constants.grid_dt_cell[2] = config.fixed_delta_seconds;
-    // Source scale is irrelevant to render-only compute. Flow Inspection uses
-    // this otherwise-reserved word as a fixed-step-scaled base lifetime;
-    // presentation-cue shaders deliberately ignore it.
-    push_constants.physics[3] =
-        config.fixed_delta_seconds * static_cast<float>(kFluid25DStreamletLifetimeAcceptedSteps);
+    // Source scale is irrelevant to render-only compute; presentation shaders
+    // deliberately ignore this otherwise-reserved word.
+    push_constants.physics[3] = 0.0F;
     return push_constants;
 }
 
@@ -92,9 +90,10 @@ presentation_cue_push_constants(const Fluid25DConfig& config) {
                                                kFluid25DComputeGroupSize);
 }
 
-[[nodiscard]] cubey::render::ComputeDispatchGroups streamlet_dispatch_groups() {
-    return cubey::render::ceil_dispatch_groups(kFluid25DStreamletCount, 1U,
-                                               kFluid25DStreamletComputeGroupSize);
+[[nodiscard]] cubey::render::ComputeDispatchGroups quiver_dispatch_groups(const Fluid25DConfig& config) {
+    return cubey::render::ceil_dispatch_groups(
+        fluid_25d_quiver_count(config.grid_width, config.grid_height), 1U,
+        kFluid25DQuiverComputeGroupSize);
 }
 
 void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
@@ -143,24 +142,24 @@ void record_presentation_cue_advection(VkCommandBuffer command_buffer,
     resources.advance_presentation_cue_parity();
 }
 
-void record_streamlet_reset(VkCommandBuffer command_buffer,
-                            const cubey::vulkan::CommandRecorder& recorder,
-                            Fluid25DGpuResources& resources,
-                            const cubey::render::ComputeDispatchGroups& groups,
-                            const SimulationPushConstants& push_constants) {
-    record_dispatch(recorder, resources.streamlet_reset_pipeline(),
-                    resources.streamlet_reset_descriptor_set(resources.current_depth_is_a()), groups,
+void record_quiver_reset(VkCommandBuffer command_buffer,
+                         const cubey::vulkan::CommandRecorder& recorder,
+                         Fluid25DGpuResources& resources,
+                         const cubey::render::ComputeDispatchGroups& groups,
+                         const SimulationPushConstants& push_constants) {
+    record_dispatch(recorder, resources.quiver_reset_pipeline(),
+                    resources.quiver_reset_descriptor_set(resources.current_depth_is_a()), groups,
                     push_constants);
     cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
 }
 
-void record_streamlet_advection(VkCommandBuffer command_buffer,
-                                const cubey::vulkan::CommandRecorder& recorder,
-                                Fluid25DGpuResources& resources,
-                                const cubey::render::ComputeDispatchGroups& groups,
-                                const SimulationPushConstants& push_constants) {
-    record_dispatch(recorder, resources.streamlet_advection_pipeline(),
-                    resources.streamlet_advection_descriptor_set(resources.current_depth_is_a()),
+void record_quiver_update(VkCommandBuffer command_buffer,
+                          const cubey::vulkan::CommandRecorder& recorder,
+                          Fluid25DGpuResources& resources,
+                          const cubey::render::ComputeDispatchGroups& groups,
+                          const SimulationPushConstants& push_constants) {
+    record_dispatch(recorder, resources.quiver_update_pipeline(),
+                    resources.quiver_update_descriptor_set(resources.current_depth_is_a()),
                     groups, push_constants);
     cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
 }
@@ -257,10 +256,9 @@ void record_fluid_25d_compute_batch_internal(
         simulation_push_constants(config, reset_source_rate_scale);
     const bool record_presentation_cue =
         recording_policy.presentation_cue == Fluid25DPresentationCuePolicy::WindowedPresentation;
-    const bool record_streamlets =
-        recording_policy.streamlets == Fluid25DStreamletPolicy::FlowInspection;
+    const bool record_quiver = recording_policy.quiver == Fluid25DQuiverPolicy::FlowInspection;
     const SimulationPushConstants cue_push_constants = presentation_cue_push_constants(config);
-    const cubey::render::ComputeDispatchGroups streamlet_groups = streamlet_dispatch_groups();
+    const cubey::render::ComputeDispatchGroups quiver_groups = quiver_dispatch_groups(config);
     // Validate every per-step source scale before recording any dispatch. The
     // vector is deliberately small (the windowed catch-up cap), and this
     // preserves fail-fast behavior for callers supplying an invalid schedule.
@@ -278,11 +276,10 @@ void record_fluid_25d_compute_batch_internal(
                                       cue_push_constants);
         *recording_policy.presentation_cue_reset_requested = false;
     }
-    if (record_streamlets && recording_policy.streamlet_reset_requested != nullptr &&
-        *recording_policy.streamlet_reset_requested) {
-        record_streamlet_reset(command_buffer, recorder, resources, streamlet_groups,
-                               cue_push_constants);
-        *recording_policy.streamlet_reset_requested = false;
+    if (record_quiver && recording_policy.quiver_reset_requested != nullptr &&
+        *recording_policy.quiver_reset_requested) {
+        record_quiver_reset(command_buffer, recorder, resources, quiver_groups, cue_push_constants);
+        *recording_policy.quiver_reset_requested = false;
     }
     if (paused) {
         return;
@@ -312,12 +309,12 @@ void record_fluid_25d_compute_batch_internal(
             record_presentation_cue_advection(command_buffer, recorder, resources, groups,
                                               cue_push_constants);
         }
-        if (record_streamlets) {
+        if (record_quiver) {
             // This follows the final published velocity for exactly one outer
             // fixed step. The shader itself preserves state if a finite-volume
             // status is rejected/sticky.
-            record_streamlet_advection(command_buffer, recorder, resources, streamlet_groups,
-                                       cue_push_constants);
+            record_quiver_update(command_buffer, recorder, resources, quiver_groups,
+                                 cue_push_constants);
         }
     }
     if (include_render_visibility_barrier) {
@@ -325,33 +322,33 @@ void record_fluid_25d_compute_batch_internal(
     }
 }
 
-void record_flow_inspection_streamlets_internal(
+void record_flow_inspection_quiver_internal(
     VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& streamlet_reset_requested) {
+    bool& quiver_reset_requested) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const SimulationPushConstants push_constants = presentation_cue_push_constants(config);
-    const cubey::render::ComputeDispatchGroups groups = streamlet_dispatch_groups();
-    if (streamlet_reset_requested) {
-        record_streamlet_reset(command_buffer, recorder, resources, groups, push_constants);
-        streamlet_reset_requested = false;
+    const cubey::render::ComputeDispatchGroups groups = quiver_dispatch_groups(config);
+    if (quiver_reset_requested) {
+        record_quiver_reset(command_buffer, recorder, resources, groups, push_constants);
+        quiver_reset_requested = false;
     }
     // Headless Flow Inspection reaches this after its deliberately separate
     // solver submission. It remains outside solver profiling and has no
     // numerical state/readback dependency.
-    record_streamlet_advection(command_buffer, recorder, resources, groups, push_constants);
+    record_quiver_update(command_buffer, recorder, resources, groups, push_constants);
     cubey::vulkan::record_compute_render_shader_write_barrier(command_buffer);
 }
 
-void record_flow_inspection_streamlet_reset_internal(
+void record_flow_inspection_quiver_reset_internal(
     VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& streamlet_reset_requested) {
-    if (!streamlet_reset_requested) {
+    bool& quiver_reset_requested) {
+    if (!quiver_reset_requested) {
         return;
     }
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    record_streamlet_reset(command_buffer, recorder, resources, streamlet_dispatch_groups(),
+    record_quiver_reset(command_buffer, recorder, resources, quiver_dispatch_groups(config),
                            presentation_cue_push_constants(config));
-    streamlet_reset_requested = false;
+    quiver_reset_requested = false;
 }
 
 } // namespace
@@ -379,18 +376,17 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
         reset_requested, include_render_visibility_barrier, profiler, frame_slot_index);
 }
 
-void record_fluid_25d_flow_inspection_streamlet_step(
+void record_fluid_25d_flow_inspection_quiver_step(
     VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& streamlet_reset_requested) {
-    record_flow_inspection_streamlets_internal(command_buffer, resources, config,
-                                               streamlet_reset_requested);
+    bool& quiver_reset_requested) {
+    record_flow_inspection_quiver_internal(command_buffer, resources, config, quiver_reset_requested);
 }
 
-void record_fluid_25d_flow_inspection_streamlet_reset(
+void record_fluid_25d_flow_inspection_quiver_reset(
     VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& streamlet_reset_requested) {
-    record_flow_inspection_streamlet_reset_internal(command_buffer, resources, config,
-                                                    streamlet_reset_requested);
+    bool& quiver_reset_requested) {
+    record_flow_inspection_quiver_reset_internal(command_buffer, resources, config,
+                                                  quiver_reset_requested);
 }
 
 void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
@@ -434,14 +430,16 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const CatchmentPushConstants push_constants =
         catchment_push_constants(config, resources, catchment_view, camera);
+    const std::uint32_t quiver_count =
+        fluid_25d_quiver_count(config.grid_width, config.grid_height);
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target, depth_target),
         cubey::render::RenderClearValues{
             .color = cubey::render::color_clear_value(0.018F, 0.030F, 0.046F, 1.0F),
             .depth = cubey::render::depth_clear_value(),
         },
-        [&resources, catchment_view, push_constants,
-         vertex_count](const cubey::vulkan::CommandRecorder& pass_recorder) {
+        [&resources, catchment_view, push_constants, vertex_count,
+         quiver_count](const cubey::vulkan::CommandRecorder& pass_recorder) {
             const VkDescriptorSet descriptor_set = resources.render_descriptor_set();
             const cubey::render::GraphicsPipelineResource& terrain = resources.terrain_pipeline();
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, terrain.pipeline());
@@ -462,16 +460,15 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
             pass_recorder.draw(static_cast<std::uint32_t>(vertex_count));
 
             if (catchment_view == Fluid25DCatchmentView::FlowInspection) {
-                const cubey::render::GraphicsPipelineResource& streamlets =
-                    resources.streamlet_pipeline();
-                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, streamlets.pipeline());
+                const cubey::render::GraphicsPipelineResource& quiver = resources.quiver_pipeline();
+                pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, quiver.pipeline());
                 pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                  streamlets.layout(), 0U,
-                                                  resources.streamlet_render_descriptor_set());
+                                                  quiver.layout(), 0U,
+                                                  resources.quiver_render_descriptor_set());
                 pass_recorder.push_constants(
-                    streamlets.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    quiver.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                     0U, push_constants);
-                pass_recorder.draw(kFluid25DStreamletVertexCount, kFluid25DStreamletCount);
+                pass_recorder.draw(kFluid25DQuiverVertexCount, quiver_count);
             }
         });
 }
@@ -483,14 +480,14 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     const Fluid25DRenderCamera& camera,
     Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
     bool& reset_requested, bool& presentation_cue_reset_requested,
-    bool& streamlet_reset_requested,
+    bool& quiver_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler,
     std::uint32_t frame_slot_index, std::span<const float> source_rate_scales) {
     Fluid25DGpuResources* resource_ptr = &resources;
     const Fluid25DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
     bool* presentation_cue_reset_requested_ptr = &presentation_cue_reset_requested;
-    bool* streamlet_reset_requested_ptr = &streamlet_reset_requested;
+    bool* quiver_reset_requested_ptr = &quiver_reset_requested;
     const bool flow_inspection_active =
         presentation_view == Fluid25DPresentationView::Catchment &&
         catchment_view == Fluid25DCatchmentView::FlowInspection;
@@ -524,8 +521,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         import("fluid 2.5D presentation cue status", resources.presentation_cue_status());
     const cubey::render::RenderGraphBufferHandle endpoint_markers =
         import("fluid 2.5D source outlet markers", resources.endpoint_markers());
-    const cubey::render::RenderGraphBufferHandle streamlets =
-        import("fluid 2.5D flow inspection streamlets", resources.streamlets());
+    const cubey::render::RenderGraphBufferHandle quiver =
+        import("fluid 2.5D flow inspection quiver", resources.quiver());
     const cubey::render::RenderGraphTextureState initial_state =
         target_mode == Fluid25DRenderTargetMode::Present
             ? cubey::render::render_graph_undefined_texture_state()
@@ -552,7 +549,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
             .read_write_storage_buffer(presentation_cue_a)
             .read_write_storage_buffer(presentation_cue_b);
         if (flow_inspection_active) {
-            simulation.read_write_storage_buffer(streamlets);
+            simulation.read_write_storage_buffer(quiver);
         }
         if (config.solver == Fluid25DSolver::VirtualPipes) {
             const cubey::render::RenderGraphBufferHandle flux =
@@ -577,7 +574,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         }
         simulation.execute([resource_ptr, config_ptr, source_rate_scales, paused,
                             flow_inspection_active, reset_requested_ptr,
-                            presentation_cue_reset_requested_ptr, streamlet_reset_requested_ptr,
+                            presentation_cue_reset_requested_ptr, quiver_reset_requested_ptr,
                             profiler, frame_slot_index](
                                const cubey::render::RenderGraphExecutionContext& context) {
             record_fluid_25d_compute_batch_internal(
@@ -585,9 +582,9 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
                 *reset_requested_ptr,
                 {.presentation_cue = Fluid25DPresentationCuePolicy::WindowedPresentation,
                  .presentation_cue_reset_requested = presentation_cue_reset_requested_ptr,
-                 .streamlets = flow_inspection_active ? Fluid25DStreamletPolicy::FlowInspection
-                                                       : Fluid25DStreamletPolicy::Disabled,
-                 .streamlet_reset_requested = streamlet_reset_requested_ptr},
+                 .quiver = flow_inspection_active ? Fluid25DQuiverPolicy::FlowInspection
+                                                   : Fluid25DQuiverPolicy::Disabled,
+                 .quiver_reset_requested = quiver_reset_requested_ptr},
                 false, profiler, frame_slot_index);
         });
     }
@@ -620,7 +617,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
             .read_storage_buffer(presentation_cue_b)
             .read_storage_buffer(endpoint_markers);
         if (flow_inspection_active) {
-            catchment.read_storage_buffer(streamlets);
+            catchment.read_storage_buffer(quiver);
         }
         catchment.write_color(backbuffer)
             .write_depth(catchment_depth)

@@ -16,9 +16,9 @@ opt-in GPU finite-volume comparison solve, plus a
 deterministic oblique terrain-and-water catchment presentation. Top-down
 diagnostics remain explicitly selectable. The default Composite catchment
 view preserves the original terrain-and-water shading; Water Isolation
-quiets the bed to expose the wet edge, and Flow Inspection adds sparse,
-directional velocity streamlets to the explicit flow-reading surface. It has deterministic dry-bed,
-lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
+quiets the bed to expose the wet edge, and Flow Inspection adds a fixed-grid
+velocity-arrow field to the explicit flow-reading surface. It has deterministic
+dry-bed, lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
 virtual-pipes depth/face-flux/velocity/ledger and finite-volume
 depth/momentum/velocity/ledger against their corresponding CPU oracle.
 
@@ -74,9 +74,9 @@ River V0 includes:
 - an implicit oblique grid (no uploaded mesh) with opaque terrain, translucent
   premultiplied-alpha water, depth testing, restrained lighting, and a
   deterministic render-only advected flow cue;
-- a Flow Inspection-only, fixed sparse set of persistent GPU streamlets. Their
-  narrow pale head points downstream; they are velocity tracers rather than
-  waves, foam, water mass, or solver particles;
+- a Flow Inspection-only, fixed-grid GPU quiver field. Arrow angle shows
+  local downstream velocity, while restrained length and brightness show
+  speed; the arrows are samples, not waves, foam, water mass, or particles;
 - top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
   diagnostics as an explicit alternate presentation mode;
 - opt-in headless CPU/GPU fixtures that read back only at their final evidence
@@ -100,35 +100,31 @@ is not solver state and never enters depth, momentum, CFL, ledgers, or
 oracle/diagnostic readback. Pausing performs no cue update; calm water uses
 the stable base shade rather than a time-driven pattern.
 
-Flow Inspection has a separate project-local streamlet state buffer. A mark
-advects only after an accepted outer fixed step using final published velocity.
-Inactive seeds require `0.025 m/s` to appear, while an established mark holds
-through speeds down to `0.013 m/s`; it then fades over eight simulation
-seconds before a single deterministic, staggered reseed attempt. A failed
-attempt consumes one cooldown and moves to the next deterministic seed, never
-repeating a dry or slow sample every accepted step. A mark that begins a
-speed-driven fade but recovers to the sustain threshold before disappearing
-smoothly restores; lifetime retirement remains terminal. Stored
-headings are smoothed in simulation time, and the renderer uses those headings
-and persistent opacity rather than a draw-time velocity cutoff. This makes the
-narrow pale head readable as a persistent downstream tracer rather than a
-field of blinking points. The current wet/finite/domain guard remains hard, so
-dry beds and lakes at rest have no marks. Reset samples the current
-parity-selected depth and velocity, allowing an established paused flow to be
-immediately legible without a host readback. These are presentation gates, not
-solver wetness-policy changes. A sticky finite-volume status is a strict
-no-write boundary for both streamlet reset and advection. This state never
-enters solver descriptors, wet/dry policy, diagnostics, profiler diagnostics,
-or CPU/GPU oracle readback. Composite, Water Isolation, and top-down
-Diagnostics never dispatch or draw streamlets. Flow Inspection also suppresses
-Composite's broad scalar-cue highlight so its streamlets are the only
-motion/direction language. Windowed
-Flow Inspection includes its optional render work in the existing aggregate
-presentation command span; explicitly selected headless Flow Inspection steps
-streamlets after each solver record, outside the solver-only timestamp/oracle
-lane. Its initial reset is recorded before the first headless solver step, so
-the first capture remains the truthful unanimated initial state; this changes
-only presentation state and does not change solver dispatches or timestamps.
+Flow Inspection has a separate project-local quiver-state buffer. Every state
+element owns one deterministic, fixed anchor in a regular 32 by 16 lattice on
+the default 256 by 128 product grid and the 128 by 64 source-to-outlet demo;
+small fixtures reduce that count rather than producing duplicate anchors. A
+three-by-three wet/finite-aware neighborhood average samples the published
+physical velocity around each anchor after an accepted outer fixed step.
+Direction, strength, and opacity smooth in simulation time, but anchor
+coordinates never advect, reseed, or retire. `0.025 m/s` is the visibility
+threshold, intentionally above the retained initial terrain-sheet maximum, so
+the dry bed, lake at rest, and honest initial terrain state remain arrow-free.
+Current dry or nonfinite data hides an arrow immediately; calm valid water
+fades it through the same presentation-only state. Reset samples the current
+parity-selected field, allowing an established paused flow to be read without
+a host readback. A sticky finite-volume status is a strict no-write boundary
+for reset and update. This state never enters solver descriptors, wet/dry
+policy, diagnostics, profiler diagnostics, or CPU/GPU oracle readback.
+Composite, Water Isolation, and top-down Diagnostics never dispatch or draw
+the quiver. Flow Inspection suppresses Composite's broad scalar-cue highlight
+so its fixed arrows are the only direction language. Windowed Flow Inspection
+includes optional work in the existing presentation command span; explicitly
+selected headless Flow Inspection updates after each solver record, outside
+the solver-only timestamp/oracle lane. Its initial reset is recorded before
+the first headless solver step, so the first capture remains the truthful
+unanimated initial state; this changes only presentation state and does not
+change solver dispatches or timestamps.
 
 ### Opt-in source-to-outlet scene
 
@@ -163,8 +159,8 @@ build/dev/projects/fluid/fluid_25d/fluid_25d \
 ```
 
 Append `--fluid25d-catchment-view flow-inspection` to use the optional
-velocity-tracer reading mode. For reproducible long-horizon evidence, use the
-headless profile command:
+fixed-grid velocity-field reading mode. For reproducible long-horizon evidence,
+use the headless profile command:
 
 ```sh
 build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture png \
@@ -437,6 +433,11 @@ velocity; it is not waves or a depth cue. Left-drag or scroll orbits/zooms the
 catchment; `Space` pauses, `R` resets the deterministic scenario, and `D`
 cycles diagnostic contents. UI controls only affect presentation/pacing; solver
 fixed delta, headless timing, and numerical evidence remain unchanged.
+
+In Flow Inspection, arrows stay anchored to a uniform grid: angle means local
+flow direction, and length/brightness mean speed. They sample the velocity
+field and are not moving water particles. The source-to-outlet scene retains
+its green SOURCE and amber OUTLET rings in this view.
 
 ## Source layout
 

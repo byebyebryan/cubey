@@ -183,7 +183,7 @@ class Fluid25DApp {
             if (input.key_pressed(cubey::input::Key::R)) {
                 reset_requested_ = true;
                 presentation_cue_reset_requested_ = true;
-                streamlet_reset_requested_ = true;
+                quiver_reset_requested_ = true;
                 windowed_pacing_.reset();
             }
             if (input.key_pressed(cubey::input::Key::D)) {
@@ -196,7 +196,7 @@ class Fluid25DApp {
                                          : Fluid25DPresentationView::Diagnostics;
             }
             if (!was_flow_inspection_active && flow_inspection_active()) {
-                streamlet_reset_requested_ = true;
+                quiver_reset_requested_ = true;
             }
         };
         callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
@@ -236,12 +236,12 @@ class Fluid25DApp {
             .paused = paused_,
             .reset_requested = reset_requested_,
             .presentation_cue_reset_requested = presentation_cue_reset_requested_,
-            .streamlet_reset_requested = streamlet_reset_requested_,
+            .quiver_reset_requested = quiver_reset_requested_,
         });
         if (!was_flow_inspection_active && flow_inspection_active()) {
             // Flow Inspection starts from a deterministic render-only field;
             // changing the reading mode never changes solver state.
-            streamlet_reset_requested_ = true;
+            quiver_reset_requested_ = true;
         }
     }
 
@@ -286,7 +286,7 @@ class Fluid25DApp {
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             catchment_view_, debug_view_, render_camera(render_frame.color_target.extent),
             Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
-            presentation_cue_reset_requested_, streamlet_reset_requested_, profiler,
+            presentation_cue_reset_requested_, quiver_reset_requested_, profiler,
             render_frame.frame_slot.index,
             source_rate_scales);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
@@ -407,18 +407,18 @@ class Fluid25DApp {
             }
         }
         const float source_rate_scale = source_schedule_.source_rate_scale(config_.simulation);
-        const bool record_flow_inspection_streamlets = flow_inspection_active();
+        const bool record_flow_inspection_quiver = flow_inspection_active();
         static_cast<void>(gpu.submit_and_wait({
             .label = "fluid_25d headless simulation frame",
             .work =
                 [this, frame, profile_recorder, source_rate_scale, frame_index,
-                 record_flow_inspection_streamlets](cubey::vulkan::GpuOwnerContext& gpu_context) {
+                 record_flow_inspection_quiver](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
                     cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
                     if (profiler != nullptr) {
                         profiler->begin_frame(commands.command_buffer(), frame.frame_slot.index);
                     }
-                    if (record_flow_inspection_streamlets && streamlet_reset_requested_ &&
+                    if (record_flow_inspection_quiver && quiver_reset_requested_ &&
                         !reset_requested_) {
                         // Seed from the capture's current initial state before
                         // the first numerical update. The reset is still
@@ -427,20 +427,20 @@ class Fluid25DApp {
                         // record below. An explicit solver reset instead stays
                         // queued for that post-solver step, where it observes
                         // the reset numerical field.
-                        record_fluid_25d_flow_inspection_streamlet_reset(
+                        record_fluid_25d_flow_inspection_quiver_reset(
                             commands.command_buffer(), resources_, config_.simulation,
-                            streamlet_reset_requested_);
+                            quiver_reset_requested_);
                     }
                     record_fluid_25d_compute(commands.command_buffer(), resources_,
                                              config_.simulation, false, reset_requested_, false,
                                              profiler, frame.frame_slot.index, source_rate_scale);
-                    if (record_flow_inspection_streamlets) {
+                    if (record_flow_inspection_quiver) {
                         // This runs after the direct solver recorder returns,
                         // so headless numerical timestamps and oracle command
                         // streams remain solver-only.
-                        record_fluid_25d_flow_inspection_streamlet_step(
+                        record_fluid_25d_flow_inspection_quiver_step(
                             commands.command_buffer(), resources_, config_.simulation,
-                            streamlet_reset_requested_);
+                            quiver_reset_requested_);
                     }
                     commands.submit_and_wait();
                     if (profiler != nullptr) {
@@ -730,7 +730,7 @@ class Fluid25DApp {
                 target, resources_, config_.simulation, presentation_view_, catchment_view_,
                 debug_view_, render_camera(target.extent),
                 Fluid25DRenderTargetMode::ColorAttachment, false, false, reset_requested_,
-                presentation_cue_reset_requested_, streamlet_reset_requested_);
+                presentation_cue_reset_requested_, quiver_reset_requested_);
             graph_executor_.record(
                 {
                     .device = &context.device(),
@@ -776,7 +776,7 @@ class Fluid25DApp {
     // render-only cue separately on the first frame or an explicit reset.
     bool reset_requested_ = false;
     bool presentation_cue_reset_requested_ = true;
-    bool streamlet_reset_requested_ = true;
+    bool quiver_reset_requested_ = true;
 };
 
 } // namespace

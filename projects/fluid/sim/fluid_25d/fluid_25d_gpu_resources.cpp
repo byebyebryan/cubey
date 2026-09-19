@@ -71,12 +71,12 @@ inline constexpr VkDeviceSize kSimulationPushConstantBytes = sizeof(float) * 8U;
     return pass;
 }
 
-[[nodiscard]] cubey::render::MaterialPassInfo streamlet_pass_info() {
+[[nodiscard]] cubey::render::MaterialPassInfo quiver_pass_info() {
     cubey::render::MaterialPassInfo pass = terrain_pass_info();
-    pass.label = "fluid_25d.catchment_streamlets";
+    pass.label = "fluid_25d.catchment_quiver";
     pass.depth_write = false;
     pass.blend_enable = true;
-    // Flow Inspection streamlets also write premultiplied source-over color.
+    // Flow Inspection quiver arrows write premultiplied source-over color.
     pass.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
     pass.dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     pass.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
@@ -206,11 +206,12 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
         endpoint_markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], outlet_xy[0],
                                                 outlet_xy[1]};
     }
-    std::vector<Fluid25DStreamletGpu> inactive_streamlets(kFluid25DStreamletCount);
-    for (Fluid25DStreamletGpu& streamlet : inactive_streamlets) {
+    std::vector<Fluid25DQuiverGpu> inactive_quiver(
+        fluid_25d_quiver_count(config.grid_width, config.grid_height));
+    for (Fluid25DQuiverGpu& arrow : inactive_quiver) {
         // A failed status-gated reset must remain visibly inert rather than
         // rendering the value-initialized origin as a stack of false marks.
-        streamlet.cell_xy_age_generation[2] = -1.0F;
+        arrow.direction_xy_strength_opacity[3] = 0.0F;
     }
     if (config.solver == Fluid25DSolver::VirtualPipes) {
         const std::vector<Fluid25DFluxGpu> zero_flux(cells);
@@ -242,8 +243,8 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     endpoint_markers_.emplace(upload(std::vector<Fluid25DEndpointMarkersGpu>{endpoint_markers},
                                      static_buffer_usage(),
                                      "fluid_25d source outlet markers"));
-    streamlets_.emplace(upload(inactive_streamlets, static_buffer_usage(),
-                               "fluid_25d flow inspection streamlets"));
+    quiver_.emplace(upload(inactive_quiver, static_buffer_usage(),
+                           "fluid_25d flow inspection quiver"));
     current_depth_is_a_ = true;
     presentation_cue_parity_.reset();
 }
@@ -264,20 +265,20 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
         device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
     presentation_cue_depth_b_b_to_a_descriptors_.emplace(
         device, storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
-    // Reset samples the parity-selected published depth/velocity so Flow
-    // Inspection can become immediately useful while paused, without a host
-    // readback or a solver-state write.
-    streamlet_reset_a_descriptors_.emplace(device,
-                                           storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    streamlet_reset_b_descriptors_.emplace(device,
-                                           storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    streamlet_advection_a_descriptors_.emplace(
+    // Reset/update sample the parity-selected published depth/velocity so
+    // Flow Inspection can become useful while paused without a host readback
+    // or a solver-state write.
+    quiver_reset_a_descriptors_.emplace(device,
+                                        storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    quiver_reset_b_descriptors_.emplace(device,
+                                        storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    quiver_update_a_descriptors_.emplace(
         device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    streamlet_advection_b_descriptors_.emplace(
+    quiver_update_b_descriptors_.emplace(
         device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    streamlet_render_a_descriptors_.emplace(
+    quiver_render_a_descriptors_.emplace(
         device, storage_set_info(4U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
-    streamlet_render_b_descriptors_.emplace(
+    quiver_render_b_descriptors_.emplace(
         device, storage_set_info(4U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
 
     cubey::vulkan::DescriptorWriteBatch writes;
@@ -476,36 +477,35 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     write_presentation_cue_advection(presentation_cue_depth_b_b_to_a_descriptors_->set(), depth_b(),
                                      presentation_cue_b(), presentation_cue_a());
 
-    const cubey::vulkan::Buffer& streamlet_status = presentation_cue_status();
-    const auto write_streamlet_reset = [this, &writes, &streamlet_status](
-                                           VkDescriptorSet set,
-                                           const cubey::vulkan::Buffer& depth) {
-        writes.storage_buffer(set, 0, streamlets().handle(), streamlets().size())
-            .storage_buffer(set, 1, streamlet_status.handle(), streamlet_status.size())
+    const cubey::vulkan::Buffer& quiver_status = presentation_cue_status();
+    const auto write_quiver_reset = [this, &writes, &quiver_status](VkDescriptorSet set,
+                                                                    const cubey::vulkan::Buffer& depth) {
+        writes.storage_buffer(set, 0, quiver().handle(), quiver().size())
+            .storage_buffer(set, 1, quiver_status.handle(), quiver_status.size())
             .storage_buffer(set, 2, depth.handle(), depth.size())
             .storage_buffer(set, 3, velocity().handle(), velocity().size());
     };
-    write_streamlet_reset(streamlet_reset_a_descriptors_->set(), depth_a());
-    write_streamlet_reset(streamlet_reset_b_descriptors_->set(), depth_b());
-    const auto write_streamlet_advection =
-        [this, &writes, &streamlet_status](VkDescriptorSet set,
-                                           const cubey::vulkan::Buffer& depth) {
+    write_quiver_reset(quiver_reset_a_descriptors_->set(), depth_a());
+    write_quiver_reset(quiver_reset_b_descriptors_->set(), depth_b());
+    const auto write_quiver_update = [this, &writes, &quiver_status](
+                                         VkDescriptorSet set,
+                                         const cubey::vulkan::Buffer& depth) {
             writes.storage_buffer(set, 0, depth.handle(), depth.size())
                 .storage_buffer(set, 1, velocity().handle(), velocity().size())
-                .storage_buffer(set, 2, streamlet_status.handle(), streamlet_status.size())
-                .storage_buffer(set, 3, streamlets().handle(), streamlets().size());
+                .storage_buffer(set, 2, quiver_status.handle(), quiver_status.size())
+                .storage_buffer(set, 3, quiver().handle(), quiver().size());
         };
-    write_streamlet_advection(streamlet_advection_a_descriptors_->set(), depth_a());
-    write_streamlet_advection(streamlet_advection_b_descriptors_->set(), depth_b());
-    const auto write_streamlet_render =
+    write_quiver_update(quiver_update_a_descriptors_->set(), depth_a());
+    write_quiver_update(quiver_update_b_descriptors_->set(), depth_b());
+    const auto write_quiver_render =
         [this, &writes](VkDescriptorSet set, const cubey::vulkan::Buffer& depth) {
             writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
                 .storage_buffer(set, 1, depth.handle(), depth.size())
                 .storage_buffer(set, 2, velocity().handle(), velocity().size())
-                .storage_buffer(set, 3, streamlets().handle(), streamlets().size());
+                .storage_buffer(set, 3, quiver().handle(), quiver().size());
         };
-    write_streamlet_render(streamlet_render_a_descriptors_->set(), depth_a());
-    write_streamlet_render(streamlet_render_b_descriptors_->set(), depth_b());
+    write_quiver_render(quiver_render_a_descriptors_->set(), depth_a());
+    write_quiver_render(quiver_render_b_descriptors_->set(), depth_b());
     writes.update(device);
 }
 
@@ -539,11 +539,11 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
     emplace_compute_pipeline(presentation_cue_advection_pipeline_, device,
                              "fluid_25d_presentation_cue_advect.comp.spv",
                              presentation_cue_depth_a_a_to_b_descriptors_->layout());
-    emplace_compute_pipeline(streamlet_reset_pipeline_, device, "fluid_25d_streamlet_reset.comp.spv",
-                             streamlet_reset_a_descriptors_->layout());
-    emplace_compute_pipeline(streamlet_advection_pipeline_, device,
-                             "fluid_25d_streamlet_advect.comp.spv",
-                             streamlet_advection_a_descriptors_->layout());
+    emplace_compute_pipeline(quiver_reset_pipeline_, device, "fluid_25d_quiver_reset.comp.spv",
+                             quiver_reset_a_descriptors_->layout());
+    emplace_compute_pipeline(quiver_update_pipeline_, device,
+                             "fluid_25d_quiver_update.comp.spv",
+                             quiver_update_a_descriptors_->layout());
 }
 
 void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device,
@@ -588,24 +588,23 @@ void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device
                                         .material_pass = water_pass_info(),
                                     });
 
-    const std::array<cubey::render::ShaderStageFile, 2> streamlet_shader_stages{
-        cubey::render::vertex_shader_file(shader_path("fluid_25d_streamlet.vert.spv")),
-        cubey::render::fragment_shader_file(shader_path("fluid_25d_streamlet.frag.spv")),
+    const std::array<cubey::render::ShaderStageFile, 2> quiver_shader_stages{
+        cubey::render::vertex_shader_file(shader_path("fluid_25d_quiver.vert.spv")),
+        cubey::render::fragment_shader_file(shader_path("fluid_25d_quiver.frag.spv")),
     };
-    const std::array<VkDescriptorSetLayout, 1> streamlet_layouts{
-        streamlet_render_a_descriptors_->layout()};
-    streamlet_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+    const std::array<VkDescriptorSetLayout, 1> quiver_layouts{quiver_render_a_descriptors_->layout()};
+    quiver_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
                                             .extent = extent,
                                             .color_format = color_format,
                                             .depth_format = depth_format,
-                                            .shader_stage_files = streamlet_shader_stages,
-                                            .descriptor_set_layouts = streamlet_layouts,
-                                            .material_pass = streamlet_pass_info(),
+                                            .shader_stage_files = quiver_shader_stages,
+                                            .descriptor_set_layouts = quiver_layouts,
+                                            .material_pass = quiver_pass_info(),
                                         });
 }
 
 void Fluid25DGpuResources::destroy_swapchain_resources() {
-    streamlet_pipeline_.reset();
+    quiver_pipeline_.reset();
     water_pipeline_.reset();
     terrain_pipeline_.reset();
     diagnostic_pipeline_.reset();
@@ -621,8 +620,8 @@ void Fluid25DGpuResources::destroy_all_resources() {
     finite_volume_cfl_finalize_pipeline_.reset();
     finite_volume_cfl_pipeline_.reset();
     finite_volume_reset_pipeline_.reset();
-    streamlet_advection_pipeline_.reset();
-    streamlet_reset_pipeline_.reset();
+    quiver_update_pipeline_.reset();
+    quiver_reset_pipeline_.reset();
     presentation_cue_advection_pipeline_.reset();
     presentation_cue_reset_pipeline_.reset();
     depth_pipeline_.reset();
@@ -633,12 +632,12 @@ void Fluid25DGpuResources::destroy_all_resources() {
     presentation_cue_depth_a_b_to_a_descriptors_.reset();
     presentation_cue_depth_a_a_to_b_descriptors_.reset();
     presentation_cue_reset_descriptors_.reset();
-    streamlet_render_b_descriptors_.reset();
-    streamlet_render_a_descriptors_.reset();
-    streamlet_advection_b_descriptors_.reset();
-    streamlet_advection_a_descriptors_.reset();
-    streamlet_reset_b_descriptors_.reset();
-    streamlet_reset_a_descriptors_.reset();
+    quiver_render_b_descriptors_.reset();
+    quiver_render_a_descriptors_.reset();
+    quiver_update_b_descriptors_.reset();
+    quiver_update_a_descriptors_.reset();
+    quiver_reset_b_descriptors_.reset();
+    quiver_reset_a_descriptors_.reset();
     render_b_descriptors_.reset();
     render_a_descriptors_.reset();
     depth_b_to_a_descriptors_.reset();
@@ -659,7 +658,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     presentation_cue_b_.reset();
     presentation_cue_a_.reset();
     endpoint_markers_.reset();
-    streamlets_.reset();
+    quiver_.reset();
     ledger_.reset();
     velocity_.reset();
     flux_.reset();
@@ -714,7 +713,7 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_a, presentation_cue_a_,
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_b, presentation_cue_b_,
                                  "presentation cue B buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(endpoint_markers, endpoint_markers_, "endpoint marker buffer")
-CUBEY_FLUID25D_RESOURCE_ACCESSOR(streamlets, streamlets_, "flow inspection streamlet buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(quiver, quiver_, "flow inspection quiver buffer")
 
 #undef CUBEY_FLUID25D_RESOURCE_ACCESSOR
 
@@ -770,10 +769,10 @@ CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_reset_pipeline, presentation_c
 CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_advection_pipeline,
                                  presentation_cue_advection_pipeline_,
                                  "presentation cue advection pipeline")
-CUBEY_FLUID25D_PIPELINE_ACCESSOR(streamlet_reset_pipeline, streamlet_reset_pipeline_,
-                                 "flow inspection streamlet reset pipeline")
-CUBEY_FLUID25D_PIPELINE_ACCESSOR(streamlet_advection_pipeline, streamlet_advection_pipeline_,
-                                 "flow inspection streamlet advection pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(quiver_reset_pipeline, quiver_reset_pipeline_,
+                                 "flow inspection quiver reset pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(quiver_update_pipeline, quiver_update_pipeline_,
+                                 "flow inspection quiver update pipeline")
 
 #undef CUBEY_FLUID25D_PIPELINE_ACCESSOR
 
@@ -798,11 +797,11 @@ const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::water_pipel
     return water_pipeline_.value();
 }
 
-const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::streamlet_pipeline() const {
-    if (!streamlet_pipeline_.has_value()) {
-        throw std::runtime_error("fluid 2.5D flow inspection streamlet pipeline is not initialized");
+const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::quiver_pipeline() const {
+    if (!quiver_pipeline_.has_value()) {
+        throw std::runtime_error("fluid 2.5D flow inspection quiver pipeline is not initialized");
     }
-    return streamlet_pipeline_.value();
+    return quiver_pipeline_.value();
 }
 
 } // namespace cubey::projects::fluid::fluid_25d
