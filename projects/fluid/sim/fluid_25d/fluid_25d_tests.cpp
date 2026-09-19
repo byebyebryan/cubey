@@ -182,6 +182,17 @@ void test_config_defaults_and_parsing() {
     require(fluid_25d_scenario_from_name("boundary-drain-fixture") ==
                 Fluid25DScenario::BoundaryDrainFixture,
             "fluid 2.5D should parse the numerical boundary drain fixture");
+    require(fluid_25d_scenario_from_name("source-outlet-demo") ==
+                Fluid25DScenario::SourceOutletDemo &&
+                std::string(fluid_25d_scenario_name(Fluid25DScenario::SourceOutletDemo)) ==
+                    "source-outlet-demo",
+            "fluid 2.5D should expose the opt-in source-outlet demo distinctly from River V0");
+    Fluid25DConfig virtual_pipes_demo = defaults;
+    virtual_pipes_demo.scenario = Fluid25DScenario::SourceOutletDemo;
+    require_throws([&] { validate_fluid_25d_config(virtual_pipes_demo); },
+                   "source-outlet demo should require the explicit finite-volume solver");
+    virtual_pipes_demo.solver = Fluid25DSolver::FiniteVolume;
+    validate_fluid_25d_config(virtual_pipes_demo);
     require(fluid_25d_terrain_water_protocol_from_name("rain-pulse") ==
                 Fluid25DTerrainWaterProtocol::RainPulse,
             "fluid 2.5D should parse the rain-pulse terrain-water protocol");
@@ -491,8 +502,82 @@ void test_deterministic_scenarios() {
             "river fixture should carry one positive source rate");
     require(river.sink_depth_rate_m_per_s[river.sink_cell] > 0.0F,
             "river fixture should carry one positive sink rate");
-    require(river.initial_water_depth_m[river.sink_cell] == 0.0F,
-            "river fixture sink should start dry");
+    require(river.initial_water_depth_m[river.source_cell] > 0.0F &&
+                river.initial_water_depth_m[river.sink_cell] == 0.0F,
+            "River V0 should retain its narrow initially dry-outlet fixture");
+
+    const Fluid25DScenarioData readable_river =
+        make_fluid_25d_scenario(Fluid25DScenario::SourceOutletDemo, 64U, 32U, 1.0F);
+    require(readable_river.source_cell != kFluid25DNoCell &&
+                readable_river.sink_cell != kFluid25DNoCell &&
+                readable_river.source_cell != readable_river.sink_cell,
+            "source-outlet demo should identify distinct endpoint centroids");
+    require(readable_river.initial_water_depth_m[readable_river.source_cell] > 0.0F &&
+                readable_river.initial_water_depth_m[readable_river.sink_cell] > 0.0F,
+            "source-outlet demo should seed a visible route through both endpoint regions");
+    std::uint32_t source_region_cells = 0U;
+    std::uint32_t sink_region_cells = 0U;
+    float source_rate_sum = 0.0F;
+    float sink_rate_sum = 0.0F;
+    bool overlapping_endpoint_rates = false;
+    for (std::size_t index = 0U; index < readable_river.source_depth_rate_m_per_s.size(); ++index) {
+        const float source_rate = readable_river.source_depth_rate_m_per_s[index];
+        const float sink_rate = readable_river.sink_depth_rate_m_per_s[index];
+        source_region_cells += source_rate > 0.0F ? 1U : 0U;
+        sink_region_cells += sink_rate > 0.0F ? 1U : 0U;
+        source_rate_sum += source_rate;
+        sink_rate_sum += sink_rate;
+        overlapping_endpoint_rates =
+            overlapping_endpoint_rates || (source_rate > 0.0F && sink_rate > 0.0F);
+    }
+    require(source_region_cells > 1U && sink_region_cells > 1U && !overlapping_endpoint_rates,
+            "source-outlet demo should retain separate bounded endpoint regions");
+    require_close(source_rate_sum, 0.03, kDepthToleranceM,
+                  "source-outlet demo source should retain its total physical throughput");
+    require_close(sink_rate_sum, 0.03, kDepthToleranceM,
+                  "source-outlet demo outlet should retain its total physical throughput");
+
+    const std::uint32_t readable_source_x =
+        static_cast<std::uint32_t>(readable_river.source_cell % readable_river.width);
+    const std::uint32_t readable_sink_x =
+        static_cast<std::uint32_t>(readable_river.sink_cell % readable_river.width);
+    const float outlet_bed_height_m = readable_river.terrain_height_m[readable_river.sink_cell];
+    float minimum_ribbon_center_y = std::numeric_limits<float>::infinity();
+    float maximum_ribbon_center_y = -std::numeric_limits<float>::infinity();
+    for (std::uint32_t x = readable_source_x; x <= readable_sink_x; ++x) {
+        std::uint32_t wet_cells = 0U;
+        float weighted_y_sum = 0.0F;
+        float depth_sum = 0.0F;
+        for (std::uint32_t y = 0U; y < readable_river.height; ++y) {
+            const float depth = readable_river.initial_water_depth_m[
+                fluid_25d_scenario_index(readable_river.width, readable_river.height, x, y)];
+            if (depth > 0.0F) {
+                ++wet_cells;
+                weighted_y_sum += static_cast<float>(y) * depth;
+                depth_sum += depth;
+            }
+        }
+        require(wet_cells >= 4U && depth_sum > 0.0F,
+                "river fixture should seed a broad connected water ribbon in every route column");
+        const float ribbon_center_y = weighted_y_sum / depth_sum;
+        minimum_ribbon_center_y = std::min(minimum_ribbon_center_y, ribbon_center_y);
+        maximum_ribbon_center_y = std::max(maximum_ribbon_center_y, ribbon_center_y);
+    }
+    require(maximum_ribbon_center_y - minimum_ribbon_center_y > 4.0F,
+            "river fixture should visibly meander instead of retaining a straight wet line");
+    for (std::uint32_t x = readable_sink_x + 1U; x < readable_river.width; ++x) {
+        float downstream_valley_floor_m = std::numeric_limits<float>::infinity();
+        for (std::uint32_t y = 0U; y < readable_river.height; ++y) {
+            const std::size_t index =
+                fluid_25d_scenario_index(readable_river.width, readable_river.height, x, y);
+            downstream_valley_floor_m =
+                std::min(downstream_valley_floor_m, readable_river.terrain_height_m[index]);
+            require(readable_river.initial_water_depth_m[index] == 0.0F,
+                    "source-outlet demo should not seed water beyond its terminal outlet");
+        }
+        require(downstream_valley_floor_m > outlet_bed_height_m,
+                "source-outlet demo should raise the closed downstream shoulder above the outlet");
+    }
     require(!dry_a.terrain_provenance.has_value() && !lake.terrain_provenance.has_value() &&
                 !river.terrain_provenance.has_value(),
             "analytic fixtures should not acquire terrain-case provenance");
@@ -1297,7 +1382,8 @@ void test_river_mass_and_positivity() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(24, 9, Fluid25DScenario::RiverCatchment);
     // Keep one public step equal to one solver step here so the first ledger
-    // can prove that the initially dry sink removes no water before arrival.
+    // can prove that River V0's initially dry sink removes no water before
+    // the narrow seeded path reaches it.
     config.simulation_substeps = 1;
     const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
         config.scenario, config.grid_width, config.grid_height, config.cell_size_m);
@@ -1308,10 +1394,10 @@ void test_river_mass_and_positivity() {
     double maximum_ledger_error_m3 = 0.0;
     bool saw_positive_downstream_flux = false;
     require(scenario.initial_water_depth_m[scenario.sink_cell] == 0.0F,
-            "river sink must be dry at the start of the run");
+            "River V0 sink must remain dry at the start of the run");
     const Fluid25DStepLedger first_ledger = oracle.step();
     require_close(first_ledger.sink_volume_m3, 0.0, kDepthToleranceM,
-                  "dry river sink must remove no water before arrival");
+                  "dry River V0 sink must remove no water before arrival");
     source_volume_m3 += first_ledger.source_volume_m3;
     sink_volume_m3 += first_ledger.sink_volume_m3;
     maximum_ledger_error_m3 =

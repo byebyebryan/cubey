@@ -193,6 +193,19 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<Fluid25DLedgerGpu> zero_ledger(cells);
     const std::vector<float> zero_presentation_cue(cells);
     const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_presentation_status(1U);
+    Fluid25DEndpointMarkersGpu endpoint_markers{};
+    endpoint_markers.source_xy_outlet_xy.fill(-1.0F);
+    if (config.scenario == Fluid25DScenario::SourceOutletDemo &&
+        scenario.source_cell != kFluid25DNoCell && scenario.sink_cell != kFluid25DNoCell) {
+        const auto cell_xy = [width = config.grid_width](std::size_t index) {
+            return std::array<float, 2>{static_cast<float>(index % width),
+                                        static_cast<float>(index / width)};
+        };
+        const std::array<float, 2> source_xy = cell_xy(scenario.source_cell);
+        const std::array<float, 2> outlet_xy = cell_xy(scenario.sink_cell);
+        endpoint_markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], outlet_xy[0],
+                                                outlet_xy[1]};
+    }
     std::vector<Fluid25DStreamletGpu> inactive_streamlets(kFluid25DStreamletCount);
     for (Fluid25DStreamletGpu& streamlet : inactive_streamlets) {
         // A failed status-gated reset must remain visibly inert rather than
@@ -226,6 +239,9 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
                                        "fluid_25d presentation cue B upload"));
     presentation_cue_virtual_status_.emplace(upload(zero_presentation_status, static_buffer_usage(),
                                                     "fluid_25d presentation cue status upload"));
+    endpoint_markers_.emplace(upload(std::vector<Fluid25DEndpointMarkersGpu>{endpoint_markers},
+                                     static_buffer_usage(),
+                                     "fluid_25d source outlet markers"));
     streamlets_.emplace(upload(inactive_streamlets, static_buffer_usage(),
                                "fluid_25d flow inspection streamlets"));
     current_depth_is_a_ = true;
@@ -234,7 +250,7 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
 
 void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     const cubey::vulkan::DescriptorSetInfo render_info =
-        storage_set_info(5U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        storage_set_info(6U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     render_a_descriptors_.emplace(device, render_info);
     render_b_descriptors_.emplace(device, render_info);
 
@@ -429,7 +445,8 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
             .storage_buffer(set, 1, depth.handle(), depth.size())
             .storage_buffer(set, 2, velocity().handle(), velocity().size())
             .storage_buffer(set, 3, presentation_cue_a().handle(), presentation_cue_a().size())
-            .storage_buffer(set, 4, presentation_cue_b().handle(), presentation_cue_b().size());
+            .storage_buffer(set, 4, presentation_cue_b().handle(), presentation_cue_b().size())
+            .storage_buffer(set, 5, endpoint_markers().handle(), endpoint_markers().size());
     };
     write_render(render_a_descriptors_->set(), depth_a());
     write_render(render_b_descriptors_->set(), depth_b());
@@ -641,6 +658,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     presentation_cue_virtual_status_.reset();
     presentation_cue_b_.reset();
     presentation_cue_a_.reset();
+    endpoint_markers_.reset();
     streamlets_.reset();
     ledger_.reset();
     velocity_.reset();
@@ -695,6 +713,7 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_a, presentation_cue_a_,
                                  "presentation cue A buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_b, presentation_cue_b_,
                                  "presentation cue B buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(endpoint_markers, endpoint_markers_, "endpoint marker buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(streamlets, streamlets_, "flow inspection streamlet buffer")
 
 #undef CUBEY_FLUID25D_RESOURCE_ACCESSOR

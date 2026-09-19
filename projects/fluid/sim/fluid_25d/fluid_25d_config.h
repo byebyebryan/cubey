@@ -25,6 +25,9 @@ enum class Fluid25DScenario : std::uint32_t {
     RiverCatchment = 2,
     TerrainCase = 3,
     BoundaryDrainFixture = 4,
+    // Opt-in presentation fixture. It uses finite-volume evidence rather
+    // than changing River V0's virtual-pipes default or its oracle baseline.
+    SourceOutletDemo = 5,
 };
 
 // VirtualPipes remains the product default. FiniteVolume is an opt-in
@@ -256,6 +259,8 @@ struct Fluid25DStartupOptions {
         return "terrain-case";
     case Fluid25DScenario::BoundaryDrainFixture:
         return "boundary-drain-fixture";
+    case Fluid25DScenario::SourceOutletDemo:
+        return "source-outlet-demo";
     }
     return "river-catchment";
 }
@@ -296,9 +301,12 @@ struct Fluid25DStartupOptions {
     if (name == "boundary-drain-fixture") {
         return Fluid25DScenario::BoundaryDrainFixture;
     }
+    if (name == "source-outlet-demo") {
+        return Fluid25DScenario::SourceOutletDemo;
+    }
     throw std::runtime_error(
-        "fluid 2.5D scenario must be dry-bed, lake-at-rest, river-catchment, terrain-case, or "
-        "boundary-drain-fixture");
+        "fluid 2.5D scenario must be dry-bed, lake-at-rest, river-catchment, terrain-case, "
+        "boundary-drain-fixture, or source-outlet-demo");
 }
 
 [[nodiscard]] inline const char*
@@ -463,12 +471,18 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         config.scenario != Fluid25DScenario::LakeAtRest &&
         config.scenario != Fluid25DScenario::RiverCatchment &&
         config.scenario != Fluid25DScenario::TerrainCase &&
-        config.scenario != Fluid25DScenario::BoundaryDrainFixture) {
+        config.scenario != Fluid25DScenario::BoundaryDrainFixture &&
+        config.scenario != Fluid25DScenario::SourceOutletDemo) {
         throw std::runtime_error("fluid 2.5D scenario value is invalid");
     }
     if (config.solver != Fluid25DSolver::VirtualPipes &&
         config.solver != Fluid25DSolver::FiniteVolume) {
         throw std::runtime_error("fluid 2.5D solver value is invalid");
+    }
+    if (config.scenario == Fluid25DScenario::SourceOutletDemo &&
+        config.solver != Fluid25DSolver::FiniteVolume) {
+        throw std::runtime_error(
+            "fluid 2.5D source-outlet-demo requires --fluid25d-solver finite-volume");
     }
     if (!(config.cell_size_m > 0.0F) || !std::isfinite(config.cell_size_m)) {
         throw std::runtime_error("fluid 2.5D cell size must be finite and positive");

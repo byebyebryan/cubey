@@ -3,6 +3,10 @@
 
 #include "cubey/color_space.glsl"
 
+layout(set = 0, binding = 5, std430) readonly buffer EndpointMarkers {
+    vec4 source_xy_outlet_xy;
+} endpoint_markers;
+
 layout(push_constant) uniform CatchmentParams {
     mat4 view_projection;
     vec4 grid_cell;
@@ -16,6 +20,14 @@ layout(location = 2) in float water_depth;
 layout(location = 3) in vec3 water_flow;
 layout(location = 4) in float presentation_cue;
 layout(location = 0) out vec4 out_color;
+
+float endpoint_annulus(vec2 grid_position, vec2 endpoint, float radius_cells) {
+    if (any(lessThan(endpoint, vec2(0.0)))) {
+        return 0.0;
+    }
+    float radial_distance = length(grid_position - endpoint);
+    return 1.0 - smoothstep(0.60, 1.45, abs(radial_distance - radius_cells));
+}
 
 void main() {
     if (water_depth <= params.camera_wet.w) {
@@ -62,6 +74,23 @@ void main() {
     if (water_isolation) {
         alpha = mix(0.68, 0.88, depth_factor);
     }
+    // Keep endpoint rings legible where the shallow source/outlet ribbon is
+    // translucent. The terrain pass draws the same rings over dry bed, so a
+    // route remains labelled even after a local sink removes its water.
+    vec2 grid_position = world_position.xz / params.grid_cell.z +
+                         0.5 * vec2(params.grid_cell.x - 1.0, params.grid_cell.y - 1.0);
+    float radius_cells = clamp(0.045 * min(params.grid_cell.x, params.grid_cell.y), 3.0, 6.0);
+    float source_marker = endpoint_annulus(grid_position,
+                                            endpoint_markers.source_xy_outlet_xy.xy,
+                                            radius_cells);
+    float outlet_marker = endpoint_annulus(grid_position,
+                                            endpoint_markers.source_xy_outlet_xy.zw,
+                                            radius_cells);
+    vec3 source_color = cubey_srgb_to_linear(vec3(0.16, 0.88, 0.34));
+    vec3 outlet_color = cubey_srgb_to_linear(vec3(1.00, 0.56, 0.08));
+    color = mix(color, source_color, 0.94 * source_marker);
+    color = mix(color, outlet_color, 0.94 * outlet_marker);
+    alpha = max(alpha, 0.82 * max(source_marker, outlet_marker));
     // Premultiplied source-over: the pipeline uses ONE / ONE_MINUS_SRC_ALPHA.
     out_color = vec4(color * alpha, alpha);
 }

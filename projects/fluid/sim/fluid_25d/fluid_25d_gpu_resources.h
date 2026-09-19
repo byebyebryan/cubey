@@ -57,6 +57,12 @@ struct Fluid25DStreamletGpu {
     std::array<float, 4> cell_xy_age_generation{};
     std::array<float, 4> direction_xy_opacity_retire_seconds{};
 };
+// Catchment-only explanatory markers: source.xy and outlet.xy in cell
+// coordinates. A negative pair disables the corresponding terrain/water
+// annulus, leaving analytic fixtures and immutable terrain cases unchanged.
+struct Fluid25DEndpointMarkersGpu {
+    std::array<float, 4> source_xy_outlet_xy{};
+};
 
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusCflRejected = 1U << 0U;
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusInvalidState = 1U << 1U;
@@ -69,6 +75,7 @@ static_assert(sizeof(Fluid25DVelocityGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DFiniteVolumeStatusGpu) == sizeof(std::uint32_t) * 4U);
 static_assert(sizeof(Fluid25DStreamletGpu) == sizeof(float) * 8U);
+static_assert(sizeof(Fluid25DEndpointMarkersGpu) == sizeof(float) * 4U);
 
 class Fluid25DGpuResources {
   public:
@@ -106,6 +113,7 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_b() const;
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_status() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& endpoint_markers() const;
     [[nodiscard]] const cubey::vulkan::Buffer& streamlets() const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
@@ -281,6 +289,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::Buffer> presentation_cue_a_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_b_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_virtual_status_;
+    std::optional<cubey::vulkan::Buffer> endpoint_markers_;
     std::optional<cubey::vulkan::Buffer> streamlets_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 

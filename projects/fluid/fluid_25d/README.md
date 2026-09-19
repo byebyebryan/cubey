@@ -130,6 +130,56 @@ lane. Its initial reset is recorded before the first headless solver step, so
 the first capture remains the truthful unanimated initial state; this changes
 only presentation state and does not change solver dispatches or timestamps.
 
+### Opt-in source-to-outlet scene
+
+`source-outlet-demo` is a separate authored explanation scene, not a change to
+the River V0 virtual-pipes fixture or its default camera. It is meaningful only
+when launched explicitly with the opt-in finite-volume solver. It uses compact
+bounded SOURCE and OUTLET regions (the colored rings mark their representative
+centroids), a shallow connected initial ribbon, closed outer faces, and one
+terminal outlet basin. The bed falls from the green SOURCE along the winding
+channel to the amber OUTLET, then rises across a broad downstream containment
+shoulder; there is no implied drain beyond the scene edge.
+
+The ribbon is intentionally present at reset so the full route is legible
+before transport crosses it. It does not claim that the same water first
+injected at SOURCE reaches OUTLET in the initial seconds. In the finite-volume
+demo, configured source input and outlet capacity are each `0.03 m3/s`; actual
+outlet removal remains limited by water available in its region. The terminal
+basin keeps the sustained sink supplied rather than treating the initial fill
+as a hidden outlet reservoir. The first home camera frames the
+two endpoints and route with modest terrain context, while later user orbit
+and zoom remain unchanged. Ring words live in the control-panel legend rather
+than in-scene text so they stay readable at every camera distance.
+
+Use the compact one-metre `128x64` presentation grid and select the finite-
+volume solver explicitly; this does not alter the global `river-catchment` or
+virtual-pipes defaults:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --grid-width 128 --grid-height 64 \
+  --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume
+```
+
+Append `--fluid25d-catchment-view flow-inspection` to use the optional
+velocity-tracer reading mode. For reproducible long-horizon evidence, use the
+headless profile command:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture png \
+  --frames 18001 --width 1280 --height 720 --grid-width 128 --grid-height 64 \
+  --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
+  --profile-output outputs/fluid/source-outlet-demo-profile --profile-diagnostics \
+  --profile-diagnostic-interval 600 --output outputs/fluid/source-outlet-demo.png
+```
+
+The `200 s` and `300 s` profile rows are the acceptance checkpoints: finite-
+volume status must remain zero; source and sink increments over a recent
+interval should both be about `0.03 m3/s`; stored water must remain bounded;
+and boundary outflow must stay zero. Capture Composite plus Depth/Flow
+diagnostics when changing this local scene geometry.
+
 ## Numerical contract
 
 All quantities use physical units:
@@ -268,7 +318,7 @@ schema and currently exposes:
   drop excess backlog;
 - `--fluid25d-solver virtual-pipes|finite-volume` (default: `virtual-pipes`;
   finite-volume is an opt-in numerical comparison);
-- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|terrain-case|boundary-drain-fixture`;
+- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|source-outlet-demo|terrain-case|boundary-drain-fixture`;
 - `--terrain-heightfield <manifest-or-directory>` (required by `terrain-case`);
 - `--fluid25d-terrain-crop-x` and `--fluid25d-terrain-crop-z` (native sample
   indices; the configured grid dimensions define the crop extent);

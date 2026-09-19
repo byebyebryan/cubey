@@ -199,10 +199,10 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      {.has_min = true, .min = 0.0}),
               config.fluid.sheet_depth_m)
         .bind(option("fluid25d.scenario", "--fluid25d-scenario", "Scenario",
-                     "Deterministic River V0 fixture or imported terrain case.", ValueType::Enum,
-                     {},
-                     {"dry-bed", "lake-at-rest", "river-catchment", "terrain-case",
-                      "boundary-drain-fixture"}),
+                     "Deterministic River V0 fixture, opt-in source/outlet demo, or imported terrain case.",
+                     ValueType::Enum, {},
+                     {"dry-bed", "lake-at-rest", "river-catchment", "source-outlet-demo",
+                      "terrain-case", "boundary-drain-fixture"}),
               config.fluid.scenario)
         .bind(
             option("fluid25d.solver", "--fluid25d-solver", "Solver",

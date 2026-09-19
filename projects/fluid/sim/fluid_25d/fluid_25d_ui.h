@@ -6,6 +6,7 @@ namespace cubey::projects::fluid::fluid_25d {
 
 struct Fluid25DUiContext {
     const char* title = nullptr;
+    Fluid25DScenario scenario = Fluid25DScenario::RiverCatchment;
     Fluid25DPresentationView& presentation_view;
     Fluid25DCatchmentView& catchment_view;
     Fluid25DDebugView& debug_view;

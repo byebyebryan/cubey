@@ -75,6 +75,20 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     }
 
     ImGui::SeparatorText("How to read it");
+    if (ui.scenario == Fluid25DScenario::SourceOutletDemo) {
+        ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
+                           "SOURCE  green ring: continuous water input");
+        ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
+                           "OUTLET  amber ring: explicit downstream sink");
+        ImGui::TextWrapped("Read the connected ribbon from green to amber. The downstream "
+                          "terrain shoulder makes the amber ring the terminal basin; water does "
+                          "not continue off the far side of this closed scene.");
+        ImGui::TextWrapped("The colored endpoint labels are terrain-draped rings in the scene; "
+                          "their words stay here in the panel so they remain legible at every "
+                          "camera distance. The shallow reset ribbon reveals the full route "
+                          "immediately; it is not a claim that one newly injected parcel has "
+                          "already crossed the whole route.");
+    }
     ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
                       "darker blue is deeper water.");
     ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "

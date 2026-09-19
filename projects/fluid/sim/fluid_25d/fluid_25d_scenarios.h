@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <numbers>
 #include <optional>
 #include <span>
 #include <stdexcept>
@@ -270,31 +271,151 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         if (width < 6 || height < 3) {
             throw std::runtime_error("fluid 2.5D river scenario requires at least a 6x3 grid");
         }
-        const std::uint32_t source_x = 1;
+        const std::uint32_t source_x = 1U;
         const std::uint32_t sink_x = width - 2U;
         const std::uint32_t channel_y = height / 2U;
         const float channel_center = 0.5F * static_cast<float>(height - 1U);
-        for (std::uint32_t y = 0; y < height; ++y) {
-            for (std::uint32_t x = 0; x < width; ++x) {
+        for (std::uint32_t y = 0U; y < height; ++y) {
+            for (std::uint32_t x = 0U; x < width; ++x) {
                 const float x_value = static_cast<float>(x);
                 const float y_offset = static_cast<float>(y) - channel_center;
-                // The longitudinal fall creates the source-to-sink direction;
-                // the quadratic cross-section keeps water in a shallow channel.
                 data.terrain_height_m[fluid_25d_scenario_index(width, height, x, y)] =
                     3.20F - (0.085F * x_value) + (0.085F * y_offset * y_offset);
             }
         }
         data.source_cell = fluid_25d_scenario_index(width, height, source_x, channel_y);
         data.sink_cell = fluid_25d_scenario_index(width, height, sink_x, channel_y);
-        // Seed a thin, deterministic channel so the first CPU/GPU comparison
-        // exercises the complete source-to-sink route without waiting for a
-        // numerically vanishing wetting front to cross every dry cell.
+        // Keep River V0's narrow, initially dry-outlet oracle fixture stable.
         for (std::uint32_t x = source_x; x < sink_x; ++x) {
             data.initial_water_depth_m[fluid_25d_scenario_index(width, height, x, channel_y)] =
                 0.05F;
         }
         data.source_depth_rate_m_per_s[data.source_cell] = 0.040F;
         data.sink_depth_rate_m_per_s[data.sink_cell] = 0.055F;
+        break;
+    }
+    case Fluid25DScenario::SourceOutletDemo: {
+        if (width < 6 || height < 3) {
+            throw std::runtime_error(
+                "fluid 2.5D source-outlet demo requires at least a 6x3 grid");
+        }
+        // This opt-in explanatory scene is authored rather than discovered
+        // from imported terrain. Its compact regions sit well inside the
+        // closed domain and use a shorter route than River V0, so the
+        // finite-volume evidence can show meaningful transport over a
+        // practical review horizon without changing the default fixture.
+        const std::uint32_t source_x = std::max(1U, (width * 3U) / 8U);
+        const std::uint32_t sink_x = width - 1U - source_x;
+        const float channel_center = 0.5F * static_cast<float>(height - 1U);
+        const float channel_meander_amplitude = 0.18F * static_cast<float>(height - 1U);
+        const float half_grid_height = std::max(1.0F, 0.5F * static_cast<float>(height - 1U));
+        const float channel_half_width =
+            std::max(1.25F, 0.08F * static_cast<float>(height - 1U));
+        const float endpoint_radius_x = std::max(
+            0.75F, std::min(3.0F, 0.20F * static_cast<float>(sink_x - source_x)));
+        const float endpoint_radius_y = std::max(1.25F, 0.80F * channel_half_width);
+        // The outlet is deliberately the terminal low basin, rather than a
+        // label placed part-way down a still-descending valley. Once the
+        // approach reaches its centroid, a broad longitudinal shoulder rises
+        // across the remainder of the closed domain. This keeps the demo's
+        // water in the explicit OUTLET region instead of letting it pool at
+        // the far edge.
+        constexpr float downstream_containment_rise_m = 4.40F;
+        const auto channel_center_y = [source_x, sink_x, channel_center,
+                                       channel_meander_amplitude](std::uint32_t x) {
+            const float span = static_cast<float>(sink_x - source_x);
+            const float progress = std::clamp(
+                (static_cast<float>(x) - static_cast<float>(source_x)) / span, 0.0F, 1.0F);
+            return channel_center +
+                   channel_meander_amplitude * std::sin(2.0F * std::numbers::pi_v<float> * progress);
+        };
+        const std::uint32_t source_y = static_cast<std::uint32_t>(
+            std::clamp(std::round(channel_center_y(source_x)), 0.0F,
+                       static_cast<float>(height - 1U)));
+        const std::uint32_t sink_y = static_cast<std::uint32_t>(
+            std::clamp(std::round(channel_center_y(sink_x)), 0.0F,
+                       static_cast<float>(height - 1U)));
+        for (std::uint32_t y = 0; y < height; ++y) {
+            for (std::uint32_t x = 0; x < width; ++x) {
+                const float x_progress =
+                    static_cast<float>(x) / static_cast<float>(width - 1U);
+                const float downstream_progress =
+                    x <= sink_x
+                        ? 0.0F
+                        : static_cast<float>(x - sink_x) /
+                              static_cast<float>((width - 1U) - sink_x);
+                const float y_offset = static_cast<float>(y) - channel_center_y(x);
+                const float normalized_cross_section = y_offset / half_grid_height;
+                // A domain-scale downstream fall provides the route direction,
+                // while this gently meandering quadratic cross-section keeps the
+                // broad seeded ribbon visibly terrain-guided. The total fall is
+                // fixed rather than per-cell so default and oracle grids retain
+                // comparable slopes.
+                data.terrain_height_m[fluid_25d_scenario_index(width, height, x, y)] =
+                    5.00F - (4.80F * x_progress) +
+                    (downstream_containment_rise_m * downstream_progress) +
+                    (1.20F * normalized_cross_section * normalized_cross_section);
+            }
+        }
+        data.source_cell = fluid_25d_scenario_index(width, height, source_x, source_y);
+        data.sink_cell = fluid_25d_scenario_index(width, height, sink_x, sink_y);
+        const auto endpoint_weight = [endpoint_radius_x, endpoint_radius_y](float x_offset,
+                                                                              float y_offset) {
+            const float normalized_distance_squared =
+                (x_offset * x_offset) / (endpoint_radius_x * endpoint_radius_x) +
+                (y_offset * y_offset) / (endpoint_radius_y * endpoint_radius_y);
+            return std::sqrt(std::max(0.0F, 1.0F - normalized_distance_squared));
+        };
+        std::vector<std::size_t> source_region;
+        std::vector<std::size_t> sink_region;
+        // Seed a shallow, connected ribbon from the source through the outlet.
+        // Compact endpoint pools make the bounded SOURCE and OUTLET regions
+        // visibly active for the first practical observation interval. The
+        // route is still an authored initial condition, not a claim that water
+        // first injected at the source reaches the outlet within that interval.
+        for (std::uint32_t x = source_x; x <= sink_x; ++x) {
+            const float center_y = channel_center_y(x);
+            for (std::uint32_t y = 0U; y < height; ++y) {
+                const float normalized_offset =
+                    (static_cast<float>(y) - center_y) / channel_half_width;
+                const float ribbon = std::max(0.0F, 1.0F - normalized_offset * normalized_offset);
+                const float source_weight = endpoint_weight(
+                    static_cast<float>(x) - static_cast<float>(source_x),
+                    static_cast<float>(y) - static_cast<float>(source_y));
+                const float sink_weight = endpoint_weight(
+                    static_cast<float>(x) - static_cast<float>(sink_x),
+                    static_cast<float>(y) - static_cast<float>(sink_y));
+                const std::size_t index = fluid_25d_scenario_index(width, height, x, y);
+                data.initial_water_depth_m[index] =
+                    std::max(0.028F * ribbon, 0.45F * std::max(source_weight, sink_weight));
+                if (source_weight > 0.0F) {
+                    source_region.push_back(index);
+                }
+                if (sink_weight > 0.0F) {
+                    sink_region.push_back(index);
+                }
+            }
+        }
+        if (source_region.empty() || sink_region.empty()) {
+            throw std::runtime_error("fluid 2.5D river endpoint region is empty");
+        }
+        // These are one bounded source region and one bounded outlet region,
+        // expressed as depth rates so their total physical throughput is
+        // stable across the region's discrete rasterization. source_cell and
+        // sink_cell remain their representative marker centroids.
+        constexpr float endpoint_total_volume_rate_m3_per_s = 0.03F;
+        const float source_depth_rate = endpoint_total_volume_rate_m3_per_s /
+                                        (static_cast<float>(source_region.size()) * cell_size_m *
+                                         cell_size_m);
+        const float sink_depth_rate = endpoint_total_volume_rate_m3_per_s /
+                                      (static_cast<float>(sink_region.size()) * cell_size_m *
+                                       cell_size_m);
+        for (const std::size_t index : source_region) {
+            data.source_depth_rate_m_per_s[index] = source_depth_rate;
+        }
+        for (const std::size_t index : sink_region) {
+            data.sink_depth_rate_m_per_s[index] = sink_depth_rate;
+        }
         break;
     }
     case Fluid25DScenario::BoundaryDrainFixture: {

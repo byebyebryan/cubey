@@ -522,6 +522,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         import("fluid 2.5D presentation cue B", resources.presentation_cue_b());
     const cubey::render::RenderGraphBufferHandle presentation_cue_status =
         import("fluid 2.5D presentation cue status", resources.presentation_cue_status());
+    const cubey::render::RenderGraphBufferHandle endpoint_markers =
+        import("fluid 2.5D source outlet markers", resources.endpoint_markers());
     const cubey::render::RenderGraphBufferHandle streamlets =
         import("fluid 2.5D flow inspection streamlets", resources.streamlets());
     const cubey::render::RenderGraphTextureState initial_state =
@@ -615,7 +617,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
             .read_storage_buffer(depth_b)
             .read_storage_buffer(velocity)
             .read_storage_buffer(presentation_cue_a)
-            .read_storage_buffer(presentation_cue_b);
+            .read_storage_buffer(presentation_cue_b)
+            .read_storage_buffer(endpoint_markers);
         if (flow_inspection_active) {
             catchment.read_storage_buffer(streamlets);
         }

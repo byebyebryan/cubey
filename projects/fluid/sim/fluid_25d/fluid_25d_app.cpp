@@ -227,6 +227,7 @@ class Fluid25DApp {
         const bool was_flow_inspection_active = flow_inspection_active();
         draw_fluid_25d_ui({
             .title = "Fluid 2.5D",
+            .scenario = config_.simulation.scenario,
             .presentation_view = presentation_view_,
             .catchment_view = catchment_view_,
             .debug_view = debug_view_,
@@ -317,19 +318,47 @@ class Fluid25DApp {
         const float horizontal_extent = std::max(world_width, world_height);
         const float scaled_terrain_span =
             (*terrain_maximum - *terrain_minimum) * kFluid25DCatchmentHeightScale;
+        float framing_horizontal_extent = horizontal_extent;
         catchment_target_ = {
             0.0F,
             (*terrain_minimum + *terrain_maximum) * 0.5F * kFluid25DCatchmentHeightScale,
             0.0F,
         };
+        if (config_.simulation.scenario == Fluid25DScenario::SourceOutletDemo) {
+            // The explanatory route occupies a compact central part of its
+            // closed demonstration domain. Its one-time home framing includes
+            // modest terrain context around both endpoint centroids without
+            // affecting other scenarios or subsequent user orbit/zoom input.
+            const auto world_x = [this](std::size_t index) {
+                const std::uint32_t x = static_cast<std::uint32_t>(index % scenario_.width);
+                return (static_cast<float>(x) -
+                        (0.5F * static_cast<float>(scenario_.width - 1U))) *
+                       config_.simulation.cell_size_m;
+            };
+            const auto world_z = [this](std::size_t index) {
+                const std::uint32_t y =
+                    static_cast<std::uint32_t>(index / static_cast<std::size_t>(scenario_.width));
+                return (static_cast<float>(y) -
+                        (0.5F * static_cast<float>(scenario_.height - 1U))) *
+                       config_.simulation.cell_size_m;
+            };
+            const float route_span =
+                std::max(std::abs(world_x(scenario_.sink_cell) - world_x(scenario_.source_cell)),
+                         std::abs(world_z(scenario_.sink_cell) - world_z(scenario_.source_cell)));
+            framing_horizontal_extent = std::max(32.0F, route_span * 1.70F);
+            catchment_target_.x =
+                0.5F * (world_x(scenario_.source_cell) + world_x(scenario_.sink_cell));
+            catchment_target_.z =
+                0.5F * (world_z(scenario_.source_cell) + world_z(scenario_.sink_cell));
+        }
         const float camera_distance =
-            std::max(horizontal_extent * 1.05F, scaled_terrain_span * 6.0F + 16.0F);
-        orbit_controller_.set_distance_limits(std::max(8.0F, horizontal_extent * 0.30F),
-                                              std::max(48.0F, horizontal_extent * 4.0F));
+            std::max(framing_horizontal_extent * 1.05F, scaled_terrain_span * 6.0F + 16.0F);
+        orbit_controller_.set_distance_limits(std::max(8.0F, framing_horizontal_extent * 0.30F),
+                                              std::max(48.0F, framing_horizontal_extent * 4.0F));
         orbit_controller_.set_pitch_limits(-0.38F, 0.38F);
         orbit_controller_.set_home_distance(camera_distance);
         const float near_plane = std::max(kCatchmentCameraMinimumNearPlaneM,
-                                          horizontal_extent *
+                                          framing_horizontal_extent *
                                               kCatchmentCameraNearExtentFraction);
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, near_plane,
                                camera_distance * 5.0F + scaled_terrain_span + 64.0F);
