@@ -193,6 +193,62 @@ recent interval should both be about `0.03 m3/s`; stored water must remain
 bounded; and boundary outflow must stay zero. Capture Composite plus
 Depth/Flow diagnostics when changing this local scene geometry.
 
+### Opt-in immutable mountain source/outlet scene
+
+`mountain-source-outlet-demo` is a separate finite-volume-only product
+demonstration on one pinned, immutable `mountain-valley-1` crop. It does not
+promote the neutral `terrain-case` audition protocol, alter River V0, or edit
+the imported elevation. Its 256 by 128 native 30 m crop is pinned at
+`(1536,1664)` by both the input elevation SHA-256
+`2a919b516d8ae4fb8c193cdd8db1a8ba055ba702e5cbd1ff50ad2b7fc6ab3c48` and the
+transformed crop SHA-256
+`9bfebfe229886ded533556acaf11de541caddfc4cf8104d864da1232fa8b24c6`.
+
+The green ring is the 81-cell source region centred at `(8,60)`, whose total
+configured input is `0.75 m3/s`. The amber ring is a visible outlet basin
+centred at `(232,122)`. Its actual explicit drain is deliberately narrower:
+the three reviewed low cells `(232,127)`, `(229,126)`, and `(231,126)` remove a
+total configured `0.75 m3/s`. All outer faces are closed. The route is a
+reviewed, radius-four prewetted initial-water corridor; it makes the whole
+source-to-outlet story readable at reset, but is not a claim that one water
+parcel, a surveyed river, or a provenance record follows that exact path.
+
+The home camera frames the full 6.97 km endpoint route. A mountain-only
+render-space relief scale and elevation/slope palette expose the valley and
+ridges; they do not alter elevation buffers, water state, source/sink masks,
+the finite-volume solve, or any other scene. Composite is the terrain-and-water
+overview, Water Isolation makes the wet corridor easier to see, and Flow
+Inspection overlays the existing fixed 96 by 48 stable velocity samples. The
+small arrows show local direction and speed, not water particles or a tracked
+parcel.
+
+Launch it directly with the pinned source and the recommended 2 s outer step
+and eight solver substeps:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-scenario mountain-source-outlet-demo \
+  --fluid25d-solver finite-volume \
+  --terrain-heightfield cache/terrain/sources/v1/presets/mountain-valley-1 \
+  --fluid25d-fixed-delta-seconds 2 --fluid25d-substeps 8
+```
+
+For a reproducible remote-review pack (reset, mature Composite, Water
+Isolation, Flow Inspection, a 120-frame CPU/GPU oracle smoke, and 600-frame
+profiles), run:
+
+```sh
+projects/fluid/fluid_25d/run_mountain_source_outlet_demo.sh \
+  outputs/fluid/mountain-source-outlet-v1-20260921
+```
+
+The 600-frame profile represents 1200 s. Expect zero finite-volume status and
+boundary ledger, late-window source and actual sink removal near `0.75 m3/s`,
+and bounded stored water. The runner writes the exact capture hashes, pinned
+input identity, metrics, and measured late-window rates into its output
+directory; use those results rather than assuming the configured sink rate was
+fully realised.
+
 ## Numerical contract
 
 All quantities use physical units:

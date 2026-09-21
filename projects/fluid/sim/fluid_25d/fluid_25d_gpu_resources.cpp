@@ -195,7 +195,7 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_presentation_status(1U);
     Fluid25DEndpointMarkersGpu endpoint_markers{};
     endpoint_markers.source_xy_outlet_xy.fill(-1.0F);
-    if (config.scenario == Fluid25DScenario::SourceOutletDemo &&
+    if (fluid_25d_is_source_outlet_demo(config.scenario) &&
         scenario.source_cell != kFluid25DNoCell && scenario.sink_cell != kFluid25DNoCell) {
         const auto cell_xy = [width = config.grid_width](std::size_t index) {
             return std::array<float, 2>{static_cast<float>(index % width),

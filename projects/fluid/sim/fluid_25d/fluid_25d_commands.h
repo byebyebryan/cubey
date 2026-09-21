@@ -25,30 +25,60 @@ inline constexpr float kFluid25DCatchmentHeightScale = 0.08F;
 // solver quantity unchanged.
 inline constexpr float kFluid25DSourceOutletDemoHeightScale = 0.65F;
 inline constexpr float kFluid25DSourceOutletDemoHomePitch = -0.72F;
+// The imported mountain crop spans 7 km across and more than 700 m vertically.
+// This render-only scale makes its valley and side relief legible from a single
+// overview without changing the metres supplied to the solver.
+inline constexpr float kFluid25DMountainSourceOutletHeightScale = 0.60F;
+inline constexpr float kFluid25DMountainSourceOutletHomePitch = -0.55F;
+inline constexpr float kFluid25DMountainSourceOutletHomeFovyRadians = 0.84F;
 
 [[nodiscard]] constexpr float fluid_25d_catchment_height_scale(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SourceOutletDemo ? kFluid25DSourceOutletDemoHeightScale
-                                                          : kFluid25DCatchmentHeightScale;
+    return scenario == Fluid25DScenario::SourceOutletDemo
+               ? kFluid25DSourceOutletDemoHeightScale
+               : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                      ? kFluid25DMountainSourceOutletHeightScale
+                      : kFluid25DCatchmentHeightScale);
 }
 
 [[nodiscard]] constexpr float
 fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
                                            float domain_horizontal_extent, float route_span) {
-    return scenario == Fluid25DScenario::SourceOutletDemo ? (route_span * 1.25F)
-                                                          : domain_horizontal_extent;
+    return scenario == Fluid25DScenario::SourceOutletDemo
+               ? (route_span * 1.25F)
+               : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                      ? (route_span * 1.18F)
+                      : domain_horizontal_extent);
 }
 
 [[nodiscard]] constexpr float fluid_25d_catchment_home_pitch(float default_pitch,
                                                              Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SourceOutletDemo ? kFluid25DSourceOutletDemoHomePitch
-                                                          : default_pitch;
+    return scenario == Fluid25DScenario::SourceOutletDemo
+               ? kFluid25DSourceOutletDemoHomePitch
+               : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                      ? kFluid25DMountainSourceOutletHomePitch
+                      : default_pitch);
+}
+
+// The full mountain route almost spans the crop. Its narrower overview fills
+// a normal widescreen capture while retaining both endpoint rings.
+[[nodiscard]] constexpr float fluid_25d_catchment_home_distance_scale(Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::MountainSourceOutletDemo ? 0.85F : 1.05F;
+}
+
+[[nodiscard]] constexpr float fluid_25d_catchment_home_fovy_radians(float default_fovy_radians,
+                                                                    Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::MountainSourceOutletDemo
+               ? kFluid25DMountainSourceOutletHomeFovyRadians
+               : default_fovy_radians;
 }
 
 // The demonstration scene alone uses a modest terrain height/slope tint. It
 // complements its render-only relief scale without changing shared material
 // behavior, numerical terrain, or any solver data.
 [[nodiscard]] constexpr float fluid_25d_catchment_terrain_material_cue(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SourceOutletDemo ? 1.0F : 0.0F;
+    return scenario == Fluid25DScenario::SourceOutletDemo
+               ? 1.0F
+               : (scenario == Fluid25DScenario::MountainSourceOutletDemo ? 2.0F : 0.0F);
 }
 
 struct Fluid25DRenderCamera {

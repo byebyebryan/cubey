@@ -193,6 +193,10 @@ void test_config_defaults_and_parsing() {
                 std::string(fluid_25d_scenario_name(Fluid25DScenario::MountainSourceOutletDemo)) ==
                     "mountain-source-outlet-demo",
             "fluid 2.5D should expose the pinned mountain source/outlet demo distinctly");
+    require(fluid_25d_is_source_outlet_demo(Fluid25DScenario::SourceOutletDemo) &&
+                fluid_25d_is_source_outlet_demo(Fluid25DScenario::MountainSourceOutletDemo) &&
+                !fluid_25d_is_source_outlet_demo(Fluid25DScenario::RiverCatchment),
+            "fluid 2.5D should share endpoint language only between the explicit demos");
     Fluid25DConfig virtual_pipes_demo = defaults;
     virtual_pipes_demo.scenario = Fluid25DScenario::SourceOutletDemo;
     require_throws([&] { validate_fluid_25d_config(virtual_pipes_demo); },
@@ -662,6 +666,9 @@ void test_deterministic_scenarios() {
     require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::SourceOutletDemo), 0.65,
                   kDepthToleranceM,
                   "source-outlet demo should select its render-only relief scale");
+    require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::MountainSourceOutletDemo),
+                  0.60, kDepthToleranceM,
+                  "mountain demo should select its own render-only relief scale");
     require_close(
         fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario::RiverCatchment, 127.0F, 96.0F),
         127.0, kDepthToleranceM,
@@ -670,17 +677,41 @@ void test_deterministic_scenarios() {
                                                              127.0F, 96.0F),
                   120.0, kDepthToleranceM,
                   "source-outlet demo home camera should fit its long route without empty margins");
+    require_close(fluid_25d_catchment_home_horizontal_extent(
+                      Fluid25DScenario::MountainSourceOutletDemo, 7650.0F, 6720.0F),
+                  7929.6, 0.001,
+                  "mountain demo home camera should frame its full 6.97 kilometre route");
     require_close(fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::RiverCatchment), -0.92,
                   kDepthToleranceM,
                   "River V0 home camera should retain its original oblique pitch");
     require_close(fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::SourceOutletDemo), -0.72,
                   kDepthToleranceM,
                   "source-outlet demo home camera should expose its render-only relief");
+    require_close(
+        fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::MountainSourceOutletDemo), -0.55,
+        kDepthToleranceM, "mountain demo home camera should expose its kilometre-scale relief");
+    require_close(fluid_25d_catchment_home_distance_scale(Fluid25DScenario::RiverCatchment), 1.05,
+                  kDepthToleranceM, "River V0 should retain its original home camera distance");
+    require_close(
+        fluid_25d_catchment_home_distance_scale(Fluid25DScenario::MountainSourceOutletDemo), 0.85,
+        kDepthToleranceM, "mountain demo home camera should fill an overview with its full route");
+    require_close(
+        fluid_25d_catchment_home_fovy_radians(1.0471975512F, Fluid25DScenario::RiverCatchment),
+        1.0471975512, kDepthToleranceM,
+        "River V0 should retain its original home camera field of view");
+    require_close(fluid_25d_catchment_home_fovy_radians(1.0471975512F,
+                                                        Fluid25DScenario::MountainSourceOutletDemo),
+                  0.84, kDepthToleranceM,
+                  "mountain demo home camera should give the full route useful capture scale");
     require_close(fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::RiverCatchment), 0.0,
                   kDepthToleranceM, "River V0 should retain the shared terrain material");
     require_close(fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::SourceOutletDemo), 1.0,
                   kDepthToleranceM,
                   "source-outlet demo should select its render-only terrain height and slope cue");
+    require_close(
+        fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::MountainSourceOutletDemo), 2.0,
+        kDepthToleranceM,
+        "mountain demo should select its separate immutable-crop terrain material cue");
     const float outlet_bed_height_m = readable_river.terrain_height_m[readable_river.sink_cell];
     const float source_bed_height_m = readable_river.terrain_height_m[readable_river.source_cell];
     float minimum_ribbon_center_y = std::numeric_limits<float>::infinity();

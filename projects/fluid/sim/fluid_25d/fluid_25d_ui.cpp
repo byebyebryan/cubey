@@ -89,6 +89,20 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                           "immediately; it is not a claim that one newly injected parcel has "
                           "already crossed the whole route.");
     }
+    if (ui.scenario == Fluid25DScenario::MountainSourceOutletDemo) {
+        ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
+                           "SOURCE  green ring: 0.75 m3/s total input region");
+        ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
+                           "OUTLET  amber ring: visible basin at cell (232,122)");
+        ImGui::TextWrapped(
+            "The explicit 0.75 m3/s drain is the three reviewed lowest cells near the closed "
+            "boundary, not every cell inside the visible amber basin. Read the broad blue "
+            "corridor from green to amber as a prewetted initial route.");
+        ImGui::TextWrapped(
+            "This is an immutable real-terrain crop with closed outer boundaries. It is a "
+            "readable source-to-outlet demonstration, not proof that an individual water "
+            "parcel, a mapped river, or a provenance claim follows this exact route.");
+    }
     ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
                       "darker blue is deeper water.");
     ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "

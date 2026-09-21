@@ -33,6 +33,13 @@ enum class Fluid25DScenario : std::uint32_t {
     MountainSourceOutletDemo = 6,
 };
 
+// Both authored source/outlet demonstrations use the same endpoint language,
+// while retaining their own terrain, solver, and presentation contracts.
+[[nodiscard]] constexpr bool fluid_25d_is_source_outlet_demo(Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::SourceOutletDemo ||
+           scenario == Fluid25DScenario::MountainSourceOutletDemo;
+}
+
 // VirtualPipes remains the product default. FiniteVolume is an opt-in
 // CPU/GPU numerical comparison contract; it is not a promoted terrain-water
 // product mode.

@@ -343,11 +343,10 @@ class Fluid25DApp {
             (*terrain_minimum + *terrain_maximum) * 0.5F * render_height_scale,
             0.0F,
         };
-        if (config_.simulation.scenario == Fluid25DScenario::SourceOutletDemo) {
-            // The explanatory route occupies a compact central part of its
-            // closed demonstration domain. Its one-time home framing includes
-            // modest terrain context around both endpoint centroids without
-            // affecting other scenarios or subsequent user orbit/zoom input.
+        if (fluid_25d_is_source_outlet_demo(config_.simulation.scenario)) {
+            // Each explanation route gets a one-time endpoint framing with
+            // modest terrain context. This changes neither later orbit/zoom
+            // input nor any non-demonstration scenario.
             const auto world_x = [this](std::size_t index) {
                 const std::uint32_t x = static_cast<std::uint32_t>(index % scenario_.width);
                 return (static_cast<float>(x) -
@@ -371,9 +370,21 @@ class Fluid25DApp {
                 0.5F * (world_x(scenario_.source_cell) + world_x(scenario_.sink_cell));
             catchment_target_.z =
                 0.5F * (world_z(scenario_.source_cell) + world_z(scenario_.sink_cell));
+            if (config_.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo) {
+                // The crop's high ridge is useful context but should not pull
+                // the long low-elevation source-to-outlet route off screen.
+                // This is a camera target only; imported elevations stay
+                // untouched in every numerical buffer.
+                catchment_target_.y = 0.5F *
+                                      (scenario_.terrain_height_m[scenario_.source_cell] +
+                                       scenario_.terrain_height_m[scenario_.sink_cell]) *
+                                      render_height_scale;
+            }
         }
         const float camera_distance =
-            std::max(framing_horizontal_extent * 1.05F, scaled_terrain_span * 6.0F + 16.0F);
+            std::max(framing_horizontal_extent *
+                         fluid_25d_catchment_home_distance_scale(config_.simulation.scenario),
+                     scaled_terrain_span * 6.0F + 16.0F);
         orbit_controller_.set_distance_limits(std::max(8.0F, framing_horizontal_extent * 0.30F),
                                               std::max(48.0F, framing_horizontal_extent * 4.0F));
         orbit_controller_.set_pitch_limits(-0.38F, 0.38F);
@@ -381,8 +392,9 @@ class Fluid25DApp {
         const float near_plane = std::max(kCatchmentCameraMinimumNearPlaneM,
                                           framing_horizontal_extent *
                                               kCatchmentCameraNearExtentFraction);
-        camera_.set_projection(std::numbers::pi_v<float> / 3.0F, near_plane,
-                               camera_distance * 5.0F + scaled_terrain_span + 64.0F);
+        camera_.set_projection(fluid_25d_catchment_home_fovy_radians(
+                                   std::numbers::pi_v<float> / 3.0F, config_.simulation.scenario),
+                               near_plane, camera_distance * 5.0F + scaled_terrain_span + 64.0F);
     }
 
     [[nodiscard]] cubey::Transform3D render_camera_transform() const {

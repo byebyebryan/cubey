@@ -40,7 +40,22 @@ void main() {
     vec3 highland = cubey_srgb_to_linear(vec3(0.46, 0.31, 0.16));
     float elevation = clamp((world_position.y + 2.0) * 0.035, 0.0, 1.0);
     vec3 albedo = mix(lowland, highland, elevation) + vec3(contour);
-    if (params.presentation.w > 0.5) {
+    if (params.presentation.w > 1.5) {
+        // Mountain source/outlet uses a pinned immutable crop. Normalize only
+        // its render-space elevation against that crop's fixed physical range
+        // so broad low valley, high ridge, and steep shoulders survive the
+        // kilometre-scale overview. The GPU solver still reads the untouched
+        // terrain buffer in metres; this branch is a fragment-only palette.
+        float terrain_height_m = world_position.y / max(params.grid_cell.w, 1.0e-6);
+        float mountain_elevation = smoothstep(-84.0, 644.0, terrain_height_m);
+        float slope = 1.0 - normal.y;
+        float slope_cue = smoothstep(0.004, 0.120, slope);
+        vec3 mountain_valley = cubey_srgb_to_linear(vec3(0.055, 0.175, 0.105));
+        vec3 mountain_ridge = cubey_srgb_to_linear(vec3(0.61, 0.43, 0.22));
+        vec3 mountain_stone = cubey_srgb_to_linear(vec3(0.30, 0.245, 0.175));
+        albedo = mix(mountain_valley, mountain_ridge, pow(mountain_elevation, 0.82));
+        albedo = mix(albedo, mountain_stone, 0.62 * slope_cue);
+    } else if (params.presentation.w > 0.5) {
         // Source-to-outlet is an authored explanatory scene with deliberately
         // broad dry banks. Its numerical heights are unchanged; this limited
         // height/slope cue only makes the valley, ridges, and constriction
@@ -55,7 +70,8 @@ void main() {
         albedo = mix(albedo, cubey_srgb_to_linear(vec3(0.36, 0.27, 0.12)),
                      0.24 * slope_cue);
     }
-    vec3 lighting = vec3(0.26) + vec3(0.74) * diffuse;
+    vec3 lighting = params.presentation.w > 1.5 ? vec3(0.42) + vec3(0.58) * diffuse
+                                                 : vec3(0.26) + vec3(0.74) * diffuse;
     vec3 color = max(albedo * lighting, vec3(0.0));
     // Water Isolation is a presentation-only reading aid: make the bed quiet
     // and neutral so the water edge carries the visual contrast. Composite and
