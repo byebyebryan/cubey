@@ -15,13 +15,13 @@ inline constexpr float kFluid25DPresentationCueRelaxationPerSecond = 0.0015F;
 
 // Flow Inspection is a conventional, fixed-grid velocity field rather than a
 // particle/tracer display. The compact 128 by 64 source-to-outlet scene gets a
-// 64 by 32 lattice (about two cells between anchors); the default 256 by 128
-// product grid retains that lattice count with about four cells between
+// 96 by 48 lattice (about 1.3 cells between anchors); the default 256 by 128
+// product grid retains that lattice count with about 2.7 cells between
 // anchors. Smaller numerical fixtures reduce the count instead of placing
 // duplicate or out-of-domain anchors.
-inline constexpr std::uint32_t kFluid25DQuiverMaxColumns = 64U;
-inline constexpr std::uint32_t kFluid25DQuiverMaxRows = 32U;
-inline constexpr std::uint32_t kFluid25DQuiverMinimumPitchCells = 2U;
+inline constexpr std::uint32_t kFluid25DQuiverMaxColumns = 96U;
+inline constexpr std::uint32_t kFluid25DQuiverMaxRows = 48U;
+inline constexpr std::uint32_t kFluid25DQuiverMinimumPitchCells = 1U;
 inline constexpr std::uint32_t kFluid25DQuiverVertexCount = 9U;
 // This lies above the retained initial terrain-sheet maximum (~0.019828 m/s),
 // keeping initial, dry, and lake-at-rest inspection frames honestly empty.
@@ -33,9 +33,9 @@ inline constexpr float kFluid25DQuiverMinimumSpeedMPerS = 0.025F;
 inline constexpr float kFluid25DQuiverSpeedUpperMPerS = 0.80F;
 // The complete arrow silhouette is 1.26 local units long. Scaling it to this
 // fraction of the local lattice pitch leaves visible gaps on the compact
-// 2-cell grid while preserving legibility on the product 4-cell grid.
-inline constexpr float kFluid25DQuiverMinimumSilhouettePitchFraction = 0.60F;
-inline constexpr float kFluid25DQuiverMaximumSilhouettePitchFraction = 0.73F;
+// grid while preserving enough overview pixels to distinguish the head.
+inline constexpr float kFluid25DQuiverMinimumSilhouettePitchFraction = 0.58F;
+inline constexpr float kFluid25DQuiverMaximumSilhouettePitchFraction = 0.72F;
 inline constexpr float kFluid25DQuiverDirectionSmoothingSeconds = 1.5F;
 inline constexpr float kFluid25DQuiverStrengthSmoothingSeconds = 1.5F;
 inline constexpr float kFluid25DQuiverOpacitySmoothingSeconds = 0.75F;

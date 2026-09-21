@@ -32,13 +32,13 @@ layout(location = 3) out float frag_opacity;
 
 const float kWaterClipDepthBias = 256.0 * 1.19209290e-7;
 const float kDirectionEpsilon = 1.0e-5;
-const uint kMaxColumns = 64u;
-const uint kMaxRows = 32u;
-const uint kMinimumPitchCells = 2u;
+const uint kMaxColumns = 96u;
+const uint kMaxRows = 48u;
+const uint kMinimumPitchCells = 1u;
 const float kMinimumSpeedMPerS = 0.025;
 const float kSpeedUpperMPerS = 0.80;
-const float kMinimumSilhouettePitchFraction = 0.60;
-const float kMaximumSilhouettePitchFraction = 0.73;
+const float kMinimumSilhouettePitchFraction = 0.58;
+const float kMaximumSilhouettePitchFraction = 0.72;
 const float kSilhouetteLengthUnits = 1.26;
 
 bool finite_vec2(vec2 value) {
@@ -134,9 +134,8 @@ void main() {
     float pitch_x = lattice_pitch(width, columns);
     float pitch_y = lattice_pitch(height, rows);
     float local_pitch = min(pitch_x, pitch_y);
-    // Scale the complete 1.26-unit silhouette from 60--73% of the local
-    // lattice pitch. This yields approximately 1.2--1.46 cells on the 2-cell
-    // demo lattice and 2.4--2.94 cells on the 4-cell product lattice.
+    // Keep this denser inspection field visibly discontinuous while leaving
+    // enough overview pixels to distinguish the arrowhead.
     float silhouette_fraction = mix(kMinimumSilhouettePitchFraction,
                                     kMaximumSilhouettePitchFraction,
                                     sqrt(speed_fraction));

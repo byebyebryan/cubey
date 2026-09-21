@@ -27,9 +27,9 @@ layout(push_constant) uniform SimulationParams {
     vec4 physics;
 } params;
 
-const uint kMaxColumns = 64u;
-const uint kMaxRows = 32u;
-const uint kMinimumPitchCells = 2u;
+const uint kMaxColumns = 96u;
+const uint kMaxRows = 48u;
+const uint kMinimumPitchCells = 1u;
 const uint kNeighborhoodRadius = 1u;
 const float kMinimumSpeedMPerS = 0.025;
 const float kDirectionEpsilon = 1.0e-5;
