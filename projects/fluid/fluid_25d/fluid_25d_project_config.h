@@ -56,16 +56,19 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
     validate_fluid_25d_windowed_presentation_time_scale(
         project_config.presentation_time_scale);
     const bool terrain_case = project_config.simulation.scenario == Fluid25DScenario::TerrainCase;
+    const bool mountain_source_outlet =
+        project_config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
+    const bool terrain_backed = terrain_case || mountain_source_outlet;
     const bool has_heightfield = project_config.terrain.heightfield_path.has_value();
     const bool has_nonempty_heightfield =
         has_heightfield && !project_config.terrain.heightfield_path->empty();
-    if (terrain_case && !has_nonempty_heightfield) {
+    if (terrain_backed && !has_nonempty_heightfield) {
         throw std::runtime_error(
-            "fluid 2.5D terrain-case requires a non-empty --terrain-heightfield path");
+            "fluid 2.5D terrain-backed scenarios require a non-empty --terrain-heightfield path");
     }
-    if (!terrain_case && has_heightfield) {
+    if (!terrain_backed && has_heightfield) {
         throw std::runtime_error(
-            "fluid 2.5D --terrain-heightfield requires --fluid25d-scenario terrain-case");
+            "fluid 2.5D --terrain-heightfield requires a terrain-backed scenario");
     }
     if (!terrain_case &&
         (project_config.terrain.crop_x.has_value() || project_config.terrain.crop_z.has_value())) {
@@ -80,6 +83,10 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
     if (!terrain_case && has_explicit_terrain_water_option) {
         throw std::runtime_error(
             "fluid 2.5D terrain-water protocol options require --fluid25d-scenario terrain-case");
+    }
+    if (mountain_source_outlet && project_config.fluid.source_active_duration_seconds.has_value()) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo rejects terrain-water forcing options");
     }
     if (!terrain_case) {
         return;
@@ -127,9 +134,9 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
         const float scale = std::max({1.0F, std::abs(requested_spacing_m), source_spacing_m});
         if (!std::isfinite(requested_spacing_m) || requested_spacing_m <= 0.0F ||
             std::abs(requested_spacing_m - source_spacing_m) > 1.0e-6F * scale) {
-            throw std::runtime_error(
-                "fluid 2.5D terrain case rejects --fluid25d-cell-size-m when it conflicts "
-                "with the source sample spacing");
+            throw std::runtime_error("fluid 2.5D terrain-backed scenario rejects "
+                                     "--fluid25d-cell-size-m when it conflicts "
+                                     "with the source sample spacing");
         }
     }
     // Always write the exact source value after the conflict check. This keeps
@@ -176,7 +183,7 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                    ValueType::Bool),
             config.gpu_oracle_validation)
         .bind(option("terrain.heightfield", "--terrain-heightfield", "Heightfield",
-                     "Terrain heightfield manifest or directory used by terrain-case.",
+                     "Terrain heightfield manifest or directory used by a terrain-backed scenario.",
                      ValueType::Path),
               config.terrain.heightfield_path)
         .bind(option("fluid25d.terrain_crop_x", "--fluid25d-terrain-crop-x", "Terrain Crop X",
@@ -199,10 +206,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      {.has_min = true, .min = 0.0}),
               config.fluid.sheet_depth_m)
         .bind(option("fluid25d.scenario", "--fluid25d-scenario", "Scenario",
-                     "Deterministic River V0 fixture, opt-in source/outlet demo, or imported terrain case.",
+                     "Deterministic River V0 fixture, opt-in source/outlet demo, or terrain-backed "
+                     "scenario.",
                      ValueType::Enum, {},
                      {"dry-bed", "lake-at-rest", "river-catchment", "source-outlet-demo",
-                      "terrain-case", "boundary-drain-fixture"}),
+                      "mountain-source-outlet-demo", "terrain-case", "boundary-drain-fixture"}),
               config.fluid.scenario)
         .bind(
             option("fluid25d.solver", "--fluid25d-solver", "Solver",

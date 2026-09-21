@@ -41,7 +41,8 @@ inline constexpr float kDepthToleranceM = 0.0005F;
 inline constexpr float kFluxToleranceM3PerS = 0.002F;
 inline constexpr float kMomentumToleranceM2PerS = 0.002F;
 inline constexpr float kVelocityToleranceMPerS = 0.002F;
-inline constexpr double kLedgerToleranceM3 = 0.003;
+inline constexpr double kMinimumLedgerToleranceM3 = 0.003;
+inline constexpr double kRelativeLedgerTolerance = 3.0e-4;
 inline constexpr float kCatchmentCameraBaseYaw = -0.52F;
 inline constexpr float kCatchmentCameraBasePitch = -0.92F;
 // The terrain-and-water presentation spans kilometres in X/Z while deliberately
@@ -93,9 +94,23 @@ template <typename Value>
     return std::isfinite(value);
 }
 
+[[nodiscard]] double cumulative_ledger_tolerance_m3(double expected_volume_m3) {
+    if (!std::isfinite(expected_volume_m3)) {
+        throw std::runtime_error("fluid 2.5D expected cumulative ledger is nonfinite");
+    }
+    // GPU distributed per-cell cumulative ledger is float, while CPU oracle
+    // accumulation is double. Scale the ledger tolerance at 0.03%; state
+    // tolerances remain unchanged, and zero expected boundary flow stays strict.
+    return std::max(kMinimumLedgerToleranceM3,
+                    std::abs(expected_volume_m3) * kRelativeLedgerTolerance);
+}
+
 [[nodiscard]] Fluid25DScenarioData make_startup_scenario(Fluid25DProjectConfig& config) {
     validate_fluid_25d_project_config(config);
-    if (config.simulation.scenario != Fluid25DScenario::TerrainCase) {
+    const bool terrain_case = config.simulation.scenario == Fluid25DScenario::TerrainCase;
+    const bool mountain_source_outlet =
+        config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
+    if (!terrain_case && !mountain_source_outlet) {
         return make_fluid_25d_scenario(config.simulation.scenario, config.simulation.grid_width,
                                        config.simulation.grid_height,
                                        config.simulation.cell_size_m);
@@ -105,13 +120,15 @@ template <typename Value>
     const float source_spacing_m = source.sample_spacing_m();
     resolve_fluid_25d_terrain_cell_size(config, source_spacing_m);
 
-    Fluid25DScenarioData scenario = make_fluid_25d_terrain_scenario(
-        config.simulation, source, config.terrain.crop_x.value_or(0U),
-        config.terrain.crop_z.value_or(0U));
+    Fluid25DScenarioData scenario =
+        terrain_case ? make_fluid_25d_terrain_scenario(config.simulation, source,
+                                                       config.terrain.crop_x.value_or(0U),
+                                                       config.terrain.crop_z.value_or(0U))
+                     : make_fluid_25d_mountain_source_outlet_scenario(config.simulation, source);
     if (!scenario.terrain_provenance.has_value()) {
-        throw std::runtime_error("fluid 2.5D terrain case did not produce provenance");
+        throw std::runtime_error("fluid 2.5D terrain-backed scenario did not produce provenance");
     }
-    std::printf("fluid_25d: terrain case identity=%s source=%s manifest=%s\n",
+    std::printf("fluid_25d: terrain-backed identity=%s source=%s manifest=%s\n",
                 scenario.terrain_provenance->identity.c_str(),
                 scenario.terrain_provenance->source_id.c_str(),
                 scenario.terrain_provenance->manifest_path.string().c_str());
@@ -576,6 +593,12 @@ class Fluid25DApp {
         const double sink_ledger_error = std::abs(actual_sink_volume_m3 - expected_sink_volume_m3_);
         const double boundary_ledger_error =
             std::abs(actual_boundary_outflow_volume_m3 - expected_boundary_outflow_volume_m3_);
+        const double source_ledger_tolerance_m3 =
+            cumulative_ledger_tolerance_m3(expected_source_volume_m3_);
+        const double sink_ledger_tolerance_m3 =
+            cumulative_ledger_tolerance_m3(expected_sink_volume_m3_);
+        const double boundary_ledger_tolerance_m3 =
+            cumulative_ledger_tolerance_m3(expected_boundary_outflow_volume_m3_);
         if (oracle_.has_value()) {
             const std::vector<Fluid25DFluxGpu> actual_flux =
                 readback_values<Fluid25DFluxGpu>(gpu, resources_.flux(), cells, "oracle flux");
@@ -609,9 +632,9 @@ class Fluid25DApp {
             if (maximum_depth_error > kDepthToleranceM ||
                 maximum_flux_error > kFluxToleranceM3PerS ||
                 maximum_velocity_error > kVelocityToleranceMPerS ||
-                source_ledger_error > kLedgerToleranceM3 ||
-                sink_ledger_error > kLedgerToleranceM3 ||
-                boundary_ledger_error > kLedgerToleranceM3) {
+                source_ledger_error > source_ledger_tolerance_m3 ||
+                sink_ledger_error > sink_ledger_tolerance_m3 ||
+                boundary_ledger_error > boundary_ledger_tolerance_m3) {
                 throw std::runtime_error(
                     "fluid 2.5D GPU oracle mismatch: max_depth=" +
                     std::to_string(maximum_depth_error) +
@@ -672,8 +695,9 @@ class Fluid25DApp {
         if (status_flags != 0U || maximum_depth_error > kDepthToleranceM ||
             maximum_momentum_error > kMomentumToleranceM2PerS ||
             maximum_velocity_error > kVelocityToleranceMPerS ||
-            source_ledger_error > kLedgerToleranceM3 || sink_ledger_error > kLedgerToleranceM3 ||
-            boundary_ledger_error > kLedgerToleranceM3) {
+            source_ledger_error > source_ledger_tolerance_m3 ||
+            sink_ledger_error > sink_ledger_tolerance_m3 ||
+            boundary_ledger_error > boundary_ledger_tolerance_m3) {
             throw std::runtime_error("fluid 2.5D finite-volume GPU oracle mismatch: status=" +
                                      std::to_string(status_flags) +
                                      " max_depth=" + std::to_string(maximum_depth_error) +

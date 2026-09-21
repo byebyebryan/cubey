@@ -188,12 +188,30 @@ void test_config_defaults_and_parsing() {
                 std::string(fluid_25d_scenario_name(Fluid25DScenario::SourceOutletDemo)) ==
                     "source-outlet-demo",
             "fluid 2.5D should expose the opt-in source-outlet demo distinctly from River V0");
+    require(fluid_25d_scenario_from_name("mountain-source-outlet-demo") ==
+                    Fluid25DScenario::MountainSourceOutletDemo &&
+                std::string(fluid_25d_scenario_name(Fluid25DScenario::MountainSourceOutletDemo)) ==
+                    "mountain-source-outlet-demo",
+            "fluid 2.5D should expose the pinned mountain source/outlet demo distinctly");
     Fluid25DConfig virtual_pipes_demo = defaults;
     virtual_pipes_demo.scenario = Fluid25DScenario::SourceOutletDemo;
     require_throws([&] { validate_fluid_25d_config(virtual_pipes_demo); },
                    "source-outlet demo should require the explicit finite-volume solver");
     virtual_pipes_demo.solver = Fluid25DSolver::FiniteVolume;
     validate_fluid_25d_config(virtual_pipes_demo);
+    Fluid25DConfig mountain_demo = defaults;
+    mountain_demo.scenario = Fluid25DScenario::MountainSourceOutletDemo;
+    mountain_demo.solver = Fluid25DSolver::FiniteVolume;
+    mountain_demo.cell_size_m = kFluid25DMountainSourceOutletCellSizeM;
+    validate_fluid_25d_config(mountain_demo);
+    mountain_demo.grid_width -= 1U;
+    require_throws([&] { validate_fluid_25d_config(mountain_demo); },
+                   "mountain source/outlet demo should require its pinned width");
+    mountain_demo = defaults;
+    mountain_demo.scenario = Fluid25DScenario::MountainSourceOutletDemo;
+    mountain_demo.solver = Fluid25DSolver::FiniteVolume;
+    require_throws([&] { validate_fluid_25d_config(mountain_demo); },
+                   "mountain source/outlet demo should require native 30 metre cells");
     require(fluid_25d_terrain_water_protocol_from_name("rain-pulse") ==
                 Fluid25DTerrainWaterProtocol::RainPulse,
             "fluid 2.5D should parse the rain-pulse terrain-water protocol");
@@ -365,6 +383,95 @@ void test_config_defaults_and_parsing() {
     require_throws(
         [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-terrain-crop-x", "1"})); },
         "fluid 2.5D should reject terrain crop options for an analytic scenario");
+
+    const Fluid25DProjectConfig mountain = parse_project(
+        {"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo", "--terrain-heightfield",
+         "terrain-fixture", "--fluid25d-solver", "finite-volume"});
+    require(
+        mountain.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo &&
+            mountain.simulation.solver == Fluid25DSolver::FiniteVolume &&
+            mountain.simulation.grid_width == kFluid25DMountainSourceOutletGridWidth &&
+            mountain.simulation.grid_height == kFluid25DMountainSourceOutletGridHeight &&
+            mountain.simulation.cell_size_m == kFluid25DMountainSourceOutletCellSizeM,
+        "mountain source/outlet parser should establish its pinned finite-volume grid contract");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--fluid25d-solver", "finite-volume"}));
+        },
+        "mountain source/outlet demo should require a terrain heightfield");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture"}));
+        },
+        "mountain source/outlet demo should require finite-volume explicitly");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--grid-width", "255"}));
+        },
+        "mountain source/outlet demo should reject non-pinned grid dimensions");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--grid-height", "127"}));
+        },
+        "mountain source/outlet demo should reject non-pinned grid height");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--fluid25d-cell-size-m", "20"}));
+        },
+        "mountain source/outlet demo should reject non-native cell spacing");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--fluid25d-terrain-crop-x", "1"}));
+        },
+        "mountain source/outlet demo should reject crop overrides");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--fluid25d-terrain-water-protocol", "none"}));
+        },
+        "mountain source/outlet demo should reject terrain-water protocol overrides");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--fluid25d-rainfall-rate-mm-per-hour", "1"}));
+        },
+        "mountain source/outlet demo should reject rainfall forcing overrides");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--fluid25d-sheet-depth-m", "0.01"}));
+        },
+        "mountain source/outlet demo should reject sheet-release forcing overrides");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "mountain-source-outlet-demo",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-solver",
+                               "finite-volume", "--fluid25d-source-active-duration-seconds", "1"}));
+        },
+        "mountain source/outlet demo should reject terrain-water forcing duration overrides");
 
     const Fluid25DProjectConfig rain_pulse =
         parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
@@ -814,6 +921,143 @@ void test_terrain_water_protocol_construction() {
     require_throws(
         [&] { static_cast<void>(load_fluid_25d_terrain_scenario(invalid, fixture.root, 1U, 1U)); },
         "sheet-release construction should fail closed for zero depth");
+}
+
+void test_mountain_source_outlet_field_construction() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const std::size_t cell_count = fluid_25d_scenario_cell_count(
+        kFluid25DMountainSourceOutletGridWidth, kFluid25DMountainSourceOutletGridHeight);
+    Fluid25DScenarioData mountain{
+        .width = kFluid25DMountainSourceOutletGridWidth,
+        .height = kFluid25DMountainSourceOutletGridHeight,
+        .cell_size_m = kFluid25DMountainSourceOutletCellSizeM,
+        .terrain_height_m = std::vector<float>(cell_count, 0.0F),
+        .initial_water_depth_m = std::vector<float>(cell_count, 1.0F),
+        .source_depth_rate_m_per_s = std::vector<float>(cell_count, 1.0F),
+        .sink_depth_rate_m_per_s = std::vector<float>(cell_count, 1.0F),
+        .boundary_outflow_face_mask = std::vector<std::uint32_t>(cell_count, 7U),
+    };
+    for (std::size_t index = 0U; index < cell_count; ++index) {
+        mountain.terrain_height_m[index] = static_cast<float>(index) * 0.001F;
+    }
+    const std::string expected_identity = fluid_25d_terrain_case_identity(
+        kFluid25DMountainSourceOutletElevationSha256, kFluid25DMountainSourceOutletCropSha256,
+        kFluid25DMountainSourceOutletCropX, kFluid25DMountainSourceOutletCropZ,
+        kFluid25DMountainSourceOutletGridWidth, kFluid25DMountainSourceOutletGridHeight,
+        kFluid25DMountainSourceOutletCellSizeM);
+    mountain.terrain_provenance = Fluid25DTerrainCaseProvenance{
+        .manifest_path = "synthetic-mountain-heightfield.json",
+        .source_id = "synthetic-mountain-source",
+        .elevation_sha256 = std::string(kFluid25DMountainSourceOutletElevationSha256),
+        .transformed_crop_sha256 = std::string(kFluid25DMountainSourceOutletCropSha256),
+        .crop_x = kFluid25DMountainSourceOutletCropX,
+        .crop_z = kFluid25DMountainSourceOutletCropZ,
+        .crop_width = kFluid25DMountainSourceOutletGridWidth,
+        .crop_height = kFluid25DMountainSourceOutletGridHeight,
+        .sample_spacing_m = kFluid25DMountainSourceOutletCellSizeM,
+        .identity = expected_identity,
+    };
+    const std::vector<float> immutable_terrain = mountain.terrain_height_m;
+    validate_fluid_25d_mountain_source_outlet_terrain_identity(mountain);
+    author_fluid_25d_mountain_source_outlet_fields(mountain);
+
+    require(mountain.terrain_height_m == immutable_terrain,
+            "mountain source/outlet authoring should not modify imported terrain");
+    require(mountain.terrain_provenance.has_value() &&
+                mountain.terrain_provenance->identity == expected_identity &&
+                mountain.terrain_provenance->source_id == "synthetic-mountain-source",
+            "mountain source/outlet authoring should retain immutable terrain provenance");
+    validate_fluid_25d_mountain_source_outlet_terrain_identity(mountain);
+    require(mountain.source_cell ==
+                    fluid_25d_scenario_index(mountain.width, mountain.height,
+                                             kFluid25DMountainSourceOutletSourceX,
+                                             kFluid25DMountainSourceOutletSourceZ) &&
+                mountain.sink_cell == fluid_25d_scenario_index(mountain.width, mountain.height,
+                                                               kFluid25DMountainSourceOutletSinkX,
+                                                               kFluid25DMountainSourceOutletSinkZ),
+            "mountain source/outlet authoring should retain reviewed endpoint centroids");
+
+    std::size_t source_cells = 0U;
+    std::size_t sink_cells = 0U;
+    std::size_t visible_sink_disk_cells = 0U;
+    double source_depth_rate_sum_m_per_s = 0.0;
+    double sink_depth_rate_sum_m_per_s = 0.0;
+    for (std::size_t index = 0U; index < cell_count; ++index) {
+        const std::uint32_t x = static_cast<std::uint32_t>(index % mountain.width);
+        const std::uint32_t z = static_cast<std::uint32_t>(index / mountain.width);
+        const bool source = mountain.source_depth_rate_m_per_s[index] > 0.0F;
+        const bool sink = mountain.sink_depth_rate_m_per_s[index] > 0.0F;
+        const std::int32_t sink_dx = static_cast<std::int32_t>(x) -
+                                     static_cast<std::int32_t>(kFluid25DMountainSourceOutletSinkX);
+        const std::int32_t sink_dz = static_cast<std::int32_t>(z) -
+                                     static_cast<std::int32_t>(kFluid25DMountainSourceOutletSinkZ);
+        const bool visible_sink = (sink_dx * sink_dx) + (sink_dz * sink_dz) <= 25;
+        require(!(source && sink),
+                "mountain source/outlet endpoint regions should remain non-overlapping");
+        if (sink) {
+            require(visible_sink && fluid_25d_mountain_source_outlet_is_drain_cell(x, z) &&
+                        mountain.initial_water_depth_m[index] >= 2.0F,
+                    "mountain active outlet cells should be the reviewed visible drain reserve");
+        }
+        source_cells += source ? 1U : 0U;
+        sink_cells += sink ? 1U : 0U;
+        visible_sink_disk_cells += visible_sink ? 1U : 0U;
+        source_depth_rate_sum_m_per_s += mountain.source_depth_rate_m_per_s[index];
+        sink_depth_rate_sum_m_per_s += mountain.sink_depth_rate_m_per_s[index];
+    }
+    require(source_cells == 81U && visible_sink_disk_cells == 81U && sink_cells == 3U,
+            "mountain source and visible outlet disks should cover 81 cells, with three reviewed "
+            "drains");
+    constexpr double kMountainCellAreaM2 =
+        static_cast<double>(kFluid25DMountainSourceOutletCellSizeM) *
+        static_cast<double>(kFluid25DMountainSourceOutletCellSizeM);
+    require_close(source_depth_rate_sum_m_per_s * kMountainCellAreaM2,
+                  kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS, 0.00001,
+                  "mountain source region should normalize to its configured physical capacity");
+    require_close(sink_depth_rate_sum_m_per_s * kMountainCellAreaM2,
+                  kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS, 0.00001,
+                  "mountain outlet region should normalize to its configured physical capacity");
+    require(std::all_of(mountain.boundary_outflow_face_mask.begin(),
+                        mountain.boundary_outflow_face_mask.end(),
+                        [](std::uint32_t mask) { return mask == 0U; }),
+            "mountain source/outlet demo should keep every outer boundary closed");
+
+    constexpr std::array<std::array<std::uint32_t, 2U>, 15U> route_controls{
+        std::array<std::uint32_t, 2U>{8U, 60U},
+        {24U, 60U},
+        {40U, 62U},
+        {56U, 65U},
+        {72U, 69U},
+        {88U, 78U},
+        {104U, 89U},
+        {120U, 91U},
+        {136U, 92U},
+        {152U, 98U},
+        {168U, 108U},
+        {184U, 122U},
+        {200U, 123U},
+        {216U, 123U},
+        {232U, 122U},
+    };
+    for (const auto& control : route_controls) {
+        require(mountain.initial_water_depth_m[fluid_25d_scenario_index(
+                    mountain.width, mountain.height, control[0], control[1])] >= 0.08F,
+                "mountain source/outlet route controls should remain connected by nonzero water");
+    }
+    require_close(mountain.initial_water_depth_m[mountain.source_cell], 0.30, kDepthToleranceM,
+                  "mountain source pool should retain its reviewed maximum initial depth");
+    require_close(mountain.initial_water_depth_m[mountain.sink_cell], 0.50, kDepthToleranceM,
+                  "mountain outlet pool should retain its reviewed maximum initial depth");
+
+    Fluid25DScenarioData wrong_crop = mountain;
+    wrong_crop.terrain_provenance->transformed_crop_sha256 = std::string(64U, '0');
+    require_throws([&] { validate_fluid_25d_mountain_source_outlet_terrain_identity(wrong_crop); },
+                   "mountain source/outlet demo should reject a synthetic wrong crop identity");
+    Fluid25DScenarioData wrong_source = mountain;
+    wrong_source.terrain_provenance->elevation_sha256 = std::string(64U, '0');
+    require_throws(
+        [&] { validate_fluid_25d_mountain_source_outlet_terrain_identity(wrong_source); },
+        "mountain source/outlet demo should reject a synthetic wrong source identity");
 }
 
 void test_profile_diagnostic_metric_math() {
@@ -1789,6 +2033,7 @@ int main() {
         test_deterministic_scenarios();
         test_terrain_case_ingestion();
         test_terrain_water_protocol_construction();
+        test_mountain_source_outlet_field_construction();
         test_profile_frame_slot_attribution();
         test_profile_diagnostic_metric_math();
         test_dry_bed_stability();

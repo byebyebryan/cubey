@@ -28,6 +28,9 @@ enum class Fluid25DScenario : std::uint32_t {
     // Opt-in presentation fixture. It uses finite-volume evidence rather
     // than changing River V0's virtual-pipes default or its oracle baseline.
     SourceOutletDemo = 5,
+    // Opt-in terrain-backed product fixture. Its pinned crop, native spacing,
+    // and finite-volume solver are part of the scenario contract.
+    MountainSourceOutletDemo = 6,
 };
 
 // VirtualPipes remains the product default. FiniteVolume is an opt-in
@@ -76,6 +79,9 @@ enum class Fluid25DCatchmentView : std::uint32_t {
 // oracle fixtures deliberately override this with much smaller grids.
 inline constexpr std::uint32_t kDefaultFluid25DGridWidth = 256;
 inline constexpr std::uint32_t kDefaultFluid25DGridHeight = 128;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletGridWidth = 256;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletGridHeight = 128;
+inline constexpr float kFluid25DMountainSourceOutletCellSizeM = 30.0F;
 inline constexpr std::uint32_t kMaxFluid25DSubsteps = 64;
 inline constexpr float kFluid25DDefaultWindowedPresentationTimeScale = 1.0F;
 inline constexpr float kFluid25DMinWindowedPresentationTimeScale = 0.125F;
@@ -261,6 +267,8 @@ struct Fluid25DStartupOptions {
         return "boundary-drain-fixture";
     case Fluid25DScenario::SourceOutletDemo:
         return "source-outlet-demo";
+    case Fluid25DScenario::MountainSourceOutletDemo:
+        return "mountain-source-outlet-demo";
     }
     return "river-catchment";
 }
@@ -304,9 +312,12 @@ struct Fluid25DStartupOptions {
     if (name == "source-outlet-demo") {
         return Fluid25DScenario::SourceOutletDemo;
     }
+    if (name == "mountain-source-outlet-demo") {
+        return Fluid25DScenario::MountainSourceOutletDemo;
+    }
     throw std::runtime_error(
         "fluid 2.5D scenario must be dry-bed, lake-at-rest, river-catchment, terrain-case, "
-        "boundary-drain-fixture, or source-outlet-demo");
+        "boundary-drain-fixture, source-outlet-demo, or mountain-source-outlet-demo");
 }
 
 [[nodiscard]] inline const char*
@@ -472,17 +483,19 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         config.scenario != Fluid25DScenario::RiverCatchment &&
         config.scenario != Fluid25DScenario::TerrainCase &&
         config.scenario != Fluid25DScenario::BoundaryDrainFixture &&
-        config.scenario != Fluid25DScenario::SourceOutletDemo) {
+        config.scenario != Fluid25DScenario::SourceOutletDemo &&
+        config.scenario != Fluid25DScenario::MountainSourceOutletDemo) {
         throw std::runtime_error("fluid 2.5D scenario value is invalid");
     }
     if (config.solver != Fluid25DSolver::VirtualPipes &&
         config.solver != Fluid25DSolver::FiniteVolume) {
         throw std::runtime_error("fluid 2.5D solver value is invalid");
     }
-    if (config.scenario == Fluid25DScenario::SourceOutletDemo &&
+    if ((config.scenario == Fluid25DScenario::SourceOutletDemo ||
+         config.scenario == Fluid25DScenario::MountainSourceOutletDemo) &&
         config.solver != Fluid25DSolver::FiniteVolume) {
         throw std::runtime_error(
-            "fluid 2.5D source-outlet-demo requires --fluid25d-solver finite-volume");
+            "fluid 2.5D source/outlet demos require --fluid25d-solver finite-volume");
     }
     if (!(config.cell_size_m > 0.0F) || !std::isfinite(config.cell_size_m)) {
         throw std::runtime_error("fluid 2.5D cell size must be finite and positive");
@@ -519,6 +532,23 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
     }
     if (!std::isfinite(config.sheet_initial_depth_m) || config.sheet_initial_depth_m < 0.0F) {
         throw std::runtime_error("fluid 2.5D sheet depth must be finite and nonnegative");
+    }
+    if (config.scenario == Fluid25DScenario::MountainSourceOutletDemo) {
+        if (config.grid_width != kFluid25DMountainSourceOutletGridWidth ||
+            config.grid_height != kFluid25DMountainSourceOutletGridHeight) {
+            throw std::runtime_error(
+                "fluid 2.5D mountain-source-outlet-demo requires a 256x128 grid");
+        }
+        if (config.cell_size_m != kFluid25DMountainSourceOutletCellSizeM) {
+            throw std::runtime_error(
+                "fluid 2.5D mountain-source-outlet-demo requires 30 metre cells");
+        }
+        if (config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::None ||
+            config.rainfall_depth_rate_m_per_s != 0.0F || config.sheet_initial_depth_m != 0.0F ||
+            config.source_active_duration_seconds.has_value()) {
+            throw std::runtime_error("fluid 2.5D mountain-source-outlet-demo rejects terrain-water "
+                                     "protocol and forcing options");
+        }
     }
     if (config.scenario != Fluid25DScenario::TerrainCase) {
         return;
@@ -607,6 +637,10 @@ fluid_25d_config_from_options(const common::FluidGridOptions& grid,
     }
     config.scenario = fluid_25d_scenario_from_name(options.scenario.value_or(""));
     config.solver = fluid_25d_solver_from_name(options.solver.value_or(""));
+    if (config.scenario == Fluid25DScenario::MountainSourceOutletDemo &&
+        !options.cell_size_m.has_value()) {
+        config.cell_size_m = kFluid25DMountainSourceOutletCellSizeM;
+    }
     validate_fluid_25d_config(config);
     return config;
 }

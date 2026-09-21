@@ -6,6 +6,7 @@
 #include <cubey/asset/terrain_raster_height_source.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -22,6 +23,34 @@
 namespace cubey::projects::fluid::fluid_25d {
 
 inline constexpr std::size_t kFluid25DNoCell = std::numeric_limits<std::size_t>::max();
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletCropX = 1536U;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletCropZ = 1664U;
+inline constexpr std::string_view kFluid25DMountainSourceOutletElevationSha256 =
+    "2a919b516d8ae4fb8c193cdd8db1a8ba055ba702e5cbd1ff50ad2b7fc6ab3c48";
+inline constexpr std::string_view kFluid25DMountainSourceOutletCropSha256 =
+    "9bfebfe229886ded533556acaf11de541caddfc4cf8104d864da1232fa8b24c6";
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletSourceX = 8U;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletSourceZ = 60U;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletSinkX = 232U;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletSinkZ = 122U;
+inline constexpr std::uint32_t kFluid25DMountainSourceOutletEndpointRadiusCells = 5U;
+inline constexpr float kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS = 0.75F;
+inline constexpr std::array<std::array<std::uint32_t, 2U>, 3U>
+    kFluid25DMountainSourceOutletDrainCells{{
+        {232U, 127U},
+        {229U, 126U},
+        {231U, 126U},
+    }};
+
+[[nodiscard]] inline constexpr bool
+fluid_25d_mountain_source_outlet_is_drain_cell(std::uint32_t x, std::uint32_t z) {
+    for (const auto& cell : kFluid25DMountainSourceOutletDrainCells) {
+        if (cell[0] == x && cell[1] == z) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // Geometric face order shared by all solvers: left, right, down, up. The
 // virtual-pipes implementation additionally stores directed discharge in
@@ -487,11 +516,219 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
             0.20F;
         break;
     }
+    case Fluid25DScenario::MountainSourceOutletDemo:
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo requires a pinned terrain heightfield");
     default:
         throw std::runtime_error("fluid 2.5D scenario value is invalid");
     }
 
     return data;
+}
+
+inline void
+validate_fluid_25d_mountain_source_outlet_terrain_identity(const Fluid25DScenarioData& scenario) {
+    if (!scenario.terrain_provenance.has_value()) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo requires terrain provenance");
+    }
+    const Fluid25DTerrainCaseProvenance& provenance = scenario.terrain_provenance.value();
+    if (provenance.elevation_sha256 != kFluid25DMountainSourceOutletElevationSha256) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo rejected the terrain elevation SHA-256");
+    }
+    if (provenance.transformed_crop_sha256 != kFluid25DMountainSourceOutletCropSha256) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo rejected the transformed crop SHA-256");
+    }
+    if (provenance.crop_x != kFluid25DMountainSourceOutletCropX ||
+        provenance.crop_z != kFluid25DMountainSourceOutletCropZ ||
+        provenance.crop_width != kFluid25DMountainSourceOutletGridWidth ||
+        provenance.crop_height != kFluid25DMountainSourceOutletGridHeight ||
+        provenance.sample_spacing_m != kFluid25DMountainSourceOutletCellSizeM ||
+        scenario.width != kFluid25DMountainSourceOutletGridWidth ||
+        scenario.height != kFluid25DMountainSourceOutletGridHeight ||
+        scenario.cell_size_m != kFluid25DMountainSourceOutletCellSizeM) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo rejected terrain crop geometry or spacing");
+    }
+    const std::string expected_identity = fluid_25d_terrain_case_identity(
+        provenance.elevation_sha256, provenance.transformed_crop_sha256, provenance.crop_x,
+        provenance.crop_z, provenance.crop_width, provenance.crop_height,
+        provenance.sample_spacing_m);
+    if (provenance.identity != expected_identity) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo rejected inconsistent terrain provenance");
+    }
+}
+
+[[nodiscard]] inline float fluid_25d_mountain_source_outlet_smooth_falloff(float distance_cells,
+                                                                           float radius_cells) {
+    if (!(radius_cells > 0.0F) || !std::isfinite(radius_cells) || !std::isfinite(distance_cells)) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo falloff inputs are invalid");
+    }
+    const float t = std::clamp(1.0F - (distance_cells / radius_cells), 0.0F, 1.0F);
+    return t * t * (3.0F - (2.0F * t));
+}
+
+// This is deliberately product-only field authoring, separated from raster
+// ingestion so its endpoint and route contract can be tested without the
+// external terrain cache. The fixed control polyline affects initial water
+// only; it never modifies the imported elevation or solver forcing fields.
+inline void author_fluid_25d_mountain_source_outlet_fields(Fluid25DScenarioData& scenario) {
+    const std::size_t cell_count = fluid_25d_scenario_cell_count(scenario.width, scenario.height);
+    if (scenario.width != kFluid25DMountainSourceOutletGridWidth ||
+        scenario.height != kFluid25DMountainSourceOutletGridHeight ||
+        scenario.cell_size_m != kFluid25DMountainSourceOutletCellSizeM ||
+        scenario.terrain_height_m.size() != cell_count ||
+        scenario.initial_water_depth_m.size() != cell_count ||
+        scenario.source_depth_rate_m_per_s.size() != cell_count ||
+        scenario.sink_depth_rate_m_per_s.size() != cell_count ||
+        scenario.boundary_outflow_face_mask.size() != cell_count) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo fields have invalid dimensions");
+    }
+
+    std::fill(scenario.initial_water_depth_m.begin(), scenario.initial_water_depth_m.end(), 0.0F);
+    std::fill(scenario.source_depth_rate_m_per_s.begin(), scenario.source_depth_rate_m_per_s.end(),
+              0.0F);
+    std::fill(scenario.sink_depth_rate_m_per_s.begin(), scenario.sink_depth_rate_m_per_s.end(),
+              0.0F);
+    std::fill(scenario.boundary_outflow_face_mask.begin(),
+              scenario.boundary_outflow_face_mask.end(), 0U);
+
+    using ControlPoint = std::array<float, 2>;
+    constexpr std::array<ControlPoint, 15U> kRoute{
+        ControlPoint{8.0F, 60.0F},    ControlPoint{24.0F, 60.0F},   ControlPoint{40.0F, 62.0F},
+        ControlPoint{56.0F, 65.0F},   ControlPoint{72.0F, 69.0F},   ControlPoint{88.0F, 78.0F},
+        ControlPoint{104.0F, 89.0F},  ControlPoint{120.0F, 91.0F},  ControlPoint{136.0F, 92.0F},
+        ControlPoint{152.0F, 98.0F},  ControlPoint{168.0F, 108.0F}, ControlPoint{184.0F, 122.0F},
+        ControlPoint{200.0F, 123.0F}, ControlPoint{216.0F, 123.0F}, ControlPoint{232.0F, 122.0F},
+    };
+    constexpr float kCorridorRadiusCells = 4.0F;
+    constexpr float kCorridorMaximumDepthM = 0.08F;
+    constexpr float kSourcePoolMaximumDepthM = 0.30F;
+    constexpr float kSinkPoolMaximumDepthM = 0.50F;
+
+    const auto point_to_segment_distance_cells = [](float x, float z, const ControlPoint& a,
+                                                    const ControlPoint& b) {
+        const float segment_x = b[0] - a[0];
+        const float segment_z = b[1] - a[1];
+        const float offset_x = x - a[0];
+        const float offset_z = z - a[1];
+        const float segment_length_squared = (segment_x * segment_x) + (segment_z * segment_z);
+        const float projection = std::clamp(
+            ((offset_x * segment_x) + (offset_z * segment_z)) / segment_length_squared, 0.0F, 1.0F);
+        const float closest_x = a[0] + (projection * segment_x);
+        const float closest_z = a[1] + (projection * segment_z);
+        return std::hypot(x - closest_x, z - closest_z);
+    };
+    const auto radial_distance_cells = [](float x, float z, std::uint32_t center_x,
+                                          std::uint32_t center_z) {
+        return std::hypot(x - static_cast<float>(center_x), z - static_cast<float>(center_z));
+    };
+    for (std::uint32_t z = 0U; z < scenario.height; ++z) {
+        for (std::uint32_t x = 0U; x < scenario.width; ++x) {
+            const float x_cells = static_cast<float>(x);
+            const float z_cells = static_cast<float>(z);
+            float nearest_route_distance_cells = std::numeric_limits<float>::infinity();
+            for (std::size_t point = 0U; point + 1U < kRoute.size(); ++point) {
+                nearest_route_distance_cells =
+                    std::min(nearest_route_distance_cells,
+                             point_to_segment_distance_cells(x_cells, z_cells, kRoute[point],
+                                                             kRoute[point + 1U]));
+            }
+            const float corridor_depth_m =
+                kCorridorMaximumDepthM * fluid_25d_mountain_source_outlet_smooth_falloff(
+                                             nearest_route_distance_cells, kCorridorRadiusCells);
+            const float source_pool_depth_m =
+                kSourcePoolMaximumDepthM *
+                fluid_25d_mountain_source_outlet_smooth_falloff(
+                    radial_distance_cells(x_cells, z_cells, kFluid25DMountainSourceOutletSourceX,
+                                          kFluid25DMountainSourceOutletSourceZ),
+                    static_cast<float>(kFluid25DMountainSourceOutletEndpointRadiusCells));
+            const float sink_pool_depth_m =
+                kSinkPoolMaximumDepthM *
+                fluid_25d_mountain_source_outlet_smooth_falloff(
+                    radial_distance_cells(x_cells, z_cells, kFluid25DMountainSourceOutletSinkX,
+                                          kFluid25DMountainSourceOutletSinkZ),
+                    static_cast<float>(kFluid25DMountainSourceOutletEndpointRadiusCells));
+            scenario.initial_water_depth_m[fluid_25d_scenario_index(scenario.width, scenario.height,
+                                                                    x, z)] =
+                std::max({corridor_depth_m, source_pool_depth_m, sink_pool_depth_m});
+        }
+    }
+
+    const auto in_endpoint_disk = [](std::uint32_t x, std::uint32_t z, std::uint32_t center_x,
+                                     std::uint32_t center_z) {
+        const std::int32_t dx = static_cast<std::int32_t>(x) - static_cast<std::int32_t>(center_x);
+        const std::int32_t dz = static_cast<std::int32_t>(z) - static_cast<std::int32_t>(center_z);
+        return (dx * dx) + (dz * dz) <=
+               static_cast<std::int32_t>(kFluid25DMountainSourceOutletEndpointRadiusCells *
+                                         kFluid25DMountainSourceOutletEndpointRadiusCells);
+    };
+    std::size_t source_region_count = 0U;
+    std::size_t visible_sink_region_count = 0U;
+    std::size_t sink_rate_region_count = 0U;
+    for (std::uint32_t z = 0U; z < scenario.height; ++z) {
+        for (std::uint32_t x = 0U; x < scenario.width; ++x) {
+            const bool source = in_endpoint_disk(x, z, kFluid25DMountainSourceOutletSourceX,
+                                                 kFluid25DMountainSourceOutletSourceZ);
+            const bool visible_sink = in_endpoint_disk(x, z, kFluid25DMountainSourceOutletSinkX,
+                                                       kFluid25DMountainSourceOutletSinkZ);
+            const bool sink_rate = fluid_25d_mountain_source_outlet_is_drain_cell(x, z);
+            if (source && visible_sink) {
+                throw std::runtime_error(
+                    "fluid 2.5D mountain-source-outlet-demo endpoint regions overlap");
+            }
+            source_region_count += source ? 1U : 0U;
+            visible_sink_region_count += visible_sink ? 1U : 0U;
+            sink_rate_region_count += sink_rate ? 1U : 0U;
+        }
+    }
+    constexpr std::size_t kExpectedEndpointRegionCellCount = 81U;
+    constexpr std::size_t kExpectedSinkRateRegionCellCount =
+        kFluid25DMountainSourceOutletDrainCells.size();
+    if (source_region_count != kExpectedEndpointRegionCellCount ||
+        visible_sink_region_count != kExpectedEndpointRegionCellCount ||
+        sink_rate_region_count != kExpectedSinkRateRegionCellCount) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain-source-outlet-demo endpoint rasterization is invalid");
+    }
+    const float cell_area_m2 = scenario.cell_size_m * scenario.cell_size_m;
+    const float source_depth_rate_m_per_s =
+        kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS /
+        (static_cast<float>(source_region_count) * cell_area_m2);
+    const float sink_depth_rate_m_per_s =
+        kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS /
+        (static_cast<float>(sink_rate_region_count) * cell_area_m2);
+    for (std::uint32_t z = 0U; z < scenario.height; ++z) {
+        for (std::uint32_t x = 0U; x < scenario.width; ++x) {
+            const std::size_t index =
+                fluid_25d_scenario_index(scenario.width, scenario.height, x, z);
+            if (in_endpoint_disk(x, z, kFluid25DMountainSourceOutletSourceX,
+                                 kFluid25DMountainSourceOutletSourceZ)) {
+                scenario.source_depth_rate_m_per_s[index] = source_depth_rate_m_per_s;
+            }
+            const bool sink_rate = fluid_25d_mountain_source_outlet_is_drain_cell(x, z);
+            if (sink_rate) {
+                // This fixed terminal reserve is the actual removal mask. Prime
+                // it for immediate established-flow readability; it is not
+                // parcel-transit proof, terrain modification, or hidden solver
+                // guidance.
+                scenario.initial_water_depth_m[index] =
+                    std::max(scenario.initial_water_depth_m[index], 2.0F);
+                scenario.sink_depth_rate_m_per_s[index] = sink_depth_rate_m_per_s;
+            }
+        }
+    }
+    scenario.source_cell = fluid_25d_scenario_index(scenario.width, scenario.height,
+                                                    kFluid25DMountainSourceOutletSourceX,
+                                                    kFluid25DMountainSourceOutletSourceZ);
+    scenario.sink_cell = fluid_25d_scenario_index(scenario.width, scenario.height,
+                                                  kFluid25DMountainSourceOutletSinkX,
+                                                  kFluid25DMountainSourceOutletSinkZ);
 }
 
 // Import one native, row-major crop from the shared immutable raster source.
@@ -566,6 +803,25 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                                                     data.width, data.height, spacing_m),
     };
     return data;
+}
+
+[[nodiscard]] inline Fluid25DScenarioData make_fluid_25d_mountain_source_outlet_scenario(
+    const Fluid25DConfig& config, const cubey::asset::TerrainRasterHeightSource& source) {
+    if (config.scenario != Fluid25DScenario::MountainSourceOutletDemo) {
+        throw std::runtime_error(
+            "fluid 2.5D mountain scenario builder requires scenario mountain-source-outlet-demo");
+    }
+    validate_fluid_25d_config(config);
+    if (source.sample_spacing_m() != kFluid25DMountainSourceOutletCellSizeM) {
+        throw std::runtime_error("fluid 2.5D mountain-source-outlet-demo requires a terrain source "
+                                 "with 30 metre spacing");
+    }
+    Fluid25DScenarioData scenario = make_fluid_25d_terrain_crop(
+        config.grid_width, config.grid_height, config.cell_size_m, source,
+        kFluid25DMountainSourceOutletCropX, kFluid25DMountainSourceOutletCropZ);
+    validate_fluid_25d_mountain_source_outlet_terrain_identity(scenario);
+    author_fluid_25d_mountain_source_outlet_fields(scenario);
+    return scenario;
 }
 
 // The neutral terrain audition entrypoint validates TerrainCase and applies
