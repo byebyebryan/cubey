@@ -682,6 +682,28 @@ void test_terrain_case_ingestion() {
             "terrain case should begin with zero water and no source or sink rates");
     require(terrain.source_cell == kFluid25DNoCell && terrain.sink_cell == kFluid25DNoCell,
             "terrain case should not invent source or sink cells");
+
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
+    const Fluid25DScenarioData crop =
+        make_fluid_25d_terrain_crop(3U, 2U, 3.5F, source, 1U, 1U);
+    require(crop.width == terrain.width && crop.height == terrain.height &&
+                crop.cell_size_m == terrain.cell_size_m &&
+                crop.terrain_height_m == terrain.terrain_height_m &&
+                crop.initial_water_depth_m == terrain.initial_water_depth_m &&
+                crop.source_depth_rate_m_per_s == terrain.source_depth_rate_m_per_s &&
+                crop.sink_depth_rate_m_per_s == terrain.sink_depth_rate_m_per_s &&
+                crop.boundary_outflow_face_mask == terrain.boundary_outflow_face_mask,
+            "scenario-neutral terrain crop helper should preserve the neutral terrain fields");
+    require_throws(
+        [&] {
+            static_cast<void>(make_fluid_25d_terrain_crop(0U, 2U, 3.5F, source, 1U, 1U));
+        },
+        "scenario-neutral terrain crop helper should reject zero dimensions");
+    require_throws(
+        [&] {
+            static_cast<void>(make_fluid_25d_terrain_crop(3U, 2U, 0.0F, source, 1U, 1U));
+        },
+        "scenario-neutral terrain crop helper should reject non-positive spacing");
     require(terrain.terrain_provenance.has_value(),
             "terrain case should expose provenance for inspection");
     const Fluid25DTerrainCaseProvenance& provenance = terrain.terrain_provenance.value();

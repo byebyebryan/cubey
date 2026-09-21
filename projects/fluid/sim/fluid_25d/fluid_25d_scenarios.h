@@ -495,36 +495,35 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
 }
 
 // Import one native, row-major crop from the shared immutable raster source.
-// A terrain case is dry and closed by default. Its only supported audition
-// overrides are complete-field, candidate-independent protocols applied after
-// the immutable crop and its provenance have been constructed.
-[[nodiscard]] inline Fluid25DScenarioData
-make_fluid_25d_terrain_scenario(const Fluid25DConfig& config,
-                                const cubey::asset::TerrainRasterHeightSource& source,
-                                std::uint32_t crop_x = 0U, std::uint32_t crop_z = 0U) {
-    if (config.scenario != Fluid25DScenario::TerrainCase) {
+// This construction is intentionally scenario-neutral: it creates only the
+// dry, closed raster-backed fields and their provenance. Product or audition
+// protocols are applied by the owning scenario wrapper after this boundary.
+[[nodiscard]] inline Fluid25DScenarioData make_fluid_25d_terrain_crop(
+    std::uint32_t width, std::uint32_t height, float expected_cell_size_m,
+    const cubey::asset::TerrainRasterHeightSource& source, std::uint32_t crop_x = 0U,
+    std::uint32_t crop_z = 0U) {
+    const std::size_t cell_count = fluid_25d_scenario_cell_count(width, height);
+    if (!std::isfinite(expected_cell_size_m) || expected_cell_size_m <= 0.0F) {
         throw std::runtime_error(
-            "fluid 2.5D terrain scenario builder requires scenario terrain-case");
+            "fluid 2.5D terrain crop cell size must be finite and positive");
     }
-    validate_fluid_25d_config(config);
     const float spacing_m = source.sample_spacing_m();
     if (!std::isfinite(spacing_m) || spacing_m <= 0.0F) {
         throw std::runtime_error("fluid 2.5D terrain source has invalid sample spacing");
     }
-    if (config.cell_size_m != spacing_m) {
+    if (expected_cell_size_m != spacing_m) {
         throw std::runtime_error(
             "fluid 2.5D terrain case cell size must equal the source sample spacing");
     }
-    if (crop_x > source.width() || config.grid_width > source.width() - crop_x ||
-        crop_z > source.height() || config.grid_height > source.height() - crop_z) {
+    if (crop_x > source.width() || width > source.width() - crop_x || crop_z > source.height() ||
+        height > source.height() - crop_z) {
         throw std::runtime_error("fluid 2.5D terrain case crop is outside the heightfield bounds");
     }
 
     Fluid25DScenarioData data;
-    data.width = config.grid_width;
-    data.height = config.grid_height;
+    data.width = width;
+    data.height = height;
     data.cell_size_m = spacing_m;
-    const std::size_t cell_count = fluid_25d_scenario_cell_count(data.width, data.height);
     data.terrain_height_m.resize(cell_count);
     data.initial_water_depth_m.assign(cell_count, 0.0F);
     data.source_depth_rate_m_per_s.assign(cell_count, 0.0F);
@@ -566,6 +565,24 @@ make_fluid_25d_terrain_scenario(const Fluid25DConfig& config,
                                                     transformed_crop_sha256, crop_x, crop_z,
                                                     data.width, data.height, spacing_m),
     };
+    return data;
+}
+
+// The neutral terrain audition entrypoint validates TerrainCase and applies
+// only its existing complete-field water protocols after importing the
+// immutable crop. Terrain-backed product scenarios should use the crop helper
+// above and own their separate endpoint/mask construction.
+[[nodiscard]] inline Fluid25DScenarioData
+make_fluid_25d_terrain_scenario(const Fluid25DConfig& config,
+                                const cubey::asset::TerrainRasterHeightSource& source,
+                                std::uint32_t crop_x = 0U, std::uint32_t crop_z = 0U) {
+    if (config.scenario != Fluid25DScenario::TerrainCase) {
+        throw std::runtime_error(
+            "fluid 2.5D terrain scenario builder requires scenario terrain-case");
+    }
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData data = make_fluid_25d_terrain_crop(
+        config.grid_width, config.grid_height, config.cell_size_m, source, crop_x, crop_z);
     apply_fluid_25d_terrain_water_protocol(config, data);
     return data;
 }
