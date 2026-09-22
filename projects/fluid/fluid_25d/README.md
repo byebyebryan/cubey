@@ -227,8 +227,9 @@ projects/fluid/fluid_25d/run_transport_readability_v1.sh \
 
 Do not interpret a green-to-amber visual change as proof of transport by
 itself. Read the magenta packet alongside the tracer source/sink ledgers,
-centroid/downstream extent, first material outlet arrival, and conservation
-residual in the generated acceptance report. The runner's fixed mapping is
+centroid/downstream extent, first ledger-detectable arrival, first material-
+front outlet-column arrival, and conservation residual in the generated
+acceptance report. The runner's fixed mapping is
 `capture fN = post-step time N seconds`; `f300` is pre-dye, `f301` is first
 dyed, `f360` is last dyed, and `f361` is first undyed.
 

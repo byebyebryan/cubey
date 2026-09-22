@@ -68,10 +68,15 @@ decoded video index N-1 -> capture frame N -> post-step time N seconds
 profile row N-1        -> capture frame N
 ```
 
-The runner also adds the first measured material outlet-arrival frame to the
-checkpoint set. Arrival is measured from the cumulative tracer sink ledger,
-using `max(1e-6 m3, 1e-6 * final cumulative tracer source amount)`; it is not
-inferred from a visible pixel or from the configured outlet capacity.
+The runner adds two derived outlet-event frames to the checkpoint set. The
+first ledger-detectable outlet arrival is measured from the cumulative tracer
+sink ledger, using `max(1e-6 m3, 1e-6 * final cumulative tracer source
+amount)`. The first material-front outlet arrival is measured when the
+diagnostics-only 1% material dyed front reaches the outlet column (`x=110` on
+this compact grid), using normalized `downstream_extent_cell_x`. The ledger
+event can precede the material-front event because a tiny conservative tail is
+detectable before the 1% front reaches the outlet; neither event is inferred
+from a visible pixel or from configured outlet capacity.
 
 ## Acceptance contract
 
@@ -91,15 +96,17 @@ downstream-extent reporting.
 The acceptance report also requires the `f300` profile row to have effectively
 zero tracer total, source, sink, and boundary amounts before the pulse begins.
 The zero guard, source tolerance, boundary tolerance, conservation limit, and
-material-arrival threshold are printed explicitly in `acceptance.txt`.
+ledger-arrival/material-front thresholds are printed explicitly in
+`acceptance.txt`.
 
 The source checks use a fixed one-percent relative tolerance to accommodate
 GPU float ledger accumulation. Maximum absolute tracer conservation residual
-must remain below `0.01%` of the final tracer source. A first material outlet
-arrival must be measured after the dye start (`f>300`) and by the final frame;
-the actual frame and threshold are recorded in `acceptance.txt` and
-`metadata.txt`. The runner also records the water residual as context, but the
-study gate is the tracer conservation result.
+must remain below `0.01%` of the final tracer source. Both a ledger-detectable
+outlet arrival and a material-front outlet-column arrival must be measured
+after the dye start (`f>300`) and by the final frame; the actual frames and
+thresholds are recorded in `acceptance.txt` and `metadata.txt`. The runner
+also records the water residual as context, but the study gate is the tracer
+conservation result.
 
 ## How to read the result
 
@@ -107,8 +114,8 @@ Transport Inspection is a source-to-outlet explanation surface, not a
 velocity/quiver diagnostic:
 
 - green SOURCE ring: where the hydraulic source and dye pulse enter;
-- amber OUTLET ring: where the explicit sink removes water and, after arrival,
-  dyed tracer;
+- amber OUTLET ring: where the explicit sink removes water and, after the
+  material-front arrival, visibly receives dyed tracer;
 - base blue: water depth and terrain context, not dye concentration;
 - magenta/violet packet: conservative dyed water, with stronger tint meaning
   a higher tracer-to-water concentration;
@@ -116,11 +123,14 @@ velocity/quiver diagnostic:
   simulated water route. It is not a particle path or a new water body.
 
 Read the checkpoints in this order: reset/early continuity, `f300` versus
-`f301` for pulse onset, `f360` versus `f361` for pulse end, the measured
-arrival frame for outlet response, and `f900` for the late state. The profile
-centroid and downstream extent quantify what the video suggests; cumulative
-source, sink, boundary, and residual fields establish whether the visual
-story is backed by the conservative ledger.
+`f301` for pulse onset, `f360` versus `f361` for pulse end, the
+ledger-detectable arrival frame, the material-front outlet-column arrival
+frame, and `f900` for the late state. In the reviewed v4 trace these events
+are `f321` and `f571`, respectively; the runner derives them from the profile
+and does not hardcode those frame numbers. The profile centroid and
+downstream extent quantify what the video suggests; cumulative source, sink,
+boundary, and residual fields establish whether the visual story is backed by
+the conservative ledger.
 
 ## Evidence boundary
 

@@ -312,7 +312,7 @@ FINAL_TRACER_CENTROID_Y="$(profile_value "${FINAL_PROFILE_FRAME}" 16)"
 FINAL_TRACER_EXTENT_X="$(profile_value "${FINAL_PROFILE_FRAME}" 17)"
 FINAL_TRACER_SINK_REGION="$(profile_value "${FINAL_PROFILE_FRAME}" 18)"
 FINAL_TRACER_RESIDUAL="$(profile_value "${FINAL_PROFILE_FRAME}" 22)"
-TRACER_ARRIVAL_THRESHOLD="$(awk -v source="${FINAL_TRACER_SOURCE}" \
+TRACER_LEDGER_ARRIVAL_THRESHOLD="$(awk -v source="${FINAL_TRACER_SOURCE}" \
     'BEGIN { threshold = source * 0.000001; if (threshold < 0.000001) threshold = 0.000001; printf "%.12f", threshold }')"
 
 PRE_DYE_CAPTURE_FRAME="$(awk -v start="${DYE_START_SECONDS}" -v delta="${FIXED_DELTA_SECONDS}" \
@@ -323,15 +323,28 @@ PRE_DYE_TRACER_SOURCE="$(profile_value "${PRE_DYE_PROFILE_FRAME}" 19)"
 PRE_DYE_TRACER_SINK="$(profile_value "${PRE_DYE_PROFILE_FRAME}" 20)"
 PRE_DYE_TRACER_BOUNDARY="$(profile_value "${PRE_DYE_PROFILE_FRAME}" 21)"
 
-ARRIVAL_LINE="$(awk -F, -v threshold="${TRACER_ARRIVAL_THRESHOLD}" \
+LEDGER_ARRIVAL_LINE="$(awk -F, -v threshold="${TRACER_LEDGER_ARRIVAL_THRESHOLD}" \
     'NR > 1 && $20 > threshold { printf "%s %s %s %s", $1, $2, $3, $20; exit }' \
     "${NORMALIZED_PROFILE}")"
-ARRIVAL_PROFILE_FRAME=none
-ARRIVAL_CAPTURE_FRAME=none
-ARRIVAL_SECONDS=none
-ARRIVAL_SINK_AMOUNT=none
-if [[ -n "${ARRIVAL_LINE}" ]]; then
-    read -r ARRIVAL_PROFILE_FRAME ARRIVAL_CAPTURE_FRAME ARRIVAL_SECONDS ARRIVAL_SINK_AMOUNT <<<"${ARRIVAL_LINE}"
+LEDGER_ARRIVAL_PROFILE_FRAME=none
+LEDGER_ARRIVAL_CAPTURE_FRAME=none
+LEDGER_ARRIVAL_SECONDS=none
+LEDGER_ARRIVAL_SINK_AMOUNT=none
+if [[ -n "${LEDGER_ARRIVAL_LINE}" ]]; then
+    read -r LEDGER_ARRIVAL_PROFILE_FRAME LEDGER_ARRIVAL_CAPTURE_FRAME \
+        LEDGER_ARRIVAL_SECONDS LEDGER_ARRIVAL_SINK_AMOUNT <<<"${LEDGER_ARRIVAL_LINE}"
+fi
+
+MATERIAL_FRONT_ARRIVAL_LINE="$(awk -F, -v outlet_x="${OUTLET_X}" \
+    'NR > 1 && ($17 + 0) >= outlet_x { printf "%s %s %s %s", $1, $2, $3, $17; exit }' \
+    "${NORMALIZED_PROFILE}")"
+MATERIAL_FRONT_ARRIVAL_PROFILE_FRAME=none
+MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME=none
+MATERIAL_FRONT_ARRIVAL_SECONDS=none
+MATERIAL_FRONT_ARRIVAL_EXTENT_X=none
+if [[ -n "${MATERIAL_FRONT_ARRIVAL_LINE}" ]]; then
+    read -r MATERIAL_FRONT_ARRIVAL_PROFILE_FRAME MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME \
+        MATERIAL_FRONT_ARRIVAL_SECONDS MATERIAL_FRONT_ARRIVAL_EXTENT_X <<<"${MATERIAL_FRONT_ARRIVAL_LINE}"
 fi
 
 MAX_STATUS="$(awk -F, 'NR > 1 { if ($4 + 0 > max) max = $4 + 0 } END { printf "%.0f", max + 0 }' "${NORMALIZED_PROFILE}")"
@@ -391,17 +404,23 @@ if ! awk -v fraction="${TRACER_RESIDUAL_FRACTION}" -v limit="${MAX_CONSERVATION_
     'BEGIN { exit !(fraction <= limit) }'; then
     conservation_ok=0
 fi
-arrival_ok=1
-if [[ "${ARRIVAL_CAPTURE_FRAME}" == none ]] ||
-    ! awk -v frame="${ARRIVAL_CAPTURE_FRAME}" -v start="${DYE_START_SECONDS}" -v total="${FRAMES}" \
+ledger_arrival_ok=1
+if [[ "${LEDGER_ARRIVAL_CAPTURE_FRAME}" == none ]] ||
+    ! awk -v frame="${LEDGER_ARRIVAL_CAPTURE_FRAME}" -v start="${DYE_START_SECONDS}" -v total="${FRAMES}" \
         'BEGIN { exit !(frame > start && frame <= total) }'; then
-    arrival_ok=0
+    ledger_arrival_ok=0
+fi
+material_front_arrival_ok=1
+if [[ "${MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME}" == none ]] ||
+    ! awk -v frame="${MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME}" -v start="${DYE_START_SECONDS}" -v total="${FRAMES}" \
+        'BEGIN { exit !(frame > start && frame <= total) }'; then
+    material_front_arrival_ok=0
 fi
 
 acceptance_ok=1
 for result in "${rows_ok}" "${water_source_ok}" "${tracer_source_ok}" "${status_ok}" \
     "${concentration_ok}" "${boundary_tracer_ok}" "${pre_dye_ok}" \
-    "${conservation_ok}" "${arrival_ok}"; do
+    "${conservation_ok}" "${ledger_arrival_ok}" "${material_front_arrival_ok}"; do
     [[ "${result}" == 1 ]] || acceptance_ok=0
 done
 
@@ -446,12 +465,19 @@ done
     printf 'maximum_absolute_water_conservation_residual_m3=%s\n' "${MAX_ABS_WATER_RESIDUAL}"
     printf 'maximum_conservation_residual_fraction=%s\n' "${MAX_CONSERVATION_RESIDUAL_FRACTION}"
     printf 'tracer_conservation_acceptance=%s\n' "${conservation_ok}"
-    printf 'material_outlet_arrival_threshold_m3=%s\n' "${TRACER_ARRIVAL_THRESHOLD}"
-    printf 'first_material_outlet_arrival_profile_frame=%s\n' "${ARRIVAL_PROFILE_FRAME}"
-    printf 'first_material_outlet_arrival_capture_frame=%s\n' "${ARRIVAL_CAPTURE_FRAME}"
-    printf 'first_material_outlet_arrival_simulation_seconds=%s\n' "${ARRIVAL_SECONDS}"
-    printf 'first_material_outlet_arrival_sink_amount_m3=%s\n' "${ARRIVAL_SINK_AMOUNT}"
-    printf 'first_material_outlet_arrival_after_dye_start=%s\n' "${arrival_ok}"
+    printf 'ledger_detectable_outlet_arrival_threshold_m3=%s\n' "${TRACER_LEDGER_ARRIVAL_THRESHOLD}"
+    printf 'first_ledger_detectable_outlet_arrival_profile_frame=%s\n' "${LEDGER_ARRIVAL_PROFILE_FRAME}"
+    printf 'first_ledger_detectable_outlet_arrival_capture_frame=%s\n' "${LEDGER_ARRIVAL_CAPTURE_FRAME}"
+    printf 'first_ledger_detectable_outlet_arrival_simulation_seconds=%s\n' "${LEDGER_ARRIVAL_SECONDS}"
+    printf 'first_ledger_detectable_outlet_arrival_sink_amount_m3=%s\n' "${LEDGER_ARRIVAL_SINK_AMOUNT}"
+    printf 'first_ledger_detectable_outlet_arrival_after_dye_start=%s\n' "${ledger_arrival_ok}"
+    printf 'material_front_reporting_threshold=%s\n' "${DYE_MATERIAL_REPORTING_THRESHOLD}"
+    printf 'material_front_outlet_column_x=%s\n' "${OUTLET_X}"
+    printf 'first_material_front_outlet_column_arrival_profile_frame=%s\n' "${MATERIAL_FRONT_ARRIVAL_PROFILE_FRAME}"
+    printf 'first_material_front_outlet_column_arrival_capture_frame=%s\n' "${MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME}"
+    printf 'first_material_front_outlet_column_arrival_simulation_seconds=%s\n' "${MATERIAL_FRONT_ARRIVAL_SECONDS}"
+    printf 'first_material_front_outlet_column_arrival_downstream_extent_cell_x=%s\n' "${MATERIAL_FRONT_ARRIVAL_EXTENT_X}"
+    printf 'first_material_front_outlet_column_arrival_after_dye_start=%s\n' "${material_front_arrival_ok}"
     printf 'acceptance=%s\n' "$([[ "${acceptance_ok}" == 1 ]] && printf PASS || printf FAIL)"
 } >"${ACCEPTANCE_PATH}"
 
@@ -461,15 +487,20 @@ done
 }
 
 declare -a CHECKPOINT_FRAMES=(1 300 301 360 361 480 540 660 900)
-if [[ "${ARRIVAL_CAPTURE_FRAME}" != none ]]; then
-    checkpoint_already_present=0
-    for frame in "${CHECKPOINT_FRAMES[@]}"; do
-        if [[ "${frame}" == "${ARRIVAL_CAPTURE_FRAME}" ]]; then
-            checkpoint_already_present=1
+for event_frame in "${LEDGER_ARRIVAL_CAPTURE_FRAME}" "${MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME}"; do
+    if [[ "${event_frame}" != none ]]; then
+        checkpoint_already_present=0
+        for frame in "${CHECKPOINT_FRAMES[@]}"; do
+            if [[ "${frame}" == "${event_frame}" ]]; then
+                checkpoint_already_present=1
+            fi
+        done
+        if [[ "${checkpoint_already_present}" == 0 ]]; then
+            CHECKPOINT_FRAMES+=("${event_frame}")
         fi
-    done
-    [[ "${checkpoint_already_present}" == 1 ]] || CHECKPOINT_FRAMES+=("${ARRIVAL_CAPTURE_FRAME}")
-fi
+    fi
+done
+mapfile -t CHECKPOINT_FRAMES < <(printf '%s\n' "${CHECKPOINT_FRAMES[@]}" | sort -n -u)
 
 {
     printf 'capture_frame,decoded_video_index,simulation_seconds,path\n'
@@ -493,9 +524,9 @@ checkpoint_paths=()
 for frame in "${CHECKPOINT_FRAMES[@]}"; do
     checkpoint_paths+=("${OUT_DIR}/checkpoints/frame-$(printf '%04d' "${frame}").png")
 done
-run_logged "${OUT_DIR}/logs/contact-sheet.log" /usr/bin/magick montage "${checkpoint_paths[@]}" \
-    -thumbnail 320x180 -tile 3x -geometry +8+28 -background '#101820' -fill white \
-    -pointsize 18 -label '%t' "${CONTACT_SHEET}"
+run_logged "${OUT_DIR}/logs/contact-sheet.log" /usr/bin/magick montage \
+    -label '%t' -thumbnail 320x180 -tile 3x -geometry +8+28 -background '#101820' \
+    -fill white -pointsize 18 "${checkpoint_paths[@]}" "${CONTACT_SHEET}"
 [[ -s "${CONTACT_SHEET}" ]] || {
     printf 'transport contact sheet was not written\n' >&2
     exit 1
@@ -532,7 +563,8 @@ fi
     printf 'video_nominal_presentation_duration_seconds=%s\n' "${VIDEO_NOMINAL_DURATION_SECONDS}"
     printf 'video_container_duration_seconds=%s\n' "${VIDEO_CONTAINER_DURATION_SECONDS}"
     printf 'video_frame_duration_seconds=%s\n' "${VIDEO_FRAME_DURATION_SECONDS}"
-    printf 'full_args=%q ' "${APP}" "${APP_ARGS[@]}"
+    printf 'full_args='
+    printf '%q ' "${APP}" "${APP_ARGS[@]}"
     printf '\n'
     printf 'source_centroid_cell=%s,%s\n' "${SOURCE_X}" "${SOURCE_Y}"
     printf 'outlet_centroid_cell=%s,%s\n' "${OUTLET_X}" "${OUTLET_Y}"
@@ -545,9 +577,13 @@ fi
     printf 'dye_interval=[%s,%s)\n' "${DYE_START_SECONDS}" "$((DYE_START_SECONDS + DYE_DURATION_SECONDS))"
     printf 'frame_semantics=decoded_frame_N_is_post_step_capture_fN; profile_row_N_minus_1\n'
     printf 'dye_checkpoint_semantics=f300_last_pre_dye;f301_first_dyed;f360_last_dyed;f361_first_undyed\n'
-    printf 'material_arrival_threshold=max(1e-6,1e-6*final_tracer_source_amount_m3)\n'
-    printf 'material_arrival_capture_frame=%s\n' "${ARRIVAL_CAPTURE_FRAME}"
-    printf 'material_arrival_simulation_seconds=%s\n' "${ARRIVAL_SECONDS}"
+    printf 'ledger_detectable_arrival_threshold=max(1e-6,1e-6*final_tracer_source_amount_m3)\n'
+    printf 'ledger_detectable_arrival_capture_frame=%s\n' "${LEDGER_ARRIVAL_CAPTURE_FRAME}"
+    printf 'ledger_detectable_arrival_simulation_seconds=%s\n' "${LEDGER_ARRIVAL_SECONDS}"
+    printf 'material_front_reporting_threshold=%s\n' "${DYE_MATERIAL_REPORTING_THRESHOLD}"
+    printf 'material_front_outlet_column_x=%s\n' "${OUTLET_X}"
+    printf 'material_front_arrival_capture_frame=%s\n' "${MATERIAL_FRONT_ARRIVAL_CAPTURE_FRAME}"
+    printf 'material_front_arrival_simulation_seconds=%s\n' "${MATERIAL_FRONT_ARRIVAL_SECONDS}"
     printf 'profile_interval_frames=%s\n' "${PROFILE_INTERVAL}"
     printf 'max_conservation_residual_fraction=%s\n' "${MAX_CONSERVATION_RESIDUAL_FRACTION}"
     printf 'boundary_tracer_tolerance_m3=%s\n' "${BOUNDARY_TRACER_TOLERANCE_M3}"
