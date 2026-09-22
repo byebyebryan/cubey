@@ -1,8 +1,7 @@
 # Fluid 2.5D Transport Readability V1
 
 Date: 2026-09-22  
-Status: runner and review protocol prepared; evidence is pending the
-Transport Inspection presentation slice
+Status: complete; canonical evidence passed
 
 ## Study question
 
@@ -108,6 +107,41 @@ thresholds are recorded in `acceptance.txt` and `metadata.txt`. The runner
 also records the water residual as context, but the study gate is the tracer
 conservation result.
 
+## Recorded evidence
+
+The canonical run is
+`outputs/fluid/transport-readability-v1-20260922-final-v5`. It was produced
+from clean commit `2a8205d5af786328f62d15b166e56e71bd7c33ed` on an NVIDIA
+GeForce RTX 5070 Ti with driver `610.57.04`. The runner recorded its own hash,
+the app hash, complete command line, GPU/driver, and zero changed worktree
+paths in `metadata.txt`. Independent `sha256sum -c sha256sums.txt` verification
+passed for the video, profiles, normalized metrics, checkpoints, contact sheet,
+acceptance report, and metadata.
+
+The measured result passed every V1 gate:
+
+- 900 of 900 profile rows were present, and every finite-volume status flag
+  was zero;
+- `f300` had zero tracer amount and zero tracer source, sink, and boundary
+  ledgers before the pulse;
+- final water source was `27.003446 m3` against `27.0 m3` expected;
+- final tracer source was `1.799986 m3` against `1.8 m3` expected;
+- tracer boundary outflow remained `0.0 m3`;
+- maximum absolute tracer conservation residual was `0.000012 m3`, or
+  `0.000006666719` of final tracer source, below the `0.0001` limit;
+- the first ledger-detectable outlet tail was `f321`; the 1%-material front
+  first reached outlet column 110 at `f571`;
+- at `f900`, cumulative tracer removal at the outlet was `0.488110 m3`, the
+  amount-weighted centroid was `(108.941874,30.495475)`, and downstream extent
+  was column `112`.
+
+Human review of the labeled contact sheet agrees with the measurements. `f300`
+shows blue carrier water only; `f301` begins a magenta pulse at the green
+SOURCE; `f321` still looks like an upstream packet because that event is only
+the conservative ledger tail; `f571` visibly places the material front at the
+amber OUTLET; and `f900` shows the route returning mostly to blue while the
+remaining dyed water is concentrated downstream.
+
 ## How to read the result
 
 Transport Inspection is a source-to-outlet explanation surface, not a
@@ -125,7 +159,7 @@ velocity/quiver diagnostic:
 Read the checkpoints in this order: reset/early continuity, `f300` versus
 `f301` for pulse onset, `f360` versus `f361` for pulse end, the
 ledger-detectable arrival frame, the material-front outlet-column arrival
-frame, and `f900` for the late state. In the reviewed v4 trace these events
+frame, and `f900` for the late state. In the canonical v5 trace these events
 are `f321` and `f571`, respectively; the runner derives them from the profile
 and does not hardcode those frame numbers. The profile centroid and
 downstream extent quantify what the video suggests; cumulative source, sink,
@@ -134,10 +168,8 @@ the conservative ledger.
 
 ## Evidence boundary
 
-Until the runner is executed against a reviewed Transport Inspection build,
-there are no V1 capture claims or measured arrival times. The runner rejects a
-pre-existing output root so stale products cannot enter a new manifest. A
-successful run is
-an opt-in readability study for the compact authored source/outlet demo. It
+The canonical result is an opt-in readability study for the compact authored
+source/outlet demo. The runner rejects a pre-existing output root so stale
+products cannot enter a new manifest. This result
 does not promote dye into virtual-pipes/default behavior, imported terrain
 auditions, rain dynamics, floaters, or a shared generic tracer framework.
