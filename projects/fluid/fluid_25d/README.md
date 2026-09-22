@@ -16,8 +16,9 @@ opt-in GPU finite-volume comparison solve, plus a
 deterministic oblique terrain-and-water catchment presentation. Top-down
 diagnostics remain explicitly selectable. The default Composite catchment
 view preserves the original terrain-and-water shading; Water Isolation
-quiets the bed to expose the wet edge, and Flow Inspection adds a fixed-grid
-velocity-arrow field to the explicit flow-reading surface. It has deterministic
+quiets the bed to expose the wet edge, Flow Inspection adds a fixed-grid
+velocity-arrow field, and Transport Inspection adds an opt-in conservative dye
+pulse to the explicit source-to-outlet reading surface. It has deterministic
 dry-bed, lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
 virtual-pipes depth/face-flux/velocity/ledger and finite-volume
 depth/momentum/velocity/ledger against their corresponding CPU oracle.
@@ -77,6 +78,10 @@ River V0 includes:
 - a Flow Inspection-only, fixed-grid GPU quiver field. Arrow angle shows
   local downstream velocity, while restrained length and brightness show
   speed; the arrows are samples, not waves, foam, water mass, or particles;
+- an opt-in Transport Inspection surface for the compact finite-volume
+  source-outlet demo. A one-scalar conservative dye pulse enters at SOURCE,
+  moves with accepted water face flux, and is removed at OUTLET; it is a
+  reading aid, not a particle system or a general tracer framework;
 - top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
   diagnostics as an explicit alternate presentation mode;
 - opt-in headless CPU/GPU fixtures that read back only at their final evidence
@@ -192,6 +197,38 @@ status must remain zero; source and *actual* sink-removal increments over the
 recent interval should both be about `0.03 m3/s`; stored water must remain
 bounded; and boundary outflow must stay zero. Capture Composite plus
 Depth/Flow diagnostics when changing this local scene geometry.
+
+For the transport readability study, select the finite-volume source/outlet
+scene together with a half-open dye pulse. The fixed hydraulic source remains
+active; only the dye concentration is switched on for the requested interval:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture video \
+  --frames 900 --fps 30 --width 1280 --height 720 \
+  --grid-width 128 --grid-height 64 \
+  --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
+  --fluid25d-catchment-view transport-inspection \
+  --fluid25d-fixed-delta-seconds 1 --fluid25d-substeps 16 \
+  --fluid25d-dye-pulse-start-seconds 300 \
+  --fluid25d-dye-pulse-duration-seconds 60 \
+  --output outputs/fluid/transport-readability-v1-review.mp4
+```
+
+The checked-in evidence runner adds profile diagnostics, exact checkpoint
+extraction from the encoded video, the contact sheet, acceptance checks, and
+hash verification:
+
+```sh
+projects/fluid/fluid_25d/run_transport_readability_v1.sh \
+  outputs/fluid/transport-readability-v1-<date>-final
+```
+
+Do not interpret a green-to-amber visual change as proof of transport by
+itself. Read the magenta packet alongside the tracer source/sink ledgers,
+centroid/downstream extent, first material outlet arrival, and conservation
+residual in the generated acceptance report. The runner's fixed mapping is
+`capture fN = post-step time N seconds`; `f300` is pre-dye, `f301` is first
+dyed, `f360` is last dyed, and `f361` is first undyed.
 
 ### Opt-in immutable mountain source/outlet scene
 
@@ -378,7 +415,7 @@ schema and currently exposes:
 - `--grid-width`, `--grid-height`, and `--grid-size`;
 - `--fluid25d-view catchment|diagnostics` (top-level surface selector; default:
   `catchment`);
-- `--fluid25d-catchment-view composite|water-isolation|flow-inspection`
+- `--fluid25d-catchment-view composite|water-isolation|flow-inspection|transport-inspection`
   (windowed or headless catchment presentation; default: `composite`; cannot
   be combined with `--fluid25d-view diagnostics`);
 - `--fluid25d-presentation-time-scale <0.125..8>` (windowed-only; defaults to
@@ -403,6 +440,10 @@ schema and currently exposes:
 - `--fluid25d-gravity-m-per-s2`;
 - `--fluid25d-flow-damping-per-second`;
 - `--fluid25d-minimum-wet-depth-m`;
+- `--fluid25d-dye-pulse-start-seconds` and
+  `--fluid25d-dye-pulse-duration-seconds` (required together for the opt-in
+  finite-volume `source-outlet-demo` Transport Inspection surface; the
+  half-open interval is evaluated on completed fixed simulation steps);
 - `--debug-view terrain|depth|surface|flow|direction|wet-dry`;
 - `--profile-output`, `--profile-warmup-frames`, `--profile-diagnostics`, and
   `--profile-diagnostic-interval` (profile diagnostics are headless-only and
@@ -505,7 +546,8 @@ ledgers. It is not a product scenario or terrain audition policy.
 
 In a window, the compact Fluid 2.5D panel selects the Catchment or Diagnostics
 surface; while Catchment is selected, a second control chooses Composite, Water
-Isolation, or Flow Inspection. The catchment choice is retained when `A`
+Isolation, Flow Inspection, or Transport Inspection. The catchment choice is
+retained when `A`
 switches to Diagnostics and back. The panel also exposes Pause/Resume, Reset,
 and the supported `0.125..8x` windowed playback speed. The legend reads the
 terrain as the matte bed, bright cyan as shallower water, and darker blue as
@@ -520,6 +562,15 @@ flow direction, and length/brightness mean speed. They sample the velocity
 field and are not moving water particles. The source-to-outlet scene retains
 its green SOURCE and amber OUTLET rings in this view.
 
+Transport Inspection is separate from Flow Inspection: it hides the quiver and
+render-only directional cue so one visual language remains. The green SOURCE
+ring marks input, the amber OUTLET ring marks explicit removal, base blue shows
+water depth, and magenta/violet shows conservative dyed water. The pulse is
+available only when `source-outlet-demo`, finite-volume, and both dye timing
+options are selected. The fixed hydraulic forcing is unchanged by the dye
+schedule. The evidence protocol and frame semantics are recorded in
+[`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md).
+
 ## Source layout
 
 - `projects/fluid/fluid_25d`: project-facing CMake and design authority;
@@ -531,6 +582,8 @@ its green SOURCE and amber OUTLET rings in this view.
   review runner for the pinned immutable mountain source/outlet scene;
 - `projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh`: matched neutral and
   visibility-stress finite-volume rain-dynamics study runner;
+- `projects/fluid/fluid_25d/run_transport_readability_v1.sh`: deterministic
+  source/outlet dye-pulse video, profile, checkpoint, and acceptance runner;
 - `projects/fluid/sim/fluid_25d`: project-local config, scenarios, CPU oracle,
   and focused tests.
 

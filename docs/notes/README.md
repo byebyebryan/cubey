@@ -55,6 +55,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Fluid 2.5D Dynamics Study V1](fluid-25d-dynamics-study-v1.md):
   finite-volume rain dynamics tiers, diagnostic evidence, and no-promotion
   result.
+- [Fluid 2.5D Transport Readability V1](fluid-25d-transport-readability-v1.md):
+  conservative dye-pulse study protocol, source/outlet reading guide, and
+  deterministic video/profile acceptance contract.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset
