@@ -32,8 +32,8 @@ and reviewed.
 - 900 post-step frames at 30 fps (30 seconds of presentation time, 900
   simulated seconds);
 - hydraulic source remains active at the configured `0.03 m3/s` throughout;
-- conservative dye concentration `0.01` is injected only for the half-open
-  interval `[300 s,360 s)`;
+- unit dye concentration `1.0` is injected only for the half-open interval
+  `[300 s,360 s)`; the diagnostics-only material-front threshold is `0.01`;
 - no floating objects, rain, terrain audition, water-table forcing, or
   per-candidate tuning.
 
@@ -48,7 +48,9 @@ The runner invokes the app once, so the video and profile metrics describe the
 same state trace. A successful root contains:
 
 - `transport-inspection.mp4`, checked as H.264, `yuv420p`, 1280x720, 30 fps,
-  and exactly 900 frames;
+  and exactly 900 frames. Its nominal presentation duration is 30.0 seconds;
+  the metadata records the actual container duration separately because H.264
+  timestamps may end one frame before the nominal `frame_count / fps` value;
 - `profile/transport-readability.{frames.csv,passes.csv,metrics.csv,trace.json,summary.txt}`;
 - `transport-profile.csv`, a normalized one-row-per-step table with water and
   tracer ledgers, concentration, centroid, and downstream extent;
@@ -79,7 +81,12 @@ boundary has no tracer outflow, and the final cumulative source amounts are
 consistent with the fixed protocol:
 
 - hydraulic water source: `0.03 * 900 = 27.0 m3`;
-- dyed tracer source: `0.03 * 0.01 * 60 = 0.018 m3`.
+- dyed tracer source: `0.03 * 1.0 * 60 = 1.8 m3`.
+
+The injected concentration and the reporting threshold are intentionally
+separate. `1.0` is the source schedule value used by the conservative tracer
+ledger; `0.01` only classifies cells as materially dyed for dyed-cell count and
+downstream-extent reporting.
 
 The acceptance report also requires the `f300` profile row to have effectively
 zero tracer total, source, sink, and boundary amounts before the pulse begins.

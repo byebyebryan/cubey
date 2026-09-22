@@ -22,7 +22,8 @@ FIXED_DELTA_SECONDS=1
 SUBSTEPS="${SUBSTEPS:-16}"
 DYE_START_SECONDS=300
 DYE_DURATION_SECONDS=60
-DYE_MATERIAL_CONCENTRATION=0.01
+DYE_SOURCE_CONCENTRATION=1.0
+DYE_MATERIAL_REPORTING_THRESHOLD=0.01
 SOURCE_RATE_M3_PER_S=0.03
 SOURCE_X=14
 SOURCE_Y=32
@@ -144,9 +145,20 @@ grep -Fxq 'pix_fmt=yuv420p' "${FFPROBE_PATH}"
 grep -Fxq "r_frame_rate=${FPS}/1" "${FFPROBE_PATH}"
 grep -Fxq "nb_read_frames=${FRAMES}" "${FFPROBE_PATH}"
 
-VIDEO_DURATION_SECONDS="$(awk -F= '$1 == "duration" { print $2; exit }' "${FFPROBE_PATH}")"
-awk -v actual="${VIDEO_DURATION_SECONDS}" -v expected="$(awk -v f="${FRAMES}" -v fps="${FPS}" 'BEGIN { printf "%.6f", f / fps }')" \
-    'BEGIN { difference = actual - expected; if (difference < 0.0) difference = -difference; exit !(difference <= 0.000001) }'
+VIDEO_CONTAINER_DURATION_SECONDS="$(awk -F= '$1 == "duration" { print $2; exit }' "${FFPROBE_PATH}")"
+VIDEO_NOMINAL_DURATION_SECONDS="$(awk -v f="${FRAMES}" -v fps="${FPS}" 'BEGIN { printf "%.6f", f / fps }')"
+VIDEO_FRAME_DURATION_SECONDS="$(awk -v fps="${FPS}" 'BEGIN { printf "%.9f", 1.0 / fps }')"
+awk -v actual="${VIDEO_CONTAINER_DURATION_SECONDS}" \
+    -v expected="${VIDEO_NOMINAL_DURATION_SECONDS}" \
+    -v frame_duration="${VIDEO_FRAME_DURATION_SECONDS}" \
+    'BEGIN {
+        difference = actual - expected
+        if (difference < 0.0) difference = -difference
+        # H.264 container timestamps commonly end one frame before the
+        # nominal frame_count / fps duration. Frame count and frame rate are
+        # exact gates above; this duration gate accepts that standard interval.
+        exit !(difference <= frame_duration + 0.000001)
+    }'
 
 # The app's profile recorder uses zero-based profile frames. Each profile row
 # below is the state after one fixed step, so capture frame N maps to profile
@@ -332,7 +344,7 @@ TRACER_RESIDUAL_FRACTION="$(awk -v residual="${MAX_ABS_TRACER_RESIDUAL}" -v sour
     'BEGIN { if (source > 0.0) printf "%.12f", residual / source; else print "inf" }')"
 EXPECTED_WATER_SOURCE="$(awk -v rate="${SOURCE_RATE_M3_PER_S}" -v frames="${FRAMES}" -v delta="${FIXED_DELTA_SECONDS}" \
     'BEGIN { printf "%.9f", rate * frames * delta }')"
-EXPECTED_TRACER_SOURCE="$(awk -v rate="${SOURCE_RATE_M3_PER_S}" -v concentration="${DYE_MATERIAL_CONCENTRATION}" -v duration="${DYE_DURATION_SECONDS}" \
+EXPECTED_TRACER_SOURCE="$(awk -v rate="${SOURCE_RATE_M3_PER_S}" -v concentration="${DYE_SOURCE_CONCENTRATION}" -v duration="${DYE_DURATION_SECONDS}" \
     'BEGIN { printf "%.9f", rate * concentration * duration }')"
 
 rows_ok=1
@@ -517,14 +529,17 @@ fi
     printf 'substep_seconds=%s\n' "$(awk -v delta="${FIXED_DELTA_SECONDS}" -v steps="${SUBSTEPS}" 'BEGIN { printf "%.9f", delta / steps }')"
     printf 'frames=%s\n' "${FRAMES}"
     printf 'fps=%s\n' "${FPS}"
-    printf 'video_duration_seconds=%s\n' "${VIDEO_DURATION_SECONDS}"
+    printf 'video_nominal_presentation_duration_seconds=%s\n' "${VIDEO_NOMINAL_DURATION_SECONDS}"
+    printf 'video_container_duration_seconds=%s\n' "${VIDEO_CONTAINER_DURATION_SECONDS}"
+    printf 'video_frame_duration_seconds=%s\n' "${VIDEO_FRAME_DURATION_SECONDS}"
     printf 'full_args=%q ' "${APP}" "${APP_ARGS[@]}"
     printf '\n'
     printf 'source_centroid_cell=%s,%s\n' "${SOURCE_X}" "${SOURCE_Y}"
     printf 'outlet_centroid_cell=%s,%s\n' "${OUTLET_X}" "${OUTLET_Y}"
     printf 'source_rate_m3_per_s=%s\n' "${SOURCE_RATE_M3_PER_S}"
     printf 'outlet_rate_capacity_m3_per_s=%s\n' "${SOURCE_RATE_M3_PER_S}"
-    printf 'dye_material_concentration=%s\n' "${DYE_MATERIAL_CONCENTRATION}"
+    printf 'dye_source_concentration=%s\n' "${DYE_SOURCE_CONCENTRATION}"
+    printf 'dye_material_reporting_threshold=%s\n' "${DYE_MATERIAL_REPORTING_THRESHOLD}"
     printf 'dye_pulse_start_seconds=%s\n' "${DYE_START_SECONDS}"
     printf 'dye_pulse_duration_seconds=%s\n' "${DYE_DURATION_SECONDS}"
     printf 'dye_interval=[%s,%s)\n' "${DYE_START_SECONDS}" "$((DYE_START_SECONDS + DYE_DURATION_SECONDS))"

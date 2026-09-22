@@ -200,7 +200,9 @@ Depth/Flow diagnostics when changing this local scene geometry.
 
 For the transport readability study, select the finite-volume source/outlet
 scene together with a half-open dye pulse. The fixed hydraulic source remains
-active; only the dye concentration is switched on for the requested interval:
+active; the source schedule uses unit dye concentration for the requested
+interval. The diagnostics-only `0.01` reporting threshold classifies a
+material dyed front; it is not the injected ledger concentration:
 
 ```sh
 build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture video \
