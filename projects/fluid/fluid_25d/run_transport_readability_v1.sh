@@ -477,7 +477,7 @@ fi
         decoded_index=$((frame - 1))
         output_path="${OUT_DIR}/checkpoints/frame-$(printf '%04d' "${frame}").png"
         run_logged "${OUT_DIR}/logs/checkpoint-f${frame}.log" /usr/bin/ffmpeg -y -hide_banner -loglevel error \
-            -i "${VIDEO_PATH}" -vf "select=eq(n\\,${decoded_index})" -frames:v 1 -vsync 0 \
+            -i "${VIDEO_PATH}" -vf "select=eq(n\\,${decoded_index})" -frames:v 1 \
             "${output_path}"
         [[ -s "${output_path}" ]] || {
             printf 'checkpoint extraction failed for capture frame %s\n' "${frame}" >&2
