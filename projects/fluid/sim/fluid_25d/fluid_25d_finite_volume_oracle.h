@@ -28,6 +28,10 @@ class Fluid25DFiniteVolumeOracle {
     // virtual-pipes oracle: it multiplies sources only, not sinks or open
     // outflow faces.
     [[nodiscard]] Fluid25DStepLedger step(float source_rate_scale = 1.0F);
+    // Opt-in conservative tracer update. Water follows the same source-scale
+    // contract as step(); the configured dye pulse is sampled from the
+    // completed fixed-step clock and does not alter hydraulic forcing.
+    [[nodiscard]] Fluid25DTracerStepResult step_with_dye(float source_rate_scale = 1.0F);
     void reset();
 
     [[nodiscard]] const Fluid25DConfig& config() const noexcept {
@@ -51,10 +55,26 @@ class Fluid25DFiniteVolumeOracle {
     [[nodiscard]] const std::vector<std::uint8_t>& wet_mask() const noexcept {
         return wet_mask_;
     }
+    [[nodiscard]] const std::vector<float>& tracer_mass_per_area_m() const noexcept {
+        return tracer_q_m_;
+    }
+    [[nodiscard]] const std::vector<float>& tracer_concentration() const noexcept {
+        return tracer_concentration_;
+    }
     [[nodiscard]] float last_cfl_number() const noexcept {
         return last_cfl_number_;
     }
     [[nodiscard]] double total_water_volume_m3() const;
+    [[nodiscard]] double total_tracer_amount_m3() const;
+    [[nodiscard]] const Fluid25DTracerStepLedger& last_tracer_step_ledger() const noexcept {
+        return last_tracer_step_ledger_;
+    }
+    [[nodiscard]] const Fluid25DTracerStepLedger& cumulative_tracer_ledger() const noexcept {
+        return cumulative_tracer_ledger_;
+    }
+    [[nodiscard]] std::uint64_t completed_steps() const noexcept {
+        return dye_source_schedule_.completed_steps();
+    }
 
   private:
     struct TransportDelta {
@@ -63,8 +83,22 @@ class Fluid25DFiniteVolumeOracle {
         double momentum_y_m2_per_s2 = 0.0;
     };
 
-    [[nodiscard]] Fluid25DStepLedger step_substep(float delta_seconds, float source_rate_scale);
+    struct TracerTransportDelta {
+        double q_m2_per_s = 0.0;
+    };
+
+    struct StepResult {
+        Fluid25DStepLedger water{};
+        Fluid25DTracerStepLedger tracer{};
+    };
+
+    [[nodiscard]] StepResult step_substep(float delta_seconds, float source_rate_scale,
+                                          float dye_source_concentration);
+    [[nodiscard]] Fluid25DTracerStepResult step_impl(float source_rate_scale,
+                                                     float dye_source_concentration);
     void derive_velocity_and_wet_state();
+    void derive_tracer_concentration();
+    void record_tracer_ledger(const Fluid25DTracerStepLedger& ledger);
 
     Fluid25DConfig config_{};
     Fluid25DScenarioData scenario_{};
@@ -75,9 +109,17 @@ class Fluid25DFiniteVolumeOracle {
     std::vector<Fluid25DMomentum> source_sink_momentum_m2_per_s_{};
     std::vector<Fluid25DMomentum> next_momentum_m2_per_s_{};
     std::vector<TransportDelta> transport_delta_{};
+    std::vector<float> tracer_q_m_{};
+    std::vector<float> source_sink_tracer_q_m_{};
+    std::vector<float> next_tracer_q_m_{};
+    std::vector<TracerTransportDelta> tracer_transport_delta_{};
+    std::vector<float> tracer_concentration_{};
     std::vector<Fluid25DVelocity> velocity_m_per_s_{};
     std::vector<std::uint8_t> wet_mask_{};
     float last_cfl_number_ = 0.0F;
+    Fluid25DDyeSourceSchedule dye_source_schedule_{};
+    Fluid25DTracerStepLedger last_tracer_step_ledger_{};
+    Fluid25DTracerStepLedger cumulative_tracer_ledger_{};
 };
 
 } // namespace cubey::projects::fluid::fluid_25d

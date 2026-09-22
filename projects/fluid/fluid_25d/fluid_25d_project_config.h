@@ -80,6 +80,15 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         project_config.fluid.terrain_water_protocol.has_value() ||
         project_config.fluid.rainfall_rate_mm_per_hour.has_value() ||
         project_config.fluid.sheet_depth_m.has_value();
+    const bool has_explicit_dye_option =
+        project_config.fluid.dye_pulse_start_seconds.has_value() ||
+        project_config.fluid.dye_pulse_duration_seconds.has_value();
+    if (has_explicit_dye_option &&
+        (project_config.simulation.scenario != Fluid25DScenario::SourceOutletDemo ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume)) {
+        throw std::runtime_error(
+            "fluid 2.5D dye pulse timing requires source-outlet-demo with finite-volume");
+    }
     if (!terrain_case && has_explicit_terrain_water_option) {
         throw std::runtime_error(
             "fluid 2.5D terrain-water protocol options require --fluid25d-scenario terrain-case");
@@ -249,7 +258,17 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "--fluid25d-source-active-duration-seconds", "Source Active Duration",
                      "Optional fixed-simulation duration before source rates switch to zero.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
-              config.fluid.source_active_duration_seconds);
+              config.fluid.source_active_duration_seconds)
+        .bind(option("fluid25d.dye_pulse_start_seconds", "--fluid25d-dye-pulse-start-seconds",
+                     "Dye Pulse Start",
+                     "Opt-in source-outlet dye pulse start time in fixed-simulation seconds.",
+                     ValueType::Float, {.has_min = true, .min = 0.0}),
+              config.fluid.dye_pulse_start_seconds)
+        .bind(option("fluid25d.dye_pulse_duration_seconds", "--fluid25d-dye-pulse-duration-seconds",
+                     "Dye Pulse Duration",
+                     "Opt-in source-outlet dye pulse duration in fixed-simulation seconds.",
+                     ValueType::Float, {.has_min = true, .min = 0.0}),
+              config.fluid.dye_pulse_duration_seconds);
     return std::move(builder).build();
 }
 

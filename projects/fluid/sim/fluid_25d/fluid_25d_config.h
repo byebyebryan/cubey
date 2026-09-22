@@ -230,6 +230,10 @@ struct Fluid25DConfig {
     // Unset keeps sources active forever. When set, the fixed-step schedule
     // provides source scale one before this duration and zero afterwards.
     std::optional<float> source_active_duration_seconds{};
+    // Conservative dye is opt-in and only applies to the compact analytic
+    // source/outlet fixture. Both pulse fields must be present together.
+    std::optional<float> dye_pulse_start_seconds{};
+    std::optional<float> dye_pulse_duration_seconds{};
 
     // Only terrain-case may select a terrain-water protocol. Rain is stored
     // in the solver's native depth-rate unit (m/s), while the public CLI uses
@@ -253,6 +257,8 @@ struct Fluid25DStartupOptions {
     std::optional<float> flow_damping_per_second{};
     std::optional<float> minimum_wet_depth_m{};
     std::optional<float> source_active_duration_seconds{};
+    std::optional<float> dye_pulse_start_seconds{};
+    std::optional<float> dye_pulse_duration_seconds{};
     std::optional<std::string> terrain_water_protocol{};
     std::optional<float> rainfall_rate_mm_per_hour{};
     std::optional<float> sheet_depth_m{};
@@ -528,6 +534,29 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         throw std::runtime_error(
             "fluid 2.5D source active duration must be finite and nonnegative");
     }
+    const bool has_dye_pulse_start = config.dye_pulse_start_seconds.has_value();
+    const bool has_dye_pulse_duration = config.dye_pulse_duration_seconds.has_value();
+    if (has_dye_pulse_start != has_dye_pulse_duration) {
+        throw std::runtime_error(
+            "fluid 2.5D dye pulse start and duration must be supplied together");
+    }
+    if (has_dye_pulse_start) {
+        const float start_seconds = *config.dye_pulse_start_seconds;
+        const float duration_seconds = *config.dye_pulse_duration_seconds;
+        if (!std::isfinite(start_seconds) || start_seconds < 0.0F ||
+            !std::isfinite(duration_seconds) || duration_seconds <= 0.0F ||
+            !std::isfinite(static_cast<double>(start_seconds) +
+                           static_cast<double>(duration_seconds))) {
+            throw std::runtime_error(
+                "fluid 2.5D dye pulse start must be finite and nonnegative, and duration must be "
+                "finite and positive");
+        }
+        if (config.scenario != Fluid25DScenario::SourceOutletDemo ||
+            config.solver != Fluid25DSolver::FiniteVolume) {
+            throw std::runtime_error(
+                "fluid 2.5D dye pulse timing requires source-outlet-demo with finite-volume");
+        }
+    }
     if (config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::None &&
         config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::RainPulse &&
         config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::SheetRelease) {
@@ -552,7 +581,7 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         }
         if (config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::None ||
             config.rainfall_depth_rate_m_per_s != 0.0F || config.sheet_initial_depth_m != 0.0F ||
-            config.source_active_duration_seconds.has_value()) {
+            config.source_active_duration_seconds.has_value() || has_dye_pulse_start) {
             throw std::runtime_error("fluid 2.5D mountain-source-outlet-demo rejects terrain-water "
                                      "protocol and forcing options");
         }
@@ -563,7 +592,7 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
     switch (config.terrain_water_protocol) {
     case Fluid25DTerrainWaterProtocol::None:
         if (config.rainfall_depth_rate_m_per_s != 0.0F || config.sheet_initial_depth_m != 0.0F ||
-            config.source_active_duration_seconds.has_value()) {
+            config.source_active_duration_seconds.has_value() || has_dye_pulse_start) {
             throw std::runtime_error(
                 "fluid 2.5D terrain-case protocol none rejects forcing parameters");
         }
@@ -572,7 +601,7 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         if (!(config.rainfall_depth_rate_m_per_s > 0.0F) ||
             !(config.source_active_duration_seconds.has_value() &&
               *config.source_active_duration_seconds > 0.0F) ||
-            config.sheet_initial_depth_m != 0.0F) {
+            config.sheet_initial_depth_m != 0.0F || has_dye_pulse_start) {
             throw std::runtime_error(
                 "fluid 2.5D rain-pulse requires positive rainfall and source-active duration, and "
                 "rejects sheet depth");
@@ -580,7 +609,7 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         break;
     case Fluid25DTerrainWaterProtocol::SheetRelease:
         if (!(config.sheet_initial_depth_m > 0.0F) || config.rainfall_depth_rate_m_per_s != 0.0F ||
-            config.source_active_duration_seconds.has_value()) {
+            config.source_active_duration_seconds.has_value() || has_dye_pulse_start) {
             throw std::runtime_error(
                 "fluid 2.5D sheet-release requires positive sheet depth and rejects rain and "
                 "source-active duration");
@@ -633,6 +662,8 @@ fluid_25d_config_from_options(const common::FluidGridOptions& grid,
         config.minimum_wet_depth_m = *options.minimum_wet_depth_m;
     }
     config.source_active_duration_seconds = options.source_active_duration_seconds;
+    config.dye_pulse_start_seconds = options.dye_pulse_start_seconds;
+    config.dye_pulse_duration_seconds = options.dye_pulse_duration_seconds;
     config.terrain_water_protocol =
         fluid_25d_terrain_water_protocol_from_name(options.terrain_water_protocol.value_or(""));
     if (options.rainfall_rate_mm_per_hour.has_value()) {
@@ -675,6 +706,47 @@ class Fluid25DSourceRateSchedule {
     void advance_fixed_step() {
         if (completed_steps_ == std::numeric_limits<std::uint64_t>::max()) {
             throw std::runtime_error("fluid 2.5D source schedule step count overflowed");
+        }
+        ++completed_steps_;
+    }
+
+    void reset() noexcept {
+        completed_steps_ = 0U;
+    }
+
+    [[nodiscard]] std::uint64_t completed_steps() const noexcept {
+        return completed_steps_;
+    }
+
+  private:
+    std::uint64_t completed_steps_ = 0U;
+};
+
+// The dye pulse uses the same completed fixed-step clock as hydraulic forcing.
+// A half-open interval makes the start and end boundaries deterministic: the
+// first step at start is dyed, while the first step at start+duration is not.
+class Fluid25DDyeSourceSchedule {
+  public:
+    [[nodiscard]] float source_concentration(const Fluid25DConfig& config) const {
+        validate_fluid_25d_config(config);
+        if (!config.dye_pulse_start_seconds.has_value()) {
+            return 0.0F;
+        }
+        const double elapsed_seconds =
+            static_cast<double>(completed_steps_) * static_cast<double>(config.fixed_delta_seconds);
+        const double start_seconds = static_cast<double>(*config.dye_pulse_start_seconds);
+        const double end_seconds =
+            start_seconds + static_cast<double>(*config.dye_pulse_duration_seconds);
+        return elapsed_seconds >= start_seconds && elapsed_seconds < end_seconds ? 1.0F : 0.0F;
+    }
+
+    [[nodiscard]] float elapsed_seconds(const Fluid25DConfig& config) const {
+        return fluid_25d_elapsed_seconds(config, completed_steps_);
+    }
+
+    void advance_fixed_step() {
+        if (completed_steps_ == std::numeric_limits<std::uint64_t>::max()) {
+            throw std::runtime_error("fluid 2.5D dye schedule step count overflowed");
         }
         ++completed_steps_;
     }

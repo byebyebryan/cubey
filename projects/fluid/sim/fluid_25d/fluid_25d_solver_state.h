@@ -30,4 +30,25 @@ struct Fluid25DStepLedger {
     }
 };
 
+// Conservative tracer accounting uses the same physical-volume units as the
+// water ledger, but remains deliberately separate: tracer is a depth
+// equivalent q=h*c, so its integrated amount is q*cell area (m3 equivalent).
+struct Fluid25DTracerStepLedger {
+    double amount_before_m3 = 0.0;
+    double source_amount_m3 = 0.0;
+    double sink_amount_m3 = 0.0;
+    double boundary_outflow_amount_m3 = 0.0;
+    double amount_after_m3 = 0.0;
+
+    [[nodiscard]] double conservation_error_m3() const noexcept {
+        return amount_after_m3 - amount_before_m3 - source_amount_m3 + sink_amount_m3 +
+               boundary_outflow_amount_m3;
+    }
+};
+
+struct Fluid25DTracerStepResult {
+    Fluid25DStepLedger water{};
+    Fluid25DTracerStepLedger tracer{};
+};
+
 } // namespace cubey::projects::fluid::fluid_25d
