@@ -278,8 +278,8 @@ awk -F, -v expected_frames="${FRAMES}" -v delta="${FIXED_DELTA_SECONDS}" '
             if (!(frame in seen)) {
                 missing = 1
             }
-            for (index = 1; index <= required_count; ++index) {
-                if (!(frame SUBSEP required[index] in have)) {
+            for (required_index = 1; required_index <= required_count; ++required_index) {
+                if (!(frame SUBSEP required[required_index] in have)) {
                     missing = 1
                 }
             }
