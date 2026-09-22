@@ -55,6 +55,14 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
 inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& project_config) {
     validate_fluid_25d_windowed_presentation_time_scale(
         project_config.presentation_time_scale);
+    const Fluid25DCatchmentView catchment_view =
+        fluid_25d_catchment_view_from_name(project_config.catchment_view);
+    if (catchment_view == Fluid25DCatchmentView::TransportInspection &&
+        !fluid_25d_transport_inspection_available(project_config.simulation)) {
+        throw std::runtime_error(
+            "fluid 2.5D transport-inspection requires source-outlet-demo with finite-volume "
+            "and a positive dye pulse duration");
+    }
     const bool terrain_case = project_config.simulation.scenario == Fluid25DScenario::TerrainCase;
     const bool mountain_source_outlet =
         project_config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
@@ -167,8 +175,10 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      {"catchment", "diagnostics"}),
               config.view)
         .bind(option("fluid25d.catchment_view", "--fluid25d-catchment-view", "Catchment View",
-                     "Catchment presentation: composite, water-isolation, or flow-inspection.",
-                     ValueType::Enum, {}, {"composite", "water-isolation", "flow-inspection"}),
+                     "Catchment presentation: composite, water-isolation, flow-inspection, or "
+                     "transport-inspection (dye source/outlet demo only).",
+                     ValueType::Enum, {}, {"composite", "water-isolation", "flow-inspection",
+                                            "transport-inspection"}),
               config.catchment_view)
         .bind(option("fluid25d.presentation_time_scale", "--fluid25d-presentation-time-scale",
                      "Presentation Time Scale",

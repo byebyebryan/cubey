@@ -254,6 +254,15 @@ void test_config_defaults_and_parsing() {
     require(fluid_25d_catchment_view_from_name("flow-inspection") ==
                 Fluid25DCatchmentView::FlowInspection,
             "fluid 2.5D should parse the flow-inspection presentation mode");
+    require(static_cast<std::uint32_t>(Fluid25DCatchmentView::Composite) == 0U &&
+                static_cast<std::uint32_t>(Fluid25DCatchmentView::WaterIsolation) == 1U &&
+                static_cast<std::uint32_t>(Fluid25DCatchmentView::FlowInspection) == 2U &&
+                static_cast<std::uint32_t>(Fluid25DCatchmentView::TransportInspection) == 3U &&
+                fluid_25d_catchment_view_from_name("transport-inspection") ==
+                    Fluid25DCatchmentView::TransportInspection &&
+                std::string(fluid_25d_catchment_view_name(
+                    Fluid25DCatchmentView::TransportInspection)) == "Transport Inspection",
+            "fluid 2.5D should append the transport view without renumbering existing modes");
     require(fluid_25d_presentation_view_from_name("diagnostics") ==
                 Fluid25DPresentationView::Diagnostics,
             "fluid 2.5D should retain an explicit diagnostic presentation mode");
@@ -371,6 +380,23 @@ void test_config_defaults_and_parsing() {
                                               "--fluid25d-catchment-view", "composite"}));
         },
         "fluid 2.5D parser should reject diagnostics combined with a catchment mode");
+
+    const Fluid25DProjectConfig transport_inspection = parse_project(
+        {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+         "--fluid25d-scenario", "source-outlet-demo", "--fluid25d-solver", "finite-volume",
+         "--fluid25d-dye-pulse-start-seconds", "0", "--fluid25d-dye-pulse-duration-seconds",
+         "0.25"});
+    require(transport_inspection.catchment_view == "transport-inspection" &&
+                fluid_25d_transport_inspection_available(transport_inspection.simulation),
+            "transport inspection should be available only with the concrete source/outlet dye pulse");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+                 "--fluid25d-scenario", "source-outlet-demo", "--fluid25d-solver",
+                 "finite-volume"}));
+        },
+        "transport inspection should reject a source/outlet scene without a dye pulse");
 
     const Fluid25DProjectConfig terrain = parse_project(
         {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
@@ -1625,6 +1651,7 @@ void test_presentation_cue_contract() {
     const std::string advect =
         read_shader(shader_directory / "fluid_25d_presentation_cue_advect.comp");
     const std::string water = read_shader(shader_directory / "fluid_25d_water.frag");
+    const std::string water_vertex = read_shader(shader_directory / "fluid_25d_water.vert");
     const std::string quiver_reset =
         read_shader(shader_directory / "fluid_25d_quiver_reset.comp");
     const std::string quiver_update =
@@ -1637,6 +1664,10 @@ void test_presentation_cue_contract() {
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
     const std::string app =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
+    const std::string ui =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_ui.cpp");
+    const std::string project_config = read_shader(
+        std::filesystem::path(__FILE__).parent_path() / "../../fluid_25d/fluid_25d_project_config.h");
     require(reset.find("cue_lattice") != std::string::npos &&
                 reset.find("cue_a.values[index] = seed;") != std::string::npos &&
                 reset.find("cue_b.values[index] = seed;") != std::string::npos,
@@ -1651,6 +1682,25 @@ void test_presentation_cue_contract() {
                 water.find("params.animation") == std::string::npos &&
                 water.find("sin(") == std::string::npos && water.find("cos(") == std::string::npos,
             "water shading should consume the persistent cue without procedural time bands");
+    require(water_vertex.find("binding = 6") != std::string::npos &&
+                water_vertex.find("TracerQField") != std::string::npos &&
+                water_vertex.find("dye_concentration = clamp") != std::string::npos &&
+                water.find("params.presentation.y == 1.0") != std::string::npos &&
+                water.find("params.presentation.y == 2.0") != std::string::npos &&
+                water.find("params.presentation.y == 3.0") != std::string::npos &&
+                water.find("params.presentation.y > 1.5") == std::string::npos &&
+                water.find("transport_inspection") != std::string::npos &&
+                water.find("dye_visibility") != std::string::npos,
+            "Transport Inspection should derive bounded q/h concentration and keep every prior "
+            "catchment mode's predicate exact");
+    require(ui.find("kTransportCatchmentViews") != std::string::npos &&
+                ui.find("transport_inspection_available") != std::string::npos &&
+                ui.find("Transport Inspection needs the finite-volume source/outlet dye pulse") !=
+                    std::string::npos &&
+                ui.find("Magenta-to-violet") != std::string::npos &&
+                project_config.find("transport-inspection") != std::string::npos &&
+                project_config.find("positive dye pulse duration") != std::string::npos,
+            "transport UI and CLI should expose the dye reading only when its scenario contract is valid");
     const std::size_t substep_loop = commands.find("for (std::uint32_t substep");
     const std::size_t cue_update =
         commands.find("record_presentation_cue_advection(", substep_loop);
@@ -1664,6 +1714,10 @@ void test_presentation_cue_contract() {
         commands.find(".read_storage_buffer(presentation_cue_a)", catchment_pass);
     const std::size_t catchment_cue_b =
         commands.find(".read_storage_buffer(presentation_cue_b)", catchment_pass);
+    const std::size_t catchment_tracer_q_a =
+        commands.find(".read_storage_buffer(tracer_q_a)", catchment_pass);
+    const std::size_t catchment_tracer_q_b =
+        commands.find(".read_storage_buffer(tracer_q_b)", catchment_pass);
     const std::size_t quiver_update_call =
         commands.find("record_quiver_update(", substep_loop);
     const std::size_t headless_quiver =
@@ -1686,8 +1740,10 @@ void test_presentation_cue_contract() {
     require(diagnostics_pass != std::string::npos && catchment_pass != std::string::npos &&
                 diagnostics_pass < catchment_pass && catchment_cue_a != std::string::npos &&
                 catchment_cue_b != std::string::npos && catchment_cue_a > catchment_pass &&
-                catchment_cue_b > catchment_pass,
-            "the catchment pass should declare the cue buffers read by the water shader");
+                catchment_cue_b > catchment_pass && catchment_tracer_q_a != std::string::npos &&
+                catchment_tracer_q_b != std::string::npos &&
+                catchment_tracer_q_a > catchment_pass && catchment_tracer_q_b > catchment_pass,
+            "the catchment pass should declare the cue and tracer buffers read by the water shader");
     require(quiver_reset.find("anchor_axis") != std::string::npos &&
                 quiver_reset.find("kMaxColumns = 96u") != std::string::npos &&
                 quiver_reset.find("kMaxRows = 48u") != std::string::npos &&
@@ -1725,6 +1781,11 @@ void test_presentation_cue_contract() {
                 app.find("record_fluid_25d_flow_inspection_quiver_step") != std::string::npos &&
                 app.find("bool quiver_reset_requested_ = true;") != std::string::npos,
             "quiver should seed the initial headless field before solving, then follow completed outer steps separately");
+    require(commands.find("catchment_view == Fluid25DCatchmentView::FlowInspection") !=
+                std::string::npos &&
+                commands.find("catchment_view == Fluid25DCatchmentView::TransportInspection") ==
+                    std::string::npos,
+            "Transport Inspection should not schedule or render Flow Inspection's quiver field");
 }
 
 void test_retained_flux_inertia() {

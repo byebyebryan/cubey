@@ -20,6 +20,13 @@ constexpr std::array<Fluid25DCatchmentView, 3> kCatchmentViews{
     Fluid25DCatchmentView::FlowInspection,
 };
 
+constexpr std::array<Fluid25DCatchmentView, 4> kTransportCatchmentViews{
+    Fluid25DCatchmentView::Composite,
+    Fluid25DCatchmentView::WaterIsolation,
+    Fluid25DCatchmentView::FlowInspection,
+    Fluid25DCatchmentView::TransportInspection,
+};
+
 constexpr std::array<Fluid25DDebugView, 6> kDebugViews{
     Fluid25DDebugView::Terrain,       Fluid25DDebugView::WaterDepth,
     Fluid25DDebugView::SurfaceHeight, Fluid25DDebugView::FlowMagnitude,
@@ -46,10 +53,25 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
         fluid_25d_presentation_view_name,
         "Choose the oblique catchment surface or the top-down diagnostics surface.");
     if (ui.presentation_view == Fluid25DPresentationView::Catchment) {
-        cubey::host::imgui_enum_combo(
-            "Catchment mode", ui.catchment_view, kCatchmentViews,
-            fluid_25d_catchment_view_name,
-            "Composite is the normal 3D view; the other modes are reading aids.");
+        if (ui.transport_inspection_available) {
+            cubey::host::imgui_enum_combo(
+                "Catchment mode", ui.catchment_view, kTransportCatchmentViews,
+                fluid_25d_catchment_view_name,
+                "Composite is the normal 3D view; the other modes are reading aids.");
+        } else {
+            // A dye-free or unrelated scene would make this mode look like a
+            // broken, empty layer. Do not offer it unless its conservative
+            // source/outlet transport contract is actually present.
+            if (ui.catchment_view == Fluid25DCatchmentView::TransportInspection) {
+                ui.catchment_view = Fluid25DCatchmentView::Composite;
+            }
+            cubey::host::imgui_enum_combo(
+                "Catchment mode", ui.catchment_view, kCatchmentViews,
+                fluid_25d_catchment_view_name,
+                "Composite is the normal 3D view; the other modes are reading aids.");
+            ImGui::TextDisabled(
+                "Transport Inspection needs the finite-volume source/outlet dye pulse.");
+        }
     }
     if (ui.presentation_view == Fluid25DPresentationView::Diagnostics) {
         cubey::host::imgui_enum_combo("Diagnostic field", ui.debug_view, kDebugViews,
@@ -112,6 +134,13 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                       "direction, while length and brightness show speed (blue is slower; "
                       "yellow is faster). They are pitch-scaled velocity samples, not water "
                       "particles or waves.");
+    if (ui.transport_inspection_available) {
+        ImGui::TextWrapped(
+            "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "
+            "water is the conserved dye concentration: watch the pulse leave the green SOURCE, "
+            "travel through the blue water, then disappear into the amber OUTLET. It is a "
+            "transport marker, not a depth, velocity, or lighting change.");
+    }
     ImGui::TextDisabled("Space pause/resume  R reset  A diagnostics  D field  drag orbit");
     ImGui::End();
 }

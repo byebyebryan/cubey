@@ -80,6 +80,10 @@ enum class Fluid25DCatchmentView : std::uint32_t {
     Composite = 0,
     WaterIsolation = 1,
     FlowInspection = 2,
+    // This is deliberately an opt-in reading mode for the compact analytic
+    // source/outlet dye study. It displays conserved tracer concentration,
+    // not a procedural surface animation or a velocity field.
+    TransportInspection = 3,
 };
 
 // The River V0 product default is a bounded 2:1 catchment. Focused CPU/GPU
@@ -245,6 +249,21 @@ struct Fluid25DConfig {
     Fluid25DScenario scenario = Fluid25DScenario::RiverCatchment;
     Fluid25DSolver solver = Fluid25DSolver::VirtualPipes;
 };
+
+// Keep the availability predicate next to the immutable simulation contract
+// so startup validation and the interactive UI cannot disagree about whether
+// Transport Inspection will contain a real, conservative dye pulse.
+[[nodiscard]] inline bool
+fluid_25d_transport_inspection_available(const Fluid25DConfig& config) noexcept {
+    return config.scenario == Fluid25DScenario::SourceOutletDemo &&
+           config.solver == Fluid25DSolver::FiniteVolume &&
+           config.dye_pulse_start_seconds.has_value() &&
+           std::isfinite(*config.dye_pulse_start_seconds) &&
+           *config.dye_pulse_start_seconds >= 0.0F &&
+           config.dye_pulse_duration_seconds.has_value() &&
+           std::isfinite(*config.dye_pulse_duration_seconds) &&
+           *config.dye_pulse_duration_seconds > 0.0F;
+}
 
 // Startup options retain "unset" separately from the concrete, validated
 // runtime values.  This is the same Config V2 shape used by the active fluid
@@ -416,8 +435,12 @@ fluid_25d_catchment_view_from_name(std::string_view name) {
     if (name == "flow-inspection" || name == "flow_inspection") {
         return Fluid25DCatchmentView::FlowInspection;
     }
+    if (name == "transport-inspection" || name == "transport_inspection") {
+        return Fluid25DCatchmentView::TransportInspection;
+    }
     throw std::runtime_error(
-        "fluid 2.5D catchment view must be composite, water-isolation, or flow-inspection");
+        "fluid 2.5D catchment view must be composite, water-isolation, flow-inspection, or "
+        "transport-inspection");
 }
 
 [[nodiscard]] inline const char* fluid_25d_presentation_view_name(Fluid25DPresentationView view) {
@@ -438,6 +461,8 @@ fluid_25d_catchment_view_from_name(std::string_view name) {
         return "Water Isolation";
     case Fluid25DCatchmentView::FlowInspection:
         return "Flow Inspection";
+    case Fluid25DCatchmentView::TransportInspection:
+        return "Transport Inspection";
     }
     return "Composite";
 }

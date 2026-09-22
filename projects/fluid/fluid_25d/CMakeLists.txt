@@ -261,6 +261,32 @@ if (BUILD_TESTING)
         --fluid25d-dye-pulse-duration-seconds 0.1
         --fluid25d-gpu-oracle-validation
     )
+    set(CUBEY_FLUID_25D_TRANSPORT_INSPECTION_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-transport-inspection-headless.png"
+    )
+    cubey_add_png_smoke_test(
+        fluid_25d_transport_inspection_writes_png
+        cubey_project_fluid_25d
+        "${CUBEY_FLUID_25D_TRANSPORT_INSPECTION_OUTPUT}"
+        --frames 80
+        --width 640
+        --height 360
+        --grid-width 128
+        --grid-height 64
+        --fluid25d-solver finite-volume
+        --fluid25d-scenario source-outlet-demo
+        --fluid25d-catchment-view transport-inspection
+        --fluid25d-fixed-delta-seconds 0.25
+        --fluid25d-substeps 16
+        --fluid25d-dye-pulse-start-seconds 0
+        --fluid25d-dye-pulse-duration-seconds 5
+    )
+    cubey_add_png_stats_test(
+        fluid_25d_transport_inspection_writes_png
+        "${CUBEY_FLUID_25D_TRANSPORT_INSPECTION_OUTPUT}"
+        0.18
+        0.12
+    )
     cubey_add_png_smoke_test(
         fluid_25d_gpu_oracle_finite_volume_boundary_drain
         cubey_project_fluid_25d

@@ -247,6 +247,8 @@ class Fluid25DApp {
         draw_fluid_25d_ui({
             .title = "Fluid 2.5D",
             .scenario = config_.simulation.scenario,
+            .transport_inspection_available =
+                fluid_25d_transport_inspection_available(config_.simulation),
             .presentation_view = presentation_view_,
             .catchment_view = catchment_view_,
             .debug_view = debug_view_,

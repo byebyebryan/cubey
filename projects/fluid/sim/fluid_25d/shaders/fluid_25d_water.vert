@@ -15,6 +15,9 @@ layout(set = 0, binding = 3, std430) readonly buffer PresentationCueAField {
 layout(set = 0, binding = 4, std430) readonly buffer PresentationCueBField {
     float values[];
 } cue_b;
+layout(set = 0, binding = 6, std430) readonly buffer TracerQField {
+    float values[];
+} tracer_q;
 
 layout(push_constant) uniform CatchmentParams {
     mat4 view_projection;
@@ -28,6 +31,7 @@ layout(location = 1) out vec3 world_normal;
 layout(location = 2) out float water_depth;
 layout(location = 3) out vec3 water_flow;
 layout(location = 4) out float presentation_cue;
+layout(location = 5) out float dye_concentration;
 
 // The catchment keeps metre-scale X/Z but compresses elevation for a readable
 // overview. Even with its scale-derived near plane, a 5 cm physical sheet can
@@ -84,6 +88,13 @@ void main() {
     water_flow = velocity.values[index].xyz;
     presentation_cue =
         params.presentation.x > 0.5 ? cue_a.values[index] : cue_b.values[index];
+    // The solver stores q = h * c. Division happens only for presentation;
+    // clamp protects the renderer from dry-cell arithmetic and makes the dye
+    // palette a bounded concentration reading rather than a new simulation
+    // quantity.
+    dye_concentration = clamp(max(0.0, tracer_q.values[index]) /
+                                  max(water_depth, 1.0e-6),
+                              0.0, 1.0);
     gl_Position = params.view_projection * vec4(world_position, 1.0);
     gl_Position.z -= kWaterClipDepthBias * gl_Position.w;
 }
