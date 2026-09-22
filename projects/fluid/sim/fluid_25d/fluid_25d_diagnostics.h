@@ -27,6 +27,10 @@ void record_gpu_timings(cubey::profiling::ProfileRecorder* recorder, std::uint64
 // auditions can distinguish broad retained water from active routing without
 // changing numerical evolution.
 inline constexpr float kFluid25DSlowPooledSpeedThresholdMPerS = 0.02F;
+// Presentation/evidence classification only: conservative q is retained all
+// the way to dry cells, but numerical Rusanov tails below 1% concentration do
+// not constitute a material dyed front.
+inline constexpr float kFluid25DTracerMaterialConcentration = 0.01F;
 
 struct Fluid25DProfileDiagnostics {
     std::uint64_t wet_cell_count = 0U;
@@ -45,6 +49,22 @@ struct Fluid25DProfileDiagnostics {
     double conservation_residual_m3 = 0.0;
 };
 
+struct Fluid25DTracerProfileDiagnostics {
+    double total_tracer_amount_m3 = 0.0;
+    double maximum_concentration = 0.0;
+    double mean_concentration = 0.0;
+    std::uint64_t dyed_wet_cell_count = 0U;
+    double dyed_wet_cell_ratio = 0.0;
+    double amount_weighted_centroid_cell_x = 0.0;
+    double amount_weighted_centroid_cell_y = 0.0;
+    double downstream_extent_cell_x = 0.0;
+    double tracer_in_explicit_sink_region_m3 = 0.0;
+    double cumulative_source_amount_m3 = 0.0;
+    double cumulative_sink_amount_m3 = 0.0;
+    double cumulative_boundary_outflow_amount_m3 = 0.0;
+    double conservation_residual_m3 = 0.0;
+};
+
 [[nodiscard]] bool
 should_record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder* recorder,
                                             const cubey::host::CommonRunConfig& common_config,
@@ -59,8 +79,18 @@ compute_fluid_25d_profile_diagnostics(const Fluid25DConfig& config, std::span<co
                                       std::span<const Fluid25DLedgerGpu> cumulative_ledger,
                                       double initial_water_volume_m3);
 
+[[nodiscard]] Fluid25DTracerProfileDiagnostics
+compute_fluid_25d_tracer_profile_diagnostics(
+    const Fluid25DConfig& config, std::span<const float> depth_m,
+    std::span<const float> tracer_q_m, std::span<const float> sink_depth_rate_m_per_s,
+    std::span<const Fluid25DTracerLedgerGpu> cumulative_tracer_ledger,
+    double initial_tracer_amount_m3 = 0.0);
+
 void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                                           std::uint64_t frame_index,
                                           const Fluid25DProfileDiagnostics& diagnostics);
+void record_fluid_25d_tracer_profile_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DTracerProfileDiagnostics& diagnostics);
 
 } // namespace cubey::projects::fluid::fluid_25d

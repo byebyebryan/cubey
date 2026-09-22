@@ -168,11 +168,121 @@ compute_fluid_25d_profile_diagnostics(const Fluid25DConfig& config, std::span<co
     return result;
 }
 
+Fluid25DTracerProfileDiagnostics compute_fluid_25d_tracer_profile_diagnostics(
+    const Fluid25DConfig& config, std::span<const float> depth_m,
+    std::span<const float> tracer_q_m, std::span<const float> sink_depth_rate_m_per_s,
+    std::span<const Fluid25DTracerLedgerGpu> cumulative_tracer_ledger,
+    double initial_tracer_amount_m3) {
+    validate_fluid_25d_config(config);
+    const std::size_t cells = fluid_25d_cell_count(config);
+    if (depth_m.size() != cells || tracer_q_m.size() != cells ||
+        sink_depth_rate_m_per_s.size() != cells || cumulative_tracer_ledger.size() != cells) {
+        throw std::runtime_error("fluid 2.5D tracer diagnostic fields have invalid dimensions");
+    }
+    if (!std::isfinite(initial_tracer_amount_m3) || initial_tracer_amount_m3 < 0.0) {
+        throw std::runtime_error("fluid 2.5D diagnostic initial tracer amount is invalid");
+    }
+
+    constexpr float kTracerRoundingResidueM = 1.0e-7F;
+    const double cell_area_m2 =
+        static_cast<double>(config.cell_size_m) * static_cast<double>(config.cell_size_m);
+    Fluid25DTracerProfileDiagnostics result;
+    double wet_concentration_sum = 0.0;
+    double concentration_weight = 0.0;
+    double weighted_x = 0.0;
+    double weighted_y = 0.0;
+    bool has_dye = false;
+    for (std::size_t index = 0U; index < cells; ++index) {
+        const float depth = depth_m[index];
+        const float tracer_q = tracer_q_m[index];
+        const float sink_rate = sink_depth_rate_m_per_s[index];
+        if (!std::isfinite(depth) || depth < 0.0F || !std::isfinite(tracer_q) ||
+            tracer_q < -kTracerRoundingResidueM ||
+            tracer_q > depth + kTracerRoundingResidueM || !std::isfinite(sink_rate) ||
+            sink_rate < 0.0F) {
+            throw std::runtime_error("fluid 2.5D tracer diagnostic state is invalid at cell=" +
+                                     std::to_string(index));
+        }
+        const double clamped_q = std::clamp(static_cast<double>(tracer_q), 0.0,
+                                            static_cast<double>(depth));
+        const double amount_m3 = clamped_q * cell_area_m2;
+        result.total_tracer_amount_m3 += amount_m3;
+        if (sink_rate > 0.0F) {
+            result.tracer_in_explicit_sink_region_m3 += amount_m3;
+        }
+        const double x = static_cast<double>(index % config.grid_width);
+        const double y = static_cast<double>(index / config.grid_width);
+        weighted_x += amount_m3 * x;
+        weighted_y += amount_m3 * y;
+        if (depth <= config.minimum_wet_depth_m || clamped_q == 0.0) {
+            continue;
+        }
+        const double concentration = clamped_q / static_cast<double>(depth);
+        if (!std::isfinite(concentration) || concentration < 0.0 || concentration > 1.0) {
+            throw std::runtime_error("fluid 2.5D tracer diagnostic concentration is invalid");
+        }
+        result.maximum_concentration = std::max(result.maximum_concentration, concentration);
+        wet_concentration_sum += concentration;
+        concentration_weight += 1.0;
+        if (concentration < static_cast<double>(kFluid25DTracerMaterialConcentration)) {
+            continue;
+        }
+        ++result.dyed_wet_cell_count;
+        result.downstream_extent_cell_x =
+            has_dye ? std::max(result.downstream_extent_cell_x, x) : x;
+        has_dye = true;
+    }
+    result.dyed_wet_cell_ratio = static_cast<double>(result.dyed_wet_cell_count) /
+                                  static_cast<double>(cells);
+    result.mean_concentration =
+        concentration_weight == 0.0 ? 0.0 : wet_concentration_sum / concentration_weight;
+    if (result.total_tracer_amount_m3 > 0.0) {
+        result.amount_weighted_centroid_cell_x = weighted_x / result.total_tracer_amount_m3;
+        result.amount_weighted_centroid_cell_y = weighted_y / result.total_tracer_amount_m3;
+    }
+
+    for (std::size_t index = 0U; index < cells; ++index) {
+        const Fluid25DTracerLedgerGpu& ledger = cumulative_tracer_ledger[index];
+        for (std::size_t component = 0U;
+             component < ledger.source_sink_boundary_reserved_m3.size(); ++component) {
+            const float value = ledger.source_sink_boundary_reserved_m3[component];
+            if (!std::isfinite(value) || value < 0.0F) {
+                throw std::runtime_error("fluid 2.5D tracer diagnostic ledger is invalid at cell=" +
+                                         std::to_string(index) + " component=" +
+                                         std::to_string(component));
+            }
+        }
+        if (ledger.source_sink_boundary_reserved_m3[3] != 0.0F) {
+            throw std::runtime_error("fluid 2.5D tracer diagnostic ledger padding is nonzero");
+        }
+        result.cumulative_source_amount_m3 +=
+            static_cast<double>(ledger.source_sink_boundary_reserved_m3[0]);
+        result.cumulative_sink_amount_m3 +=
+            static_cast<double>(ledger.source_sink_boundary_reserved_m3[1]);
+        result.cumulative_boundary_outflow_amount_m3 +=
+            static_cast<double>(ledger.source_sink_boundary_reserved_m3[2]);
+    }
+    result.conservation_residual_m3 = result.total_tracer_amount_m3 - initial_tracer_amount_m3 -
+                                      result.cumulative_source_amount_m3 +
+                                      result.cumulative_sink_amount_m3 +
+                                      result.cumulative_boundary_outflow_amount_m3;
+    if (!std::isfinite(result.total_tracer_amount_m3) ||
+        !std::isfinite(result.conservation_residual_m3)) {
+        throw std::runtime_error("fluid 2.5D tracer diagnostic totals are nonfinite");
+    }
+    return result;
+}
+
 namespace {
 
 void record_metric(cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
                    std::string_view name, double value) {
     recorder.record_metric(frame_index, "fluid_25d.water", name, value);
+}
+
+void record_tracer_metric(cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+                          std::string_view name, double value) {
+    recorder.record_metric(frame_index, "fluid_25d.tracer", name, value);
 }
 
 } // namespace
@@ -205,6 +315,37 @@ void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& rec
                   diagnostics.cumulative_boundary_outflow_volume_m3);
     record_metric(recorder, frame_index, "conservation_residual_m3",
                   diagnostics.conservation_residual_m3);
+}
+
+void record_fluid_25d_tracer_profile_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DTracerProfileDiagnostics& diagnostics) {
+    record_tracer_metric(recorder, frame_index, "total_tracer_amount_m3",
+                         diagnostics.total_tracer_amount_m3);
+    record_tracer_metric(recorder, frame_index, "maximum_concentration",
+                         diagnostics.maximum_concentration);
+    record_tracer_metric(recorder, frame_index, "mean_concentration",
+                         diagnostics.mean_concentration);
+    record_tracer_metric(recorder, frame_index, "dyed_wet_cell_count",
+                         static_cast<double>(diagnostics.dyed_wet_cell_count));
+    record_tracer_metric(recorder, frame_index, "dyed_wet_cell_ratio",
+                         diagnostics.dyed_wet_cell_ratio);
+    record_tracer_metric(recorder, frame_index, "amount_weighted_centroid_cell_x",
+                         diagnostics.amount_weighted_centroid_cell_x);
+    record_tracer_metric(recorder, frame_index, "amount_weighted_centroid_cell_y",
+                         diagnostics.amount_weighted_centroid_cell_y);
+    record_tracer_metric(recorder, frame_index, "downstream_extent_cell_x",
+                         diagnostics.downstream_extent_cell_x);
+    record_tracer_metric(recorder, frame_index, "tracer_in_explicit_sink_region_m3",
+                         diagnostics.tracer_in_explicit_sink_region_m3);
+    record_tracer_metric(recorder, frame_index, "cumulative_source_amount_m3",
+                         diagnostics.cumulative_source_amount_m3);
+    record_tracer_metric(recorder, frame_index, "cumulative_sink_amount_m3",
+                         diagnostics.cumulative_sink_amount_m3);
+    record_tracer_metric(recorder, frame_index, "cumulative_boundary_outflow_amount_m3",
+                         diagnostics.cumulative_boundary_outflow_amount_m3);
+    record_tracer_metric(recorder, frame_index, "conservation_residual_m3",
+                         diagnostics.conservation_residual_m3);
 }
 
 } // namespace cubey::projects::fluid::fluid_25d

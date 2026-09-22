@@ -41,6 +41,12 @@ struct Fluid25DLedgerGpu {
     // alignment so the C++ layout remains the shader's std430 layout.
     std::array<float, 4> source_sink_boundary_reserved_m3{};
 };
+// Conservative tracer accounting is intentionally separate from water
+// accounting. Its components have the same physical-volume units, but track
+// q=h*c rather than water depth.
+struct Fluid25DTracerLedgerGpu {
+    std::array<float, 4> source_sink_boundary_reserved_m3{};
+};
 // One tiny selected-solver status buffer retains error flags until explicit
 // solver reset. Its two CFL-max scratch words are cleared before each
 // finite-volume substep, letting the prepass reject an update without a host
@@ -71,6 +77,7 @@ static_assert(sizeof(Fluid25DFluxGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DMomentumGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DVelocityGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DLedgerGpu) == sizeof(float) * 4U);
+static_assert(sizeof(Fluid25DTracerLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DFiniteVolumeStatusGpu) == sizeof(std::uint32_t) * 4U);
 static_assert(sizeof(Fluid25DQuiverGpu) == sizeof(float) * 8U);
 static_assert(sizeof(Fluid25DEndpointMarkersGpu) == sizeof(float) * 4U);
@@ -94,6 +101,10 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& initial_depth() const;
     [[nodiscard]] const cubey::vulkan::Buffer& depth_a() const;
     [[nodiscard]] const cubey::vulkan::Buffer& depth_b() const;
+    // q=h*c tracer state always follows the depth A/B parity. Virtual-pipes
+    // owns inert zero buffers so later shared render bindings remain valid.
+    [[nodiscard]] const cubey::vulkan::Buffer& tracer_q_a() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& tracer_q_b() const;
     // Virtual-pipes-only canonical state.
     [[nodiscard]] const cubey::vulkan::Buffer& flux() const;
     // Finite-volume-only canonical state/status.
@@ -103,9 +114,12 @@ class Fluid25DGpuResources {
     // commit dispatch accepts the whole substep.
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_candidate_velocity() const;
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_candidate_ledger_delta() const;
+    [[nodiscard]] const cubey::vulkan::Buffer&
+    finite_volume_candidate_tracer_ledger_delta() const;
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_status() const;
     [[nodiscard]] const cubey::vulkan::Buffer& velocity() const;
     [[nodiscard]] const cubey::vulkan::Buffer& ledger() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& tracer_ledger() const;
     // Render-only scalar cue state. It deliberately never enters solver
     // descriptors, diagnostics, readback, or CPU oracle comparisons.
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_a() const;
@@ -276,14 +290,18 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::Buffer> initial_depth_;
     std::optional<cubey::vulkan::Buffer> depth_a_;
     std::optional<cubey::vulkan::Buffer> depth_b_;
+    std::optional<cubey::vulkan::Buffer> tracer_q_a_;
+    std::optional<cubey::vulkan::Buffer> tracer_q_b_;
     std::optional<cubey::vulkan::Buffer> flux_;
     std::optional<cubey::vulkan::Buffer> momentum_a_;
     std::optional<cubey::vulkan::Buffer> momentum_b_;
     std::optional<cubey::vulkan::Buffer> finite_volume_candidate_velocity_;
     std::optional<cubey::vulkan::Buffer> finite_volume_candidate_ledger_delta_;
+    std::optional<cubey::vulkan::Buffer> finite_volume_candidate_tracer_ledger_delta_;
     std::optional<cubey::vulkan::Buffer> finite_volume_status_;
     std::optional<cubey::vulkan::Buffer> velocity_;
     std::optional<cubey::vulkan::Buffer> ledger_;
+    std::optional<cubey::vulkan::Buffer> tracer_ledger_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_a_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_b_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_virtual_status_;

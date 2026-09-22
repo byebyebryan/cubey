@@ -245,6 +245,23 @@ if (BUILD_TESTING)
         --fluid25d-gpu-oracle-validation
     )
     cubey_add_png_smoke_test(
+        fluid_25d_gpu_oracle_finite_volume_dye_transport
+        cubey_project_fluid_25d
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-finite-volume-dye-transport-oracle.png"
+        --frames 20
+        --width 640
+        --height 360
+        --grid-width 128
+        --grid-height 64
+        --fluid25d-solver finite-volume
+        --fluid25d-scenario source-outlet-demo
+        --fluid25d-fixed-delta-seconds 0.01
+        --fluid25d-substeps 2
+        --fluid25d-dye-pulse-start-seconds 0
+        --fluid25d-dye-pulse-duration-seconds 0.1
+        --fluid25d-gpu-oracle-validation
+    )
+    cubey_add_png_smoke_test(
         fluid_25d_gpu_oracle_finite_volume_boundary_drain
         cubey_project_fluid_25d
         "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-finite-volume-boundary-drain-oracle.png"

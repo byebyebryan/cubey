@@ -56,10 +56,29 @@ layout(set = 0, binding = 11, std430) buffer StatusField {
     uint reserved;
 }
 status;
+layout(set = 0, binding = 12, std430) readonly buffer TracerQField {
+    float values[];
+}
+tracer_q;
+layout(set = 0, binding = 13, std430) buffer CandidateTracerQField {
+    float values[];
+}
+candidate_tracer_q;
+layout(set = 0, binding = 14, std430) readonly buffer CumulativeTracerLedgerField {
+    vec4 values[];
+}
+cumulative_tracer_ledger;
+layout(set = 0, binding = 15, std430) buffer CandidateTracerLedgerDeltaField {
+    vec4 values[];
+}
+candidate_tracer_ledger_delta;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
     vec4 physics;
+    // x is the outer-fixed-step source concentration; hydraulic forcing
+    // remains physics.w and every solver substep uses this same pulse value.
+    vec4 dye;
 }
 params;
 
@@ -81,6 +100,9 @@ struct SourceSinkState {
     State state;
     float source_added_h;
     float removed_h;
+    float tracer_q;
+    float source_added_tracer_q;
+    float removed_tracer_q;
 };
 struct FaceFlux {
     State homogeneous;
@@ -102,6 +124,13 @@ bool finite_nonnegative_ledger(vec4 value) {
     return finite_float(value.x) && finite_float(value.y) && finite_float(value.z) &&
            finite_float(value.w) && value.x >= 0.0 && value.y >= 0.0 && value.z >= 0.0 &&
            value.w == 0.0;
+}
+bool finite_tracer_q(float q, float h) {
+    return finite_float(q) && q >= -DEPTH_ROUNDING_RESIDUE && finite_float(h) && h >= 0.0 &&
+           q <= h + DEPTH_ROUNDING_RESIDUE;
+}
+float tracer_concentration(float q, float h) {
+    return h > 0.0 ? clamp(q / h, 0.0, 1.0) : 0.0;
 }
 uint cell_index(uint x, uint y, uint width) {
     return y * width + x;
@@ -152,6 +181,12 @@ SourceSinkState source_sink_state(uint index, float dt) {
     float sourced_h = old_h + source_added_h;
     float removed_h = min(sourced_h, sink_rate.values[index] * dt);
     float h = sourced_h - removed_h;
+    float old_tracer_q = tracer_q.values[index];
+    float source_added_tracer_q = source_added_h * params.dye.x;
+    float sourced_tracer_q = old_tracer_q + source_added_tracer_q;
+    float retained_fraction = sourced_h > 0.0 ? h / sourced_h : 0.0;
+    float updated_tracer_q = clamp(sourced_tracer_q * retained_fraction, 0.0,
+                                   max(0.0, sourced_tracer_q));
     vec2 q = old_q;
     if (sourced_h > 0.0) {
         q *= h / sourced_h;
@@ -161,7 +196,9 @@ SourceSinkState source_sink_state(uint index, float dt) {
     if (h <= params.physics.z) {
         q = vec2(0.0);
     }
-    return SourceSinkState(State(h, q), source_added_h, removed_h);
+    return SourceSinkState(State(h, q), source_added_h, removed_h, updated_tracer_q,
+                           source_added_tracer_q,
+                           max(0.0, sourced_tracer_q - updated_tracer_q));
 }
 
 void main() {
@@ -180,6 +217,8 @@ void main() {
     candidate_momentum.values[index] = momentum.values[index];
     candidate_velocity.values[index] = vec4(0.0);
     candidate_ledger_delta.values[index] = vec4(0.0);
+    candidate_tracer_q.values[index] = tracer_q.values[index];
+    candidate_tracer_ledger_delta.values[index] = vec4(0.0);
     if (status.flags != 0u) {
         return;
     }
@@ -190,12 +229,18 @@ void main() {
     float minimum_wet_depth = params.physics.z;
     SourceSinkState center_source_sink = source_sink_state(index, dt);
     State center = center_source_sink.state;
-    if (!finite_state(center)) {
+    if (!finite_state(center) || !finite_tracer_q(tracer_q.values[index], depth.values[index]) ||
+        !finite_tracer_q(center_source_sink.tracer_q, center.h) ||
+        !finite_float(center_source_sink.source_added_tracer_q) ||
+        center_source_sink.source_added_tracer_q < -DEPTH_ROUNDING_RESIDUE ||
+        !finite_float(center_source_sink.removed_tracer_q) ||
+        center_source_sink.removed_tracer_q < -DEPTH_ROUNDING_RESIDUE) {
         atomicOr(status.flags, INVALID_STATE);
         return;
     }
 
     State delta = State(0.0, vec2(0.0));
+    float tracer_delta = 0.0;
     float boundary_outflow_volume = 0.0;
     for (uint face = LEFT; face <= UP; ++face) {
         bool has_neighbor = (face == LEFT && x > 0u) || (face == RIGHT && x + 1u < width) ||
@@ -205,6 +250,7 @@ void main() {
                       : face == DOWN  ? vec2(0.0, -1.0)
                                       : vec2(0.0, 1.0);
         State exterior;
+        float exterior_tracer_q = 0.0;
         bool open_outflow = false;
         if (has_neighbor) {
             uint neighbor_x = x;
@@ -218,7 +264,10 @@ void main() {
             } else {
                 neighbor_y += 1u;
             }
-            exterior = source_sink_state(cell_index(neighbor_x, neighbor_y, width), dt).state;
+            SourceSinkState neighbor_source_sink =
+                source_sink_state(cell_index(neighbor_x, neighbor_y, width), dt);
+            exterior = neighbor_source_sink.state;
+            exterior_tracer_q = neighbor_source_sink.tracer_q;
         } else {
             open_outflow = (boundary_mask.values[index] & (1u << face)) != 0u;
             if (open_outflow) {
@@ -228,7 +277,7 @@ void main() {
                 exterior = State(center.h, center.q - 2.0 * center.h * outward_velocity * normal);
             }
         }
-        if (!finite_state(exterior)) {
+        if (!finite_state(exterior) || !finite_tracer_q(exterior_tracer_q, exterior.h)) {
             atomicOr(status.flags, INVALID_STATE);
             return;
         }
@@ -265,8 +314,26 @@ void main() {
                 boundary_outflow_volume += outward.h * cell_size * dt;
             }
         }
+        float tracer_outward_flux = 0.0;
+        if (has_neighbor) {
+            const float center_concentration = tracer_concentration(center_source_sink.tracer_q,
+                                                                     center.h);
+            const float exterior_concentration = tracer_concentration(exterior_tracer_q, exterior.h);
+            const float homogeneous_mass_flux = face_flux.homogeneous.h;
+            tracer_outward_flux = homogeneous_mass_flux >= 0.0
+                                      ? homogeneous_mass_flux * center_concentration
+                                      : homogeneous_mass_flux * exterior_concentration;
+        } else if (open_outflow) {
+            tracer_outward_flux =
+                outward.h * tracer_concentration(center_source_sink.tracer_q, center.h);
+        }
+        if (!finite_float(tracer_outward_flux)) {
+            atomicOr(status.flags, INVALID_STATE);
+            return;
+        }
         delta.h -= outward.h;
         delta.q -= outward.q;
+        tracer_delta -= tracer_outward_flux;
     }
 
     float transport_scale = dt / cell_size;
@@ -278,6 +345,12 @@ void main() {
         return;
     }
     updated_h = max(0.0, updated_h);
+    float updated_tracer_q = center_source_sink.tracer_q + transport_scale * tracer_delta;
+    if (!finite_tracer_q(updated_tracer_q, updated_h)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
+    updated_tracer_q = clamp(updated_tracer_q, 0.0, updated_h);
     if (updated_h <= minimum_wet_depth) {
         updated_q = vec2(0.0);
     }
@@ -291,16 +364,27 @@ void main() {
                              center_source_sink.removed_h * cell_area,
                              boundary_outflow_volume, 0.0);
     vec4 prospective_ledger = cumulative_ledger.values[index] + ledger_delta;
+    vec4 tracer_ledger_delta = vec4(center_source_sink.source_added_tracer_q * cell_area,
+                                    center_source_sink.removed_tracer_q * cell_area,
+                                    boundary_outflow_volume *
+                                        tracer_concentration(center_source_sink.tracer_q, center.h),
+                                    0.0);
+    vec4 prospective_tracer_ledger =
+        cumulative_tracer_ledger.values[index] + tracer_ledger_delta;
     // Commit must not find a late validation error after some cells publish:
     // check both the delta and the prospective cumulative value here.
     if (!finite_nonnegative_ledger(ledger_delta) ||
-        !finite_nonnegative_ledger(prospective_ledger)) {
+        !finite_nonnegative_ledger(prospective_ledger) ||
+        !finite_nonnegative_ledger(tracer_ledger_delta) ||
+        !finite_nonnegative_ledger(prospective_tracer_ledger)) {
         atomicOr(status.flags, INVALID_STATE);
         return;
     }
     candidate_depth.values[index] = updated_h;
     candidate_momentum.values[index] = vec4(updated_q, 0.0, 0.0);
+    candidate_tracer_q.values[index] = updated_tracer_q;
     candidate_velocity.values[index] =
         vec4(derived_velocity, updated_h > minimum_wet_depth ? 1.0 : 0.0, 0.0);
     candidate_ledger_delta.values[index] = ledger_delta;
+    candidate_tracer_ledger_delta.values[index] = tracer_ledger_delta;
 }

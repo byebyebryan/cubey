@@ -91,11 +91,20 @@ enum class Fluid25DRenderTargetMode : std::uint8_t {
     ColorAttachment,
 };
 
+// One forcing sample belongs to one public fixed solver step. Hydraulic source
+// scale and dye concentration deliberately travel together at the API boundary
+// while remaining independent values in the solver contract.
+struct Fluid25DStepForcing {
+    float source_rate_scale = 1.0F;
+    float dye_source_concentration = 0.0F;
+};
+
 void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                               const Fluid25DConfig& config, bool paused, bool& reset_requested,
                               bool include_render_visibility_barrier = true,
                               cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-                              std::uint32_t frame_slot_index = 0U, float source_rate_scale = 1.0F);
+                              std::uint32_t frame_slot_index = 0U,
+                              Fluid25DStepForcing forcing = {});
 
 // An opt-in presentation-only reset for headless Flow Inspection. Call this
 // before the fixed solver record when a headless capture starts so its initial
@@ -114,7 +123,7 @@ void record_fluid_25d_flow_inspection_quiver_step(
 
 void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                                     const Fluid25DConfig& config,
-                                    std::span<const float> source_rate_scales, bool paused,
+                                    std::span<const Fluid25DStepForcing> forcings, bool paused,
                                     bool& reset_requested,
                                     bool include_render_visibility_barrier = true,
                                     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
@@ -142,6 +151,6 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     bool& reset_requested, bool& presentation_cue_reset_requested,
     bool& quiver_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-    std::uint32_t frame_slot_index = 0U, std::span<const float> source_rate_scales = {});
+    std::uint32_t frame_slot_index = 0U, std::span<const Fluid25DStepForcing> forcings = {});
 
 } // namespace cubey::projects::fluid::fluid_25d

@@ -37,6 +37,18 @@ layout(set = 0, binding = 7, std430) buffer StatusField {
     uint reserved;
 }
 status;
+layout(set = 0, binding = 8, std430) buffer TracerQAField {
+    float values[];
+}
+tracer_q_a;
+layout(set = 0, binding = 9, std430) buffer TracerQBField {
+    float values[];
+}
+tracer_q_b;
+layout(set = 0, binding = 10, std430) buffer TracerLedgerField {
+    vec4 values[];
+}
+tracer_ledger;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
@@ -60,6 +72,9 @@ void main() {
     momentum_b.values[index] = vec4(0.0);
     velocity.values[index] = vec4(0.0, 0.0, depth > params.physics.z ? 1.0 : 0.0, 0.0);
     ledger.values[index] = vec4(0.0);
+    tracer_q_a.values[index] = 0.0;
+    tracer_q_b.values[index] = 0.0;
+    tracer_ledger.values[index] = vec4(0.0);
     if (index == 0u) {
         status.flags = 0u;
         status.max_x_speed_bits = 0u;

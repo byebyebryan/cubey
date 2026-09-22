@@ -1147,6 +1147,48 @@ void test_profile_diagnostic_metric_math() {
         "profile diagnostics should reject invalid readback depth");
 }
 
+void test_tracer_profile_diagnostic_metric_math() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
+    config.cell_size_m = 2.0F;
+    config.minimum_wet_depth_m = 0.10F;
+    const std::array<float, 6> depth{0.05F, 0.20F, 0.30F, 0.0F, 0.40F, 0.0F};
+    // The below-wet sample is physically retained q and must influence the
+    // amount-weighted centroid. The 0.33% concentration tail is retained too,
+    // but must not make the material front jump to cell x=2.
+    const std::array<float, 6> tracer_q{0.025F, 0.004F, 0.001F, 0.0F, 0.20F, 0.0F};
+    const std::array<float, 6> sink_rate{0.0F, 0.0F, 0.0F, 0.0F, 0.10F, 0.0F};
+    const std::array<Fluid25DTracerLedgerGpu, 6> ledger{{
+        {.source_sink_boundary_reserved_m3 = {0.92F, 0.0F, 0.0F, 0.0F}},
+        {}, {}, {}, {}, {},
+    }};
+    const Fluid25DTracerProfileDiagnostics diagnostics =
+        compute_fluid_25d_tracer_profile_diagnostics(config, depth, tracer_q, sink_rate, ledger);
+    require_close(diagnostics.total_tracer_amount_m3, 0.92, kDepthToleranceM,
+                  "tracer diagnostics should integrate q by physical cell area");
+    require_close(diagnostics.maximum_concentration, 0.5, kDepthToleranceM,
+                  "tracer diagnostics should expose maximum wet concentration");
+    require_close(diagnostics.mean_concentration, (0.5 + 0.02 + (1.0 / 300.0)) / 3.0,
+                  kDepthToleranceM,
+                  "tracer diagnostics should include retained wet tails in concentration mean");
+    require(diagnostics.dyed_wet_cell_count == 2U,
+            "tracer diagnostics should exclude sub-material concentration tails from dyed count");
+    require_close(diagnostics.dyed_wet_cell_ratio, 2.0 / 6.0, kDepthToleranceM,
+                  "tracer diagnostics should report the material dyed-cell ratio");
+    require_close(diagnostics.amount_weighted_centroid_cell_x, 0.824 / 0.92, kDepthToleranceM,
+                  "tracer centroid should include retained below-wet q");
+    require_close(diagnostics.amount_weighted_centroid_cell_y, 0.8 / 0.92, kDepthToleranceM,
+                  "tracer centroid should weight every retained q cell");
+    require_close(diagnostics.downstream_extent_cell_x, 1.0, kDepthToleranceM,
+                  "tracer front should exclude sub-material numerical tails");
+    require_close(diagnostics.tracer_in_explicit_sink_region_m3, 0.8, kDepthToleranceM,
+                  "tracer diagnostics should report amount inside explicit sink cells");
+    require_close(diagnostics.cumulative_source_amount_m3, 0.92, kDepthToleranceM,
+                  "tracer diagnostics should retain a separate source ledger");
+    require_close(diagnostics.conservation_residual_m3, 0.0, kDepthToleranceM,
+                  "tracer diagnostics should reconcile amount and separate ledger");
+}
+
 void test_profile_frame_slot_attribution() {
     using namespace cubey::projects::fluid::fluid_25d;
     const cubey::ProjectFrame first_frame{.frame_index = 1U};
@@ -2333,21 +2375,54 @@ void test_finite_volume_gpu_candidate_commit_shader_contract() {
     };
     const std::string candidate = read_shader(shader_directory / "fluid_25d_fv_update.comp");
     const std::string commit = read_shader(shader_directory / "fluid_25d_fv_commit.comp");
+    const std::string reset = read_shader(shader_directory / "fluid_25d_fv_reset.comp");
+    const std::string commands =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
+    const std::string app =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
+    const std::string resources = read_shader(
+        std::filesystem::path(__FILE__).parent_path() / "fluid_25d_gpu_resources.cpp");
     require(
         candidate.find("candidate_ledger_delta.values[index] = vec4(0.0);") != std::string::npos &&
+            candidate.find("candidate_tracer_q.values[index] = tracer_q.values[index];") !=
+                std::string::npos &&
+            candidate.find("candidate_tracer_ledger_delta.values[index] = vec4(0.0);") !=
+                std::string::npos &&
+            candidate.find("max(0.0, sourced_tracer_q - updated_tracer_q)") !=
+                std::string::npos &&
             candidate.find("vec4 prospective_ledger = cumulative_ledger.values[index] + "
                            "ledger_delta;") != std::string::npos &&
+            candidate.find("prospective_tracer_ledger") != std::string::npos &&
+            candidate.find("face_flux.homogeneous.h") != std::string::npos &&
             candidate.find("!finite_nonnegative_ledger(prospective_ledger)") != std::string::npos &&
             candidate.find("ledger.values[index] +=") == std::string::npos,
-        "finite-volume candidate shader must isolate and validate ledger deltas");
+        "finite-volume candidate shader must isolate q, normalize only sink-rounding residue, and "
+        "validate both ledger deltas before commit");
     require(commit.find("if (status.flags != 0u)") != std::string::npos &&
                 commit.find("next_depth.values[index] = source_depth.values[index];") !=
                     std::string::npos &&
                 commit.find("next_momentum.values[index] = source_momentum.values[index];") !=
                     std::string::npos &&
+                commit.find("next_tracer_q.values[index] = source_tracer_q.values[index];") !=
+                    std::string::npos &&
                 commit.find("ledger.values[index] += candidate_ledger_delta.values[index];") !=
+                    std::string::npos &&
+                commit.find("tracer_ledger.values[index] += "
+                            "candidate_tracer_ledger_delta.values[index];") != std::string::npos,
+            "finite-volume commit shader must copy rejected q and publish both ledgers once");
+    require(reset.find("tracer_q_a.values[index] = 0.0;") != std::string::npos &&
+                reset.find("tracer_q_b.values[index] = 0.0;") != std::string::npos &&
+                reset.find("tracer_ledger.values[index] = vec4(0.0);") != std::string::npos &&
+                commands.find("Fluid25DStepForcing") != std::string::npos &&
+                commands.find("dye_source_concentration") != std::string::npos &&
+                app.find("dye_source_schedule_.source_concentration") != std::string::npos &&
+                app.find("step_with_dye(") != std::string::npos &&
+                resources.find("storage_set_info(7U, VK_SHADER_STAGE_VERTEX_BIT") !=
+                    std::string::npos &&
+                resources.find(".storage_buffer(set, 6, tracer_q.handle(), tracer_q.size())") !=
                     std::string::npos,
-            "finite-volume commit shader must copy through rejected state and publish ledger once");
+            "GPU tracer runtime must reset with depth parity, sample fixed-step forcing, and bind q "
+            "at append-only render binding 6");
 }
 
 } // namespace
@@ -2361,6 +2436,7 @@ int main() {
         test_mountain_source_outlet_field_construction();
         test_profile_frame_slot_attribution();
         test_profile_diagnostic_metric_math();
+        test_tracer_profile_diagnostic_metric_math();
         test_dry_bed_stability();
         test_lake_at_rest();
         test_dynamic_closed_domain_conservation();

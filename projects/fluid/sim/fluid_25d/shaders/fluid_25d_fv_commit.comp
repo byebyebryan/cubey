@@ -46,6 +46,22 @@ layout(set = 0, binding = 8, std430) buffer VelocityField {
     vec4 values[];
 }
 velocity;
+layout(set = 0, binding = 9, std430) readonly buffer SourceTracerQField {
+    float values[];
+}
+source_tracer_q;
+layout(set = 0, binding = 10, std430) buffer NextTracerQField {
+    float values[];
+}
+next_tracer_q;
+layout(set = 0, binding = 11, std430) buffer TracerLedgerField {
+    vec4 values[];
+}
+tracer_ledger;
+layout(set = 0, binding = 12, std430) readonly buffer CandidateTracerLedgerDeltaField {
+    vec4 values[];
+}
+candidate_tracer_ledger_delta;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
@@ -68,6 +84,7 @@ void main() {
         // state/cumulative ledger remain at the last accepted substep.
         next_depth.values[index] = source_depth.values[index];
         next_momentum.values[index] = source_momentum.values[index];
+        next_tracer_q.values[index] = source_tracer_q.values[index];
         return;
     }
     // Candidate h/hu/hv were written to this inactive ping-pong destination.
@@ -75,4 +92,5 @@ void main() {
     // descriptor aliasing/self-copies in the commit layout.
     velocity.values[index] = candidate_velocity.values[index];
     ledger.values[index] += candidate_ledger_delta.values[index];
+    tracer_ledger.values[index] += candidate_tracer_ledger_delta.values[index];
 }
