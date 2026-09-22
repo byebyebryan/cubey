@@ -387,7 +387,7 @@ schema and currently exposes:
   drop excess backlog;
 - `--fluid25d-solver virtual-pipes|finite-volume` (default: `virtual-pipes`;
   finite-volume is an opt-in numerical comparison);
-- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|source-outlet-demo|terrain-case|boundary-drain-fixture`;
+- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|source-outlet-demo|mountain-source-outlet-demo|terrain-case|boundary-drain-fixture`;
 - `--terrain-heightfield <manifest-or-directory>` (required by `terrain-case`);
 - `--fluid25d-terrain-crop-x` and `--fluid25d-terrain-crop-z` (native sample
   indices; the configured grid dimensions define the crop extent);
@@ -489,6 +489,14 @@ reporting threshold, not a solver control. The exact V1/V2 evidence and
 shortlist/no-promotion decision live in
 [`docs/notes/fluid-25d-terrain-water-audition-v2.md`](../../../docs/notes/fluid-25d-terrain-water-audition-v2.md).
 
+The separate finite-volume rain dynamics study compares one neutral and one
+visibility-stress tier across three immutable terrain crops. Its diagnostic
+evidence and no-promotion result live in
+[`docs/notes/fluid-25d-dynamics-study-v1.md`](../../../docs/notes/fluid-25d-dynamics-study-v1.md);
+rerun it with
+`projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh` when refreshing that
+study.
+
 Analytic fixtures remain closed by default. `boundary-drain-fixture` exists
 solely to validate the numerical outflow contract: an opened perimeter face
 sees dry exterior at its own bed elevation, permits no external inflow, and
@@ -519,6 +527,10 @@ its green SOURCE and amber OUTLET rings in this view.
   runner for the immutable virtual-pipes V1 baseline;
 - `projects/fluid/fluid_25d/run_terrain_water_audition_v2.sh`: finite-volume
   physical-horizon audition runner with solver-qualified ignored outputs;
+- `projects/fluid/fluid_25d/run_mountain_source_outlet_demo.sh`: finite-volume
+  review runner for the pinned immutable mountain source/outlet scene;
+- `projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh`: matched neutral and
+  visibility-stress finite-volume rain-dynamics study runner;
 - `projects/fluid/sim/fluid_25d`: project-local config, scenarios, CPU oracle,
   and focused tests.
 

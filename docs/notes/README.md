@@ -52,6 +52,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Fluid 2.5D Terrain-Water Audition V2](fluid-25d-terrain-water-audition-v2.md):
   finite-volume real-terrain evidence, retained shortlist, and no-promotion
   boundary.
+- [Fluid 2.5D Dynamics Study V1](fluid-25d-dynamics-study-v1.md):
+  finite-volume rain dynamics tiers, diagnostic evidence, and no-promotion
+  result.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset
