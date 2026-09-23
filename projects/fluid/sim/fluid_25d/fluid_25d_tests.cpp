@@ -1438,6 +1438,170 @@ void test_source_outlet_cross_section_diagnostic_math() {
         "source-outlet cross-section metrics should reject other scenarios");
 }
 
+void test_source_outlet_spatial_diagnostic_math() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config =
+        finite_volume_test_config(128U, 64U, Fluid25DScenario::SourceOutletDemo);
+    config.cell_size_m = 2.0F;
+    config.minimum_wet_depth_m = 0.10F;
+    const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+        Fluid25DScenario::SourceOutletDemo, config.grid_width, config.grid_height, 1.0F);
+    const Fluid25DSourceOutletGeometry geometry(config.grid_width, config.grid_height);
+    const auto cell_index = [&config](std::uint32_t x, std::uint32_t y) {
+        return (static_cast<std::size_t>(y) * config.grid_width) + x;
+    };
+
+    std::vector<float> depth(fluid_25d_cell_count(config), 0.0F);
+    std::vector<float> tracer_q(depth.size(), 0.0F);
+    const std::uint32_t before_x = geometry.source_x - 1U;
+    const std::uint32_t before_y = config.grid_height / 2U;
+    const std::uint32_t off_bank_x = geometry.source_x;
+    const auto left_crest =
+        fluid_25d_source_outlet_bank_crest(geometry, off_bank_x, scenario.terrain_height_m, true);
+    const auto right_crest =
+        fluid_25d_source_outlet_bank_crest(geometry, off_bank_x, scenario.terrain_height_m, false);
+    const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+    const std::uint32_t off_bank_y = first_bank_y > 0U
+                                         ? first_bank_y - 1U
+                                         : std::max(left_crest.y_cell, right_crest.y_cell) + 1U;
+    const std::uint32_t in_bank_x = geometry.source_x + (geometry.sink_x - geometry.source_x) / 2U;
+    const std::uint32_t in_bank_y = static_cast<std::uint32_t>(
+        std::lround(geometry.channel_center_y(static_cast<float>(in_bank_x))));
+    const std::uint32_t after_x = geometry.sink_x + 1U;
+    const std::uint32_t after_tail_x = geometry.sink_x + 2U;
+    const std::uint32_t outer_y = 0U;
+
+    const std::size_t before_index = cell_index(before_x, before_y);
+    const std::size_t before_dry_index = cell_index(before_x, before_y + 1U);
+    const std::size_t off_bank_index = cell_index(off_bank_x, off_bank_y);
+    const std::size_t in_bank_index = cell_index(in_bank_x, in_bank_y);
+    const std::size_t after_index = cell_index(after_x, outer_y);
+    const std::size_t after_tail_index = cell_index(after_tail_x, outer_y);
+    depth[before_index] = 0.20F;
+    tracer_q[before_index] = 0.010F;
+    depth[before_dry_index] = 0.05F;
+    tracer_q[before_dry_index] = 0.010F;
+    depth[off_bank_index] = 0.30F;
+    tracer_q[off_bank_index] = 0.006F;
+    depth[in_bank_index] = 0.40F;
+    tracer_q[in_bank_index] = 0.002F;
+    depth[after_index] = 0.50F;
+    tracer_q[after_index] = 0.010F;
+    depth[after_tail_index] = 0.20F;
+    tracer_q[after_tail_index] = 0.0001F;
+
+    const Fluid25DSourceOutletSpatialDiagnostics diagnostics =
+        compute_fluid_25d_source_outlet_spatial_diagnostics(config, scenario.terrain_height_m,
+                                                            depth, tracer_q);
+    require(diagnostics.before_source.wet_cell_count == 1U &&
+                diagnostics.route_off_bank.wet_cell_count == 1U &&
+                diagnostics.route_in_bank.wet_cell_count == 1U &&
+                diagnostics.after_outlet.wet_cell_count == 2U,
+            "source-outlet spatial zones should classify wet cells into four disjoint regions");
+    require(diagnostics.before_source.material_dyed_wet_cell_count == 1U &&
+                diagnostics.route_off_bank.material_dyed_wet_cell_count == 1U &&
+                diagnostics.route_in_bank.material_dyed_wet_cell_count == 0U &&
+                diagnostics.after_outlet.material_dyed_wet_cell_count == 1U,
+            "spatial material counts should use wet cells at or above one-percent concentration");
+    require_close(diagnostics.before_source.water_volume_m3, 1.0, kDepthToleranceM,
+                  "before-source volume should include wet and sub-threshold water cells");
+    require_close(diagnostics.route_off_bank.water_volume_m3, 1.2, kDepthToleranceM,
+                  "route off-bank water should remain separate from in-bank water");
+    require_close(diagnostics.route_in_bank.water_volume_m3, 1.6, kDepthToleranceM,
+                  "route in-bank water should integrate only crest-bounded cells");
+    require_close(diagnostics.after_outlet.water_volume_m3, 2.8, kDepthToleranceM,
+                  "after-outlet tail water should include all rows beyond the sink x");
+    require_close(diagnostics.before_source.tracer_amount_m3, 0.08, kDepthToleranceM,
+                  "before-source tracer amount should include tracer in sub-threshold water");
+    require_close(diagnostics.route_off_bank.tracer_amount_m3, 0.024, kDepthToleranceM,
+                  "route off-bank tracer amount should use the matching spatial partition");
+    require_close(diagnostics.route_in_bank.tracer_amount_m3, 0.008, kDepthToleranceM,
+                  "route in-bank tracer amount should retain sub-material tracer");
+    require_close(diagnostics.after_outlet.tracer_amount_m3, 0.0404, kDepthToleranceM,
+                  "after-outlet tracer should include both material and low-concentration tails");
+    require_close(diagnostics.route_off_bank.maximum_wet_depth_m, 0.30, kDepthToleranceM,
+                  "route off-bank maximum should use wet cells only");
+    require_close(diagnostics.before_source.maximum_wet_depth_m, 0.20, kDepthToleranceM,
+                  "before-source maximum should ignore sub-threshold dry cells");
+    require_close(diagnostics.after_outlet.maximum_wet_depth_m, 0.50, kDepthToleranceM,
+                  "after-outlet maximum should use wet cells only");
+    require(diagnostics.material_dyed_after_outlet_valid &&
+                diagnostics.material_dyed_max_x_after_outlet_cell_x == after_x,
+            "after-outlet material front should report its furthest wet dyed cell");
+
+    const double summed_zone_water =
+        diagnostics.before_source.water_volume_m3 + diagnostics.route_off_bank.water_volume_m3 +
+        diagnostics.route_in_bank.water_volume_m3 + diagnostics.after_outlet.water_volume_m3;
+    const double summed_zone_tracer =
+        diagnostics.before_source.tracer_amount_m3 + diagnostics.route_off_bank.tracer_amount_m3 +
+        diagnostics.route_in_bank.tracer_amount_m3 + diagnostics.after_outlet.tracer_amount_m3;
+    require_close(summed_zone_water, fluid_25d_water_volume_m3(config, depth), kDepthToleranceM,
+                  "the four spatial zones should partition total water without double counting");
+    require_close(summed_zone_tracer, 0.1524, kDepthToleranceM,
+                  "the four spatial zones should partition total tracer without double counting");
+
+    const std::vector<float> initial_tracer_q(depth.size(), 0.0F);
+    Fluid25DConfig initial_config =
+        finite_volume_test_config(128U, 64U, Fluid25DScenario::SourceOutletDemo);
+    initial_config.cell_size_m = scenario.cell_size_m;
+    const Fluid25DSourceOutletSpatialDiagnostics initial =
+        compute_fluid_25d_source_outlet_spatial_diagnostics(
+            initial_config, scenario.terrain_height_m, scenario.initial_water_depth_m,
+            initial_tracer_q);
+    require(initial.before_source.water_volume_m3 == 0.0 &&
+                initial.route_off_bank.water_volume_m3 == 0.0 &&
+                initial.after_outlet.water_volume_m3 == 0.0 &&
+                initial.route_in_bank.water_volume_m3 > 0.0,
+            "the authored initial source-outlet seed should stay entirely route in-bank");
+    require_close(initial.route_in_bank.water_volume_m3,
+                  fluid_25d_water_volume_m3(initial_config, scenario.initial_water_depth_m),
+                  kDepthToleranceM,
+                  "initial in-bank water should account for the complete authored seed volume");
+    require(!initial.material_dyed_after_outlet_valid &&
+                initial.after_outlet.material_dyed_wet_cell_count == 0U,
+            "an undyed initial seed should have no after-outlet material front");
+
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_source_outlet_spatial_diagnostics(
+                config, scenario.terrain_height_m, std::span<const float>(depth).first(1U),
+                tracer_q));
+        },
+        "source-outlet spatial diagnostics should reject mismatched readback dimensions");
+    std::vector<float> invalid_tracer_q = tracer_q;
+    invalid_tracer_q[after_tail_index] = -0.001F;
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_source_outlet_spatial_diagnostics(
+                config, scenario.terrain_height_m, depth, invalid_tracer_q));
+        },
+        "source-outlet spatial diagnostics should reject negative tracer readback");
+    invalid_tracer_q = tracer_q;
+    invalid_tracer_q[after_tail_index] = 0.5F;
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_source_outlet_spatial_diagnostics(
+                config, scenario.terrain_height_m, depth, invalid_tracer_q));
+        },
+        "source-outlet spatial diagnostics should reject tracer q above water depth");
+    std::vector<float> invalid_terrain = scenario.terrain_height_m;
+    invalid_terrain[before_index] = std::numeric_limits<float>::quiet_NaN();
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_source_outlet_spatial_diagnostics(
+                config, invalid_terrain, depth, tracer_q));
+        },
+        "source-outlet spatial diagnostics should reject nonfinite terrain readback");
+    Fluid25DConfig unrelated = config;
+    unrelated.scenario = Fluid25DScenario::RiverCatchment;
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_source_outlet_spatial_diagnostics(
+                unrelated, scenario.terrain_height_m, depth, tracer_q));
+        },
+        "source-outlet spatial diagnostics should reject other scenarios");
+}
+
 void test_tracer_profile_diagnostic_metric_math() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
@@ -2763,6 +2927,7 @@ int main() {
         test_profile_frame_slot_attribution();
         test_profile_diagnostic_metric_math();
         test_source_outlet_cross_section_diagnostic_math();
+        test_source_outlet_spatial_diagnostic_math();
         test_tracer_profile_diagnostic_metric_math();
         test_dry_bed_stability();
         test_lake_at_rest();

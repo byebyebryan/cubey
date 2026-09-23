@@ -577,6 +577,11 @@ class Fluid25DApp {
                 record_fluid_25d_source_outlet_cross_section_diagnostics(*profile_recorder,
                                                                          frame_index, section);
             }
+            const Fluid25DSourceOutletSpatialDiagnostics spatial =
+                compute_fluid_25d_source_outlet_spatial_diagnostics(
+                    config_.simulation, scenario_.terrain_height_m, depth_m, tracer_q_m);
+            record_fluid_25d_source_outlet_spatial_diagnostics(*profile_recorder, frame_index,
+                                                               spatial);
         }
     }
 

@@ -122,6 +122,23 @@ struct Fluid25DSourceOutletCrossSectionDiagnostics {
     double froude_estimate = 0.0;
 };
 
+struct Fluid25DSourceOutletSpatialZoneDiagnostics {
+    std::uint64_t wet_cell_count = 0U;
+    std::uint64_t material_dyed_wet_cell_count = 0U;
+    double water_volume_m3 = 0.0;
+    double tracer_amount_m3 = 0.0;
+    double maximum_wet_depth_m = 0.0;
+};
+
+struct Fluid25DSourceOutletSpatialDiagnostics {
+    Fluid25DSourceOutletSpatialZoneDiagnostics before_source{};
+    Fluid25DSourceOutletSpatialZoneDiagnostics route_off_bank{};
+    Fluid25DSourceOutletSpatialZoneDiagnostics route_in_bank{};
+    Fluid25DSourceOutletSpatialZoneDiagnostics after_outlet{};
+    bool material_dyed_after_outlet_valid = false;
+    std::uint32_t material_dyed_max_x_after_outlet_cell_x = 0U;
+};
+
 [[nodiscard]] bool
 should_record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder* recorder,
                                             const cubey::host::CommonRunConfig& common_config,
@@ -153,6 +170,24 @@ compute_fluid_25d_source_outlet_cross_section_diagnostics(
     std::span<const float> terrain_height_m, std::span<const float> depth_m,
     std::span<const Fluid25DVelocityGpu> velocity);
 
+// Spatial totals partition every cell exactly once. Before/after zones include
+// all rows at x<source_x and x>sink_x. Within the inclusive source-to-sink
+// route, cells between the inclusive minimum/maximum selected crest rows are
+// in-bank; all other rows are route off-bank. Wet means h>minimum_wet_depth_m.
+// Water volume is sum(h*cell_area), and tracer amount is sum(clamp(q,0,h)*area)
+// over every zone cell, including dry-cell tracer residue. Tracer q tolerates
+// the existing 1e-7 m rounding residue before clamping. A material dyed wet
+// cell is wet with q/h >= kFluid25DTracerMaterialConcentration. Maximum wet
+// depth ignores dry cells. After-outlet is a closed-domain tail zone, not a
+// boundary-loss classification. The recorder uses category
+// `fluid_25d.river_spatial` and stable names `<zone>.<metric>` plus
+// `material_dyed_max_x_after_outlet_*`.
+[[nodiscard]] Fluid25DSourceOutletSpatialDiagnostics
+compute_fluid_25d_source_outlet_spatial_diagnostics(const Fluid25DConfig& config,
+                                                    std::span<const float> terrain_height_m,
+                                                    std::span<const float> depth_m,
+                                                    std::span<const float> tracer_q_m);
+
 void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                                           std::uint64_t frame_index,
                                           const Fluid25DProfileDiagnostics& diagnostics);
@@ -162,5 +197,8 @@ void record_fluid_25d_tracer_profile_diagnostics(
 void record_fluid_25d_source_outlet_cross_section_diagnostics(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const Fluid25DSourceOutletCrossSectionDiagnostics& diagnostics);
+void record_fluid_25d_source_outlet_spatial_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSourceOutletSpatialDiagnostics& diagnostics);
 
 } // namespace cubey::projects::fluid::fluid_25d

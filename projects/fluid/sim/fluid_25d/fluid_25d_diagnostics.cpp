@@ -26,6 +26,26 @@ void record_cross_section_metric(cubey::profiling::ProfileRecorder& recorder,
     recorder.record_metric(frame_index, "fluid_25d.river_cross_section", name, value);
 }
 
+void record_source_outlet_spatial_metric(cubey::profiling::ProfileRecorder& recorder,
+                                         std::uint64_t frame_index, std::string_view name,
+                                         double value) {
+    recorder.record_metric(frame_index, "fluid_25d.river_spatial", name, value);
+}
+
+void record_source_outlet_spatial_zone(cubey::profiling::ProfileRecorder& recorder,
+                                       std::uint64_t frame_index, std::string_view zone_name,
+                                       const Fluid25DSourceOutletSpatialZoneDiagnostics& zone) {
+    const auto record = [&](std::string_view metric_name, double value) {
+        const std::string name = std::string(zone_name) + "." + std::string(metric_name);
+        record_source_outlet_spatial_metric(recorder, frame_index, name, value);
+    };
+    record("wet_cell_count", static_cast<double>(zone.wet_cell_count));
+    record("water_volume_m3", zone.water_volume_m3);
+    record("tracer_amount_m3", zone.tracer_amount_m3);
+    record("material_dyed_wet_cell_count", static_cast<double>(zone.material_dyed_wet_cell_count));
+    record("maximum_wet_depth_m", zone.maximum_wet_depth_m);
+}
+
 } // namespace
 
 std::uint64_t profile_frame_index(const ProjectFrame& frame) {
@@ -461,6 +481,94 @@ compute_fluid_25d_source_outlet_cross_section_diagnostics(
     return result;
 }
 
+Fluid25DSourceOutletSpatialDiagnostics compute_fluid_25d_source_outlet_spatial_diagnostics(
+    const Fluid25DConfig& config, std::span<const float> terrain_height_m,
+    std::span<const float> depth_m, std::span<const float> tracer_q_m) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::SourceOutletDemo) {
+        throw std::runtime_error("fluid 2.5D river spatial diagnostics require source-outlet-demo");
+    }
+    const std::size_t cells = fluid_25d_cell_count(config);
+    if (terrain_height_m.size() != cells || depth_m.size() != cells || tracer_q_m.size() != cells) {
+        throw std::runtime_error(
+            "fluid 2.5D river spatial diagnostic fields have invalid dimensions");
+    }
+    for (const float elevation_m : terrain_height_m) {
+        if (!std::isfinite(elevation_m)) {
+            throw std::runtime_error("fluid 2.5D river spatial terrain readback is invalid");
+        }
+    }
+
+    constexpr float kTracerRoundingResidueM = 1.0e-7F;
+    const std::size_t width = static_cast<std::size_t>(config.grid_width);
+    const double cell_area_m2 =
+        static_cast<double>(config.cell_size_m) * static_cast<double>(config.cell_size_m);
+    const Fluid25DSourceOutletGeometry geometry(config.grid_width, config.grid_height);
+    Fluid25DSourceOutletSpatialDiagnostics result;
+
+    for (std::uint32_t x_cell = 0U; x_cell < config.grid_width; ++x_cell) {
+        const bool before_source = x_cell < geometry.source_x;
+        const bool after_outlet = x_cell > geometry.sink_x;
+        std::uint32_t first_bank_y = 0U;
+        std::uint32_t last_bank_y = 0U;
+        if (!before_source && !after_outlet) {
+            const Fluid25DSourceOutletBankCrestSample left_crest =
+                fluid_25d_source_outlet_bank_crest(geometry, x_cell, terrain_height_m, true);
+            const Fluid25DSourceOutletBankCrestSample right_crest =
+                fluid_25d_source_outlet_bank_crest(geometry, x_cell, terrain_height_m, false);
+            first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+            last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
+        }
+
+        for (std::uint32_t y_cell = 0U; y_cell < config.grid_height; ++y_cell) {
+            const std::size_t index = static_cast<std::size_t>(y_cell) * width + x_cell;
+            const float depth = depth_m[index];
+            const float tracer_q = tracer_q_m[index];
+            if (!std::isfinite(depth) || depth < 0.0F || !std::isfinite(tracer_q) ||
+                tracer_q < -kTracerRoundingResidueM || tracer_q > depth + kTracerRoundingResidueM) {
+                throw std::runtime_error("fluid 2.5D river spatial readback is invalid at cell=" +
+                                         std::to_string(index));
+            }
+            const double clamped_tracer_q =
+                std::clamp(static_cast<double>(tracer_q), 0.0, static_cast<double>(depth));
+            Fluid25DSourceOutletSpatialZoneDiagnostics* zone = nullptr;
+            if (before_source) {
+                zone = &result.before_source;
+            } else if (after_outlet) {
+                zone = &result.after_outlet;
+            } else if (y_cell >= first_bank_y && y_cell <= last_bank_y) {
+                zone = &result.route_in_bank;
+            } else {
+                zone = &result.route_off_bank;
+            }
+
+            zone->water_volume_m3 += static_cast<double>(depth) * cell_area_m2;
+            zone->tracer_amount_m3 += clamped_tracer_q * cell_area_m2;
+            if (depth <= config.minimum_wet_depth_m) {
+                continue;
+            }
+            ++zone->wet_cell_count;
+            zone->maximum_wet_depth_m =
+                std::max(zone->maximum_wet_depth_m, static_cast<double>(depth));
+            if (clamped_tracer_q == 0.0) {
+                continue;
+            }
+            const double concentration = clamped_tracer_q / static_cast<double>(depth);
+            if (concentration < static_cast<double>(kFluid25DTracerMaterialConcentration)) {
+                continue;
+            }
+            ++zone->material_dyed_wet_cell_count;
+            if (after_outlet && (!result.material_dyed_after_outlet_valid ||
+                                 x_cell > result.material_dyed_max_x_after_outlet_cell_x)) {
+                result.material_dyed_after_outlet_valid = true;
+                result.material_dyed_max_x_after_outlet_cell_x = x_cell;
+            }
+        }
+    }
+
+    return result;
+}
+
 void record_fluid_25d_tracer_profile_diagnostics(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const Fluid25DTracerProfileDiagnostics& diagnostics) {
@@ -552,6 +660,25 @@ void record_fluid_25d_source_outlet_cross_section_diagnostics(
                                 diagnostics.mean_x_velocity_m_per_s);
     record_cross_section_metric(recorder, frame_index, station, "froude_estimate",
                                 diagnostics.froude_estimate);
+}
+
+void record_fluid_25d_source_outlet_spatial_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSourceOutletSpatialDiagnostics& diagnostics) {
+    record_source_outlet_spatial_zone(recorder, frame_index, "before_source",
+                                      diagnostics.before_source);
+    record_source_outlet_spatial_zone(recorder, frame_index, "route_off_bank",
+                                      diagnostics.route_off_bank);
+    record_source_outlet_spatial_zone(recorder, frame_index, "route_in_bank",
+                                      diagnostics.route_in_bank);
+    record_source_outlet_spatial_zone(recorder, frame_index, "after_outlet",
+                                      diagnostics.after_outlet);
+    record_source_outlet_spatial_metric(recorder, frame_index,
+                                        "material_dyed_max_x_after_outlet_valid",
+                                        diagnostics.material_dyed_after_outlet_valid ? 1.0 : 0.0);
+    record_source_outlet_spatial_metric(
+        recorder, frame_index, "material_dyed_max_x_after_outlet_cell_x",
+        static_cast<double>(diagnostics.material_dyed_max_x_after_outlet_cell_x));
 }
 
 } // namespace cubey::projects::fluid::fluid_25d
