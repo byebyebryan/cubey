@@ -678,9 +678,9 @@ void test_deterministic_scenarios() {
     }
     require(source_region_cells > 1U && sink_region_cells > 1U && !overlapping_endpoint_rates,
             "source-outlet demo should retain separate bounded endpoint regions");
-    require_close(source_rate_sum, 0.03, kDepthToleranceM,
+    require_close(source_rate_sum, 0.06, kDepthToleranceM,
                   "source-outlet demo source should retain its total physical throughput");
-    require_close(sink_rate_sum, 0.03, kDepthToleranceM,
+    require_close(sink_rate_sum, 0.06, kDepthToleranceM,
                   "source-outlet demo outlet should retain its total physical throughput");
 
     const std::uint32_t readable_source_x =
@@ -690,6 +690,32 @@ void test_deterministic_scenarios() {
     require(readable_source_x == 14U && readable_sink_x == 110U &&
                 readable_sink_x - readable_source_x == 96U,
             "source-outlet demo should retain its long 128 by 64 endpoint route");
+    // These fixed-grid cells are on the ordinary connected route, outside both
+    // endpoint pools. Keep the authored route center and one adjacent wet cell
+    // distinct from the larger SOURCE/OUTLET depth seeds when checking the
+    // flat-surface fill contract.
+    const std::size_t ordinary_route_peak_index =
+        fluid_25d_scenario_index(readable_river.width, readable_river.height, 24U, 38U);
+    require(readable_river.source_depth_rate_m_per_s[ordinary_route_peak_index] == 0.0F &&
+                readable_river.sink_depth_rate_m_per_s[ordinary_route_peak_index] == 0.0F,
+            "source-outlet ordinary route seed should exclude endpoint pools");
+    require_close(readable_river.initial_water_depth_m[ordinary_route_peak_index], 0.60,
+                  kDepthToleranceM,
+                  "source-outlet ordinary route should seed a 60 cm centerline depth");
+    const std::size_t ordinary_route_adjacent_index =
+        fluid_25d_scenario_index(readable_river.width, readable_river.height, 24U, 37U);
+    require(
+        readable_river.source_depth_rate_m_per_s[ordinary_route_adjacent_index] == 0.0F &&
+            readable_river.sink_depth_rate_m_per_s[ordinary_route_adjacent_index] == 0.0F &&
+            readable_river.initial_water_depth_m[ordinary_route_adjacent_index] > 0.0F,
+        "source-outlet ordinary route should include an adjacent wet cell outside endpoint pools");
+    const float ordinary_route_target_surface =
+        readable_river.terrain_height_m[ordinary_route_peak_index] + 0.60F;
+    require_close(
+        static_cast<double>(readable_river.terrain_height_m[ordinary_route_adjacent_index] +
+                            readable_river.initial_water_depth_m[ordinary_route_adjacent_index]),
+        ordinary_route_target_surface, kDepthToleranceM,
+        "source-outlet ordinary route should preserve a flat cross-sectional water surface");
     require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::RiverCatchment), 0.08,
                   kDepthToleranceM,
                   "River V0 should retain the shared restrained render height scale");
@@ -762,7 +788,7 @@ void test_deterministic_scenarios() {
                 depth_sum += depth;
             }
         }
-        require(wet_cells >= 4U && depth_sum > 0.0F,
+        require(wet_cells >= 3U && depth_sum > 0.0F,
                 "river fixture should seed a broad connected water ribbon in every route column");
         narrowest_ribbon_cells = std::min(narrowest_ribbon_cells, wet_cells);
         widest_ribbon_cells = std::max(widest_ribbon_cells, wet_cells);

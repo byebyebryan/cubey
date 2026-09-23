@@ -437,20 +437,29 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         // shoulder cells can be dry even while the compact terminal basin is
         // visibly supplied, which would make a nominal outlet capacity look
         // like an unexplained loss of removal. The remaining bounded core
-        // still receives the same total configured 0.03 m3/s capacity.
+        // still receives the same total configured 0.06 m3/s capacity.
         constexpr float outlet_region_minimum_weight = 0.70F;
-        // Seed a shallow, connected ribbon from the source through the outlet.
-        // Compact endpoint pools make the bounded SOURCE and OUTLET regions
-        // visibly active for the first practical observation interval. The
-        // route is still an authored initial condition, not a claim that water
-        // first injected at the source reaches the outlet within that interval.
+        // Seed a connected channel from the source through the outlet. The
+        // ordinary route uses a flat cross-sectional free surface measured from
+        // the already-authored discrete centerline bed sample at each x. This
+        // keeps the initial water level legible across the terrain instead of
+        // tapering the depth to zero at the channel shoulders. Compact endpoint
+        // pools make the bounded SOURCE and OUTLET regions visibly active for
+        // the first practical observation interval. The route is still an
+        // authored initial condition, not a claim that water first injected at
+        // the source reaches the outlet within that interval.
+        constexpr float channel_target_surface_depth_m = 0.60F;
         for (std::uint32_t x = source_x; x <= sink_x; ++x) {
             const float center_y = channel_center_y(x);
             const float local_half_width = channel_half_width(x);
+            const std::uint32_t center_row = static_cast<std::uint32_t>(
+                std::clamp(std::round(center_y), 0.0F, static_cast<float>(height - 1U)));
+            const std::size_t center_index = fluid_25d_scenario_index(width, height, x, center_row);
+            const float target_surface_m =
+                data.terrain_height_m[center_index] + channel_target_surface_depth_m;
             for (std::uint32_t y = 0U; y < height; ++y) {
                 const float normalized_offset =
                     (static_cast<float>(y) - center_y) / local_half_width;
-                const float ribbon = std::max(0.0F, 1.0F - normalized_offset * normalized_offset);
                 const float source_weight =
                     endpoint_weight(static_cast<float>(x) - static_cast<float>(source_x),
                                     static_cast<float>(y) - static_cast<float>(source_y));
@@ -458,8 +467,12 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                     endpoint_weight(static_cast<float>(x) - static_cast<float>(sink_x),
                                     static_cast<float>(y) - static_cast<float>(sink_y));
                 const std::size_t index = fluid_25d_scenario_index(width, height, x, y);
+                const float surface_fill =
+                    std::abs(normalized_offset) <= 1.0F
+                        ? std::max(0.0F, target_surface_m - data.terrain_height_m[index])
+                        : 0.0F;
                 data.initial_water_depth_m[index] =
-                    std::max({0.028F * ribbon, 0.45F * source_weight, 0.70F * sink_weight});
+                    std::max({surface_fill, 0.45F * source_weight, 0.70F * sink_weight});
                 if (source_weight > 0.0F) {
                     source_region.push_back(index);
                 }
@@ -475,7 +488,7 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         // expressed as depth rates so their total physical throughput is
         // stable across the region's discrete rasterization. source_cell and
         // sink_cell remain their representative marker centroids.
-        constexpr float endpoint_total_volume_rate_m3_per_s = 0.03F;
+        constexpr float endpoint_total_volume_rate_m3_per_s = 0.06F;
         const float source_depth_rate =
             endpoint_total_volume_rate_m3_per_s /
             (static_cast<float>(source_region.size()) * cell_size_m * cell_size_m);
