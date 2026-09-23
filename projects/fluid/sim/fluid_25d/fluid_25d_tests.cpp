@@ -18,6 +18,7 @@
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -657,10 +658,6 @@ void test_deterministic_scenarios() {
     require(readable_river.initial_water_depth_m[readable_river.source_cell] > 0.0F &&
                 readable_river.initial_water_depth_m[readable_river.sink_cell] > 0.0F,
             "source-outlet demo should seed a visible route through both endpoint regions");
-    require(
-        readable_river.initial_water_depth_m[readable_river.sink_cell] >
-            readable_river.initial_water_depth_m[readable_river.source_cell],
-        "source-outlet demo should prime its terminal basin without changing endpoint capacity");
     std::uint32_t source_region_cells = 0U;
     std::uint32_t sink_region_cells = 0U;
     float source_rate_sum = 0.0F;
@@ -690,32 +687,70 @@ void test_deterministic_scenarios() {
     require(readable_source_x == 14U && readable_sink_x == 110U &&
                 readable_sink_x - readable_source_x == 96U,
             "source-outlet demo should retain its long 128 by 64 endpoint route");
-    // These fixed-grid cells are on the ordinary connected route, outside both
-    // endpoint pools. Keep the authored route center and one adjacent wet cell
-    // distinct from the larger SOURCE/OUTLET depth seeds when checking the
-    // flat-surface fill contract.
-    const std::size_t ordinary_route_peak_index =
-        fluid_25d_scenario_index(readable_river.width, readable_river.height, 24U, 38U);
-    require(readable_river.source_depth_rate_m_per_s[ordinary_route_peak_index] == 0.0F &&
-                readable_river.sink_depth_rate_m_per_s[ordinary_route_peak_index] == 0.0F,
-            "source-outlet ordinary route seed should exclude endpoint pools");
-    require_close(readable_river.initial_water_depth_m[ordinary_route_peak_index], 0.60,
-                  kDepthToleranceM,
-                  "source-outlet ordinary route should seed a 60 cm centerline depth");
-    const std::size_t ordinary_route_adjacent_index =
-        fluid_25d_scenario_index(readable_river.width, readable_river.height, 24U, 37U);
-    require(
-        readable_river.source_depth_rate_m_per_s[ordinary_route_adjacent_index] == 0.0F &&
-            readable_river.sink_depth_rate_m_per_s[ordinary_route_adjacent_index] == 0.0F &&
-            readable_river.initial_water_depth_m[ordinary_route_adjacent_index] > 0.0F,
-        "source-outlet ordinary route should include an adjacent wet cell outside endpoint pools");
-    const float ordinary_route_target_surface =
-        readable_river.terrain_height_m[ordinary_route_peak_index] + 0.60F;
-    require_close(
-        static_cast<double>(readable_river.terrain_height_m[ordinary_route_adjacent_index] +
-                            readable_river.initial_water_depth_m[ordinary_route_adjacent_index]),
-        ordinary_route_target_surface, kDepthToleranceM,
-        "source-outlet ordinary route should preserve a flat cross-sectional water surface");
+    const Fluid25DSourceOutletGeometry readable_geometry(128U, 64U);
+    const std::array<std::uint32_t, 5U> station_x_cells{14U, 38U, 70U, 91U, 110U};
+    float previous_route_surface_m = std::numeric_limits<float>::infinity();
+    for (std::uint32_t x = readable_source_x; x <= readable_sink_x; ++x) {
+        const float center_y = readable_geometry.channel_center_y(static_cast<float>(x));
+        const std::uint32_t center_row = static_cast<std::uint32_t>(std::lround(center_y));
+        const std::size_t center_index =
+            fluid_25d_scenario_index(readable_river.width, readable_river.height, x, center_row);
+        const auto left_crest = fluid_25d_source_outlet_bank_crest(
+            readable_geometry, x, readable_river.terrain_height_m, true);
+        const auto right_crest = fluid_25d_source_outlet_bank_crest(
+            readable_geometry, x, readable_river.terrain_height_m, false);
+        const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+        const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
+        const float centerline_bed_m = readable_river.terrain_height_m[center_index];
+        const float lower_crest_m = std::min(left_crest.elevation_m, right_crest.elevation_m);
+        const float crest_rise_m = lower_crest_m - centerline_bed_m;
+        require(!left_crest.fallback && !right_crest.fallback && crest_rise_m >= 0.70F &&
+                    crest_rise_m <= 1.01F,
+                "source-outlet lower bank crest should stay 0.70-1.00 m above the channel bed");
+        const float target_surface_m =
+            centerline_bed_m + (kFluid25DSourceOutletInitialBankRiseFraction * crest_rise_m);
+        require(target_surface_m <= previous_route_surface_m + 1.0e-5F,
+                "source-outlet initial free surface should have no local reverse slope along the "
+                "route");
+        previous_route_surface_m = target_surface_m;
+        require_close(static_cast<double>(readable_river.terrain_height_m[center_index] +
+                                          readable_river.initial_water_depth_m[center_index]),
+                      target_surface_m, 0.01,
+                      "source-outlet centerline seed should follow its lower-bank-relative "
+                      "free-surface target");
+
+        const bool is_station =
+            std::find(station_x_cells.begin(), station_x_cells.end(), x) != station_x_cells.end();
+        if (is_station) {
+            const std::uint32_t bank_span_cells = last_bank_y - first_bank_y + 1U;
+            std::uint32_t wet_bank_cells = 0U;
+            for (std::uint32_t y = first_bank_y; y <= last_bank_y; ++y) {
+                const std::size_t index =
+                    fluid_25d_scenario_index(readable_river.width, readable_river.height, x, y);
+                wet_bank_cells += readable_river.initial_water_depth_m[index] > 0.01F ? 1U : 0U;
+            }
+            const float wet_width_fraction =
+                static_cast<float>(wet_bank_cells) / static_cast<float>(bank_span_cells);
+            if (wet_width_fraction < 0.70F) {
+                throw std::runtime_error(
+                    "source-outlet initial bank-relative wet width at x=" + std::to_string(x) +
+                    " is " + std::to_string(wet_width_fraction));
+            }
+        }
+
+        for (std::uint32_t y = 0U; y < readable_river.height; ++y) {
+            if (y >= first_bank_y && y <= last_bank_y) {
+                continue;
+            }
+            const std::size_t index =
+                fluid_25d_scenario_index(readable_river.width, readable_river.height, x, y);
+            require(readable_river.initial_water_depth_m[index] == 0.0F,
+                    "source-outlet initial water should remain inside the selected bank span");
+        }
+    }
+    require_close(previous_route_surface_m - (4.40F - kFluid25DSourceOutletLongitudinalFallM), 0.80,
+                  0.03,
+                  "source-outlet endpoint should retain the bank-relative longitudinal surface");
     require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::RiverCatchment), 0.08,
                   kDepthToleranceM,
                   "River V0 should retain the shared restrained render height scale");
@@ -810,10 +845,13 @@ void test_deterministic_scenarios() {
             "source-outlet demo should retain multiple broad terrain-guided bends");
     require(widest_ribbon_cells >= narrowest_ribbon_cells + 4U,
             "source-outlet demo should retain visible width variation and one constriction");
-    require(maximum_transverse_terrain_relief_m > 2.8F,
-            "source-outlet demo should retain readable broad dry-bank relief");
-    require(source_bed_height_m > outlet_bed_height_m + 2.0F,
-            "source-outlet demo should keep a meaningful smooth fall into its outlet basin");
+    require(maximum_transverse_terrain_relief_m > 1.2F &&
+                maximum_transverse_terrain_relief_m < 1.5F,
+            "source-outlet demo should retain a readable outer valley wall beyond its lower bank "
+            "crest");
+    const float route_fall_m = source_bed_height_m - outlet_bed_height_m;
+    require(route_fall_m >= 0.35F && route_fall_m <= 0.55F,
+            "source-outlet demo should keep a smooth 0.35-0.55 m fall over its 96 m route");
     for (std::uint32_t x = readable_sink_x + 1U; x < readable_river.width; ++x) {
         float downstream_valley_floor_m = std::numeric_limits<float>::infinity();
         for (std::uint32_t y = 0U; y < readable_river.height; ++y) {

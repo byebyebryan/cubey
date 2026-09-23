@@ -35,6 +35,9 @@ inline constexpr std::uint32_t kFluid25DMountainSourceOutletSinkX = 232U;
 inline constexpr std::uint32_t kFluid25DMountainSourceOutletSinkZ = 122U;
 inline constexpr std::uint32_t kFluid25DMountainSourceOutletEndpointRadiusCells = 5U;
 inline constexpr float kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS = 0.75F;
+inline constexpr float kFluid25DSourceOutletLongitudinalFallM = 0.45F;
+inline constexpr float kFluid25DSourceOutletBankCrestRiseM = 1.00F;
+inline constexpr float kFluid25DSourceOutletInitialBankRiseFraction = 0.80F;
 inline constexpr std::array<std::array<std::uint32_t, 2U>, 3U>
     kFluid25DMountainSourceOutletDrainCells{{
         {232U, 127U},
@@ -149,18 +152,97 @@ struct Fluid25DSourceOutletGeometry {
         return std::clamp(4.60F + broad_width_variation - (1.65F * constriction), 3.25F, 6.50F);
     }
 
+    // The lower channel shoulder rises monotonically to a 1.00 m bench by
+    // normalized offset 2.0. Its short plateau makes the selected discrete
+    // crest stable as the sinuous channel and variable width cross the grid.
+    // A second gentle wall rise starts outside the crest-selection band.
+    [[nodiscard]] float cross_sectional_relief_m(float normalized_offset) const {
+        const float offset = std::abs(normalized_offset);
+        const float bank_t = std::clamp((offset - 0.55F) / 1.45F, 0.0F, 1.0F);
+        const float eased_bank_t = bank_t * bank_t * bank_t * bank_t * bank_t * bank_t;
+        const float bank_smooth = eased_bank_t * eased_bank_t * (3.0F - (2.0F * eased_bank_t));
+        const float outer_t = std::clamp((offset - 2.5F) / 1.5F, 0.0F, 1.0F);
+        const float outer_smooth = outer_t * outer_t * (3.0F - (2.0F * outer_t));
+        return (kFluid25DSourceOutletBankCrestRiseM * bank_smooth) + (0.40F * outer_smooth);
+    }
+
     [[nodiscard]] float endpoint_radius_x() const {
         return std::max(0.75F, std::min(3.0F, 0.20F * static_cast<float>(sink_x - source_x)));
     }
 
     // Source and sink initial-water masks use compact elliptical support with
-    // this x radius. The terminal basin terrain shoulder is separate.
+    // this x radius. The post-outlet containment shoulder is separate.
     [[nodiscard]] bool endpoint_pool_affected(std::uint32_t x) const {
         const float radius = endpoint_radius_x();
         return std::abs(static_cast<float>(x) - static_cast<float>(source_x)) < radius ||
                std::abs(static_cast<float>(x) - static_cast<float>(sink_x)) < radius;
     }
 };
+
+struct Fluid25DSourceOutletBankCrestSample {
+    std::uint32_t y_cell = 0U;
+    float elevation_m = 0.0F;
+    bool fallback = false;
+};
+
+// Select the actual immutable terrain maximum on one side of the authored
+// channel in the same normalized 1.0..2.5 shoulder band used by the section
+// diagnostics. Tiny grids without a band sample fall back to that side's
+// maximum and expose the fallback to callers.
+[[nodiscard]] inline Fluid25DSourceOutletBankCrestSample
+fluid_25d_source_outlet_bank_crest(const Fluid25DSourceOutletGeometry& geometry,
+                                   std::uint32_t x_cell, std::span<const float> terrain_height_m,
+                                   bool left_bank) {
+    if (x_cell >= geometry.width ||
+        terrain_height_m.size() != static_cast<std::size_t>(geometry.width) * geometry.height) {
+        throw std::runtime_error("fluid 2.5D source-outlet bank crest inputs are invalid");
+    }
+    const float center_y = geometry.channel_center_y(static_cast<float>(x_cell));
+    const float half_width = geometry.channel_half_width(static_cast<float>(x_cell));
+    const std::size_t width = static_cast<std::size_t>(geometry.width);
+    Fluid25DSourceOutletBankCrestSample selected{};
+    bool has_band_sample = false;
+    for (std::uint32_t y = 0U; y < geometry.height; ++y) {
+        const float signed_offset = static_cast<float>(y) - center_y;
+        if ((left_bank && signed_offset >= 0.0F) || (!left_bank && signed_offset <= 0.0F)) {
+            continue;
+        }
+        const float absolute_offset = std::abs(signed_offset);
+        if (absolute_offset < half_width || absolute_offset > (2.5F * half_width)) {
+            continue;
+        }
+        const float elevation = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell];
+        if (!has_band_sample || elevation > selected.elevation_m ||
+            (elevation == selected.elevation_m &&
+             absolute_offset > std::abs(static_cast<float>(selected.y_cell) - center_y))) {
+            selected = {.y_cell = y, .elevation_m = elevation, .fallback = false};
+            has_band_sample = true;
+        }
+    }
+    if (has_band_sample) {
+        return selected;
+    }
+
+    bool has_side_sample = false;
+    for (std::uint32_t y = 0U; y < geometry.height; ++y) {
+        const float signed_offset = static_cast<float>(y) - center_y;
+        if ((left_bank && signed_offset >= 0.0F) || (!left_bank && signed_offset <= 0.0F)) {
+            continue;
+        }
+        const float elevation = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell];
+        if (!has_side_sample || elevation > selected.elevation_m) {
+            selected = {.y_cell = y, .elevation_m = elevation, .fallback = true};
+            has_side_sample = true;
+        }
+    }
+    if (!has_side_sample) {
+        const std::uint32_t y = left_bank ? 0U : geometry.height - 1U;
+        selected = {.y_cell = y,
+                    .elevation_m = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell],
+                    .fallback = true};
+    }
+    return selected;
+}
 
 [[nodiscard]] inline std::string
 fluid_25d_terrain_case_identity(std::string_view elevation_sha256,
@@ -390,12 +472,8 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         const std::uint32_t sink_x = geometry.sink_x;
         const float endpoint_radius_x = geometry.endpoint_radius_x();
         constexpr float endpoint_radius_y = 3.25F;
-        // The outlet is deliberately the terminal low basin, rather than a
-        // label placed part-way down a still-descending valley. Once the
-        // approach reaches its centroid, a broad longitudinal shoulder rises
-        // across the remainder of the closed domain. This keeps the demo's
-        // water in the explicit OUTLET region instead of letting it pool at
-        // the far edge.
+        // A broad post-outlet longitudinal shoulder contains the route in the
+        // closed domain. The outlet itself is not depressed into a deep basin.
         constexpr float downstream_containment_rise_m = 1.30F;
         const auto route_progress = [&geometry](std::uint32_t x) {
             return geometry.route_progress(static_cast<float>(x));
@@ -423,39 +501,17 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                 const float y_offset = static_cast<float>(y) - channel_center_y(x);
                 const float local_half_width = channel_half_width(x);
                 const float normalized_cross_section = y_offset / local_half_width;
-                const float cross_section_squared =
-                    normalized_cross_section * normalized_cross_section;
-                // Keep the hydraulic floor broad and smooth through the wet
-                // corridor, then rise decisively only beyond it. This makes
-                // the dry valley form readable at the explanatory camera
-                // without steepening the channel-floor grade that carries the
-                // finite-volume flow.
-                const float outer_bank_t =
-                    std::clamp((std::abs(normalized_cross_section) - 0.65F) / 1.35F, 0.0F, 1.0F);
-                const float outer_bank =
-                    outer_bank_t * outer_bank_t * (3.0F - (2.0F * outer_bank_t));
-                const float valley_bank =
-                    (0.65F * cross_section_squared / (1.0F + cross_section_squared)) +
-                    (1.90F * outer_bank);
-                const float ridge_distance = 1.65F * local_half_width;
-                const float ridge_sigma = std::max(1.50F, 0.60F * local_half_width);
-                const float ridge_offset = (std::abs(y_offset) - ridge_distance) / ridge_sigma;
-                const float side_ridge = 0.85F * std::exp(-0.5F * ridge_offset * ridge_offset);
-                const float basin_x_offset =
-                    (static_cast<float>(x) - static_cast<float>(sink_x)) / 5.0F;
-                const float basin_y_offset = y_offset / 8.0F;
-                const float terminal_basin =
-                    0.65F * std::exp(-0.5F * (basin_x_offset * basin_x_offset +
-                                              basin_y_offset * basin_y_offset));
-                // A smooth longitudinal fall drives the channel, variable
-                // side ridges keep the water in its broad bends, and one
-                // narrow reach makes the terrain guidance visible. The short
-                // post-outlet shoulder is deliberately modest: it only seals
-                // the terminal basin against the closed-domain tail.
+                const float cross_sectional_relief_m =
+                    geometry.cross_sectional_relief_m(normalized_cross_section);
+                // The route falls 0.45 m over its 96 m source-to-outlet span.
+                // The shared cross-section profile keeps the discrete bank
+                // crest near-bankfull while the preserved post-outlet shoulder
+                // contains the closed-domain tail.
                 data.terrain_height_m[fluid_25d_scenario_index(width, height, x, y)] =
-                    4.40F - (2.60F * progress) + (0.50F * upstream_progress * upstream_progress) +
-                    (downstream_containment_rise_m * downstream_progress) + valley_bank +
-                    side_ridge - terminal_basin;
+                    4.40F - (kFluid25DSourceOutletLongitudinalFallM * progress) +
+                    (0.50F * upstream_progress * upstream_progress) +
+                    (downstream_containment_rise_m * downstream_progress) +
+                    cross_sectional_relief_m;
             }
         }
         data.source_cell = fluid_25d_scenario_index(width, height, source_x, source_y);
@@ -469,32 +525,34 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         std::vector<std::size_t> source_region;
         std::vector<std::size_t> sink_region;
         // The outlet mask excludes the vanishing-weight ellipse fringe. Those
-        // shoulder cells can be dry even while the compact terminal basin is
-        // visibly supplied, which would make a nominal outlet capacity look
-        // like an unexplained loss of removal. The remaining bounded core
-        // still receives the same total configured 0.06 m3/s capacity.
+        // shoulder cells can be dry even while the bounded outlet region is
+        // visibly supplied, which would make nominal capacity look like an
+        // unexplained loss of removal. The core retains the configured
+        // 0.06 m3/s capacity.
         constexpr float outlet_region_minimum_weight = 0.70F;
-        // Seed a connected channel from the source through the outlet. The
-        // ordinary route uses a flat cross-sectional free surface measured from
-        // the already-authored discrete centerline bed sample at each x. This
-        // keeps the initial water level legible across the terrain instead of
-        // tapering the depth to zero at the channel shoulders. Compact endpoint
-        // pools make the bounded SOURCE and OUTLET regions visibly active for
-        // the first practical observation interval. The route is still an
-        // authored initial condition, not a claim that water first injected at
-        // the source reaches the outlet within that interval.
-        constexpr float channel_target_surface_depth_m = 0.60F;
+        // Seed a connected, bank-bounded channel from the source through the
+        // outlet. At each x the surface is bank-relative to the lower discrete
+        // crest, leaving enough freeboard for the settled pool. The short
+        // crest plateau in the shared profile makes that surface smooth along
+        // the rasterized route. Endpoint weights remain bounded within the
+        // selected bank span and do not set the ordinary channel level.
         for (std::uint32_t x = source_x; x <= sink_x; ++x) {
             const float center_y = channel_center_y(x);
-            const float local_half_width = channel_half_width(x);
             const std::uint32_t center_row = static_cast<std::uint32_t>(
                 std::clamp(std::round(center_y), 0.0F, static_cast<float>(height - 1U)));
             const std::size_t center_index = fluid_25d_scenario_index(width, height, x, center_row);
+            const Fluid25DSourceOutletBankCrestSample left_crest =
+                fluid_25d_source_outlet_bank_crest(geometry, x, data.terrain_height_m, true);
+            const Fluid25DSourceOutletBankCrestSample right_crest =
+                fluid_25d_source_outlet_bank_crest(geometry, x, data.terrain_height_m, false);
+            const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+            const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
+            const float lower_crest_m = std::min(left_crest.elevation_m, right_crest.elevation_m);
+            const float centerline_bed_m = data.terrain_height_m[center_index];
             const float target_surface_m =
-                data.terrain_height_m[center_index] + channel_target_surface_depth_m;
-            for (std::uint32_t y = 0U; y < height; ++y) {
-                const float normalized_offset =
-                    (static_cast<float>(y) - center_y) / local_half_width;
+                centerline_bed_m +
+                (kFluid25DSourceOutletInitialBankRiseFraction * (lower_crest_m - centerline_bed_m));
+            for (std::uint32_t y = first_bank_y; y <= last_bank_y; ++y) {
                 const float source_weight =
                     endpoint_weight(static_cast<float>(x) - static_cast<float>(source_x),
                                     static_cast<float>(y) - static_cast<float>(source_y));
@@ -503,9 +561,7 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                                     static_cast<float>(y) - static_cast<float>(sink_y));
                 const std::size_t index = fluid_25d_scenario_index(width, height, x, y);
                 const float surface_fill =
-                    std::abs(normalized_offset) <= 1.0F
-                        ? std::max(0.0F, target_surface_m - data.terrain_height_m[index])
-                        : 0.0F;
+                    std::max(0.0F, target_surface_m - data.terrain_height_m[index]);
                 data.initial_water_depth_m[index] =
                     std::max({surface_fill, 0.45F * source_weight, 0.70F * sink_weight});
                 if (source_weight > 0.0F) {

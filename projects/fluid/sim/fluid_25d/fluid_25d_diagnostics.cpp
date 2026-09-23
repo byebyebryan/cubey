@@ -12,68 +12,6 @@
 namespace cubey::projects::fluid::fluid_25d {
 namespace {
 
-struct BankCrestSample {
-    std::uint32_t y_cell = 0U;
-    float elevation_m = 0.0F;
-    bool fallback = false;
-};
-
-[[nodiscard]] BankCrestSample select_bank_crest_sample(const Fluid25DSourceOutletGeometry& geometry,
-                                                       std::uint32_t x_cell,
-                                                       std::span<const float> terrain_height_m,
-                                                       bool left_bank) {
-    const float center_y = geometry.channel_center_y(static_cast<float>(x_cell));
-    const float half_width = geometry.channel_half_width(static_cast<float>(x_cell));
-    const std::size_t width = static_cast<std::size_t>(geometry.width);
-    const float first_band_offset = half_width;
-    const float last_band_offset = 2.5F * half_width;
-    bool has_band_sample = false;
-    BankCrestSample selected{};
-    const std::uint32_t first_y = 0U;
-    const std::uint32_t last_y = geometry.height - 1U;
-    for (std::uint32_t y = first_y; y <= last_y; ++y) {
-        const float signed_offset = static_cast<float>(y) - center_y;
-        if ((left_bank && signed_offset >= 0.0F) || (!left_bank && signed_offset <= 0.0F)) {
-            continue;
-        }
-        const float absolute_offset = std::abs(signed_offset);
-        if (absolute_offset < first_band_offset || absolute_offset > last_band_offset) {
-            continue;
-        }
-        const float elevation = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell];
-        if (!has_band_sample || elevation > selected.elevation_m) {
-            selected = {.y_cell = y, .elevation_m = elevation, .fallback = false};
-            has_band_sample = true;
-        }
-    }
-    if (has_band_sample) {
-        return selected;
-    }
-
-    // Tiny valid grids can have no cell center in the authored 1.0..2.5
-    // shoulder band. In that bounded case, choose the highest sample on the
-    // corresponding side of the channel center and make the fallback visible.
-    bool has_side_sample = false;
-    for (std::uint32_t y = first_y; y <= last_y; ++y) {
-        const float signed_offset = static_cast<float>(y) - center_y;
-        if ((left_bank && signed_offset >= 0.0F) || (!left_bank && signed_offset <= 0.0F)) {
-            continue;
-        }
-        const float elevation = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell];
-        if (!has_side_sample || elevation > selected.elevation_m) {
-            selected = {.y_cell = y, .elevation_m = elevation, .fallback = true};
-            has_side_sample = true;
-        }
-    }
-    if (!has_side_sample) {
-        const std::uint32_t y = left_bank ? 0U : geometry.height - 1U;
-        selected = {.y_cell = y,
-                    .elevation_m = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell],
-                    .fallback = true};
-    }
-    return selected;
-}
-
 [[nodiscard]] std::string diagnostic_float(float value) {
     std::ostringstream stream;
     stream << std::setprecision(9) << value;
@@ -432,10 +370,10 @@ compute_fluid_25d_source_outlet_cross_section_diagnostics(
 
     const Fluid25DSourceOutletGeometry geometry(config.grid_width, config.grid_height);
     const std::size_t width = static_cast<std::size_t>(config.grid_width);
-    const BankCrestSample left_crest =
-        select_bank_crest_sample(geometry, station.x_cell, terrain_height_m, true);
-    const BankCrestSample right_crest =
-        select_bank_crest_sample(geometry, station.x_cell, terrain_height_m, false);
+    const Fluid25DSourceOutletBankCrestSample left_crest =
+        fluid_25d_source_outlet_bank_crest(geometry, station.x_cell, terrain_height_m, true);
+    const Fluid25DSourceOutletBankCrestSample right_crest =
+        fluid_25d_source_outlet_bank_crest(geometry, station.x_cell, terrain_height_m, false);
     const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
     const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
     const std::uint32_t centerline_y = static_cast<std::uint32_t>(
