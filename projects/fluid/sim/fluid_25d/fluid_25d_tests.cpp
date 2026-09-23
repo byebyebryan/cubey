@@ -1602,6 +1602,239 @@ void test_source_outlet_spatial_diagnostic_math() {
         "source-outlet spatial diagnostics should reject other scenarios");
 }
 
+void test_source_outlet_endpoint_shoulders() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    constexpr std::uint32_t width = 128U;
+    constexpr std::uint32_t height = 64U;
+    const Fluid25DScenarioData scenario =
+        make_fluid_25d_scenario(Fluid25DScenario::SourceOutletDemo, width, height, 1.0F);
+    const Fluid25DSourceOutletGeometry geometry(width, height);
+    const auto index = [](std::uint32_t x, std::uint32_t y) {
+        return fluid_25d_scenario_index(width, height, x, y);
+    };
+    const auto smoothstep = [](float t) {
+        const float bounded_t = std::clamp(t, 0.0F, 1.0F);
+        return bounded_t * bounded_t * (3.0F - (2.0F * bounded_t));
+    };
+    const std::uint32_t upstream_length =
+        std::min(kFluid25DSourceOutletUpstreamShoulderLengthCells, geometry.source_x);
+    const std::uint32_t downstream_length = std::min(
+        kFluid25DSourceOutletDownstreamShoulderLengthCells, (width - 1U) - geometry.sink_x);
+    require(scenario.source_cell ==
+                    index(geometry.source_x,
+                          static_cast<std::uint32_t>(std::lround(
+                              geometry.channel_center_y(static_cast<float>(geometry.source_x))))) &&
+                scenario.sink_cell ==
+                    index(geometry.sink_x,
+                          static_cast<std::uint32_t>(std::lround(
+                              geometry.channel_center_y(static_cast<float>(geometry.sink_x))))),
+            "endpoint shoulders should retain the source and sink marker centroids");
+
+    // Reconstruct each terrain column from the established interior route
+    // profile plus the four-cell upstream and downstream smoothstep end caps.
+    // This also pins every route cell, not merely its centerline.
+    for (std::uint32_t x = 0U; x < width; ++x) {
+        const float progress = geometry.route_progress(static_cast<float>(x));
+        const float upstream_t = x < geometry.source_x ? static_cast<float>(geometry.source_x - x) /
+                                                             static_cast<float>(upstream_length)
+                                                       : 0.0F;
+        const float downstream_t = x > geometry.sink_x ? static_cast<float>(x - geometry.sink_x) /
+                                                             static_cast<float>(downstream_length)
+                                                       : 0.0F;
+        for (std::uint32_t y = 0U; y < height; ++y) {
+            const float normalized_offset =
+                (static_cast<float>(y) - geometry.channel_center_y(static_cast<float>(x))) /
+                geometry.channel_half_width(static_cast<float>(x));
+            const float expected_terrain =
+                4.40F - (kFluid25DSourceOutletLongitudinalFallM * progress) +
+                (kFluid25DSourceOutletUpstreamContainmentRiseM * smoothstep(upstream_t)) +
+                (kFluid25DSourceOutletDownstreamContainmentRiseM * smoothstep(downstream_t)) +
+                geometry.cross_sectional_relief_m(normalized_offset);
+            require(scenario.terrain_height_m[index(x, y)] == expected_terrain,
+                    "source-outlet terrain should preserve the full route and use bounded smooth "
+                    "endpoint shoulders");
+        }
+    }
+
+    const std::uint32_t source_center_y = static_cast<std::uint32_t>(
+        std::lround(geometry.channel_center_y(static_cast<float>(geometry.source_x))));
+    const std::uint32_t sink_center_y = static_cast<std::uint32_t>(
+        std::lround(geometry.channel_center_y(static_cast<float>(geometry.sink_x))));
+    const float source_center_bed_m =
+        scenario.terrain_height_m[index(geometry.source_x, source_center_y)];
+    const float sink_center_bed_m =
+        scenario.terrain_height_m[index(geometry.sink_x, sink_center_y)];
+    const float upstream_plateau_m =
+        scenario.terrain_height_m[index(geometry.source_x - upstream_length, source_center_y)];
+    const float downstream_plateau_m =
+        scenario.terrain_height_m[index(geometry.sink_x + downstream_length, sink_center_y)];
+    require_close(upstream_plateau_m - source_center_bed_m,
+                  kFluid25DSourceOutletUpstreamContainmentRiseM, 0.001,
+                  "the upstream end cap should reach its one-metre containment plateau by cell 4");
+    require_close(downstream_plateau_m - sink_center_bed_m,
+                  kFluid25DSourceOutletDownstreamContainmentRiseM, 0.001,
+                  "the outlet end cap should preserve its total 1.30-metre rise by cell 4");
+
+    // The shoulders are monotone in the direction away from the route and
+    // remain flat after their clamped reach.
+    for (std::uint32_t y = 0U; y < height; ++y) {
+        for (std::uint32_t x = 0U; x < geometry.source_x; ++x) {
+            require(
+                scenario.terrain_height_m[index(x, y)] >=
+                    scenario.terrain_height_m[index(x + 1U, y)],
+                "upstream containment terrain should rise monotonically toward the closed edge");
+        }
+        for (std::uint32_t x = geometry.sink_x; x + 1U < width; ++x) {
+            require(scenario.terrain_height_m[index(x, y)] <=
+                        scenario.terrain_height_m[index(x + 1U, y)],
+                    "downstream containment terrain should rise monotonically beyond the outlet");
+        }
+        require(scenario.terrain_height_m[index(0U, y)] ==
+                        scenario.terrain_height_m[index(geometry.source_x - upstream_length, y)] &&
+                    scenario.terrain_height_m[index(width - 1U, y)] ==
+                        scenario.terrain_height_m[index(geometry.sink_x + downstream_length, y)],
+                "endpoint containment shoulders should remain level after their short ramps");
+    }
+
+    // Rebuild the unchanged bank-relative seed and endpoint rates. The
+    // shoulder edit must not move initial water, alter forcing strips, or
+    // change their normalized two-cubic-metre-per-second rates.
+    const auto endpoint_weight = [](float x_offset, float y_offset, float radius_x) {
+        const float normalized_distance_squared =
+            (x_offset * x_offset) / (radius_x * radius_x) + (y_offset * y_offset) / (3.25F * 3.25F);
+        return std::sqrt(std::max(0.0F, 1.0F - normalized_distance_squared));
+    };
+    const float endpoint_radius_x = geometry.endpoint_radius_x();
+    std::vector<float> expected_source_rate(scenario.source_depth_rate_m_per_s.size(), 0.0F);
+    std::vector<float> expected_sink_rate(scenario.sink_depth_rate_m_per_s.size(), 0.0F);
+    const std::uint32_t strip_length =
+        std::min(kFluid25DSourceOutletForcingStripLengthCells,
+                 std::max(1U, (geometry.sink_x - geometry.source_x) / 3U));
+    std::vector<std::size_t> source_region;
+    std::vector<std::size_t> sink_region;
+    for (std::uint32_t x = geometry.source_x; x <= geometry.sink_x; ++x) {
+        const auto left_crest =
+            fluid_25d_source_outlet_bank_crest(geometry, x, scenario.terrain_height_m, true);
+        const auto right_crest =
+            fluid_25d_source_outlet_bank_crest(geometry, x, scenario.terrain_height_m, false);
+        const std::uint32_t first_y = std::min(left_crest.y_cell, right_crest.y_cell);
+        const std::uint32_t last_y = std::max(left_crest.y_cell, right_crest.y_cell);
+        const float center_y = geometry.channel_center_y(static_cast<float>(x));
+        const float half_width = geometry.channel_half_width(static_cast<float>(x));
+        for (std::uint32_t y = first_y; y <= last_y; ++y) {
+            const std::size_t cell = index(x, y);
+            const float normalized_offset = std::abs(static_cast<float>(y) - center_y) / half_width;
+            if (normalized_offset > kFluid25DSourceOutletForcingHalfWidthNormalized ||
+                scenario.initial_water_depth_m[cell] <= 0.10F) {
+                continue;
+            }
+            if (x < geometry.source_x + strip_length) {
+                source_region.push_back(cell);
+            }
+            if (x + strip_length > geometry.sink_x) {
+                sink_region.push_back(cell);
+            }
+        }
+    }
+    require(!source_region.empty() && !sink_region.empty(),
+            "source-outlet shoulder invariant should retain populated forcing regions");
+    const float source_rate = kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS /
+                              (static_cast<float>(source_region.size()));
+    const float sink_rate = kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS /
+                            (static_cast<float>(sink_region.size()));
+    for (const std::size_t cell : source_region) {
+        expected_source_rate[cell] = source_rate;
+    }
+    for (const std::size_t cell : sink_region) {
+        expected_sink_rate[cell] = sink_rate;
+    }
+    const float expected_cell_rate_scale = 1.0F / (scenario.cell_size_m * scenario.cell_size_m);
+    for (std::size_t cell = 0U; cell < scenario.initial_water_depth_m.size(); ++cell) {
+        float expected_seed = 0.0F;
+        const std::uint32_t x = static_cast<std::uint32_t>(cell % width);
+        const std::uint32_t y = static_cast<std::uint32_t>(cell / width);
+        if (x >= geometry.source_x && x <= geometry.sink_x) {
+            const auto left_crest =
+                fluid_25d_source_outlet_bank_crest(geometry, x, scenario.terrain_height_m, true);
+            const auto right_crest =
+                fluid_25d_source_outlet_bank_crest(geometry, x, scenario.terrain_height_m, false);
+            const std::uint32_t first_y = std::min(left_crest.y_cell, right_crest.y_cell);
+            const std::uint32_t last_y = std::max(left_crest.y_cell, right_crest.y_cell);
+            if (y >= first_y && y <= last_y) {
+                const float center_y = geometry.channel_center_y(static_cast<float>(x));
+                const std::uint32_t center_row = static_cast<std::uint32_t>(
+                    std::clamp(std::round(center_y), 0.0F, static_cast<float>(height - 1U)));
+                const float centerline_bed_m = scenario.terrain_height_m[index(x, center_row)];
+                const float lower_crest_m =
+                    std::min(left_crest.elevation_m, right_crest.elevation_m);
+                const float target_surface_m =
+                    centerline_bed_m + (kFluid25DSourceOutletInitialBankRiseFraction *
+                                        (lower_crest_m - centerline_bed_m));
+                const float source_weight =
+                    endpoint_weight(static_cast<float>(x) - static_cast<float>(geometry.source_x),
+                                    static_cast<float>(y) -
+                                        static_cast<float>(std::lround(geometry.channel_center_y(
+                                            static_cast<float>(geometry.source_x)))),
+                                    endpoint_radius_x);
+                const float sink_weight =
+                    endpoint_weight(static_cast<float>(x) - static_cast<float>(geometry.sink_x),
+                                    static_cast<float>(y) -
+                                        static_cast<float>(std::lround(geometry.channel_center_y(
+                                            static_cast<float>(geometry.sink_x)))),
+                                    endpoint_radius_x);
+                expected_seed =
+                    std::max({std::max(0.0F, target_surface_m - scenario.terrain_height_m[cell]),
+                              0.45F * source_weight, 0.70F * sink_weight});
+            }
+        }
+        require(scenario.initial_water_depth_m[cell] == expected_seed,
+                "endpoint shoulder terrain must leave every initial seed cell bitwise unchanged");
+        require(scenario.source_depth_rate_m_per_s[cell] ==
+                        expected_source_rate[cell] * expected_cell_rate_scale &&
+                    scenario.sink_depth_rate_m_per_s[cell] ==
+                        expected_sink_rate[cell] * expected_cell_rate_scale,
+                "endpoint shoulder terrain must leave the normalized source/sink masks and rates "
+                "unchanged");
+    }
+
+    // A very small supported grid clamps each shoulder to the available
+    // outside cells instead of dividing by zero or changing the route contract.
+    const Fluid25DScenarioData small =
+        make_fluid_25d_scenario(Fluid25DScenario::SourceOutletDemo, 6U, 3U, 1.0F);
+    const Fluid25DSourceOutletGeometry small_geometry(6U, 3U);
+    const std::uint32_t small_center_y = static_cast<std::uint32_t>(
+        std::lround(small_geometry.channel_center_y(static_cast<float>(small_geometry.source_x))));
+    require_close(small.terrain_height_m[fluid_25d_scenario_index(6U, 3U, 0U, small_center_y)] -
+                      small.terrain_height_m[fluid_25d_scenario_index(
+                          6U, 3U, small_geometry.source_x, small_center_y)],
+                  kFluid25DSourceOutletUpstreamContainmentRiseM, 0.001,
+                  "upstream endpoint shoulder should clamp to the available span on small grids");
+    const std::uint32_t small_sink_center_y = static_cast<std::uint32_t>(
+        std::lround(small_geometry.channel_center_y(static_cast<float>(small_geometry.sink_x))));
+    require_close(
+        small.terrain_height_m[fluid_25d_scenario_index(6U, 3U, 5U, small_sink_center_y)] -
+            small.terrain_height_m[fluid_25d_scenario_index(6U, 3U, small_geometry.sink_x,
+                                                            small_sink_center_y)],
+        kFluid25DSourceOutletDownstreamContainmentRiseM, 0.001,
+        "downstream endpoint shoulder should clamp to the available span on small grids");
+
+    // The non-opt-in RiverCatchment scenario remains the same analytic fixture.
+    const Fluid25DScenarioData river =
+        make_fluid_25d_scenario(Fluid25DScenario::RiverCatchment, 12U, 8U, 1.0F);
+    const float river_center_y = 0.5F * static_cast<float>(river.height - 1U);
+    for (std::uint32_t y = 0U; y < river.height; ++y) {
+        for (std::uint32_t x = 0U; x < river.width; ++x) {
+            const float y_offset = static_cast<float>(y) - river_center_y;
+            const float expected_terrain =
+                3.20F - (0.085F * static_cast<float>(x)) + (0.085F * y_offset * y_offset);
+            require(
+                river.terrain_height_m[fluid_25d_scenario_index(river.width, river.height, x, y)] ==
+                    expected_terrain,
+                "source-outlet shoulder changes must not modify RiverCatchment terrain");
+        }
+    }
+}
+
 void test_tracer_profile_diagnostic_metric_math() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
@@ -2928,6 +3161,7 @@ int main() {
         test_profile_diagnostic_metric_math();
         test_source_outlet_cross_section_diagnostic_math();
         test_source_outlet_spatial_diagnostic_math();
+        test_source_outlet_endpoint_shoulders();
         test_tracer_profile_diagnostic_metric_math();
         test_dry_bed_stability();
         test_lake_at_rest();

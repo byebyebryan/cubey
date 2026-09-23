@@ -41,6 +41,10 @@ inline constexpr float kFluid25DSourceOutletInitialBankRiseFraction = 0.80F;
 inline constexpr std::uint32_t kFluid25DSourceOutletForcingStripLengthCells = 4U;
 inline constexpr float kFluid25DSourceOutletForcingHalfWidthNormalized = 1.50F;
 inline constexpr float kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS = 2.00F;
+inline constexpr std::uint32_t kFluid25DSourceOutletUpstreamShoulderLengthCells = 4U;
+inline constexpr std::uint32_t kFluid25DSourceOutletDownstreamShoulderLengthCells = 4U;
+inline constexpr float kFluid25DSourceOutletUpstreamContainmentRiseM = 1.00F;
+inline constexpr float kFluid25DSourceOutletDownstreamContainmentRiseM = 1.30F;
 inline constexpr std::array<std::array<std::uint32_t, 2U>, 3U>
     kFluid25DMountainSourceOutletDrainCells{{
         {232U, 127U},
@@ -475,9 +479,18 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         const std::uint32_t sink_x = geometry.sink_x;
         const float endpoint_radius_x = geometry.endpoint_radius_x();
         constexpr float endpoint_radius_y = 3.25F;
-        // A broad post-outlet longitudinal shoulder contains the route in the
-        // closed domain. The outlet itself is not depressed into a deep basin.
-        constexpr float downstream_containment_rise_m = 1.30F;
+        // Short, smooth end-cap shoulders contain the closed-domain tails. The
+        // downstream rise retains its 1.30 m total relief and eases over four
+        // cells; both reaches clamp to the available domain.
+        const std::uint32_t upstream_shoulder_length_cells =
+            std::min(kFluid25DSourceOutletUpstreamShoulderLengthCells, source_x);
+        const std::uint32_t downstream_available_cells = (width - 1U) - sink_x;
+        const std::uint32_t downstream_shoulder_length_cells = std::min(
+            kFluid25DSourceOutletDownstreamShoulderLengthCells, downstream_available_cells);
+        const auto smoothstep = [](float t) {
+            const float bounded_t = std::clamp(t, 0.0F, 1.0F);
+            return bounded_t * bounded_t * (3.0F - (2.0F * bounded_t));
+        };
         const auto route_progress = [&geometry](std::uint32_t x) {
             return geometry.route_progress(static_cast<float>(x));
         };
@@ -494,13 +507,14 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         for (std::uint32_t y = 0; y < height; ++y) {
             for (std::uint32_t x = 0; x < width; ++x) {
                 const float progress = route_progress(x);
-                const float upstream_progress =
-                    x < source_x ? static_cast<float>(source_x - x) / static_cast<float>(source_x)
+                const float upstream_shoulder_t =
+                    x < source_x ? static_cast<float>(source_x - x) /
+                                       static_cast<float>(upstream_shoulder_length_cells)
                                  : 0.0F;
-                const float downstream_progress =
-                    x <= sink_x ? 0.0F
-                                : static_cast<float>(x - sink_x) /
-                                      static_cast<float>((width - 1U) - sink_x);
+                const float downstream_shoulder_t =
+                    x > sink_x ? static_cast<float>(x - sink_x) /
+                                     static_cast<float>(downstream_shoulder_length_cells)
+                               : 0.0F;
                 const float y_offset = static_cast<float>(y) - channel_center_y(x);
                 const float local_half_width = channel_half_width(x);
                 const float normalized_cross_section = y_offset / local_half_width;
@@ -508,12 +522,14 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                     geometry.cross_sectional_relief_m(normalized_cross_section);
                 // The route falls 0.45 m over its 96 m source-to-outlet span.
                 // The shared cross-section profile keeps the discrete bank
-                // crest near-bankfull while the preserved post-outlet shoulder
-                // contains the closed-domain tail.
+                // crest near-bankfull while short endpoint shoulders contain
+                // the closed-domain tails.
                 data.terrain_height_m[fluid_25d_scenario_index(width, height, x, y)] =
                     4.40F - (kFluid25DSourceOutletLongitudinalFallM * progress) +
-                    (0.50F * upstream_progress * upstream_progress) +
-                    (downstream_containment_rise_m * downstream_progress) +
+                    (kFluid25DSourceOutletUpstreamContainmentRiseM *
+                     smoothstep(upstream_shoulder_t)) +
+                    (kFluid25DSourceOutletDownstreamContainmentRiseM *
+                     smoothstep(downstream_shoulder_t)) +
                     cross_sectional_relief_m;
             }
         }
