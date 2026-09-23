@@ -1199,6 +1199,125 @@ void test_profile_diagnostic_metric_math() {
         "profile diagnostics should reject invalid readback depth");
 }
 
+void test_source_outlet_cross_section_diagnostic_math() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config =
+        finite_volume_test_config(128U, 64U, Fluid25DScenario::SourceOutletDemo);
+    config.cell_size_m = 2.0F;
+    config.gravity_m_per_s2 = 10.0F;
+    config.minimum_wet_depth_m = 0.10F;
+
+    const auto stations =
+        fluid_25d_source_outlet_cross_section_stations(config.grid_width, config.grid_height);
+    require(stations[0].name == "near_source" && stations[0].x_cell == 14U &&
+                stations[1].name == "upstream_reach" && stations[1].x_cell == 38U &&
+                stations[2].name == "constriction" && stations[2].x_cell == 70U &&
+                stations[3].name == "downstream_reach" && stations[3].x_cell == 91U &&
+                stations[4].name == "near_outlet" && stations[4].x_cell == 110U &&
+                stations[0].endpoint_pool_affected && !stations[1].endpoint_pool_affected &&
+                !stations[2].endpoint_pool_affected && !stations[3].endpoint_pool_affected &&
+                stations[4].endpoint_pool_affected,
+            "source-outlet section stations should be fixed on the authored route and mark pools");
+
+    const Fluid25DSourceOutletGeometry geometry(config.grid_width, config.grid_height);
+    const std::uint32_t x_cell = stations[0].x_cell;
+    const float center_y = geometry.channel_center_y(static_cast<float>(x_cell));
+    const float half_width = geometry.channel_half_width(static_cast<float>(x_cell));
+    const std::uint32_t left_crest_y =
+        static_cast<std::uint32_t>(std::lround(center_y - (1.65F * half_width)));
+    const std::uint32_t right_crest_y =
+        static_cast<std::uint32_t>(std::lround(center_y + (1.65F * half_width)));
+    const std::uint32_t centerline_y = static_cast<std::uint32_t>(std::lround(center_y));
+    const std::size_t cells = fluid_25d_cell_count(config);
+    std::vector<float> terrain(cells, 0.0F);
+    std::vector<float> depth(cells, 0.0F);
+    std::vector<Fluid25DVelocityGpu> velocity(cells);
+    const auto index = [&config, x_cell](std::uint32_t y) {
+        return (static_cast<std::size_t>(y) * config.grid_width) + x_cell;
+    };
+    terrain[index(left_crest_y)] = 5.0F;
+    terrain[index(right_crest_y)] = 4.5F;
+    terrain[index(centerline_y)] = 1.0F;
+    for (std::uint32_t y = left_crest_y; y <= right_crest_y; ++y) {
+        depth[index(y)] = 0.20F;
+        velocity[index(y)].velocity_wet = {2.0F, 0.0F, 1.0F, 0.0F};
+    }
+    depth[index(left_crest_y - 1U)] = 0.30F;
+    depth[index(right_crest_y + 2U)] = 0.05F;
+
+    const Fluid25DSourceOutletCrossSectionDiagnostics diagnostics =
+        compute_fluid_25d_source_outlet_cross_section_diagnostics(config, stations[0], terrain,
+                                                                  depth, velocity);
+    const double cell_count = static_cast<double>(right_crest_y - left_crest_y + 1U);
+    const double expected_area_m2 = cell_count * 0.20 * 2.0;
+    const double expected_bankfull_capacity_m2 = (((cell_count - 3.0) * 4.5) + 3.5) * 2.0;
+    require(
+        diagnostics.left_bank_crest_y_cell == left_crest_y &&
+            diagnostics.right_bank_crest_y_cell == right_crest_y &&
+            diagnostics.left_bank_crest_fallback == 0U &&
+            diagnostics.right_bank_crest_fallback == 0U,
+        "cross-section bank crests should select actual terrain maxima in the authored shoulder");
+    require(diagnostics.wetted_cell_count == static_cast<std::uint64_t>(cell_count) &&
+                diagnostics.overbank_wet_cell_count == 1U,
+            "cross-section wet counts should separate bank-to-bank water from overbank cells");
+    require_close(diagnostics.station_x_m, 29.0, kDepthToleranceM,
+                  "cross-section station x should use the cell-center coordinate");
+    require_close(diagnostics.centerline_bed_elevation_m, 1.0, kDepthToleranceM,
+                  "cross-section should sample the authored centerline bed cell");
+    require_close(diagnostics.lower_bank_crest_elevation_m, 4.5, kDepthToleranceM,
+                  "cross-section lower bank should be the lower of actual side crests");
+    require_close(diagnostics.wetted_cell_width_m, cell_count * 2.0, kDepthToleranceM,
+                  "cross-section wetted width should use only wet in-bank cells");
+    require_close(diagnostics.wetted_width_fraction, 1.0, kDepthToleranceM,
+                  "cross-section wetted width fraction should divide by bank-to-bank width");
+    require_close(diagnostics.section_water_area_m2, expected_area_m2, kDepthToleranceM,
+                  "cross-section water area should integrate only wet in-bank cells");
+    require_close(diagnostics.mean_wet_depth_m, 0.20, kDepthToleranceM,
+                  "cross-section wet mean depth should divide area by wetted width");
+    require_close(diagnostics.mean_section_depth_m, 0.20, kDepthToleranceM,
+                  "cross-section mean depth should divide area by bank-to-bank width");
+    require_close(diagnostics.representative_free_surface_elevation_m, 0.20 + (10.5 / cell_count),
+                  kDepthToleranceM,
+                  "cross-section free surface should be water-area weighted over wet cells");
+    require(diagnostics.representative_free_surface_valid == 1.0 &&
+                diagnostics.bankfull_capacity_valid == 1.0,
+            "cross-section wet surface and positive bankfull capacity should be marked valid");
+    require_close(diagnostics.bankfull_capacity_area_m2, expected_bankfull_capacity_m2,
+                  kDepthToleranceM,
+                  "bankfull capacity should integrate only between selected crest cells");
+    require_close(diagnostics.bankfull_fraction, expected_area_m2 / expected_bankfull_capacity_m2,
+                  kDepthToleranceM, "bankfull fraction should compare in-bank area to capacity");
+    require_close(diagnostics.depth_velocity_discharge_estimate_m3_per_s, cell_count * 0.8,
+                  kDepthToleranceM,
+                  "cross-section discharge should estimate sum(h times x velocity times width)");
+    require_close(diagnostics.mean_x_velocity_m_per_s, 2.0, kDepthToleranceM,
+                  "cross-section mean x velocity should be approximate Q divided by area");
+    require_close(diagnostics.froude_estimate, 2.0 / std::sqrt(2.0), kDepthToleranceM,
+                  "cross-section Froude estimate should use mean wet hydraulic depth");
+
+    std::fill(depth.begin(), depth.end(), 0.0F);
+    const Fluid25DSourceOutletCrossSectionDiagnostics dry =
+        compute_fluid_25d_source_outlet_cross_section_diagnostics(config, stations[0], terrain,
+                                                                  depth, velocity);
+    require(dry.wetted_cell_count == 0U && dry.overbank_wet_cell_count == 0U &&
+                dry.representative_free_surface_valid == 0.0 &&
+                dry.representative_free_surface_elevation_m == 0.0 &&
+                dry.section_water_area_m2 == 0.0 && dry.mean_wet_depth_m == 0.0 &&
+                dry.mean_section_depth_m == 0.0 &&
+                dry.depth_velocity_discharge_estimate_m3_per_s == 0.0 &&
+                dry.mean_x_velocity_m_per_s == 0.0 && dry.froude_estimate == 0.0 &&
+                dry.bankfull_fraction == 0.0,
+            "dry cross-sections should produce finite zero water metrics and an invalid surface");
+    Fluid25DConfig unrelated = config;
+    unrelated.scenario = Fluid25DScenario::RiverCatchment;
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_source_outlet_cross_section_diagnostics(
+                unrelated, stations[0], terrain, depth, velocity));
+        },
+        "source-outlet cross-section metrics should reject other scenarios");
+}
+
 void test_tracer_profile_diagnostic_metric_math() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = test_config(3U, 2U, Fluid25DScenario::TerrainCase);
@@ -2523,6 +2642,7 @@ int main() {
         test_mountain_source_outlet_field_construction();
         test_profile_frame_slot_attribution();
         test_profile_diagnostic_metric_math();
+        test_source_outlet_cross_section_diagnostic_math();
         test_tracer_profile_diagnostic_metric_math();
         test_dry_bed_stability();
         test_lake_at_rest();

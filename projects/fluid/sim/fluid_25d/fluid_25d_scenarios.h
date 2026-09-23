@@ -106,6 +106,62 @@ struct Fluid25DScenarioData {
     std::optional<Fluid25DTerrainCaseProvenance> terrain_provenance{};
 };
 
+// Shared pure geometry for the authored source-outlet explanation scene. The
+// terrain builder and cross-section diagnostics use the same route and channel
+// shape functions so station placement follows the immutable authored field.
+struct Fluid25DSourceOutletGeometry {
+    std::uint32_t width = 0U;
+    std::uint32_t height = 0U;
+    std::uint32_t source_x = 0U;
+    std::uint32_t sink_x = 0U;
+
+    Fluid25DSourceOutletGeometry(std::uint32_t grid_width, std::uint32_t grid_height)
+        : width(grid_width), height(grid_height) {
+        if (width < 6U || height < 3U) {
+            throw std::runtime_error(
+                "fluid 2.5D source-outlet geometry requires at least a 6x3 grid");
+        }
+        source_x = std::max(1U, (width * 11U) / 100U);
+        sink_x = std::min(width - 2U, std::max(source_x + 2U, (width * 86U) / 100U));
+    }
+
+    [[nodiscard]] float route_progress(float x) const {
+        const float span = static_cast<float>(sink_x - source_x);
+        return std::clamp((x - static_cast<float>(source_x)) / span, 0.0F, 1.0F);
+    }
+
+    [[nodiscard]] float channel_center_y(float x) const {
+        const float channel_center = 0.5F * static_cast<float>(height - 1U);
+        const float half_grid_height = std::max(1.0F, 0.5F * static_cast<float>(height - 1U));
+        const float progress = route_progress(x);
+        return channel_center +
+               half_grid_height * (0.18F * std::sin(2.0F * std::numbers::pi_v<float> * progress) +
+                                   0.10F * std::sin(4.0F * std::numbers::pi_v<float> * progress));
+    }
+
+    [[nodiscard]] float channel_half_width(float x) const {
+        const float progress = route_progress(x);
+        const float constriction_offset = (progress - 0.58F) / 0.075F;
+        const float constriction = std::exp(-0.5F * constriction_offset * constriction_offset);
+        const float broad_width_variation =
+            (0.90F * std::sin(2.0F * std::numbers::pi_v<float> * progress + 0.80F)) +
+            (0.50F * std::sin(4.0F * std::numbers::pi_v<float> * progress - 0.50F));
+        return std::clamp(4.60F + broad_width_variation - (1.65F * constriction), 3.25F, 6.50F);
+    }
+
+    [[nodiscard]] float endpoint_radius_x() const {
+        return std::max(0.75F, std::min(3.0F, 0.20F * static_cast<float>(sink_x - source_x)));
+    }
+
+    // Source and sink initial-water masks use compact elliptical support with
+    // this x radius. The terminal basin terrain shoulder is separate.
+    [[nodiscard]] bool endpoint_pool_affected(std::uint32_t x) const {
+        const float radius = endpoint_radius_x();
+        return std::abs(static_cast<float>(x) - static_cast<float>(source_x)) < radius ||
+               std::abs(static_cast<float>(x) - static_cast<float>(sink_x)) < radius;
+    }
+};
+
 [[nodiscard]] inline std::string
 fluid_25d_terrain_case_identity(std::string_view elevation_sha256,
                                 std::string_view transformed_crop_sha256, std::uint32_t crop_x,
@@ -324,21 +380,15 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         break;
     }
     case Fluid25DScenario::SourceOutletDemo: {
-        if (width < 6 || height < 3) {
-            throw std::runtime_error("fluid 2.5D source-outlet demo requires at least a 6x3 grid");
-        }
         // This opt-in explanatory scene is authored rather than discovered
         // from imported terrain. Its endpoint regions stay inside the closed
         // domain, but the route spans most of its width so the flow story has
         // enough room for broad bends, changing valley width, and one visible
         // constriction without changing the River V0 fixture.
-        const std::uint32_t source_x = std::max(1U, (width * 11U) / 100U);
-        const std::uint32_t sink_x =
-            std::min(width - 2U, std::max(source_x + 2U, (width * 86U) / 100U));
-        const float channel_center = 0.5F * static_cast<float>(height - 1U);
-        const float half_grid_height = std::max(1.0F, 0.5F * static_cast<float>(height - 1U));
-        const float endpoint_radius_x =
-            std::max(0.75F, std::min(3.0F, 0.20F * static_cast<float>(sink_x - source_x)));
+        const Fluid25DSourceOutletGeometry geometry(width, height);
+        const std::uint32_t source_x = geometry.source_x;
+        const std::uint32_t sink_x = geometry.sink_x;
+        const float endpoint_radius_x = geometry.endpoint_radius_x();
         constexpr float endpoint_radius_y = 3.25F;
         // The outlet is deliberately the terminal low basin, rather than a
         // label placed part-way down a still-descending valley. Once the
@@ -347,29 +397,14 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         // water in the explicit OUTLET region instead of letting it pool at
         // the far edge.
         constexpr float downstream_containment_rise_m = 1.30F;
-        const auto route_progress = [source_x, sink_x](std::uint32_t x) {
-            const float span = static_cast<float>(sink_x - source_x);
-            return std::clamp((static_cast<float>(x) - static_cast<float>(source_x)) / span, 0.0F,
-                              1.0F);
+        const auto route_progress = [&geometry](std::uint32_t x) {
+            return geometry.route_progress(static_cast<float>(x));
         };
-        const auto channel_center_y = [channel_center, half_grid_height,
-                                       route_progress](std::uint32_t x) {
-            const float progress = route_progress(x);
-            // Two smooth S-bends give a visibly terrain-guided route while
-            // returning the source and outlet to the same readable latitude.
-            return channel_center +
-                   half_grid_height *
-                       (0.18F * std::sin(2.0F * std::numbers::pi_v<float> * progress) +
-                        0.10F * std::sin(4.0F * std::numbers::pi_v<float> * progress));
+        const auto channel_center_y = [&geometry](std::uint32_t x) {
+            return geometry.channel_center_y(static_cast<float>(x));
         };
-        const auto channel_half_width = [route_progress](std::uint32_t x) {
-            const float progress = route_progress(x);
-            const float constriction_offset = (progress - 0.58F) / 0.075F;
-            const float constriction = std::exp(-0.5F * constriction_offset * constriction_offset);
-            const float broad_width_variation =
-                (0.90F * std::sin(2.0F * std::numbers::pi_v<float> * progress + 0.80F)) +
-                (0.50F * std::sin(4.0F * std::numbers::pi_v<float> * progress - 0.50F));
-            return std::clamp(4.60F + broad_width_variation - (1.65F * constriction), 3.25F, 6.50F);
+        const auto channel_half_width = [&geometry](std::uint32_t x) {
+            return geometry.channel_half_width(static_cast<float>(x));
         };
         const std::uint32_t source_y = static_cast<std::uint32_t>(std::clamp(
             std::round(channel_center_y(source_x)), 0.0F, static_cast<float>(height - 1U)));

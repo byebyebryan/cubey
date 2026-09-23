@@ -9,8 +9,10 @@
 #include <cubey/render/frame_data.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 
+#include <array>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -65,6 +67,61 @@ struct Fluid25DTracerProfileDiagnostics {
     double conservation_residual_m3 = 0.0;
 };
 
+struct Fluid25DSourceOutletCrossSectionStation {
+    std::string_view name{};
+    std::uint32_t x_cell = 0U;
+    bool endpoint_pool_affected = false;
+};
+
+inline constexpr std::size_t kFluid25DSourceOutletCrossSectionStationCount = 5U;
+
+// Metrics cover the bank-to-bank cell span, inclusive of the selected bank
+// crest cells. A wet cell has h > minimum_wet_depth_m. Wetted width is wet-cell
+// count times dx; water area is sum(h*dx); wet and section mean depths divide
+// that area by wetted width and bank-to-bank width respectively. Surface is
+// water-area-weighted terrain+h over wet cells, with *_valid=0 and a numeric
+// zero when dry. Each bank crest is the maximum immutable terrain sample in
+// the authored shoulder band 1.0 <= |(y-center)/half_width| <= 2.5; if that
+// band has no grid sample on a side, the highest sample on that side is used
+// and the fallback flag is set. Lower crest is the lesser side elevation.
+// Bankfull capacity is sum(max(lower_crest-terrain, 0)*dx) only between the
+// two selected crest cells. Bankfull fraction is in-bank section area divided
+// by that capacity, unclamped; its validity flag is zero for zero capacity.
+// Discharge is the approximate depth-velocity estimate sum(h*u_x*dx) over wet
+// in-bank cells, not a solver face flux. Mean x velocity is Q/A. Froude uses
+// abs(Q/A)/sqrt(g*A/wetted_width). Wet cells beyond either selected crest are
+// counted separately as overbank cells and are excluded from in-bank metrics.
+struct Fluid25DSourceOutletCrossSectionDiagnostics {
+    std::string_view station_name{};
+    std::uint32_t station_x_cell = 0U;
+    std::uint32_t left_bank_crest_y_cell = 0U;
+    std::uint32_t right_bank_crest_y_cell = 0U;
+    std::uint64_t wetted_cell_count = 0U;
+    std::uint64_t overbank_wet_cell_count = 0U;
+    std::uint32_t left_bank_crest_fallback = 0U;
+    std::uint32_t right_bank_crest_fallback = 0U;
+    bool endpoint_pool_affected = false;
+    double station_x_m = 0.0;
+    double left_bank_crest_elevation_m = 0.0;
+    double right_bank_crest_elevation_m = 0.0;
+    double lower_bank_crest_elevation_m = 0.0;
+    double centerline_bed_elevation_m = 0.0;
+    double bank_to_bank_width_m = 0.0;
+    double wetted_cell_width_m = 0.0;
+    double wetted_width_fraction = 0.0;
+    double representative_free_surface_elevation_m = 0.0;
+    double representative_free_surface_valid = 0.0;
+    double section_water_area_m2 = 0.0;
+    double mean_wet_depth_m = 0.0;
+    double mean_section_depth_m = 0.0;
+    double bankfull_capacity_area_m2 = 0.0;
+    double bankfull_fraction = 0.0;
+    double bankfull_capacity_valid = 0.0;
+    double depth_velocity_discharge_estimate_m3_per_s = 0.0;
+    double mean_x_velocity_m_per_s = 0.0;
+    double froude_estimate = 0.0;
+};
+
 [[nodiscard]] bool
 should_record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder* recorder,
                                             const cubey::host::CommonRunConfig& common_config,
@@ -86,11 +143,24 @@ compute_fluid_25d_tracer_profile_diagnostics(
     std::span<const Fluid25DTracerLedgerGpu> cumulative_tracer_ledger,
     double initial_tracer_amount_m3 = 0.0);
 
+[[nodiscard]] std::array<Fluid25DSourceOutletCrossSectionStation,
+                         kFluid25DSourceOutletCrossSectionStationCount>
+fluid_25d_source_outlet_cross_section_stations(std::uint32_t grid_width, std::uint32_t grid_height);
+
+[[nodiscard]] Fluid25DSourceOutletCrossSectionDiagnostics
+compute_fluid_25d_source_outlet_cross_section_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DSourceOutletCrossSectionStation& station,
+    std::span<const float> terrain_height_m, std::span<const float> depth_m,
+    std::span<const Fluid25DVelocityGpu> velocity);
+
 void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                                           std::uint64_t frame_index,
                                           const Fluid25DProfileDiagnostics& diagnostics);
 void record_fluid_25d_tracer_profile_diagnostics(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const Fluid25DTracerProfileDiagnostics& diagnostics);
+void record_fluid_25d_source_outlet_cross_section_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSourceOutletCrossSectionDiagnostics& diagnostics);
 
 } // namespace cubey::projects::fluid::fluid_25d

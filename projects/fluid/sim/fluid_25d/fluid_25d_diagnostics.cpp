@@ -1,4 +1,5 @@
 #include "fluid_25d_diagnostics.h"
+#include "fluid_25d_scenarios.h"
 
 #include <cmath>
 #include <iomanip>
@@ -6,14 +7,85 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace cubey::projects::fluid::fluid_25d {
 namespace {
+
+struct BankCrestSample {
+    std::uint32_t y_cell = 0U;
+    float elevation_m = 0.0F;
+    bool fallback = false;
+};
+
+[[nodiscard]] BankCrestSample select_bank_crest_sample(const Fluid25DSourceOutletGeometry& geometry,
+                                                       std::uint32_t x_cell,
+                                                       std::span<const float> terrain_height_m,
+                                                       bool left_bank) {
+    const float center_y = geometry.channel_center_y(static_cast<float>(x_cell));
+    const float half_width = geometry.channel_half_width(static_cast<float>(x_cell));
+    const std::size_t width = static_cast<std::size_t>(geometry.width);
+    const float first_band_offset = half_width;
+    const float last_band_offset = 2.5F * half_width;
+    bool has_band_sample = false;
+    BankCrestSample selected{};
+    const std::uint32_t first_y = 0U;
+    const std::uint32_t last_y = geometry.height - 1U;
+    for (std::uint32_t y = first_y; y <= last_y; ++y) {
+        const float signed_offset = static_cast<float>(y) - center_y;
+        if ((left_bank && signed_offset >= 0.0F) || (!left_bank && signed_offset <= 0.0F)) {
+            continue;
+        }
+        const float absolute_offset = std::abs(signed_offset);
+        if (absolute_offset < first_band_offset || absolute_offset > last_band_offset) {
+            continue;
+        }
+        const float elevation = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell];
+        if (!has_band_sample || elevation > selected.elevation_m) {
+            selected = {.y_cell = y, .elevation_m = elevation, .fallback = false};
+            has_band_sample = true;
+        }
+    }
+    if (has_band_sample) {
+        return selected;
+    }
+
+    // Tiny valid grids can have no cell center in the authored 1.0..2.5
+    // shoulder band. In that bounded case, choose the highest sample on the
+    // corresponding side of the channel center and make the fallback visible.
+    bool has_side_sample = false;
+    for (std::uint32_t y = first_y; y <= last_y; ++y) {
+        const float signed_offset = static_cast<float>(y) - center_y;
+        if ((left_bank && signed_offset >= 0.0F) || (!left_bank && signed_offset <= 0.0F)) {
+            continue;
+        }
+        const float elevation = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell];
+        if (!has_side_sample || elevation > selected.elevation_m) {
+            selected = {.y_cell = y, .elevation_m = elevation, .fallback = true};
+            has_side_sample = true;
+        }
+    }
+    if (!has_side_sample) {
+        const std::uint32_t y = left_bank ? 0U : geometry.height - 1U;
+        selected = {.y_cell = y,
+                    .elevation_m = terrain_height_m[static_cast<std::size_t>(y) * width + x_cell],
+                    .fallback = true};
+    }
+    return selected;
+}
 
 [[nodiscard]] std::string diagnostic_float(float value) {
     std::ostringstream stream;
     stream << std::setprecision(9) << value;
     return std::move(stream).str();
+}
+
+void record_cross_section_metric(cubey::profiling::ProfileRecorder& recorder,
+                                 std::uint64_t frame_index, std::string_view station_name,
+                                 std::string_view metric_name, double value) {
+    const std::string name =
+        "station." + std::string(station_name) + "." + std::string(metric_name);
+    recorder.record_metric(frame_index, "fluid_25d.river_cross_section", name, value);
 }
 
 } // namespace
@@ -317,6 +389,140 @@ void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& rec
                   diagnostics.conservation_residual_m3);
 }
 
+std::array<Fluid25DSourceOutletCrossSectionStation, kFluid25DSourceOutletCrossSectionStationCount>
+fluid_25d_source_outlet_cross_section_stations(std::uint32_t grid_width,
+                                               std::uint32_t grid_height) {
+    const Fluid25DSourceOutletGeometry geometry(grid_width, grid_height);
+    const auto station_at_progress = [&geometry](float progress) {
+        const float span = static_cast<float>(geometry.sink_x - geometry.source_x);
+        const float x = static_cast<float>(geometry.source_x) + (span * progress);
+        return static_cast<std::uint32_t>(
+            std::clamp(std::lround(x), 0L, static_cast<long>(geometry.width - 1U)));
+    };
+    const auto make_station = [&geometry](std::string_view name, std::uint32_t x_cell) {
+        return Fluid25DSourceOutletCrossSectionStation{
+            .name = name,
+            .x_cell = x_cell,
+            .endpoint_pool_affected = geometry.endpoint_pool_affected(x_cell),
+        };
+    };
+    return {{make_station("near_source", geometry.source_x),
+             make_station("upstream_reach", station_at_progress(0.25F)),
+             make_station("constriction", station_at_progress(0.58F)),
+             make_station("downstream_reach", station_at_progress(0.80F)),
+             make_station("near_outlet", geometry.sink_x)}};
+}
+
+Fluid25DSourceOutletCrossSectionDiagnostics
+compute_fluid_25d_source_outlet_cross_section_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DSourceOutletCrossSectionStation& station,
+    std::span<const float> terrain_height_m, std::span<const float> depth_m,
+    std::span<const Fluid25DVelocityGpu> velocity) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::SourceOutletDemo) {
+        throw std::runtime_error("fluid 2.5D river cross sections require source-outlet-demo");
+    }
+    const std::size_t cells = fluid_25d_cell_count(config);
+    if (terrain_height_m.size() != cells || depth_m.size() != cells || velocity.size() != cells) {
+        throw std::runtime_error("fluid 2.5D river cross-section fields have invalid dimensions");
+    }
+    if (station.name.empty() || station.x_cell >= config.grid_width) {
+        throw std::runtime_error("fluid 2.5D river cross-section station is invalid");
+    }
+
+    const Fluid25DSourceOutletGeometry geometry(config.grid_width, config.grid_height);
+    const std::size_t width = static_cast<std::size_t>(config.grid_width);
+    const BankCrestSample left_crest =
+        select_bank_crest_sample(geometry, station.x_cell, terrain_height_m, true);
+    const BankCrestSample right_crest =
+        select_bank_crest_sample(geometry, station.x_cell, terrain_height_m, false);
+    const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+    const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
+    const std::uint32_t centerline_y = static_cast<std::uint32_t>(
+        std::clamp(std::lround(geometry.channel_center_y(static_cast<float>(station.x_cell))), 0L,
+                   static_cast<long>(config.grid_height - 1U)));
+    const std::size_t centerline_index =
+        static_cast<std::size_t>(centerline_y) * width + station.x_cell;
+    const double cell_width_m = static_cast<double>(config.cell_size_m);
+    const double bank_to_bank_width_m =
+        static_cast<double>(last_bank_y - first_bank_y + 1U) * cell_width_m;
+    const double lower_bank_crest_elevation_m = std::min(
+        static_cast<double>(left_crest.elevation_m), static_cast<double>(right_crest.elevation_m));
+
+    Fluid25DSourceOutletCrossSectionDiagnostics result;
+    result.station_name = station.name;
+    result.station_x_cell = station.x_cell;
+    result.left_bank_crest_y_cell = left_crest.y_cell;
+    result.right_bank_crest_y_cell = right_crest.y_cell;
+    result.left_bank_crest_fallback = left_crest.fallback ? 1U : 0U;
+    result.right_bank_crest_fallback = right_crest.fallback ? 1U : 0U;
+    result.endpoint_pool_affected = station.endpoint_pool_affected;
+    result.station_x_m = (static_cast<double>(station.x_cell) + 0.5) * cell_width_m;
+    result.left_bank_crest_elevation_m = left_crest.elevation_m;
+    result.right_bank_crest_elevation_m = right_crest.elevation_m;
+    result.lower_bank_crest_elevation_m = lower_bank_crest_elevation_m;
+    result.centerline_bed_elevation_m = terrain_height_m[centerline_index];
+    result.bank_to_bank_width_m = bank_to_bank_width_m;
+
+    double surface_area_weighted_sum_m3 = 0.0;
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        const std::size_t index = static_cast<std::size_t>(y) * width + station.x_cell;
+        const float bed = terrain_height_m[index];
+        const float depth = depth_m[index];
+        const Fluid25DVelocityGpu state = velocity[index];
+        if (!std::isfinite(bed) || !std::isfinite(depth) || depth < 0.0F ||
+            !std::isfinite(state.velocity_wet[0]) || !std::isfinite(state.velocity_wet[1]) ||
+            !std::isfinite(state.velocity_wet[2]) || !std::isfinite(state.velocity_wet[3])) {
+            throw std::runtime_error("fluid 2.5D river cross-section readback is invalid");
+        }
+        const bool in_bank_span = y >= first_bank_y && y <= last_bank_y;
+        if (!in_bank_span) {
+            if (depth > config.minimum_wet_depth_m) {
+                ++result.overbank_wet_cell_count;
+            }
+            continue;
+        }
+        if (depth > config.minimum_wet_depth_m) {
+            ++result.wetted_cell_count;
+            const double depth_value_m = static_cast<double>(depth);
+            const double area_contribution_m2 = depth_value_m * cell_width_m;
+            result.section_water_area_m2 += area_contribution_m2;
+            result.wetted_cell_width_m += cell_width_m;
+            result.depth_velocity_discharge_estimate_m3_per_s +=
+                depth_value_m * static_cast<double>(state.velocity_wet[0]) * cell_width_m;
+            surface_area_weighted_sum_m3 +=
+                (static_cast<double>(bed) + depth_value_m) * area_contribution_m2;
+        }
+        result.bankfull_capacity_area_m2 +=
+            std::max(0.0, lower_bank_crest_elevation_m - static_cast<double>(bed)) * cell_width_m;
+    }
+
+    result.wetted_width_fraction = result.bank_to_bank_width_m > 0.0
+                                       ? result.wetted_cell_width_m / result.bank_to_bank_width_m
+                                       : 0.0;
+    result.mean_section_depth_m = result.bank_to_bank_width_m > 0.0
+                                      ? result.section_water_area_m2 / result.bank_to_bank_width_m
+                                      : 0.0;
+    if (result.wetted_cell_width_m > 0.0) {
+        result.mean_wet_depth_m = result.section_water_area_m2 / result.wetted_cell_width_m;
+    }
+    if (result.section_water_area_m2 > 0.0) {
+        result.representative_free_surface_elevation_m =
+            surface_area_weighted_sum_m3 / result.section_water_area_m2;
+        result.representative_free_surface_valid = 1.0;
+        result.mean_x_velocity_m_per_s =
+            result.depth_velocity_discharge_estimate_m3_per_s / result.section_water_area_m2;
+        result.froude_estimate =
+            std::abs(result.mean_x_velocity_m_per_s) /
+            std::sqrt(static_cast<double>(config.gravity_m_per_s2) * result.mean_wet_depth_m);
+    }
+    if (result.bankfull_capacity_area_m2 > 0.0) {
+        result.bankfull_capacity_valid = 1.0;
+        result.bankfull_fraction = result.section_water_area_m2 / result.bankfull_capacity_area_m2;
+    }
+    return result;
+}
+
 void record_fluid_25d_tracer_profile_diagnostics(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const Fluid25DTracerProfileDiagnostics& diagnostics) {
@@ -346,6 +552,68 @@ void record_fluid_25d_tracer_profile_diagnostics(
                          diagnostics.cumulative_boundary_outflow_amount_m3);
     record_tracer_metric(recorder, frame_index, "conservation_residual_m3",
                          diagnostics.conservation_residual_m3);
+}
+
+void record_fluid_25d_source_outlet_cross_section_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSourceOutletCrossSectionDiagnostics& diagnostics) {
+    const std::string_view station = diagnostics.station_name;
+    record_cross_section_metric(recorder, frame_index, station, "station_x_cell",
+                                static_cast<double>(diagnostics.station_x_cell));
+    record_cross_section_metric(recorder, frame_index, station, "station_x_m",
+                                diagnostics.station_x_m);
+    record_cross_section_metric(recorder, frame_index, station, "endpoint_pool_affected",
+                                diagnostics.endpoint_pool_affected ? 1.0 : 0.0);
+    record_cross_section_metric(recorder, frame_index, station, "left_bank_crest_y_cell",
+                                static_cast<double>(diagnostics.left_bank_crest_y_cell));
+    record_cross_section_metric(recorder, frame_index, station, "right_bank_crest_y_cell",
+                                static_cast<double>(diagnostics.right_bank_crest_y_cell));
+    record_cross_section_metric(recorder, frame_index, station, "left_bank_crest_fallback",
+                                static_cast<double>(diagnostics.left_bank_crest_fallback));
+    record_cross_section_metric(recorder, frame_index, station, "right_bank_crest_fallback",
+                                static_cast<double>(diagnostics.right_bank_crest_fallback));
+    record_cross_section_metric(recorder, frame_index, station, "left_bank_crest_elevation_m",
+                                diagnostics.left_bank_crest_elevation_m);
+    record_cross_section_metric(recorder, frame_index, station, "right_bank_crest_elevation_m",
+                                diagnostics.right_bank_crest_elevation_m);
+    record_cross_section_metric(recorder, frame_index, station, "lower_bank_crest_elevation_m",
+                                diagnostics.lower_bank_crest_elevation_m);
+    record_cross_section_metric(recorder, frame_index, station, "centerline_bed_elevation_m",
+                                diagnostics.centerline_bed_elevation_m);
+    record_cross_section_metric(recorder, frame_index, station, "bank_to_bank_width_m",
+                                diagnostics.bank_to_bank_width_m);
+    record_cross_section_metric(recorder, frame_index, station, "wetted_cell_count",
+                                static_cast<double>(diagnostics.wetted_cell_count));
+    record_cross_section_metric(recorder, frame_index, station, "wetted_cell_width_m",
+                                diagnostics.wetted_cell_width_m);
+    record_cross_section_metric(recorder, frame_index, station, "wetted_width_fraction",
+                                diagnostics.wetted_width_fraction);
+    record_cross_section_metric(recorder, frame_index, station,
+                                "representative_free_surface_elevation_m",
+                                diagnostics.representative_free_surface_elevation_m);
+    record_cross_section_metric(recorder, frame_index, station, "representative_free_surface_valid",
+                                diagnostics.representative_free_surface_valid);
+    record_cross_section_metric(recorder, frame_index, station, "section_water_area_m2",
+                                diagnostics.section_water_area_m2);
+    record_cross_section_metric(recorder, frame_index, station, "mean_wet_depth_m",
+                                diagnostics.mean_wet_depth_m);
+    record_cross_section_metric(recorder, frame_index, station, "mean_section_depth_m",
+                                diagnostics.mean_section_depth_m);
+    record_cross_section_metric(recorder, frame_index, station, "bankfull_capacity_area_m2",
+                                diagnostics.bankfull_capacity_area_m2);
+    record_cross_section_metric(recorder, frame_index, station, "bankfull_fraction",
+                                diagnostics.bankfull_fraction);
+    record_cross_section_metric(recorder, frame_index, station, "bankfull_capacity_valid",
+                                diagnostics.bankfull_capacity_valid);
+    record_cross_section_metric(recorder, frame_index, station, "overbank_wet_cell_count",
+                                static_cast<double>(diagnostics.overbank_wet_cell_count));
+    record_cross_section_metric(recorder, frame_index, station,
+                                "depth_velocity_discharge_estimate_m3_per_s",
+                                diagnostics.depth_velocity_discharge_estimate_m3_per_s);
+    record_cross_section_metric(recorder, frame_index, station, "mean_x_velocity_m_per_s",
+                                diagnostics.mean_x_velocity_m_per_s);
+    record_cross_section_metric(recorder, frame_index, station, "froude_estimate",
+                                diagnostics.froude_estimate);
 }
 
 } // namespace cubey::projects::fluid::fluid_25d

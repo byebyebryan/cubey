@@ -567,6 +567,17 @@ class Fluid25DApp {
                                                          tracer_ledger);
         record_fluid_25d_tracer_profile_diagnostics(*profile_recorder, frame_index,
                                                     tracer_diagnostics);
+        if (config_.simulation.scenario == Fluid25DScenario::SourceOutletDemo) {
+            const auto stations = fluid_25d_source_outlet_cross_section_stations(
+                config_.simulation.grid_width, config_.simulation.grid_height);
+            for (const Fluid25DSourceOutletCrossSectionStation& station : stations) {
+                const Fluid25DSourceOutletCrossSectionDiagnostics section =
+                    compute_fluid_25d_source_outlet_cross_section_diagnostics(
+                        config_.simulation, station, scenario_.terrain_height_m, depth_m, velocity);
+                record_fluid_25d_source_outlet_cross_section_diagnostics(*profile_recorder,
+                                                                         frame_index, section);
+            }
+        }
     }
 
     [[nodiscard]] std::uint32_t read_finite_volume_status(cubey::ProjectGpuServices& gpu,
