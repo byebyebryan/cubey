@@ -658,28 +658,6 @@ void test_deterministic_scenarios() {
     require(readable_river.initial_water_depth_m[readable_river.source_cell] > 0.0F &&
                 readable_river.initial_water_depth_m[readable_river.sink_cell] > 0.0F,
             "source-outlet demo should seed a visible route through both endpoint regions");
-    std::uint32_t source_region_cells = 0U;
-    std::uint32_t sink_region_cells = 0U;
-    float source_rate_sum = 0.0F;
-    float sink_rate_sum = 0.0F;
-    bool overlapping_endpoint_rates = false;
-    for (std::size_t index = 0U; index < readable_river.source_depth_rate_m_per_s.size(); ++index) {
-        const float source_rate = readable_river.source_depth_rate_m_per_s[index];
-        const float sink_rate = readable_river.sink_depth_rate_m_per_s[index];
-        source_region_cells += source_rate > 0.0F ? 1U : 0U;
-        sink_region_cells += sink_rate > 0.0F ? 1U : 0U;
-        source_rate_sum += source_rate;
-        sink_rate_sum += sink_rate;
-        overlapping_endpoint_rates =
-            overlapping_endpoint_rates || (source_rate > 0.0F && sink_rate > 0.0F);
-    }
-    require(source_region_cells > 1U && sink_region_cells > 1U && !overlapping_endpoint_rates,
-            "source-outlet demo should retain separate bounded endpoint regions");
-    require_close(source_rate_sum, 0.06, kDepthToleranceM,
-                  "source-outlet demo source should retain its total physical throughput");
-    require_close(sink_rate_sum, 0.06, kDepthToleranceM,
-                  "source-outlet demo outlet should retain its total physical throughput");
-
     const std::uint32_t readable_source_x =
         static_cast<std::uint32_t>(readable_river.source_cell % readable_river.width);
     const std::uint32_t readable_sink_x =
@@ -688,6 +666,110 @@ void test_deterministic_scenarios() {
                 readable_sink_x - readable_source_x == 96U,
             "source-outlet demo should retain its long 128 by 64 endpoint route");
     const Fluid25DSourceOutletGeometry readable_geometry(128U, 64U);
+    const std::uint32_t expected_strip_length =
+        std::min(kFluid25DSourceOutletForcingStripLengthCells,
+                 std::max(1U, (readable_sink_x - readable_source_x) / 3U));
+    const float cell_area_m2 = readable_river.cell_size_m * readable_river.cell_size_m;
+    std::vector<std::uint8_t> expected_source_mask(readable_river.source_depth_rate_m_per_s.size(),
+                                                   0U);
+    std::vector<std::uint8_t> expected_sink_mask(readable_river.sink_depth_rate_m_per_s.size(), 0U);
+    std::array<std::uint32_t, kFluid25DSourceOutletForcingStripLengthCells> source_column_cells{};
+    std::array<std::uint32_t, kFluid25DSourceOutletForcingStripLengthCells> sink_column_cells{};
+    for (std::uint32_t x = readable_source_x; x <= readable_sink_x; ++x) {
+        const auto left_crest = fluid_25d_source_outlet_bank_crest(
+            readable_geometry, x, readable_river.terrain_height_m, true);
+        const auto right_crest = fluid_25d_source_outlet_bank_crest(
+            readable_geometry, x, readable_river.terrain_height_m, false);
+        const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+        const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
+        const float center_y = readable_geometry.channel_center_y(static_cast<float>(x));
+        const float half_width = readable_geometry.channel_half_width(static_cast<float>(x));
+        const bool source_column =
+            x >= readable_source_x && x < readable_source_x + expected_strip_length;
+        const bool sink_column =
+            x <= readable_sink_x && x + expected_strip_length > readable_sink_x;
+        for (std::uint32_t y = first_bank_y; y <= last_bank_y; ++y) {
+            const std::size_t index =
+                fluid_25d_scenario_index(readable_river.width, readable_river.height, x, y);
+            const float normalized_offset = std::abs(static_cast<float>(y) - center_y) / half_width;
+            const bool expected_wetted_cell =
+                normalized_offset <= kFluid25DSourceOutletForcingHalfWidthNormalized &&
+                readable_river.initial_water_depth_m[index] > 0.10F;
+            if (expected_wetted_cell && source_column) {
+                expected_source_mask[index] = 1U;
+                ++source_column_cells[x - readable_source_x];
+            }
+            if (expected_wetted_cell && sink_column) {
+                expected_sink_mask[index] = 1U;
+                ++sink_column_cells[x - (readable_sink_x - expected_strip_length + 1U)];
+            }
+        }
+    }
+    std::uint32_t source_region_cells = 0U;
+    std::uint32_t sink_region_cells = 0U;
+    double source_rate_sum_m3_per_s = 0.0;
+    double sink_rate_sum_m3_per_s = 0.0;
+    double source_rate_per_cell = 0.0;
+    double sink_rate_per_cell = 0.0;
+    bool overlapping_endpoint_rates = false;
+    for (std::size_t index = 0U; index < readable_river.source_depth_rate_m_per_s.size(); ++index) {
+        const float source_rate = readable_river.source_depth_rate_m_per_s[index];
+        const float sink_rate = readable_river.sink_depth_rate_m_per_s[index];
+        const bool source_cell = source_rate > 0.0F;
+        const bool sink_cell = sink_rate > 0.0F;
+        require(source_cell == (expected_source_mask[index] != 0U) &&
+                    sink_cell == (expected_sink_mask[index] != 0U),
+                "source-outlet forcing should match the bounded, wetted endpoint strip geometry");
+        source_region_cells += source_rate > 0.0F ? 1U : 0U;
+        sink_region_cells += sink_rate > 0.0F ? 1U : 0U;
+        source_rate_sum_m3_per_s += static_cast<double>(source_rate) * cell_area_m2;
+        sink_rate_sum_m3_per_s += static_cast<double>(sink_rate) * cell_area_m2;
+        if (source_cell) {
+            if (source_rate_per_cell == 0.0) {
+                source_rate_per_cell = source_rate;
+            }
+            require_close(source_rate, source_rate_per_cell, kDepthToleranceM,
+                          "source strip should distribute its normalized throughput uniformly");
+        }
+        if (sink_cell) {
+            if (sink_rate_per_cell == 0.0) {
+                sink_rate_per_cell = sink_rate;
+            }
+            require_close(sink_rate, sink_rate_per_cell, kDepthToleranceM,
+                          "sink strip should distribute its normalized throughput uniformly");
+        }
+        overlapping_endpoint_rates =
+            overlapping_endpoint_rates || (source_rate > 0.0F && sink_rate > 0.0F);
+    }
+    require(source_region_cells > 1U && sink_region_cells > 1U && !overlapping_endpoint_rates &&
+                std::all_of(source_column_cells.begin(), source_column_cells.end(),
+                            [](std::uint32_t count) { return count > 0U; }) &&
+                std::all_of(sink_column_cells.begin(), sink_column_cells.end(),
+                            [](std::uint32_t count) { return count > 0U; }),
+            "source-outlet demo should retain separate, populated four-column endpoint strips");
+    require(readable_river.source_depth_rate_m_per_s[readable_river.source_cell] > 0.0F &&
+                readable_river.sink_depth_rate_m_per_s[readable_river.sink_cell] > 0.0F,
+            "source-outlet markers should remain inside their forcing strips");
+    require_close(source_rate_sum_m3_per_s, kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS,
+                  kDepthToleranceM,
+                  "source-outlet source strip should retain its normalized physical rate");
+    require_close(sink_rate_sum_m3_per_s, kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS,
+                  kDepthToleranceM,
+                  "source-outlet sink strip should match the normalized source rate");
+
+    const std::size_t river_source_count = static_cast<std::size_t>(std::count_if(
+        river.source_depth_rate_m_per_s.begin(), river.source_depth_rate_m_per_s.end(),
+        [](float rate) { return rate > 0.0F; }));
+    const std::size_t river_sink_count = static_cast<std::size_t>(
+        std::count_if(river.sink_depth_rate_m_per_s.begin(), river.sink_depth_rate_m_per_s.end(),
+                      [](float rate) { return rate > 0.0F; }));
+    require(river_source_count == 1U && river_sink_count == 1U,
+            "River V0 should retain its single-cell source and sink masks");
+    require_close(river.source_depth_rate_m_per_s[river.source_cell], 0.040, kDepthToleranceM,
+                  "River V0 source rate should remain unchanged");
+    require_close(river.sink_depth_rate_m_per_s[river.sink_cell], 0.055, kDepthToleranceM,
+                  "River V0 sink rate should remain unchanged");
+
     const std::array<std::uint32_t, 5U> station_x_cells{14U, 38U, 70U, 91U, 110U};
     float previous_route_surface_m = std::numeric_limits<float>::infinity();
     for (std::uint32_t x = readable_source_x; x <= readable_sink_x; ++x) {

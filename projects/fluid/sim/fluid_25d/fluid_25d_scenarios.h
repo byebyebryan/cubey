@@ -38,6 +38,9 @@ inline constexpr float kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3Per
 inline constexpr float kFluid25DSourceOutletLongitudinalFallM = 0.45F;
 inline constexpr float kFluid25DSourceOutletBankCrestRiseM = 1.00F;
 inline constexpr float kFluid25DSourceOutletInitialBankRiseFraction = 0.80F;
+inline constexpr std::uint32_t kFluid25DSourceOutletForcingStripLengthCells = 4U;
+inline constexpr float kFluid25DSourceOutletForcingHalfWidthNormalized = 1.50F;
+inline constexpr float kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS = 2.00F;
 inline constexpr std::array<std::array<std::uint32_t, 2U>, 3U>
     kFluid25DMountainSourceOutletDrainCells{{
         {232U, 127U},
@@ -522,14 +525,8 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                 (y_offset * y_offset) / (endpoint_radius_y * endpoint_radius_y);
             return std::sqrt(std::max(0.0F, 1.0F - normalized_distance_squared));
         };
-        std::vector<std::size_t> source_region;
-        std::vector<std::size_t> sink_region;
-        // The outlet mask excludes the vanishing-weight ellipse fringe. Those
-        // shoulder cells can be dry even while the bounded outlet region is
-        // visibly supplied, which would make nominal capacity look like an
-        // unexplained loss of removal. The core retains the configured
-        // 0.06 m3/s capacity.
-        constexpr float outlet_region_minimum_weight = 0.70F;
+        // Retain the compact endpoint ellipses only as initial-water seeds;
+        // forcing uses separate, fully wetted strips built below.
         // Seed a connected, bank-bounded channel from the source through the
         // outlet. At each x the surface is bank-relative to the lower discrete
         // crest, leaving enough freeboard for the settled pool. The short
@@ -564,27 +561,59 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
                     std::max(0.0F, target_surface_m - data.terrain_height_m[index]);
                 data.initial_water_depth_m[index] =
                     std::max({surface_fill, 0.45F * source_weight, 0.70F * sink_weight});
-                if (source_weight > 0.0F) {
-                    source_region.push_back(index);
-                }
-                if (sink_weight >= outlet_region_minimum_weight) {
-                    sink_region.push_back(index);
-                }
             }
         }
-        if (source_region.empty() || sink_region.empty()) {
-            throw std::runtime_error("fluid 2.5D river endpoint region is empty");
+
+        // Keep endpoint forcing separate from the unchanged compact pool seed:
+        // four longitudinal columns of the already-wet channel interior at
+        // each end provide broad, fully wetted, bank-bounded source/sink masks.
+        const std::uint32_t route_span_cells = sink_x - source_x;
+        const std::uint32_t strip_length_cells = std::min(
+            kFluid25DSourceOutletForcingStripLengthCells, std::max(1U, route_span_cells / 3U));
+        const std::uint32_t source_strip_first_x = source_x;
+        const std::uint32_t source_strip_last_x = source_x + strip_length_cells - 1U;
+        const std::uint32_t sink_strip_first_x = sink_x - strip_length_cells + 1U;
+        const std::uint32_t sink_strip_last_x = sink_x;
+        if (source_strip_last_x >= sink_strip_first_x) {
+            throw std::runtime_error("fluid 2.5D source-outlet forcing strips overlap");
         }
-        // These are one bounded source region and one bounded outlet region,
-        // expressed as depth rates so their total physical throughput is
-        // stable across the region's discrete rasterization. source_cell and
-        // sink_cell remain their representative marker centroids.
-        constexpr float endpoint_total_volume_rate_m3_per_s = 0.06F;
+        std::vector<std::size_t> source_region;
+        std::vector<std::size_t> sink_region;
+        const auto collect_wetted_strip = [&](std::uint32_t first_x, std::uint32_t last_x,
+                                              std::vector<std::size_t>& region) {
+            for (std::uint32_t x = first_x; x <= last_x; ++x) {
+                const float center_y = channel_center_y(x);
+                const float local_half_width = channel_half_width(x);
+                const Fluid25DSourceOutletBankCrestSample left_crest =
+                    fluid_25d_source_outlet_bank_crest(geometry, x, data.terrain_height_m, true);
+                const Fluid25DSourceOutletBankCrestSample right_crest =
+                    fluid_25d_source_outlet_bank_crest(geometry, x, data.terrain_height_m, false);
+                const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
+                const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
+                for (std::uint32_t y = first_bank_y; y <= last_bank_y; ++y) {
+                    const float normalized_offset =
+                        std::abs(static_cast<float>(y) - center_y) / local_half_width;
+                    const std::size_t index = fluid_25d_scenario_index(width, height, x, y);
+                    if (normalized_offset <= kFluid25DSourceOutletForcingHalfWidthNormalized &&
+                        data.initial_water_depth_m[index] > 0.10F) {
+                        region.push_back(index);
+                    }
+                }
+            }
+        };
+        collect_wetted_strip(source_strip_first_x, source_strip_last_x, source_region);
+        collect_wetted_strip(sink_strip_first_x, sink_strip_last_x, sink_region);
+        if (source_region.empty() || sink_region.empty()) {
+            throw std::runtime_error("fluid 2.5D source-outlet forcing strip is empty");
+        }
+        // Normalize each broad strip independently so both retain the same
+        // physical throughput regardless of rasterized cell count. The marker
+        // cells remain the endpoint centroids above.
         const float source_depth_rate =
-            endpoint_total_volume_rate_m3_per_s /
+            kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS /
             (static_cast<float>(source_region.size()) * cell_size_m * cell_size_m);
         const float sink_depth_rate =
-            endpoint_total_volume_rate_m3_per_s /
+            kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS /
             (static_cast<float>(sink_region.size()) * cell_size_m * cell_size_m);
         for (const std::size_t index : source_region) {
             data.source_depth_rate_m_per_s[index] = source_depth_rate;
