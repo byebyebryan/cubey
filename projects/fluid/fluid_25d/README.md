@@ -140,34 +140,25 @@ change solver dispatches or timestamps.
 
 `source-outlet-demo` is a separate authored explanation scene, not a change to
 the River V0 virtual-pipes fixture or its default camera. It is meaningful only
-when launched explicitly with the opt-in finite-volume solver. It uses compact
-bounded SOURCE and OUTLET regions (the colored rings mark their representative
-centroids), a shallow connected initial ribbon, closed outer faces, and one
-terminal outlet basin. The bed falls from the green SOURCE along the winding
-channel to the amber OUTLET, then rises across a broad downstream containment
-shoulder; there is no implied drain beyond the scene edge.
+when launched explicitly with the opt-in finite-volume solver. On the
+one-metre `128x64` grid, the green SOURCE and amber OUTLET rings mark columns
+`14` and `110`. The channel between them has two broad S-bends, variable width,
+and one constriction. Its bed falls `0.45 m` over the 96 m route, while the
+selected lower bank crest is about `1.00 m` above the centerline bed. Initial
+water is seeded within the discrete bank span at `0.80` of that crest rise, so
+the river is legible at reset without claiming that source water has already
+traveled to the outlet.
 
 This is deliberately stylized authored relief, not an imported real-world DEM.
-On the recommended `128x64` grid the representative centroids are at columns
-`14` and `110`. Between them, two broad S-bends, changing valley width, and a
-single constriction make the route read as terrain-guided rather than as a
-straight wet line. A scene-only height/slope tint and render-only relief scale
-make the dry banks legible from the home camera; numerical terrain heights,
-water depths, and every other scenario's material and camera are unchanged.
-The compact OUTLET-rate mask is the wet core of the visible terminal basin, so
-its configured capacity is not assigned to dry shoulder cells.
-
-The ribbon is intentionally present at reset so the full route is legible
-before transport crosses it. It does not claim that the same water first
-injected at SOURCE reaches OUTLET in the initial seconds. In the finite-volume
-demo, configured source input and outlet capacity are each `0.03 m3/s`; actual
-outlet removal remains limited by water available in its region and must be
-measured from the ledger rather than assumed from the configured capacity. The
-terminal basin keeps the sustained sink supplied without a bypass beyond its
-marker. The first home camera frames the
-two endpoints and route with modest terrain context, while later user orbit
-and zoom remain unchanged. Ring words live in the control-panel legend rather
-than in-scene text so they stay readable at every camera distance.
+The scene-only height/slope tint and render-only relief scale make the dry
+banks legible without changing numerical heights. The source and sink each have
+a four-column forcing strip confined to already-wet, in-bank cells; each strip
+is normalized to `2.00 m3/s` of physical throughput. Actual removal is still
+limited by available water and should be read from the ledger. The short tan
+terrain rises behind the markers contain the closed-domain tails. They are
+stylized end caps, not physical intake structures or a stage-controlled open
+boundary. The home camera frames both endpoints; user orbit and zoom remain
+available. Ring words live in the control-panel legend.
 
 Use the compact one-metre `128x64` presentation grid and select the finite-
 volume solver explicitly; this does not alter the global `river-catchment` or
@@ -180,58 +171,52 @@ build/dev/projects/fluid/fluid_25d/fluid_25d \
 ```
 
 Append `--fluid25d-catchment-view flow-inspection` to use the optional
-fixed-grid velocity-field reading mode. For reproducible long-horizon evidence,
-use the headless profile command:
+fixed-grid velocity-field reading mode. The arrows show local velocity, not
+the path of one parcel. For transport, inject a half-open dye pulse while the
+hydraulic source stays active. This command advances 900 simulated seconds in
+900 frames and encodes them as a 30-second video:
 
 ```sh
-build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture png \
-  --frames 54001 --width 1280 --height 720 --grid-width 128 --grid-height 64 \
-  --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
-  --profile-output outputs/fluid/source-outlet-demo-profile --profile-diagnostics \
-  --profile-diagnostic-interval 600 --output outputs/fluid/source-outlet-demo.png
-```
-
-Use early checkpoints for reset/mature continuity and a late interval (for
-example `890–900 s`) for the sustained-flow acceptance check: finite-volume
-status must remain zero; source and *actual* sink-removal increments over the
-recent interval should both be about `0.03 m3/s`; stored water must remain
-bounded; and boundary outflow must stay zero. Capture Composite plus
-Depth/Flow diagnostics when changing this local scene geometry.
-
-For the transport readability study, select the finite-volume source/outlet
-scene together with a half-open dye pulse. The fixed hydraulic source remains
-active; the source schedule uses unit dye concentration for the requested
-interval. The diagnostics-only `0.01` reporting threshold classifies a
-material dyed front; it is not the injected ledger concentration:
-
-```sh
+mkdir -p outputs/fluid/source-outlet-review
 build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture video \
   --frames 900 --fps 30 --width 1280 --height 720 \
   --grid-width 128 --grid-height 64 \
   --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
   --fluid25d-catchment-view transport-inspection \
-  --fluid25d-fixed-delta-seconds 1 --fluid25d-substeps 16 \
+  --fluid25d-fixed-delta-seconds 1 --fluid25d-substeps 32 \
   --fluid25d-dye-pulse-start-seconds 300 \
   --fluid25d-dye-pulse-duration-seconds 60 \
-  --output outputs/fluid/transport-readability-v1-review.mp4
+  --profile-output outputs/fluid/source-outlet-review/profile \
+  --profile-diagnostics --profile-diagnostic-interval 1 \
+  --output outputs/fluid/source-outlet-review/transport.mp4
 ```
 
-The checked-in evidence runner adds profile diagnostics, exact checkpoint
-extraction from the encoded video, the contact sheet, acceptance checks, and
-hash verification:
+Read the magenta packet alongside the profile CSVs, not as stand-alone proof
+of flow. `fluid_25d.river_cross_section` reports actual discrete bank crests,
+wet widths, depth, approximate cell-centred discharge, and local velocity at
+five stations. `fluid_25d.river_spatial` partitions every cell into before
+SOURCE, in-bank route, off-bank route, or after OUTLET; it distinguishes a
+small closed-domain endpoint tail from lateral overbank flow.
+`fluid_25d.water` and `fluid_25d.tracer` provide source/sink/boundary ledgers
+and conservation residuals. The diagnostic `0.01` dye-concentration threshold
+marks a material visible front; it is not the injected concentration. Capture
+frame `fN` is the state after `N` simulated seconds: `f300` precedes dye,
+`f301` is the first dyed step, and `f360` is the last.
 
-```sh
-projects/fluid/fluid_25d/run_transport_readability_v1.sh \
-  outputs/fluid/transport-readability-v1-<date>-final
-```
+The reviewed four-cell end-cap run in
+`outputs/fluid/river-endpoint-shoulders-v1-20260923/` has zero status flags,
+boundary loss, and route off-bank water across all 900 frames. At `f900`,
+interior section discharge is about `1.96–1.98 m3/s`, and the outlet has
+captured `51.878 m3` (`43.2%`) of the `119.999 m3` dye pulse. Before-SOURCE and
+after-OUTLET water are `12.724` and `15.247 m3`, respectively. The dye front
+reaches `x112`, two cells past the outlet marker; these end caps substantially
+reduce but do not eliminate the tails. The water conservation residual is
+`−0.961 m3` against about `1222 m3` stored water. These are measured results,
+not assertions that every dyed parcel is removed by `f900`.
 
-Do not interpret a green-to-amber visual change as proof of transport by
-itself. Read the magenta packet alongside the tracer source/sink ledgers,
-centroid/downstream extent, first ledger-detectable arrival, first material-
-front outlet-column arrival, and conservation residual in the generated
-acceptance report. The runner's fixed mapping is
-`capture fN = post-step time N seconds`; `f300` is pre-dye, `f301` is first
-dyed, `f360` is last dyed, and `f361` is first undyed.
+`run_transport_readability_v1.sh` and its linked V1 note preserve an earlier
+historical protocol and thresholds; use the command above for this current
+scene, not the V1 runner as an acceptance gate.
 
 ### Opt-in immutable mountain source/outlet scene
 
@@ -571,8 +556,10 @@ ring marks input, the amber OUTLET ring marks explicit removal, base blue shows
 water depth, and magenta/violet shows conservative dyed water. The pulse is
 available only when `source-outlet-demo`, finite-volume, and both dye timing
 options are selected. The fixed hydraulic forcing is unchanged by the dye
-schedule. The evidence protocol and frame semantics are recorded in
-[`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md).
+schedule. See the source-to-outlet section above for the current capture and
+frame semantics; the earlier V1 study remains in
+[`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md)
+as historical evidence.
 
 ## Source layout
 
