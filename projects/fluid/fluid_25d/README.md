@@ -273,6 +273,14 @@ projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py --mode
 supply --source-scales 1 2 4` for the bounded first sweep; these opt-in
 controls do not change the project defaults.
 
+The [bankfull and spill study](../../../docs/notes/fluid-25d-headwaters-bankfull-v1.md)
+adds local sampled bank/freeboard sections and a separate whole-grid authored-
+corridor spill indicator. With the same 1 m terrain and 0.05/s damping, 24×
+supply is the fullest tested no-indicated-spill opt-in review point; 28×
+already spills near the outlet while the branches remain below bankfull.
+This is a bounded authored-scene result, not a default or general containment
+certificate.
+
 ### Opt-in immutable mountain source/outlet scene
 
 `mountain-source-outlet-demo` is a separate finite-volume-only product

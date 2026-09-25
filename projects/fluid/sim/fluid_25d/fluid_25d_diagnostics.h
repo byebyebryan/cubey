@@ -35,6 +35,7 @@ inline constexpr float kFluid25DSlowPooledSpeedThresholdMPerS = 0.02F;
 inline constexpr float kFluid25DTracerMaterialConcentration = 0.01F;
 inline constexpr std::size_t kFluid25DBoundaryOutflowBinCount = 16U;
 inline constexpr std::size_t kFluid25DSustainedHeadwatersStationCount = 7U;
+inline constexpr std::size_t kFluid25DSustainedHeadwatersCrossSectionStationCount = 7U;
 
 struct Fluid25DSustainedHeadwatersStationDiagnostics {
     std::string_view name{};
@@ -43,6 +44,74 @@ struct Fluid25DSustainedHeadwatersStationDiagnostics {
     double depth_m = 0.0;
     double velocity_x_m_per_s = 0.0;
     double velocity_y_m_per_s = 0.0;
+};
+
+struct Fluid25DSustainedHeadwatersCrossSectionStation {
+    std::string_view name{};
+    double center_x_m = 0.0;
+    double center_y_m = 0.0;
+    double tangent_x = 0.0;
+    double tangent_y = 0.0;
+    double half_width_m = 0.0;
+    bool endpoint_section = false;
+};
+
+// Perpendicular sampled transects across the authored headwaters branches and
+// trunk. Bank crests are maxima of immutable terrain samples around the
+// authored plateau radius (half-width + 12 m transition), with a two-cell
+// margin on each side. The reported section values are local sampled
+// estimates: they do not certify containment between stations or over the
+// whole route. Endpoint stations are emitted under a separate profile category
+// so they cannot be mistaken for the interior reach samples.
+struct Fluid25DSustainedHeadwatersCrossSectionDiagnostics {
+    std::string_view station_name{};
+    bool endpoint_section = false;
+    double section_geometry_valid = 0.0;
+    double positive_bank_crest_valid = 0.0;
+    double negative_bank_crest_valid = 0.0;
+    double bank_search_coverage_fraction = 0.0;
+    std::uint64_t sampled_cell_count = 0U;
+    std::uint64_t wetted_cell_count = 0U;
+    std::uint64_t overbank_wet_cell_count = 0U;
+    double center_x_m = 0.0;
+    double center_y_m = 0.0;
+    double tangent_x = 0.0;
+    double tangent_y = 0.0;
+    double positive_bank_crest_lateral_m = 0.0;
+    double negative_bank_crest_lateral_m = 0.0;
+    double positive_bank_crest_elevation_m = 0.0;
+    double negative_bank_crest_elevation_m = 0.0;
+    double lower_bank_crest_elevation_m = 0.0;
+    double overbank_corridor_radius_m = 0.0;
+    double bank_to_bank_width_m = 0.0;
+    double section_water_area_m2 = 0.0;
+    double representative_free_surface_elevation_m = 0.0;
+    double freeboard_m = 0.0;
+    double freeboard_valid = 0.0;
+    double bankfull_capacity_area_m2 = 0.0;
+    double bankfull_fraction = 0.0;
+    double bankfull_capacity_valid = 0.0;
+    double overbank_valid = 0.0;
+    double overbank_water_volume_one_section_estimate_m3 = 0.0;
+    double depth_velocity_discharge_estimate_m3_per_s = 0.0;
+    double mean_longitudinal_velocity_m_per_s = 0.0;
+    double froude_estimate = 0.0;
+    double froude_valid = 0.0;
+};
+
+// Whole-grid water whose nearest authored reach centerline is farther away
+// than its half-width plus the 12 m bank transition.
+// This includes source/outlet endpoint regions and is an authored-geometry
+// spill indicator, not a terrain-containment certification; endpoint disks and
+// the shared confluence remain approximate because the corridor is built from
+// finite centerline segments.
+struct Fluid25DSustainedHeadwatersCorridorDiagnostics {
+    double diagnostics_valid = 0.0;
+    double endpoint_regions_included = 0.0;
+    double sampled_domain_coverage_fraction = 0.0;
+    std::uint64_t sampled_cell_count = 0U;
+    std::uint64_t outside_authored_corridor_wet_cell_count = 0U;
+    double outside_authored_corridor_water_volume_m3 = 0.0;
 };
 
 struct Fluid25DProfileDiagnostics {
@@ -193,6 +262,20 @@ compute_fluid_25d_sustained_headwaters_stations(const Fluid25DConfig& config,
                                                 std::span<const float> depth_m,
                                                 std::span<const Fluid25DVelocityGpu> velocity);
 
+[[nodiscard]] std::array<Fluid25DSustainedHeadwatersCrossSectionStation,
+                         kFluid25DSustainedHeadwatersCrossSectionStationCount>
+fluid_25d_sustained_headwaters_cross_section_stations(const Fluid25DConfig& config);
+
+[[nodiscard]] Fluid25DSustainedHeadwatersCrossSectionDiagnostics
+compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DSustainedHeadwatersCrossSectionStation& station,
+    std::span<const float> terrain_height_m, std::span<const float> depth_m,
+    std::span<const Fluid25DVelocityGpu> velocity);
+
+[[nodiscard]] Fluid25DSustainedHeadwatersCorridorDiagnostics
+compute_fluid_25d_sustained_headwaters_corridor_diagnostics(const Fluid25DConfig& config,
+                                                            std::span<const float> depth_m);
+
 [[nodiscard]] Fluid25DTracerProfileDiagnostics
 compute_fluid_25d_tracer_profile_diagnostics(
     const Fluid25DConfig& config, std::span<const float> depth_m,
@@ -235,6 +318,12 @@ void record_fluid_25d_sustained_headwaters_stations(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const std::array<Fluid25DSustainedHeadwatersStationDiagnostics,
                      kFluid25DSustainedHeadwatersStationCount>& stations);
+void record_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSustainedHeadwatersCrossSectionDiagnostics& diagnostics);
+void record_fluid_25d_sustained_headwaters_corridor_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSustainedHeadwatersCorridorDiagnostics& diagnostics);
 void record_fluid_25d_boundary_outflow_diagnostics(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const Fluid25DProfileDiagnostics& diagnostics);

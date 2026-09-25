@@ -1702,6 +1702,355 @@ void test_sustained_headwaters_station_diagnostics() {
         "headwater station diagnostics should reject a short velocity field");
 }
 
+void test_sustained_headwaters_cross_section_diagnostics() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    struct Resolution {
+        std::uint32_t width;
+        std::uint32_t height;
+        float cell_size_m;
+    };
+    constexpr std::array<Resolution, 3U> resolutions{{
+        {kFluid25DSustainedHeadwatersGridWidth, kFluid25DSustainedHeadwatersGridHeight,
+         kFluid25DSustainedHeadwatersCellSizeM},
+        {kFluid25DSustainedHeadwatersGridWidth2m, kFluid25DSustainedHeadwatersGridHeight2m,
+         kFluid25DSustainedHeadwatersCellSize2m},
+        {kFluid25DSustainedHeadwatersGridWidth1m, kFluid25DSustainedHeadwatersGridHeight1m,
+         kFluid25DSustainedHeadwatersCellSize1m},
+    }};
+
+    Fluid25DConfig config;
+    config.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+    config.solver = Fluid25DSolver::FiniteVolume;
+    for (const Resolution& resolution : resolutions) {
+        config.grid_width = resolution.width;
+        config.grid_height = resolution.height;
+        config.cell_size_m = resolution.cell_size_m;
+        validate_fluid_25d_config(config);
+        const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+            config.scenario, config.grid_width, config.grid_height, config.cell_size_m);
+        std::vector<float> depth(fluid_25d_cell_count(config), 0.0F);
+        std::vector<Fluid25DVelocityGpu> velocity(depth.size());
+        const auto dry_corridor =
+            compute_fluid_25d_sustained_headwaters_corridor_diagnostics(config, depth);
+        require(dry_corridor.diagnostics_valid == 1.0 &&
+                    dry_corridor.endpoint_regions_included == 1.0 &&
+                    dry_corridor.sampled_domain_coverage_fraction == 1.0 &&
+                    dry_corridor.sampled_cell_count == depth.size() &&
+                    dry_corridor.outside_authored_corridor_wet_cell_count == 0U &&
+                    dry_corridor.outside_authored_corridor_water_volume_m3 == 0.0,
+                "dry authored-corridor diagnostic should report full-domain valid coverage");
+        std::vector<float> corridor_fixture_depth(depth.size(), 0.0F);
+        const std::size_t source_a_index = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height,
+            static_cast<std::uint32_t>(std::lround(kFluid25DSustainedHeadwatersSourceAX *
+                                                   kFluid25DSustainedHeadwatersCellSizeM /
+                                                   config.cell_size_m)),
+            static_cast<std::uint32_t>(std::lround(kFluid25DSustainedHeadwatersSourceAY *
+                                                   kFluid25DSustainedHeadwatersCellSizeM /
+                                                   config.cell_size_m)));
+        const std::size_t far_endpoint_index = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, config.grid_width - 1U, 0U);
+        corridor_fixture_depth[source_a_index] = 0.20F;
+        corridor_fixture_depth[far_endpoint_index] = 0.15F;
+        const auto corridor_fixture = compute_fluid_25d_sustained_headwaters_corridor_diagnostics(
+            config, corridor_fixture_depth);
+        require(corridor_fixture.diagnostics_valid == 1.0 &&
+                    corridor_fixture.endpoint_regions_included == 1.0 &&
+                    corridor_fixture.outside_authored_corridor_wet_cell_count == 1U,
+                "whole-grid corridor tally should retain only water beyond the authored route, "
+                "including edge endpoints");
+        require_close(corridor_fixture.outside_authored_corridor_water_volume_m3,
+                      0.15 * config.cell_size_m * config.cell_size_m, kDepthToleranceM,
+                      "whole-grid corridor water volume should be cell-area weighted");
+        const auto stations = fluid_25d_sustained_headwaters_cross_section_stations(config);
+        require(stations[0].name == "branch_a_interior" &&
+                    stations[1].name == "branch_b_interior" &&
+                    stations[2].name == "trunk_interior" && !stations[0].endpoint_section &&
+                    !stations[1].endpoint_section && !stations[2].endpoint_section &&
+                    stations[3].name == "source_a_endpoint" &&
+                    stations[4].name == "source_b_endpoint" &&
+                    stations[5].name == "outlet_near_endpoint" &&
+                    stations[6].name == "outlet_edge_endpoint" && stations[3].endpoint_section &&
+                    stations[4].endpoint_section && stations[5].endpoint_section &&
+                    stations[6].endpoint_section,
+                "headwaters cross sections should separate interior stations from source/outlet "
+                "endpoints");
+        require(stations[0].tangent_y > 0.0 && stations[1].tangent_y < 0.0 &&
+                    std::abs(stations[2].tangent_y) < 1.0e-12,
+                "headwaters branch transects should retain their authored angled directions");
+        for (std::size_t station_index = 0U; station_index < stations.size(); ++station_index) {
+            const auto dry = compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                config, stations[station_index], scenario.terrain_height_m, depth, velocity);
+            require(
+                dry.section_geometry_valid == 1.0 && dry.bank_search_coverage_fraction >= 0.999 &&
+                    dry.negative_bank_crest_valid == 1.0 && dry.positive_bank_crest_valid == 1.0 &&
+                    dry.bankfull_capacity_valid == 1.0 && dry.overbank_valid == 1.0,
+                "authored headwaters transects should sample both actual bank crests with full "
+                "coverage");
+            require(dry.wetted_cell_count == 0U && dry.overbank_wet_cell_count == 0U &&
+                        dry.freeboard_valid == 0.0 && dry.froude_valid == 0.0 &&
+                        dry.section_water_area_m2 == 0.0 &&
+                        dry.overbank_water_volume_one_section_estimate_m3 == 0.0,
+                    "dry headwaters transects should keep water metrics finite and invalid where "
+                    "unwetted");
+            require(dry.bankfull_capacity_area_m2 > 0.0 && dry.bankfull_fraction == 0.0,
+                    "dry headwaters transects should retain terrain-derived bankfull capacity");
+        }
+
+        const auto source_endpoint =
+            compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                config, stations[3], scenario.terrain_height_m, depth, velocity);
+        require(source_endpoint.endpoint_section && source_endpoint.section_geometry_valid == 1.0,
+                "source-adjacent section should remain separately valid endpoint evidence");
+        const auto outlet_edge = compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+            config, stations[6], scenario.terrain_height_m, depth, velocity);
+        require(outlet_edge.endpoint_section && outlet_edge.section_geometry_valid == 1.0 &&
+                    std::abs(outlet_edge.center_x_m - static_cast<double>(config.grid_width - 1U) *
+                                                          config.cell_size_m) < 1.0e-9,
+                "outlet-edge section should sample the true boundary separately from the "
+                "near-outlet section");
+
+        if (resolution.cell_size_m == kFluid25DSustainedHeadwatersCellSizeM) {
+            std::vector<float> opposite_branch_depth(depth.size(), 0.0F);
+            std::vector<Fluid25DVelocityGpu> opposite_branch_velocity(depth.size());
+            constexpr double source_x_m =
+                kFluid25DSustainedHeadwatersSourceBX * kFluid25DSustainedHeadwatersCellSizeM;
+            constexpr double source_y_m =
+                kFluid25DSustainedHeadwatersSourceBY * kFluid25DSustainedHeadwatersCellSizeM;
+            constexpr double confluence_x_m =
+                kFluid25DSustainedHeadwatersConfluenceX * kFluid25DSustainedHeadwatersCellSizeM;
+            constexpr double confluence_y_m =
+                kFluid25DSustainedHeadwatersConfluenceY * kFluid25DSustainedHeadwatersCellSizeM;
+            const double branch_dx_m = confluence_x_m - source_x_m;
+            const double branch_dy_m = confluence_y_m - source_y_m;
+            const double branch_length_squared_m2 =
+                branch_dx_m * branch_dx_m + branch_dy_m * branch_dy_m;
+            std::uint64_t opposite_branch_cells_in_section = 0U;
+            for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+                for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+                    const std::size_t index =
+                        fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+                    const double x_m = static_cast<double>(x) * config.cell_size_m;
+                    const double y_m = static_cast<double>(y) * config.cell_size_m;
+                    const double branch_t = std::clamp(
+                        ((x_m - source_x_m) * branch_dx_m + (y_m - source_y_m) * branch_dy_m) /
+                            branch_length_squared_m2,
+                        0.0, 1.0);
+                    const double branch_offset_x_m = x_m - (source_x_m + branch_t * branch_dx_m);
+                    const double branch_offset_y_m = y_m - (source_y_m + branch_t * branch_dy_m);
+                    if (std::hypot(branch_offset_x_m, branch_offset_y_m) <= 6.0) {
+                        opposite_branch_depth[index] = 0.20F;
+                    }
+                    const double station_offset_x_m = x_m - stations[0].center_x_m;
+                    const double station_offset_y_m = y_m - stations[0].center_y_m;
+                    const double station_along_m = station_offset_x_m * stations[0].tangent_x +
+                                                   station_offset_y_m * stations[0].tangent_y;
+                    const double station_lateral_m = station_offset_x_m * -stations[0].tangent_y +
+                                                     station_offset_y_m * stations[0].tangent_x;
+                    if (std::abs(station_along_m) <= 0.5 * config.cell_size_m + 1.0e-9 &&
+                        opposite_branch_depth[index] > config.minimum_wet_depth_m) {
+                        ++opposite_branch_cells_in_section;
+                        const double local_corridor_radius_m =
+                            stations[0].half_width_m + 12.0 + (0.5 * stations[0].half_width_m);
+                        require(std::abs(station_lateral_m) > local_corridor_radius_m,
+                                "the opposite branch should lie outside the local spill corridor");
+                    }
+                }
+            }
+            const auto branch_a_with_opposite_branch_wet =
+                compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                    config, stations[0], scenario.terrain_height_m, opposite_branch_depth,
+                    opposite_branch_velocity);
+            const auto opposite_branch_corridor =
+                compute_fluid_25d_sustained_headwaters_corridor_diagnostics(config,
+                                                                            opposite_branch_depth);
+            require(opposite_branch_cells_in_section > 0U &&
+                        branch_a_with_opposite_branch_wet.overbank_valid == 1.0 &&
+                        branch_a_with_opposite_branch_wet.overbank_wet_cell_count == 0U &&
+                        branch_a_with_opposite_branch_wet
+                                .overbank_water_volume_one_section_estimate_m3 == 0.0 &&
+                        opposite_branch_corridor.outside_authored_corridor_wet_cell_count == 0U,
+                    "water on the opposite branch should not be attributed as local branch spill");
+        }
+    }
+
+    config.grid_width = kFluid25DSustainedHeadwatersGridWidth;
+    config.grid_height = kFluid25DSustainedHeadwatersGridHeight;
+    config.cell_size_m = kFluid25DSustainedHeadwatersCellSizeM;
+    config.minimum_wet_depth_m = 0.01F;
+    const auto stations = fluid_25d_sustained_headwaters_cross_section_stations(config);
+    const auto& station = stations[0];
+    const std::size_t cell_count = fluid_25d_cell_count(config);
+    std::vector<float> terrain(cell_count, 0.0F);
+    std::vector<float> depth(cell_count, 0.0F);
+    std::vector<Fluid25DVelocityGpu> velocity(cell_count);
+    const double cell_size_m = config.cell_size_m;
+    const double normal_x = -station.tangent_y;
+    const double normal_y = station.tangent_x;
+    const double half_longitudinal_m =
+        0.5 * cell_size_m * (std::abs(station.tangent_x) + std::abs(station.tangent_y));
+    const double lateral_sample_width_m = cell_size_m / (std::abs(normal_x) + std::abs(normal_y));
+    const auto coordinates = [&](std::uint32_t x, std::uint32_t y) {
+        const double offset_x_m = static_cast<double>(x) * cell_size_m - station.center_x_m;
+        const double offset_y_m = static_cast<double>(y) * cell_size_m - station.center_y_m;
+        const double along_m = offset_x_m * station.tangent_x + offset_y_m * station.tangent_y;
+        const double lateral_m = offset_x_m * normal_x + offset_y_m * normal_y;
+        return std::array<double, 2U>{along_m, lateral_m};
+    };
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const std::size_t index =
+                fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+            const auto [along_m, lateral_m] = coordinates(x, y);
+            const double distance_m = std::abs(lateral_m);
+            terrain[index] = static_cast<float>(
+                distance_m <= 18.0 ? std::min(1.0, distance_m / 18.0)
+                                   : std::max(0.40, 1.0 - (0.05 * (distance_m - 18.0))));
+            if (std::abs(along_m) <= half_longitudinal_m + 1.0e-9 && std::abs(lateral_m) < 4.0) {
+                depth[index] = 0.20F;
+                velocity[index].velocity_wet = {static_cast<float>(2.0 * station.tangent_x),
+                                                static_cast<float>(2.0 * station.tangent_y), 1.0F,
+                                                0.0F};
+            }
+        }
+    }
+
+    const auto filled = compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+        config, station, terrain, depth, velocity);
+    std::uint64_t expected_wet_cells = 0U;
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const auto [along_m, lateral_m] = coordinates(x, y);
+            if (std::abs(along_m) <= half_longitudinal_m + 1.0e-9 && std::abs(lateral_m) < 4.0) {
+                ++expected_wet_cells;
+            }
+        }
+    }
+    require(filled.section_geometry_valid == 1.0 &&
+                filled.wetted_cell_count == expected_wet_cells && filled.wetted_cell_count > 0U &&
+                filled.freeboard_valid == 1.0 && filled.bankfull_capacity_valid == 1.0 &&
+                filled.froude_valid == 1.0,
+            "filled angled transect should expose valid local section and flow estimates");
+    require_close(filled.section_water_area_m2,
+                  static_cast<double>(expected_wet_cells) * 0.20 * lateral_sample_width_m,
+                  kDepthToleranceM,
+                  "angled transect section area should integrate only its normal-plane wet cells");
+    require_close(
+        filled.depth_velocity_discharge_estimate_m3_per_s, filled.section_water_area_m2 * 2.0,
+        kDepthToleranceM,
+        "angled transect discharge estimate should project velocity onto the branch direction");
+    require_close(filled.mean_longitudinal_velocity_m_per_s, 2.0, kDepthToleranceM,
+                  "angled transect mean flow speed should use the branch tangent component");
+    require_close(filled.froude_estimate,
+                  2.0 / std::sqrt(static_cast<double>(config.gravity_m_per_s2) * 0.20),
+                  kDepthToleranceM,
+                  "angled transect Froude estimate should stay finite at shallow wet depths");
+    require(filled.bankfull_fraction > 0.0 && filled.bankfull_fraction < 1.0 &&
+                std::isfinite(filled.freeboard_m),
+            "known in-bank water should produce a finite freeboard and partial bankfull fraction");
+
+    std::fill(depth.begin(), depth.end(), 0.0F);
+    std::uint64_t expected_overbank_cells = 0U;
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const std::size_t index =
+                fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+            const auto [along_m, lateral_m] = coordinates(x, y);
+            const bool in_station_slab = std::abs(along_m) <= half_longitudinal_m + 1.0e-9;
+            if (in_station_slab && std::abs(lateral_m) <= filled.overbank_corridor_radius_m &&
+                (lateral_m < filled.negative_bank_crest_lateral_m ||
+                 lateral_m > filled.positive_bank_crest_lateral_m)) {
+                depth[index] = 0.15F;
+                ++expected_overbank_cells;
+            }
+        }
+    }
+    const auto overbank = compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+        config, station, terrain, depth, velocity);
+    require(overbank.overbank_valid == 1.0 &&
+                overbank.overbank_wet_cell_count == expected_overbank_cells &&
+                overbank.overbank_wet_cell_count > 0U,
+            "water outside the sampled bank crests should count as local overbank wet cells");
+    require_close(overbank.overbank_water_volume_one_section_estimate_m3,
+                  static_cast<double>(expected_overbank_cells) * 0.15 * lateral_sample_width_m *
+                      cell_size_m,
+                  kDepthToleranceM,
+                  "overbank volume should estimate only the sampled one-section station slab");
+    require(overbank.freeboard_valid == 0.0 && overbank.froude_valid == 0.0,
+            "overbank-only water should not create an in-bank freeboard or Froude estimate");
+
+    const auto endpoint = fluid_25d_sustained_headwaters_cross_section_stations(config)[6];
+    const auto endpoint_diagnostics =
+        compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(config, endpoint, terrain,
+                                                                         depth, velocity);
+    cubey::profiling::ProfileRecorder recorder({
+        .output_prefix =
+            std::filesystem::temp_directory_path() / "cubey-fluid-25d-headwaters-profile",
+        .warmup_frames = 0U,
+    });
+    record_fluid_25d_sustained_headwaters_cross_section_diagnostics(recorder, 0U, filled);
+    record_fluid_25d_sustained_headwaters_cross_section_diagnostics(recorder, 0U,
+                                                                    endpoint_diagnostics);
+    std::vector<float> corridor_record_depth(cell_count, 0.0F);
+    corridor_record_depth[fluid_25d_scenario_index(config.grid_width, config.grid_height,
+                                                   config.grid_width - 1U, 0U)] = 0.15F;
+    const auto corridor_record =
+        compute_fluid_25d_sustained_headwaters_corridor_diagnostics(config, corridor_record_depth);
+    record_fluid_25d_sustained_headwaters_corridor_diagnostics(recorder, 0U, corridor_record);
+    const auto metrics = recorder.metric_records();
+    const auto has_metric = [&metrics](std::string_view category, std::string_view name,
+                                       double expected_value) {
+        return std::any_of(metrics.begin(), metrics.end(), [&](const auto& metric) {
+            return metric.category == category && metric.name == name &&
+                   std::abs(metric.value - expected_value) < 1.0e-9;
+        });
+    };
+    require(
+        has_metric("fluid_25d.headwaters_cross_section",
+                   "station.branch_a_interior.bankfull_capacity_valid", 1.0) &&
+            has_metric("fluid_25d.headwaters_endpoint_section",
+                       "station.outlet_edge_endpoint.endpoint_section", 1.0) &&
+            has_metric("fluid_25d.headwaters_authored_corridor",
+                       "outside_authored_corridor_wet_cell_count", 1.0) &&
+            has_metric("fluid_25d.headwaters_authored_corridor", "endpoint_regions_included", 1.0),
+        "profile recording should separate interior sections, endpoint sections, and corridor "
+        "spill");
+
+    Fluid25DConfig unrelated = config;
+    unrelated.scenario = Fluid25DScenario::DryBed;
+    require_throws(
+        [&] {
+            static_cast<void>(fluid_25d_sustained_headwaters_cross_section_stations(unrelated));
+        },
+        "headwaters cross-section station selection should reject other scenarios");
+    require_throws(
+        [&] {
+            static_cast<void>(
+                compute_fluid_25d_sustained_headwaters_corridor_diagnostics(unrelated, depth));
+        },
+        "headwaters authored-corridor diagnostics should reject other scenarios");
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                config, station, terrain, std::span<const float>(depth).first(1U), velocity));
+        },
+        "headwaters cross-section diagnostics should reject mismatched field dimensions");
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_sustained_headwaters_corridor_diagnostics(
+                config, std::span<const float>(depth).first(1U)));
+        },
+        "headwaters authored-corridor diagnostics should reject mismatched depth dimensions");
+    auto malformed_station = station;
+    malformed_station.tangent_x = 2.0;
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                config, malformed_station, terrain, depth, velocity));
+        },
+        "headwaters cross-section diagnostics should reject non-unit transect directions");
+}
+
 void test_terrain_case_ingestion() {
     using namespace cubey::projects::fluid::fluid_25d;
     TerrainFixture fixture;
@@ -4246,6 +4595,7 @@ int main() {
         test_sustained_headwaters_scenario_construction();
         test_sustained_headwaters_refined_scenario_construction();
         test_sustained_headwaters_station_diagnostics();
+        test_sustained_headwaters_cross_section_diagnostics();
         test_terrain_case_ingestion();
         test_terrain_water_protocol_construction();
         test_mountain_source_outlet_field_construction();

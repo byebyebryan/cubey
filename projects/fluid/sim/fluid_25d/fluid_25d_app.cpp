@@ -590,6 +590,21 @@ class Fluid25DApp {
                 config_.simulation, depth_m, velocity);
             record_fluid_25d_sustained_headwaters_stations(*profile_recorder, frame_index,
                                                            stations);
+            const auto cross_section_stations =
+                fluid_25d_sustained_headwaters_cross_section_stations(config_.simulation);
+            for (const Fluid25DSustainedHeadwatersCrossSectionStation& station :
+                 cross_section_stations) {
+                const Fluid25DSustainedHeadwatersCrossSectionDiagnostics section =
+                    compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                        config_.simulation, station, scenario_.terrain_height_m, depth_m, velocity);
+                record_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+                    *profile_recorder, frame_index, section);
+            }
+            const Fluid25DSustainedHeadwatersCorridorDiagnostics corridor =
+                compute_fluid_25d_sustained_headwaters_corridor_diagnostics(config_.simulation,
+                                                                            depth_m);
+            record_fluid_25d_sustained_headwaters_corridor_diagnostics(*profile_recorder,
+                                                                       frame_index, corridor);
         }
         const Fluid25DTracerProfileDiagnostics tracer_diagnostics =
             compute_fluid_25d_tracer_profile_diagnostics(config_.simulation, depth_m, tracer_q_m,

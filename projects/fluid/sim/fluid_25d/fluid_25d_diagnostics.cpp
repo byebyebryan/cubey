@@ -1,13 +1,16 @@
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_scenarios.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
 namespace {
@@ -289,6 +292,352 @@ compute_fluid_25d_sustained_headwaters_stations(const Fluid25DConfig& config,
     return stations;
 }
 
+std::array<Fluid25DSustainedHeadwatersCrossSectionStation,
+           kFluid25DSustainedHeadwatersCrossSectionStationCount>
+fluid_25d_sustained_headwaters_cross_section_stations(const Fluid25DConfig& config) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::SustainedHeadwatersDemo) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters cross sections require sustained-headwaters-demo");
+    }
+    struct Reach {
+        double x0_m;
+        double y0_m;
+        double x1_m;
+        double y1_m;
+        double half_width_m;
+    };
+    constexpr double reference_cell_size_m = kFluid25DSustainedHeadwatersCellSizeM;
+    const double confluence_x_m = kFluid25DSustainedHeadwatersConfluenceX * reference_cell_size_m;
+    const double confluence_y_m = kFluid25DSustainedHeadwatersConfluenceY * reference_cell_size_m;
+    const std::array<Reach, 3U> reaches{{
+        {kFluid25DSustainedHeadwatersSourceAX * reference_cell_size_m,
+         kFluid25DSustainedHeadwatersSourceAY * reference_cell_size_m, confluence_x_m,
+         confluence_y_m, 6.0},
+        {kFluid25DSustainedHeadwatersSourceBX * reference_cell_size_m,
+         kFluid25DSustainedHeadwatersSourceBY * reference_cell_size_m, confluence_x_m,
+         confluence_y_m, 6.0},
+        {confluence_x_m, confluence_y_m,
+         static_cast<double>(config.grid_width - 1U) * config.cell_size_m, confluence_y_m, 8.0},
+    }};
+    const auto make_station = [&reaches](std::string_view name, std::size_t reach_index,
+                                         double progress, bool endpoint_section) {
+        const Reach& reach = reaches[reach_index];
+        const double dx_m = reach.x1_m - reach.x0_m;
+        const double dy_m = reach.y1_m - reach.y0_m;
+        const double length_m = std::hypot(dx_m, dy_m);
+        return Fluid25DSustainedHeadwatersCrossSectionStation{
+            .name = name,
+            .center_x_m = reach.x0_m + progress * dx_m,
+            .center_y_m = reach.y0_m + progress * dy_m,
+            .tangent_x = dx_m / length_m,
+            .tangent_y = dy_m / length_m,
+            .half_width_m = reach.half_width_m,
+            .endpoint_section = endpoint_section,
+        };
+    };
+    return {{make_station("branch_a_interior", 0U, 0.50, false),
+             make_station("branch_b_interior", 1U, 0.50, false),
+             make_station("trunk_interior", 2U, 0.50, false),
+             make_station("source_a_endpoint", 0U, 0.10, true),
+             make_station("source_b_endpoint", 1U, 0.10, true),
+             make_station("outlet_near_endpoint", 2U, 0.94, true),
+             make_station("outlet_edge_endpoint", 2U, 1.00, true)}};
+}
+
+Fluid25DSustainedHeadwatersCrossSectionDiagnostics
+compute_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DSustainedHeadwatersCrossSectionStation& station,
+    std::span<const float> terrain_height_m, std::span<const float> depth_m,
+    std::span<const Fluid25DVelocityGpu> velocity) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::SustainedHeadwatersDemo) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters cross sections require sustained-headwaters-demo");
+    }
+    const std::size_t cell_count = fluid_25d_cell_count(config);
+    if (terrain_height_m.size() != cell_count || depth_m.size() != cell_count ||
+        velocity.size() != cell_count) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters cross-section fields have invalid dimensions");
+    }
+    const double tangent_length = std::hypot(station.tangent_x, station.tangent_y);
+    if (station.name.empty() || !std::isfinite(station.center_x_m) ||
+        !std::isfinite(station.center_y_m) || !std::isfinite(station.tangent_x) ||
+        !std::isfinite(station.tangent_y) || !std::isfinite(station.half_width_m) ||
+        station.half_width_m <= 0.0 || !std::isfinite(tangent_length) ||
+        std::abs(tangent_length - 1.0) > 1.0e-6) {
+        throw std::runtime_error("fluid 2.5D headwaters cross-section station is invalid");
+    }
+
+    struct Sample {
+        double lateral_m;
+        double bed_m;
+        double depth_m;
+        double velocity_along_m_per_s;
+    };
+    const double dx_m = config.cell_size_m;
+    constexpr double bank_transition_width_m = 12.0;
+    const double plateau_radius_m = station.half_width_m + bank_transition_width_m;
+    const double crest_margin_m = 2.0 * dx_m;
+    const double crest_radius_m = plateau_radius_m + crest_margin_m;
+    const double spill_corridor_radius_m = plateau_radius_m + 0.5 * station.half_width_m;
+    const double normal_x = -station.tangent_y;
+    const double normal_y = station.tangent_x;
+    const double projected_cell_half_extent_m =
+        0.5 * dx_m * (std::abs(station.tangent_x) + std::abs(station.tangent_y));
+    const double lateral_sample_width_m = dx_m / (std::abs(normal_x) + std::abs(normal_y));
+    const std::size_t width = config.grid_width;
+    std::vector<Sample> samples;
+    samples.reserve(config.grid_width + config.grid_height);
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        const double y_m = static_cast<double>(y) * dx_m;
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const double x_m = static_cast<double>(x) * dx_m;
+            const double offset_x_m = x_m - station.center_x_m;
+            const double offset_y_m = y_m - station.center_y_m;
+            const double along_m = offset_x_m * station.tangent_x + offset_y_m * station.tangent_y;
+            if (std::abs(along_m) > projected_cell_half_extent_m + 1.0e-9) {
+                continue;
+            }
+            const std::size_t index = static_cast<std::size_t>(y) * width + x;
+            const auto& components = velocity[index].velocity_wet;
+            const float bed = terrain_height_m[index];
+            const float depth = depth_m[index];
+            if (!std::isfinite(bed) || !std::isfinite(depth) || depth < 0.0F ||
+                !std::isfinite(components[0]) || !std::isfinite(components[1]) ||
+                !std::isfinite(components[2]) || !std::isfinite(components[3])) {
+                throw std::runtime_error("fluid 2.5D headwaters cross-section readback is invalid");
+            }
+            const double lateral_m = offset_x_m * normal_x + offset_y_m * normal_y;
+            const double velocity_along_m_per_s =
+                static_cast<double>(components[0]) * station.tangent_x +
+                static_cast<double>(components[1]) * station.tangent_y;
+            samples.push_back({lateral_m, bed, depth, velocity_along_m_per_s});
+        }
+    }
+
+    // Coverage is the union of actual cell-width intervals in the expected
+    // crest-search band. The bank transition reaches its authored plateau at
+    // half-width + 12 m; two cells on either side absorb raster alignment.
+    std::vector<std::pair<double, double>> intervals;
+    intervals.reserve(samples.size());
+    for (const Sample& sample : samples) {
+        const double lower =
+            std::max(-crest_radius_m, sample.lateral_m - projected_cell_half_extent_m);
+        const double upper =
+            std::min(crest_radius_m, sample.lateral_m + projected_cell_half_extent_m);
+        if (upper > lower) {
+            intervals.emplace_back(lower, upper);
+        }
+    }
+    std::sort(intervals.begin(), intervals.end());
+    double covered_width_m = 0.0;
+    double covered_until_m = -crest_radius_m;
+    for (const auto& [lower, upper] : intervals) {
+        const double start_m = std::max(lower, covered_until_m);
+        if (upper > start_m) {
+            covered_width_m += upper - start_m;
+            covered_until_m = upper;
+        }
+    }
+
+    bool has_negative_bank = false;
+    bool has_positive_bank = false;
+    double negative_lateral_m = 0.0;
+    double positive_lateral_m = 0.0;
+    double negative_elevation_m = 0.0;
+    double positive_elevation_m = 0.0;
+    const double crest_inner_m = plateau_radius_m - crest_margin_m;
+    for (const Sample& sample : samples) {
+        if (sample.lateral_m >= -crest_radius_m && sample.lateral_m <= -crest_inner_m &&
+            (!has_negative_bank || sample.bed_m > negative_elevation_m ||
+             (sample.bed_m == negative_elevation_m && sample.lateral_m < negative_lateral_m))) {
+            has_negative_bank = true;
+            negative_lateral_m = sample.lateral_m;
+            negative_elevation_m = sample.bed_m;
+        }
+        if (sample.lateral_m >= crest_inner_m && sample.lateral_m <= crest_radius_m &&
+            (!has_positive_bank || sample.bed_m > positive_elevation_m ||
+             (sample.bed_m == positive_elevation_m && sample.lateral_m > positive_lateral_m))) {
+            has_positive_bank = true;
+            positive_lateral_m = sample.lateral_m;
+            positive_elevation_m = sample.bed_m;
+        }
+    }
+
+    Fluid25DSustainedHeadwatersCrossSectionDiagnostics result;
+    result.station_name = station.name;
+    result.endpoint_section = station.endpoint_section;
+    result.bank_search_coverage_fraction =
+        std::clamp(covered_width_m / (2.0 * crest_radius_m), 0.0, 1.0);
+    result.sampled_cell_count = samples.size();
+    result.center_x_m = station.center_x_m;
+    result.center_y_m = station.center_y_m;
+    result.tangent_x = station.tangent_x;
+    result.tangent_y = station.tangent_y;
+    result.overbank_corridor_radius_m = spill_corridor_radius_m;
+    result.negative_bank_crest_valid = has_negative_bank ? 1.0 : 0.0;
+    result.positive_bank_crest_valid = has_positive_bank ? 1.0 : 0.0;
+    result.negative_bank_crest_lateral_m = negative_lateral_m;
+    result.positive_bank_crest_lateral_m = positive_lateral_m;
+    result.negative_bank_crest_elevation_m = negative_elevation_m;
+    result.positive_bank_crest_elevation_m = positive_elevation_m;
+    const bool center_in_domain =
+        station.center_x_m >= 0.0 && station.center_y_m >= 0.0 &&
+        station.center_x_m <= static_cast<double>(config.grid_width - 1U) * dx_m &&
+        station.center_y_m <= static_cast<double>(config.grid_height - 1U) * dx_m;
+    const bool has_bank_pair = has_negative_bank && has_positive_bank;
+    result.section_geometry_valid = !samples.empty() && center_in_domain && has_bank_pair &&
+                                            result.bank_search_coverage_fraction >= 0.999
+                                        ? 1.0
+                                        : 0.0;
+    if (has_bank_pair) {
+        result.lower_bank_crest_elevation_m = std::min(negative_elevation_m, positive_elevation_m);
+        result.bank_to_bank_width_m =
+            positive_lateral_m - negative_lateral_m + lateral_sample_width_m;
+    }
+
+    double wetted_width_m = 0.0;
+    double weighted_surface_sum_m3 = 0.0;
+    if (has_bank_pair) {
+        for (const Sample& sample : samples) {
+            const bool in_bank =
+                sample.lateral_m >= negative_lateral_m && sample.lateral_m <= positive_lateral_m;
+            const bool wet = sample.depth_m > config.minimum_wet_depth_m;
+            if (in_bank) {
+                result.bankfull_capacity_area_m2 +=
+                    std::max(0.0, result.lower_bank_crest_elevation_m - sample.bed_m) *
+                    lateral_sample_width_m;
+                if (!wet) {
+                    continue;
+                }
+                const double area_m2 = sample.depth_m * lateral_sample_width_m;
+                ++result.wetted_cell_count;
+                result.section_water_area_m2 += area_m2;
+                wetted_width_m += lateral_sample_width_m;
+                result.depth_velocity_discharge_estimate_m3_per_s +=
+                    area_m2 * sample.velocity_along_m_per_s;
+                weighted_surface_sum_m3 += (sample.bed_m + sample.depth_m) * area_m2;
+            } else if (wet && std::abs(sample.lateral_m) <= spill_corridor_radius_m) {
+                ++result.overbank_wet_cell_count;
+                result.overbank_water_volume_one_section_estimate_m3 +=
+                    sample.depth_m * lateral_sample_width_m * dx_m;
+            }
+        }
+    }
+    result.overbank_valid = result.section_geometry_valid;
+    if (result.section_water_area_m2 > 0.0 && wetted_width_m > 0.0) {
+        result.representative_free_surface_elevation_m =
+            weighted_surface_sum_m3 / result.section_water_area_m2;
+        result.freeboard_m =
+            result.lower_bank_crest_elevation_m - result.representative_free_surface_elevation_m;
+        result.freeboard_valid = result.section_geometry_valid;
+        result.mean_longitudinal_velocity_m_per_s =
+            result.depth_velocity_discharge_estimate_m3_per_s / result.section_water_area_m2;
+        const double mean_wet_depth_m = result.section_water_area_m2 / wetted_width_m;
+        if (mean_wet_depth_m > 0.0) {
+            result.froude_estimate =
+                std::abs(result.mean_longitudinal_velocity_m_per_s) /
+                std::sqrt(static_cast<double>(config.gravity_m_per_s2) * mean_wet_depth_m);
+            result.froude_valid = result.section_geometry_valid;
+        }
+    }
+    if (result.section_geometry_valid > 0.0 &&
+        result.bankfull_capacity_area_m2 > std::numeric_limits<double>::min()) {
+        result.bankfull_fraction = result.section_water_area_m2 / result.bankfull_capacity_area_m2;
+        result.bankfull_capacity_valid = 1.0;
+    }
+    return result;
+}
+
+Fluid25DSustainedHeadwatersCorridorDiagnostics
+compute_fluid_25d_sustained_headwaters_corridor_diagnostics(const Fluid25DConfig& config,
+                                                            std::span<const float> depth_m) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::SustainedHeadwatersDemo) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters corridor diagnostic requires sustained-headwaters-demo");
+    }
+    const std::size_t cell_count = fluid_25d_cell_count(config);
+    if (depth_m.size() != cell_count) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters corridor depth field has invalid dimensions");
+    }
+
+    struct Reach {
+        double x0_m;
+        double y0_m;
+        double x1_m;
+        double y1_m;
+        double half_width_m;
+    };
+    constexpr double reference_cell_size_m = kFluid25DSustainedHeadwatersCellSizeM;
+    const double confluence_x_m = kFluid25DSustainedHeadwatersConfluenceX * reference_cell_size_m;
+    const double confluence_y_m = kFluid25DSustainedHeadwatersConfluenceY * reference_cell_size_m;
+    const std::array<Reach, 3U> reaches{{
+        {kFluid25DSustainedHeadwatersSourceAX * reference_cell_size_m,
+         kFluid25DSustainedHeadwatersSourceAY * reference_cell_size_m, confluence_x_m,
+         confluence_y_m, 6.0},
+        {kFluid25DSustainedHeadwatersSourceBX * reference_cell_size_m,
+         kFluid25DSustainedHeadwatersSourceBY * reference_cell_size_m, confluence_x_m,
+         confluence_y_m, 6.0},
+        {confluence_x_m, confluence_y_m,
+         static_cast<double>(config.grid_width - 1U) * config.cell_size_m, confluence_y_m, 8.0},
+    }};
+
+    Fluid25DSustainedHeadwatersCorridorDiagnostics result;
+    const double cell_area_m2 = static_cast<double>(config.cell_size_m) * config.cell_size_m;
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        const double y_m = static_cast<double>(y) * config.cell_size_m;
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const std::size_t index = static_cast<std::size_t>(y) * config.grid_width + x;
+            const float depth = depth_m[index];
+            if (!std::isfinite(depth) || depth < 0.0F) {
+                throw std::runtime_error(
+                    "fluid 2.5D headwaters corridor diagnostic depth is invalid");
+            }
+            ++result.sampled_cell_count;
+            if (depth <= config.minimum_wet_depth_m) {
+                continue;
+            }
+
+            const double x_m = static_cast<double>(x) * config.cell_size_m;
+            double nearest_distance_m = std::numeric_limits<double>::infinity();
+            double nearest_half_width_m = 0.0;
+            for (const Reach& reach : reaches) {
+                const double dx_m = reach.x1_m - reach.x0_m;
+                const double dy_m = reach.y1_m - reach.y0_m;
+                const double length_squared_m2 = dx_m * dx_m + dy_m * dy_m;
+                const double offset_x_m = x_m - reach.x0_m;
+                const double offset_y_m = y_m - reach.y0_m;
+                const double t = std::clamp(
+                    (offset_x_m * dx_m + offset_y_m * dy_m) / length_squared_m2, 0.0, 1.0);
+                const double nearest_x_m = reach.x0_m + t * dx_m;
+                const double nearest_y_m = reach.y0_m + t * dy_m;
+                const double distance_m = std::hypot(x_m - nearest_x_m, y_m - nearest_y_m);
+                if (distance_m < nearest_distance_m) {
+                    nearest_distance_m = distance_m;
+                    nearest_half_width_m = reach.half_width_m;
+                }
+            }
+            if (nearest_distance_m > nearest_half_width_m + 12.0) {
+                ++result.outside_authored_corridor_wet_cell_count;
+                result.outside_authored_corridor_water_volume_m3 +=
+                    static_cast<double>(depth) * cell_area_m2;
+            }
+        }
+    }
+    result.diagnostics_valid = 1.0;
+    result.endpoint_regions_included = 1.0;
+    result.sampled_domain_coverage_fraction =
+        static_cast<double>(result.sampled_cell_count) / static_cast<double>(cell_count);
+    if (!std::isfinite(result.outside_authored_corridor_water_volume_m3)) {
+        throw std::runtime_error("fluid 2.5D headwaters corridor volume is nonfinite");
+    }
+    return result;
+}
+
 Fluid25DTracerProfileDiagnostics compute_fluid_25d_tracer_profile_diagnostics(
     const Fluid25DConfig& config, std::span<const float> depth_m,
     std::span<const float> tracer_q_m, std::span<const float> sink_depth_rate_m_per_s,
@@ -451,6 +800,73 @@ void record_fluid_25d_sustained_headwaters_stations(
         recorder.record_metric(frame_index, "fluid_25d.headwaters", prefix + "velocity_y_m_per_s",
                                station.velocity_y_m_per_s);
     }
+}
+
+void record_fluid_25d_sustained_headwaters_cross_section_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSustainedHeadwatersCrossSectionDiagnostics& diagnostics) {
+    const std::string_view category = diagnostics.endpoint_section
+                                          ? "fluid_25d.headwaters_endpoint_section"
+                                          : "fluid_25d.headwaters_cross_section";
+    const auto record = [&](std::string_view metric, double value) {
+        recorder.record_metric(
+            frame_index, category,
+            "station." + std::string(diagnostics.station_name) + "." + std::string(metric), value);
+    };
+    record("endpoint_section", diagnostics.endpoint_section ? 1.0 : 0.0);
+    record("section_geometry_valid", diagnostics.section_geometry_valid);
+    record("bank_search_coverage_fraction", diagnostics.bank_search_coverage_fraction);
+    record("sampled_cell_count", static_cast<double>(diagnostics.sampled_cell_count));
+    record("center_x_m", diagnostics.center_x_m);
+    record("center_y_m", diagnostics.center_y_m);
+    record("tangent_x", diagnostics.tangent_x);
+    record("tangent_y", diagnostics.tangent_y);
+    record("negative_bank_crest_valid", diagnostics.negative_bank_crest_valid);
+    record("positive_bank_crest_valid", diagnostics.positive_bank_crest_valid);
+    record("negative_bank_crest_lateral_m", diagnostics.negative_bank_crest_lateral_m);
+    record("positive_bank_crest_lateral_m", diagnostics.positive_bank_crest_lateral_m);
+    record("negative_bank_crest_elevation_m", diagnostics.negative_bank_crest_elevation_m);
+    record("positive_bank_crest_elevation_m", diagnostics.positive_bank_crest_elevation_m);
+    record("lower_bank_crest_elevation_m", diagnostics.lower_bank_crest_elevation_m);
+    record("overbank_corridor_radius_m", diagnostics.overbank_corridor_radius_m);
+    record("bank_to_bank_width_m", diagnostics.bank_to_bank_width_m);
+    record("wetted_cell_count", static_cast<double>(diagnostics.wetted_cell_count));
+    record("section_water_area_m2", diagnostics.section_water_area_m2);
+    record("representative_free_surface_elevation_m",
+           diagnostics.representative_free_surface_elevation_m);
+    record("freeboard_m", diagnostics.freeboard_m);
+    record("freeboard_valid", diagnostics.freeboard_valid);
+    record("bankfull_capacity_area_m2", diagnostics.bankfull_capacity_area_m2);
+    record("bankfull_fraction", diagnostics.bankfull_fraction);
+    record("bankfull_capacity_valid", diagnostics.bankfull_capacity_valid);
+    record("overbank_wet_cell_count", static_cast<double>(diagnostics.overbank_wet_cell_count));
+    record("overbank_one_section_volume_estimate_m3",
+           diagnostics.overbank_water_volume_one_section_estimate_m3);
+    record("overbank_valid", diagnostics.overbank_valid);
+    record("depth_velocity_discharge_estimate_m3_per_s",
+           diagnostics.depth_velocity_discharge_estimate_m3_per_s);
+    record("mean_longitudinal_velocity_m_per_s", diagnostics.mean_longitudinal_velocity_m_per_s);
+    record("froude_estimate", diagnostics.froude_estimate);
+    record("froude_valid", diagnostics.froude_valid);
+}
+
+void record_fluid_25d_sustained_headwaters_corridor_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DSustainedHeadwatersCorridorDiagnostics& diagnostics) {
+    constexpr std::string_view category = "fluid_25d.headwaters_authored_corridor";
+    recorder.record_metric(frame_index, category, "diagnostics_valid",
+                           diagnostics.diagnostics_valid);
+    recorder.record_metric(frame_index, category, "endpoint_regions_included",
+                           diagnostics.endpoint_regions_included);
+    recorder.record_metric(frame_index, category, "sampled_domain_coverage_fraction",
+                           diagnostics.sampled_domain_coverage_fraction);
+    recorder.record_metric(frame_index, category, "sampled_cell_count",
+                           static_cast<double>(diagnostics.sampled_cell_count));
+    recorder.record_metric(
+        frame_index, category, "outside_authored_corridor_wet_cell_count",
+        static_cast<double>(diagnostics.outside_authored_corridor_wet_cell_count));
+    recorder.record_metric(frame_index, category, "outside_authored_corridor_water_volume_m3",
+                           diagnostics.outside_authored_corridor_water_volume_m3);
 }
 
 void record_fluid_25d_boundary_outflow_diagnostics(
