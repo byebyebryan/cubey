@@ -5,6 +5,7 @@
 
 layout(set = 0, binding = 5, std430) readonly buffer EndpointMarkers {
     vec4 source_xy_outlet_xy;
+    vec4 secondary_source_xy_reserved;
 } endpoint_markers;
 
 layout(push_constant) uniform CatchmentParams {
@@ -28,6 +29,14 @@ float endpoint_annulus(vec2 grid_position, vec2 endpoint, float radius_cells) {
     }
     float radial_distance = length(grid_position - endpoint);
     return 1.0 - smoothstep(0.60, 1.45, abs(radial_distance - radius_cells));
+}
+
+float headwaters_endpoint_annulus_m(vec2 grid_position, vec2 endpoint, float cell_size_m) {
+    if (any(lessThan(endpoint, vec2(0.0)))) {
+        return 0.0;
+    }
+    float radial_distance_m = length(grid_position - endpoint) * cell_size_m;
+    return 1.0 - smoothstep(2.4, 5.8, abs(radial_distance_m - 12.0));
 }
 
 void main() {
@@ -86,6 +95,13 @@ void main() {
     color += cubey_srgb_to_linear(vec3(0.34, 0.72, 0.95)) * (0.16 * sparse_highlight);
     color = color * (0.38 + 0.45 * diffuse) + vec3(0.40, 0.68, 0.92) * (0.34 * fresnel);
     float alpha = mix(0.48, 0.76, depth_factor);
+    if (params.presentation.z > 0.5 && !water_isolation && !flow_inspection &&
+        !transport_inspection) {
+        // Opt-in terrain-study presentation only. Rainfall excess wets every
+        // cell at sub-centimetre depths; attenuate that thin film in Composite
+        // without changing solver wetness, volume, or diagnostic water views.
+        alpha *= smoothstep(0.002, 0.050, water_depth);
+    }
     if (water_isolation) {
         alpha = mix(0.68, 0.88, depth_factor);
     }
@@ -97,18 +113,36 @@ void main() {
     // route remains labelled even after a local sink removes its water.
     vec2 grid_position = world_position.xz / params.grid_cell.z +
                          0.5 * vec2(params.grid_cell.x - 1.0, params.grid_cell.y - 1.0);
-    float radius_cells = clamp(0.045 * min(params.grid_cell.x, params.grid_cell.y), 3.0, 6.0);
-    float source_marker = endpoint_annulus(grid_position,
-                                            endpoint_markers.source_xy_outlet_xy.xy,
-                                            radius_cells);
-    float outlet_marker = endpoint_annulus(grid_position,
-                                            endpoint_markers.source_xy_outlet_xy.zw,
-                                            radius_cells);
+    float source_marker;
+    float outlet_marker;
+    float secondary_source_marker;
+    if (params.presentation.w > 2.5 && params.grid_cell.z < 4.0) {
+        // Match the legacy headwaters ring in metres on refined grids. The
+        // old path remains intact for 4 m and all other scenarios.
+        source_marker = headwaters_endpoint_annulus_m(
+            grid_position, endpoint_markers.source_xy_outlet_xy.xy, params.grid_cell.z);
+        outlet_marker = headwaters_endpoint_annulus_m(
+            grid_position, endpoint_markers.source_xy_outlet_xy.zw, params.grid_cell.z);
+        secondary_source_marker = headwaters_endpoint_annulus_m(
+            grid_position, endpoint_markers.secondary_source_xy_reserved.xy,
+            params.grid_cell.z);
+    } else {
+        float radius_cells = clamp(0.045 * min(params.grid_cell.x, params.grid_cell.y),
+                                   3.0, 6.0);
+        source_marker = endpoint_annulus(grid_position,
+                                         endpoint_markers.source_xy_outlet_xy.xy,
+                                         radius_cells);
+        outlet_marker = endpoint_annulus(grid_position,
+                                         endpoint_markers.source_xy_outlet_xy.zw,
+                                         radius_cells);
+        secondary_source_marker = endpoint_annulus(
+            grid_position, endpoint_markers.secondary_source_xy_reserved.xy, radius_cells);
+    }
     vec3 source_color = cubey_srgb_to_linear(vec3(0.16, 0.88, 0.34));
     vec3 outlet_color = cubey_srgb_to_linear(vec3(1.00, 0.56, 0.08));
-    color = mix(color, source_color, 0.94 * source_marker);
+    color = mix(color, source_color, 0.94 * max(source_marker, secondary_source_marker));
     color = mix(color, outlet_color, 0.94 * outlet_marker);
-    alpha = max(alpha, 0.82 * max(source_marker, outlet_marker));
+    alpha = max(alpha, 0.82 * max(max(source_marker, secondary_source_marker), outlet_marker));
     // Premultiplied source-over: the pipeline uses ONE / ONE_MINUS_SRC_ALPHA.
     out_color = vec4(color * alpha, alpha);
 }

@@ -45,7 +45,7 @@ inline constexpr VkDeviceSize kSimulationPushConstantBytes = sizeof(float) * 12U
     const VkPushConstantRange push_constant{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 28U,
+        .size = sizeof(float) * 32U,
     };
     return {
         .label = "fluid_25d.catchment_terrain",
@@ -195,19 +195,8 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<float> zero_tracer_q(cells);
     const std::vector<float> zero_presentation_cue(cells);
     const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_presentation_status(1U);
-    Fluid25DEndpointMarkersGpu endpoint_markers{};
-    endpoint_markers.source_xy_outlet_xy.fill(-1.0F);
-    if (fluid_25d_is_source_outlet_demo(config.scenario) &&
-        scenario.source_cell != kFluid25DNoCell && scenario.sink_cell != kFluid25DNoCell) {
-        const auto cell_xy = [width = config.grid_width](std::size_t index) {
-            return std::array<float, 2>{static_cast<float>(index % width),
-                                        static_cast<float>(index / width)};
-        };
-        const std::array<float, 2> source_xy = cell_xy(scenario.source_cell);
-        const std::array<float, 2> outlet_xy = cell_xy(scenario.sink_cell);
-        endpoint_markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], outlet_xy[0],
-                                                outlet_xy[1]};
-    }
+    const Fluid25DEndpointMarkersGpu endpoint_markers =
+        fluid_25d_endpoint_markers(config, scenario);
     std::vector<Fluid25DQuiverGpu> inactive_quiver(
         fluid_25d_quiver_count(config.grid_width, config.grid_height));
     for (Fluid25DQuiverGpu& arrow : inactive_quiver) {

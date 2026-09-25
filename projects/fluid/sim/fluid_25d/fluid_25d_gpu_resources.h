@@ -61,12 +61,48 @@ struct Fluid25DQuiverGpu {
     std::array<float, 4> anchor_xy_reserved{};
     std::array<float, 4> direction_xy_strength_opacity{};
 };
-// Catchment-only explanatory markers: source.xy and outlet.xy in cell
-// coordinates. A negative pair disables the corresponding terrain/water
-// annulus, leaving analytic fixtures and immutable terrain cases unchanged.
+// Catchment-only explanatory markers in cell coordinates. The first vec4 is
+// the original source.xy/outlet.xy layout; the second adds an optional second
+// source without changing existing scene marker placement. Negative pairs
+// disable the corresponding terrain/water annulus.
 struct Fluid25DEndpointMarkersGpu {
     std::array<float, 4> source_xy_outlet_xy{};
+    std::array<float, 4> secondary_source_xy_reserved{};
 };
+static_assert(offsetof(Fluid25DEndpointMarkersGpu, secondary_source_xy_reserved) ==
+              sizeof(float) * 4U);
+
+[[nodiscard]] inline Fluid25DEndpointMarkersGpu
+fluid_25d_endpoint_markers(const Fluid25DConfig& config, const Fluid25DScenarioData& scenario) {
+    Fluid25DEndpointMarkersGpu markers{};
+    markers.source_xy_outlet_xy.fill(-1.0F);
+    markers.secondary_source_xy_reserved.fill(-1.0F);
+    if (config.grid_width == 0U) {
+        return markers;
+    }
+
+    const auto cell_xy = [width = config.grid_width](std::size_t index) {
+        return std::array<float, 2>{static_cast<float>(index % width),
+                                    static_cast<float>(index / width)};
+    };
+    if (fluid_25d_is_source_outlet_demo(config.scenario) &&
+        scenario.source_cell != kFluid25DNoCell && scenario.sink_cell != kFluid25DNoCell) {
+        const std::array<float, 2> source_xy = cell_xy(scenario.source_cell);
+        const std::array<float, 2> outlet_xy = cell_xy(scenario.sink_cell);
+        markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], outlet_xy[0], outlet_xy[1]};
+    } else if (config.scenario == Fluid25DScenario::SustainedHeadwatersDemo &&
+               scenario.source_cell != kFluid25DNoCell &&
+               scenario.secondary_source_cell != kFluid25DNoCell &&
+               scenario.outlet_cell != kFluid25DNoCell) {
+        const std::array<float, 2> source_xy = cell_xy(scenario.source_cell);
+        const std::array<float, 2> secondary_source_xy = cell_xy(scenario.secondary_source_cell);
+        const std::array<float, 2> outlet_xy = cell_xy(scenario.outlet_cell);
+        markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], outlet_xy[0], outlet_xy[1]};
+        markers.secondary_source_xy_reserved = {secondary_source_xy[0], secondary_source_xy[1],
+                                                -1.0F, -1.0F};
+    }
+    return markers;
+}
 
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusCflRejected = 1U << 0U;
 inline constexpr std::uint32_t kFluid25DFiniteVolumeStatusInvalidState = 1U << 1U;
@@ -80,7 +116,7 @@ static_assert(sizeof(Fluid25DLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DTracerLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DFiniteVolumeStatusGpu) == sizeof(std::uint32_t) * 4U);
 static_assert(sizeof(Fluid25DQuiverGpu) == sizeof(float) * 8U);
-static_assert(sizeof(Fluid25DEndpointMarkersGpu) == sizeof(float) * 4U);
+static_assert(sizeof(Fluid25DEndpointMarkersGpu) == sizeof(float) * 8U);
 
 class Fluid25DGpuResources {
   public:

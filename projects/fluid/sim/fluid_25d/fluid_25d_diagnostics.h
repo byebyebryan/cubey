@@ -33,6 +33,17 @@ inline constexpr float kFluid25DSlowPooledSpeedThresholdMPerS = 0.02F;
 // the way to dry cells, but numerical Rusanov tails below 1% concentration do
 // not constitute a material dyed front.
 inline constexpr float kFluid25DTracerMaterialConcentration = 0.01F;
+inline constexpr std::size_t kFluid25DBoundaryOutflowBinCount = 16U;
+inline constexpr std::size_t kFluid25DSustainedHeadwatersStationCount = 7U;
+
+struct Fluid25DSustainedHeadwatersStationDiagnostics {
+    std::string_view name{};
+    std::uint32_t x_cell = 0U;
+    std::uint32_t y_cell = 0U;
+    double depth_m = 0.0;
+    double velocity_x_m_per_s = 0.0;
+    double velocity_y_m_per_s = 0.0;
+};
 
 struct Fluid25DProfileDiagnostics {
     std::uint64_t wet_cell_count = 0U;
@@ -48,6 +59,15 @@ struct Fluid25DProfileDiagnostics {
     double cumulative_source_volume_m3 = 0.0;
     double cumulative_sink_volume_m3 = 0.0;
     double cumulative_boundary_outflow_volume_m3 = 0.0;
+    // Diagnostic attribution of the existing per-cell boundary ledger. Corner
+    // cells may have two open faces, so their combined volume is kept separate
+    // rather than assigned to either side. Non-edge volume should remain zero.
+    std::array<double, kFluid25DBoundaryOutflowBinCount> north_outflow_bins_m3{};
+    std::array<double, kFluid25DBoundaryOutflowBinCount> south_outflow_bins_m3{};
+    std::array<double, kFluid25DBoundaryOutflowBinCount> west_outflow_bins_m3{};
+    std::array<double, kFluid25DBoundaryOutflowBinCount> east_outflow_bins_m3{};
+    double corner_outflow_volume_m3 = 0.0;
+    double non_edge_outflow_volume_m3 = 0.0;
     double conservation_residual_m3 = 0.0;
 };
 
@@ -135,6 +155,18 @@ struct Fluid25DSourceOutletSpatialDiagnostics {
     Fluid25DSourceOutletSpatialZoneDiagnostics route_off_bank{};
     Fluid25DSourceOutletSpatialZoneDiagnostics route_in_bank{};
     Fluid25DSourceOutletSpatialZoneDiagnostics after_outlet{};
+    // One representative free surface per source-to-outlet column, using the
+    // same water-area weighting as the five named cross-section stations.
+    // This captures gaps between those stations without changing solver state.
+    std::uint32_t route_section_count = 0U;
+    std::uint32_t route_wet_section_count = 0U;
+    std::uint32_t route_freeboard_above_half_m_section_count = 0U;
+    double route_min_freeboard_m = 0.0;
+    double route_mean_freeboard_m = 0.0;
+    double route_max_freeboard_m = 0.0;
+    double route_min_centerline_depth_m = 0.0;
+    double route_mean_centerline_depth_m = 0.0;
+    double route_max_centerline_depth_m = 0.0;
     bool material_dyed_after_outlet_valid = false;
     std::uint32_t material_dyed_max_x_after_outlet_cell_x = 0U;
 };
@@ -152,6 +184,14 @@ compute_fluid_25d_profile_diagnostics(const Fluid25DConfig& config, std::span<co
                                       std::span<const Fluid25DVelocityGpu> velocity,
                                       std::span<const Fluid25DLedgerGpu> cumulative_ledger,
                                       double initial_water_volume_m3);
+
+// Fixed probes are a reading aid for the authored dry-start Y control. They
+// sample the completed solver state; no probe feeds back into the simulation.
+[[nodiscard]] std::array<Fluid25DSustainedHeadwatersStationDiagnostics,
+                         kFluid25DSustainedHeadwatersStationCount>
+compute_fluid_25d_sustained_headwaters_stations(const Fluid25DConfig& config,
+                                                std::span<const float> depth_m,
+                                                std::span<const Fluid25DVelocityGpu> velocity);
 
 [[nodiscard]] Fluid25DTracerProfileDiagnostics
 compute_fluid_25d_tracer_profile_diagnostics(
@@ -191,6 +231,13 @@ compute_fluid_25d_source_outlet_spatial_diagnostics(const Fluid25DConfig& config
 void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                                           std::uint64_t frame_index,
                                           const Fluid25DProfileDiagnostics& diagnostics);
+void record_fluid_25d_sustained_headwaters_stations(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const std::array<Fluid25DSustainedHeadwatersStationDiagnostics,
+                     kFluid25DSustainedHeadwatersStationCount>& stations);
+void record_fluid_25d_boundary_outflow_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DProfileDiagnostics& diagnostics);
 void record_fluid_25d_tracer_profile_diagnostics(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const Fluid25DTracerProfileDiagnostics& diagnostics);

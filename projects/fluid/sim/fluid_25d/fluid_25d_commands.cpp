@@ -33,6 +33,7 @@ struct CatchmentPushConstants {
     cubey::math::Vec4 grid_cell{};
     cubey::math::Vec4 camera_wet{};
     cubey::math::Vec4 presentation{};
+    cubey::math::Vec4 terrain_palette{};
 };
 
 // Direct headless stepping is numerical evidence and must keep its historical
@@ -57,7 +58,7 @@ struct Fluid25DComputeRecordingPolicy {
 
 static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 12U);
 static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
-static_assert(sizeof(CatchmentPushConstants) == sizeof(float) * 28U);
+static_assert(sizeof(CatchmentPushConstants) == sizeof(float) * 32U);
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid25DConfig& config,
                                                                 Fluid25DStepForcing forcing) {
@@ -223,16 +224,24 @@ void record_finite_volume_substep(VkCommandBuffer command_buffer,
 [[nodiscard]] CatchmentPushConstants catchment_push_constants(const Fluid25DConfig& config,
                                                               const Fluid25DGpuResources& resources,
                                                               Fluid25DCatchmentView catchment_view,
-                                                              const Fluid25DRenderCamera& camera) {
+                                                              const Fluid25DRenderCamera& camera,
+                                                              const Fluid25DCatchmentRenderOptions& render_options) {
+    const float terrain_height_scale = render_options.terrain_height_scale.value_or(
+        fluid_25d_catchment_height_scale(config.scenario));
+    const bool has_physical_palette = render_options.terrain_palette_low_m.has_value();
     return {
         .view_projection = camera.view_projection,
         .grid_cell = {static_cast<float>(config.grid_width), static_cast<float>(config.grid_height),
-                      config.cell_size_m, fluid_25d_catchment_height_scale(config.scenario)},
+                      config.cell_size_m, terrain_height_scale},
         .camera_wet = {camera.position.x, camera.position.y, camera.position.z,
                        config.minimum_wet_depth_m},
         .presentation = {resources.current_presentation_cue_is_a() ? 1.0F : 0.0F,
-                         static_cast<float>(static_cast<std::uint32_t>(catchment_view)), 0.0F,
+                         static_cast<float>(static_cast<std::uint32_t>(catchment_view)),
+                         render_options.terrain_thin_water_composite ? 1.0F : 0.0F,
                          fluid_25d_catchment_terrain_material_cue(config.scenario)},
+        .terrain_palette = {render_options.terrain_palette_low_m.value_or(0.0F),
+                            render_options.terrain_palette_high_m.value_or(0.0F),
+                            has_physical_palette ? 1.0F : 0.0F, 0.0F},
     };
 }
 
@@ -428,6 +437,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
                                      const Fluid25DConfig& config,
                                      Fluid25DCatchmentView catchment_view,
                                      const Fluid25DRenderCamera& camera,
+                                     Fluid25DCatchmentRenderOptions render_options,
                                      cubey::render::ColorTargetView color_target,
                                      cubey::render::DepthTargetView depth_target) {
     const std::size_t vertex_count = fluid_25d_mesh_vertex_count(config);
@@ -436,7 +446,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     }
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const CatchmentPushConstants push_constants =
-        catchment_push_constants(config, resources, catchment_view, camera);
+        catchment_push_constants(config, resources, catchment_view, camera, render_options);
     const std::uint32_t quiver_count =
         fluid_25d_quiver_count(config.grid_width, config.grid_height);
     cubey::render::record_render_target_pass(
@@ -489,7 +499,8 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     bool& reset_requested, bool& presentation_cue_reset_requested,
     bool& quiver_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler,
-    std::uint32_t frame_slot_index, std::span<const Fluid25DStepForcing> forcings) {
+    std::uint32_t frame_slot_index, std::span<const Fluid25DStepForcing> forcings,
+    Fluid25DCatchmentRenderOptions render_options) {
     Fluid25DGpuResources* resource_ptr = &resources;
     const Fluid25DConfig* config_ptr = &config;
     bool* reset_requested_ptr = &reset_requested;
@@ -645,11 +656,11 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
         }
         catchment.write_color(backbuffer)
             .write_depth(catchment_depth)
-            .execute([resource_ptr, config_ptr, catchment_view, camera, backbuffer,
+            .execute([resource_ptr, config_ptr, catchment_view, camera, render_options, backbuffer,
                       catchment_depth](const cubey::render::RenderGraphExecutionContext& context) {
                 record_fluid_25d_catchment_draw(
                     context.recorder().handle(), *resource_ptr, *config_ptr, catchment_view,
-                    camera,
+                    camera, render_options,
                     cubey::render::resolved_color_target_view(context, backbuffer),
                     cubey::render::resolved_depth_target_view(context, catchment_depth));
             });

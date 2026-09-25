@@ -144,10 +144,11 @@ when launched explicitly with the opt-in finite-volume solver. On the
 one-metre `128x64` grid, the green SOURCE and amber OUTLET rings mark columns
 `14` and `110`. The channel between them has two broad S-bends, variable width,
 and one constriction. Its bed falls `0.45 m` over the 96 m route, while the
-selected lower bank crest is about `1.00 m` above the centerline bed. Initial
-water is seeded within the discrete bank span at `0.80` of that crest rise, so
-the river is legible at reset without claiming that source water has already
-traveled to the outlet.
+selected lower bank crest is about `3.00 m` above the centerline bed. Broad
+smoothstep banks avoid a near-vertical trench. Initial water is seeded within
+the discrete bank span with its surface `0.30 m` below the lower crest, so the
+river is deep and near-bankfull at reset without claiming that source water
+has already traveled to the outlet.
 
 This is deliberately stylized authored relief, not an imported real-world DEM.
 The scene-only height/slope tint and render-only relief scale make the dry
@@ -155,7 +156,8 @@ banks legible without changing numerical heights. The source and sink each have
 a four-column forcing strip confined to already-wet, in-bank cells; each strip
 is normalized to `2.00 m3/s` of physical throughput. Actual removal is still
 limited by available water and should be read from the ledger. The short tan
-terrain rises behind the markers contain the closed-domain tails. They are
+shoulders behind the markers rise `3.00 m` upstream and `3.30 m` downstream
+over four cells to contain the deep-water closed-domain tails. They are
 stylized end caps, not physical intake structures or a stage-controlled open
 boundary. The home camera frames both endpoints; user orbit and zoom remain
 available. Ring words live in the control-panel legend.
@@ -173,13 +175,13 @@ build/dev/projects/fluid/fluid_25d/fluid_25d \
 Append `--fluid25d-catchment-view flow-inspection` to use the optional
 fixed-grid velocity-field reading mode. The arrows show local velocity, not
 the path of one parcel. For transport, inject a half-open dye pulse while the
-hydraulic source stays active. This command advances 900 simulated seconds in
-900 frames and encodes them as a 30-second video:
+hydraulic source stays active. This command advances 2,400 simulated seconds in
+2,400 frames and encodes them as a 40-second video:
 
 ```sh
 mkdir -p outputs/fluid/source-outlet-review
 build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture video \
-  --frames 900 --fps 30 --width 1280 --height 720 \
+  --frames 2400 --fps 60 --width 1280 --height 720 \
   --grid-width 128 --grid-height 64 \
   --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
   --fluid25d-catchment-view transport-inspection \
@@ -197,26 +199,79 @@ wet widths, depth, approximate cell-centred discharge, and local velocity at
 five stations. `fluid_25d.river_spatial` partitions every cell into before
 SOURCE, in-bank route, off-bank route, or after OUTLET; it distinguishes a
 small closed-domain endpoint tail from lateral overbank flow.
+It also reports route-wide representative freeboard and centerline-depth
+min/mean/max values across all 97 source-to-outlet columns, helping reveal
+gaps that the five named stations may miss.
 `fluid_25d.water` and `fluid_25d.tracer` provide source/sink/boundary ledgers
 and conservation residuals. The diagnostic `0.01` dye-concentration threshold
 marks a material visible front; it is not the injected concentration. Capture
 frame `fN` is the state after `N` simulated seconds: `f300` precedes dye,
 `f301` is the first dyed step, and `f360` is the last.
 
-The reviewed four-cell end-cap run in
-`outputs/fluid/river-endpoint-shoulders-v1-20260923/` has zero status flags,
-boundary loss, and route off-bank water across all 900 frames. At `f900`,
-interior section discharge is about `1.96–1.98 m3/s`, and the outlet has
-captured `51.878 m3` (`43.2%`) of the `119.999 m3` dye pulse. Before-SOURCE and
-after-OUTLET water are `12.724` and `15.247 m3`, respectively. The dye front
-reaches `x112`, two cells past the outlet marker; these end caps substantially
-reduce but do not eliminate the tails. The water conservation residual is
-`−0.961 m3` against about `1222 m3` stored water. These are measured results,
-not assertions that every dyed parcel is removed by `f900`.
+The [reviewed deep-channel run](../../../outputs/fluid/deep-river-v1-20260923/report.md)
+has zero status flags, boundary loss, and route off-bank water across all
+2,400 frames. At `f900`, all 97 route sections are wet with 0.181–0.499 m
+representative freeboard and 2.500–2.819 m centerline depth; interior section
+discharge remains about `2 m3/s`. Before-SOURCE and after-OUTLET water settle
+to `31.275` and `37.720 m3`. Material dye passes the OUTLET marker at `f1384`,
+and the explicit sink has captured `118.420 m3` (`98.68%`) of the `119.999 m3`
+pulse by `f2400`. The reported water conservation residual is `+4.375 m3`
+against `2806.518 m3` stored water at `f2400`; the full report leaves this
+ledger discrepancy visible rather than assigning a cause. The larger section
+slows the dye compared with the historical shallow scene, so `f900` is no
+longer a sufficient transport horizon.
 
 `run_transport_readability_v1.sh` and its linked V1 note preserve an earlier
 historical protocol and thresholds; use the command above for this current
 scene, not the V1 runner as an acceptance gate.
+
+### Opt-in sustained-headwaters control
+
+`sustained-headwaters-demo` is a separate, authored finite-volume control for
+dynamic flow rather than a pre-filled river. Its 65×33 grid has 4 m cells and
+starts completely dry. Two marked 3×3 headwater patches each supply 0.25 m³/s
+continuously; their banked reaches join into one trunk. Only a three-face east
+aperture is open, with outflow-only boundary behavior. There is no explicit
+water sink. The green rings mark both inputs and the amber semicircle marks
+the outlet; the 4× visible relief and terrain tint are render-only.
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --grid-width 65 --grid-height 33 --fluid25d-cell-size-m 4 \
+  --fluid25d-scenario sustained-headwaters-demo --fluid25d-solver finite-volume \
+  --fluid25d-fixed-delta-seconds 1 --fluid25d-substeps 32
+```
+
+The [V1 result note](../../../docs/notes/fluid-25d-sustained-headwaters-v1.md)
+shows the two wet fronts joining, measured late outlet discharge, station
+velocities, a passive dye packet crossing the same route, and the remaining
+natural-terrain resolution boundary. Run
+`projects/fluid/fluid_25d/run_sustained_headwaters_demo.sh` for the two
+dry-to-mature videos, dye-transport video, stills, profiles, and GPU/CPU
+comparison. The control remains a shallow stream scene, not a near-bankfull
+or naturally discovered river.
+
+The opt-in resolution study keeps the same 256×128 m physical reach and
+0.25 m³/s per source while allowing `129x65` at 2 m and `257x129` at 1 m in
+this scenario only. The original 4 m arrays and the project defaults are
+unchanged. Run `python3 projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py
+--mode resolution` to compare the three grids, or replace the mode with
+`--mode damping --damping-grid-m 1 --video`
+to compare 0.15, 0.075, and 0.05/s momentum damping at 1 m. The
+[resolution and speed note](../../../docs/notes/fluid-25d-headwaters-resolution-speed-v1.md)
+links the captures, timing and ledger evidence, and the current validation
+boundary. These are study controls, not calibrated flow settings.
+
+An additional headwaters-only `--fluid25d-headwaters-source-scale` multiplies
+both continuous source rates while leaving their footprint, terrain, and
+outflow aperture unchanged. The default `1` preserves the original scene.
+The [supply and speed study](../../../docs/notes/fluid-25d-headwaters-supply-speed-v1.md)
+compares 1×/2×/4×/8× supply on the 1 m grid and one combined lower-damping
+case. Source rate makes the channel fuller and its initial front earlier, but
+does little for dye travel speed on its own. Use `python3
+projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py --mode
+supply --source-scales 1 2 4` for the bounded first sweep; these opt-in
+controls do not change the project defaults.
 
 ### Opt-in immutable mountain source/outlet scene
 
@@ -412,7 +467,7 @@ schema and currently exposes:
   drop excess backlog;
 - `--fluid25d-solver virtual-pipes|finite-volume` (default: `virtual-pipes`;
   finite-volume is an opt-in numerical comparison);
-- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|source-outlet-demo|mountain-source-outlet-demo|terrain-case|boundary-drain-fixture`;
+- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|source-outlet-demo|sustained-headwaters-demo|mountain-source-outlet-demo|terrain-case|boundary-drain-fixture`;
 - `--terrain-heightfield <manifest-or-directory>` (required by `terrain-case`);
 - `--fluid25d-terrain-crop-x` and `--fluid25d-terrain-crop-z` (native sample
   indices; the configured grid dimensions define the crop extent);
@@ -421,16 +476,22 @@ schema and currently exposes:
 - `--fluid25d-rainfall-rate-mm-per-hour` and
   `--fluid25d-source-active-duration-seconds` (required together by
   `rain-pulse`);
+- `--fluid25d-terrain-thin-water-composite` (terrain-case Composite-only,
+  opt-in render attenuation for water shallower than 5 cm; solver wetness,
+  water mass, diagnostic views, and default rendering are unchanged);
 - `--fluid25d-sheet-depth-m` (required by `sheet-release`);
 - `--fluid25d-cell-size-m`;
 - `--fluid25d-fixed-delta-seconds`;
 - `--fluid25d-substeps`;
 - `--fluid25d-gravity-m-per-s2`;
 - `--fluid25d-flow-damping-per-second`;
+- `--fluid25d-headwaters-source-scale` (positive finite, opt-in for
+  `sustained-headwaters-demo` only);
 - `--fluid25d-minimum-wet-depth-m`;
 - `--fluid25d-dye-pulse-start-seconds` and
   `--fluid25d-dye-pulse-duration-seconds` (required together for the opt-in
-  finite-volume `source-outlet-demo` Transport Inspection surface; the
+  finite-volume `source-outlet-demo` or `sustained-headwaters-demo` Transport
+  Inspection surface; the
   half-open interval is evaluated on completed fixed simulation steps);
 - `--debug-view terrain|depth|surface|flow|direction|wet-dry`;
 - `--profile-output`, `--profile-warmup-frames`, `--profile-diagnostics`, and
@@ -526,6 +587,15 @@ rerun it with
 `projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh` when refreshing that
 study.
 
+The follow-up [rain catchment study](../../../docs/notes/fluid-25d-rain-catchment-study-v1.md)
+separates render-only thin-water legibility from a pinned natural-catchment
+pilot. For headless RainPulse profiles, `fluid_25d.boundary` now reports the
+existing cumulative perimeter outflow in 16 bins per side plus separate corner
+and non-edge totals; these metrics do not alter the solve. The candidate
+shows distributed runoff, not a promoted single-outlet scene. Its reproducible
+scripts are `terrain_rain_thin_water_ab_v1.py` and
+`terrain_rain_catchment_pilot_v1.py` in this directory.
+
 Analytic fixtures remain closed by default. `boundary-drain-fixture` exists
 solely to validate the numerical outflow contract: an opened perimeter face
 sees dry exterior at its own bed elevation, permits no external inflow, and
@@ -551,13 +621,15 @@ field and are not moving water particles. The source-to-outlet scene retains
 its green SOURCE and amber OUTLET rings in this view.
 
 Transport Inspection is separate from Flow Inspection: it hides the quiver and
-render-only directional cue so one visual language remains. The green SOURCE
-ring marks input, the amber OUTLET ring marks explicit removal, base blue shows
-water depth, and magenta/violet shows conservative dyed water. The pulse is
-available only when `source-outlet-demo`, finite-volume, and both dye timing
-options are selected. The fixed hydraulic forcing is unchanged by the dye
-schedule. See the source-to-outlet section above for the current capture and
-frame semantics; the earlier V1 study remains in
+render-only directional cue so one visual language remains. Green rings mark
+input, base blue shows water depth, and magenta/violet shows conservative dyed
+water. The older `source-outlet-demo` uses one amber ring for explicit removal;
+the sustained-headwaters control uses two green inputs and an amber open-edge
+outlet instead. The pulse is available only with finite-volume, both dye
+timing options, and either
+`source-outlet-demo` or `sustained-headwaters-demo`. The fixed hydraulic
+forcing is unchanged by the dye schedule. See the two demo sections above for
+their captures and frame semantics; the earlier V1 study remains in
 [`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md)
 as historical evidence.
 
@@ -570,6 +642,8 @@ as historical evidence.
   physical-horizon audition runner with solver-qualified ignored outputs;
 - `projects/fluid/fluid_25d/run_mountain_source_outlet_demo.sh`: finite-volume
   review runner for the pinned immutable mountain source/outlet scene;
+- `projects/fluid/fluid_25d/run_sustained_headwaters_demo.sh`: dry-start
+  two-source control and dye-motion evidence runner;
 - `projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh`: matched neutral and
   visibility-stress finite-volume rain-dynamics study runner;
 - `projects/fluid/fluid_25d/run_transport_readability_v1.sh`: deterministic

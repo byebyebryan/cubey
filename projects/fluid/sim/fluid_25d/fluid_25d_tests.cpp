@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -32,6 +33,24 @@ namespace {
 constexpr double kDepthToleranceM = 0.000001;
 constexpr double kLedgerToleranceM3 = 0.00001;
 constexpr double kVolumeToleranceM3 = 0.0005;
+
+[[nodiscard]] std::uint64_t headwaters_field_hash(std::span<const float> values) {
+    std::uint64_t hash = 14695981039346656037ULL;
+    for (const float value : values) {
+        hash ^= std::bit_cast<std::uint32_t>(value);
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
+
+[[nodiscard]] std::uint64_t headwaters_mask_hash(std::span<const std::uint32_t> values) {
+    std::uint64_t hash = 14695981039346656037ULL;
+    for (const std::uint32_t value : values) {
+        hash ^= value;
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
 
 void require(bool condition, const char* message) {
     if (!condition) {
@@ -198,6 +217,11 @@ void test_config_defaults_and_parsing() {
                 std::string(fluid_25d_scenario_name(Fluid25DScenario::MountainSourceOutletDemo)) ==
                     "mountain-source-outlet-demo",
             "fluid 2.5D should expose the pinned mountain source/outlet demo distinctly");
+    require(fluid_25d_scenario_from_name("sustained-headwaters-demo") ==
+                    Fluid25DScenario::SustainedHeadwatersDemo &&
+                std::string(fluid_25d_scenario_name(Fluid25DScenario::SustainedHeadwatersDemo)) ==
+                    "sustained-headwaters-demo",
+            "fluid 2.5D should expose the opt-in sustained-headwaters control distinctly");
     require(fluid_25d_is_source_outlet_demo(Fluid25DScenario::SourceOutletDemo) &&
                 fluid_25d_is_source_outlet_demo(Fluid25DScenario::MountainSourceOutletDemo) &&
                 !fluid_25d_is_source_outlet_demo(Fluid25DScenario::RiverCatchment),
@@ -221,6 +245,128 @@ void test_config_defaults_and_parsing() {
     mountain_demo.solver = Fluid25DSolver::FiniteVolume;
     require_throws([&] { validate_fluid_25d_config(mountain_demo); },
                    "mountain source/outlet demo should require native 30 metre cells");
+    Fluid25DConfig headwaters_demo = defaults;
+    headwaters_demo.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+    headwaters_demo.solver = Fluid25DSolver::FiniteVolume;
+    headwaters_demo.grid_width = kFluid25DSustainedHeadwatersGridWidth;
+    headwaters_demo.grid_height = kFluid25DSustainedHeadwatersGridHeight;
+    headwaters_demo.cell_size_m = kFluid25DSustainedHeadwatersCellSizeM;
+    validate_fluid_25d_config(headwaters_demo);
+    struct HeadwatersResolution {
+        std::uint32_t width;
+        std::uint32_t height;
+        float cell_size_m;
+    };
+    constexpr std::array<HeadwatersResolution, 3U> supported_headwaters_resolutions{{
+        {kFluid25DSustainedHeadwatersGridWidth, kFluid25DSustainedHeadwatersGridHeight,
+         kFluid25DSustainedHeadwatersCellSizeM},
+        {kFluid25DSustainedHeadwatersGridWidth2m, kFluid25DSustainedHeadwatersGridHeight2m,
+         kFluid25DSustainedHeadwatersCellSize2m},
+        {kFluid25DSustainedHeadwatersGridWidth1m, kFluid25DSustainedHeadwatersGridHeight1m,
+         kFluid25DSustainedHeadwatersCellSize1m},
+    }};
+    for (const HeadwatersResolution& resolution : supported_headwaters_resolutions) {
+        Fluid25DConfig supported = headwaters_demo;
+        supported.grid_width = resolution.width;
+        supported.grid_height = resolution.height;
+        supported.cell_size_m = resolution.cell_size_m;
+        validate_fluid_25d_config(supported);
+    }
+    Fluid25DConfig headwaters_with_dye = headwaters_demo;
+    headwaters_with_dye.dye_pulse_start_seconds = 0.25F;
+    headwaters_with_dye.dye_pulse_duration_seconds = 0.5F;
+    validate_fluid_25d_config(headwaters_with_dye);
+    require(fluid_25d_transport_inspection_available(headwaters_with_dye),
+            "a sustained-headwaters finite-volume dye pulse should enable transport inspection");
+    require(!fluid_25d_transport_inspection_available(headwaters_demo),
+            "sustained-headwaters transport inspection should remain opt-in without a dye pulse");
+    Fluid25DConfig invalid_headwaters_demo = headwaters_demo;
+    invalid_headwaters_demo.solver = Fluid25DSolver::VirtualPipes;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "sustained-headwaters demo should require the finite-volume solver");
+    invalid_headwaters_demo = headwaters_demo;
+    invalid_headwaters_demo.grid_width -= 1U;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "sustained-headwaters demo should require its control grid width");
+    invalid_headwaters_demo = headwaters_demo;
+    invalid_headwaters_demo.grid_width = kFluid25DSustainedHeadwatersGridWidth2m;
+    invalid_headwaters_demo.grid_height = kFluid25DSustainedHeadwatersGridHeight2m;
+    invalid_headwaters_demo.cell_size_m = 1.0F;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "sustained-headwaters demo should reject a mismatched refined tuple");
+    invalid_headwaters_demo = headwaters_demo;
+    invalid_headwaters_demo.source_active_duration_seconds = 10.0F;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "sustained-headwaters demo should reject a source shutoff duration");
+    invalid_headwaters_demo = headwaters_with_dye;
+    invalid_headwaters_demo.source_active_duration_seconds = 10.0F;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "dye timing should not permit sustained-headwaters hydraulic shutoff");
+    invalid_headwaters_demo = headwaters_demo;
+    invalid_headwaters_demo.terrain_water_protocol = Fluid25DTerrainWaterProtocol::RainPulse;
+    invalid_headwaters_demo.rainfall_depth_rate_m_per_s = 0.001F;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "sustained-headwaters demo should reject rain forcing");
+    invalid_headwaters_demo = headwaters_demo;
+    invalid_headwaters_demo.terrain_water_protocol = Fluid25DTerrainWaterProtocol::SheetRelease;
+    invalid_headwaters_demo.sheet_initial_depth_m = 0.1F;
+    require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
+                   "sustained-headwaters demo should reject sheet forcing");
+    for (const Fluid25DScenario scenario : {Fluid25DScenario::MountainSourceOutletDemo,
+                                            Fluid25DScenario::TerrainCase}) {
+        Fluid25DConfig invalid_dye_scenario = defaults;
+        invalid_dye_scenario.scenario = scenario;
+        invalid_dye_scenario.solver = Fluid25DSolver::FiniteVolume;
+        invalid_dye_scenario.dye_pulse_start_seconds = 0.0F;
+        invalid_dye_scenario.dye_pulse_duration_seconds = 1.0F;
+        require_throws([&] { validate_fluid_25d_config(invalid_dye_scenario); },
+                       "terrain-backed and mountain scenarios should reject dye pulse timing");
+    }
+
+    const Fluid25DProjectConfig parsed_headwaters = parse_project(
+        {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
+         "finite-volume", "--grid-width", "65", "--grid-height", "33",
+         "--fluid25d-cell-size-m", "4"});
+    require(parsed_headwaters.simulation.scenario == Fluid25DScenario::SustainedHeadwatersDemo &&
+                parsed_headwaters.simulation.solver == Fluid25DSolver::FiniteVolume &&
+                parsed_headwaters.simulation.grid_width == kFluid25DSustainedHeadwatersGridWidth &&
+                parsed_headwaters.simulation.grid_height == kFluid25DSustainedHeadwatersGridHeight &&
+                parsed_headwaters.simulation.cell_size_m == kFluid25DSustainedHeadwatersCellSizeM &&
+                parsed_headwaters.simulation.headwaters_source_scale ==
+                    kFluid25DDefaultHeadwatersSourceScale,
+            "sustained-headwaters demo should be selectable through its explicit CLI contract");
+    const Fluid25DProjectConfig scaled_headwaters = parse_project(
+        {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
+         "finite-volume", "--grid-width", "65", "--grid-height", "33",
+         "--fluid25d-cell-size-m", "4", "--fluid25d-headwaters-source-scale", "2"});
+    require(scaled_headwaters.simulation.headwaters_source_scale == 2.0F,
+            "sustained-headwaters CLI should accept a positive source multiplier");
+    for (const std::string invalid_scale : {"0", "-1", "nan", "inf"}) {
+        require_throws(
+            [invalid_scale] {
+                static_cast<void>(parse_project(
+                    {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                     "--fluid25d-solver", "finite-volume", "--grid-width", "65",
+                     "--grid-height", "33", "--fluid25d-cell-size-m", "4",
+                     "--fluid25d-headwaters-source-scale", invalid_scale}));
+            },
+            "sustained-headwaters CLI should reject non-positive or non-finite source multipliers");
+    }
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-headwaters-source-scale", "1"}));
+        },
+        "headwaters source multiplier should be rejected when its scenario is not selected");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
+                 "33", "--fluid25d-cell-size-m", "4",
+                 "--fluid25d-source-active-duration-seconds", "10"}));
+        },
+        "sustained-headwaters CLI should reject source shutoff scheduling");
     require(fluid_25d_terrain_water_protocol_from_name("rain-pulse") ==
                 Fluid25DTerrainWaterProtocol::RainPulse,
             "fluid 2.5D should parse the rain-pulse terrain-water protocol");
@@ -390,6 +536,18 @@ void test_config_defaults_and_parsing() {
     require(transport_inspection.catchment_view == "transport-inspection" &&
                 fluid_25d_transport_inspection_available(transport_inspection.simulation),
             "transport inspection should be available only with the concrete source/outlet dye pulse");
+    const Fluid25DProjectConfig headwaters_transport_inspection = parse_project(
+        {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+         "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
+         "finite-volume", "--grid-width", "65", "--grid-height", "33",
+         "--fluid25d-cell-size-m", "4", "--fluid25d-dye-pulse-start-seconds", "0",
+         "--fluid25d-dye-pulse-duration-seconds", "0.25"});
+    require(headwaters_transport_inspection.simulation.scenario ==
+                    Fluid25DScenario::SustainedHeadwatersDemo &&
+                headwaters_transport_inspection.catchment_view == "transport-inspection" &&
+                fluid_25d_transport_inspection_available(
+                    headwaters_transport_inspection.simulation),
+            "sustained headwaters should expose transport inspection for an explicit dye pulse");
     require_throws(
         [] {
             static_cast<void>(parse_project(
@@ -398,6 +556,15 @@ void test_config_defaults_and_parsing() {
                  "finite-volume"}));
         },
         "transport inspection should reject a source/outlet scene without a dye pulse");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+                 "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
+                 "finite-volume", "--grid-width", "65", "--grid-height", "33",
+                 "--fluid25d-cell-size-m", "4"}));
+        },
+        "headwater transport inspection should require explicit dye timing");
 
     const Fluid25DProjectConfig terrain = parse_project(
         {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
@@ -407,6 +574,33 @@ void test_config_defaults_and_parsing() {
     require(terrain.terrain.heightfield_path == "terrain-fixture" &&
                 terrain.terrain.crop_x == 12U && terrain.terrain.crop_z == 7U,
             "fluid 2.5D parser should retain the terrain path and native crop coordinates");
+    const Fluid25DProjectConfig thin_water = parse_project(
+        {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+         "terrain-fixture", "--fluid25d-terrain-thin-water-composite"});
+    require(thin_water.catchment_render.terrain_thin_water_composite,
+            "terrain thin-water Composite should be an explicit render-only opt-in");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-terrain-thin-water-composite"}));
+        },
+        "thin-water Composite should reject analytic scenarios");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+                 "terrain-fixture", "--fluid25d-view", "diagnostics",
+                 "--fluid25d-terrain-thin-water-composite"}));
+        },
+        "thin-water Composite should reject diagnostic views");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+                 "terrain-fixture", "--fluid25d-catchment-view", "flow-inspection",
+                 "--fluid25d-terrain-thin-water-composite"}));
+        },
+        "thin-water Composite should reject non-Composite catchment views");
     require_throws(
         [] { static_cast<void>(parse_project({"fluid_25d", "--terrain-heightfield", "terrain"})); },
         "fluid 2.5D should reject a terrain path with an analytic scenario");
@@ -786,11 +980,27 @@ void test_deterministic_scenarios() {
         const float centerline_bed_m = readable_river.terrain_height_m[center_index];
         const float lower_crest_m = std::min(left_crest.elevation_m, right_crest.elevation_m);
         const float crest_rise_m = lower_crest_m - centerline_bed_m;
-        require(!left_crest.fallback && !right_crest.fallback && crest_rise_m >= 0.70F &&
-                    crest_rise_m <= 1.01F,
-                "source-outlet lower bank crest should stay 0.70-1.00 m above the channel bed");
-        const float target_surface_m =
-            centerline_bed_m + (kFluid25DSourceOutletInitialBankRiseFraction * crest_rise_m);
+        require(!left_crest.fallback && !right_crest.fallback && crest_rise_m >= 2.80F &&
+                    crest_rise_m <= 3.05F,
+                "source-outlet lower bank crest should stay about 3.0 m above the channel bed");
+        const float target_surface_m = lower_crest_m - kFluid25DSourceOutletInitialFreeboardM;
+        const float absolute_freeboard_m = lower_crest_m - target_surface_m;
+        require(absolute_freeboard_m >= 0.25F && absolute_freeboard_m <= 0.35F,
+                "source-outlet initial surface should stay 0.25-0.35 m below its discrete crest");
+        require_close(absolute_freeboard_m, 0.30, kDepthToleranceM,
+                      "source-outlet initial freeboard should be an absolute 0.30 m");
+        float maximum_cell_rise_m = 0.0F;
+        const float half_width = readable_geometry.channel_half_width(static_cast<float>(x));
+        for (std::uint32_t y = 0U; y + 1U < readable_river.height; ++y) {
+            const float lower_relief = readable_geometry.cross_sectional_relief_m(
+                (static_cast<float>(y) - center_y) / half_width);
+            const float upper_relief = readable_geometry.cross_sectional_relief_m(
+                (static_cast<float>(y + 1U) - center_y) / half_width);
+            maximum_cell_rise_m =
+                std::max(maximum_cell_rise_m, std::abs(upper_relief - lower_relief));
+        }
+        require(maximum_cell_rise_m < 1.05F,
+                "source-outlet bank ramp should not form a near-vertical cell-scale wall");
         require(target_surface_m <= previous_route_surface_m + 1.0e-5F,
                 "source-outlet initial free surface should have no local reverse slope along the "
                 "route");
@@ -798,7 +1008,7 @@ void test_deterministic_scenarios() {
         require_close(static_cast<double>(readable_river.terrain_height_m[center_index] +
                                           readable_river.initial_water_depth_m[center_index]),
                       target_surface_m, 0.01,
-                      "source-outlet centerline seed should follow its lower-bank-relative "
+                      "source-outlet centerline seed should retain its absolute lower-crest "
                       "free-surface target");
 
         const bool is_station =
@@ -813,10 +1023,10 @@ void test_deterministic_scenarios() {
             }
             const float wet_width_fraction =
                 static_cast<float>(wet_bank_cells) / static_cast<float>(bank_span_cells);
-            if (wet_width_fraction < 0.70F) {
+            if (wet_width_fraction < 0.60F) {
                 throw std::runtime_error(
-                    "source-outlet initial bank-relative wet width at x=" + std::to_string(x) +
-                    " is " + std::to_string(wet_width_fraction));
+                    "source-outlet initial wet width at x=" + std::to_string(x) + " is " +
+                    std::to_string(wet_width_fraction));
             }
         }
 
@@ -830,9 +1040,18 @@ void test_deterministic_scenarios() {
                     "source-outlet initial water should remain inside the selected bank span");
         }
     }
-    require_close(previous_route_surface_m - (4.40F - kFluid25DSourceOutletLongitudinalFallM), 0.80,
-                  0.03,
-                  "source-outlet endpoint should retain the bank-relative longitudinal surface");
+    const auto nominal_bed_at = [&](std::uint32_t x) {
+        const float center_y = readable_geometry.channel_center_y(static_cast<float>(x));
+        const std::uint32_t center_row = static_cast<std::uint32_t>(std::lround(center_y));
+        const float half_width = readable_geometry.channel_half_width(static_cast<float>(x));
+        const float normalized_offset = (static_cast<float>(center_row) - center_y) / half_width;
+        return readable_river.terrain_height_m[fluid_25d_scenario_index(
+                   readable_river.width, readable_river.height, x, center_row)] -
+               readable_geometry.cross_sectional_relief_m(normalized_offset);
+    };
+    require_close(nominal_bed_at(readable_sink_x) - nominal_bed_at(readable_source_x),
+                  -kFluid25DSourceOutletLongitudinalFallM, kDepthToleranceM,
+                  "source-outlet route should retain its 0.45 m longitudinal fall");
     require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::RiverCatchment), 0.08,
                   kDepthToleranceM,
                   "River V0 should retain the shared restrained render height scale");
@@ -842,6 +1061,9 @@ void test_deterministic_scenarios() {
     require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::MountainSourceOutletDemo),
                   0.60, kDepthToleranceM,
                   "mountain demo should select its own render-only relief scale");
+    require_close(fluid_25d_catchment_height_scale(Fluid25DScenario::SustainedHeadwatersDemo),
+                  kFluid25DSustainedHeadwatersHeightScale, kDepthToleranceM,
+                  "sustained-headwaters terrain should select render-only bank relief");
     require_close(
         fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario::RiverCatchment, 127.0F, 96.0F),
         127.0, kDepthToleranceM,
@@ -863,11 +1085,19 @@ void test_deterministic_scenarios() {
     require_close(
         fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::MountainSourceOutletDemo), -0.55,
         kDepthToleranceM, "mountain demo home camera should expose its kilometre-scale relief");
+    require_close(
+        fluid_25d_catchment_home_pitch(-0.92F, Fluid25DScenario::SustainedHeadwatersDemo), -0.70,
+        kDepthToleranceM,
+        "sustained-headwaters home camera should expose the authored banks and tributaries");
     require_close(fluid_25d_catchment_home_distance_scale(Fluid25DScenario::RiverCatchment), 1.05,
                   kDepthToleranceM, "River V0 should retain its original home camera distance");
     require_close(
         fluid_25d_catchment_home_distance_scale(Fluid25DScenario::MountainSourceOutletDemo), 0.85,
         kDepthToleranceM, "mountain demo home camera should fill an overview with its full route");
+    require_close(
+        fluid_25d_catchment_home_distance_scale(Fluid25DScenario::SustainedHeadwatersDemo), 0.80,
+        kDepthToleranceM,
+        "sustained-headwaters home camera should frame the compact Y-shaped control");
     require_close(
         fluid_25d_catchment_home_fovy_radians(1.0471975512F, Fluid25DScenario::RiverCatchment),
         1.0471975512, kDepthToleranceM,
@@ -881,6 +1111,10 @@ void test_deterministic_scenarios() {
     require_close(fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::SourceOutletDemo), 1.0,
                   kDepthToleranceM,
                   "source-outlet demo should select its render-only terrain height and slope cue");
+    require_close(
+        fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::SustainedHeadwatersDemo), 3.0,
+        kDepthToleranceM,
+        "sustained-headwaters terrain should select its authored-bank render-only palette");
     require_close(
         fluid_25d_catchment_terrain_material_cue(Fluid25DScenario::MountainSourceOutletDemo), 2.0,
         kDepthToleranceM,
@@ -927,10 +1161,9 @@ void test_deterministic_scenarios() {
             "source-outlet demo should retain multiple broad terrain-guided bends");
     require(widest_ribbon_cells >= narrowest_ribbon_cells + 4U,
             "source-outlet demo should retain visible width variation and one constriction");
-    require(maximum_transverse_terrain_relief_m > 1.2F &&
-                maximum_transverse_terrain_relief_m < 1.5F,
-            "source-outlet demo should retain a readable outer valley wall beyond its lower bank "
-            "crest");
+    require(maximum_transverse_terrain_relief_m > 3.2F &&
+                maximum_transverse_terrain_relief_m < 3.5F,
+            "source-outlet demo should retain its 3.0 m bank crest and gentle outer valley wall");
     const float route_fall_m = source_bed_height_m - outlet_bed_height_m;
     require(route_fall_m >= 0.35F && route_fall_m <= 0.55F,
             "source-outlet demo should keep a smooth 0.35-0.55 m fall over its 96 m route");
@@ -960,6 +1193,513 @@ void test_deterministic_scenarios() {
                             river.boundary_outflow_face_mask.end(),
                             [](std::uint32_t mask) { return mask == 0U; }),
             "analytic fixtures should retain closed outer boundaries by default");
+}
+
+void test_sustained_headwaters_scenario_construction() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config;
+    config.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+    config.solver = Fluid25DSolver::FiniteVolume;
+    config.grid_width = kFluid25DSustainedHeadwatersGridWidth;
+    config.grid_height = kFluid25DSustainedHeadwatersGridHeight;
+    config.cell_size_m = kFluid25DSustainedHeadwatersCellSizeM;
+    validate_fluid_25d_config(config);
+
+    const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+        config.scenario, config.grid_width, config.grid_height, config.cell_size_m);
+    // Canonical FNV-1a over each 32-bit field word, captured from the original
+    // 65x33@4m builder before refined-grid support was added. This protects the
+    // baseline terrain, forcing, dry state, and boundary mask byte-for-byte.
+    require(headwaters_field_hash(scenario.terrain_height_m) == 15469740960098613791ULL &&
+                headwaters_field_hash(scenario.initial_water_depth_m) ==
+                    3895755185517356639ULL &&
+                headwaters_field_hash(scenario.source_depth_rate_m_per_s) ==
+                    549231792614289439ULL &&
+                headwaters_field_hash(scenario.sink_depth_rate_m_per_s) ==
+                    3895755185517356639ULL &&
+                headwaters_mask_hash(scenario.boundary_outflow_face_mask) ==
+                    12659419801437752869ULL,
+            "4 m sustained-headwaters fields should remain bit-identical to the original control");
+    const Fluid25DScenarioData doubled_scenario = make_fluid_25d_scenario(
+        config.scenario, config.grid_width, config.grid_height, config.cell_size_m, 2.0F);
+    require(doubled_scenario.terrain_height_m == scenario.terrain_height_m &&
+                doubled_scenario.initial_water_depth_m == scenario.initial_water_depth_m &&
+                doubled_scenario.sink_depth_rate_m_per_s ==
+                    scenario.sink_depth_rate_m_per_s &&
+                doubled_scenario.boundary_outflow_face_mask == scenario.boundary_outflow_face_mask &&
+                doubled_scenario.outlet_cell == scenario.outlet_cell &&
+                doubled_scenario.sink_cell == scenario.sink_cell,
+            "4 m headwaters source scaling should leave terrain, state, sink, and outlet unchanged");
+    double doubled_total_source_rate_m3_per_s = 0.0;
+    for (std::size_t index = 0U; index < scenario.source_depth_rate_m_per_s.size(); ++index) {
+        const float baseline_rate = scenario.source_depth_rate_m_per_s[index];
+        const float doubled_rate = doubled_scenario.source_depth_rate_m_per_s[index];
+        require((baseline_rate > 0.0F) == (doubled_rate > 0.0F),
+                "4 m headwaters scaling should preserve both authored source footprints");
+        doubled_total_source_rate_m3_per_s +=
+            static_cast<double>(doubled_rate) * config.cell_size_m * config.cell_size_m;
+    }
+    require_close(doubled_total_source_rate_m3_per_s, 1.0, kDepthToleranceM,
+                  "4 m headwaters multiplier should double total source discharge");
+    require(scenario.terrain_height_m.size() == fluid_25d_cell_count(config) &&
+                scenario.cell_size_m == 4.0F,
+            "sustained-headwaters geometry should use the fixed 65x33 four-metre grid");
+    require(std::all_of(scenario.initial_water_depth_m.begin(),
+                        scenario.initial_water_depth_m.end(),
+                        [](float depth_m) { return depth_m == 0.0F; }),
+            "sustained-headwaters control should start completely dry");
+    require(std::all_of(scenario.sink_depth_rate_m_per_s.begin(),
+                        scenario.sink_depth_rate_m_per_s.end(),
+                        [](float rate_m_per_s) { return rate_m_per_s == 0.0F; }) &&
+                scenario.sink_cell == kFluid25DNoCell,
+            "sustained-headwaters control should have no explicit sink");
+    require(!scenario.terrain_provenance.has_value(),
+            "the authored control terrain should not claim imported-terrain provenance");
+
+    const std::size_t source_a = fluid_25d_scenario_index(config.grid_width, config.grid_height,
+                                                          kFluid25DSustainedHeadwatersSourceAX,
+                                                          kFluid25DSustainedHeadwatersSourceAY);
+    const std::size_t source_b = fluid_25d_scenario_index(config.grid_width, config.grid_height,
+                                                          kFluid25DSustainedHeadwatersSourceBX,
+                                                          kFluid25DSustainedHeadwatersSourceBY);
+    const std::size_t confluence = fluid_25d_scenario_index(
+        config.grid_width, config.grid_height, kFluid25DSustainedHeadwatersConfluenceX,
+        kFluid25DSustainedHeadwatersConfluenceY);
+    const std::size_t outlet =
+        fluid_25d_scenario_index(config.grid_width, config.grid_height, config.grid_width - 1U,
+                                 kFluid25DSustainedHeadwatersConfluenceY);
+    require(
+        scenario.source_cell == source_a && scenario.secondary_source_cell == source_b &&
+            scenario.outlet_cell == outlet && scenario.sink_cell == kFluid25DNoCell,
+        "headwater marker metadata should identify both inputs and the aperture without a sink");
+    require_close(scenario.terrain_height_m[source_a], 1.45, kDepthToleranceM,
+                  "first headwater bed should start at its authored elevation");
+    require_close(scenario.terrain_height_m[source_b], 1.45, kDepthToleranceM,
+                  "second headwater bed should start at its authored elevation");
+    require_close(scenario.terrain_height_m[confluence], 0.57, kDepthToleranceM,
+                  "both tributary beds should meet at the shared confluence elevation");
+    require_close(scenario.terrain_height_m[outlet], 0.0, kDepthToleranceM,
+                  "the trunk bed should fall to the downstream aperture");
+    const std::size_t bank =
+        fluid_25d_scenario_index(config.grid_width, config.grid_height, 40U, 12U);
+    require(scenario.terrain_height_m[bank] > scenario.terrain_height_m[confluence] + 0.25F,
+            "confluence terrain should include a raised bank outside the channel");
+
+    const float cell_area_m2 = config.cell_size_m * config.cell_size_m;
+    const float expected_source_rate_m_per_s =
+        kFluid25DSustainedHeadwatersDischargePerSourceM3PerS / (9.0F * cell_area_m2);
+    std::size_t source_cell_count = 0U;
+    double total_source_rate_m3_per_s = 0.0;
+    for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+        for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+            const std::size_t index =
+                fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+            const bool in_source_a = x >= kFluid25DSustainedHeadwatersSourceAX - 1U &&
+                                     x <= kFluid25DSustainedHeadwatersSourceAX + 1U &&
+                                     y >= kFluid25DSustainedHeadwatersSourceAY - 1U &&
+                                     y <= kFluid25DSustainedHeadwatersSourceAY + 1U;
+            const bool in_source_b = x >= kFluid25DSustainedHeadwatersSourceBX - 1U &&
+                                     x <= kFluid25DSustainedHeadwatersSourceBX + 1U &&
+                                     y >= kFluid25DSustainedHeadwatersSourceBY - 1U &&
+                                     y <= kFluid25DSustainedHeadwatersSourceBY + 1U;
+            const bool is_source = in_source_a || in_source_b;
+            const float rate_m_per_s = scenario.source_depth_rate_m_per_s[index];
+            require(is_source == (rate_m_per_s > 0.0F),
+                    "headwater forcing should occupy exactly the two authored 3x3 patches");
+            if (is_source) {
+                ++source_cell_count;
+                require_close(
+                    rate_m_per_s, expected_source_rate_m_per_s, kDepthToleranceM,
+                    "each source patch should be normalized to 0.25 cubic metres per second");
+            }
+            total_source_rate_m3_per_s +=
+                static_cast<double>(rate_m_per_s) * static_cast<double>(cell_area_m2);
+
+            const bool aperture_face = x == config.grid_width - 1U &&
+                                       y >= kFluid25DSustainedHeadwatersOutletYFirst &&
+                                       y <= kFluid25DSustainedHeadwatersOutletYLast;
+            const std::uint32_t expected_mask = aperture_face ? kFluid25DBoundaryOutflowRight : 0U;
+            require(scenario.boundary_outflow_face_mask[index] == expected_mask,
+                    "only the three east-facing aperture cells should be open");
+        }
+    }
+    require(source_cell_count == 18U,
+            "sustained-headwaters control should contain two disjoint nine-cell sources");
+    require_close(total_source_rate_m3_per_s, 0.50, kDepthToleranceM,
+                  "two normalized headwaters should combine to 0.50 cubic metres per second");
+    validate_fluid_25d_boundary_outflow_face_mask(config.grid_width, config.grid_height,
+                                                  scenario.boundary_outflow_face_mask);
+
+    const Fluid25DEndpointMarkersGpu markers = fluid_25d_endpoint_markers(config, scenario);
+    require(sizeof(markers) == sizeof(float) * 8U &&
+                offsetof(Fluid25DEndpointMarkersGpu, secondary_source_xy_reserved) ==
+                    sizeof(float) * 4U,
+            "endpoint-marker host layout should match two std430 vec4 values");
+    require(markers.source_xy_outlet_xy == std::array<float, 4U>{4.0F, 8.0F, 64.0F, 16.0F} &&
+                markers.secondary_source_xy_reserved ==
+                    std::array<float, 4U>{4.0F, 24.0F, -1.0F, -1.0F},
+            "headwater markers should map source A, source B, and the east aperture exactly");
+
+    Fluid25DConfig legacy_config = config;
+    legacy_config.scenario = Fluid25DScenario::SourceOutletDemo;
+    legacy_config.grid_width = 10U;
+    Fluid25DScenarioData legacy_scenario;
+    legacy_scenario.source_cell = 13U;
+    legacy_scenario.sink_cell = 27U;
+    const Fluid25DEndpointMarkersGpu legacy_markers =
+        fluid_25d_endpoint_markers(legacy_config, legacy_scenario);
+    require(legacy_markers.source_xy_outlet_xy == std::array<float, 4U>{3.0F, 1.0F, 7.0F, 2.0F} &&
+                legacy_markers.secondary_source_xy_reserved ==
+                    std::array<float, 4U>{-1.0F, -1.0F, -1.0F, -1.0F},
+            "extended marker storage should preserve existing source/outlet ring placement");
+
+    const auto read_shader = [](const std::filesystem::path& path) {
+        std::ifstream stream(path);
+        if (!stream) {
+            throw std::runtime_error("failed to read endpoint-marker shader layout");
+        }
+        return std::string(std::istreambuf_iterator<char>(stream),
+                           std::istreambuf_iterator<char>());
+    };
+    const std::filesystem::path shader_directory =
+        std::filesystem::path(__FILE__).parent_path() / "shaders";
+    const std::string terrain_shader = read_shader(shader_directory / "fluid_25d_terrain.frag");
+    const std::string water_shader = read_shader(shader_directory / "fluid_25d_water.frag");
+    const auto check_marker_shader_layout = [](const std::string& shader) {
+        const std::size_t primary = shader.find("vec4 source_xy_outlet_xy;");
+        const std::size_t secondary = shader.find("vec4 secondary_source_xy_reserved;");
+        require(primary != std::string::npos && secondary != std::string::npos &&
+                    secondary > primary &&
+                    shader.find("secondary_source_marker") != std::string::npos,
+                "terrain and water shaders should use the append-only two-source marker layout");
+    };
+    check_marker_shader_layout(terrain_shader);
+    check_marker_shader_layout(water_shader);
+}
+
+void test_sustained_headwaters_refined_scenario_construction() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    struct Resolution {
+        std::uint32_t width;
+        std::uint32_t height;
+        float cell_size_m;
+        std::uint32_t expected_source_cells_per_patch;
+        std::uint32_t outlet_first_row;
+        std::uint32_t outlet_face_count;
+        double expected_outlet_center_y_m;
+    };
+    constexpr std::array<Resolution, 2U> resolutions{{
+        {kFluid25DSustainedHeadwatersGridWidth2m,
+         kFluid25DSustainedHeadwatersGridHeight2m,
+         kFluid25DSustainedHeadwatersCellSize2m, 49U, 29U, 6U, 63.0},
+        {kFluid25DSustainedHeadwatersGridWidth1m,
+         kFluid25DSustainedHeadwatersGridHeight1m,
+         kFluid25DSustainedHeadwatersCellSize1m, 169U, 58U, 12U, 63.5},
+    }};
+
+    for (const Resolution& resolution : resolutions) {
+        Fluid25DConfig config;
+        config.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+        config.solver = Fluid25DSolver::FiniteVolume;
+        config.grid_width = resolution.width;
+        config.grid_height = resolution.height;
+        config.cell_size_m = resolution.cell_size_m;
+        validate_fluid_25d_config(config);
+
+        const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+            config.scenario, config.grid_width, config.grid_height, config.cell_size_m);
+        require(scenario.width == resolution.width && scenario.height == resolution.height &&
+                    scenario.cell_size_m == resolution.cell_size_m &&
+                    scenario.terrain_height_m.size() == fluid_25d_cell_count(config),
+                "refined sustained-headwaters fields should match the selected resolution");
+        require(std::all_of(scenario.initial_water_depth_m.begin(),
+                            scenario.initial_water_depth_m.end(),
+                            [](float depth_m) { return depth_m == 0.0F; }) &&
+                    std::all_of(scenario.sink_depth_rate_m_per_s.begin(),
+                                scenario.sink_depth_rate_m_per_s.end(),
+                                [](float rate_m_per_s) { return rate_m_per_s == 0.0F; }) &&
+                    scenario.sink_cell == kFluid25DNoCell &&
+                    !scenario.terrain_provenance.has_value(),
+                "refined headwaters should remain dry-started, sink-free, authored controls");
+
+        const auto scaled_cell = [cell_size_m = config.cell_size_m](std::uint32_t reference_cell) {
+            return static_cast<std::uint32_t>(
+                std::lround(static_cast<float>(reference_cell) * 4.0F / cell_size_m));
+        };
+        const std::uint32_t source_ax = scaled_cell(kFluid25DSustainedHeadwatersSourceAX);
+        const std::uint32_t source_ay = scaled_cell(kFluid25DSustainedHeadwatersSourceAY);
+        const std::uint32_t source_bx = scaled_cell(kFluid25DSustainedHeadwatersSourceBX);
+        const std::uint32_t source_by = scaled_cell(kFluid25DSustainedHeadwatersSourceBY);
+        const std::uint32_t confluence_x = scaled_cell(kFluid25DSustainedHeadwatersConfluenceX);
+        const std::uint32_t confluence_y = scaled_cell(kFluid25DSustainedHeadwatersConfluenceY);
+        const std::uint32_t outlet_x = config.grid_width - 1U;
+        const std::size_t source_a =
+            fluid_25d_scenario_index(config.grid_width, config.grid_height, source_ax, source_ay);
+        const std::size_t source_b =
+            fluid_25d_scenario_index(config.grid_width, config.grid_height, source_bx, source_by);
+        const std::size_t confluence = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, confluence_x, confluence_y);
+        const std::size_t outlet = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, outlet_x, confluence_y);
+        require(scenario.source_cell == source_a && scenario.secondary_source_cell == source_b &&
+                    scenario.outlet_cell == outlet,
+                "refined endpoint metadata should preserve the authored physical locations");
+        require_close(scenario.terrain_height_m[source_a], 1.45, kDepthToleranceM,
+                      "refined source A should retain its authored bed elevation");
+        require_close(scenario.terrain_height_m[source_b], 1.45, kDepthToleranceM,
+                      "refined source B should retain its authored bed elevation");
+        require_close(scenario.terrain_height_m[confluence], 0.57, kDepthToleranceM,
+                      "refined tributaries should retain the authored confluence elevation");
+        require_close(scenario.terrain_height_m[outlet], 0.0, kDepthToleranceM,
+                      "refined trunk should retain its authored outlet elevation");
+        const std::uint32_t bank_x = scaled_cell(40U);
+        const std::uint32_t bank_y = scaled_cell(12U);
+        require(scenario.terrain_height_m[fluid_25d_scenario_index(
+                    config.grid_width, config.grid_height, bank_x, bank_y)] >
+                    scenario.terrain_height_m[confluence] + 0.25F,
+                "refined channel should retain the raised bank at the same physical location");
+
+        const double cell_area_m2 = static_cast<double>(config.cell_size_m) * config.cell_size_m;
+        std::size_t source_a_cell_count = 0U;
+        std::size_t source_b_cell_count = 0U;
+        double source_a_rate_m3_per_s = 0.0;
+        double source_b_rate_m3_per_s = 0.0;
+        for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+            for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+                const std::size_t index =
+                    fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+                const float rate_m_per_s = scenario.source_depth_rate_m_per_s[index];
+                require(std::isfinite(rate_m_per_s) && rate_m_per_s >= 0.0F,
+                        "refined source rates should remain finite and nonnegative");
+                if (rate_m_per_s > 0.0F) {
+                    const double cell_center_y_m =
+                        static_cast<double>(y) * static_cast<double>(config.cell_size_m);
+                    if (cell_center_y_m < 64.0) {
+                        ++source_a_cell_count;
+                        source_a_rate_m3_per_s += static_cast<double>(rate_m_per_s) * cell_area_m2;
+                    } else {
+                        ++source_b_cell_count;
+                        source_b_rate_m3_per_s += static_cast<double>(rate_m_per_s) * cell_area_m2;
+                    }
+                }
+            }
+        }
+        require(source_a_cell_count == resolution.expected_source_cells_per_patch &&
+                    source_b_cell_count == resolution.expected_source_cells_per_patch,
+                "refined source patches should rasterize the complete physical footprint");
+        require_close(source_a_rate_m3_per_s,
+                      kFluid25DSustainedHeadwatersDischargePerSourceM3PerS, 1.0e-7,
+                      "refined source A should integrate to exactly 0.25 cubic metres per second");
+        require_close(source_b_rate_m3_per_s,
+                      kFluid25DSustainedHeadwatersDischargePerSourceM3PerS, 1.0e-7,
+                      "refined source B should integrate to exactly 0.25 cubic metres per second");
+        const std::size_t full_cell_source = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, source_ax, source_ay);
+        require_close(scenario.source_depth_rate_m_per_s[full_cell_source], 0.25 / 144.0,
+                      1.0e-8,
+                      "the full-overlap source cells should preserve the 12x12 metre flux density");
+
+        std::size_t open_face_count = 0U;
+        double open_face_center_y_sum_m = 0.0;
+        for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+            for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+                const std::size_t index =
+                    fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+                const bool expected_open = x == outlet_x && y >= resolution.outlet_first_row &&
+                                           y < resolution.outlet_first_row +
+                                                   resolution.outlet_face_count;
+                const std::uint32_t expected_mask =
+                    expected_open ? kFluid25DBoundaryOutflowRight : 0U;
+                require(scenario.boundary_outflow_face_mask[index] == expected_mask,
+                        "refined headwaters should open only the chosen east aperture faces");
+                if (expected_open) {
+                    ++open_face_count;
+                    open_face_center_y_sum_m +=
+                        static_cast<double>(y) * static_cast<double>(config.cell_size_m);
+                }
+            }
+        }
+        require(open_face_count == resolution.outlet_face_count,
+                "refined outlet should preserve the twelve metre full-face aperture width");
+        require_close(open_face_center_y_sum_m / static_cast<double>(open_face_count),
+                      resolution.expected_outlet_center_y_m, kDepthToleranceM,
+                      "binary aperture rows should use the documented lower-y centering tie");
+        validate_fluid_25d_boundary_outflow_face_mask(config.grid_width, config.grid_height,
+                                                      scenario.boundary_outflow_face_mask);
+
+        const Fluid25DEndpointMarkersGpu markers = fluid_25d_endpoint_markers(config, scenario);
+        require(markers.source_xy_outlet_xy ==
+                    std::array<float, 4U>{static_cast<float>(source_ax),
+                                          static_cast<float>(source_ay),
+                                          static_cast<float>(outlet_x),
+                                          static_cast<float>(confluence_y)} &&
+                    markers.secondary_source_xy_reserved ==
+                        std::array<float, 4U>{static_cast<float>(source_bx),
+                                              static_cast<float>(source_by), -1.0F, -1.0F},
+                "refined render markers should use the corresponding physical endpoint cells");
+
+        if (config.cell_size_m == kFluid25DSustainedHeadwatersCellSize1m) {
+            constexpr std::array<float, 4U> source_scales{{1.0F, 2.0F, 4.0F, 8.0F}};
+            for (const float source_scale : source_scales) {
+                const Fluid25DScenarioData scaled = make_fluid_25d_scenario(
+                    config.scenario, config.grid_width, config.grid_height, config.cell_size_m,
+                    source_scale);
+                require(scaled.terrain_height_m == scenario.terrain_height_m &&
+                            scaled.initial_water_depth_m == scenario.initial_water_depth_m &&
+                            scaled.sink_depth_rate_m_per_s == scenario.sink_depth_rate_m_per_s &&
+                            scaled.boundary_outflow_face_mask ==
+                                scenario.boundary_outflow_face_mask &&
+                            scaled.source_cell == scenario.source_cell &&
+                            scaled.secondary_source_cell == scenario.secondary_source_cell &&
+                            scaled.outlet_cell == scenario.outlet_cell &&
+                            scaled.sink_cell == scenario.sink_cell,
+                        "headwaters source scaling should leave terrain, sinks, outlet, and clocks unchanged");
+
+                std::size_t source_a_cells = 0U;
+                std::size_t source_b_cells = 0U;
+                double scaled_source_a_rate_m3_per_s = 0.0;
+                double scaled_source_b_rate_m3_per_s = 0.0;
+                for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+                    for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+                        const std::size_t index = fluid_25d_scenario_index(
+                            config.grid_width, config.grid_height, x, y);
+                        const float baseline_rate = scenario.source_depth_rate_m_per_s[index];
+                        const float scaled_rate = scaled.source_depth_rate_m_per_s[index];
+                        require((baseline_rate > 0.0F) == (scaled_rate > 0.0F),
+                                "headwaters source scaling should preserve the 1 m source footprint");
+                        if (scaled_rate > 0.0F) {
+                            const double cell_center_y_m =
+                                static_cast<double>(y) * config.cell_size_m;
+                            if (cell_center_y_m < 64.0) {
+                                ++source_a_cells;
+                                scaled_source_a_rate_m3_per_s +=
+                                    static_cast<double>(scaled_rate) * cell_area_m2;
+                            } else {
+                                ++source_b_cells;
+                                scaled_source_b_rate_m3_per_s +=
+                                    static_cast<double>(scaled_rate) * cell_area_m2;
+                            }
+                        }
+                    }
+                }
+                require(source_a_cells == resolution.expected_source_cells_per_patch &&
+                            source_b_cells == resolution.expected_source_cells_per_patch,
+                        "scaled headwaters should retain both authored 1 m source footprints");
+                const double expected_rate_m3_per_s =
+                    static_cast<double>(kFluid25DSustainedHeadwatersDischargePerSourceM3PerS) *
+                    source_scale;
+                const double rate_tolerance_m3_per_s = 2.0e-7 * source_scale;
+                require_close(scaled_source_a_rate_m3_per_s, expected_rate_m3_per_s,
+                              rate_tolerance_m3_per_s,
+                              "scaled 1 m source A should integrate to its requested discharge");
+                require_close(scaled_source_b_rate_m3_per_s, expected_rate_m3_per_s,
+                              rate_tolerance_m3_per_s,
+                              "scaled 1 m source B should integrate to its requested discharge");
+            }
+        }
+    }
+}
+
+void test_sustained_headwaters_station_diagnostics() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    struct ExpectedStation {
+        std::string_view name;
+        std::uint32_t x_reference_cell;
+        std::uint32_t y_reference_cell;
+    };
+    constexpr std::array<ExpectedStation, kFluid25DSustainedHeadwatersStationCount> expected{{
+        {"source_a", 4U, 8U},
+        {"source_b", 4U, 24U},
+        {"branch_a", 32U, 14U},
+        {"branch_b", 32U, 18U},
+        {"confluence", 40U, 16U},
+        {"trunk", 54U, 16U},
+        {"outlet", 64U, 16U},
+    }};
+    struct Resolution {
+        std::uint32_t width;
+        std::uint32_t height;
+        float cell_size_m;
+    };
+    constexpr std::array<Resolution, 3U> resolutions{{
+        {kFluid25DSustainedHeadwatersGridWidth, kFluid25DSustainedHeadwatersGridHeight,
+         kFluid25DSustainedHeadwatersCellSizeM},
+        {kFluid25DSustainedHeadwatersGridWidth2m, kFluid25DSustainedHeadwatersGridHeight2m,
+         kFluid25DSustainedHeadwatersCellSize2m},
+        {kFluid25DSustainedHeadwatersGridWidth1m, kFluid25DSustainedHeadwatersGridHeight1m,
+         kFluid25DSustainedHeadwatersCellSize1m},
+    }};
+
+    Fluid25DConfig config;
+    std::vector<float> depth_m;
+    std::vector<Fluid25DVelocityGpu> velocity;
+    for (const Resolution& resolution : resolutions) {
+        config.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+        config.solver = Fluid25DSolver::FiniteVolume;
+        config.grid_width = resolution.width;
+        config.grid_height = resolution.height;
+        config.cell_size_m = resolution.cell_size_m;
+        validate_fluid_25d_config(config);
+        const std::size_t cell_count = fluid_25d_cell_count(config);
+        depth_m.resize(cell_count);
+        velocity.resize(cell_count);
+        for (std::size_t index = 0U; index < cell_count; ++index) {
+            depth_m[index] = 0.1F + (0.0001F * static_cast<float>(index));
+            velocity[index].velocity_wet = {0.01F * static_cast<float>(index),
+                                            -0.02F * static_cast<float>(index), 1.0F, 0.0F};
+        }
+
+        const auto stations =
+            compute_fluid_25d_sustained_headwaters_stations(config, depth_m, velocity);
+        for (std::size_t station_index = 0U; station_index < stations.size(); ++station_index) {
+            const auto& station = stations[station_index];
+            const auto& expected_station = expected[station_index];
+            const std::uint32_t expected_x_cell = static_cast<std::uint32_t>(std::lround(
+                static_cast<float>(expected_station.x_reference_cell) * 4.0F /
+                config.cell_size_m));
+            const std::uint32_t expected_y_cell = static_cast<std::uint32_t>(std::lround(
+                static_cast<float>(expected_station.y_reference_cell) * 4.0F /
+                config.cell_size_m));
+            require(station.name == expected_station.name &&
+                        station.x_cell == expected_x_cell && station.y_cell == expected_y_cell,
+                    "headwater diagnostic stations should retain their names and physical locations");
+            const std::size_t cell_index = fluid_25d_scenario_index(
+                config.grid_width, config.grid_height, expected_x_cell, expected_y_cell);
+            require_close(station.depth_m, depth_m[cell_index], kDepthToleranceM,
+                          "headwater stations should sample synthetic depth at the configured cell");
+            require_close(station.velocity_x_m_per_s,
+                          velocity[cell_index].velocity_wet[0], kDepthToleranceM,
+                          "headwater stations should sample synthetic x velocity at the configured cell");
+            require_close(station.velocity_y_m_per_s,
+                          velocity[cell_index].velocity_wet[1], kDepthToleranceM,
+                          "headwater stations should sample synthetic y velocity at the configured cell");
+        }
+    }
+
+    Fluid25DConfig wrong_scenario = config;
+    wrong_scenario.scenario = Fluid25DScenario::DryBed;
+    require_throws(
+        [&] {
+            static_cast<void>(
+                compute_fluid_25d_sustained_headwaters_stations(wrong_scenario, depth_m, velocity));
+        },
+        "headwater station diagnostics should reject a different scenario");
+    std::vector<float> short_depth = depth_m;
+    short_depth.pop_back();
+    require_throws(
+        [&] {
+            static_cast<void>(
+                compute_fluid_25d_sustained_headwaters_stations(config, short_depth, velocity));
+        },
+        "headwater station diagnostics should reject a short depth field");
+    std::vector<Fluid25DVelocityGpu> short_velocity = velocity;
+    short_velocity.pop_back();
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_sustained_headwaters_stations(
+                config, depth_m, short_velocity));
+        },
+        "headwater station diagnostics should reject a short velocity field");
 }
 
 void test_terrain_case_ingestion() {
@@ -1319,6 +2059,43 @@ void test_profile_diagnostic_metric_math() {
         "profile diagnostics should reject invalid readback depth");
 }
 
+void test_rain_boundary_outflow_attribution() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const Fluid25DConfig config = test_config(32U, 4U, Fluid25DScenario::TerrainCase);
+    const std::size_t cells = fluid_25d_cell_count(config);
+    const std::vector<float> depth(cells, 0.0F);
+    const std::vector<Fluid25DVelocityGpu> velocity(cells);
+    std::vector<Fluid25DLedgerGpu> ledger(cells);
+    const auto set_outflow = [&](std::uint32_t x, std::uint32_t y, float volume_m3) {
+        ledger[static_cast<std::size_t>(y) * config.grid_width + x]
+            .source_sink_boundary_reserved_m3[2] = volume_m3;
+    };
+    set_outflow(2U, 0U, 2.0F);   // north bin 1
+    set_outflow(30U, 0U, 6.0F);  // north bin 15
+    set_outflow(25U, 3U, 3.0F);  // south bin 12
+    set_outflow(0U, 1U, 4.0F);   // west bin 4
+    set_outflow(31U, 2U, 5.0F);  // east bin 8
+    set_outflow(31U, 0U, 7.0F);  // combined corner, not assigned to a side
+    const Fluid25DProfileDiagnostics diagnostics =
+        compute_fluid_25d_profile_diagnostics(config, depth, velocity, ledger, 0.0);
+    require_close(diagnostics.cumulative_boundary_outflow_volume_m3, 27.0, kDepthToleranceM,
+                  "rain boundary diagnostic should preserve the total ledger outflow");
+    require_close(diagnostics.north_outflow_bins_m3[1], 2.0, kDepthToleranceM,
+                  "rain boundary diagnostic should locate north outflow by bin");
+    require_close(diagnostics.north_outflow_bins_m3[15], 6.0, kDepthToleranceM,
+                  "rain boundary diagnostic should locate the far north outflow bin");
+    require_close(diagnostics.south_outflow_bins_m3[12], 3.0, kDepthToleranceM,
+                  "rain boundary diagnostic should locate south outflow by bin");
+    require_close(diagnostics.west_outflow_bins_m3[4], 4.0, kDepthToleranceM,
+                  "rain boundary diagnostic should locate west outflow by bin");
+    require_close(diagnostics.east_outflow_bins_m3[8], 5.0, kDepthToleranceM,
+                  "rain boundary diagnostic should locate east outflow by bin");
+    require_close(diagnostics.corner_outflow_volume_m3, 7.0, kDepthToleranceM,
+                  "rain boundary diagnostic should keep ambiguous corners separate");
+    require_close(diagnostics.non_edge_outflow_volume_m3, 0.0, kDepthToleranceM,
+                  "rain boundary diagnostic should expose unexpected interior outflow");
+}
+
 void test_source_outlet_cross_section_diagnostic_math() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config =
@@ -1528,6 +2305,32 @@ void test_source_outlet_spatial_diagnostic_math() {
     require(diagnostics.material_dyed_after_outlet_valid &&
                 diagnostics.material_dyed_max_x_after_outlet_cell_x == after_x,
             "after-outlet material front should report its furthest wet dyed cell");
+    const std::uint32_t route_sections = geometry.sink_x - geometry.source_x + 1U;
+    const double single_section_freeboard_m =
+        std::min(
+            fluid_25d_source_outlet_bank_crest(geometry, in_bank_x, scenario.terrain_height_m, true)
+                .elevation_m,
+            fluid_25d_source_outlet_bank_crest(geometry, in_bank_x, scenario.terrain_height_m,
+                                               false)
+                .elevation_m) -
+        (scenario.terrain_height_m[in_bank_index] + depth[in_bank_index]);
+    require(diagnostics.route_section_count == route_sections &&
+                diagnostics.route_wet_section_count == 1U &&
+                diagnostics.route_freeboard_above_half_m_section_count == 1U,
+            "route summary should distinguish all columns from the one wet section");
+    require_close(diagnostics.route_min_freeboard_m, single_section_freeboard_m, kDepthToleranceM,
+                  "one wet section should set the minimum freeboard");
+    require_close(diagnostics.route_mean_freeboard_m, single_section_freeboard_m, kDepthToleranceM,
+                  "one wet section should set the mean freeboard");
+    require_close(diagnostics.route_max_freeboard_m, single_section_freeboard_m, kDepthToleranceM,
+                  "one wet section should set the maximum freeboard");
+    require_close(diagnostics.route_min_centerline_depth_m, 0.0, kDepthToleranceM,
+                  "dry route sections should remain visible in minimum centerline depth");
+    require_close(diagnostics.route_mean_centerline_depth_m,
+                  static_cast<double>(depth[in_bank_index]) / route_sections, kDepthToleranceM,
+                  "route mean centerline depth should include dry sections");
+    require_close(diagnostics.route_max_centerline_depth_m, depth[in_bank_index], kDepthToleranceM,
+                  "the one wet centerline should set maximum centerline depth");
 
     const double summed_zone_water =
         diagnostics.before_source.water_volume_m3 + diagnostics.route_off_bank.water_volume_m3 +
@@ -1560,6 +2363,17 @@ void test_source_outlet_spatial_diagnostic_math() {
     require(!initial.material_dyed_after_outlet_valid &&
                 initial.after_outlet.material_dyed_wet_cell_count == 0U,
             "an undyed initial seed should have no after-outlet material front");
+    require(initial.route_section_count == route_sections &&
+                initial.route_wet_section_count == route_sections &&
+                initial.route_freeboard_above_half_m_section_count == 0U &&
+                initial.route_min_centerline_depth_m > 2.60,
+            "the deep initial seed should wet every route section below its crest");
+    require_close(initial.route_min_freeboard_m, kFluid25DSourceOutletInitialFreeboardM,
+                  kDepthToleranceM, "initial route minimum freeboard should match its seed");
+    require_close(initial.route_mean_freeboard_m, kFluid25DSourceOutletInitialFreeboardM,
+                  kDepthToleranceM, "initial route mean freeboard should match its seed");
+    require_close(initial.route_max_freeboard_m, kFluid25DSourceOutletInitialFreeboardM,
+                  kDepthToleranceM, "initial route maximum freeboard should match its seed");
 
     require_throws(
         [&] {
@@ -1668,12 +2482,30 @@ void test_source_outlet_endpoint_shoulders() {
         scenario.terrain_height_m[index(geometry.source_x - upstream_length, source_center_y)];
     const float downstream_plateau_m =
         scenario.terrain_height_m[index(geometry.sink_x + downstream_length, sink_center_y)];
+    const auto source_left_crest = fluid_25d_source_outlet_bank_crest(
+        geometry, geometry.source_x, scenario.terrain_height_m, true);
+    const auto source_right_crest = fluid_25d_source_outlet_bank_crest(
+        geometry, geometry.source_x, scenario.terrain_height_m, false);
+    const auto sink_left_crest = fluid_25d_source_outlet_bank_crest(
+        geometry, geometry.sink_x, scenario.terrain_height_m, true);
+    const auto sink_right_crest = fluid_25d_source_outlet_bank_crest(
+        geometry, geometry.sink_x, scenario.terrain_height_m, false);
+    const float source_target_surface_m =
+        std::min(source_left_crest.elevation_m, source_right_crest.elevation_m) -
+        kFluid25DSourceOutletInitialFreeboardM;
+    const float sink_target_surface_m =
+        std::min(sink_left_crest.elevation_m, sink_right_crest.elevation_m) -
+        kFluid25DSourceOutletInitialFreeboardM;
     require_close(upstream_plateau_m - source_center_bed_m,
                   kFluid25DSourceOutletUpstreamContainmentRiseM, 0.001,
-                  "the upstream end cap should reach its one-metre containment plateau by cell 4");
+                  "the upstream end cap should reach its three-metre containment plateau by cell "
+                  "4");
     require_close(downstream_plateau_m - sink_center_bed_m,
                   kFluid25DSourceOutletDownstreamContainmentRiseM, 0.001,
-                  "the outlet end cap should preserve its total 1.30-metre rise by cell 4");
+                  "the outlet end cap should reach its 3.30-metre containment plateau by cell 4");
+    require(upstream_plateau_m > source_target_surface_m &&
+                downstream_plateau_m > sink_target_surface_m,
+            "both end-cap plateaus should stand above their initial centerline target surfaces");
 
     // The shoulders are monotone in the direction away from the route and
     // remain flat after their clamped reach.
@@ -1696,7 +2528,7 @@ void test_source_outlet_endpoint_shoulders() {
                 "endpoint containment shoulders should remain level after their short ramps");
     }
 
-    // Rebuild the unchanged bank-relative seed and endpoint rates. The
+    // Rebuild the absolute-freeboard seed and unchanged endpoint rates. The
     // shoulder edit must not move initial water, alter forcing strips, or
     // change their normalized two-cubic-metre-per-second rates.
     const auto endpoint_weight = [](float x_offset, float y_offset, float radius_x) {
@@ -1761,15 +2593,10 @@ void test_source_outlet_endpoint_shoulders() {
             const std::uint32_t first_y = std::min(left_crest.y_cell, right_crest.y_cell);
             const std::uint32_t last_y = std::max(left_crest.y_cell, right_crest.y_cell);
             if (y >= first_y && y <= last_y) {
-                const float center_y = geometry.channel_center_y(static_cast<float>(x));
-                const std::uint32_t center_row = static_cast<std::uint32_t>(
-                    std::clamp(std::round(center_y), 0.0F, static_cast<float>(height - 1U)));
-                const float centerline_bed_m = scenario.terrain_height_m[index(x, center_row)];
                 const float lower_crest_m =
                     std::min(left_crest.elevation_m, right_crest.elevation_m);
                 const float target_surface_m =
-                    centerline_bed_m + (kFluid25DSourceOutletInitialBankRiseFraction *
-                                        (lower_crest_m - centerline_bed_m));
+                    lower_crest_m - kFluid25DSourceOutletInitialFreeboardM;
                 const float source_weight =
                     endpoint_weight(static_cast<float>(x) - static_cast<float>(geometry.source_x),
                                     static_cast<float>(y) -
@@ -1785,6 +2612,13 @@ void test_source_outlet_endpoint_shoulders() {
                 expected_seed =
                     std::max({std::max(0.0F, target_surface_m - scenario.terrain_height_m[cell]),
                               0.45F * source_weight, 0.70F * sink_weight});
+                if (scenario.initial_water_depth_m[cell] > 0.0F) {
+                    const float seeded_surface_m =
+                        scenario.terrain_height_m[cell] + scenario.initial_water_depth_m[cell];
+                    require(lower_crest_m - seeded_surface_m >= 0.25F,
+                            "source-outlet endpoint seed should remain below the discrete lower "
+                            "crest");
+                }
             }
         }
         require(scenario.initial_water_depth_m[cell] == expected_seed,
@@ -2357,7 +3191,7 @@ void test_presentation_cue_contract() {
             "catchment mode's predicate exact");
     require(ui.find("kTransportCatchmentViews") != std::string::npos &&
                 ui.find("transport_inspection_available") != std::string::npos &&
-                ui.find("Transport Inspection needs the finite-volume source/outlet dye pulse") !=
+                ui.find("Transport Inspection needs a finite-volume dye pulse on an eligible demo.") !=
                     std::string::npos &&
                 ui.find("Magenta-to-violet") != std::string::npos &&
                 project_config.find("transport-inspection") != std::string::npos &&
@@ -2761,6 +3595,136 @@ void test_finite_volume_open_boundary_and_source_sink_ledgers() {
                   "finite-volume source and sink ledger should remain conserved");
 }
 
+void test_finite_volume_sustained_headwaters_flow_control() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    struct Resolution {
+        std::uint32_t width;
+        std::uint32_t height;
+        float cell_size_m;
+    };
+    constexpr std::array<Resolution, 3U> resolutions{{
+        {kFluid25DSustainedHeadwatersGridWidth, kFluid25DSustainedHeadwatersGridHeight,
+         kFluid25DSustainedHeadwatersCellSizeM},
+        {kFluid25DSustainedHeadwatersGridWidth2m, kFluid25DSustainedHeadwatersGridHeight2m,
+         kFluid25DSustainedHeadwatersCellSize2m},
+        {kFluid25DSustainedHeadwatersGridWidth1m, kFluid25DSustainedHeadwatersGridHeight1m,
+         kFluid25DSustainedHeadwatersCellSize1m},
+    }};
+    constexpr float kMaterialFrontDepthM = 0.001F;
+    constexpr std::uint64_t kMaximumControlSteps = 2400U; // 600 seconds at 0.25 s/fixed step.
+    const auto reference_cell = [](std::uint32_t value, float cell_size_m) {
+        return static_cast<std::uint32_t>(std::lround(static_cast<float>(value) * 4.0F /
+                                                      cell_size_m));
+    };
+    for (const Resolution& resolution : resolutions) {
+        Fluid25DConfig config;
+        config.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+        config.solver = Fluid25DSolver::FiniteVolume;
+        config.grid_width = resolution.width;
+        config.grid_height = resolution.height;
+        config.cell_size_m = resolution.cell_size_m;
+        config.fixed_delta_seconds = 0.25F;
+        config.simulation_substeps = 8U;
+        validate_fluid_25d_config(config);
+
+        const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+            config.scenario, config.grid_width, config.grid_height, config.cell_size_m);
+        Fluid25DFiniteVolumeOracle oracle(config, scenario);
+        require_close(oracle.total_water_volume_m3(), 0.0, kDepthToleranceM,
+                      "sustained-headwaters evolution should begin from a dry state");
+
+        const std::size_t branch_a_probe = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, reference_cell(32U, config.cell_size_m),
+            reference_cell(14U, config.cell_size_m));
+        const std::size_t branch_b_probe = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, reference_cell(32U, config.cell_size_m),
+            reference_cell(18U, config.cell_size_m));
+        const std::size_t source_a_probe = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height,
+            reference_cell(kFluid25DSustainedHeadwatersSourceAX, config.cell_size_m),
+            reference_cell(kFluid25DSustainedHeadwatersSourceAY, config.cell_size_m));
+        const std::size_t source_b_probe = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height,
+            reference_cell(kFluid25DSustainedHeadwatersSourceBX, config.cell_size_m),
+            reference_cell(kFluid25DSustainedHeadwatersSourceBY, config.cell_size_m));
+        const std::size_t confluence_probe = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height,
+            reference_cell(kFluid25DSustainedHeadwatersConfluenceX, config.cell_size_m),
+            reference_cell(kFluid25DSustainedHeadwatersConfluenceY, config.cell_size_m));
+        const std::size_t downstream_probe = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, reference_cell(54U, config.cell_size_m),
+            reference_cell(kFluid25DSustainedHeadwatersConfluenceY, config.cell_size_m));
+        bool branch_a_wetted = false;
+        bool branch_b_wetted = false;
+        bool confluence_wetted = false;
+        bool trunk_wetted = false;
+        double cumulative_source_volume_m3 = 0.0;
+        double cumulative_outflow_volume_m3 = 0.0;
+        // Retain the 600 s reach/outlet regression at the exact 4 m control.
+        // Refined CPU cases are 30 s CFL/positivity/ledger sanity checks; the
+        // long 900/1800 s refined evidence is collected through the GPU runner.
+        const std::uint64_t control_steps =
+            config.cell_size_m == kFluid25DSustainedHeadwatersCellSizeM
+                ? kMaximumControlSteps
+                : 120U;
+
+        for (std::uint64_t step = 0U; step < control_steps; ++step) {
+            const Fluid25DStepLedger ledger = oracle.step();
+            cumulative_source_volume_m3 += ledger.source_volume_m3;
+            cumulative_outflow_volume_m3 += ledger.boundary_outflow_volume_m3;
+            const double step_ledger_tolerance_m3 =
+                std::max(kLedgerToleranceM3, ledger.volume_after_m3 * 2.0e-6);
+            require_close(ledger.conservation_error_m3(), 0.0, step_ledger_tolerance_m3,
+                          "sustained-headwaters fixed step should conserve source and boundary volume");
+            require(ledger.sink_volume_m3 == 0.0,
+                    "sustained-headwaters control should not remove water through a sink");
+            require(oracle.last_cfl_number() <= Fluid25DFiniteVolumeOracle::kTargetCfl,
+                    "sustained-headwaters accepted steps should remain within the CFL target");
+
+            const std::vector<float>& depth_m = oracle.water_depth_m();
+            require(std::all_of(depth_m.begin(), depth_m.end(), [](float depth) {
+                        return std::isfinite(depth) && depth >= 0.0F;
+                    }),
+                    "sustained-headwaters evolution should keep all depths finite and nonnegative");
+            branch_a_wetted = branch_a_wetted || depth_m[branch_a_probe] > kMaterialFrontDepthM;
+            branch_b_wetted = branch_b_wetted || depth_m[branch_b_probe] > kMaterialFrontDepthM;
+            if (control_steps < kMaximumControlSteps) {
+                require(depth_m[source_a_probe] > 0.0F && depth_m[source_b_probe] > 0.0F,
+                        "refined headwater CPU steps should apply forcing at both source centers");
+            }
+            confluence_wetted =
+                confluence_wetted || depth_m[confluence_probe] > kMaterialFrontDepthM;
+            trunk_wetted = trunk_wetted || depth_m[downstream_probe] > kMaterialFrontDepthM;
+        }
+
+        if (control_steps == kMaximumControlSteps) {
+            require(branch_a_wetted && branch_b_wetted,
+                    "both continuously forced tributaries should carry a material water front");
+            require(confluence_wetted,
+                    "the two headwater fronts should reach their shared confluence");
+            require(trunk_wetted,
+                    "confluence flow should continue down the shared trunk");
+            require(cumulative_outflow_volume_m3 > 0.01,
+                    "sustained headwater flow should eventually discharge through the east aperture");
+        }
+        const double expected_source_volume_m3 =
+            0.50 * static_cast<double>(config.fixed_delta_seconds) *
+            static_cast<double>(control_steps);
+        // The solver adds each source as a float depth increment; at nonzero depth the
+        // represented delta is quantized when accumulated into water_depth_m_. Keep this
+        // integrated-ledger tolerance relative and tight, while the static source-field
+        // test above independently verifies the requested 0.50 m^3/s normalization.
+        const double integrated_source_tolerance_m3 =
+            std::max(kVolumeToleranceM3, expected_source_volume_m3 * 5.0e-5);
+        require_close(cumulative_source_volume_m3, expected_source_volume_m3,
+                      integrated_source_tolerance_m3,
+                      "two constant headwaters should contribute the configured total source volume");
+        require_close(oracle.total_water_volume_m3() + cumulative_outflow_volume_m3,
+                      cumulative_source_volume_m3, 0.05,
+                      "stored water plus open-boundary discharge should reconcile all headwater input");
+    }
+}
+
 void test_finite_volume_cfl_fails_closed() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = finite_volume_test_config(2U, 2U, Fluid25DScenario::DryBed);
@@ -2824,6 +3788,15 @@ void test_dye_config_and_fixed_step_schedule() {
     require(parsed.simulation.dye_pulse_start_seconds == 0.5F &&
                 parsed.simulation.dye_pulse_duration_seconds == 1.25F,
             "dye CLI options should bind the validated source-outlet pulse timing");
+    const Fluid25DProjectConfig headwaters_parsed = parse_project(
+        {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+         "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height", "33",
+         "--fluid25d-cell-size-m", "4", "--fluid25d-dye-pulse-start-seconds", "0.25",
+         "--fluid25d-dye-pulse-duration-seconds", "0.5"});
+    require(headwaters_parsed.simulation.dye_pulse_start_seconds == 0.25F &&
+                headwaters_parsed.simulation.dye_pulse_duration_seconds == 0.5F &&
+                fluid_25d_transport_inspection_available(headwaters_parsed.simulation),
+            "dye CLI options should bind the opt-in sustained-headwaters pulse");
     require_throws(
         [] {
             static_cast<void>(parse_project(
@@ -2854,6 +3827,33 @@ void test_dye_config_and_fixed_step_schedule() {
                                "--fluid25d-dye-pulse-duration-seconds", "1"}));
         },
         "dye CLI should reject timing options without finite-volume");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
+                 "33", "--fluid25d-cell-size-m", "4", "--fluid25d-source-active-duration-seconds",
+                 "10", "--fluid25d-dye-pulse-start-seconds", "0",
+                 "--fluid25d-dye-pulse-duration-seconds", "1"}));
+        },
+        "headwater dye CLI should reject hydraulic source shutoff scheduling");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
+                 "33", "--fluid25d-cell-size-m", "4", "--fluid25d-rainfall-rate-mm-per-hour",
+                 "10"}));
+        },
+        "headwater CLI should reject rain forcing");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
+                 "33", "--fluid25d-cell-size-m", "4", "--fluid25d-sheet-depth-m", "0.1"}));
+        },
+        "headwater CLI should reject sheet forcing");
 }
 
 [[nodiscard]] cubey::projects::fluid::fluid_25d::Fluid25DScenarioData
@@ -2929,6 +3929,95 @@ void test_dye_zero_path_and_resting_concentration() {
     for (const float concentration : uniform.tracer_concentration()) {
         require_close(concentration, 1.0, kDepthToleranceM,
                       "uniform resting tracer should remain spatially uniform");
+    }
+}
+
+void test_sustained_headwaters_dye_pulse() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    struct Resolution {
+        std::uint32_t width;
+        std::uint32_t height;
+        float cell_size_m;
+    };
+    constexpr std::array<Resolution, 3U> resolutions{{
+        {kFluid25DSustainedHeadwatersGridWidth, kFluid25DSustainedHeadwatersGridHeight,
+         kFluid25DSustainedHeadwatersCellSizeM},
+        {kFluid25DSustainedHeadwatersGridWidth2m, kFluid25DSustainedHeadwatersGridHeight2m,
+         kFluid25DSustainedHeadwatersCellSize2m},
+        {kFluid25DSustainedHeadwatersGridWidth1m, kFluid25DSustainedHeadwatersGridHeight1m,
+         kFluid25DSustainedHeadwatersCellSize1m},
+    }};
+    for (const Resolution& resolution : resolutions) {
+        Fluid25DConfig config;
+        config.scenario = Fluid25DScenario::SustainedHeadwatersDemo;
+        config.solver = Fluid25DSolver::FiniteVolume;
+        config.grid_width = resolution.width;
+        config.grid_height = resolution.height;
+        config.cell_size_m = resolution.cell_size_m;
+        config.fixed_delta_seconds = 0.25F;
+        config.simulation_substeps = 2U;
+        config.dye_pulse_start_seconds = 0.0F;
+        config.dye_pulse_duration_seconds = config.fixed_delta_seconds;
+        validate_fluid_25d_config(config);
+        require(!config.source_active_duration_seconds.has_value(),
+                "headwater tracer control should retain continuous hydraulic source scheduling");
+
+        const Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+            config.scenario, config.grid_width, config.grid_height, config.cell_size_m);
+        Fluid25DFiniteVolumeOracle oracle(config, scenario);
+        const Fluid25DTracerStepResult pulse_step = oracle.step_with_dye();
+        require_close(pulse_step.water.source_volume_m3, 0.125, kVolumeToleranceM3,
+                      "both headwater inputs should inject water during the tracer pulse step");
+        require_close(pulse_step.tracer.source_amount_m3, 0.125, kVolumeToleranceM3,
+                      "the shared unit-concentration pulse should add tracer at both inputs");
+        require_close(pulse_step.water.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "headwater pulse water ledger should conserve");
+        require_close(pulse_step.tracer.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "headwater pulse tracer ledger should conserve");
+
+        double source_a_tracer_amount_m3 = 0.0;
+        double source_b_tracer_amount_m3 = 0.0;
+        const double cell_area_m2 =
+            static_cast<double>(config.cell_size_m) * static_cast<double>(config.cell_size_m);
+        for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
+            for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
+                const std::size_t index =
+                    fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
+                const double tracer_amount_m3 =
+                    static_cast<double>(oracle.tracer_mass_per_area_m()[index]) * cell_area_m2;
+                if (scenario.source_depth_rate_m_per_s[index] > 0.0F) {
+                    const double cell_center_y_m =
+                        static_cast<double>(y) * static_cast<double>(config.cell_size_m);
+                    if (cell_center_y_m < 64.0) {
+                        source_a_tracer_amount_m3 += tracer_amount_m3;
+                    } else {
+                        source_b_tracer_amount_m3 += tracer_amount_m3;
+                    }
+                }
+            }
+        }
+        require(source_a_tracer_amount_m3 > 0.0 && source_b_tracer_amount_m3 > 0.0,
+                "the shared tracer pulse should appear in both refined source footprints");
+
+        const Fluid25DTracerStepResult post_pulse_step = oracle.step_with_dye();
+        require_close(post_pulse_step.water.source_volume_m3, 0.125, kVolumeToleranceM3,
+                      "headwater water input should continue after the dye pulse ends");
+        require_close(post_pulse_step.tracer.source_amount_m3, 0.0, kDepthToleranceM,
+                      "the half-open headwater tracer pulse should be off at its end boundary");
+        require_close(post_pulse_step.water.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "post-pulse headwater water ledger should conserve");
+        require_close(post_pulse_step.tracer.conservation_error_m3(), 0.0, kLedgerToleranceM3,
+                      "post-pulse headwater tracer ledger should conserve");
+        require_close(oracle.total_water_volume_m3(), 0.25, kVolumeToleranceM3,
+                      "continuous headwater sources should accumulate after the pulse boundary");
+        const auto& cumulative_tracer = oracle.cumulative_tracer_ledger();
+        require_close(oracle.total_tracer_amount_m3(),
+                      cumulative_tracer.source_amount_m3 - cumulative_tracer.sink_amount_m3 -
+                          cumulative_tracer.boundary_outflow_amount_m3,
+                      kVolumeToleranceM3,
+                      "headwater tracer storage should reconcile its cumulative source and outlet ledger");
+        require_close(cumulative_tracer.source_amount_m3, 0.125, kVolumeToleranceM3,
+                      "cumulative headwater tracer input should stop at the half-open pulse boundary");
     }
 }
 
@@ -3154,11 +4243,15 @@ int main() {
     try {
         test_config_defaults_and_parsing();
         test_deterministic_scenarios();
+        test_sustained_headwaters_scenario_construction();
+        test_sustained_headwaters_refined_scenario_construction();
+        test_sustained_headwaters_station_diagnostics();
         test_terrain_case_ingestion();
         test_terrain_water_protocol_construction();
         test_mountain_source_outlet_field_construction();
         test_profile_frame_slot_attribution();
         test_profile_diagnostic_metric_math();
+        test_rain_boundary_outflow_attribution();
         test_source_outlet_cross_section_diagnostic_math();
         test_source_outlet_spatial_diagnostic_math();
         test_source_outlet_endpoint_shoulders();
@@ -3177,9 +4270,11 @@ int main() {
         test_finite_volume_high_absolute_elevation_shallow_film();
         test_finite_volume_symmetric_dam_break();
         test_finite_volume_open_boundary_and_source_sink_ledgers();
+        test_finite_volume_sustained_headwaters_flow_control();
         test_finite_volume_cfl_fails_closed();
         test_dye_config_and_fixed_step_schedule();
         test_dye_zero_path_and_resting_concentration();
+        test_sustained_headwaters_dye_pulse();
         test_dye_advection_bounds_and_ledgers();
         test_dye_open_boundary_ledger();
         test_dye_cfl_rejection_and_reset();

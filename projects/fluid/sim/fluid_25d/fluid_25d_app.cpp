@@ -115,7 +115,8 @@ template <typename Value>
     if (!terrain_case && !mountain_source_outlet) {
         return make_fluid_25d_scenario(config.simulation.scenario, config.simulation.grid_width,
                                        config.simulation.grid_height,
-                                       config.simulation.cell_size_m);
+                                       config.simulation.cell_size_m,
+                                       config.simulation.headwaters_source_scale);
     }
 
     cubey::asset::TerrainRasterHeightSource source(config.terrain.heightfield_path.value());
@@ -315,7 +316,7 @@ class Fluid25DApp {
             Fluid25DRenderTargetMode::Present, true, paused_, reset_requested_,
             presentation_cue_reset_requested_, quiver_reset_requested_, profiler,
             render_frame.frame_slot.index,
-            forcings);
+            forcings, config_.catchment_render);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         if (profiler != nullptr) {
@@ -344,10 +345,13 @@ class Fluid25DApp {
         const float world_height = static_cast<float>(config_.simulation.grid_height - 1U) *
                                    config_.simulation.cell_size_m;
         const float horizontal_extent = std::max(world_width, world_height);
-        const float render_height_scale =
-            fluid_25d_catchment_height_scale(config_.simulation.scenario);
+        const float render_height_scale = config_.catchment_render.terrain_height_scale.value_or(
+            fluid_25d_catchment_height_scale(config_.simulation.scenario));
         const float scaled_terrain_span =
             (*terrain_maximum - *terrain_minimum) * render_height_scale;
+        const float default_camera_terrain_span =
+            (*terrain_maximum - *terrain_minimum) *
+            fluid_25d_catchment_height_scale(config_.simulation.scenario);
         float framing_horizontal_extent = horizontal_extent;
         catchment_target_ = {
             0.0F,
@@ -392,12 +396,25 @@ class Fluid25DApp {
                                       render_height_scale;
             }
         }
-        const float camera_distance =
+        float camera_distance =
             std::max(framing_horizontal_extent *
                          fluid_25d_catchment_home_distance_scale(config_.simulation.scenario),
-                     scaled_terrain_span * 6.0F + 16.0F);
-        orbit_controller_.set_distance_limits(std::max(8.0F, framing_horizontal_extent * 0.30F),
-                                              std::max(48.0F, framing_horizontal_extent * 4.0F));
+                     default_camera_terrain_span * 6.0F + 16.0F);
+        const float minimum_camera_distance =
+            std::max(8.0F, framing_horizontal_extent * 0.30F);
+        const float maximum_camera_distance =
+            std::max(48.0F, framing_horizontal_extent * 4.0F);
+        if (config_.catchment_render.home_camera_distance_m.has_value()) {
+            const float requested_distance =
+                *config_.catchment_render.home_camera_distance_m;
+            if (requested_distance < minimum_camera_distance ||
+                requested_distance > maximum_camera_distance) {
+                throw std::runtime_error(
+                    "fluid 2.5D terrain home camera distance falls outside the current orbit limits");
+            }
+            camera_distance = requested_distance;
+        }
+        orbit_controller_.set_distance_limits(minimum_camera_distance, maximum_camera_distance);
         orbit_controller_.set_pitch_limits(-0.38F, 0.38F);
         orbit_controller_.set_home_distance(camera_distance);
         const float near_plane = std::max(kCatchmentCameraMinimumNearPlaneM,
@@ -561,6 +578,19 @@ class Fluid25DApp {
         const Fluid25DProfileDiagnostics diagnostics = compute_fluid_25d_profile_diagnostics(
             config_.simulation, depth_m, velocity, ledger, initial_water_volume_m3_);
         record_fluid_25d_profile_diagnostics(*profile_recorder, frame_index, diagnostics);
+        if ((config_.simulation.scenario == Fluid25DScenario::TerrainCase &&
+             config_.simulation.terrain_water_protocol ==
+                 Fluid25DTerrainWaterProtocol::RainPulse) ||
+            config_.simulation.scenario == Fluid25DScenario::SustainedHeadwatersDemo) {
+            record_fluid_25d_boundary_outflow_diagnostics(*profile_recorder, frame_index,
+                                                          diagnostics);
+        }
+        if (config_.simulation.scenario == Fluid25DScenario::SustainedHeadwatersDemo) {
+            const auto stations = compute_fluid_25d_sustained_headwaters_stations(
+                config_.simulation, depth_m, velocity);
+            record_fluid_25d_sustained_headwaters_stations(*profile_recorder, frame_index,
+                                                           stations);
+        }
         const Fluid25DTracerProfileDiagnostics tracer_diagnostics =
             compute_fluid_25d_tracer_profile_diagnostics(config_.simulation, depth_m, tracer_q_m,
                                                          scenario_.sink_depth_rate_m_per_s,
@@ -740,6 +770,10 @@ class Fluid25DApp {
                                                       "oracle finite-volume tracer ledger");
         float maximum_tracer_q_error = 0.0F;
         float maximum_tracer_concentration_error = 0.0F;
+        std::size_t maximum_velocity_error_cell = 0U;
+        std::size_t maximum_velocity_error_component = 0U;
+        float maximum_velocity_actual = 0.0F;
+        float maximum_velocity_expected = 0.0F;
         double actual_tracer_amount_m3 = 0.0;
         double actual_tracer_source_amount_m3 = 0.0;
         double actual_tracer_sink_amount_m3 = 0.0;
@@ -765,9 +799,15 @@ class Fluid25DApp {
                 const float expected_velocity =
                     component == 0U ? finite_volume_oracle_->velocity_m_per_s()[index].x_m_per_s
                                     : finite_volume_oracle_->velocity_m_per_s()[index].y_m_per_s;
-                maximum_velocity_error = std::max(
-                    maximum_velocity_error,
-                    std::abs(actual_velocity[index].velocity_wet[component] - expected_velocity));
+                const float actual_component = actual_velocity[index].velocity_wet[component];
+                const float velocity_error = std::abs(actual_component - expected_velocity);
+                if (velocity_error > maximum_velocity_error) {
+                    maximum_velocity_error = velocity_error;
+                    maximum_velocity_error_cell = index;
+                    maximum_velocity_error_component = component;
+                    maximum_velocity_actual = actual_component;
+                    maximum_velocity_expected = expected_velocity;
+                }
             }
             if (actual_momentum[index].momentum_xy_reserved[2] != 0.0F ||
                 actual_momentum[index].momentum_xy_reserved[3] != 0.0F) {
@@ -775,9 +815,15 @@ class Fluid25DApp {
                     "fluid 2.5D GPU oracle observed nonzero finite-volume padding");
             }
             const float expected_wet = finite_volume_oracle_->wet_mask()[index] == 0U ? 0.0F : 1.0F;
-            maximum_velocity_error =
-                std::max(maximum_velocity_error,
-                         std::abs(actual_velocity[index].velocity_wet[2] - expected_wet));
+            const float wet_error =
+                std::abs(actual_velocity[index].velocity_wet[2] - expected_wet);
+            if (wet_error > maximum_velocity_error) {
+                maximum_velocity_error = wet_error;
+                maximum_velocity_error_cell = index;
+                maximum_velocity_error_component = 2U;
+                maximum_velocity_actual = actual_velocity[index].velocity_wet[2];
+                maximum_velocity_expected = expected_wet;
+            }
             const float actual_q = actual_tracer_q[index];
             const float expected_q = finite_volume_oracle_->tracer_mass_per_area_m()[index];
             if (!finite(actual_q) || actual_q < -1.0e-7F ||
@@ -870,6 +916,19 @@ class Fluid25DApp {
                                      " max_depth=" + std::to_string(maximum_depth_error) +
                                      " max_momentum=" + std::to_string(maximum_momentum_error) +
                                      " max_velocity=" + std::to_string(maximum_velocity_error) +
+                                     " velocity_cell=" +
+                                     std::to_string(maximum_velocity_error_cell) +
+                                     " velocity_component=" +
+                                     std::to_string(maximum_velocity_error_component) +
+                                     " velocity_actual=" +
+                                     std::to_string(maximum_velocity_actual) +
+                                     " velocity_expected=" +
+                                     std::to_string(maximum_velocity_expected) +
+                                     " velocity_actual_depth=" +
+                                     std::to_string(actual_depth[maximum_velocity_error_cell]) +
+                                     " velocity_expected_depth=" +
+                                     std::to_string(finite_volume_oracle_->water_depth_m()
+                                                        [maximum_velocity_error_cell]) +
                                      " max_tracer_q=" + std::to_string(maximum_tracer_q_error) +
                                      " max_tracer_concentration=" +
                                      std::to_string(maximum_tracer_concentration_error) +
@@ -944,7 +1003,8 @@ class Fluid25DApp {
                 target, resources_, config_.simulation, presentation_view_, catchment_view_,
                 debug_view_, render_camera(target.extent),
                 Fluid25DRenderTargetMode::ColorAttachment, false, false, reset_requested_,
-                presentation_cue_reset_requested_, quiver_reset_requested_);
+                presentation_cue_reset_requested_, quiver_reset_requested_, nullptr, 0U, {},
+                config_.catchment_render);
             graph_executor_.record(
                 {
                     .device = &context.device(),

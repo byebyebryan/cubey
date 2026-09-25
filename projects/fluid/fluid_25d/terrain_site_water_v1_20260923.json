@@ -1,0 +1,121 @@
+{
+  "schema": "cubey.fluid25d.terrain_site_water_v1.recipe",
+  "scan_identity": {
+    "id": "terrain-site-scan-v1-20260923",
+    "path": "outputs/fluid/terrain-site-scan-v1-20260923/scan.json",
+    "sha256": "ca29947bf1ec1d73c0f1af93a81fb25e46cd2ece7d7731c5a9f87470c5837f50",
+    "schema": "cubey.fluid25d.terrain_site_scan.v1"
+  },
+  "source_identity": {
+    "generator": "terrain-diffusion",
+    "id": "terrain-diffusion-30m",
+    "code_revision": "82a0431281f21a6ec3d691a12ee61525de5b0790",
+    "model_id": "xandergos/terrain-diffusion-30m",
+    "model_revision": "9ef8030cb805b433b98ec25c5dddefbac07a9e26",
+    "native_resolution_m": 30.0
+  },
+  "terrain_crop": {
+    "width": 512,
+    "height": 256,
+    "sample_spacing_m": 30.0,
+    "extent_m": {
+      "x": 15360.0,
+      "z": 7680.0
+    }
+  },
+  "solver_grid": {
+    "width": 512,
+    "height": 256,
+    "cell_size_m": 30
+  },
+  "protocol": {
+    "solver": "finite-volume",
+    "terrain_water_protocol": "rain-pulse",
+    "fixed_delta_seconds": 2,
+    "substeps": 8,
+    "total_frames": 600,
+    "rain_duration_seconds": 600,
+    "sequence_first_frame": 1,
+    "sequence_interval_frames": 15,
+    "selected_frames": [
+      1,
+      60,
+      150,
+      300,
+      450,
+      600
+    ],
+    "video_fps": 4,
+    "capture_width": 1280,
+    "capture_height": 720,
+    "profile_diagnostic_interval": 15,
+    "slow_pooled_speed_threshold_m_per_s": 0.02,
+    "max_conservation_residual_fraction_of_source": 0.0001,
+    "tiers": [
+      {
+        "id": "neutral",
+        "rainfall_mm_per_hour": 12,
+        "evidence_role": "neutral-discovery-baseline"
+      },
+      {
+        "id": "visibility-stress",
+        "rainfall_mm_per_hour": 60,
+        "evidence_role": "visibility-stress-not-climate-or-hydrology-evidence"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "rank": 1,
+      "id": "rank-01-canyon-basin-contrast",
+      "variant": "canyon-candidate-4",
+      "seed": 12345,
+      "review_role": "basin-like-morphology-contrast",
+      "manifest_path": "cache/terrain/sources/v1/desert-canyon-study/canyon-candidate-4/heightfield.json",
+      "manifest_sha256": "e16b145fabdcb9c0c9d6d275461405fe27ef3cfb4c5c81855f5ffe46fdc5fc93",
+      "elevation_sha256": "88cc6c1fdacbd9759f90e6781ddf4ff570e4516fb0652438dc28f7ad23086d8b",
+      "crop": {
+        "x": 256,
+        "z": 576,
+        "width": 512,
+        "height": 256,
+        "sample_spacing_m": 30.0
+      }
+    },
+    {
+      "rank": 2,
+      "id": "rank-02-temperate-mountain-valley",
+      "variant": "temperate-mountain-valley",
+      "seed": 0,
+      "review_role": "visually-clearer-trunk-tributary-candidate",
+      "manifest_path": "cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json",
+      "manifest_sha256": "744356b27e2c2f7895c93bd88a8969fa329b212b9b39c0a9ced239ac405d3d6c",
+      "elevation_sha256": "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737",
+      "crop": {
+        "x": 512,
+        "z": 832,
+        "width": 512,
+        "height": 256,
+        "sample_spacing_m": 30.0
+      }
+    },
+    {
+      "rank": 3,
+      "id": "rank-03-canyon-trunk-tributary-candidate",
+      "variant": "canyon-candidate-2",
+      "seed": 0,
+      "review_role": "visually-clearer-trunk-tributary-candidate",
+      "manifest_path": "cache/terrain/sources/v1/desert-canyon-study/canyon-candidate-2/heightfield.json",
+      "manifest_sha256": "b44351a32a33d27f73d78978f3a7e0bfacabfcb817866e88983a75c734184f8d",
+      "elevation_sha256": "2a919b516d8ae4fb8c193cdd8db1a8ba055ba702e5cbd1ff50ad2b7fc6ab3c48",
+      "crop": {
+        "x": 640,
+        "z": 896,
+        "width": 512,
+        "height": 256,
+        "sample_spacing_m": 30.0
+      }
+    }
+  ],
+  "selection_boundary": "The scan and role labels are review evidence only. Terrain samples remain immutable, and neither valley masks nor scan topology enter the solver. No fixture/default promotion is implied."
+}

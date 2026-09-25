@@ -1,0 +1,160 @@
+{
+  "schema": "cubey.fluid25d.terrain_reach_neutral_v1.recipe",
+  "scan_identity": {
+    "id": "terrain-reach-scan-v1-final-20260923",
+    "path": "outputs/fluid/terrain-reach-scan-v1-final-20260923/scan.json",
+    "sha256": "60bdd07c9a7fb6db6bb4c0de890fa2a49715284c5a5bdaf5e14061a449d09428",
+    "schema": "cubey.fluid25d.terrain_reach_scan.v1"
+  },
+  "source_identity": {
+    "generator": "terrain-diffusion",
+    "id": "terrain-diffusion-30m",
+    "code_revision": "82a0431281f21a6ec3d691a12ee61525de5b0790",
+    "model_id": "xandergos/terrain-diffusion-30m",
+    "model_revision": "9ef8030cb805b433b98ec25c5dddefbac07a9e26",
+    "native_resolution_m": 30.0,
+    "manifest_path": "cache/terrain/sources/v1/landscape-variations/rolling-wet-lowland/heightfield.json",
+    "manifest_sha256": "bdf0d86185147947ea02402cd5f215fab28eb629e7b1dc9785c034d77e85aefc",
+    "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2",
+    "landscape_variant": "rolling-wet-lowland",
+    "seed": 12345
+  },
+  "source_grid": {
+    "width": 2048,
+    "height": 2048,
+    "sample_spacing_m": 30.0,
+    "axis_mapping": {
+      "world_x": "model_j",
+      "world_z": "model_i"
+    },
+    "dtype": "float32-le",
+    "layout": "row-major-zx",
+    "unit": "m"
+  },
+  "solver_grid": {
+    "width": 256,
+    "height": 128,
+    "cell_size_m": 30,
+    "extent_m": {
+      "x": 7680.0,
+      "z": 3840.0
+    }
+  },
+  "protocol": {
+    "solver": "finite-volume",
+    "scenario": "terrain-case",
+    "terrain_water_protocol": "rain-pulse",
+    "initial_water_depth_m": 0.0,
+    "rainfall_mm_per_hour": 12,
+    "rain_duration_seconds": 600,
+    "drain_duration_seconds": 600,
+    "fixed_delta_seconds": 2,
+    "substeps": 8,
+    "total_frames": 600,
+    "total_simulation_seconds": 1200,
+    "explicit_inlet": false,
+    "explicit_sink": false,
+    "boundary_policy": "existing-terrain-case-open-outflow-only-perimeter",
+    "profile_diagnostic_interval_frames": 15,
+    "profile_final_capture_frame": 600,
+    "profile_exact_final_frame_sample": true,
+    "profile_exact_final_sample_interval_frames": 599,
+    "composite_capture_frames": [1, 300, 600],
+    "water_depth_capture_frames": [300, 600],
+    "flow_capture_frames": [300, 600],
+    "capture_width": 1280,
+    "capture_height": 720,
+    "max_status_flags": 0,
+    "max_conservation_residual_fraction_of_source": 0.0001,
+    "expected_uniform_rain_volume_m3": 58982.4
+  },
+  "render_policy": {
+    "physics_independent": true,
+    "height_scale": 0.6,
+    "palette_low_physical_m": 74.773376,
+    "palette_high_physical_m": 212.025720,
+    "palette_basis": "common envelope of the two runtime-transformed crop p05/p95 ranges; bounds remain in physical metres",
+    "home_camera_distance_m": 8043.75,
+    "camera_basis": "same 256x128x30m domain and identical explicit distance for both crops"
+  },
+  "cases": [
+    {
+      "id": "broad-valley-contrast-x384-z837",
+      "rank": 1,
+      "review_role": "broad-valley-morphology-contrast",
+      "morphology_is_not_flow_truth": true,
+      "manifest_path": "cache/terrain/sources/v1/landscape-variations/rolling-wet-lowland/heightfield.json",
+      "manifest_sha256": "bdf0d86185147947ea02402cd5f215fab28eb629e7b1dc9785c034d77e85aefc",
+      "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2",
+      "context_crop": {
+        "x": 128,
+        "z": 768,
+        "width": 512,
+        "height": 256
+      },
+      "crop": {
+        "x": 384,
+        "z": 837,
+        "width": 256,
+        "height": 128,
+        "sample_spacing_m": 30.0
+      },
+      "transformed_crop_sha256": "1cabf75012716793b510dc6958c5cb05f0916356d86736fd02e59461f0016052",
+      "runtime_transformed_crop_percentiles_m": {
+        "minimum": 60.027912,
+        "p05": 74.773376,
+        "p50": 105.001789,
+        "p95": 212.025720,
+        "maximum": 288.912018
+      },
+      "scan_metrics": {
+        "regional_relief_p05_p95_m": 137.252344,
+        "median_floor_width_m": 210.0,
+        "paired_bank_ratio": 1.0,
+        "trunk_length_m": 6121.980515,
+        "grade": 0.0054803,
+        "max_smoothed_adverse_rise_m": 0.536258
+      }
+    },
+    {
+      "id": "narrower-river-reach-candidate-x843-z809",
+      "rank": 2,
+      "review_role": "narrower-channel-morphology-candidate",
+      "morphology_is_not_flow_truth": true,
+      "manifest_path": "cache/terrain/sources/v1/landscape-variations/rolling-wet-lowland/heightfield.json",
+      "manifest_sha256": "bdf0d86185147947ea02402cd5f215fab28eb629e7b1dc9785c034d77e85aefc",
+      "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2",
+      "context_crop": {
+        "x": 640,
+        "z": 768,
+        "width": 512,
+        "height": 256
+      },
+      "crop": {
+        "x": 843,
+        "z": 809,
+        "width": 256,
+        "height": 128,
+        "sample_spacing_m": 30.0
+      },
+      "transformed_crop_sha256": "6a9818526757333925536ba3abd0d3394981797dea4e83d7b2f182ea432d3485",
+      "runtime_transformed_crop_percentiles_m": {
+        "minimum": 64.735695,
+        "p05": 85.791412,
+        "p50": 117.497948,
+        "p95": 151.275988,
+        "maximum": 186.255173
+      },
+      "scan_metrics": {
+        "regional_relief_p05_p95_m": 65.484576,
+        "median_floor_width_m": 90.0,
+        "paired_bank_ratio": 1.0,
+        "trunk_length_m": 8168.376618,
+        "grade": 0.008407016,
+        "max_smoothed_adverse_rise_m": 2.749917
+      },
+      "review_limitation": "Last measured transverse station has a weaker right bank; treat as possible overbank/spill limitation, not hydrologic truth."
+    }
+  ],
+  "selection_boundary": "This bounded shared-forcing audition compares two scanner-selected morphology candidates only. It uses immutable terrain and an existing neutral solver protocol; it does not validate hydrology, add endpoint forcing, or promote a terrain fixture/default."
+}

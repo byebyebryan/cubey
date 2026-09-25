@@ -35,16 +35,25 @@ inline constexpr std::uint32_t kFluid25DMountainSourceOutletSinkX = 232U;
 inline constexpr std::uint32_t kFluid25DMountainSourceOutletSinkZ = 122U;
 inline constexpr std::uint32_t kFluid25DMountainSourceOutletEndpointRadiusCells = 5U;
 inline constexpr float kFluid25DMountainSourceOutletEndpointTotalVolumeRateM3PerS = 0.75F;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersSourceAX = 4U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersSourceAY = 8U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersSourceBX = 4U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersSourceBY = 24U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersConfluenceX = 40U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersConfluenceY = 16U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersOutletYFirst = 15U;
+inline constexpr std::uint32_t kFluid25DSustainedHeadwatersOutletYLast = 17U;
+inline constexpr float kFluid25DSustainedHeadwatersDischargePerSourceM3PerS = 0.25F;
 inline constexpr float kFluid25DSourceOutletLongitudinalFallM = 0.45F;
-inline constexpr float kFluid25DSourceOutletBankCrestRiseM = 1.00F;
-inline constexpr float kFluid25DSourceOutletInitialBankRiseFraction = 0.80F;
+inline constexpr float kFluid25DSourceOutletBankCrestRiseM = 3.00F;
+inline constexpr float kFluid25DSourceOutletInitialFreeboardM = 0.30F;
 inline constexpr std::uint32_t kFluid25DSourceOutletForcingStripLengthCells = 4U;
 inline constexpr float kFluid25DSourceOutletForcingHalfWidthNormalized = 1.50F;
 inline constexpr float kFluid25DSourceOutletEndpointTotalVolumeRateM3PerS = 2.00F;
 inline constexpr std::uint32_t kFluid25DSourceOutletUpstreamShoulderLengthCells = 4U;
 inline constexpr std::uint32_t kFluid25DSourceOutletDownstreamShoulderLengthCells = 4U;
-inline constexpr float kFluid25DSourceOutletUpstreamContainmentRiseM = 1.00F;
-inline constexpr float kFluid25DSourceOutletDownstreamContainmentRiseM = 1.30F;
+inline constexpr float kFluid25DSourceOutletUpstreamContainmentRiseM = 3.00F;
+inline constexpr float kFluid25DSourceOutletDownstreamContainmentRiseM = 3.30F;
 inline constexpr std::array<std::array<std::uint32_t, 2U>, 3U>
     kFluid25DMountainSourceOutletDrainCells{{
         {232U, 127U},
@@ -112,6 +121,8 @@ struct Fluid25DScenarioData {
     // is intentionally outflow-only, not a general transmissive boundary.
     std::vector<std::uint32_t> boundary_outflow_face_mask{};
     std::size_t source_cell = kFluid25DNoCell;
+    std::size_t secondary_source_cell = kFluid25DNoCell;
+    std::size_t outlet_cell = kFluid25DNoCell;
     std::size_t sink_cell = kFluid25DNoCell;
     std::optional<Fluid25DTerrainCaseProvenance> terrain_provenance{};
 };
@@ -159,15 +170,15 @@ struct Fluid25DSourceOutletGeometry {
         return std::clamp(4.60F + broad_width_variation - (1.65F * constriction), 3.25F, 6.50F);
     }
 
-    // The lower channel shoulder rises monotonically to a 1.00 m bench by
-    // normalized offset 2.0. Its short plateau makes the selected discrete
-    // crest stable as the sinuous channel and variable width cross the grid.
-    // A second gentle wall rise starts outside the crest-selection band.
+    // The channel shoulder rises smoothly to its 3.00 m crest by normalized
+    // offset 2.0. The broad smoothstep ramp avoids a trench-like wall, and its
+    // short plateau keeps the selected discrete crest stable as the sinuous
+    // channel and variable width cross the grid. A second gentle rise starts
+    // outside the crest-selection band.
     [[nodiscard]] float cross_sectional_relief_m(float normalized_offset) const {
         const float offset = std::abs(normalized_offset);
         const float bank_t = std::clamp((offset - 0.55F) / 1.45F, 0.0F, 1.0F);
-        const float eased_bank_t = bank_t * bank_t * bank_t * bank_t * bank_t * bank_t;
-        const float bank_smooth = eased_bank_t * eased_bank_t * (3.0F - (2.0F * eased_bank_t));
+        const float bank_smooth = bank_t * bank_t * (3.0F - (2.0F * bank_t));
         const float outer_t = std::clamp((offset - 2.5F) / 1.5F, 0.0F, 1.0F);
         const float outer_smooth = outer_t * outer_t * (3.0F - (2.0F * outer_t));
         return (kFluid25DSourceOutletBankCrestRiseM * bank_smooth) + (0.40F * outer_smooth);
@@ -389,12 +400,218 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
     }
 }
 
+// The authored 4 m scenario below is the original control and remains on its
+// original arithmetic path. Refined grids rasterize the same metre-space
+// reaches and source footprints onto their smaller finite-volume cells.
+[[nodiscard]] inline Fluid25DScenarioData
+make_fluid_25d_sustained_headwaters_refined_scenario(std::uint32_t width,
+                                                     std::uint32_t height,
+                                                     float cell_size_m,
+                                                     float headwaters_source_scale) {
+    if (!fluid_25d_sustained_headwaters_resolution_supported(width, height, cell_size_m) ||
+        cell_size_m == kFluid25DSustainedHeadwatersCellSizeM) {
+        throw std::runtime_error(
+            "fluid 2.5D refined headwaters builder requires the 2 m or 1 m resolution tuple");
+    }
+    if (!std::isfinite(headwaters_source_scale) || !(headwaters_source_scale > 0.0F)) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters source scale must be finite and positive");
+    }
+
+    constexpr float kReferenceCellSizeM = kFluid25DSustainedHeadwatersCellSizeM;
+    constexpr float kSourceBedElevationM = 1.45F;
+    constexpr float kConfluenceBedElevationM = 0.57F;
+    constexpr float kOutletBedElevationM = 0.0F;
+    constexpr float kBankRiseM = 0.65F;
+    constexpr float kBankTransitionWidthM = 12.0F;
+    constexpr float kSourcePatchSideM = 12.0F;
+    constexpr float kOutletApertureWidthM = 12.0F;
+    constexpr float kOutletCenterY = 64.0F;
+    const std::size_t cell_count = fluid_25d_scenario_cell_count(width, height);
+
+    Fluid25DScenarioData data;
+    data.width = width;
+    data.height = height;
+    data.cell_size_m = cell_size_m;
+    data.terrain_height_m.resize(cell_count);
+    data.initial_water_depth_m.assign(cell_count, 0.0F);
+    data.source_depth_rate_m_per_s.assign(cell_count, 0.0F);
+    data.sink_depth_rate_m_per_s.assign(cell_count, 0.0F);
+    data.boundary_outflow_face_mask.assign(cell_count, 0U);
+
+    struct ReachSegment {
+        float x0_m;
+        float y0_m;
+        float x1_m;
+        float y1_m;
+        float bed0_m;
+        float bed1_m;
+        float half_width_m;
+    };
+    const auto reference_coordinate_m = [](std::uint32_t coordinate) {
+        return static_cast<float>(coordinate) * kReferenceCellSizeM;
+    };
+    const std::array<ReachSegment, 3U> reach_segments{{
+        {reference_coordinate_m(kFluid25DSustainedHeadwatersSourceAX),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersSourceAY),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceX),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceY),
+         kSourceBedElevationM, kConfluenceBedElevationM, 6.0F},
+        {reference_coordinate_m(kFluid25DSustainedHeadwatersSourceBX),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersSourceBY),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceX),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceY),
+         kSourceBedElevationM, kConfluenceBedElevationM, 6.0F},
+        {reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceX),
+         reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceY),
+         static_cast<float>(width - 1U) * cell_size_m,
+         reference_coordinate_m(kFluid25DSustainedHeadwatersConfluenceY),
+         kConfluenceBedElevationM, kOutletBedElevationM, 8.0F},
+    }};
+    const auto smoothstep = [](float t) {
+        const float bounded_t = std::clamp(t, 0.0F, 1.0F);
+        return bounded_t * bounded_t * (3.0F - (2.0F * bounded_t));
+    };
+    for (std::uint32_t y = 0U; y < height; ++y) {
+        const float y_m = static_cast<float>(y) * cell_size_m;
+        for (std::uint32_t x = 0U; x < width; ++x) {
+            const float x_m = static_cast<float>(x) * cell_size_m;
+            float nearest_distance_m = std::numeric_limits<float>::infinity();
+            float nearest_bed_m = 0.0F;
+            float nearest_half_width_m = 0.0F;
+            for (const ReachSegment& segment : reach_segments) {
+                const float dx_m = segment.x1_m - segment.x0_m;
+                const float dy_m = segment.y1_m - segment.y0_m;
+                const float length_squared_m2 = (dx_m * dx_m) + (dy_m * dy_m);
+                const float offset_x_m = x_m - segment.x0_m;
+                const float offset_y_m = y_m - segment.y0_m;
+                const float t = std::clamp(
+                    ((offset_x_m * dx_m) + (offset_y_m * dy_m)) / length_squared_m2,
+                    0.0F, 1.0F);
+                const float nearest_x_m = segment.x0_m + (t * dx_m);
+                const float nearest_y_m = segment.y0_m + (t * dy_m);
+                const float distance_m = std::hypot(x_m - nearest_x_m, y_m - nearest_y_m);
+                if (distance_m < nearest_distance_m) {
+                    nearest_distance_m = distance_m;
+                    nearest_bed_m = segment.bed0_m + (t * (segment.bed1_m - segment.bed0_m));
+                    nearest_half_width_m = segment.half_width_m;
+                }
+            }
+            const float bank_t =
+                (nearest_distance_m - nearest_half_width_m) / kBankTransitionWidthM;
+            const float bank_relief_m = kBankRiseM * smoothstep(bank_t);
+            data.terrain_height_m[fluid_25d_scenario_index(width, height, x, y)] =
+                nearest_bed_m + bank_relief_m;
+        }
+    }
+
+    const auto overlap_length_m = [](float cell_lower_m, float cell_upper_m,
+                                     float patch_lower_m, float patch_upper_m) {
+        return std::max(0.0F, std::min(cell_upper_m, patch_upper_m) -
+                                  std::max(cell_lower_m, patch_lower_m));
+    };
+    const float cell_area_m2 = cell_size_m * cell_size_m;
+    const float patch_area_m2 = kSourcePatchSideM * kSourcePatchSideM;
+    const float cell_half_size_m = 0.5F * cell_size_m;
+    const auto add_source_patch = [&](std::uint32_t center_x_reference_cells,
+                                      std::uint32_t center_y_reference_cells) {
+        const float center_x_m = reference_coordinate_m(center_x_reference_cells);
+        const float center_y_m = reference_coordinate_m(center_y_reference_cells);
+        const float patch_lower_x_m = center_x_m - 0.5F * kSourcePatchSideM;
+        const float patch_upper_x_m = center_x_m + 0.5F * kSourcePatchSideM;
+        const float patch_lower_y_m = center_y_m - 0.5F * kSourcePatchSideM;
+        const float patch_upper_y_m = center_y_m + 0.5F * kSourcePatchSideM;
+        for (std::uint32_t y = 0U; y < height; ++y) {
+            const float y_m = static_cast<float>(y) * cell_size_m;
+            const float overlap_y_m = overlap_length_m(y_m - cell_half_size_m,
+                                                       y_m + cell_half_size_m,
+                                                       patch_lower_y_m, patch_upper_y_m);
+            if (overlap_y_m == 0.0F) {
+                continue;
+            }
+            for (std::uint32_t x = 0U; x < width; ++x) {
+                const float x_m = static_cast<float>(x) * cell_size_m;
+                const float overlap_x_m = overlap_length_m(x_m - cell_half_size_m,
+                                                           x_m + cell_half_size_m,
+                                                           patch_lower_x_m, patch_upper_x_m);
+                const float overlap_area_m2 = overlap_x_m * overlap_y_m;
+                if (overlap_area_m2 == 0.0F) {
+                    continue;
+                }
+                const float source_volume_rate_m3_per_s =
+                    kFluid25DSustainedHeadwatersDischargePerSourceM3PerS *
+                    (overlap_area_m2 / patch_area_m2);
+                data.source_depth_rate_m_per_s[
+                    fluid_25d_scenario_index(width, height, x, y)] =
+                    source_volume_rate_m3_per_s / cell_area_m2;
+            }
+        }
+    };
+    add_source_patch(kFluid25DSustainedHeadwatersSourceAX,
+                     kFluid25DSustainedHeadwatersSourceAY);
+    add_source_patch(kFluid25DSustainedHeadwatersSourceBX,
+                     kFluid25DSustainedHeadwatersSourceBY);
+    if (headwaters_source_scale != kFluid25DDefaultHeadwatersSourceScale) {
+        for (float& rate_m_per_s : data.source_depth_rate_m_per_s) {
+            if (rate_m_per_s > 0.0F) {
+                rate_m_per_s *= headwaters_source_scale;
+            }
+        }
+    }
+
+    const std::uint32_t outlet_x = width - 1U;
+    const std::uint32_t outlet_face_count = static_cast<std::uint32_t>(
+        std::lround(kOutletApertureWidthM / cell_size_m));
+    const std::uint32_t outlet_center_row =
+        static_cast<std::uint32_t>(std::lround(kOutletCenterY / cell_size_m));
+    // An even number of binary full faces cannot be centered exactly on y=64.
+    // Choose the lower-y tie side consistently: the 2 m aperture center is
+    // y=63 m and the 1 m aperture center is y=63.5 m, each half a fine cell off.
+    const std::uint32_t outlet_first_row = outlet_center_row - (outlet_face_count / 2U);
+    const std::uint32_t outlet_last_row = outlet_first_row + outlet_face_count - 1U;
+    if (outlet_last_row >= height) {
+        throw std::runtime_error("fluid 2.5D refined headwaters outlet is out of grid bounds");
+    }
+    for (std::uint32_t y = outlet_first_row; y <= outlet_last_row; ++y) {
+        data.boundary_outflow_face_mask[
+            fluid_25d_scenario_index(width, height, outlet_x, y)] =
+            kFluid25DBoundaryOutflowRight;
+    }
+    data.source_cell = fluid_25d_scenario_index(
+        width, height,
+        static_cast<std::uint32_t>(std::lround(reference_coordinate_m(
+                                  kFluid25DSustainedHeadwatersSourceAX) / cell_size_m)),
+        static_cast<std::uint32_t>(std::lround(reference_coordinate_m(
+                                  kFluid25DSustainedHeadwatersSourceAY) / cell_size_m)));
+    data.secondary_source_cell = fluid_25d_scenario_index(
+        width, height,
+        static_cast<std::uint32_t>(std::lround(reference_coordinate_m(
+                                  kFluid25DSustainedHeadwatersSourceBX) / cell_size_m)),
+        static_cast<std::uint32_t>(std::lround(reference_coordinate_m(
+                                  kFluid25DSustainedHeadwatersSourceBY) / cell_size_m)));
+    data.outlet_cell = fluid_25d_scenario_index(
+        width, height, outlet_x,
+        static_cast<std::uint32_t>(std::lround(kOutletCenterY / cell_size_m)));
+    return data;
+}
+
 [[nodiscard]] inline Fluid25DScenarioData make_fluid_25d_scenario(Fluid25DScenario scenario,
                                                                   std::uint32_t width,
                                                                   std::uint32_t height,
-                                                                  float cell_size_m) {
+                                                                  float cell_size_m,
+                                                                  float headwaters_source_scale =
+                                                                      kFluid25DDefaultHeadwatersSourceScale) {
     if (!(cell_size_m > 0.0F) || !std::isfinite(cell_size_m)) {
         throw std::runtime_error("fluid 2.5D scenario cell size must be finite and positive");
+    }
+    if (!std::isfinite(headwaters_source_scale) || !(headwaters_source_scale > 0.0F)) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters source scale must be finite and positive");
+    }
+    if (scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
+        headwaters_source_scale != kFluid25DDefaultHeadwatersSourceScale) {
+        throw std::runtime_error(
+            "fluid 2.5D headwaters source scale requires sustained-headwaters-demo");
     }
     const std::size_t cell_count = fluid_25d_scenario_cell_count(width, height);
     Fluid25DScenarioData data;
@@ -544,16 +761,13 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         // Retain the compact endpoint ellipses only as initial-water seeds;
         // forcing uses separate, fully wetted strips built below.
         // Seed a connected, bank-bounded channel from the source through the
-        // outlet. At each x the surface is bank-relative to the lower discrete
-        // crest, leaving enough freeboard for the settled pool. The short
-        // crest plateau in the shared profile makes that surface smooth along
-        // the rasterized route. Endpoint weights remain bounded within the
-        // selected bank span and do not set the ordinary channel level.
+        // outlet. At each x the surface is an absolute 0.30 m below the lower
+        // discrete crest, leaving consistent freeboard for the settled pool.
+        // The short crest plateau in the shared profile makes that surface
+        // smooth along the rasterized route. Endpoint weights remain bounded
+        // within the selected bank span and do not set the ordinary channel
+        // level.
         for (std::uint32_t x = source_x; x <= sink_x; ++x) {
-            const float center_y = channel_center_y(x);
-            const std::uint32_t center_row = static_cast<std::uint32_t>(
-                std::clamp(std::round(center_y), 0.0F, static_cast<float>(height - 1U)));
-            const std::size_t center_index = fluid_25d_scenario_index(width, height, x, center_row);
             const Fluid25DSourceOutletBankCrestSample left_crest =
                 fluid_25d_source_outlet_bank_crest(geometry, x, data.terrain_height_m, true);
             const Fluid25DSourceOutletBankCrestSample right_crest =
@@ -561,10 +775,7 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
             const std::uint32_t first_bank_y = std::min(left_crest.y_cell, right_crest.y_cell);
             const std::uint32_t last_bank_y = std::max(left_crest.y_cell, right_crest.y_cell);
             const float lower_crest_m = std::min(left_crest.elevation_m, right_crest.elevation_m);
-            const float centerline_bed_m = data.terrain_height_m[center_index];
-            const float target_surface_m =
-                centerline_bed_m +
-                (kFluid25DSourceOutletInitialBankRiseFraction * (lower_crest_m - centerline_bed_m));
+            const float target_surface_m = lower_crest_m - kFluid25DSourceOutletInitialFreeboardM;
             for (std::uint32_t y = first_bank_y; y <= last_bank_y; ++y) {
                 const float source_weight =
                     endpoint_weight(static_cast<float>(x) - static_cast<float>(source_x),
@@ -663,6 +874,125 @@ validate_fluid_25d_boundary_outflow_face_mask(std::uint32_t width, std::uint32_t
         data.source_depth_rate_m_per_s[data.source_cell] = 0.025F;
         data.initial_water_depth_m[fluid_25d_scenario_index(width, height, width - 1U, channel_y)] =
             0.20F;
+        break;
+    }
+    case Fluid25DScenario::SustainedHeadwatersDemo: {
+        if (!fluid_25d_sustained_headwaters_resolution_supported(width, height, cell_size_m)) {
+            throw std::runtime_error(
+                "fluid 2.5D sustained-headwaters-demo requires 65x33@4m, 129x65@2m, or "
+                "257x129@1m resolution");
+        }
+        if (cell_size_m != kFluid25DSustainedHeadwatersCellSizeM) {
+            return make_fluid_25d_sustained_headwaters_refined_scenario(width, height,
+                                                                        cell_size_m,
+                                                                        headwaters_source_scale);
+        }
+
+        struct ReachSegment {
+            float x0;
+            float y0;
+            float x1;
+            float y1;
+            float bed0_m;
+            float bed1_m;
+            float half_width_m;
+        };
+        constexpr float kSourceBedElevationM = 1.45F;
+        constexpr float kConfluenceBedElevationM = 0.57F;
+        constexpr float kOutletBedElevationM = 0.0F;
+        constexpr float kBankRiseM = 0.65F;
+        constexpr float kBankTransitionWidthM = 12.0F;
+        constexpr std::array<ReachSegment, 3U> kReachSegments{{
+            {static_cast<float>(kFluid25DSustainedHeadwatersSourceAX),
+             static_cast<float>(kFluid25DSustainedHeadwatersSourceAY),
+             static_cast<float>(kFluid25DSustainedHeadwatersConfluenceX),
+             static_cast<float>(kFluid25DSustainedHeadwatersConfluenceY), kSourceBedElevationM,
+             kConfluenceBedElevationM, 6.0F},
+            {static_cast<float>(kFluid25DSustainedHeadwatersSourceBX),
+             static_cast<float>(kFluid25DSustainedHeadwatersSourceBY),
+             static_cast<float>(kFluid25DSustainedHeadwatersConfluenceX),
+             static_cast<float>(kFluid25DSustainedHeadwatersConfluenceY), kSourceBedElevationM,
+             kConfluenceBedElevationM, 6.0F},
+            {static_cast<float>(kFluid25DSustainedHeadwatersConfluenceX),
+             static_cast<float>(kFluid25DSustainedHeadwatersConfluenceY),
+             static_cast<float>(kFluid25DSustainedHeadwatersGridWidth - 1U),
+             static_cast<float>(kFluid25DSustainedHeadwatersConfluenceY), kConfluenceBedElevationM,
+             kOutletBedElevationM, 8.0F},
+        }};
+        const auto smoothstep = [](float t) {
+            const float bounded_t = std::clamp(t, 0.0F, 1.0F);
+            return bounded_t * bounded_t * (3.0F - (2.0F * bounded_t));
+        };
+
+        for (std::uint32_t y = 0U; y < height; ++y) {
+            for (std::uint32_t x = 0U; x < width; ++x) {
+                float nearest_distance_m = std::numeric_limits<float>::infinity();
+                float nearest_bed_m = 0.0F;
+                float nearest_half_width_m = 0.0F;
+                for (const ReachSegment& segment : kReachSegments) {
+                    const float dx = segment.x1 - segment.x0;
+                    const float dy = segment.y1 - segment.y0;
+                    const float length_squared = (dx * dx) + (dy * dy);
+                    const float offset_x = static_cast<float>(x) - segment.x0;
+                    const float offset_y = static_cast<float>(y) - segment.y0;
+                    const float t = std::clamp(((offset_x * dx) + (offset_y * dy)) / length_squared,
+                                               0.0F, 1.0F);
+                    const float nearest_x = segment.x0 + (t * dx);
+                    const float nearest_y = segment.y0 + (t * dy);
+                    const float distance_m = std::hypot(static_cast<float>(x) - nearest_x,
+                                                        static_cast<float>(y) - nearest_y) *
+                                             cell_size_m;
+                    if (distance_m < nearest_distance_m) {
+                        nearest_distance_m = distance_m;
+                        nearest_bed_m = segment.bed0_m + (t * (segment.bed1_m - segment.bed0_m));
+                        nearest_half_width_m = segment.half_width_m;
+                    }
+                }
+                const float bank_t =
+                    (nearest_distance_m - nearest_half_width_m) / kBankTransitionWidthM;
+                const float bank_relief_m = kBankRiseM * smoothstep(bank_t);
+                data.terrain_height_m[fluid_25d_scenario_index(width, height, x, y)] =
+                    nearest_bed_m + bank_relief_m;
+            }
+        }
+
+        const float source_depth_rate_m_per_s =
+            kFluid25DSustainedHeadwatersDischargePerSourceM3PerS /
+            (9.0F * cell_size_m * cell_size_m);
+        const auto add_source_patch = [&](std::uint32_t center_x, std::uint32_t center_y) {
+            for (std::uint32_t y = center_y - 1U; y <= center_y + 1U; ++y) {
+                for (std::uint32_t x = center_x - 1U; x <= center_x + 1U; ++x) {
+                    data.source_depth_rate_m_per_s[fluid_25d_scenario_index(width, height, x, y)] =
+                        source_depth_rate_m_per_s;
+                }
+            }
+        };
+        add_source_patch(kFluid25DSustainedHeadwatersSourceAX,
+                         kFluid25DSustainedHeadwatersSourceAY);
+        add_source_patch(kFluid25DSustainedHeadwatersSourceBX,
+                         kFluid25DSustainedHeadwatersSourceBY);
+        if (headwaters_source_scale != kFluid25DDefaultHeadwatersSourceScale) {
+            for (float& rate_m_per_s : data.source_depth_rate_m_per_s) {
+                if (rate_m_per_s > 0.0F) {
+                    rate_m_per_s *= headwaters_source_scale;
+                }
+            }
+        }
+
+        const std::uint32_t outlet_x = width - 1U;
+        for (std::uint32_t y = kFluid25DSustainedHeadwatersOutletYFirst;
+             y <= kFluid25DSustainedHeadwatersOutletYLast; ++y) {
+            data.boundary_outflow_face_mask[fluid_25d_scenario_index(width, height, outlet_x, y)] =
+                kFluid25DBoundaryOutflowRight;
+        }
+        data.source_cell =
+            fluid_25d_scenario_index(width, height, kFluid25DSustainedHeadwatersSourceAX,
+                                     kFluid25DSustainedHeadwatersSourceAY);
+        data.secondary_source_cell =
+            fluid_25d_scenario_index(width, height, kFluid25DSustainedHeadwatersSourceBX,
+                                     kFluid25DSustainedHeadwatersSourceBY);
+        data.outlet_cell = fluid_25d_scenario_index(width, height, outlet_x,
+                                                    kFluid25DSustainedHeadwatersConfluenceY);
         break;
     }
     case Fluid25DScenario::MountainSourceOutletDemo:

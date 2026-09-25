@@ -3,8 +3,23 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 
 namespace cubey::projects::fluid::fluid_25d {
+
+// Optional catchment presentation overrides. These values are consumed only
+// by camera setup and graphics push constants; the solver configuration and
+// its terrain/water buffers never contain them.
+struct Fluid25DCatchmentRenderOptions {
+    std::optional<float> terrain_palette_low_m{};
+    std::optional<float> terrain_palette_high_m{};
+    std::optional<float> terrain_height_scale{};
+    std::optional<float> home_camera_distance_m{};
+    bool terrain_thin_water_composite = false;
+};
+
+inline constexpr float kFluid25DMinTerrainCaseRenderHeightScale = 0.001F;
+inline constexpr float kFluid25DMaxTerrainCaseRenderHeightScale = 2.0F;
 
 // Render-only cue constants. The lattice spans are deliberately measured in
 // cells so every imported terrain receives the same broad, non-authored

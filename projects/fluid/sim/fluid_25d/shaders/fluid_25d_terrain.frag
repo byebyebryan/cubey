@@ -4,9 +4,10 @@
 #include "cubey/color_space.glsl"
 
 layout(set = 0, binding = 5, std430) readonly buffer EndpointMarkers {
-    // source.xy, outlet.xy in raster-cell coordinates. Negative pairs disable
-    // the corresponding marker for non-river analytic fixtures and terrain cases.
+    // Primary source.xy/outlet.xy and optional secondary source.xy in cells.
+    // Negative pairs disable a marker for unrelated analytic/terrain scenes.
     vec4 source_xy_outlet_xy;
+    vec4 secondary_source_xy_reserved;
 } endpoint_markers;
 
 layout(location = 0) in vec3 world_position;
@@ -19,6 +20,7 @@ layout(push_constant) uniform CatchmentParams {
     vec4 grid_cell;
     vec4 camera_wet;
     vec4 presentation;
+    vec4 terrain_palette;
 } params;
 
 float endpoint_annulus(vec2 grid_position, vec2 endpoint, float radius_cells) {
@@ -31,6 +33,14 @@ float endpoint_annulus(vec2 grid_position, vec2 endpoint, float radius_cells) {
     return 1.0 - smoothstep(0.60, 1.45, abs(radial_distance - radius_cells));
 }
 
+float headwaters_endpoint_annulus_m(vec2 grid_position, vec2 endpoint, float cell_size_m) {
+    if (any(lessThan(endpoint, vec2(0.0)))) {
+        return 0.0;
+    }
+    float radial_distance_m = length(grid_position - endpoint) * cell_size_m;
+    return 1.0 - smoothstep(2.4, 5.8, abs(radial_distance_m - 12.0));
+}
+
 void main() {
     vec3 normal = normalize(world_normal);
     vec3 light_direction = normalize(vec3(-0.45, 0.82, 0.35));
@@ -40,7 +50,22 @@ void main() {
     vec3 highland = cubey_srgb_to_linear(vec3(0.46, 0.31, 0.16));
     float elevation = clamp((world_position.y + 2.0) * 0.035, 0.0, 1.0);
     vec3 albedo = mix(lowland, highland, elevation) + vec3(contour);
-    if (params.presentation.w > 1.5) {
+    if (params.presentation.w > 2.5) {
+        // The dry-start headwaters control has sub-metre numerical banks over
+        // a 256 m footprint. Its vertex-space relief is selected by the
+        // scenario render scale; use physical elevation plus those rendered
+        // slopes to separate the Y-shaped bed and shoulders without modifying
+        // the terrain buffer or solver state.
+        float terrain_height_m = world_position.y / max(params.grid_cell.w, 1.0e-6);
+        float elevation_cue = smoothstep(0.05, 1.45, terrain_height_m);
+        float slope = 1.0 - normal.y;
+        float bank_cue = smoothstep(0.003, 0.035, slope);
+        vec3 headwater_bed = cubey_srgb_to_linear(vec3(0.075, 0.19, 0.105));
+        vec3 headwater_upland = cubey_srgb_to_linear(vec3(0.39, 0.34, 0.20));
+        vec3 headwater_bank = cubey_srgb_to_linear(vec3(0.48, 0.37, 0.20));
+        albedo = mix(headwater_bed, headwater_upland, 0.58 * elevation_cue);
+        albedo = mix(albedo, headwater_bank, 0.82 * bank_cue);
+    } else if (params.presentation.w > 1.5) {
         // Mountain source/outlet uses a pinned immutable crop. Normalize only
         // its render-space elevation against that crop's fixed physical range
         // so broad low valley, high ridge, and steep shoulders survive the
@@ -70,6 +95,16 @@ void main() {
         albedo = mix(albedo, cubey_srgb_to_linear(vec3(0.36, 0.27, 0.12)),
                      0.24 * slope_cue);
     }
+    if (params.terrain_palette.z > 0.5) {
+        // The opt-in terrain-case palette range is expressed in physical
+        // metres. Convert the rendered vertex height back to those metres so
+        // changing vertical relief cannot also change the color mapping.
+        float terrain_height_m = world_position.y / max(params.grid_cell.w, 1.0e-6);
+        float palette_elevation = smoothstep(params.terrain_palette.x,
+                                             params.terrain_palette.y,
+                                             terrain_height_m);
+        albedo = mix(lowland, highland, palette_elevation) + vec3(contour);
+    }
     vec3 lighting = params.presentation.w > 1.5 ? vec3(0.42) + vec3(0.58) * diffuse
                                                  : vec3(0.26) + vec3(0.74) * diffuse;
     vec3 color = max(albedo * lighting, vec3(0.0));
@@ -82,19 +117,39 @@ void main() {
     }
     vec2 grid_position = world_xz / params.grid_cell.z +
                          0.5 * vec2(params.grid_cell.x - 1.0, params.grid_cell.y - 1.0);
-    float radius_cells = clamp(0.045 * min(params.grid_cell.x, params.grid_cell.y), 3.0, 6.0);
-    float source_marker = endpoint_annulus(grid_position,
-                                            endpoint_markers.source_xy_outlet_xy.xy,
-                                            radius_cells);
-    float outlet_marker = endpoint_annulus(grid_position,
-                                            endpoint_markers.source_xy_outlet_xy.zw,
-                                            radius_cells);
+    float source_marker;
+    float outlet_marker;
+    float secondary_source_marker;
+    if (params.presentation.w > 2.5 && params.grid_cell.z < 4.0) {
+        // Refined sustained-headwaters grids use the same 12 m radius and
+        // 2.4..5.8 m edge transition as the legacy 4 m marker. Keep the old
+        // cell-space path below for 4 m and all other scenarios, preserving
+        // their original pixels.
+        source_marker = headwaters_endpoint_annulus_m(
+            grid_position, endpoint_markers.source_xy_outlet_xy.xy, params.grid_cell.z);
+        outlet_marker = headwaters_endpoint_annulus_m(
+            grid_position, endpoint_markers.source_xy_outlet_xy.zw, params.grid_cell.z);
+        secondary_source_marker = headwaters_endpoint_annulus_m(
+            grid_position, endpoint_markers.secondary_source_xy_reserved.xy,
+            params.grid_cell.z);
+    } else {
+        float radius_cells = clamp(0.045 * min(params.grid_cell.x, params.grid_cell.y),
+                                   3.0, 6.0);
+        source_marker = endpoint_annulus(grid_position,
+                                         endpoint_markers.source_xy_outlet_xy.xy,
+                                         radius_cells);
+        outlet_marker = endpoint_annulus(grid_position,
+                                         endpoint_markers.source_xy_outlet_xy.zw,
+                                         radius_cells);
+        secondary_source_marker = endpoint_annulus(
+            grid_position, endpoint_markers.secondary_source_xy_reserved.xy, radius_cells);
+    }
     // These colors are intentionally endpoint language rather than water
-    // language: green identifies the continuous input and amber the explicit
-    // downstream removal point. The water shader repeats them above wet cells.
+    // language: green identifies a continuous input and amber a configured
+    // downstream outlet. The water shader repeats them above wet cells.
     vec3 source_color = cubey_srgb_to_linear(vec3(0.16, 0.88, 0.34));
     vec3 outlet_color = cubey_srgb_to_linear(vec3(1.00, 0.56, 0.08));
-    color = mix(color, source_color, 0.94 * source_marker);
+    color = mix(color, source_color, 0.94 * max(source_marker, secondary_source_marker));
     color = mix(color, outlet_color, 0.94 * outlet_marker);
     out_color = vec4(color, 1.0);
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../sim/fluid_25d/fluid_25d_config.h"
+#include "../sim/fluid_25d/fluid_25d_presentation.h"
 
 #include <cubey/host/common_config.h>
 
@@ -31,6 +32,7 @@ struct Fluid25DProjectConfig {
     bool gpu_oracle_validation = false;
     Fluid25DStartupOptions fluid{};
     Fluid25DTerrainOptions terrain{};
+    Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
 };
 
@@ -55,15 +57,65 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
 inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& project_config) {
     validate_fluid_25d_windowed_presentation_time_scale(
         project_config.presentation_time_scale);
+    if (project_config.fluid.headwaters_source_scale.has_value() &&
+        project_config.simulation.scenario != Fluid25DScenario::SustainedHeadwatersDemo) {
+        throw std::runtime_error(
+            "fluid 2.5D --fluid25d-headwaters-source-scale requires "
+            "--fluid25d-scenario sustained-headwaters-demo");
+    }
     const Fluid25DCatchmentView catchment_view =
         fluid_25d_catchment_view_from_name(project_config.catchment_view);
     if (catchment_view == Fluid25DCatchmentView::TransportInspection &&
         !fluid_25d_transport_inspection_available(project_config.simulation)) {
         throw std::runtime_error(
-            "fluid 2.5D transport-inspection requires source-outlet-demo with finite-volume "
-            "and a positive dye pulse duration");
+            "fluid 2.5D transport-inspection requires source-outlet-demo or "
+            "sustained-headwaters-demo with finite-volume and a positive dye pulse duration");
     }
     const bool terrain_case = project_config.simulation.scenario == Fluid25DScenario::TerrainCase;
+    const Fluid25DCatchmentRenderOptions& render = project_config.catchment_render;
+    const bool has_render_override = render.terrain_palette_low_m.has_value() ||
+                                     render.terrain_palette_high_m.has_value() ||
+                                     render.terrain_height_scale.has_value() ||
+                                     render.home_camera_distance_m.has_value() ||
+                                     render.terrain_thin_water_composite;
+    if (has_render_override && !terrain_case) {
+        throw std::runtime_error(
+            "fluid 2.5D terrain presentation overrides require --fluid25d-scenario terrain-case");
+    }
+    if (has_render_override && project_config.view == "diagnostics") {
+        throw std::runtime_error(
+            "fluid 2.5D terrain presentation overrides require the catchment view");
+    }
+    if (render.terrain_thin_water_composite &&
+        catchment_view != Fluid25DCatchmentView::Composite) {
+        throw std::runtime_error(
+            "fluid 2.5D thin-water composite requires the Composite catchment view");
+    }
+    if (render.terrain_palette_low_m.has_value() !=
+        render.terrain_palette_high_m.has_value()) {
+        throw std::runtime_error(
+            "fluid 2.5D terrain palette requires both low and high physical elevation bounds");
+    }
+    if (render.terrain_palette_low_m.has_value() &&
+        (!std::isfinite(*render.terrain_palette_low_m) ||
+         !std::isfinite(*render.terrain_palette_high_m) ||
+         !(*render.terrain_palette_low_m < *render.terrain_palette_high_m))) {
+        throw std::runtime_error(
+            "fluid 2.5D terrain palette physical bounds must be finite and low < high");
+    }
+    if (render.terrain_height_scale.has_value() &&
+        (!std::isfinite(*render.terrain_height_scale) ||
+         *render.terrain_height_scale < kFluid25DMinTerrainCaseRenderHeightScale ||
+         *render.terrain_height_scale > kFluid25DMaxTerrainCaseRenderHeightScale)) {
+        throw std::runtime_error(
+            "fluid 2.5D terrain render height scale must be finite and within 0.001..2.0");
+    }
+    if (render.home_camera_distance_m.has_value() &&
+        (!std::isfinite(*render.home_camera_distance_m) ||
+         *render.home_camera_distance_m <= 0.0F)) {
+        throw std::runtime_error(
+            "fluid 2.5D terrain home camera distance must be finite and positive");
+    }
     const bool mountain_source_outlet =
         project_config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
     const bool terrain_backed = terrain_case || mountain_source_outlet;
@@ -92,10 +144,12 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         project_config.fluid.dye_pulse_start_seconds.has_value() ||
         project_config.fluid.dye_pulse_duration_seconds.has_value();
     if (has_explicit_dye_option &&
-        (project_config.simulation.scenario != Fluid25DScenario::SourceOutletDemo ||
+        ((project_config.simulation.scenario != Fluid25DScenario::SourceOutletDemo &&
+          project_config.simulation.scenario != Fluid25DScenario::SustainedHeadwatersDemo) ||
          project_config.simulation.solver != Fluid25DSolver::FiniteVolume)) {
         throw std::runtime_error(
-            "fluid 2.5D dye pulse timing requires source-outlet-demo with finite-volume");
+            "fluid 2.5D dye pulse timing requires source-outlet-demo or "
+            "sustained-headwaters-demo with finite-volume");
     }
     if (!terrain_case && has_explicit_terrain_water_option) {
         throw std::runtime_error(
@@ -176,10 +230,39 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
               config.view)
         .bind(option("fluid25d.catchment_view", "--fluid25d-catchment-view", "Catchment View",
                      "Catchment presentation: composite, water-isolation, flow-inspection, or "
-                     "transport-inspection (dye source/outlet demo only).",
+                     "transport-inspection (dye source/outlet or sustained-headwaters demo only).",
                      ValueType::Enum, {}, {"composite", "water-isolation", "flow-inspection",
                                             "transport-inspection"}),
               config.catchment_view)
+        .bind(option("fluid25d.terrain_palette_low_m", "--fluid25d-terrain-palette-low-m",
+                     "Terrain Palette Low",
+                     "Terrain-case render-only physical elevation mapped to the lowland palette.",
+                     ValueType::Float),
+              config.catchment_render.terrain_palette_low_m)
+        .bind(option("fluid25d.terrain_palette_high_m", "--fluid25d-terrain-palette-high-m",
+                     "Terrain Palette High",
+                     "Terrain-case render-only physical elevation mapped to the highland palette.",
+                     ValueType::Float),
+              config.catchment_render.terrain_palette_high_m)
+        .bind(option("fluid25d.terrain_height_scale", "--fluid25d-render-height-scale",
+                     "Terrain Render Height Scale",
+                     "Terrain-case render-only vertical scale; omitted preserves the scenario default.",
+                     ValueType::Float,
+                     {.has_min = true,
+                      .has_max = true,
+                      .min = static_cast<double>(kFluid25DMinTerrainCaseRenderHeightScale),
+                      .max = static_cast<double>(kFluid25DMaxTerrainCaseRenderHeightScale)}),
+              config.catchment_render.terrain_height_scale)
+        .bind(option("fluid25d.home_camera_distance_m", "--fluid25d-home-camera-distance-m",
+                     "Home Camera Distance",
+                     "Terrain-case absolute render-only home camera distance in metres.",
+                     ValueType::Float, {.has_min = true, .min = 1.0}),
+              config.catchment_render.home_camera_distance_m)
+        .bind(option("fluid25d.terrain_thin_water_composite",
+                     "--fluid25d-terrain-thin-water-composite", "Thin Water Composite",
+                     "Terrain-case Composite-only display attenuation for thin water; solver state is unchanged.",
+                     ValueType::Bool),
+              config.catchment_render.terrain_thin_water_composite)
         .bind(option("fluid25d.presentation_time_scale", "--fluid25d-presentation-time-scale",
                      "Presentation Time Scale",
                      "Windowed-only simulation playback speed; 1, 4, and 8 are review-friendly.",
@@ -225,11 +308,12 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      {.has_min = true, .min = 0.0}),
               config.fluid.sheet_depth_m)
         .bind(option("fluid25d.scenario", "--fluid25d-scenario", "Scenario",
-                     "Deterministic River V0 fixture, opt-in source/outlet demo, or terrain-backed "
-                     "scenario.",
+                     "Deterministic River V0 fixture, opt-in finite-volume control/demo, or "
+                     "terrain-backed scenario.",
                      ValueType::Enum, {},
                      {"dry-bed", "lake-at-rest", "river-catchment", "source-outlet-demo",
-                      "mountain-source-outlet-demo", "terrain-case", "boundary-drain-fixture"}),
+                      "mountain-source-outlet-demo", "sustained-headwaters-demo", "terrain-case",
+                      "boundary-drain-fixture"}),
               config.fluid.scenario)
         .bind(
             option("fluid25d.solver", "--fluid25d-solver", "Solver",
@@ -269,14 +353,19 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Optional fixed-simulation duration before source rates switch to zero.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
               config.fluid.source_active_duration_seconds)
+        .bind(option("fluid25d.headwaters_source_scale",
+                     "--fluid25d-headwaters-source-scale", "Headwaters Source Scale",
+                     "Positive finite multiplier for both sustained-headwaters source fields.",
+                     ValueType::Float),
+              config.fluid.headwaters_source_scale)
         .bind(option("fluid25d.dye_pulse_start_seconds", "--fluid25d-dye-pulse-start-seconds",
                      "Dye Pulse Start",
-                     "Opt-in source-outlet dye pulse start time in fixed-simulation seconds.",
+                     "Opt-in finite-volume demo dye pulse start time in fixed-simulation seconds.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
               config.fluid.dye_pulse_start_seconds)
         .bind(option("fluid25d.dye_pulse_duration_seconds", "--fluid25d-dye-pulse-duration-seconds",
                      "Dye Pulse Duration",
-                     "Opt-in source-outlet dye pulse duration in fixed-simulation seconds.",
+                     "Opt-in finite-volume demo dye pulse duration in fixed-simulation seconds.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
               config.fluid.dye_pulse_duration_seconds);
     return std::move(builder).build();

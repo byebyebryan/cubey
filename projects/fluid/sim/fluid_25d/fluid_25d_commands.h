@@ -2,6 +2,7 @@
 
 #include "fluid_25d_config.h"
 #include "fluid_25d_gpu_resources.h"
+#include "fluid_25d_presentation.h"
 
 #include <cubey/core/math.h>
 #include <cubey/engine/project_runtime.h>
@@ -25,6 +26,12 @@ inline constexpr float kFluid25DCatchmentHeightScale = 0.08F;
 // solver quantity unchanged.
 inline constexpr float kFluid25DSourceOutletDemoHeightScale = 0.65F;
 inline constexpr float kFluid25DSourceOutletDemoHomePitch = -0.72F;
+// The authored headwaters banks are under a metre high numerically. Exaggerate
+// them only in the catchment vertex transform and frame the compact domain
+// closer so the Y-shaped terrain reads without changing solver elevations.
+inline constexpr float kFluid25DSustainedHeadwatersHeightScale = 4.0F;
+inline constexpr float kFluid25DSustainedHeadwatersHomePitch = -0.70F;
+inline constexpr float kFluid25DSustainedHeadwatersHomeDistanceScale = 0.80F;
 // The imported mountain crop spans 7 km across and more than 700 m vertically.
 // This render-only scale makes its valley and side relief legible from a single
 // overview without changing the metres supplied to the solver.
@@ -33,11 +40,13 @@ inline constexpr float kFluid25DMountainSourceOutletHomePitch = -0.55F;
 inline constexpr float kFluid25DMountainSourceOutletHomeFovyRadians = 0.84F;
 
 [[nodiscard]] constexpr float fluid_25d_catchment_height_scale(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SourceOutletDemo
-               ? kFluid25DSourceOutletDemoHeightScale
-               : (scenario == Fluid25DScenario::MountainSourceOutletDemo
-                      ? kFluid25DMountainSourceOutletHeightScale
-                      : kFluid25DCatchmentHeightScale);
+    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
+               ? kFluid25DSustainedHeadwatersHeightScale
+               : (scenario == Fluid25DScenario::SourceOutletDemo
+                      ? kFluid25DSourceOutletDemoHeightScale
+                      : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                             ? kFluid25DMountainSourceOutletHeightScale
+                             : kFluid25DCatchmentHeightScale));
 }
 
 [[nodiscard]] constexpr float
@@ -52,17 +61,21 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 
 [[nodiscard]] constexpr float fluid_25d_catchment_home_pitch(float default_pitch,
                                                              Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SourceOutletDemo
-               ? kFluid25DSourceOutletDemoHomePitch
-               : (scenario == Fluid25DScenario::MountainSourceOutletDemo
-                      ? kFluid25DMountainSourceOutletHomePitch
-                      : default_pitch);
+    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
+               ? kFluid25DSustainedHeadwatersHomePitch
+               : (scenario == Fluid25DScenario::SourceOutletDemo
+                      ? kFluid25DSourceOutletDemoHomePitch
+                      : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                             ? kFluid25DMountainSourceOutletHomePitch
+                             : default_pitch));
 }
 
 // The full mountain route almost spans the crop. Its narrower overview fills
 // a normal widescreen capture while retaining both endpoint rings.
 [[nodiscard]] constexpr float fluid_25d_catchment_home_distance_scale(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::MountainSourceOutletDemo ? 0.85F : 1.05F;
+    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
+               ? kFluid25DSustainedHeadwatersHomeDistanceScale
+               : (scenario == Fluid25DScenario::MountainSourceOutletDemo ? 0.85F : 1.05F);
 }
 
 [[nodiscard]] constexpr float fluid_25d_catchment_home_fovy_radians(float default_fovy_radians,
@@ -76,9 +89,11 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 // complements its render-only relief scale without changing shared material
 // behavior, numerical terrain, or any solver data.
 [[nodiscard]] constexpr float fluid_25d_catchment_terrain_material_cue(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SourceOutletDemo
-               ? 1.0F
-               : (scenario == Fluid25DScenario::MountainSourceOutletDemo ? 2.0F : 0.0F);
+    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
+               ? 3.0F
+               : (scenario == Fluid25DScenario::SourceOutletDemo
+                      ? 1.0F
+                      : (scenario == Fluid25DScenario::MountainSourceOutletDemo ? 2.0F : 0.0F));
 }
 
 struct Fluid25DRenderCamera {
@@ -139,6 +154,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
                                      const Fluid25DConfig& config,
                                      Fluid25DCatchmentView catchment_view,
                                      const Fluid25DRenderCamera& camera,
+                                     Fluid25DCatchmentRenderOptions render_options,
                                      cubey::render::ColorTargetView color_target,
                                      cubey::render::DepthTargetView depth_target);
 
@@ -151,6 +167,7 @@ void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
     bool& reset_requested, bool& presentation_cue_reset_requested,
     bool& quiver_reset_requested,
     cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-    std::uint32_t frame_slot_index = 0U, std::span<const Fluid25DStepForcing> forcings = {});
+    std::uint32_t frame_slot_index = 0U, std::span<const Fluid25DStepForcing> forcings = {},
+    Fluid25DCatchmentRenderOptions render_options = {});
 
 } // namespace cubey::projects::fluid::fluid_25d

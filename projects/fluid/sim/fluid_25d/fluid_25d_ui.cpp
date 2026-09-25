@@ -70,7 +70,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                 fluid_25d_catchment_view_name,
                 "Composite is the normal 3D view; the other modes are reading aids.");
             ImGui::TextDisabled(
-                "Transport Inspection needs the finite-volume source/outlet dye pulse.");
+                "Transport Inspection needs a finite-volume dye pulse on an eligible demo.");
         }
     }
     if (ui.presentation_view == Fluid25DPresentationView::Diagnostics) {
@@ -125,8 +125,17 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             "readable source-to-outlet demonstration, not proof that an individual water "
             "parcel, a mapped river, or a provenance claim follows this exact route.");
     }
+    if (ui.scenario == Fluid25DScenario::SustainedHeadwatersDemo) {
+        ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
+                           "GREEN RINGS  two continuous inputs; dry start");
+        ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
+                           "AMBER RING  open outlet at the east edge");
+        ImGui::TextWrapped(
+            "The two tributaries join before the outlet. Rings are fixed render-only location "
+            "markers, not water parcels or a depth cue.");
+    }
     ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
-                      "darker blue is deeper water.");
+                       "darker blue is deeper water.");
     ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "
                       "by velocity; it is not waves or a depth cue.");
     ImGui::TextWrapped("Water Isolation quiets the bed to expose the wet edge. "
