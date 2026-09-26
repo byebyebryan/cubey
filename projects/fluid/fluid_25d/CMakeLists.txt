@@ -10,6 +10,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_gpu_resources.cpp
+        ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
@@ -52,6 +53,7 @@ if (BUILD_TESTING)
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
+        ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_tests.cpp
     )
     target_include_directories(

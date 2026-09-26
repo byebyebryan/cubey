@@ -11,6 +11,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <span>
 
@@ -20,6 +21,8 @@ namespace cubey::projects::fluid::fluid_25d {
 // view uses a restrained vertical presentation scale so the bounded River V0
 // catchment remains readable from one deterministic orbit.
 inline constexpr float kFluid25DCatchmentHeightScale = 0.08F;
+inline constexpr float kFluid25DNaturalFlowStudyHeightScale = 1.0F;
+inline constexpr float kFluid25DNaturalFlowStudyHomePitch = -0.72F;
 // The authored source-to-outlet explanation scene has a compact, deliberately
 // varied terrain profile. It needs more render-only vertical relief than the
 // broad River V0 overview, while keeping every numerical terrain height and
@@ -39,14 +42,32 @@ inline constexpr float kFluid25DMountainSourceOutletHeightScale = 0.60F;
 inline constexpr float kFluid25DMountainSourceOutletHomePitch = -0.55F;
 inline constexpr float kFluid25DMountainSourceOutletHomeFovyRadians = 0.84F;
 
+struct Fluid25DCatchmentOrbitLimits {
+    float minimum_distance_m;
+    float maximum_distance_m;
+};
+
+[[nodiscard]] constexpr Fluid25DCatchmentOrbitLimits
+fluid_25d_catchment_orbit_limits(Fluid25DScenario scenario, float domain_extent,
+                                 float framing_extent) {
+    // Camera-only hillside framing switches must not invalidate an explicit
+    // home distance that was accepted at startup in the other view.
+    const bool hillside = scenario == Fluid25DScenario::HillsideFlowStudy;
+    const float minimum_extent = hillside ? std::min(domain_extent, 3200.0F) : framing_extent;
+    const float maximum_extent = hillside ? domain_extent : framing_extent;
+    return {std::max(8.0F, minimum_extent * 0.30F), std::max(48.0F, maximum_extent * 4.0F)};
+}
+
 [[nodiscard]] constexpr float fluid_25d_catchment_height_scale(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
-               ? kFluid25DSustainedHeadwatersHeightScale
-               : (scenario == Fluid25DScenario::SourceOutletDemo
-                      ? kFluid25DSourceOutletDemoHeightScale
-                      : (scenario == Fluid25DScenario::MountainSourceOutletDemo
-                             ? kFluid25DMountainSourceOutletHeightScale
-                             : kFluid25DCatchmentHeightScale));
+    return fluid_25d_is_natural_terrain_study(scenario)
+               ? kFluid25DNaturalFlowStudyHeightScale
+               : (scenario == Fluid25DScenario::SustainedHeadwatersDemo
+                      ? kFluid25DSustainedHeadwatersHeightScale
+                      : (scenario == Fluid25DScenario::SourceOutletDemo
+                             ? kFluid25DSourceOutletDemoHeightScale
+                             : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                                    ? kFluid25DMountainSourceOutletHeightScale
+                                    : kFluid25DCatchmentHeightScale)));
 }
 
 [[nodiscard]] constexpr float
@@ -61,19 +82,22 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 
 [[nodiscard]] constexpr float fluid_25d_catchment_home_pitch(float default_pitch,
                                                              Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
-               ? kFluid25DSustainedHeadwatersHomePitch
-               : (scenario == Fluid25DScenario::SourceOutletDemo
-                      ? kFluid25DSourceOutletDemoHomePitch
-                      : (scenario == Fluid25DScenario::MountainSourceOutletDemo
-                             ? kFluid25DMountainSourceOutletHomePitch
-                             : default_pitch));
+    return fluid_25d_is_natural_terrain_study(scenario)
+               ? kFluid25DNaturalFlowStudyHomePitch
+               : (scenario == Fluid25DScenario::SustainedHeadwatersDemo
+                      ? kFluid25DSustainedHeadwatersHomePitch
+                      : (scenario == Fluid25DScenario::SourceOutletDemo
+                             ? kFluid25DSourceOutletDemoHomePitch
+                             : (scenario == Fluid25DScenario::MountainSourceOutletDemo
+                                    ? kFluid25DMountainSourceOutletHomePitch
+                                    : default_pitch)));
 }
 
 // The full mountain route almost spans the crop. Its narrower overview fills
 // a normal widescreen capture while retaining both endpoint rings.
 [[nodiscard]] constexpr float fluid_25d_catchment_home_distance_scale(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
+    return scenario == Fluid25DScenario::HillsideFlowStudy ? 1.50F
+           : scenario == Fluid25DScenario::SustainedHeadwatersDemo
                ? kFluid25DSustainedHeadwatersHomeDistanceScale
                : (scenario == Fluid25DScenario::MountainSourceOutletDemo ? 0.85F : 1.05F);
 }
@@ -89,7 +113,8 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 // complements its render-only relief scale without changing shared material
 // behavior, numerical terrain, or any solver data.
 [[nodiscard]] constexpr float fluid_25d_catchment_terrain_material_cue(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::SustainedHeadwatersDemo
+    return scenario == Fluid25DScenario::HillsideFlowStudy ? 4.0F
+           : scenario == Fluid25DScenario::SustainedHeadwatersDemo
                ? 3.0F
                : (scenario == Fluid25DScenario::SourceOutletDemo
                       ? 1.0F

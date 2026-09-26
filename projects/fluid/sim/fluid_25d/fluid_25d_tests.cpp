@@ -2,6 +2,7 @@
 #include "fluid_25d_commands.h"
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_finite_volume_oracle.h"
+#include "fluid_25d_natural_flow_recipe.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_presentation.h"
 
@@ -75,15 +76,18 @@ template <typename Callable> void require_throws(Callable&& callable, const char
 }
 
 struct TerrainFixture {
-    TerrainFixture() {
+    explicit TerrainFixture(float spacing_m = 3.5F, std::uint32_t grid_width = 5U,
+                            std::uint32_t grid_height = 4U)
+        : width(grid_width), height(grid_height), sample_spacing_m(spacing_m) {
         const auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
         root = std::filesystem::temp_directory_path() /
                ("cubey-fluid-25d-terrain-" + std::to_string(suffix));
         std::filesystem::create_directories(root);
-        elevation.resize(5U * 4U);
-        for (std::uint32_t z = 0U; z < 4U; ++z) {
-            for (std::uint32_t x = 0U; x < 5U; ++x) {
-                elevation[static_cast<std::size_t>(z) * 5U + x] = static_cast<float>(z * 5U + x);
+        elevation.resize(static_cast<std::size_t>(width) * height);
+        for (std::uint32_t z = 0U; z < height; ++z) {
+            for (std::uint32_t x = 0U; x < width; ++x) {
+                elevation[static_cast<std::size_t>(z) * width + x] =
+                    static_cast<float>(z * width + x);
             }
         }
         const std::string hash = cubey::asset::sha256_hex(std::as_bytes(std::span{elevation}));
@@ -92,9 +96,9 @@ struct TerrainFixture {
             {"source", {{"id", "fluid-25d-test-terrain"}}},
             {"seed", 731U},
             {"grid",
-             {{"width", 5U},
-              {"height", 4U},
-              {"sample_spacing_m", 3.5F},
+             {{"width", width},
+              {"height", height},
+              {"sample_spacing_m", sample_spacing_m},
               {"sample_origin_x_m", -10.0F},
               {"sample_origin_z_m", 25.0F}}},
             {"height", {{"offset_m", 10.0F}, {"scale", 1.5F}, {"relief_scale_m", 100.0F}}},
@@ -103,7 +107,7 @@ struct TerrainFixture {
                {{"path", "elevation.f32"},
                 {"dtype", "float32-le"},
                 {"layout", "row-major-zx"},
-                {"shape", {4U, 5U}},
+                {"shape", {height, width}},
                 {"byte_count", elevation.size() * sizeof(float)},
                 {"sha256", hash}}}}},
         };
@@ -130,9 +134,50 @@ struct TerrainFixture {
     }
 
     std::filesystem::path root{};
+    std::uint32_t width = 5U;
+    std::uint32_t height = 4U;
+    float sample_spacing_m = 3.5F;
     std::vector<float> elevation{};
     nlohmann::json manifest{};
 };
+
+[[nodiscard]] nlohmann::json
+make_synthetic_natural_flow_recipe_document(const TerrainFixture& fixture) {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
+    const Fluid25DScenarioData crop = make_fluid_25d_terrain_crop(5U, 5U, 30.0F, source, 1U, 1U);
+    return {
+        {"schema", kFluid25DNaturalFlowRecipeSchema},
+        {"candidate_id", "synthetic-30m-fixture"},
+        {"elevation_sha256", source.provenance().elevation_sha256},
+        {"transformed_crop_sha256", crop.terrain_provenance->transformed_crop_sha256},
+        {"crop_xzwh", {1U, 1U, 5U, 5U}},
+        {"cell_size_m", 30.0},
+        {"source_center_cell_xz", {2U, 2U}},
+        {"source_cells_xz", {{2U, 2U}, {2U, 1U}, {2U, 3U}, {3U, 2U}, {1U, 2U}}},
+        {"expected_outlet", {{"edge", "west"}, {"crop_cell_xz_bounds", {{0U, 2U}, {0U, 2U}}}}},
+        {"gauges",
+         {{{"name", "upstream"},
+           {"cell_xz", {2U, 2U}},
+           {"tangent_dx_dz", {-1, 0}},
+           {"distance_m", 0.0},
+           {"half_span_cells", 1U}}}},
+    };
+}
+
+[[nodiscard]] cubey::projects::fluid::fluid_25d::Fluid25DConfig
+natural_flow_test_config(std::uint32_t width = 5U, std::uint32_t height = 5U) {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config;
+    config.grid_width = width;
+    config.grid_height = height;
+    config.cell_size_m = kFluid25DNaturalFlowCellSizeM;
+    config.scenario = Fluid25DScenario::NaturalFlowStudy;
+    config.solver = Fluid25DSolver::FiniteVolume;
+    config.natural_flow_source_m3_per_s = 30.0F;
+    validate_fluid_25d_config(config);
+    return config;
+}
 
 [[nodiscard]] cubey::projects::fluid::fluid_25d::Fluid25DProjectConfig
 parse_project(std::vector<std::string> arguments) {
@@ -1068,6 +1113,22 @@ void test_deterministic_scenarios() {
         fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario::RiverCatchment, 127.0F, 96.0F),
         127.0, kDepthToleranceM,
         "River V0 home camera should retain its full-domain framing contract");
+    const auto hillside_overview_limits =
+        fluid_25d_catchment_orbit_limits(Fluid25DScenario::HillsideFlowStudy, 7650.0F, 7650.0F);
+    const auto hillside_close_limits =
+        fluid_25d_catchment_orbit_limits(Fluid25DScenario::HillsideFlowStudy, 7650.0F, 3200.0F);
+    require(hillside_overview_limits.minimum_distance_m ==
+                    hillside_close_limits.minimum_distance_m &&
+                hillside_overview_limits.maximum_distance_m ==
+                    hillside_close_limits.maximum_distance_m &&
+                hillside_overview_limits.minimum_distance_m <= 1000.0F &&
+                hillside_overview_limits.maximum_distance_m >= 25000.0F,
+            "hillside framing switches must retain accepted close and distant home overrides");
+    const auto river_limits =
+        fluid_25d_catchment_orbit_limits(Fluid25DScenario::RiverCatchment, 127.0F, 96.0F);
+    require(river_limits.minimum_distance_m == std::max(8.0F, 96.0F * 0.30F) &&
+                river_limits.maximum_distance_m == std::max(48.0F, 96.0F * 4.0F),
+            "other scenario orbit limits must retain the exact original framing formula");
     require_close(fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario::SourceOutletDemo,
                                                              127.0F, 96.0F),
                   120.0, kDepthToleranceM,
@@ -2169,6 +2230,462 @@ void test_terrain_case_ingestion() {
                 load_fluid_25d_terrain_scenario(config, fixture.root / "invalid.txt", 0U, 0U));
         },
         "terrain case should reject an invalid heightfield path");
+}
+
+void test_hillside_flow_study_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    TerrainFixture fixture(30.0F, 7U, 7U);
+    nlohmann::json document = make_synthetic_natural_flow_recipe_document(fixture);
+    document["schema"] = kFluid25DHillsideFlowRecipeSchema;
+    document.erase("expected_outlet");
+    document["gauges"] = nlohmann::json::array();
+    const auto recipe = parse_fluid_25d_natural_flow_recipe(document.dump());
+    Fluid25DConfig config = natural_flow_test_config();
+    config.scenario = Fluid25DScenario::HillsideFlowStudy;
+    validate_fluid_25d_config(config);
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
+    auto scenario = make_fluid_25d_natural_flow_study_scenario(config, source, recipe, 1U, 1U);
+    const auto raw = make_fluid_25d_terrain_crop(5U, 5U, 30.0F, source, 1U, 1U);
+    require(
+        !recipe.has_expected_outlet && !scenario.natural_flow_study->has_expected_outlet &&
+            scenario.outlet_cell == kFluid25DNoCell && scenario.sink_cell == kFluid25DNoCell &&
+            scenario.terrain_height_m == raw.terrain_height_m &&
+            scenario.initial_water_depth_m == raw.initial_water_depth_m &&
+            scenario.sink_depth_rate_m_per_s == raw.sink_depth_rate_m_per_s,
+        "hillside source-only study must preserve dry raw terrain without sink or chosen outlet");
+    const auto markers = fluid_25d_endpoint_markers(config, scenario);
+    require(markers.source_xy_outlet_xy[0] >= 0.0F && markers.source_xy_outlet_xy[2] < 0.0F &&
+                markers.source_xy_outlet_xy[3] < 0.0F,
+            "hillside markers must not invent an amber destination");
+    require_throws(
+        [&] {
+            auto invalid = document;
+            invalid["expected_outlet"] = nullptr;
+            static_cast<void>(parse_fluid_25d_natural_flow_recipe(invalid.dump()));
+        },
+        "hillside schema must reject outlet fields rather than silently ignore them");
+    require_throws(
+        [&] {
+            static_cast<void>(make_fluid_25d_natural_flow_study_scenario(natural_flow_test_config(),
+                                                                         source, recipe, 1U, 1U));
+        },
+        "hillside recipe cannot enter the old expected-outlet study");
+    const auto old_recipe = parse_fluid_25d_natural_flow_recipe(
+        make_synthetic_natural_flow_recipe_document(fixture).dump());
+    require_throws(
+        [&] {
+            static_cast<void>(
+                make_fluid_25d_natural_flow_study_scenario(config, source, old_recipe, 1U, 1U));
+        },
+        "expected-outlet recipe cannot enter the hillside study");
+
+    // Uneven source patch: reference is its LOWEST bed, not the centre or mean.
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 1000.0F);
+    scenario.terrain_height_m[scenario.source_cell] = 1100.0F;
+    std::vector<float> depth(25U, 0.0F);
+    depth[scenario.source_cell] = 1.0F;
+    depth[scenario.natural_flow_study->source_cells[1]] = 1.0F;
+    scenario.terrain_height_m[0U] = 900.0F;
+    depth[0U] = 0.009F;
+    auto progress = compute_fluid_25d_hillside_progress(config, scenario, depth);
+    require(progress.source_minimum_bed_m == 1000.0 && progress.maximum_wetted_bed_drop_m == 0.0 &&
+                progress.lower_band_wet_cells[0] == 0U && progress.materially_wet_cell_count == 2U,
+            "uneven source and sub-threshold tails cannot falsely count downhill progress");
+    depth[0U] = 0.1F;
+    progress = compute_fluid_25d_hillside_progress(config, scenario, depth);
+    require(progress.maximum_wetted_bed_drop_m == 100.0 && progress.lower_band_wet_cells[0] == 1U &&
+                progress.lower_band_wet_cells[2] == 1U && progress.lower_band_wet_cells[3] == 0U,
+            "hillside diagnostics must count nested elevation bands independent of exit");
+    require_close(progress.lower_band_water_volume_m3[2], 90.0, 1e-5,
+                  "hillside lower-band volume uses actual water depth and cell area");
+    depth[0U] = -1.0F;
+    require_throws(
+        [&] { static_cast<void>(compute_fluid_25d_hillside_progress(config, scenario, depth)); },
+        "hillside diagnostic must reject corrupt depth");
+
+    Fluid25DInspectionAdvance advance;
+    advance.request(600.0F, 2.0F);
+    std::uint32_t total = 0U;
+    while (advance.remaining_steps() > 0U) {
+        const auto batch = advance.take_batch();
+        require(batch > 0U && batch <= 16U, "inspection advance must bound per-frame work");
+        total += batch;
+    }
+    require(total == 300U && advance.take_batch() == 0U,
+            "inspection advance must execute every fixed step exactly once");
+    advance.request(5.0F, 2.0F);
+    require(advance.remaining_steps() == 3U, "inspection advance rounds to full fixed steps");
+    advance.reset();
+    require(advance.remaining_steps() == 0U, "reset must cancel pending inspection advance");
+    require_throws([&] { advance.request(600.0F, 0.0F); }, "advance rejects invalid time step");
+    require_throws([&] { advance.request(7201.0F, 2.0F); }, "advance enforces bounded horizon");
+
+    std::vector<std::string> args{"fluid_25d",
+                                  "--fluid25d-scenario",
+                                  "hillside-flow-study",
+                                  "--fluid25d-solver",
+                                  "finite-volume",
+                                  "--grid-width",
+                                  "5",
+                                  "--grid-height",
+                                  "5",
+                                  "--fluid25d-cell-size-m",
+                                  "30",
+                                  "--terrain-heightfield",
+                                  "synthetic-terrain",
+                                  "--fluid25d-terrain-crop-x",
+                                  "1",
+                                  "--fluid25d-terrain-crop-z",
+                                  "1",
+                                  "--fluid25d-natural-flow-recipe",
+                                  "synthetic-recipe.json",
+                                  "--fluid25d-natural-flow-source-m3-per-s",
+                                  "30",
+                                  "--fluid25d-hillside-inspection-advance-seconds",
+                                  "600",
+                                  "--fluid25d-hillside-source-context"};
+    const auto parsed = parse_project(args);
+    require(parsed.simulation.scenario == Fluid25DScenario::HillsideFlowStudy &&
+                parsed.hillside_inspection_advance_seconds == 600.0F &&
+                parsed.hillside_source_context,
+            "hillside study and explicit windowed inspection controls must parse");
+    args.push_back("--headless");
+    require_throws([&] { static_cast<void>(parse_project(args)); },
+                   "windowed advance must never alter deterministic headless timing");
+}
+
+void test_natural_flow_recipe_import_and_validation() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    TerrainFixture fixture(30.0F, 7U, 7U);
+    const nlohmann::json document = make_synthetic_natural_flow_recipe_document(fixture);
+    const Fluid25DNaturalFlowRecipe recipe = parse_fluid_25d_natural_flow_recipe(document.dump());
+    const Fluid25DConfig config = natural_flow_test_config();
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
+    const Fluid25DScenarioData raw_crop =
+        make_fluid_25d_terrain_crop(5U, 5U, 30.0F, source, 1U, 1U);
+    const Fluid25DScenarioData scenario = make_fluid_25d_natural_flow_study_scenario(
+        config, source, recipe, recipe.crop_x, recipe.crop_z);
+
+    require(scenario.terrain_height_m == raw_crop.terrain_height_m &&
+                scenario.terrain_provenance->transformed_crop_sha256 ==
+                    raw_crop.terrain_provenance->transformed_crop_sha256,
+            "natural-flow study must preserve the exact transformed native terrain crop");
+    require(std::all_of(scenario.initial_water_depth_m.begin(),
+                        scenario.initial_water_depth_m.end(),
+                        [](float value) { return value == 0.0F; }) &&
+                std::all_of(scenario.sink_depth_rate_m_per_s.begin(),
+                            scenario.sink_depth_rate_m_per_s.end(),
+                            [](float value) { return value == 0.0F; }) &&
+                scenario.sink_cell == kFluid25DNoCell,
+            "natural-flow study must keep the imported terrain dry with no sink field or marker");
+    require(
+        scenario.source_cell == fluid_25d_scenario_index(5U, 5U, 2U, 2U) &&
+            scenario.outlet_cell == fluid_25d_scenario_index(5U, 5U, 0U, 2U) &&
+            scenario.natural_flow_study.has_value() &&
+            scenario.natural_flow_study->source_cells.size() == 5U,
+        "natural-flow study should retain five source cells and an observation-only exit marker");
+    const float expected_depth_rate = 30.0F / (5.0F * 30.0F * 30.0F);
+    double source_volume_rate_m3_per_s = 0.0;
+    for (const float depth_rate : scenario.source_depth_rate_m_per_s) {
+        require(depth_rate == 0.0F || depth_rate == expected_depth_rate,
+                "natural-flow source depth rate should be equal across the exact five cells");
+        source_volume_rate_m3_per_s += static_cast<double>(depth_rate) * 30.0 * 30.0;
+    }
+    require(std::count_if(scenario.source_depth_rate_m_per_s.begin(),
+                          scenario.source_depth_rate_m_per_s.end(),
+                          [](float value) { return value > 0.0F; }) == 5,
+            "natural-flow source footprint should contain exactly five nonzero cells");
+    require_close(source_volume_rate_m3_per_s, config.natural_flow_source_m3_per_s, 1.0e-6,
+                  "five-cell source volume rate should sum to the explicit total Q exactly once");
+    require(scenario.boundary_outflow_face_mask ==
+                make_fluid_25d_all_outward_boundary_outflow_mask(5U, 5U),
+            "natural-flow study should open outward-only faces on every crop perimeter");
+    const Fluid25DEndpointMarkersGpu markers = fluid_25d_endpoint_markers(config, scenario);
+    require(markers.source_xy_outlet_xy == std::array<float, 4>{2.0F, 2.0F, 0.0F, 2.0F} &&
+                markers.secondary_source_xy_reserved[0] < 0.0F &&
+                markers.secondary_source_xy_reserved[1] < 0.0F,
+            "natural-flow endpoint SSBO should show a source ring and expected-exit marker only");
+
+    const auto reject_json = [](nlohmann::json invalid, const char* message) {
+        require_throws(
+            [&invalid] { static_cast<void>(parse_fluid_25d_natural_flow_recipe(invalid.dump())); },
+            message);
+    };
+    require_throws([] { static_cast<void>(parse_fluid_25d_natural_flow_recipe("{malformed")); },
+                   "natural-flow recipe parser should reject malformed JSON");
+    nlohmann::json invalid = document;
+    invalid["extra"] = true;
+    reject_json(invalid, "natural-flow recipe parser should reject unknown top-level fields");
+    invalid = document;
+    invalid["elevation_sha256"] = "not-a-sha";
+    reject_json(invalid, "natural-flow recipe parser should require well-formed SHA-256 hashes");
+    invalid = document;
+    invalid["candidate_id"] = "";
+    reject_json(invalid, "natural-flow recipe parser should require a nonempty candidate id");
+    invalid = document;
+    invalid["cell_size_m"] = 30.0000001;
+    reject_json(invalid,
+                "natural-flow recipe parser should check native spacing before float rounding");
+    invalid = document;
+    invalid["source_center_cell_xz"] = {1U, 2U};
+    reject_json(invalid,
+                "natural-flow recipe parser should keep every source footprint cell interior");
+    invalid = document;
+    invalid["source_cells_xz"][4] = invalid["source_cells_xz"][0];
+    reject_json(invalid, "natural-flow recipe parser should reject duplicate source cells");
+    invalid = document;
+    invalid["source_cells_xz"][4] = {0U, 2U};
+    reject_json(invalid, "natural-flow recipe parser should reject edge-source cells");
+    invalid = document;
+    invalid["expected_outlet"]["crop_cell_xz_bounds"] = {{0U, 0U}, {0U, 2U}};
+    reject_json(invalid,
+                "natural-flow recipe parser should reject outlet windows that include corners");
+    invalid = document;
+    invalid["expected_outlet"]["crop_cell_xz_bounds"] = {{0U, 3U}, {0U, 2U}};
+    reject_json(invalid, "natural-flow recipe parser should reject reversed outlet bounds");
+    invalid = document;
+    invalid["gauges"][0]["tangent_dx_dz"] = {std::numeric_limits<std::uint64_t>::max(), 0U};
+    reject_json(invalid, "natural-flow recipe parser should reject unsigned tangent wraparound");
+    invalid = document;
+    invalid["gauges"][0]["tangent_dx_dz"] = {std::numeric_limits<std::int32_t>::min(), 0};
+    reject_json(invalid, "natural-flow recipe parser should safely reject extreme tangents");
+    invalid = document;
+    invalid["gauges"][0]["tangent_dx_dz"] = {1, 1};
+    reject_json(invalid, "natural-flow recipe parser should reject diagonal gauge tangents");
+    invalid = document;
+    invalid["gauges"][0]["half_span_cells"] = 0U;
+    reject_json(invalid, "natural-flow recipe parser should require a positive gauge half-span");
+    invalid = document;
+    invalid["gauges"][0]["distance_m"] = "nan";
+    reject_json(invalid, "natural-flow recipe parser should reject nonnumeric gauge distances");
+
+    Fluid25DTerrainCaseProvenance mismatched_provenance = scenario.terrain_provenance.value();
+    mismatched_provenance.elevation_sha256 = std::string(64U, '0');
+    require_throws(
+        [&] {
+            validate_fluid_25d_natural_flow_recipe_provenance(recipe, mismatched_provenance, 5U, 5U,
+                                                              30.0F);
+        },
+        "natural-flow recipe provenance gate should reject raw hash mismatches");
+    mismatched_provenance = scenario.terrain_provenance.value();
+    ++mismatched_provenance.crop_x;
+    require_throws(
+        [&] {
+            validate_fluid_25d_natural_flow_recipe_provenance(recipe, mismatched_provenance, 5U, 5U,
+                                                              30.0F);
+        },
+        "natural-flow recipe provenance gate should reject crop bbox mismatches");
+
+    Fluid25DNaturalFlowRecipe crop_mismatch = recipe;
+    ++crop_mismatch.crop_x;
+    require_throws(
+        [&] {
+            static_cast<void>(make_fluid_25d_natural_flow_study_scenario(
+                config, source, crop_mismatch, recipe.crop_x, recipe.crop_z));
+        },
+        "natural-flow scenario builder should reject crop-origin mismatches");
+    Fluid25DNaturalFlowRecipe hash_mismatch = recipe;
+    hash_mismatch.transformed_crop_sha256 = std::string(64U, '0');
+    require_throws(
+        [&] {
+            static_cast<void>(make_fluid_25d_natural_flow_study_scenario(
+                config, source, hash_mismatch, recipe.crop_x, recipe.crop_z));
+        },
+        "natural-flow scenario builder should reject transformed crop hash mismatches");
+
+    Fluid25DConfig invalid_config = config;
+    invalid_config.solver = Fluid25DSolver::VirtualPipes;
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should require finite-volume");
+    invalid_config = config;
+    invalid_config.cell_size_m = 29.0F;
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should require exact 30 m native cells");
+    invalid_config = config;
+    invalid_config.natural_flow_source_m3_per_s = 0.0F;
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should require positive total Q");
+    invalid_config = config;
+    invalid_config.source_active_duration_seconds = 0.0F;
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should reject source-duration scheduling");
+    invalid_config = config;
+    invalid_config.headwaters_source_scale = 2.0F;
+    invalid_config.source_active_duration_seconds.reset();
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should reject non-default headwaters source scaling");
+    invalid_config = config;
+    invalid_config.terrain_water_protocol = Fluid25DTerrainWaterProtocol::RainPulse;
+    invalid_config.rainfall_depth_rate_m_per_s = 0.001F;
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should reject rain forcing");
+    invalid_config = config;
+    invalid_config.terrain_water_protocol = Fluid25DTerrainWaterProtocol::SheetRelease;
+    invalid_config.sheet_initial_depth_m = 0.1F;
+    require_throws([&] { validate_fluid_25d_config(invalid_config); },
+                   "natural-flow study should reject sheet forcing");
+    Fluid25DConfig with_dye = config;
+    with_dye.dye_pulse_start_seconds = 10.0F;
+    with_dye.dye_pulse_duration_seconds = 5.0F;
+    validate_fluid_25d_config(with_dye);
+    require(fluid_25d_transport_inspection_available(with_dye),
+            "natural-flow study should support the existing conservative dye pulse path");
+
+    const std::vector<std::string> valid_cli{"fluid_25d",
+                                             "--fluid25d-scenario",
+                                             "natural-flow-study",
+                                             "--fluid25d-solver",
+                                             "finite-volume",
+                                             "--grid-width",
+                                             "5",
+                                             "--grid-height",
+                                             "5",
+                                             "--fluid25d-cell-size-m",
+                                             "30",
+                                             "--terrain-heightfield",
+                                             "synthetic-terrain",
+                                             "--fluid25d-terrain-crop-x",
+                                             "1",
+                                             "--fluid25d-terrain-crop-z",
+                                             "1",
+                                             "--fluid25d-natural-flow-recipe",
+                                             "synthetic-recipe.json",
+                                             "--fluid25d-natural-flow-source-m3-per-s",
+                                             "30",
+                                             "--fluid25d-natural-flow-home-pitch-radians",
+                                             "-1.55",
+                                             "--fluid25d-terrain-palette-low-m",
+                                             "100",
+                                             "--fluid25d-terrain-palette-high-m",
+                                             "150"};
+    const Fluid25DProjectConfig parsed = parse_project(valid_cli);
+    require(parsed.simulation.scenario == Fluid25DScenario::NaturalFlowStudy &&
+                parsed.simulation.natural_flow_source_m3_per_s == 30.0F &&
+                parsed.natural_flow_recipe_path == "synthetic-recipe.json" &&
+                parsed.natural_flow_home_pitch_radians == -1.55F &&
+                parsed.catchment_render.terrain_palette_low_m == 100.0F &&
+                parsed.catchment_render.terrain_palette_high_m == 150.0F,
+            "natural-flow CLI should bind recipe, explicit total Q, render pitch, and palette");
+    const auto reject_cli = [](std::vector<std::string> arguments, const char* message) {
+        require_throws([&arguments] { static_cast<void>(parse_project(arguments)); }, message);
+    };
+    reject_cli({"fluid_25d", "--fluid25d-scenario", "natural-flow-study"},
+               "natural-flow CLI should require explicit recipe and total source rate");
+    reject_cli({"fluid_25d", "--fluid25d-natural-flow-recipe", "recipe.json"},
+               "natural-flow recipe path should be rejected for unrelated scenarios");
+    reject_cli({"fluid_25d", "--fluid25d-natural-flow-source-m3-per-s", "0"},
+               "explicit neutral natural-flow Q should be rejected outside its scenario");
+    reject_cli({"fluid_25d", "--fluid25d-scenario", "natural-flow-study", "--fluid25d-solver",
+                "finite-volume", "--grid-width", "5", "--grid-height", "5",
+                "--fluid25d-cell-size-m", "30", "--terrain-heightfield", "terrain",
+                "--fluid25d-terrain-crop-x", "1", "--fluid25d-terrain-crop-z", "1",
+                "--fluid25d-natural-flow-source-m3-per-s", "30"},
+               "natural-flow CLI should require its recipe path");
+    for (const std::vector<std::string>& forcing :
+         {std::vector<std::string>{"--fluid25d-terrain-water-protocol", "none"},
+          std::vector<std::string>{"--fluid25d-rainfall-rate-mm-per-hour", "0"},
+          std::vector<std::string>{"--fluid25d-sheet-depth-m", "0"},
+          std::vector<std::string>{"--fluid25d-source-active-duration-seconds", "0"},
+          std::vector<std::string>{"--fluid25d-headwaters-source-scale", "1"}}) {
+        std::vector<std::string> invalid_cli = valid_cli;
+        invalid_cli.insert(invalid_cli.end(), forcing.begin(), forcing.end());
+        reject_cli(std::move(invalid_cli),
+                   "natural-flow CLI should reject every explicit terrain/headwaters forcing flag");
+    }
+    std::vector<std::string> unrelated_pitch{"fluid_25d",
+                                             "--fluid25d-natural-flow-home-pitch-radians", "-0.72"};
+    reject_cli(unrelated_pitch,
+               "natural-flow camera pitch should be rejected outside natural-flow-study");
+    std::vector<std::string> bad_pitch = valid_cli;
+    bad_pitch[bad_pitch.size() - 5U] = "-1.56";
+    reject_cli(bad_pitch, "natural-flow camera pitch should enforce its declared range");
+    std::vector<std::string> dye_cli = valid_cli;
+    dye_cli.insert(dye_cli.end(), {"--fluid25d-catchment-view", "transport-inspection",
+                                   "--fluid25d-dye-pulse-start-seconds", "10",
+                                   "--fluid25d-dye-pulse-duration-seconds", "5"});
+    require(parse_project(std::move(dye_cli)).simulation.dye_pulse_duration_seconds == 5.0F,
+            "natural-flow CLI should retain finite-volume transport-inspection dye timing");
+}
+
+void test_natural_flow_profile_diagnostics() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const Fluid25DConfig config = natural_flow_test_config();
+    Fluid25DNaturalFlowStudyMetadata study;
+    study.expected_outlet_edge = Fluid25DNaturalFlowEdge::West;
+    study.expected_outlet_x_min = 0U;
+    study.expected_outlet_z_min = 2U;
+    study.expected_outlet_x_max = 0U;
+    study.expected_outlet_z_max = 2U;
+    study.gauges.push_back({.name = "upstream",
+                            .x_cell = 2U,
+                            .z_cell = 2U,
+                            .tangent_dx = -1,
+                            .tangent_dz = 0,
+                            .distance_m = 0.0,
+                            .half_span_cells = 1U});
+    std::vector<float> depth(fluid_25d_cell_count(config), 0.0F);
+    std::vector<float> tracer_q(depth.size(), 0.0F);
+    std::vector<Fluid25DVelocityGpu> velocity(depth.size());
+    for (const std::uint32_t z : {1U, 2U, 3U}) {
+        const std::size_t index = fluid_25d_scenario_index(5U, 5U, 2U, z);
+        depth[index] = z == 2U ? 2.0F : 1.0F;
+        tracer_q[index] = 0.1F;
+        velocity[index].velocity_wet[0] = -0.5F;
+    }
+    const auto gauges =
+        compute_fluid_25d_natural_flow_gauge_diagnostics(config, study, depth, velocity, tracer_q);
+    require(gauges.size() == 1U && gauges[0].name == "upstream" &&
+                gauges[0].wetted_cell_count == 3U,
+            "natural-flow gauges should sample the recipe's exact perpendicular transect");
+    require_close(gauges[0].center_depth_m, 2.0, kDepthToleranceM,
+                  "natural-flow gauge should report center depth from the sampled state");
+    require_close(gauges[0].section_water_area_m2, 120.0, kDepthToleranceM,
+                  "natural-flow section area should integrate depth across sample spacing");
+    require_close(
+        gauges[0].depth_velocity_discharge_estimate_m3_per_s, 60.0, kDepthToleranceM,
+        "natural-flow depth-velocity discharge estimate should use signed tangent velocity");
+    require_close(gauges[0].mean_longitudinal_velocity_m_per_s, 0.5, kDepthToleranceM,
+                  "natural-flow mean longitudinal velocity should be depth weighted");
+    require_close(gauges[0].sampled_tracer_amount_m3, 270.0, kVolumeToleranceM3,
+                  "natural-flow gauge tracer amount should sum sampled q times cell area");
+    for (Fluid25DVelocityGpu& state : velocity) {
+        state.velocity_wet[0] = 0.5F;
+    }
+    const auto reversed_gauges =
+        compute_fluid_25d_natural_flow_gauge_diagnostics(config, study, depth, velocity, tracer_q);
+    require_close(reversed_gauges[0].depth_velocity_discharge_estimate_m3_per_s, -60.0,
+                  kDepthToleranceM,
+                  "natural-flow gauge discharge estimate should preserve the route-relative sign");
+    require_close(reversed_gauges[0].mean_longitudinal_velocity_m_per_s, -0.5, kDepthToleranceM,
+                  "natural-flow mean longitudinal velocity should preserve its tangent sign");
+
+    std::vector<Fluid25DLedgerGpu> ledger(depth.size());
+    const auto boundary_volume = [&ledger](std::uint32_t x, std::uint32_t z, float value) {
+        ledger[fluid_25d_scenario_index(5U, 5U, x, z)].source_sink_boundary_reserved_m3[2] = value;
+    };
+    boundary_volume(0U, 2U, 2.0F);
+    boundary_volume(0U, 1U, 3.0F);
+    boundary_volume(4U, 2U, 4.0F);
+    boundary_volume(0U, 0U, 5.0F);
+    boundary_volume(2U, 2U, 6.0F);
+    const Fluid25DNaturalFlowBoundaryLedgerDiagnostics boundary =
+        compute_fluid_25d_natural_flow_boundary_ledger_diagnostics(config, study, ledger, 20.0);
+    require_close(boundary.expected_window_outflow_m3, 2.0, kDepthToleranceM,
+                  "natural-flow boundary ledger should attribute its recipe window");
+    require_close(boundary.other_noncorner_edge_outflow_m3, 7.0, kDepthToleranceM,
+                  "natural-flow boundary ledger should retain unrelated open edges");
+    require_close(boundary.corner_outflow_m3, 5.0, kDepthToleranceM,
+                  "natural-flow boundary ledger should classify corners separately");
+    require_close(boundary.non_edge_outflow_m3, 6.0, kDepthToleranceM,
+                  "natural-flow boundary ledger should expose non-edge ledger volume");
+    require_close(boundary.all_boundary_outflow_m3, 20.0, kDepthToleranceM,
+                  "natural-flow boundary category should conserve the existing all-edge ledger");
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_natural_flow_boundary_ledger_diagnostics(
+                config, study, ledger, 21.0));
+        },
+        "natural-flow boundary attribution should reject mismatch with the general ledger");
 }
 
 void test_terrain_water_protocol_construction() {
@@ -4597,6 +5114,9 @@ int main() {
         test_sustained_headwaters_station_diagnostics();
         test_sustained_headwaters_cross_section_diagnostics();
         test_terrain_case_ingestion();
+        test_natural_flow_recipe_import_and_validation();
+        test_hillside_flow_study_contract();
+        test_natural_flow_profile_diagnostics();
         test_terrain_water_protocol_construction();
         test_mountain_source_outlet_field_construction();
         test_profile_frame_slot_attribution();

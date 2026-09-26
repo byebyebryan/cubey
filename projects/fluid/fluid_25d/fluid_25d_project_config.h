@@ -32,6 +32,10 @@ struct Fluid25DProjectConfig {
     bool gpu_oracle_validation = false;
     Fluid25DStartupOptions fluid{};
     Fluid25DTerrainOptions terrain{};
+    std::optional<std::filesystem::path> natural_flow_recipe_path{};
+    std::optional<float> natural_flow_home_pitch_radians{};
+    std::optional<float> hillside_inspection_advance_seconds{};
+    bool hillside_source_context = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
 };
@@ -63,24 +67,64 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
             "fluid 2.5D --fluid25d-headwaters-source-scale requires "
             "--fluid25d-scenario sustained-headwaters-demo");
     }
+    const bool natural_flow_study =
+        fluid_25d_is_natural_terrain_study(project_config.simulation.scenario);
+    if (project_config.hillside_source_context &&
+        project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy) {
+        throw std::runtime_error("source-context camera requires hillside-flow-study");
+    }
+    if (project_config.hillside_inspection_advance_seconds.has_value()) {
+        if (project_config.common.headless ||
+            project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy) {
+            throw std::runtime_error("inspection advance is windowed hillside-flow-study only");
+        }
+        Fluid25DInspectionAdvance advance;
+        advance.request(*project_config.hillside_inspection_advance_seconds,
+                        project_config.simulation.fixed_delta_seconds);
+    }
+    if (project_config.natural_flow_recipe_path.has_value() != natural_flow_study ||
+        (project_config.natural_flow_recipe_path.has_value() &&
+         project_config.natural_flow_recipe_path->empty())) {
+        throw std::runtime_error(
+            "fluid 2.5D --fluid25d-natural-flow-recipe requires natural-flow-study and must be "
+            "a non-empty path");
+    }
+    if (project_config.fluid.natural_flow_source_m3_per_s.has_value() != natural_flow_study) {
+        throw std::runtime_error(
+            "fluid 2.5D --fluid25d-natural-flow-source-m3-per-s requires natural-flow-study and "
+            "must be supplied explicitly");
+    }
+    if (project_config.natural_flow_home_pitch_radians.has_value() &&
+        (!natural_flow_study || !std::isfinite(*project_config.natural_flow_home_pitch_radians) ||
+         *project_config.natural_flow_home_pitch_radians < -1.55F ||
+         *project_config.natural_flow_home_pitch_radians > -0.1F)) {
+        throw std::runtime_error(
+            "fluid 2.5D natural-flow home pitch requires natural-flow-study and a finite value in "
+            "[-1.55,-0.1]");
+    }
+    if (natural_flow_study && (!project_config.terrain.crop_x.has_value() ||
+                               !project_config.terrain.crop_z.has_value())) {
+        throw std::runtime_error("fluid 2.5D natural-flow-study requires explicit terrain crop x "
+                                 "and z matching its recipe");
+    }
     const Fluid25DCatchmentView catchment_view =
         fluid_25d_catchment_view_from_name(project_config.catchment_view);
     if (catchment_view == Fluid25DCatchmentView::TransportInspection &&
         !fluid_25d_transport_inspection_available(project_config.simulation)) {
         throw std::runtime_error(
-            "fluid 2.5D transport-inspection requires source-outlet-demo or "
-            "sustained-headwaters-demo with finite-volume and a positive dye pulse duration");
+            "fluid 2.5D transport-inspection requires an eligible finite-volume scenario and a "
+            "positive dye pulse duration");
     }
     const bool terrain_case = project_config.simulation.scenario == Fluid25DScenario::TerrainCase;
     const Fluid25DCatchmentRenderOptions& render = project_config.catchment_render;
-    const bool has_render_override = render.terrain_palette_low_m.has_value() ||
-                                     render.terrain_palette_high_m.has_value() ||
-                                     render.terrain_height_scale.has_value() ||
-                                     render.home_camera_distance_m.has_value() ||
-                                     render.terrain_thin_water_composite;
-    if (has_render_override && !terrain_case) {
+    const bool has_render_override =
+        render.terrain_palette_low_m.has_value() || render.terrain_palette_high_m.has_value() ||
+        render.terrain_height_scale.has_value() || render.home_camera_distance_m.has_value() ||
+        render.terrain_thin_water_composite ||
+        project_config.natural_flow_home_pitch_radians.has_value();
+    if (has_render_override && !terrain_case && !natural_flow_study) {
         throw std::runtime_error(
-            "fluid 2.5D terrain presentation overrides require --fluid25d-scenario terrain-case");
+            "fluid 2.5D terrain presentation overrides require terrain-case or natural-flow-study");
     }
     if (has_render_override && project_config.view == "diagnostics") {
         throw std::runtime_error(
@@ -118,7 +162,7 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
     }
     const bool mountain_source_outlet =
         project_config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
-    const bool terrain_backed = terrain_case || mountain_source_outlet;
+    const bool terrain_backed = terrain_case || mountain_source_outlet || natural_flow_study;
     const bool has_heightfield = project_config.terrain.heightfield_path.has_value();
     const bool has_nonempty_heightfield =
         has_heightfield && !project_config.terrain.heightfield_path->empty();
@@ -130,7 +174,7 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         throw std::runtime_error(
             "fluid 2.5D --terrain-heightfield requires a terrain-backed scenario");
     }
-    if (!terrain_case &&
+    if (!terrain_case && !natural_flow_study &&
         (project_config.terrain.crop_x.has_value() || project_config.terrain.crop_z.has_value())) {
         throw std::runtime_error(
             "fluid 2.5D terrain crop options require --fluid25d-scenario terrain-case");
@@ -145,11 +189,11 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         project_config.fluid.dye_pulse_duration_seconds.has_value();
     if (has_explicit_dye_option &&
         ((project_config.simulation.scenario != Fluid25DScenario::SourceOutletDemo &&
-          project_config.simulation.scenario != Fluid25DScenario::SustainedHeadwatersDemo) ||
+          project_config.simulation.scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
+          !natural_flow_study) ||
          project_config.simulation.solver != Fluid25DSolver::FiniteVolume)) {
         throw std::runtime_error(
-            "fluid 2.5D dye pulse timing requires source-outlet-demo or "
-            "sustained-headwaters-demo with finite-volume");
+            "fluid 2.5D dye pulse timing requires an eligible finite-volume scenario");
     }
     if (!terrain_case && has_explicit_terrain_water_option) {
         throw std::runtime_error(
@@ -158,6 +202,16 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
     if (mountain_source_outlet && project_config.fluid.source_active_duration_seconds.has_value()) {
         throw std::runtime_error(
             "fluid 2.5D mountain-source-outlet-demo rejects terrain-water forcing options");
+    }
+    if (natural_flow_study && (project_config.fluid.terrain_water_protocol.has_value() ||
+                               project_config.fluid.rainfall_rate_mm_per_hour.has_value() ||
+                               project_config.fluid.sheet_depth_m.has_value() ||
+                               project_config.fluid.source_active_duration_seconds.has_value() ||
+                               project_config.fluid.headwaters_source_scale.has_value())) {
+        throw std::runtime_error(
+            "fluid 2.5D natural-flow-study rejects terrain-water protocol, rain, sheet, "
+            "source-duration, and headwaters-source-scale options, including explicit neutral "
+            "values");
     }
     if (!terrain_case) {
         return;
@@ -231,8 +285,8 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
         .bind(option("fluid25d.catchment_view", "--fluid25d-catchment-view", "Catchment View",
                      "Catchment presentation: composite, water-isolation, flow-inspection, or "
                      "transport-inspection (dye source/outlet or sustained-headwaters demo only).",
-                     ValueType::Enum, {}, {"composite", "water-isolation", "flow-inspection",
-                                            "transport-inspection"}),
+                     ValueType::Enum, {},
+                     {"composite", "water-isolation", "flow-inspection", "transport-inspection"}),
               config.catchment_view)
         .bind(option("fluid25d.terrain_palette_low_m", "--fluid25d-terrain-palette-low-m",
                      "Terrain Palette Low",
@@ -244,23 +298,43 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Terrain-case render-only physical elevation mapped to the highland palette.",
                      ValueType::Float),
               config.catchment_render.terrain_palette_high_m)
-        .bind(option("fluid25d.terrain_height_scale", "--fluid25d-render-height-scale",
-                     "Terrain Render Height Scale",
-                     "Terrain-case render-only vertical scale; omitted preserves the scenario default.",
-                     ValueType::Float,
-                     {.has_min = true,
-                      .has_max = true,
-                      .min = static_cast<double>(kFluid25DMinTerrainCaseRenderHeightScale),
-                      .max = static_cast<double>(kFluid25DMaxTerrainCaseRenderHeightScale)}),
-              config.catchment_render.terrain_height_scale)
+        .bind(
+            option(
+                "fluid25d.terrain_height_scale", "--fluid25d-render-height-scale",
+                "Terrain Render Height Scale",
+                "Terrain-case render-only vertical scale; omitted preserves the scenario default.",
+                ValueType::Float,
+                {.has_min = true,
+                 .has_max = true,
+                 .min = static_cast<double>(kFluid25DMinTerrainCaseRenderHeightScale),
+                 .max = static_cast<double>(kFluid25DMaxTerrainCaseRenderHeightScale)}),
+            config.catchment_render.terrain_height_scale)
         .bind(option("fluid25d.home_camera_distance_m", "--fluid25d-home-camera-distance-m",
                      "Home Camera Distance",
                      "Terrain-case absolute render-only home camera distance in metres.",
                      ValueType::Float, {.has_min = true, .min = 1.0}),
               config.catchment_render.home_camera_distance_m)
+        .bind(option("fluid25d.natural_flow_home_pitch_radians",
+                     "--fluid25d-natural-flow-home-pitch-radians", "Natural Flow Home Pitch",
+                     "Natural-flow-study render-only home camera pitch in radians.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1.55, .max = -0.1}),
+              config.natural_flow_home_pitch_radians)
+        .bind(
+            option(
+                "fluid25d.hillside_inspection_advance_seconds",
+                "--fluid25d-hillside-inspection-advance-seconds", "Inspection Advance",
+                "Windowed hillside study: execute every dry-start step then pause for inspection.",
+                ValueType::Float, {.has_min = true, .has_max = true, .min = 0.001, .max = 7200.0}),
+            config.hillside_inspection_advance_seconds)
+        .bind(option("fluid25d.hillside_source_context", "--fluid25d-hillside-source-context",
+                     "Source Context Camera", "Render-only 3.2 km view around the hillside source.",
+                     ValueType::Bool),
+              config.hillside_source_context)
         .bind(option("fluid25d.terrain_thin_water_composite",
                      "--fluid25d-terrain-thin-water-composite", "Thin Water Composite",
-                     "Terrain-case Composite-only display attenuation for thin water; solver state is unchanged.",
+                     "Terrain-case Composite-only display attenuation for thin water; solver state "
+                     "is unchanged.",
                      ValueType::Bool),
               config.catchment_render.terrain_thin_water_composite)
         .bind(option("fluid25d.presentation_time_scale", "--fluid25d-presentation-time-scale",
@@ -288,6 +362,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Terrain heightfield manifest or directory used by a terrain-backed scenario.",
                      ValueType::Path),
               config.terrain.heightfield_path)
+        .bind(option("fluid25d.natural_flow_recipe", "--fluid25d-natural-flow-recipe",
+                     "Natural Flow Recipe",
+                     "Frozen, hash-pinned native terrain recipe required by natural-flow-study.",
+                     ValueType::Path),
+              config.natural_flow_recipe_path)
         .bind(option("fluid25d.terrain_crop_x", "--fluid25d-terrain-crop-x", "Terrain Crop X",
                      "Native x sample index of the terrain-case crop origin.", ValueType::UInt32),
               config.terrain.crop_x)
@@ -313,7 +392,7 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Enum, {},
                      {"dry-bed", "lake-at-rest", "river-catchment", "source-outlet-demo",
                       "mountain-source-outlet-demo", "sustained-headwaters-demo", "terrain-case",
-                      "boundary-drain-fixture"}),
+                      "boundary-drain-fixture", "natural-flow-study", "hillside-flow-study"}),
               config.fluid.scenario)
         .bind(
             option("fluid25d.solver", "--fluid25d-solver", "Solver",
@@ -353,11 +432,18 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Optional fixed-simulation duration before source rates switch to zero.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
               config.fluid.source_active_duration_seconds)
-        .bind(option("fluid25d.headwaters_source_scale",
-                     "--fluid25d-headwaters-source-scale", "Headwaters Source Scale",
+        .bind(option("fluid25d.headwaters_source_scale", "--fluid25d-headwaters-source-scale",
+                     "Headwaters Source Scale",
                      "Positive finite multiplier for both sustained-headwaters source fields.",
                      ValueType::Float),
               config.fluid.headwaters_source_scale)
+        .bind(
+            option(
+                "fluid25d.natural_flow_source_m3_per_s", "--fluid25d-natural-flow-source-m3-per-s",
+                "Natural Flow Total Source Rate",
+                "Finite positive total water source rate distributed across the five recipe cells.",
+                ValueType::Float, {.has_min = true, .min = 0.0}),
+            config.fluid.natural_flow_source_m3_per_s)
         .bind(option("fluid25d.dye_pulse_start_seconds", "--fluid25d-dye-pulse-start-seconds",
                      "Dye Pulse Start",
                      "Opt-in finite-volume demo dye pulse start time in fixed-simulation seconds.",

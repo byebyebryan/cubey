@@ -13,6 +13,81 @@
 #include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
+Fluid25DHillsideProgressDiagnostics
+compute_fluid_25d_hillside_progress(const Fluid25DConfig& config,
+                                    const Fluid25DScenarioData& scenario,
+                                    std::span<const float> depth_m) {
+    const std::size_t count = fluid_25d_cell_count(config);
+    if (config.scenario != Fluid25DScenario::HillsideFlowStudy ||
+        scenario.terrain_height_m.size() != count || depth_m.size() != count ||
+        scenario.width != config.grid_width || scenario.height != config.grid_height ||
+        !scenario.natural_flow_study || scenario.natural_flow_study->has_expected_outlet ||
+        scenario.natural_flow_study->source_cells.empty() || scenario.source_cell >= count) {
+        throw std::runtime_error("hillside progress requires matching source-only study fields");
+    }
+    Fluid25DHillsideProgressDiagnostics result;
+    result.source_minimum_bed_m = std::numeric_limits<double>::infinity();
+    const double area = static_cast<double>(config.cell_size_m) * config.cell_size_m;
+    for (const std::size_t index : scenario.natural_flow_study->source_cells) {
+        if (index >= count) {
+            throw std::runtime_error("hillside progress source index is out of bounds");
+        }
+        result.source_minimum_bed_m = std::min(
+            result.source_minimum_bed_m, static_cast<double>(scenario.terrain_height_m[index]));
+        result.source_region_water_volume_m3 += depth_m[index] * area;
+    }
+    const double source_x = static_cast<double>(scenario.source_cell % config.grid_width);
+    const double source_z = static_cast<double>(scenario.source_cell / config.grid_width);
+    for (std::size_t index = 0U; index < count; ++index) {
+        const double bed = scenario.terrain_height_m[index];
+        const double depth = depth_m[index];
+        if (!std::isfinite(bed) || !std::isfinite(depth) || depth < 0.0) {
+            throw std::runtime_error("hillside progress field is nonfinite or negative");
+        }
+        if (depth < kFluid25DHillsideMaterialDepthM) {
+            continue;
+        }
+        ++result.materially_wet_cell_count;
+        const double drop = result.source_minimum_bed_m - bed;
+        result.maximum_wetted_bed_drop_m = std::max(result.maximum_wetted_bed_drop_m, drop);
+        const double dx = static_cast<double>(index % config.grid_width) - source_x;
+        const double dz = static_cast<double>(index / config.grid_width) - source_z;
+        result.farthest_materially_wet_distance_m = std::max(
+            result.farthest_materially_wet_distance_m, std::hypot(dx, dz) * config.cell_size_m);
+        for (std::size_t band = 0U; band < kFluid25DHillsideElevationDropsM.size(); ++band) {
+            if (drop >= kFluid25DHillsideElevationDropsM[band]) {
+                ++result.lower_band_wet_cells[band];
+                result.lower_band_water_volume_m3[band] += depth * area;
+            }
+        }
+    }
+    return result;
+}
+
+void record_fluid_25d_hillside_progress(cubey::profiling::ProfileRecorder& recorder,
+                                        std::uint64_t frame_index,
+                                        const Fluid25DHillsideProgressDiagnostics& diagnostics) {
+    constexpr std::string_view category = "fluid_25d.hillside.progress";
+    recorder.record_metric(frame_index, category, "source_minimum_bed_m",
+                           diagnostics.source_minimum_bed_m);
+    recorder.record_metric(frame_index, category, "maximum_wetted_bed_drop_m",
+                           diagnostics.maximum_wetted_bed_drop_m);
+    recorder.record_metric(frame_index, category, "farthest_materially_wet_distance_m",
+                           diagnostics.farthest_materially_wet_distance_m);
+    recorder.record_metric(frame_index, category, "source_region_water_volume_m3",
+                           diagnostics.source_region_water_volume_m3);
+    recorder.record_metric(frame_index, category, "materially_wet_cell_count",
+                           static_cast<double>(diagnostics.materially_wet_cell_count));
+    for (std::size_t band = 0U; band < kFluid25DHillsideElevationDropsM.size(); ++band) {
+        const std::string suffix =
+            std::to_string(static_cast<int>(kFluid25DHillsideElevationDropsM[band])) + "m";
+        recorder.record_metric(frame_index, category, "below_source_wet_cells_" + suffix,
+                               static_cast<double>(diagnostics.lower_band_wet_cells[band]));
+        recorder.record_metric(frame_index, category, "below_source_water_volume_" + suffix,
+                               diagnostics.lower_band_water_volume_m3[band]);
+    }
+}
+
 namespace {
 
 [[nodiscard]] std::string diagnostic_float(float value) {
@@ -220,6 +295,139 @@ compute_fluid_25d_profile_diagnostics(const Fluid25DConfig& config, std::span<co
                                       result.cumulative_boundary_outflow_volume_m3;
     if (!std::isfinite(result.conservation_residual_m3)) {
         throw std::runtime_error("fluid 2.5D diagnostic conservation residual is nonfinite");
+    }
+    return result;
+}
+
+std::vector<Fluid25DNaturalFlowGaugeDiagnostics> compute_fluid_25d_natural_flow_gauge_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DNaturalFlowStudyMetadata& study,
+    std::span<const float> depth_m, std::span<const Fluid25DVelocityGpu> velocity,
+    std::span<const float> tracer_q_m) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::NaturalFlowStudy) {
+        throw std::runtime_error(
+            "natural-flow gauge diagnostics require scenario natural-flow-study");
+    }
+    const std::size_t cells = fluid_25d_cell_count(config);
+    if (depth_m.size() != cells || velocity.size() != cells || tracer_q_m.size() != cells) {
+        throw std::runtime_error("natural-flow gauge diagnostic fields have invalid dimensions");
+    }
+
+    const double cell_size_m = config.cell_size_m;
+    const double cell_area_m2 = cell_size_m * cell_size_m;
+    std::vector<Fluid25DNaturalFlowGaugeDiagnostics> results;
+    results.reserve(study.gauges.size());
+    for (const Fluid25DNaturalFlowGauge& gauge : study.gauges) {
+        Fluid25DNaturalFlowGaugeDiagnostics result;
+        result.name = gauge.name;
+        const std::size_t center_index = fluid_25d_scenario_index(
+            config.grid_width, config.grid_height, gauge.x_cell, gauge.z_cell);
+        result.center_depth_m = depth_m[center_index];
+        if (!std::isfinite(result.center_depth_m) || result.center_depth_m < 0.0) {
+            throw std::runtime_error("natural-flow gauge center depth is invalid");
+        }
+        double depth_velocity_sum = 0.0;
+        for (std::int32_t offset = -static_cast<std::int32_t>(gauge.half_span_cells);
+             offset <= static_cast<std::int32_t>(gauge.half_span_cells); ++offset) {
+            const std::int64_t sample_x = static_cast<std::int64_t>(gauge.x_cell) -
+                                          static_cast<std::int64_t>(gauge.tangent_dz) * offset;
+            const std::int64_t sample_z = static_cast<std::int64_t>(gauge.z_cell) +
+                                          static_cast<std::int64_t>(gauge.tangent_dx) * offset;
+            if (sample_x < 0 || sample_z < 0 || sample_x >= config.grid_width ||
+                sample_z >= config.grid_height) {
+                throw std::runtime_error("natural-flow gauge transect is outside the grid");
+            }
+            const std::size_t index = fluid_25d_scenario_index(
+                config.grid_width, config.grid_height, static_cast<std::uint32_t>(sample_x),
+                static_cast<std::uint32_t>(sample_z));
+            const float depth = depth_m[index];
+            const Fluid25DVelocityGpu& state = velocity[index];
+            const float tracer_q = tracer_q_m[index];
+            if (!std::isfinite(depth) || depth < 0.0F || !std::isfinite(tracer_q) ||
+                tracer_q < 0.0F || !std::isfinite(state.velocity_wet[0]) ||
+                !std::isfinite(state.velocity_wet[1])) {
+                throw std::runtime_error("natural-flow gauge sampled state is invalid");
+            }
+            const double longitudinal_velocity =
+                static_cast<double>(state.velocity_wet[0]) * gauge.tangent_dx +
+                static_cast<double>(state.velocity_wet[1]) * gauge.tangent_dz;
+            const double depth_value = depth;
+            result.section_water_area_m2 += depth_value * cell_size_m;
+            depth_velocity_sum += depth_value * longitudinal_velocity;
+            result.sampled_tracer_amount_m3 += static_cast<double>(tracer_q) * cell_area_m2;
+            if (depth > config.minimum_wet_depth_m) {
+                ++result.wetted_cell_count;
+            }
+        }
+        result.depth_velocity_discharge_estimate_m3_per_s = depth_velocity_sum * cell_size_m;
+        result.mean_longitudinal_velocity_m_per_s =
+            result.section_water_area_m2 > 0.0
+                ? result.depth_velocity_discharge_estimate_m3_per_s / result.section_water_area_m2
+                : 0.0;
+        if (!std::isfinite(result.section_water_area_m2) ||
+            !std::isfinite(result.depth_velocity_discharge_estimate_m3_per_s) ||
+            !std::isfinite(result.mean_longitudinal_velocity_m_per_s) ||
+            !std::isfinite(result.sampled_tracer_amount_m3)) {
+            throw std::runtime_error("natural-flow gauge diagnostic result is nonfinite");
+        }
+        results.push_back(std::move(result));
+    }
+    return results;
+}
+
+Fluid25DNaturalFlowBoundaryLedgerDiagnostics
+compute_fluid_25d_natural_flow_boundary_ledger_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DNaturalFlowStudyMetadata& study,
+    std::span<const Fluid25DLedgerGpu> cumulative_ledger,
+    double existing_boundary_ledger_total_m3) {
+    validate_fluid_25d_config(config);
+    if (config.scenario != Fluid25DScenario::NaturalFlowStudy) {
+        throw std::runtime_error(
+            "natural-flow boundary attribution requires scenario natural-flow-study");
+    }
+    const std::size_t cells = fluid_25d_cell_count(config);
+    if (cumulative_ledger.size() != cells || !std::isfinite(existing_boundary_ledger_total_m3) ||
+        existing_boundary_ledger_total_m3 < 0.0) {
+        throw std::runtime_error("natural-flow boundary ledger fields are invalid");
+    }
+
+    Fluid25DNaturalFlowBoundaryLedgerDiagnostics result;
+    for (std::size_t index = 0U; index < cells; ++index) {
+        const float boundary_volume = cumulative_ledger[index].source_sink_boundary_reserved_m3[2];
+        if (!std::isfinite(boundary_volume) || boundary_volume < 0.0F) {
+            throw std::runtime_error("natural-flow boundary ledger contains invalid volume");
+        }
+        const std::uint32_t x = static_cast<std::uint32_t>(index % config.grid_width);
+        const std::uint32_t z = static_cast<std::uint32_t>(index / config.grid_width);
+        const bool x_edge = x == 0U || x + 1U == config.grid_width;
+        const bool z_edge = z == 0U || z + 1U == config.grid_height;
+        const double volume = boundary_volume;
+        result.all_boundary_outflow_m3 += volume;
+        if (x_edge && z_edge) {
+            result.corner_outflow_m3 += volume;
+            continue;
+        }
+        if (!x_edge && !z_edge) {
+            result.non_edge_outflow_m3 += volume;
+            continue;
+        }
+        const bool inside_expected_window =
+            x >= study.expected_outlet_x_min && x <= study.expected_outlet_x_max &&
+            z >= study.expected_outlet_z_min && z <= study.expected_outlet_z_max;
+        if (inside_expected_window) {
+            result.expected_window_outflow_m3 += volume;
+        } else {
+            result.other_noncorner_edge_outflow_m3 += volume;
+        }
+    }
+    const double attributed_total = result.expected_window_outflow_m3 +
+                                    result.other_noncorner_edge_outflow_m3 +
+                                    result.corner_outflow_m3 + result.non_edge_outflow_m3;
+    const double tolerance = std::max(1.0e-6, result.all_boundary_outflow_m3 * 1.0e-6);
+    if (std::abs(attributed_total - result.all_boundary_outflow_m3) > tolerance ||
+        std::abs(result.all_boundary_outflow_m3 - existing_boundary_ledger_total_m3) > tolerance) {
+        throw std::runtime_error(
+            "natural-flow boundary attribution does not conserve the existing boundary ledger");
     }
     return result;
 }
@@ -785,6 +993,41 @@ void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& rec
                   diagnostics.cumulative_boundary_outflow_volume_m3);
     record_metric(recorder, frame_index, "conservation_residual_m3",
                   diagnostics.conservation_residual_m3);
+}
+
+void record_fluid_25d_natural_flow_gauge_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const std::vector<Fluid25DNaturalFlowGaugeDiagnostics>& gauges) {
+    for (const Fluid25DNaturalFlowGaugeDiagnostics& gauge : gauges) {
+        const std::string category = "fluid_25d.natural_flow.gauge." + gauge.name;
+        recorder.record_metric(frame_index, category, "center_depth_m", gauge.center_depth_m);
+        recorder.record_metric(frame_index, category, "wetted_cell_count",
+                               static_cast<double>(gauge.wetted_cell_count));
+        recorder.record_metric(frame_index, category, "section_water_area_m2",
+                               gauge.section_water_area_m2);
+        recorder.record_metric(frame_index, category, "depth_velocity_discharge_estimate_m3_per_s",
+                               gauge.depth_velocity_discharge_estimate_m3_per_s);
+        recorder.record_metric(frame_index, category, "mean_longitudinal_velocity_m_per_s",
+                               gauge.mean_longitudinal_velocity_m_per_s);
+        recorder.record_metric(frame_index, category, "sampled_tracer_amount_m3",
+                               gauge.sampled_tracer_amount_m3);
+    }
+}
+
+void record_fluid_25d_natural_flow_boundary_ledger_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DNaturalFlowBoundaryLedgerDiagnostics& diagnostics) {
+    constexpr std::string_view category = "fluid_25d.natural_flow.boundary_ledger";
+    recorder.record_metric(frame_index, category, "expected_window_outflow_m3",
+                           diagnostics.expected_window_outflow_m3);
+    recorder.record_metric(frame_index, category, "other_noncorner_edge_outflow_m3",
+                           diagnostics.other_noncorner_edge_outflow_m3);
+    recorder.record_metric(frame_index, category, "corner_outflow_m3",
+                           diagnostics.corner_outflow_m3);
+    recorder.record_metric(frame_index, category, "non_edge_outflow_m3",
+                           diagnostics.non_edge_outflow_m3);
+    recorder.record_metric(frame_index, category, "all_boundary_outflow_m3",
+                           diagnostics.all_boundary_outflow_m3);
 }
 
 void record_fluid_25d_sustained_headwaters_stations(

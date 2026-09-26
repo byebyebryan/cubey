@@ -12,6 +12,7 @@
 #include <array>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -34,6 +35,27 @@ inline constexpr float kFluid25DSlowPooledSpeedThresholdMPerS = 0.02F;
 // not constitute a material dyed front.
 inline constexpr float kFluid25DTracerMaterialConcentration = 0.01F;
 inline constexpr std::size_t kFluid25DBoundaryOutflowBinCount = 16U;
+inline constexpr float kFluid25DHillsideMaterialDepthM = 0.01F;
+inline constexpr std::array<double, 4U> kFluid25DHillsideElevationDropsM{20.0, 50.0, 100.0, 200.0};
+
+struct Fluid25DHillsideProgressDiagnostics {
+    double source_minimum_bed_m = 0.0;
+    double maximum_wetted_bed_drop_m = 0.0;
+    double farthest_materially_wet_distance_m = 0.0;
+    double source_region_water_volume_m3 = 0.0;
+    std::uint64_t materially_wet_cell_count = 0U;
+    std::array<std::uint64_t, 4U> lower_band_wet_cells{};
+    std::array<double, 4U> lower_band_water_volume_m3{};
+};
+
+// Elevation bands are observations, not a routing field or imposed destination.
+[[nodiscard]] Fluid25DHillsideProgressDiagnostics
+compute_fluid_25d_hillside_progress(const Fluid25DConfig& config,
+                                    const Fluid25DScenarioData& scenario,
+                                    std::span<const float> depth_m);
+void record_fluid_25d_hillside_progress(cubey::profiling::ProfileRecorder& recorder,
+                                        std::uint64_t frame_index,
+                                        const Fluid25DHillsideProgressDiagnostics& diagnostics);
 inline constexpr std::size_t kFluid25DSustainedHeadwatersStationCount = 7U;
 inline constexpr std::size_t kFluid25DSustainedHeadwatersCrossSectionStationCount = 7U;
 
@@ -138,6 +160,24 @@ struct Fluid25DProfileDiagnostics {
     double corner_outflow_volume_m3 = 0.0;
     double non_edge_outflow_volume_m3 = 0.0;
     double conservation_residual_m3 = 0.0;
+};
+
+struct Fluid25DNaturalFlowGaugeDiagnostics {
+    std::string name{};
+    double center_depth_m = 0.0;
+    std::uint64_t wetted_cell_count = 0U;
+    double section_water_area_m2 = 0.0;
+    double depth_velocity_discharge_estimate_m3_per_s = 0.0;
+    double mean_longitudinal_velocity_m_per_s = 0.0;
+    double sampled_tracer_amount_m3 = 0.0;
+};
+
+struct Fluid25DNaturalFlowBoundaryLedgerDiagnostics {
+    double expected_window_outflow_m3 = 0.0;
+    double other_noncorner_edge_outflow_m3 = 0.0;
+    double corner_outflow_m3 = 0.0;
+    double non_edge_outflow_m3 = 0.0;
+    double all_boundary_outflow_m3 = 0.0;
 };
 
 struct Fluid25DTracerProfileDiagnostics {
@@ -254,6 +294,18 @@ compute_fluid_25d_profile_diagnostics(const Fluid25DConfig& config, std::span<co
                                       std::span<const Fluid25DLedgerGpu> cumulative_ledger,
                                       double initial_water_volume_m3);
 
+[[nodiscard]] std::vector<Fluid25DNaturalFlowGaugeDiagnostics>
+compute_fluid_25d_natural_flow_gauge_diagnostics(const Fluid25DConfig& config,
+                                                 const Fluid25DNaturalFlowStudyMetadata& study,
+                                                 std::span<const float> depth_m,
+                                                 std::span<const Fluid25DVelocityGpu> velocity,
+                                                 std::span<const float> tracer_q_m);
+
+[[nodiscard]] Fluid25DNaturalFlowBoundaryLedgerDiagnostics
+compute_fluid_25d_natural_flow_boundary_ledger_diagnostics(
+    const Fluid25DConfig& config, const Fluid25DNaturalFlowStudyMetadata& study,
+    std::span<const Fluid25DLedgerGpu> cumulative_ledger, double existing_boundary_ledger_total_m3);
+
 // Fixed probes are a reading aid for the authored dry-start Y control. They
 // sample the completed solver state; no probe feeds back into the simulation.
 [[nodiscard]] std::array<Fluid25DSustainedHeadwatersStationDiagnostics,
@@ -314,6 +366,12 @@ compute_fluid_25d_source_outlet_spatial_diagnostics(const Fluid25DConfig& config
 void record_fluid_25d_profile_diagnostics(cubey::profiling::ProfileRecorder& recorder,
                                           std::uint64_t frame_index,
                                           const Fluid25DProfileDiagnostics& diagnostics);
+void record_fluid_25d_natural_flow_gauge_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const std::vector<Fluid25DNaturalFlowGaugeDiagnostics>& gauges);
+void record_fluid_25d_natural_flow_boundary_ledger_diagnostics(
+    cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
+    const Fluid25DNaturalFlowBoundaryLedgerDiagnostics& diagnostics);
 void record_fluid_25d_sustained_headwaters_stations(
     cubey::profiling::ProfileRecorder& recorder, std::uint64_t frame_index,
     const std::array<Fluid25DSustainedHeadwatersStationDiagnostics,

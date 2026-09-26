@@ -4,6 +4,7 @@
 
 #include <cubey/host/common_config.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -34,7 +35,17 @@ enum class Fluid25DScenario : std::uint32_t {
     // Opt-in dry-start numerical control with two constant sources and one
     // open downstream boundary. It does not alter the River V0 default.
     SustainedHeadwatersDemo = 7,
+    // Human-reviewed, recipe-pinned immutable terrain remains a separate
+    // opt-in study and never changes River V0 defaults.
+    NaturalFlowStudy = 8,
+    // Macro upland supply experiment: no prescribed outlet or destination.
+    HillsideFlowStudy = 9,
 };
+
+[[nodiscard]] constexpr bool fluid_25d_is_natural_terrain_study(Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::NaturalFlowStudy ||
+           scenario == Fluid25DScenario::HillsideFlowStudy;
+}
 
 // Both authored source/outlet demonstrations use the same endpoint language,
 // while retaining their own terrain, solver, and presentation contracts.
@@ -246,6 +257,38 @@ class Fluid25DWindowedPacing {
     std::uint64_t dropped_backlog_frames_ = 0U;
 };
 
+// Explicit inspection advance executes every normal fixed step, in bounded
+// batches. It is not a prewet, a state jump, or a larger numerical time step.
+class Fluid25DInspectionAdvance {
+  public:
+    void request(float seconds, float fixed_delta_seconds) {
+        if (!std::isfinite(seconds) || seconds <= 0.0F || seconds > 7200.0F ||
+            !std::isfinite(fixed_delta_seconds) || fixed_delta_seconds <= 0.0F) {
+            throw std::runtime_error(
+                "inspection advance needs positive finite time (at most 7200s)");
+        }
+        const double steps = std::ceil(static_cast<double>(seconds) / fixed_delta_seconds);
+        if (steps > static_cast<double>(std::numeric_limits<std::uint32_t>::max())) {
+            throw std::runtime_error("inspection advance step count is not representable");
+        }
+        remaining_steps_ = static_cast<std::uint32_t>(steps);
+    }
+    [[nodiscard]] std::uint32_t remaining_steps() const noexcept {
+        return remaining_steps_;
+    }
+    [[nodiscard]] std::uint32_t take_batch() noexcept {
+        const std::uint32_t count = std::min(remaining_steps_, 16U);
+        remaining_steps_ -= count;
+        return count;
+    }
+    void reset() noexcept {
+        remaining_steps_ = 0U;
+    }
+
+  private:
+    std::uint32_t remaining_steps_ = 0U;
+};
+
 struct Fluid25DConfig {
     std::uint32_t grid_width = kDefaultFluid25DGridWidth;
     std::uint32_t grid_height = kDefaultFluid25DGridHeight;
@@ -263,8 +306,11 @@ struct Fluid25DConfig {
     // Opt-in multiplier for the two sustained-headwaters source fields.
     // One preserves the authored source rates exactly.
     float headwaters_source_scale = kFluid25DDefaultHeadwatersSourceScale;
-    // Conservative dye is opt-in and applies only to explicit finite-volume
-    // source/outlet demos. Both pulse fields must be present together.
+    // Total volume rate distributed evenly across a natural-study recipe's
+    // five cardinal source cells.
+    float natural_flow_source_m3_per_s = 0.0F;
+    // Conservative dye is opt-in and applies only to eligible finite-volume
+    // source/outlet, headwaters, or natural-flow-study scenarios.
     std::optional<float> dye_pulse_start_seconds{};
     std::optional<float> dye_pulse_duration_seconds{};
 
@@ -285,7 +331,8 @@ struct Fluid25DConfig {
 [[nodiscard]] inline bool
 fluid_25d_transport_inspection_available(const Fluid25DConfig& config) noexcept {
     const bool supports_dye_pulse = config.scenario == Fluid25DScenario::SourceOutletDemo ||
-                                    config.scenario == Fluid25DScenario::SustainedHeadwatersDemo;
+                                    config.scenario == Fluid25DScenario::SustainedHeadwatersDemo ||
+                                    config.scenario == Fluid25DScenario::NaturalFlowStudy;
     return supports_dye_pulse &&
            config.solver == Fluid25DSolver::FiniteVolume &&
            config.dye_pulse_start_seconds.has_value() &&
@@ -308,6 +355,7 @@ struct Fluid25DStartupOptions {
     std::optional<float> minimum_wet_depth_m{};
     std::optional<float> source_active_duration_seconds{};
     std::optional<float> headwaters_source_scale{};
+    std::optional<float> natural_flow_source_m3_per_s{};
     std::optional<float> dye_pulse_start_seconds{};
     std::optional<float> dye_pulse_duration_seconds{};
     std::optional<std::string> terrain_water_protocol{};
@@ -335,6 +383,10 @@ struct Fluid25DStartupOptions {
         return "mountain-source-outlet-demo";
     case Fluid25DScenario::SustainedHeadwatersDemo:
         return "sustained-headwaters-demo";
+    case Fluid25DScenario::NaturalFlowStudy:
+        return "natural-flow-study";
+    case Fluid25DScenario::HillsideFlowStudy:
+        return "hillside-flow-study";
     }
     return "river-catchment";
 }
@@ -384,10 +436,16 @@ struct Fluid25DStartupOptions {
     if (name == "sustained-headwaters-demo") {
         return Fluid25DScenario::SustainedHeadwatersDemo;
     }
+    if (name == "natural-flow-study") {
+        return Fluid25DScenario::NaturalFlowStudy;
+    }
+    if (name == "hillside-flow-study") {
+        return Fluid25DScenario::HillsideFlowStudy;
+    }
     throw std::runtime_error(
         "fluid 2.5D scenario must be dry-bed, lake-at-rest, river-catchment, terrain-case, "
-        "boundary-drain-fixture, source-outlet-demo, mountain-source-outlet-demo, or "
-        "sustained-headwaters-demo");
+        "boundary-drain-fixture, source-outlet-demo, mountain-source-outlet-demo, "
+        "sustained-headwaters-demo, natural-flow-study, or hillside-flow-study");
 }
 
 [[nodiscard]] inline const char*
@@ -561,7 +619,8 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         config.scenario != Fluid25DScenario::BoundaryDrainFixture &&
         config.scenario != Fluid25DScenario::SourceOutletDemo &&
         config.scenario != Fluid25DScenario::MountainSourceOutletDemo &&
-        config.scenario != Fluid25DScenario::SustainedHeadwatersDemo) {
+        config.scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
+        !fluid_25d_is_natural_terrain_study(config.scenario)) {
         throw std::runtime_error("fluid 2.5D scenario value is invalid");
     }
     if (config.solver != Fluid25DSolver::VirtualPipes &&
@@ -578,6 +637,11 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         config.solver != Fluid25DSolver::FiniteVolume) {
         throw std::runtime_error(
             "fluid 2.5D sustained-headwaters-demo requires --fluid25d-solver finite-volume");
+    }
+    if (fluid_25d_is_natural_terrain_study(config.scenario) &&
+        config.solver != Fluid25DSolver::FiniteVolume) {
+        throw std::runtime_error(
+            "fluid 2.5D natural-flow-study requires --fluid25d-solver finite-volume");
     }
     if (!(config.cell_size_m > 0.0F) || !std::isfinite(config.cell_size_m)) {
         throw std::runtime_error("fluid 2.5D cell size must be finite and positive");
@@ -631,11 +695,11 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
                 "finite and positive");
         }
         if ((config.scenario != Fluid25DScenario::SourceOutletDemo &&
-             config.scenario != Fluid25DScenario::SustainedHeadwatersDemo) ||
+             config.scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
+             config.scenario != Fluid25DScenario::NaturalFlowStudy) ||
             config.solver != Fluid25DSolver::FiniteVolume) {
             throw std::runtime_error(
-                "fluid 2.5D dye pulse timing requires source-outlet-demo or "
-                "sustained-headwaters-demo with finite-volume");
+                "fluid 2.5D dye pulse timing requires an eligible finite-volume demo");
         }
     }
     if (config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::None &&
@@ -681,6 +745,27 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
                 "fluid 2.5D sustained-headwaters-demo rejects terrain-water forcing or "
                 "source shutoff scheduling");
         }
+    }
+    if (fluid_25d_is_natural_terrain_study(config.scenario)) {
+        if (config.cell_size_m != 30.0F) {
+            throw std::runtime_error(
+                "fluid 2.5D natural-flow-study requires exact 30 metre native cells");
+        }
+        if (!std::isfinite(config.natural_flow_source_m3_per_s) ||
+            !(config.natural_flow_source_m3_per_s > 0.0F)) {
+            throw std::runtime_error(
+                "fluid 2.5D natural-flow-study requires a finite positive total source rate");
+        }
+        if (config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::None ||
+            config.rainfall_depth_rate_m_per_s != 0.0F || config.sheet_initial_depth_m != 0.0F ||
+            config.source_active_duration_seconds.has_value() ||
+            config.headwaters_source_scale != kFluid25DDefaultHeadwatersSourceScale) {
+            throw std::runtime_error(
+                "fluid 2.5D natural-flow-study rejects terrain-water forcing, source-duration, "
+                "and headwaters-source-scale options");
+        }
+    } else if (config.natural_flow_source_m3_per_s != 0.0F) {
+        throw std::runtime_error("fluid 2.5D natural-flow source rate requires natural-flow-study");
     }
     if (config.scenario != Fluid25DScenario::TerrainCase) {
         return;
@@ -760,6 +845,9 @@ fluid_25d_config_from_options(const common::FluidGridOptions& grid,
     config.source_active_duration_seconds = options.source_active_duration_seconds;
     if (options.headwaters_source_scale.has_value()) {
         config.headwaters_source_scale = *options.headwaters_source_scale;
+    }
+    if (options.natural_flow_source_m3_per_s.has_value()) {
+        config.natural_flow_source_m3_per_s = *options.natural_flow_source_m3_per_s;
     }
     config.dye_pulse_start_seconds = options.dye_pulse_start_seconds;
     config.dye_pulse_duration_seconds = options.dye_pulse_duration_seconds;

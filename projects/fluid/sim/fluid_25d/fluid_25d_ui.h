@@ -13,6 +13,10 @@ struct Fluid25DUiContext {
     Fluid25DDebugView& debug_view;
     float& presentation_time_scale;
     Fluid25DWindowedPacing& windowed_pacing;
+    Fluid25DInspectionAdvance& inspection_advance;
+    float simulation_elapsed_seconds = 0.0F;
+    float fixed_delta_seconds = 0.0F;
+    bool& hillside_source_context;
     bool& paused;
     bool& reset_requested;
     bool& presentation_cue_reset_requested;

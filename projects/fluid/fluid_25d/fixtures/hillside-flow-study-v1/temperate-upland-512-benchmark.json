@@ -1,0 +1,11 @@
+{
+  "schema": "cubey.fluid25d.hillside_flow_study.v1",
+  "candidate_id": "temperate-upland-same-source-512-context-benchmark",
+  "elevation_sha256": "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737",
+  "transformed_crop_sha256": "02f1577d96f3ea4f65b75c7b21b6e1b2c83248cebb8b87a528fff6193435bc3f",
+  "crop_xzwh": [1152, 1408, 512, 512],
+  "cell_size_m": 30.0,
+  "source_center_cell_xz": [213, 213],
+  "source_cells_xz": [[213, 213], [213, 212], [213, 214], [214, 213], [212, 213]],
+  "gauges": []
+}

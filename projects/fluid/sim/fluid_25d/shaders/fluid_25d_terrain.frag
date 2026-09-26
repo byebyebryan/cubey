@@ -46,11 +46,16 @@ void main() {
     vec3 light_direction = normalize(vec3(-0.45, 0.82, 0.35));
     float diffuse = max(dot(normal, light_direction), 0.0);
     float contour = 0.006 * sin(world_position.y * 0.75 + world_xz.x * 0.03);
+    // Kilometre-scale uplands have hundreds of these cosmetic stripes.
+    // Omit them only for the macro study so actual facets/slopes carry relief.
+    if (params.presentation.w > 3.5) {
+        contour = 0.0;
+    }
     vec3 lowland = cubey_srgb_to_linear(vec3(0.105, 0.205, 0.105));
     vec3 highland = cubey_srgb_to_linear(vec3(0.46, 0.31, 0.16));
     float elevation = clamp((world_position.y + 2.0) * 0.035, 0.0, 1.0);
     vec3 albedo = mix(lowland, highland, elevation) + vec3(contour);
-    if (params.presentation.w > 2.5) {
+    if (params.presentation.w > 2.5 && params.presentation.w < 3.5) {
         // The dry-start headwaters control has sub-metre numerical banks over
         // a 256 m footprint. Its vertex-space relief is selected by the
         // scenario render scale; use physical elevation plus those rendered

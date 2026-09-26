@@ -106,6 +106,35 @@ struct Fluid25DTerrainCaseProvenance {
     std::string identity{};
 };
 
+enum class Fluid25DNaturalFlowEdge : std::uint8_t {
+    West,
+    East,
+    North,
+    South
+};
+
+struct Fluid25DNaturalFlowGauge {
+    std::string name{};
+    std::uint32_t x_cell = 0U;
+    std::uint32_t z_cell = 0U;
+    std::int32_t tangent_dx = 0;
+    std::int32_t tangent_dz = 0;
+    double distance_m = 0.0;
+    std::uint32_t half_span_cells = 0U;
+};
+
+struct Fluid25DNaturalFlowStudyMetadata {
+    bool has_expected_outlet = true;
+    std::string candidate_id{};
+    std::vector<std::size_t> source_cells{};
+    Fluid25DNaturalFlowEdge expected_outlet_edge = Fluid25DNaturalFlowEdge::West;
+    std::uint32_t expected_outlet_x_min = 0U;
+    std::uint32_t expected_outlet_z_min = 0U;
+    std::uint32_t expected_outlet_x_max = 0U;
+    std::uint32_t expected_outlet_z_max = 0U;
+    std::vector<Fluid25DNaturalFlowGauge> gauges{};
+};
+
 // Scenario fields use one value per cell in row-major order.  Source and sink
 // fields are depth rates (m/s), not volume rates; the oracle multiplies by
 // cell area before recording the m3 ledger.
@@ -125,6 +154,7 @@ struct Fluid25DScenarioData {
     std::size_t outlet_cell = kFluid25DNoCell;
     std::size_t sink_cell = kFluid25DNoCell;
     std::optional<Fluid25DTerrainCaseProvenance> terrain_provenance{};
+    std::optional<Fluid25DNaturalFlowStudyMetadata> natural_flow_study{};
 };
 
 // Shared pure geometry for the authored source-outlet explanation scene. The

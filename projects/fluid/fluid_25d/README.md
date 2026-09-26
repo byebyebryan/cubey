@@ -604,6 +604,65 @@ shows distributed runoff, not a promoted single-outlet scene. Its reproducible
 scripts are `terrain_rain_thin_water_ab_v1.py` and
 `terrain_rain_catchment_pilot_v1.py` in this directory.
 
+The [native sustained-flow preflight](../../../docs/notes/fluid-25d-native-sustained-flow-preflight-v1.md)
+audits two unchanged Terrain Diffusion sites before adding a localized continuous
+source. It separates D8 locators from raw cardinal routes, source-footprint
+relief, and derived local depression storage. Neither site is selected for the
+first continuous-stream pilot; the lowland starts inside a large depression and
+the mountain reference is narrow and steep at native 30 m spacing. Reproduce the
+offline audit with `native_sustained_flow_preflight_v1.py` in this directory.
+Its static fill volumes are not required transient water mass. No new Fluid
+protocol, source tuning, default, or promoted scene follows from this audit.
+
+The follow-up [native flow-site survey and pilot](../../../docs/notes/fluid-25d-native-flow-site-survey-v1.md)
+screens 240 reaches in the same 12 cached payloads, then tests two human-reviewed
+sites with a shared 30/60 m³/s continuous source. Its separate opt-in
+`natural-flow-study` scenario requires a hash-pinned recipe, exact native 30 m
+crop, explicit positive `--fluid25d-natural-flow-source-m3-per-s`, and
+`finite-volume`. Terrain starts dry and is never modified. Five face-connected
+source cells receive equal depth-rate input; there is no prescribed source
+momentum, rain, interior sink, or finite source duration. Every perimeter is
+outward-only. The amber expected-exit window measures discharge; it does not
+force drainage there. Existing neutral terrain protocols and defaults remain
+unchanged. All four pilot cases established continuous flow; site A / 30 is
+retained as the visual study, not a promoted product fixture or a natural-river
+prediction. The user subsequently rejected its low-relief presentation as too
+flat/subtle; retain that feedback separately from its numerical success. The
+note contains matched motion/dye evidence and strict-parity
+limits.
+
+The follow-up [macro hillside-flow study](../../../docs/notes/fluid-25d-hillside-flow-study-v1.md)
+uses a separate opt-in `hillside-flow-study` mode on a 256x256 native-30m
+mountain domain. It has continuous upland supply, a dry start, unchanged
+terrain, and no prescribed outlet or interior drain. Only the green source
+marker is shown. Elevation-band observations measure actual downhill wetting,
+not arrival at a chosen exit. The source-only recipe uses the existing
+`--fluid25d-natural-flow-recipe` and source-rate flags with a distinct strict
+schema; an old expected-outlet recipe cannot silently become a hillside case.
+Whole-domain and close-front captures, short 512x512 cost evidence and limits
+are in the note. Defaults and neutral rain/sheet protocols remain unchanged.
+
+For the hillside window, `--fluid25d-hillside-source-context` selects a closer
+render-only source camera. Normal playback is continuous, with the source
+always supplying water; `Space` pauses/resumes it. The optional
+`--fluid25d-hillside-inspection-advance-seconds 1800`
+executes every ordinary solver step from the dry start and then pauses at
+30 simulated minutes. The panel offers another ten-minute compute-and-pause,
+Cancel and physical-time feedback. This is not a larger numerical dt, a
+prefill, or a skipped water evolution, and startup advance is rejected in
+headless mode. Reset restores dry start and cancels pending advance.
+
+`native_flow_site_survey_v1.py` reproduces the offline screening.
+`run_natural_flow_pilot_v1.py --phase hydraulics --output-dir <new-directory>`
+runs the frozen four-case matrix; after review, `--phase evidence --winner a:30`
+with that same directory records matched captures and strict oracle checks.
+Failed numerical or strict-oracle checks return a nonzero exit status while
+retaining their reports; the known long-duration dye failure is not waived.
+Output directories must be fresh for hydraulics, and captures are never
+overwritten. Recipe gauges report signed depth–velocity discharge estimates,
+not solver face flux. Separate expected-window/other-edge/corner ledgers retain
+the existing boundary total. See the note for exact `rtk` commands and timing.
+
 Analytic fixtures remain closed by default. `boundary-drain-fixture` exists
 solely to validate the numerical outflow contract: an opened perimeter face
 sees dry exterior at its own bed elevation, permits no external inflow, and
@@ -633,9 +692,10 @@ render-only directional cue so one visual language remains. Green rings mark
 input, base blue shows water depth, and magenta/violet shows conservative dyed
 water. The older `source-outlet-demo` uses one amber ring for explicit removal;
 the sustained-headwaters control uses two green inputs and an amber open-edge
-outlet instead. The pulse is available only with finite-volume, both dye
-timing options, and either
-`source-outlet-demo` or `sustained-headwaters-demo`. The fixed hydraulic
+outlet instead. The natural-flow study's amber ring is an expected-exit
+observation window, with all perimeter edges open independently. The pulse is
+available only with finite-volume, both dye timing options, and
+`source-outlet-demo`, `sustained-headwaters-demo`, or `natural-flow-study`. The fixed hydraulic
 forcing is unchanged by the dye schedule. See the two demo sections above for
 their captures and frame semantics; the earlier V1 study remains in
 [`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md)

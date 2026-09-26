@@ -100,6 +100,18 @@ fluid_25d_endpoint_markers(const Fluid25DConfig& config, const Fluid25DScenarioD
         markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], outlet_xy[0], outlet_xy[1]};
         markers.secondary_source_xy_reserved = {secondary_source_xy[0], secondary_source_xy[1],
                                                 -1.0F, -1.0F};
+    } else if (config.scenario == Fluid25DScenario::HillsideFlowStudy &&
+               scenario.source_cell != kFluid25DNoCell && scenario.outlet_cell == kFluid25DNoCell &&
+               scenario.sink_cell == kFluid25DNoCell) {
+        const std::array<float, 2> source_xy = cell_xy(scenario.source_cell);
+        markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], -1.0F, -1.0F};
+    } else if (config.scenario == Fluid25DScenario::NaturalFlowStudy &&
+               scenario.source_cell != kFluid25DNoCell && scenario.outlet_cell != kFluid25DNoCell &&
+               scenario.sink_cell == kFluid25DNoCell) {
+        const std::array<float, 2> source_xy = cell_xy(scenario.source_cell);
+        const std::array<float, 2> expected_exit_xy = cell_xy(scenario.outlet_cell);
+        markers.source_xy_outlet_xy = {source_xy[0], source_xy[1], expected_exit_xy[0],
+                                       expected_exit_xy[1]};
     }
     return markers;
 }

@@ -38,6 +38,7 @@ void request_reset(Fluid25DUiContext& ui) {
     ui.presentation_cue_reset_requested = true;
     ui.quiver_reset_requested = true;
     ui.windowed_pacing.reset();
+    ui.inspection_advance.reset();
 }
 
 } // namespace
@@ -79,10 +80,12 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                                       "Top-down numerical field shown by diagnostics.");
     }
 
+    ImGui::BeginDisabled(ui.inspection_advance.remaining_steps() > 0U);
     if (cubey::host::imgui_button(ui.paused ? "Resume" : "Pause",
                                   "Pause or resume windowed simulation time.")) {
         ui.paused = !ui.paused;
     }
+    ImGui::EndDisabled();
     ImGui::SameLine();
     if (cubey::host::imgui_button("Reset", "Restart the deterministic scenario.")) {
         request_reset(ui);
@@ -97,19 +100,43 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     }
 
     ImGui::SeparatorText("How to read it");
+    if (ui.scenario == Fluid25DScenario::HillsideFlowStudy) {
+        ImGui::Text("Physical simulation time: %.1f s", ui.simulation_elapsed_seconds);
+        if (ui.inspection_advance.remaining_steps() > 0U) {
+            ImGui::Text("Computing advance: %.1f s remaining",
+                        static_cast<double>(ui.inspection_advance.remaining_steps()) *
+                            ui.fixed_delta_seconds);
+            if (ImGui::Button("Cancel advance")) {
+                ui.inspection_advance.reset();
+                ui.windowed_pacing.reset();
+            }
+        } else if (ImGui::Button("Compute next 10 min, then pause")) {
+            ui.inspection_advance.request(600.0F, ui.fixed_delta_seconds);
+            ui.paused = true;
+            ui.windowed_pacing.reset();
+        }
+        ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
+                           "SOURCE  green ring: continuous upland supply");
+        ImGui::Checkbox("Closer source context", &ui.hillside_source_context);
+        ImGui::TextWrapped("Watch water descend and collect in the unchanged terrain. There is no "
+                           "chosen drain or route. Crop edges permit outward flow, never inflow.");
+        ImGui::TextWrapped(
+            "Inspection advance executes every fixed solver step from the dry start; "
+            "it does not teleport water, enlarge the time step, or change source strength.");
+    }
     if (ui.scenario == Fluid25DScenario::SourceOutletDemo) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
                            "SOURCE  green ring: continuous water input");
         ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
                            "OUTLET  amber ring: explicit downstream sink");
         ImGui::TextWrapped("Read the connected ribbon from green to amber. The downstream "
-                          "terrain shoulder makes the amber ring the terminal basin; water does "
-                          "not continue off the far side of this closed scene.");
+                           "terrain shoulder makes the amber ring the terminal basin; water does "
+                           "not continue off the far side of this closed scene.");
         ImGui::TextWrapped("The colored endpoint labels are terrain-draped rings in the scene; "
-                          "their words stay here in the panel so they remain legible at every "
-                          "camera distance. The shallow reset ribbon reveals the full route "
-                          "immediately; it is not a claim that one newly injected parcel has "
-                          "already crossed the whole route.");
+                           "their words stay here in the panel so they remain legible at every "
+                           "camera distance. The shallow reset ribbon reveals the full route "
+                           "immediately; it is not a claim that one newly injected parcel has "
+                           "already crossed the whole route.");
     }
     if (ui.scenario == Fluid25DScenario::MountainSourceOutletDemo) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
@@ -134,6 +161,16 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             "The two tributaries join before the outlet. Rings are fixed render-only location "
             "markers, not water parcels or a depth cue.");
     }
+    if (ui.scenario == Fluid25DScenario::NaturalFlowStudy) {
+        ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
+                           "SOURCE  green ring: five-cell continuous input");
+        ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
+                           "EXPECTED EXIT  amber ring: observation window only; no sink");
+        ImGui::TextWrapped(
+            "The native elevation is unchanged and starts dry. Every crop edge is independently "
+            "outflow-only; the amber marker identifies the recipe's expected outlet window and "
+            "does not force or drain flow there.");
+    }
     ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
                        "darker blue is deeper water.");
     ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "
@@ -144,11 +181,18 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                       "yellow is faster). They are pitch-scaled velocity samples, not water "
                       "particles or waves.");
     if (ui.transport_inspection_available) {
-        ImGui::TextWrapped(
-            "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "
-            "water is the conserved dye concentration: watch the pulse leave the green SOURCE, "
-            "travel through the blue water, then disappear into the amber OUTLET. It is a "
-            "transport marker, not a depth, velocity, or lighting change.");
+        if (ui.scenario == Fluid25DScenario::NaturalFlowStudy) {
+            ImGui::TextWrapped(
+                "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "
+                "water is conserved dye concentration from the five-cell source; the amber "
+                "expected-exit marker is observation-only, not a sink or a prescribed outlet.");
+        } else {
+            ImGui::TextWrapped(
+                "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "
+                "water is the conserved dye concentration: watch the pulse leave the green SOURCE, "
+                "travel through the blue water, then disappear into the amber OUTLET. It is a "
+                "transport marker, not a depth, velocity, or lighting change.");
+        }
     }
     ImGui::TextDisabled("Space pause/resume  R reset  A diagnostics  D field  drag orbit");
     ImGui::End();

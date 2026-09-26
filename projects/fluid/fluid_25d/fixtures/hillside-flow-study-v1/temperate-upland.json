@@ -1,0 +1,11 @@
+{
+  "schema": "cubey.fluid25d.hillside_flow_study.v1",
+  "candidate_id": "temperate-mountain-valley-x1280-z1536-src1365-1621",
+  "elevation_sha256": "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737",
+  "transformed_crop_sha256": "42cc62f823284c41d768bc05b6195cf291879fb4f6f04337a327ab79806ef5d8",
+  "crop_xzwh": [1280, 1536, 256, 256],
+  "cell_size_m": 30.0,
+  "source_center_cell_xz": [85, 85],
+  "source_cells_xz": [[85, 85], [85, 84], [85, 86], [86, 85], [84, 85]],
+  "gauges": []
+}

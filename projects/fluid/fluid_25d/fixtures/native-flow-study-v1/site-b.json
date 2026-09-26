@@ -1,0 +1,93 @@
+{
+  "schema": "cubey.fluid25d.natural_flow_study.v1",
+  "candidate_id": "7e0d5cfc47-1983-1478",
+  "elevation_sha256": "7e0d5cfc47abdfc8d1338217efa7c70a082fe46bc742028c5e90e871b73f441c",
+  "transformed_crop_sha256": "5e96f238ffc13d539f8b4f7660177573b94ad8cbd058cc67a50cdaf6f5aee166",
+  "crop_xzwh": [
+    1947,
+    1448,
+    48,
+    48
+  ],
+  "cell_size_m": 30.0,
+  "source_center_cell_xz": [
+    36,
+    30
+  ],
+  "source_cells_xz": [
+    [
+      36,
+      30
+    ],
+    [
+      36,
+      29
+    ],
+    [
+      36,
+      31
+    ],
+    [
+      37,
+      30
+    ],
+    [
+      35,
+      30
+    ]
+  ],
+  "expected_outlet": {
+    "crop_cell_xz_bounds": [
+      [
+        0,
+        9
+      ],
+      [
+        0,
+        13
+      ]
+    ],
+    "edge": "west"
+  },
+  "gauges": [
+    {
+      "name": "upstream",
+      "cell_xz": [
+        36,
+        30
+      ],
+      "tangent_dx_dz": [
+        -1,
+        0
+      ],
+      "distance_m": 0.0,
+      "half_span_cells": 10
+    },
+    {
+      "name": "midstream",
+      "cell_xz": [
+        23,
+        23
+      ],
+      "tangent_dx_dz": [
+        0,
+        -1
+      ],
+      "distance_m": 600.0,
+      "half_span_cells": 10
+    },
+    {
+      "name": "downstream",
+      "cell_xz": [
+        10,
+        16
+      ],
+      "tangent_dx_dz": [
+        -1,
+        0
+      ],
+      "distance_m": 1200.0,
+      "half_span_cells": 10
+    }
+  ]
+}
