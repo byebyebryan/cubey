@@ -2354,6 +2354,66 @@ void test_hillside_flow_study_contract() {
                    "windowed advance must never alter deterministic headless timing");
 }
 
+void test_hillside_spatial_diagnostics() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = natural_flow_test_config();
+    config.scenario = Fluid25DScenario::HillsideFlowStudy;
+    config.grid_width = 11U;
+    config.grid_height = 11U;
+    auto scenario = make_fluid_25d_scenario(Fluid25DScenario::DryBed, 11U, 11U, 30.0F);
+    scenario.source_cell = 60U;
+    scenario.natural_flow_study = Fluid25DNaturalFlowStudyMetadata{};
+    scenario.natural_flow_study->has_expected_outlet = false;
+    scenario.natural_flow_study->source_cells = {60U, 59U, 61U, 49U, 71U};
+    std::vector<float> depth(121U, 0.0F);
+    std::vector<Fluid25DVelocityGpu> velocity(121U);
+    auto empty = compute_fluid_25d_hillside_spatial(config, scenario, depth, velocity);
+    require(empty.minimum_material_edge_distance_m == -1.0 &&
+                empty.source_connected_material_wet_cells == 0U,
+            "dry hillside spatial evidence must not fabricate an edge or connected water");
+    depth[60U] = 0.1F;
+    depth[61U] = 0.2F;
+    depth[62U] = 0.009F; // Sub-material bridge cannot join a separate wet island.
+    depth[73U] = 0.3F;   // Only diagonal to 61.
+    depth[0U] = 0.4F;
+    velocity[60U].velocity_wet[0] = 0.05F;
+    velocity[61U].velocity_wet[0] = kFluid25DSlowPooledSpeedThresholdMPerS;
+    velocity[73U].velocity_wet[1] = 0.1F;
+    const auto initial_depth = depth;
+    const auto initial_terrain = scenario.terrain_height_m;
+    auto result = compute_fluid_25d_hillside_spatial(config, scenario, depth, velocity);
+    require(result.source_connected_material_wet_cells == 2U &&
+                result.material_active_flow_cells == 2U &&
+                result.minimum_material_edge_distance_m == 0.0 &&
+                result.material_edge_band_wet_cells == 3U,
+            "spatial classifications must separate diagonal islands, slow cells and perimeter "
+            "proximity");
+    require_close(result.source_connected_material_water_volume_m3, 270.0, 1e-4,
+                  "source-connected storage is actual depth times native cell area");
+    require_close(result.material_water_volume_m3, 900.0, 1e-4,
+                  "material volume excludes thin numerical tails");
+    require_close(result.material_active_water_volume_m3 + result.material_slow_water_volume_m3,
+                  result.material_water_volume_m3, 1e-8,
+                  "moving and slow volume classifications must partition material water");
+    require(depth == initial_depth && scenario.terrain_height_m == initial_terrain,
+            "spatial observation must not alter water or terrain");
+    velocity[73U].velocity_wet[0] = std::numeric_limits<float>::infinity();
+    require_throws(
+        [&] {
+            static_cast<void>(
+                compute_fluid_25d_hillside_spatial(config, scenario, depth, velocity));
+        },
+        "hillside spatial evidence rejects invalid velocity");
+    velocity[73U].velocity_wet[0] = 0.0F;
+    scenario.natural_flow_study->source_cells.push_back(121U);
+    require_throws(
+        [&] {
+            static_cast<void>(
+                compute_fluid_25d_hillside_spatial(config, scenario, depth, velocity));
+        },
+        "hillside spatial evidence rejects out-of-bounds sources");
+}
+
 void test_natural_flow_recipe_import_and_validation() {
     using namespace cubey::projects::fluid::fluid_25d;
     TerrainFixture fixture(30.0F, 7U, 7U);
@@ -4940,6 +5000,50 @@ void test_dye_advection_bounds_and_ledgers() {
                   kVolumeToleranceM3, "cumulative dye source ledger should match step totals");
 }
 
+void test_dye_zero_sink_transfer_and_real_sink() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = finite_volume_test_config(6U, 3U, Fluid25DScenario::SourceOutletDemo);
+    config.fixed_delta_seconds = 0.01F;
+    config.simulation_substeps = 1U;
+    config.dye_pulse_start_seconds = 0.0F;
+    config.dye_pulse_duration_seconds = config.fixed_delta_seconds;
+    auto scenario = make_dye_test_scenario();
+    std::fill(scenario.source_depth_rate_m_per_s.begin(), scenario.source_depth_rate_m_per_s.end(),
+              0.01234567F);
+    std::fill(scenario.sink_depth_rate_m_per_s.begin(), scenario.sink_depth_rate_m_per_s.end(),
+              0.0F);
+    Fluid25DFiniteVolumeOracle zero_sink(config, scenario);
+    for (std::size_t step = 0U; step < 1200U; ++step) {
+        const auto result = zero_sink.step_with_dye();
+        require(result.tracer.sink_amount_m3 == 0.0 &&
+                    zero_sink.cumulative_tracer_ledger().sink_amount_m3 == 0.0,
+                "zero actual sink transfer must preserve an exactly zero tracer sink ledger");
+    }
+    std::fill(scenario.sink_depth_rate_m_per_s.begin(), scenario.sink_depth_rate_m_per_s.end(),
+              0.05F);
+    Fluid25DFiniteVolumeOracle real_sink(config, scenario);
+    const auto removed = real_sink.step_with_dye();
+    require(removed.water.sink_volume_m3 > 0.0 && removed.tracer.sink_amount_m3 > 0.0,
+            "the zero-sink fix must not disable actual water or proportional tracer removal");
+    const float source_delta = 0.01234567F * config.fixed_delta_seconds;
+    const float sourced_depth = 0.20F + source_delta;
+    const double donor_concentration = static_cast<double>(source_delta) / sourced_depth;
+    require_close(removed.tracer.sink_amount_m3, removed.water.sink_volume_m3 * donor_concentration,
+                  kLedgerToleranceM3,
+                  "a real sink must transfer the source-mixed donor tracer concentration");
+    // Complement the executable CTest GPU regression with a source-structure
+    // guard against reintroducing the unconditional h/h.
+    const auto path =
+        std::filesystem::path(__FILE__).parent_path() / "shaders/fluid_25d_fv_update.comp";
+    std::ifstream stream(path);
+    const std::string shader{std::istreambuf_iterator<char>(stream),
+                             std::istreambuf_iterator<char>()};
+    require(stream.good() || stream.eof(), "zero-sink shader control must read the shipped source");
+    require(shader.find("if (removed_h > 0.0)") != std::string::npos &&
+                shader.find("float removed_tracer_q = 0.0;") != std::string::npos,
+            "GPU tracer sink arithmetic must be conditional on actual removed water");
+}
+
 void test_dye_open_boundary_ledger() {
     using namespace cubey::projects::fluid::fluid_25d;
     Fluid25DConfig config = finite_volume_test_config(6U, 3U, Fluid25DScenario::SourceOutletDemo);
@@ -5116,6 +5220,7 @@ int main() {
         test_terrain_case_ingestion();
         test_natural_flow_recipe_import_and_validation();
         test_hillside_flow_study_contract();
+        test_hillside_spatial_diagnostics();
         test_natural_flow_profile_diagnostics();
         test_terrain_water_protocol_construction();
         test_mountain_source_outlet_field_construction();
@@ -5146,6 +5251,7 @@ int main() {
         test_dye_zero_path_and_resting_concentration();
         test_sustained_headwaters_dye_pulse();
         test_dye_advection_bounds_and_ledgers();
+        test_dye_zero_sink_transfer_and_real_sink();
         test_dye_open_boundary_ledger();
         test_dye_cfl_rejection_and_reset();
         test_finite_volume_gpu_candidate_commit_shader_contract();

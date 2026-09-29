@@ -652,6 +652,35 @@ Cancel and physical-time feedback. This is not a larger numerical dt, a
 prefill, or a skipped water evolution, and startup advance is rejected in
 headless mode. Reset restores dry start and cancels pending advance.
 
+For repeatable **continuous** local review, run:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py
+```
+
+This uses the same dry-start 256x256 native-30m terrain and 100 m³/s supply,
+starts at 8x windowed playback with the closer source camera, and runs until
+you close the window. It never requests an inspection advance or timed pause.
+Use `--camera overview`, `--view water-isolation` / `flow-inspection`,
+`--playback 1`, or `--print-command` for presentation-only alternatives.
+The panel displays physical time, supply rate, and continuous/paused status.
+Hillside dye is deliberately unavailable pending the long tracer oracle gate.
+
+The [sustained hillside V2 pass](../../../docs/notes/fluid-25d-hillside-sustained-flow-v2.md)
+keeps the accepted terrain and forcing fixed over two physical hours. Its new
+`run_hillside_sustained_flow_v2.py` separates hydraulic profiles, matched
+captures, and a stop-on-first-failure strict oracle ladder. It records active
+versus slow material-water volume, shared-face source connectivity, and crop
+edge proximity as observations, without prescribing a route or changing the
+terrain. A same-source 512x512 comparison is allowed only when the current
+256x256 profile actually approaches an edge or exports water. App, compiled
+shader, recipe, manifest, and elevation identities are checked before and
+after each phase. See the note for measurements, evidence, and parity limits.
+The current strict 1/10/30-minute checkpoints pass, but the extended water
+ledger fails its unchanged tolerance after 68.5 minutes. Its later captures
+are explicitly diagnostic, not a promoted two-hour pass; hillside dye also
+remains gated by the separately failing long tracer conservation check.
+
 `native_flow_site_survey_v1.py` reproduces the offline screening.
 `run_natural_flow_pilot_v1.py --phase hydraulics --output-dir <new-directory>`
 runs the frozen four-case matrix; after review, `--phase evidence --winner a:30`

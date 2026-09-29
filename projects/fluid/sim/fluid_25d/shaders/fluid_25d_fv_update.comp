@@ -184,9 +184,17 @@ SourceSinkState source_sink_state(uint index, float dt) {
     float old_tracer_q = tracer_q.values[index];
     float source_added_tracer_q = source_added_h * params.dye.x;
     float sourced_tracer_q = old_tracer_q + source_added_tracer_q;
-    float retained_fraction = sourced_h > 0.0 ? h / sourced_h : 0.0;
-    float updated_tracer_q = clamp(sourced_tracer_q * retained_fraction, 0.0,
-                                   max(0.0, sourced_tracer_q));
+    // No removed water means no sink transfer. In particular, avoid an h/h
+    // GPU division turning a mathematically unit fraction into phantom tracer
+    // loss in a zero-sink scene. Actual sinks retain the proportional rule.
+    float updated_tracer_q = sourced_tracer_q;
+    float removed_tracer_q = 0.0;
+    if (removed_h > 0.0) {
+        float retained_fraction = h / sourced_h;
+        updated_tracer_q = clamp(sourced_tracer_q * retained_fraction, 0.0,
+                                 max(0.0, sourced_tracer_q));
+        removed_tracer_q = max(0.0, sourced_tracer_q - updated_tracer_q);
+    }
     vec2 q = old_q;
     if (sourced_h > 0.0) {
         q *= h / sourced_h;
@@ -198,7 +206,7 @@ SourceSinkState source_sink_state(uint index, float dt) {
     }
     return SourceSinkState(State(h, q), source_added_h, removed_h, updated_tracer_q,
                            source_added_tracer_q,
-                           max(0.0, sourced_tracer_q - updated_tracer_q));
+                           removed_tracer_q);
 }
 
 void main() {

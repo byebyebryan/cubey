@@ -284,6 +284,7 @@ class Fluid25DApp {
             .inspection_advance = inspection_advance_,
             .simulation_elapsed_seconds = source_schedule_.elapsed_seconds(config_.simulation),
             .fixed_delta_seconds = config_.simulation.fixed_delta_seconds,
+            .continuous_source_m3_per_s = config_.simulation.natural_flow_source_m3_per_s,
             .hillside_source_context = config_.hillside_source_context,
             .paused = paused_,
             .reset_requested = reset_requested_,
@@ -647,6 +648,10 @@ class Fluid25DApp {
             record_fluid_25d_hillside_progress(
                 *profile_recorder, frame_index,
                 compute_fluid_25d_hillside_progress(config_.simulation, scenario_, depth_m));
+            record_fluid_25d_hillside_spatial(*profile_recorder, frame_index,
+                                              compute_fluid_25d_hillside_spatial(config_.simulation,
+                                                                                 scenario_, depth_m,
+                                                                                 velocity));
         }
         if ((config_.simulation.scenario == Fluid25DScenario::TerrainCase &&
              config_.simulation.terrain_water_protocol ==

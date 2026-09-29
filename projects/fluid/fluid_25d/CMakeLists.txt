@@ -263,6 +263,48 @@ if (BUILD_TESTING)
         --fluid25d-dye-pulse-duration-seconds 0.1
         --fluid25d-gpu-oracle-validation
     )
+    set(CUBEY_FLUID_25D_ZERO_SINK_TRACER_OUTPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-zero-sink-tracer.png"
+    )
+    set(CUBEY_FLUID_25D_ZERO_SINK_TRACER_PREFIX
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-zero-sink-tracer"
+    )
+    cubey_add_png_smoke_test(
+        fluid_25d_gpu_zero_sink_tracer
+        cubey_project_fluid_25d
+        "${CUBEY_FLUID_25D_ZERO_SINK_TRACER_OUTPUT}"
+        --frames 120
+        --grid-width 65
+        --grid-height 33
+        --fluid25d-cell-size-m 4
+        --fluid25d-solver finite-volume
+        --fluid25d-scenario sustained-headwaters-demo
+        --fluid25d-fixed-delta-seconds 0.25
+        --fluid25d-substeps 16
+        --fluid25d-dye-pulse-start-seconds 0
+        --fluid25d-dye-pulse-duration-seconds 1
+        --fluid25d-gpu-oracle-validation
+        --profile-output "${CUBEY_FLUID_25D_ZERO_SINK_TRACER_PREFIX}"
+        --profile-diagnostics
+        --profile-diagnostic-interval 1
+    )
+    add_test(
+        NAME fluid_25d_gpu_zero_sink_tracer_ledger
+        COMMAND
+            /bin/sh -c
+            "output=$1; prefix=$2; if ! test -s \"$output\"; then if test -f \"$output.skip\"; then exit 77; fi; exit 1; fi; test -s \"$prefix.metrics.csv\" || exit 1; awk -F, 'NR > 1 && $2 == \"fluid_25d.tracer\" && $3 == \"cumulative_sink_amount_m3\" { count++; if ($4 != 0) bad = 1 } NR > 1 && $2 == \"fluid_25d.tracer\" && $3 == \"cumulative_source_amount_m3\" && $4 > 0 { source = 1 } END { exit count == 120 && source && !bad ? 0 : 1 }' \"$prefix.metrics.csv\""
+            fluid_25d_gpu_zero_sink_tracer_ledger
+            "${CUBEY_FLUID_25D_ZERO_SINK_TRACER_OUTPUT}"
+            "${CUBEY_FLUID_25D_ZERO_SINK_TRACER_PREFIX}"
+    )
+    set_tests_properties(
+        fluid_25d_gpu_zero_sink_tracer_ledger
+        PROPERTIES TIMEOUT 10 DEPENDS fluid_25d_gpu_zero_sink_tracer SKIP_RETURN_CODE 77
+    )
+    set_property(
+        TEST fluid_25d_gpu_zero_sink_tracer_ledger
+        APPEND PROPERTY LABELS "headless;gpu;diagnostics;finite-volume;tracer"
+    )
     set(CUBEY_FLUID_25D_TRANSPORT_INSPECTION_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-transport-inspection-headless.png"
     )

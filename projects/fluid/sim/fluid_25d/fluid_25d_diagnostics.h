@@ -56,6 +56,27 @@ compute_fluid_25d_hillside_progress(const Fluid25DConfig& config,
 void record_fluid_25d_hillside_progress(cubey::profiling::ProfileRecorder& recorder,
                                         std::uint64_t frame_index,
                                         const Fluid25DHillsideProgressDiagnostics& diagnostics);
+
+// Read-only spatial classifications. Connectivity is shared-face and uses
+// the material depth threshold, not numerical wetness or a prescribed route.
+inline constexpr float kFluid25DHillsideEdgeBandM = 120.0F;
+struct Fluid25DHillsideSpatialDiagnostics {
+    double material_water_volume_m3 = 0.0;
+    std::uint64_t source_connected_material_wet_cells = 0U;
+    double source_connected_material_water_volume_m3 = 0.0;
+    std::uint64_t material_active_flow_cells = 0U;
+    double material_active_water_volume_m3 = 0.0;
+    double material_slow_water_volume_m3 = 0.0;
+    // Cell-centre distance to the nearest perimeter cell; -1 when none wet.
+    double minimum_material_edge_distance_m = -1.0;
+    std::uint64_t material_edge_band_wet_cells = 0U;
+};
+[[nodiscard]] Fluid25DHillsideSpatialDiagnostics compute_fluid_25d_hillside_spatial(
+    const Fluid25DConfig& config, const Fluid25DScenarioData& scenario,
+    std::span<const float> depth_m, std::span<const Fluid25DVelocityGpu> velocity);
+void record_fluid_25d_hillside_spatial(cubey::profiling::ProfileRecorder& recorder,
+                                       std::uint64_t frame_index,
+                                       const Fluid25DHillsideSpatialDiagnostics& diagnostics);
 inline constexpr std::size_t kFluid25DSustainedHeadwatersStationCount = 7U;
 inline constexpr std::size_t kFluid25DSustainedHeadwatersCrossSectionStationCount = 7U;
 

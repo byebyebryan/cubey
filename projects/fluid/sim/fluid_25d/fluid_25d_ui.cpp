@@ -101,7 +101,13 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
 
     ImGui::SeparatorText("How to read it");
     if (ui.scenario == Fluid25DScenario::HillsideFlowStudy) {
-        ImGui::Text("Physical simulation time: %.1f s", ui.simulation_elapsed_seconds);
+        ImGui::Text("Physical time: %.1f min (%.0f s)", ui.simulation_elapsed_seconds / 60.0F,
+                    ui.simulation_elapsed_seconds);
+        ImGui::Text("Input: %.1f m3/s | no prescribed drain", ui.continuous_source_m3_per_s);
+        ImGui::Text("Playback: %.3gx | %s", ui.presentation_time_scale,
+                    ui.inspection_advance.remaining_steps() > 0U ? "inspection advance"
+                    : ui.paused                                  ? "paused"
+                                                                 : "continuous");
         if (ui.inspection_advance.remaining_steps() > 0U) {
             ImGui::Text("Computing advance: %.1f s remaining",
                         static_cast<double>(ui.inspection_advance.remaining_steps()) *

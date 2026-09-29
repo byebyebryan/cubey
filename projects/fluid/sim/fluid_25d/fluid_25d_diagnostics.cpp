@@ -13,6 +13,106 @@
 #include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
+Fluid25DHillsideSpatialDiagnostics compute_fluid_25d_hillside_spatial(
+    const Fluid25DConfig& config, const Fluid25DScenarioData& scenario,
+    std::span<const float> depth_m, std::span<const Fluid25DVelocityGpu> velocity) {
+    validate_fluid_25d_config(config);
+    const std::size_t count = fluid_25d_cell_count(config);
+    if (config.scenario != Fluid25DScenario::HillsideFlowStudy || depth_m.size() != count ||
+        velocity.size() != count || scenario.width != config.grid_width ||
+        scenario.height != config.grid_height || !scenario.natural_flow_study ||
+        scenario.natural_flow_study->has_expected_outlet ||
+        scenario.natural_flow_study->source_cells.empty()) {
+        throw std::runtime_error(
+            "hillside spatial diagnostics require matching source-only fields");
+    }
+    Fluid25DHillsideSpatialDiagnostics result;
+    const double area = static_cast<double>(config.cell_size_m) * config.cell_size_m;
+    for (std::size_t index = 0U; index < count; ++index) {
+        const double depth = depth_m[index];
+        const double vx = velocity[index].velocity_wet[0];
+        const double vz = velocity[index].velocity_wet[1];
+        if (!std::isfinite(depth) || depth < 0.0 || !std::isfinite(vx) || !std::isfinite(vz)) {
+            throw std::runtime_error("hillside spatial diagnostic state is invalid");
+        }
+        if (depth < kFluid25DHillsideMaterialDepthM) {
+            continue;
+        }
+        const double volume = depth * area;
+        result.material_water_volume_m3 += volume;
+        if (std::hypot(vx, vz) > kFluid25DSlowPooledSpeedThresholdMPerS) {
+            ++result.material_active_flow_cells;
+            result.material_active_water_volume_m3 += volume;
+        } else {
+            result.material_slow_water_volume_m3 += volume;
+        }
+        const auto x = static_cast<std::uint32_t>(index % config.grid_width);
+        const auto z = static_cast<std::uint32_t>(index / config.grid_width);
+        const double distance = static_cast<double>(std::min({x, z, config.grid_width - 1U - x,
+                                                              config.grid_height - 1U - z})) *
+                                config.cell_size_m;
+        if (result.minimum_material_edge_distance_m < 0.0 ||
+            distance < result.minimum_material_edge_distance_m) {
+            result.minimum_material_edge_distance_m = distance;
+        }
+        if (distance <= kFluid25DHillsideEdgeBandM) {
+            ++result.material_edge_band_wet_cells;
+        }
+    }
+    std::vector<std::uint8_t> visited(count, 0U);
+    std::vector<std::size_t> pending;
+    const auto enqueue = [&](std::size_t index) {
+        if (visited[index] == 0U && depth_m[index] >= kFluid25DHillsideMaterialDepthM) {
+            visited[index] = 1U;
+            pending.push_back(index);
+        }
+    };
+    for (const auto index : scenario.natural_flow_study->source_cells) {
+        if (index >= count) {
+            throw std::runtime_error("hillside spatial source index is out of bounds");
+        }
+        enqueue(index);
+    }
+    for (std::size_t cursor = 0U; cursor < pending.size(); ++cursor) {
+        const auto index = pending[cursor];
+        ++result.source_connected_material_wet_cells;
+        result.source_connected_material_water_volume_m3 += depth_m[index] * area;
+        const auto x = index % config.grid_width;
+        const auto z = index / config.grid_width;
+        if (x > 0U)
+            enqueue(index - 1U);
+        if (x + 1U < config.grid_width)
+            enqueue(index + 1U);
+        if (z > 0U)
+            enqueue(index - config.grid_width);
+        if (z + 1U < config.grid_height)
+            enqueue(index + config.grid_width);
+    }
+    return result;
+}
+
+void record_fluid_25d_hillside_spatial(cubey::profiling::ProfileRecorder& recorder,
+                                       std::uint64_t frame_index,
+                                       const Fluid25DHillsideSpatialDiagnostics& diagnostics) {
+    constexpr std::string_view category = "fluid_25d.hillside.spatial";
+    recorder.record_metric(frame_index, category, "material_water_volume_m3",
+                           diagnostics.material_water_volume_m3);
+    recorder.record_metric(frame_index, category, "source_connected_material_wet_cells",
+                           static_cast<double>(diagnostics.source_connected_material_wet_cells));
+    recorder.record_metric(frame_index, category, "source_connected_material_water_volume_m3",
+                           diagnostics.source_connected_material_water_volume_m3);
+    recorder.record_metric(frame_index, category, "material_active_flow_cells",
+                           static_cast<double>(diagnostics.material_active_flow_cells));
+    recorder.record_metric(frame_index, category, "material_active_water_volume_m3",
+                           diagnostics.material_active_water_volume_m3);
+    recorder.record_metric(frame_index, category, "material_slow_water_volume_m3",
+                           diagnostics.material_slow_water_volume_m3);
+    recorder.record_metric(frame_index, category, "minimum_material_edge_distance_m",
+                           diagnostics.minimum_material_edge_distance_m);
+    recorder.record_metric(frame_index, category, "material_edge_band_wet_cells",
+                           static_cast<double>(diagnostics.material_edge_band_wet_cells));
+}
+
 Fluid25DHillsideProgressDiagnostics
 compute_fluid_25d_hillside_progress(const Fluid25DConfig& config,
                                     const Fluid25DScenarioData& scenario,

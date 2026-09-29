@@ -16,6 +16,7 @@ struct Fluid25DUiContext {
     Fluid25DInspectionAdvance& inspection_advance;
     float simulation_elapsed_seconds = 0.0F;
     float fixed_delta_seconds = 0.0F;
+    float continuous_source_m3_per_s = 0.0F;
     bool& hillside_source_context;
     bool& paused;
     bool& reset_requested;
