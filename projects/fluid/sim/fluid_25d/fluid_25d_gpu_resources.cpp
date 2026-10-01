@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <filesystem>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -209,6 +210,18 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
         flux_.emplace(upload(zero_flux, static_buffer_usage(), "fluid_25d face flux upload"));
     } else {
         const std::vector<Fluid25DMomentumGpu> zero_momentum(cells);
+        const std::vector<Fluid25DMassAuditGpu> zero_mass_audit(config.mass_audit ? cells : 1U);
+        const std::vector<Fluid25DConservationResidualGpu> zero_conservation_residual(cells);
+        finite_volume_conservation_residual_.emplace(
+            upload(zero_conservation_residual, static_buffer_usage(),
+                   "fluid_25d conservation residual upload"));
+        finite_volume_candidate_conservation_residual_.emplace(
+            upload(zero_conservation_residual, static_buffer_usage(),
+                   "fluid_25d candidate conservation residual upload"));
+        finite_volume_candidate_mass_audit_.emplace(upload(
+            zero_mass_audit, static_buffer_usage(), "fluid_25d candidate mass audit upload"));
+        finite_volume_mass_audit_.emplace(upload(zero_mass_audit, static_buffer_usage(),
+                                                 "fluid_25d committed mass audit upload"));
         const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_status(1U);
         momentum_a_.emplace(upload(zero_momentum, static_buffer_usage(),
                                    "fluid_25d finite-volume momentum A upload"));
@@ -228,12 +241,12 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     }
     velocity_.emplace(upload(zero_velocity, static_buffer_usage(), "fluid_25d velocity upload"));
     ledger_.emplace(upload(zero_ledger, static_buffer_usage(), "fluid_25d ledger upload"));
-    tracer_q_a_.emplace(upload(zero_tracer_q, static_buffer_usage(),
-                               "fluid_25d tracer q A upload"));
-    tracer_q_b_.emplace(upload(zero_tracer_q, static_buffer_usage(),
-                               "fluid_25d tracer q B upload"));
-    tracer_ledger_.emplace(upload(zero_tracer_ledger, static_buffer_usage(),
-                                  "fluid_25d tracer ledger upload"));
+    tracer_q_a_.emplace(
+        upload(zero_tracer_q, static_buffer_usage(), "fluid_25d tracer q A upload"));
+    tracer_q_b_.emplace(
+        upload(zero_tracer_q, static_buffer_usage(), "fluid_25d tracer q B upload"));
+    tracer_ledger_.emplace(
+        upload(zero_tracer_ledger, static_buffer_usage(), "fluid_25d tracer ledger upload"));
     presentation_cue_a_.emplace(upload(zero_presentation_cue, static_buffer_usage(),
                                        "fluid_25d presentation cue A upload"));
     presentation_cue_b_.emplace(upload(zero_presentation_cue, static_buffer_usage(),
@@ -241,10 +254,16 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     presentation_cue_virtual_status_.emplace(upload(zero_presentation_status, static_buffer_usage(),
                                                     "fluid_25d presentation cue status upload"));
     endpoint_markers_.emplace(upload(std::vector<Fluid25DEndpointMarkersGpu>{endpoint_markers},
-                                     static_buffer_usage(),
-                                     "fluid_25d source outlet markers"));
-    quiver_.emplace(upload(inactive_quiver, static_buffer_usage(),
-                           "fluid_25d flow inspection quiver"));
+                                     static_buffer_usage(), "fluid_25d source outlet markers"));
+    auto cubes = fluid_25d_forcing_cubes(config, scenario);
+    if (cubes.size() > std::numeric_limits<std::uint32_t>::max())
+        throw std::runtime_error("forcing cube count exceeds Vulkan instance range");
+    forcing_cube_count_ = static_cast<std::uint32_t>(cubes.size());
+    if (cubes.empty())
+        cubes.emplace_back(); // Valid shared render binding; draw count stays zero.
+    forcing_cubes_.emplace(upload(cubes, static_buffer_usage(), "fluid_25d forcing cubes"));
+    quiver_.emplace(
+        upload(inactive_quiver, static_buffer_usage(), "fluid_25d flow inspection quiver"));
     current_depth_is_a_ = true;
     presentation_cue_parity_.reset();
 }
@@ -254,7 +273,7 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     // existing shaders deliberately do not consume it until that presentation
     // slice lands, but both solvers bind a valid buffer today.
     const cubey::vulkan::DescriptorSetInfo render_info =
-        storage_set_info(7U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        storage_set_info(8U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     render_a_descriptors_.emplace(device, render_info);
     render_b_descriptors_.emplace(device, render_info);
 
@@ -271,14 +290,10 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     // Reset/update sample the parity-selected published depth/velocity so
     // Flow Inspection can become useful while paused without a host readback
     // or a solver-state write.
-    quiver_reset_a_descriptors_.emplace(device,
-                                        storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    quiver_reset_b_descriptors_.emplace(device,
-                                        storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    quiver_update_a_descriptors_.emplace(
-        device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
-    quiver_update_b_descriptors_.emplace(
-        device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    quiver_reset_a_descriptors_.emplace(device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    quiver_reset_b_descriptors_.emplace(device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    quiver_update_a_descriptors_.emplace(device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
+    quiver_update_b_descriptors_.emplace(device, storage_set_info(4U, VK_SHADER_STAGE_COMPUTE_BIT));
     quiver_render_a_descriptors_.emplace(
         device, storage_set_info(4U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT));
     quiver_render_b_descriptors_.emplace(
@@ -337,13 +352,13 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     } else {
         // Finite-volume reset: initial depth, depth A/B, momentum A/B,
         // velocity, water ledger, status, q A/B, and tracer ledger.
-        finite_volume_reset_descriptors_.emplace(device,
-                                                 storage_set_info(11U, VK_SHADER_STAGE_COMPUTE_BIT));
+        finite_volume_reset_descriptors_.emplace(
+            device, storage_set_info(13U, VK_SHADER_STAGE_COMPUTE_BIT));
         // CFL: source depth/momentum, rates, and a persistent status bundle.
         finite_volume_cfl_a_descriptors_.emplace(device,
-                                                 storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
+                                                 storage_set_info(6U, VK_SHADER_STAGE_COMPUTE_BIT));
         finite_volume_cfl_b_descriptors_.emplace(device,
-                                                 storage_set_info(5U, VK_SHADER_STAGE_COMPUTE_BIT));
+                                                 storage_set_info(6U, VK_SHADER_STAGE_COMPUTE_BIT));
         finite_volume_cfl_finalize_descriptors_.emplace(
             device, storage_set_info(1U, VK_SHADER_STAGE_COMPUTE_BIT));
         // Candidate: terrain, source/sink, boundary, source h/hu/hv, candidate
@@ -351,17 +366,17 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
         // deltas, cumulative water/tracer ledgers, and status.
         // It must not mutate the common velocity or cumulative ledger.
         finite_volume_candidate_a_to_b_descriptors_.emplace(
-            device, storage_set_info(16U, VK_SHADER_STAGE_COMPUTE_BIT));
+            device, storage_set_info(19U, VK_SHADER_STAGE_COMPUTE_BIT));
         finite_volume_candidate_b_to_a_descriptors_.emplace(
-            device, storage_set_info(16U, VK_SHADER_STAGE_COMPUTE_BIT));
+            device, storage_set_info(19U, VK_SHADER_STAGE_COMPUTE_BIT));
         // Commit: source state, isolated candidate velocity/ledger delta, and
         // shared published state. Candidate h/hu/hv already occupy the inactive
         // ping-pong destination; commit leaves them in place on acceptance or
         // copies source h/hu/hv through after a global rejection.
         finite_volume_commit_a_to_b_descriptors_.emplace(
-            device, storage_set_info(13U, VK_SHADER_STAGE_COMPUTE_BIT));
+            device, storage_set_info(17U, VK_SHADER_STAGE_COMPUTE_BIT));
         finite_volume_commit_b_to_a_descriptors_.emplace(
-            device, storage_set_info(13U, VK_SHADER_STAGE_COMPUTE_BIT));
+            device, storage_set_info(17U, VK_SHADER_STAGE_COMPUTE_BIT));
 
         writes
             .storage_buffer(finite_volume_reset_descriptors_->set(), 0, initial_depth().handle(),
@@ -385,7 +400,12 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
             .storage_buffer(finite_volume_reset_descriptors_->set(), 9, tracer_q_b().handle(),
                             tracer_q_b().size())
             .storage_buffer(finite_volume_reset_descriptors_->set(), 10, tracer_ledger().handle(),
-                            tracer_ledger().size());
+                            tracer_ledger().size())
+            .storage_buffer(finite_volume_reset_descriptors_->set(), 11,
+                            finite_volume_mass_audit().handle(), finite_volume_mass_audit().size())
+            .storage_buffer(finite_volume_reset_descriptors_->set(), 12,
+                            finite_volume_conservation_residual().handle(),
+                            finite_volume_conservation_residual().size());
         const auto write_cfl = [this, &writes](VkDescriptorSet set,
                                                const cubey::vulkan::Buffer& source_depth,
                                                const cubey::vulkan::Buffer& source_momentum) {
@@ -394,43 +414,50 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
                 .storage_buffer(set, 2, source_rate().handle(), source_rate().size())
                 .storage_buffer(set, 3, sink_rate().handle(), sink_rate().size())
                 .storage_buffer(set, 4, finite_volume_status().handle(),
-                                finite_volume_status().size());
+                                finite_volume_status().size())
+                .storage_buffer(set, 5, finite_volume_conservation_residual().handle(),
+                                finite_volume_conservation_residual().size());
         };
         write_cfl(finite_volume_cfl_a_descriptors_->set(), depth_a(), momentum_a());
         write_cfl(finite_volume_cfl_b_descriptors_->set(), depth_b(), momentum_b());
         writes.storage_buffer(finite_volume_cfl_finalize_descriptors_->set(), 0,
                               finite_volume_status().handle(), finite_volume_status().size());
-        const auto write_candidate =
-            [this, &writes](VkDescriptorSet set, const cubey::vulkan::Buffer& source_depth,
-                            const cubey::vulkan::Buffer& source_momentum,
-                            const cubey::vulkan::Buffer& candidate_depth,
-                            const cubey::vulkan::Buffer& candidate_momentum,
-                            const cubey::vulkan::Buffer& source_tracer_q,
-                            const cubey::vulkan::Buffer& candidate_tracer_q) {
-                writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
-                    .storage_buffer(set, 1, source_rate().handle(), source_rate().size())
-                    .storage_buffer(set, 2, sink_rate().handle(), sink_rate().size())
-                    .storage_buffer(set, 3, boundary_outflow_mask().handle(),
-                                    boundary_outflow_mask().size())
-                    .storage_buffer(set, 4, source_depth.handle(), source_depth.size())
-                    .storage_buffer(set, 5, source_momentum.handle(), source_momentum.size())
-                    .storage_buffer(set, 6, candidate_depth.handle(), candidate_depth.size())
-                    .storage_buffer(set, 7, candidate_momentum.handle(), candidate_momentum.size())
-                    .storage_buffer(set, 8, finite_volume_candidate_velocity().handle(),
-                                    finite_volume_candidate_velocity().size())
-                    .storage_buffer(set, 9, ledger().handle(), ledger().size())
-                    .storage_buffer(set, 10, finite_volume_candidate_ledger_delta().handle(),
-                                    finite_volume_candidate_ledger_delta().size())
-                    .storage_buffer(set, 11, finite_volume_status().handle(),
-                                    finite_volume_status().size())
-                    .storage_buffer(set, 12, source_tracer_q.handle(), source_tracer_q.size())
-                    .storage_buffer(set, 13, candidate_tracer_q.handle(),
-                                    candidate_tracer_q.size())
-                    .storage_buffer(set, 14, tracer_ledger().handle(), tracer_ledger().size())
-                    .storage_buffer(set, 15,
-                                    finite_volume_candidate_tracer_ledger_delta().handle(),
-                                    finite_volume_candidate_tracer_ledger_delta().size());
-            };
+        const auto write_candidate = [this,
+                                      &writes](VkDescriptorSet set,
+                                               const cubey::vulkan::Buffer& source_depth,
+                                               const cubey::vulkan::Buffer& source_momentum,
+                                               const cubey::vulkan::Buffer& candidate_depth,
+                                               const cubey::vulkan::Buffer& candidate_momentum,
+                                               const cubey::vulkan::Buffer& source_tracer_q,
+                                               const cubey::vulkan::Buffer& candidate_tracer_q) {
+            writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
+                .storage_buffer(set, 1, source_rate().handle(), source_rate().size())
+                .storage_buffer(set, 2, sink_rate().handle(), sink_rate().size())
+                .storage_buffer(set, 3, boundary_outflow_mask().handle(),
+                                boundary_outflow_mask().size())
+                .storage_buffer(set, 4, source_depth.handle(), source_depth.size())
+                .storage_buffer(set, 5, source_momentum.handle(), source_momentum.size())
+                .storage_buffer(set, 6, candidate_depth.handle(), candidate_depth.size())
+                .storage_buffer(set, 7, candidate_momentum.handle(), candidate_momentum.size())
+                .storage_buffer(set, 8, finite_volume_candidate_velocity().handle(),
+                                finite_volume_candidate_velocity().size())
+                .storage_buffer(set, 9, ledger().handle(), ledger().size())
+                .storage_buffer(set, 10, finite_volume_candidate_ledger_delta().handle(),
+                                finite_volume_candidate_ledger_delta().size())
+                .storage_buffer(set, 11, finite_volume_status().handle(),
+                                finite_volume_status().size())
+                .storage_buffer(set, 12, source_tracer_q.handle(), source_tracer_q.size())
+                .storage_buffer(set, 13, candidate_tracer_q.handle(), candidate_tracer_q.size())
+                .storage_buffer(set, 14, tracer_ledger().handle(), tracer_ledger().size())
+                .storage_buffer(set, 15, finite_volume_candidate_tracer_ledger_delta().handle(),
+                                finite_volume_candidate_tracer_ledger_delta().size())
+                .storage_buffer(set, 16, finite_volume_candidate_mass_audit().handle(),
+                                finite_volume_candidate_mass_audit().size())
+                .storage_buffer(set, 17, finite_volume_conservation_residual().handle(),
+                                finite_volume_conservation_residual().size())
+                .storage_buffer(set, 18, finite_volume_candidate_conservation_residual().handle(),
+                                finite_volume_candidate_conservation_residual().size());
+        };
         write_candidate(finite_volume_candidate_a_to_b_descriptors_->set(), depth_a(), momentum_a(),
                         depth_b(), momentum_b(), tracer_q_a(), tracer_q_b());
         write_candidate(finite_volume_candidate_b_to_a_descriptors_->set(), depth_b(), momentum_b(),
@@ -456,12 +483,18 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
                 .storage_buffer(set, 7, destination_momentum.handle(), destination_momentum.size())
                 .storage_buffer(set, 8, velocity().handle(), velocity().size())
                 .storage_buffer(set, 9, source_tracer_q.handle(), source_tracer_q.size())
-                .storage_buffer(set, 10, destination_tracer_q.handle(),
-                                destination_tracer_q.size())
+                .storage_buffer(set, 10, destination_tracer_q.handle(), destination_tracer_q.size())
                 .storage_buffer(set, 11, tracer_ledger().handle(), tracer_ledger().size())
-                .storage_buffer(set, 12,
-                                finite_volume_candidate_tracer_ledger_delta().handle(),
-                                finite_volume_candidate_tracer_ledger_delta().size());
+                .storage_buffer(set, 12, finite_volume_candidate_tracer_ledger_delta().handle(),
+                                finite_volume_candidate_tracer_ledger_delta().size())
+                .storage_buffer(set, 13, finite_volume_candidate_mass_audit().handle(),
+                                finite_volume_candidate_mass_audit().size())
+                .storage_buffer(set, 14, finite_volume_mass_audit().handle(),
+                                finite_volume_mass_audit().size())
+                .storage_buffer(set, 15, finite_volume_conservation_residual().handle(),
+                                finite_volume_conservation_residual().size())
+                .storage_buffer(set, 16, finite_volume_candidate_conservation_residual().handle(),
+                                finite_volume_candidate_conservation_residual().size());
         };
         write_commit(finite_volume_commit_a_to_b_descriptors_->set(), depth_a(), momentum_a(),
                      depth_b(), momentum_b(), tracer_q_a(), tracer_q_b());
@@ -478,7 +511,8 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
             .storage_buffer(set, 3, presentation_cue_a().handle(), presentation_cue_a().size())
             .storage_buffer(set, 4, presentation_cue_b().handle(), presentation_cue_b().size())
             .storage_buffer(set, 5, endpoint_markers().handle(), endpoint_markers().size())
-            .storage_buffer(set, 6, tracer_q.handle(), tracer_q.size());
+            .storage_buffer(set, 6, tracer_q.handle(), tracer_q.size())
+            .storage_buffer(set, 7, forcing_cubes().handle(), forcing_cubes().size());
     };
     write_render(render_a_descriptors_->set(), depth_a(), tracer_q_a());
     write_render(render_b_descriptors_->set(), depth_b(), tracer_q_b());
@@ -509,18 +543,17 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
                                      presentation_cue_b(), presentation_cue_a());
 
     const cubey::vulkan::Buffer& quiver_status = presentation_cue_status();
-    const auto write_quiver_reset = [this, &writes, &quiver_status](VkDescriptorSet set,
-                                                                    const cubey::vulkan::Buffer& depth) {
-        writes.storage_buffer(set, 0, quiver().handle(), quiver().size())
-            .storage_buffer(set, 1, quiver_status.handle(), quiver_status.size())
-            .storage_buffer(set, 2, depth.handle(), depth.size())
-            .storage_buffer(set, 3, velocity().handle(), velocity().size());
-    };
+    const auto write_quiver_reset =
+        [this, &writes, &quiver_status](VkDescriptorSet set, const cubey::vulkan::Buffer& depth) {
+            writes.storage_buffer(set, 0, quiver().handle(), quiver().size())
+                .storage_buffer(set, 1, quiver_status.handle(), quiver_status.size())
+                .storage_buffer(set, 2, depth.handle(), depth.size())
+                .storage_buffer(set, 3, velocity().handle(), velocity().size());
+        };
     write_quiver_reset(quiver_reset_a_descriptors_->set(), depth_a());
     write_quiver_reset(quiver_reset_b_descriptors_->set(), depth_b());
-    const auto write_quiver_update = [this, &writes, &quiver_status](
-                                         VkDescriptorSet set,
-                                         const cubey::vulkan::Buffer& depth) {
+    const auto write_quiver_update =
+        [this, &writes, &quiver_status](VkDescriptorSet set, const cubey::vulkan::Buffer& depth) {
             writes.storage_buffer(set, 0, depth.handle(), depth.size())
                 .storage_buffer(set, 1, velocity().handle(), velocity().size())
                 .storage_buffer(set, 2, quiver_status.handle(), quiver_status.size())
@@ -528,13 +561,13 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
         };
     write_quiver_update(quiver_update_a_descriptors_->set(), depth_a());
     write_quiver_update(quiver_update_b_descriptors_->set(), depth_b());
-    const auto write_quiver_render =
-        [this, &writes](VkDescriptorSet set, const cubey::vulkan::Buffer& depth) {
-            writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
-                .storage_buffer(set, 1, depth.handle(), depth.size())
-                .storage_buffer(set, 2, velocity().handle(), velocity().size())
-                .storage_buffer(set, 3, quiver().handle(), quiver().size());
-        };
+    const auto write_quiver_render = [this, &writes](VkDescriptorSet set,
+                                                     const cubey::vulkan::Buffer& depth) {
+        writes.storage_buffer(set, 0, terrain().handle(), terrain().size())
+            .storage_buffer(set, 1, depth.handle(), depth.size())
+            .storage_buffer(set, 2, velocity().handle(), velocity().size())
+            .storage_buffer(set, 3, quiver().handle(), quiver().size());
+    };
     write_quiver_render(quiver_render_a_descriptors_->set(), depth_a());
     write_quiver_render(quiver_render_b_descriptors_->set(), depth_b());
     writes.update(device);
@@ -572,8 +605,7 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
                              presentation_cue_depth_a_a_to_b_descriptors_->layout());
     emplace_compute_pipeline(quiver_reset_pipeline_, device, "fluid_25d_quiver_reset.comp.spv",
                              quiver_reset_a_descriptors_->layout());
-    emplace_compute_pipeline(quiver_update_pipeline_, device,
-                             "fluid_25d_quiver_update.comp.spv",
+    emplace_compute_pipeline(quiver_update_pipeline_, device, "fluid_25d_quiver_update.comp.spv",
                              quiver_update_a_descriptors_->layout());
 }
 
@@ -619,22 +651,40 @@ void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device
                                         .material_pass = water_pass_info(),
                                     });
 
+    const std::array<cubey::render::ShaderStageFile, 2> cube_shader_stages{
+        cubey::render::vertex_shader_file(shader_path("fluid_25d_forcing_cubes.vert.spv")),
+        cubey::render::fragment_shader_file(shader_path("fluid_25d_forcing_cubes.frag.spv")),
+    };
+    auto cube_pass = water_pass_info();
+    cube_pass.label = "fluid_25d.forcing_cubes";
+    cube_pass.cull_mode = VK_CULL_MODE_BACK_BIT;
+    forcing_cube_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                               .extent = extent,
+                                               .color_format = color_format,
+                                               .depth_format = depth_format,
+                                               .shader_stage_files = cube_shader_stages,
+                                               .descriptor_set_layouts = layouts,
+                                               .material_pass = cube_pass,
+                                           });
+
     const std::array<cubey::render::ShaderStageFile, 2> quiver_shader_stages{
         cubey::render::vertex_shader_file(shader_path("fluid_25d_quiver.vert.spv")),
         cubey::render::fragment_shader_file(shader_path("fluid_25d_quiver.frag.spv")),
     };
-    const std::array<VkDescriptorSetLayout, 1> quiver_layouts{quiver_render_a_descriptors_->layout()};
+    const std::array<VkDescriptorSetLayout, 1> quiver_layouts{
+        quiver_render_a_descriptors_->layout()};
     quiver_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                            .extent = extent,
-                                            .color_format = color_format,
-                                            .depth_format = depth_format,
-                                            .shader_stage_files = quiver_shader_stages,
-                                            .descriptor_set_layouts = quiver_layouts,
-                                            .material_pass = quiver_pass_info(),
-                                        });
+                                         .extent = extent,
+                                         .color_format = color_format,
+                                         .depth_format = depth_format,
+                                         .shader_stage_files = quiver_shader_stages,
+                                         .descriptor_set_layouts = quiver_layouts,
+                                         .material_pass = quiver_pass_info(),
+                                     });
 }
 
 void Fluid25DGpuResources::destroy_swapchain_resources() {
+    forcing_cube_pipeline_.reset();
     quiver_pipeline_.reset();
     water_pipeline_.reset();
     terrain_pipeline_.reset();
@@ -689,6 +739,8 @@ void Fluid25DGpuResources::destroy_all_resources() {
     presentation_cue_b_.reset();
     presentation_cue_a_.reset();
     endpoint_markers_.reset();
+    forcing_cubes_.reset();
+    forcing_cube_count_ = 0U;
     quiver_.reset();
     tracer_ledger_.reset();
     ledger_.reset();
@@ -698,6 +750,10 @@ void Fluid25DGpuResources::destroy_all_resources() {
     finite_volume_candidate_tracer_ledger_delta_.reset();
     finite_volume_candidate_ledger_delta_.reset();
     finite_volume_candidate_velocity_.reset();
+    finite_volume_candidate_mass_audit_.reset();
+    finite_volume_mass_audit_.reset();
+    finite_volume_conservation_residual_.reset();
+    finite_volume_candidate_conservation_residual_.reset();
     momentum_b_.reset();
     momentum_a_.reset();
     depth_b_.reset();
@@ -746,6 +802,16 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_candidate_tracer_ledger_delta,
                                  "finite-volume candidate tracer ledger delta buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_status, finite_volume_status_,
                                  "finite-volume status buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_candidate_mass_audit,
+                                 finite_volume_candidate_mass_audit_, "candidate mass audit buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_mass_audit, finite_volume_mass_audit_,
+                                 "committed mass audit buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_conservation_residual,
+                                 finite_volume_conservation_residual_,
+                                 "conservation residual buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_candidate_conservation_residual,
+                                 finite_volume_candidate_conservation_residual_,
+                                 "candidate conservation residual buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(velocity, velocity_, "velocity buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(ledger, ledger_, "ledger buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(tracer_ledger, tracer_ledger_, "tracer ledger buffer")
@@ -754,6 +820,7 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_a, presentation_cue_a_,
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(presentation_cue_b, presentation_cue_b_,
                                  "presentation cue B buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(endpoint_markers, endpoint_markers_, "endpoint marker buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(forcing_cubes, forcing_cubes_, "forcing cube buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(quiver, quiver_, "flow inspection quiver buffer")
 
 #undef CUBEY_FLUID25D_RESOURCE_ACCESSOR
@@ -829,6 +896,12 @@ const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::terrain_pip
         throw std::runtime_error("fluid 2.5D terrain pipeline is not initialized");
     }
     return terrain_pipeline_.value();
+}
+
+const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::forcing_cube_pipeline() const {
+    if (!forcing_cube_pipeline_)
+        throw std::runtime_error("forcing cube pipeline is unavailable");
+    return *forcing_cube_pipeline_;
 }
 
 const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::water_pipeline() const {

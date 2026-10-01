@@ -1,7 +1,10 @@
 #include "../../fluid_25d/fluid_25d_project_config.h"
 #include "fluid_25d_commands.h"
 #include "fluid_25d_diagnostics.h"
+#include "fluid_25d_dye_palette.h"
 #include "fluid_25d_finite_volume_oracle.h"
+#include "fluid_25d_mass_audit.h"
+#include "fluid_25d_motion_markers.h"
 #include "fluid_25d_natural_flow_recipe.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_presentation.h"
@@ -253,7 +256,7 @@ void test_config_defaults_and_parsing() {
                 Fluid25DScenario::BoundaryDrainFixture,
             "fluid 2.5D should parse the numerical boundary drain fixture");
     require(fluid_25d_scenario_from_name("source-outlet-demo") ==
-                Fluid25DScenario::SourceOutletDemo &&
+                    Fluid25DScenario::SourceOutletDemo &&
                 std::string(fluid_25d_scenario_name(Fluid25DScenario::SourceOutletDemo)) ==
                     "source-outlet-demo",
             "fluid 2.5D should expose the opt-in source-outlet demo distinctly from River V0");
@@ -357,8 +360,8 @@ void test_config_defaults_and_parsing() {
     invalid_headwaters_demo.sheet_initial_depth_m = 0.1F;
     require_throws([&] { validate_fluid_25d_config(invalid_headwaters_demo); },
                    "sustained-headwaters demo should reject sheet forcing");
-    for (const Fluid25DScenario scenario : {Fluid25DScenario::MountainSourceOutletDemo,
-                                            Fluid25DScenario::TerrainCase}) {
+    for (const Fluid25DScenario scenario :
+         {Fluid25DScenario::MountainSourceOutletDemo, Fluid25DScenario::TerrainCase}) {
         Fluid25DConfig invalid_dye_scenario = defaults;
         invalid_dye_scenario.scenario = scenario;
         invalid_dye_scenario.solver = Fluid25DSolver::FiniteVolume;
@@ -368,48 +371,49 @@ void test_config_defaults_and_parsing() {
                        "terrain-backed and mountain scenarios should reject dye pulse timing");
     }
 
-    const Fluid25DProjectConfig parsed_headwaters = parse_project(
-        {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
-         "finite-volume", "--grid-width", "65", "--grid-height", "33",
-         "--fluid25d-cell-size-m", "4"});
+    const Fluid25DProjectConfig parsed_headwaters =
+        parse_project({"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                       "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
+                       "33", "--fluid25d-cell-size-m", "4"});
     require(parsed_headwaters.simulation.scenario == Fluid25DScenario::SustainedHeadwatersDemo &&
                 parsed_headwaters.simulation.solver == Fluid25DSolver::FiniteVolume &&
                 parsed_headwaters.simulation.grid_width == kFluid25DSustainedHeadwatersGridWidth &&
-                parsed_headwaters.simulation.grid_height == kFluid25DSustainedHeadwatersGridHeight &&
+                parsed_headwaters.simulation.grid_height ==
+                    kFluid25DSustainedHeadwatersGridHeight &&
                 parsed_headwaters.simulation.cell_size_m == kFluid25DSustainedHeadwatersCellSizeM &&
                 parsed_headwaters.simulation.headwaters_source_scale ==
                     kFluid25DDefaultHeadwatersSourceScale,
             "sustained-headwaters demo should be selectable through its explicit CLI contract");
     const Fluid25DProjectConfig scaled_headwaters = parse_project(
         {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
-         "finite-volume", "--grid-width", "65", "--grid-height", "33",
-         "--fluid25d-cell-size-m", "4", "--fluid25d-headwaters-source-scale", "2"});
+         "finite-volume", "--grid-width", "65", "--grid-height", "33", "--fluid25d-cell-size-m",
+         "4", "--fluid25d-headwaters-source-scale", "2"});
     require(scaled_headwaters.simulation.headwaters_source_scale == 2.0F,
             "sustained-headwaters CLI should accept a positive source multiplier");
     for (const std::string invalid_scale : {"0", "-1", "nan", "inf"}) {
         require_throws(
             [invalid_scale] {
-                static_cast<void>(parse_project(
-                    {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
-                     "--fluid25d-solver", "finite-volume", "--grid-width", "65",
-                     "--grid-height", "33", "--fluid25d-cell-size-m", "4",
-                     "--fluid25d-headwaters-source-scale", invalid_scale}));
+                static_cast<void>(
+                    parse_project({"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                                   "--fluid25d-solver", "finite-volume", "--grid-width", "65",
+                                   "--grid-height", "33", "--fluid25d-cell-size-m", "4",
+                                   "--fluid25d-headwaters-source-scale", invalid_scale}));
             },
             "sustained-headwaters CLI should reject non-positive or non-finite source multipliers");
     }
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-headwaters-source-scale", "1"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-headwaters-source-scale", "1"}));
         },
         "headwaters source multiplier should be rejected when its scenario is not selected");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
-                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
-                 "33", "--fluid25d-cell-size-m", "4",
-                 "--fluid25d-source-active-duration-seconds", "10"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                               "--fluid25d-solver", "finite-volume", "--grid-width", "65",
+                               "--grid-height", "33", "--fluid25d-cell-size-m", "4",
+                               "--fluid25d-source-active-duration-seconds", "10"}));
         },
         "sustained-headwaters CLI should reject source shutoff scheduling");
     require(fluid_25d_terrain_water_protocol_from_name("rain-pulse") ==
@@ -434,12 +438,10 @@ void test_config_defaults_and_parsing() {
     require(fluid_25d_presentation_view_from_name("catchment") ==
                 Fluid25DPresentationView::Catchment,
             "fluid 2.5D should select the product catchment view explicitly");
-    require(fluid_25d_catchment_view_from_name("composite") ==
-                Fluid25DCatchmentView::Composite,
+    require(fluid_25d_catchment_view_from_name("composite") == Fluid25DCatchmentView::Composite,
             "fluid 2.5D should retain Composite as the default catchment presentation");
-    require_throws(
-        [] { static_cast<void>(fluid_25d_presentation_view_from_name("composite")); },
-        "fluid 2.5D surface selector should keep catchment modes in their own enum");
+    require_throws([] { static_cast<void>(fluid_25d_presentation_view_from_name("composite")); },
+                   "fluid 2.5D surface selector should keep catchment modes in their own enum");
     require(fluid_25d_catchment_view_from_name("water-isolation") ==
                 Fluid25DCatchmentView::WaterIsolation,
             "fluid 2.5D should parse the water-isolation presentation mode");
@@ -459,13 +461,12 @@ void test_config_defaults_and_parsing() {
                 Fluid25DPresentationView::Diagnostics,
             "fluid 2.5D should retain an explicit diagnostic presentation mode");
     require(std::string(fluid_25d_presentation_view_name(Fluid25DPresentationView::Catchment)) ==
-                "Catchment" &&
+                    "Catchment" &&
                 std::string(fluid_25d_catchment_view_name(Fluid25DCatchmentView::Composite)) ==
                     "Composite",
             "fluid 2.5D surface and catchment presentation names should stay distinct");
-    require_throws(
-        [] { static_cast<void>(fluid_25d_catchment_view_from_name("diagnostics")); },
-        "fluid 2.5D catchment presentation should reject diagnostics");
+    require_throws([] { static_cast<void>(fluid_25d_catchment_view_from_name("diagnostics")); },
+                   "fluid 2.5D catchment presentation should reject diagnostics");
     require_throws([] { static_cast<void>(fluid_25d_presentation_view_from_name("unknown")); },
                    "fluid 2.5D should reject unknown presentation views");
     require(fluid_25d_mesh_vertex_count(Fluid25DConfig{
@@ -526,8 +527,8 @@ void test_config_defaults_and_parsing() {
     require(scheduled.simulation.source_active_duration_seconds == 0.05F,
             "fluid 2.5D parser should retain an optional source active duration");
 
-    const Fluid25DProjectConfig playback = parse_project(
-        {"fluid_25d", "--fluid25d-presentation-time-scale", "4"});
+    const Fluid25DProjectConfig playback =
+        parse_project({"fluid_25d", "--fluid25d-presentation-time-scale", "4"});
     require(playback.presentation_time_scale == 4.0F,
             "fluid 2.5D parser should bind the windowed presentation time scale");
     require_throws(
@@ -538,8 +539,8 @@ void test_config_defaults_and_parsing() {
         "fluid 2.5D presentation time scale should be rejected in headless mode");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-presentation-time-scale", "0"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-presentation-time-scale", "0"}));
         },
         "fluid 2.5D presentation time scale should reject zero");
     require_throws(
@@ -547,67 +548,67 @@ void test_config_defaults_and_parsing() {
         "fluid 2.5D presentation time scale should reject values below the named minimum");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-presentation-time-scale", "9"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-presentation-time-scale", "9"}));
         },
         "fluid 2.5D presentation time scale should reject values above the review bound");
 
-    const Fluid25DProjectConfig water_isolation = parse_project(
-        {"fluid_25d", "--fluid25d-catchment-view", "water-isolation"});
+    const Fluid25DProjectConfig water_isolation =
+        parse_project({"fluid_25d", "--fluid25d-catchment-view", "water-isolation"});
     require(water_isolation.catchment_view == "water-isolation",
             "fluid 2.5D parser should propagate the water-isolation presentation mode");
-    const Fluid25DProjectConfig flow_inspection = parse_project(
-        {"fluid_25d", "--fluid25d-catchment-view", "flow-inspection"});
+    const Fluid25DProjectConfig flow_inspection =
+        parse_project({"fluid_25d", "--fluid25d-catchment-view", "flow-inspection"});
     require(flow_inspection.catchment_view == "flow-inspection",
             "fluid 2.5D parser should propagate the flow-inspection presentation mode");
     require_throws(
         [] {
-            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-catchment-view",
-                                              "not-a-catchment-view"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-catchment-view", "not-a-catchment-view"}));
         },
         "fluid 2.5D parser should reject an unknown catchment presentation mode");
     require_throws(
         [] {
             static_cast<void>(parse_project({"fluid_25d", "--fluid25d-view", "diagnostics",
-                                              "--fluid25d-catchment-view", "composite"}));
+                                             "--fluid25d-catchment-view", "composite"}));
         },
         "fluid 2.5D parser should reject diagnostics combined with a catchment mode");
 
-    const Fluid25DProjectConfig transport_inspection = parse_project(
-        {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
-         "--fluid25d-scenario", "source-outlet-demo", "--fluid25d-solver", "finite-volume",
-         "--fluid25d-dye-pulse-start-seconds", "0", "--fluid25d-dye-pulse-duration-seconds",
-         "0.25"});
-    require(transport_inspection.catchment_view == "transport-inspection" &&
-                fluid_25d_transport_inspection_available(transport_inspection.simulation),
-            "transport inspection should be available only with the concrete source/outlet dye pulse");
+    const Fluid25DProjectConfig transport_inspection =
+        parse_project({"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+                       "--fluid25d-scenario", "source-outlet-demo", "--fluid25d-solver",
+                       "finite-volume", "--fluid25d-dye-pulse-start-seconds", "0",
+                       "--fluid25d-dye-pulse-duration-seconds", "0.25"});
+    require(
+        transport_inspection.catchment_view == "transport-inspection" &&
+            fluid_25d_transport_inspection_available(transport_inspection.simulation),
+        "transport inspection should be available only with the concrete source/outlet dye pulse");
     const Fluid25DProjectConfig headwaters_transport_inspection = parse_project(
-        {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
-         "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
-         "finite-volume", "--grid-width", "65", "--grid-height", "33",
-         "--fluid25d-cell-size-m", "4", "--fluid25d-dye-pulse-start-seconds", "0",
-         "--fluid25d-dye-pulse-duration-seconds", "0.25"});
-    require(headwaters_transport_inspection.simulation.scenario ==
-                    Fluid25DScenario::SustainedHeadwatersDemo &&
-                headwaters_transport_inspection.catchment_view == "transport-inspection" &&
-                fluid_25d_transport_inspection_available(
-                    headwaters_transport_inspection.simulation),
-            "sustained headwaters should expose transport inspection for an explicit dye pulse");
+        {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection", "--fluid25d-scenario",
+         "sustained-headwaters-demo", "--fluid25d-solver", "finite-volume", "--grid-width", "65",
+         "--grid-height", "33", "--fluid25d-cell-size-m", "4", "--fluid25d-dye-pulse-start-seconds",
+         "0", "--fluid25d-dye-pulse-duration-seconds", "0.25"});
+    require(
+        headwaters_transport_inspection.simulation.scenario ==
+                Fluid25DScenario::SustainedHeadwatersDemo &&
+            headwaters_transport_inspection.catchment_view == "transport-inspection" &&
+            fluid_25d_transport_inspection_available(headwaters_transport_inspection.simulation),
+        "sustained headwaters should expose transport inspection for an explicit dye pulse");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
-                 "--fluid25d-scenario", "source-outlet-demo", "--fluid25d-solver",
-                 "finite-volume"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+                               "--fluid25d-scenario", "source-outlet-demo", "--fluid25d-solver",
+                               "finite-volume"}));
         },
         "transport inspection should reject a source/outlet scene without a dye pulse");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
-                 "--fluid25d-scenario", "sustained-headwaters-demo", "--fluid25d-solver",
-                 "finite-volume", "--grid-width", "65", "--grid-height", "33",
-                 "--fluid25d-cell-size-m", "4"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-catchment-view", "transport-inspection",
+                               "--fluid25d-scenario", "sustained-headwaters-demo",
+                               "--fluid25d-solver", "finite-volume", "--grid-width", "65",
+                               "--grid-height", "33", "--fluid25d-cell-size-m", "4"}));
         },
         "headwater transport inspection should require explicit dye timing");
 
@@ -619,31 +620,31 @@ void test_config_defaults_and_parsing() {
     require(terrain.terrain.heightfield_path == "terrain-fixture" &&
                 terrain.terrain.crop_x == 12U && terrain.terrain.crop_z == 7U,
             "fluid 2.5D parser should retain the terrain path and native crop coordinates");
-    const Fluid25DProjectConfig thin_water = parse_project(
-        {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
-         "terrain-fixture", "--fluid25d-terrain-thin-water-composite"});
+    const Fluid25DProjectConfig thin_water =
+        parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
+                       "terrain-fixture", "--fluid25d-terrain-thin-water-composite"});
     require(thin_water.catchment_render.terrain_thin_water_composite,
             "terrain thin-water Composite should be an explicit render-only opt-in");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-terrain-thin-water-composite"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-terrain-thin-water-composite"}));
         },
         "thin-water Composite should reject analytic scenarios");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
-                 "terrain-fixture", "--fluid25d-view", "diagnostics",
-                 "--fluid25d-terrain-thin-water-composite"}));
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case",
+                               "--terrain-heightfield", "terrain-fixture", "--fluid25d-view",
+                               "diagnostics", "--fluid25d-terrain-thin-water-composite"}));
         },
         "thin-water Composite should reject diagnostic views");
     require_throws(
         [] {
-            static_cast<void>(parse_project(
-                {"fluid_25d", "--fluid25d-scenario", "terrain-case", "--terrain-heightfield",
-                 "terrain-fixture", "--fluid25d-catchment-view", "flow-inspection",
-                 "--fluid25d-terrain-thin-water-composite"}));
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-scenario", "terrain-case",
+                                             "--terrain-heightfield", "terrain-fixture",
+                                             "--fluid25d-catchment-view", "flow-inspection",
+                                             "--fluid25d-terrain-thin-water-composite"}));
         },
         "thin-water Composite should reject non-Composite catchment views");
     require_throws(
@@ -1192,8 +1193,8 @@ void test_deterministic_scenarios() {
         float weighted_y_sum = 0.0F;
         float depth_sum = 0.0F;
         for (std::uint32_t y = 0U; y < readable_river.height; ++y) {
-            const float depth = readable_river.initial_water_depth_m[
-                fluid_25d_scenario_index(readable_river.width, readable_river.height, x, y)];
+            const float depth = readable_river.initial_water_depth_m[fluid_25d_scenario_index(
+                readable_river.width, readable_river.height, x, y)];
             if (depth > 0.0F) {
                 ++wet_cells;
                 weighted_y_sum += static_cast<float>(y) * depth;
@@ -1271,26 +1272,23 @@ void test_sustained_headwaters_scenario_construction() {
     // Canonical FNV-1a over each 32-bit field word, captured from the original
     // 65x33@4m builder before refined-grid support was added. This protects the
     // baseline terrain, forcing, dry state, and boundary mask byte-for-byte.
-    require(headwaters_field_hash(scenario.terrain_height_m) == 15469740960098613791ULL &&
-                headwaters_field_hash(scenario.initial_water_depth_m) ==
-                    3895755185517356639ULL &&
-                headwaters_field_hash(scenario.source_depth_rate_m_per_s) ==
-                    549231792614289439ULL &&
-                headwaters_field_hash(scenario.sink_depth_rate_m_per_s) ==
-                    3895755185517356639ULL &&
-                headwaters_mask_hash(scenario.boundary_outflow_face_mask) ==
-                    12659419801437752869ULL,
-            "4 m sustained-headwaters fields should remain bit-identical to the original control");
+    require(
+        headwaters_field_hash(scenario.terrain_height_m) == 15469740960098613791ULL &&
+            headwaters_field_hash(scenario.initial_water_depth_m) == 3895755185517356639ULL &&
+            headwaters_field_hash(scenario.source_depth_rate_m_per_s) == 549231792614289439ULL &&
+            headwaters_field_hash(scenario.sink_depth_rate_m_per_s) == 3895755185517356639ULL &&
+            headwaters_mask_hash(scenario.boundary_outflow_face_mask) == 12659419801437752869ULL,
+        "4 m sustained-headwaters fields should remain bit-identical to the original control");
     const Fluid25DScenarioData doubled_scenario = make_fluid_25d_scenario(
         config.scenario, config.grid_width, config.grid_height, config.cell_size_m, 2.0F);
-    require(doubled_scenario.terrain_height_m == scenario.terrain_height_m &&
-                doubled_scenario.initial_water_depth_m == scenario.initial_water_depth_m &&
-                doubled_scenario.sink_depth_rate_m_per_s ==
-                    scenario.sink_depth_rate_m_per_s &&
-                doubled_scenario.boundary_outflow_face_mask == scenario.boundary_outflow_face_mask &&
-                doubled_scenario.outlet_cell == scenario.outlet_cell &&
-                doubled_scenario.sink_cell == scenario.sink_cell,
-            "4 m headwaters source scaling should leave terrain, state, sink, and outlet unchanged");
+    require(
+        doubled_scenario.terrain_height_m == scenario.terrain_height_m &&
+            doubled_scenario.initial_water_depth_m == scenario.initial_water_depth_m &&
+            doubled_scenario.sink_depth_rate_m_per_s == scenario.sink_depth_rate_m_per_s &&
+            doubled_scenario.boundary_outflow_face_mask == scenario.boundary_outflow_face_mask &&
+            doubled_scenario.outlet_cell == scenario.outlet_cell &&
+            doubled_scenario.sink_cell == scenario.sink_cell,
+        "4 m headwaters source scaling should leave terrain, state, sink, and outlet unchanged");
     double doubled_total_source_rate_m3_per_s = 0.0;
     for (std::size_t index = 0U; index < scenario.source_depth_rate_m_per_s.size(); ++index) {
         const float baseline_rate = scenario.source_depth_rate_m_per_s[index];
@@ -1412,7 +1410,7 @@ void test_sustained_headwaters_scenario_construction() {
     require(legacy_markers.source_xy_outlet_xy == std::array<float, 4U>{3.0F, 1.0F, 7.0F, 2.0F} &&
                 legacy_markers.secondary_source_xy_reserved ==
                     std::array<float, 4U>{-1.0F, -1.0F, -1.0F, -1.0F},
-            "extended marker storage should preserve existing source/outlet ring placement");
+            "extended endpoint references should preserve source/outlet coordinates");
 
     const auto read_shader = [](const std::filesystem::path& path) {
         std::ifstream stream(path);
@@ -1426,16 +1424,18 @@ void test_sustained_headwaters_scenario_construction() {
         std::filesystem::path(__FILE__).parent_path() / "shaders";
     const std::string terrain_shader = read_shader(shader_directory / "fluid_25d_terrain.frag");
     const std::string water_shader = read_shader(shader_directory / "fluid_25d_water.frag");
-    const auto check_marker_shader_layout = [](const std::string& shader) {
-        const std::size_t primary = shader.find("vec4 source_xy_outlet_xy;");
-        const std::size_t secondary = shader.find("vec4 secondary_source_xy_reserved;");
-        require(primary != std::string::npos && secondary != std::string::npos &&
-                    secondary > primary &&
-                    shader.find("secondary_source_marker") != std::string::npos,
-                "terrain and water shaders should use the append-only two-source marker layout");
-    };
-    check_marker_shader_layout(terrain_shader);
-    check_marker_shader_layout(water_shader);
+    require(terrain_shader.find("endpoint_annulus") == std::string::npos &&
+                water_shader.find("endpoint_annulus") == std::string::npos,
+            "terrain and water should no longer draw oversized point-reference rings");
+    const auto cube_shader = read_shader(shader_directory / "fluid_25d_forcing_cubes.vert");
+    require(cube_shader.find("readonly buffer ForcingCubes") != std::string::npos &&
+                cube_shader.find("cubes.values[gl_InstanceIndex]") != std::string::npos &&
+                cube_shader.find("float half_side = 0.5 * params.grid_cell.z;") !=
+                    std::string::npos &&
+                cube_shader.find("center.y *= params.grid_cell.w;") != std::string::npos &&
+                cube_shader.find("high = clamp(neighbor_offset - half_side") != std::string::npos &&
+                cube_shader.find("low = clamp(neighbor_offset + half_side") != std::string::npos,
+            "forcing cubes must use read-only actual cell instances and omit only shared overlap");
 }
 
 void test_sustained_headwaters_refined_scenario_construction() {
@@ -1450,11 +1450,9 @@ void test_sustained_headwaters_refined_scenario_construction() {
         double expected_outlet_center_y_m;
     };
     constexpr std::array<Resolution, 2U> resolutions{{
-        {kFluid25DSustainedHeadwatersGridWidth2m,
-         kFluid25DSustainedHeadwatersGridHeight2m,
+        {kFluid25DSustainedHeadwatersGridWidth2m, kFluid25DSustainedHeadwatersGridHeight2m,
          kFluid25DSustainedHeadwatersCellSize2m, 49U, 29U, 6U, 63.0},
-        {kFluid25DSustainedHeadwatersGridWidth1m,
-         kFluid25DSustainedHeadwatersGridHeight1m,
+        {kFluid25DSustainedHeadwatersGridWidth1m, kFluid25DSustainedHeadwatersGridHeight1m,
          kFluid25DSustainedHeadwatersCellSize1m, 169U, 58U, 12U, 63.5},
     }};
 
@@ -1500,8 +1498,8 @@ void test_sustained_headwaters_refined_scenario_construction() {
             fluid_25d_scenario_index(config.grid_width, config.grid_height, source_bx, source_by);
         const std::size_t confluence = fluid_25d_scenario_index(
             config.grid_width, config.grid_height, confluence_x, confluence_y);
-        const std::size_t outlet = fluid_25d_scenario_index(
-            config.grid_width, config.grid_height, outlet_x, confluence_y);
+        const std::size_t outlet =
+            fluid_25d_scenario_index(config.grid_width, config.grid_height, outlet_x, confluence_y);
         require(scenario.source_cell == source_a && scenario.secondary_source_cell == source_b &&
                     scenario.outlet_cell == outlet,
                 "refined endpoint metadata should preserve the authored physical locations");
@@ -1548,16 +1546,15 @@ void test_sustained_headwaters_refined_scenario_construction() {
         require(source_a_cell_count == resolution.expected_source_cells_per_patch &&
                     source_b_cell_count == resolution.expected_source_cells_per_patch,
                 "refined source patches should rasterize the complete physical footprint");
-        require_close(source_a_rate_m3_per_s,
-                      kFluid25DSustainedHeadwatersDischargePerSourceM3PerS, 1.0e-7,
+        require_close(source_a_rate_m3_per_s, kFluid25DSustainedHeadwatersDischargePerSourceM3PerS,
+                      1.0e-7,
                       "refined source A should integrate to exactly 0.25 cubic metres per second");
-        require_close(source_b_rate_m3_per_s,
-                      kFluid25DSustainedHeadwatersDischargePerSourceM3PerS, 1.0e-7,
+        require_close(source_b_rate_m3_per_s, kFluid25DSustainedHeadwatersDischargePerSourceM3PerS,
+                      1.0e-7,
                       "refined source B should integrate to exactly 0.25 cubic metres per second");
-        const std::size_t full_cell_source = fluid_25d_scenario_index(
-            config.grid_width, config.grid_height, source_ax, source_ay);
-        require_close(scenario.source_depth_rate_m_per_s[full_cell_source], 0.25 / 144.0,
-                      1.0e-8,
+        const std::size_t full_cell_source =
+            fluid_25d_scenario_index(config.grid_width, config.grid_height, source_ax, source_ay);
+        require_close(scenario.source_depth_rate_m_per_s[full_cell_source], 0.25 / 144.0, 1.0e-8,
                       "the full-overlap source cells should preserve the 12x12 metre flux density");
 
         std::size_t open_face_count = 0U;
@@ -1566,9 +1563,9 @@ void test_sustained_headwaters_refined_scenario_construction() {
             for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
                 const std::size_t index =
                     fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
-                const bool expected_open = x == outlet_x && y >= resolution.outlet_first_row &&
-                                           y < resolution.outlet_first_row +
-                                                   resolution.outlet_face_count;
+                const bool expected_open =
+                    x == outlet_x && y >= resolution.outlet_first_row &&
+                    y < resolution.outlet_first_row + resolution.outlet_face_count;
                 const std::uint32_t expected_mask =
                     expected_open ? kFluid25DBoundaryOutflowRight : 0U;
                 require(scenario.boundary_outflow_face_mask[index] == expected_mask,
@@ -1590,10 +1587,9 @@ void test_sustained_headwaters_refined_scenario_construction() {
 
         const Fluid25DEndpointMarkersGpu markers = fluid_25d_endpoint_markers(config, scenario);
         require(markers.source_xy_outlet_xy ==
-                    std::array<float, 4U>{static_cast<float>(source_ax),
-                                          static_cast<float>(source_ay),
-                                          static_cast<float>(outlet_x),
-                                          static_cast<float>(confluence_y)} &&
+                        std::array<float, 4U>{
+                            static_cast<float>(source_ax), static_cast<float>(source_ay),
+                            static_cast<float>(outlet_x), static_cast<float>(confluence_y)} &&
                     markers.secondary_source_xy_reserved ==
                         std::array<float, 4U>{static_cast<float>(source_bx),
                                               static_cast<float>(source_by), -1.0F, -1.0F},
@@ -1602,9 +1598,9 @@ void test_sustained_headwaters_refined_scenario_construction() {
         if (config.cell_size_m == kFluid25DSustainedHeadwatersCellSize1m) {
             constexpr std::array<float, 4U> source_scales{{1.0F, 2.0F, 4.0F, 8.0F}};
             for (const float source_scale : source_scales) {
-                const Fluid25DScenarioData scaled = make_fluid_25d_scenario(
-                    config.scenario, config.grid_width, config.grid_height, config.cell_size_m,
-                    source_scale);
+                const Fluid25DScenarioData scaled =
+                    make_fluid_25d_scenario(config.scenario, config.grid_width, config.grid_height,
+                                            config.cell_size_m, source_scale);
                 require(scaled.terrain_height_m == scenario.terrain_height_m &&
                             scaled.initial_water_depth_m == scenario.initial_water_depth_m &&
                             scaled.sink_depth_rate_m_per_s == scenario.sink_depth_rate_m_per_s &&
@@ -1614,7 +1610,8 @@ void test_sustained_headwaters_refined_scenario_construction() {
                             scaled.secondary_source_cell == scenario.secondary_source_cell &&
                             scaled.outlet_cell == scenario.outlet_cell &&
                             scaled.sink_cell == scenario.sink_cell,
-                        "headwaters source scaling should leave terrain, sinks, outlet, and clocks unchanged");
+                        "headwaters source scaling should leave terrain, sinks, outlet, and clocks "
+                        "unchanged");
 
                 std::size_t source_a_cells = 0U;
                 std::size_t source_b_cells = 0U;
@@ -1622,12 +1619,13 @@ void test_sustained_headwaters_refined_scenario_construction() {
                 double scaled_source_b_rate_m3_per_s = 0.0;
                 for (std::uint32_t y = 0U; y < config.grid_height; ++y) {
                     for (std::uint32_t x = 0U; x < config.grid_width; ++x) {
-                        const std::size_t index = fluid_25d_scenario_index(
-                            config.grid_width, config.grid_height, x, y);
+                        const std::size_t index =
+                            fluid_25d_scenario_index(config.grid_width, config.grid_height, x, y);
                         const float baseline_rate = scenario.source_depth_rate_m_per_s[index];
                         const float scaled_rate = scaled.source_depth_rate_m_per_s[index];
-                        require((baseline_rate > 0.0F) == (scaled_rate > 0.0F),
-                                "headwaters source scaling should preserve the 1 m source footprint");
+                        require(
+                            (baseline_rate > 0.0F) == (scaled_rate > 0.0F),
+                            "headwaters source scaling should preserve the 1 m source footprint");
                         if (scaled_rate > 0.0F) {
                             const double cell_center_y_m =
                                 static_cast<double>(y) * config.cell_size_m;
@@ -1716,24 +1714,24 @@ void test_sustained_headwaters_station_diagnostics() {
             const auto& station = stations[station_index];
             const auto& expected_station = expected[station_index];
             const std::uint32_t expected_x_cell = static_cast<std::uint32_t>(std::lround(
-                static_cast<float>(expected_station.x_reference_cell) * 4.0F /
-                config.cell_size_m));
+                static_cast<float>(expected_station.x_reference_cell) * 4.0F / config.cell_size_m));
             const std::uint32_t expected_y_cell = static_cast<std::uint32_t>(std::lround(
-                static_cast<float>(expected_station.y_reference_cell) * 4.0F /
-                config.cell_size_m));
-            require(station.name == expected_station.name &&
-                        station.x_cell == expected_x_cell && station.y_cell == expected_y_cell,
-                    "headwater diagnostic stations should retain their names and physical locations");
+                static_cast<float>(expected_station.y_reference_cell) * 4.0F / config.cell_size_m));
+            require(
+                station.name == expected_station.name && station.x_cell == expected_x_cell &&
+                    station.y_cell == expected_y_cell,
+                "headwater diagnostic stations should retain their names and physical locations");
             const std::size_t cell_index = fluid_25d_scenario_index(
                 config.grid_width, config.grid_height, expected_x_cell, expected_y_cell);
-            require_close(station.depth_m, depth_m[cell_index], kDepthToleranceM,
-                          "headwater stations should sample synthetic depth at the configured cell");
-            require_close(station.velocity_x_m_per_s,
-                          velocity[cell_index].velocity_wet[0], kDepthToleranceM,
-                          "headwater stations should sample synthetic x velocity at the configured cell");
-            require_close(station.velocity_y_m_per_s,
-                          velocity[cell_index].velocity_wet[1], kDepthToleranceM,
-                          "headwater stations should sample synthetic y velocity at the configured cell");
+            require_close(
+                station.depth_m, depth_m[cell_index], kDepthToleranceM,
+                "headwater stations should sample synthetic depth at the configured cell");
+            require_close(
+                station.velocity_x_m_per_s, velocity[cell_index].velocity_wet[0], kDepthToleranceM,
+                "headwater stations should sample synthetic x velocity at the configured cell");
+            require_close(
+                station.velocity_y_m_per_s, velocity[cell_index].velocity_wet[1], kDepthToleranceM,
+                "headwater stations should sample synthetic y velocity at the configured cell");
         }
     }
 
@@ -1757,8 +1755,8 @@ void test_sustained_headwaters_station_diagnostics() {
     short_velocity.pop_back();
     require_throws(
         [&] {
-            static_cast<void>(compute_fluid_25d_sustained_headwaters_stations(
-                config, depth_m, short_velocity));
+            static_cast<void>(
+                compute_fluid_25d_sustained_headwaters_stations(config, depth_m, short_velocity));
         },
         "headwater station diagnostics should reject a short velocity field");
 }
@@ -2148,8 +2146,7 @@ void test_terrain_case_ingestion() {
             "terrain case should not invent source or sink cells");
 
     const cubey::asset::TerrainRasterHeightSource source(fixture.root);
-    const Fluid25DScenarioData crop =
-        make_fluid_25d_terrain_crop(3U, 2U, 3.5F, source, 1U, 1U);
+    const Fluid25DScenarioData crop = make_fluid_25d_terrain_crop(3U, 2U, 3.5F, source, 1U, 1U);
     require(crop.width == terrain.width && crop.height == terrain.height &&
                 crop.cell_size_m == terrain.cell_size_m &&
                 crop.terrain_height_m == terrain.terrain_height_m &&
@@ -2159,14 +2156,10 @@ void test_terrain_case_ingestion() {
                 crop.boundary_outflow_face_mask == terrain.boundary_outflow_face_mask,
             "scenario-neutral terrain crop helper should preserve the neutral terrain fields");
     require_throws(
-        [&] {
-            static_cast<void>(make_fluid_25d_terrain_crop(0U, 2U, 3.5F, source, 1U, 1U));
-        },
+        [&] { static_cast<void>(make_fluid_25d_terrain_crop(0U, 2U, 3.5F, source, 1U, 1U)); },
         "scenario-neutral terrain crop helper should reject zero dimensions");
     require_throws(
-        [&] {
-            static_cast<void>(make_fluid_25d_terrain_crop(3U, 2U, 0.0F, source, 1U, 1U));
-        },
+        [&] { static_cast<void>(make_fluid_25d_terrain_crop(3U, 2U, 0.0F, source, 1U, 1U)); },
         "scenario-neutral terrain crop helper should reject non-positive spacing");
     require(terrain.terrain_provenance.has_value(),
             "terrain case should expose provenance for inspection");
@@ -2243,6 +2236,14 @@ void test_hillside_flow_study_contract() {
     Fluid25DConfig config = natural_flow_test_config();
     config.scenario = Fluid25DScenario::HillsideFlowStudy;
     validate_fluid_25d_config(config);
+    require(!fluid_25d_transport_inspection_available(config),
+            "water-only hillside must not advertise conserved dye");
+    auto dyed_config = config;
+    dyed_config.dye_pulse_start_seconds = 3600.0F;
+    dyed_config.dye_pulse_duration_seconds = 120.0F;
+    validate_fluid_25d_config(dyed_config);
+    require(fluid_25d_transport_inspection_available(dyed_config),
+            "explicit finite-volume hillside pulse should enable conserved transport inspection");
     const cubey::asset::TerrainRasterHeightSource source(fixture.root);
     auto scenario = make_fluid_25d_natural_flow_study_scenario(config, source, recipe, 1U, 1U);
     const auto raw = make_fluid_25d_terrain_crop(5U, 5U, 30.0F, source, 1U, 1U);
@@ -2305,6 +2306,7 @@ void test_hillside_flow_study_contract() {
 
     Fluid25DInspectionAdvance advance;
     advance.request(600.0F, 2.0F);
+    require_close(advance.progress(), 0.0, 0.0, "inspection progress begins at zero");
     std::uint32_t total = 0U;
     while (advance.remaining_steps() > 0U) {
         const auto batch = advance.take_batch();
@@ -2313,6 +2315,8 @@ void test_hillside_flow_study_contract() {
     }
     require(total == 300U && advance.take_batch() == 0U,
             "inspection advance must execute every fixed step exactly once");
+    require_close(advance.progress(), 1.0, 0.0,
+                  "inspection progress reaches one after all fixed steps");
     advance.request(5.0F, 2.0F);
     require(advance.remaining_steps() == 3U, "inspection advance rounds to full fixed steps");
     advance.reset();
@@ -2349,6 +2353,43 @@ void test_hillside_flow_study_contract() {
                 parsed.hillside_inspection_advance_seconds == 600.0F &&
                 parsed.hillside_source_context,
             "hillside study and explicit windowed inspection controls must parse");
+    auto continuous_args = args;
+    const auto pause_option = std::find(continuous_args.begin(), continuous_args.end(),
+                                        "--fluid25d-hillside-inspection-advance-seconds");
+    continuous_args.erase(pause_option, pause_option + 2);
+    continuous_args.insert(continuous_args.end(),
+                           {"--fluid25d-motion-markers", "--fluid25d-hillside-camera", "branch",
+                            "--fluid25d-hillside-advance-and-continue-seconds", "3300"});
+    const auto continuous = parse_project(continuous_args);
+    require(continuous.motion_markers && continuous.hillside_camera == "branch" &&
+                continuous.hillside_advance_and_continue_seconds == 3300.0F &&
+                !continuous.hillside_inspection_advance_seconds &&
+                continuous.simulation.natural_flow_source_m3_per_s ==
+                    parsed.simulation.natural_flow_source_m3_per_s &&
+                continuous.simulation.fixed_delta_seconds ==
+                    parsed.simulation.fixed_delta_seconds &&
+                continuous.simulation.simulation_substeps == parsed.simulation.simulation_substeps,
+            "motion/camera/continuous advance are presentation controls and preserve hydraulic "
+            "forcing");
+    auto conflicted = args;
+    conflicted.insert(conflicted.end(),
+                      {"--fluid25d-hillside-advance-and-continue-seconds", "3300"});
+    require_throws([&] { static_cast<void>(parse_project(conflicted)); },
+                   "a requested inspection pause and automatic continue cannot coexist");
+    continuous_args.push_back("--headless");
+    require_throws([&] { static_cast<void>(parse_project(continuous_args)); },
+                   "compute-and-continue cannot change deterministic headless time");
+    require_throws(
+        [&] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-motion-markers"})); },
+        "motion markers cannot silently activate on unrelated product scenarios");
+    auto dye_args = args;
+    dye_args.insert(dye_args.end(), {"--fluid25d-dye-pulse-start-seconds", "3600",
+                                     "--fluid25d-dye-pulse-duration-seconds", "120",
+                                     "--fluid25d-catchment-view", "transport-inspection"});
+    const auto dyed_parsed = parse_project(dye_args);
+    require(fluid_25d_transport_inspection_available(dyed_parsed.simulation) &&
+                !dyed_parsed.simulation.source_active_duration_seconds.has_value(),
+            "hillside dye timing must remain independent of continuous hydraulic supply");
     args.push_back("--headless");
     require_throws([&] { static_cast<void>(parse_project(args)); },
                    "windowed advance must never alter deterministic headless timing");
@@ -2464,7 +2505,7 @@ void test_natural_flow_recipe_import_and_validation() {
     require(markers.source_xy_outlet_xy == std::array<float, 4>{2.0F, 2.0F, 0.0F, 2.0F} &&
                 markers.secondary_source_xy_reserved[0] < 0.0F &&
                 markers.secondary_source_xy_reserved[1] < 0.0F,
-            "natural-flow endpoint SSBO should show a source ring and expected-exit marker only");
+            "natural-flow endpoint references should retain source and expected-exit coordinates");
 
     const auto reject_json = [](nlohmann::json invalid, const char* message) {
         require_throws(
@@ -2996,12 +3037,12 @@ void test_rain_boundary_outflow_attribution() {
         ledger[static_cast<std::size_t>(y) * config.grid_width + x]
             .source_sink_boundary_reserved_m3[2] = volume_m3;
     };
-    set_outflow(2U, 0U, 2.0F);   // north bin 1
-    set_outflow(30U, 0U, 6.0F);  // north bin 15
-    set_outflow(25U, 3U, 3.0F);  // south bin 12
-    set_outflow(0U, 1U, 4.0F);   // west bin 4
-    set_outflow(31U, 2U, 5.0F);  // east bin 8
-    set_outflow(31U, 0U, 7.0F);  // combined corner, not assigned to a side
+    set_outflow(2U, 0U, 2.0F);  // north bin 1
+    set_outflow(30U, 0U, 6.0F); // north bin 15
+    set_outflow(25U, 3U, 3.0F); // south bin 12
+    set_outflow(0U, 1U, 4.0F);  // west bin 4
+    set_outflow(31U, 2U, 5.0F); // east bin 8
+    set_outflow(31U, 0U, 7.0F); // combined corner, not assigned to a side
     const Fluid25DProfileDiagnostics diagnostics =
         compute_fluid_25d_profile_diagnostics(config, depth, velocity, ledger, 0.0);
     require_close(diagnostics.cumulative_boundary_outflow_volume_m3, 27.0, kDepthToleranceM,
@@ -3608,7 +3649,11 @@ void test_tracer_profile_diagnostic_metric_math() {
     const std::array<float, 6> sink_rate{0.0F, 0.0F, 0.0F, 0.0F, 0.10F, 0.0F};
     const std::array<Fluid25DTracerLedgerGpu, 6> ledger{{
         {.source_sink_boundary_reserved_m3 = {0.92F, 0.0F, 0.0F, 0.0F}},
-        {}, {}, {}, {}, {},
+        {},
+        {},
+        {},
+        {},
+        {},
     }};
     const Fluid25DTracerProfileDiagnostics diagnostics =
         compute_fluid_25d_tracer_profile_diagnostics(config, depth, tracer_q, sink_rate, ledger);
@@ -3908,8 +3953,7 @@ void test_windowed_pacing() {
         require(pacing.accumulator_seconds() >= 0.0 &&
                     pacing.accumulator_seconds() < 1.0 / 60.0 + 1.0e-12,
                 "fluid 2.5D windowed pacing should retain only a substep remainder");
-        return std::pair<std::uint64_t, std::uint64_t>{step_count,
-                                                       pacing.dropped_backlog_frames()};
+        return std::pair<std::uint64_t, std::uint64_t>{step_count, pacing.dropped_backlog_frames()};
     };
 
     const auto [steps_144, drops_144] = count_steps(144.0, 1.0F, 144U);
@@ -3957,18 +4001,125 @@ void test_windowed_pacing() {
     require(stalled.accumulator_seconds() == 0.0 && stalled.dropped_backlog_frames() == 0U &&
                 stalled.advance(1.0 / 120.0, false).fixed_step_count == 0U,
             "fluid 2.5D pacing reset should clear backlog and drop history");
-    require_throws(
-        [] { static_cast<void>(Fluid25DWindowedPacing(0.0F, 1.0F)); },
-        "fluid 2.5D windowed pacing should reject a nonpositive fixed delta");
-    require_throws(
-        [] { static_cast<void>(Fluid25DWindowedPacing(1.0F / 60.0F, 0.0F)); },
-        "fluid 2.5D windowed pacing should reject a nonpositive presentation scale");
+    require_throws([] { static_cast<void>(Fluid25DWindowedPacing(0.0F, 1.0F)); },
+                   "fluid 2.5D windowed pacing should reject a nonpositive fixed delta");
+    require_throws([] { static_cast<void>(Fluid25DWindowedPacing(1.0F / 60.0F, 0.0F)); },
+                   "fluid 2.5D windowed pacing should reject a nonpositive presentation scale");
     require_throws(
         [] {
             Fluid25DWindowedPacing pacing;
             static_cast<void>(pacing.advance(std::numeric_limits<double>::infinity(), false));
         },
         "fluid 2.5D windowed pacing should reject a nonfinite wall delta");
+}
+
+void test_motion_marker_display_clock() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const auto sample = [&](std::uint32_t fps) {
+        Fluid25DWindowedPacing pacing(2.0F, 8.0F);
+        Fluid25DMotionMarkerDisplayClock display;
+        std::uint32_t steps = 0U;
+        for (std::uint32_t frame = 0U; frame < fps * 10U; ++frame) {
+            const auto state = pacing.advance(1.0 / static_cast<double>(fps), false);
+            steps += state.fixed_step_count;
+            display.update(pacing.accumulator_seconds(), 2.0F, state.fixed_step_count, false,
+                           false);
+        }
+        const float before_pause = display.fraction();
+        for (std::uint32_t frame = 0U; frame < fps; ++frame) {
+            const auto state = pacing.advance(1.0 / static_cast<double>(fps), true);
+            display.update(pacing.accumulator_seconds(), 2.0F, state.fixed_step_count, false, true);
+        }
+        require(display.fraction() == before_pause,
+                "pause freezes the exact displayed marker position");
+        return std::pair{steps, display.fraction()};
+    };
+    const auto at30 = sample(30U), at60 = sample(60U);
+    require(at30.first == 40U && at60.first == 40U,
+            "30 and 60 FPS execute the same 80 physical seconds of hillside motion");
+    require_close(
+        at30.second, at60.second, 0.000001,
+        "render FPS does not change the interpolated position at the same physical clock");
+    Fluid25DMotionMarkerDisplayClock display;
+    display.update(0.0, 2.0F, 16U, true, true);
+    display.update(0.5, 2.0F, 0U, false, false);
+    require(display.fraction() == 1.0F,
+            "continuous resume holds the completed inspection state until a new step");
+    display.update(0.5, 2.0F, 1U, false, false);
+    require_close(display.fraction(), 0.25, 0.0,
+                  "regular fixed steps resume interpolation without backwards teleport");
+    display.reset();
+    require(display.fraction() == 1.0F, "reset restores the display clock");
+    require_throws(
+        [&] { display.update(0.0, 0.0F, 0U, false, false); },
+        "invalid display delta cannot introduce animation independent of simulation time");
+}
+
+void test_hillside_dye_palette_mapping() {
+    using namespace cubey::projects::fluid::fluid_25d;
+
+    require_close(fluid_25d_hillside_dye_palette_position(0.0F), 0.0, 0.0,
+                  "clear carrier should map to the bottom of the fixed dye scale");
+    require_close(
+        fluid_25d_hillside_dye_palette_position(kFluid25DHillsideDyePaletteMinimumConcentration),
+        0.0, 0.0, "the lower palette endpoint should remain clear carrier");
+    require_close(
+        fluid_25d_hillside_dye_palette_position(kFluid25DHillsideDyePaletteMaximumConcentration),
+        1.0, 0.0, "injected concentration should map to the upper palette endpoint");
+    require_close(fluid_25d_hillside_dye_palette_position(2.0F), 1.0, 0.0,
+                  "concentration above the injection reference should clamp to the upper endpoint");
+    require_close(kFluid25DHillsideDyePaletteClearFloorPercent, 0.01, 0.000001,
+                  "the fixed clear-carrier floor should be 0.01 percent of injection");
+
+    constexpr std::array<float, 4> expected_positions{0.25F, 0.5F, 0.75F, 1.0F};
+    for (std::size_t index = 0U; index < kFluid25DHillsideDyePaletteLegendConcentrations.size();
+         ++index) {
+        const float concentration = kFluid25DHillsideDyePaletteLegendConcentrations[index];
+        require_close(fluid_25d_hillside_dye_palette_position(concentration),
+                      expected_positions[index], 0.00001,
+                      "each fixed concentration legend knot should have its logarithmic position");
+        if (index > 0U) {
+            const float previous = kFluid25DHillsideDyePaletteLegendConcentrations[index - 1U];
+            require(fluid_25d_hillside_dye_palette_tint(concentration) >
+                        fluid_25d_hillside_dye_palette_tint(previous),
+                    "successive concentration decades should produce stronger dye tint");
+        }
+    }
+    require(fluid_25d_hillside_dye_palette_tint(0.001F) > 0.10F &&
+                fluid_25d_hillside_dye_palette_tint(0.003F) < 0.35F &&
+                fluid_25d_hillside_dye_palette_tint(1.0F) ==
+                    kFluid25DHillsideDyePaletteMaximumTint &&
+                kFluid25DHillsideDyePaletteMaximumTint < 1.0F,
+            "weak tails should remain visible, former saturation levels should retain a gradient, "
+            "and injected concentration should preserve carrier color");
+
+    constexpr std::array<float, 10> samples{-1.0F,  0.0F,  0.00001F, 0.0001F, 0.0002F,
+                                            0.001F, 0.01F, 0.1F,     1.0F,    2.0F};
+    float previous_position = -1.0F;
+    float previous_tint = -1.0F;
+    for (const float concentration : samples) {
+        const float position = fluid_25d_hillside_dye_palette_position(concentration);
+        const float tint = fluid_25d_hillside_dye_palette_tint(concentration);
+        require(std::isfinite(position) && position >= 0.0F && position <= 1.0F &&
+                    std::isfinite(tint) && tint >= 0.0F &&
+                    tint <= kFluid25DHillsideDyePaletteMaximumTint &&
+                    position >= previous_position && tint >= previous_tint,
+                "the fixed dye palette position and tint should be finite, bounded, and monotonic");
+        previous_position = position;
+        previous_tint = tint;
+    }
+
+    const auto uses_hillside_palette = [](Fluid25DScenario scenario) {
+        return fluid_25d_hillside_dye_palette_enabled_for_material_cue(
+            fluid_25d_catchment_terrain_material_cue(scenario));
+    };
+    require(uses_hillside_palette(Fluid25DScenario::HillsideFlowStudy) &&
+                !uses_hillside_palette(Fluid25DScenario::NaturalFlowStudy) &&
+                !uses_hillside_palette(Fluid25DScenario::SustainedHeadwatersDemo) &&
+                !uses_hillside_palette(Fluid25DScenario::SourceOutletDemo) &&
+                !uses_hillside_palette(Fluid25DScenario::MountainSourceOutletDemo) &&
+                !fluid_25d_hillside_dye_palette_enabled_for_material_cue(3.999F),
+            "only the exact hillside material cue should select the new dye scale");
 }
 
 void test_presentation_cue_contract() {
@@ -4074,22 +4225,35 @@ void test_presentation_cue_contract() {
         read_shader(shader_directory / "fluid_25d_presentation_cue_advect.comp");
     const std::string water = read_shader(shader_directory / "fluid_25d_water.frag");
     const std::string water_vertex = read_shader(shader_directory / "fluid_25d_water.vert");
-    const std::string quiver_reset =
-        read_shader(shader_directory / "fluid_25d_quiver_reset.comp");
+    const std::string marker_vertex =
+        read_shader(shader_directory / "fluid_25d_motion_markers.vert");
+    require(marker_vertex.find("f.x>=f.y") != std::string::npos &&
+                marker_vertex.find("h[0]*(1.0-f.x)+h[1]*(f.x-f.y)+h[3]*f.y") != std::string::npos &&
+                marker_vertex.find("h[0]*(1.0-f.y)+h[2]*(f.y-f.x)+h[3]*f.x") != std::string::npos &&
+                water_vertex.find("uvec2(0u, 0u), uvec2(1u, 1u), uvec2(1u, 0u)") !=
+                    std::string::npos,
+            "markers must use the visible water mesh diagonal, not a bilinear surface below it");
+    // Independent curved-cell counterexample: four corner heights 0,0,0,4
+    // give a visible diagonal height of 2 at the center. Bilinear draping
+    // gives 1 and can hide the marker below the water. Both triangles have
+    // nonnegative barycentric weights and agree along their common diagonal.
+    const auto mesh_height = [](double x, double z) { return x >= z ? 4.0 * z : 4.0 * x; };
+    require_close(mesh_height(0.5, 0.5), 2.0, 0.0, "curved-cell mesh center height");
+    require_close(mesh_height(0.75, 0.25), 1.0, 0.0, "first water triangle height");
+    require_close(mesh_height(0.25, 0.75), 1.0, 0.0, "second water triangle height");
+    const std::string quiver_reset = read_shader(shader_directory / "fluid_25d_quiver_reset.comp");
     const std::string quiver_update =
         read_shader(shader_directory / "fluid_25d_quiver_update.comp");
-    const std::string quiver_vertex =
-        read_shader(shader_directory / "fluid_25d_quiver.vert");
-    const std::string quiver_fragment =
-        read_shader(shader_directory / "fluid_25d_quiver.frag");
+    const std::string quiver_vertex = read_shader(shader_directory / "fluid_25d_quiver.vert");
+    const std::string quiver_fragment = read_shader(shader_directory / "fluid_25d_quiver.frag");
     const std::string commands =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
     const std::string app =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
     const std::string ui =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_ui.cpp");
-    const std::string project_config = read_shader(
-        std::filesystem::path(__FILE__).parent_path() / "../../fluid_25d/fluid_25d_project_config.h");
+    const std::string project_config = read_shader(std::filesystem::path(__FILE__).parent_path() /
+                                                   "../../fluid_25d/fluid_25d_project_config.h");
     require(reset.find("cue_lattice") != std::string::npos &&
                 reset.find("cue_a.values[index] = seed;") != std::string::npos &&
                 reset.find("cue_b.values[index] = seed;") != std::string::npos,
@@ -4115,14 +4279,21 @@ void test_presentation_cue_contract() {
                 water.find("dye_visibility") != std::string::npos,
             "Transport Inspection should derive bounded q/h concentration and keep every prior "
             "catchment mode's predicate exact");
-    require(ui.find("kTransportCatchmentViews") != std::string::npos &&
-                ui.find("transport_inspection_available") != std::string::npos &&
-                ui.find("Transport Inspection needs a finite-volume dye pulse on an eligible demo.") !=
-                    std::string::npos &&
-                ui.find("Magenta-to-violet") != std::string::npos &&
-                project_config.find("transport-inspection") != std::string::npos &&
-                project_config.find("positive dye pulse duration") != std::string::npos,
-            "transport UI and CLI should expose the dye reading only when its scenario contract is valid");
+    require(water.find("params.presentation.w == 4.0") != std::string::npos &&
+                water.find("log(bounded_concentration / dye_scale_minimum)") != std::string::npos &&
+                water.find("smoothstep(0.00025, 0.0030, dye_concentration)") != std::string::npos,
+            "the fixed log-scale palette should be material-cue gated while other scenarios retain "
+            "their established concentration palette");
+    require(
+        ui.find("kTransportCatchmentViews") != std::string::npos &&
+            ui.find("transport_inspection_available") != std::string::npos &&
+            ui.find("Transport Inspection needs a finite-volume dye pulse on an eligible demo.") !=
+                std::string::npos &&
+            ui.find("Magenta-to-violet") != std::string::npos &&
+            project_config.find("transport-inspection") != std::string::npos &&
+            project_config.find("positive dye pulse duration") != std::string::npos,
+        "transport UI and CLI should expose the dye reading only when its scenario contract is "
+        "valid");
     const std::size_t substep_loop = commands.find("for (std::uint32_t substep");
     const std::size_t cue_update =
         commands.find("record_presentation_cue_advection(", substep_loop);
@@ -4140,8 +4311,7 @@ void test_presentation_cue_contract() {
         commands.find(".read_storage_buffer(tracer_q_a)", catchment_pass);
     const std::size_t catchment_tracer_q_b =
         commands.find(".read_storage_buffer(tracer_q_b)", catchment_pass);
-    const std::size_t quiver_update_call =
-        commands.find("record_quiver_update(", substep_loop);
+    const std::size_t quiver_update_call = commands.find("record_quiver_update(", substep_loop);
     const std::size_t headless_quiver =
         commands.find("record_fluid_25d_flow_inspection_quiver_step(");
     const std::size_t headless_quiver_reset =
@@ -4158,14 +4328,16 @@ void test_presentation_cue_contract() {
                     std::string::npos &&
                 app.find("bool reset_requested_ = false;") != std::string::npos &&
                 app.find("bool presentation_cue_reset_requested_ = true;") != std::string::npos,
-            "direct headless compute should keep the solver-only path while frame-graph presentation owns the cue");
-    require(diagnostics_pass != std::string::npos && catchment_pass != std::string::npos &&
-                diagnostics_pass < catchment_pass && catchment_cue_a != std::string::npos &&
-                catchment_cue_b != std::string::npos && catchment_cue_a > catchment_pass &&
-                catchment_cue_b > catchment_pass && catchment_tracer_q_a != std::string::npos &&
-                catchment_tracer_q_b != std::string::npos &&
-                catchment_tracer_q_a > catchment_pass && catchment_tracer_q_b > catchment_pass,
-            "the catchment pass should declare the cue and tracer buffers read by the water shader");
+            "direct headless compute should keep the solver-only path while frame-graph "
+            "presentation owns the cue");
+    require(
+        diagnostics_pass != std::string::npos && catchment_pass != std::string::npos &&
+            diagnostics_pass < catchment_pass && catchment_cue_a != std::string::npos &&
+            catchment_cue_b != std::string::npos && catchment_cue_a > catchment_pass &&
+            catchment_cue_b > catchment_pass && catchment_tracer_q_a != std::string::npos &&
+            catchment_tracer_q_b != std::string::npos && catchment_tracer_q_a > catchment_pass &&
+            catchment_tracer_q_b > catchment_pass,
+        "the catchment pass should declare the cue and tracer buffers read by the water shader");
     require(quiver_reset.find("anchor_axis") != std::string::npos &&
                 quiver_reset.find("kMaxColumns = 96u") != std::string::npos &&
                 quiver_reset.find("kMaxRows = 48u") != std::string::npos &&
@@ -4194,17 +4366,18 @@ void test_presentation_cue_contract() {
                 quiver_fragment.find("fwidth(normalized_edge)") != std::string::npos &&
                 quiver_fragment.find("frag_part != 0u") != std::string::npos &&
                 quiver_fragment.find("color * alpha") != std::string::npos,
-            "Flow Inspection should render fixed conventional antialiased arrow glyphs without a draw-time speed cutoff");
+            "Flow Inspection should render fixed conventional antialiased arrow glyphs without a "
+            "draw-time speed cutoff");
     require(quiver_update_call != std::string::npos && quiver_update_call > substep_loop &&
                 headless_quiver != std::string::npos &&
                 headless_quiver_reset != std::string::npos &&
-                headless_compute != std::string::npos &&
-                headless_quiver_reset < headless_compute &&
+                headless_compute != std::string::npos && headless_quiver_reset < headless_compute &&
                 app.find("record_fluid_25d_flow_inspection_quiver_step") != std::string::npos &&
                 app.find("bool quiver_reset_requested_ = true;") != std::string::npos,
-            "quiver should seed the initial headless field before solving, then follow completed outer steps separately");
+            "quiver should seed the initial headless field before solving, then follow completed "
+            "outer steps separately");
     require(commands.find("catchment_view == Fluid25DCatchmentView::FlowInspection") !=
-                std::string::npos &&
+                    std::string::npos &&
                 commands.find("catchment_view == Fluid25DCatchmentView::TransportInspection") ==
                     std::string::npos,
             "Transport Inspection should not schedule or render Flow Inspection's quiver field");
@@ -4539,8 +4712,8 @@ void test_finite_volume_sustained_headwaters_flow_control() {
     constexpr float kMaterialFrontDepthM = 0.001F;
     constexpr std::uint64_t kMaximumControlSteps = 2400U; // 600 seconds at 0.25 s/fixed step.
     const auto reference_cell = [](std::uint32_t value, float cell_size_m) {
-        return static_cast<std::uint32_t>(std::lround(static_cast<float>(value) * 4.0F /
-                                                      cell_size_m));
+        return static_cast<std::uint32_t>(
+            std::lround(static_cast<float>(value) * 4.0F / cell_size_m));
     };
     for (const Resolution& resolution : resolutions) {
         Fluid25DConfig config;
@@ -4590,9 +4763,8 @@ void test_finite_volume_sustained_headwaters_flow_control() {
         // Refined CPU cases are 30 s CFL/positivity/ledger sanity checks; the
         // long 900/1800 s refined evidence is collected through the GPU runner.
         const std::uint64_t control_steps =
-            config.cell_size_m == kFluid25DSustainedHeadwatersCellSizeM
-                ? kMaximumControlSteps
-                : 120U;
+            config.cell_size_m == kFluid25DSustainedHeadwatersCellSizeM ? kMaximumControlSteps
+                                                                        : 120U;
 
         for (std::uint64_t step = 0U; step < control_steps; ++step) {
             const Fluid25DStepLedger ledger = oracle.step();
@@ -4600,17 +4772,17 @@ void test_finite_volume_sustained_headwaters_flow_control() {
             cumulative_outflow_volume_m3 += ledger.boundary_outflow_volume_m3;
             const double step_ledger_tolerance_m3 =
                 std::max(kLedgerToleranceM3, ledger.volume_after_m3 * 2.0e-6);
-            require_close(ledger.conservation_error_m3(), 0.0, step_ledger_tolerance_m3,
-                          "sustained-headwaters fixed step should conserve source and boundary volume");
+            require_close(
+                ledger.conservation_error_m3(), 0.0, step_ledger_tolerance_m3,
+                "sustained-headwaters fixed step should conserve source and boundary volume");
             require(ledger.sink_volume_m3 == 0.0,
                     "sustained-headwaters control should not remove water through a sink");
             require(oracle.last_cfl_number() <= Fluid25DFiniteVolumeOracle::kTargetCfl,
                     "sustained-headwaters accepted steps should remain within the CFL target");
 
             const std::vector<float>& depth_m = oracle.water_depth_m();
-            require(std::all_of(depth_m.begin(), depth_m.end(), [](float depth) {
-                        return std::isfinite(depth) && depth >= 0.0F;
-                    }),
+            require(std::all_of(depth_m.begin(), depth_m.end(),
+                                [](float depth) { return std::isfinite(depth) && depth >= 0.0F; }),
                     "sustained-headwaters evolution should keep all depths finite and nonnegative");
             branch_a_wetted = branch_a_wetted || depth_m[branch_a_probe] > kMaterialFrontDepthM;
             branch_b_wetted = branch_b_wetted || depth_m[branch_b_probe] > kMaterialFrontDepthM;
@@ -4628,26 +4800,27 @@ void test_finite_volume_sustained_headwaters_flow_control() {
                     "both continuously forced tributaries should carry a material water front");
             require(confluence_wetted,
                     "the two headwater fronts should reach their shared confluence");
-            require(trunk_wetted,
-                    "confluence flow should continue down the shared trunk");
-            require(cumulative_outflow_volume_m3 > 0.01,
-                    "sustained headwater flow should eventually discharge through the east aperture");
+            require(trunk_wetted, "confluence flow should continue down the shared trunk");
+            require(
+                cumulative_outflow_volume_m3 > 0.01,
+                "sustained headwater flow should eventually discharge through the east aperture");
         }
-        const double expected_source_volume_m3 =
-            0.50 * static_cast<double>(config.fixed_delta_seconds) *
-            static_cast<double>(control_steps);
+        const double expected_source_volume_m3 = 0.50 *
+                                                 static_cast<double>(config.fixed_delta_seconds) *
+                                                 static_cast<double>(control_steps);
         // The solver adds each source as a float depth increment; at nonzero depth the
         // represented delta is quantized when accumulated into water_depth_m_. Keep this
         // integrated-ledger tolerance relative and tight, while the static source-field
         // test above independently verifies the requested 0.50 m^3/s normalization.
         const double integrated_source_tolerance_m3 =
             std::max(kVolumeToleranceM3, expected_source_volume_m3 * 5.0e-5);
-        require_close(cumulative_source_volume_m3, expected_source_volume_m3,
-                      integrated_source_tolerance_m3,
-                      "two constant headwaters should contribute the configured total source volume");
-        require_close(oracle.total_water_volume_m3() + cumulative_outflow_volume_m3,
-                      cumulative_source_volume_m3, 0.05,
-                      "stored water plus open-boundary discharge should reconcile all headwater input");
+        require_close(
+            cumulative_source_volume_m3, expected_source_volume_m3, integrated_source_tolerance_m3,
+            "two constant headwaters should contribute the configured total source volume");
+        require_close(
+            oracle.total_water_volume_m3() + cumulative_outflow_volume_m3,
+            cumulative_source_volume_m3, 0.05,
+            "stored water plus open-boundary discharge should reconcile all headwater input");
     }
 }
 
@@ -4714,11 +4887,11 @@ void test_dye_config_and_fixed_step_schedule() {
     require(parsed.simulation.dye_pulse_start_seconds == 0.5F &&
                 parsed.simulation.dye_pulse_duration_seconds == 1.25F,
             "dye CLI options should bind the validated source-outlet pulse timing");
-    const Fluid25DProjectConfig headwaters_parsed = parse_project(
-        {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
-         "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height", "33",
-         "--fluid25d-cell-size-m", "4", "--fluid25d-dye-pulse-start-seconds", "0.25",
-         "--fluid25d-dye-pulse-duration-seconds", "0.5"});
+    const Fluid25DProjectConfig headwaters_parsed =
+        parse_project({"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
+                       "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
+                       "33", "--fluid25d-cell-size-m", "4", "--fluid25d-dye-pulse-start-seconds",
+                       "0.25", "--fluid25d-dye-pulse-duration-seconds", "0.5"});
     require(headwaters_parsed.simulation.dye_pulse_start_seconds == 0.25F &&
                 headwaters_parsed.simulation.dye_pulse_duration_seconds == 0.5F &&
                 fluid_25d_transport_inspection_available(headwaters_parsed.simulation),
@@ -4757,27 +4930,26 @@ void test_dye_config_and_fixed_step_schedule() {
         [] {
             static_cast<void>(parse_project(
                 {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
-                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
-                 "33", "--fluid25d-cell-size-m", "4", "--fluid25d-source-active-duration-seconds",
-                 "10", "--fluid25d-dye-pulse-start-seconds", "0",
-                 "--fluid25d-dye-pulse-duration-seconds", "1"}));
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height", "33",
+                 "--fluid25d-cell-size-m", "4", "--fluid25d-source-active-duration-seconds", "10",
+                 "--fluid25d-dye-pulse-start-seconds", "0", "--fluid25d-dye-pulse-duration-seconds",
+                 "1"}));
         },
         "headwater dye CLI should reject hydraulic source shutoff scheduling");
     require_throws(
         [] {
             static_cast<void>(parse_project(
                 {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
-                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
-                 "33", "--fluid25d-cell-size-m", "4", "--fluid25d-rainfall-rate-mm-per-hour",
-                 "10"}));
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height", "33",
+                 "--fluid25d-cell-size-m", "4", "--fluid25d-rainfall-rate-mm-per-hour", "10"}));
         },
         "headwater CLI should reject rain forcing");
     require_throws(
         [] {
             static_cast<void>(parse_project(
                 {"fluid_25d", "--fluid25d-scenario", "sustained-headwaters-demo",
-                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height",
-                 "33", "--fluid25d-cell-size-m", "4", "--fluid25d-sheet-depth-m", "0.1"}));
+                 "--fluid25d-solver", "finite-volume", "--grid-width", "65", "--grid-height", "33",
+                 "--fluid25d-cell-size-m", "4", "--fluid25d-sheet-depth-m", "0.1"}));
         },
         "headwater CLI should reject sheet forcing");
 }
@@ -4937,13 +5109,15 @@ void test_sustained_headwaters_dye_pulse() {
         require_close(oracle.total_water_volume_m3(), 0.25, kVolumeToleranceM3,
                       "continuous headwater sources should accumulate after the pulse boundary");
         const auto& cumulative_tracer = oracle.cumulative_tracer_ledger();
-        require_close(oracle.total_tracer_amount_m3(),
-                      cumulative_tracer.source_amount_m3 - cumulative_tracer.sink_amount_m3 -
-                          cumulative_tracer.boundary_outflow_amount_m3,
-                      kVolumeToleranceM3,
-                      "headwater tracer storage should reconcile its cumulative source and outlet ledger");
-        require_close(cumulative_tracer.source_amount_m3, 0.125, kVolumeToleranceM3,
-                      "cumulative headwater tracer input should stop at the half-open pulse boundary");
+        require_close(
+            oracle.total_tracer_amount_m3(),
+            cumulative_tracer.source_amount_m3 - cumulative_tracer.sink_amount_m3 -
+                cumulative_tracer.boundary_outflow_amount_m3,
+            kVolumeToleranceM3,
+            "headwater tracer storage should reconcile its cumulative source and outlet ledger");
+        require_close(
+            cumulative_tracer.source_amount_m3, 0.125, kVolumeToleranceM3,
+            "cumulative headwater tracer input should stop at the half-open pulse boundary");
     }
 }
 
@@ -5055,16 +5229,17 @@ void test_dye_open_boundary_ledger() {
     validate_fluid_25d_config(config);
 
     Fluid25DScenarioData scenario = make_dye_test_scenario();
-    std::fill(scenario.source_depth_rate_m_per_s.begin(),
-              scenario.source_depth_rate_m_per_s.end(), 0.0F);
+    std::fill(scenario.source_depth_rate_m_per_s.begin(), scenario.source_depth_rate_m_per_s.end(),
+              0.0F);
     std::fill(scenario.sink_depth_rate_m_per_s.begin(), scenario.sink_depth_rate_m_per_s.end(),
               0.0F);
     scenario.source_cell = fluid_25d_scenario_index(6U, 3U, 0U, 1U);
     scenario.sink_cell = kFluid25DNoCell;
     scenario.source_depth_rate_m_per_s[scenario.source_cell] = 0.20F;
     scenario.boundary_outflow_face_mask[scenario.source_cell] = kFluid25DBoundaryOutflowLeft;
-    const double source_delta_m = static_cast<double>(scenario.source_depth_rate_m_per_s[
-        scenario.source_cell]) * static_cast<double>(config.fixed_delta_seconds);
+    const double source_delta_m =
+        static_cast<double>(scenario.source_depth_rate_m_per_s[scenario.source_cell]) *
+        static_cast<double>(config.fixed_delta_seconds);
     const double source_depth_m =
         static_cast<double>(scenario.initial_water_depth_m[scenario.source_cell]) + source_delta_m;
     const double expected_donor_concentration = source_delta_m / source_depth_m;
@@ -5083,8 +5258,8 @@ void test_dye_open_boundary_ledger() {
                   "open-boundary tracer outflow should use the interior donor concentration");
     require_close(result.tracer.conservation_error_m3(), 0.0, kLedgerToleranceM3,
                   "open-boundary tracer ledger should reconcile its source and removal");
-    require_close(oracle.total_tracer_amount_m3(), result.tracer.source_amount_m3 -
-                                                       result.tracer.boundary_outflow_amount_m3,
+    require_close(oracle.total_tracer_amount_m3(),
+                  result.tracer.source_amount_m3 - result.tracer.boundary_outflow_amount_m3,
                   kVolumeToleranceM3,
                   "open-boundary tracer amount should reconcile its positive source and outflow");
     require_close(oracle.cumulative_tracer_ledger().boundary_outflow_amount_m3,
@@ -5139,6 +5314,289 @@ void test_dye_cfl_rejection_and_reset() {
             "dye reset should restore zero tracer state, accounting, and schedule clock");
 }
 
+void test_finite_volume_reference_conserved_storage() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config;
+    config.solver = Fluid25DSolver::FiniteVolume;
+    config.scenario = Fluid25DScenario::DryBed;
+    config.grid_width = config.grid_height = 4U;
+    config.cell_size_m = 30.0F;
+    config.fixed_delta_seconds = 2.0F;
+    config.simulation_substeps = 16U;
+    auto scenario = make_fluid_25d_scenario(config.scenario, 4U, 4U, config.cell_size_m);
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+    std::fill(scenario.initial_water_depth_m.begin(), scenario.initial_water_depth_m.end(), 1.0F);
+    std::fill(scenario.source_depth_rate_m_per_s.begin(), scenario.source_depth_rate_m_per_s.end(),
+              20.0F / 900.0F);
+    Fluid25DFiniteVolumeOracle oracle(config, scenario);
+    double sources = 0.0;
+    for (unsigned step = 0U; step < 3600U; ++step) {
+        const auto ledger = oracle.step();
+        sources += ledger.source_volume_m3;
+        require(ledger.sink_volume_m3 == 0.0 && ledger.boundary_outflow_volume_m3 == 0.0,
+                "closed reference source basin must not acquire a sink or outlet");
+    }
+    const double nominal_sources =
+        static_cast<double>(scenario.source_depth_rate_m_per_s.front()) * 7200.0 * 900.0 * 16.0;
+    require_close(
+        sources, nominal_sources, 1.0e-6,
+        "reference source ledger must measure configured addition, not float h subtraction");
+    const float h = oracle.water_depth_m().front();
+    const double maximum_float_publication_error =
+        0.5 * static_cast<double>(std::nextafter(h, std::numeric_limits<float>::infinity()) - h) *
+        900.0 * 16.0;
+    require(std::abs(oracle.total_water_volume_m3() - 14400.0 - sources) <=
+                maximum_float_publication_error,
+            "local double remainders must bound two-hour storage error by final float publication");
+    oracle.reset();
+    Fluid25DFiniteVolumeOracle fresh(config, scenario);
+    static_cast<void>(oracle.step());
+    static_cast<void>(fresh.step());
+    require(oracle.water_depth_m() == fresh.water_depth_m(),
+            "reference reset must clear the accumulated conserved-depth remainder");
+}
+
+void test_mass_audit_cli_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+
+    const Fluid25DProjectConfig audited = parse_project(
+        {"fluid_25d", "--headless", "--fluid25d-solver", "finite-volume", "--fluid25d-mass-audit",
+         "--profile-diagnostics", "--profile-output", "mass-audit-test"});
+    require(audited.mass_audit && audited.simulation.mass_audit && audited.common.headless &&
+                audited.common.profile_diagnostics &&
+                audited.simulation.solver == Fluid25DSolver::FiniteVolume,
+            "mass audit should parse only with its headless finite-volume diagnostic contract");
+
+    for (const std::string control : {"source-basin", "dam-break"}) {
+        const Fluid25DProjectConfig parsed = parse_project(
+            {"fluid_25d", "--headless", "--fluid25d-solver", "finite-volume", "--fluid25d-scenario",
+             "dry-bed", "--fluid25d-mass-audit-control", control});
+        require(parsed.mass_audit_control == control && !parsed.mass_audit,
+                "mass audit control fixtures should be selectable without enabling the audit");
+    }
+    const Fluid25DProjectConfig no_control =
+        parse_project({"fluid_25d", "--fluid25d-mass-audit-control", "none"});
+    require(no_control.mass_audit_control == "none",
+            "the explicit no-control mass audit option should remain available");
+
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-solver", "finite-volume",
+                                             "--fluid25d-mass-audit", "--profile-diagnostics",
+                                             "--profile-output", "mass-audit-test"}));
+        },
+        "mass audit should reject windowed operation");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--headless", "--fluid25d-solver", "finite-volume",
+                               "--fluid25d-mass-audit", "--profile-output", "mass-audit-test"}));
+        },
+        "mass audit should require profile diagnostics");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--headless", "--fluid25d-mass-audit",
+                               "--profile-diagnostics", "--profile-output", "mass-audit-test"}));
+        },
+        "mass audit should require the finite-volume solver");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-mass-audit-control", "source-basin"}));
+        },
+        "mass audit controls should reject windowed operation");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project(
+                {"fluid_25d", "--headless", "--fluid25d-mass-audit-control", "dam-break"}));
+        },
+        "mass audit controls should require the finite-volume solver");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--headless", "--fluid25d-solver",
+                                             "finite-volume", "--fluid25d-scenario", "lake-at-rest",
+                                             "--fluid25d-mass-audit-control", "dam-break"}));
+        },
+        "mass audit controls should require the dry-bed scenario");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-mass-audit-control", "unknown"}));
+        },
+        "mass audit controls should reject unknown fixture names");
+}
+
+void test_mass_audit_diagnostics() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    static_assert(kFluid25DMassAuditTerms == 12U);
+    static_assert(sizeof(Fluid25DMassAuditGpu) == 192U);
+
+    std::array<Fluid25DMassAuditGpu, 3U> cells{};
+    const auto set_water = [](Fluid25DMassAuditGpu& cell, std::size_t term, float high, float low) {
+        cell.water_hi[term] = high;
+        cell.water_lo[term] = low;
+    };
+    set_water(cells[0], 0U, 2.0F, 0.0F);
+    set_water(cells[1], 0U, 3.0F, 0.0F);
+    set_water(cells[0], 1U, 0.25F, 0.0F);
+    set_water(cells[1], 1U, 0.25F, 0.0F);
+    set_water(cells[0], 2U, 0.4F, 0.0F);
+    set_water(cells[1], 2U, 0.6F, 0.0F);
+    set_water(cells[0], 3U, 2.0F, 0.0F);
+    set_water(cells[1], 3U, 3.0F, 0.0F);
+    set_water(cells[0], 4U, 0.2F, 0.0F);
+    set_water(cells[1], 4U, 0.3F, 0.0F);
+    set_water(cells[0], 5U, 0.125F, 0.0F);
+    set_water(cells[1], 5U, 0.125F, 0.0F);
+    set_water(cells[0], 6U, 0.4F, 0.0F);
+    set_water(cells[1], 6U, 0.5F, 0.0F);
+    set_water(cells[0], 7U, 0.02F, 0.0F);
+    set_water(cells[1], 7U, 0.03F, 0.0F);
+    set_water(cells[0], 8U, 0.04F, 0.0F);
+    set_water(cells[1], 8U, 0.06F, 0.0F);
+    for (Fluid25DMassAuditGpu& cell : cells) {
+        cell.water_hi[9U] = 4.0F;
+    }
+
+    const auto original_cells = cells;
+    const Fluid25DMassAuditDiagnostics water =
+        compute_fluid_25d_mass_audit(cells, 106.0, 100.0, 5.25, 0.75, 1.1);
+    require_close(water.totals_m3[0U], 5.0, 1.0e-6,
+                  "mass audit should sum independent nominal source deltas");
+    require_close(water.totals_m3[1U], 0.5, 1.0e-6,
+                  "mass audit should sum independent nominal sink deltas");
+    require_close(water.totals_m3[2U], 1.0, 1.0e-6,
+                  "mass audit should sum independent nominal boundary deltas");
+    require_close(water.totals_m3[3U], 5.0, 1.0e-6,
+                  "mass audit should sum actual source field additions");
+    require_close(water.totals_m3[4U], 0.5, 1.0e-6,
+                  "mass audit should sum actual sink field removals");
+    require_close(water.totals_m3[5U], 0.25, 1.0e-6,
+                  "mass audit should preserve signed internal transport");
+    require_close(water.totals_m3[6U], 0.9, 1.0e-6,
+                  "mass audit should sum positive boundary transport out");
+    require_close(water.totals_m3[7U], 0.05, 1.0e-6,
+                  "mass audit should sum update arithmetic corrections");
+    require_close(water.totals_m3[8U], 0.1, 1.0e-6, "mass audit should sum clamp corrections");
+    require(water.committed_substeps == 4U && water.totals_m3[9U] == 4.0,
+            "mass audit should retain the common per-cell committed-step count once");
+    require(water.totals_m3[10U] == 0.0 && water.totals_m3[11U] == 0.0,
+            "mass audit reserved totals should remain zero");
+    require_close(water.field_budget_residual_m3, 2.0, 1.0e-6,
+                  "mass audit field budget should include transport, arithmetic, and clamp terms");
+    require_close(water.cumulative_ledger_rounding_m3, 0.1, 1.0e-6,
+                  "mass audit should separate cumulative-ledger rounding");
+    require_close(water.source_representation_difference_m3, 0.0, 1.0e-6,
+                  "mass audit should compare actual source change with nominal source delta");
+    require_close(water.sink_representation_difference_m3, 0.0, 1.0e-6,
+                  "mass audit should compare nominal sink delta with actual sink removal");
+    require_close(water.boundary_definition_difference_m3, 0.1, 1.0e-6,
+                  "mass audit should compare nominal boundary delta with boundary transport");
+    require_close(water.observed_conservation_residual_m3, 2.6, 1.0e-6,
+                  "mass audit should reproduce the existing observed conservation residual");
+    require_close(water.field_budget_residual_m3 + water.source_representation_difference_m3 +
+                      water.sink_representation_difference_m3 +
+                      water.boundary_definition_difference_m3 +
+                      water.cumulative_ledger_rounding_m3 + water.totals_m3[5U] +
+                      water.totals_m3[7U] + water.totals_m3[8U],
+                  water.observed_conservation_residual_m3, 1.0e-6,
+                  "mass audit terms should recompose to the observed conservation residual");
+    for (std::size_t index = 0U; index < cells.size(); ++index) {
+        require(cells[index].water_hi == original_cells[index].water_hi &&
+                    cells[index].water_lo == original_cells[index].water_lo &&
+                    cells[index].tracer_hi == original_cells[index].tracer_hi &&
+                    cells[index].tracer_lo == original_cells[index].tracer_lo,
+                "mass audit reduction should not mutate its input buffer");
+    }
+
+    std::array<Fluid25DMassAuditGpu, 2U> expansions{};
+    expansions[0].water_hi[0U] = 2.5F;
+    expansions[1].water_hi[0U] = 2.5F;
+    expansions[0].water_hi[3U] = 2.5F;
+    expansions[1].water_hi[3U] = 2.5F;
+    expansions[0].water_hi[5U] = 1.0e20F;
+    expansions[0].water_lo[5U] = 0.125F;
+    expansions[1].water_hi[5U] = -1.0e20F;
+    expansions[1].water_lo[5U] = 0.125F;
+    expansions[0].tracer_hi[0U] = 2.5F;
+    expansions[1].tracer_hi[0U] = 2.5F;
+    expansions[0].tracer_hi[3U] = 2.5F;
+    expansions[1].tracer_hi[3U] = 2.5F;
+    expansions[0].tracer_hi[5U] = 1.0e20F;
+    expansions[0].tracer_lo[5U] = 0.25F;
+    expansions[1].tracer_hi[5U] = -1.0e20F;
+    expansions[1].tracer_lo[5U] = 0.25F;
+    for (Fluid25DMassAuditGpu& cell : expansions) {
+        cell.water_hi[9U] = 3.0F;
+        cell.tracer_hi[9U] = 3.0F;
+    }
+    const Fluid25DMassAuditDiagnostics water_expansion =
+        compute_fluid_25d_mass_audit(expansions, 5.25, 0.0, 5.0, 0.0, 0.0);
+    require_close(water_expansion.totals_m3[5U], 0.25, 1.0e-7,
+                  "mass audit should retain low-part residuals after large-term cancellation");
+    require_close(water_expansion.field_budget_residual_m3, 0.0, 1.0e-7,
+                  "water expansion audit should reconcile its selected channel");
+    const Fluid25DMassAuditDiagnostics tracer_expansion =
+        compute_fluid_25d_mass_audit(expansions, 5.5, 0.0, 5.0, 0.0, 0.0, true);
+    require_close(tracer_expansion.totals_m3[5U], 0.5, 1.0e-7,
+                  "mass audit should select the tracer high/low channel when requested");
+    require_close(tracer_expansion.field_budget_residual_m3, 0.0, 1.0e-7,
+                  "tracer expansion audit should reconcile its selected channel");
+
+    const std::array<Fluid25DMassAuditGpu, 1U> reset_cells{};
+    const Fluid25DMassAuditDiagnostics reset =
+        compute_fluid_25d_mass_audit(reset_cells, 0.0, 0.0, 0.0, 0.0, 0.0);
+    require(reset.committed_substeps == 0U && reset.observed_conservation_residual_m3 == 0.0 &&
+                std::all_of(reset.totals_m3.begin(), reset.totals_m3.end(),
+                            [](double value) { return value == 0.0; }),
+            "zeroed audit fields should represent a clean reset without accumulated totals");
+
+    require_throws(
+        [] {
+            static_cast<void>(compute_fluid_25d_mass_audit(std::span<const Fluid25DMassAuditGpu>{},
+                                                           0.0, 0.0, 0.0, 0.0, 0.0));
+        },
+        "mass audit should reject an empty cell span");
+    require_throws(
+        [&] {
+            auto invalid = cells;
+            invalid[0].water_hi[0U] = std::numeric_limits<float>::quiet_NaN();
+            static_cast<void>(compute_fluid_25d_mass_audit(invalid, 106.0, 100.0, 5.25, 0.75, 1.1));
+        },
+        "mass audit should reject nonfinite high or low expansion data");
+    require_throws(
+        [&] {
+            auto invalid = cells;
+            invalid[1].water_lo[10U] = 1.0F;
+            static_cast<void>(compute_fluid_25d_mass_audit(invalid, 106.0, 100.0, 5.25, 0.75, 1.1));
+        },
+        "mass audit should reject nonzero reserved expansion terms");
+    require_throws(
+        [&] {
+            auto invalid = cells;
+            invalid[2].water_hi[9U] = 5.0F;
+            static_cast<void>(compute_fluid_25d_mass_audit(invalid, 106.0, 100.0, 5.25, 0.75, 1.1));
+        },
+        "mass audit should reject inconsistent per-cell committed-step counts");
+    require_throws(
+        [&] {
+            auto invalid = cells;
+            invalid[0].water_hi[9U] = 4.5F;
+            static_cast<void>(compute_fluid_25d_mass_audit(invalid, 106.0, 100.0, 5.25, 0.75, 1.1));
+        },
+        "mass audit should reject noninteger committed-step counts");
+    require_throws(
+        [&] { static_cast<void>(compute_fluid_25d_mass_audit(cells, -1.0, 0.0, 0.0, 0.0, 0.0)); },
+        "mass audit should reject negative diagnostic volumes");
+    require_throws(
+        [&] {
+            static_cast<void>(compute_fluid_25d_mass_audit(
+                cells, 106.0, 100.0, std::numeric_limits<double>::infinity(), 0.75, 1.1));
+        },
+        "mass audit should reject nonfinite cumulative ledger totals");
+}
+
 void test_finite_volume_gpu_candidate_commit_shader_contract() {
     // Invalid GPU candidate-state injection is deliberately not a user-facing
     // scenario knob. Keep a small structural test on the shipped shaders in
@@ -5162,15 +5620,15 @@ void test_finite_volume_gpu_candidate_commit_shader_contract() {
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
     const std::string app =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
-    const std::string resources = read_shader(
-        std::filesystem::path(__FILE__).parent_path() / "fluid_25d_gpu_resources.cpp");
+    const std::string resources =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_gpu_resources.cpp");
     require(
         candidate.find("candidate_ledger_delta.values[index] = vec4(0.0);") != std::string::npos &&
             candidate.find("candidate_tracer_q.values[index] = tracer_q.values[index];") !=
                 std::string::npos &&
             candidate.find("candidate_tracer_ledger_delta.values[index] = vec4(0.0);") !=
                 std::string::npos &&
-            candidate.find("max(0.0, sourced_tracer_q - updated_tracer_q)") !=
+            candidate.find("conserved_add(sourced_tracer_pair, -retained_tracer_pair).x") !=
                 std::string::npos &&
             candidate.find("vec4 prospective_ledger = cumulative_ledger.values[index] + "
                            "ledger_delta;") != std::string::npos &&
@@ -5187,24 +5645,91 @@ void test_finite_volume_gpu_candidate_commit_shader_contract() {
                     std::string::npos &&
                 commit.find("next_tracer_q.values[index] = source_tracer_q.values[index];") !=
                     std::string::npos &&
-                commit.find("ledger.values[index] += candidate_ledger_delta.values[index];") !=
-                    std::string::npos &&
-                commit.find("tracer_ledger.values[index] += "
-                            "candidate_tracer_ledger_delta.values[index];") != std::string::npos,
+                commit.find("previous_residual.water_ledger[component]") != std::string::npos &&
+                commit.find("previous_residual.tracer_ledger[component]") != std::string::npos &&
+                commit.find("conservation_residual.values[index] = "
+                            "candidate_conservation_residual.values[index];") != std::string::npos,
             "finite-volume commit shader must copy rejected q and publish both ledgers once");
-    require(reset.find("tracer_q_a.values[index] = 0.0;") != std::string::npos &&
-                reset.find("tracer_q_b.values[index] = 0.0;") != std::string::npos &&
-                reset.find("tracer_ledger.values[index] = vec4(0.0);") != std::string::npos &&
-                commands.find("Fluid25DStepForcing") != std::string::npos &&
-                commands.find("dye_source_concentration") != std::string::npos &&
-                app.find("dye_source_schedule_.source_concentration") != std::string::npos &&
-                app.find("step_with_dye(") != std::string::npos &&
-                resources.find("storage_set_info(7U, VK_SHADER_STAGE_VERTEX_BIT") !=
-                    std::string::npos &&
-                resources.find(".storage_buffer(set, 6, tracer_q.handle(), tracer_q.size())") !=
-                    std::string::npos,
-            "GPU tracer runtime must reset with depth parity, sample fixed-step forcing, and bind q "
-            "at append-only render binding 6");
+    require(
+        reset.find("tracer_q_a.values[index] = 0.0;") != std::string::npos &&
+            reset.find("tracer_q_b.values[index] = 0.0;") != std::string::npos &&
+            reset.find("tracer_ledger.values[index] = vec4(0.0);") != std::string::npos &&
+            reset.find("conservation_residual.values[index] = ConservationResidual") !=
+                std::string::npos &&
+            commands.find("Fluid25DStepForcing") != std::string::npos &&
+            commands.find("dye_source_concentration") != std::string::npos &&
+            app.find("dye_source_schedule_.source_concentration") != std::string::npos &&
+            app.find("step_with_dye(") != std::string::npos &&
+            resources.find("storage_set_info(8U, VK_SHADER_STAGE_VERTEX_BIT") !=
+                std::string::npos &&
+            resources.find(".storage_buffer(set, 6, tracer_q.handle(), tracer_q.size())") !=
+                std::string::npos,
+        "GPU tracer runtime must reset with depth parity, sample fixed-step forcing, and bind q "
+        "at append-only render binding 6");
+}
+
+void test_forcing_cube_footprints_and_shared_faces() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config;
+    config.scenario = Fluid25DScenario::HillsideFlowStudy;
+    config.grid_width = 4U;
+    config.grid_height = 3U;
+    config.cell_size_m = 30.0F;
+    Fluid25DScenarioData scenario;
+    scenario.width = 4U;
+    scenario.height = 3U;
+    scenario.cell_size_m = 30.0F;
+    scenario.terrain_height_m.resize(12U);
+    for (std::size_t i = 0U; i < 12U; ++i)
+        scenario.terrain_height_m[i] = static_cast<float>(i) * 10.0F - 20.0F;
+    scenario.source_depth_rate_m_per_s.assign(12U, 0.0F);
+    scenario.sink_depth_rate_m_per_s.assign(12U, 0.0F);
+    scenario.source_depth_rate_m_per_s[5] = 0.1F;
+    scenario.source_depth_rate_m_per_s[6] = 0.2F;
+    scenario.sink_depth_rate_m_per_s[0] = 0.3F;
+    scenario.sink_depth_rate_m_per_s[11] = 0.4F;
+    const auto before = scenario;
+    const auto cubes = fluid_25d_forcing_cubes(config, scenario);
+    require(cubes.size() == 4U && cubes[0].center_kind == std::array<float, 4>{-15, 30, 0, 0} &&
+                cubes[1].center_kind == std::array<float, 4>{15, 40, 0, 0} &&
+                cubes[2].center_kind == std::array<float, 4>{-45, -20, -30, 1},
+            "cube counts and terrain-anchored centers must match actual source/sink cells");
+    require(cubes[0].neighbor_present == std::array<float, 4>{0, 1, 0, 0} &&
+                cubes[1].neighbor_present == std::array<float, 4>{1, 0, 0, 0} &&
+                cubes[0].neighbor_bed[1] == 40 && cubes[1].neighbor_bed[0] == 30 &&
+                cubes[2].neighbor_present == std::array<float, 4>{0, 0, 0, 0},
+            "cube neighbors must use matching forcing masks without wrapping crop edges");
+    require(scenario.terrain_height_m == before.terrain_height_m &&
+                scenario.source_depth_rate_m_per_s == before.source_depth_rate_m_per_s &&
+                scenario.sink_depth_rate_m_per_s == before.sink_depth_rate_m_per_s,
+            "cube construction must leave terrain and hydraulic forcing untouched");
+    config.scenario = Fluid25DScenario::RiverCatchment;
+    require(fluid_25d_forcing_cubes(config, scenario).empty(), "default River V0 stays unchanged");
+    config.scenario = Fluid25DScenario::NaturalFlowStudy;
+    scenario.sink_depth_rate_m_per_s.assign(12U, 0.0F);
+    scenario.outlet_cell = 11U;
+    require(fluid_25d_forcing_cubes(config, scenario).size() == 2U,
+            "an observed expected exit is not a drain forcing region");
+    using Ranges = std::array<std::array<float, 2>, 2>;
+    require(fluid_25d_forcing_cube_side_ranges(2, 0, true) == Ranges{{{-1, -1}, {1, 1}}} &&
+                fluid_25d_forcing_cube_side_ranges(2, 1, true) == Ranges{{{-1, 0}, {1, 1}}} &&
+                fluid_25d_forcing_cube_side_ranges(2, -1, true) == Ranges{{{-1, -1}, {0, 1}}} &&
+                fluid_25d_forcing_cube_side_ranges(2, 5, true) == Ranges{{{-1, 1}, {1, 1}}} &&
+                fluid_25d_forcing_cube_side_ranges(2, 0, false) == Ranges{{{-1, 1}, {1, 1}}},
+            "cube sides must omit only shared overlap and retain exposed height steps");
+    config.scenario = Fluid25DScenario::SourceOutletDemo;
+    config.grid_width = 128U;
+    config.grid_height = 64U;
+    config.cell_size_m = 1.0F;
+    const auto demo = make_fluid_25d_scenario(config.scenario, 128U, 64U, 1.0F);
+    const auto positive_count = [](const auto& field) {
+        return static_cast<std::size_t>(
+            std::count_if(field.begin(), field.end(), [](float value) { return value > 0; }));
+    };
+    require(fluid_25d_forcing_cubes(config, demo).size() ==
+                positive_count(demo.source_depth_rate_m_per_s) +
+                    positive_count(demo.sink_depth_rate_m_per_s),
+            "authored source/drain strips must highlight every actual forcing tile");
 }
 
 } // namespace
@@ -5213,6 +5738,7 @@ int main() {
     try {
         test_config_defaults_and_parsing();
         test_deterministic_scenarios();
+        test_forcing_cube_footprints_and_shared_faces();
         test_sustained_headwaters_scenario_construction();
         test_sustained_headwaters_refined_scenario_construction();
         test_sustained_headwaters_station_diagnostics();
@@ -5238,6 +5764,8 @@ int main() {
         test_boundary_mask_validation_and_helper();
         test_source_rate_scale_and_schedule();
         test_windowed_pacing();
+        test_motion_marker_display_clock();
+        test_hillside_dye_palette_mapping();
         test_presentation_cue_contract();
         test_retained_flux_inertia();
         test_river_mass_and_positivity();
@@ -5254,6 +5782,9 @@ int main() {
         test_dye_zero_sink_transfer_and_real_sink();
         test_dye_open_boundary_ledger();
         test_dye_cfl_rejection_and_reset();
+        test_finite_volume_reference_conserved_storage();
+        test_mass_audit_cli_contract();
+        test_mass_audit_diagnostics();
         test_finite_volume_gpu_candidate_commit_shader_contract();
     } catch (const std::exception& error) {
         std::fprintf(stderr, "fluid_25d_tests: %s\n", error.what());

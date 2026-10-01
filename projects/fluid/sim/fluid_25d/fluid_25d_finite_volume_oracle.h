@@ -105,6 +105,12 @@ class Fluid25DFiniteVolumeOracle {
     std::vector<float> water_depth_m_{};
     std::vector<float> source_sink_depth_m_{};
     std::vector<float> next_water_depth_m_{};
+    // Independent double remainders preserve increments discarded when the
+    // reference publishes float depth. Fluxes still read the published high
+    // field; these local remainders are not a global budget correction.
+    std::vector<double> water_depth_remainder_m_{};
+    std::vector<double> source_sink_depth_remainder_m_{};
+    std::vector<double> next_water_depth_remainder_m_{};
     std::vector<Fluid25DMomentum> momentum_m2_per_s_{};
     std::vector<Fluid25DMomentum> source_sink_momentum_m2_per_s_{};
     std::vector<Fluid25DMomentum> next_momentum_m2_per_s_{};

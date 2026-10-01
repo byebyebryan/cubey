@@ -1,4 +1,6 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+#include "fluid_25d_conserved_arithmetic.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
@@ -25,6 +27,10 @@ layout(set = 0, binding = 4, std430) buffer StatusField {
     uint reserved;
 }
 status;
+layout(set = 0, binding = 5, std430) readonly buffer ConservationResidualField {
+    ConservationResidual values[];
+}
+conservation_residual;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
@@ -51,9 +57,13 @@ void main() {
     float minimum_wet_depth = params.physics.z;
     float old_depth = depth.values[index];
     vec2 old_momentum = momentum.values[index].xy;
-    float sourced_depth = old_depth + source_rate.values[index] * params.physics.w * dt;
-    float removed_depth = min(sourced_depth, sink_rate.values[index] * dt);
-    float source_sink_depth = sourced_depth - removed_depth;
+    float source_delta = source_rate.values[index] * params.physics.w * dt;
+    vec2 sourced_pair = conserved_add(vec2(old_depth, conservation_residual.values[index].state.x),
+                                     vec2(source_delta, 0.0));
+    float sourced_depth = sourced_pair.x;
+    vec2 source_sink_pair = conserved_nonnegative(conserved_add(
+        sourced_pair, vec2(-sink_rate.values[index] * dt, 0.0)));
+    float source_sink_depth = source_sink_pair.x;
     vec2 source_sink_momentum = old_momentum;
     if (sourced_depth > 0.0) {
         source_sink_momentum *= source_sink_depth / sourced_depth;
@@ -66,6 +76,7 @@ void main() {
     if (!finite_float(old_depth) || old_depth < 0.0 || !finite_float(old_momentum.x) ||
         !finite_float(old_momentum.y) || !finite_float(sourced_depth) || sourced_depth < 0.0 ||
         !finite_float(source_sink_depth) || source_sink_depth < 0.0 ||
+        !finite_float(sourced_pair.y) || !finite_float(source_sink_pair.y) ||
         !finite_float(source_sink_momentum.x) || !finite_float(source_sink_momentum.y)) {
         atomicOr(status.flags, INVALID_STATE);
         return;

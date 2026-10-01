@@ -1,4 +1,6 @@
 #include "fluid_25d_ui.h"
+#include "fluid_25d_dye_palette.h"
+#include "fluid_25d_forcing_cubes.h"
 
 #include <cubey/host/imgui_helpers.h>
 
@@ -50,8 +52,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     }
 
     cubey::host::imgui_enum_combo(
-        "Presentation", ui.presentation_view, kPresentationViews,
-        fluid_25d_presentation_view_name,
+        "Presentation", ui.presentation_view, kPresentationViews, fluid_25d_presentation_view_name,
         "Choose the oblique catchment surface or the top-down diagnostics surface.");
     if (ui.presentation_view == Fluid25DPresentationView::Catchment) {
         if (ui.transport_inspection_available) {
@@ -67,8 +68,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                 ui.catchment_view = Fluid25DCatchmentView::Composite;
             }
             cubey::host::imgui_enum_combo(
-                "Catchment mode", ui.catchment_view, kCatchmentViews,
-                fluid_25d_catchment_view_name,
+                "Catchment mode", ui.catchment_view, kCatchmentViews, fluid_25d_catchment_view_name,
                 "Composite is the normal 3D view; the other modes are reading aids.");
             ImGui::TextDisabled(
                 "Transport Inspection needs a finite-volume dye pulse on an eligible demo.");
@@ -93,8 +93,8 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
 
     if (cubey::host::imgui_slider_float(
             "Playback speed", &ui.presentation_time_scale,
-            kFluid25DMinWindowedPresentationTimeScale,
-            kFluid25DMaxWindowedPresentationTimeScale, "%.3gx",
+            kFluid25DMinWindowedPresentationTimeScale, kFluid25DMaxWindowedPresentationTimeScale,
+            "%.3gx",
             "Windowed pacing only; solver fixed delta and headless timing are unchanged.")) {
         ui.windowed_pacing.set_presentation_time_scale(ui.presentation_time_scale);
     }
@@ -112,18 +112,71 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             ImGui::Text("Computing advance: %.1f s remaining",
                         static_cast<double>(ui.inspection_advance.remaining_steps()) *
                             ui.fixed_delta_seconds);
+            ImGui::ProgressBar(ui.inspection_advance.progress());
+            ImGui::TextDisabled(ui.resume_after_advance ? "Continuous playback resumes when ready."
+                                                        : "Pauses for inspection when ready.");
             if (ImGui::Button("Cancel advance")) {
                 ui.inspection_advance.reset();
                 ui.windowed_pacing.reset();
+                ui.resume_after_advance = false;
             }
-        } else if (ImGui::Button("Compute next 10 min, then pause")) {
-            ui.inspection_advance.request(600.0F, ui.fixed_delta_seconds);
+        }
+        if (ui.inspection_advance.remaining_steps() == 0U &&
+            ui.simulation_elapsed_seconds < 3300.0F &&
+            ImGui::Button("Advance to 55 min and continue")) {
+            ui.inspection_advance.request(3300.0F - ui.simulation_elapsed_seconds,
+                                          ui.fixed_delta_seconds);
+            ui.resume_after_advance = true;
             ui.paused = true;
             ui.windowed_pacing.reset();
         }
+        if (ImGui::CollapsingHeader("Inspection tools")) {
+            ImGui::BeginDisabled(ui.inspection_advance.remaining_steps() > 0U);
+            if (ImGui::Button("Compute next 10 min, then pause")) {
+                ui.inspection_advance.request(600.0F, ui.fixed_delta_seconds);
+                ui.resume_after_advance = false;
+                ui.paused = true;
+                ui.windowed_pacing.reset();
+            }
+            ImGui::EndDisabled();
+        }
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
-                           "SOURCE  green ring: continuous upland supply");
-        ImGui::Checkbox("Closer source context", &ui.hillside_source_context);
+                           "SOURCE  green cubes: continuous upland supply tiles");
+        const std::string selected =
+            ui.hillside_camera.empty()
+                ? (ui.hillside_source_context ? "source (legacy)" : "overview")
+                : ui.hillside_camera;
+        if (ImGui::BeginCombo("Camera", selected.c_str())) {
+            for (const char* camera : {"source", "branch", "overview"}) {
+                if (ImGui::Selectable(camera, ui.hillside_camera == camera))
+                    ui.hillside_camera = camera;
+            }
+            ImGui::EndCombo();
+        }
+        if (ui.motion_markers_available) {
+            ImGui::Checkbox("Moving markers", &ui.show_motion_markers);
+            ImGui::TextWrapped(
+                "Pale dots and trails follow the simulated depth-averaged velocity. "
+                "Their movement slows in pools. Release continues at the green source.");
+        }
+        if (ui.dye_enabled) {
+            const bool active = ui.simulation_elapsed_seconds >= ui.dye_start_seconds &&
+                                ui.simulation_elapsed_seconds < ui.dye_end_seconds;
+            ImGui::Text("Color input: %s (%.0f-%.0f physical min)",
+                        active ? "active"
+                               : (ui.simulation_elapsed_seconds < ui.dye_start_seconds
+                                      ? "waiting"
+                                      : "ended; clear supply continues"),
+                        ui.dye_start_seconds / 60.0F, ui.dye_end_seconds / 60.0F);
+            ImGui::TextWrapped(
+                "Dye concentration uses a fixed log scale: %.1f%%, %.0f%%, %.0f%%, %.0f%% "
+                "of the injected concentration. Below %.2f%% retains clear-water color.",
+                100.0F * kFluid25DHillsideDyePaletteLegendConcentrations[0],
+                100.0F * kFluid25DHillsideDyePaletteLegendConcentrations[1],
+                100.0F * kFluid25DHillsideDyePaletteLegendConcentrations[2],
+                100.0F * kFluid25DHillsideDyePaletteLegendConcentrations[3],
+                kFluid25DHillsideDyePaletteClearFloorPercent);
+        }
         ImGui::TextWrapped("Watch water descend and collect in the unchanged terrain. There is no "
                            "chosen drain or route. Crop edges permit outward flow, never inflow.");
         ImGui::TextWrapped(
@@ -132,13 +185,13 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     }
     if (ui.scenario == Fluid25DScenario::SourceOutletDemo) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
-                           "SOURCE  green ring: continuous water input");
+                           "SOURCE  green cubes: continuous water input tiles");
         ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
-                           "OUTLET  amber ring: explicit downstream sink");
+                           "DRAIN  amber cubes: explicit water removal tiles");
         ImGui::TextWrapped("Read the connected ribbon from green to amber. The downstream "
-                           "terrain shoulder makes the amber ring the terminal basin; water does "
+                           "terrain shoulder makes the drain patch the terminal basin; water does "
                            "not continue off the far side of this closed scene.");
-        ImGui::TextWrapped("The colored endpoint labels are terrain-draped rings in the scene; "
+        ImGui::TextWrapped("Colored cubes highlight the actual source/drain cells; "
                            "their words stay here in the panel so they remain legible at every "
                            "camera distance. The shallow reset ribbon reveals the full route "
                            "immediately; it is not a claim that one newly injected parcel has "
@@ -146,12 +199,12 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     }
     if (ui.scenario == Fluid25DScenario::MountainSourceOutletDemo) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
-                           "SOURCE  green ring: 0.75 m3/s total input region");
+                           "SOURCE  green cubes: 0.75 m3/s total input region");
         ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
-                           "OUTLET  amber ring: visible basin at cell (232,122)");
+                           "DRAIN  amber cubes: three actual removal cells");
         ImGui::TextWrapped(
             "The explicit 0.75 m3/s drain is the three reviewed lowest cells near the closed "
-            "boundary, not every cell inside the visible amber basin. Read the broad blue "
+            "boundary; cubes show those exact cells, not the whole basin. Read the blue "
             "corridor from green to amber as a prewetted initial route.");
         ImGui::TextWrapped(
             "This is an immutable real-terrain crop with closed outer boundaries. It is a "
@@ -160,38 +213,49 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     }
     if (ui.scenario == Fluid25DScenario::SustainedHeadwatersDemo) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
-                           "GREEN RINGS  two continuous inputs; dry start");
+                           "GREEN CUBES  two continuous input patches; dry start");
         ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
-                           "AMBER RING  open outlet at the east edge");
+                           "OPEN EAST EDGE  boundary outflow, not a drain patch");
         ImGui::TextWrapped(
-            "The two tributaries join before the outlet. Rings are fixed render-only location "
-            "markers, not water parcels or a depth cue.");
+            "The tributaries join before the open outlet. No amber drain cubes are shown "
+            "because this scene removes water only through boundary outflow.");
     }
     if (ui.scenario == Fluid25DScenario::NaturalFlowStudy) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
-                           "SOURCE  green ring: five-cell continuous input");
+                           "SOURCE  green cubes: five-cell continuous input");
         ImGui::TextColored(ImVec4(1.00F, 0.56F, 0.08F, 1.0F),
-                           "EXPECTED EXIT  amber ring: observation window only; no sink");
+                           "EXPECTED EXIT  diagnostic observation window; no drain cubes");
         ImGui::TextWrapped(
             "The native elevation is unchanged and starts dry. Every crop edge is independently "
-            "outflow-only; the amber marker identifies the recipe's expected outlet window and "
-            "does not force or drain flow there.");
+            "outflow-only. The recipe's expected exit is a diagnostic window, not an explicit "
+            "drain region, and is not drawn as amber cubes.");
+    }
+    if (fluid_25d_uses_forcing_cubes(ui.scenario)) {
+        ImGui::TextWrapped("Cubes are one-cell-wide highlights centered at each tile's terrain "
+                           "height. Their height is not water depth or a physical emitter volume; "
+                           "terrain hides buried portions.");
     }
     ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
                        "darker blue is deeper water.");
     ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "
-                      "by velocity; it is not waves or a depth cue.");
+                       "by velocity; it is not waves or a depth cue.");
     ImGui::TextWrapped("Water Isolation quiets the bed to expose the wet edge. "
-                      "Flow Inspection adds fixed-grid arrows: their angle shows local flow "
-                      "direction, while length and brightness show speed (blue is slower; "
-                      "yellow is faster). They are pitch-scaled velocity samples, not water "
-                      "particles or waves.");
+                       "Flow Inspection adds fixed-grid arrows: their angle shows local flow "
+                       "direction, while length and brightness show speed (blue is slower; "
+                       "yellow is faster). They are pitch-scaled velocity samples, not water "
+                       "particles or waves.");
     if (ui.transport_inspection_available) {
-        if (ui.scenario == Fluid25DScenario::NaturalFlowStudy) {
+        if (ui.scenario == Fluid25DScenario::HillsideFlowStudy) {
             ImGui::TextWrapped(
                 "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "
-                "water is conserved dye concentration from the five-cell source; the amber "
-                "expected-exit marker is observation-only, not a sink or a prescribed outlet.");
+                "is conserved dye concentration, not depth or speed. Clear supply continues after "
+                "the timed source pulse; follow the parcel down the unchanged bed. There is no "
+                "chosen outlet: water and dye can leave only across crop edges.");
+        } else if (ui.scenario == Fluid25DScenario::NaturalFlowStudy) {
+            ImGui::TextWrapped(
+                "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "
+                "water is conserved dye concentration from the five-cell source. The expected "
+                "exit is observation-only, not a sink or a prescribed outlet.");
         } else {
             ImGui::TextWrapped(
                 "Transport Inspection hides arrows and the moving surface cue. Magenta-to-violet "

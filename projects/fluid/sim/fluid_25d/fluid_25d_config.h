@@ -118,8 +118,9 @@ inline constexpr std::uint32_t kFluid25DSustainedHeadwatersGridHeight1m = 129U;
 inline constexpr float kFluid25DSustainedHeadwatersCellSize1m = 1.0F;
 inline constexpr float kFluid25DDefaultHeadwatersSourceScale = 1.0F;
 
-[[nodiscard]] inline constexpr bool fluid_25d_sustained_headwaters_resolution_supported(
-    std::uint32_t width, std::uint32_t height, float cell_size_m) noexcept {
+[[nodiscard]] inline constexpr bool
+fluid_25d_sustained_headwaters_resolution_supported(std::uint32_t width, std::uint32_t height,
+                                                    float cell_size_m) noexcept {
     return (width == kFluid25DSustainedHeadwatersGridWidth &&
             height == kFluid25DSustainedHeadwatersGridHeight &&
             cell_size_m == kFluid25DSustainedHeadwatersCellSizeM) ||
@@ -190,8 +191,7 @@ class Fluid25DWindowedPacing {
         return dropped_backlog_frames_;
     }
 
-    [[nodiscard]] Fluid25DWindowedPacingFrame advance(double wall_delta_seconds,
-                                                       bool paused) {
+    [[nodiscard]] Fluid25DWindowedPacingFrame advance(double wall_delta_seconds, bool paused) {
         if (!std::isfinite(wall_delta_seconds) || wall_delta_seconds < 0.0) {
             throw std::runtime_error(
                 "fluid 2.5D windowed pacing wall delta must be finite and nonnegative");
@@ -235,8 +235,7 @@ class Fluid25DWindowedPacing {
         }
 
         const std::uint32_t fixed_step_count = static_cast<std::uint32_t>(available_steps);
-        accumulator_seconds_ -=
-            static_cast<long double>(fixed_step_count) * fixed_delta_seconds_;
+        accumulator_seconds_ -= static_cast<long double>(fixed_step_count) * fixed_delta_seconds_;
         if (accumulator_seconds_ < 0.0L &&
             accumulator_seconds_ > -kStepCountEpsilon * fixed_delta_seconds_) {
             accumulator_seconds_ = 0.0L;
@@ -272,6 +271,7 @@ class Fluid25DInspectionAdvance {
             throw std::runtime_error("inspection advance step count is not representable");
         }
         remaining_steps_ = static_cast<std::uint32_t>(steps);
+        total_steps_ = remaining_steps_;
     }
     [[nodiscard]] std::uint32_t remaining_steps() const noexcept {
         return remaining_steps_;
@@ -281,15 +281,24 @@ class Fluid25DInspectionAdvance {
         remaining_steps_ -= count;
         return count;
     }
+    [[nodiscard]] float progress() const noexcept {
+        return total_steps_ == 0U
+                   ? 1.0F
+                   : 1.0F - static_cast<float>(remaining_steps_) / static_cast<float>(total_steps_);
+    }
     void reset() noexcept {
         remaining_steps_ = 0U;
+        total_steps_ = 0U;
     }
 
   private:
     std::uint32_t remaining_steps_ = 0U;
+    std::uint32_t total_steps_ = 0U;
 };
 
 struct Fluid25DConfig {
+    // Headless-only read-only accounting instrumentation, never a solver control.
+    bool mass_audit = false;
     std::uint32_t grid_width = kDefaultFluid25DGridWidth;
     std::uint32_t grid_height = kDefaultFluid25DGridHeight;
 
@@ -332,9 +341,9 @@ struct Fluid25DConfig {
 fluid_25d_transport_inspection_available(const Fluid25DConfig& config) noexcept {
     const bool supports_dye_pulse = config.scenario == Fluid25DScenario::SourceOutletDemo ||
                                     config.scenario == Fluid25DScenario::SustainedHeadwatersDemo ||
-                                    config.scenario == Fluid25DScenario::NaturalFlowStudy;
-    return supports_dye_pulse &&
-           config.solver == Fluid25DSolver::FiniteVolume &&
+                                    config.scenario == Fluid25DScenario::NaturalFlowStudy ||
+                                    config.scenario == Fluid25DScenario::HillsideFlowStudy;
+    return supports_dye_pulse && config.solver == Fluid25DSolver::FiniteVolume &&
            config.dye_pulse_start_seconds.has_value() &&
            std::isfinite(*config.dye_pulse_start_seconds) &&
            *config.dye_pulse_start_seconds >= 0.0F &&
@@ -610,6 +619,9 @@ fluid_25d_catchment_view_from_name(std::string_view name) {
 }
 
 inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
+    if (config.mass_audit && config.solver != Fluid25DSolver::FiniteVolume) {
+        throw std::runtime_error("fluid 2.5D mass audit requires finite-volume solver");
+    }
     static_cast<void>(fluid_25d_cell_count(config));
     static_cast<void>(fluid_25d_mesh_vertex_count(config));
     if (config.scenario != Fluid25DScenario::DryBed &&
@@ -648,8 +660,7 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
     }
     if (!std::isfinite(config.headwaters_source_scale) ||
         !(config.headwaters_source_scale > 0.0F)) {
-        throw std::runtime_error(
-            "fluid 2.5D headwaters source scale must be finite and positive");
+        throw std::runtime_error("fluid 2.5D headwaters source scale must be finite and positive");
     }
     if (config.scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
         config.headwaters_source_scale != kFluid25DDefaultHeadwatersSourceScale) {
@@ -696,7 +707,8 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         }
         if ((config.scenario != Fluid25DScenario::SourceOutletDemo &&
              config.scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
-             config.scenario != Fluid25DScenario::NaturalFlowStudy) ||
+             config.scenario != Fluid25DScenario::NaturalFlowStudy &&
+             config.scenario != Fluid25DScenario::HillsideFlowStudy) ||
             config.solver != Fluid25DSolver::FiniteVolume) {
             throw std::runtime_error(
                 "fluid 2.5D dye pulse timing requires an eligible finite-volume demo");

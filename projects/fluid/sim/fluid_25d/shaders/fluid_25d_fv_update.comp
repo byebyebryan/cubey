@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+#include "fluid_25d_mass_audit.glsl"
+#include "fluid_25d_conserved_arithmetic.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
@@ -72,6 +75,18 @@ layout(set = 0, binding = 15, std430) buffer CandidateTracerLedgerDeltaField {
     vec4 values[];
 }
 candidate_tracer_ledger_delta;
+layout(set = 0, binding = 16, std430) buffer CandidateMassAuditField {
+    MassAudit values[];
+}
+candidate_mass_audit;
+layout(set = 0, binding = 17, std430) readonly buffer ConservationResidualField {
+    ConservationResidual values[];
+}
+conservation_residual;
+layout(set = 0, binding = 18, std430) buffer CandidateConservationResidualField {
+    ConservationResidual values[];
+}
+candidate_conservation_residual;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
@@ -103,6 +118,10 @@ struct SourceSinkState {
     float tracer_q;
     float source_added_tracer_q;
     float removed_tracer_q;
+    float sourced_h;
+    float sourced_tracer_q;
+    float h_tail;
+    float tracer_tail;
 };
 struct FaceFlux {
     State homogeneous;
@@ -178,22 +197,32 @@ SourceSinkState source_sink_state(uint index, float dt) {
     float old_h = depth.values[index];
     vec2 old_q = momentum.values[index].xy;
     float source_added_h = source_rate.values[index] * params.physics.w * dt;
-    float sourced_h = old_h + source_added_h;
-    float removed_h = min(sourced_h, sink_rate.values[index] * dt);
-    float h = sourced_h - removed_h;
+    vec2 sourced_h_pair = conserved_add(
+        vec2(old_h, conservation_residual.values[index].state.x), vec2(source_added_h, 0.0));
+    float sourced_h = sourced_h_pair.x;
+    float requested_sink_h = sink_rate.values[index] * dt;
+    vec2 remaining_h_pair = conserved_add(sourced_h_pair, vec2(-requested_sink_h, 0.0));
+    vec2 h_pair = conserved_nonnegative(remaining_h_pair);
+    vec2 removed_h_pair = conserved_add(sourced_h_pair, -h_pair);
+    float removed_h = max(0.0, removed_h_pair.x);
+    float h = h_pair.x;
     float old_tracer_q = tracer_q.values[index];
     float source_added_tracer_q = source_added_h * params.dye.x;
-    float sourced_tracer_q = old_tracer_q + source_added_tracer_q;
+    vec2 sourced_tracer_pair = conserved_add(
+        vec2(old_tracer_q, conservation_residual.values[index].state.y),
+        vec2(source_added_tracer_q, 0.0));
+    float sourced_tracer_q = sourced_tracer_pair.x;
     // No removed water means no sink transfer. In particular, avoid an h/h
     // GPU division turning a mathematically unit fraction into phantom tracer
     // loss in a zero-sink scene. Actual sinks retain the proportional rule.
     float updated_tracer_q = sourced_tracer_q;
     float removed_tracer_q = 0.0;
+    vec2 retained_tracer_pair = sourced_tracer_pair;
     if (removed_h > 0.0) {
         float retained_fraction = h / sourced_h;
-        updated_tracer_q = clamp(sourced_tracer_q * retained_fraction, 0.0,
-                                 max(0.0, sourced_tracer_q));
-        removed_tracer_q = max(0.0, sourced_tracer_q - updated_tracer_q);
+        retained_tracer_pair = conserved_scale(sourced_tracer_pair, clamp(retained_fraction, 0.0, 1.0));
+        updated_tracer_q = max(0.0, retained_tracer_pair.x);
+        removed_tracer_q = max(0.0, conserved_add(sourced_tracer_pair, -retained_tracer_pair).x);
     }
     vec2 q = old_q;
     if (sourced_h > 0.0) {
@@ -206,7 +235,8 @@ SourceSinkState source_sink_state(uint index, float dt) {
     }
     return SourceSinkState(State(h, q), source_added_h, removed_h, updated_tracer_q,
                            source_added_tracer_q,
-                           removed_tracer_q);
+                           removed_tracer_q, sourced_h, sourced_tracer_q,
+                           h_pair.y, retained_tracer_pair.y);
 }
 
 void main() {
@@ -227,6 +257,10 @@ void main() {
     candidate_ledger_delta.values[index] = vec4(0.0);
     candidate_tracer_q.values[index] = tracer_q.values[index];
     candidate_tracer_ledger_delta.values[index] = vec4(0.0);
+    candidate_conservation_residual.values[index] = conservation_residual.values[index];
+    if (params.dye.y > 0.5) {
+        candidate_mass_audit.values[index] = audit_zero();
+    }
     if (status.flags != 0u) {
         return;
     }
@@ -237,6 +271,10 @@ void main() {
     float minimum_wet_depth = params.physics.z;
     SourceSinkState center_source_sink = source_sink_state(index, dt);
     State center = center_source_sink.state;
+    if (!finite_float(center_source_sink.h_tail) || !finite_float(center_source_sink.tracer_tail)) {
+        atomicOr(status.flags, INVALID_STATE);
+        return;
+    }
     if (!finite_state(center) || !finite_tracer_q(tracer_q.values[index], depth.values[index]) ||
         !finite_tracer_q(center_source_sink.tracer_q, center.h) ||
         !finite_float(center_source_sink.source_added_tracer_q) ||
@@ -250,6 +288,12 @@ void main() {
     State delta = State(0.0, vec2(0.0));
     float tracer_delta = 0.0;
     float boundary_outflow_volume = 0.0;
+    vec2 water_flux_sum = vec2(0.0);
+    vec2 tracer_flux_sum = vec2(0.0);
+    vec2 audit_water_internal = vec2(0.0);
+    vec2 audit_water_boundary = vec2(0.0);
+    vec2 audit_tracer_internal = vec2(0.0);
+    vec2 audit_tracer_boundary = vec2(0.0);
     for (uint face = LEFT; face <= UP; ++face) {
         bool has_neighbor = (face == LEFT && x > 0u) || (face == RIGHT && x + 1u < width) ||
                             (face == DOWN && y > 0u) || (face == UP && y + 1u < height);
@@ -342,23 +386,56 @@ void main() {
         delta.h -= outward.h;
         delta.q -= outward.q;
         tracer_delta -= tracer_outward_flux;
+        water_flux_sum = conserved_add(water_flux_sum, vec2(-outward.h, 0.0));
+        tracer_flux_sum = conserved_add(tracer_flux_sum, vec2(-tracer_outward_flux, 0.0));
+        if (params.dye.y > 0.5) {
+            // Record the actual signed face fluxes before divergence/update
+            // rounding. Independent cells' internal faces should cancel.
+            vec2 water_face = vec2(audit_observe(outward.h), 0.0);
+            vec2 tracer_face = vec2(audit_observe(tracer_outward_flux), 0.0);
+            if (has_neighbor) {
+                audit_water_internal = audit_add(audit_water_internal, -water_face);
+                audit_tracer_internal = audit_add(audit_tracer_internal, -tracer_face);
+            } else {
+                audit_water_boundary = audit_add(audit_water_boundary, water_face);
+                audit_tracer_boundary = audit_add(audit_tracer_boundary, tracer_face);
+            }
+        }
     }
 
     float transport_scale = dt / cell_size;
-    float updated_h = center.h + transport_scale * delta.h;
+    vec2 updated_h_pair = conserved_add(vec2(center.h, center_source_sink.h_tail),
+                                        conserved_scale(water_flux_sum, transport_scale));
+    float updated_h = updated_h_pair.x;
     vec2 updated_q = (center.q + transport_scale * delta.q) * exp(-params.physics.y * dt);
-    if (!finite_float(updated_h) || updated_h < -DEPTH_ROUNDING_RESIDUE ||
+    if (!finite_float(updated_h) || !finite_float(updated_h_pair.y) ||
+        updated_h < -DEPTH_ROUNDING_RESIDUE ||
         !finite_float(updated_q.x) || !finite_float(updated_q.y)) {
         atomicOr(status.flags, INVALID_STATE);
         return;
     }
+    float preclamp_h = updated_h;
     updated_h = max(0.0, updated_h);
-    float updated_tracer_q = center_source_sink.tracer_q + transport_scale * tracer_delta;
-    if (!finite_tracer_q(updated_tracer_q, updated_h)) {
+    updated_h_pair = conserved_nonnegative(updated_h_pair);
+    vec2 updated_tracer_pair = conserved_add(
+        vec2(center_source_sink.tracer_q, center_source_sink.tracer_tail),
+        conserved_scale(tracer_flux_sum, transport_scale));
+    float updated_tracer_q = updated_tracer_pair.x;
+    if (!finite_tracer_q(updated_tracer_q, updated_h) || !finite_float(updated_tracer_pair.y)) {
         atomicOr(status.flags, INVALID_STATE);
         return;
     }
+    float preclamp_tracer_q = updated_tracer_q;
     updated_tracer_q = clamp(updated_tracer_q, 0.0, updated_h);
+    if (updated_tracer_pair.x < 0.0 ||
+        (updated_tracer_pair.x == 0.0 && updated_tracer_pair.y < 0.0)) {
+        updated_tracer_pair = vec2(0.0);
+    }
+    if (updated_tracer_pair.x > updated_h_pair.x ||
+        (updated_tracer_pair.x == updated_h_pair.x && updated_tracer_pair.y > updated_h_pair.y)) {
+        updated_tracer_pair = updated_h_pair;
+    }
+    updated_tracer_q = updated_tracer_pair.x;
     if (updated_h <= minimum_wet_depth) {
         updated_q = vec2(0.0);
     }
@@ -379,6 +456,24 @@ void main() {
                                     0.0);
     vec4 prospective_tracer_ledger =
         cumulative_tracer_ledger.values[index] + tracer_ledger_delta;
+    ConservationResidual next_residual = conservation_residual.values[index];
+    next_residual.state = vec4(updated_h_pair.y, updated_tracer_pair.y, 0.0, 0.0);
+    for (uint component = 0u; component < 3u; ++component) {
+        vec2 water_ledger_pair = conserved_add(
+            vec2(cumulative_ledger.values[index][component], next_residual.water_ledger[component]),
+            vec2(ledger_delta[component], 0.0));
+        vec2 tracer_ledger_pair = conserved_add(
+            vec2(cumulative_tracer_ledger.values[index][component], next_residual.tracer_ledger[component]),
+            vec2(tracer_ledger_delta[component], 0.0));
+        prospective_ledger[component] = water_ledger_pair.x;
+        prospective_tracer_ledger[component] = tracer_ledger_pair.x;
+        next_residual.water_ledger[component] = water_ledger_pair.y;
+        next_residual.tracer_ledger[component] = tracer_ledger_pair.y;
+        if (!finite_float(water_ledger_pair.y) || !finite_float(tracer_ledger_pair.y)) {
+            atomicOr(status.flags, INVALID_STATE);
+            return;
+        }
+    }
     // Commit must not find a late validation error after some cells publish:
     // check both the delta and the prospective cumulative value here.
     if (!finite_nonnegative_ledger(ledger_delta) ||
@@ -395,4 +490,46 @@ void main() {
         vec4(derived_velocity, updated_h > minimum_wet_depth ? 1.0 : 0.0, 0.0);
     candidate_ledger_delta.values[index] = ledger_delta;
     candidate_tracer_ledger_delta.values[index] = tracer_ledger_delta;
+    candidate_conservation_residual.values[index] = next_residual;
+    if (params.dye.y > 0.5) {
+        MassAudit a = audit_zero();
+        float area = audit_observe(cell_area);
+        float scale = audit_observe(transport_scale);
+        vec2 water_internal = audit_scale(audit_water_internal, scale);
+        vec2 water_boundary = audit_scale(audit_water_boundary, scale);
+        vec2 tracer_internal = audit_scale(audit_tracer_internal, scale);
+        vec2 tracer_boundary = audit_scale(audit_tracer_boundary, scale);
+        for (uint component = 0u; component < 3u; ++component) {
+            audit_set_water(a, component, vec2(audit_observe(ledger_delta[component]), 0.0));
+            audit_set_tracer(a, component,
+                             vec2(audit_observe(tracer_ledger_delta[component]), 0.0));
+        }
+        audit_set_water(a, 3u, audit_scale(audit_difference(
+            audit_observe(center_source_sink.sourced_h), audit_observe(depth.values[index])), area));
+        audit_set_water(a, 4u, audit_scale(audit_difference(
+            audit_observe(center_source_sink.sourced_h), audit_observe(center.h)), area));
+        audit_set_tracer(a, 3u, audit_scale(audit_difference(
+            audit_observe(center_source_sink.sourced_tracer_q), audit_observe(tracer_q.values[index])), area));
+        audit_set_tracer(a, 4u, audit_scale(audit_difference(
+            audit_observe(center_source_sink.sourced_tracer_q), audit_observe(center_source_sink.tracer_q)), area));
+        audit_set_water(a, 5u, audit_scale(water_internal, area));
+        audit_set_water(a, 6u, audit_scale(water_boundary, area));
+        audit_set_tracer(a, 5u, audit_scale(tracer_internal, area));
+        audit_set_tracer(a, 6u, audit_scale(tracer_boundary, area));
+        vec2 water_rounding = audit_add(audit_difference(audit_observe(preclamp_h),
+                                                        audit_observe(center.h)),
+                                       audit_add(-water_internal, water_boundary));
+        vec2 tracer_rounding = audit_add(audit_difference(audit_observe(preclamp_tracer_q),
+                                                         audit_observe(center_source_sink.tracer_q)),
+                                        audit_add(-tracer_internal, tracer_boundary));
+        audit_set_water(a, 7u, audit_scale(water_rounding, area));
+        audit_set_tracer(a, 7u, audit_scale(tracer_rounding, area));
+        audit_set_water(a, 8u, audit_scale(audit_difference(audit_observe(updated_h),
+                                                          audit_observe(preclamp_h)), area));
+        audit_set_tracer(a, 8u, audit_scale(audit_difference(audit_observe(updated_tracer_q),
+                                                           audit_observe(preclamp_tracer_q)), area));
+        audit_set_water(a, 9u, vec2(1.0, 0.0));
+        audit_set_tracer(a, 9u, vec2(1.0, 0.0));
+        candidate_mass_audit.values[index] = a;
+    }
 }

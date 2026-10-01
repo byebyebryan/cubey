@@ -765,7 +765,6 @@ def load_matching_hydraulics(
     report: dict[str, Any],
     *,
     allow_diagnostic_unhealthy: bool = False,
-    require_edge_trigger: bool = False,
 ) -> tuple[dict[str, Any], Path]:
     path = out / "hydraulics.json"
     if not path.is_file():
@@ -785,6 +784,7 @@ def load_matching_hydraulics(
         bool(start_hashes) and start_hashes == end_hashes and
         start_hashes == report.get("start_input_hashes") and
         len(hydraulic_cases) == 1 and
+        hydraulic_cases[0].get("exit_code") == 0 and
         hydraulic_cases[0].get("input_hashes") == start_hashes
     )
     if report.get("domain") == 512:
@@ -798,12 +798,8 @@ def load_matching_hydraulics(
         summary.get("unhealthy_frames") == []
     )
     if matching and healthy:
-        if require_edge_trigger and not _has_edge_trigger(summary):
-            raise ValueError("512 captures require an actual current-domain edge trigger")
         return hydraulic, path
     if matching and allow_diagnostic_unhealthy and diagnostic_hydraulics_eligible(hydraulic):
-        if require_edge_trigger and not _has_edge_trigger(summary):
-            raise ValueError("512 captures require an actual current-domain edge trigger")
         return hydraulic, path
     raise ValueError(
         "phase requires healthy matching hydraulics; --diagnostic-unhealthy accepts only "
@@ -955,7 +951,6 @@ def captures_phase(app: Path, out: Path, domain: int, report: dict[str, Any]) ->
         out,
         report,
         allow_diagnostic_unhealthy=bool(report.get("diagnostic_unhealthy_requested")),
-        require_edge_trigger=domain == 512,
     )
     report["hydraulics_report_sha256"] = sha256_file(hydraulic_path)
     report["hydraulic_app_sha256"] = hydraulic["app_sha256"]

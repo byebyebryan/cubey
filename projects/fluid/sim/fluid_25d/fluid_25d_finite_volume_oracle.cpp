@@ -244,6 +244,9 @@ Fluid25DFiniteVolumeOracle::Fluid25DFiniteVolumeOracle(Fluid25DConfig config,
     water_depth_m_.resize(cell_count);
     source_sink_depth_m_.resize(cell_count);
     next_water_depth_m_.resize(cell_count);
+    water_depth_remainder_m_.resize(cell_count);
+    source_sink_depth_remainder_m_.resize(cell_count);
+    next_water_depth_remainder_m_.resize(cell_count);
     momentum_m2_per_s_.resize(cell_count);
     source_sink_momentum_m2_per_s_.resize(cell_count);
     next_momentum_m2_per_s_.resize(cell_count);
@@ -357,14 +360,16 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
         }
         const float source_delta_m =
             scenario_.source_depth_rate_m_per_s[index] * source_rate_scale * delta_seconds;
-        const float sourced_depth_m = water_depth_m_[index] + source_delta_m;
+        const double sourced_depth_full_m = static_cast<double>(water_depth_m_[index]) +
+                                            water_depth_remainder_m_[index] +
+                                            static_cast<double>(source_delta_m);
+        const float sourced_depth_m = static_cast<float>(sourced_depth_full_m);
         if (!std::isfinite(sourced_depth_m) || sourced_depth_m < 0.0F) {
             throw std::runtime_error("fluid 2.5D finite-volume source update is invalid");
         }
         source_sink_depth_m_[index] = sourced_depth_m;
         source_sink_momentum_m2_per_s_[index] = momentum_m2_per_s_[index];
-        ledger.source_volume_m3 +=
-            static_cast<double>(sourced_depth_m - water_depth_m_[index]) * cell_area_m2;
+        ledger.source_volume_m3 += static_cast<double>(source_delta_m) * cell_area_m2;
         const double source_q_m =
             static_cast<double>(source_delta_m) * static_cast<double>(dye_source_concentration);
         double sourced_q_m = existing_q_m + source_q_m;
@@ -378,10 +383,13 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
 
         const float requested_sink_delta_m =
             scenario_.sink_depth_rate_m_per_s[index] * delta_seconds;
-        const float removed_depth_m = std::min(sourced_depth_m, requested_sink_delta_m);
-        const float sink_depth_m = sourced_depth_m - removed_depth_m;
+        const double sink_depth_full_m =
+            std::max(0.0, sourced_depth_full_m - static_cast<double>(requested_sink_delta_m));
+        const float sink_depth_m = static_cast<float>(sink_depth_full_m);
         source_sink_depth_m_[index] = sink_depth_m;
-        ledger.sink_volume_m3 += static_cast<double>(sourced_depth_m - sink_depth_m) * cell_area_m2;
+        source_sink_depth_remainder_m_[index] =
+            sink_depth_full_m - static_cast<double>(sink_depth_m);
+        ledger.sink_volume_m3 += (sourced_depth_full_m - sink_depth_full_m) * cell_area_m2;
         const double retained_fraction =
             sourced_depth_m > 0.0F
                 ? static_cast<double>(sink_depth_m) / static_cast<double>(sourced_depth_m)
@@ -432,6 +440,16 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
                 read_state(source_sink_depth_m_, source_sink_momentum_m2_per_s_, left_index);
             const ConservedState right =
                 read_state(source_sink_depth_m_, source_sink_momentum_m2_per_s_, right_index);
+            // An exactly dry, zero-momentum/tracer face has identically zero
+            // flux and pressure correction. Do not classify a positive film
+            // as dry here: this only avoids expensive double flux arithmetic
+            // over untouched parts of a large dry-start reference domain.
+            if (left.depth_m == 0.0 && right.depth_m == 0.0 && left.momentum_x_m2_per_s == 0.0 &&
+                left.momentum_y_m2_per_s == 0.0 && right.momentum_x_m2_per_s == 0.0 &&
+                right.momentum_y_m2_per_s == 0.0 && source_sink_tracer_q_m_[left_index] == 0.0F &&
+                source_sink_tracer_q_m_[right_index] == 0.0F) {
+                return;
+            }
             const HydrostaticFaceFlux face = hydrostatic_rusanov_flux(
                 left, right, static_cast<double>(scenario_.terrain_height_m[left_index]),
                 static_cast<double>(scenario_.terrain_height_m[right_index]), normal_x, normal_y,
@@ -480,6 +498,10 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
                                                         double normal_x, double normal_y) {
         const ConservedState interior =
             read_state(source_sink_depth_m_, source_sink_momentum_m2_per_s_, index);
+        if (interior.depth_m == 0.0 && interior.momentum_x_m2_per_s == 0.0 &&
+            interior.momentum_y_m2_per_s == 0.0 && source_sink_tracer_q_m_[index] == 0.0F) {
+            return;
+        }
         const bool open_outflow = (scenario_.boundary_outflow_face_mask[index] &
                                    fluid_25d_boundary_outflow_bit(face)) != 0U;
         ConservedState exterior{};
@@ -554,6 +576,7 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
                                     static_cast<double>(delta_seconds));
     for (std::size_t index = 0; index < water_depth_m_.size(); ++index) {
         double updated_depth_m = static_cast<double>(source_sink_depth_m_[index]) +
+                                 source_sink_depth_remainder_m_[index] +
                                  (transport_scale * transport_delta_[index].depth_m_per_s);
         if (!std::isfinite(updated_depth_m) || updated_depth_m < -kDepthRoundingResidueM) {
             throw std::runtime_error(
@@ -584,6 +607,8 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
             updated_momentum_y_m2_per_s = 0.0;
         }
         next_water_depth_m_[index] = static_cast<float>(updated_depth_m);
+        next_water_depth_remainder_m_[index] =
+            updated_depth_m - static_cast<double>(next_water_depth_m_[index]);
         next_tracer_q_m_[index] = static_cast<float>(updated_tracer_q_m);
         next_momentum_m2_per_s_[index] = {
             .x_m2_per_s = static_cast<float>(updated_momentum_x_m2_per_s),
@@ -593,6 +618,7 @@ Fluid25DFiniteVolumeOracle::step_substep(float delta_seconds, float source_rate_
     }
 
     water_depth_m_.swap(next_water_depth_m_);
+    water_depth_remainder_m_.swap(next_water_depth_remainder_m_);
     tracer_q_m_.swap(next_tracer_q_m_);
     momentum_m2_per_s_.swap(next_momentum_m2_per_s_);
     last_cfl_number_ = cfl;
@@ -647,6 +673,9 @@ void Fluid25DFiniteVolumeOracle::reset() {
     water_depth_m_ = scenario_.initial_water_depth_m;
     std::fill(source_sink_depth_m_.begin(), source_sink_depth_m_.end(), 0.0F);
     std::fill(next_water_depth_m_.begin(), next_water_depth_m_.end(), 0.0F);
+    std::fill(water_depth_remainder_m_.begin(), water_depth_remainder_m_.end(), 0.0);
+    std::fill(source_sink_depth_remainder_m_.begin(), source_sink_depth_remainder_m_.end(), 0.0);
+    std::fill(next_water_depth_remainder_m_.begin(), next_water_depth_remainder_m_.end(), 0.0);
     std::fill(momentum_m2_per_s_.begin(), momentum_m2_per_s_.end(), Fluid25DMomentum{});
     std::fill(source_sink_momentum_m2_per_s_.begin(), source_sink_momentum_m2_per_s_.end(),
               Fluid25DMomentum{});

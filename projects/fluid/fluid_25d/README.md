@@ -18,7 +18,7 @@ diagnostics remain explicitly selectable. The default Composite catchment
 view preserves the original terrain-and-water shading; Water Isolation
 quiets the bed to expose the wet edge, Flow Inspection adds a fixed-grid
 velocity-arrow field, and Transport Inspection adds an opt-in conservative dye
-pulse to the explicit source-to-outlet reading surface. It has deterministic
+pulse to eligible finite-volume source/outlet and terrain studies. It has deterministic
 dry-bed, lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
 virtual-pipes depth/face-flux/velocity/ledger and finite-volume
 depth/momentum/velocity/ledger against their corresponding CPU oracle.
@@ -78,16 +78,18 @@ River V0 includes:
 - a Flow Inspection-only, fixed-grid GPU quiver field. Arrow angle shows
   local downstream velocity, while restrained length and brightness show
   speed; the arrows are samples, not waves, foam, water mass, or particles;
-- an opt-in Transport Inspection surface for the compact finite-volume
-  source-outlet demo. A one-scalar conservative dye pulse enters at SOURCE,
-  moves with accepted water face flux, and is removed at OUTLET; it is a
+- an opt-in Transport Inspection surface for eligible finite-volume demos.
+  A one-scalar conservative dye pulse enters at SOURCE and moves with accepted
+  water face flux. Source-outlet cases remove dye at their sink; the hillside
+  has no prescribed drain and can export only through crop edges. This is a
   reading aid, not a particle system or a general tracer framework;
 - top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
   diagnostics as an explicit alternate presentation mode;
 - opt-in headless CPU/GPU fixtures that read back only at their final evidence
   point;
-- opt-in headless profile diagnostics that read depth, velocity, and ledger
-  only at the requested common diagnostic interval.
+- opt-in headless profile diagnostics at the requested common diagnostic interval,
+  including hydraulic-state fingerprints and an optional independent committed
+  water/tracer arithmetic audit for finite-volume investigations.
 
 It deliberately excludes erosion, sediment, interactive editing, spray,
 breaking waves, periodic or inflow-capable outer boundaries, water-table or
@@ -136,13 +138,29 @@ the first headless solver step, so the first capture remains the truthful
 unanimated initial state; this changes only presentation state and does not
 change solver dispatches or timestamps.
 
+### Source/drain cell highlights
+
+The explanatory catchment scenes use translucent cubes instead of location
+rings. Each positive source/sink-rate cell gets one cell-wide cube centered
+at its own terrain height: green input, amber explicit removal. Cube size is
+fixed in render metres; terrain height scaling moves the center but does not
+stretch the cube. Terrain depth testing hides buried portions. Cube height
+is a visual region marker, not water depth or a physical emitter volume.
+Overlapping sides between adjacent same-kind cubes are omitted, retaining
+only exposed height steps. Markers remain static across pause/reset and never
+enter hydraulic descriptors or state. Default River V0 is unchanged.
+
+Open crop boundaries and expected-exit observation windows are not sinks and
+do not get amber cubes. Retained older captures/study notes still show rings;
+those remain historical evidence, not captures of this renderer.
+
 ### Opt-in source-to-outlet scene
 
 `source-outlet-demo` is a separate authored explanation scene, not a change to
 the River V0 virtual-pipes fixture or its default camera. It is meaningful only
 when launched explicitly with the opt-in finite-volume solver. On the
-one-metre `128x64` grid, the green SOURCE and amber OUTLET rings mark columns
-`14` and `110`. The channel between them has two broad S-bends, variable width,
+one-metre `128x64` grid, green SOURCE and amber DRAIN cube patches cover the
+forcing strips near columns `14` and `110`. The channel has two broad S-bends, variable width,
 and one constriction. Its bed falls `0.45 m` over the 96 m route, while the
 selected lower bank crest is about `3.00 m` above the centerline bed. Broad
 smoothstep banks avoid a near-vertical trench. Initial water is seeded within
@@ -232,8 +250,8 @@ dynamic flow rather than a pre-filled river. Its 65×33 grid has 4 m cells and
 starts completely dry. Two marked 3×3 headwater patches each supply 0.25 m³/s
 continuously; their banked reaches join into one trunk. Only a three-face east
 aperture is open, with outflow-only boundary behavior. There is no explicit
-water sink. The green rings mark both inputs and the amber semicircle marks
-the outlet; the 4× visible relief and terrain tint are render-only.
+water sink. Green cube patches mark both inputs; the open east edge is not
+highlighted as a drain. The 4× visible relief and terrain tint are render-only.
 
 ```sh
 build/dev/projects/fluid/fluid_25d/fluid_25d \
@@ -292,9 +310,8 @@ the imported elevation. Its 256 by 128 native 30 m crop is pinned at
 transformed crop SHA-256
 `9bfebfe229886ded533556acaf11de541caddfc4cf8104d864da1232fa8b24c6`.
 
-The green ring is the 81-cell source region centred at `(8,60)`, whose total
-configured input is `0.75 m3/s`. The amber ring is a visible outlet basin
-centred at `(232,122)`. Its actual explicit drain is deliberately narrower:
+The green cubes cover the 81-cell source region centred at `(8,60)`, whose total
+configured input is `0.75 m3/s`. Amber cubes cover the actual explicit drain:
 the three reviewed low cells `(232,127)`, `(229,126)`, and `(231,126)` remove a
 total configured `0.75 m3/s`. All outer faces are closed. The route is a
 reviewed, radius-four prewetted initial-water corridor; it makes the whole
@@ -647,8 +664,10 @@ render-only source camera. Normal playback is continuous, with the source
 always supplying water; `Space` pauses/resumes it. The optional
 `--fluid25d-hillside-inspection-advance-seconds 1800`
 executes every ordinary solver step from the dry start and then pauses at
-30 simulated minutes. The panel offers another ten-minute compute-and-pause,
-Cancel and physical-time feedback. This is not a larger numerical dt, a
+30 simulated minutes. The panel retains ten-minute compute-and-pause under
+Inspection tools, Cancel and physical-time feedback. Its primary advance
+action computes to 55 simulated minutes and resumes continuous playback.
+This is not a larger numerical dt, a
 prefill, or a skipped water evolution, and startup advance is rejected in
 headless mode. Reset restores dry start and cancels pending advance.
 
@@ -660,11 +679,46 @@ rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py
 
 This uses the same dry-start 256x256 native-30m terrain and 100 m³/s supply,
 starts at 8x windowed playback with the closer source camera, and runs until
-you close the window. It never requests an inspection advance or timed pause.
+you close the window. By default it requests neither advance nor timed pause.
 Use `--camera overview`, `--view water-isolation` / `flow-inspection`,
 `--playback 1`, or `--print-command` for presentation-only alternatives.
 The panel displays physical time, supply rate, and continuous/paused status.
-Hillside dye is deliberately unavailable pending the long tracer oracle gate.
+The original launcher remains water-only by default. `--domain 512 --dye
+--view transport-inspection` explicitly selects the wider crop and a conserved
+60-62-minute source pulse; clear water supply remains continuous. See the
+[V3 conservation/transport pass](../../../docs/notes/fluid-25d-hillside-conservation-transport-v3.md)
+for its numerical and presentation gates.
+
+The opt-in [motion/readability V4](../../../docs/notes/fluid-25d-hillside-motion-readability-v4.md)
+adds source-released pale markers and short
+trails, a fixed logarithmic hillside dye scale, and explicit source, branch,
+and overview camera presets. Markers sample the accepted depth-averaged
+velocity; they are presentation state, not simulated floating objects or
+additional hydraulic forcing. They disappear at dry support or crop exits,
+freeze on a rejected hydraulic update, and reset with the dry start. The
+fixed dye legend is 0.1%, 1%, 10%, 100% of injected concentration, with a
+0.01% clear-water floor. It is concentration, not speed or depth.
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py \
+  --domain 512 --markers --dye --view transport-inspection --developed
+```
+
+`--developed` executes ordinary fixed steps to 55 physical minutes with
+visible progress, then continues at 8x. Green cubes mark the upland source tiles;
+there is no selected drain. `--camera branch` frames the downstream split.
+Marker-free launch defaults retain the established camera. These controls
+do not change terrain, source rate, solver dt, or the `virtual-pipes` default.
+`run_hillside_motion_v4.py --phase smoke|profiles|captures|review --out
+<directory>` separates short media QA, exact two-hour V3 numerical comparisons,
+matched videos, and receipt verification. Each phase refuses to overwrite
+existing evidence. Full captures require passing profiles from the same app
+and shader identity; retained V3 strict results are a labelled replay bridge,
+not a claim that strict CPU comparisons were rerun under the V4 app.
+An explicit `--phase profiles --revalidate-profiles` validates complete retained
+executions into a separate receipt, preserving the earlier rejected report and
+all artifacts. It refuses changed inputs, unsuccessful children, or incomplete
+receipts; it does not rerun the simulation or alter numerical tolerances.
 
 The [sustained hillside V2 pass](../../../docs/notes/fluid-25d-hillside-sustained-flow-v2.md)
 keeps the accepted terrain and forcing fixed over two physical hours. Its new
@@ -676,10 +730,12 @@ terrain. A same-source 512x512 comparison is allowed only when the current
 256x256 profile actually approaches an edge or exports water. App, compiled
 shader, recipe, manifest, and elevation identities are checked before and
 after each phase. See the note for measurements, evidence, and parity limits.
-The current strict 1/10/30-minute checkpoints pass, but the extended water
+At the V2 checkpoint, strict 1/10/30-minute checks passed, but the extended water
 ledger fails its unchanged tolerance after 68.5 minutes. Its later captures
 are explicitly diagnostic, not a promoted two-hour pass; hillside dye also
-remains gated by the separately failing long tracer conservation check.
+was gated by the separately failing long tracer conservation check. Those
+historical failures are retained; V3 diagnoses and corrects the demonstrated
+rounding loss without changing forcing or tolerances.
 
 `native_flow_site_survey_v1.py` reproduces the offline screening.
 `run_natural_flow_pilot_v1.py --phase hydraulics --output-dir <new-directory>`
@@ -714,18 +770,19 @@ fixed delta, headless timing, and numerical evidence remain unchanged.
 In Flow Inspection, arrows stay anchored to a uniform grid: angle means local
 flow direction, and length/brightness mean speed. They sample the velocity
 field and are not moving water particles. The source-to-outlet scene retains
-its green SOURCE and amber OUTLET rings in this view.
+its green SOURCE and amber DRAIN cube patches in this view.
 
 Transport Inspection is separate from Flow Inspection: it hides the quiver and
-render-only directional cue so one visual language remains. Green rings mark
+render-only directional cue so one visual language remains. Green cubes mark
 input, base blue shows water depth, and magenta/violet shows conservative dyed
-water. The older `source-outlet-demo` uses one amber ring for explicit removal;
-the sustained-headwaters control uses two green inputs and an amber open-edge
-outlet instead. The natural-flow study's amber ring is an expected-exit
-observation window, with all perimeter edges open independently. The pulse is
+water. The `source-outlet-demo` uses amber cubes for explicit removal;
+the sustained-headwaters control uses two green input patches and an open-edge
+outlet without sink cubes. The natural-flow study's expected exit remains a
+diagnostic observation window, with all perimeter edges open independently. The pulse is
 available only with finite-volume, both dye timing options, and
-`source-outlet-demo`, `sustained-headwaters-demo`, or `natural-flow-study`. The fixed hydraulic
-forcing is unchanged by the dye schedule. See the two demo sections above for
+`source-outlet-demo`, `sustained-headwaters-demo`, `natural-flow-study`, or
+`hillside-flow-study`. The fixed hydraulic forcing is unchanged by the dye
+schedule. See the demo and hillside sections above for
 their captures and frame semantics; the earlier V1 study remains in
 [`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md)
 as historical evidence.

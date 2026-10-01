@@ -1,6 +1,8 @@
 #pragma once
 
 #include "fluid_25d_config.h"
+#include "fluid_25d_forcing_cubes.h"
+#include "fluid_25d_mass_audit.h"
 #include "fluid_25d_presentation.h"
 #include "fluid_25d_scenarios.h"
 
@@ -47,6 +49,12 @@ struct Fluid25DLedgerGpu {
 struct Fluid25DTracerLedgerGpu {
     std::array<float, 4> source_sink_boundary_reserved_m3{};
 };
+struct Fluid25DConservationResidualGpu {
+    std::array<float, 4> depth_tracer_reserved{};
+    std::array<float, 4> water_ledger{};
+    std::array<float, 4> tracer_ledger{};
+};
+static_assert(sizeof(Fluid25DConservationResidualGpu) == sizeof(float) * 12U);
 // One tiny selected-solver status buffer retains error flags until explicit
 // solver reset. Its two CFL-max scratch words are cleared before each
 // finite-volume substep, letting the prepass reject an update without a host
@@ -64,7 +72,8 @@ struct Fluid25DQuiverGpu {
 // Catchment-only explanatory markers in cell coordinates. The first vec4 is
 // the original source.xy/outlet.xy layout; the second adds an optional second
 // source without changing existing scene marker placement. Negative pairs
-// disable the corresponding terrain/water annulus.
+// disable a point reference. These remain source-release/camera references,
+// not rendered source/drain extents; forcing cubes use the actual cell masks.
 struct Fluid25DEndpointMarkersGpu {
     std::array<float, 4> source_xy_outlet_xy{};
     std::array<float, 4> secondary_source_xy_reserved{};
@@ -162,8 +171,12 @@ class Fluid25DGpuResources {
     // commit dispatch accepts the whole substep.
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_candidate_velocity() const;
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_candidate_ledger_delta() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_candidate_tracer_ledger_delta() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_candidate_mass_audit() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_mass_audit() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_conservation_residual() const;
     [[nodiscard]] const cubey::vulkan::Buffer&
-    finite_volume_candidate_tracer_ledger_delta() const;
+    finite_volume_candidate_conservation_residual() const;
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_status() const;
     [[nodiscard]] const cubey::vulkan::Buffer& velocity() const;
     [[nodiscard]] const cubey::vulkan::Buffer& ledger() const;
@@ -174,6 +187,10 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_b() const;
     [[nodiscard]] const cubey::vulkan::Buffer& presentation_cue_status() const;
     [[nodiscard]] const cubey::vulkan::Buffer& endpoint_markers() const;
+    [[nodiscard]] const cubey::vulkan::Buffer& forcing_cubes() const;
+    [[nodiscard]] std::uint32_t forcing_cube_count() const noexcept {
+        return forcing_cube_count_;
+    }
     [[nodiscard]] const cubey::vulkan::Buffer& quiver() const;
     [[nodiscard]] cubey::vulkan::GpuTimestampProfiler* profiler() noexcept {
         return profiler_.has_value() ? &profiler_.value() : nullptr;
@@ -199,6 +216,7 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& diagnostic_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& terrain_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& water_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource& forcing_cube_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& quiver_pipeline() const;
 
     [[nodiscard]] VkDescriptorSet reset_descriptor_set() const noexcept {
@@ -286,8 +304,7 @@ class Fluid25DGpuResources {
                           ? quiver_reset_b_descriptors_->set()
                           : VK_NULL_HANDLE);
     }
-    [[nodiscard]] VkDescriptorSet
-    quiver_update_descriptor_set(bool depth_is_a) const noexcept {
+    [[nodiscard]] VkDescriptorSet quiver_update_descriptor_set(bool depth_is_a) const noexcept {
         return depth_is_a && quiver_update_a_descriptors_.has_value()
                    ? quiver_update_a_descriptors_->set()
                    : (!depth_is_a && quiver_update_b_descriptors_.has_value()
@@ -332,6 +349,10 @@ class Fluid25DGpuResources {
     void create_compute_pipelines(cubey::vulkan::Device& device);
 
     std::optional<cubey::vulkan::Buffer> terrain_;
+    std::optional<cubey::vulkan::Buffer> finite_volume_candidate_mass_audit_;
+    std::optional<cubey::vulkan::Buffer> finite_volume_mass_audit_;
+    std::optional<cubey::vulkan::Buffer> finite_volume_conservation_residual_;
+    std::optional<cubey::vulkan::Buffer> finite_volume_candidate_conservation_residual_;
     std::optional<cubey::vulkan::Buffer> source_rate_;
     std::optional<cubey::vulkan::Buffer> sink_rate_;
     std::optional<cubey::vulkan::Buffer> boundary_outflow_mask_;
@@ -354,6 +375,8 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::Buffer> presentation_cue_b_;
     std::optional<cubey::vulkan::Buffer> presentation_cue_virtual_status_;
     std::optional<cubey::vulkan::Buffer> endpoint_markers_;
+    std::optional<cubey::vulkan::Buffer> forcing_cubes_;
+    std::uint32_t forcing_cube_count_ = 0U;
     std::optional<cubey::vulkan::Buffer> quiver_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 
@@ -399,6 +422,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::render::GraphicsPipelineResource> diagnostic_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> terrain_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> water_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> forcing_cube_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> quiver_pipeline_;
     bool current_depth_is_a_ = true;
     Fluid25DPresentationCueParity presentation_cue_parity_;

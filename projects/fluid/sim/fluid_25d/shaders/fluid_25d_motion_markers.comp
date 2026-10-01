@@ -1,0 +1,127 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "fluid_25d_motion_markers.glsl"
+
+layout(local_size_x = 64) in;
+layout(set = 0, binding = 0, std430) readonly buffer Depth { float values[]; } depth;
+layout(set = 0, binding = 1, std430) readonly buffer Velocity { vec4 values[]; } velocity;
+layout(set = 0, binding = 2, std430) readonly buffer Status { uvec4 values[]; } status;
+layout(set = 0, binding = 3, std430) buffer Markers { MotionMarker values[]; } markers;
+layout(set = 0, binding = 4, std430) readonly buffer Source { float values[]; } source_rate;
+layout(push_constant) uniform MarkerParams {
+    vec4 grid_dt_cell;
+    vec4 wet_source_xy;
+    uvec4 clock_reset;
+} params;
+
+bool finite_vec2(vec2 value) { return !any(isnan(value)) && !any(isinf(value)); }
+uint index_of(ivec2 p) { return uint(p.y) * uint(params.grid_dt_cell.x) + uint(p.x); }
+
+bool wet_position(vec2 p) {
+    if (!finite_vec2(p) || any(lessThan(p, vec2(-0.5))) ||
+        any(greaterThanEqual(p, params.grid_dt_cell.xy - vec2(0.5)))) return false;
+    ivec2 cell = ivec2(floor(p + vec2(0.5)));
+    float h = depth.values[index_of(cell)];
+    return !isnan(h) && !isinf(h) && h > params.wet_source_xy.x;
+}
+
+// The nearest cell must be wet. Dry neighbours have zero interpolation
+// weight, so a bank does not drag a parcel toward an unphysical dry velocity.
+bool sample_velocity(vec2 p, out vec2 flow) {
+    flow = vec2(0.0);
+    if (!wet_position(p)) return false;
+    vec2 bounded = clamp(p, vec2(0.0), params.grid_dt_cell.xy - vec2(1.0));
+    ivec2 lower = ivec2(floor(bounded));
+    vec2 f = fract(bounded);
+    float weights = 0.0;
+    for (int y = 0; y < 2; ++y) for (int x = 0; x < 2; ++x) {
+        ivec2 cell = min(lower + ivec2(x,y), ivec2(params.grid_dt_cell.xy) - ivec2(1));
+        uint i = index_of(cell);
+        float h = depth.values[i];
+        vec2 v = velocity.values[i].xy;
+        if (isnan(h) || isinf(h) || h <= params.wet_source_xy.x || !finite_vec2(v)) continue;
+        float weight = (x == 0 ? 1.0-f.x : f.x) * (y == 0 ? 1.0-f.y : f.y);
+        flow += weight * v;
+        weights += weight;
+    }
+    if (weights <= 0.0) return false;
+    flow /= weights;
+    return finite_vec2(flow);
+}
+
+uint hash_value(uint value) {
+    value ^= value >> 16u; value *= 0x7feb352du;
+    value ^= value >> 15u; value *= 0x846ca68bu;
+    return value ^ (value >> 16u);
+}
+float random_unit(uint value) { return float(hash_value(value) & 0xffffffu) / 16777215.0; }
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= uint(markers.values.length())) return;
+    MotionMarker marker = markers.values[id];
+    if (params.clock_reset.y != 0u) {
+        marker.position_age_active = vec4(0.0);
+        marker.previous_xy_reserved = vec4(0.0);
+        for (uint i=0u;i<MARKER_TRAIL_POINTS;++i) marker.history[i]=vec4(0.0);
+        markers.values[id] = marker;
+        return;
+    }
+    // Rejected hydraulic updates freeze the entire observational state.
+    if (status.values[0].x != 0u) return;
+    uint step = params.clock_reset.x;
+    float dt = params.grid_dt_cell.z;
+    float elapsed = float(step + 1u) * dt;
+    // One source release every four fixed steps; a bounded pool is reused
+    // after 512*4 steps. Retirement is visibly disappearance, never a path
+    // joining the old location back to a newly emitted source parcel.
+    bool birth = step % 4u == 0u && (step / 4u) % uint(markers.values.length()) == id;
+    if (birth) {
+        const ivec2 offsets[5] = ivec2[](ivec2(0,0),ivec2(-1,0),ivec2(1,0),ivec2(0,-1),ivec2(0,1));
+        ivec2 cell = ivec2(params.wet_source_xy.yz) + offsets[id % 5u];
+        vec2 jitter = vec2(random_unit(id + step * 17u), random_unit(id + step * 31u + 77u)) - 0.5;
+        vec2 p = vec2(cell) + 0.36 * jitter;
+        marker.position_age_active = vec4(p,0.0,0.0);
+        marker.previous_xy_reserved = vec4(p,0.0,0.0);
+        bool valid_cell = all(greaterThanEqual(cell,ivec2(0))) &&
+                          all(lessThan(cell,ivec2(params.grid_dt_cell.xy)));
+        bool valid = valid_cell && wet_position(p);
+        if (valid) valid = source_rate.values[index_of(cell)] > 0.0;
+        marker.position_age_active.w = valid ? 1.0 : 0.0;
+        for (uint i=0u;i<MARKER_TRAIL_POINTS;++i)
+            marker.history[i] = vec4(p,elapsed,i==0u && valid ? 1.0 : 0.0);
+        markers.values[id]=marker;
+        return;
+    }
+    if (marker.position_age_active.w < 0.5) return;
+    vec2 p = marker.position_age_active.xy;
+    marker.previous_xy_reserved = vec4(p,0.0,0.0);
+    vec2 flow;
+    bool valid = sample_velocity(p,flow);
+    // Midpoint integration with displacement-bounded internal steps. An
+    // unexpectedly high speed retires the marker rather than clamping speed
+    // or leaping across an unsampled dry strip.
+    float requested = valid ? ceil(length(flow) * dt / (params.grid_dt_cell.w * 0.25)) : 1.0;
+    if (requested > 64.0) valid=false;
+    uint count = uint(clamp(requested,1.0,64.0));
+    float small_dt = dt / float(count);
+    for (uint i=0u;i<count && valid;++i) {
+        vec2 v0,vmid;
+        valid=sample_velocity(p,v0);
+        vec2 midpoint=p+v0*(0.5*small_dt/params.grid_dt_cell.w);
+        if (valid) valid=sample_velocity(midpoint,vmid);
+        if (valid) {
+            vec2 next=p+vmid*(small_dt/params.grid_dt_cell.w);
+            if (length(next-p)>0.2501 || !wet_position(next)) valid=false;
+            else p=next;
+        }
+    }
+    marker.position_age_active=vec4(p,marker.position_age_active.z+dt,valid?1.0:0.0);
+    if (marker.position_age_active.z >= float(markers.values.length())*4.0*dt)
+        marker.position_age_active.w=0.0;
+    if (valid && elapsed-marker.history[0].z >= 40.0) {
+        for(uint i=MARKER_TRAIL_POINTS-1u;i>0u;--i) marker.history[i]=marker.history[i-1u];
+        marker.history[0]=vec4(p,elapsed,1.0);
+    }
+    markers.values[id]=marker;
+}

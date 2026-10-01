@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+#include "fluid_25d_mass_audit.glsl"
+#include "fluid_25d_conserved_arithmetic.glsl"
 
 // Publish the complete finite-volume candidate only after the preceding
 // candidate dispatch has made its global sticky status visible. No validation
@@ -62,10 +65,27 @@ layout(set = 0, binding = 12, std430) readonly buffer CandidateTracerLedgerDelta
     vec4 values[];
 }
 candidate_tracer_ledger_delta;
+layout(set = 0, binding = 13, std430) readonly buffer CandidateMassAuditField {
+    MassAudit values[];
+}
+candidate_mass_audit;
+layout(set = 0, binding = 14, std430) buffer MassAuditField {
+    MassAudit values[];
+}
+mass_audit;
+layout(set = 0, binding = 15, std430) buffer ConservationResidualField {
+    ConservationResidual values[];
+}
+conservation_residual;
+layout(set = 0, binding = 16, std430) readonly buffer CandidateConservationResidualField {
+    ConservationResidual values[];
+}
+candidate_conservation_residual;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
     vec4 physics;
+    vec4 dye;
 }
 params;
 
@@ -91,6 +111,18 @@ void main() {
     // Leaving them untouched is the success-path publication and avoids
     // descriptor aliasing/self-copies in the commit layout.
     velocity.values[index] = candidate_velocity.values[index];
-    ledger.values[index] += candidate_ledger_delta.values[index];
-    tracer_ledger.values[index] += candidate_tracer_ledger_delta.values[index];
+    ConservationResidual previous_residual = conservation_residual.values[index];
+    for (uint component = 0u; component < 3u; ++component) {
+        ledger.values[index][component] = conserved_add(
+            vec2(ledger.values[index][component], previous_residual.water_ledger[component]),
+            vec2(candidate_ledger_delta.values[index][component], 0.0)).x;
+        tracer_ledger.values[index][component] = conserved_add(
+            vec2(tracer_ledger.values[index][component], previous_residual.tracer_ledger[component]),
+            vec2(candidate_tracer_ledger_delta.values[index][component], 0.0)).x;
+    }
+    conservation_residual.values[index] = candidate_conservation_residual.values[index];
+    if (params.dye.y > 0.5) {
+        mass_audit.values[index] = audit_accumulate(mass_audit.values[index],
+                                                   candidate_mass_audit.values[index]);
+    }
 }

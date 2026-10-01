@@ -18,6 +18,13 @@ struct Fluid25DUiContext {
     float fixed_delta_seconds = 0.0F;
     float continuous_source_m3_per_s = 0.0F;
     bool& hillside_source_context;
+    std::string& hillside_camera;
+    bool& resume_after_advance;
+    bool motion_markers_available = false;
+    bool& show_motion_markers;
+    bool dye_enabled = false;
+    float dye_start_seconds = 0.0F;
+    float dye_end_seconds = 0.0F;
     bool& paused;
     bool& reset_requested;
     bool& presentation_cue_reset_requested;

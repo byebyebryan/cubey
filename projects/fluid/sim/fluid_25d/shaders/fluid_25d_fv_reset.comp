@@ -1,4 +1,7 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
+#include "fluid_25d_mass_audit.glsl"
+#include "fluid_25d_conserved_arithmetic.glsl"
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
@@ -49,10 +52,19 @@ layout(set = 0, binding = 10, std430) buffer TracerLedgerField {
     vec4 values[];
 }
 tracer_ledger;
+layout(set = 0, binding = 11, std430) buffer MassAuditField {
+    MassAudit values[];
+}
+mass_audit;
+layout(set = 0, binding = 12, std430) buffer ConservationResidualField {
+    ConservationResidual values[];
+}
+conservation_residual;
 
 layout(push_constant) uniform SimulationParams {
     vec4 grid_dt_cell;
     vec4 physics;
+    vec4 dye;
 }
 params;
 
@@ -75,6 +87,10 @@ void main() {
     tracer_q_a.values[index] = 0.0;
     tracer_q_b.values[index] = 0.0;
     tracer_ledger.values[index] = vec4(0.0);
+    conservation_residual.values[index] = ConservationResidual(vec4(0.0), vec4(0.0), vec4(0.0));
+    if (params.dye.y > 0.5) {
+        mass_audit.values[index] = audit_zero();
+    }
     if (index == 0u) {
         status.flags = 0u;
         status.max_x_speed_bits = 0u;

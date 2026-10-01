@@ -10,6 +10,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_gpu_resources.cpp
+        ../sim/fluid_25d/fluid_25d_mass_audit.cpp
+        ../sim/fluid_25d/fluid_25d_motion_markers.cpp
         ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
         ../sim/fluid_25d/fluid_25d_ui.cpp
@@ -21,6 +23,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_terrain.frag
         ../sim/fluid_25d/shaders/fluid_25d_water.vert
         ../sim/fluid_25d/shaders/fluid_25d_water.frag
+        ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.vert
+        ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.frag
         ../sim/fluid_25d/shaders/fluid_25d_quiver.vert
         ../sim/fluid_25d/shaders/fluid_25d_quiver.frag
         ../sim/fluid_25d/shaders/fluid_25d_reset.comp
@@ -35,10 +39,16 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_advect.comp
         ../sim/fluid_25d/shaders/fluid_25d_quiver_reset.comp
         ../sim/fluid_25d/shaders/fluid_25d_quiver_update.comp
+        ../sim/fluid_25d/shaders/fluid_25d_motion_markers.comp
+        ../sim/fluid_25d/shaders/fluid_25d_motion_markers.vert
+        ../sim/fluid_25d/shaders/fluid_25d_motion_markers.frag
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
 )
 
 target_include_directories(
@@ -53,6 +63,7 @@ if (BUILD_TESTING)
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
+        ../sim/fluid_25d/fluid_25d_mass_audit.cpp
         ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_tests.cpp
     )
@@ -72,6 +83,18 @@ if (BUILD_TESTING)
             cubey_project_warnings
     )
     add_test(NAME fluid_25d_tests COMMAND cubey_project_fluid_25d_tests)
+
+    cubey_add_png_smoke_test(
+        fluid_25d_motion_marker_gpu_controls
+        cubey_project_fluid_25d
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-motion-marker-controls.png"
+        --frames 1
+        --grid-width 4
+        --grid-height 4
+        --fluid25d-scenario dry-bed
+        --fluid25d-solver finite-volume
+        --fluid25d-motion-marker-gpu-controls
+    )
 
     set(CUBEY_FLUID_25D_HEADLESS_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-headless.png"

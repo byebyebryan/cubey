@@ -319,12 +319,32 @@ class HillsideSustainedFlowRunnerTests(unittest.TestCase):
                 path, "current-app", "current-shaders", expected_forcing
             )
             self.assertEqual(accepted["sha256"], runner.sha256_file(path))
-            parent["summary"]["edge_triggered"] = False
-            path.write_text(json.dumps(parent))
-            with self.assertRaisesRegex(ValueError, "real edge trigger"):
+            path.unlink()
+            with self.assertRaises(FileNotFoundError):
                 runner.verify_parent_evidence(
                     path, "current-app", "current-shaders", expected_forcing
                 )
+
+            mutations = (
+                ("edge trigger", lambda p: p["summary"].update(edge_triggered=False)),
+                ("unhealthy", lambda p: p.update(phase_checks_passed=False)),
+                ("child exit", lambda p: p["cases"][0].update(exit_code=8)),
+                ("app identity", lambda p: p.update(app_sha256="stale-app")),
+                ("shader identity", lambda p: p.update(shader_map_sha256="stale-shaders")),
+                ("forcing identity", lambda p: p["input_identity"]["forcing_identity"].update(
+                    source_rate_m3_per_s=99)),
+                ("crop identity", lambda p: p["input_identity"].update(crop_xzwh=[0, 0, 256, 256])),
+                ("unstable inputs", lambda p: p["end_input_hashes"].update(app_sha256="changed")),
+            )
+            for name, mutate in mutations:
+                with self.subTest(mutation=name):
+                    changed = copy.deepcopy(parent)
+                    mutate(changed)
+                    path.write_text(json.dumps(changed))
+                    with self.assertRaises(ValueError):
+                        runner.verify_parent_evidence(
+                            path, "current-app", "current-shaders", expected_forcing
+                        )
 
     def test_diagnostic_switch_is_limited_to_captures_and_domain_512_hydraulics(self) -> None:
         runner.validate_diagnostic_scope("captures", 256, True)
@@ -417,7 +437,98 @@ class HillsideSustainedFlowRunnerTests(unittest.TestCase):
                     out, capture_report, allow_diagnostic_unhealthy=True
                 )
 
-    def test_512_diagnostic_hydraulics_inherits_parent_and_captures_need_edge_trigger(self) -> None:
+    def test_512_healthy_captures_need_only_the_triggered_parent(self) -> None:
+        recipe = json.loads(runner.RECIPES[256].read_text())
+        forcing = runner.forcing_identity(recipe, runner.MANIFEST_SHA256)
+        parent = synthetic_hydraulic_report(diagnostic_failure=False)
+        with tempfile.TemporaryDirectory() as parent_directory:
+            parent_path = Path(parent_directory) / "hydraulics.json"
+            parent_path.write_text(json.dumps(parent))
+            verified_parent = runner.verify_parent_evidence(
+                parent_path, "current-app", "current-shaders", forcing
+            )
+
+        hydraulic = synthetic_hydraulic_report(diagnostic_failure=False, domain=512)
+        hydraulic["summary"]["edge_triggered"] = False
+        hydraulic["summary"]["first_edge_trigger"] = None
+        hydraulic["parent_evidence"] = verified_parent
+        hydraulic["parent_evidence_sha256"] = verified_parent["sha256"]
+        identity, hashes = pinned_report_identity(512)
+        capture_report = {
+            "report_path": "unused",
+            "phase": "captures",
+            "domain": 512,
+            "app_sha256": "current-app",
+            "shader_map_sha256": "current-shaders",
+            "recipe_sha256": runner.RECIPE_SHA256[512],
+            "manifest_sha256": runner.MANIFEST_SHA256,
+            "input_identity": identity,
+            "start_input_hashes": hashes,
+            "parent_evidence": verified_parent,
+            "parent_evidence_sha256": verified_parent["sha256"],
+            "diagnostic_unhealthy_requested": False,
+            "cases": [],
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            capture_report["report_path"] = str(out / "captures.json")
+            hydraulic_path = out / "hydraulics.json"
+            hydraulic_path.write_text(json.dumps(hydraulic))
+
+            def fake_run(_app, args, log):
+                raw = Path(args[args.index("--output") + 1])
+                raw.write_bytes(b"healthy 512 capture")
+                return {"exit_code": 0, "wall_seconds": 0.01,
+                        "command": ["fake-fluid", *args], "log": str(log)}
+
+            def fake_label(source, _out, *, diagnostic_only=False, capture_label=None):
+                return {
+                    "exit_code": 0,
+                    "sha256": f"healthy-label-{capture_label}",
+                    "source_sha256": runner.sha256_file(source),
+                    "diagnostic_only": diagnostic_only,
+                }
+
+            with mock.patch.object(runner, "run_command", side_effect=fake_run) as child, \
+                    mock.patch.object(runner, "label_video", side_effect=fake_label):
+                runner.captures_phase(Path("fake-app"), out, 512, capture_report)
+            self.assertEqual(child.call_count, 3)
+            self.assertEqual(len(capture_report["cases"]), 3)
+            self.assertTrue(capture_report["capture_artifacts_completed"])
+            self.assertFalse(capture_report["diagnostic_only"])
+            self.assertFalse(capture_report["inherited_parent_failure"])
+            self.assertNotIn("diagnostic-unlabelled-raw.mp4",
+                             capture_report["cases"][0]["raw_video_path"])
+            capture_report["phase_checks_passed"] = runner.report_checks_passed(capture_report)
+            self.assertTrue(capture_report["phase_checks_passed"])
+
+            mutations = (
+                ("child exit", lambda p: p["cases"][0].update(exit_code=8)),
+                ("app identity", lambda p: p.update(app_sha256="stale-app")),
+                ("forcing identity", lambda p: p["input_identity"]["forcing_identity"].update(
+                    source_rate_m3_per_s=99)),
+                ("parent digest", lambda p: p.update(parent_evidence_sha256="stale-parent")),
+                ("unhealthy profile", lambda p: (
+                    p.update(phase_checks_passed=False),
+                    p["summary"].update(numeric_profile_checks_passed=False,
+                                         unhealthy_frames=[{"frame_index": 1}]))),
+                ("unstable inputs", lambda p: p["end_input_hashes"].update(
+                    shader_map_sha256="changed-shaders")),
+            )
+            for name, mutate in mutations:
+                with self.subTest(current_evidence=name):
+                    changed = copy.deepcopy(hydraulic)
+                    mutate(changed)
+                    hydraulic_path.write_text(json.dumps(changed))
+                    with self.assertRaises(ValueError):
+                        runner.load_matching_hydraulics(out, capture_report)
+
+            with tempfile.TemporaryDirectory() as missing_directory:
+                with self.assertRaisesRegex(ValueError, "successful hydraulics.json"):
+                    runner.load_matching_hydraulics(Path(missing_directory), capture_report)
+
+    def test_512_diagnostic_hydraulics_inherits_parent_without_current_edge_trigger(self) -> None:
         hydraulic = synthetic_hydraulic_report(diagnostic_failure=False, domain=512)
         parent = synthetic_hydraulic_report()
         recipe = json.loads(runner.RECIPES[256].read_text())
@@ -437,8 +548,12 @@ class HillsideSustainedFlowRunnerTests(unittest.TestCase):
         hydraulic["diagnostic_only"] = True
         hydraulic["inherited_parent_failure"] = True
         hydraulic["phase_checks_passed"] = False
+        hydraulic["summary"]["edge_triggered"] = False
+        hydraulic["summary"]["first_edge_trigger"] = None
         identity, hashes = pinned_report_identity(512)
         capture_report = {
+            "report_path": "unused",
+            "phase": "captures",
             "domain": 512,
             "app_sha256": "current-app",
             "shader_map_sha256": "current-shaders",
@@ -446,24 +561,52 @@ class HillsideSustainedFlowRunnerTests(unittest.TestCase):
             "manifest_sha256": runner.MANIFEST_SHA256,
             "input_identity": identity,
             "start_input_hashes": hashes,
+            "parent_evidence": verified_parent,
             "parent_evidence_sha256": verified_parent["sha256"],
+            "diagnostic_unhealthy_requested": True,
+            "cases": [],
         }
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory)
+            capture_report["report_path"] = str(out / "captures.json")
             (out / "hydraulics.json").write_text(json.dumps(hydraulic))
-            with self.assertRaisesRegex(ValueError, "healthy matching hydraulics"):
-                runner.load_matching_hydraulics(out, capture_report, require_edge_trigger=True)
             accepted, _ = runner.load_matching_hydraulics(
-                out, capture_report, allow_diagnostic_unhealthy=True, require_edge_trigger=True
+                out, capture_report, allow_diagnostic_unhealthy=True
             )
             self.assertTrue(accepted["diagnostic_only"])
             self.assertTrue(accepted["inherited_parent_failure"])
-            hydraulic["summary"]["edge_triggered"] = False
-            (out / "hydraulics.json").write_text(json.dumps(hydraulic))
-            with self.assertRaisesRegex(ValueError, "actual current-domain edge trigger"):
-                runner.load_matching_hydraulics(
-                    out, capture_report, allow_diagnostic_unhealthy=True, require_edge_trigger=True
-                )
+
+            def fake_run(_app, args, log):
+                raw = Path(args[args.index("--output") + 1])
+                raw.write_bytes(b"diagnostic 512 capture")
+                return {"exit_code": 0, "wall_seconds": 0.01,
+                        "command": ["fake-fluid", *args], "log": str(log)}
+
+            def fake_label(source, _out, *, diagnostic_only=False, capture_label=None):
+                return {
+                    "exit_code": 0,
+                    "sha256": f"diagnostic-label-{capture_label}",
+                    "source_sha256": runner.sha256_file(source),
+                    "diagnostic_only": diagnostic_only,
+                }
+
+            with mock.patch.object(runner, "run_command", side_effect=fake_run) as child, \
+                    mock.patch.object(runner, "label_video", side_effect=fake_label):
+                runner.captures_phase(Path("fake-app"), out, 512, capture_report)
+            self.assertEqual(child.call_count, 3)
+            self.assertEqual(len(capture_report["cases"]), 3)
+            self.assertTrue(capture_report["diagnostic_only"])
+            self.assertTrue(capture_report["inherited_parent_failure"])
+            self.assertTrue(capture_report["capture_artifacts_completed"])
+            self.assertFalse(runner.report_checks_passed(capture_report))
+            self.assertEqual(runner.phase_exit_code({
+                "phase_checks_passed": runner.report_checks_passed(capture_report)
+            }), 1)
+            for case in capture_report["cases"]:
+                self.assertTrue(case["diagnostic_only"])
+                self.assertIn("diagnostic-unlabelled-raw.mp4", case["raw_video_path"])
+                self.assertIn("not reviewed; not validated", case["raw_video_status"])
+                self.assertTrue(case["labelled_video"]["diagnostic_only"])
 
     def test_diagnostic_captures_complete_but_never_pass_and_keep_raw_unlabelled(self) -> None:
         hydraulic = synthetic_hydraulic_report()

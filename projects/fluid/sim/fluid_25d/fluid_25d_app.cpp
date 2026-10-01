@@ -4,6 +4,8 @@
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_finite_volume_oracle.h"
 #include "fluid_25d_gpu_resources.h"
+#include "fluid_25d_mass_audit.h"
+#include "fluid_25d_motion_markers.h"
 #include "fluid_25d_natural_flow_recipe.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_scenarios.h"
@@ -23,6 +25,7 @@
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -115,10 +118,38 @@ template <typename Value>
         config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
     const bool natural_flow_study = fluid_25d_is_natural_terrain_study(config.simulation.scenario);
     if (!terrain_case && !mountain_source_outlet && !natural_flow_study) {
-        return make_fluid_25d_scenario(config.simulation.scenario, config.simulation.grid_width,
-                                       config.simulation.grid_height,
-                                       config.simulation.cell_size_m,
-                                       config.simulation.headwaters_source_scale);
+        Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+            config.simulation.scenario, config.simulation.grid_width, config.simulation.grid_height,
+            config.simulation.cell_size_m, config.simulation.headwaters_source_scale);
+        if (!config.mass_audit_control.empty() && config.mass_audit_control != "none") {
+            std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+            std::fill(scenario.source_depth_rate_m_per_s.begin(),
+                      scenario.source_depth_rate_m_per_s.end(), 0.0F);
+            std::fill(scenario.sink_depth_rate_m_per_s.begin(),
+                      scenario.sink_depth_rate_m_per_s.end(), 0.0F);
+            std::fill(scenario.boundary_outflow_face_mask.begin(),
+                      scenario.boundary_outflow_face_mask.end(), 0U);
+            scenario.source_cell = scenario.sink_cell = scenario.outlet_cell = kFluid25DNoCell;
+            if (config.mass_audit_control == "source-basin") {
+                std::fill(scenario.initial_water_depth_m.begin(),
+                          scenario.initial_water_depth_m.end(), 1.0F);
+                // Uniform supply isolates representable source additions;
+                // without a surface gradient there is no horizontal transfer.
+                std::fill(scenario.source_depth_rate_m_per_s.begin(),
+                          scenario.source_depth_rate_m_per_s.end(), 20.0F / 900.0F);
+            } else if (config.mass_audit_control == "dam-break") {
+                std::fill(scenario.initial_water_depth_m.begin(),
+                          scenario.initial_water_depth_m.end(), 0.02F);
+                const std::uint32_t width = config.simulation.grid_width;
+                const std::uint32_t height = config.simulation.grid_height;
+                scenario.initial_water_depth_m[(height / 2U) * width + width / 2U] = 2.0F;
+            } else {
+                throw std::runtime_error("unknown fluid 2.5D mass audit control");
+            }
+            std::printf("fluid_25d: mass-audit-control=%s closed-boundary diagnostic fields\n",
+                        config.mass_audit_control.c_str());
+        }
+        return scenario;
     }
 
     cubey::asset::TerrainRasterHeightSource source(config.terrain.heightfield_path.value());
@@ -156,8 +187,7 @@ class Fluid25DApp {
   public:
     explicit Fluid25DApp(Fluid25DProjectConfig config)
         : config_(std::move(config)),
-          windowed_pacing_(config_.simulation.fixed_delta_seconds,
-                           config_.presentation_time_scale),
+          windowed_pacing_(config_.simulation.fixed_delta_seconds, config_.presentation_time_scale),
           scenario_(make_startup_scenario(config_)),
           presentation_view_(fluid_25d_presentation_view_from_name(config_.view)),
           catchment_view_(fluid_25d_catchment_view_from_name(config_.catchment_view)),
@@ -173,9 +203,16 @@ class Fluid25DApp {
                 config_.simulation.sheet_initial_depth_m);
         }
         configure_catchment_camera();
+        show_motion_markers_ = config_.motion_markers;
         if (config_.hillside_inspection_advance_seconds) {
             inspection_advance_.request(*config_.hillside_inspection_advance_seconds,
                                         config_.simulation.fixed_delta_seconds);
+            paused_ = true;
+        }
+        if (config_.hillside_advance_and_continue_seconds) {
+            inspection_advance_.request(*config_.hillside_advance_and_continue_seconds,
+                                        config_.simulation.fixed_delta_seconds);
+            resume_after_advance_ = true;
             paused_ = true;
         }
         if (config_.gpu_oracle_validation) {
@@ -204,11 +241,16 @@ class Fluid25DApp {
         callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
             resources_.create_render_pipelines(context.device(), context.swapchain().format(),
                                                VK_FORMAT_D32_SFLOAT, context.swapchain().extent());
+            if (config_.motion_markers)
+                motion_markers_.create_render_pipeline(
+                    context.device(), context.swapchain().format(), VK_FORMAT_D32_SFLOAT,
+                    context.swapchain().extent());
             graph_executor_.clear();
             graph_executor_.resize(context.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext&) {
             graph_executor_.clear();
+            motion_markers_.destroy_render_pipeline();
             resources_.destroy_swapchain_resources();
         };
         callbacks.update = [this](cubey::host::WindowedAppContext& context,
@@ -221,6 +263,7 @@ class Fluid25DApp {
                     inspection_advance_.reset();
                     windowed_pacing_.reset();
                     paused_ = true;
+                    resume_after_advance_ = false;
                 } else {
                     paused_ = !paused_;
                 }
@@ -251,6 +294,7 @@ class Fluid25DApp {
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) {
             graph_executor_.clear();
+            motion_markers_.destroy();
             resources_.destroy_all_resources();
             runtime_.detach_gpu_if_attached();
         };
@@ -271,6 +315,7 @@ class Fluid25DApp {
     void draw_ui() {
         const bool was_flow_inspection_active = flow_inspection_active();
         const bool was_source_context = config_.hillside_source_context;
+        const std::string was_hillside_camera = config_.hillside_camera;
         draw_fluid_25d_ui({
             .title = "Fluid 2.5D",
             .scenario = config_.simulation.scenario,
@@ -286,12 +331,21 @@ class Fluid25DApp {
             .fixed_delta_seconds = config_.simulation.fixed_delta_seconds,
             .continuous_source_m3_per_s = config_.simulation.natural_flow_source_m3_per_s,
             .hillside_source_context = config_.hillside_source_context,
+            .hillside_camera = config_.hillside_camera,
+            .resume_after_advance = resume_after_advance_,
+            .motion_markers_available = config_.motion_markers,
+            .show_motion_markers = show_motion_markers_,
+            .dye_enabled = config_.simulation.dye_pulse_start_seconds.has_value(),
+            .dye_start_seconds = config_.simulation.dye_pulse_start_seconds.value_or(0.0F),
+            .dye_end_seconds = config_.simulation.dye_pulse_start_seconds.value_or(0.0F) +
+                               config_.simulation.dye_pulse_duration_seconds.value_or(0.0F),
             .paused = paused_,
             .reset_requested = reset_requested_,
             .presentation_cue_reset_requested = presentation_cue_reset_requested_,
             .quiver_reset_requested = quiver_reset_requested_,
         });
-        if (was_source_context != config_.hillside_source_context) {
+        if (was_source_context != config_.hillside_source_context ||
+            was_hillside_camera != config_.hillside_camera) {
             configure_catchment_camera();
             orbit_controller_.reset();
         }
@@ -308,11 +362,37 @@ class Fluid25DApp {
         runtime_.attach_gpu_if_needed(gpu);
         resources_.create_global_resources_if_needed(device, runtime_.gpu(), config_.simulation,
                                                      scenario_, frame_slot_count);
+        if (config_.motion_markers && !motion_markers_.created()) {
+            const auto endpoints = fluid_25d_endpoint_markers(config_.simulation, scenario_);
+            motion_markers_.create(
+                device, runtime_.gpu(), config_.simulation,
+                {&resources_.terrain(), &resources_.depth_a(), &resources_.depth_b(),
+                 &resources_.velocity(), &resources_.source_rate(),
+                 &resources_.finite_volume_status()},
+                {endpoints.source_xy_outlet_xy[0], endpoints.source_xy_outlet_xy[1]},
+                frame_slot_count, !config_.common.profile_output_prefix.empty());
+        }
+    }
+
+    void record_marker_timings(cubey::profiling::ProfileRecorder* recorder, std::uint32_t slot,
+                               bool draw_only = false, bool update_only = false) {
+        auto* profiler = motion_markers_.profiler();
+        if (profiler == nullptr || recorder == nullptr)
+            return;
+        profiler->collect(slot);
+        std::vector<cubey::vulkan::GpuPassTiming> timings;
+        for (const auto& timing : profiler->latest_timings()) {
+            const bool draw = timing.label == "fluid_25d motion markers draw";
+            if ((!draw_only || draw) && (!update_only || !draw))
+                timings.push_back(timing);
+        }
+        record_gpu_timings(recorder, motion_markers_.profile_frame_index(slot), timings);
     }
 
     void record_windowed_frame(cubey::host::WindowedAppContext& context,
                                const cubey::host::WindowedRenderFrame& render_frame) {
         const ProjectFrame project_frame = runtime_.frame_for_timing(render_frame.timing);
+        record_marker_timings(context.profile_recorder(), render_frame.frame_slot.index);
         cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
         if (profiler != nullptr) {
             profiler->collect(render_frame.frame_slot.index);
@@ -328,6 +408,10 @@ class Fluid25DApp {
         }
         if (reset_requested_) {
             inspection_advance_.reset();
+            resume_after_advance_ = false;
+            marker_display_clock_.reset();
+            continuous_wall_seconds_ = 0.0;
+            continuous_physical_seconds_ = 0.0;
         }
         const bool advancing_for_inspection = inspection_advance_.remaining_steps() > 0U;
         const Fluid25DWindowedPacingFrame pacing =
@@ -337,9 +421,13 @@ class Fluid25DApp {
         const std::uint32_t fixed_step_count =
             advancing_for_inspection ? inspection_advance_.take_batch() : pacing.fixed_step_count;
         if (advancing_for_inspection && inspection_advance_.remaining_steps() == 0U) {
-            paused_ = true;
+            paused_ = !resume_after_advance_;
+            resume_after_advance_ = false;
             windowed_pacing_.reset();
         }
+        marker_display_clock_.update(windowed_pacing_.accumulator_seconds(),
+                                     config_.simulation.fixed_delta_seconds, fixed_step_count,
+                                     advancing_for_inspection, paused_);
         Fluid25DSourceRateSchedule next_source_schedule = source_schedule_;
         Fluid25DDyeSourceSchedule next_dye_source_schedule = dye_source_schedule_;
         std::vector<Fluid25DStepForcing> forcings;
@@ -361,9 +449,14 @@ class Fluid25DApp {
             catchment_view_, debug_view_, render_camera(render_frame.color_target.extent),
             Fluid25DRenderTargetMode::Present, true, paused_ && !advancing_for_inspection,
             reset_requested_, presentation_cue_reset_requested_, quiver_reset_requested_, profiler,
-            render_frame.frame_slot.index, forcings, config_.catchment_render);
+            render_frame.frame_slot.index, forcings, config_.catchment_render,
+            config_.motion_markers ? &motion_markers_ : nullptr, marker_display_clock_.fraction(),
+            show_motion_markers_);
         const cubey::vulkan::CommandRecorder recorder(render_frame.command_buffer);
         recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        if (config_.motion_markers)
+            motion_markers_.begin_frame(render_frame.command_buffer, render_frame.frame_slot.index,
+                                        profile_frame_index(project_frame));
         if (profiler != nullptr) {
             profiler->begin_frame(render_frame.command_buffer, render_frame.frame_slot.index);
         }
@@ -380,6 +473,28 @@ class Fluid25DApp {
         recorder.end("vkEndCommandBuffer fluid_25d");
         source_schedule_ = std::move(next_source_schedule);
         dye_source_schedule_ = std::move(next_dye_source_schedule);
+        if (auto* profile = context.profile_recorder(); profile != nullptr) {
+            const auto frame_index = profile_frame_index(project_frame);
+            const auto metric = [&](const char* name, double value) {
+                profile->record_metric(frame_index, "fluid_25d.playback", name, value);
+            };
+            if (!advancing_for_inspection && !paused_) {
+                continuous_wall_seconds_ += render_frame.timing.delta_seconds;
+                continuous_physical_seconds_ +=
+                    static_cast<double>(fixed_step_count) * config_.simulation.fixed_delta_seconds;
+            }
+            metric("physical_time_s", source_schedule_.elapsed_seconds(config_.simulation));
+            metric("fixed_steps", fixed_step_count);
+            metric("paused", paused_ ? 1.0 : 0.0);
+            metric("advance_remaining_steps", inspection_advance_.remaining_steps());
+            metric("requested_playback_x", config_.presentation_time_scale);
+            metric("achieved_continuous_playback_x",
+                   continuous_wall_seconds_ > 0.0
+                       ? continuous_physical_seconds_ / continuous_wall_seconds_
+                       : 0.0);
+            metric("dropped_backlog_frames",
+                   static_cast<double>(windowed_pacing_.dropped_backlog_frames()));
+        }
     }
 
     void configure_catchment_camera() {
@@ -408,8 +523,15 @@ class Fluid25DApp {
         const bool natural_flow_study =
             config_.simulation.scenario == Fluid25DScenario::NaturalFlowStudy;
         const bool hillside = config_.simulation.scenario == Fluid25DScenario::HillsideFlowStudy;
-        if (hillside && config_.hillside_source_context) {
-            framing_horizontal_extent = std::min(horizontal_extent, 3200.0F);
+        const bool hillside_close =
+            hillside &&
+            (config_.hillside_camera == "source" || config_.hillside_camera == "branch" ||
+             (config_.hillside_camera.empty() && config_.hillside_source_context));
+        if (hillside_close) {
+            framing_horizontal_extent =
+                std::min(horizontal_extent, config_.hillside_camera == "source"   ? 1800.0F
+                                            : config_.hillside_camera == "branch" ? 2400.0F
+                                                                                  : 3200.0F);
             const std::uint32_t source_x =
                 static_cast<std::uint32_t>(scenario_.source_cell % scenario_.width);
             const std::uint32_t source_z =
@@ -422,6 +544,24 @@ class Fluid25DApp {
                 config_.simulation.cell_size_m;
             catchment_target_.y =
                 scenario_.terrain_height_m[scenario_.source_cell] * render_height_scale;
+            if (config_.hillside_camera == "branch") {
+                // Framing only: the lower branch observed in the retained
+                // study lies south-west of the source. No route or source
+                // cell is changed by this presentation preset.
+                const std::uint32_t branch_x = source_x > 12U ? source_x - 12U : 0U;
+                const std::uint32_t branch_z = std::min(source_z + 30U, scenario_.height - 1U);
+                catchment_target_.x = (static_cast<float>(branch_x) -
+                                       0.5F * static_cast<float>(scenario_.width - 1U)) *
+                                      config_.simulation.cell_size_m;
+                catchment_target_.z = (static_cast<float>(branch_z) -
+                                       0.5F * static_cast<float>(scenario_.height - 1U)) *
+                                      config_.simulation.cell_size_m;
+                catchment_target_.y =
+                    scenario_
+                        .terrain_height_m[static_cast<std::size_t>(branch_z) * scenario_.width +
+                                          branch_x] *
+                    render_height_scale;
+            }
         }
         if (authored_source_outlet || natural_flow_study) {
             // Each explanation route gets a one-time endpoint framing with
@@ -429,8 +569,7 @@ class Fluid25DApp {
             // input nor any non-demonstration scenario.
             const auto world_x = [this](std::size_t index) {
                 const std::uint32_t x = static_cast<std::uint32_t>(index % scenario_.width);
-                return (static_cast<float>(x) -
-                        (0.5F * static_cast<float>(scenario_.width - 1U))) *
+                return (static_cast<float>(x) - (0.5F * static_cast<float>(scenario_.width - 1U))) *
                        config_.simulation.cell_size_m;
             };
             const auto world_z = [this](std::size_t index) {
@@ -472,17 +611,17 @@ class Fluid25DApp {
             const float requested_distance = *config_.catchment_render.home_camera_distance_m;
             if (requested_distance < minimum_camera_distance ||
                 requested_distance > maximum_camera_distance) {
-                throw std::runtime_error(
-                    "fluid 2.5D terrain home camera distance falls outside the current orbit limits");
+                throw std::runtime_error("fluid 2.5D terrain home camera distance falls outside "
+                                         "the current orbit limits");
             }
             camera_distance = requested_distance;
         }
         orbit_controller_.set_distance_limits(minimum_camera_distance, maximum_camera_distance);
         orbit_controller_.set_pitch_limits(-0.38F, 0.38F);
         orbit_controller_.set_home_distance(camera_distance);
-        const float near_plane = std::max(kCatchmentCameraMinimumNearPlaneM,
-                                          framing_horizontal_extent *
-                                              kCatchmentCameraNearExtentFraction);
+        const float near_plane =
+            std::max(kCatchmentCameraMinimumNearPlaneM,
+                     framing_horizontal_extent * kCatchmentCameraNearExtentFraction);
         camera_.set_projection(fluid_25d_catchment_home_fovy_radians(
                                    std::numbers::pi_v<float> / 3.0F, config_.simulation.scenario),
                                near_plane, camera_distance * 5.0F + scaled_terrain_span + 64.0F);
@@ -553,6 +692,12 @@ class Fluid25DApp {
                 [this, frame, profile_recorder, forcing, frame_index,
                  record_flow_inspection_quiver](cubey::vulkan::GpuOwnerContext& gpu_context) {
                     cubey::vulkan::ImmediateCommands commands(gpu_context);
+                    if (config_.motion_markers) {
+                        record_marker_timings(profile_recorder, frame.frame_slot.index, true,
+                                              false);
+                        motion_markers_.begin_frame(commands.command_buffer(),
+                                                    frame.frame_slot.index, frame_index);
+                    }
                     cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
                     if (profiler != nullptr) {
                         profiler->begin_frame(commands.command_buffer(), frame.frame_slot.index);
@@ -573,15 +718,19 @@ class Fluid25DApp {
                     record_fluid_25d_compute(commands.command_buffer(), resources_,
                                              config_.simulation, false, reset_requested_, false,
                                              profiler, frame.frame_slot.index, forcing);
+                    if (config_.motion_markers)
+                        motion_markers_.record_step(commands.command_buffer(),
+                                                    resources_.current_depth_is_a());
                     if (record_flow_inspection_quiver) {
                         // This runs after the direct solver recorder returns,
                         // so headless numerical timestamps and oracle command
                         // streams remain solver-only.
-                        record_fluid_25d_flow_inspection_quiver_step(
-                            commands.command_buffer(), resources_, config_.simulation,
-                            quiver_reset_requested_);
+                        record_fluid_25d_flow_inspection_quiver_step(commands.command_buffer(),
+                                                                     resources_, config_.simulation,
+                                                                     quiver_reset_requested_);
                     }
                     commands.submit_and_wait();
+                    record_marker_timings(profile_recorder, frame.frame_slot.index, false, true);
                     if (profiler != nullptr) {
                         profiler->collect(frame.frame_slot.index);
                         record_gpu_timings(profile_recorder, frame_index,
@@ -591,11 +740,9 @@ class Fluid25DApp {
         }));
         record_headless_profile_diagnostics_if_requested(gpu, profile_recorder, frame_index);
         if (oracle_.has_value() || finite_volume_oracle_.has_value()) {
-            const Fluid25DStepLedger step_ledger = oracle_.has_value()
-                                                     ? oracle_->step(source_rate_scale)
-                                                     : finite_volume_oracle_->step_with_dye(
-                                                           source_rate_scale)
-                                                           .water;
+            const Fluid25DStepLedger step_ledger =
+                oracle_.has_value() ? oracle_->step(source_rate_scale)
+                                    : finite_volume_oracle_->step_with_dye(source_rate_scale).water;
             expected_source_volume_m3_ += step_ledger.source_volume_m3;
             expected_sink_volume_m3_ += step_ledger.sink_volume_m3;
             expected_boundary_outflow_volume_m3_ += step_ledger.boundary_outflow_volume_m3;
@@ -604,8 +751,7 @@ class Fluid25DApp {
                     finite_volume_oracle_->last_tracer_step_ledger();
                 expected_tracer_source_amount_m3_ += tracer.source_amount_m3;
                 expected_tracer_sink_amount_m3_ += tracer.sink_amount_m3;
-                expected_tracer_boundary_outflow_amount_m3_ +=
-                    tracer.boundary_outflow_amount_m3;
+                expected_tracer_boundary_outflow_amount_m3_ += tracer.boundary_outflow_amount_m3;
             }
         }
         source_schedule_.advance_fixed_step();
@@ -633,13 +779,52 @@ class Fluid25DApp {
         const std::vector<float> tracer_q_m =
             readback_values<float>(gpu, current_tracer_q, cells, "profile diagnostic tracer q");
         const std::vector<Fluid25DTracerLedgerGpu> tracer_ledger =
-            readback_values<Fluid25DTracerLedgerGpu>(
-                gpu, resources_.tracer_ledger(), cells, "profile diagnostic tracer ledger");
+            readback_values<Fluid25DTracerLedgerGpu>(gpu, resources_.tracer_ledger(), cells,
+                                                     "profile diagnostic tracer ledger");
         if (config_.simulation.solver == Fluid25DSolver::FiniteVolume) {
             const std::uint32_t status_flags = read_finite_volume_status(gpu, "profile diagnostic");
             profile_recorder->record_metric(frame_index, "fluid_25d.solver",
                                             "finite_volume_status_flags",
                                             static_cast<double>(status_flags));
+            // Diagnostic-only identity of the complete hydraulic state. Dye
+            // fields are deliberately excluded so pulse/no-pulse replays can
+            // prove that the transport experiment did not change hydraulics.
+            const auto momentum = readback_values<Fluid25DMomentumGpu>(
+                gpu,
+                resources_.current_depth_is_a() ? resources_.momentum_a() : resources_.momentum_b(),
+                cells, "profile hydraulic identity momentum");
+            const auto residual = readback_values<Fluid25DConservationResidualGpu>(
+                gpu, resources_.finite_volume_conservation_residual(), cells,
+                "profile hydraulic identity residual");
+            std::uint64_t hash = 14695981039346656037ULL;
+            const auto append = [&](float value) {
+                const auto bits = std::bit_cast<std::uint32_t>(value);
+                for (unsigned shift = 0; shift < 32; shift += 8) {
+                    hash ^= (bits >> shift) & 0xffU;
+                    hash *= 1099511628211ULL;
+                }
+            };
+            for (std::size_t i = 0; i < cells; ++i) {
+                append(depth_m[i]);
+                for (float value : momentum[i].momentum_xy_reserved) {
+                    append(value);
+                }
+                for (float value : velocity[i].velocity_wet) {
+                    append(value);
+                }
+                for (float value : ledger[i].source_sink_boundary_reserved_m3) {
+                    append(value);
+                }
+                append(residual[i].depth_tracer_reserved[0]);
+                for (float value : residual[i].water_ledger) {
+                    append(value);
+                }
+            }
+            profile_recorder->record_metric(frame_index, "fluid_25d.hydraulic_identity",
+                                            "hash_hi_u32", static_cast<double>(hash >> 32));
+            profile_recorder->record_metric(frame_index, "fluid_25d.hydraulic_identity",
+                                            "hash_lo_u32",
+                                            static_cast<double>(hash & 0xffffffffULL));
         }
         const Fluid25DProfileDiagnostics diagnostics = compute_fluid_25d_profile_diagnostics(
             config_.simulation, depth_m, velocity, ledger, initial_water_volume_m3_);
@@ -652,6 +837,62 @@ class Fluid25DApp {
                                               compute_fluid_25d_hillside_spatial(config_.simulation,
                                                                                  scenario_, depth_m,
                                                                                  velocity));
+            if (config_.motion_markers) {
+                const auto markers = readback_values<Fluid25DMotionMarkerGpu>(
+                    gpu, motion_markers_.buffer(), kFluid25DMotionMarkerCount,
+                    "profile motion marker state");
+                const float sx = static_cast<float>(scenario_.source_cell % scenario_.width);
+                const float sy = static_cast<float>(scenario_.source_cell / scenario_.width);
+                double active = 0.0, far = 0.0, total_distance = 0.0, max_age = 0.0;
+                std::uint64_t hash = 14695981039346656037ULL;
+                const auto append = [&](float value) {
+                    if (!std::isfinite(value))
+                        throw std::runtime_error("nonfinite motion marker state");
+                    const auto bits = std::bit_cast<std::uint32_t>(value);
+                    for (unsigned shift = 0U; shift < 32U; shift += 8U) {
+                        hash ^= (bits >> shift) & 0xffU;
+                        hash *= 1099511628211ULL;
+                    }
+                };
+                for (const auto& marker : markers) {
+                    for (float value : marker.position_age_active)
+                        append(value);
+                    for (float value : marker.previous_xy_reserved)
+                        append(value);
+                    for (const auto& point : marker.history)
+                        for (float value : point)
+                            append(value);
+                    const auto& p = marker.position_age_active;
+                    if (p[3] != 0.0F && p[3] != 1.0F)
+                        throw std::runtime_error("invalid motion marker active flag");
+                    if (p[3] < 0.5F)
+                        continue;
+                    const int x = static_cast<int>(std::floor(p[0] + 0.5F));
+                    const int y = static_cast<int>(std::floor(p[1] + 0.5F));
+                    if (x < 0 || y < 0 || x >= static_cast<int>(scenario_.width) ||
+                        y >= static_cast<int>(scenario_.height) ||
+                        depth_m[static_cast<std::size_t>(y) * scenario_.width +
+                                static_cast<std::size_t>(x)] <=
+                            config_.simulation.minimum_wet_depth_m)
+                        throw std::runtime_error("motion marker lacks wet hydraulic support");
+                    const double distance =
+                        std::hypot(p[0] - sx, p[1] - sy) * config_.simulation.cell_size_m;
+                    ++active;
+                    far = std::max(far, distance);
+                    total_distance += distance;
+                    max_age = std::max(max_age, static_cast<double>(p[2]));
+                }
+                const auto metric = [&](const char* name, double value) {
+                    profile_recorder->record_metric(frame_index, "fluid_25d.motion_markers", name,
+                                                    value);
+                };
+                metric("active_count", active);
+                metric("farthest_from_source_m", far);
+                metric("mean_from_source_m", active > 0.0 ? total_distance / active : 0.0);
+                metric("maximum_age_s", max_age);
+                metric("hash_hi_u32", static_cast<double>(hash >> 32U));
+                metric("hash_lo_u32", static_cast<double>(hash & 0xffffffffULL));
+            }
         }
         if ((config_.simulation.scenario == Fluid25DScenario::TerrainCase &&
              config_.simulation.terrain_water_protocol ==
@@ -704,6 +945,53 @@ class Fluid25DApp {
                                                          tracer_ledger);
         record_fluid_25d_tracer_profile_diagnostics(*profile_recorder, frame_index,
                                                     tracer_diagnostics);
+        if (config_.simulation.mass_audit) {
+            const auto audit_cells = readback_values<Fluid25DMassAuditGpu>(
+                gpu, resources_.finite_volume_mass_audit(), cells, "committed mass audit");
+            const auto water_audit = compute_fluid_25d_mass_audit(
+                audit_cells, diagnostics.total_water_volume_m3, initial_water_volume_m3_,
+                diagnostics.cumulative_source_volume_m3, diagnostics.cumulative_sink_volume_m3,
+                diagnostics.cumulative_boundary_outflow_volume_m3);
+            const auto tracer_audit = compute_fluid_25d_mass_audit(
+                audit_cells, tracer_diagnostics.total_tracer_amount_m3, 0.0,
+                tracer_diagnostics.cumulative_source_amount_m3,
+                tracer_diagnostics.cumulative_sink_amount_m3,
+                tracer_diagnostics.cumulative_boundary_outflow_amount_m3, true);
+            const auto record_audit = [&](const Fluid25DMassAuditDiagnostics& audit,
+                                          std::string_view category) {
+                constexpr std::array<std::string_view, 9> terms{
+                    "independent_source_m3",   "independent_sink_m3",
+                    "independent_boundary_m3", "actual_source_addition_m3",
+                    "actual_sink_removal_m3",  "internal_transport_m3",
+                    "boundary_transport_m3",   "update_arithmetic_m3",
+                    "clamp_correction_m3"};
+                for (std::size_t i = 0; i < terms.size(); ++i) {
+                    profile_recorder->record_metric(frame_index, category, terms[i],
+                                                    audit.totals_m3[i]);
+                }
+                profile_recorder->record_metric(frame_index, category, "field_budget_residual_m3",
+                                                audit.field_budget_residual_m3);
+                profile_recorder->record_metric(frame_index, category,
+                                                "cumulative_ledger_rounding_m3",
+                                                audit.cumulative_ledger_rounding_m3);
+                profile_recorder->record_metric(frame_index, category,
+                                                "source_representation_difference_m3",
+                                                audit.source_representation_difference_m3);
+                profile_recorder->record_metric(frame_index, category,
+                                                "sink_representation_difference_m3",
+                                                audit.sink_representation_difference_m3);
+                profile_recorder->record_metric(frame_index, category,
+                                                "boundary_definition_difference_m3",
+                                                audit.boundary_definition_difference_m3);
+                profile_recorder->record_metric(frame_index, category,
+                                                "observed_conservation_residual_m3",
+                                                audit.observed_conservation_residual_m3);
+                profile_recorder->record_metric(frame_index, category, "committed_substeps",
+                                                static_cast<double>(audit.committed_substeps));
+            };
+            record_audit(water_audit, "fluid_25d.mass_audit.water");
+            record_audit(tracer_audit, "fluid_25d.mass_audit.tracer");
+        }
         if (config_.simulation.scenario == Fluid25DScenario::SourceOutletDemo) {
             const auto stations = fluid_25d_source_outlet_cross_section_stations(
                 config_.simulation.grid_width, config_.simulation.grid_height);
@@ -864,17 +1152,32 @@ class Fluid25DApp {
         }
 
         const std::uint32_t status_flags = read_finite_volume_status(gpu, "oracle status");
+        double actual_water_volume_m3 = 0.0;
+        const double oracle_cell_area_m2 = static_cast<double>(config_.simulation.cell_size_m) *
+                                           static_cast<double>(config_.simulation.cell_size_m);
+        for (float h : actual_depth) {
+            actual_water_volume_m3 += static_cast<double>(h) * oracle_cell_area_m2;
+        }
+        const double cpu_water_volume_m3 = finite_volume_oracle_->total_water_volume_m3();
+        std::printf("fluid_25d_oracle_water_budget: gpu_stored=%.9f cpu_stored=%.9f "
+                    "gpu_residual=%.9f cpu_residual=%.9f\n",
+                    actual_water_volume_m3, cpu_water_volume_m3,
+                    actual_water_volume_m3 - initial_water_volume_m3_ - actual_source_volume_m3 +
+                        actual_sink_volume_m3 + actual_boundary_outflow_volume_m3,
+                    cpu_water_volume_m3 - initial_water_volume_m3_ - expected_source_volume_m3_ +
+                        expected_sink_volume_m3_ + expected_boundary_outflow_volume_m3_);
         const std::vector<Fluid25DMomentumGpu> actual_momentum =
             readback_values<Fluid25DMomentumGpu>(
                 gpu,
                 resources_.current_depth_is_a() ? resources_.momentum_a() : resources_.momentum_b(),
                 cells, "oracle finite-volume momentum");
         const std::vector<float> actual_tracer_q = readback_values<float>(
-            gpu, resources_.current_depth_is_a() ? resources_.tracer_q_a() : resources_.tracer_q_b(),
+            gpu,
+            resources_.current_depth_is_a() ? resources_.tracer_q_a() : resources_.tracer_q_b(),
             cells, "oracle finite-volume tracer q");
         const std::vector<Fluid25DTracerLedgerGpu> actual_tracer_ledger =
             readback_values<Fluid25DTracerLedgerGpu>(gpu, resources_.tracer_ledger(), cells,
-                                                      "oracle finite-volume tracer ledger");
+                                                     "oracle finite-volume tracer ledger");
         float maximum_tracer_q_error = 0.0F;
         float maximum_tracer_concentration_error = 0.0F;
         std::size_t maximum_velocity_error_cell = 0U;
@@ -922,8 +1225,7 @@ class Fluid25DApp {
                     "fluid 2.5D GPU oracle observed nonzero finite-volume padding");
             }
             const float expected_wet = finite_volume_oracle_->wet_mask()[index] == 0U ? 0.0F : 1.0F;
-            const float wet_error =
-                std::abs(actual_velocity[index].velocity_wet[2] - expected_wet);
+            const float wet_error = std::abs(actual_velocity[index].velocity_wet[2] - expected_wet);
             if (wet_error > maximum_velocity_error) {
                 maximum_velocity_error = wet_error;
                 maximum_velocity_error_cell = index;
@@ -946,12 +1248,11 @@ class Fluid25DApp {
                 const float actual_concentration = actual_q / actual_depth[index];
                 const float expected_concentration =
                     finite_volume_oracle_->tracer_concentration()[index];
-                maximum_tracer_concentration_error = std::max(
-                    maximum_tracer_concentration_error,
-                    std::abs(actual_concentration - expected_concentration));
+                maximum_tracer_concentration_error =
+                    std::max(maximum_tracer_concentration_error,
+                             std::abs(actual_concentration - expected_concentration));
             }
-            actual_tracer_amount_m3 += static_cast<double>(std::max(0.0F, actual_q)) *
-                                       cell_area_m2;
+            actual_tracer_amount_m3 += static_cast<double>(std::max(0.0F, actual_q)) * cell_area_m2;
             const Fluid25DTracerLedgerGpu& tracer_ledger = actual_tracer_ledger[index];
             for (std::size_t component_index = 0U;
                  component_index < tracer_ledger.source_sink_boundary_reserved_m3.size();
@@ -961,8 +1262,7 @@ class Fluid25DApp {
                 if (!finite(component)) {
                     throw std::runtime_error(
                         "fluid 2.5D GPU oracle observed nonfinite tracer ledger at cell=" +
-                        std::to_string(index) + " component=" +
-                        std::to_string(component_index));
+                        std::to_string(index) + " component=" + std::to_string(component_index));
                 }
             }
             if (tracer_ledger.source_sink_boundary_reserved_m3[0] < 0.0F ||
@@ -971,14 +1271,13 @@ class Fluid25DApp {
                 tracer_ledger.source_sink_boundary_reserved_m3[3] != 0.0F) {
                 throw std::runtime_error(
                     "fluid 2.5D GPU oracle observed invalid tracer ledger at cell=" +
-                    std::to_string(index) + " values=" +
-                    std::to_string(tracer_ledger.source_sink_boundary_reserved_m3[0]) + "," +
-                    std::to_string(tracer_ledger.source_sink_boundary_reserved_m3[1]) + "," +
+                    std::to_string(index) +
+                    " values=" + std::to_string(tracer_ledger.source_sink_boundary_reserved_m3[0]) +
+                    "," + std::to_string(tracer_ledger.source_sink_boundary_reserved_m3[1]) + "," +
                     std::to_string(tracer_ledger.source_sink_boundary_reserved_m3[2]) + "," +
                     std::to_string(tracer_ledger.source_sink_boundary_reserved_m3[3]));
             }
-            actual_tracer_source_amount_m3 +=
-                tracer_ledger.source_sink_boundary_reserved_m3[0];
+            actual_tracer_source_amount_m3 += tracer_ledger.source_sink_boundary_reserved_m3[0];
             actual_tracer_sink_amount_m3 += tracer_ledger.source_sink_boundary_reserved_m3[1];
             actual_tracer_boundary_outflow_amount_m3 +=
                 tracer_ledger.source_sink_boundary_reserved_m3[2];
@@ -1018,51 +1317,43 @@ class Fluid25DApp {
             tracer_boundary_ledger_error > tracer_boundary_ledger_tolerance_m3 ||
             tracer_amount_error > tracer_amount_tolerance_m3 ||
             std::abs(tracer_conservation_residual_m3) > tracer_conservation_tolerance_m3) {
-            throw std::runtime_error("fluid 2.5D finite-volume GPU oracle mismatch: status=" +
-                                     std::to_string(status_flags) +
-                                     " max_depth=" + std::to_string(maximum_depth_error) +
-                                     " max_momentum=" + std::to_string(maximum_momentum_error) +
-                                     " max_velocity=" + std::to_string(maximum_velocity_error) +
-                                     " velocity_cell=" +
-                                     std::to_string(maximum_velocity_error_cell) +
-                                     " velocity_component=" +
-                                     std::to_string(maximum_velocity_error_component) +
-                                     " velocity_actual=" +
-                                     std::to_string(maximum_velocity_actual) +
-                                     " velocity_expected=" +
-                                     std::to_string(maximum_velocity_expected) +
-                                     " velocity_actual_depth=" +
-                                     std::to_string(actual_depth[maximum_velocity_error_cell]) +
-                                     " velocity_expected_depth=" +
-                                     std::to_string(finite_volume_oracle_->water_depth_m()
-                                                        [maximum_velocity_error_cell]) +
-                                     " max_tracer_q=" + std::to_string(maximum_tracer_q_error) +
-                                     " max_tracer_concentration=" +
-                                     std::to_string(maximum_tracer_concentration_error) +
-                                     " source_ledger=" + std::to_string(source_ledger_error) +
-                                     " sink_ledger=" + std::to_string(sink_ledger_error) +
-                                     " boundary_ledger=" + std::to_string(boundary_ledger_error) +
-                                     " tracer_amount=" + std::to_string(tracer_amount_error) +
-                                     " tracer_source_ledger=" +
-                                     std::to_string(tracer_source_ledger_error) +
-                                     " tracer_sink_ledger=" +
-                                     std::to_string(tracer_sink_ledger_error) +
-                                     " tracer_boundary_ledger=" +
-                                     std::to_string(tracer_boundary_ledger_error) +
-                                     " tracer_conservation=" +
-                                     std::to_string(tracer_conservation_residual_m3));
+            throw std::runtime_error(
+                "fluid 2.5D finite-volume GPU oracle mismatch: status=" +
+                std::to_string(status_flags) + " max_depth=" + std::to_string(maximum_depth_error) +
+                " max_momentum=" + std::to_string(maximum_momentum_error) +
+                " max_velocity=" + std::to_string(maximum_velocity_error) +
+                " velocity_cell=" + std::to_string(maximum_velocity_error_cell) +
+                " velocity_component=" + std::to_string(maximum_velocity_error_component) +
+                " velocity_actual=" + std::to_string(maximum_velocity_actual) +
+                " velocity_expected=" + std::to_string(maximum_velocity_expected) +
+                " velocity_actual_depth=" +
+                std::to_string(actual_depth[maximum_velocity_error_cell]) +
+                " velocity_expected_depth=" +
+                std::to_string(
+                    finite_volume_oracle_->water_depth_m()[maximum_velocity_error_cell]) +
+                " max_tracer_q=" + std::to_string(maximum_tracer_q_error) +
+                " max_tracer_concentration=" + std::to_string(maximum_tracer_concentration_error) +
+                " source_ledger=" + std::to_string(source_ledger_error) +
+                " sink_ledger=" + std::to_string(sink_ledger_error) +
+                " boundary_ledger=" + std::to_string(boundary_ledger_error) +
+                " tracer_amount=" + std::to_string(tracer_amount_error) +
+                " tracer_source_ledger=" + std::to_string(tracer_source_ledger_error) +
+                " tracer_sink_ledger=" + std::to_string(tracer_sink_ledger_error) +
+                " tracer_boundary_ledger=" + std::to_string(tracer_boundary_ledger_error) +
+                " tracer_conservation=" + std::to_string(tracer_conservation_residual_m3));
         }
-        std::printf("fluid_25d_gpu_oracle: PASS solver=finite-volume scenario=%s status=%u "
-                    "max_depth=%.7f max_momentum=%.7f max_velocity=%.7f max_tracer_q=%.7f "
-                    "max_tracer_concentration=%.7f tracer_amount=%.7f source_ledger=%.7f sink_ledger=%.7f "
-                    "boundary_ledger=%.7f tracer_source_ledger=%.7f tracer_sink_ledger=%.7f "
-                    "tracer_boundary_ledger=%.7f tracer_conservation=%.7f\n",
-                    fluid_25d_scenario_name(config_.simulation.scenario), status_flags,
-                    maximum_depth_error, maximum_momentum_error, maximum_velocity_error,
-                    maximum_tracer_q_error, maximum_tracer_concentration_error, tracer_amount_error,
-                    source_ledger_error, sink_ledger_error, boundary_ledger_error,
-                    tracer_source_ledger_error, tracer_sink_ledger_error,
-                    tracer_boundary_ledger_error, tracer_conservation_residual_m3);
+        std::printf(
+            "fluid_25d_gpu_oracle: PASS solver=finite-volume scenario=%s status=%u "
+            "max_depth=%.7f max_momentum=%.7f max_velocity=%.7f max_tracer_q=%.7f "
+            "max_tracer_concentration=%.7f tracer_amount=%.7f source_ledger=%.7f sink_ledger=%.7f "
+            "boundary_ledger=%.7f tracer_source_ledger=%.7f tracer_sink_ledger=%.7f "
+            "tracer_boundary_ledger=%.7f tracer_conservation=%.7f\n",
+            fluid_25d_scenario_name(config_.simulation.scenario), status_flags, maximum_depth_error,
+            maximum_momentum_error, maximum_velocity_error, maximum_tracer_q_error,
+            maximum_tracer_concentration_error, tracer_amount_error, source_ledger_error,
+            sink_ledger_error, boundary_ledger_error, tracer_source_ledger_error,
+            tracer_sink_ledger_error, tracer_boundary_ledger_error,
+            tracer_conservation_residual_m3);
     }
 
     int run_headless() {
@@ -1083,6 +1374,11 @@ class Fluid25DApp {
             const cubey::host::HeadlessRenderTarget& target = context.render_target();
             resources_.create_render_pipelines(context.device(), target.format,
                                                VK_FORMAT_D32_SFLOAT, target.extent);
+            if (config_.motion_markers)
+                motion_markers_.create_render_pipeline(context.device(), target.format,
+                                                       VK_FORMAT_D32_SFLOAT, target.extent);
+            if (config_.motion_marker_gpu_controls)
+                validate_fluid_25d_motion_marker_gpu_controls(context.device(), runtime_.gpu());
             graph_executor_.clear();
             graph_executor_.resize(frame_slot_count);
         };
@@ -1111,7 +1407,8 @@ class Fluid25DApp {
                 debug_view_, render_camera(target.extent),
                 Fluid25DRenderTargetMode::ColorAttachment, false, false, reset_requested_,
                 presentation_cue_reset_requested_, quiver_reset_requested_, nullptr, 0U, {},
-                config_.catchment_render);
+                config_.catchment_render,
+                config_.motion_markers && show_motion_markers_ ? &motion_markers_ : nullptr, 1.0F);
             graph_executor_.record(
                 {
                     .device = &context.device(),
@@ -1123,8 +1420,11 @@ class Fluid25DApp {
                 },
                 graph);
         };
-        callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) {
+        callbacks.shutdown = [this](cubey::host::HeadlessPngContext& context) {
+            for (std::uint32_t slot = 0U; slot < motion_markers_.profile_slot_count(); ++slot)
+                record_marker_timings(context.profile_recorder(), slot, true, false);
             graph_executor_.clear();
+            motion_markers_.destroy();
             resources_.destroy_all_resources();
             runtime_.detach_gpu_if_attached();
         };
@@ -1138,6 +1438,7 @@ class Fluid25DApp {
     Fluid25DScenarioData scenario_;
     cubey::ProjectRuntimeAdapter runtime_{1};
     Fluid25DGpuResources resources_;
+    Fluid25DMotionMarkers motion_markers_;
     cubey::render::RenderGraphFrameExecutor graph_executor_;
     cubey::Camera3D camera_;
     cubey::OrbitController orbit_controller_;
@@ -1157,6 +1458,11 @@ class Fluid25DApp {
     double expected_tracer_boundary_outflow_amount_m3_ = 0.0;
     double initial_water_volume_m3_ = 0.0;
     bool paused_ = false;
+    bool resume_after_advance_ = false;
+    bool show_motion_markers_ = false;
+    Fluid25DMotionMarkerDisplayClock marker_display_clock_;
+    double continuous_wall_seconds_ = 0.0;
+    double continuous_physical_seconds_ = 0.0;
     // Headless simulation keeps the uploaded initial numerical state and
     // solver dispatch stream unchanged. Windowed presentation initializes its
     // render-only cue separately on the first frame or an explicit reset.

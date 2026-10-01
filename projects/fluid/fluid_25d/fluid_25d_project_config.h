@@ -30,11 +30,17 @@ struct Fluid25DProjectConfig {
     std::string debug_view{};
     float presentation_time_scale = kFluid25DDefaultWindowedPresentationTimeScale;
     bool gpu_oracle_validation = false;
+    bool mass_audit = false;
+    std::string mass_audit_control{};
     Fluid25DStartupOptions fluid{};
     Fluid25DTerrainOptions terrain{};
     std::optional<std::filesystem::path> natural_flow_recipe_path{};
     std::optional<float> natural_flow_home_pitch_radians{};
     std::optional<float> hillside_inspection_advance_seconds{};
+    std::optional<float> hillside_advance_and_continue_seconds{};
+    std::string hillside_camera{};
+    bool motion_markers = false;
+    bool motion_marker_gpu_controls = false;
     bool hillside_source_context = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
@@ -59,16 +65,40 @@ inline config::OptionSpec option(std::string path, std::string cli, std::string 
 } // namespace fluid_25d_project_config_detail
 
 inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& project_config) {
-    validate_fluid_25d_windowed_presentation_time_scale(
-        project_config.presentation_time_scale);
+    if (!project_config.mass_audit_control.empty() && project_config.mass_audit_control != "none" &&
+        (!project_config.common.headless ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume ||
+         project_config.simulation.scenario != Fluid25DScenario::DryBed)) {
+        throw std::runtime_error(
+            "fluid 2.5D mass audit controls require headless finite-volume dry-bed scenario");
+    }
+    if (project_config.mass_audit &&
+        (!project_config.common.headless || !project_config.common.profile_diagnostics ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume)) {
+        throw std::runtime_error(
+            "fluid 2.5D mass audit requires headless finite-volume profile diagnostics");
+    }
+    validate_fluid_25d_windowed_presentation_time_scale(project_config.presentation_time_scale);
     if (project_config.fluid.headwaters_source_scale.has_value() &&
         project_config.simulation.scenario != Fluid25DScenario::SustainedHeadwatersDemo) {
-        throw std::runtime_error(
-            "fluid 2.5D --fluid25d-headwaters-source-scale requires "
-            "--fluid25d-scenario sustained-headwaters-demo");
+        throw std::runtime_error("fluid 2.5D --fluid25d-headwaters-source-scale requires "
+                                 "--fluid25d-scenario sustained-headwaters-demo");
     }
     const bool natural_flow_study =
         fluid_25d_is_natural_terrain_study(project_config.simulation.scenario);
+    if (project_config.motion_markers &&
+        (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume))
+        throw std::runtime_error("motion markers require the finite-volume hillside study");
+    if (project_config.motion_marker_gpu_controls && !project_config.common.headless)
+        throw std::runtime_error("motion marker GPU controls are headless only");
+    if (!project_config.hillside_camera.empty() &&
+        (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
+         (project_config.hillside_camera != "source" &&
+          project_config.hillside_camera != "branch" &&
+          project_config.hillside_camera != "overview")))
+        throw std::runtime_error(
+            "hillside camera requires source, branch or overview on the hillside study");
     if (project_config.hillside_source_context &&
         project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy) {
         throw std::runtime_error("source-context camera requires hillside-flow-study");
@@ -80,6 +110,16 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         }
         Fluid25DInspectionAdvance advance;
         advance.request(*project_config.hillside_inspection_advance_seconds,
+                        project_config.simulation.fixed_delta_seconds);
+    }
+    if (project_config.hillside_advance_and_continue_seconds.has_value()) {
+        if (project_config.common.headless ||
+            project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
+            project_config.hillside_inspection_advance_seconds.has_value())
+            throw std::runtime_error(
+                "advance and continue is windowed hillside only and excludes pause advance");
+        Fluid25DInspectionAdvance advance;
+        advance.request(*project_config.hillside_advance_and_continue_seconds,
                         project_config.simulation.fixed_delta_seconds);
     }
     if (project_config.natural_flow_recipe_path.has_value() != natural_flow_study ||
@@ -130,13 +170,11 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         throw std::runtime_error(
             "fluid 2.5D terrain presentation overrides require the catchment view");
     }
-    if (render.terrain_thin_water_composite &&
-        catchment_view != Fluid25DCatchmentView::Composite) {
+    if (render.terrain_thin_water_composite && catchment_view != Fluid25DCatchmentView::Composite) {
         throw std::runtime_error(
             "fluid 2.5D thin-water composite requires the Composite catchment view");
     }
-    if (render.terrain_palette_low_m.has_value() !=
-        render.terrain_palette_high_m.has_value()) {
+    if (render.terrain_palette_low_m.has_value() != render.terrain_palette_high_m.has_value()) {
         throw std::runtime_error(
             "fluid 2.5D terrain palette requires both low and high physical elevation bounds");
     }
@@ -327,6 +365,25 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                 "Windowed hillside study: execute every dry-start step then pause for inspection.",
                 ValueType::Float, {.has_min = true, .has_max = true, .min = 0.001, .max = 7200.0}),
             config.hillside_inspection_advance_seconds)
+        .bind(option("fluid25d.hillside_advance_and_continue_seconds",
+                     "--fluid25d-hillside-advance-and-continue-seconds", "Advance and Continue",
+                     "Compute normal fixed steps with progress, then resume continuous hillside "
+                     "playback.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.001, .max = 7200.0}),
+              config.hillside_advance_and_continue_seconds)
+        .bind(option("fluid25d.hillside_camera", "--fluid25d-hillside-camera", "Hillside Camera",
+                     "Render-only source, downstream branch or full terrain framing.",
+                     ValueType::Enum, {}, {"source", "branch", "overview"}),
+              config.hillside_camera)
+        .bind(option("fluid25d.motion_markers", "--fluid25d-motion-markers", "Motion Markers",
+                     "Opt-in source-released markers following hillside depth-averaged velocity.",
+                     ValueType::Bool),
+              config.motion_markers)
+        .bind(option("fluid25d.motion_marker_gpu_controls", "--fluid25d-motion-marker-gpu-controls",
+                     "Motion Marker GPU Controls",
+                     "Headless synthetic validation of the marker shader.", ValueType::Bool),
+              config.motion_marker_gpu_controls)
         .bind(option("fluid25d.hillside_source_context", "--fluid25d-hillside-source-context",
                      "Source Context Camera", "Render-only 3.2 km view around the hillside source.",
                      ValueType::Bool),
@@ -358,6 +415,17 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                    "Headless-only opt-in CPU/GPU solver comparison with simulation-state readback.",
                    ValueType::Bool),
             config.gpu_oracle_validation)
+        .bind(
+            option(
+                "fluid25d.mass_audit", "--fluid25d-mass-audit", "Mass Budget Audit",
+                "Headless finite-volume committed-update mass audit; requires profile diagnostics.",
+                ValueType::Bool),
+            config.mass_audit)
+        .bind(option("fluid25d.mass_audit_control", "--fluid25d-mass-audit-control",
+                     "Mass Audit Control",
+                     "Headless closed source basin or dam-break diagnostic fields.",
+                     ValueType::Enum, {}, {"none", "source-basin", "dam-break"}),
+              config.mass_audit_control)
         .bind(option("terrain.heightfield", "--terrain-heightfield", "Heightfield",
                      "Terrain heightfield manifest or directory used by a terrain-backed scenario.",
                      ValueType::Path),
@@ -467,6 +535,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
                                           project_config.common.output_path != "cubey-output.png");
     project_config.simulation =
         fluid_25d_config_from_options(project_config.grid, project_config.fluid);
+    project_config.simulation.mass_audit = project_config.mass_audit;
     validate_fluid_25d_project_config(project_config);
     if (project_config.common.headless &&
         parsed.path_was_assigned("fluid25d.presentation_time_scale")) {
@@ -476,8 +545,8 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     static_cast<void>(fluid_25d_presentation_view_from_name(project_config.view));
     static_cast<void>(fluid_25d_catchment_view_from_name(project_config.catchment_view));
     if (!project_config.catchment_view.empty() && project_config.view == "diagnostics") {
-        throw std::runtime_error(
-            "fluid 2.5D --fluid25d-catchment-view cannot be combined with --fluid25d-view diagnostics");
+        throw std::runtime_error("fluid 2.5D --fluid25d-catchment-view cannot be combined with "
+                                 "--fluid25d-view diagnostics");
     }
     static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
     if (project_config.gpu_oracle_validation && !project_config.common.headless) {

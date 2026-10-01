@@ -17,6 +17,8 @@
 
 namespace cubey::projects::fluid::fluid_25d {
 
+class Fluid25DMotionMarkers;
+
 // The numerical terrain fields retain their metre-scale heights. The product
 // view uses a restrained vertical presentation scale so the bounded River V0
 // catchment remains readable from one deterministic orbit.
@@ -150,16 +152,18 @@ void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResourc
 // before the fixed solver record when a headless capture starts so its initial
 // empty field cannot be mistaken for one completed flow step. It remains
 // outside numerical profiler/oracle paths and is status-gated.
-void record_fluid_25d_flow_inspection_quiver_reset(
-    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& quiver_reset_requested);
+void record_fluid_25d_flow_inspection_quiver_reset(VkCommandBuffer command_buffer,
+                                                   Fluid25DGpuResources& resources,
+                                                   const Fluid25DConfig& config,
+                                                   bool& quiver_reset_requested);
 
 // An opt-in presentation-only step for headless Flow Inspection. Call it
 // after the fixed solver step has returned so numerical profiler/oracle paths
 // remain untouched; the implementation is status-gated and never reads back.
-void record_fluid_25d_flow_inspection_quiver_step(
-    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    bool& quiver_reset_requested);
+void record_fluid_25d_flow_inspection_quiver_step(VkCommandBuffer command_buffer,
+                                                  Fluid25DGpuResources& resources,
+                                                  const Fluid25DConfig& config,
+                                                  bool& quiver_reset_requested);
 
 void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                                     const Fluid25DConfig& config,
@@ -174,25 +178,24 @@ void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
                                       const Fluid25DConfig& config, Fluid25DDebugView debug_view,
                                       cubey::render::ColorTargetView color_target);
 
-void record_fluid_25d_catchment_draw(VkCommandBuffer command_buffer,
-                                     const Fluid25DGpuResources& resources,
-                                     const Fluid25DConfig& config,
-                                     Fluid25DCatchmentView catchment_view,
-                                     const Fluid25DRenderCamera& camera,
-                                     Fluid25DCatchmentRenderOptions render_options,
-                                     cubey::render::ColorTargetView color_target,
-                                     cubey::render::DepthTargetView depth_target);
+void record_fluid_25d_catchment_draw(
+    VkCommandBuffer command_buffer, const Fluid25DGpuResources& resources,
+    const Fluid25DConfig& config, Fluid25DCatchmentView catchment_view,
+    const Fluid25DRenderCamera& camera, Fluid25DCatchmentRenderOptions render_options,
+    cubey::render::ColorTargetView color_target, cubey::render::DepthTargetView depth_target,
+    Fluid25DMotionMarkers* motion_markers = nullptr, float marker_interpolation = 1.0F);
 
 [[nodiscard]] cubey::render::CompiledRenderGraph build_fluid_25d_frame_graph(
     cubey::render::ColorTargetView color_target, Fluid25DGpuResources& resources,
     const Fluid25DConfig& config, Fluid25DPresentationView presentation_view,
     Fluid25DCatchmentView catchment_view, Fluid25DDebugView debug_view,
-    const Fluid25DRenderCamera& camera,
-    Fluid25DRenderTargetMode target_mode, bool include_simulation, bool paused,
-    bool& reset_requested, bool& presentation_cue_reset_requested,
-    bool& quiver_reset_requested,
-    cubey::vulkan::GpuTimestampProfiler* profiler = nullptr,
-    std::uint32_t frame_slot_index = 0U, std::span<const Fluid25DStepForcing> forcings = {},
-    Fluid25DCatchmentRenderOptions render_options = {});
+    const Fluid25DRenderCamera& camera, Fluid25DRenderTargetMode target_mode,
+    bool include_simulation, bool paused, bool& reset_requested,
+    bool& presentation_cue_reset_requested, bool& quiver_reset_requested,
+    cubey::vulkan::GpuTimestampProfiler* profiler = nullptr, std::uint32_t frame_slot_index = 0U,
+    std::span<const Fluid25DStepForcing> forcings = {},
+    Fluid25DCatchmentRenderOptions render_options = {},
+    Fluid25DMotionMarkers* motion_markers = nullptr, float marker_interpolation = 1.0F,
+    bool show_motion_markers = true);
 
 } // namespace cubey::projects::fluid::fluid_25d
