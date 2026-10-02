@@ -16,6 +16,7 @@ struct Fluid25DCatchmentRenderOptions {
     std::optional<float> terrain_height_scale{};
     std::optional<float> home_camera_distance_m{};
     bool terrain_thin_water_composite = false;
+    bool hillside_depth_cues = false;
 };
 
 inline constexpr float kFluid25DMinTerrainCaseRenderHeightScale = 0.001F;
@@ -61,8 +62,8 @@ struct Fluid25DQuiverLattice {
     std::uint32_t rows = 1U;
 };
 
-[[nodiscard]] constexpr std::uint32_t fluid_25d_quiver_axis_count(
-    std::uint32_t cell_count, std::uint32_t maximum_count) {
+[[nodiscard]] constexpr std::uint32_t fluid_25d_quiver_axis_count(std::uint32_t cell_count,
+                                                                  std::uint32_t maximum_count) {
     // Config validation requires at least two cells on each axis. The max(1)
     // keeps this helper safe for focused callers before that validation, and
     // the anchor helper clamps the corresponding degenerate coordinate.
@@ -70,8 +71,8 @@ struct Fluid25DQuiverLattice {
     return std::min(maximum_count, std::max(1U, reduced));
 }
 
-[[nodiscard]] constexpr Fluid25DQuiverLattice
-fluid_25d_quiver_lattice(std::uint32_t grid_width, std::uint32_t grid_height) {
+[[nodiscard]] constexpr Fluid25DQuiverLattice fluid_25d_quiver_lattice(std::uint32_t grid_width,
+                                                                       std::uint32_t grid_height) {
     return {
         .columns = fluid_25d_quiver_axis_count(grid_width, kFluid25DQuiverMaxColumns),
         .rows = fluid_25d_quiver_axis_count(grid_height, kFluid25DQuiverMaxRows),
@@ -79,7 +80,7 @@ fluid_25d_quiver_lattice(std::uint32_t grid_width, std::uint32_t grid_height) {
 }
 
 [[nodiscard]] constexpr std::uint32_t fluid_25d_quiver_count(std::uint32_t grid_width,
-                                                               std::uint32_t grid_height) {
+                                                             std::uint32_t grid_height) {
     const Fluid25DQuiverLattice lattice = fluid_25d_quiver_lattice(grid_width, grid_height);
     return lattice.columns * lattice.rows;
 }
@@ -90,8 +91,8 @@ struct Fluid25DQuiverAnchor {
 };
 
 [[nodiscard]] inline float fluid_25d_quiver_anchor_axis(std::uint32_t coordinate,
-                                                          std::uint32_t count,
-                                                          std::uint32_t cell_count) {
+                                                        std::uint32_t count,
+                                                        std::uint32_t cell_count) {
     if (cell_count == 0U) {
         return 0.0F;
     }
@@ -104,20 +105,19 @@ struct Fluid25DQuiverAnchor {
 }
 
 [[nodiscard]] inline Fluid25DQuiverAnchor
-fluid_25d_quiver_anchor(std::uint32_t index, std::uint32_t grid_width,
-                        std::uint32_t grid_height) {
+fluid_25d_quiver_anchor(std::uint32_t index, std::uint32_t grid_width, std::uint32_t grid_height) {
     const Fluid25DQuiverLattice lattice = fluid_25d_quiver_lattice(grid_width, grid_height);
     const std::uint32_t bounded_index = std::min(index, lattice.columns * lattice.rows - 1U);
     return {
         .cell_x = fluid_25d_quiver_anchor_axis(bounded_index % lattice.columns, lattice.columns,
-                                                grid_width),
+                                               grid_width),
         .cell_y = fluid_25d_quiver_anchor_axis(bounded_index / lattice.columns, lattice.rows,
-                                                grid_height),
+                                               grid_height),
     };
 }
 
 [[nodiscard]] inline float fluid_25d_quiver_smoothing_blend(float delta_seconds,
-                                                              float smoothing_seconds) {
+                                                            float smoothing_seconds) {
     if (!std::isfinite(delta_seconds) || !std::isfinite(smoothing_seconds) ||
         delta_seconds <= 0.0F || smoothing_seconds <= 0.0F) {
         return 0.0F;
@@ -126,8 +126,8 @@ fluid_25d_quiver_anchor(std::uint32_t index, std::uint32_t grid_width,
 }
 
 [[nodiscard]] inline bool fluid_25d_quiver_sample_is_visible(float water_depth_m,
-                                                               float speed_m_per_s,
-                                                               float minimum_wet_depth_m) {
+                                                             float speed_m_per_s,
+                                                             float minimum_wet_depth_m) {
     return std::isfinite(water_depth_m) && std::isfinite(speed_m_per_s) &&
            std::isfinite(minimum_wet_depth_m) && water_depth_m > minimum_wet_depth_m &&
            speed_m_per_s >= kFluid25DQuiverMinimumSpeedMPerS;

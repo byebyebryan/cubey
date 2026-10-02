@@ -41,6 +41,7 @@ void main() {
     bool water_isolation = params.presentation.y == 1.0;
     bool flow_inspection = params.presentation.y == 2.0;
     bool transport_inspection = params.presentation.y == 3.0;
+    bool hillside_depth_cues = params.presentation.w == 4.0 && params.presentation.z >= 2.0;
     if (water_isolation || flow_inspection || transport_inspection) {
         // Isolation finds the wet footprint; Flow Inspection reserves its
         // motion language for fixed directional quiver arrows. Neither reading
@@ -53,6 +54,11 @@ void main() {
     float diffuse = max(dot(normal, light_direction), 0.0);
     float fresnel = pow(1.0 - max(dot(normal, view_direction), 0.0), 5.0);
     float depth_factor = clamp(water_depth * 10.0, 0.0, 1.0);
+    if (hillside_depth_cues) {
+        // Fixed physical depths: 1 cm / 10 cm / 1 m / 10 m. Keep thin
+        // runoff distinct from deep collection instead of saturating at 10 cm.
+        depth_factor = clamp(log(max(water_depth, 0.01) / 0.01) / log(1000.0), 0.0, 1.0);
+    }
     vec3 shallow = cubey_srgb_to_linear(vec3(0.08, 0.48, 0.72));
     vec3 deep = cubey_srgb_to_linear(vec3(0.015, 0.12, 0.33));
     if (water_isolation) {
@@ -96,7 +102,7 @@ void main() {
     color += cubey_srgb_to_linear(vec3(0.34, 0.72, 0.95)) * (0.16 * sparse_highlight);
     color = color * (0.38 + 0.45 * diffuse) + vec3(0.40, 0.68, 0.92) * (0.34 * fresnel);
     float alpha = mix(0.48, 0.76, depth_factor);
-    if (params.presentation.z > 0.5 && !water_isolation && !flow_inspection &&
+    if (mod(params.presentation.z, 2.0) > 0.5 && !water_isolation && !flow_inspection &&
         !transport_inspection) {
         // Opt-in terrain-study presentation only. Rainfall excess wets every
         // cell at sub-centimetre depths; attenuate that thin film in Composite
@@ -108,6 +114,13 @@ void main() {
     }
     if (transport_inspection) {
         alpha = max(alpha, 0.72);
+    }
+    if (hillside_depth_cues) {
+        // Only attenuate the already-wet fragment near the numerical wet
+        // threshold. This is screen-space coverage AA, not extra wet cells or
+        // reconstruction of the native 30 m triangle geometry.
+        float shoreline_width = max(fwidth(water_depth), 0.000001);
+        alpha *= smoothstep(0.0, shoreline_width, water_depth - params.camera_wet.w);
     }
     // Premultiplied source-over: the pipeline uses ONE / ONE_MINUS_SRC_ALPHA.
     out_color = vec4(color * alpha, alpha);

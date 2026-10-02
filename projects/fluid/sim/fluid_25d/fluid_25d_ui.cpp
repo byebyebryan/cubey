@@ -103,7 +103,22 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     if (ui.scenario == Fluid25DScenario::HillsideFlowStudy) {
         ImGui::Text("Physical time: %.1f min (%.0f s)", ui.simulation_elapsed_seconds / 60.0F,
                     ui.simulation_elapsed_seconds);
-        ImGui::Text("Input: %.1f m3/s | no prescribed drain", ui.continuous_source_m3_per_s);
+        ImGui::Text("Last step input: %.1f m3/s | no drain", ui.continuous_source_m3_per_s);
+        ImGui::TextDisabled(ui.hillside_supply.manual() ? "Manual supply holds until Reset."
+                            : ui.hillside_supply.response()
+                                ? "Script: Q100 / 150 / 50 / 100 at 0 / 60 / 90 / 120 min."
+                                : "Reference: constant supply.");
+        for (float rate : {50.0F, 100.0F, 150.0F}) {
+            if (rate != 50.0F)
+                ImGui::SameLine();
+            const char* label = rate == 50.0F    ? "Low: 50"
+                                : rate == 100.0F ? "Base: 100"
+                                                 : "High: 150";
+            if (ImGui::Button(label))
+                ui.hillside_supply.queue_preset(rate);
+        }
+        if (ui.hillside_supply.pending())
+            ImGui::Text("Queued %.0f m3/s for next fixed step.", *ui.hillside_supply.pending());
         ImGui::Text("Playback: %.3gx | %s", ui.presentation_time_scale,
                     ui.inspection_advance.remaining_steps() > 0U ? "inspection advance"
                     : ui.paused                                  ? "paused"
@@ -147,7 +162,11 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                 ? (ui.hillside_source_context ? "source (legacy)" : "overview")
                 : ui.hillside_camera;
         if (ImGui::BeginCombo("Camera", selected.c_str())) {
-            for (const char* camera : {"source", "branch", "overview"}) {
+            for (const char* camera : {"source", "travel", "collection", "branch", "overview"}) {
+                if (!ui.downstream_hillside_cameras_available &&
+                    (std::string_view(camera) == "travel" ||
+                     std::string_view(camera) == "collection"))
+                    continue;
                 if (ImGui::Selectable(camera, ui.hillside_camera == camera))
                     ui.hillside_camera = camera;
             }
@@ -156,9 +175,22 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
         if (ui.motion_markers_available) {
             ImGui::Checkbox("Moving markers", &ui.show_motion_markers);
             ImGui::TextWrapped(
-                "Pale dots and trails follow the simulated depth-averaged velocity. "
-                "Their movement slows in pools. Release continues at the green source.");
+                ui.local_motion_markers
+                    ? "Local pale dots show movement HERE, seeded across wet terrain. They are not "
+                      "parcels that travelled from the source; trails follow actual depth-averaged "
+                      "velocity."
+                    : "Source-released pale dots follow simulated depth-averaged velocity. Their "
+                      "movement slows in pools; release continues at the green source.");
         }
+        if (ui.hillside_depth_cues && ui.presentation_view == Fluid25DPresentationView::Catchment)
+            ImGui::TextWrapped(
+                "Depth: fixed log scale, 1 cm / 10 cm / 1 m / 10 m. Cyan is thin runoff; deep blue "
+                "is accumulation. Not speed. Native 30 m geometric steps remain.");
+        if (ui.presentation_view == Fluid25DPresentationView::Diagnostics &&
+            ui.debug_view == Fluid25DDebugView::WaterDepth)
+            ImGui::TextWrapped(
+                "Diagnostic depth map: brighter cyan means deeper water; linear color saturates "
+                "at about 8.3 cm. This map shows the footprint, not the 3D log-depth palette.");
         if (ui.dye_enabled) {
             const bool active = ui.simulation_elapsed_seconds >= ui.dye_start_seconds &&
                                 ui.simulation_elapsed_seconds < ui.dye_end_seconds;
@@ -235,8 +267,9 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                            "height. Their height is not water depth or a physical emitter volume; "
                            "terrain hides buried portions.");
     }
-    ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
-                       "darker blue is deeper water.");
+    if (ui.presentation_view == Fluid25DPresentationView::Catchment)
+        ImGui::TextWrapped("Terrain is the matte bed. Bright cyan is shallower water; "
+                           "darker blue is deeper water.");
     ImGui::TextWrapped("Composite's moving highlight is a passive render-only marker advected "
                        "by velocity; it is not waves or a depth cue.");
     ImGui::TextWrapped("Water Isolation quiets the bed to expose the wet edge. "

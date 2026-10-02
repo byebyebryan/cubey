@@ -40,6 +40,9 @@ struct Fluid25DProjectConfig {
     std::optional<float> hillside_advance_and_continue_seconds{};
     std::string hillside_camera{};
     bool motion_markers = false;
+    std::string motion_marker_mode = "source";
+    bool hillside_supply_response = false;
+    bool hillside_supply_gpu_controls = false;
     bool motion_marker_gpu_controls = false;
     bool hillside_source_context = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
@@ -92,13 +95,38 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         throw std::runtime_error("motion markers require the finite-volume hillside study");
     if (project_config.motion_marker_gpu_controls && !project_config.common.headless)
         throw std::runtime_error("motion marker GPU controls are headless only");
+    if ((project_config.motion_marker_mode != "source" &&
+         project_config.motion_marker_mode != "local") ||
+        (project_config.motion_marker_mode == "local" && !project_config.motion_markers))
+        throw std::runtime_error("local marker mode requires motion markers");
+    if (project_config.hillside_supply_response &&
+        (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume ||
+         project_config.simulation.natural_flow_source_m3_per_s != 100.0F))
+        throw std::runtime_error("hillside supply response requires finite-volume hillside Q100");
+    if (project_config.hillside_supply_gpu_controls &&
+        (!project_config.common.headless || !project_config.gpu_oracle_validation ||
+         project_config.common.frames != 4U ||
+         project_config.simulation.scenario != Fluid25DScenario::DryBed ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume))
+        throw std::runtime_error("supply GPU controls require four headless oracle dry-bed steps");
+    if (project_config.catchment_render.hillside_depth_cues &&
+        project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy)
+        throw std::runtime_error("hillside depth cues require hillside study");
     if (!project_config.hillside_camera.empty() &&
         (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
          (project_config.hillside_camera != "source" &&
           project_config.hillside_camera != "branch" &&
+          project_config.hillside_camera != "travel" &&
+          project_config.hillside_camera != "collection" &&
           project_config.hillside_camera != "overview")))
         throw std::runtime_error(
-            "hillside camera requires source, branch or overview on the hillside study");
+            "hillside camera requires source, branch, travel, collection or overview");
+    if ((project_config.hillside_camera == "travel" ||
+         project_config.hillside_camera == "collection") &&
+        (project_config.simulation.grid_width != 512U ||
+         project_config.simulation.grid_height != 512U))
+        throw std::runtime_error("downstream hillside cameras require the 512x512 study crop");
     if (project_config.hillside_source_context &&
         project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy) {
         throw std::runtime_error("source-context camera requires hillside-flow-study");
@@ -373,9 +401,25 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      {.has_min = true, .has_max = true, .min = 0.001, .max = 7200.0}),
               config.hillside_advance_and_continue_seconds)
         .bind(option("fluid25d.hillside_camera", "--fluid25d-hillside-camera", "Hillside Camera",
-                     "Render-only source, downstream branch or full terrain framing.",
-                     ValueType::Enum, {}, {"source", "branch", "overview"}),
+                     "Render-only source, legacy branch, downhill travel, collection or overview.",
+                     ValueType::Enum, {}, {"source", "branch", "travel", "collection", "overview"}),
               config.hillside_camera)
+        .bind(option("fluid25d.motion_marker_mode", "--fluid25d-motion-marker-mode", "Marker Mode",
+                     "Source-released travel or locally seeded movement indicators.",
+                     ValueType::Enum, {}, {"source", "local"}),
+              config.motion_marker_mode)
+        .bind(option("fluid25d.hillside_supply_response", "--fluid25d-hillside-supply-response",
+                     "Hillside Supply Response", "Continuous Q100/150/50/100 at 0/60/90/120 min.",
+                     ValueType::Bool),
+              config.hillside_supply_response)
+        .bind(option("fluid25d.hillside_supply_gpu_controls",
+                     "--fluid25d-hillside-supply-gpu-controls", "Supply GPU Controls",
+                     "Synthetic four-step source sequence with CPU oracle.", ValueType::Bool),
+              config.hillside_supply_gpu_controls)
+        .bind(option("fluid25d.hillside_depth_cues", "--fluid25d-hillside-depth-cues",
+                     "Hillside Depth Cues", "Fixed 0.01 to 10 m depth palette and wet-edge AA.",
+                     ValueType::Bool),
+              config.catchment_render.hillside_depth_cues)
         .bind(option("fluid25d.motion_markers", "--fluid25d-motion-markers", "Motion Markers",
                      "Opt-in source-released markers following hillside depth-averaged velocity.",
                      ValueType::Bool),

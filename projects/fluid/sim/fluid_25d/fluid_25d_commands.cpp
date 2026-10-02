@@ -239,7 +239,8 @@ catchment_push_constants(const Fluid25DConfig& config, const Fluid25DGpuResource
                        config.minimum_wet_depth_m},
         .presentation = {resources.current_presentation_cue_is_a() ? 1.0F : 0.0F,
                          static_cast<float>(static_cast<std::uint32_t>(catchment_view)),
-                         render_options.terrain_thin_water_composite ? 1.0F : 0.0F,
+                         (render_options.terrain_thin_water_composite ? 1.0F : 0.0F) +
+                             (render_options.hillside_depth_cues ? 2.0F : 0.0F),
                          fluid_25d_catchment_terrain_material_cue(config.scenario)},
         .terrain_palette = {render_options.terrain_palette_low_m.value_or(0.0F),
                             render_options.terrain_palette_high_m.value_or(0.0F),

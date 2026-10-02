@@ -1,8 +1,10 @@
 #include "../../fluid_25d/fluid_25d_project_config.h"
 #include "fluid_25d_commands.h"
+#include "fluid_25d_depth_palette.h"
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_dye_palette.h"
 #include "fluid_25d_finite_volume_oracle.h"
+#include "fluid_25d_hillside_supply.h"
 #include "fluid_25d_mass_audit.h"
 #include "fluid_25d_motion_markers.h"
 #include "fluid_25d_natural_flow_recipe.h"
@@ -2371,6 +2373,37 @@ void test_hillside_flow_study_contract() {
                 continuous.simulation.simulation_substeps == parsed.simulation.simulation_substeps,
             "motion/camera/continuous advance are presentation controls and preserve hydraulic "
             "forcing");
+    auto v5_args = continuous_args;
+    *(std::find(v5_args.begin(), v5_args.end(), "--fluid25d-hillside-camera") + 1) = "travel";
+    require_throws([&] { static_cast<void>(parse_project(v5_args)); },
+                   "downstream camera rejects crops without the measured collection pocket");
+    *(std::find(v5_args.begin(), v5_args.end(), "--grid-width") + 1) = "512";
+    *(std::find(v5_args.begin(), v5_args.end(), "--grid-height") + 1) = "512";
+    v5_args.insert(v5_args.end(),
+                   {"--fluid25d-motion-marker-mode", "local", "--fluid25d-hillside-depth-cues"});
+    const auto v5 = parse_project(v5_args);
+    require(v5.motion_marker_mode == "local" && v5.catchment_render.hillside_depth_cues &&
+                v5.hillside_camera == "travel" &&
+                v5.simulation.natural_flow_source_m3_per_s == 30.0F,
+            "V5 presentation opt-ins preserve reference forcing");
+    auto invalid_response = v5_args;
+    invalid_response.push_back("--fluid25d-hillside-supply-response");
+    require_throws([&] { static_cast<void>(parse_project(invalid_response)); },
+                   "response refuses non-Q100 reference");
+    const auto source_value =
+        std::find(v5_args.begin(), v5_args.end(), "--fluid25d-natural-flow-source-m3-per-s");
+    *(source_value + 1) = "100";
+    v5_args.push_back("--fluid25d-hillside-supply-response");
+    require(parse_project(v5_args).hillside_supply_response, "Q100 response is explicitly opt-in");
+    require_throws(
+        [&] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-hillside-depth-cues"})); },
+        "hillside depth palette cannot alter other scenarios");
+    require_throws(
+        [&] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-motion-marker-mode", "local"}));
+        },
+        "local marker mode requires opted-in markers");
     auto conflicted = args;
     conflicted.insert(conflicted.end(),
                       {"--fluid25d-hillside-advance-and-continue-seconds", "3300"});
@@ -5734,9 +5767,69 @@ void test_forcing_cube_footprints_and_shared_faces() {
 
 } // namespace
 
+void test_hillside_supply_and_depth_cues() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DHillsideSupply reference;
+    Fluid25DHillsideSupply response(true);
+    for (const double time : {0.0, 3598.0, 3600.0, 5398.0, 5400.0, 7198.0, 7200.0, 9000.0}) {
+        require_close(reference.rate(time, 100.0F), 100.0, 0.0, "reference must stay constant");
+        const double expected = time < 3600.0 || time >= 7200.0 ? 100.0
+                                : time < 5400.0                 ? 150.0
+                                                                : 50.0;
+        require_close(response.rate(time, 100.0F), expected, 0.0,
+                      "response uses half-open physical phases");
+    }
+    response.queue_preset(50.0F);
+    require(response.pending() == 50.0F && !response.manual(),
+            "queued supply waits for fixed step");
+    require_close(response.rate(3600.0, 100.0F), 150.0, 0.0, "queue doesn't mutate paused supply");
+    response.apply_pending();
+    require(response.manual() && !response.pending(),
+            "fixed step applies and consumes manual queue");
+    require_close(response.rate(7200.0, 100.0F), 50.0, 0.0,
+                  "manual override survives scripted boundary");
+    response.queue_preset(150.0F);
+    response.reset();
+    require(!response.manual() && !response.pending(),
+            "reset clears applied and pending manual forcing");
+    require_close(response.rate(0.0, 100.0F), 100.0, 0.0, "reset restarts response reference");
+    require_throws([&] { response.queue_preset(0.0F); }, "continuous presets never permit zero");
+    require_throws([&] { static_cast<void>(response.rate(-1.0, 100.0F)); },
+                   "supply rejects invalid clock");
+    const auto paced_sequence = [](float refresh) {
+        Fluid25DWindowedPacing pacing(2.0F, 8.0F);
+        Fluid25DHillsideSupply supply(true);
+        std::vector<float> rates;
+        while (rates.size() < 3600U) {
+            const auto frame = pacing.advance(1.0F / refresh, false);
+            for (std::uint32_t step = 0; step < frame.fixed_step_count && rates.size() < 3600U;
+                 ++step)
+                rates.push_back(supply.rate(static_cast<double>(rates.size()) * 2.0, 100.0F));
+        }
+        require(pacing.dropped_backlog_frames() == 0U, "normal pacing must not drop supply steps");
+        return rates;
+    };
+    const auto rates = paced_sequence(30.0F);
+    require(rates == paced_sequence(60.0F), "source sequence must be independent of render FPS");
+    double integral = 0.0;
+    for (float rate : rates)
+        integral += static_cast<double>(rate) * 2.0;
+    require_close(integral, 720000.0, 0.0, "two-hour response equals constant reference input");
+    Fluid25DWindowedPacing paused(2.0F, 8.0F);
+    require(paused.advance(1.0F, true).fixed_step_count == 0U, "pause never consumes supply steps");
+    for (std::size_t index = 0; index < kFluid25DHillsideDepthLegendM.size(); ++index)
+        require_close(
+            fluid_25d_hillside_depth_palette_position(kFluid25DHillsideDepthLegendM[index]),
+            static_cast<double>(index) / 3.0, 0.000001, "fixed decade depth legend matches shader");
+    require_close(fluid_25d_hillside_depth_palette_position(100.0F), 1.0, 0.0, "deep scale clamps");
+    require_close(fluid_25d_hillside_depth_palette_position(0.0001F), 0.0, 0.0,
+                  "thin scale clamps");
+}
+
 int main() {
     try {
         test_config_defaults_and_parsing();
+        test_hillside_supply_and_depth_cues();
         test_deterministic_scenarios();
         test_forcing_cube_footprints_and_shared_faces();
         test_sustained_headwaters_scenario_construction();

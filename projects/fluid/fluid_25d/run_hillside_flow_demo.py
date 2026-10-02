@@ -19,15 +19,20 @@ import run_hillside_sustained_flow_v2 as study
 
 def arguments(camera: str = "source", view: str = "composite", playback: float = 8,
               domain: int = 256, dye: bool = False, markers: bool = False,
-              developed: bool = False) -> list[str]:
-    if camera not in ("source", "branch", "overview"):
-        raise ValueError("camera must be source, branch, or overview")
+              developed: bool = False, local_markers: bool = False,
+              depth_cues: bool = False, response: bool = False) -> list[str]:
+    if camera not in ("source", "branch", "travel", "collection", "overview"):
+        raise ValueError("unknown hillside camera")
+    if local_markers and not markers:
+        raise ValueError("local markers require markers")
     if view not in ("composite", "water-isolation", "flow-inspection", "transport-inspection"):
         raise ValueError("unknown review view")
     if view == "transport-inspection" and not dye:
         raise ValueError("transport inspection requires the opt-in dye pulse")
     if domain not in (256, 512):
         raise ValueError("domain must be 256 or 512")
+    if camera in ("travel", "collection") and domain != 512:
+        raise ValueError("downstream hillside cameras require domain 512")
     if not math.isfinite(playback) or not 1 <= playback <= 8:
         raise ValueError("playback must be between 1 and 8")
     args = study.arguments(domain)
@@ -47,6 +52,12 @@ def arguments(camera: str = "source", view: str = "composite", playback: float =
                  "--fluid25d-dye-pulse-duration-seconds", "120"]
     if markers:
         args.append("--fluid25d-motion-markers")
+    if local_markers:
+        args += ["--fluid25d-motion-marker-mode", "local"]
+    if depth_cues:
+        args.append("--fluid25d-hillside-depth-cues")
+    if response:
+        args.append("--fluid25d-hillside-supply-response")
     if developed:
         args += ["--fluid25d-hillside-advance-and-continue-seconds", "3300"]
     return args
@@ -55,7 +66,7 @@ def arguments(camera: str = "source", view: str = "composite", playback: float =
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, default=study.DEFAULT_APP)
-    parser.add_argument("--camera", choices=("source", "branch", "overview"), default="source")
+    parser.add_argument("--camera", choices=("source", "branch", "travel", "collection", "overview"), default="source")
     parser.add_argument("--view", choices=("composite", "water-isolation", "flow-inspection",
                                          "transport-inspection"),
                         default="composite")
@@ -66,6 +77,9 @@ def main() -> None:
                         help="show opt-in depth-averaged-motion markers on the hillside")
     parser.add_argument("--developed", action="store_true",
                         help="compute 3300 simulated seconds with progress, then continue playback")
+    parser.add_argument("--local-markers", action="store_true", help="seed movement indicators across wet areas; requires --markers")
+    parser.add_argument("--depth-cues", action="store_true", help="fixed 1 cm to 10 m depth palette")
+    parser.add_argument("--response", action="store_true", help="continuous Q100/150/50/100 supply experiment")
     parser.add_argument("--playback", type=float, default=8)
     parser.add_argument("--print-command", action="store_true")
     options = parser.parse_args()
@@ -74,7 +88,8 @@ def main() -> None:
     study.pinned_inputs(options.domain, app)
     command = ["rtk", "proxy", str(app),
                *arguments(options.camera, options.view, options.playback, options.domain,
-                          options.dye, options.markers, options.developed)]
+                          options.dye, options.markers, options.developed, options.local_markers,
+                          options.depth_cues, options.response)]
     print(shlex.join(command), flush=True)
     if not options.print_command:
         raise SystemExit(subprocess.run(command, cwd=study.ROOT).returncode)

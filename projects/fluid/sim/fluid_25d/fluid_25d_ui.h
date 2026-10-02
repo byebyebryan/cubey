@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fluid_25d_config.h"
+#include "fluid_25d_hillside_supply.h"
 
 namespace cubey::projects::fluid::fluid_25d {
 
@@ -17,10 +18,14 @@ struct Fluid25DUiContext {
     float simulation_elapsed_seconds = 0.0F;
     float fixed_delta_seconds = 0.0F;
     float continuous_source_m3_per_s = 0.0F;
+    Fluid25DHillsideSupply& hillside_supply;
+    bool hillside_depth_cues = false;
+    bool downstream_hillside_cameras_available = false;
     bool& hillside_source_context;
     std::string& hillside_camera;
     bool& resume_after_advance;
     bool motion_markers_available = false;
+    bool local_motion_markers = false;
     bool& show_motion_markers;
     bool dye_enabled = false;
     float dye_start_seconds = 0.0F;

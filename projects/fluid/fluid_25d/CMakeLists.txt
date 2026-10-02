@@ -85,6 +85,16 @@ if (BUILD_TESTING)
     add_test(NAME fluid_25d_tests COMMAND cubey_project_fluid_25d_tests)
 
     cubey_add_png_smoke_test(
+        fluid_25d_hillside_supply_gpu_controls
+        cubey_project_fluid_25d
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-supply-controls.png"
+        --frames 4 --grid-width 8 --grid-height 8
+        --fluid25d-scenario dry-bed --fluid25d-solver finite-volume
+        --fluid25d-fixed-delta-seconds 0.05 --fluid25d-substeps 4
+        --fluid25d-gpu-oracle-validation --fluid25d-hillside-supply-gpu-controls
+    )
+
+    cubey_add_png_smoke_test(
         fluid_25d_motion_marker_gpu_controls
         cubey_project_fluid_25d
         "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-motion-marker-controls.png"

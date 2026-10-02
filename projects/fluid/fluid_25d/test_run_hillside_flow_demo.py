@@ -89,6 +89,24 @@ class ContinuousDemoTests(unittest.TestCase):
         self.assertNotIn("--fluid25d-hillside-source-context", command)
         self.assertEqual(command[command.index("--fluid25d-hillside-camera") + 1], "source")
 
+    def test_v5_is_explicit_continuous_and_keeps_frozen_inputs(self):
+        for camera in ("travel", "collection"):
+            args = demo.arguments(camera=camera, domain=512, markers=True,
+                                  local_markers=True, depth_cues=True, response=True)
+            frozen = study.arguments(512)
+            frozen.remove("--headless")
+            self.assertEqual(args[:len(frozen)], frozen)
+            self.assertEqual(args[args.index("--fluid25d-motion-marker-mode") + 1], "local")
+            self.assertIn("--fluid25d-hillside-depth-cues", args)
+            self.assertIn("--fluid25d-hillside-supply-response", args)
+            self.assertNotIn("--frames", args)
+            self.assertNotIn("--fluid25d-dye-pulse-start-seconds", args)
+        with self.assertRaises(ValueError):
+            demo.arguments(local_markers=True)
+        for camera in ("travel", "collection"):
+            with self.assertRaisesRegex(ValueError, "require domain 512"):
+                demo.arguments(camera=camera, domain=256)
+
 
 if __name__ == "__main__":
     unittest.main()
