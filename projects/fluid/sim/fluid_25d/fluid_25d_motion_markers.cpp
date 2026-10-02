@@ -44,7 +44,7 @@ cubey::vulkan::DescriptorSetInfo marker_bindings(std::uint32_t count, VkShaderSt
 void Fluid25DMotionMarkers::create(cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu,
                                    const Fluid25DConfig& config, Fluid25DMotionMarkerFields fields,
                                    std::array<float, 2> source_xy, std::uint32_t frame_slots,
-                                   bool profile_enabled) {
+                                   bool profile_enabled, Fluid25DMotionMarkerMode mode) {
     if (created())
         return;
     if (!fields.terrain || !fields.depth_a || !fields.depth_b || !fields.velocity ||
@@ -52,6 +52,7 @@ void Fluid25DMotionMarkers::create(cubey::vulkan::Device& device, cubey::Project
         throw std::runtime_error("motion markers require all read-only hydraulic fields");
     config_ = config;
     source_xy_ = source_xy;
+    mode_ = mode;
     if (profile_enabled) {
         profiler_.emplace(device, frame_slots, 17U);
         profile_frames_.resize(frame_slots, 0U);
@@ -152,7 +153,7 @@ void Fluid25DMotionMarkers::dispatch(VkCommandBuffer command_buffer, bool depth_
                          static_cast<float>(config_.grid_height), config_.fixed_delta_seconds,
                          config_.cell_size_m},
         .wet_source_xy = {config_.minimum_wet_depth_m, source_xy_[0], source_xy_[1], 0.0F},
-        .clock_reset = {completed_steps_, reset ? 1U : 0U, 0U, 0U},
+        .clock_reset = {completed_steps_, reset ? 1U : 0U, static_cast<std::uint32_t>(mode_), 0U},
     };
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     cubey::render::record_compute_pipeline_dispatch(
@@ -299,8 +300,267 @@ void validate_fluid_25d_motion_marker_gpu_controls(cubey::vulkan::Device& device
     run({2.0F, 0.0F}, true, false, false);
     run({0.5F, 0.25F}, false, true, false);
     run({4.0F, 0.0F}, false, false, true);
+
+    Fluid25DConfig local_config;
+    local_config.grid_width = 64U;
+    local_config.grid_height = 32U;
+    local_config.cell_size_m = 1.0F;
+    local_config.fixed_delta_seconds = 1.0F;
+    local_config.minimum_wet_depth_m = 0.000001F;
+    const auto run_local = [&](bool dry) {
+        constexpr std::uint32_t width = 64U;
+        constexpr std::uint32_t height = 32U;
+        std::vector<float> terrain(width * height, 0.0F);
+        std::vector<float> depth(width * height, dry ? 0.0F : 0.02F);
+        std::vector<float> source(width * height, 0.0F);
+        std::vector<std::array<float, 4>> velocity(width * height, {0.02F, 0.0F, 1.0F, 0.0F});
+        if (!dry) {
+            for (std::uint32_t y = 0U; y < height; ++y) {
+                for (std::uint32_t x = 28U; x < 36U; ++x)
+                    depth[static_cast<std::size_t>(y) * width + x] = 0.0F;
+                for (std::uint32_t x = 40U; x < 44U; ++x)
+                    depth[static_cast<std::size_t>(y) * width + x] = 0.005F;
+            }
+        }
+        const auto upload = [&](const auto& values, const char* name) {
+            return gpu.upload_device_buffer(values.data(), values.size() * sizeof(values.front()),
+                                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                                                VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                            name);
+        };
+        auto bed = upload(terrain, "local marker control bed");
+        auto water = upload(depth, "local marker control depth");
+        auto v = upload(velocity, "local marker control velocity");
+        auto input = upload(source, "local marker control source");
+        const std::vector<std::array<std::uint32_t, 4>> flags(1U, {0U, 0U, 0U, 0U});
+        auto status = upload(flags, "local marker control status");
+        Fluid25DMotionMarkers markers;
+        markers.create(device, gpu, local_config, {&bed, &water, &water, &v, &input, &status},
+                       {2.0F, 2.0F}, 1U, false, Fluid25DMotionMarkerMode::Local);
+        const auto execute = [&](std::uint32_t steps, bool reset, bool rejected) {
+            static_cast<void>(gpu.submit_and_wait(
+                {.label = "local marker GPU controls",
+                 .work = [&](cubey::vulkan::GpuOwnerContext& context) {
+                     cubey::vulkan::ImmediateCommands commands(context);
+                     if (rejected) {
+                         cubey::vulkan::record_memory_barrier(
+                             commands.command_buffer(),
+                             {.src_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                              .dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                              .dst_access = VK_ACCESS_TRANSFER_WRITE_BIT});
+                         vkCmdFillBuffer(commands.command_buffer(), status.handle(), 0U,
+                                         status.size(), 1U);
+                         cubey::vulkan::record_transfer_write_barrier(
+                             commands.command_buffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                             VK_ACCESS_SHADER_READ_BIT);
+                     }
+                     if (reset)
+                         markers.record_reset(commands.command_buffer());
+                     for (std::uint32_t i = 0U; i < steps; ++i)
+                         markers.record_step(commands.command_buffer(), true);
+                     commands.submit_and_wait();
+                 }}));
+        };
+        const auto read = [&] {
+            return gpu.readback_buffer(markers.buffer().handle(), markers.buffer().size(),
+                                       "local marker control readback");
+        };
+        const auto active_count = [&](const auto& bytes) {
+            std::uint32_t active = 0U;
+            for (std::uint32_t id = 0U; id < kFluid25DMotionMarkerCount; ++id) {
+                Fluid25DMotionMarkerGpu marker{};
+                std::memcpy(&marker, bytes.data() + id * sizeof(marker), sizeof(marker));
+                if (marker.position_age_active[3] >= 0.5F)
+                    ++active;
+            }
+            return active;
+        };
+
+        if (dry) {
+            execute(32U, false, false);
+            const auto dry_state = read();
+            if (active_count(dry_state) != 0U)
+                throw std::runtime_error("local markers seeded on a dry field");
+            execute(0U, true, false);
+            const auto reset_state = read();
+            if (active_count(reset_state) != 0U)
+                throw std::runtime_error("local marker reset retained active parcels");
+        } else {
+            execute(16U, false, false);
+            const auto covered = read();
+            std::uint32_t left = 0U;
+            std::uint32_t right = 0U;
+            std::uint32_t dry_strip = 0U;
+            std::uint32_t thin_film = 0U;
+            std::array<bool, 16> occupied_rows{};
+            for (std::uint32_t id = 0U; id < kFluid25DMotionMarkerCount; ++id) {
+                Fluid25DMotionMarkerGpu marker{};
+                std::memcpy(&marker, covered.data() + id * sizeof(marker), sizeof(marker));
+                if (marker.position_age_active[3] < 0.5F)
+                    continue;
+                const float x = marker.position_age_active[0];
+                const auto cell_x = static_cast<std::uint32_t>(std::floor(x + 0.5F));
+                if (cell_x >= 28U && cell_x < 36U)
+                    ++dry_strip;
+                else if (cell_x >= 40U && cell_x < 44U)
+                    ++thin_film;
+                else if (cell_x < 28U)
+                    ++left;
+                else
+                    ++right;
+                occupied_rows[id / 32U] = true;
+            }
+            const std::uint32_t covered_rows = static_cast<std::uint32_t>(
+                std::count(occupied_rows.begin(), occupied_rows.end(), true));
+            if (active_count(covered) < 350U || left < 150U || right < 150U || dry_strip != 0U ||
+                thin_film != 0U || covered_rows < 14U)
+                throw std::runtime_error(
+                    "local marker seeds did not cover material water while excluding thin film");
+
+            Fluid25DMotionMarkerGpu before_advection{};
+            std::memcpy(&before_advection, covered.data(), sizeof(before_advection));
+            execute(1U, false, false);
+            const auto advected = read();
+            Fluid25DMotionMarkerGpu after_advection{};
+            std::memcpy(&after_advection, advected.data(), sizeof(after_advection));
+            if (after_advection.position_age_active[3] < 0.5F ||
+                std::abs(after_advection.position_age_active[0] -
+                         before_advection.position_age_active[0] - 0.02F) > 0.00001F ||
+                std::abs(after_advection.position_age_active[2] -
+                         before_advection.position_age_active[2] - 1.0F) > 0.00001F)
+                throw std::runtime_error("local marker did not follow accepted flow on its anchor");
+
+            execute(0U, true, false);
+            const auto reset_state = read();
+            if (active_count(reset_state) != 0U ||
+                std::any_of(reset_state.begin(), reset_state.end(),
+                            [](std::uint8_t byte) { return byte != 0U; }))
+                throw std::runtime_error("local marker reset did not clear exact state bytes");
+            execute(16U, false, false);
+            const auto replayed = read();
+            if (replayed != covered)
+                throw std::runtime_error("local marker reset replay was not deterministic");
+            execute(1U, false, true);
+            if (read() != replayed)
+                throw std::runtime_error("rejected local marker update changed state bytes");
+        }
+        markers.destroy();
+    };
+    run_local(false);
+    run_local(true);
+
+    Fluid25DConfig channel_config;
+    channel_config.grid_width = 256U;
+    channel_config.grid_height = 128U;
+    channel_config.cell_size_m = 1.0F;
+    channel_config.fixed_delta_seconds = 1.0F;
+    channel_config.minimum_wet_depth_m = 0.000001F;
+    constexpr std::uint32_t channel_width = 256U;
+    constexpr std::uint32_t channel_height = 128U;
+    std::vector<float> channel_terrain(channel_width * channel_height, 0.0F);
+    std::vector<float> channel_depth(channel_width * channel_height, 0.0F);
+    std::vector<float> channel_source(channel_width * channel_height, 0.0F);
+    std::vector<std::array<float, 4>> channel_velocity(channel_width * channel_height,
+                                                       {0.0F, 0.0F, 1.0F, 0.0F});
+    // At this 256x128 resolution, the nine probes round to relative x
+    // columns 1, 3/4, or 6 in each eight-cell anchor tile. This thin channel
+    // is in the unprobed relative column 2, so only the bounded global search
+    // can seed it.
+    for (std::uint32_t y = 24U; y < 104U; ++y)
+        channel_depth[static_cast<std::size_t>(y) * channel_width + 18U] = 1.0F;
+    const auto upload_channel = [&](const auto& values, const char* name) {
+        return gpu.upload_device_buffer(values.data(), values.size() * sizeof(values.front()),
+                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                                            VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                        name);
+    };
+    auto channel_bed = upload_channel(channel_terrain, "thin channel marker control bed");
+    auto channel_water = upload_channel(channel_depth, "thin channel marker control depth");
+    auto channel_v = upload_channel(channel_velocity, "thin channel marker control velocity");
+    auto channel_input = upload_channel(channel_source, "thin channel marker control source");
+    const std::vector<std::array<std::uint32_t, 4>> channel_flags(1U, {0U, 0U, 0U, 0U});
+    auto channel_status = upload_channel(channel_flags, "thin channel marker control status");
+    Fluid25DMotionMarkers channel_markers;
+    channel_markers.create(
+        device, gpu, channel_config,
+        {&channel_bed, &channel_water, &channel_water, &channel_v, &channel_input, &channel_status},
+        {2.0F, 2.0F}, 1U, false, Fluid25DMotionMarkerMode::Local);
+    const auto execute_channel = [&](std::uint32_t steps, bool reset, bool rejected) {
+        static_cast<void>(gpu.submit_and_wait(
+            {.label = "thin channel marker GPU controls",
+             .work = [&](cubey::vulkan::GpuOwnerContext& context) {
+                 cubey::vulkan::ImmediateCommands commands(context);
+                 if (rejected) {
+                     cubey::vulkan::record_memory_barrier(
+                         commands.command_buffer(),
+                         {.src_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                          .dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                          .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                          .dst_access = VK_ACCESS_TRANSFER_WRITE_BIT});
+                     vkCmdFillBuffer(commands.command_buffer(), channel_status.handle(), 0U,
+                                     channel_status.size(), 1U);
+                     cubey::vulkan::record_transfer_write_barrier(
+                         commands.command_buffer(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         VK_ACCESS_SHADER_READ_BIT);
+                 }
+                 if (reset)
+                     channel_markers.record_reset(commands.command_buffer());
+                 for (std::uint32_t i = 0U; i < steps; ++i)
+                     channel_markers.record_step(commands.command_buffer(), true);
+                 commands.submit_and_wait();
+             }}));
+    };
+    const auto read_channel = [&] {
+        return gpu.readback_buffer(channel_markers.buffer().handle(),
+                                   channel_markers.buffer().size(),
+                                   "thin channel marker control readback");
+    };
+    execute_channel(16U, false, false);
+    const auto channel_state = read_channel();
+    std::uint32_t channel_active = 0U;
+    std::uint32_t channel_min_y = channel_height;
+    std::uint32_t channel_max_y = 0U;
+    std::array<bool, channel_height> channel_rows{};
+    for (std::uint32_t id = 0U; id < kFluid25DMotionMarkerCount; ++id) {
+        Fluid25DMotionMarkerGpu marker{};
+        std::memcpy(&marker, channel_state.data() + id * sizeof(marker), sizeof(marker));
+        if (marker.position_age_active[3] < 0.5F)
+            continue;
+        const auto cell_x =
+            static_cast<std::uint32_t>(std::floor(marker.position_age_active[0] + 0.5F));
+        const auto cell_y =
+            static_cast<std::uint32_t>(std::floor(marker.position_age_active[1] + 0.5F));
+        if (cell_x != 18U || cell_y < 24U || cell_y >= 104U)
+            throw std::runtime_error("thin channel marker escaped its only wet support");
+        ++channel_active;
+        channel_min_y = std::min(channel_min_y, cell_y);
+        channel_max_y = std::max(channel_max_y, cell_y);
+        channel_rows[cell_y] = true;
+    }
+    const std::uint32_t channel_row_coverage =
+        static_cast<std::uint32_t>(std::count(channel_rows.begin(), channel_rows.end(), true));
+    if (channel_active < 8U || channel_row_coverage < 12U || channel_max_y - channel_min_y < 32U)
+        throw std::runtime_error("bounded global fallback could not reach the thin wet channel");
+
+    execute_channel(0U, true, false);
+    const auto channel_reset = read_channel();
+    if (std::any_of(channel_reset.begin(), channel_reset.end(),
+                    [](std::uint8_t byte) { return byte != 0U; }))
+        throw std::runtime_error("thin channel marker reset did not clear exact state bytes");
+    execute_channel(16U, false, false);
+    const auto channel_replay = read_channel();
+    if (channel_replay != channel_state)
+        throw std::runtime_error("thin channel fallback replay was not deterministic");
+    execute_channel(1U, false, true);
+    if (read_channel() != channel_replay)
+        throw std::runtime_error("rejected thin channel marker update changed state bytes");
+    channel_markers.destroy();
     std::printf("fluid_25d: motion marker GPU controls PASS "
-                "(uniform/rest/dry/rejection/boundary/reset/batching)\n");
+                "(source uniform/rest/dry/rejection/boundary/reset/batching; local coverage/dry/"
+                "rejection/reset/replay/flow/thin-channel-fallback)\n");
 }
 
 } // namespace cubey::projects::fluid::fluid_25d

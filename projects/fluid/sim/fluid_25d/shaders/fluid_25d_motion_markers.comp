@@ -14,6 +14,8 @@ layout(push_constant) uniform MarkerParams {
     uvec4 clock_reset;
 } params;
 
+const float LOCAL_MARKER_BIRTH_MINIMUM_DEPTH_M = 0.01;
+
 bool finite_vec2(vec2 value) { return !any(isnan(value)) && !any(isinf(value)); }
 uint index_of(ivec2 p) { return uint(p.y) * uint(params.grid_dt_cell.x) + uint(p.x); }
 
@@ -23,6 +25,17 @@ bool wet_position(vec2 p) {
     ivec2 cell = ivec2(floor(p + vec2(0.5)));
     float h = depth.values[index_of(cell)];
     return !isnan(h) && !isinf(h) && h > params.wet_source_xy.x;
+}
+
+// Local births are a presentation cue and should start in materially visible
+// water, while advection and retirement retain the hydraulic wet threshold.
+bool local_birth_position(vec2 p) {
+    if (!finite_vec2(p) || any(lessThan(p, vec2(-0.5))) ||
+        any(greaterThanEqual(p, params.grid_dt_cell.xy - vec2(0.5)))) return false;
+    ivec2 cell = ivec2(floor(p + vec2(0.5)));
+    float h = depth.values[index_of(cell)];
+    return !isnan(h) && !isinf(h) &&
+           h >= max(params.wet_source_xy.x, LOCAL_MARKER_BIRTH_MINIMUM_DEPTH_M);
 }
 
 // The nearest cell must be wet. Dry neighbours have zero interpolation
@@ -56,6 +69,54 @@ uint hash_value(uint value) {
 }
 float random_unit(uint value) { return float(hash_value(value) & 0xffffffu) / 16777215.0; }
 
+bool local_seed(uint id, uint step, out vec2 position) {
+    const uint lattice_width = 32u;
+    const uint lattice_height = 16u;
+    const uint stagger_steps = 16u;
+    if (step % stagger_steps != id % stagger_steps) return false;
+
+    uint lattice_x = id % lattice_width;
+    uint lattice_y = id / lattice_width;
+    vec2 pitch = params.grid_dt_cell.xy / vec2(lattice_width, lattice_height);
+    vec2 anchor = (vec2(lattice_x, lattice_y) + vec2(0.5)) * pitch - vec2(0.5);
+    vec2 radius = pitch * 0.35;
+    vec2 offsets[9] = vec2[](
+        vec2(0.0, 0.0), vec2(-radius.x, 0.0), vec2(radius.x, 0.0),
+        vec2(0.0, -radius.y), vec2(0.0, radius.y),
+        vec2(-radius.x, -radius.y), vec2(radius.x, -radius.y),
+        vec2(-radius.x, radius.y), vec2(radius.x, radius.y));
+
+    for (uint attempt = 0u; attempt < 9u; ++attempt) {
+        uint seed = hash_value(id ^ (step * 0x9e3779b9u) ^ (attempt * 0x85ebca6bu));
+        vec2 jitter = (vec2(random_unit(seed), random_unit(seed + 0x27d4eb2du)) - vec2(0.5)) * 0.36;
+        vec2 candidate = anchor + offsets[attempt] + jitter;
+        if (local_birth_position(candidate)) {
+            position = candidate;
+            return true;
+        }
+    }
+
+    // Sparse channels can fall between the fixed anchor probes. Use a fixed
+    // work bound to sample the full domain, rejecting dry cells so each wet
+    // cell remains equally likely to be the first accepted fallback sample.
+    uint width = uint(params.grid_dt_cell.x);
+    uint height = uint(params.grid_dt_cell.y);
+    for (uint attempt = 0u; attempt < 64u; ++attempt) {
+        uint seed = hash_value(id ^ (step * 0x9e3779b9u) ^
+                               ((attempt + 9u) * 0x85ebca6bu) ^ 0xc2b2ae35u);
+        uint cell_x = min(uint(random_unit(seed) * float(width)), width - 1u);
+        uint cell_y = min(uint(random_unit(seed + 0x27d4eb2du) * float(height)), height - 1u);
+        vec2 jitter = (vec2(random_unit(seed ^ 0x165667b1u),
+                            random_unit(seed ^ 0xd3a2646cu)) - vec2(0.5)) * 0.72;
+        vec2 candidate = vec2(cell_x, cell_y) + jitter;
+        if (local_birth_position(candidate)) {
+            position = candidate;
+            return true;
+        }
+    }
+    return false;
+}
+
 void main() {
     uint id = gl_GlobalInvocationID.x;
     if (id >= uint(markers.values.length())) return;
@@ -72,26 +133,43 @@ void main() {
     uint step = params.clock_reset.x;
     float dt = params.grid_dt_cell.z;
     float elapsed = float(step + 1u) * dt;
-    // One source release every four fixed steps; a bounded pool is reused
-    // after 512*4 steps. Retirement is visibly disappearance, never a path
-    // joining the old location back to a newly emitted source parcel.
-    bool birth = step % 4u == 0u && (step / 4u) % uint(markers.values.length()) == id;
-    if (birth) {
-        const ivec2 offsets[5] = ivec2[](ivec2(0,0),ivec2(-1,0),ivec2(1,0),ivec2(0,-1),ivec2(0,1));
-        ivec2 cell = ivec2(params.wet_source_xy.yz) + offsets[id % 5u];
-        vec2 jitter = vec2(random_unit(id + step * 17u), random_unit(id + step * 31u + 77u)) - 0.5;
-        vec2 p = vec2(cell) + 0.36 * jitter;
-        marker.position_age_active = vec4(p,0.0,0.0);
-        marker.previous_xy_reserved = vec4(p,0.0,0.0);
-        bool valid_cell = all(greaterThanEqual(cell,ivec2(0))) &&
-                          all(lessThan(cell,ivec2(params.grid_dt_cell.xy)));
-        bool valid = valid_cell && wet_position(p);
-        if (valid) valid = source_rate.values[index_of(cell)] > 0.0;
-        marker.position_age_active.w = valid ? 1.0 : 0.0;
-        for (uint i=0u;i<MARKER_TRAIL_POINTS;++i)
-            marker.history[i] = vec4(p,elapsed,i==0u && valid ? 1.0 : 0.0);
-        markers.values[id]=marker;
-        return;
+    if (params.clock_reset.z == 1u) {
+        // Each slot owns a fixed spatial anchor. Its seed attempts are
+        // staggered by fixed-step phase and only run while inactive, so an
+        // active trajectory is never teleported to a new wet patch.
+        if (marker.position_age_active.w < 0.5) {
+            vec2 p;
+            if (local_seed(id, step, p)) {
+                marker.position_age_active = vec4(p, 0.0, 1.0);
+                marker.previous_xy_reserved = vec4(p, 0.0, 0.0);
+                for (uint i = 0u; i < MARKER_TRAIL_POINTS; ++i)
+                    marker.history[i] = vec4(p, elapsed, i == 0u ? 1.0 : 0.0);
+                markers.values[id] = marker;
+                return;
+            }
+        }
+    } else {
+        // One source release every four fixed steps; a bounded pool is reused
+        // after 512*4 steps. Retirement is visibly disappearance, never a path
+        // joining the old location back to a newly emitted source parcel.
+        bool birth = step % 4u == 0u && (step / 4u) % uint(markers.values.length()) == id;
+        if (birth) {
+            const ivec2 offsets[5] = ivec2[](ivec2(0,0),ivec2(-1,0),ivec2(1,0),ivec2(0,-1),ivec2(0,1));
+            ivec2 cell = ivec2(params.wet_source_xy.yz) + offsets[id % 5u];
+            vec2 jitter = vec2(random_unit(id + step * 17u), random_unit(id + step * 31u + 77u)) - 0.5;
+            vec2 p = vec2(cell) + 0.36 * jitter;
+            marker.position_age_active = vec4(p,0.0,0.0);
+            marker.previous_xy_reserved = vec4(p,0.0,0.0);
+            bool valid_cell = all(greaterThanEqual(cell,ivec2(0))) &&
+                              all(lessThan(cell,ivec2(params.grid_dt_cell.xy)));
+            bool valid = valid_cell && wet_position(p);
+            if (valid) valid = source_rate.values[index_of(cell)] > 0.0;
+            marker.position_age_active.w = valid ? 1.0 : 0.0;
+            for (uint i=0u;i<MARKER_TRAIL_POINTS;++i)
+                marker.history[i] = vec4(p,elapsed,i==0u && valid ? 1.0 : 0.0);
+            markers.values[id]=marker;
+            return;
+        }
     }
     if (marker.position_age_active.w < 0.5) return;
     vec2 p = marker.position_age_active.xy;

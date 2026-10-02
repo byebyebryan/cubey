@@ -19,6 +19,11 @@ inline constexpr std::uint32_t kFluid25DMotionMarkerCount = 512U;
 inline constexpr std::uint32_t kFluid25DMotionMarkerTrailPoints = 6U;
 inline constexpr std::uint32_t kFluid25DMotionMarkerVertices = 42U;
 
+enum class Fluid25DMotionMarkerMode : std::uint32_t {
+    Source = 0U,
+    Local = 1U
+};
+
 // Interpolate accepted positions independently of render FPS. Inspection
 // advance shows the completed state until the next regular fixed update.
 class Fluid25DMotionMarkerDisplayClock {
@@ -76,7 +81,8 @@ class Fluid25DMotionMarkers {
     void create(cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu,
                 const Fluid25DConfig& config, Fluid25DMotionMarkerFields fields,
                 std::array<float, 2> source_xy, std::uint32_t frame_slots = 1U,
-                bool profile_enabled = false);
+                bool profile_enabled = false,
+                Fluid25DMotionMarkerMode mode = Fluid25DMotionMarkerMode::Source);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
                                 VkFormat depth_format, VkExtent2D extent);
     void destroy_render_pipeline();
@@ -108,6 +114,7 @@ class Fluid25DMotionMarkers {
     void dispatch(VkCommandBuffer command_buffer, bool depth_is_a, bool reset);
     Fluid25DConfig config_{};
     std::array<float, 2> source_xy_{};
+    Fluid25DMotionMarkerMode mode_ = Fluid25DMotionMarkerMode::Source;
     std::uint32_t completed_steps_ = 0U;
     std::optional<cubey::vulkan::Buffer> markers_;
     std::optional<cubey::vulkan::DescriptorSetBundle> update_a_;
