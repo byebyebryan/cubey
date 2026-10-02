@@ -720,6 +720,68 @@ executions into a separate receipt, preserving the earlier rejected report and
 all artifacts. It refuses changed inputs, unsuccessful children, or incomplete
 receipts; it does not rerun the simulation or alter numerical tolerances.
 
+The V5 readability/response options stay on this same immutable hillside;
+they do not audition another river site or develop the authored-river demo:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py \
+  --domain 512 --markers --local-markers --depth-cues \
+  --view water-isolation --camera travel --developed
+```
+
+Local dots show movement **here**, not parcels that travelled from the source.
+The bounded 512-marker pool seeds areas at least 1 cm deep on fixed simulation steps;
+active paths are never periodically teleported. The original source-release
+mode remains available by omitting `--local-markers`. The opt-in fixed depth
+palette spans 1 cm / 10 cm / 1 m / 10 m; this is depth, not speed. Its modest
+shoreline coverage smoothing does not reconstruct the native 30 m geometry.
+`--camera collection` frames the observed western collection pocket on the
+512 reference crop; `travel` frames its intervening downhill region. These two
+presets require `--domain 512`, because the smaller crop omits that pocket. The old
+source/branch/overview cameras and launcher defaults remain available.
+
+Add `--response` for a continuous supply experiment: 100 m³/s for 0–60 physical
+minutes, 150 for 60–90, 50 for 90–120, then 100 indefinitely. The first two hours
+inject the same 720,000 m³ as the constant reference. These are actual hydraulic
+changes, unlike marker, camera, or palette switches. Leave dye off for the
+matched forcing comparison. GUI Low/Base/High buttons queue 50/100/150 m³/s for
+the next fixed step; a manual selection overrides the script until Reset.
+Pause preserves that queue and clock; Reset clears both manual and scripted
+progress. Playback speed changes wall-time pacing, not input strength or dt.
+The GUI continues until closed; finite headless captures are evidence windows,
+not a timed simulation stop. `run_hillside_readability_v5.py` separates profile,
+captures, and review phases under a fresh output directory. Human animation and
+live GUI acceptance remain separate from its automated gates. The optional
+`run_hillside_pacing_v5.py --out <fresh-output-root>` records serialized 900-frame
+marker-off/on Xvfb playback runs with an independently checked supply ledger;
+this is offscreen-windowed pacing evidence, not an isolated overhead benchmark.
+The Diagnostics depth map retains its legacy linear palette (brighter cyan is
+deeper, saturated at about 8.3 cm); the 3D log-depth legend does not apply there.
+Use a Python environment with Pillow for the V5 capture/review phases:
+
+```bash
+rtk proxy uv run --python 3.12 --with pillow==12.3.0 python \
+  projects/fluid/fluid_25d/run_hillside_readability_v5.py \
+  --phase captures --out <output-root>
+```
+
+`--profile-workers 3` optionally overlaps the three independent
+correctness jobs; those child wall times are not performance measurements.
+
+The local V5 checkpoint is retained under
+`outputs/fluid/hillside-readability-v5-20261001-o0PsLm/`; start with
+`READING-GUIDE.txt` and `final-local-closure.json`. All three two-hour profiles
+pass their automated gates: constant water matches V3, constant dye matches
+V4, and the response matches the reference until its first supply change.
+At 120 physical minutes, the response's observed collection depth is 7.136 m
+versus 6.580 m, with equal 720,000 m³ input and no boundary export in either run.
+The response is delayed downstream: at 75 minutes, source-region storage and
+mean active speed already differ, but the observed collection depth and
+material-front distance still match. Final stills alone conceal that delay.
+Local-marker coverage in narrow downstream branches and native-grid geometry
+remain readability limits; human animation and live GUI acceptance are pending.
+This checkpoint does not establish calibrated hydrology or change solver defaults.
+
 The [sustained hillside V2 pass](../../../docs/notes/fluid-25d-hillside-sustained-flow-v2.md)
 keeps the accepted terrain and forcing fixed over two physical hours. Its new
 `run_hillside_sustained_flow_v2.py` separates hydraulic profiles, matched
