@@ -4,12 +4,14 @@
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_dye_palette.h"
 #include "fluid_25d_finite_volume_oracle.h"
+#include "fluid_25d_forcing_cubes.h"
 #include "fluid_25d_hillside_supply.h"
 #include "fluid_25d_mass_audit.h"
 #include "fluid_25d_motion_markers.h"
 #include "fluid_25d_natural_flow_recipe.h"
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_presentation.h"
+#include "fluid_25d_rain_study.h"
 
 #include <cubey/asset/file_digest.h>
 
@@ -78,6 +80,191 @@ template <typename Callable> void require_throws(Callable&& callable, const char
         threw = true;
     }
     require(threw, message);
+}
+
+void test_catchment_far_plane_geometry() {
+    using cubey::math::Vec3;
+    using namespace cubey::projects::fluid::fluid_25d;
+
+    struct SceneBounds {
+        Vec3 minimum;
+        Vec3 maximum;
+        Vec3 target;
+        float minimum_orbit_m;
+        float maximum_orbit_m;
+        std::array<float, 3> observation_distances_m;
+    };
+    std::vector<SceneBounds> scenes{
+        SceneBounds{
+            .minimum = {-3825.0F, 20.0F, -3825.0F},
+            .maximum = {3825.0F, 920.0F, 3825.0F},
+            .target = {-1125.0F, 370.0F, 315.0F},
+            .minimum_orbit_m = 960.0F,
+            .maximum_orbit_m = 30600.0F,
+            .observation_distances_m = {3000.0F, 1200.0F, 11475.0F},
+        },
+        SceneBounds{
+            .minimum = {-45.0F, -250.0F, -30.0F},
+            .maximum = {45.0F, 1750.0F, 30.0F},
+            .target = {30.0F, 200.0F, -20.0F},
+            .minimum_orbit_m = 8.0F,
+            .maximum_orbit_m = 48.0F,
+            .observation_distances_m = {12.0F, 24.0F, 40.0F},
+        },
+        SceneBounds{
+            .minimum = {-20000.0F, -50.0F, -200.0F},
+            .maximum = {20000.0F, 50.0F, 200.0F},
+            .target = {15000.0F, 0.0F, 0.0F},
+            .minimum_orbit_m = 900.0F,
+            .maximum_orbit_m = 160000.0F,
+            .observation_distances_m = {1200.0F, 3000.0F, 30000.0F},
+        },
+        SceneBounds{
+            .minimum = {-100.0F, -10.0F, -50.0F},
+            .maximum = {100.0F, 15.0F, 50.0F},
+            .target = {80.0F, 5.0F, 40.0F},
+            .minimum_orbit_m = 8.0F,
+            .maximum_orbit_m = 400.0F,
+            .observation_distances_m = {24.0F, 96.0F, 200.0F},
+        },
+    };
+
+    constexpr std::uint32_t rain_grid_width = 512U;
+    constexpr std::uint32_t rain_grid_height = 512U;
+    constexpr float rain_cell_size_m = 30.0F;
+    constexpr float rain_domain_extent_m =
+        static_cast<float>(rain_grid_width - 1U) * rain_cell_size_m;
+    constexpr float rain_minimum_orbit_m = 960.0F;
+    constexpr float rain_maximum_orbit_m = 61320.0F;
+    constexpr float rain_travel_home_distance_m = 3000.0F;
+    constexpr float rain_collection_home_distance_m = 1200.0F;
+    Fluid25DScenarioData rain;
+    rain.width = rain_grid_width;
+    rain.height = rain_grid_height;
+    rain.cell_size_m = rain_cell_size_m;
+    rain.terrain_height_m.assign(static_cast<std::size_t>(rain_grid_width) * rain_grid_height,
+                                 0.0F);
+    rain.terrain_height_m.front() = -10.0F;
+    rain.terrain_height_m.back() = 300.0F;
+    const std::size_t rain_travel_cell =
+        fluid_25d_scenario_index(rain_grid_width, rain_grid_height, 138U, 234U);
+    const std::size_t rain_collection_cell =
+        fluid_25d_scenario_index(rain_grid_width, rain_grid_height, 58U, 251U);
+    rain.terrain_height_m[rain_travel_cell] = 125.0F;
+    rain.terrain_height_m[rain_collection_cell] = 42.0F;
+    const auto [rain_minimum, rain_maximum] =
+        std::minmax_element(rain.terrain_height_m.begin(), rain.terrain_height_m.end());
+    const float rain_overview_distance_m =
+        std::max(rain_domain_extent_m * 1.5F, (*rain_maximum - *rain_minimum) * 1.5F + 16.0F);
+    const auto rain_overview_limits = fluid_25d_catchment_orbit_limits(
+        Fluid25DScenario::HillsideRainStudy, rain_domain_extent_m, rain_domain_extent_m);
+    require_close(rain_domain_extent_m, 15330.0, kDepthToleranceM,
+                  "512-cell rain crop should retain its 15,330 m domain extent");
+    require_close(rain_overview_limits.minimum_distance_m, rain_minimum_orbit_m, 0.001,
+                  "512-cell rain presets should retain their 960 m minimum orbit");
+    require_close(rain_overview_limits.maximum_distance_m, rain_maximum_orbit_m, 0.001,
+                  "512-cell rain presets should retain their 61,320 m maximum orbit");
+    require_close(rain_overview_distance_m, 22995.0, kDepthToleranceM,
+                  "rain overview home distance should retain its 22,995 m preset");
+    const Vec3 rain_overview_target{0.0F, 0.5F * (*rain_minimum + *rain_maximum), 0.0F};
+    const Vec3 rain_travel_target{-3525.0F, rain.terrain_height_m[rain_travel_cell], -645.0F};
+    const Vec3 rain_collection_target{-5925.0F, rain.terrain_height_m[rain_collection_cell],
+                                      -135.0F};
+    require(rain_travel_target.x == -3525.0F && rain_travel_target.z == -645.0F &&
+                rain_collection_target.x == -5925.0F && rain_collection_target.z == -135.0F &&
+                rain_overview_target.x == 0.0F && rain_overview_target.z == 0.0F,
+            "rain overview, travel, and collection should retain their exact world targets");
+    require(rain_travel_home_distance_m == 3000.0F && rain_collection_home_distance_m == 1200.0F &&
+                rain_overview_distance_m >= rain_minimum_orbit_m &&
+                rain_overview_distance_m <= rain_maximum_orbit_m,
+            "rain overview, travel, and collection should retain their legal home distances");
+    const float rain_terrain_minimum_y = std::min(*rain_minimum, *rain_maximum);
+    const float rain_terrain_maximum_y = std::max(*rain_minimum, *rain_maximum);
+    const auto add_rain_scene = [&](Vec3 target, float home_distance_m) {
+        scenes.push_back({
+            .minimum = {-0.5F * rain_domain_extent_m, rain_terrain_minimum_y,
+                        -0.5F * rain_domain_extent_m},
+            .maximum = {0.5F * rain_domain_extent_m, rain_terrain_maximum_y,
+                        0.5F * rain_domain_extent_m},
+            .target = target,
+            .minimum_orbit_m = rain_minimum_orbit_m,
+            .maximum_orbit_m = rain_maximum_orbit_m,
+            .observation_distances_m = {rain_travel_home_distance_m,
+                                        rain_collection_home_distance_m, home_distance_m},
+        });
+    };
+    add_rain_scene(rain_overview_target, rain_overview_distance_m);
+    add_rain_scene(rain_travel_target, rain_travel_home_distance_m);
+    add_rain_scene(rain_collection_target, rain_collection_home_distance_m);
+
+    for (const SceneBounds& scene : scenes) {
+        const float far_plane = fluid_25d_catchment_far_plane(scene.maximum_orbit_m, scene.minimum,
+                                                              scene.maximum, scene.target);
+        require(std::isfinite(far_plane) && far_plane > scene.maximum_orbit_m,
+                "catchment far plane should be finite and beyond every legal orbit distance");
+        std::array<float, 5> distances{
+            scene.minimum_orbit_m,
+            scene.observation_distances_m[0],
+            scene.observation_distances_m[1],
+            scene.observation_distances_m[2],
+            scene.maximum_orbit_m,
+        };
+        for (const float distance_m : distances) {
+            require(distance_m >= scene.minimum_orbit_m && distance_m <= scene.maximum_orbit_m,
+                    "camera observation preset should remain inside legal zoom limits");
+            for (std::uint32_t step = 0U; step <= 16U; ++step) {
+                const float orbit_distance_m =
+                    scene.minimum_orbit_m + (scene.maximum_orbit_m - scene.minimum_orbit_m) *
+                                                (static_cast<float>(step) / 16.0F);
+                for (std::uint32_t corner = 0U; corner < 8U; ++corner) {
+                    const Vec3 point{
+                        (corner & 1U) == 0U ? scene.minimum.x : scene.maximum.x,
+                        (corner & 2U) == 0U ? scene.minimum.y : scene.maximum.y,
+                        (corner & 4U) == 0U ? scene.minimum.z : scene.maximum.z,
+                    };
+                    const float dx = point.x - scene.target.x;
+                    const float dy = point.y - scene.target.y;
+                    const float dz = point.z - scene.target.z;
+                    const float corner_radius_m = std::hypot(std::hypot(dx, dy), dz);
+                    // Every unit forward vector has a corner projection no
+                    // larger than the Euclidean camera-to-corner distance,
+                    // which is at most orbit distance plus target radius.
+                    const float maximum_forward_depth_m = orbit_distance_m + corner_radius_m;
+                    require(maximum_forward_depth_m < far_plane,
+                            "terrain AABB corner must remain before far clip at every legal orbit");
+                }
+            }
+        }
+    }
+
+    const Vec3 minimum{-1.0F, -2.0F, -3.0F};
+    const Vec3 maximum{1.0F, 2.0F, 3.0F};
+    require_throws(
+        [&] { static_cast<void>(fluid_25d_catchment_far_plane(0.0F, minimum, maximum, Vec3{})); },
+        "catchment far-plane helper should reject a nonpositive orbit limit");
+    require_throws(
+        [&] {
+            static_cast<void>(fluid_25d_catchment_far_plane(std::numeric_limits<float>::infinity(),
+                                                            minimum, maximum, Vec3{}));
+        },
+        "catchment far-plane helper should reject nonfinite orbit limits");
+    require_throws(
+        [&] { static_cast<void>(fluid_25d_catchment_far_plane(10.0F, maximum, minimum, Vec3{})); },
+        "catchment far-plane helper should reject reversed scene bounds");
+    require_throws(
+        [&] {
+            static_cast<void>(fluid_25d_catchment_far_plane(
+                10.0F, minimum, maximum,
+                Vec3{0.0F, std::numeric_limits<float>::quiet_NaN(), 0.0F}));
+        },
+        "catchment far-plane helper should reject nonfinite targets");
+    require_throws(
+        [&] {
+            const float largest = std::numeric_limits<float>::max();
+            static_cast<void>(fluid_25d_catchment_far_plane(largest, Vec3{-largest, 0.0F, 0.0F},
+                                                            Vec3{largest, 0.0F, 0.0F}, Vec3{}));
+        },
+        "catchment far-plane helper should reject bounds whose conservative depth overflows");
 }
 
 struct TerrainFixture {
@@ -180,6 +367,22 @@ natural_flow_test_config(std::uint32_t width = 5U, std::uint32_t height = 5U) {
     config.scenario = Fluid25DScenario::NaturalFlowStudy;
     config.solver = Fluid25DSolver::FiniteVolume;
     config.natural_flow_source_m3_per_s = 30.0F;
+    validate_fluid_25d_config(config);
+    return config;
+}
+
+[[nodiscard]] cubey::projects::fluid::fluid_25d::Fluid25DConfig
+rain_study_test_config(std::uint32_t width = 8U, std::uint32_t height = 8U,
+                       float rainfall_rate_mm_per_hour = 36000.0F) {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config;
+    config.grid_width = width;
+    config.grid_height = height;
+    config.cell_size_m = kFluid25DHillsideRainStudyCellSizeM;
+    config.scenario = Fluid25DScenario::HillsideRainStudy;
+    config.solver = Fluid25DSolver::FiniteVolume;
+    config.rainfall_depth_rate_m_per_s =
+        fluid_25d_rainfall_depth_rate_m_per_s_from_mm_per_hour(rainfall_rate_mm_per_hour);
     validate_fluid_25d_config(config);
     return config;
 }
@@ -841,6 +1044,139 @@ void test_config_defaults_and_parsing() {
     invalid.source_active_duration_seconds = -0.1F;
     require_throws([&] { validate_fluid_25d_config(invalid); },
                    "fluid 2.5D should reject a negative source active duration");
+}
+
+void test_hillside_rain_study_config_and_cli() {
+    using namespace cubey::projects::fluid::fluid_25d;
+
+    const Fluid25DConfig rain = rain_study_test_config(512U, 512U, 12.0F);
+    require(fluid_25d_scenario_from_name("hillside-rain-study") ==
+                Fluid25DScenario::HillsideRainStudy &&
+                std::string(fluid_25d_scenario_name(Fluid25DScenario::HillsideRainStudy)) ==
+                    "hillside-rain-study",
+            "hillside rain should have its own stable opt-in scenario name");
+    require(!fluid_25d_is_natural_terrain_study(Fluid25DScenario::HillsideRainStudy) &&
+                fluid_25d_is_natural_terrain_study(Fluid25DScenario::HillsideFlowStudy),
+            "rain must not inherit the point-source natural-flow recipe predicate");
+    require(fluid_25d_is_macro_hillside_study(Fluid25DScenario::HillsideRainStudy),
+            "rain should reuse hillside macro presentation helpers");
+    require_close(rain.rainfall_depth_rate_m_per_s, 12.0 / 3'600'000.0, 1.0e-12,
+                  "rain CLI rate should use the existing mm/hour conversion");
+
+    const std::vector<std::string> rain_cli_base{
+        "fluid_25d", "--grid-width", "512", "--grid-height", "512",
+        "--fluid25d-scenario", "hillside-rain-study", "--fluid25d-solver", "finite-volume",
+        "--fluid25d-cell-size-m", "30", "--terrain-heightfield", "terrain-fixture",
+        "--fluid25d-terrain-crop-x", "1152", "--fluid25d-terrain-crop-z", "1408",
+        "--fluid25d-rainfall-rate-mm-per-hour", "12", "--fluid25d-hillside-camera",
+        "collection", "--fluid25d-natural-flow-home-pitch-radians", "-0.6",
+        "--fluid25d-hillside-depth-cues", "--fluid25d-terrain-thin-water-composite",
+        "--fluid25d-motion-markers", "--fluid25d-motion-marker-mode", "local",
+        "--fluid25d-hillside-inspection-advance-seconds", "2"};
+    const auto rain_cli_with_option = [&](std::string_view option, std::string value) {
+        std::vector<std::string> arguments = rain_cli_base;
+        const auto found = std::find(arguments.begin(), arguments.end(), option);
+        if (found == arguments.end() || found + 1 == arguments.end())
+            throw std::runtime_error("test rain CLI option was not found");
+        *(found + 1) = std::move(value);
+        return arguments;
+    };
+    const auto rain_cli_with_extra = [&](std::string option, std::string value) {
+        std::vector<std::string> arguments = rain_cli_base;
+        arguments.push_back(std::move(option));
+        arguments.push_back(std::move(value));
+        return arguments;
+    };
+    const Fluid25DProjectConfig project = parse_project(rain_cli_base);
+    require(project.simulation.scenario == Fluid25DScenario::HillsideRainStudy &&
+                project.simulation.source_active_duration_seconds == std::nullopt &&
+                project.terrain.crop_x == 1152U && project.terrain.crop_z == 1408U &&
+                project.hillside_camera == "collection" &&
+                project.natural_flow_home_pitch_radians == -0.6F &&
+                project.catchment_render.hillside_depth_cues &&
+                project.catchment_render.terrain_thin_water_composite &&
+                project.motion_markers && project.motion_marker_mode == "local" &&
+                project.hillside_inspection_advance_seconds == 2.0F,
+            "rain CLI should admit pinned native terrain and presentation-only controls");
+
+    const std::vector<std::string> source_camera =
+        rain_cli_with_option("--fluid25d-hillside-camera", "source");
+    require_throws([&] { static_cast<void>(parse_project(source_camera)); },
+                   "rain must not expose source-relative camera presets");
+    const std::vector<std::string> source_markers =
+        rain_cli_with_option("--fluid25d-motion-marker-mode", "source");
+    require_throws([&] { static_cast<void>(parse_project(source_markers)); },
+                   "rain markers must use the local, not source, release mode");
+    std::vector<std::string> missing_rate = rain_cli_base;
+    const auto rainfall_option =
+        std::find(missing_rate.begin(), missing_rate.end(), "--fluid25d-rainfall-rate-mm-per-hour");
+    require(rainfall_option != missing_rate.end(), "rain CLI fixture should contain its rate");
+    missing_rate.erase(rainfall_option, rainfall_option + 2);
+    require_throws([&] { static_cast<void>(parse_project(missing_rate)); },
+                   "rain scenario should require an explicit positive rainfall rate");
+    const std::vector<std::string> neutral_protocol = rain_cli_with_extra(
+        "--fluid25d-terrain-water-protocol", "none");
+    require_throws([&] { static_cast<void>(parse_project(neutral_protocol)); },
+                   "rain should reject even an explicit neutral terrain-water protocol");
+    const std::vector<std::string> point_source_q =
+        rain_cli_with_extra("--fluid25d-natural-flow-source-m3-per-s", "100");
+    require_throws([&] { static_cast<void>(parse_project(point_source_q)); },
+                   "rain CLI should reject the point-source Q recipe option");
+    const std::vector<std::string> dye_timing =
+        rain_cli_with_extra("--fluid25d-dye-pulse-start-seconds", "0");
+    std::vector<std::string> dye_timing_pair = dye_timing;
+    dye_timing_pair.insert(dye_timing_pair.end(),
+                           {"--fluid25d-dye-pulse-duration-seconds", "1"});
+    require_throws([&] { static_cast<void>(parse_project(dye_timing_pair)); },
+                   "rain CLI should reject dye timing options");
+    const std::vector<std::string> point_source_duration = rain_cli_with_extra(
+        "--fluid25d-source-active-duration-seconds", "5");
+    require_throws([&] { static_cast<void>(parse_project(point_source_duration)); },
+                   "rain CLI should reject source-active-duration scheduling");
+
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.solver = Fluid25DSolver::VirtualPipes;
+            validate_fluid_25d_config(invalid);
+        },
+        "rain should require the finite-volume solver");
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.cell_size_m = 29.0F;
+            validate_fluid_25d_config(invalid);
+        },
+        "rain should require exact native 30 m cells");
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.source_active_duration_seconds = 5.0F;
+            validate_fluid_25d_config(invalid);
+        },
+        "continuous rain should reject point-source duration scheduling");
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.natural_flow_source_m3_per_s = 100.0F;
+            validate_fluid_25d_config(invalid);
+        },
+        "rain should reject point-source Q");
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.dye_pulse_start_seconds = 1.0F;
+            invalid.dye_pulse_duration_seconds = 1.0F;
+            validate_fluid_25d_config(invalid);
+        },
+        "rain should reject dye timing");
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.terrain_water_protocol = Fluid25DTerrainWaterProtocol::RainPulse;
+            validate_fluid_25d_config(invalid);
+        },
+        "rain should remain separate from TerrainCase RainPulse");
 }
 
 void test_deterministic_scenarios() {
@@ -2227,6 +2563,56 @@ void test_terrain_case_ingestion() {
         "terrain case should reject an invalid heightfield path");
 }
 
+void test_hillside_rain_study_scenario_construction() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    TerrainFixture fixture(30.0F, 10U, 10U);
+    const Fluid25DConfig config = rain_study_test_config(8U, 8U, 100.0F);
+    const cubey::asset::TerrainRasterHeightSource source(fixture.root);
+    const Fluid25DScenarioData scenario =
+        make_fluid_25d_hillside_rain_study_scenario(config, source, 1U, 1U);
+
+    const std::size_t cells = fluid_25d_cell_count(config);
+    require(scenario.width == config.grid_width && scenario.height == config.grid_height &&
+                scenario.cell_size_m == 30.0F && scenario.terrain_provenance.has_value() &&
+                scenario.terrain_provenance->crop_x == 1U &&
+                scenario.terrain_provenance->crop_z == 1U,
+            "rain crop builder should reuse native terrain crop provenance unchanged");
+    require(scenario.source_cell == kFluid25DNoCell &&
+                scenario.secondary_source_cell == kFluid25DNoCell &&
+                scenario.outlet_cell == kFluid25DNoCell && scenario.sink_cell == kFluid25DNoCell,
+            "rain crop should carry no point-source, outlet, or sink sentinels");
+    require(std::all_of(scenario.initial_water_depth_m.begin(),
+                        scenario.initial_water_depth_m.end(),
+                        [](float depth) { return depth == 0.0F; }) &&
+                std::all_of(scenario.sink_depth_rate_m_per_s.begin(),
+                            scenario.sink_depth_rate_m_per_s.end(),
+                            [](float rate) { return rate == 0.0F; }),
+            "rain crop should begin dry with no sink field");
+    require(std::all_of(scenario.source_depth_rate_m_per_s.begin(),
+                        scenario.source_depth_rate_m_per_s.end(), [&](float rate) {
+                            return rate == config.rainfall_depth_rate_m_per_s;
+                        }),
+            "rain should distribute its one configured depth rate uniformly over the crop");
+    require(scenario.boundary_outflow_face_mask ==
+                make_fluid_25d_all_outward_boundary_outflow_mask(config.grid_width,
+                                                                 config.grid_height),
+            "rain should use the existing outward-only full perimeter mask");
+    require(!fluid_25d_uses_forcing_cubes(config.scenario) &&
+                fluid_25d_forcing_cubes(config, scenario).empty(),
+            "rain must not display source or outlet forcing cubes");
+
+    Fluid25DScenarioData invalid = scenario;
+    invalid.source_cell = 0U;
+    require_throws([&] { apply_fluid_25d_hillside_rain_study_forcing(config, invalid); },
+                   "rain forcing should reject a point-source sentinel");
+    invalid = scenario;
+    invalid.sink_depth_rate_m_per_s[0] = 1.0F;
+    require_throws([&] { apply_fluid_25d_hillside_rain_study_forcing(config, invalid); },
+                   "rain forcing should reject a pre-existing sink field");
+    require(cells == scenario.source_depth_rate_m_per_s.size(),
+            "rain crop fields should retain the configured full grid size");
+}
+
 void test_hillside_flow_study_contract() {
     using namespace cubey::projects::fluid::fluid_25d;
     TerrainFixture fixture(30.0F, 7U, 7U);
@@ -3057,6 +3443,190 @@ void test_profile_diagnostic_metric_math() {
                                                                     ledger, 2.0));
         },
         "profile diagnostics should reject invalid readback depth");
+}
+
+void test_hillside_rain_study_control_and_flat_oracle() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.cell_size_m = 10.0F;
+            Fluid25DRainStudyControl control;
+            static_cast<void>(control.prepare_fixed_step(invalid));
+        },
+        "rain control itself should reject non-native spacing before scheduling input");
+    require_throws(
+        [] {
+            Fluid25DConfig invalid = rain_study_test_config();
+            invalid.source_active_duration_seconds = 1.0F;
+            Fluid25DRainStudyControl control;
+            static_cast<void>(control.total_input_m3_per_s(invalid));
+        },
+        "rain control observation should reject incompatible timed forcing");
+    Fluid25DConfig config = rain_study_test_config(8U, 8U, 36000.0F);
+    config.fixed_delta_seconds = 0.05F;
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+        Fluid25DScenario::DryBed, config.grid_width, config.grid_height, config.cell_size_m);
+    std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+    apply_fluid_25d_hillside_rain_study_forcing(config, scenario);
+    std::fill(scenario.boundary_outflow_face_mask.begin(),
+              scenario.boundary_outflow_face_mask.end(), 0U);
+
+    Fluid25DFiniteVolumeOracle oracle(config, scenario);
+    Fluid25DRainStudyControl control;
+    const double area = static_cast<double>(config.cell_size_m) * config.cell_size_m;
+    const double volume_per_on_step =
+        static_cast<double>(config.rainfall_depth_rate_m_per_s) * config.fixed_delta_seconds * area *
+        static_cast<double>(fluid_25d_cell_count(config));
+    const auto step = [&](bool expected_enabled) {
+        const float scale = control.prepare_fixed_step(config);
+        require((scale == 1.0F) == expected_enabled && control.enabled() == expected_enabled,
+                "rain On/Off should apply only when the next fixed step is prepared");
+        const Fluid25DStepLedger ledger = oracle.step(scale);
+        require_close(ledger.conservation_error_m3(), 0.0, 0.00001,
+                      "closed flat rain oracle should conserve its source ledger");
+    };
+
+    step(true);
+    control.queue_enabled(false);
+    const double queued_volume = control.state().scheduled_volume_m3;
+    require(control.queued_enabled() == false && control.enabled() &&
+                control.state().scheduled_volume_m3 == queued_volume,
+            "queued rain-off should not change the applied state before a fixed step");
+    step(false);
+    control.queue_enabled(true);
+    step(true);
+    step(true);
+    require_close(control.state().cumulative_depth_m,
+                  3.0 * static_cast<double>(config.rainfall_depth_rate_m_per_s) *
+                      config.fixed_delta_seconds,
+                  1.0e-12, "cumulative rain depth should include only applied-on steps");
+    require_close(control.state().scheduled_volume_m3, 3.0 * volume_per_on_step, 0.00001,
+                  "scheduled rain volume should include only applied-on fixed steps");
+    require_close(oracle.total_water_volume_m3(), control.state().scheduled_volume_m3, 0.00001,
+                  "flat closed rain should add the scheduled volume without lateral movement");
+    require(std::all_of(oracle.velocity_m_per_s().begin(), oracle.velocity_m_per_s().end(),
+                        [](const Fluid25DVelocity& velocity) {
+                            return velocity.x_m_per_s == 0.0F && velocity.y_m_per_s == 0.0F;
+                        }),
+            "uniform rain on a flat closed bed should create no motion");
+
+    control.queue_enabled(false);
+    const double before_paused_advance = control.state().scheduled_volume_m3;
+    Fluid25DWindowedPacing paused_pacing(config.fixed_delta_seconds, 1.0F);
+    require(paused_pacing.advance(5.0, true).fixed_step_count == 0U &&
+                control.queued_enabled() == false && control.enabled() &&
+                control.state().scheduled_volume_m3 == before_paused_advance,
+            "pause should preserve a queued rain change without consuming rain time");
+    require(paused_pacing.advance(config.fixed_delta_seconds, false).fixed_step_count == 1U,
+            "unpaused pacing should produce a normal fixed step");
+    step(false);
+    control.reset();
+    require(control.enabled() && !control.queued_enabled().has_value() &&
+                control.state().cumulative_depth_m == 0.0 &&
+                control.state().scheduled_volume_m3 == 0.0 &&
+                control.state().completed_steps == 0U,
+            "rain reset should return to dry time zero with rain enabled");
+    require_close(control.applied_rate_mm_per_hour(config), 36000.0, 0.1,
+                  "rain reset should restore the configured positive rain rate");
+
+    const auto run_at_fps = [&](double fps) {
+        Fluid25DConfig pacing_config = config;
+        pacing_config.fixed_delta_seconds = 1.0F / 60.0F;
+        validate_fluid_25d_config(pacing_config);
+        Fluid25DWindowedPacing pacing(pacing_config.fixed_delta_seconds, 1.0F);
+        Fluid25DRainStudyControl fps_control;
+        const std::uint32_t frame_count = static_cast<std::uint32_t>(2.0 * fps);
+        for (std::uint32_t frame = 0U; frame < frame_count; ++frame) {
+            const std::uint32_t fixed_steps =
+                pacing.advance(1.0 / fps, false).fixed_step_count;
+            for (std::uint32_t i = 0U; i < fixed_steps; ++i) {
+                if (fps_control.state().completed_steps == 10U)
+                    fps_control.queue_enabled(false);
+                if (fps_control.state().completed_steps == 20U)
+                    fps_control.queue_enabled(true);
+                static_cast<void>(fps_control.prepare_fixed_step(pacing_config));
+            }
+        }
+        return fps_control.state();
+    };
+    const auto thirty_fps = run_at_fps(30.0);
+    const auto sixty_fps = run_at_fps(60.0);
+    require(thirty_fps.completed_steps == 120U &&
+                thirty_fps.completed_steps == sixty_fps.completed_steps &&
+                thirty_fps.cumulative_depth_m == sixty_fps.cumulative_depth_m &&
+                thirty_fps.scheduled_volume_m3 == sixty_fps.scheduled_volume_m3 &&
+                thirty_fps.enabled == sixty_fps.enabled,
+            "rain event schedule should be fixed-step deterministic at 30 and 60 render FPS");
+}
+
+void test_hillside_rain_study_observations() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DConfig config = rain_study_test_config(512U, 512U, 36000.0F);
+    config.fixed_delta_seconds = 2.0F;
+    validate_fluid_25d_config(config);
+    Fluid25DRainStudyControl control;
+    static_cast<void>(control.prepare_fixed_step(config));
+    const std::size_t cells = fluid_25d_cell_count(config);
+    std::vector<float> depth(cells, static_cast<float>(control.state().cumulative_depth_m));
+    std::vector<Fluid25DVelocityGpu> velocity(cells);
+    const auto index = [](std::uint32_t x, std::uint32_t z) {
+        return static_cast<std::size_t>(z) * 512U + x;
+    };
+    const auto mark = [&](std::uint32_t x, std::uint32_t z, float h, float speed) {
+        depth[index(x, z)] = h;
+        velocity[index(x, z)].velocity_wet = {speed, 0.0F, h, 0.0F};
+    };
+
+    for (std::uint32_t z = 203U; z < 224U; ++z) {
+        for (std::uint32_t x = 203U; x < 224U; ++x)
+            depth[index(x, z)] = 0.04F;
+    }
+    velocity[index(203U, 203U)].velocity_wet = {0.03F, 0.0F, 0.04F, 0.0F};
+    velocity[index(204U, 203U)].velocity_wet = {0.03F, 0.0F, 0.04F, 0.0F};
+    for (std::uint32_t x = 10U; x < 16U; ++x)
+        mark(x, 10U, 0.035F, 0.03F);
+    for (std::uint32_t x = 20U; x < 23U; ++x)
+        mark(x, 20U, 0.031F, 0.03F);
+    for (std::uint32_t x = 0U; x < 6U; ++x)
+        mark(x, 300U, 0.04F, 0.03F);
+
+    const Fluid25DRainStudyObservation observation =
+        compute_fluid_25d_rain_study_observation(config, depth, velocity, control, 2.0);
+    require(observation.physical_time_s == 2.0 && observation.enabled &&
+                std::abs(observation.rate_mm_per_hour - 36000.0) < 0.1 &&
+                observation.material_wet_cells == cells &&
+                observation.material_active_cells == 17U &&
+                observation.converged_moving_cells == 17U,
+            "rain observations should use applied forcing and specified wet/moving thresholds");
+    require(observation.largest_corridor_cells == 6U &&
+                observation.largest_corridor_span_m == 150.0,
+            "rain corridor should use interior D4 components and select greatest span");
+    require_close(observation.converged_water_volume_m3,
+                  (0.04 - observation.cumulative_depth_m) * 900.0 * (441.0 + 6.0) +
+                      (0.035 - observation.cumulative_depth_m) * 900.0 * 6.0 +
+                      (0.031 - observation.cumulative_depth_m) * 900.0 * 3.0,
+                  0.1, "rain converged-water volume should subtract uniform cumulative rain");
+    require_close(observation.maximum_depth_m, 0.04, 1.0e-7,
+                  "rain maximum depth should report the field maximum");
+    require(observation.maximum_depth_cell_x == 203U &&
+                observation.maximum_depth_cell_z == 203U,
+            "rain observation should deterministically report a useful max-depth cell");
+    require(observation.regions[0].name == "upper" && observation.regions[0].valid &&
+                observation.regions[1].name == "transit" && observation.regions[1].valid &&
+                observation.regions[2].name == "collection" && observation.regions[2].valid,
+            "rain observations should expose the three pinned 21x21 regions on a 512 crop");
+    for (const auto& region : observation.regions) {
+        require_close(region.direct_rain_volume_m3,
+                      observation.cumulative_depth_m * 900.0 * 441.0, 0.01,
+                      "each rain ROI should report its fixed direct-rain volume");
+    }
+    require_close(observation.regions[0].water_volume_m3, 0.04 * 900.0 * 441.0, 0.1,
+                  "upper ROI water volume should sum its fixed footprint");
+    require(observation.regions[0].material_wet_cells == 441U &&
+                observation.regions[0].active_cells == 2U,
+            "rain ROI thresholds should count material wet and active cells independently");
 }
 
 void test_rain_boundary_outflow_attribution() {
@@ -4391,7 +4961,8 @@ void test_presentation_cue_contract() {
                 quiver_vertex.find("shaft_vertex") != std::string::npos &&
                 quiver_vertex.find("head_vertex") != std::string::npos &&
                 quiver_vertex.find("lattice_pitch") != std::string::npos &&
-                quiver_vertex.find("kSpeedUpperMPerS = 0.80") != std::string::npos &&
+                quiver_vertex.find("params.terrain_palette.w - kMinimumSpeedMPerS") != std::string::npos &&
+                Fluid25DCatchmentRenderOptions{}.quiver_speed_upper_m_per_s == 0.80F &&
                 quiver_vertex.find("kMaximumSilhouettePitchFraction") != std::string::npos &&
                 quiver_vertex.find("current_velocity.z < 0.5") != std::string::npos &&
                 quiver_vertex.find("current_velocity.xy") != std::string::npos &&
@@ -5826,9 +6397,48 @@ void test_hillside_supply_and_depth_cues() {
                   "thin scale clamps");
 }
 
+void test_recording_cli_is_separate_from_physics() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const auto valid = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                     "--fluid25d-motion-markers", "--fluid25d-recording-speed", "60"});
+    require(valid.recording_path == "recording.json" && valid.motion_marker_mode == "local",
+            "recording path should resolve without hydraulic scenario validation");
+    require(valid.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "recording must not promote finite-volume defaults");
+    const auto reject = [](std::vector<std::string> extra) {
+        std::vector<std::string> arguments{"fluid_25d", "--fluid25d-recording", "recording.json"};
+        arguments.insert(arguments.end(), extra.begin(), extra.end());
+        require_throws([&] { static_cast<void>(parse_project(arguments)); },
+                       "recording accepted an incompatible or inactive control");
+    };
+    reject({"--fluid25d-solver", "virtual-pipes"});
+    reject({"--fluid25d-scenario", "dry-bed"});
+    reject({"--grid-width", "512"});
+    reject({"--terrain-heightfield", "terrain.json"});
+    reject({"--fluid25d-cell-size-m", "30"});
+    reject({"--fluid25d-rainfall-rate-mm-per-hour", "12"});
+    reject({"--fluid25d-gpu-oracle-validation"});
+    reject({"--fluid25d-motion-markers", "--fluid25d-motion-marker-mode", "source"});
+    reject({"--fluid25d-catchment-view", "transport-inspection"});
+    reject({"--fluid25d-recording-gpu-validation"});
+    reject({"--fluid25d-recording-frame-interval-seconds", "60"});
+    reject({"--headless", "--fluid25d-recording-speed", "60"});
+    reject({"--headless", "--capture", "video", "--output", "movie.mp4",
+            "--fluid25d-recording-frame-interval-seconds", "0"});
+    require_throws([] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording-speed", "60"})); },
+                   "recording controls need a recording path");
+    const auto capture = parse_project({"fluid_25d", "--headless", "--fluid25d-recording", "recording.json",
+                                       "--fluid25d-recording-gpu-validation", "--fluid25d-recording-time-seconds", "900"});
+    require(capture.recording_gpu_validation && capture.recording_time_seconds == 900.0F,
+            "fixed-time recorded capture should be independently configured");
+}
+
 int main() {
     try {
+        test_recording_cli_is_separate_from_physics();
+        test_catchment_far_plane_geometry();
         test_config_defaults_and_parsing();
+        test_hillside_rain_study_config_and_cli();
         test_hillside_supply_and_depth_cues();
         test_deterministic_scenarios();
         test_forcing_cube_footprints_and_shared_faces();
@@ -5837,6 +6447,7 @@ int main() {
         test_sustained_headwaters_station_diagnostics();
         test_sustained_headwaters_cross_section_diagnostics();
         test_terrain_case_ingestion();
+        test_hillside_rain_study_scenario_construction();
         test_natural_flow_recipe_import_and_validation();
         test_hillside_flow_study_contract();
         test_hillside_spatial_diagnostics();
@@ -5846,6 +6457,8 @@ int main() {
         test_profile_frame_slot_attribution();
         test_profile_diagnostic_metric_math();
         test_rain_boundary_outflow_attribution();
+        test_hillside_rain_study_control_and_flat_oracle();
+        test_hillside_rain_study_observations();
         test_source_outlet_cross_section_diagnostic_math();
         test_source_outlet_spatial_diagnostic_math();
         test_source_outlet_endpoint_shoulders();

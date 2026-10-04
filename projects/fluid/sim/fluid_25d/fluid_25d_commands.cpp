@@ -28,6 +28,7 @@ struct SimulationPushConstants {
 };
 struct RenderPushConstants {
     std::array<float, 4> grid_debug{};
+    std::array<float, 4> recording_range{};
 };
 struct CatchmentPushConstants {
     cubey::math::Mat4 view_projection{1.0F};
@@ -59,7 +60,7 @@ struct Fluid25DComputeRecordingPolicy {
 };
 
 static_assert(sizeof(SimulationPushConstants) == sizeof(float) * 12U);
-static_assert(sizeof(RenderPushConstants) == sizeof(float) * 4U);
+static_assert(sizeof(RenderPushConstants) == sizeof(float) * 8U);
 static_assert(sizeof(CatchmentPushConstants) == sizeof(float) * 32U);
 
 [[nodiscard]] SimulationPushConstants simulation_push_constants(const Fluid25DConfig& config,
@@ -241,10 +242,12 @@ catchment_push_constants(const Fluid25DConfig& config, const Fluid25DGpuResource
                          static_cast<float>(static_cast<std::uint32_t>(catchment_view)),
                          (render_options.terrain_thin_water_composite ? 1.0F : 0.0F) +
                              (render_options.hillside_depth_cues ? 2.0F : 0.0F),
-                         fluid_25d_catchment_terrain_material_cue(config.scenario)},
+                         render_options.native_recording ? 4.0F :
+                             fluid_25d_catchment_terrain_material_cue(config.scenario)},
         .terrain_palette = {render_options.terrain_palette_low_m.value_or(0.0F),
                             render_options.terrain_palette_high_m.value_or(0.0F),
-                            has_physical_palette ? 1.0F : 0.0F, 0.0F},
+                            has_physical_palette ? 1.0F : 0.0F,
+                            render_options.quiver_speed_upper_m_per_s},
     };
 }
 
@@ -262,6 +265,8 @@ void record_fluid_25d_compute_batch_internal(
     std::span<const Fluid25DStepForcing> forcings, bool paused, bool& reset_requested,
     const Fluid25DComputeRecordingPolicy recording_policy, bool include_render_visibility_barrier,
     cubey::vulkan::GpuTimestampProfiler* profiler, std::uint32_t frame_slot_index) {
+    if (resources.presentation_only())
+        throw std::runtime_error("recording resources cannot dispatch a hydraulic solver or reset");
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     // Keep every fixed step and its solver substeps inside one aggregate solve
     // span. The direct headless lane selects Disabled below, leaving this as
@@ -378,6 +383,44 @@ void record_flow_inspection_quiver_reset_internal(VkCommandBuffer command_buffer
 
 } // namespace
 
+void record_fluid_25d_recorded_presentation(
+    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    float physical_delta_seconds, bool& cue_reset_requested, bool& quiver_reset_requested,
+    bool show_quiver) {
+    if (!resources.presentation_only() || !std::isfinite(physical_delta_seconds) ||
+        physical_delta_seconds < 0.0F)
+        throw std::runtime_error("recorded presentation requires its own finite nonnegative clock");
+    const cubey::vulkan::CommandRecorder recorder(command_buffer);
+    auto params = presentation_cue_push_constants(config);
+    params.grid_dt_cell[2] = physical_delta_seconds;
+    const auto groups = dispatch_groups(config);
+    cubey::vulkan::record_memory_barrier(command_buffer, {
+        .src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+    });
+    if (cue_reset_requested) {
+        record_presentation_cue_reset(command_buffer, recorder, resources, groups, params);
+        cue_reset_requested = false;
+    }
+    if (physical_delta_seconds > 0.0F)
+        record_presentation_cue_advection(command_buffer, recorder, resources, groups, params);
+    if (show_quiver) {
+        const auto quiver_groups = quiver_dispatch_groups(config);
+        if (quiver_reset_requested) {
+            record_quiver_reset(command_buffer, recorder, resources, quiver_groups, params);
+            quiver_reset_requested = false;
+        }
+        record_quiver_update(command_buffer, recorder, resources, quiver_groups, params);
+    }
+    cubey::vulkan::record_shader_write_barrier(
+        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+}
+
 void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                                     const Fluid25DConfig& config,
                                     std::span<const Fluid25DStepForcing> forcings, bool paused,
@@ -420,13 +463,20 @@ void record_fluid_25d_flow_inspection_quiver_reset(VkCommandBuffer command_buffe
 void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
                                       const Fluid25DGpuResources& resources,
                                       const Fluid25DConfig& config, Fluid25DDebugView debug_view,
-                                      cubey::render::ColorTargetView color_target) {
+                                      cubey::render::ColorTargetView color_target,
+                                      Fluid25DCatchmentRenderOptions render_options) {
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     const RenderPushConstants push_constants{
         .grid_debug = {static_cast<float>(config.grid_width),
                        static_cast<float>(config.grid_height),
                        static_cast<float>(static_cast<std::uint32_t>(debug_view)),
                        config.minimum_wet_depth_m},
+        .recording_range = {render_options.terrain_palette_low_m.value_or(0.0F),
+                            render_options.terrain_palette_high_m.value_or(1.0F),
+                            15.0F, render_options.native_recording
+                                       ? static_cast<float>(color_target.extent.width) /
+                                             static_cast<float>(color_target.extent.height)
+                                       : 0.0F},
     };
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target),
@@ -674,11 +724,11 @@ void record_fluid_25d_catchment_draw(
             .read_storage_buffer(tracer_q_b)
             .read_storage_buffer(velocity)
             .write_color(backbuffer)
-            .execute([resource_ptr, config_ptr, debug_view,
+            .execute([resource_ptr, config_ptr, debug_view, render_options,
                       backbuffer](const cubey::render::RenderGraphExecutionContext& context) {
                 record_fluid_25d_fullscreen_draw(
                     context.recorder().handle(), *resource_ptr, *config_ptr, debug_view,
-                    cubey::render::resolved_color_target_view(context, backbuffer));
+                    cubey::render::resolved_color_target_view(context, backbuffer), render_options);
             });
     } else {
         const cubey::render::RenderGraphTextureHandle catchment_depth =

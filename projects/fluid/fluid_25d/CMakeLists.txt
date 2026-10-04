@@ -14,6 +14,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_motion_markers.cpp
         ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
+        ../sim/fluid_25d/fluid_25d_recording.cpp
+        ../sim/fluid_25d/fluid_25d_recording_app.cpp
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
@@ -59,6 +61,39 @@ target_include_directories(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_fluid_25d_recording_tests
+        ../sim/fluid_25d/fluid_25d_recording.cpp
+        ../sim/fluid_25d/fluid_25d_recording_tests.cpp)
+    target_link_libraries(cubey_project_fluid_25d_recording_tests
+        PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
+    add_test(NAME fluid_25d_recording_contract
+        COMMAND cubey_project_fluid_25d_recording_tests)
+    set_tests_properties(fluid_25d_recording_contract PROPERTIES LABELS "unit;fluid;recording")
+    find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
+    if (CUBEY_FLUID_RECORDING_PYTHON)
+        set(CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS)
+        if (CUBEY_HAS_LIBAV)
+            list(APPEND CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS --video)
+        endif()
+        add_test(NAME fluid_25d_recording_converter
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_convert_synxflow_recording_v1.py)
+        add_test(NAME fluid_25d_live_session_publisher
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_live_synxflow_session_v1.py)
+        set_tests_properties(fluid_25d_live_session_publisher PROPERTIES LABELS "unit;fluid;stream" TIMEOUT 60)
+        add_test(NAME fluid_25d_live_view_acceptance_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_live_view_acceptance_v1.py)
+        set_tests_properties(fluid_25d_live_view_acceptance_helpers PROPERTIES LABELS "unit;fluid;stream" TIMEOUT 60)
+        add_test(NAME fluid_25d_recording_gpu_immutability
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_recording_viewer_gpu_v1.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>"
+                ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
+        set_tests_properties(fluid_25d_recording_gpu_immutability
+            PROPERTIES LABELS "headless;gpu;recording" SKIP_RETURN_CODE 77 TIMEOUT 100)
+    endif()
     add_executable(cubey_project_fluid_25d_tests
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
@@ -157,6 +192,17 @@ if (BUILD_TESTING)
         --fluid25d-scenario dry-bed --fluid25d-solver finite-volume
         --fluid25d-fixed-delta-seconds 0.05 --fluid25d-substeps 4
         --fluid25d-gpu-oracle-validation --fluid25d-hillside-supply-gpu-controls
+    )
+
+    cubey_add_png_smoke_test(
+        fluid_25d_hillside_rain_gpu_controls
+        cubey_project_fluid_25d
+        "${CMAKE_CURRENT_BINARY_DIR}/fluid-25d-rain-controls.png"
+        --frames 4 --grid-width 8 --grid-height 8
+        --fluid25d-scenario hillside-rain-study --fluid25d-solver finite-volume
+        --fluid25d-cell-size-m 30 --fluid25d-fixed-delta-seconds 0.05 --fluid25d-substeps 4
+        --fluid25d-rainfall-rate-mm-per-hour 100
+        --fluid25d-gpu-oracle-validation --fluid25d-rain-study-gpu-controls
     )
 
     cubey_add_png_smoke_test(

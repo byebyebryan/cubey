@@ -12,8 +12,10 @@
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <span>
+#include <stdexcept>
 
 namespace cubey::projects::fluid::fluid_25d {
 
@@ -43,25 +45,66 @@ inline constexpr float kFluid25DSustainedHeadwatersHomeDistanceScale = 0.80F;
 inline constexpr float kFluid25DMountainSourceOutletHeightScale = 0.60F;
 inline constexpr float kFluid25DMountainSourceOutletHomePitch = -0.55F;
 inline constexpr float kFluid25DMountainSourceOutletHomeFovyRadians = 0.84F;
+inline constexpr float kFluid25DCatchmentFarPlaneRelativeHeadroom = 0.05F;
+inline constexpr float kFluid25DCatchmentFarPlaneMinimumHeadroomM = 32.0F;
 
 struct Fluid25DCatchmentOrbitLimits {
     float minimum_distance_m;
     float maximum_distance_m;
 };
 
+// Camera-space depth of any terrain point is bounded by orbit distance plus
+// its Euclidean distance from the orbit target. Use the largest legal orbit
+// distance so every supported yaw, pitch, and zoom keeps the terrain in front
+// of the far plane without widening the near plane used for shallow-water
+// depth precision.
+[[nodiscard]] inline float fluid_25d_catchment_far_plane(float maximum_orbit_distance_m,
+                                                         cubey::math::Vec3 terrain_minimum,
+                                                         cubey::math::Vec3 terrain_maximum,
+                                                         cubey::math::Vec3 target) {
+    const auto finite = [](cubey::math::Vec3 value) {
+        return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
+    };
+    if (!std::isfinite(maximum_orbit_distance_m) || maximum_orbit_distance_m <= 0.0F ||
+        !finite(terrain_minimum) || !finite(terrain_maximum) || !finite(target) ||
+        terrain_minimum.x > terrain_maximum.x || terrain_minimum.y > terrain_maximum.y ||
+        terrain_minimum.z > terrain_maximum.z) {
+        throw std::invalid_argument("fluid 2.5D catchment camera bounds are invalid");
+    }
+
+    const float dx =
+        std::max(std::abs(terrain_minimum.x - target.x), std::abs(terrain_maximum.x - target.x));
+    const float dy =
+        std::max(std::abs(terrain_minimum.y - target.y), std::abs(terrain_maximum.y - target.y));
+    const float dz =
+        std::max(std::abs(terrain_minimum.z - target.z), std::abs(terrain_maximum.z - target.z));
+    const float terrain_radius_m = std::hypot(std::hypot(dx, dy), dz);
+    const float orbit_and_terrain_m = maximum_orbit_distance_m + terrain_radius_m;
+    const float headroom_m =
+        std::max(kFluid25DCatchmentFarPlaneMinimumHeadroomM,
+                 orbit_and_terrain_m * kFluid25DCatchmentFarPlaneRelativeHeadroom);
+    const float far_plane_m = orbit_and_terrain_m + headroom_m;
+    if (!std::isfinite(terrain_radius_m) || !std::isfinite(orbit_and_terrain_m) ||
+        !std::isfinite(far_plane_m)) {
+        throw std::invalid_argument("fluid 2.5D catchment camera bounds exceed finite range");
+    }
+    return far_plane_m;
+}
+
 [[nodiscard]] constexpr Fluid25DCatchmentOrbitLimits
 fluid_25d_catchment_orbit_limits(Fluid25DScenario scenario, float domain_extent,
                                  float framing_extent) {
     // Camera-only hillside framing switches must not invalidate an explicit
     // home distance that was accepted at startup in the other view.
-    const bool hillside = scenario == Fluid25DScenario::HillsideFlowStudy;
+    const bool hillside = fluid_25d_is_macro_hillside_study(scenario);
     const float minimum_extent = hillside ? std::min(domain_extent, 3200.0F) : framing_extent;
     const float maximum_extent = hillside ? domain_extent : framing_extent;
     return {std::max(8.0F, minimum_extent * 0.30F), std::max(48.0F, maximum_extent * 4.0F)};
 }
 
 [[nodiscard]] constexpr float fluid_25d_catchment_height_scale(Fluid25DScenario scenario) {
-    return fluid_25d_is_natural_terrain_study(scenario)
+    return fluid_25d_is_natural_terrain_study(scenario) ||
+                   scenario == Fluid25DScenario::HillsideRainStudy
                ? kFluid25DNaturalFlowStudyHeightScale
                : (scenario == Fluid25DScenario::SustainedHeadwatersDemo
                       ? kFluid25DSustainedHeadwatersHeightScale
@@ -84,7 +127,8 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 
 [[nodiscard]] constexpr float fluid_25d_catchment_home_pitch(float default_pitch,
                                                              Fluid25DScenario scenario) {
-    return fluid_25d_is_natural_terrain_study(scenario)
+    return fluid_25d_is_natural_terrain_study(scenario) ||
+                   scenario == Fluid25DScenario::HillsideRainStudy
                ? kFluid25DNaturalFlowStudyHomePitch
                : (scenario == Fluid25DScenario::SustainedHeadwatersDemo
                       ? kFluid25DSustainedHeadwatersHomePitch
@@ -98,7 +142,7 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 // The full mountain route almost spans the crop. Its narrower overview fills
 // a normal widescreen capture while retaining both endpoint rings.
 [[nodiscard]] constexpr float fluid_25d_catchment_home_distance_scale(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::HillsideFlowStudy ? 1.50F
+    return fluid_25d_is_macro_hillside_study(scenario) ? 1.50F
            : scenario == Fluid25DScenario::SustainedHeadwatersDemo
                ? kFluid25DSustainedHeadwatersHomeDistanceScale
                : (scenario == Fluid25DScenario::MountainSourceOutletDemo ? 0.85F : 1.05F);
@@ -115,7 +159,7 @@ fluid_25d_catchment_home_horizontal_extent(Fluid25DScenario scenario,
 // complements its render-only relief scale without changing shared material
 // behavior, numerical terrain, or any solver data.
 [[nodiscard]] constexpr float fluid_25d_catchment_terrain_material_cue(Fluid25DScenario scenario) {
-    return scenario == Fluid25DScenario::HillsideFlowStudy ? 4.0F
+    return fluid_25d_is_macro_hillside_study(scenario) ? 4.0F
            : scenario == Fluid25DScenario::SustainedHeadwatersDemo
                ? 3.0F
                : (scenario == Fluid25DScenario::SourceOutletDemo
@@ -140,6 +184,11 @@ struct Fluid25DStepForcing {
     float source_rate_scale = 1.0F;
     float dye_source_concentration = 0.0F;
 };
+
+// Explicitly presentation-only: never resets or advances imported hydraulic fields.
+void record_fluid_25d_recorded_presentation(VkCommandBuffer command_buffer,
+    Fluid25DGpuResources& resources, const Fluid25DConfig& config, float physical_delta_seconds,
+    bool& cue_reset_requested, bool& quiver_reset_requested, bool show_quiver);
 
 void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                               const Fluid25DConfig& config, bool paused, bool& reset_requested,
@@ -176,7 +225,8 @@ void record_fluid_25d_compute_batch(VkCommandBuffer command_buffer, Fluid25DGpuR
 void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
                                       const Fluid25DGpuResources& resources,
                                       const Fluid25DConfig& config, Fluid25DDebugView debug_view,
-                                      cubey::render::ColorTargetView color_target);
+                                      cubey::render::ColorTargetView color_target,
+                                      Fluid25DCatchmentRenderOptions render_options = {});
 
 void record_fluid_25d_catchment_draw(
     VkCommandBuffer command_buffer, const Fluid25DGpuResources& resources,

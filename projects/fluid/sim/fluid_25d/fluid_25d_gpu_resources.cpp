@@ -1,4 +1,5 @@
 #include "fluid_25d_gpu_resources.h"
+#include <cubey/vulkan/memory_barriers.h>
 
 #include <array>
 #include <cmath>
@@ -34,7 +35,7 @@ inline constexpr VkDeviceSize kSimulationPushConstantBytes = sizeof(float) * 12U
     const VkPushConstantRange push_constant{
         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .offset = 0,
-        .size = sizeof(float) * 4U,
+        .size = sizeof(float) * 8U,
     };
     return {
         .label = "fluid_25d.render",
@@ -115,13 +116,11 @@ void emplace_compute_pipeline(std::optional<cubey::render::ComputePipelineResour
 
 } // namespace
 
-void Fluid25DGpuResources::create_global_resources_if_needed(cubey::vulkan::Device& device,
-                                                             cubey::ProjectGpuServices& gpu,
-                                                             const Fluid25DConfig& config,
-                                                             const Fluid25DScenarioData& scenario,
-                                                             std::uint32_t frame_slot_count) {
+void Fluid25DGpuResources::create_global_resources_if_needed(
+    cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu, const Fluid25DConfig& config,
+    const Fluid25DScenarioData& scenario, std::uint32_t frame_slot_count, bool presentation_only) {
     if (terrain_.has_value()) {
-        if (solver_ != config.solver) {
+        if (solver_ != config.solver || presentation_only_ != presentation_only) {
             throw std::runtime_error("fluid 2.5D GPU resources cannot change solver in place");
         }
         return;
@@ -130,10 +129,56 @@ void Fluid25DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devi
         throw std::runtime_error("fluid 2.5D resources require at least one frame slot");
     }
     solver_ = config.solver;
+    presentation_only_ = presentation_only;
     create_buffers(gpu, config, scenario);
     profiler_.emplace(device, frame_slot_count, kFluid25DGpuProfilerPassCapacity);
     create_descriptors(device);
     create_compute_pipelines(device);
+    if (presentation_only_) {
+        const VkDeviceSize bytes = static_cast<VkDeviceSize>(fluid_25d_cell_count(config)) *
+                                   (sizeof(float) + sizeof(Fluid25DVelocityGpu));
+        recording_staging_.reserve(frame_slot_count);
+        for (std::uint32_t slot = 0; slot < frame_slot_count; ++slot)
+            recording_staging_.emplace_back(device, cubey::vulkan::staging_buffer_config(bytes));
+    }
+}
+
+void Fluid25DGpuResources::record_recording_upload(
+    VkCommandBuffer command_buffer, std::uint32_t frame_slot, std::span<const float> depth_values,
+    std::span<const Fluid25DVelocityGpu> velocity_values) {
+    if (!presentation_only_ || frame_slot >= recording_staging_.size() || depth_values.empty() ||
+        velocity_values.size() != depth_values.size() ||
+        depth_values.size_bytes() != depth_a().size() ||
+        velocity_values.size_bytes() != velocity().size())
+        throw std::runtime_error(
+            "recording upload requires matching presentation-only fields/slot");
+    const auto depth_bytes = static_cast<VkDeviceSize>(depth_values.size_bytes());
+    const auto velocity_bytes = static_cast<VkDeviceSize>(velocity_values.size_bytes());
+    auto& staging = recording_staging_[frame_slot];
+    staging.upload(depth_values.data(), depth_bytes);
+    staging.upload(velocity_values.data(), velocity_bytes, depth_bytes);
+    // Include vertex reads: water/quiver sample these SSBOs in vertex shaders.
+    cubey::vulkan::record_memory_barrier(
+        command_buffer, {
+                            .src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            .dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            .dst_access = VK_ACCESS_TRANSFER_WRITE_BIT,
+                        });
+    const VkBufferCopy depth_copy{.srcOffset = 0, .dstOffset = 0, .size = depth_bytes};
+    vkCmdCopyBuffer(command_buffer, staging.handle(), depth_a().handle(), 1, &depth_copy);
+    vkCmdCopyBuffer(command_buffer, staging.handle(), depth_b().handle(), 1, &depth_copy);
+    const VkBufferCopy velocity_copy{
+        .srcOffset = depth_bytes, .dstOffset = 0, .size = velocity_bytes};
+    vkCmdCopyBuffer(command_buffer, staging.handle(), velocity().handle(), 1, &velocity_copy);
+    cubey::vulkan::record_transfer_write_barrier(command_buffer,
+                                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                                     VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                 VK_ACCESS_SHADER_READ_BIT);
+    reset_depth_parity();
 }
 
 void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
@@ -574,28 +619,31 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
 }
 
 void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device) {
-    if (solver_ == Fluid25DSolver::VirtualPipes) {
-        emplace_compute_pipeline(reset_pipeline_, device, "fluid_25d_reset.comp.spv",
-                                 reset_descriptors_->layout());
-        emplace_compute_pipeline(flux_pipeline_, device, "fluid_25d_flux.comp.spv",
-                                 flux_a_descriptors_->layout());
-        emplace_compute_pipeline(depth_pipeline_, device, "fluid_25d_depth.comp.spv",
-                                 depth_a_to_b_descriptors_->layout());
-    } else {
-        emplace_compute_pipeline(finite_volume_reset_pipeline_, device,
-                                 "fluid_25d_fv_reset.comp.spv",
-                                 finite_volume_reset_descriptors_->layout());
-        emplace_compute_pipeline(finite_volume_cfl_pipeline_, device, "fluid_25d_fv_cfl.comp.spv",
-                                 finite_volume_cfl_a_descriptors_->layout());
-        emplace_compute_pipeline(finite_volume_cfl_finalize_pipeline_, device,
-                                 "fluid_25d_fv_cfl_finalize.comp.spv",
-                                 finite_volume_cfl_finalize_descriptors_->layout());
-        emplace_compute_pipeline(finite_volume_candidate_pipeline_, device,
-                                 "fluid_25d_fv_update.comp.spv",
-                                 finite_volume_candidate_a_to_b_descriptors_->layout());
-        emplace_compute_pipeline(finite_volume_commit_pipeline_, device,
-                                 "fluid_25d_fv_commit.comp.spv",
-                                 finite_volume_commit_a_to_b_descriptors_->layout());
+    if (!presentation_only_) {
+        if (solver_ == Fluid25DSolver::VirtualPipes) {
+            emplace_compute_pipeline(reset_pipeline_, device, "fluid_25d_reset.comp.spv",
+                                     reset_descriptors_->layout());
+            emplace_compute_pipeline(flux_pipeline_, device, "fluid_25d_flux.comp.spv",
+                                     flux_a_descriptors_->layout());
+            emplace_compute_pipeline(depth_pipeline_, device, "fluid_25d_depth.comp.spv",
+                                     depth_a_to_b_descriptors_->layout());
+        } else {
+            emplace_compute_pipeline(finite_volume_reset_pipeline_, device,
+                                     "fluid_25d_fv_reset.comp.spv",
+                                     finite_volume_reset_descriptors_->layout());
+            emplace_compute_pipeline(finite_volume_cfl_pipeline_, device,
+                                     "fluid_25d_fv_cfl.comp.spv",
+                                     finite_volume_cfl_a_descriptors_->layout());
+            emplace_compute_pipeline(finite_volume_cfl_finalize_pipeline_, device,
+                                     "fluid_25d_fv_cfl_finalize.comp.spv",
+                                     finite_volume_cfl_finalize_descriptors_->layout());
+            emplace_compute_pipeline(finite_volume_candidate_pipeline_, device,
+                                     "fluid_25d_fv_update.comp.spv",
+                                     finite_volume_candidate_a_to_b_descriptors_->layout());
+            emplace_compute_pipeline(finite_volume_commit_pipeline_, device,
+                                     "fluid_25d_fv_commit.comp.spv",
+                                     finite_volume_commit_a_to_b_descriptors_->layout());
+        }
     }
     emplace_compute_pipeline(presentation_cue_reset_pipeline_, device,
                              "fluid_25d_presentation_cue_reset.comp.spv",
@@ -692,6 +740,8 @@ void Fluid25DGpuResources::destroy_swapchain_resources() {
 }
 
 void Fluid25DGpuResources::destroy_all_resources() {
+    recording_staging_.clear();
+    presentation_only_ = false;
     destroy_swapchain_resources();
     // Pipelines retain pipeline layouts that reference the descriptor layouts;
     // release them before descriptors, then release descriptor-referenced

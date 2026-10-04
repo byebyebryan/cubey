@@ -17,6 +17,9 @@ struct Fluid25DCatchmentRenderOptions {
     std::optional<float> home_camera_distance_m{};
     bool terrain_thin_water_composite = false;
     bool hillside_depth_cues = false;
+    // Native recording presentation only; historical scenario defaults remain unchanged.
+    bool native_recording = false;
+    float quiver_speed_upper_m_per_s = 0.80F;
 };
 
 inline constexpr float kFluid25DMinTerrainCaseRenderHeightScale = 0.001F;

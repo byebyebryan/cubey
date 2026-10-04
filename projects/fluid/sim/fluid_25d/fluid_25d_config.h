@@ -40,11 +40,19 @@ enum class Fluid25DScenario : std::uint32_t {
     NaturalFlowStudy = 8,
     // Macro upland supply experiment: no prescribed outlet or destination.
     HillsideFlowStudy = 9,
+    // Distributed uniform rainfall on immutable terrain; no source point or
+    // authored destination is part of this separate opt-in study.
+    HillsideRainStudy = 10,
 };
 
 [[nodiscard]] constexpr bool fluid_25d_is_natural_terrain_study(Fluid25DScenario scenario) {
     return scenario == Fluid25DScenario::NaturalFlowStudy ||
            scenario == Fluid25DScenario::HillsideFlowStudy;
+}
+
+[[nodiscard]] constexpr bool fluid_25d_is_macro_hillside_study(Fluid25DScenario scenario) {
+    return scenario == Fluid25DScenario::HillsideFlowStudy ||
+           scenario == Fluid25DScenario::HillsideRainStudy;
 }
 
 // Both authored source/outlet demonstrations use the same endpoint language,
@@ -107,6 +115,7 @@ inline constexpr std::uint32_t kDefaultFluid25DGridHeight = 128;
 inline constexpr std::uint32_t kFluid25DMountainSourceOutletGridWidth = 256;
 inline constexpr std::uint32_t kFluid25DMountainSourceOutletGridHeight = 128;
 inline constexpr float kFluid25DMountainSourceOutletCellSizeM = 30.0F;
+inline constexpr float kFluid25DHillsideRainStudyCellSizeM = 30.0F;
 inline constexpr std::uint32_t kFluid25DSustainedHeadwatersGridWidth = 65U;
 inline constexpr std::uint32_t kFluid25DSustainedHeadwatersGridHeight = 33U;
 inline constexpr float kFluid25DSustainedHeadwatersCellSizeM = 4.0F;
@@ -396,6 +405,8 @@ struct Fluid25DStartupOptions {
         return "natural-flow-study";
     case Fluid25DScenario::HillsideFlowStudy:
         return "hillside-flow-study";
+    case Fluid25DScenario::HillsideRainStudy:
+        return "hillside-rain-study";
     }
     return "river-catchment";
 }
@@ -451,10 +462,14 @@ struct Fluid25DStartupOptions {
     if (name == "hillside-flow-study") {
         return Fluid25DScenario::HillsideFlowStudy;
     }
+    if (name == "hillside-rain-study") {
+        return Fluid25DScenario::HillsideRainStudy;
+    }
     throw std::runtime_error(
         "fluid 2.5D scenario must be dry-bed, lake-at-rest, river-catchment, terrain-case, "
         "boundary-drain-fixture, source-outlet-demo, mountain-source-outlet-demo, "
-        "sustained-headwaters-demo, natural-flow-study, or hillside-flow-study");
+        "sustained-headwaters-demo, natural-flow-study, hillside-flow-study, or "
+        "hillside-rain-study");
 }
 
 [[nodiscard]] inline const char*
@@ -632,6 +647,7 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         config.scenario != Fluid25DScenario::SourceOutletDemo &&
         config.scenario != Fluid25DScenario::MountainSourceOutletDemo &&
         config.scenario != Fluid25DScenario::SustainedHeadwatersDemo &&
+        config.scenario != Fluid25DScenario::HillsideRainStudy &&
         !fluid_25d_is_natural_terrain_study(config.scenario)) {
         throw std::runtime_error("fluid 2.5D scenario value is invalid");
     }
@@ -654,6 +670,11 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         config.solver != Fluid25DSolver::FiniteVolume) {
         throw std::runtime_error(
             "fluid 2.5D natural-flow-study requires --fluid25d-solver finite-volume");
+    }
+    if (config.scenario == Fluid25DScenario::HillsideRainStudy &&
+        config.solver != Fluid25DSolver::FiniteVolume) {
+        throw std::runtime_error(
+            "fluid 2.5D hillside-rain-study requires --fluid25d-solver finite-volume");
     }
     if (!(config.cell_size_m > 0.0F) || !std::isfinite(config.cell_size_m)) {
         throw std::runtime_error("fluid 2.5D cell size must be finite and positive");
@@ -778,6 +799,22 @@ inline void validate_fluid_25d_config(const Fluid25DConfig& config) {
         }
     } else if (config.natural_flow_source_m3_per_s != 0.0F) {
         throw std::runtime_error("fluid 2.5D natural-flow source rate requires natural-flow-study");
+    }
+    if (config.scenario == Fluid25DScenario::HillsideRainStudy) {
+        if (config.cell_size_m != kFluid25DHillsideRainStudyCellSizeM) {
+            throw std::runtime_error(
+                "fluid 2.5D hillside-rain-study requires exact 30 metre native cells");
+        }
+        if (!(config.rainfall_depth_rate_m_per_s > 0.0F) ||
+            config.terrain_water_protocol != Fluid25DTerrainWaterProtocol::None ||
+            config.sheet_initial_depth_m != 0.0F ||
+            config.source_active_duration_seconds.has_value() || has_dye_pulse_start ||
+            config.natural_flow_source_m3_per_s != 0.0F) {
+            throw std::runtime_error(
+                "fluid 2.5D hillside-rain-study requires positive continuous rain and rejects "
+                "terrain-water protocols, sheet depth, source duration, dye, or point-source Q");
+        }
+        return;
     }
     if (config.scenario != Fluid25DScenario::TerrainCase) {
         return;

@@ -1,0 +1,30 @@
+{
+  "schema": "cubey.fluid25d.hillside_rain_study.v1",
+  "manifest": "cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json",
+  "manifest_sha256": "744356b27e2c2f7895c93bd88a8969fa329b212b9b39c0a9ced239ac405d3d6c",
+  "elevation_sha256": "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737",
+  "transformed_crop_sha256": "02f1577d96f3ea4f65b75c7b21b6e1b2c83248cebb8b87a528fff6193435bc3f",
+  "crop_xzwh": [1152, 1408, 512, 512],
+  "cell_size_m": 30,
+  "fixed_delta_seconds": 2,
+  "substeps": 16,
+  "gravity_m_per_s2": 9.81,
+  "damping_per_second": 0.15,
+  "rates_mm_per_hour": {"equal-input": "1.52587890625", "main": "12"},
+  "primary_horizon_seconds": 7200,
+  "conditional_main_extension_seconds": 14400,
+  "material_depth_m": "0.01",
+  "active_speed_m_per_s": "0.02",
+  "convergence_depth_above_direct_rain_m": "0.01",
+  "corridor_edge_exclusion_m": 120,
+  "corridor_minimum_span_m": 300,
+  "corridor_support_duration_seconds": 900,
+  "regions_xzwh": {
+    "upper": [203, 203, 21, 21],
+    "transit": [128, 224, 21, 21],
+    "collection": [48, 241, 21, 21]
+  },
+  "model_limits": "Uniform rainfall excess, all rain becomes surface water; no infiltration, evaporation, upstream inflow, point source, sink, prefill, erosion, or calibrated watershed claim.",
+  "boundary": "Every outward perimeter face open to dry exterior at its own bed elevation; no prescribed outlet.",
+  "extension_policy": "Only extend the main case after healthy but inconclusive two-hour observations. A four-hour evidence replay must exactly reproduce every two-hour non-timing profile value before its uninterrupted continuation; it is not a restored GPU checkpoint."
+}

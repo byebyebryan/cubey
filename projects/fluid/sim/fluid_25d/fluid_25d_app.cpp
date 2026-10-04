@@ -9,6 +9,8 @@
 #include "fluid_25d_motion_markers.h"
 #include "fluid_25d_natural_flow_recipe.h"
 #include "fluid_25d_oracle.h"
+#include "fluid_25d_rain_study.h"
+#include "fluid_25d_recording_app.h"
 #include "fluid_25d_scenarios.h"
 #include "fluid_25d_ui.h"
 
@@ -118,7 +120,9 @@ template <typename Value>
     const bool mountain_source_outlet =
         config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
     const bool natural_flow_study = fluid_25d_is_natural_terrain_study(config.simulation.scenario);
-    if (!terrain_case && !mountain_source_outlet && !natural_flow_study) {
+    const bool rain_study =
+        config.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
+    if (!terrain_case && !mountain_source_outlet && !natural_flow_study && !rain_study) {
         Fluid25DScenarioData scenario = make_fluid_25d_scenario(
             config.simulation.scenario, config.simulation.grid_width, config.simulation.grid_height,
             config.simulation.cell_size_m, config.simulation.headwaters_source_scale);
@@ -153,6 +157,18 @@ template <typename Value>
         return scenario;
     }
 
+    if (rain_study && config.rain_study_gpu_controls) {
+        Fluid25DScenarioData scenario = make_fluid_25d_scenario(
+            Fluid25DScenario::DryBed, config.simulation.grid_width,
+            config.simulation.grid_height, config.simulation.cell_size_m);
+        std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
+        apply_fluid_25d_hillside_rain_study_forcing(config.simulation, scenario);
+        std::fill(scenario.boundary_outflow_face_mask.begin(),
+                  scenario.boundary_outflow_face_mask.end(), 0U);
+        std::printf("fluid_25d: synthetic rain GPU controls use a flat closed native grid\n");
+        return scenario;
+    }
+
     cubey::asset::TerrainRasterHeightSource source(config.terrain.heightfield_path.value());
     const float source_spacing_m = source.sample_spacing_m();
     resolve_fluid_25d_terrain_cell_size(config, source_spacing_m);
@@ -164,6 +180,10 @@ template <typename Value>
                                                    config.terrain.crop_z.value_or(0U));
     } else if (mountain_source_outlet) {
         scenario = make_fluid_25d_mountain_source_outlet_scenario(config.simulation, source);
+    } else if (rain_study) {
+        scenario = make_fluid_25d_hillside_rain_study_scenario(
+            config.simulation, source, config.terrain.crop_x.value_or(0U),
+            config.terrain.crop_z.value_or(0U));
     } else {
         const Fluid25DNaturalFlowRecipe recipe =
             load_fluid_25d_natural_flow_recipe(config.natural_flow_recipe_path.value());
@@ -341,6 +361,15 @@ class Fluid25DApp {
             .fixed_delta_seconds = config_.simulation.fixed_delta_seconds,
             .continuous_source_m3_per_s = last_source_m3_per_s_,
             .hillside_supply = hillside_supply_,
+            .rain_study = rain_study_,
+            .rainfall_rate_mm_per_hour =
+                config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy
+                    ? rain_study_.applied_rate_mm_per_hour(config_.simulation)
+                    : 0.0,
+            .rainfall_total_input_m3_per_s =
+                config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy
+                    ? rain_study_.total_input_m3_per_s(config_.simulation)
+                    : 0.0,
             .hillside_depth_cues = config_.catchment_render.hillside_depth_cues,
             .downstream_hillside_cameras_available =
                 scenario_.width == 512U && scenario_.height == 512U,
@@ -422,6 +451,7 @@ class Fluid25DApp {
             source_schedule_.reset();
             dye_source_schedule_.reset();
             hillside_supply_.reset();
+            rain_study_.reset();
             scheduled_source_volume_m3_ = 0.0;
             last_source_m3_per_s_ = config_.simulation.natural_flow_source_m3_per_s;
             windowed_pacing_.reset();
@@ -451,11 +481,13 @@ class Fluid25DApp {
         Fluid25DSourceRateSchedule next_source_schedule = source_schedule_;
         Fluid25DDyeSourceSchedule next_dye_source_schedule = dye_source_schedule_;
         Fluid25DHillsideSupply next_supply = hillside_supply_;
+        Fluid25DRainStudyControl next_rain_study = rain_study_;
         std::vector<Fluid25DStepForcing> forcings;
         forcings.reserve(fixed_step_count);
         for (std::uint32_t step = 0U; step < fixed_step_count; ++step) {
             forcings.push_back({
-                .source_rate_scale = source_rate_scale_for_step(next_source_schedule, next_supply),
+                .source_rate_scale = source_rate_scale_for_step(
+                    next_source_schedule, next_supply, next_rain_study),
                 .dye_source_concentration =
                     next_dye_source_schedule.source_concentration(config_.simulation),
             });
@@ -495,6 +527,7 @@ class Fluid25DApp {
         source_schedule_ = std::move(next_source_schedule);
         dye_source_schedule_ = std::move(next_dye_source_schedule);
         hillside_supply_ = std::move(next_supply);
+        rain_study_ = std::move(next_rain_study);
         if (auto* profile = context.profile_recorder(); profile != nullptr) {
             const auto frame_index = profile_frame_index(project_frame);
             const auto metric = [&](const char* name, double value) {
@@ -519,11 +552,19 @@ class Fluid25DApp {
                        : 0.0);
             metric("dropped_backlog_frames",
                    static_cast<double>(windowed_pacing_.dropped_backlog_frames()));
+            if (config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy) {
+                metric("rain_enabled", rain_study_.enabled() ? 1.0 : 0.0);
+                metric("rain_applied_rate_mm_per_hour",
+                       rain_study_.applied_rate_mm_per_hour(config_.simulation));
+                metric("rain_cumulative_depth_m", rain_study_.state().cumulative_depth_m);
+                metric("rain_scheduled_volume_m3", rain_study_.state().scheduled_volume_m3);
+            }
         }
     }
 
     float source_rate_scale_for_step(const Fluid25DSourceRateSchedule& clock,
-                                     Fluid25DHillsideSupply& supply) {
+                                     Fluid25DHillsideSupply& supply,
+                                     Fluid25DRainStudyControl& rain_study) {
         const float legacy_scale = clock.source_rate_scale(config_.simulation);
         if (config_.hillside_supply_gpu_controls) {
             constexpr std::array<double, 4> control_times{3598.0, 3600.0, 5400.0, 7200.0};
@@ -531,8 +572,21 @@ class Fluid25DApp {
                                                      100.0F) /
                    100.0F;
         }
-        if (config_.simulation.scenario != Fluid25DScenario::HillsideFlowStudy)
+        if (config_.simulation.scenario != Fluid25DScenario::HillsideFlowStudy &&
+            config_.simulation.scenario != Fluid25DScenario::HillsideRainStudy)
             return legacy_scale;
+        if (config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy) {
+            if (config_.rain_study_gpu_controls) {
+                if (rain_study.state().completed_steps == 1U)
+                    rain_study.queue_enabled(false);
+                if (rain_study.state().completed_steps == 2U)
+                    rain_study.queue_enabled(true);
+            }
+            const float scale = rain_study.prepare_fixed_step(config_.simulation);
+            last_source_m3_per_s_ = static_cast<float>(rain_study.total_input_m3_per_s(
+                config_.simulation));
+            return legacy_scale * scale;
+        }
         supply.apply_pending();
         const double time =
             static_cast<double>(clock.completed_steps()) * config_.simulation.fixed_delta_seconds;
@@ -560,8 +614,6 @@ class Fluid25DApp {
         const float horizontal_extent = std::max(world_width, world_height);
         const float render_height_scale = config_.catchment_render.terrain_height_scale.value_or(
             fluid_25d_catchment_height_scale(config_.simulation.scenario));
-        const float scaled_terrain_span =
-            (*terrain_maximum - *terrain_minimum) * render_height_scale;
         const float default_camera_terrain_span =
             (*terrain_maximum - *terrain_minimum) *
             fluid_25d_catchment_height_scale(config_.simulation.scenario);
@@ -575,9 +627,13 @@ class Fluid25DApp {
             fluid_25d_is_source_outlet_demo(config_.simulation.scenario);
         const bool natural_flow_study =
             config_.simulation.scenario == Fluid25DScenario::NaturalFlowStudy;
-        const bool hillside = config_.simulation.scenario == Fluid25DScenario::HillsideFlowStudy;
+        const bool rain_study =
+            config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
+        const bool hillside = fluid_25d_is_macro_hillside_study(config_.simulation.scenario);
+        const bool hillside_flow =
+            config_.simulation.scenario == Fluid25DScenario::HillsideFlowStudy;
         const bool hillside_close =
-            hillside &&
+            hillside_flow &&
             (config_.hillside_camera == "source" || config_.hillside_camera == "branch" ||
              config_.hillside_camera == "travel" || config_.hillside_camera == "collection" ||
              (config_.hillside_camera.empty() && config_.hillside_source_context));
@@ -639,6 +695,22 @@ class Fluid25DApp {
                     scenario_.terrain_height_m[static_cast<std::size_t>(z) * scenario_.width + x] *
                     render_height_scale;
             }
+        }
+        if (rain_study && (config_.hillside_camera == "travel" ||
+                           config_.hillside_camera == "collection")) {
+            framing_horizontal_extent =
+                std::min(horizontal_extent,
+                         config_.hillside_camera == "travel" ? 2800.0F : 1600.0F);
+            const std::uint32_t x = config_.hillside_camera == "travel" ? 138U : 58U;
+            const std::uint32_t z = config_.hillside_camera == "travel" ? 234U : 251U;
+            const std::size_t cell = static_cast<std::size_t>(z) * scenario_.width + x;
+            catchment_target_.x =
+                (static_cast<float>(x) - 0.5F * static_cast<float>(scenario_.width - 1U)) *
+                config_.simulation.cell_size_m;
+            catchment_target_.z =
+                (static_cast<float>(z) - 0.5F * static_cast<float>(scenario_.height - 1U)) *
+                config_.simulation.cell_size_m;
+            catchment_target_.y = scenario_.terrain_height_m[cell] * render_height_scale;
         }
         if (authored_source_outlet || natural_flow_study) {
             // Each explanation route gets a one-time endpoint framing with
@@ -703,9 +775,24 @@ class Fluid25DApp {
         const float near_plane =
             std::max(kCatchmentCameraMinimumNearPlaneM,
                      framing_horizontal_extent * kCatchmentCameraNearExtentFraction);
+        const float scaled_terrain_minimum_y = *terrain_minimum * render_height_scale;
+        const float scaled_terrain_maximum_y = *terrain_maximum * render_height_scale;
+        const cubey::math::Vec3 terrain_minimum_bounds{
+            -0.5F * world_width,
+            std::min(scaled_terrain_minimum_y, scaled_terrain_maximum_y),
+            -0.5F * world_height,
+        };
+        const cubey::math::Vec3 terrain_maximum_bounds{
+            0.5F * world_width,
+            std::max(scaled_terrain_minimum_y, scaled_terrain_maximum_y),
+            0.5F * world_height,
+        };
+        const float far_plane =
+            fluid_25d_catchment_far_plane(maximum_camera_distance, terrain_minimum_bounds,
+                                          terrain_maximum_bounds, catchment_target_);
         camera_.set_projection(fluid_25d_catchment_home_fovy_radians(
                                    std::numbers::pi_v<float> / 3.0F, config_.simulation.scenario),
-                               near_plane, camera_distance * 5.0F + scaled_terrain_span + 64.0F);
+                               near_plane, far_plane);
     }
 
     [[nodiscard]] cubey::Transform3D render_camera_transform() const {
@@ -713,7 +800,8 @@ class Fluid25DApp {
             .target = catchment_target_,
             .distance = orbit_controller_.distance(),
             .yaw = kCatchmentCameraBaseYaw + orbit_controller_.yaw(),
-            .pitch = (fluid_25d_is_natural_terrain_study(config_.simulation.scenario) &&
+            .pitch = ((fluid_25d_is_natural_terrain_study(config_.simulation.scenario) ||
+                       config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy) &&
                               config_.natural_flow_home_pitch_radians.has_value()
                           ? *config_.natural_flow_home_pitch_radians
                           : fluid_25d_catchment_home_pitch(kCatchmentCameraBasePitch,
@@ -747,6 +835,7 @@ class Fluid25DApp {
             source_schedule_.reset();
             dye_source_schedule_.reset();
             hillside_supply_.reset();
+            rain_study_.reset();
             scheduled_source_volume_m3_ = 0.0;
             last_source_m3_per_s_ = config_.simulation.natural_flow_source_m3_per_s;
             expected_source_volume_m3_ = 0.0;
@@ -763,7 +852,7 @@ class Fluid25DApp {
             }
         }
         const float source_rate_scale =
-            source_rate_scale_for_step(source_schedule_, hillside_supply_);
+            source_rate_scale_for_step(source_schedule_, hillside_supply_, rain_study_);
         const float dye_source_concentration =
             dye_source_schedule_.source_concentration(config_.simulation);
         const Fluid25DStepForcing forcing{
@@ -868,6 +957,54 @@ class Fluid25DApp {
             readback_values<float>(gpu, current_depth, cells, "profile diagnostic depth");
         const std::vector<Fluid25DVelocityGpu> velocity = readback_values<Fluid25DVelocityGpu>(
             gpu, resources_.velocity(), cells, "profile diagnostic velocity");
+        if (config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy) {
+            const double physical_time_s =
+                static_cast<double>(source_schedule_.completed_steps() + 1U) *
+                config_.simulation.fixed_delta_seconds;
+            const Fluid25DRainStudyObservation rain =
+                compute_fluid_25d_rain_study_observation(config_.simulation, depth_m, velocity,
+                                                         rain_study_, physical_time_s);
+            const auto record_rain = [&](const char* name, double value) {
+                profile_recorder->record_metric(frame_index, "fluid_25d.rain", name, value);
+            };
+            record_rain("physical_time_s", rain.physical_time_s);
+            record_rain("rate_mm_per_hour", rain.rate_mm_per_hour);
+            record_rain("total_input_m3_per_s", rain.total_input_m3_per_s);
+            record_rain("cumulative_depth_m", rain.cumulative_depth_m);
+            record_rain("scheduled_volume_m3", rain.scheduled_volume_m3);
+            record_rain("enabled", rain.enabled ? 1.0 : 0.0);
+            record_rain("material_wet_cells", static_cast<double>(rain.material_wet_cells));
+            record_rain("material_active_cells",
+                        static_cast<double>(rain.material_active_cells));
+            record_rain("converged_water_volume_m3", rain.converged_water_volume_m3);
+            record_rain("converged_moving_cells",
+                        static_cast<double>(rain.converged_moving_cells));
+            record_rain("largest_corridor_cells",
+                        static_cast<double>(rain.largest_corridor_cells));
+            record_rain("largest_corridor_span_m", rain.largest_corridor_span_m);
+            record_rain("maximum_depth_m", rain.maximum_depth_m);
+            record_rain("maximum_depth_cell_x", rain.maximum_depth_cell_x);
+            record_rain("maximum_depth_cell_z", rain.maximum_depth_cell_z);
+            for (const Fluid25DRainStudyRegionObservation& region : rain.regions) {
+                const std::string category =
+                    "fluid_25d.rain.region." + std::string(region.name);
+                profile_recorder->record_metric(frame_index, category, "valid",
+                                                region.valid ? 1.0 : 0.0);
+                profile_recorder->record_metric(frame_index, category, "water_volume_m3",
+                                                region.water_volume_m3);
+                profile_recorder->record_metric(frame_index, category, "direct_rain_volume_m3",
+                                                region.direct_rain_volume_m3);
+                profile_recorder->record_metric(frame_index, category,
+                                                "net_lateral_storage_m3",
+                                                region.net_lateral_storage_m3);
+                profile_recorder->record_metric(frame_index, category, "maximum_depth_m",
+                                                region.maximum_depth_m);
+                profile_recorder->record_metric(frame_index, category, "material_wet_cells",
+                                                static_cast<double>(region.material_wet_cells));
+                profile_recorder->record_metric(frame_index, category, "active_cells",
+                                                static_cast<double>(region.active_cells));
+            }
+        }
         if (config_.simulation.scenario == Fluid25DScenario::HillsideFlowStudy) {
             // Observation only: locate the intermediate moving footprint and
             // deepest downstream collection. Nothing feeds back to forcing.
@@ -1029,6 +1166,7 @@ class Fluid25DApp {
              config_.simulation.terrain_water_protocol ==
                  Fluid25DTerrainWaterProtocol::RainPulse) ||
             config_.simulation.scenario == Fluid25DScenario::SustainedHeadwatersDemo ||
+            config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy ||
             fluid_25d_is_natural_terrain_study(config_.simulation.scenario)) {
             record_fluid_25d_boundary_outflow_diagnostics(*profile_recorder, frame_index,
                                                           diagnostics);
@@ -1582,6 +1720,7 @@ class Fluid25DApp {
     Fluid25DSourceRateSchedule source_schedule_;
     Fluid25DDyeSourceSchedule dye_source_schedule_;
     Fluid25DHillsideSupply hillside_supply_;
+    Fluid25DRainStudyControl rain_study_;
     float last_source_m3_per_s_ = 0.0F;
     double scheduled_source_volume_m3_ = 0.0;
     double expected_source_volume_m3_ = 0.0;
@@ -1608,6 +1747,8 @@ class Fluid25DApp {
 } // namespace
 
 int run_fluid_25d(const Fluid25DProjectConfig& config) {
+    if (config.recording_path || config.stream_path)
+        return run_fluid_25d_recording(config);
     Fluid25DApp app(config);
     return app.run();
 }

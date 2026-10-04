@@ -52,6 +52,221 @@ and neither solver has selected or tuned a terrain case.
 
 ## Product boundary
 
+### Opt-in live external SynxFlow viewing V1
+
+`--fluid25d-stream` reads an atomically published growing prefix from a separate
+foreground launcher. Cubey remains a Vulkan-only presentation application: it
+does not link CUDA, dispatch hydraulics, or share GPU allocations with SynxFlow.
+The installed pinned solver is unchanged; this is live viewing of finite runs,
+not interactive rainfall control or indefinite simulation.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/live_synxflow_session_v1.py \
+  --baseline-case outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/cases/mountain-rain-on-14400s \
+  --out outputs/fluid/my-new-live-session \
+  --python outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python
+```
+
+After its first `stream.json` appears, attach in another terminal:
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-stream outputs/fluid/my-new-live-session \
+  --fluid25d-recording-camera overview
+```
+
+The default is paced viewing at 60 physical seconds per wall second. Optional
+`--fluid25d-stream-follow-latest` follows the latest complete imported state and
+may skip saved states. The GUI distinguishes native computation, publisher
+lifecycle, newest native/available times, displayed time, and import lag.
+Space pauses **viewing only**. Seeking/restart affects only the viewing timeline.
+Closing the GUI detaches; cancel the foreground launcher to stop only its owned
+child. When the finite run finishes, it holds the last state without looping.
+
+The launcher clones audited inputs into a fresh directory without copying old
+outputs/results as evidence of the new run. It preserves terrain, forcing,
+friction, boundaries and native output cadence. A successor-export barrier
+prevents reading an unfinished `h`/`hUx`/`hUy` triple; the last frame is withheld
+until successful child exit. Payloads are written before the atomic stream
+manifest, hashed, and immutable once published. The consumer rejects changed
+session identity, revision regression, altered metadata/history, and corrupt
+payloads. An early failure before frame0 retains `session-result.json` instead
+of fabricating a frame or weakening the nonempty-prefix contract.
+
+Static PNG snapshots can read a live prefix; live headless video is rejected.
+Convert the finalized `case/` with the existing converter for portable recorded
+playback/video. Partial/failing session evidence remains available but is not
+marked as completed-case acceptance. No global installation is performed.
+
+`run_live_view_acceptance_v1.py --out <fresh-directory>` is an explicit native
+and windowed acceptance runner, not part of ordinary tests. It retains failures,
+compares native fields to the frozen mountain reference and binary frames to
+the unchanged converter, and measures actual run overlap, publication latency,
+and matched/concurrent viewer profiles. Automated command-record timing and
+scoped window captures do not imply human visual acceptance or monitor scanout.
+
+V1 native evidence is retained at
+`outputs/fluid/native-live-view-v1-20261003-0612Z`: both unchanged 512x512,
+30 m, four-hour mountain cases and a paced rain-on repeat match all 723 native
+field files and all 241 independent-converter payloads per run. The two
+follow-latest views displayed 86/82 nonzero-time states during actual native
+calls; publication-to-command-record p95 was 0.160/0.162 seconds. Frame0
+initialization is separate, and paced viewing intentionally shows older states.
+
+Matched completed-prefix live/recorded p95 frame time was 1.010x. Concurrent
+CUDA raised the paced viewer from 0.653 ms on an idle GPU to 1.116 ms, failing
+the frozen 1.2x idle-GPU gate (`acceptance-failure.json` remains unchanged).
+The user explicitly accepted V1 with this shared-GPU limitation retained;
+do not describe the original matrix as all-gates-passed. ASCII publication
+also queued up to 16.9 seconds behind an observed successor export. These are
+local RTX5070Ti observations, not a release or calibrated-hydrology benchmark.
+Human GUI acceptance remains a separate review.
+
+The matched CUDA control is retained at
+`outputs/fluid/native-live-view-gpu-control-v1-20261003-0632Z`: recorded p95
+was 1.120 ms versus live 1.116 ms (0.997x), supporting a shared-workload
+explanation rather than large bridge overhead. Its 172-frame prefix ended
+`cancelled`, with the stock native call already returned normally and all
+723 native fields still matching the baseline. Earlier failed controls remain
+retained; do not reuse them as terminal-state acceptance.
+
+`run_live_view_gpu_control_v1.py` is an additional opt-in, finite diagnostic:
+it views the recorded fields with the same stock CUDA/publisher workload.
+It closes only its own window after ten wall seconds and cancels its importer
+only after the normal native call returns. A cancelled partial stream in that
+control is not completed-stream acceptance; native fields, captures, timings,
+and any failed attempts are retained. Cancellation preserves the last
+published prefix immediately rather than draining a backlog first.
+
+### Recorded playback contract
+
+`--fluid25d-recording` selects a separate presentation-only application path.
+It displays saved SynxFlow depth and depth-integrated momentum over the exact
+numerical bed used by that run. It does not create or dispatch hydraulic reset,
+forcing, CFL, or solve pipelines. Existing virtual-pipes and finite-volume
+modes/defaults remain unchanged. This is **recorded playback**, not a live
+external backend, solver port, calibrated hydrology, or native conservation
+certificate.
+
+Convert a completed case without importing SynxFlow or requiring CUDA:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/convert_synxflow_recording_v1.py \
+  --case path/to/completed-native-case --out outputs/fluid/new-recording
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-recording outputs/fluid/new-recording \
+  --fluid25d-recording-speed 60 --fluid25d-motion-markers
+```
+
+The converter refuses an existing destination. It requires matching case spec,
+frozen protocol, case-result input audit, original `DEM.asc`, native `z.dat`,
+and a complete regular `h`/`hUx`/`hUy` ASC series. It supports the audited
+native `fall` bed-boundary serialization, not arbitrary SynxFlow exports.
+Portable `recording.json` uses versioned, hashed, relative-path planar
+little-endian float32 payloads: `h`, `qx`, and world-Z `qz=-hUy` retain raster
+row order. Displayed velocity is `q/h`, not momentum mistaken for velocity.
+Invalid/nonfinite/negative states, zero-depth nonzero momentum, bad cadence,
+and integrity/path failures reject. The reader caches at most three frames
+and loads windowed states off the UI thread; I/O waits hold the playhead.
+
+Optional `protocol.rainfall_history` contains strictly increasing
+`[time_s, rate_m_per_s]` knots from zero to the recording duration. Conversion
+requires agreement with the case protocol, pre-solver audit and hashed native
+rainfall input. Older constant-rain recordings remain supported. The UI reports
+On/Tapering/Off, rate and cumulative **scheduled** rain at the actual displayed
+saved state, not a pending requested time. Rain-event seek buttons pause and
+reset visual history; they do not change physics. A canonical terminal
+`h_max_<duration>.asc` is hashed auxiliary provenance, never a playback frame.
+
+The bounded rain-recession study is retained in
+`outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/index.html`. Both four-hour
+runs exactly reproduce the accepted 120 mm/h first two hours. One then tapers
+to zero in one minute; the other keeps raining. After shutoff, total storage
+falls about 51% while fixed B20 storage grows about 17% as upstream water
+arrives. None of the three frozen depression masks meets the persistent quiet,
+near-level patch criterion: recession and moving collection, not a verified
+calm lake. The gallery includes matched recorded clips, rain-event captions,
+raw-state review and local launch commands. Human GUI review is separate.
+
+The original DEM is retained separately. Rendering uses the native numerical
+bed because `%g` serialization differs from original terrain by up to about
+5 mm in the reviewed mountain. There is no terrain smoothing, channel carving,
+water amplification, or physical-field interpolation. Samples are cell centers
+centered in world X/Z; cell-area domain size is `width*dx`, whereas the mesh
+sample-to-sample span is `(width-1)*dx`.
+
+Space plays/pauses. Seeking, previous/next, and R restart pause and clear visual
+history. The end holds the last state without looping. The GUI shows requested
+playhead and actual saved time, explicit recorded labels, and fixed scales.
+Fields are held between saves. `overview`, `runoff`, and `collection` cameras
+are observation targets for the reviewed mountain (collection is previously
+surveyed B20), not sources/sinks. Rain supplies the entire map; native edge
+`fall` conditions are distinct from Cubey's legacy boundary model.
+
+Composite attenuates thin rain film; Water Isolation reveals all wet cells.
+3D depth uses a logarithmic `0.01..10 m` palette; the 2D depth map is brighter
+for deeper water on the same scale and preserves physical X/Z aspect. The
+speed map spans `0..15 m/s`. Arrows use fixed-grid wet-aware neighborhood
+velocities with color/length spanning `0.025..4 m/s`, saturated above 4; maximum
+saved speed is also reported numerically. Optional dots/trails and scalar cues
+are approximate visual advection in held saved velocities, not native parcels
+or conserved dye. Sparse video intervals cap only visual catch-up at 60 seconds
+per output frame, without changing saved physical fields.
+
+Exact saved-time stills and indexed video have independent controls:
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d --headless \
+  --fluid25d-recording outputs/fluid/new-recording \
+  --fluid25d-recording-time-seconds 7200 \
+  --fluid25d-recording-camera collection \
+  --fluid25d-recording-gpu-validation --output outputs/fluid/recorded-final.png
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d --headless \
+  --fluid25d-recording outputs/fluid/new-recording \
+  --capture video --frames 121 --fps 8 \
+  --fluid25d-recording-frame-interval-seconds 60 \
+  --output outputs/fluid/recorded-playback.mp4
+```
+
+GPU validation checks bed, both depth buffers and derived velocity bit-for-bit
+after presentation, not native conservation/CFL. Hydraulic/legacy controls
+reject instead of silently doing nothing. Automated coverage includes
+converter orientation, reader integrity/bounded cache, playback/end behavior,
+CLI separation, dry/signed-asymmetric GPU states, and multi-slot video updates.
+Generated local review evidence is under
+`outputs/fluid/native-recording-viewer-v1-20261003-EWKAhM`; its gallery,
+captures, clips and launch command retain provenance. Human GUI acceptance
+remains pending.
+
+### Native rain-intensity comparison
+
+`run_native_rain_intensity_v1.py` is a separate, frozen-input experiment on the
+same unchanged 512x512, 30 m mountain. It reuses the sealed two-hour 12 mm/h
+baseline and prepares continuous 48 and 120 mm/h dry-start cases. Native
+serialized inputs must match the baseline byte-for-byte except the rain
+schedule, before the released SynxFlow solver can run. `--prepare --phase all`
+does not run hydraulics; `--run --phase all --go` requires the pinned existing
+native Python environment and stops before 120 mm/h if the 48 mm/h case fails.
+Existing solvers, defaults and terrain are unchanged.
+
+Protocol, retained native cases, independent saved-field checks, matched Cubey
+playback and launch commands are under
+`outputs/fluid/native-rain-intensity-v1-20261003-bXgHXx/`. Its `index.html` is
+the review entry point. Rain-normalized concentration distinguishes runoff
+from direct rain film; storage alone is not proof of a quiet lake. This is
+uncalibrated forcing sensitivity, not storm forecasting, a live Cubey backend
+or a native face-flux conservation certificate. Human GUI review is separate.
+
+This runner is retained as historical, protocol-bound study tooling. Its frozen
+converter hash predates the current rainfall-history adapter, so its workspace
+check now fails closed with the current converter. Replaying that experiment
+requires its archived matching sources; do not relax the frozen identity checks
+or treat its historical test counts as current validation. Optional study suites
+also require their own scientific Python dependencies, unlike the standard-library
+converter and live-publisher tests registered in CTest.
+
+### River V0
+
 The first numerical fixture is an authored upland catchment:
 
 ```text
@@ -781,6 +996,124 @@ material-front distance still match. Final stills alone conceal that delay.
 Local-marker coverage in narrow downstream branches and native-grid geometry
 remain readability limits; human animation and live GUI acceptance are pending.
 This checkpoint does not establish calibrated hydrology or change solver defaults.
+
+### Continuous mountain rain study
+
+`hillside-rain-study` is a separate opt-in forcing experiment on the same
+unchanged 512x512 native-30m Terrain Diffusion mountain crop. It starts dry,
+adds uniform surface rainfall continuously, and has no point source, interior
+sink, or chosen outlet. Every outward crop face permits export to a dry
+exterior at that face's own bed elevation. Crop edges are not watershed bounds.
+The virtual-pipes default and previous point-source and timed rain-pulse modes
+are unchanged.
+
+The two predefined cases are `equal-input` (1.52587890625 mm/h, 100 m³/s over
+235.9296 km²) and `main` (12 mm/h, 786.432 m³/s). At two physical hours these
+add 720,000 and 5,662,310.4 m³ respectively. All rainfall becomes surface water:
+there is no infiltration, evaporation, soil, terrain erosion, or hydrological
+calibration. The main case's direct rainfall depth is 24 mm after two hours;
+merely seeing blue across the map is therefore not evidence of stream formation.
+
+For indefinite live playback:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_demo.py
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_demo.py \
+  --case equal-input --camera collection --markers --developed
+```
+
+`--developed` computes the first physical hour using every unchanged fixed
+step, then continues at 8x requested playback. It does not prefill the terrain
+or stop the live simulation. The UI shows physical time, applied mm/h and total
+m³/s, accumulated rain, queued rain On/Off, and continuous/paused/advance state.
+Rain changes apply at the next fixed step; pausing preserves a queued change.
+Reset clears the water and rain clock and restores rain On. It is not a forced
+pause: when running, normal fixed-step playback continues immediately after
+the reset. Pause first to inspect the dry time-zero state. Camera presets are
+absolute terrain locations (`overview`, `travel`, `collection`), not source
+locations. There are no source/drain cubes. Optional pale dots are local motion
+indicators, not rainfall drops or water parcels released from an endpoint.
+
+The bounded study runner is independent of the indefinite launcher:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase smoke --out <fresh-output-root>
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase compatibility --out <output-root>
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase profiles --out <output-root>
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_pacing_v1.py \
+  --out <output-root>
+rtk proxy uv run --python 3.12 --with pillow==12.3.0 python \
+  projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase captures --out <output-root>
+rtk proxy uv run --python 3.12 --with pillow==12.3.0 python \
+  projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase review --out <output-root>
+```
+
+Profiles check every fixed-step rain integral, solver status, and the unchanged
+water-conservation bound. Observations distinguish direct rainfall from water
+gathered laterally. The two independent correctness profiles may overlap;
+their timings are not an isolated performance measurement. Pacing runs later,
+serially, without those diagnostic readbacks. Three predefined 21x21 regions
+report storage minus their
+own direct rain (a signed net storage measure, not gross inflow). Interior
+D4-connected moving cells at least 1 cm deeper than cumulative direct rain
+describe convergence corridors; span is the component's maximum X/Z extent,
+not a parcel's travel distance. The screening gate requires at least 300 m
+of corridor support for 900 consecutive physical seconds and positive excess
+storage in a fixed region. This does not prove that one identical channel
+persisted throughout, nor does it establish visual acceptance.
+
+If the healthy two-hour main case lacks that support, the predefined extension
+is an uninterrupted four-hour replay from dry start. Its entire two-hour
+non-timing prefix must match exactly; it is not GPU checkpoint restoration.
+Captures include matched two-hour rate comparisons, three labelled main-case
+videos and exact-time stills. Video physical clocks are post-step: frame zero
+is 2 s. Offscreen marker-off/on pacing excludes full-field diagnostics and is
+not an isolated marker-overhead benchmark or desktop acceptance. Receipts bind
+commands, terrain, app, shaders, profiles, media and logs; old evidence is never
+overwritten. Human animation/live GUI acceptance remains a separate review.
+
+The local V1 checkpoint is
+`outputs/fluid/hillside-rain-v1-20261001-EQ9DU6/`. Both two-hour rates passed
+the unchanged numerical gate and the convergence/collection screen, so the
+conditional four-hour extension was not needed. At two hours, the main case
+had a 5,910 m largest connected moving-water corridor span and about 54,004 m³
+of net lateral storage in the collection footprint, whose maximum depth was
+5.98 m. The equal-input case's final corridor span was 1,950 m and its collection
+excess about 1,210 m³. These are observations, not calibrated river forecasts.
+The main water-ledger residual stayed below 0.325 m³ over roughly 5.66 million
+m³ supplied. Short serialized windowed runs achieved 7.91x/7.97x requested-8x
+playback without backlog drops, but are not a desktop performance guarantee.
+138 non-windowed native tests and 208 Python tests passed. Sampled captures
+show terrain-shaped branching runoff and growing collection; the first ten
+minutes remain visually quiet and native 30 m wet-edge steps are exposed in
+oblique views. Sparse temporal samples do not establish flicker-free animation.
+Start with the labelled valley video and `READING-GUIDE.txt`; the sealed local
+closure leaves human animation/live GUI acceptance explicitly pending.
+
+The [Rain V2 camera/transport diagnosis](../../../docs/notes/fluid-25d-hillside-rain-v2-transport-diagnosis.md)
+fixes the far-plane bound for the full legal orbit range and adds an independent
+uniform-sheet incline benchmark. It demonstrates substantial thin-water speed
+underprediction from the existing first-order hydrostatic reconstruction,
+despite safe CFL, depth preservation and CPU/GPU agreement. It does **not**
+change solver defaults or promote a numerical correction. The predefined
+48 mm/h mountain comparison and new live basin observations/cameras are
+deferred behind that failed accuracy gate. Analysis-only depression masks on
+the current immutable crop are not simulated lakes. See the note and the
+sealed V2 evidence root for measurements, reproduction and acceptance limits.
+
+The [Rain V3 CPU correction study](../../../docs/notes/fluid-25d-hillside-rain-v3-cpu-transport-study.md)
+tests two isolated double-state prototypes without linking them into the app.
+The slope-aware candidate passes the straight-incline and continuous-rain
+references, but both candidates fail curved-flow accuracy; the fallback also
+moves a partially wet resting lake. Neither is promoted. Production CPU/GPU
+solvers, defaults, immutable terrain and forcing remain unchanged. Actual
+applied face-transfer evidence and the negative verdict are retained under
+`./outputs`; stronger mountain rainfall and GPU integration remain deferred.
 
 The [sustained hillside V2 pass](../../../docs/notes/fluid-25d-hillside-sustained-flow-v2.md)
 keeps the accepted terrain and forcing fixed over two physical hours. Its new

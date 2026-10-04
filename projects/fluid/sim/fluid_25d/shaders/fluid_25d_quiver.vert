@@ -23,6 +23,7 @@ layout(push_constant) uniform CatchmentParams {
     vec4 grid_cell;
     vec4 camera_wet;
     vec4 presentation;
+    vec4 terrain_palette;
 } params;
 
 layout(location = 0) out vec2 frag_local;
@@ -36,7 +37,6 @@ const uint kMaxColumns = 96u;
 const uint kMaxRows = 48u;
 const uint kMinimumPitchCells = 1u;
 const float kMinimumSpeedMPerS = 0.025;
-const float kSpeedUpperMPerS = 0.80;
 const float kMinimumSilhouettePitchFraction = 0.58;
 const float kMaximumSilhouettePitchFraction = 0.72;
 const float kSilhouetteLengthUnits = 1.26;
@@ -127,7 +127,7 @@ void main() {
     vec2 side = vec2(-direction.y, direction.x);
     float speed_fraction = clamp(
         (stored_strength - kMinimumSpeedMPerS) /
-            (kSpeedUpperMPerS - kMinimumSpeedMPerS),
+            max(params.terrain_palette.w - kMinimumSpeedMPerS, 0.001),
         0.0, 1.0);
     uint columns = axis_count(width, kMaxColumns);
     uint rows = axis_count(height, kMaxRows);

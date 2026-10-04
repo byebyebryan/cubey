@@ -229,6 +229,101 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                            "immediately; it is not a claim that one newly injected parcel has "
                            "already crossed the whole route.");
     }
+    if (ui.scenario == Fluid25DScenario::HillsideRainStudy) {
+        ImGui::Text("Physical time: %.1f min (%.0f s)", ui.simulation_elapsed_seconds / 60.0F,
+                    ui.simulation_elapsed_seconds);
+        ImGui::Text("Rain: %.6g mm/h | %.6g m3/s", ui.rainfall_rate_mm_per_hour,
+                    ui.rainfall_total_input_m3_per_s);
+        ImGui::Text("Scheduled since reset: %.4f m | %.1f m3",
+                    ui.rain_study.state().cumulative_depth_m,
+                    ui.rain_study.state().scheduled_volume_m3);
+        if (cubey::host::imgui_button("Queue Rain Off",
+                                      "Apply rain-off at the next fixed solver step.")) {
+            ui.rain_study.queue_enabled(false);
+        }
+        ImGui::SameLine();
+        if (cubey::host::imgui_button("Queue Rain On",
+                                      "Apply rain-on at the next fixed solver step.")) {
+            ui.rain_study.queue_enabled(true);
+        }
+        if (ui.rain_study.queued_enabled().has_value()) {
+            ImGui::Text("Queued rain %s for the next fixed step.",
+                        *ui.rain_study.queued_enabled() ? "On" : "Off");
+        } else {
+            ImGui::Text("Rain is %s.", ui.rain_study.enabled() ? "on" : "off");
+        }
+        ImGui::Text("Playback: %.3gx | %s", ui.presentation_time_scale,
+                    ui.inspection_advance.remaining_steps() > 0U ? "inspection advance"
+                    : ui.paused                                  ? "paused"
+                                                                 : "continuous");
+        if (ui.inspection_advance.remaining_steps() > 0U) {
+            ImGui::Text("Computing advance: %.1f s remaining",
+                        static_cast<double>(ui.inspection_advance.remaining_steps()) *
+                            ui.fixed_delta_seconds);
+            ImGui::ProgressBar(ui.inspection_advance.progress());
+            if (ImGui::Button("Cancel advance")) {
+                ui.inspection_advance.reset();
+                ui.windowed_pacing.reset();
+                ui.resume_after_advance = false;
+            }
+        }
+        if (ui.inspection_advance.remaining_steps() == 0U &&
+            ui.simulation_elapsed_seconds < 7200.0F &&
+            ImGui::Button("Advance to 2 h and continue")) {
+            ui.inspection_advance.request(7200.0F - ui.simulation_elapsed_seconds,
+                                          ui.fixed_delta_seconds);
+            ui.resume_after_advance = true;
+            ui.paused = true;
+            ui.windowed_pacing.reset();
+        }
+        if (ui.inspection_advance.remaining_steps() == 0U &&
+            ImGui::CollapsingHeader("Inspection tools")) {
+            ImGui::BeginDisabled(ui.inspection_advance.remaining_steps() > 0U);
+            if (ImGui::Button("Compute next 10 min, then pause")) {
+                ui.inspection_advance.request(600.0F, ui.fixed_delta_seconds);
+                ui.resume_after_advance = false;
+                ui.paused = true;
+                ui.windowed_pacing.reset();
+            }
+            ImGui::EndDisabled();
+        }
+        const std::string selected = ui.hillside_camera.empty() ? "overview" : ui.hillside_camera;
+        if (ImGui::BeginCombo("Camera", selected.c_str())) {
+            for (const char* camera : {"travel", "collection", "overview"}) {
+                if (!ui.downstream_hillside_cameras_available &&
+                    std::string_view(camera) != "overview")
+                    continue;
+                if (ImGui::Selectable(camera, ui.hillside_camera == camera))
+                    ui.hillside_camera = camera;
+            }
+            ImGui::EndCombo();
+        }
+        if (ui.motion_markers_available) {
+            ImGui::Checkbox("Moving markers", &ui.show_motion_markers);
+            ImGui::TextWrapped(
+                "Local pale dots show movement here, seeded across materially wet terrain. They "
+                "are local motion indicators, not parcels from a source; trails follow actual "
+                "depth-averaged velocity.");
+        }
+        if (ui.hillside_depth_cues && ui.presentation_view == Fluid25DPresentationView::Catchment)
+            ImGui::TextWrapped(
+                "Depth: fixed log scale, 1 cm / 10 cm / 1 m / 10 m. Cyan is thin runoff; deep "
+                "blue is accumulation. Native 30 m geometric steps remain.");
+        if (ui.presentation_view == Fluid25DPresentationView::Diagnostics &&
+            ui.debug_view == Fluid25DDebugView::WaterDepth)
+            ImGui::TextWrapped(
+                "Diagnostic depth map: brighter cyan means deeper water; linear color saturates "
+                "at about 8.3 cm. This map shows the footprint, not the 3D log-depth palette.");
+        ImGui::TextWrapped(
+            "Uniform rainfall adds surface water across the dry, unchanged crop. Every crop edge "
+            "permits outward flow only; there is no selected source, sink, or outlet.");
+        ImGui::TextWrapped(
+            "Queued rain changes apply at the next fixed step. Pausing preserves a queued change; "
+            "Reset returns to dry terrain with rain on at physical time zero.");
+        ImGui::TextWrapped(
+            "Inspection advance executes every fixed solver step; it does not teleport water, "
+            "enlarge the time step, or change rainfall strength.");
+    }
     if (ui.scenario == Fluid25DScenario::MountainSourceOutletDemo) {
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
                            "SOURCE  green cubes: 0.75 m3/s total input region");

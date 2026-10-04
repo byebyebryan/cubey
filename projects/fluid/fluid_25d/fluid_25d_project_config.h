@@ -6,6 +6,7 @@
 #include <cubey/host/common_config.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <filesystem>
 #include <optional>
@@ -43,8 +44,18 @@ struct Fluid25DProjectConfig {
     std::string motion_marker_mode = "source";
     bool hillside_supply_response = false;
     bool hillside_supply_gpu_controls = false;
+    bool rain_study_gpu_controls = false;
     bool motion_marker_gpu_controls = false;
     bool hillside_source_context = false;
+    // An external recording is a presentation data source, never a solver selection.
+    std::optional<std::filesystem::path> recording_path{};
+    std::optional<std::filesystem::path> stream_path{};
+    bool stream_follow_latest = false;
+    float recording_speed = 60.0F;
+    float recording_time_seconds = 0.0F;
+    float recording_frame_interval_seconds = 60.0F;
+    std::string recording_camera = "overview";
+    bool recording_gpu_validation = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
 };
@@ -89,9 +100,12 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
     }
     const bool natural_flow_study =
         fluid_25d_is_natural_terrain_study(project_config.simulation.scenario);
+    const bool rain_study =
+        project_config.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
+    const bool macro_hillside_study =
+        fluid_25d_is_macro_hillside_study(project_config.simulation.scenario);
     if (project_config.motion_markers &&
-        (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
-         project_config.simulation.solver != Fluid25DSolver::FiniteVolume))
+        (!macro_hillside_study || project_config.simulation.solver != Fluid25DSolver::FiniteVolume))
         throw std::runtime_error("motion markers require the finite-volume hillside study");
     if (project_config.motion_marker_gpu_controls && !project_config.common.headless)
         throw std::runtime_error("motion marker GPU controls are headless only");
@@ -99,6 +113,10 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
          project_config.motion_marker_mode != "local") ||
         (project_config.motion_marker_mode == "local" && !project_config.motion_markers))
         throw std::runtime_error("local marker mode requires motion markers");
+    if (rain_study && project_config.motion_markers &&
+        project_config.motion_marker_mode != "local") {
+        throw std::runtime_error("hillside-rain-study motion markers require local marker mode");
+    }
     if (project_config.hillside_supply_response &&
         (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
          project_config.simulation.solver != Fluid25DSolver::FiniteVolume ||
@@ -110,16 +128,32 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
          project_config.simulation.scenario != Fluid25DScenario::DryBed ||
          project_config.simulation.solver != Fluid25DSolver::FiniteVolume))
         throw std::runtime_error("supply GPU controls require four headless oracle dry-bed steps");
-    if (project_config.catchment_render.hillside_depth_cues &&
-        project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy)
+    if (project_config.rain_study_gpu_controls &&
+        (!project_config.common.headless || !project_config.gpu_oracle_validation ||
+         project_config.common.frames != 4U || !rain_study ||
+         project_config.simulation.grid_width != 8U ||
+         project_config.simulation.grid_height != 8U ||
+         project_config.simulation.cell_size_m != kFluid25DHillsideRainStudyCellSizeM ||
+         project_config.simulation.solver != Fluid25DSolver::FiniteVolume ||
+         project_config.terrain.heightfield_path.has_value() ||
+         project_config.terrain.crop_x.has_value() || project_config.terrain.crop_z.has_value())) {
+        throw std::runtime_error(
+            "rain-study GPU controls require four headless finite-volume oracle steps on an 8x8 "
+            "native-spacing rain study");
+    }
+    if (project_config.catchment_render.hillside_depth_cues && !macro_hillside_study)
         throw std::runtime_error("hillside depth cues require hillside study");
+    const bool valid_hillside_camera = rain_study
+                                           ? (project_config.hillside_camera == "travel" ||
+                                              project_config.hillside_camera == "collection" ||
+                                              project_config.hillside_camera == "overview")
+                                           : (project_config.hillside_camera == "source" ||
+                                              project_config.hillside_camera == "branch" ||
+                                              project_config.hillside_camera == "travel" ||
+                                              project_config.hillside_camera == "collection" ||
+                                              project_config.hillside_camera == "overview");
     if (!project_config.hillside_camera.empty() &&
-        (project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
-         (project_config.hillside_camera != "source" &&
-          project_config.hillside_camera != "branch" &&
-          project_config.hillside_camera != "travel" &&
-          project_config.hillside_camera != "collection" &&
-          project_config.hillside_camera != "overview")))
+        (!macro_hillside_study || !valid_hillside_camera))
         throw std::runtime_error(
             "hillside camera requires source, branch, travel, collection or overview");
     if ((project_config.hillside_camera == "travel" ||
@@ -132,8 +166,7 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         throw std::runtime_error("source-context camera requires hillside-flow-study");
     }
     if (project_config.hillside_inspection_advance_seconds.has_value()) {
-        if (project_config.common.headless ||
-            project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy) {
+        if (project_config.common.headless || !macro_hillside_study) {
             throw std::runtime_error("inspection advance is windowed hillside-flow-study only");
         }
         Fluid25DInspectionAdvance advance;
@@ -141,8 +174,7 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
                         project_config.simulation.fixed_delta_seconds);
     }
     if (project_config.hillside_advance_and_continue_seconds.has_value()) {
-        if (project_config.common.headless ||
-            project_config.simulation.scenario != Fluid25DScenario::HillsideFlowStudy ||
+        if (project_config.common.headless || !macro_hillside_study ||
             project_config.hillside_inspection_advance_seconds.has_value())
             throw std::runtime_error(
                 "advance and continue is windowed hillside only and excludes pause advance");
@@ -163,12 +195,13 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
             "must be supplied explicitly");
     }
     if (project_config.natural_flow_home_pitch_radians.has_value() &&
-        (!natural_flow_study || !std::isfinite(*project_config.natural_flow_home_pitch_radians) ||
+        ((!natural_flow_study && !rain_study) ||
+         !std::isfinite(*project_config.natural_flow_home_pitch_radians) ||
          *project_config.natural_flow_home_pitch_radians < -1.55F ||
          *project_config.natural_flow_home_pitch_radians > -0.1F)) {
         throw std::runtime_error(
-            "fluid 2.5D natural-flow home pitch requires natural-flow-study and a finite value in "
-            "[-1.55,-0.1]");
+            "fluid 2.5D natural-flow home pitch requires natural-flow-study or "
+            "hillside-rain-study and a finite value in [-1.55,-0.1]");
     }
     if (natural_flow_study && (!project_config.terrain.crop_x.has_value() ||
                                !project_config.terrain.crop_z.has_value())) {
@@ -190,9 +223,10 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         render.terrain_height_scale.has_value() || render.home_camera_distance_m.has_value() ||
         render.terrain_thin_water_composite ||
         project_config.natural_flow_home_pitch_radians.has_value();
-    if (has_render_override && !terrain_case && !natural_flow_study) {
+    if (has_render_override && !terrain_case && !natural_flow_study && !rain_study) {
         throw std::runtime_error(
-            "fluid 2.5D terrain presentation overrides require terrain-case or natural-flow-study");
+            "fluid 2.5D terrain presentation overrides require terrain-case, a natural-flow study, "
+            "or hillside-rain-study");
     }
     if (has_render_override && project_config.view == "diagnostics") {
         throw std::runtime_error(
@@ -228,11 +262,12 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
     }
     const bool mountain_source_outlet =
         project_config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
-    const bool terrain_backed = terrain_case || mountain_source_outlet || natural_flow_study;
+    const bool terrain_backed =
+        terrain_case || mountain_source_outlet || natural_flow_study || rain_study;
     const bool has_heightfield = project_config.terrain.heightfield_path.has_value();
     const bool has_nonempty_heightfield =
         has_heightfield && !project_config.terrain.heightfield_path->empty();
-    if (terrain_backed && !has_nonempty_heightfield) {
+    if (terrain_backed && !has_nonempty_heightfield && !project_config.rain_study_gpu_controls) {
         throw std::runtime_error(
             "fluid 2.5D terrain-backed scenarios require a non-empty --terrain-heightfield path");
     }
@@ -240,10 +275,10 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         throw std::runtime_error(
             "fluid 2.5D --terrain-heightfield requires a terrain-backed scenario");
     }
-    if (!terrain_case && !natural_flow_study &&
+    if (!terrain_case && !natural_flow_study && !rain_study &&
         (project_config.terrain.crop_x.has_value() || project_config.terrain.crop_z.has_value())) {
         throw std::runtime_error(
-            "fluid 2.5D terrain crop options require --fluid25d-scenario terrain-case");
+            "fluid 2.5D terrain crop options require a terrain-backed crop scenario");
     }
 
     const bool has_explicit_terrain_water_option =
@@ -261,9 +296,15 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
         throw std::runtime_error(
             "fluid 2.5D dye pulse timing requires an eligible finite-volume scenario");
     }
-    if (!terrain_case && has_explicit_terrain_water_option) {
+    if (!terrain_case && !rain_study && has_explicit_terrain_water_option) {
         throw std::runtime_error(
             "fluid 2.5D terrain-water protocol options require --fluid25d-scenario terrain-case");
+    }
+    if (rain_study && (project_config.fluid.terrain_water_protocol.has_value() ||
+                       project_config.fluid.sheet_depth_m.has_value())) {
+        throw std::runtime_error(
+            "fluid 2.5D hillside-rain-study accepts the rainfall rate only; terrain protocol and "
+            "sheet options are not part of this study");
     }
     if (mountain_source_outlet && project_config.fluid.source_active_duration_seconds.has_value()) {
         throw std::runtime_error(
@@ -278,6 +319,21 @@ inline void validate_fluid_25d_project_config(const Fluid25DProjectConfig& proje
             "fluid 2.5D natural-flow-study rejects terrain-water protocol, rain, sheet, "
             "source-duration, and headwaters-source-scale options, including explicit neutral "
             "values");
+    }
+    if (rain_study) {
+        if (!project_config.rain_study_gpu_controls &&
+            !project_config.terrain.heightfield_path.has_value()) {
+            throw std::runtime_error(
+                "fluid 2.5D hillside-rain-study requires --terrain-heightfield");
+        }
+        if (!project_config.fluid.rainfall_rate_mm_per_hour.has_value() ||
+            !(project_config.simulation.rainfall_depth_rate_m_per_s > 0.0F)) {
+            throw std::runtime_error(
+                "fluid 2.5D hillside-rain-study requires a positive rainfall rate");
+        }
+        if (!project_config.rain_study_gpu_controls) {
+            return;
+        }
     }
     if (!terrain_case) {
         return;
@@ -344,6 +400,44 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
     builder.compose(common::fluid_grid_schema(config.grid, common::FluidGridSchemaMode::TwoD));
     builder
+        .bind(option("fluid25d.recording", "--fluid25d-recording", "Recording",
+                     "Replay a portable native-state recording; no hydraulic solver runs.",
+                     ValueType::Path),
+              config.recording_path)
+        .bind(option("fluid25d.stream", "--fluid25d-stream", "Live External Session",
+                     "Watch atomic snapshots from a running external solver; no CUDA in Cubey.",
+                     ValueType::Path),
+              config.stream_path)
+        .bind(option("fluid25d.stream_follow_latest", "--fluid25d-stream-follow-latest",
+                     "Follow Latest",
+                     "Follow the latest validated snapshot instead of paced viewing.",
+                     ValueType::Bool),
+              config.stream_follow_latest)
+        .bind(option("fluid25d.recording_speed", "--fluid25d-recording-speed", "Playback Speed",
+                     "Recorded physical seconds per wall second (windowed playback only).",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.125, .max = 300.0}),
+              config.recording_speed)
+        .bind(option("fluid25d.recording_time_seconds", "--fluid25d-recording-time-seconds",
+                     "Recording Time",
+                     "Initial physical time; PNG captures hold this exact saved state.",
+                     ValueType::Float, {.has_min = true, .min = 0.0}),
+              config.recording_time_seconds)
+        .bind(option("fluid25d.recording_frame_interval_seconds",
+                     "--fluid25d-recording-frame-interval-seconds", "Recorded Video Interval",
+                     "Physical seconds between headless video frames, beginning at recording time.",
+                     ValueType::Float, {.has_min = true, .min = 0.0}),
+              config.recording_frame_interval_seconds)
+        .bind(option("fluid25d.recording_camera", "--fluid25d-recording-camera", "Recording Camera",
+                     "Presentation-only overview or existing native runoff/collection observation.",
+                     ValueType::Enum, {}, {"overview", "runoff", "collection"}),
+              config.recording_camera)
+        .bind(option("fluid25d.recording_gpu_validation", "--fluid25d-recording-gpu-validation",
+                     "Recording Upload Validation",
+                     "Headless bit-exact uploaded-field and presentation-immutability checks, not "
+                     "a hydraulic oracle.",
+                     ValueType::Bool),
+              config.recording_gpu_validation)
         .bind(option("fluid25d.view", "--fluid25d-view", "View",
                      "Top-level River V0 surface: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
@@ -382,17 +476,16 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
               config.catchment_render.home_camera_distance_m)
         .bind(option("fluid25d.natural_flow_home_pitch_radians",
                      "--fluid25d-natural-flow-home-pitch-radians", "Natural Flow Home Pitch",
-                     "Natural-flow-study render-only home camera pitch in radians.",
+                     "Natural-flow or hillside-rain render-only home camera pitch in radians.",
                      ValueType::Float,
                      {.has_min = true, .has_max = true, .min = -1.55, .max = -0.1}),
               config.natural_flow_home_pitch_radians)
-        .bind(
-            option(
-                "fluid25d.hillside_inspection_advance_seconds",
-                "--fluid25d-hillside-inspection-advance-seconds", "Inspection Advance",
-                "Windowed hillside study: execute every dry-start step then pause for inspection.",
-                ValueType::Float, {.has_min = true, .has_max = true, .min = 0.001, .max = 7200.0}),
-            config.hillside_inspection_advance_seconds)
+        .bind(option("fluid25d.hillside_inspection_advance_seconds",
+                     "--fluid25d-hillside-inspection-advance-seconds", "Inspection Advance",
+                     "Windowed hillside study: execute every fixed step then pause for inspection.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.001, .max = 7200.0}),
+              config.hillside_inspection_advance_seconds)
         .bind(option("fluid25d.hillside_advance_and_continue_seconds",
                      "--fluid25d-hillside-advance-and-continue-seconds", "Advance and Continue",
                      "Compute normal fixed steps with progress, then resume continuous hillside "
@@ -416,6 +509,10 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "--fluid25d-hillside-supply-gpu-controls", "Supply GPU Controls",
                      "Synthetic four-step source sequence with CPU oracle.", ValueType::Bool),
               config.hillside_supply_gpu_controls)
+        .bind(option("fluid25d.rain_study_gpu_controls", "--fluid25d-rain-study-gpu-controls",
+                     "Rain Study GPU Controls",
+                     "Synthetic four-step rain on/off sequence with CPU oracle.", ValueType::Bool),
+              config.rain_study_gpu_controls)
         .bind(option("fluid25d.hillside_depth_cues", "--fluid25d-hillside-depth-cues",
                      "Hillside Depth Cues", "Fixed 0.01 to 10 m depth palette and wet-edge AA.",
                      ValueType::Bool),
@@ -434,8 +531,8 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
               config.hillside_source_context)
         .bind(option("fluid25d.terrain_thin_water_composite",
                      "--fluid25d-terrain-thin-water-composite", "Thin Water Composite",
-                     "Terrain-case Composite-only display attenuation for thin water; solver state "
-                     "is unchanged.",
+                     "Terrain-case or hillside-rain Composite-only display attenuation for thin "
+                     "water; solver state is unchanged.",
                      ValueType::Bool),
               config.catchment_render.terrain_thin_water_composite)
         .bind(option("fluid25d.presentation_time_scale", "--fluid25d-presentation-time-scale",
@@ -491,7 +588,9 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Enum, {}, {"none", "rain-pulse", "sheet-release"}),
               config.fluid.terrain_water_protocol)
         .bind(option("fluid25d.rainfall_rate_mm_per_hour", "--fluid25d-rainfall-rate-mm-per-hour",
-                     "Rainfall Rate", "Terrain-case rain-pulse depth rate in millimetres per hour.",
+                     "Rainfall Rate",
+                     "Terrain-case pulse or hillside-rain depth rate in "
+                     "millimetres per hour.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
               config.fluid.rainfall_rate_mm_per_hour)
         .bind(option("fluid25d.sheet_depth_m", "--fluid25d-sheet-depth-m", "Sheet Depth",
@@ -504,7 +603,8 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Enum, {},
                      {"dry-bed", "lake-at-rest", "river-catchment", "source-outlet-demo",
                       "mountain-source-outlet-demo", "sustained-headwaters-demo", "terrain-case",
-                      "boundary-drain-fixture", "natural-flow-study", "hillside-flow-study"}),
+                      "boundary-drain-fixture", "natural-flow-study", "hillside-flow-study",
+                      "hillside-rain-study"}),
               config.fluid.scenario)
         .bind(
             option("fluid25d.solver", "--fluid25d-solver", "Solver",
@@ -577,6 +677,111 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     host::normalize_common_run_config(project_config.common,
                                       parsed.path_was_assigned("output") ||
                                           project_config.common.output_path != "cubey-output.png");
+    const std::array recording_options{
+        "fluid25d.recording_speed", "fluid25d.recording_time_seconds",
+        "fluid25d.recording_frame_interval_seconds", "fluid25d.recording_camera",
+        "fluid25d.recording_gpu_validation"};
+    if (project_config.recording_path && project_config.stream_path)
+        throw std::runtime_error("recording and live stream sources are mutually exclusive");
+    if (parsed.path_was_assigned("fluid25d.stream_follow_latest") && !project_config.stream_path)
+        throw std::runtime_error("follow latest requires --fluid25d-stream");
+    if (project_config.recording_path || project_config.stream_path) {
+        if (project_config.stream_path && project_config.common.headless &&
+            project_config.common.capture_mode == CaptureMode::Video)
+            throw std::runtime_error("live streams support windowed viewing or a static PNG "
+                                     "snapshot; convert the finished case for video");
+        // Reject, rather than silently ignore, controls that imply running or changing physics.
+        const std::array incompatible_options{"grid.width",
+                                              "grid.height",
+                                              "grid.depth",
+                                              "terrain.heightfield",
+                                              "fluid25d.solver",
+                                              "fluid25d.scenario",
+                                              "fluid25d.cell_size_m",
+                                              "fluid25d.fixed_delta_seconds",
+                                              "fluid25d.substeps",
+                                              "fluid25d.gravity_m_per_s2",
+                                              "fluid25d.flow_damping_per_second",
+                                              "fluid25d.minimum_wet_depth_m",
+                                              "fluid25d.terrain_crop_x",
+                                              "fluid25d.terrain_crop_z",
+                                              "fluid25d.terrain_water_protocol",
+                                              "fluid25d.rainfall_rate_mm_per_hour",
+                                              "fluid25d.sheet_depth_m",
+                                              "fluid25d.source_active_duration_seconds",
+                                              "fluid25d.headwaters_source_scale",
+                                              "fluid25d.natural_flow_recipe",
+                                              "fluid25d.natural_flow_source_m3_per_s",
+                                              "fluid25d.dye_pulse_start_seconds",
+                                              "fluid25d.dye_pulse_duration_seconds",
+                                              "fluid25d.gpu_oracle_validation",
+                                              "fluid25d.mass_audit",
+                                              "fluid25d.mass_audit_control",
+                                              "fluid25d.hillside_supply_response",
+                                              "fluid25d.hillside_supply_gpu_controls",
+                                              "fluid25d.rain_study_gpu_controls",
+                                              "fluid25d.motion_marker_gpu_controls",
+                                              "fluid25d.hillside_inspection_advance_seconds",
+                                              "fluid25d.hillside_advance_and_continue_seconds",
+                                              "fluid25d.presentation_time_scale",
+                                              "fluid25d.hillside_source_context",
+                                              "fluid25d.hillside_camera",
+                                              "fluid25d.natural_flow_home_pitch_radians"};
+        for (const char* path : incompatible_options) {
+            if (parsed.path_was_assigned(path))
+                throw std::runtime_error(
+                    std::string("recorded playback rejects hydraulic/legacy control: ") + path);
+        }
+        if ((project_config.recording_path && project_config.recording_path->empty()) ||
+            (project_config.stream_path && project_config.stream_path->empty()))
+            throw std::runtime_error("recording manifest path must not be empty");
+        if (project_config.recording_gpu_validation && !project_config.common.headless)
+            throw std::runtime_error("recording GPU upload validation is headless-only");
+        if (project_config.common.headless && parsed.path_was_assigned("fluid25d.recording_speed"))
+            throw std::runtime_error(
+                "headless recording uses frame interval, not windowed playback speed");
+        if (parsed.path_was_assigned("fluid25d.recording_frame_interval_seconds") &&
+            (!project_config.common.headless ||
+             project_config.common.capture_mode != CaptureMode::Video))
+            throw std::runtime_error("recording frame interval is headless-video-only");
+        if (project_config.common.headless &&
+            project_config.common.capture_mode == CaptureMode::Video &&
+            project_config.recording_frame_interval_seconds <= 0.0F)
+            throw std::runtime_error("recording video frame interval must be positive");
+        if (parsed.path_was_assigned("fluid25d.hillside_depth_cues") ||
+            parsed.path_was_assigned("fluid25d.terrain_thin_water_composite"))
+            throw std::runtime_error("recording uses fixed depth cues and thin-film attenuation");
+        if (project_config.catchment_view == "transport-inspection")
+            throw std::runtime_error("recording contains water momentum, not conserved dye");
+        if (project_config.motion_markers &&
+            parsed.path_was_assigned("fluid25d.motion_marker_mode") &&
+            project_config.motion_marker_mode != "local")
+            throw std::runtime_error(
+                "recorded rainfall supports local visual markers, not source release");
+        project_config.motion_marker_mode = "local";
+        static_cast<void>(fluid_25d_presentation_view_from_name(project_config.view));
+        static_cast<void>(fluid_25d_catchment_view_from_name(project_config.catchment_view));
+        static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
+        if (!project_config.catchment_view.empty() && project_config.view == "diagnostics")
+            throw std::runtime_error("recorded catchment view cannot be combined with diagnostics");
+        if (project_config.catchment_render.terrain_palette_low_m.has_value() !=
+            project_config.catchment_render.terrain_palette_high_m.has_value())
+            throw std::runtime_error("recording terrain palette bounds must be supplied together");
+        if (project_config.catchment_render.terrain_palette_low_m &&
+            *project_config.catchment_render.terrain_palette_low_m >=
+                *project_config.catchment_render.terrain_palette_high_m)
+            throw std::runtime_error("recording terrain palette bounds must be increasing");
+        if (parsed.write_config_template_path)
+            schema.write_template(*parsed.write_config_template_path);
+        if (result != nullptr)
+            *result = std::move(parsed);
+        return project_config;
+    }
+    for (const char* path : recording_options) {
+        if (parsed.path_was_assigned(path))
+            throw std::runtime_error(
+                std::string("recording option requires --fluid25d-recording: ") + path);
+    }
     project_config.simulation =
         fluid_25d_config_from_options(project_config.grid, project_config.fluid);
     project_config.simulation.mass_audit = project_config.mass_audit;

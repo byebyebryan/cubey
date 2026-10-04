@@ -2,6 +2,7 @@
 
 #include "fluid_25d_config.h"
 #include "fluid_25d_hillside_supply.h"
+#include "fluid_25d_rain_study.h"
 
 namespace cubey::projects::fluid::fluid_25d {
 
@@ -19,6 +20,9 @@ struct Fluid25DUiContext {
     float fixed_delta_seconds = 0.0F;
     float continuous_source_m3_per_s = 0.0F;
     Fluid25DHillsideSupply& hillside_supply;
+    Fluid25DRainStudyControl& rain_study;
+    double rainfall_rate_mm_per_hour = 0.0;
+    double rainfall_total_input_m3_per_s = 0.0;
     bool hillside_depth_cues = false;
     bool downstream_hillside_cameras_available = false;
     bool& hillside_source_context;

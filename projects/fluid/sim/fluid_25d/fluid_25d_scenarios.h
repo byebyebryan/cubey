@@ -360,6 +360,44 @@ inline void open_fluid_25d_all_outward_boundary_faces(Fluid25DScenarioData& scen
         make_fluid_25d_all_outward_boundary_outflow_mask(scenario.width, scenario.height);
 }
 
+// Uniform rainfall is represented by the solver's existing per-cell source
+// field. This sibling study keeps the terrain crop dry and immutable, has no
+// authored source/sink/outlet cell, and opens only outward perimeter faces.
+inline void apply_fluid_25d_hillside_rain_study_forcing(const Fluid25DConfig& config,
+                                                        Fluid25DScenarioData& scenario) {
+    if (config.scenario != Fluid25DScenario::HillsideRainStudy) {
+        throw std::runtime_error(
+            "fluid 2.5D rain-study forcing requires scenario hillside-rain-study");
+    }
+    validate_fluid_25d_config(config);
+    const std::size_t cell_count = fluid_25d_scenario_cell_count(scenario.width, scenario.height);
+    if (scenario.width != config.grid_width || scenario.height != config.grid_height ||
+        scenario.cell_size_m != config.cell_size_m ||
+        scenario.initial_water_depth_m.size() != cell_count ||
+        scenario.source_depth_rate_m_per_s.size() != cell_count ||
+        scenario.sink_depth_rate_m_per_s.size() != cell_count ||
+        scenario.boundary_outflow_face_mask.size() != cell_count) {
+        throw std::runtime_error("fluid 2.5D rain-study fields do not match the configured grid");
+    }
+    if (scenario.source_cell != kFluid25DNoCell ||
+        scenario.secondary_source_cell != kFluid25DNoCell ||
+        scenario.outlet_cell != kFluid25DNoCell || scenario.sink_cell != kFluid25DNoCell ||
+        std::any_of(scenario.initial_water_depth_m.begin(), scenario.initial_water_depth_m.end(),
+                    [](float depth) { return depth != 0.0F; }) ||
+        std::any_of(scenario.source_depth_rate_m_per_s.begin(),
+                    scenario.source_depth_rate_m_per_s.end(),
+                    [](float rate) { return rate != 0.0F; }) ||
+        std::any_of(scenario.sink_depth_rate_m_per_s.begin(),
+                    scenario.sink_depth_rate_m_per_s.end(),
+                    [](float rate) { return rate != 0.0F; })) {
+        throw std::runtime_error(
+            "fluid 2.5D rain-study forcing requires a dry crop without point sources or sinks");
+    }
+    std::fill(scenario.source_depth_rate_m_per_s.begin(),
+              scenario.source_depth_rate_m_per_s.end(), config.rainfall_depth_rate_m_per_s);
+    open_fluid_25d_all_outward_boundary_faces(scenario);
+}
+
 // Applies only complete, neutral terrain-case field constructions. These
 // protocols deliberately operate over the full crop and the complete outward
 // perimeter: terrain is immutable input, not something shaped around a desired
@@ -1312,6 +1350,20 @@ inline void author_fluid_25d_mountain_source_outlet_fields(Fluid25DScenarioData&
                                                     data.width, data.height, spacing_m),
     };
     return data;
+}
+
+[[nodiscard]] inline Fluid25DScenarioData make_fluid_25d_hillside_rain_study_scenario(
+    const Fluid25DConfig& config, const cubey::asset::TerrainRasterHeightSource& source,
+    std::uint32_t crop_x = 0U, std::uint32_t crop_z = 0U) {
+    if (config.scenario != Fluid25DScenario::HillsideRainStudy) {
+        throw std::runtime_error(
+            "fluid 2.5D rain-study builder requires scenario hillside-rain-study");
+    }
+    validate_fluid_25d_config(config);
+    Fluid25DScenarioData scenario = make_fluid_25d_terrain_crop(
+        config.grid_width, config.grid_height, config.cell_size_m, source, crop_x, crop_z);
+    apply_fluid_25d_hillside_rain_study_forcing(config, scenario);
+    return scenario;
 }
 
 [[nodiscard]] inline Fluid25DScenarioData make_fluid_25d_mountain_source_outlet_scenario(

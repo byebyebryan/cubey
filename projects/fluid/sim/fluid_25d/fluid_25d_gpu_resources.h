@@ -18,6 +18,7 @@
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -145,7 +146,14 @@ class Fluid25DGpuResources {
                                            cubey::ProjectGpuServices& gpu,
                                            const Fluid25DConfig& config,
                                            const Fluid25DScenarioData& scenario,
-                                           std::uint32_t frame_slot_count);
+                                           std::uint32_t frame_slot_count,
+                                           bool presentation_only = false);
+    // A recording owns the uploaded h/velocity; only render cues may write thereafter.
+    // Slot reuse must follow the host's completed frame-slot fence.
+    void record_recording_upload(VkCommandBuffer command_buffer, std::uint32_t frame_slot,
+                                 std::span<const float> depth,
+                                 std::span<const Fluid25DVelocityGpu> velocity);
+    [[nodiscard]] bool presentation_only() const noexcept { return presentation_only_; }
     void create_render_pipelines(cubey::vulkan::Device& device, VkFormat color_format,
                                  VkFormat depth_format, VkExtent2D extent);
     void destroy_swapchain_resources();
@@ -349,6 +357,8 @@ class Fluid25DGpuResources {
     void create_compute_pipelines(cubey::vulkan::Device& device);
 
     std::optional<cubey::vulkan::Buffer> terrain_;
+    std::vector<cubey::vulkan::Buffer> recording_staging_;
+    bool presentation_only_ = false;
     std::optional<cubey::vulkan::Buffer> finite_volume_candidate_mass_audit_;
     std::optional<cubey::vulkan::Buffer> finite_volume_mass_audit_;
     std::optional<cubey::vulkan::Buffer> finite_volume_conservation_residual_;
