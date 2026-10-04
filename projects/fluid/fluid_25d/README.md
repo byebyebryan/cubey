@@ -10,6 +10,12 @@ The broader technique map lives in
 
 ## Status
 
+The October 4 integration adds an optional, interactive external SynxFlow
+service alongside the unchanged built-in default and recorded fallback. Cubey
+shares a project-local scene/session contract across these paths; CUDA remains
+in a separately launched GPL worker, not in the Vulkan application. See the
+backend/service sections below for controls, acceptance evidence and limits.
+
 River V0 has a project-local GPU checkpoint. `fluid_25d` is a windowed and
 headless Vulkan application with a GPU-resident virtual-pipes default and an
 opt-in GPU finite-volume comparison solve, plus a
@@ -57,22 +63,23 @@ and neither solver has selected or tuned a terrain case.
 `--fluid25d-backend builtin|external|recording` makes the producer explicit.
 Omitting it preserves the existing default and legacy path flags. `builtin`
 uses the existing GPU solver (`--fluid25d-solver virtual-pipes|finite-volume`);
-`external` requires `--fluid25d-stream`; `recording` requires
+`external` requires `--fluid25d-external-session` (interactive service) or
+`--fluid25d-stream` (retained viewing-only bridge); `recording` requires
 `--fluid25d-recording`. Conflicting selections fail before startup: there is
 no silent fallback or numerical-state transfer between solvers. The stock
 external stream remains viewing-only; it does not support solver pause or
 rainfall edits. Built-in controls operate on the GPU simulation. Neither
 built-in method is being promoted as equivalent to the tested mountain solver.
 
-### Backend contract foundation
+### Project-local backend contract
 
 `fluid_25d_backend_contract.h` defines the project-local, versioned scene/grid
 identity, field availability, session lifecycle, frame header and command/ack
 envelopes. Solver controls and viewer playback controls are separate capabilities;
 unsupported fields or controls are never inferred from the backend name. The
 guard rejects stale generations, regressing clocks/frames and duplicate acks,
-with at most one outstanding command. This is a foundation, not a new external
-transport or a claim that runtime command handling has been integrated.
+with at most one outstanding command. This is not a universal fluid framework,
+and backends are selected at startup rather than hot-swapped.
 
 Each application now emits `fluid_25d_backend_startup_metadata:` once and shows
 the adapter/input fingerprints under **Backend details**. Built-in descriptors
@@ -80,11 +87,23 @@ hash the actual initial bed/depth/source/sink/boundary arrays and numerical
 settings; recording/stream descriptors use immutable input provenance and
 exclude the growing output prefix or producer status. Solver-bed hashes cover
 the exact row-major little-endian float32 bytes. A live viewer owns a separate
-logical playback session, not the producer's lifecycle. These are startup
-descriptors only: no per-frame GPU readback, shared runtime command dispatcher,
-hot backend switching or external-service handshake is added by this checkpoint.
+logical playback session, not the producer's lifecycle. The in-process adapters
+now publish runtime frame headers and boundary acknowledgements through the same
+guard. Built-in completion uses a separate 16-byte GPU observer at 10 Hz and on
+controls/final capture, never full hydraulic-field readback. It counts accepted
+substeps; rejected FV candidates cannot advance the reported clock. The observer
+does not write solver fields or alter any existing numerical shader. Pause,
+resume, reset, stop and pacing affect the built-in producer. Generic numeric
+rain editing and single-step commands remain unavailable there; existing narrow
+scene controls remain distinct.
 
-### Bounded external-service transport foundation
+Recording/stock-bridge headers describe the logical viewer playhead, not native
+computation. Saved field time is separately displayed. Navigation loads the
+selected state before announcing a new generation; late asynchronous loads
+cannot replace another requested frame or viewer generation. Playback pause/rate/seek/restart never
+change the recorded or external producer's hydraulics.
+
+### Bounded external-service transport and viewer
 
 The separate `fluid_25d_external_session` client defines a bounded local binary
 transport for the new service: immutable contract metadata and solver bed,
@@ -94,8 +113,27 @@ identity, generation, precision, size and SHA-256 before accepting fields.
 An overtaken display slot may be retried; persistent corruption fails closed.
 POSIX file locking permits one controller, with one outstanding command.
 Stop's final fields and its acknowledgement are accepted atomically; ordinary
-frames cannot follow a terminal state. This transport checkpoint is CPU-tested
-in isolation; it does not yet add a service launch or GUI path.
+frames cannot follow a terminal state. On Linux, attach the draw-only Cubey viewer
+to an explicitly launched worker:
+
+```sh
+# These are explicit, separate foreground processes; use a fresh session leaf.
+python projects/fluid/fluid_25d/external_synxflow/session_worker.py \
+  --extension /absolute/path/to/audited/flood.so \
+  --case /absolute/path/to/retained-case --out ./outputs/fluid/new-session --paused
+
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-backend external --fluid25d-external-session ./outputs/fluid/new-session
+```
+
+The Python process needs the retained native/NumPy environment. Cubey does not
+build or launch it implicitly. The viewer exposes acknowledged solver
+pause/resume/reset/step/stop, uniform rain override in mm/h, and host pacing;
+Space/R address the solver, not playback. Closing the viewer only detaches.
+Typed edits survive heartbeats. A publication delay is explicit; after three
+seconds without a changed valid publication the viewer freezes cues, disables
+controls and returns nonzero on exit. Failed service state also returns nonzero;
+normal stopped/completed states remain viewable without polling a dead producer.
 
 ### Optional source-build audit
 
@@ -132,7 +170,7 @@ retained failed `source-build-verdict.json` under
 This clears the source-build prerequisite, not the later interactive-service
 acceptance gates. The released wheel and stock live viewer remain available.
 
-### Optional GPL external service worker (integration in progress)
+### Optional GPL external service worker
 
 `external_synxflow/` is a separately licensed GPL-3.0-only worker/build slice.
 Its explicit build helper pins the correspondence-passing upstream tag and adds
@@ -171,6 +209,60 @@ dedicated unit test. This is real control evidence, not render freshness,
 long-running storage or human GUI acceptance. See
 `native-controls-service-2/result.json` in the October 4 evidence directory.
 The stock V1 bridge and recordings remain the retained fallback.
+
+### Continuous-service acceptance and limits
+
+`run_external_service_lifetime_v1.py` is an explicitly invoked native/GUI study,
+not a default test. It requires the audited extension, native case/environment,
+MIT probe, viewer, fresh output leaf and a protocol frozen before candidate
+execution. The retained October 4 retry passed 600 wall seconds of continuous
+stateful simulation and rendering on the unchanged 512x512, 30 m mountain input.
+Native time reached 36,007 seconds before the final control sequence. Rain-off/on
+edits and twenty warm pause/resume acknowledgements passed; acknowledgement p95
+was 101.6 ms. The worker stopped/reaped normally, with three fixed slots, at most
+64 control records, zero native output files and unchanged reference inputs.
+Worker RSS varied by only 0.024 MiB after the first 60 seconds.
+
+At the compositor's actual 1280x1432 extent (larger than the requested 960x640),
+concurrent rendering p95 was 0.914 ms against a frozen 16.7 ms budget. The matched
+paused/idle-GPU observation was 0.619 ms: a 47.6% relative slowdown remains an
+accepted shared-GPU limitation, not an interop-free performance claim.
+Publication-to-CPU-side-render-command freshness p95 was 0.184 seconds (maximum
+0.973 seconds), against a 1-second p95 gate. This is not physical scanout timing.
+The first completed soak was not accepted because its harness interrupted a
+large profile export at shutdown; the retry allowed 120 seconds for export
+without changing the simulation or measurement gates. Full uncapped profiling
+is an explicit diagnostic that grows viewer memory/files; it is not the normal
+viewer/worker storage policy.
+
+`run_external_service_failure_v1.py` separately passed real GUI Space/R
+resume/pause/full-reset controls, detach/reattach without producer termination,
+3-second heartbeat-loss fail-closed behavior, and native callback-error unwind
+and reaping. The harness requires an explicit keyboard driver using physical
+evdev scancodes: stock `wtype`'s sequential virtual map did not reach GLFW's
+physical-key shortcuts. The retained private wtype study build changed only
+that diagnostic driver, not Cubey, the installed tool or the solver.
+
+`run_local_backend_lifecycle_v1.py` additionally passed real GUI pause/resume/
+reset for both built-in methods on tiny dry fixtures, and Completed-to-Reset
+navigation on a synthetic recording with its fixture bytes unchanged. These
+are application lifecycle checks, not new terrain/numerical acceptance.
+The final dev repository gate passed 153 CTest cases with zero failures;
+20 opt-in windowed cases were skipped. The default Python host test's optional
+NumPy case was skipped there, then all six host cases passed separately in the
+retained NumPy environment. See `final-regression-2.log`,
+`final-regression-2.xml` and `local-gui-lifecycle/result.json`.
+
+Evidence is under `outputs/fluid/backend-integration-v2-20261004-wlELKz/`:
+`native-continuous-soak-2/result.json`, `native-gui-failure-3/result.json`, and the
+successor `integration-verdict.json`. Earlier failed audits/runs and the earlier
+incomplete `protocol.json` checkpoint are retained, not rewritten as successes.
+Static overview/collection PNGs validate bit-exact bed/depth/velocity uploads
+with zero hydraulic dispatches in Cubey. Automated captures do not replace the
+deferred human GUI review, and extreme uniform study rainfall is not calibrated
+hydrology. Neither native conserved tracer nor a complete native flux ledger
+is published. Switching backends requires a new session; numerical states are
+not transferred between methods.
 
 ### Opt-in live external SynxFlow viewing V1
 
@@ -1327,9 +1419,9 @@ contract is demonstrated.
 
 ## Next implementation gate
 
-The finite-volume terrain audit retains a ranked shortlist, not a product
-fixture. The next product decision must supply a concrete water story and a
-presentation-validity review before selecting mountain floodplain or rolling
-catchment; it must not tune a candidate inside the neutral audition. Any shared
-helper or foundation change still waits for a second independent consumer or a
-measured bottleneck.
+Review the integrated continuous mountain-rain service in the GUI before any
+presentation/product promotion. Keep the built-in solver as the simpler option,
+the stock bridge/recordings as references, and terrain inputs immutable. No
+solver port, new terrain search or numerical replacement follows implicitly
+from this integration. Shared helpers still require an independent consumer or
+a measured bottleneck.
