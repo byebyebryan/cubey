@@ -69,6 +69,18 @@ if (BUILD_TESTING)
     add_test(NAME fluid_25d_recording_contract
         COMMAND cubey_project_fluid_25d_recording_tests)
     set_tests_properties(fluid_25d_recording_contract PROPERTIES LABELS "unit;fluid;recording")
+    add_executable(cubey_project_fluid_25d_backend_contract_tests
+        ../sim/fluid_25d/fluid_25d_backend_contract.cpp
+        ../sim/fluid_25d/fluid_25d_backend_contract_tests.cpp)
+    target_include_directories(
+        cubey_project_fluid_25d_backend_contract_tests
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d"
+    )
+    target_link_libraries(cubey_project_fluid_25d_backend_contract_tests
+        PRIVATE nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
+    add_test(NAME fluid_25d_backend_contract
+        COMMAND cubey_project_fluid_25d_backend_contract_tests)
+    set_tests_properties(fluid_25d_backend_contract PROPERTIES LABELS "unit;fluid;backend")
     find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
     if (CUBEY_FLUID_RECORDING_PYTHON)
         set(CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS)
