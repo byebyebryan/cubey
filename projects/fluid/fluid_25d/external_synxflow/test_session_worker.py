@@ -80,7 +80,7 @@ class WorkerTests(unittest.TestCase):
             original = input_hashes(case / "native/input")
             thread = BoundaryThread(worker, True, 0)
             wait_state(worker, lambda state: state["frame"]["lifecycle"] == "paused")
-            command(worker, 1, "set_rain", 0.001)
+            command(worker, 1, "set-rain", 0.001)
             rain = wait_state(worker, lambda state: state["ack"] and state["ack"]["command_id"] == 1)
             self.assertEqual(rain["ack"]["application_time_s"], 0)
             self.assertAlmostEqual(rain["rain_m_per_s"], 0.001)
@@ -122,12 +122,12 @@ class WorkerTests(unittest.TestCase):
             self.assertTrue(worker.read_command()["rejected"])
             self.assertEqual(worker.last_ack["state"], "rejected")
             self.assertIsNone(worker.read_command())
-            command(worker, 2, "set_rain", 0.001, generation=3)
+            command(worker, 2, "set-rain", 0.001, generation=3)
             self.assertTrue(worker.read_command()["rejected"])
-            command(worker, 3, "set_time_scale", -1)
+            command(worker, 3, "set-time-scale", -1)
             self.assertTrue(worker.read_command()["rejected"])
             for index in range(4, 104):
-                command(worker, index, "set_rain", 0.001)
+                command(worker, index, "set-rain", 0.001)
                 cmd = worker.read_command()
                 worker.acknowledge(cmd)
                 worker.publish(lambda: None)
@@ -141,6 +141,21 @@ class WorkerTests(unittest.TestCase):
             state = json.loads((worker.out / "state.json").read_bytes())
             self.assertEqual(state["frame"]["physical_time_s"], 0)
             self.assertEqual(state["frame"]["lifecycle"], "failed")
+
+    def test_canonical_wire_commands_are_not_capability_keys(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            worker = SessionWorker(make_case(root), root / "service", paused=True)
+            for identity, kind, value in ((1, "set-rain", 0.001),
+                                          (2, "set-time-scale", 60)):
+                command(worker, identity, kind, value)
+                parsed = worker.read_command()
+                self.assertEqual(parsed["kind"], kind)
+                self.assertFalse(parsed.get("rejected", False))
+            for identity, kind in ((3, "set_rain"), (4, "set_time_scale")):
+                command(worker, identity, kind, 1)
+                self.assertTrue(worker.read_command()["rejected"])
+                self.assertEqual(worker.last_ack["state"], "rejected")
 
     def test_malformed_json_and_fresh_output(self):
         for raw in (b'{"x":1,"x":2}', b'{"x":NaN}', b'[]', b' ' * 65537):

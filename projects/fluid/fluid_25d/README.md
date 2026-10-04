@@ -161,9 +161,16 @@ pass. Immutable inputs are not rewritten. The latest 64 control records are
 retained, not an indefinitely growing command log. Worker float-clock stalls
 remain explicit failures; continuous does not promise unlimited time precision.
 
-CPU fake-boundary and format tests do not prove real command responsiveness,
-render freshness, long-running storage or GUI integration. Those gates are
-still pending; the stock V1 bridge and recordings remain the retained fallback.
+`run_external_service_controls_v1.py` explicitly exercises the native worker
+through the same MIT C++ client used by Cubey. The October 4 study passed:
+paused planes held byte-exact, rain edits preserved water, reset restored the
+initial planes byte-exact in a new generation, and twenty warm acknowledgements
+had p95 106.7 ms. The first attempt's wire-command spelling failure remains
+retained beside the successful retry; canonical command spellings now have a
+dedicated unit test. This is real control evidence, not render freshness,
+long-running storage or human GUI acceptance. See
+`native-controls-service-2/result.json` in the October 4 evidence directory.
+The stock V1 bridge and recordings remain the retained fallback.
 
 ### Opt-in live external SynxFlow viewing V1
 

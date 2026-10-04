@@ -26,6 +26,7 @@ STATE_SCHEMA = "cubey.fluid25d.external-state.v1"
 MAX_JSON = 64 * 1024
 MAX_CELLS = 4_194_304
 CAPABILITIES = ("pause", "resume", "reset", "stop", "step", "seek", "set_rain", "set_time_scale")
+WIRE_COMMANDS = {name.replace("_", "-") for name in CAPABILITIES}
 MAGIC = b"CBWTRV1\0"
 
 
@@ -291,17 +292,17 @@ class SessionWorker:
         self.last_command_id = identity
         if (command["schema"] != SCHEMA or command["type"] != "command" or
                 command["session_id"] != self.session_id or command["reset_generation"] != self.generation or
-                command["domain"] != "solver" or command["kind"] not in CAPABILITIES or
+                command["domain"] != "solver" or command["kind"] not in WIRE_COMMANDS or
                 command["kind"] == "seek" or self.step_command is not None):
             self.acknowledge(command, "rejected", "Stale session/generation or unsupported command")
             return {"rejected": True}
         try:
-            value_kind = command["kind"] in ("set_rain", "set_time_scale")
+            value_kind = command["kind"] in ("set-rain", "set-time-scale")
             if value_kind != (command["value"] is not None):
                 raise ValueError("command value presence is invalid")
-            if command["kind"] == "set_rain":
+            if command["kind"] == "set-rain":
                 command["value"] = finite(command["value"], 0, 0.01)
-            if command["kind"] == "set_time_scale":
+            if command["kind"] == "set-time-scale":
                 command["value"] = finite(command["value"], 0.125, 300)
             if command["kind"] == "step" and not self.paused:
                 raise ValueError("Step requires a paused solver")
@@ -372,7 +373,7 @@ class SessionWorker:
                 if command.get("rejected"):
                     self.publish(snapshot)
                 else:
-                    kind = command["kind"]
+                    kind = command["kind"].replace("-", "_")
                     if kind == "reset":
                         self.reset_command = command
                         self.acknowledge(command, "accepted", "Full native reinitialization pending")

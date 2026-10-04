@@ -63,6 +63,14 @@ target_include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d"
 )
 
+# Explicit read/control diagnostic only; no automatic native launch or CUDA dependency.
+add_executable(cubey_project_fluid_25d_external_probe EXCLUDE_FROM_ALL
+    ../sim/fluid_25d/fluid_25d_backend_contract.cpp
+    ../sim/fluid_25d/fluid_25d_external_session.cpp
+    ../sim/fluid_25d/fluid_25d_external_session_probe.cpp)
+target_link_libraries(cubey_project_fluid_25d_external_probe
+    PRIVATE cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
+
 if (BUILD_TESTING)
     add_executable(cubey_project_fluid_25d_external_session_tests
         ../sim/fluid_25d/fluid_25d_backend_contract.cpp
