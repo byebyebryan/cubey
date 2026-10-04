@@ -17,6 +17,14 @@ import tarfile
 
 
 SDIST_SHA256 = "dd99a5b424fd4cad0a38f5e91d6b4ac09db4ae8dbf8d8c2fb4af669a105bd281"
+GITHUB_COMMIT = "8a9781504204a7b41217b483db4190c1f6f340bc"
+SOURCE_PINS = {
+    "pypi-1.0.1": (SDIST_SHA256, "synxflow-1.0.1"),
+    "github-1.0.1": (
+        "281e84ac6945b7a10c04e11a226dd1bc56673f2fe4deb03f9095671f3ac5f297",
+        "SynxFlow-" + GITHUB_COMMIT,
+    ),
+}
 
 
 def sha256(path: Path) -> str:
@@ -33,6 +41,8 @@ def replace_exact(path: Path, old: str, new: str, expected_count: int = 1) -> No
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sdist", type=Path, required=True)
+    parser.add_argument("--source-pin", choices=tuple(SOURCE_PINS), default="pypi-1.0.1",
+                        help="explicit immutable source artifact; equal version labels do not imply equal numerical source")
     parser.add_argument("--cuda-root", type=Path, required=True)
     parser.add_argument("--python", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
@@ -43,8 +53,9 @@ def main() -> int:
     parser.add_argument("--cxx", type=Path)
     args = parser.parse_args()
     source_archive = args.sdist.resolve(strict=True)
-    if sha256(source_archive) != SDIST_SHA256:
-        raise ValueError("source archive does not match the pinned SynxFlow1.0.1 sdist")
+    source_sha256, source_directory = SOURCE_PINS[args.source_pin]
+    if sha256(source_archive) != source_sha256:
+        raise ValueError("source archive does not match the explicitly selected SynxFlow1.0.1 pin")
     cuda = args.cuda_root.resolve(strict=True)
     python = args.python.absolute()
     if not 1 <= args.jobs <= 32 or not (cuda / "bin/nvcc").is_file():
@@ -62,10 +73,11 @@ def main() -> int:
         # The immutable hash is checked first; still reject link/path members.
         for member in archive.getmembers():
             path = Path(member.name)
-            if path.is_absolute() or ".." in path.parts or member.issym() or member.islnk():
+            if (path.is_absolute() or ".." in path.parts or member.issym() or member.islnk()
+                    or not path.parts or path.parts[0] != source_directory):
                 raise ValueError("unsafe source archive member")
         archive.extractall(out)
-    source = out / "synxflow-1.0.1"
+    source = out / source_directory
     before = {str(path.relative_to(source)): sha256(path) for path in source.rglob("*") if path.is_file()}
     if args.toolchain == "blackwell13":
         replace_exact(source / "CMakeLists.txt", "set(CMAKE_CXX_STANDARD 11)", "set(CMAKE_CXX_STANDARD 17)")
@@ -89,7 +101,9 @@ def main() -> int:
         compiler = args.cxx.resolve(strict=True)
         configure.extend([f"-DCMAKE_CXX_COMPILER={compiler}", f"-DCUDA_HOST_COMPILER={compiler}"])
     compile_command = ["cmake", "--build", str(build), "--target", "flood", "-j", str(args.jobs)]
-    record = {"schema": "cubey.fluid25d.synxflow-source-build.v1", "sdist_sha256": SDIST_SHA256,
+    record = {"schema": "cubey.fluid25d.synxflow-source-build.v1",
+              "source_pin": args.source_pin, "source_archive_sha256": source_sha256,
+              "upstream_commit": GITHUB_COMMIT if args.source_pin == "github-1.0.1" else None,
               "cuda_root": str(cuda), "cuda_version": subprocess.check_output([str(cuda / "bin/nvcc"), "--version"], text=True),
               "toolchain": args.toolchain,
               "python": str(python), "build_compatibility_files": changed,
@@ -100,6 +114,12 @@ def main() -> int:
             subprocess.run(configure, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=120)
         with (out / "build.log").open("wb") as log:
             subprocess.run(compile_command, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=600)
+        changed_after_build = sorted(name for name, checksum in before.items()
+                                     if sha256(source / name) != checksum)
+        if changed_after_build != expected_changes:
+            record["numerical_sources_unchanged"] = False
+            raise ValueError("source files changed outside declared build compatibility edits")
+        record["unchanged_original_source_file_count"] = len(before) - len(expected_changes)
         extension = build / "synxflow/apps/cudaFloodSolversPybind/flood.cpython-311-x86_64-linux-gnu.so"
         record.update(passed=True, extension=str(extension), extension_sha256=sha256(extension))
     finally:

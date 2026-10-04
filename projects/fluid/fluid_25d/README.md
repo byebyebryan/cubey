@@ -84,14 +84,19 @@ logical playback session, not the producer's lifecycle. These are startup
 descriptors only: no per-frame GPU readback, shared runtime command dispatcher,
 hot backend switching or external-service handshake is added by this checkpoint.
 
-### Optional source-build audit (not promoted)
+### Optional source-build audit
 
-`build_synxflow_source_v1.py` builds the pinned SynxFlow 1.0.1 source archive in
+`build_synxflow_source_v1.py` builds an explicitly pinned SynxFlow 1.0.1 archive in
 a fresh private directory using an explicitly supplied CUDA toolkit and CPython
 3.11. It does not install anything or add CUDA to Cubey. The default `legacy11`
 lane leaves every upstream source file unchanged; `blackwell13` changes only
 the two build-system files for current CUDA compatibility. The archive checksum,
 commands, extension checksum and logs are retained in the output directory.
+The default `--source-pin pypi-1.0.1` retains the original sdist diagnostic;
+`--source-pin github-1.0.1` selects upstream commit
+`8a9781504204a7b41217b483db4190c1f6f340bc`. These equal version labels do not
+identify equal numerical source. Both pins require their exact archive checksum
+before toolkit inspection or output creation.
 
 `check_synxflow_source_correspondence_v1.py` runs that extension on fresh,
 byte-identical copies of retained case inputs, using a predeclared protocol.
@@ -100,14 +105,19 @@ controls, stops after a failed case, and never edits the reference inputs or
 loosens the comparison gates. Its unit tests require the study's NumPy environment
 and do not run the solver.
 
-The October 4 source audit did **not** pass the promotion gate. Both tested builds
+The initial October 4 PyPI-source audit did **not** pass the promotion gate. Both builds
 matched all nine small controls exactly. On the mountain case, aggregate depth
 and momentum differences stayed within the frozen tolerances, but localized
 momentum differences did not. A fresh run of the released wheel matched all
-723 reference field files exactly. The cause of the rebuild divergence remains
-unresolved; the released wheel and stock live viewer are retained. Binary
-publication and continuous, interactive external-solver controls have not been
-implemented or accepted. Evidence: `outputs/fluid/backend-integration-v2-20261004-wlELKz/`.
+723 reference field files exactly. A source audit then found semantic differences
+in 11 of 125 numerical files between that sdist and the upstream release tag.
+The unmodified tag, built with the same retained CUDA 11.7/GCC 11.4 toolchain,
+passed all nine controls and both 14,400-second mountain rain/recession cases
+under the unchanged frozen gates. See `source-tag-verdict.json` alongside the
+retained failed `source-build-verdict.json` under
+`outputs/fluid/backend-integration-v2-20261004-wlELKz/`.
+This clears the source-build prerequisite, not the later interactive-service
+acceptance gates. The released wheel and stock live viewer remain available.
 
 ### Opt-in live external SynxFlow viewing V1
 

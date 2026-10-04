@@ -106,6 +106,10 @@ if (BUILD_TESTING)
     set_tests_properties(fluid_25d_backend_adapters PROPERTIES LABELS "unit;fluid;backend")
     find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
     if (CUBEY_FLUID_RECORDING_PYTHON)
+        add_test(NAME fluid_25d_source_build_pin
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_build_synxflow_source_v1.py)
+        set_tests_properties(fluid_25d_source_build_pin PROPERTIES LABELS "unit;fluid;dependency" TIMEOUT 30)
         set(CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS)
         if (CUBEY_HAS_LIBAV)
             list(APPEND CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS --video)
