@@ -51,6 +51,9 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
         return;
     }
 
+    ImGui::Text("Backend: built-in | %s", fluid_25d_solver_name(ui.solver));
+    ImGui::TextDisabled("GPU-resident simulation; controls below change this solver.");
+
     cubey::host::imgui_enum_combo(
         "Presentation", ui.presentation_view, kPresentationViews, fluid_25d_presentation_view_name,
         "Choose the oblique catchment surface or the top-down diagnostics surface.");

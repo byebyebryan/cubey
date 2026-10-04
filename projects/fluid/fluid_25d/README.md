@@ -52,6 +52,18 @@ and neither solver has selected or tuned a terrain case.
 
 ## Product boundary
 
+### Backend selection
+
+`--fluid25d-backend builtin|external|recording` makes the producer explicit.
+Omitting it preserves the existing default and legacy path flags. `builtin`
+uses the existing GPU solver (`--fluid25d-solver virtual-pipes|finite-volume`);
+`external` requires `--fluid25d-stream`; `recording` requires
+`--fluid25d-recording`. Conflicting selections fail before startup: there is
+no silent fallback or numerical-state transfer between solvers. The stock
+external stream remains viewing-only; it does not support solver pause or
+rainfall edits. Built-in controls operate on the GPU simulation. Neither
+built-in method is being promoted as equivalent to the tested mountain solver.
+
 ### Opt-in live external SynxFlow viewing V1
 
 `--fluid25d-stream` reads an atomically published growing prefix from a separate

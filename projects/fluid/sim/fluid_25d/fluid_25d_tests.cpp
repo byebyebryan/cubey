@@ -6433,8 +6433,47 @@ void test_recording_cli_is_separate_from_physics() {
             "fixed-time recorded capture should be independently configured");
 }
 
+void test_backend_selection_preserves_existing_modes() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const auto defaults = parse_project({"fluid_25d"});
+    require(fluid_25d_selected_backend(defaults) == "builtin" &&
+                defaults.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "omitted backend must retain the builtin virtual-pipes default");
+    const auto builtin = parse_project(
+        {"fluid_25d", "--fluid25d-backend", "builtin", "--fluid25d-solver", "finite-volume"});
+    require(fluid_25d_selected_backend(builtin) == "builtin" &&
+                builtin.simulation.solver == Fluid25DSolver::FiniteVolume,
+            "backend and builtin numerical method must remain separate");
+    for (const bool explicit_backend : {false, true}) {
+        std::vector<std::string> recording{"fluid_25d", "--fluid25d-recording", "recording.json"};
+        std::vector<std::string> external{"fluid_25d", "--fluid25d-stream", "stream.json"};
+        if (explicit_backend) {
+            recording.insert(recording.end(), {"--fluid25d-backend", "recording"});
+            external.insert(external.end(), {"--fluid25d-backend", "external"});
+        }
+        require(fluid_25d_selected_backend(parse_project(recording)) == "recording",
+                "recording selection must support both old and explicit CLI forms");
+        require(fluid_25d_selected_backend(parse_project(external)) == "external",
+                "external selection must support both old and explicit CLI forms");
+    }
+    for (const auto& arguments : std::vector<std::vector<std::string>>{
+             {"fluid_25d", "--fluid25d-backend", "external"},
+             {"fluid_25d", "--fluid25d-backend", "recording"},
+             {"fluid_25d", "--fluid25d-backend", "builtin", "--fluid25d-stream", "stream.json"},
+             {"fluid_25d", "--fluid25d-backend", "builtin", "--fluid25d-recording",
+              "recording.json"},
+             {"fluid_25d", "--fluid25d-backend", "recording", "--fluid25d-stream", "stream.json"},
+             {"fluid_25d", "--fluid25d-backend", "external", "--fluid25d-recording",
+              "recording.json"},
+             {"fluid_25d", "--fluid25d-backend", "not-a-backend"}}) {
+        require_throws([&] { static_cast<void>(parse_project(arguments)); },
+                       "backend conflicts must fail without silently selecting another mode");
+    }
+}
+
 int main() {
     try {
+        test_backend_selection_preserves_existing_modes();
         test_recording_cli_is_separate_from_physics();
         test_catchment_far_plane_geometry();
         test_config_defaults_and_parsing();

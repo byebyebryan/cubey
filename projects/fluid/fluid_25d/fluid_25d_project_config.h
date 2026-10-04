@@ -12,6 +12,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -47,6 +48,9 @@ struct Fluid25DProjectConfig {
     bool rain_study_gpu_controls = false;
     bool motion_marker_gpu_controls = false;
     bool hillside_source_context = false;
+    // Backend selection is independent of the built-in numerical method.
+    // Omitted preserves the existing recording/stream flags and builtin default.
+    std::optional<std::string> backend{};
     // An external recording is a presentation data source, never a solver selection.
     std::optional<std::filesystem::path> recording_path{};
     std::optional<std::filesystem::path> stream_path{};
@@ -59,6 +63,20 @@ struct Fluid25DProjectConfig {
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
 };
+
+[[nodiscard]] inline std::string_view
+fluid_25d_selected_backend(const Fluid25DProjectConfig& config) {
+    const std::string_view inferred = config.recording_path ? "recording"
+                                      : config.stream_path  ? "external"
+                                                            : "builtin";
+    if (config.backend && *config.backend != inferred) {
+        throw std::runtime_error(
+            "fluid 2.5D backend conflicts with the supplied data source: builtin needs no "
+            "recording/stream, recording needs --fluid25d-recording, external needs "
+            "--fluid25d-stream");
+    }
+    return inferred;
+}
 
 namespace fluid_25d_project_config_detail {
 
@@ -400,6 +418,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
     builder.compose(common::fluid_grid_schema(config.grid, common::FluidGridSchemaMode::TwoD));
     builder
+        .bind(option("fluid25d.backend", "--fluid25d-backend", "Water Backend",
+                     "Select builtin, external, or recording; the builtin solver option remains "
+                     "independent. Omitted preserves existing source-based selection.",
+                     ValueType::Enum, {}, {"builtin", "external", "recording"}),
+              config.backend)
         .bind(option("fluid25d.recording", "--fluid25d-recording", "Recording",
                      "Replay a portable native-state recording; no hydraulic solver runs.",
                      ValueType::Path),
@@ -683,6 +706,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         "fluid25d.recording_gpu_validation"};
     if (project_config.recording_path && project_config.stream_path)
         throw std::runtime_error("recording and live stream sources are mutually exclusive");
+    static_cast<void>(fluid_25d_selected_backend(project_config));
     if (parsed.path_was_assigned("fluid25d.stream_follow_latest") && !project_config.stream_path)
         throw std::runtime_error("follow latest requires --fluid25d-stream");
     if (project_config.recording_path || project_config.stream_path) {
