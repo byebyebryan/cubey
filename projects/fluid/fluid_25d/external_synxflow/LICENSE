@@ -3,7 +3,7 @@ SPDX-License-Identifier: GPL-3.0-only
 The optional SynxFlow service hook and the build tooling that patches the
 pinned SynxFlow source are distributed under GPL-3.0-only. The generated
 private source tree retains the pinned upstream LICENSE.txt verbatim; the
-complete license text is available there and at:
+complete license text is also included in COPYING in this directory and at:
 
 https://www.gnu.org/licenses/gpl-3.0.txt
 
