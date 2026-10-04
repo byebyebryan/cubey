@@ -122,11 +122,35 @@ void record_dispatch(const cubey::vulkan::CommandRecorder& recorder,
 void record_reset(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                   const cubey::render::ComputeDispatchGroups& groups,
                   const SimulationPushConstants& push_constants) {
+    cubey::vulkan::record_memory_barrier(
+        command_buffer, {
+                            .src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            .dst_access = VK_ACCESS_TRANSFER_WRITE_BIT,
+                        });
+    vkCmdFillBuffer(command_buffer, resources.backend_progress().handle(), 0,
+                    static_cast<VkDeviceSize>(sizeof(Fluid25DBackendProgressGpu)), 0U);
+    cubey::vulkan::record_transfer_write_barrier(
+        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     record_dispatch(recorder, resources.reset_pipeline(), resources.reset_descriptor_set(), groups,
                     push_constants);
     cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
     resources.reset_depth_parity();
+}
+
+void record_backend_progress(VkCommandBuffer command_buffer,
+                             const cubey::vulkan::CommandRecorder& recorder,
+                             Fluid25DGpuResources& resources,
+                             const SimulationPushConstants& push_constants) {
+    record_dispatch(recorder, resources.backend_progress_pipeline(),
+                    resources.backend_progress_descriptor_set(), {.x = 1U, .y = 1U, .z = 1U},
+                    push_constants);
+    // The next observer invocation in this submission reads the counter
+    // written by this invocation. No solver buffer is written by the observer.
+    cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
 }
 
 void record_presentation_cue_reset(VkCommandBuffer command_buffer,
@@ -242,8 +266,9 @@ catchment_push_constants(const Fluid25DConfig& config, const Fluid25DGpuResource
                          static_cast<float>(static_cast<std::uint32_t>(catchment_view)),
                          (render_options.terrain_thin_water_composite ? 1.0F : 0.0F) +
                              (render_options.hillside_depth_cues ? 2.0F : 0.0F),
-                         render_options.native_recording ? 4.0F :
-                             fluid_25d_catchment_terrain_material_cue(config.scenario)},
+                         render_options.native_recording
+                             ? 4.0F
+                             : fluid_25d_catchment_terrain_material_cue(config.scenario)},
         .terrain_palette = {render_options.terrain_palette_low_m.value_or(0.0F),
                             render_options.terrain_palette_high_m.value_or(0.0F),
                             has_physical_palette ? 1.0F : 0.0F,
@@ -317,6 +342,7 @@ void record_fluid_25d_compute_batch_internal(
             if (config.solver == Fluid25DSolver::FiniteVolume) {
                 record_finite_volume_substep(command_buffer, recorder, resources, groups,
                                              push_constants);
+                record_backend_progress(command_buffer, recorder, resources, push_constants);
                 continue;
             }
             const bool source_is_a = resources.current_depth_is_a();
@@ -329,6 +355,7 @@ void record_fluid_25d_compute_batch_internal(
                             resources.depth_descriptor_set(source_is_a), groups, push_constants);
             cubey::vulkan::record_compute_shader_write_barrier(command_buffer);
             resources.advance_depth_parity();
+            record_backend_progress(command_buffer, recorder, resources, push_constants);
         }
         if (record_presentation_cue) {
             record_presentation_cue_advection(command_buffer, recorder, resources, groups,
@@ -383,10 +410,11 @@ void record_flow_inspection_quiver_reset_internal(VkCommandBuffer command_buffer
 
 } // namespace
 
-void record_fluid_25d_recorded_presentation(
-    VkCommandBuffer command_buffer, Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-    float physical_delta_seconds, bool& cue_reset_requested, bool& quiver_reset_requested,
-    bool show_quiver) {
+void record_fluid_25d_recorded_presentation(VkCommandBuffer command_buffer,
+                                            Fluid25DGpuResources& resources,
+                                            const Fluid25DConfig& config,
+                                            float physical_delta_seconds, bool& cue_reset_requested,
+                                            bool& quiver_reset_requested, bool show_quiver) {
     if (!resources.presentation_only() || !std::isfinite(physical_delta_seconds) ||
         physical_delta_seconds < 0.0F)
         throw std::runtime_error("recorded presentation requires its own finite nonnegative clock");
@@ -394,13 +422,15 @@ void record_fluid_25d_recorded_presentation(
     auto params = presentation_cue_push_constants(config);
     params.grid_dt_cell[2] = physical_delta_seconds;
     const auto groups = dispatch_groups(config);
-    cubey::vulkan::record_memory_barrier(command_buffer, {
-        .src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-        .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-    });
+    cubey::vulkan::record_memory_barrier(
+        command_buffer, {
+                            .src_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                            .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                            .dst_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                        });
     if (cue_reset_requested) {
         record_presentation_cue_reset(command_buffer, recorder, resources, groups, params);
         cue_reset_requested = false;
@@ -416,8 +446,9 @@ void record_fluid_25d_recorded_presentation(
         record_quiver_update(command_buffer, recorder, resources, quiver_groups, params);
     }
     cubey::vulkan::record_shader_write_barrier(
-        command_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        command_buffer,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
         VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
 }
 
@@ -472,11 +503,11 @@ void record_fluid_25d_fullscreen_draw(VkCommandBuffer command_buffer,
                        static_cast<float>(static_cast<std::uint32_t>(debug_view)),
                        config.minimum_wet_depth_m},
         .recording_range = {render_options.terrain_palette_low_m.value_or(0.0F),
-                            render_options.terrain_palette_high_m.value_or(1.0F),
-                            15.0F, render_options.native_recording
-                                       ? static_cast<float>(color_target.extent.width) /
-                                             static_cast<float>(color_target.extent.height)
-                                       : 0.0F},
+                            render_options.terrain_palette_high_m.value_or(1.0F), 15.0F,
+                            render_options.native_recording
+                                ? static_cast<float>(color_target.extent.width) /
+                                      static_cast<float>(color_target.extent.height)
+                                : 0.0F},
     };
     cubey::render::record_render_target_pass(
         recorder, cubey::render::render_target_view(color_target),
@@ -611,6 +642,10 @@ void record_fluid_25d_catchment_draw(
         import("fluid 2.5D ledger", resources.ledger());
     const cubey::render::RenderGraphBufferHandle tracer_ledger =
         import("fluid 2.5D tracer ledger", resources.tracer_ledger());
+    std::optional<cubey::render::RenderGraphBufferHandle> backend_progress;
+    if (include_simulation && !resources.presentation_only())
+        backend_progress =
+            import("fluid 2.5D accepted backend progress", resources.backend_progress());
     const cubey::render::RenderGraphBufferHandle presentation_cue_a =
         import("fluid 2.5D presentation cue A", resources.presentation_cue_a());
     const cubey::render::RenderGraphBufferHandle presentation_cue_b =
@@ -653,6 +688,8 @@ void record_fluid_25d_catchment_draw(
             .read_write_storage_buffer(tracer_ledger)
             .read_write_storage_buffer(presentation_cue_a)
             .read_write_storage_buffer(presentation_cue_b);
+        if (backend_progress)
+            simulation.read_write_storage_buffer(*backend_progress);
         if (flow_inspection_active) {
             simulation.read_write_storage_buffer(quiver);
         }

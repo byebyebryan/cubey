@@ -8,6 +8,16 @@
 
 namespace cubey::projects::fluid::fluid_25d {
 
+// A completed asynchronous load belongs to both a saved frame and the viewer
+// generation that requested it. Returning to the same index after a seek must
+// not make work from the previous generation current again.
+[[nodiscard]] inline bool
+fluid_25d_local_frame_load_is_current(std::size_t loaded_index, std::uint64_t loaded_generation,
+                                      std::size_t wanted_index,
+                                      std::uint64_t viewer_generation) noexcept {
+    return loaded_index == wanted_index && loaded_generation == viewer_generation;
+}
+
 // Metadata-only adapter for the existing in-process producers. Applications
 // supply a completed GPU boundary or a logical playback boundary; this class
 // never advances a solver, reads a full field, or converts momentum/discharge.

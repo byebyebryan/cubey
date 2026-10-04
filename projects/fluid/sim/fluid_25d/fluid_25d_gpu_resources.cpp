@@ -241,6 +241,7 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
     const std::vector<float> zero_tracer_q(cells);
     const std::vector<float> zero_presentation_cue(cells);
     const std::vector<Fluid25DFiniteVolumeStatusGpu> zero_presentation_status(1U);
+    const std::array<Fluid25DBackendProgressGpu, 1U> zero_backend_progress{};
     const Fluid25DEndpointMarkersGpu endpoint_markers =
         fluid_25d_endpoint_markers(config, scenario);
     std::vector<Fluid25DQuiverGpu> inactive_quiver(
@@ -283,6 +284,10 @@ void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
                    "fluid_25d finite-volume candidate tracer ledger delta upload"));
         finite_volume_status_.emplace(
             upload(zero_status, static_buffer_usage(), "fluid_25d finite-volume status upload"));
+    }
+    if (!presentation_only_) {
+        backend_progress_.emplace(upload(zero_backend_progress, static_buffer_usage(),
+                                         "fluid_25d accepted backend progress upload"));
     }
     velocity_.emplace(upload(zero_velocity, static_buffer_usage(), "fluid_25d velocity upload"));
     ledger_.emplace(upload(zero_ledger, static_buffer_usage(), "fluid_25d ledger upload"));
@@ -615,6 +620,15 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     };
     write_quiver_render(quiver_render_a_descriptors_->set(), depth_a());
     write_quiver_render(quiver_render_b_descriptors_->set(), depth_b());
+    if (!presentation_only_) {
+        backend_progress_descriptors_.emplace(device,
+                                              storage_set_info(2U, VK_SHADER_STAGE_COMPUTE_BIT));
+        writes
+            .storage_buffer(backend_progress_descriptors_->set(), 0,
+                            presentation_cue_status().handle(), presentation_cue_status().size())
+            .storage_buffer(backend_progress_descriptors_->set(), 1, backend_progress().handle(),
+                            backend_progress().size());
+    }
     writes.update(device);
 }
 
@@ -644,6 +658,9 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
                                      "fluid_25d_fv_commit.comp.spv",
                                      finite_volume_commit_a_to_b_descriptors_->layout());
         }
+        emplace_compute_pipeline(backend_progress_pipeline_, device,
+                                 "fluid_25d_backend_progress.comp.spv",
+                                 backend_progress_descriptors_->layout());
     }
     emplace_compute_pipeline(presentation_cue_reset_pipeline_, device,
                              "fluid_25d_presentation_cue_reset.comp.spv",
@@ -746,6 +763,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     // Pipelines retain pipeline layouts that reference the descriptor layouts;
     // release them before descriptors, then release descriptor-referenced
     // buffers last.
+    backend_progress_pipeline_.reset();
     finite_volume_commit_pipeline_.reset();
     finite_volume_candidate_pipeline_.reset();
     finite_volume_cfl_finalize_pipeline_.reset();
@@ -776,6 +794,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     flux_b_descriptors_.reset();
     flux_a_descriptors_.reset();
     reset_descriptors_.reset();
+    backend_progress_descriptors_.reset();
     finite_volume_commit_b_to_a_descriptors_.reset();
     finite_volume_commit_a_to_b_descriptors_.reset();
     finite_volume_candidate_b_to_a_descriptors_.reset();
@@ -796,6 +815,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     ledger_.reset();
     velocity_.reset();
     flux_.reset();
+    backend_progress_.reset();
     finite_volume_status_.reset();
     finite_volume_candidate_tracer_ledger_delta_.reset();
     finite_volume_candidate_ledger_delta_.reset();
@@ -852,6 +872,8 @@ CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_candidate_tracer_ledger_delta,
                                  "finite-volume candidate tracer ledger delta buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_status, finite_volume_status_,
                                  "finite-volume status buffer")
+CUBEY_FLUID25D_RESOURCE_ACCESSOR(backend_progress, backend_progress_,
+                                 "accepted backend progress buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_candidate_mass_audit,
                                  finite_volume_candidate_mass_audit_, "candidate mass audit buffer")
 CUBEY_FLUID25D_RESOURCE_ACCESSOR(finite_volume_mass_audit, finite_volume_mass_audit_,
@@ -922,6 +944,8 @@ CUBEY_FLUID25D_PIPELINE_ACCESSOR(finite_volume_candidate_pipeline,
                                  "finite-volume candidate pipeline")
 CUBEY_FLUID25D_PIPELINE_ACCESSOR(finite_volume_commit_pipeline, finite_volume_commit_pipeline_,
                                  "finite-volume commit pipeline")
+CUBEY_FLUID25D_PIPELINE_ACCESSOR(backend_progress_pipeline, backend_progress_pipeline_,
+                                 "accepted backend progress pipeline")
 CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_reset_pipeline, presentation_cue_reset_pipeline_,
                                  "presentation cue reset pipeline")
 CUBEY_FLUID25D_PIPELINE_ACCESSOR(presentation_cue_advection_pipeline,

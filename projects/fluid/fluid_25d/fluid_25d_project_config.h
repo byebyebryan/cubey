@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../sim/fluid_25d/fluid_25d_backend_contract.h"
 #include "../sim/fluid_25d/fluid_25d_config.h"
 #include "../sim/fluid_25d/fluid_25d_presentation.h"
 
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <stdexcept>
@@ -53,6 +55,8 @@ struct Fluid25DProjectConfig {
     std::optional<std::string> backend{};
     // An external recording is a presentation data source, never a solver selection.
     std::optional<std::filesystem::path> recording_path{};
+    // Attach to an already-running service; Cubey never launches the producer.
+    std::optional<std::filesystem::path> external_session_path{};
     std::optional<std::filesystem::path> stream_path{};
     bool stream_follow_latest = false;
     float recording_speed = 60.0F;
@@ -66,19 +70,65 @@ struct Fluid25DProjectConfig {
 
 [[nodiscard]] inline std::string_view
 fluid_25d_selected_backend(const Fluid25DProjectConfig& config) {
+    const bool external_source = config.external_session_path || config.stream_path;
+    if (config.recording_path && external_source)
+        throw std::runtime_error("recording and external session sources are mutually exclusive");
+    if (config.external_session_path && config.stream_path)
+        throw std::runtime_error(
+            "external service and stock stream sources are mutually exclusive");
     const std::string_view inferred = config.recording_path ? "recording"
-                                      : config.stream_path  ? "external"
+                                      : external_source     ? "external"
                                                             : "builtin";
     if (config.backend && *config.backend != inferred) {
         throw std::runtime_error(
             "fluid 2.5D backend conflicts with the supplied data source: builtin needs no "
-            "recording/stream, recording needs --fluid25d-recording, external needs "
-            "--fluid25d-stream");
+            "recording/external session/stream, recording needs --fluid25d-recording, external "
+            "needs --fluid25d-external-session or --fluid25d-stream");
     }
     return inferred;
 }
 
 namespace fluid_25d_project_config_detail {
+
+enum class ExternalSessionHealth : std::uint8_t {
+    Healthy,
+    Delayed,
+    Disconnected,
+    Completed,
+    Stopped,
+    Failed,
+};
+
+inline constexpr double kExternalHealthyHeartbeatSeconds = 0.5;
+inline constexpr double kExternalDisconnectAfterSeconds = 3.0;
+
+[[nodiscard]] inline ExternalSessionHealth
+external_session_health(Fluid25DLifecycle lifecycle, double seconds_since_valid_publication,
+                        double publication_age_seconds) noexcept {
+    if (lifecycle == Fluid25DLifecycle::Completed)
+        return ExternalSessionHealth::Completed;
+    if (lifecycle == Fluid25DLifecycle::Stopped)
+        return ExternalSessionHealth::Stopped;
+    if (lifecycle == Fluid25DLifecycle::Failed)
+        return ExternalSessionHealth::Failed;
+    if (!std::isfinite(seconds_since_valid_publication) ||
+        !std::isfinite(publication_age_seconds) || seconds_since_valid_publication < 0.0 ||
+        publication_age_seconds < 0.0 ||
+        seconds_since_valid_publication >= kExternalDisconnectAfterSeconds ||
+        publication_age_seconds >= kExternalDisconnectAfterSeconds)
+        return ExternalSessionHealth::Disconnected;
+    if (seconds_since_valid_publication <= kExternalHealthyHeartbeatSeconds &&
+        publication_age_seconds <= kExternalHealthyHeartbeatSeconds)
+        return ExternalSessionHealth::Healthy;
+    return ExternalSessionHealth::Delayed;
+}
+
+[[nodiscard]] inline bool
+should_refresh_external_control_input(bool locally_dirty, bool generation_changed,
+                                      bool own_command_applied,
+                                      bool explicitly_cancelled = false) noexcept {
+    return !locally_dirty || generation_changed || own_command_applied || explicitly_cancelled;
+}
 
 inline config::OptionSpec option(std::string path, std::string cli, std::string label,
                                  std::string help, config::ValueType type, config::Range range = {},
@@ -431,6 +481,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Watch atomic snapshots from a running external solver; no CUDA in Cubey.",
                      ValueType::Path),
               config.stream_path)
+        .bind(option("fluid25d.external_session", "--fluid25d-external-session",
+                     "External Service Session",
+                     "Attach to an existing service directory; Cubey never launches or builds it.",
+                     ValueType::Path),
+              config.external_session_path)
         .bind(option("fluid25d.stream_follow_latest", "--fluid25d-stream-follow-latest",
                      "Follow Latest",
                      "Follow the latest validated snapshot instead of paced viewing.",
@@ -704,10 +759,15 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         "fluid25d.recording_speed", "fluid25d.recording_time_seconds",
         "fluid25d.recording_frame_interval_seconds", "fluid25d.recording_camera",
         "fluid25d.recording_gpu_validation"};
-    if (project_config.recording_path && project_config.stream_path)
-        throw std::runtime_error("recording and live stream sources are mutually exclusive");
+    const bool service_session = project_config.external_session_path.has_value();
+    if ((project_config.recording_path &&
+         (project_config.stream_path || project_config.external_session_path)) ||
+        (project_config.stream_path && project_config.external_session_path))
+        throw std::runtime_error("recording, stock stream, and external service sources are "
+                                 "mutually exclusive");
     static_cast<void>(fluid_25d_selected_backend(project_config));
-    if (parsed.path_was_assigned("fluid25d.stream_follow_latest") && !project_config.stream_path)
+    if (parsed.path_was_assigned("fluid25d.stream_follow_latest") &&
+        (!project_config.stream_path || service_session))
         throw std::runtime_error("follow latest requires --fluid25d-stream");
     if (project_config.recording_path || project_config.stream_path) {
         if (project_config.stream_path && project_config.common.headless &&
@@ -795,6 +855,92 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
             *project_config.catchment_render.terrain_palette_low_m >=
                 *project_config.catchment_render.terrain_palette_high_m)
             throw std::runtime_error("recording terrain palette bounds must be increasing");
+        if (parsed.write_config_template_path)
+            schema.write_template(*parsed.write_config_template_path);
+        if (result != nullptr)
+            *result = std::move(parsed);
+        return project_config;
+    }
+    if (service_session) {
+        const std::array incompatible_options{"grid.width",
+                                              "grid.height",
+                                              "grid.depth",
+                                              "terrain.heightfield",
+                                              "fluid25d.solver",
+                                              "fluid25d.scenario",
+                                              "fluid25d.cell_size_m",
+                                              "fluid25d.fixed_delta_seconds",
+                                              "fluid25d.substeps",
+                                              "fluid25d.gravity_m_per_s2",
+                                              "fluid25d.flow_damping_per_second",
+                                              "fluid25d.minimum_wet_depth_m",
+                                              "fluid25d.terrain_crop_x",
+                                              "fluid25d.terrain_crop_z",
+                                              "fluid25d.terrain_water_protocol",
+                                              "fluid25d.rainfall_rate_mm_per_hour",
+                                              "fluid25d.sheet_depth_m",
+                                              "fluid25d.source_active_duration_seconds",
+                                              "fluid25d.headwaters_source_scale",
+                                              "fluid25d.natural_flow_recipe",
+                                              "fluid25d.natural_flow_source_m3_per_s",
+                                              "fluid25d.dye_pulse_start_seconds",
+                                              "fluid25d.dye_pulse_duration_seconds",
+                                              "fluid25d.gpu_oracle_validation",
+                                              "fluid25d.mass_audit",
+                                              "fluid25d.mass_audit_control",
+                                              "fluid25d.hillside_supply_response",
+                                              "fluid25d.hillside_supply_gpu_controls",
+                                              "fluid25d.rain_study_gpu_controls",
+                                              "fluid25d.motion_marker_gpu_controls",
+                                              "fluid25d.hillside_inspection_advance_seconds",
+                                              "fluid25d.hillside_advance_and_continue_seconds",
+                                              "fluid25d.presentation_time_scale",
+                                              "fluid25d.hillside_source_context",
+                                              "fluid25d.hillside_camera",
+                                              "fluid25d.natural_flow_home_pitch_radians"};
+        for (const char* path : incompatible_options) {
+            if (parsed.path_was_assigned(path))
+                throw std::runtime_error(
+                    std::string("external service rejects hydraulic/legacy control: ") + path);
+        }
+        if (!project_config.external_session_path || project_config.external_session_path->empty())
+            throw std::runtime_error("external service session directory must not be empty");
+        if (project_config.common.headless &&
+            project_config.common.capture_mode == CaptureMode::Video)
+            throw std::runtime_error("external service supports a static PNG snapshot only; "
+                                     "video/replay is unavailable");
+        for (const char* path :
+             {"fluid25d.recording_speed", "fluid25d.recording_time_seconds",
+              "fluid25d.recording_frame_interval_seconds", "fluid25d.stream_follow_latest"}) {
+            if (parsed.path_was_assigned(path))
+                throw std::runtime_error(
+                    std::string("external service has no playback/seek option: ") + path);
+        }
+        if (project_config.recording_gpu_validation && !project_config.common.headless)
+            throw std::runtime_error("external GPU upload validation is headless-only");
+        if (parsed.path_was_assigned("fluid25d.hillside_depth_cues") ||
+            parsed.path_was_assigned("fluid25d.terrain_thin_water_composite"))
+            throw std::runtime_error("external service uses fixed depth cues and thin-film "
+                                     "attenuation");
+        if (project_config.catchment_view == "transport-inspection")
+            throw std::runtime_error("external service does not publish conserved tracer fields");
+        if (project_config.motion_markers &&
+            parsed.path_was_assigned("fluid25d.motion_marker_mode") &&
+            project_config.motion_marker_mode != "local")
+            throw std::runtime_error("external service supports local visual markers only");
+        project_config.motion_marker_mode = "local";
+        static_cast<void>(fluid_25d_presentation_view_from_name(project_config.view));
+        static_cast<void>(fluid_25d_catchment_view_from_name(project_config.catchment_view));
+        static_cast<void>(fluid_25d_debug_view_from_name(project_config.debug_view));
+        if (!project_config.catchment_view.empty() && project_config.view == "diagnostics")
+            throw std::runtime_error("external catchment view cannot be combined with diagnostics");
+        if (project_config.catchment_render.terrain_palette_low_m.has_value() !=
+            project_config.catchment_render.terrain_palette_high_m.has_value())
+            throw std::runtime_error("external terrain palette bounds must be supplied together");
+        if (project_config.catchment_render.terrain_palette_low_m &&
+            *project_config.catchment_render.terrain_palette_low_m >=
+                *project_config.catchment_render.terrain_palette_high_m)
+            throw std::runtime_error("external terrain palette bounds must be increasing");
         if (parsed.write_config_template_path)
             schema.write_template(*parsed.write_config_template_path);
         if (result != nullptr)

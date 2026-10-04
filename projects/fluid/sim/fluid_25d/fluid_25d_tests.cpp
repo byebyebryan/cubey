@@ -6447,14 +6447,20 @@ void test_backend_selection_preserves_existing_modes() {
     for (const bool explicit_backend : {false, true}) {
         std::vector<std::string> recording{"fluid_25d", "--fluid25d-recording", "recording.json"};
         std::vector<std::string> external{"fluid_25d", "--fluid25d-stream", "stream.json"};
+        std::vector<std::string> service{"fluid_25d", "--fluid25d-external-session", "worker"};
         if (explicit_backend) {
             recording.insert(recording.end(), {"--fluid25d-backend", "recording"});
             external.insert(external.end(), {"--fluid25d-backend", "external"});
+            service.insert(service.end(), {"--fluid25d-backend", "external"});
         }
         require(fluid_25d_selected_backend(parse_project(recording)) == "recording",
                 "recording selection must support both old and explicit CLI forms");
         require(fluid_25d_selected_backend(parse_project(external)) == "external",
                 "external selection must support both old and explicit CLI forms");
+        const auto attached = parse_project(service);
+        require(fluid_25d_selected_backend(attached) == "external" &&
+                    attached.external_session_path == "worker",
+                "external service selection must support omitted and explicit backend forms");
     }
     for (const auto& arguments : std::vector<std::vector<std::string>>{
              {"fluid_25d", "--fluid25d-backend", "external"},
@@ -6465,15 +6471,85 @@ void test_backend_selection_preserves_existing_modes() {
              {"fluid_25d", "--fluid25d-backend", "recording", "--fluid25d-stream", "stream.json"},
              {"fluid_25d", "--fluid25d-backend", "external", "--fluid25d-recording",
               "recording.json"},
+             {"fluid_25d", "--fluid25d-backend", "external", "--fluid25d-recording",
+              "recording.json", "--fluid25d-external-session", "worker"},
+             {"fluid_25d", "--fluid25d-external-session", "worker", "--fluid25d-stream",
+              "stream.json"},
+             {"fluid_25d", "--fluid25d-external-session", "worker", "--fluid25d-backend",
+              "builtin"},
              {"fluid_25d", "--fluid25d-backend", "not-a-backend"}}) {
         require_throws([&] { static_cast<void>(parse_project(arguments)); },
                        "backend conflicts must fail without silently selecting another mode");
     }
+    for (const auto& arguments : std::vector<std::vector<std::string>>{
+             {"fluid_25d", "--fluid25d-external-session", "worker", "--fluid25d-solver",
+              "finite-volume"},
+             {"fluid_25d", "--fluid25d-external-session", "worker",
+              "--fluid25d-rainfall-rate-mm-per-hour", "3"},
+             {"fluid_25d", "--fluid25d-external-session", "worker",
+              "--fluid25d-stream-follow-latest"},
+             {"fluid_25d", "--fluid25d-external-session", "worker",
+              "--fluid25d-recording-time-seconds", "10"},
+             {"fluid_25d", "--fluid25d-external-session", "worker", "--fluid25d-recording-speed",
+              "2"},
+             {"fluid_25d", "--fluid25d-external-session", "worker", "--headless",
+              "--fluid25d-recording-frame-interval-seconds", "60"},
+             {"fluid_25d", "--fluid25d-external-session", "worker", "--headless", "--capture",
+              "video", "--output", "movie.mp4"}}) {
+        require_throws([&] { static_cast<void>(parse_project(arguments)); },
+                       "external service must reject physics and playback controls");
+    }
+    const auto static_service = parse_project({"fluid_25d", "--fluid25d-external-session", "worker",
+                                               "--headless", "--fluid25d-recording-gpu-validation",
+                                               "--fluid25d-recording-camera", "collection"});
+    require(static_service.external_session_path == "worker" &&
+                static_service.recording_gpu_validation &&
+                static_service.recording_camera == "collection",
+            "external service must allow static PNG upload validation and camera selection");
+}
+
+void test_external_session_freshness_and_typed_inputs() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    using fluid_25d_project_config_detail::external_session_health;
+    using fluid_25d_project_config_detail::ExternalSessionHealth;
+    using fluid_25d_project_config_detail::should_refresh_external_control_input;
+
+    require(external_session_health(Fluid25DLifecycle::Running, 0.1, 0.2) ==
+                    ExternalSessionHealth::Healthy &&
+                external_session_health(Fluid25DLifecycle::Paused, 0.5, 0.5) ==
+                    ExternalSessionHealth::Healthy,
+            "running and paused service heartbeats up to 0.5 s should remain healthy");
+    require(external_session_health(Fluid25DLifecycle::Paused, 0.6, 0.6) ==
+                    ExternalSessionHealth::Delayed &&
+                external_session_health(Fluid25DLifecycle::Ready, 2.99, 0.2) ==
+                    ExternalSessionHealth::Delayed,
+            "late but sub-three-second service publications should be marked delayed");
+    require(external_session_health(Fluid25DLifecycle::Running, 3.0, 0.1) ==
+                    ExternalSessionHealth::Disconnected &&
+                external_session_health(Fluid25DLifecycle::Paused, 0.1, 3.0) ==
+                    ExternalSessionHealth::Disconnected,
+            "three seconds without a changed or fresh publication should disconnect");
+    require(external_session_health(Fluid25DLifecycle::Completed, 50.0, 50.0) ==
+                    ExternalSessionHealth::Completed &&
+                external_session_health(Fluid25DLifecycle::Stopped, 50.0, 50.0) ==
+                    ExternalSessionHealth::Stopped &&
+                external_session_health(Fluid25DLifecycle::Failed, 0.0, 0.0) ==
+                    ExternalSessionHealth::Failed,
+            "terminal completed/stopped states are normal while failed remains distinct");
+
+    require(
+        should_refresh_external_control_input(false, false, false) &&
+            !should_refresh_external_control_input(true, false, false) &&
+            should_refresh_external_control_input(true, false, true) &&
+            should_refresh_external_control_input(true, true, false) &&
+            should_refresh_external_control_input(true, false, false, true),
+        "typed controls refresh only when clean, applied, reset-generation changed, or canceled");
 }
 
 int main() {
     try {
         test_backend_selection_preserves_existing_modes();
+        test_external_session_freshness_and_typed_inputs();
         test_recording_cli_is_separate_from_physics();
         test_catchment_far_plane_geometry();
         test_config_defaults_and_parsing();

@@ -514,6 +514,10 @@ void test_local_runtime_frames_and_boundary_controls() {
                        Fluid25DLifecycle::Paused, 20);
     require(after_end.reset_generation == 3,
             "completed recordings must allow an explicit generation-scoped backward seek");
+    require(fluid_25d_local_frame_load_is_current(2, 3, 2, 3) &&
+                !fluid_25d_local_frame_load_is_current(1, 3, 2, 3) &&
+                !fluid_25d_local_frame_load_is_current(2, 2, 2, 3),
+            "asynchronous playback loads must match both requested index and viewer generation");
     require_throws(
         [&] {
             (void)playback.apply(Fluid25DControlDomain::Solver, Fluid25DCommandKind::SetRain, 10,

@@ -48,6 +48,12 @@ void request_reset(Fluid25DUiContext& ui) {
 } // namespace
 
 void draw_fluid_25d_ui(Fluid25DUiContext ui) {
+    const bool terminal = ui.stopped || ui.backend_failed;
+    if (terminal) {
+        ui.inspection_advance.reset();
+        ui.windowed_pacing.reset();
+        ui.resume_after_advance = false;
+    }
     if (!cubey::host::begin_control_panel(ui.title, {.width = 360.0F})) {
         ImGui::End();
         return;
@@ -60,7 +66,13 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
         ImGui::TextWrapped("Adapter: %s", backend.id.c_str());
         ImGui::Text("Input: %.12s | solver bed: %.12s", backend.grid.input_sha256.c_str(),
                     backend.grid.solver_bed_sha256.c_str());
-        ImGui::TextDisabled("Startup identity; not a GPU completion clock.");
+        ImGui::Text("Generation %llu | confirmed GPU time %.6f s",
+                    static_cast<unsigned long long>(backend.session.reset_generation),
+                    backend.session.physical_time_s);
+        ImGui::TextDisabled(
+            "16-byte completion status only; hydraulic fields remain GPU-resident.");
+        if (!backend.session.failure_message.empty())
+            ImGui::TextWrapped("Solver failed: %s", backend.session.failure_message.c_str());
         ImGui::TextUnformatted(backend.fields.momentum_x_m2_per_s
                                    ? "Native momentum: h*u (m2/s)"
                                    : "Native directed face discharge (m3/s)");
@@ -99,7 +111,8 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                                       "Top-down numerical field shown by diagnostics.");
     }
 
-    ImGui::BeginDisabled(ui.inspection_advance.remaining_steps() > 0U);
+    ImGui::BeginDisabled(ui.inspection_advance.remaining_steps() > 0U || ui.stopped ||
+                         ui.backend_failed);
     if (cubey::host::imgui_button(ui.paused ? "Resume" : "Pause",
                                   "Pause or resume windowed simulation time.")) {
         ui.paused = !ui.paused;
@@ -107,9 +120,21 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
     ImGui::EndDisabled();
     ImGui::SameLine();
     if (cubey::host::imgui_button("Reset", "Restart the deterministic scenario.")) {
+        ui.stopped = false;
         request_reset(ui);
     }
+    ImGui::SameLine();
+    ImGui::BeginDisabled(ui.stopped || ui.backend_failed);
+    if (ImGui::Button("Stop")) {
+        ui.stopped = true;
+        ui.paused = true;
+        ui.inspection_advance.reset();
+        ui.windowed_pacing.reset();
+        ui.resume_after_advance = false;
+    }
+    ImGui::EndDisabled();
 
+    ImGui::BeginDisabled(terminal);
     if (cubey::host::imgui_slider_float(
             "Playback speed", &ui.presentation_time_scale,
             kFluid25DMinWindowedPresentationTimeScale, kFluid25DMaxWindowedPresentationTimeScale,
@@ -117,6 +142,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             "Windowed pacing only; solver fixed delta and headless timing are unchanged.")) {
         ui.windowed_pacing.set_presentation_time_scale(ui.presentation_time_scale);
     }
+    ImGui::EndDisabled();
 
     ImGui::SeparatorText("How to read it");
     if (ui.scenario == Fluid25DScenario::HillsideFlowStudy) {
@@ -127,6 +153,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                             : ui.hillside_supply.response()
                                 ? "Script: Q100 / 150 / 50 / 100 at 0 / 60 / 90 / 120 min."
                                 : "Reference: constant supply.");
+        ImGui::BeginDisabled(terminal);
         for (float rate : {50.0F, 100.0F, 150.0F}) {
             if (rate != 50.0F)
                 ImGui::SameLine();
@@ -136,6 +163,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             if (ImGui::Button(label))
                 ui.hillside_supply.queue_preset(rate);
         }
+        ImGui::EndDisabled();
         if (ui.hillside_supply.pending())
             ImGui::Text("Queued %.0f m3/s for next fixed step.", *ui.hillside_supply.pending());
         ImGui::Text("Playback: %.3gx | %s", ui.presentation_time_scale,
@@ -155,6 +183,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                 ui.resume_after_advance = false;
             }
         }
+        ImGui::BeginDisabled(terminal);
         if (ui.inspection_advance.remaining_steps() == 0U &&
             ui.simulation_elapsed_seconds < 3300.0F &&
             ImGui::Button("Advance to 55 min and continue")) {
@@ -174,6 +203,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             }
             ImGui::EndDisabled();
         }
+        ImGui::EndDisabled();
         ImGui::TextColored(ImVec4(0.16F, 0.88F, 0.34F, 1.0F),
                            "SOURCE  green cubes: continuous upland supply tiles");
         const std::string selected =
@@ -256,6 +286,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
         ImGui::Text("Scheduled since reset: %.4f m | %.1f m3",
                     ui.rain_study.state().cumulative_depth_m,
                     ui.rain_study.state().scheduled_volume_m3);
+        ImGui::BeginDisabled(terminal);
         if (cubey::host::imgui_button("Queue Rain Off",
                                       "Apply rain-off at the next fixed solver step.")) {
             ui.rain_study.queue_enabled(false);
@@ -265,6 +296,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                                       "Apply rain-on at the next fixed solver step.")) {
             ui.rain_study.queue_enabled(true);
         }
+        ImGui::EndDisabled();
         if (ui.rain_study.queued_enabled().has_value()) {
             ImGui::Text("Queued rain %s for the next fixed step.",
                         *ui.rain_study.queued_enabled() ? "On" : "Off");
@@ -286,6 +318,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
                 ui.resume_after_advance = false;
             }
         }
+        ImGui::BeginDisabled(terminal);
         if (ui.inspection_advance.remaining_steps() == 0U &&
             ui.simulation_elapsed_seconds < 7200.0F &&
             ImGui::Button("Advance to 2 h and continue")) {
@@ -306,6 +339,7 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
             }
             ImGui::EndDisabled();
         }
+        ImGui::EndDisabled();
         const std::string selected = ui.hillside_camera.empty() ? "overview" : ui.hillside_camera;
         if (ImGui::BeginCombo("Camera", selected.c_str())) {
             for (const char* camera : {"travel", "collection", "overview"}) {

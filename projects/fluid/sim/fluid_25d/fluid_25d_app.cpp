@@ -6,6 +6,7 @@
 #include "fluid_25d_finite_volume_oracle.h"
 #include "fluid_25d_gpu_resources.h"
 #include "fluid_25d_hillside_supply.h"
+#include "fluid_25d_local_session.h"
 #include "fluid_25d_mass_audit.h"
 #include "fluid_25d_motion_markers.h"
 #include "fluid_25d_natural_flow_recipe.h"
@@ -30,6 +31,7 @@
 
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -121,8 +123,7 @@ template <typename Value>
     const bool mountain_source_outlet =
         config.simulation.scenario == Fluid25DScenario::MountainSourceOutletDemo;
     const bool natural_flow_study = fluid_25d_is_natural_terrain_study(config.simulation.scenario);
-    const bool rain_study =
-        config.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
+    const bool rain_study = config.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
     if (!terrain_case && !mountain_source_outlet && !natural_flow_study && !rain_study) {
         Fluid25DScenarioData scenario = make_fluid_25d_scenario(
             config.simulation.scenario, config.simulation.grid_width, config.simulation.grid_height,
@@ -159,9 +160,9 @@ template <typename Value>
     }
 
     if (rain_study && config.rain_study_gpu_controls) {
-        Fluid25DScenarioData scenario = make_fluid_25d_scenario(
-            Fluid25DScenario::DryBed, config.simulation.grid_width,
-            config.simulation.grid_height, config.simulation.cell_size_m);
+        Fluid25DScenarioData scenario =
+            make_fluid_25d_scenario(Fluid25DScenario::DryBed, config.simulation.grid_width,
+                                    config.simulation.grid_height, config.simulation.cell_size_m);
         std::fill(scenario.terrain_height_m.begin(), scenario.terrain_height_m.end(), 0.0F);
         apply_fluid_25d_hillside_rain_study_forcing(config.simulation, scenario);
         std::fill(scenario.boundary_outflow_face_mask.begin(),
@@ -182,9 +183,9 @@ template <typename Value>
     } else if (mountain_source_outlet) {
         scenario = make_fluid_25d_mountain_source_outlet_scenario(config.simulation, source);
     } else if (rain_study) {
-        scenario = make_fluid_25d_hillside_rain_study_scenario(
-            config.simulation, source, config.terrain.crop_x.value_or(0U),
-            config.terrain.crop_z.value_or(0U));
+        scenario = make_fluid_25d_hillside_rain_study_scenario(config.simulation, source,
+                                                               config.terrain.crop_x.value_or(0U),
+                                                               config.terrain.crop_z.value_or(0U));
     } else {
         const Fluid25DNaturalFlowRecipe recipe =
             load_fluid_25d_natural_flow_recipe(config.natural_flow_recipe_path.value());
@@ -223,6 +224,8 @@ class Fluid25DApp {
         }
         backend_metadata_ = make_fluid_25d_builtin_backend_metadata(
             config_, scenario_, fluid_25d_new_backend_session_id());
+        local_session_.emplace(backend_metadata_);
+        backend_applied_time_scale_ = config_.presentation_time_scale;
         std::printf("fluid_25d_backend_startup_metadata: %s\n",
                     encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
         initial_water_volume_m3_ =
@@ -263,10 +266,99 @@ class Fluid25DApp {
     Fluid25DApp& operator=(const Fluid25DApp&) = delete;
 
     int run() {
-        return config_.common.headless ? run_headless() : run_windowed();
+        const int status = config_.common.headless ? run_headless() : run_windowed();
+        if (local_session_->metadata().session.lifecycle == Fluid25DLifecycle::Failed)
+            return 1;
+        if (local_session_->metadata().session.lifecycle != Fluid25DLifecycle::Stopped)
+            static_cast<void>(local_session_->publish(
+                local_session_->metadata().session.physical_time_s, Fluid25DLifecycle::Completed));
+        backend_metadata_ = local_session_->metadata();
+        std::printf("fluid_25d_backend_runtime_metadata: %s\n",
+                    encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
+        return status;
     }
 
   private:
+    void refresh_builtin_boundary(cubey::ProjectGpuServices& gpu, bool force) {
+        const auto now = std::chrono::steady_clock::now();
+        const auto& previous = local_session_->metadata().session;
+        const bool pause_changed = paused_ != backend_applied_paused_;
+        const bool scale_changed = config_.presentation_time_scale != backend_applied_time_scale_;
+        const bool stop_changed = stopped_ && previous.lifecycle != Fluid25DLifecycle::Stopped;
+        if (!force && !backend_reset_in_flight_ && !pause_changed && !scale_changed &&
+            !stop_changed && now < next_backend_status_poll_)
+            return;
+        next_backend_status_poll_ = now + std::chrono::milliseconds(100);
+        // This submission/fence reads only sixteen diagnostic bytes after all
+        // preceding graphics-queue work. No hydraulic field is downloaded.
+        const auto progress =
+            readback_values<Fluid25DBackendProgressGpu>(gpu, resources_.backend_progress(), 1U,
+                                                        "builtin backend completed progress")
+                .front();
+        if (progress.reserved != 0U)
+            throw std::runtime_error("builtin backend progress padding is nonzero");
+        const std::uint64_t accepted =
+            static_cast<std::uint64_t>(progress.accepted_substeps_low) |
+            (static_cast<std::uint64_t>(progress.accepted_substeps_high) << 32U);
+        const std::uint64_t scheduled =
+            source_schedule_.completed_steps() * config_.simulation.simulation_substeps;
+        if (accepted > scheduled || (progress.flags == 0U && accepted != scheduled))
+            throw std::runtime_error("builtin completed substeps disagree with submitted work");
+        const auto acknowledge = [&](Fluid25DCommandKind kind, double time_s,
+                                     Fluid25DLifecycle lifecycle,
+                                     std::optional<double> value = {}) {
+            const auto ack = local_session_->apply(Fluid25DControlDomain::Solver, kind, time_s,
+                                                   lifecycle, value);
+            std::printf("fluid_25d_backend_ack: %s\n",
+                        encode_fluid_25d_command_acknowledgement_json(ack).c_str());
+        };
+        if (backend_reset_in_flight_) {
+            acknowledge(Fluid25DCommandKind::Reset, 0.0, Fluid25DLifecycle::Ready);
+            backend_reset_in_flight_ = false;
+            backend_applied_paused_ = paused_;
+            backend_applied_time_scale_ = config_.presentation_time_scale;
+        }
+        const double time_s =
+            static_cast<double>(accepted) *
+            static_cast<double>(config_.simulation.fixed_delta_seconds /
+                                static_cast<float>(config_.simulation.simulation_substeps));
+        if (local_session_->metadata().session.lifecycle == Fluid25DLifecycle::Failed ||
+            local_session_->metadata().session.lifecycle == Fluid25DLifecycle::Stopped)
+            return;
+        const auto lifecycle = paused_ ? Fluid25DLifecycle::Paused : Fluid25DLifecycle::Running;
+        // Publish the accepted physical clock first. A rejected FV candidate
+        // does not increment the observer and cannot masquerade as advancement.
+        const auto frame = local_session_->publish(time_s, lifecycle);
+        if (progress.flags != 0U) {
+            local_session_->fail("native finite-volume update rejected, flags=" +
+                                 std::to_string(progress.flags));
+            paused_ = true;
+            inspection_advance_.reset();
+            resume_after_advance_ = false;
+        } else {
+            if (pause_changed) {
+                acknowledge(paused_ ? Fluid25DCommandKind::Pause : Fluid25DCommandKind::Resume,
+                            time_s, lifecycle);
+                backend_applied_paused_ = paused_;
+            }
+            if (scale_changed) {
+                acknowledge(Fluid25DCommandKind::SetTimeScale, time_s, lifecycle,
+                            config_.presentation_time_scale);
+                backend_applied_time_scale_ = config_.presentation_time_scale;
+            }
+            if (stop_changed) {
+                acknowledge(Fluid25DCommandKind::Stop, time_s, Fluid25DLifecycle::Stopped);
+                paused_ = true;
+            }
+        }
+        backend_metadata_ = local_session_->metadata();
+        std::printf("fluid_25d_backend_frame: %s\n",
+                    encode_fluid_25d_frame_header_json(frame).c_str());
+        if (progress.flags != 0U)
+            std::printf("fluid_25d_backend_runtime_metadata: %s\n",
+                        encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
+    }
+
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
@@ -293,7 +385,8 @@ class Fluid25DApp {
             const bool was_flow_inspection_active = flow_inspection_active();
             const auto input = context.filtered_input();
             orbit_controller_.update_pointer_input(input, timing.delta_seconds);
-            if (input.key_pressed(cubey::input::Key::Space)) {
+            if (input.key_pressed(cubey::input::Key::Space) && !stopped_ &&
+                backend_metadata_.session.lifecycle != Fluid25DLifecycle::Failed) {
                 if (inspection_advance_.remaining_steps() > 0U) {
                     inspection_advance_.reset();
                     windowed_pacing_.reset();
@@ -304,6 +397,7 @@ class Fluid25DApp {
                 }
             }
             if (input.key_pressed(cubey::input::Key::R)) {
+                stopped_ = false;
                 reset_requested_ = true;
                 presentation_cue_reset_requested_ = true;
                 quiver_reset_requested_ = true;
@@ -328,6 +422,7 @@ class Fluid25DApp {
             record_windowed_frame(context, frame);
         };
         callbacks.shutdown = [this](cubey::host::WindowedAppContext&) {
+            refresh_builtin_boundary(runtime_.gpu(), true);
             graph_executor_.clear();
             motion_markers_.destroy();
             resources_.destroy_all_resources();
@@ -391,6 +486,8 @@ class Fluid25DApp {
             .dye_end_seconds = config_.simulation.dye_pulse_start_seconds.value_or(0.0F) +
                                config_.simulation.dye_pulse_duration_seconds.value_or(0.0F),
             .paused = paused_,
+            .stopped = stopped_,
+            .backend_failed = backend_metadata_.session.lifecycle == Fluid25DLifecycle::Failed,
             .reset_requested = reset_requested_,
             .presentation_cue_reset_requested = presentation_cue_reset_requested_,
             .quiver_reset_requested = quiver_reset_requested_,
@@ -444,6 +541,7 @@ class Fluid25DApp {
 
     void record_windowed_frame(cubey::host::WindowedAppContext& context,
                                const cubey::host::WindowedRenderFrame& render_frame) {
+        refresh_builtin_boundary(runtime_.gpu(), false);
         const ProjectFrame project_frame = runtime_.frame_for_timing(render_frame.timing);
         record_marker_timings(context.profile_recorder(), render_frame.frame_slot.index);
         cubey::vulkan::GpuTimestampProfiler* profiler = resources_.profiler();
@@ -470,11 +568,14 @@ class Fluid25DApp {
             continuous_wall_seconds_ = 0.0;
             continuous_physical_seconds_ = 0.0;
         }
-        const bool advancing_for_inspection = inspection_advance_.remaining_steps() > 0U;
+        const bool producer_available =
+            !stopped_ && backend_metadata_.session.lifecycle != Fluid25DLifecycle::Failed;
+        const bool advancing_for_inspection =
+            producer_available && inspection_advance_.remaining_steps() > 0U;
         const Fluid25DWindowedPacingFrame pacing =
-            advancing_for_inspection
-                ? Fluid25DWindowedPacingFrame{}
-                : windowed_pacing_.advance(render_frame.timing.delta_seconds, paused_);
+            advancing_for_inspection ? Fluid25DWindowedPacingFrame{}
+                                     : windowed_pacing_.advance(render_frame.timing.delta_seconds,
+                                                                paused_ || !producer_available);
         const std::uint32_t fixed_step_count =
             advancing_for_inspection ? inspection_advance_.take_batch() : pacing.fixed_step_count;
         if (advancing_for_inspection && inspection_advance_.remaining_steps() == 0U) {
@@ -493,8 +594,8 @@ class Fluid25DApp {
         forcings.reserve(fixed_step_count);
         for (std::uint32_t step = 0U; step < fixed_step_count; ++step) {
             forcings.push_back({
-                .source_rate_scale = source_rate_scale_for_step(
-                    next_source_schedule, next_supply, next_rain_study),
+                .source_rate_scale =
+                    source_rate_scale_for_step(next_source_schedule, next_supply, next_rain_study),
                 .dye_source_concentration =
                     next_dye_source_schedule.source_concentration(config_.simulation),
             });
@@ -504,6 +605,7 @@ class Fluid25DApp {
         // The windowed graph records every pending fixed step and then draws
         // from the resulting state in one command buffer. The cue update is
         // recorded after each outer step, never once per presented frame.
+        const bool recorded_reset = reset_requested_;
         const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
             render_frame.color_target, resources_, config_.simulation, presentation_view_,
             catchment_view_, debug_view_, render_camera(render_frame.color_target.extent),
@@ -531,6 +633,7 @@ class Fluid25DApp {
             },
             graph);
         recorder.end("vkEndCommandBuffer fluid_25d");
+        backend_reset_in_flight_ = backend_reset_in_flight_ || recorded_reset;
         source_schedule_ = std::move(next_source_schedule);
         dye_source_schedule_ = std::move(next_dye_source_schedule);
         hillside_supply_ = std::move(next_supply);
@@ -546,6 +649,10 @@ class Fluid25DApp {
                     static_cast<double>(fixed_step_count) * config_.simulation.fixed_delta_seconds;
             }
             metric("physical_time_s", source_schedule_.elapsed_seconds(config_.simulation));
+            metric("confirmed_gpu_physical_time_s", backend_metadata_.session.physical_time_s);
+            metric("backend_generation",
+                   static_cast<double>(backend_metadata_.session.reset_generation));
+            metric("backend_progress_readback_bytes", sizeof(Fluid25DBackendProgressGpu));
             metric("last_step_source_m3_per_s", last_source_m3_per_s_);
             metric("scheduled_source_volume_m3", scheduled_source_volume_m3_);
             metric("manual_supply_override", hillside_supply_.manual() ? 1.0 : 0.0);
@@ -590,8 +697,8 @@ class Fluid25DApp {
                     rain_study.queue_enabled(true);
             }
             const float scale = rain_study.prepare_fixed_step(config_.simulation);
-            last_source_m3_per_s_ = static_cast<float>(rain_study.total_input_m3_per_s(
-                config_.simulation));
+            last_source_m3_per_s_ =
+                static_cast<float>(rain_study.total_input_m3_per_s(config_.simulation));
             return legacy_scale * scale;
         }
         supply.apply_pending();
@@ -634,8 +741,7 @@ class Fluid25DApp {
             fluid_25d_is_source_outlet_demo(config_.simulation.scenario);
         const bool natural_flow_study =
             config_.simulation.scenario == Fluid25DScenario::NaturalFlowStudy;
-        const bool rain_study =
-            config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
+        const bool rain_study = config_.simulation.scenario == Fluid25DScenario::HillsideRainStudy;
         const bool hillside = fluid_25d_is_macro_hillside_study(config_.simulation.scenario);
         const bool hillside_flow =
             config_.simulation.scenario == Fluid25DScenario::HillsideFlowStudy;
@@ -703,11 +809,10 @@ class Fluid25DApp {
                     render_height_scale;
             }
         }
-        if (rain_study && (config_.hillside_camera == "travel" ||
-                           config_.hillside_camera == "collection")) {
-            framing_horizontal_extent =
-                std::min(horizontal_extent,
-                         config_.hillside_camera == "travel" ? 2800.0F : 1600.0F);
+        if (rain_study &&
+            (config_.hillside_camera == "travel" || config_.hillside_camera == "collection")) {
+            framing_horizontal_extent = std::min(
+                horizontal_extent, config_.hillside_camera == "travel" ? 2800.0F : 1600.0F);
             const std::uint32_t x = config_.hillside_camera == "travel" ? 138U : 58U;
             const std::uint32_t z = config_.hillside_camera == "travel" ? 234U : 251U;
             const std::size_t cell = static_cast<std::size_t>(z) * scenario_.width + x;
@@ -968,9 +1073,8 @@ class Fluid25DApp {
             const double physical_time_s =
                 static_cast<double>(source_schedule_.completed_steps() + 1U) *
                 config_.simulation.fixed_delta_seconds;
-            const Fluid25DRainStudyObservation rain =
-                compute_fluid_25d_rain_study_observation(config_.simulation, depth_m, velocity,
-                                                         rain_study_, physical_time_s);
+            const Fluid25DRainStudyObservation rain = compute_fluid_25d_rain_study_observation(
+                config_.simulation, depth_m, velocity, rain_study_, physical_time_s);
             const auto record_rain = [&](const char* name, double value) {
                 profile_recorder->record_metric(frame_index, "fluid_25d.rain", name, value);
             };
@@ -981,28 +1085,23 @@ class Fluid25DApp {
             record_rain("scheduled_volume_m3", rain.scheduled_volume_m3);
             record_rain("enabled", rain.enabled ? 1.0 : 0.0);
             record_rain("material_wet_cells", static_cast<double>(rain.material_wet_cells));
-            record_rain("material_active_cells",
-                        static_cast<double>(rain.material_active_cells));
+            record_rain("material_active_cells", static_cast<double>(rain.material_active_cells));
             record_rain("converged_water_volume_m3", rain.converged_water_volume_m3);
-            record_rain("converged_moving_cells",
-                        static_cast<double>(rain.converged_moving_cells));
-            record_rain("largest_corridor_cells",
-                        static_cast<double>(rain.largest_corridor_cells));
+            record_rain("converged_moving_cells", static_cast<double>(rain.converged_moving_cells));
+            record_rain("largest_corridor_cells", static_cast<double>(rain.largest_corridor_cells));
             record_rain("largest_corridor_span_m", rain.largest_corridor_span_m);
             record_rain("maximum_depth_m", rain.maximum_depth_m);
             record_rain("maximum_depth_cell_x", rain.maximum_depth_cell_x);
             record_rain("maximum_depth_cell_z", rain.maximum_depth_cell_z);
             for (const Fluid25DRainStudyRegionObservation& region : rain.regions) {
-                const std::string category =
-                    "fluid_25d.rain.region." + std::string(region.name);
+                const std::string category = "fluid_25d.rain.region." + std::string(region.name);
                 profile_recorder->record_metric(frame_index, category, "valid",
                                                 region.valid ? 1.0 : 0.0);
                 profile_recorder->record_metric(frame_index, category, "water_volume_m3",
                                                 region.water_volume_m3);
                 profile_recorder->record_metric(frame_index, category, "direct_rain_volume_m3",
                                                 region.direct_rain_volume_m3);
-                profile_recorder->record_metric(frame_index, category,
-                                                "net_lateral_storage_m3",
+                profile_recorder->record_metric(frame_index, category, "net_lateral_storage_m3",
                                                 region.net_lateral_storage_m3);
                 profile_recorder->record_metric(frame_index, category, "maximum_depth_m",
                                                 region.maximum_depth_m);
@@ -1677,6 +1776,7 @@ class Fluid25DApp {
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
                                         const cubey::host::HeadlessRenderTarget& target) {
+            refresh_builtin_boundary(runtime_.gpu(), true);
             validate_gpu_oracle(runtime_.gpu());
             const cubey::render::CompiledRenderGraph graph = build_fluid_25d_frame_graph(
                 target, resources_, config_.simulation, presentation_view_, catchment_view_,
@@ -1713,6 +1813,11 @@ class Fluid25DApp {
     Fluid25DInspectionAdvance inspection_advance_;
     Fluid25DScenarioData scenario_;
     Fluid25DBackendMetadata backend_metadata_;
+    std::optional<Fluid25DLocalSession> local_session_;
+    std::chrono::steady_clock::time_point next_backend_status_poll_{};
+    bool backend_reset_in_flight_ = false;
+    bool backend_applied_paused_ = false;
+    float backend_applied_time_scale_ = 1.0F;
     cubey::ProjectRuntimeAdapter runtime_{1};
     Fluid25DGpuResources resources_;
     Fluid25DMotionMarkers motion_markers_;
@@ -1739,6 +1844,7 @@ class Fluid25DApp {
     double expected_tracer_boundary_outflow_amount_m3_ = 0.0;
     double initial_water_volume_m3_ = 0.0;
     bool paused_ = false;
+    bool stopped_ = false;
     bool resume_after_advance_ = false;
     bool show_motion_markers_ = false;
     Fluid25DMotionMarkerDisplayClock marker_display_clock_;
@@ -1755,7 +1861,7 @@ class Fluid25DApp {
 } // namespace
 
 int run_fluid_25d(const Fluid25DProjectConfig& config) {
-    if (config.recording_path || config.stream_path)
+    if (config.recording_path || config.stream_path || config.external_session_path)
         return run_fluid_25d_recording(config);
     Fluid25DApp app(config);
     return app.run();

@@ -17,6 +17,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <vector>
@@ -62,6 +63,15 @@ static_assert(sizeof(Fluid25DConservationResidualGpu) == sizeof(float) * 12U);
 // round-trip. Any nonzero flag is an invalid comparison result.
 struct Fluid25DFiniteVolumeStatusGpu {
     std::array<std::uint32_t, 4> flags_reserved{};
+};
+// Diagnostic-only accepted numerical progress. The 64-bit count is stored as
+// two uint32 words for portable std430 access; flags latch solver status and
+// this buffer never feeds numerical state or solver dispatch decisions.
+struct Fluid25DBackendProgressGpu {
+    std::uint32_t accepted_substeps_low = 0U;
+    std::uint32_t accepted_substeps_high = 0U;
+    std::uint32_t flags = 0U;
+    std::uint32_t reserved = 0U;
 };
 // Flow Inspection-only persistent render state. Anchor coordinates are set
 // from one deterministic regular lattice on reset and never advect, respawn,
@@ -137,6 +147,7 @@ static_assert(sizeof(Fluid25DVelocityGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DTracerLedgerGpu) == sizeof(float) * 4U);
 static_assert(sizeof(Fluid25DFiniteVolumeStatusGpu) == sizeof(std::uint32_t) * 4U);
+static_assert(sizeof(Fluid25DBackendProgressGpu) == sizeof(std::uint32_t) * 4U);
 static_assert(sizeof(Fluid25DQuiverGpu) == sizeof(float) * 8U);
 static_assert(sizeof(Fluid25DEndpointMarkersGpu) == sizeof(float) * 8U);
 
@@ -153,7 +164,9 @@ class Fluid25DGpuResources {
     void record_recording_upload(VkCommandBuffer command_buffer, std::uint32_t frame_slot,
                                  std::span<const float> depth,
                                  std::span<const Fluid25DVelocityGpu> velocity);
-    [[nodiscard]] bool presentation_only() const noexcept { return presentation_only_; }
+    [[nodiscard]] bool presentation_only() const noexcept {
+        return presentation_only_;
+    }
     void create_render_pipelines(cubey::vulkan::Device& device, VkFormat color_format,
                                  VkFormat depth_format, VkExtent2D extent);
     void destroy_swapchain_resources();
@@ -186,6 +199,9 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::vulkan::Buffer&
     finite_volume_candidate_conservation_residual() const;
     [[nodiscard]] const cubey::vulkan::Buffer& finite_volume_status() const;
+    // Counts accepted substeps using a read-only post-commit observer; never
+    // consumed by solver math. Presentation-only resources do not own it.
+    [[nodiscard]] const cubey::vulkan::Buffer& backend_progress() const;
     [[nodiscard]] const cubey::vulkan::Buffer& velocity() const;
     [[nodiscard]] const cubey::vulkan::Buffer& ledger() const;
     [[nodiscard]] const cubey::vulkan::Buffer& tracer_ledger() const;
@@ -215,6 +231,7 @@ class Fluid25DGpuResources {
     finite_volume_candidate_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     finite_volume_commit_pipeline() const;
+    [[nodiscard]] const cubey::render::ComputePipelineResource& backend_progress_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
     presentation_cue_reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource&
@@ -277,6 +294,10 @@ class Fluid25DGpuResources {
         return finite_volume_cfl_finalize_descriptors_.has_value()
                    ? finite_volume_cfl_finalize_descriptors_->set()
                    : VK_NULL_HANDLE;
+    }
+    [[nodiscard]] VkDescriptorSet backend_progress_descriptor_set() const noexcept {
+        return backend_progress_descriptors_.has_value() ? backend_progress_descriptors_->set()
+                                                         : VK_NULL_HANDLE;
     }
     [[nodiscard]] VkDescriptorSet presentation_cue_reset_descriptor_set() const noexcept {
         return presentation_cue_reset_descriptors_.has_value()
@@ -378,6 +399,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::Buffer> finite_volume_candidate_ledger_delta_;
     std::optional<cubey::vulkan::Buffer> finite_volume_candidate_tracer_ledger_delta_;
     std::optional<cubey::vulkan::Buffer> finite_volume_status_;
+    std::optional<cubey::vulkan::Buffer> backend_progress_;
     std::optional<cubey::vulkan::Buffer> velocity_;
     std::optional<cubey::vulkan::Buffer> ledger_;
     std::optional<cubey::vulkan::Buffer> tracer_ledger_;
@@ -403,6 +425,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::vulkan::DescriptorSetBundle> finite_volume_candidate_b_to_a_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> finite_volume_commit_a_to_b_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> finite_volume_commit_b_to_a_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetBundle> backend_progress_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> render_a_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> render_b_descriptors_;
     std::optional<cubey::vulkan::DescriptorSetBundle> presentation_cue_reset_descriptors_;
@@ -425,6 +448,7 @@ class Fluid25DGpuResources {
     std::optional<cubey::render::ComputePipelineResource> finite_volume_cfl_finalize_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> finite_volume_candidate_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> finite_volume_commit_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> backend_progress_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> presentation_cue_reset_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> presentation_cue_advection_pipeline_;
     std::optional<cubey::render::ComputePipelineResource> quiver_reset_pipeline_;

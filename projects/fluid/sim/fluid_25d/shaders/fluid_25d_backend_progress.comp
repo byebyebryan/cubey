@@ -1,0 +1,43 @@
+#version 450
+
+// One invocation runs after each numerical substep's publication barrier.
+// This observer is diagnostic-only: it reads sticky solver status and writes
+// only a separate progress counter, never solver or presentation state.
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer SolverStatusField {
+    uvec4 values[];
+} solver_status;
+
+layout(set = 0, binding = 1, std430) buffer BackendProgressField {
+    uint accepted_substeps_low;
+    uint accepted_substeps_high;
+    uint flags;
+    uint reserved;
+} progress;
+
+layout(push_constant) uniform SimulationParams {
+    vec4 grid_dt_cell;
+    vec4 physics;
+} params;
+
+void main() {
+    if (gl_GlobalInvocationID.x != 0u || gl_GlobalInvocationID.y != 0u ||
+        gl_GlobalInvocationID.z != 0u) {
+        return;
+    }
+
+    const uint status_flags = solver_status.values[0].x;
+    if (status_flags != 0u) {
+        progress.flags |= status_flags;
+        return;
+    }
+    if (progress.flags != 0u) {
+        return;
+    }
+
+    progress.accepted_substeps_low += 1u;
+    if (progress.accepted_substeps_low == 0u) {
+        progress.accepted_substeps_high += 1u;
+    }
+}

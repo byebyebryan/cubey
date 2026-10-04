@@ -39,6 +39,8 @@ struct Fluid25DUiContext {
     float dye_start_seconds = 0.0F;
     float dye_end_seconds = 0.0F;
     bool& paused;
+    bool& stopped;
+    bool backend_failed = false;
     bool& reset_requested;
     bool& presentation_cue_reset_requested;
     bool& quiver_reset_requested;
