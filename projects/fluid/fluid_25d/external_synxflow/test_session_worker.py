@@ -137,10 +137,11 @@ class WorkerTests(unittest.TestCase):
             self.assertLess((worker.out / "controls.json").stat().st_size, 64 * 1024)
             self.assertFalse(list((worker.native / "output").iterdir()))
             worker.time_s = 100 # An error must label the last synchronized fields, not this clock.
-            worker.finish("failed", "injected native error")
+            worker.finish("failed", "injected native error " + "\u00e9" * 512)
             state = json.loads((worker.out / "state.json").read_bytes())
             self.assertEqual(state["frame"]["physical_time_s"], 0)
             self.assertEqual(state["frame"]["lifecycle"], "failed")
+            self.assertLessEqual(len(state["frame"]["failure_message"].encode("utf-8")), 512)
 
     def test_canonical_wire_commands_are_not_capability_keys(self):
         with tempfile.TemporaryDirectory() as temporary:

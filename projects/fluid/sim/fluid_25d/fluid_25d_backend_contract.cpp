@@ -1030,10 +1030,13 @@ void Fluid25DSessionGuard::observe_command(const Fluid25DControlCommand& command
         command.kind != Fluid25DCommandKind::Reset) {
         invalid("failed lifecycle is sticky until explicit reset or generation change");
     }
+    const bool completed_playback_seek = current.lifecycle == Fluid25DLifecycle::Completed &&
+                                         command.domain == Fluid25DControlDomain::Playback &&
+                                         command.kind == Fluid25DCommandKind::Seek;
     if ((current.lifecycle == Fluid25DLifecycle::Completed ||
          current.lifecycle == Fluid25DLifecycle::Stopped) &&
-        command.kind != Fluid25DCommandKind::Reset) {
-        invalid("completed or stopped lifecycle accepts only reset");
+        command.kind != Fluid25DCommandKind::Reset && !completed_playback_seek) {
+        invalid("terminal lifecycle requires reset or completed-playback seek");
     }
     if (outstanding_.size() >= kFluid25DBackendMaximumOutstandingCommands) {
         invalid("outstanding command limit has been reached for this session");

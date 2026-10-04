@@ -508,6 +508,12 @@ void test_local_runtime_frames_and_boundary_controls() {
     const auto shown = playback.publish(10, Fluid25DLifecycle::Paused);
     require(seek.reset_generation == 2 && shown.physical_time_s == 10,
             "backward playback seek must be explicit and generation scoped");
+    (void)playback.publish(30, Fluid25DLifecycle::Completed);
+    const auto after_end =
+        playback.apply(Fluid25DControlDomain::Playback, Fluid25DCommandKind::Seek, 20,
+                       Fluid25DLifecycle::Paused, 20);
+    require(after_end.reset_generation == 3,
+            "completed recordings must allow an explicit generation-scoped backward seek");
     require_throws(
         [&] {
             (void)playback.apply(Fluid25DControlDomain::Solver, Fluid25DCommandKind::SetRain, 10,

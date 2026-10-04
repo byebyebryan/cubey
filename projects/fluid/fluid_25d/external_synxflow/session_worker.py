@@ -261,7 +261,7 @@ class SessionWorker:
         self.last_ack = {"schema": SCHEMA, "type": "ack", "command_id": command["command_id"],
                          "session_id": self.session_id, "reset_generation": self.generation,
                          "state": state, "application_time_s": self.time_s if state == "applied" else None,
-                         "lifecycle": self.lifecycle, "message": message[:512]}
+                         "lifecycle": self.lifecycle, "message": message.encode("utf-8")[:512].decode("utf-8", "ignore")}
         self.history.append({"command": command, "ack": self.last_ack})
         atomic_json(self.out / "controls.json", {"schema": "cubey.fluid25d.control-history.v1",
                                                 "total_commands": self.last_command_id,
@@ -416,7 +416,7 @@ class SessionWorker:
         reference_unchanged = input_hashes(self.case / "native/input") == self.original_hashes
         if not local_unchanged or not reference_unchanged:
             lifecycle, message = "failed", "Immutable session/reference inputs changed"
-        self.lifecycle, self.failure_message = lifecycle, message[:512]
+        self.lifecycle, self.failure_message = lifecycle, message.encode("utf-8")[:512].decode("utf-8", "ignore")
         if lifecycle == "failed":
             self.last_ack = None
         if self.planes is not None and lifecycle != "stopped":
