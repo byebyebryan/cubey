@@ -2,6 +2,7 @@
 
 #include "../../fluid_25d/fluid_25d_project_config.h"
 #include "fluid_25d_config.h"
+#include "fluid_25d_local_session.h"
 #include "fluid_25d_recording.h"
 #include "fluid_25d_scenarios.h"
 
@@ -468,6 +469,53 @@ void test_generated_session_ids_are_bounded_unique_identifiers() {
             "generated backend session ids are invalid or not unique in-process");
 }
 
+void test_local_runtime_frames_and_boundary_controls() {
+    const auto project = builtin_config(6U, 3U);
+    const auto scenario = make_scenario(project);
+    Fluid25DLocalSession solver(
+        make_fluid_25d_builtin_backend_metadata(project, scenario, "local-runtime"));
+    const auto first = solver.publish(0.25, Fluid25DLifecycle::Running);
+    const auto paused = solver.apply(Fluid25DControlDomain::Solver, Fluid25DCommandKind::Pause,
+                                     0.25, Fluid25DLifecycle::Paused);
+    require(paused.application_time_s == 0.25 && solver.metadata().session.physical_time_s == 0.25,
+            "local pause must report supplied completed boundary, not requested work");
+    require_throws([&] { (void)solver.publish(0.1, Fluid25DLifecycle::Paused); },
+                   "local physical clock must not regress without a generation barrier");
+    require_throws(
+        [&] {
+            (void)solver.apply(Fluid25DControlDomain::Playback, Fluid25DCommandKind::Seek, 0.0,
+                               Fluid25DLifecycle::Paused, 0.0);
+        },
+        "builtin must reject recording playback commands");
+    const auto reset = solver.apply(Fluid25DControlDomain::Solver, Fluid25DCommandKind::Reset, 0.0,
+                                    Fluid25DLifecycle::Ready);
+    const auto after_reset = solver.publish(0.0, Fluid25DLifecycle::Ready);
+    require(reset.reset_generation == 2 && reset.command_id == paused.command_id + 1 &&
+                after_reset.sequence > first.sequence,
+            "local reset must be transactional and preserve monotone frame/command identity");
+    solver.fail("native update rejected");
+    require(solver.metadata().session.lifecycle == Fluid25DLifecycle::Failed,
+            "local native rejection must enter failed lifecycle");
+    require_throws([&] { (void)solver.publish(1.0, Fluid25DLifecycle::Running); },
+                   "failure must not silently resume a local producer");
+
+    auto fixture = make_recording_fixture(false, 4U);
+    Fluid25DRecording recording(fixture.directory / "recording.json");
+    Fluid25DLocalSession playback(make_fluid_25d_recording_backend_metadata(recording, "viewer"));
+    (void)playback.publish(20, Fluid25DLifecycle::Running);
+    const auto seek = playback.apply(Fluid25DControlDomain::Playback, Fluid25DCommandKind::Seek, 10,
+                                     Fluid25DLifecycle::Paused, 10);
+    const auto shown = playback.publish(10, Fluid25DLifecycle::Paused);
+    require(seek.reset_generation == 2 && shown.physical_time_s == 10,
+            "backward playback seek must be explicit and generation scoped");
+    require_throws(
+        [&] {
+            (void)playback.apply(Fluid25DControlDomain::Solver, Fluid25DCommandKind::SetRain, 10,
+                                 Fluid25DLifecycle::Paused, 0.0);
+        },
+        "recordings must never accept numerical forcing changes");
+}
+
 } // namespace
 
 int main() {
@@ -478,6 +526,7 @@ int main() {
         test_recording_and_stock_bridge_have_viewer_scoped_playback_metadata();
         test_builtin_identity_buffer_is_bounded();
         test_generated_session_ids_are_bounded_unique_identifiers();
+        test_local_runtime_frames_and_boundary_controls();
     } catch (const std::exception& exception) {
         std::cerr << "fluid 2.5D backend adapter test failed: " << exception.what() << '\n';
         return 1;
