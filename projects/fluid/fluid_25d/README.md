@@ -84,7 +84,7 @@ logical playback session, not the producer's lifecycle. These are startup
 descriptors only: no per-frame GPU readback, shared runtime command dispatcher,
 hot backend switching or external-service handshake is added by this checkpoint.
 
-### Optional source-build audit
+### Bounded external-service transport foundation
 
 The separate `fluid_25d_external_session` client defines a bounded local binary
 transport for the new service: immutable contract metadata and solver bed,
@@ -96,6 +96,8 @@ POSIX file locking permits one controller, with one outstanding command.
 Stop's final fields and its acknowledgement are accepted atomically; ordinary
 frames cannot follow a terminal state. This transport checkpoint is CPU-tested
 in isolation; it does not yet add a service launch or GUI path.
+
+### Optional source-build audit
 
 `build_synxflow_source_v1.py` builds an explicitly pinned SynxFlow 1.0.1 archive in
 a fresh private directory using an explicitly supplied CUDA toolkit and CPython
@@ -129,6 +131,39 @@ retained failed `source-build-verdict.json` under
 `outputs/fluid/backend-integration-v2-20261004-wlELKz/`.
 This clears the source-build prerequisite, not the later interactive-service
 acceptance gates. The released wheel and stock live viewer remain available.
+
+### Optional GPL external service worker (integration in progress)
+
+`external_synxflow/` is a separately licensed GPL-3.0-only worker/build slice.
+Its explicit build helper pins the correspondence-passing upstream tag and adds
+host-boundary hooks to the native application, leaving all solver-library files
+and the stock `run()` function unchanged. Nothing builds, installs or runs CUDA
+from Cubey's normal configure/build/test workflow. Private build trees are
+ignored; use a fresh leaf under `outputs/fluid/` for new builds and experiments.
+
+The modified stock API and no-op service hook both passed all eleven retained
+cases: all 3,690 exported field comparisons were exact; service timestep logs
+were byte-identical. The direct binary snapshots retained native float32
+precision and passed the predeclared six-decimal ASC quantization checks.
+Source and parity evidence is in `service-parity-verdict.json` under the same
+October 4 evidence directory. Native output clipping's scheduled zero-duration
+bookkeeping pass is preserved, not removed or treated as an unexpected stall.
+
+`session_worker.py --extension PATH --case RETAINED_CASE --out FRESH_DIR` is an
+explicit foreground process, separate from Cubey. Its default is continuous
+stateful operation at 60 physical seconds per wall second; `--finite` is an
+explicit diagnostic option. Host pacing never scales the numerical timestep.
+The worker publishes the three-slot binary transport, holds commands at checked
+CUDA boundaries, and rebuilds the complete native state for reset. Rain changes
+are uniform full-map rates (0..0.01 m/s); pacing supports 0.125..300x. Step waits
+for one positive physical advance, preserving any intervening scheduled zero
+pass. Immutable inputs are not rewritten. The latest 64 control records are
+retained, not an indefinitely growing command log. Worker float-clock stalls
+remain explicit failures; continuous does not promise unlimited time precision.
+
+CPU fake-boundary and format tests do not prove real command responsiveness,
+render freshness, long-running storage or GUI integration. Those gates are
+still pending; the stock V1 bridge and recordings remain the retained fallback.
 
 ### Opt-in live external SynxFlow viewing V1
 

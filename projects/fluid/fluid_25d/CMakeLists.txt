@@ -116,6 +116,14 @@ if (BUILD_TESTING)
     set_tests_properties(fluid_25d_backend_adapters PROPERTIES LABELS "unit;fluid;backend")
     find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
     if (CUBEY_FLUID_RECORDING_PYTHON)
+        add_test(NAME fluid_25d_external_worker_host
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}/external_synxflow" -p test_session_worker.py)
+        add_test(NAME fluid_25d_external_worker_build_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}/external_synxflow" -p test_build_synxflow_service_v1.py)
+        set_tests_properties(fluid_25d_external_worker_host fluid_25d_external_worker_build_helpers
+            PROPERTIES LABELS "unit;fluid;backend" TIMEOUT 30)
         add_test(NAME fluid_25d_source_build_pin
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_build_synxflow_source_v1.py)
