@@ -1110,6 +1110,30 @@ void Fluid25DSessionGuard::accept_acknowledgement(
                                             : std::string{};
 }
 
+void Fluid25DSessionGuard::accept_acknowledged_frame(
+    const Fluid25DCommandAcknowledgement& acknowledgement, const Fluid25DFrameHeader& frame) {
+    validate_fluid_25d_frame_header(frame);
+    auto candidate = *this;
+    const auto command = candidate.outstanding_.find(acknowledgement.command_id);
+    const bool applied_stop = command != candidate.outstanding_.end() &&
+                              command->second.command.kind == Fluid25DCommandKind::Stop &&
+                              acknowledgement.state == Fluid25DAcknowledgementState::Applied;
+    candidate.accept_acknowledgement(acknowledgement);
+    if (applied_stop) {
+        const auto& current = candidate.session();
+        if (frame.lifecycle != Fluid25DLifecycle::Stopped ||
+            frame.session_id != current.session_id ||
+            frame.reset_generation != current.reset_generation ||
+            frame.sequence <= current.frame_sequence ||
+            frame.physical_time_s != current.physical_time_s)
+            invalid("Stop publication must match the acknowledged terminal boundary");
+        candidate.metadata_.session.frame_sequence = frame.sequence;
+    } else {
+        candidate.accept_frame(frame);
+    }
+    *this = std::move(candidate);
+}
+
 void Fluid25DSessionGuard::mark_failed(std::string message) {
     validate_message(message, "failure message");
     if (message.empty()) {

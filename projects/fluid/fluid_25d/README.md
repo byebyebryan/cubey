@@ -86,6 +86,17 @@ hot backend switching or external-service handshake is added by this checkpoint.
 
 ### Optional source-build audit
 
+The separate `fluid_25d_external_session` client defines a bounded local binary
+transport for the new service: immutable contract metadata and solver bed,
+three replaceable depth/qx/qz slots, and an atomic state publication carrying
+the current lifecycle plus any command acknowledgement. The reader checks
+identity, generation, precision, size and SHA-256 before accepting fields.
+An overtaken display slot may be retried; persistent corruption fails closed.
+POSIX file locking permits one controller, with one outstanding command.
+Stop's final fields and its acknowledgement are accepted atomically; ordinary
+frames cannot follow a terminal state. This transport checkpoint is CPU-tested
+in isolation; it does not yet add a service launch or GUI path.
+
 `build_synxflow_source_v1.py` builds an explicitly pinned SynxFlow 1.0.1 archive in
 a fresh private directory using an explicitly supplied CUDA toolkit and CPython
 3.11. It does not install anything or add CUDA to Cubey. The default `legacy11`

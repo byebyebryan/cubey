@@ -561,6 +561,39 @@ void test_command_ack_guard_and_reset_invalidation() {
                                                  "rain controls unavailable at this boundary"));
 }
 
+void test_atomic_acknowledged_publication() {
+    auto metadata = metadata_for(Fluid25DBackendProfile::ExternalService);
+    metadata.capabilities.solver.stop = metadata.capabilities.solver.reset = true;
+    Fluid25DSessionGuard guard(metadata);
+    guard.accept_frame(frame("session-001", 1U, 1U, 1.0));
+    guard.observe_command(command(1U, 1U, Fluid25DCommandKind::Stop));
+    const auto ack = acknowledgement(1U, 1U, Fluid25DAcknowledgementState::Applied,
+                                     Fluid25DLifecycle::Stopped, 2.0);
+    require_throws(
+        [&] {
+            guard.accept_acknowledged_frame(
+                ack, frame("session-001", 1U, 2U, 3.0, Fluid25DLifecycle::Stopped));
+        },
+        "Stop accepted fields at a different physical boundary");
+    require(guard.session().lifecycle == Fluid25DLifecycle::Running &&
+                guard.session().frame_sequence == 1U,
+            "failed atomic Stop partially mutated guard");
+    guard.accept_acknowledged_frame(ack,
+                                    frame("session-001", 1U, 2U, 2.0, Fluid25DLifecycle::Stopped));
+    require(guard.session().frame_sequence == 2U &&
+                guard.session().lifecycle == Fluid25DLifecycle::Stopped,
+            "terminal publication lost its frame sequence");
+    require_throws(
+        [&] { guard.accept_frame(frame("session-001", 1U, 3U, 2.0, Fluid25DLifecycle::Stopped)); },
+        "terminal publication allowed later frames");
+    guard.observe_command(command(2U, 1U, Fluid25DCommandKind::Reset));
+    guard.accept_acknowledged_frame(acknowledgement(2U, 2U, Fluid25DAcknowledgementState::Applied,
+                                                    Fluid25DLifecycle::Ready, 0.0),
+                                    frame("session-001", 2U, 3U, 0.0, Fluid25DLifecycle::Ready));
+    require(guard.session().reset_generation == 2U && guard.session().frame_sequence == 3U,
+            "atomic reset publication did not establish new generation");
+}
+
 void test_sticky_failure_and_recovery() {
     Fluid25DBackendMetadata metadata = metadata_for(Fluid25DBackendProfile::BuiltinFiniteVolume);
     metadata.capabilities.solver.reset = true;
@@ -612,6 +645,7 @@ int main() {
         test_command_units_and_acknowledgement_codec();
         test_frame_guard_and_generation_changes();
         test_command_ack_guard_and_reset_invalidation();
+        test_atomic_acknowledged_publication();
         test_sticky_failure_and_recovery();
     } catch (const std::exception& exception) {
         std::cerr << "fluid_25d_backend_contract_tests: " << exception.what() << '\n';

@@ -8,6 +8,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_app.cpp
         ../sim/fluid_25d/fluid_25d_backend_adapters.cpp
         ../sim/fluid_25d/fluid_25d_backend_contract.cpp
+        ../sim/fluid_25d/fluid_25d_external_session.cpp
         ../sim/fluid_25d/fluid_25d_commands.cpp
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
@@ -63,6 +64,15 @@ target_include_directories(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_fluid_25d_external_session_tests
+        ../sim/fluid_25d/fluid_25d_backend_contract.cpp
+        ../sim/fluid_25d/fluid_25d_external_session.cpp
+        ../sim/fluid_25d/fluid_25d_external_session_tests.cpp)
+    target_link_libraries(cubey_project_fluid_25d_external_session_tests
+        PRIVATE cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
+    add_test(NAME fluid_25d_external_session
+        COMMAND cubey_project_fluid_25d_external_session_tests)
+    set_tests_properties(fluid_25d_external_session PROPERTIES LABELS "unit;fluid;backend")
     add_executable(cubey_project_fluid_25d_recording_tests
         ../sim/fluid_25d/fluid_25d_recording.cpp
         ../sim/fluid_25d/fluid_25d_recording_tests.cpp)

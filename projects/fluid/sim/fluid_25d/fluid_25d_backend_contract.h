@@ -242,6 +242,11 @@ class Fluid25DSessionGuard {
     void accept_frame(const Fluid25DFrameHeader& frame);
     void observe_command(const Fluid25DControlCommand& command);
     void accept_acknowledgement(const Fluid25DCommandAcknowledgement& acknowledgement);
+    // One atomic publication may contain an Applied control and its fields.
+    // This includes Stop's sole terminal payload, which cannot be accepted as
+    // an ordinary additional frame after a terminal acknowledgement.
+    void accept_acknowledged_frame(const Fluid25DCommandAcknowledgement& acknowledgement,
+                                   const Fluid25DFrameHeader& frame);
     void mark_failed(std::string message);
     // For an explicit reset announced by a service handshake rather than an
     // Applied Reset acknowledgement. Session IDs cannot be replaced in-place.
