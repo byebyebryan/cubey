@@ -1,5 +1,6 @@
 #include "fluid_25d_recording_app.h"
 
+#include "fluid_25d_backend_adapters.h"
 #include "fluid_25d_commands.h"
 #include "fluid_25d_motion_markers.h"
 #include "fluid_25d_project_config.h"
@@ -58,6 +59,11 @@ class RecordingApp {
             throw std::runtime_error(
                 "headless recording start time must match a saved state exactly");
         clock_.set_paused(config.common.headless || config.recording_time_seconds != 0.0F);
+        backend_metadata_ = make_fluid_25d_recording_backend_metadata(
+            *recording_, fluid_25d_new_backend_session_id());
+        backend_metadata_.session.physical_time_s = clock_.time_s();
+        std::printf("fluid_25d_backend_startup_metadata: %s\n",
+                    encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
         shown_index_ = clock_.frame_index();
         accept_frame(recording_->frame(shown_index_));
         scenario_.width = simulation_.grid_width;
@@ -463,6 +469,16 @@ class RecordingApp {
                 ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
                                    "RECORDED SYNXFLOW - not a live Cubey solver");
             }
+            if (ImGui::CollapsingHeader("Backend details")) {
+                ImGui::TextWrapped("Adapter: %s", backend_metadata_.id.c_str());
+                ImGui::Text("Input: %.12s | solver bed: %.12s",
+                            backend_metadata_.grid.input_sha256.c_str(),
+                            backend_metadata_.grid.solver_bed_sha256.c_str());
+                ImGui::TextUnformatted("Fields: saved depth, momentum; derived velocity");
+                ImGui::TextDisabled("No face discharge, native ledger or tracer fields.");
+                ImGui::TextDisabled("Playback controls only; no numerical solver commands.");
+                ImGui::TextDisabled("Startup viewer identity; not the producer lifecycle.");
+            }
             ImGui::Text("Saved state: %.0f min %.0f s / %.0f min",
                         std::floor(shown_->time_s / 60.0), std::fmod(shown_->time_s, 60.0),
                         recording_->protocol().value("duration_s", recording_->times_s().back()) /
@@ -724,6 +740,7 @@ class RecordingApp {
 
     Fluid25DProjectConfig config_;
     std::shared_ptr<Fluid25DRecording> recording_;
+    Fluid25DBackendMetadata backend_metadata_;
     Fluid25DRecordingPlayback clock_;
     std::shared_ptr<const Fluid25DRecordedFrame> shown_;
     std::future<std::shared_ptr<const Fluid25DRecordedFrame>> pending_;

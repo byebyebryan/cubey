@@ -6,10 +6,13 @@
 
 namespace cubey::projects::fluid::fluid_25d {
 
+struct Fluid25DBackendMetadata;
+
 struct Fluid25DUiContext {
     const char* title = nullptr;
     Fluid25DScenario scenario = Fluid25DScenario::RiverCatchment;
     Fluid25DSolver solver = Fluid25DSolver::VirtualPipes;
+    const Fluid25DBackendMetadata* backend_metadata = nullptr;
     bool transport_inspection_available = false;
     Fluid25DPresentationView& presentation_view;
     Fluid25DCatchmentView& catchment_view;

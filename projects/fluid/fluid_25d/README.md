@@ -74,6 +74,16 @@ guard rejects stale generations, regressing clocks/frames and duplicate acks,
 with at most one outstanding command. This is a foundation, not a new external
 transport or a claim that runtime command handling has been integrated.
 
+Each application now emits `fluid_25d_backend_startup_metadata:` once and shows
+the adapter/input fingerprints under **Backend details**. Built-in descriptors
+hash the actual initial bed/depth/source/sink/boundary arrays and numerical
+settings; recording/stream descriptors use immutable input provenance and
+exclude the growing output prefix or producer status. Solver-bed hashes cover
+the exact row-major little-endian float32 bytes. A live viewer owns a separate
+logical playback session, not the producer's lifecycle. These are startup
+descriptors only: no per-frame GPU readback, shared runtime command dispatcher,
+hot backend switching or external-service handshake is added by this checkpoint.
+
 ### Optional source-build audit (not promoted)
 
 `build_synxflow_source_v1.py` builds the pinned SynxFlow 1.0.1 source archive in

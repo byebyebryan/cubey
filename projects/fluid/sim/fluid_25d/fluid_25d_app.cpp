@@ -1,5 +1,6 @@
 #include "fluid_25d_app.h"
 
+#include "fluid_25d_backend_adapters.h"
 #include "fluid_25d_commands.h"
 #include "fluid_25d_diagnostics.h"
 #include "fluid_25d_finite_volume_oracle.h"
@@ -220,6 +221,10 @@ class Fluid25DApp {
             scenario_.source_depth_rate_m_per_s[scenario_.source_cell] = 0.04F;
             std::printf("fluid_25d: synthetic supply control scales 1 / 1.5 / 0.5 / 1\n");
         }
+        backend_metadata_ = make_fluid_25d_builtin_backend_metadata(
+            config_, scenario_, fluid_25d_new_backend_session_id());
+        std::printf("fluid_25d_backend_startup_metadata: %s\n",
+                    encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
         initial_water_volume_m3_ =
             fluid_25d_water_volume_m3(config_.simulation, scenario_.initial_water_depth_m);
         if (config_.simulation.scenario == Fluid25DScenario::TerrainCase) {
@@ -350,6 +355,7 @@ class Fluid25DApp {
             .title = "Fluid 2.5D",
             .scenario = config_.simulation.scenario,
             .solver = config_.simulation.solver,
+            .backend_metadata = &backend_metadata_,
             .transport_inspection_available =
                 fluid_25d_transport_inspection_available(config_.simulation),
             .presentation_view = presentation_view_,
@@ -1706,6 +1712,7 @@ class Fluid25DApp {
     Fluid25DWindowedPacing windowed_pacing_;
     Fluid25DInspectionAdvance inspection_advance_;
     Fluid25DScenarioData scenario_;
+    Fluid25DBackendMetadata backend_metadata_;
     cubey::ProjectRuntimeAdapter runtime_{1};
     Fluid25DGpuResources resources_;
     Fluid25DMotionMarkers motion_markers_;

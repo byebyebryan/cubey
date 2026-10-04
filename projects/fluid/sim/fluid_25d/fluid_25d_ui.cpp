@@ -1,4 +1,6 @@
 #include "fluid_25d_ui.h"
+
+#include "fluid_25d_backend_contract.h"
 #include "fluid_25d_dye_palette.h"
 #include "fluid_25d_forcing_cubes.h"
 
@@ -53,6 +55,20 @@ void draw_fluid_25d_ui(Fluid25DUiContext ui) {
 
     ImGui::Text("Backend: built-in | %s", fluid_25d_solver_name(ui.solver));
     ImGui::TextDisabled("GPU-resident simulation; controls below change this solver.");
+    if (ui.backend_metadata && ImGui::CollapsingHeader("Backend details")) {
+        const auto& backend = *ui.backend_metadata;
+        ImGui::TextWrapped("Adapter: %s", backend.id.c_str());
+        ImGui::Text("Input: %.12s | solver bed: %.12s", backend.grid.input_sha256.c_str(),
+                    backend.grid.solver_bed_sha256.c_str());
+        ImGui::TextDisabled("Startup identity; not a GPU completion clock.");
+        ImGui::TextUnformatted(backend.fields.momentum_x_m2_per_s
+                                   ? "Native momentum: h*u (m2/s)"
+                                   : "Native directed face discharge (m3/s)");
+        ImGui::Text("Water ledger: %s | tracer: %s",
+                    backend.fields.water_ledger ? "available" : "unavailable",
+                    backend.fields.tracer_depth_equivalent_m ? "available" : "unavailable");
+        ImGui::TextDisabled("No generic rain-rate or single-step command adapter yet.");
+    }
 
     cubey::host::imgui_enum_combo(
         "Presentation", ui.presentation_view, kPresentationViews, fluid_25d_presentation_view_name,

@@ -6,6 +6,8 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "fluid_25d: .*rendering River V0"
     SOURCES
         ../sim/fluid_25d/fluid_25d_app.cpp
+        ../sim/fluid_25d/fluid_25d_backend_adapters.cpp
+        ../sim/fluid_25d/fluid_25d_backend_contract.cpp
         ../sim/fluid_25d/fluid_25d_commands.cpp
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
@@ -81,6 +83,27 @@ if (BUILD_TESTING)
     add_test(NAME fluid_25d_backend_contract
         COMMAND cubey_project_fluid_25d_backend_contract_tests)
     set_tests_properties(fluid_25d_backend_contract PROPERTIES LABELS "unit;fluid;backend")
+    add_executable(cubey_project_fluid_25d_backend_adapters_tests
+        ../sim/fluid_25d/fluid_25d_backend_contract.cpp
+        ../sim/fluid_25d/fluid_25d_backend_adapters.cpp
+        ../sim/fluid_25d/fluid_25d_recording.cpp
+        ../sim/fluid_25d/fluid_25d_backend_adapters_tests.cpp)
+    target_include_directories(
+        cubey_project_fluid_25d_backend_adapters_tests
+        PRIVATE
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d"
+    )
+    target_link_libraries(cubey_project_fluid_25d_backend_adapters_tests
+        PRIVATE
+            cubey::cubey
+            cubey::host
+            nlohmann_json::nlohmann_json
+            cubey_project_options
+            cubey_project_warnings)
+    add_test(NAME fluid_25d_backend_adapters
+        COMMAND cubey_project_fluid_25d_backend_adapters_tests)
+    set_tests_properties(fluid_25d_backend_adapters PROPERTIES LABELS "unit;fluid;backend")
     find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
     if (CUBEY_FLUID_RECORDING_PYTHON)
         set(CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS)
@@ -105,6 +128,12 @@ if (BUILD_TESTING)
                 ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
         set_tests_properties(fluid_25d_recording_gpu_immutability
             PROPERTIES LABELS "headless;gpu;recording" SKIP_RETURN_CODE 77 TIMEOUT 100)
+        add_test(NAME fluid_25d_backend_startup_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_backend_startup_gpu_v1.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>")
+        set_tests_properties(fluid_25d_backend_startup_gpu
+            PROPERTIES LABELS "headless;gpu;backend" SKIP_RETURN_CODE 77 TIMEOUT 180)
     endif()
     add_executable(cubey_project_fluid_25d_tests
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
