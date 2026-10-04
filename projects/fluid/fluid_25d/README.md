@@ -64,6 +64,41 @@ external stream remains viewing-only; it does not support solver pause or
 rainfall edits. Built-in controls operate on the GPU simulation. Neither
 built-in method is being promoted as equivalent to the tested mountain solver.
 
+### Backend contract foundation
+
+`fluid_25d_backend_contract.h` defines the project-local, versioned scene/grid
+identity, field availability, session lifecycle, frame header and command/ack
+envelopes. Solver controls and viewer playback controls are separate capabilities;
+unsupported fields or controls are never inferred from the backend name. The
+guard rejects stale generations, regressing clocks/frames and duplicate acks,
+with at most one outstanding command. This is a foundation, not a new external
+transport or a claim that runtime command handling has been integrated.
+
+### Optional source-build audit (not promoted)
+
+`build_synxflow_source_v1.py` builds the pinned SynxFlow 1.0.1 source archive in
+a fresh private directory using an explicitly supplied CUDA toolkit and CPython
+3.11. It does not install anything or add CUDA to Cubey. The default `legacy11`
+lane leaves every upstream source file unchanged; `blackwell13` changes only
+the two build-system files for current CUDA compatibility. The archive checksum,
+commands, extension checksum and logs are retained in the output directory.
+
+`check_synxflow_source_correspondence_v1.py` runs that extension on fresh,
+byte-identical copies of retained case inputs, using a predeclared protocol.
+It compares every exported depth/momentum timestamp and the original analytic
+controls, stops after a failed case, and never edits the reference inputs or
+loosens the comparison gates. Its unit tests require the study's NumPy environment
+and do not run the solver.
+
+The October 4 source audit did **not** pass the promotion gate. Both tested builds
+matched all nine small controls exactly. On the mountain case, aggregate depth
+and momentum differences stayed within the frozen tolerances, but localized
+momentum differences did not. A fresh run of the released wheel matched all
+723 reference field files exactly. The cause of the rebuild divergence remains
+unresolved; the released wheel and stock live viewer are retained. Binary
+publication and continuous, interactive external-solver controls have not been
+implemented or accepted. Evidence: `outputs/fluid/backend-integration-v2-20261004-wlELKz/`.
+
 ### Opt-in live external SynxFlow viewing V1
 
 `--fluid25d-stream` reads an atomically published growing prefix from a separate
