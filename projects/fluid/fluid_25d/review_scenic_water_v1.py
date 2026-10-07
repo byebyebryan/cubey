@@ -10,6 +10,7 @@ import math
 import re
 import statistics
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import run_native_presentation_v1 as ref
 
@@ -19,7 +20,7 @@ def source_files() -> dict:
     paths += list(Path(__file__).parent.glob("*.py"))
     paths += [Path(__file__).parent/"CMakeLists.txt",Path(__file__).parent/"fluid_25d_project_config.h"]
     paths += [ref.ROOT/p for p in ("include/cubey/input/input.h", "src/cubey/input/input.cpp", "src/cubey/host/glfw_window.cpp")]
-    paths += list((ref.ROOT/"shaders/cubey").rglob("*.glsl"))
+    paths += list((ref.ROOT/"shaders/cubey").rglob("*"))
     paths += [ref.ROOT/p for p in ("src/cubey/render/generated_ibl.cpp", "src/cubey/render/generated_texture.cpp")]
     return {str(p.relative_to(ref.ROOT)):ref.sha256_file(p) for p in sorted(paths)
             if p.is_file() and p.suffix in (".cpp",".h",".glsl",".vert",".frag",".comp",".py",".txt")}
@@ -142,7 +143,7 @@ def media(out: Path, label: str | None) -> None:
     font = str(ref.find_font())
     for name,left,right,l_label,r_label in (
         ("01-readable-vs-scenic","readable-flow","scenic-flow","Readable","Scenic (opt-in)"),
-        ("02-rain-on-vs-off","scenic-rain-on","scenic-rain-off","Rain continues: 120 mm/h","Rain off since 7260s")):
+        ("02-rain-on-vs-off","scenic-rain-on","scenic-rain-off","Rain continues - 120 mm/h","Rain off since 7260s")):
         output = leaf/(name+".mp4")
         graph = (f"[0:v]scale=640:360,drawtext=fontfile='{font}':text='{l_label}':x=12:y=12:fontsize=20:fontcolor=white:box=1:boxcolor=black@0.65[l];"
                  f"[1:v]scale=640:360,drawtext=fontfile='{font}':text='{r_label}':x=12:y=12:fontsize=20:fontcolor=white:box=1:boxcolor=black@0.65[r];[l][r]hstack=inputs=2[v]")
@@ -235,6 +236,12 @@ def seal_review(out: Path, stills: str, videos: str, timings: str) -> None:
         value = json.loads(safe_artifact(out,leaf+"/manifest.json").read_text())
         if value["status"]!="pass" or value["style"]!="scenic": raise ValueError("private GUI gate did not pass")
         ref.assert_same_runtime(runtime,value["runtime_identity"],"private GUI review "+leaf)
+    suite = ET.parse(safe_artifact(out,"gates-final.xml")).getroot()
+    if int(suite.get("tests","0"))<166 or any(int(suite.get(k,"0")) for k in ("failures","errors","skipped")):
+        raise ValueError("complete dev test gate missing or failed")
+    names = {case.get("name") for case in suite.findall("testcase")}
+    if not {"fluid_25d_scenic_gpu","fluid_25d_scenic_review_helpers","fluid_25d_tests"}.issubset(names):
+        raise ValueError("required Scenic test gate missing")
     leaves = [stills,videos,timings,"gui-replay-final","gui-banks-final","gui-live-final"]
     files = ["index.html","RESULTS.md","gates-final.log","gates-final.xml"]
     ref.write_json_exclusive(out/"review-seal.json",{"schema":"cubey.fluid25d.scenic-review.v1",

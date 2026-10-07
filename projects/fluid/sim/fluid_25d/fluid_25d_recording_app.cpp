@@ -1017,9 +1017,7 @@ class RecordingApp {
         // Decorative normal clock only. Held native hydraulic samples are never
         // interpolated. Pause keeps this frozen; replay/reset clears it explicitly.
         scenic_clock_s_ += std::max(0.0, visual_delta_) * 0.03;
-        const bool scenic_active =
-            render_.native_presentation == 3U && view_ == Fluid25DPresentationView::Catchment &&
-            catchment_view_ == Fluid25DCatchmentView::Composite && render_.native_water_debug == 0U;
+        const bool scenic_active = scenic_material_active();
         if (native_profiler_ && profile)
             native_profile_scenic_[slot.index] = scenic_active;
         if (scenic_active) {
@@ -1183,6 +1181,22 @@ class RecordingApp {
         runtime_.detach_gpu_if_attached();
     }
 
+    bool scenic_material_active() const {
+        return render_.native_presentation == 3U && view_ == Fluid25DPresentationView::Catchment &&
+               catchment_view_ == Fluid25DCatchmentView::Composite &&
+               render_.native_water_debug == 0U;
+    }
+
+    void draw_native_color_legend() const {
+        if (scenic_material_active())
+            ImGui::TextWrapped(
+                "Scenic color = materials/reflection/optical depth, not a depth scale. "
+                "Dots/trails = approximate velocity, not water parcels.");
+        else
+            ImGui::TextWrapped(
+                "Blue = depth. Dots/trails = approximate velocity, not water parcels.");
+    }
+
     void select_native_style(std::uint32_t style) {
         const bool compare_materials = render_.native_presentation >= 2U && style >= 2U;
         render_.native_presentation = style;
@@ -1333,8 +1347,7 @@ class RecordingApp {
             ImGui::Text("Rain %s: %.2f mm/h | solver pacing %.1fx",
                         external_snapshot_->rain_m_per_s > 0.0 ? "ON" : "OFF",
                         external_snapshot_->rain_m_per_s * 3.6e6, external_snapshot_->pacing);
-            ImGui::TextWrapped(
-                "Blue = depth. Dots/trails = approximate velocity, not water parcels.");
+            draw_native_color_legend();
             ImGui::TextWrapped(
                 "Space pauses/resumes computation. Esc only detaches; the foreground "
                 "launcher owns the worker (Ctrl-C to stop). No playback seek.");
@@ -1560,7 +1573,7 @@ class RecordingApp {
                         "END OF COMPARISON WINDOW: last saved state held. Replay/Restart is "
                         "explicit; the solver has not been stopped.");
                 draw_native_presentation_ui();
-                ImGui::TextWrapped("Blue = depth. Dots/trails = approximate velocity cues.");
+                draw_native_color_legend();
                 ImGui::Separator();
             }
             if (config_.stream_path) {
@@ -1590,8 +1603,8 @@ class RecordingApp {
             } else if (!comparison_) {
                 ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
                                    "REPLAY - recorded SynxFlow; no solver running");
-                ImGui::TextWrapped("Blue = depth. Dots/trails = approximate velocity cues. "
-                                   "Space pauses viewing, not computation.");
+                draw_native_color_legend();
+                ImGui::TextWrapped("Space pauses viewing, not computation.");
             }
             if (ImGui::CollapsingHeader("Backend details")) {
                 ImGui::TextWrapped("Adapter: %s", backend_metadata_.id.c_str());
@@ -1747,7 +1760,10 @@ class RecordingApp {
                                  "Terrain\0Depth\0Surface\0Speed\0Direction\0Wet/dry\0"))
                     debug_view_ = static_cast<Fluid25DDebugView>(debug);
             }
-            ImGui::Text("Depth color: log scale 0.01 / 0.1 / 1 / 10 m");
+            if (scenic_material_active())
+                ImGui::TextWrapped("Scenic color is not a depth palette; use raw maps to measure.");
+            else
+                ImGui::Text("Depth color: log scale 0.01 / 0.1 / 1 / 10 m");
             if (!comparison_)
                 draw_native_presentation_ui();
             if (diagnostics)
