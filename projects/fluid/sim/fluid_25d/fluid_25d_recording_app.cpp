@@ -207,6 +207,11 @@ class RecordingApp {
         scenario_.sink_depth_rate_m_per_s.assign(shown_->depth_m.size(), 0.0F);
         scenario_.boundary_outflow_face_mask.assign(shown_->depth_m.size(), 0U);
         render_ = config.catchment_render;
+        scenic_material_ = fluid_25d_scenic_material(config_.native_scenic_material);
+        if (config_.native_scenic_tuning_path)
+            scenic_material_ = fluid_25d_load_scenic_material(*config_.native_scenic_tuning_path,
+                                                              scenic_material_);
+        report_scenic_material();
         render_.native_recording = true;
         render_.native_presentation = config.native_presentation == "scenic"     ? 3U
                                       : config.native_presentation == "readable" ? 2U
@@ -1055,8 +1060,8 @@ class RecordingApp {
             ensure_scenic_resources(device, target);
             scenic_.record(device, commands, graph_, slot, target, target_mode, resources_,
                            simulation_, camera(target.extent), displayed_render, scenic_clock_s_,
-                           config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
-                           profile != nullptr, scenic_flow_reset_);
+                           scenic_material_, config_.motion_markers ? &markers_ : nullptr,
+                           marker_fraction_, profile != nullptr, scenic_flow_reset_);
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1246,6 +1251,15 @@ class RecordingApp {
         std::fflush(stdout);
     }
 
+    void report_scenic_material() const {
+        const auto json = fluid_25d_scenic_material_json(scenic_material_);
+        std::printf("fluid_25d_scenic_material: profile=%s%s%s settings=%s\n",
+                    config_.native_scenic_material.c_str(),
+                    config_.native_scenic_tuning_path ? "+tuning" : "",
+                    scenic_material_edited_ ? "+edited" : "", json.c_str());
+        std::fflush(stdout);
+    }
+
     void draw_native_presentation_ui() {
         int style = static_cast<int>(render_.native_presentation);
         ImGui::SetNextItemWidth(-100.0F);
@@ -1272,6 +1286,32 @@ class RecordingApp {
             ImGui::TextWrapped(
                 "Scenic: HDR materials and decorative flow normals; V compares Readable. "
                 "Raw maps and inspection views retain diagnostic shading.");
+        if (render_.native_presentation == 3U &&
+            ImGui::CollapsingHeader("Scenic materials (render only)")) {
+            int profile = config_.native_scenic_material == "refined" ? 1 : 0;
+            ImGui::SetNextItemWidth(-100.0F);
+            if (ImGui::Combo("Material", &profile, "V1 reference\0Refined\0")) {
+                config_.native_scenic_material = profile == 1 ? "refined" : "v1";
+                config_.native_scenic_tuning_path.reset();
+                scenic_material_edited_ = false;
+                scenic_material_ = fluid_25d_scenic_material(config_.native_scenic_material);
+                report_scenic_material();
+            }
+            // Edits only affect the next frame's material uniforms, not playback history.
+            bool edited =
+                ImGui::SliderFloat("Wet roughness", &scenic_material_.wet_roughness, 0.2F, 1.0F);
+            edited |=
+                ImGui::SliderFloat("Water clarity", &scenic_material_.water_clarity, 0.0F, 1.0F);
+            if (edited) {
+                scenic_material_edited_ = true;
+                report_scenic_material();
+            }
+            if (config_.native_scenic_tuning_path || scenic_material_edited_)
+                ImGui::TextWrapped("Custom settings; selecting a preset discards these overrides.");
+            ImGui::TextWrapped("Clarity is an artistic tint, not a depth reading. Material edits "
+                               "do not move banks or modify water fields. JSON overrides load "
+                               "once; effective settings are logged.");
+        }
         const auto selected = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares
                               : render_.native_bspline_surface ? Fluid25DBankView::Bspline2x
                                                                : Fluid25DBankView::Reference;
@@ -2065,6 +2105,8 @@ class RecordingApp {
     Fluid25DMotionMarkers markers_;
     render::RenderGraphFrameExecutor graph_;
     Fluid25DScenic scenic_;
+    Fluid25DScenicMaterial scenic_material_;
+    bool scenic_material_edited_ = false;
     vulkan::GpuRuntime* scenic_gpu_ = nullptr;
     std::uint32_t scenic_slots_ = 0U;
     double scenic_clock_s_ = 0.0;

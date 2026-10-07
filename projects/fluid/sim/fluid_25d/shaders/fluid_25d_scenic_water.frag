@@ -49,13 +49,14 @@ void main() {
     float speed = length(visual_u);
     vec2 flow = visual_u / max(1.0,speed/2.0);
     float footprint = max(length(dFdx(world_position)),length(dFdy(world_position)));
-    float detail_strength = 0.14*smoothstep(0.025,0.40,speed)*(1.0-smoothstep(2.0,12.0,footprint));
+    float detail_strength = 0.14*scenic.surface_material.w*smoothstep(0.025,0.40,speed)*(1.0-smoothstep(2.0,12.0,footprint));
     vec2 detail = flow_detail(world_position.xz,flow,scenic.clock_encoding.x)*detail_strength;
     n = normalize(n+vec3(detail.x,0.0,detail.y));
     vec3 nx = dFdx(n), ny = dFdy(n);
     // Ocean's normal-variance roughness principle: unresolved detail broadens
     // reflection instead of turning into bright crawling pixels.
-    float roughness = sqrt(clamp(0.18*0.18+min(0.18,0.5*max(dot(nx,nx),dot(ny,ny))),0.0324,0.36));
+    float base_roughness = scenic.surface_material.z;
+    float roughness = sqrt(clamp(base_roughness*base_roughness+min(0.18,0.5*max(dot(nx,nx),dot(ny,ny))),base_roughness*base_roughness,0.36));
     if (h<=params.camera_wet.w) discard;
     vec2 uv = gl_FragCoord.xy/scenic.clock_encoding.zw;
     float scene_z = texture(scenic_depth,uv).r;
@@ -88,8 +89,24 @@ void main() {
     ivec2 c = clamp(ivec2(floor(bed_cell+0.5)),ivec2(0),ivec2(params.grid_cell.xy)-1);
     safe = safe && depth.values[c.y*int(params.grid_cell.x)+c.x]>params.camera_wet.w;
     vec3 background = texture(scenic_opaque,safe ? candidate_uv : uv).rgb;
-    vec3 transmittance = exp(-vec3(0.17,0.055,0.030)*path_m);
-    vec3 transmitted = background*transmittance+vec3(0.015,0.085,0.105)*(1.0-transmittance);
+    vec3 transmittance = exp(-vec3(0.17,0.055,0.030)*path_m*scenic.water_optics.x);
+    vec3 scattering = vec3(0.015,0.085,0.105)*scenic.water_optics.y;
+    if (scenic.water_optics.w>0.0) {
+        // Artistic single-layer source lighting, not a new volume integrator.
+        // Current-field water in shadow should not share an unlit turquoise source.
+        vec3 source_light = texture(scenic_irradiance,n).rgb+
+            scenic.light_color_mips.xyz*max(dot(n,scenic.light_direction_exposure.xyz),0.0)*
+            scenic_sun_visibility(world_position,n)/CUBEY_PBR_PI;
+        scattering *= mix(vec3(1.0),source_light,scenic.water_optics.w);
+    }
+    vec3 transmitted = background*transmittance+scattering*(1.0-transmittance);
+    if (scenic.art_direction.x>0.0) {
+        // Explicit visual-demo tint within existing coverage; not apparent depth
+        // or enlarged wet area. It fades out before the deeper optical treatment.
+        float clarity = scenic.art_direction.x*(1.0-smoothstep(0.15,0.50,h));
+        vec3 clearer_bed = background*vec3(0.55,0.95,1.35);
+        transmitted = mix(transmitted,clearer_bed,clarity);
+    }
     float ndotv = max(dot(n,view),0.0);
     vec3 fresnel = cubey_pbr_fresnel_schlick(ndotv,vec3(0.02037));
     vec3 reflection = textureLod(scenic_environment,reflect(-view,n),
@@ -108,7 +125,7 @@ void main() {
     }
     vec2 environment_brdf = texture(scenic_brdf,vec2(ndotv,roughness)).rg;
     vec3 color = transmitted*(1.0-fresnel)+
-        reflection*(vec3(0.02037)*environment_brdf.x+environment_brdf.y)+specular;
+        (reflection*(vec3(0.02037)*environment_brdf.x+environment_brdf.y)+specular)*scenic.water_optics.z;
     float coverage = smoothstep(0.0,edge_width,h-params.camera_wet.w);
     if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,h);
     if ((options&512u)!=0u) {

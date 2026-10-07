@@ -6,6 +6,10 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 light_direction_exposure;
     vec4 light_color_mips;
     vec4 clock_encoding;
+    vec4 ground_material;
+    vec4 surface_material;
+    vec4 water_optics;
+    vec4 art_direction;
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;
@@ -36,6 +40,6 @@ float scenic_sun_visibility(vec3 p, vec3 n) {
     float visibility = 0.0;
     for (int y=0;y<2;++y) for (int x=0;x<2;++x)
         visibility += q.z-bias <= texture(scenic_shadow,uv+(vec2(x,y)-0.5)*texel).r ? 0.25 : 0.0;
-    return visibility;
+    return mix(1.0,visibility,scenic.surface_material.y);
 }
 #endif

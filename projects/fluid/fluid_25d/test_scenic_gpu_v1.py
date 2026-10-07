@@ -46,9 +46,16 @@ def main():
             a = run("rest-a",["--fluid25d-recording-time-seconds","0"])
             b = run("rest-b",["--fluid25d-recording-time-seconds","2"])
             assert digest(a)==digest(b),"identical calm fields changed across saved times"
+            refined = ["--fluid25d-scenic-material", "refined"]
+            ra = run("refined-rest-a",[*refined,"--fluid25d-recording-time-seconds","0"])
+            rb = run("refined-rest-b",[*refined,"--fluid25d-recording-time-seconds","2"])
+            assert digest(ra)==digest(rb),"refined calm material changed across identical saved fields"
             run("bspline",["--fluid25d-native-bank-view","bspline-2x"])
             sidecar,_ = make_sidecar(root/(case+"-masks"),manifest)
             run("ms",["--fluid25d-native-display-coverage",str(sidecar),"--fluid25d-native-bank-view","marching-squares"])
+            if case == "partial-dry-lake":
+                run("refined-bspline",[*refined,"--fluid25d-native-bank-view","bspline-2x"])
+                run("refined-ms",[*refined,"--fluid25d-native-display-coverage",str(sidecar),"--fluid25d-native-bank-view","marching-squares"])
             diagnostics = []
             for style in ("readable","scenic"):
                 diagnostics.append(run("raw-"+style,["--fluid25d-native-presentation",style,

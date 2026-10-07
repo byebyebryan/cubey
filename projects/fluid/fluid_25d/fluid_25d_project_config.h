@@ -64,6 +64,8 @@ struct Fluid25DProjectConfig {
     float recording_frame_interval_seconds = 60.0F;
     std::string recording_camera = "overview";
     std::string native_presentation = "original";
+    std::string native_scenic_material = "v1";
+    std::optional<std::filesystem::path> native_scenic_tuning_path{};
     std::string native_surface_highlights = "auto";
     std::string native_water_debug = "shaded";
     std::string native_water_sampling = "triangular";
@@ -533,6 +535,16 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Enum, {}, {"original", "motion", "readable", "scenic"}),
               config.native_presentation)
         .bind(
+            option(
+                "fluid25d.scenic_material", "--fluid25d-scenic-material", "Scenic Material",
+                "Scenic-only V1 reference or refined artistic material; no field/coverage changes.",
+                ValueType::Enum, {}, {"v1", "refined"}),
+            config.native_scenic_material)
+        .bind(option("fluid25d.scenic_tuning", "--fluid25d-scenic-tuning", "Scenic Tuning",
+                     "Bounded Scenic-only JSON overrides, loaded once and logged; no hot reload.",
+                     ValueType::Path),
+              config.native_scenic_tuning_path)
+        .bind(
             option("fluid25d.native_surface_highlights", "--fluid25d-native-surface-highlights",
                    "Procedural Flow Highlights",
                    "Native-only auto keeps highlights on for Original/Motion and off for Readable; "
@@ -866,6 +878,8 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         throw std::runtime_error(
             "prebaked display coverage requires a completed recording and triangular geometry");
     if ((parsed.path_was_assigned("fluid25d.native_presentation") ||
+         parsed.path_was_assigned("fluid25d.scenic_material") ||
+         parsed.path_was_assigned("fluid25d.scenic_tuning") ||
          parsed.path_was_assigned("fluid25d.native_surface_highlights") ||
          parsed.path_was_assigned("fluid25d.native_water_debug") ||
          parsed.path_was_assigned("fluid25d.native_water_sampling") ||
@@ -874,6 +888,10 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.native_camera_pitch")) &&
         !project_config.recording_path && !project_config.stream_path && !service_session)
         throw std::runtime_error("native presentation requires a recording or external source");
+    if ((parsed.path_was_assigned("fluid25d.scenic_material") ||
+         parsed.path_was_assigned("fluid25d.scenic_tuning")) &&
+        project_config.native_presentation != "scenic")
+        throw std::runtime_error("Scenic material controls require the Scenic presentation");
     if (project_config.native_surface_subdivision != 1U &&
         project_config.native_surface_subdivision != 2U &&
         project_config.native_surface_subdivision != 4U)

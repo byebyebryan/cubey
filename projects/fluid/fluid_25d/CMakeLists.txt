@@ -24,6 +24,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_recording.cpp
         ../sim/fluid_25d/fluid_25d_recording_app.cpp
         ../sim/fluid_25d/fluid_25d_scenic.cpp
+        ../sim/fluid_25d/fluid_25d_scenic_material.cpp
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
@@ -193,6 +194,11 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_scenic_water_v1.py)
         set_tests_properties(fluid_25d_scenic_review_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_scenic_material_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_scenic_material_v2.py)
+        set_tests_properties(fluid_25d_scenic_material_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
         add_test(NAME fluid_25d_native_bank_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_render_v1.py)
@@ -265,6 +271,7 @@ if (BUILD_TESTING)
         ../sim/fluid_25d/fluid_25d_mass_audit.cpp
         ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_tests.cpp
+        ../sim/fluid_25d/fluid_25d_scenic_material.cpp
     )
     target_include_directories(
         cubey_project_fluid_25d_tests

@@ -25,9 +25,10 @@ struct Push {
 struct Uniforms {
     math::Mat4 inverse_view_projection, shadow_view_projection;
     math::Vec4 light_direction_exposure, light_color_mips, clock_encoding;
+    math::Vec4 ground_material, surface_material, water_optics, art_direction;
 };
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 176U);
+static_assert(sizeof(Uniforms) == 240U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -272,8 +273,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                             const Fluid25DGpuResources& resources, const Fluid25DConfig& config,
                             const Fluid25DRenderCamera& camera,
                             Fluid25DCatchmentRenderOptions options, double visual_clock_s,
-                            Fluid25DMotionMarkers* markers, float marker_fraction, bool profile,
-                            bool reset_visual_flow) {
+                            const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
+                            float marker_fraction, bool profile, bool reset_visual_flow) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
@@ -310,7 +311,14 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                            {2.6F, 2.4F, 2.1F, float(s.environment->prefiltered_mip_levels)},
                            {float(std::fmod(visual_clock_s, 1024.0)),
                             srgb_attachment(target.format) ? 0.0F : 1.0F,
-                            float(target.extent.width), float(target.extent.height)}});
+                            float(target.extent.width), float(target.extent.height)},
+                           {material.wet_roughness, material.wet_darkening,
+                            material.terrain_saturation, material.terrain_ambient},
+                           {material.terrain_direct, material.shadow_strength,
+                            material.water_roughness, material.water_normal_strength},
+                           {material.water_extinction_scale, material.water_scatter_scale,
+                            material.water_reflection_scale, material.water_scatter_lighting},
+                           {material.water_clarity, material.terrain_mineral_scale, 0.0F, 0.0F}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()

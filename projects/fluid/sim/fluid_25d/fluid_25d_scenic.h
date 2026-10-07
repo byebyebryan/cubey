@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fluid_25d_commands.h"
+#include "fluid_25d_scenic_material.h"
 #include <memory>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -23,8 +24,9 @@ class Fluid25DScenic {
                 render::ColorTargetView target, Fluid25DRenderTargetMode target_mode,
                 const Fluid25DGpuResources& resources, const Fluid25DConfig& config,
                 const Fluid25DRenderCamera& camera, Fluid25DCatchmentRenderOptions options,
-                double visual_clock_s, Fluid25DMotionMarkers* markers, float marker_fraction,
-                bool profile = false, bool reset_visual_flow = false);
+                double visual_clock_s, const Fluid25DScenicMaterial& material,
+                Fluid25DMotionMarkers* markers, float marker_fraction, bool profile = false,
+                bool reset_visual_flow = false);
 
   private:
     struct State;

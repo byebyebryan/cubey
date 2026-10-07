@@ -13,6 +13,7 @@
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_presentation.h"
 #include "fluid_25d_rain_study.h"
+#include "fluid_25d_scenic_material.h"
 
 #include <cubey/asset/file_digest.h>
 
@@ -6893,11 +6894,84 @@ void test_external_session_freshness_and_typed_inputs() {
         "typed controls refresh only when clean, applied, reset-generation changed, or canceled");
 }
 
+void test_scenic_material_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    const auto v1 = fluid_25d_scenic_material("v1");
+    const auto refined = fluid_25d_scenic_material("refined");
+    require(v1.wet_roughness == 0.38F && v1.water_clarity == 0.0F &&
+                v1.water_scatter_lighting == 0.0F && refined.wet_roughness > v1.wet_roughness,
+            "V1 remains available and refined wet ground is less glossy");
+    const auto roundtrip =
+        fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(refined), v1);
+    require(fluid_25d_scenic_material_json(roundtrip) == fluid_25d_scenic_material_json(refined),
+            "effective material settings roundtrip exactly");
+    const auto minimum = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","wet_roughness":0.2,"water_roughness":0.08})",
+        v1);
+    require(minimum.wet_roughness == 0.2F && minimum.water_roughness == 0.08F &&
+                minimum.wet_darkening == v1.wet_darkening,
+            "decimal endpoints are accepted and omitted controls inherit the selected profile");
+    for (
+        const auto* text :
+        {"{}", "[]", R"({"schema":"unknown"})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_clarity":true})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","wet_roughness":0.19})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_clarity":1.1})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_clarity":1e400})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","rainfall":10})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","wet_roughness":0.4,"wet_roughness":0.7})"}) {
+        require_throws(
+            [&] { static_cast<void>(fluid_25d_parse_scenic_material(text, v1)); },
+            "malformed/unknown/duplicate/non-finite or out-of-range tuning fails closed");
+    }
+    require_throws(
+        [&] { static_cast<void>(fluid_25d_parse_scenic_material(std::string(16385U, ' '), v1)); },
+        "tuning document memory is bounded");
+    require_throws([] { static_cast<void>(fluid_25d_scenic_material("unknown")); },
+                   "unknown material profiles fail closed");
+    TerrainFixture fixture;
+    const auto tuning_file = fixture.root / "scenic.json";
+    {
+        std::ofstream stream(tuning_file);
+        stream << fluid_25d_scenic_material_json(refined);
+    }
+    require(fluid_25d_scenic_material_json(fluid_25d_load_scenic_material(tuning_file, v1)) ==
+                fluid_25d_scenic_material_json(refined),
+            "bounded tuning file loads the same effective settings as the parser");
+    const auto link = fixture.root / "scenic-link.json";
+    std::filesystem::create_symlink(tuning_file, link);
+    require_throws([&] { static_cast<void>(fluid_25d_load_scenic_material(link, v1)); },
+                   "tuning rejects symbolic-link files");
+    require_throws([&] { static_cast<void>(fluid_25d_load_scenic_material(fixture.root, v1)); },
+                   "tuning rejects directories");
+    for (const char* source : {"--fluid25d-recording", "--fluid25d-external-session"}) {
+        const auto parsed = parse_project(
+            {"fluid_25d", source, "fixture", "--fluid25d-native-presentation", "scenic",
+             "--fluid25d-scenic-material", "refined", "--fluid25d-scenic-tuning", "study.json"});
+        require(parsed.native_scenic_material == "refined" &&
+                    parsed.native_scenic_tuning_path == "study.json" &&
+                    parsed.simulation.solver == Fluid25DSolver::VirtualPipes,
+                "recording/live share material overrides without changing the solver");
+    }
+    for (const char* style : {"original", "motion", "readable"})
+        require_throws(
+            [&] {
+                static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                                 "--fluid25d-native-presentation", style,
+                                                 "--fluid25d-scenic-material", "refined"}));
+            },
+            "non-Scenic startup cannot silently ignore material overrides");
+    require_throws(
+        [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-scenic-material", "v1"})); },
+        "builtin cannot accidentally consume Scenic controls");
+}
+
 int main() {
     try {
         test_backend_selection_preserves_existing_modes();
         test_external_session_freshness_and_typed_inputs();
         test_recording_cli_is_separate_from_physics();
+        test_scenic_material_contract();
         test_bank_comparison_controls();
         test_catchment_far_plane_geometry();
         test_config_defaults_and_parsing();
