@@ -10,6 +10,83 @@ The broader technique map lives in
 
 ## Status
 
+### Mountain Rain Demo V1: start here
+
+The main visual demo is rain/runoff on the existing, unchanged Terrain Diffusion
+mountain terrain, not an authored river. The dedicated launcher uses Readable
+shading, triangular reference banks, dots/trails on and procedural highlights
+off. These are launcher choices, **not changes to the application or solver
+defaults**. Blue means depth; dots/trails show approximate velocity, not native
+water parcels or conserved dye.
+
+From the repository root, with a local graphical session:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py banks
+```
+
+- `replay`: retained rain-off recording, dry start, 150x viewing. Rain is 120 mm/h
+  through 7200 physical seconds, tapers to zero by 7260 s, then recedes through
+  14400 s. Space pauses viewing; R rewinds. No solver runs. Nonzero `--start`
+  starts paused, must match a saved 60-second state. `--rain-case rain-on`
+  selects the sustained-rain counterpart.
+- `live`: audited optional SynxFlow worker, continuous and initially paused at
+  dry start, 60x producer pacing. Space pauses/resumes computation; GUI rain
+  controls can turn uniform rain off/on without resetting water. R fully resets
+  native dynamic fields in a new generation and restores the case rain rate.
+  Closing/Esc detaches the viewer; the **foreground launcher remains the worker
+  owner**. Reattach using its printed viewer command. Ctrl-C in that launcher
+  gracefully stops only its own process groups. Do not background/disown it.
+- `banks`: separate bounded, prerecorded coverage comparison, initially paused,
+  60x viewing. S cycles triangular reference, experimental B-spline 2x and
+  prerecorded marching-squares coverage; W toggles dots. End holds the last
+  baked state, not the end of a simulation. `--loop` deliberately loops that
+  recorded window. Marching squares is not available in live/full-story replay.
+
+`--print-command` performs read-only input/extension preflight without creating
+an output leaf, window or producer. `--camera overview|runoff|collection`,
+`--speed`, `--bank reference|bspline-2x`, `--no-dots`, and `--width/--height`
+are explicit overrides. Bank mode also permits `--bank marching-squares`.
+Live mode rejects recorded-case/start options instead of silently ignoring them.
+Every actual launch gets a fresh leaf under `outputs/fluid`, isolated ImGui
+settings, commands/pins, logs and an owned-cleanup receipt. An explicit `--out`
+must be fresh below an existing parent there.
+
+Replay/banks do not need CUDA, but require the retained local recording/mask
+artifacts and an explicitly built dev application. Live additionally requires
+the retained native Python environment and audited hooked extension. The
+launcher never installs dependencies, builds CUDA, imports the GPL worker into
+Cubey or silently falls back to a different producer. `--native-python` and
+`--extension` may relocate those dependencies; the audited extension hash is
+still required. Missing/mismatched prerequisites fail clearly.
+
+For remote review (no desktop window or solver):
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/review_mountain_rain_demo_v1.py \
+  --out ./outputs/fluid/my-fresh-mountain-review
+```
+
+This writes one page with a 96.1-second full story at 150x, a 25-second flow
+detail at 50x, and a matched 23.9-second rain-off/on pair at 300x, plus six
+labelled stills. Actual held field times, requested times, rain phase/rate and
+pacing are labelled. Raw fields remain held at saved 60-second intervals;
+visual cues are approximate, with no hydraulic temporal interpolation. The
+rain ramp has no intermediate saved field. Diagnostics and provenance sit
+under a disclosure instead of another large comparison matrix. Standalone
+GPU presentation and capture/encoding wall costs are separated; no solver
+throughput or concurrent CUDA performance is inferred from replay pacing.
+
+`probe_mountain_rain_demo.py` is an explicitly invoked private-Xvfb UI/ownership
+smoke, not an ordinary native/CUDA test or desktop/user acceptance. The older
+`run_hillside_flow_demo.py` remains the built-in, simpler hillside alternative:
+it is a **different simulation/forcing example**, not equivalent native rain
+results. No solver port, new terrain or live contour reconstruction is involved.
+
+### Retained numerical and integration evidence
+
 The October 4 integration adds an optional, interactive external SynxFlow
 service alongside the unchanged built-in default and recorded fallback. Cubey
 shares a project-local scene/session contract across these paths; CUDA remains

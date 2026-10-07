@@ -167,6 +167,16 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_presentation_v1.py)
         set_tests_properties(fluid_25d_native_presentation_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_mountain_demo_launcher
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_mountain_rain_demo.py)
+        set_tests_properties(fluid_25d_mountain_demo_launcher
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_mountain_demo_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_mountain_rain_demo_v1.py)
+        set_tests_properties(fluid_25d_mountain_demo_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
         add_test(NAME fluid_25d_native_bank_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_render_v1.py)

@@ -1151,7 +1151,8 @@ class RecordingApp {
 
     void draw_native_presentation_ui() {
         int style = static_cast<int>(render_.native_presentation);
-        if (ImGui::Combo("Presentation (visual only)", &style,
+        ImGui::SetNextItemWidth(-100.0F);
+        if (ImGui::Combo("Style", &style,
                          "Original reference\0Continuous motion\0Readable terrain/water\0")) {
             render_.native_presentation = static_cast<std::uint32_t>(style);
             config_.native_presentation = style == 2   ? "readable"
@@ -1166,7 +1167,8 @@ class RecordingApp {
         }
         int highlight_policy = static_cast<int>(
             fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights));
-        if (ImGui::Combo("Procedural flow highlights", &highlight_policy,
+        ImGui::SetNextItemWidth(-100.0F);
+        if (ImGui::Combo("Highlights", &highlight_policy,
                          "Auto (off only in Readable)\0On\0Off\0")) {
             config_.native_surface_highlights = highlight_policy == 1   ? "on"
                                                 : highlight_policy == 2 ? "off"
@@ -1175,7 +1177,6 @@ class RecordingApp {
                 fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights),
                 render_.native_presentation);
         }
-        ImGui::TextDisabled("Bank views never change the native terrain/depth/velocity inputs.");
         const auto selected = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares
                               : render_.native_bspline_surface ? Fluid25DBankView::Bspline2x
                                                                : Fluid25DBankView::Reference;
@@ -1186,9 +1187,9 @@ class RecordingApp {
             render_.native_bilinear_water ||
             (render_.native_bspline_surface && render_.native_surface_subdivision != 2U);
         ImGui::BeginDisabled(comparison_ && !coverage_cache_);
-        if (ImGui::BeginCombo("Bank view [S]", advanced
-                                                   ? "Advanced reconstruction"
-                                                   : names[static_cast<std::size_t>(selected)])) {
+        ImGui::SetNextItemWidth(-100.0F);
+        if (ImGui::BeginCombo("Banks [S]", advanced ? "Advanced reconstruction"
+                                                    : names[static_cast<std::size_t>(selected)])) {
             for (std::size_t i = 0; i < names.size(); ++i) {
                 const auto mode = static_cast<Fluid25DBankView>(i);
                 const bool available =
@@ -1215,25 +1216,25 @@ class RecordingApp {
                                "Height geometry stays triangular. Baked %s; not live.",
                                coverage_->label().c_str());
         if (!matching_mask_ready())
-            ImGui::TextDisabled("Marching squares unavailable: no ready matching recorded mask.");
+            ImGui::TextWrapped("Marching squares: recorded masks only; unavailable here.");
         if (view_ == Fluid25DPresentationView::Diagnostics)
             ImGui::TextWrapped("RAW 2D FIELDS: bank reconstruction is bypassed; selected bank view "
                                "resumes in 3D.");
         else
-            ImGui::TextDisabled(
-                "Water debug views below inspect the selected display, not solver accuracy.");
+            ImGui::TextWrapped("Bank views are display-only; native inputs stay unchanged.");
         ImGui::BeginDisabled(!markers_available_);
-        ImGui::Checkbox("Dots/trails [W] (approximate velocity cues)", &config_.motion_markers);
+        ImGui::Checkbox("Dots/trails [W] - approximate velocity", &config_.motion_markers);
         ImGui::EndDisabled();
         if (!markers_available_)
-            ImGui::TextDisabled(
+            ImGui::TextWrapped(
                 "Enable dots at launch; comparison mode prepares them automatically.");
         if (ImGui::CollapsingHeader("Advanced reconstruction / display diagnostics")) {
             int sampling = render_.native_bspline_surface  ? 2
                            : render_.native_bilinear_water ? 1
                                                            : 0;
             ImGui::BeginDisabled(comparison_.has_value());
-            if (ImGui::Combo("Surface reconstruction (experimental)", &sampling,
+            ImGui::SetNextItemWidth(-100.0F);
+            if (ImGui::Combo("Surface", &sampling,
                              "Triangular reference\0Bilinear depth only\0Matched B-spline "
                              "terrain/water\0")) {
                 render_.native_bilinear_water = sampling == 1;
@@ -1248,13 +1249,15 @@ class RecordingApp {
                 int level = render_.native_surface_subdivision == 4U   ? 2
                             : render_.native_surface_subdivision == 2U ? 1
                                                                        : 0;
-                if (ImGui::Combo("Display subdivision (not sim resolution)", &level,
-                                 "1x\0 2x\0 4x\0"))
+                ImGui::TextWrapped("Display subdivision only; simulation resolution is unchanged.");
+                ImGui::SetNextItemWidth(-100.0F);
+                if (ImGui::Combo("Subdivisions", &level, "1x\0 2x\0 4x\0"))
                     config_.native_surface_subdivision = render_.native_surface_subdivision =
                         1U << level;
             }
             ImGui::EndDisabled();
             int diagnostic = static_cast<int>(render_.native_water_debug);
+            ImGui::SetNextItemWidth(-100.0F);
             if (ImGui::Combo(
                     "Water diagnostic", &diagnostic,
                     "Shaded\0Solid coverage\0Unlit depth\0Normals\0Wireframe\0Native/display "
@@ -1264,15 +1267,26 @@ class RecordingApp {
     }
 
     void draw_external_ui() {
-        ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin("External service runoff")) {
+        ImGui::SetNextWindowSize(
+            ImVec2(510.0F, std::min(850.0F, ImGui::GetIO().DisplaySize.y - 32.0F)),
+            ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Mountain Rain - LIVE solver")) {
             ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
-                               "EXTERNAL SERVICE - Cubey Vulkan viewer");
+                               "LIVE - external SynxFlow / Vulkan viewer");
             const auto health = external_health();
             ImGui::Text("Lifecycle: %s | heartbeat: %s",
                         lifecycle_name(external_snapshot_->header.lifecycle),
                         external_health_name(health));
             ImGui::Text("Native physical time: %.6f s", shown_->time_s);
+            ImGui::Text("Rain %s: %.2f mm/h | solver pacing %.1fx",
+                        external_snapshot_->rain_m_per_s > 0.0 ? "ON" : "OFF",
+                        external_snapshot_->rain_m_per_s * 3.6e6, external_snapshot_->pacing);
+            ImGui::TextWrapped(
+                "Blue = depth. Dots/trails = approximate velocity, not water parcels.");
+            ImGui::TextWrapped(
+                "Space pauses/resumes computation. Esc only detaches; the foreground "
+                "launcher owns the worker (Ctrl-C to stop). No playback seek.");
             const double publication_age_s = external_publication_age_s();
             const double now_unix_s =
                 std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch())
@@ -1283,9 +1297,9 @@ class RecordingApp {
                 static_cast<unsigned long long>(external_snapshot_->header.sequence));
             ImGui::Text("Publication age %.3f s", publication_age_s);
             if (external_session_->command_pending())
-                ImGui::Text("Command pending %.2f s | recorded at Unix %.6f",
-                            std::max(0.0, now_unix_s - external_command_recorded_unix_s_),
-                            external_command_recorded_unix_s_);
+                ImGui::TextWrapped("Command pending %.2f s | recorded at Unix %.6f",
+                                   std::max(0.0, now_unix_s - external_command_recorded_unix_s_),
+                                   external_command_recorded_unix_s_);
             if (!external_session_->last_command_message().empty())
                 ImGui::TextWrapped("Last command acknowledgement: %s",
                                    external_session_->last_command_message().c_str());
@@ -1467,13 +1481,13 @@ class RecordingApp {
             draw_external_ui();
             return;
         }
-        ImGui::SetNextWindowSize(comparison_ ? ImVec2(510.0F, 850.0F) : ImVec2(430.0F, 0.0F),
-                                 ImGuiCond_FirstUseEver);
-        if (comparison_)
-            ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(comparison_           ? "Bank reconstruction comparison"
+        ImGui::SetNextWindowSize(
+            ImVec2(510.0F, std::min(850.0F, ImGui::GetIO().DisplaySize.y - 32.0F)),
+            ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(comparison_           ? "Mountain Rain - BANKS recorded comparison"
                          : config_.stream_path ? "Live external mountain runoff"
-                                               : "Recorded mountain runoff")) {
+                                               : "Mountain Rain - REPLAY recorded fields")) {
             if (comparison_) {
                 ImGui::TextColored(ImVec4(.25F, .85F, 1.F, 1.F),
                                    "RECORDED BANK COMPARISON - prebaked, not live");
@@ -1485,8 +1499,8 @@ class RecordingApp {
                                 static_cast<double>(coverage_cache_->bytes()) / (1024. * 1024.),
                                 coverage_cache_->preparation_ms());
                 else if (comparison_error_.empty())
-                    ImGui::Text("Preparing coverage %zu/%zu; reference shown, playback held",
-                                cache_progress_->load(), comparison_->frame_count());
+                    ImGui::TextWrapped("Preparing coverage %zu/%zu; reference shown, playback held",
+                                       cache_progress_->load(), comparison_->frame_count());
                 else
                     ImGui::TextWrapped("PREPARATION FAILED: %s", comparison_error_.c_str());
                 ImGui::Checkbox("Loop recorded window (not simulation)", &comparison_loop_);
@@ -1495,7 +1509,7 @@ class RecordingApp {
                         "END OF COMPARISON WINDOW: last saved state held. Replay/Restart is "
                         "explicit; the solver has not been stopped.");
                 draw_native_presentation_ui();
-                ImGui::TextDisabled("Blue: depth | dots/trails: approximate velocity cues.");
+                ImGui::TextWrapped("Blue = depth. Dots/trails = approximate velocity cues.");
                 ImGui::Separator();
             }
             if (config_.stream_path) {
@@ -1522,9 +1536,11 @@ class RecordingApp {
                 ImGui::TextWrapped(
                     "Viewing controls never pause computation or change rainfall. Closing this "
                     "window detaches; the launcher owns the finite run.");
-            } else {
+            } else if (!comparison_) {
                 ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
-                                   "RECORDED SYNXFLOW - not a live Cubey solver");
+                                   "REPLAY - recorded SynxFlow; no solver running");
+                ImGui::TextWrapped("Blue = depth. Dots/trails = approximate velocity cues. "
+                                   "Space pauses viewing, not computation.");
             }
             if (ImGui::CollapsingHeader("Backend details")) {
                 ImGui::TextWrapped("Adapter: %s", backend_metadata_.id.c_str());
@@ -1547,28 +1563,30 @@ class RecordingApp {
                         recording_->protocol().value("duration_s", recording_->times_s().back()) /
                             60.0);
             const Fluid25DRecordedRainStatus rain = recording_->rain_status_at(shown_->time_s);
-            ImGui::Text("Scheduled rain source: %s | %.2f mm/h | %.3f mm scheduled cumulative",
-                        fluid_25d_recorded_rain_phase_name(rain.phase), rain.rate_mm_per_hour,
+            ImGui::Text("Saved rain: %s | %.2f mm/h",
+                        fluid_25d_recorded_rain_phase_name(rain.phase), rain.rate_mm_per_hour);
+            ImGui::Text("Scheduled total %.3f mm (not retained water)",
                         rain.cumulative_scheduled_rain_depth_mm);
             if (shown_index_ != clock_.frame_index())
                 ImGui::Text("Loading requested state %.0f s...", clock_.time_s());
             else
-                ImGui::Text("%s | playhead %.1f s | %.1fx viewing speed",
-                            comparison_at_end_ ? "END OF COMPARISON WINDOW"
-                            : clock_.ended()
-                                ? (config_.stream_path ? (recording_->producer_state() == "running"
-                                                              ? "WAITING FOR NEXT SNAPSHOT"
-                                                              : "END OF FINITE SOURCE")
-                                                       : "END OF RECORDING")
-                            : clock_.paused() ? "PAUSED"
-                                              : "PLAYING",
-                            clock_.time_s(), clock_.rate());
+                ImGui::TextWrapped("%s | playhead %.1f s | %.1fx viewing speed",
+                                   comparison_at_end_ ? "END OF COMPARISON WINDOW"
+                                   : clock_.ended()
+                                       ? (config_.stream_path
+                                              ? (recording_->producer_state() == "running"
+                                                     ? "WAITING FOR NEXT SNAPSHOT"
+                                                     : "END OF FINITE SOURCE")
+                                              : "END OF RECORDING")
+                                   : clock_.paused() ? "PAUSED"
+                                                     : "PLAYING",
+                                   clock_.time_s(), clock_.rate());
             ImGui::BeginDisabled((!comparison_ && clock_.ended()) ||
                                  config_.stream_path.has_value() ||
                                  (comparison_ && !coverage_cache_));
             if (ImGui::Button(comparison_at_end_ ? "Replay window [Space]"
-                              : clock_.paused()  ? "Play [Space]"
-                                                 : "Pause [Space]"))
+                              : clock_.paused()  ? "Play viewing [Space]"
+                                                 : "Pause viewing [Space]"))
                 toggle_playback();
             ImGui::EndDisabled();
             ImGui::SameLine();
