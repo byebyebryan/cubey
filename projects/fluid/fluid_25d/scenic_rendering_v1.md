@@ -99,6 +99,60 @@ publication still fails closed; the worker timeout and heartbeat policy are
 not extended or re-dated. No numerical frame is accepted from inside a render
 command after its hydraulic upload has already been recorded.
 
+## Validated checkpoint — 2026-10-07
+
+The current remote handoff is
+[the compact two-clip gallery](../../../outputs/fluid/scenic-terrain-water-v1-20261007-GjiN5X/index.html),
+with [results and limits](../../../outputs/fluid/scenic-terrain-water-v1-20261007-GjiN5X/RESULTS.md)
+and a 192-artifact review seal. Owner visual acceptance remains deferred.
+The gallery also exposes full-resolution clips and raw maps; optional posters
+are decoded first frames added during review curation, not new simulated states.
+
+Final RTX 5070 Ti/dev-build standalone viewer measurements use reference banks,
+dots enabled, the same runoff camera and saved 6000 s start, with 12 warmup and
+108 measured frames:
+
+| Style / viewport | Median GPU ms | p95 GPU ms |
+| --- | ---: | ---: |
+| Readable / 1280×720 | 0.154 | 0.386 |
+| Scenic / 1280×720 | 0.364 | 1.326 |
+| Scenic / 1920×1080 | 1.015 | 1.835 |
+
+The 720p Scenic gate passes 4 ms p95. These are complete native presentation
+spans, including upload/cues/dots, not whole-app FPS. Cold setup, ImGui/present,
+capture/encode and simultaneous CUDA costs are not included in these standalone
+spans. Short development runs measured lower values; the handoff retains the
+final values rather than selecting the best sample. No clocks or desktop
+processes were changed to meet the budget.
+
+The final non-windowed dev gate passes **166/166**, with no failures/skips,
+348.41 s. Ten matched Readable/raw stills retain exact pixel parity; Scenic raw
+maps also match, and all 34 pre-existing compiled shaders remain byte-identical.
+Synthetic rendering controls and actual private replay/bank/resize events pass.
+
+The private 1080p native live run adds 300 wall seconds of continuous rain at
+unchanged 60× pacing, reaching 18,294.93 physical seconds. Pause, rain-off,
+detach/reattach, resume, byte-exact dry generation reset and owned cleanup pass.
+Across 7,047 running frames, presentation GPU p95 is 0.623 ms and publication
+freshness p95/max is 0.223/0.297 s. The worker reports working/reference inputs
+unchanged; no native output recording grows. This is bounded CUDA-concurrent
+compatibility evidence, not a comparable idle/loaded overhead test or indefinite
+stability. No desktop GUI was opened.
+
+Verdict: keep both styles. Scenic improves relief and deeper-water optical
+appearance; Readable remains better for faint shallow streams and measuring
+depth/footprint. Stronger shadows still expose native cell steps. Do not promote
+Scenic or B-spline based on automation alone. The next useful step is owner
+review of the two comparisons, then a bounded material/contrast refinement if
+desired, without reopening solver or shoreline math.
+
+Revalidate the sealed handoff against the current build with:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/review_scenic_water_v1.py verify \
+  --out outputs/fluid/scenic-terrain-water-v1-20261007-GjiN5X
+```
+
 ## Research lineage
 
 The scene-color/depth single-layer approach is established in

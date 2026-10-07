@@ -171,6 +171,8 @@ def gallery(out: Path, stills: str, videos: str, timings: str) -> None:
 <p>9600–14380 simulated seconds. The right-hand basin is collecting residual runoff while overall storage falls; this is not evidence of a permanent calm lake.</p>
 <details><summary>Shallow streams, dry terrain and evidence</summary><div class='pair'><img src='{stills}/rain-on-runoff-1800s-readable.png'><img src='{stills}/rain-on-runoff-1800s-scenic.png'></div>
 <p>Scenic preserves the film/coverage policy; shallow water can be harder to spot against the material than in Readable. The reference cell-scale bank steps remain. B-spline is still experimental; recorded marching-squares is bounded coverage, not new 3D geometry.</p>
+<p>Full-resolution flow clips: <a href='{videos}/readable-flow.mp4'>Readable</a> · <a href='{videos}/scenic-flow.mp4'>Scenic</a>. Paired clips above are scaled only for comparison layout.</p>
+<p>Raw late collection: <a href='{stills}/rain-off-diagnostic-depth-14400s-readable.png'>depth</a> · <a href='{stills}/rain-off-diagnostic-flow-14400s-readable.png'>speed</a> · <a href='{stills}/rain-off-diagnostic-wet-dry-14400s-readable.png'>wet/dry</a>. These retain the diagnostic shading and native numerical readings.</p>
 <div class='pair'><img src='{stills}/rain-on-overview-0s-readable.png'><img src='{stills}/rain-on-overview-0s-scenic.png'></div>
 <p><a href='{stills}/parity.json'>Pixel/shader parity</a> · <a href='{stills}/protocol.json'>Input/runtime/source pins</a> · <a href='{timings}/result.json'>GPU timings</a> · <a href='{videos}/manifest.json'>Video provenance</a></p>
 </details><p>Automated private-window and GPU checks are not owner visual acceptance. No desktop GUI was opened. See <a href='RESULTS.md'>results and limits</a>.</p>"""
