@@ -6911,6 +6911,11 @@ void test_scenic_material_contract() {
     require(minimum.wet_roughness == 0.2F && minimum.water_roughness == 0.08F &&
                 minimum.wet_darkening == v1.wet_darkening,
             "decimal endpoints are accepted and omitted controls inherit the selected profile");
+    const auto minimum_roundtrip =
+        fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(minimum), v1);
+    require(minimum_roundtrip.water_roughness == minimum.water_roughness &&
+                minimum_roundtrip.wet_roughness == minimum.wet_roughness,
+            "logged decimal endpoint settings roundtrip without float-boundary rejection");
     for (
         const auto* text :
         {"{}", "[]", R"({"schema":"unknown"})",

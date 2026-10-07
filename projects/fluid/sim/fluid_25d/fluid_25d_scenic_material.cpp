@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <fstream>
@@ -117,8 +118,12 @@ Fluid25DScenicMaterial fluid_25d_load_scenic_material(const std::filesystem::pat
 std::string fluid_25d_scenic_material_json(const Fluid25DScenicMaterial& material) {
     validate(material);
     nlohmann::json document{{"schema", kSchema}};
-    for (const auto& p : kProperties)
-        document[p.name] = material.*p.member;
+    for (const auto& p : kProperties) {
+        // Decimal range endpoints need not be exactly representable as floats.
+        // Emit an in-range double so the bounded parser can read our receipt
+        // back without rejecting e.g. the float representation of 0.08.
+        document[p.name] = std::clamp(static_cast<double>(material.*p.member), p.low, p.high);
+    }
     return document.dump();
 }
 } // namespace cubey::projects::fluid::fluid_25d
