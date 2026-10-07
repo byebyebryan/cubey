@@ -32,6 +32,8 @@ Key to_key(int key) {
         return Key::Space;
     case GLFW_KEY_W:
         return Key::W;
+    case GLFW_KEY_V:
+        return Key::V;
     default:
         return Key::Unknown;
     }

@@ -23,6 +23,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_oracle.cpp
         ../sim/fluid_25d/fluid_25d_recording.cpp
         ../sim/fluid_25d/fluid_25d_recording_app.cpp
+        ../sim/fluid_25d/fluid_25d_scenic.cpp
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
@@ -35,6 +36,13 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_water.vert
         ../sim/fluid_25d/shaders/fluid_25d_water_bspline.vert
         ../sim/fluid_25d/shaders/fluid_25d_water.frag
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain.frag
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_water.frag
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_flow.comp
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_sky.frag
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_copy.frag
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_display.frag
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp"
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.vert
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.frag
         ../sim/fluid_25d/shaders/fluid_25d_quiver.vert
@@ -60,6 +68,9 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
@@ -177,6 +188,11 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_mountain_rain_demo_v1.py)
         set_tests_properties(fluid_25d_mountain_demo_review_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_scenic_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_scenic_water_v1.py)
+        set_tests_properties(fluid_25d_scenic_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
         add_test(NAME fluid_25d_native_bank_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_render_v1.py)
@@ -227,6 +243,13 @@ if (BUILD_TESTING)
                 ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
         set_tests_properties(fluid_25d_recording_gpu_immutability
             PROPERTIES LABELS "headless;gpu;recording" SKIP_RETURN_CODE 77 TIMEOUT 150)
+        add_test(NAME fluid_25d_scenic_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_scenic_gpu_v1.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>"
+                ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
+        set_tests_properties(fluid_25d_scenic_gpu
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" SKIP_RETURN_CODE 77 TIMEOUT 240)
         add_test(NAME fluid_25d_backend_startup_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_backend_startup_gpu_v1.py"

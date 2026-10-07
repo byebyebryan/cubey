@@ -529,8 +529,8 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
               config.recording_gpu_validation)
         .bind(option("fluid25d.native_presentation", "--fluid25d-native-presentation",
                      "Native Presentation",
-                     "Render-only original, motion, or readable native views.", ValueType::Enum, {},
-                     {"original", "motion", "readable"}),
+                     "Render-only original, motion, readable, or opt-in scenic native views.",
+                     ValueType::Enum, {}, {"original", "motion", "readable", "scenic"}),
               config.native_presentation)
         .bind(
             option("fluid25d.native_surface_highlights", "--fluid25d-native-surface-highlights",

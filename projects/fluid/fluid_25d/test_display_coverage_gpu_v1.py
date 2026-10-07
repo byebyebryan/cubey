@@ -24,11 +24,12 @@ def make_sidecar(root, recording, values=(0., 1., 0.)):
     doc = {"schema": "cubey.fluid25d.display_coverage.v1", "encoding": "float32-little-endian",
            "source_manifest_sha256": sha(recording), "grid": source["grid"],
            "subdivision": 4, "variant": "synthetic-control", "temporal_interpolation": False, "frames": []}
+    count = ((source["grid"]["width"]-1)*4+1)*((source["grid"]["height"]-1)*4+1)
     for row, value in zip(source["frames"], values, strict=True):
         path = root / f"{int(row['time_s'])}.f32"
-        path.write_bytes(struct.pack("<25f", *([value]*25)))
+        path.write_bytes(struct.pack(f"<{count}f", *([value]*count)))
         doc["frames"].append({"time_s": row["time_s"], "path": path.name, "sha256": sha(path),
-                              "source_frame_sha256": row["sha256"], "bytes": 100})
+                              "source_frame_sha256": row["sha256"], "bytes": count*4})
     path = root / "coverage.json"
     path.write_text(json.dumps(doc))
     return path, doc

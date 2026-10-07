@@ -5,11 +5,14 @@ from __future__ import annotations
 import argparse
 import ctypes
 import ctypes.util
+import csv
 import json
+import math
 import os
 from pathlib import Path
 import re
 import signal
+import statistics
 import subprocess
 import sys
 import time
@@ -44,6 +47,8 @@ class PrivateKeys:
                                      ctypes.POINTER(ctypes.c_uint)]
         self.x.XFetchName.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.POINTER(ctypes.c_void_p)]
         self.x.XFree.argtypes = [ctypes.c_void_p]
+        self.x.XResizeWindow.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_uint, ctypes.c_uint]
+        self.window_id = None
         self.xt.XTestFakeKeyEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
         self.xt.XTestFakeMotionEvent.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_ulong]
         self.xt.XTestFakeButtonEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
@@ -67,6 +72,7 @@ class PrivateKeys:
                 if self.x.XFetchName(self.display, children[index], ctypes.byref(name)) and name.value:
                     try:
                         if ctypes.string_at(name).decode(errors="replace") == title:
+                            self.window_id = children[index]
                             return True
                     finally:
                         self.x.XFree(name)
@@ -86,6 +92,13 @@ class PrivateKeys:
         self.x.XFlush(self.display)
         time.sleep(.2)
 
+    def resize(self, width, height):
+        if self.window_id is None:
+            raise RuntimeError("private viewer window was not resolved")
+        self.x.XResizeWindow(self.display,self.window_id,width,height)
+        self.x.XFlush(self.display)
+        time.sleep(1)
+
     def close(self):
         self.x.XCloseDisplay(self.display)
 
@@ -100,11 +113,51 @@ def until(predicate, timeout=30):
     raise TimeoutError("private smoke observation deadline")
 
 
+def live_profile_summary(prefix):
+    metrics = {}
+    with prefix.with_suffix(".metrics.csv").open(newline="") as stream:
+        for row in csv.DictReader(stream):
+            if row["category"] == "fluid_25d.external":
+                metrics.setdefault(int(row["frame_index"]),{})[row["name"]] = float(row["value"])
+    running = {frame:row for frame,row in metrics.items() if frame>=12 and
+               row.get("lifecycle_code")==1 and row.get("physical_time_s",0)>=300}
+    if not running: raise ValueError("missing running native profile")
+    freshness = [row["publication_freshness_s"] for row in running.values()]
+    assert all(row["hydraulic_dispatch_count"]==0 for row in metrics.values())
+    gpu = []
+    with prefix.with_suffix(".passes.csv").open(newline="") as stream:
+        for row in csv.DictReader(stream):
+            if row["kind"]=="gpu" and row["label"]=="fluid_25d native presentation total" and int(row["frame_index"]) in running:
+                gpu.append(float(row["duration_ms"]))
+    if not gpu or any(not math.isfinite(v) or v<0 for v in (*gpu,*freshness)):
+        raise ValueError("missing/non-finite native live profile")
+    def summarize(values):
+        return {"samples":len(values),"median":statistics.median(values),
+                "p95":sorted(values)[math.ceil(len(values)*.95)-1],"max":max(values)}
+    age = summarize(freshness)
+    assert age["p95"]<=1 and age["max"]<=2, age
+    return {"presentation_gpu_ms":summarize(gpu),"publication_freshness_s":age,
+            "freshness_gate":"PASS: p95 <=1s, max <=2s while running",
+            "hydraulic_dispatches":0,"cuda_concurrency":True,
+            "scope":"running after 300 physical seconds; native total includes upload/cues/dots/Scenic, excludes ImGui/present/encode"}
+
+
+def verify_scenic_controls(text):
+    for event in ("fluid_25d_native_style: mode=readable", "fluid_25d_native_style: mode=scenic",
+                  "fluid_25d_scenic_resources: extent=1280x720", "fluid_25d_scenic_resources: extent=1920x1080"):
+        if event not in text: raise ValueError("private Scenic control not observed: "+event)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out", required=True, type=Path)
     p.add_argument("--mode", required=True, choices=("replay", "banks", "live"))
+    p.add_argument("--style", choices=("readable", "scenic"), default="readable")
+    p.add_argument("--live-wall-seconds", type=float, default=0,
+                   help="Extra bounded rain-on live observation, 0..300 wall seconds")
     a = p.parse_args()
+    if not 0 <= a.live_wall_seconds <= 300 or (a.mode != "live" and a.live_wall_seconds):
+        p.error("live observation requires live mode and 0..300 seconds")
     keys = PrivateKeys()
     out = demo.fresh_output(a.out)
     ref.reserve_directory(out)
@@ -112,14 +165,16 @@ def main():
     ref.write_json_exclusive(out / "protocol.json", {"frozen_before_execution": True, "mode": a.mode,
         "private_gui_only": True, "live_target_physical_s": 300, "native_speed": 60,
         "controls": "GUI Space pause/resume and R reset; MIT probe rain edit only while detached; launcher Ctrl-C cleanup",
-        "human_visual_acceptance": "deferred"})
+        "human_visual_acceptance": "deferred", "style": a.style,
+        "additional_rain_on_wall_seconds": a.live_wall_seconds})
     env = dict(os.environ, XDG_SESSION_TYPE="x11")
     env.pop("WAYLAND_DISPLAY", None)
     launch_out = out / "launch"
     extra = (["--start", "6000", "--camera", "collection"] if a.mode == "replay" else
              ["--start", "7800"] if a.mode == "banks" else [])
     command = ["rtk", "proxy", sys.executable, str(demo.HERE / "run_mountain_rain_demo.py"), a.mode,
-               "--out", str(launch_out), "--width", "1920", "--height", "1080", "--speed", "60", *extra]
+               "--out", str(launch_out), "--width", "1920", "--height", "1080", "--speed", "60",
+               "--style", a.style, *(["--profile"] if a.mode == "live" else []), *extra]
     captures, observations, reattached = [], [], None
     with (out / "launcher.log").open("xb") as stream:
         process = subprocess.Popen(command, cwd=out, env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
@@ -129,7 +184,9 @@ def main():
                     raise RuntimeError("launcher exited before window creation; inspect launcher.log")
                 return keys.has_window("Cubey Mountain Rain - " + a.mode)
             until(window_ready, 40)
-            time.sleep(2)
+            # rtk proxy publishes child logs on exit. Allow bounded cold IBL
+            # creation before key edges; verify its control log after clean exit.
+            time.sleep(8 if a.style == "scenic" else 2)
             if process.poll() is not None:
                 raise RuntimeError("launcher exited before GUI observation: " + (out / "launcher.log").read_text()[-3000:])
             keys.focus()
@@ -144,6 +201,14 @@ def main():
                 captures.append(row)
 
             capture("01-initial", "Actual " + a.mode + " controls and labels")
+            if a.style == "scenic":
+                keys.key("v")
+                keys.key("v")
+                keys.resize(1280,720)
+                keys.resize(1920,1080)
+                keys.focus()
+                observations.append({"scenic_style_roundtrip": True, "resize_extents": [[1280,720],[1920,1080]]})
+                capture("01b-resize-return", "Scenic style roundtrip and two private-window resizes")
             if a.mode != "live":
                 keys.key("s")
                 capture("02-bspline", "Experimental B-spline, held state")
@@ -159,6 +224,7 @@ def main():
                     raise RuntimeError("replay/banks launcher failed")
                 text = (launch_out / "viewer.log").read_text()
                 ref.verify_capture_log(text, False)
+                if a.style == "scenic": verify_scenic_controls(text)
                 events = re.findall(r"^fluid_25d_bank_view: .+$", text, re.M)
                 if not any("mode=bspline-2x" in e for e in events):
                     raise ValueError("actual GUI bank switching not observed")
@@ -182,6 +248,13 @@ def main():
                 initial_planes = (session / f"slot-{initial['slot']}.bin").read_bytes()[32:]
                 keys.key("space")
                 running = wait_state(lambda s: s["frame"]["physical_time_s"] >= 300)
+                if a.live_wall_seconds:
+                    deadline = time.monotonic()+a.live_wall_seconds
+                    while time.monotonic()<deadline:
+                        current = state()
+                        assert current["frame"]["lifecycle"] == "running", current
+                        time.sleep(min(1, max(0,deadline-time.monotonic())))
+                    running = state()
                 capture("02-running", "Actual native rain-on computation, 60x")
                 keys.key("space")
                 paused = wait_state(lambda s: s["frame"]["lifecycle"] == "paused")
@@ -195,6 +268,8 @@ def main():
                 rain_off = json.loads(result.stdout)
                 assert rain_off["ack"]["state"] == "applied" and rain_off["rain_m_per_s"] == 0
                 argv = json.loads((launch_out / "launch.json").read_bytes())["commands"]["viewer"]
+                if "--profile-output" in argv:
+                    argv[argv.index("--profile-output")+1] = str(out/"reattach-profile")
                 with (out / "reattach.log").open("xb") as view_log:
                     reattached = subprocess.Popen(argv, cwd=out, env=env, stdout=view_log, stderr=subprocess.STDOUT, start_new_session=True)
                     time.sleep(3)
@@ -226,6 +301,7 @@ def main():
                     text = log.read_text()
                     ref.verify_capture_log(text, False)
                     assert "VIEWER ERROR" not in text
+                if a.style == "scenic": verify_scenic_controls((launch_out/"viewer.log").read_text())
         finally:
             if reattached is not None:
                 demo.stop_owned(reattached)
@@ -236,8 +312,10 @@ def main():
             demo.stop_owned(process)
             keys.close()
     ref.assert_same_runtime(before, ref.runtime_identity(), "private GUI/native smoke")
+    live_profile = live_profile_summary(launch_out/"viewer-profile") if a.mode=="live" else None
     ref.write_json_exclusive(out / "manifest.json", {"status": "pass", "mode": a.mode, "command": command,
-        "runtime_identity": before, "captures": captures, "observations": observations,
+        "runtime_identity": before, "style": a.style, "captures": captures, "observations": observations,
+        "live_profile":live_profile,
         "launcher_result": json.loads((launch_out / "result.json").read_bytes()),
         "scope": "private Xvfb real UI/control events; bounded native smoke only in live mode; no desktop window touched",
         "human_visual_acceptance": "deferred"})

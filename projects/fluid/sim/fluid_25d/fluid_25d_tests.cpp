@@ -4950,8 +4950,7 @@ void test_presentation_cue_contract() {
             project_config.find("positive dye pulse duration") != std::string::npos,
         "transport UI and CLI should expose the dye reading only when its scenario contract is "
         "valid");
-    const std::size_t highlights_ui_start =
-        recording_app.find("if (ImGui::Combo(\"Highlights\"");
+    const std::size_t highlights_ui_start = recording_app.find("if (ImGui::Combo(\"Highlights\"");
     const std::size_t highlights_ui_end =
         highlights_ui_start == std::string::npos
             ? std::string::npos
@@ -4962,7 +4961,8 @@ void test_presentation_cue_contract() {
             : std::string_view(recording_app)
                   .substr(highlights_ui_start, highlights_ui_end - highlights_ui_start);
     require(!highlights_ui_block.empty() &&
-                highlights_ui_block.find("Auto (off only in Readable)") != std::string_view::npos &&
+                highlights_ui_block.find("Auto (off in Readable/Scenic)") !=
+                    std::string_view::npos &&
                 highlights_ui_block.find("config_.native_surface_highlights") !=
                     std::string_view::npos &&
                 highlights_ui_block.find("render_.native_surface_highlights") !=
@@ -6599,8 +6599,9 @@ void test_recording_cli_is_separate_from_physics() {
     const auto highlight_policy = fluid_25d_native_surface_highlights_policy("auto");
     require(fluid_25d_native_surface_highlights_enabled(highlight_policy, 0U) &&
                 fluid_25d_native_surface_highlights_enabled(highlight_policy, 1U) &&
-                !fluid_25d_native_surface_highlights_enabled(highlight_policy, 2U),
-            "auto highlights remain on in Original and Motion and off only in Readable");
+                !fluid_25d_native_surface_highlights_enabled(highlight_policy, 2U) &&
+                !fluid_25d_native_surface_highlights_enabled(highlight_policy, 3U),
+            "auto highlights remain on in Original/Motion and off in Readable/Scenic");
     require(fluid_25d_native_surface_highlights_enabled(Fluid25DNativeSurfaceHighlightsPolicy::On,
                                                         2U) &&
                 !fluid_25d_native_surface_highlights_enabled(
@@ -6676,7 +6677,7 @@ void test_recording_cli_is_separate_from_physics() {
             },
             "unknown bank display modes fail closed");
     }
-    for (const char* style : {"original", "motion", "readable"}) {
+    for (const char* style : {"original", "motion", "readable", "scenic"}) {
         const auto styled = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
                                            "--fluid25d-native-presentation", style});
         require(styled.native_presentation == style &&

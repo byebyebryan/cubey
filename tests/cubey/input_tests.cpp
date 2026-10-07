@@ -87,12 +87,15 @@ void test_input_state_tracks_wasd_keys() {
     input.record_key({.key = cubey::input::Key::A, .action = cubey::input::KeyAction::Press});
     input.record_key({.key = cubey::input::Key::S, .action = cubey::input::KeyAction::Press});
     input.record_key({.key = cubey::input::Key::D, .action = cubey::input::KeyAction::Press});
+    input.record_key({.key = cubey::input::Key::V, .action = cubey::input::KeyAction::Press});
 
     const cubey::input::InputFrame& frame = input.frame();
     require(frame.key_down(cubey::input::Key::W), "W should be tracked as a semantic key");
     require(frame.key_down(cubey::input::Key::A), "A should be tracked as a semantic key");
     require(frame.key_down(cubey::input::Key::S), "S should be tracked as a semantic key");
     require(frame.key_down(cubey::input::Key::D), "D should be tracked as a semantic key");
+    require(frame.key_pressed(cubey::input::Key::V),
+            "V should expose the native style comparison edge");
 }
 
 void test_input_state_accumulates_cursor_and_scroll_per_frame() {

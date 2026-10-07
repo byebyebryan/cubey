@@ -19,6 +19,23 @@ off. These are launcher choices, **not changes to the application or solver
 defaults**. Blue means depth; dots/trails show approximate velocity, not native
 water parcels or conserved dye.
 
+An opt-in **Scenic** terrain/water renderer is also available:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style scenic
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live --style scenic
+```
+
+In the native viewer, `V` switches Readable/Scenic while retaining the camera
+and dots. Scenic uses lit ground/rock materials, directional shadows, HDR
+environment reflection, absorption and guarded refraction. Its blue/green color
+is **not the Readable depth palette**; use raw maps for depth. Normal motion is
+decorative, driven by held native velocities; pause freezes it. Banks and dots
+remain independent. Raw maps, water debugging and inspection views retain the
+diagnostic renderer. Readable remains the launcher default and the builtin
+solver frontend is unchanged. See [Scenic rendering V1](scenic_rendering_v1.md)
+for implementation boundaries, verification and known tradeoffs.
+
 From the repository root, with a local graphical session:
 
 ```sh

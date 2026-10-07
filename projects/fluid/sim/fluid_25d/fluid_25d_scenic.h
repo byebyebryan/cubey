@@ -1,0 +1,33 @@
+#pragma once
+
+#include "fluid_25d_commands.h"
+#include <memory>
+
+namespace cubey::projects::fluid::fluid_25d {
+
+// Native frontend only. All hydraulic buffers are read-only inputs; the
+// legacy draw graph and shaders are deliberately separate from this path.
+class Fluid25DScenic {
+  public:
+    Fluid25DScenic();
+    ~Fluid25DScenic();
+    void ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
+                          render::ColorTargetView target, const Fluid25DConfig& config,
+                          const Fluid25DScenarioData& scenario, const Fluid25DGpuResources& fields);
+    void destroy_swapchain_resources();
+    void destroy();
+    [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
+    void record(vulkan::Device& device, VkCommandBuffer commands,
+                render::RenderGraphFrameExecutor& executor, render::FrameSlot slot,
+                render::ColorTargetView target, Fluid25DRenderTargetMode target_mode,
+                const Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+                const Fluid25DRenderCamera& camera, Fluid25DCatchmentRenderOptions options,
+                double visual_clock_s, Fluid25DMotionMarkers* markers, float marker_fraction,
+                bool profile = false, bool reset_visual_flow = false);
+
+  private:
+    struct State;
+    std::unique_ptr<State> state_;
+};
+
+} // namespace cubey::projects::fluid::fluid_25d

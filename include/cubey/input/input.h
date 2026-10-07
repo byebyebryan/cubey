@@ -14,6 +14,7 @@ enum class Key {
     S,
     Space,
     W,
+    V,
 };
 
 enum class KeyAction {
@@ -99,7 +100,7 @@ class InputFrame {
   private:
     friend class InputState;
 
-    static constexpr std::size_t kKeyCount = 7;
+    static constexpr std::size_t kKeyCount = 8;
     static constexpr std::size_t kMouseButtonCount = 3;
 
     std::array<bool, kKeyCount> keys_down_{};

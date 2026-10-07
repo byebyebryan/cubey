@@ -11,6 +11,7 @@
 #include "fluid_25d_native_presentation_controls.h"
 #include "fluid_25d_project_config.h"
 #include "fluid_25d_recording.h"
+#include "fluid_25d_scenic.h"
 
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -207,9 +208,10 @@ class RecordingApp {
         scenario_.boundary_outflow_face_mask.assign(shown_->depth_m.size(), 0U);
         render_ = config.catchment_render;
         render_.native_recording = true;
-        render_.native_presentation = config.native_presentation == "readable" ? 2U
-                                      : config.native_presentation == "motion" ? 1U
-                                                                               : 0U;
+        render_.native_presentation = config.native_presentation == "scenic"     ? 3U
+                                      : config.native_presentation == "readable" ? 2U
+                                      : config.native_presentation == "motion"   ? 1U
+                                                                                 : 0U;
         render_.native_surface_highlights = fluid_25d_native_surface_highlights_enabled(
             fluid_25d_native_surface_highlights_policy(config.native_surface_highlights),
             render_.native_presentation);
@@ -491,6 +493,8 @@ class RecordingApp {
     }
 
     void reset_presentation_history() {
+        scenic_clock_s_ = 0.0;
+        scenic_flow_reset_ = true;
         cue_reset_ = quiver_reset_ = marker_reset_ = true;
         visual_delta_ = marker_accumulator_ = 0.0;
     }
@@ -799,6 +803,8 @@ class RecordingApp {
     }
 
     void create_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots) {
+        scenic_gpu_ = &gpu;
+        scenic_slots_ = slots;
         runtime_.attach_gpu_if_needed(gpu);
         if (config_.recording_gpu_validation && render_.native_presentation != 0U)
             validate_fluid_25d_native_cue_gpu_controls(device, runtime_.gpu());
@@ -822,6 +828,7 @@ class RecordingApp {
                 coverage_profiler_.emplace(device, slots, 1U);
             native_profile_frames_.resize(slots);
             native_profile_pending_.resize(slots, false);
+            native_profile_scenic_.resize(slots, false);
         }
     }
 
@@ -831,6 +838,9 @@ class RecordingApp {
         if (markers_available_)
             markers_.create_render_pipeline(device, target.format, VK_FORMAT_D32_SFLOAT,
                                             target.extent, true);
+        if (render_.native_presentation == 3U)
+            scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
+                                     scenario_, resources_);
     }
 
     void configure_camera() {
@@ -867,7 +877,7 @@ class RecordingApp {
         const float maximum_distance = std::max(64.0F, domain * 4.0F);
         const float minimum_distance = std::max(16.0F, framing * 0.30F);
         const float home = render_.home_camera_distance_m.value_or(std::max(
-            32.0F, framing * (render_.native_presentation == 2U
+            32.0F, framing * (render_.native_presentation >= 2U
                                   ? (config_.recording_camera == "overview" ? 1.50F : 1.18F)
                                   : (config_.recording_camera == "overview" ? 1.65F : 1.35F))));
         if (home < minimum_distance || home > maximum_distance)
@@ -1004,18 +1014,37 @@ class RecordingApp {
         auto displayed_render = render_;
         if (view_ == Fluid25DPresentationView::Diagnostics)
             apply_fluid_25d_bank_view(displayed_render, Fluid25DBankView::Reference, false);
-        const auto compiled = build_fluid_25d_frame_graph(
-            target, resources_, simulation_, view_, catchment_view_, debug_view_,
-            camera(target.extent), target_mode, false, true, hydraulic_reset_never_used_,
-            cue_reset_, quiver_reset_, nullptr, slot.index, {}, displayed_render,
-            config_.motion_markers ? &markers_ : nullptr, marker_fraction_, config_.motion_markers);
-        graph_.record(
-            {.device = &device,
-             .command_buffer = commands,
-             .frame_slot = slot,
-             .label = "recorded SynxFlow presentation (draw-only)",
-             .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording},
-            compiled);
+        // Decorative normal clock only. Held native hydraulic samples are never
+        // interpolated. Pause keeps this frozen; replay/reset clears it explicitly.
+        scenic_clock_s_ += std::max(0.0, visual_delta_) * 0.03;
+        const bool scenic_active =
+            render_.native_presentation == 3U && view_ == Fluid25DPresentationView::Catchment &&
+            catchment_view_ == Fluid25DCatchmentView::Composite && render_.native_water_debug == 0U;
+        if (native_profiler_ && profile)
+            native_profile_scenic_[slot.index] = scenic_active;
+        if (scenic_active) {
+            scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
+                                     scenario_, resources_);
+            scenic_.record(device, commands, graph_, slot, target, target_mode, resources_,
+                           simulation_, camera(target.extent), displayed_render, scenic_clock_s_,
+                           config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
+                           profile != nullptr, scenic_flow_reset_);
+            scenic_flow_reset_ = false;
+        } else {
+            const auto compiled = build_fluid_25d_frame_graph(
+                target, resources_, simulation_, view_, catchment_view_, debug_view_,
+                camera(target.extent), target_mode, false, true, hydraulic_reset_never_used_,
+                cue_reset_, quiver_reset_, nullptr, slot.index, {}, displayed_render,
+                config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
+                config_.motion_markers);
+            graph_.record(
+                {.device = &device,
+                 .command_buffer = commands,
+                 .frame_slot = slot,
+                 .label = "recorded SynxFlow presentation (draw-only)",
+                 .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording},
+                compiled);
+        }
         if (profile) {
             if (external_session_ && external_snapshot_) {
                 const auto metric = [&](const char* name, double value) {
@@ -1068,6 +1097,10 @@ class RecordingApp {
         for (const auto& timing : native_profiler_->latest_timings())
             profile->record_gpu_span(native_profile_frames_[slot], timing.label,
                                      timing.milliseconds);
+        if (native_profile_scenic_[slot])
+            for (const auto& timing : scenic_.collect_timings(slot))
+                profile->record_gpu_span(native_profile_frames_[slot], timing.label,
+                                         timing.milliseconds);
         if (coverage_profiler_) {
             coverage_profiler_->collect(slot);
             for (const auto& timing : coverage_profiler_->latest_timings())
@@ -1142,6 +1175,7 @@ class RecordingApp {
                 shutdown_failure_ = std::current_exception();
         }
         graph_.clear();
+        scenic_.destroy();
         native_profiler_.reset();
         coverage_profiler_.reset();
         markers_.destroy();
@@ -1149,27 +1183,39 @@ class RecordingApp {
         runtime_.detach_gpu_if_attached();
     }
 
+    void select_native_style(std::uint32_t style) {
+        const bool compare_materials = render_.native_presentation >= 2U && style >= 2U;
+        render_.native_presentation = style;
+        config_.native_presentation = style == 3U   ? "scenic"
+                                      : style == 2U ? "readable"
+                                      : style == 1U ? "motion"
+                                                    : "original";
+        render_.native_surface_highlights = fluid_25d_native_surface_highlights_enabled(
+            fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights), style);
+        // Readable/Scenic comparisons preserve the orbit and dot history.
+        // Original/Motion retain their historical framing/reset behavior.
+        if (!compare_materials) {
+            reset_presentation_history();
+            configure_camera();
+        }
+        std::printf("fluid_25d_native_style: mode=%s\n", config_.native_presentation.c_str());
+        std::fflush(stdout);
+    }
+
     void draw_native_presentation_ui() {
         int style = static_cast<int>(render_.native_presentation);
         ImGui::SetNextItemWidth(-100.0F);
         if (ImGui::Combo("Style", &style,
-                         "Original reference\0Continuous motion\0Readable terrain/water\0")) {
-            render_.native_presentation = static_cast<std::uint32_t>(style);
-            config_.native_presentation = style == 2   ? "readable"
-                                          : style == 1 ? "motion"
-                                                       : "original";
-            if (fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights) ==
-                Fluid25DNativeSurfaceHighlightsPolicy::Auto)
-                render_.native_surface_highlights = fluid_25d_native_surface_highlights_enabled(
-                    Fluid25DNativeSurfaceHighlightsPolicy::Auto, render_.native_presentation);
-            reset_presentation_history();
-            configure_camera();
+                         "Original reference\0Continuous motion\0Readable terrain/water\0Scenic "
+                         "(opt-in HDR)\0")) {
+            select_native_style(static_cast<std::uint32_t>(style));
         }
         int highlight_policy = static_cast<int>(
             fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights));
         ImGui::SetNextItemWidth(-100.0F);
+        ImGui::BeginDisabled(render_.native_presentation == 3U);
         if (ImGui::Combo("Highlights", &highlight_policy,
-                         "Auto (off only in Readable)\0On\0Off\0")) {
+                         "Auto (off in Readable/Scenic)\0On\0Off\0")) {
             config_.native_surface_highlights = highlight_policy == 1   ? "on"
                                                 : highlight_policy == 2 ? "off"
                                                                         : "auto";
@@ -1177,6 +1223,11 @@ class RecordingApp {
                 fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights),
                 render_.native_presentation);
         }
+        ImGui::EndDisabled();
+        if (render_.native_presentation == 3U)
+            ImGui::TextWrapped(
+                "Scenic: HDR materials and decorative flow normals; V compares Readable. "
+                "Raw maps and inspection views retain diagnostic shading.");
         const auto selected = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares
                               : render_.native_bspline_surface ? Fluid25DBankView::Bspline2x
                                                                : Fluid25DBankView::Reference;
@@ -1735,6 +1786,7 @@ class RecordingApp {
         };
         callbacks.destroy_swapchain_resources = [this](host::WindowedAppContext&) {
             graph_.clear();
+            scenic_.destroy_swapchain_resources();
             markers_.destroy_render_pipeline();
             resources_.destroy_swapchain_resources();
         };
@@ -1746,6 +1798,8 @@ class RecordingApp {
                 cycle_bank_view();
             if (input.key_pressed(input::Key::W) && markers_available_)
                 config_.motion_markers = !config_.motion_markers;
+            if (input.key_pressed(input::Key::V))
+                select_native_style(render_.native_presentation == 3U ? 2U : 3U);
             if (external_session_) {
                 const auto lifecycle = external_snapshot_->header.lifecycle;
                 const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
@@ -1963,10 +2017,16 @@ class RecordingApp {
     Fluid25DGpuResources resources_;
     Fluid25DMotionMarkers markers_;
     render::RenderGraphFrameExecutor graph_;
+    Fluid25DScenic scenic_;
+    vulkan::GpuRuntime* scenic_gpu_ = nullptr;
+    std::uint32_t scenic_slots_ = 0U;
+    double scenic_clock_s_ = 0.0;
+    bool scenic_flow_reset_ = true;
     std::optional<vulkan::GpuTimestampProfiler> native_profiler_;
     std::optional<vulkan::GpuTimestampProfiler> coverage_profiler_;
     std::vector<std::uint64_t> native_profile_frames_;
     std::vector<bool> native_profile_pending_;
+    std::vector<bool> native_profile_scenic_;
     profiling::ProfileRecorder* native_profile_recorder_ = nullptr;
     Camera3D camera_;
     OrbitController orbit_;

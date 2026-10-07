@@ -49,6 +49,25 @@ class MountainLauncherTests(unittest.TestCase):
             with self.subTest(values=values), self.assertRaises(ValueError):
                 demo.commands(self.args(*values), Path("/tmp/preview"))
 
+    def test_scenic_is_opt_in_and_does_not_change_native_worker(self):
+        out = Path("/tmp/unused-preview")
+        baseline = demo.commands(self.args("live"),out)
+        scenic = demo.commands(self.args("live","--style","scenic"),out)
+        self.assertEqual(baseline["worker"],scenic["worker"])
+        self.assertIn("readable",baseline["viewer"])
+        self.assertIn("scenic",scenic["viewer"])
+        self.assertIn("reference",scenic["viewer"])
+        self.assertIn("--fluid25d-motion-markers",scenic["viewer"])
+
+    def test_profile_is_viewer_only_and_owned_by_fresh_launch(self):
+        out = Path("/tmp/unused-preview")
+        base = demo.commands(self.args("live"), out)
+        profiled = demo.commands(self.args("live", "--style", "scenic", "--profile"), out)
+        self.assertEqual(base["worker"], profiled["worker"])
+        self.assertNotIn("--profile-output", base["viewer"])
+        index = profiled["viewer"].index("--profile-output")
+        self.assertEqual(profiled["viewer"][index+1], str(out/"viewer-profile"))
+
     def test_output_scope_and_overwrite_guards(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

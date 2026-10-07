@@ -42,8 +42,11 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--speed", type=float, help="replay default 150x, live/banks default 60x")
     p.add_argument("--start", type=float, help="replay saved time; banks defaults to its baked start")
     p.add_argument("--bank", choices=("reference", "bspline-2x", "marching-squares"), default="reference")
+    p.add_argument("--style", choices=("readable", "scenic"), default="readable",
+                   help="Scenic is opt-in HDR terrain/water; diagnostic views retain Readable shading")
     p.add_argument("--loop", action="store_true", help="banks only: explicit recorded-window looping")
     p.add_argument("--no-dots", action="store_true")
+    p.add_argument("--profile", action="store_true", help="Record viewer GPU/bridge metrics inside the fresh launcher output")
     p.add_argument("--width", type=int, default=1440)
     p.add_argument("--height", type=int, default=900)
     p.add_argument("--native-python", type=Path, default=LIVE_PYTHON)
@@ -132,10 +135,12 @@ def commands(a, out: Path) -> dict[str, list[str]]:
     camera = a.camera or ("collection" if a.mode == "banks" else "overview")
     viewer = ["rtk", "proxy", str(a.app.absolute()), "--width", str(a.width), "--height", str(a.height),
               "--frames", "0", "--title", f"Cubey Mountain Rain - {a.mode}",
-              "--fluid25d-recording-camera", camera, "--fluid25d-native-presentation", "readable",
+              "--fluid25d-recording-camera", camera, "--fluid25d-native-presentation", a.style,
               "--fluid25d-native-surface-highlights", "off", "--fluid25d-native-bank-view", a.bank]
     if not a.no_dots:
         viewer.append("--fluid25d-motion-markers")
+    if a.profile:
+        viewer += ["--profile-output", str(out / "viewer-profile"), "--profile-warmup-frames", "12"]
     if a.mode == "live":
         session = out / "session"
         viewer += ["--fluid25d-backend", "external", "--fluid25d-external-session", str(session)]
@@ -302,7 +307,7 @@ def main(argv=None) -> int:
         identity = preflight(a)
         preview = fresh_output(a.out) if a.out is not None else ref.OUTPUT_ROOT / "mountain-rain-launch-FRESH"
         plan = commands(a, preview)
-        print(f"{a.mode.upper()} | readable | {a.bank} | dots {'off' if a.no_dots else 'on'} | no numerical-input changes", flush=True)
+        print(f"{a.mode.upper()} | {a.style} | {a.bank} | dots {'off' if a.no_dots else 'on'} | no numerical-input changes", flush=True)
         for name, command in plan.items():
             print(name + ": " + shlex.join(command), flush=True)
         if a.print_command:

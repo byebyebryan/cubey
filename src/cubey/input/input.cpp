@@ -23,6 +23,8 @@ namespace {
         return 5U;
     case Key::W:
         return 6U;
+    case Key::V:
+        return 7U;
     case Key::Unknown:
         return std::nullopt;
     }

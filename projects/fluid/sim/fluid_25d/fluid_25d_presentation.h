@@ -24,7 +24,8 @@ struct Fluid25DCatchmentRenderOptions {
     // Resolved render-only switch. It suppresses only the sparse highlight term.
     bool native_surface_highlights = true;
     // Native-only opt-ins: 0 preserves the reference, 1 changes motion cues,
-    // and 2 also changes framing/material. Never consumed by a solver.
+    // 2 changes framing/material; 3 selects opt-in Scenic HDR shading.
+    // Never consumed by a solver.
     std::uint32_t native_presentation = 0U;
     // Native-only water diagnostics: shaded/solid/unlit/normals/wireframe/wet-mask.
     std::uint32_t native_water_debug = 0U;
