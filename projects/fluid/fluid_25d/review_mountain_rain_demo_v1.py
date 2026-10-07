@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 import run_mountain_rain_demo as demo
@@ -62,6 +63,10 @@ def source_hashes() -> dict:
              "review_mountain_rain_demo_v1.py", "test_run_mountain_rain_demo.py",
              "test_review_mountain_rain_demo_v1.py", "CMakeLists.txt")
     return {str((demo.HERE / name).relative_to(ref.ROOT)): ref.sha256_file(demo.HERE / name) for name in names}
+
+
+def bank_gallery_href(out: Path) -> str:
+    return Path(os.path.relpath(ref.OUTPUT_ROOT / "bank-comparison-v1-20261006-DxdrJe/review/index.html", out)).as_posix()
 
 
 def capture(out: Path) -> dict:
@@ -136,8 +141,10 @@ def capture(out: Path) -> dict:
     review(out, report)
     # Seal every generated artifact. The seal itself is intentionally outside its own tree.
     files = {str(p.relative_to(out)): ref.sha256_file(p) for p in sorted(out.rglob("*")) if p.is_file()}
+    if identity["inputs"] != ref.frozen_input_identity():
+        raise ValueError("immutable inputs changed before sealing review artifacts")
     ref.write_json_exclusive(out / "integrity.json", {"status": "pass", "files": files,
-        "inputs_preserved": identity["inputs"] == ref.frozen_input_identity(), "human_visual_acceptance": "deferred"})
+        "inputs_preserved": True, "human_visual_acceptance": "deferred"})
     return report
 
 
@@ -169,7 +176,7 @@ Look for small tributaries feeding larger channels and persistent downstream sto
         if row["kind"] == "diagnostic":
             page += f"<img src='{row['path']}'>"
     page += "<p>Composite deliberately hides very thin rain film to reveal channels. Raw diagnostics keep it. Display smoothing can change apparent widths/connectivity; B-spline stays experimental and prerecorded marching-squares masks stay in a separate bounded comparison.</p>"
-    page += "<p><a href='../../bank-comparison-v1-20261006-DxdrJe/review/index.html'>Existing three-bank comparison</a> (retained older executable, not a new matched benchmark).</p><img src='diagnostics/pair-contact.png'></details>"
+    page += f"<p><a href='{bank_gallery_href(out)}'>Existing three-bank comparison</a> (retained older executable, not a new matched benchmark).</p><img src='diagnostics/pair-contact.png'></details>"
     gpu = report["cost"]["gpu"]
     page += f"<details><summary>Provenance and separate costs</summary><p>Standalone reference/dots GPU p95 {gpu['gpu_p95_ms']:.3f} ms at 960x540 (108 measured spans after 12 warmup). This is presentation-only, not total GUI frame time or concurrent CUDA performance. Caption encoding is logged separately; raw capture wall includes readback and encoding. No solver ran for this page. The previously accepted shared-GPU slowdown still applies to live mode.</p><p><a href='manifest.json'>Exact inputs, commands and frame timelines</a> | <a href='protocol.json'>Frozen capture plan</a> | <a href='integrity.json'>Artifact hashes</a></p></details>"
     page += "<p>Use run_mountain_rain_demo.py replay / live / banks locally; --print-command is safe remotely. Built-in hillside launcher remains a simpler, different simulation, not a substitute for these results. Automated checks passed; owner visual acceptance is deferred.</p>"

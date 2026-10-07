@@ -1,5 +1,6 @@
 """CPU-only compact media plan/caption checks; no captures or solver."""
 import unittest
+from pathlib import Path
 
 import review_mountain_rain_demo_v1 as review
 
@@ -35,6 +36,12 @@ class MountainReviewTests(unittest.TestCase):
         diagnostic = review.caption_filters(review.plan()[-1])
         self.assertIn("RAW speed", diagnostic)
         self.assertNotIn("dots = approximate", diagnostic)
+
+    def test_bank_gallery_links_work_for_direct_and_nested_leaves(self):
+        root = review.ref.OUTPUT_ROOT
+        for out in (root / "direct-review", root / "study-root/nested-review"):
+            self.assertEqual((out / review.bank_gallery_href(out)).resolve(),
+                             (root / "bank-comparison-v1-20261006-DxdrJe/review/index.html").resolve())
 
 
 if __name__ == "__main__":

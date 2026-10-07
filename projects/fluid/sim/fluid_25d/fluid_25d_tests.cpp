@@ -4951,7 +4951,7 @@ void test_presentation_cue_contract() {
         "transport UI and CLI should expose the dye reading only when its scenario contract is "
         "valid");
     const std::size_t highlights_ui_start =
-        recording_app.find("if (ImGui::Combo(\"Procedural flow highlights\"");
+        recording_app.find("if (ImGui::Combo(\"Highlights\"");
     const std::size_t highlights_ui_end =
         highlights_ui_start == std::string::npos
             ? std::string::npos
