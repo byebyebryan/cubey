@@ -53,6 +53,9 @@ Live mode rejects recorded-case/start options instead of silently ignoring them.
 Every actual launch gets a fresh leaf under `outputs/fluid`, isolated ImGui
 settings, commands/pins, logs and an owned-cleanup receipt. An explicit `--out`
 must be fresh below an existing parent there.
+Foreground log files accumulate with runtime; the worker's bounded three slots
+and control history are not a claim of bounded log retention. This launcher is
+not an unattended daemon or a log-rotation service.
 
 Replay/banks do not need CUDA, but require the retained local recording/mask
 artifacts and an explicitly built dev application. Live additionally requires
@@ -84,6 +87,50 @@ smoke, not an ordinary native/CUDA test or desktop/user acceptance. The older
 `run_hillside_flow_demo.py` remains the built-in, simpler hillside alternative:
 it is a **different simulation/forcing example**, not equivalent native rain
 results. No solver port, new terrain or live contour reconstruction is involved.
+
+#### October 7 results and verdict
+
+The technical consolidation is accepted as Mountain Rain Demo V1; owner visual
+acceptance remains deferred. Start with the short rain-off/on comparison in the
+[compact remote handoff](../../../outputs/fluid/mountain-rain-demo-v1-20261007-8SHHgs/index.html).
+The rain-off side visibly loses small tributaries while the rain-on side keeps
+feeding them. The full overview provides terrain context, but fine streams are
+small at whole-map scale; the closer flow clip is the better motion reading.
+This is a useful rainfall-response visual demo, not calibrated hydrology or
+proof of calm lake formation.
+
+All 164 dev tests passed in the final gate, including 13 new CPU-only launcher
+and media-helper checks. Final-executable private-Xvfb replay/bank controls
+passed. The bounded native smoke exercised GUI resume/pause, detach without
+worker termination, a rain edit through the MIT client while detached,
+reattachment, continued zero-rain computation, GUI full reset, and foreground
+launcher shutdown. Reset restored initial depth/momentum bytes exactly in
+generation 2; inputs remained unchanged, three slots and zero native output
+files were retained, and no forced-kill escalation or owned-process leak was
+observed. The longer service soak/parity evidence remains separate and was not
+replaced by this short control smoke.
+
+Two ordinary readable-reference PNGs remain byte-identical to the prior bank
+checkpoint. Numerical sources/defaults, compiled shaders and recording inputs
+were preserved; this pass changed launching, UI labels/layout and review tools.
+The original native-cue no-reset structural test is retained with its updated
+compact label. Its first failing full-gate log and the earlier buffered-stdout
+GUI-readiness attempt remain in the evidence leaf; neither was hidden or
+accepted. Media was regenerated after the direct/nested review-link fix.
+
+Standalone 960x540 reference/dots GPU presentation median was 0.147 ms and p95
+0.381 ms (108 samples after 12 warmup). The 96.1-second story's raw capture
+took 14.43 wall seconds including rendering/readback/encoding; its caption
+encoding took 0.52 seconds separately. No solver ran for these captures.
+These are not total GUI-frame or concurrent-CUDA measurements; the accepted
+shared-GPU slowdown remains a live-mode limitation.
+
+Recommendation: retain the reference/dots preset and optional bank views.
+Reference banks remain angular; experimental B-spline can alter apparent
+width/connectivity, and marching-squares coverage remains prerecorded and
+faceted in height. This pass does not promote a universal bank fix or reopen
+solver/terrain research. The next useful gate is owner review of this concise
+handoff, then a specifically chosen visual refinement if needed.
 
 ### Retained numerical and integration evidence
 
