@@ -51,14 +51,15 @@ Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile) {
         return {};
     if (profile != "refined")
         invalid("unknown profile");
-    return {.wet_roughness = 0.68F,
-            .wet_darkening = 0.84F,
-            .terrain_saturation = 0.65F,
-            .terrain_ambient = 1.5F,
-            .terrain_direct = 0.9F,
-            .water_scatter_scale = 0.7F,
-            .water_scatter_lighting = 0.5F,
-            .water_clarity = 0.4F};
+    return {.wet_roughness = 0.78F,
+            .wet_darkening = 0.86F,
+            .terrain_saturation = 0.6F,
+            .terrain_ambient = 1.4F,
+            .terrain_direct = 0.8F,
+            .water_scatter_scale = 0.85F,
+            .water_scatter_lighting = 0.7F,
+            .water_clarity = 0.55F,
+            .terrain_mineral_scale = 0.62F};
 }
 
 Fluid25DScenicMaterial fluid_25d_parse_scenic_material(std::string_view text,

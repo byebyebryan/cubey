@@ -33,6 +33,9 @@ def main():
                 command = ["rtk","proxy",str(args.target.resolve()),"--headless","--width","256","--height","192",
                     "--fluid25d-recording",str(manifest),"--fluid25d-recording-gpu-validation",
                     "--fluid25d-native-presentation","scenic","--output",str(output),*extra]
+                raw_readable = "--fluid25d-native-presentation" in extra and extra[extra.index("--fluid25d-native-presentation")+1] == "readable"
+                if not raw_readable and "--fluid25d-scenic-material" not in extra:
+                    command += ["--fluid25d-scenic-material", "v1"]
                 result = subprocess.run(command,text=True,capture_output=True,timeout=90)
                 text = result.stdout+result.stderr
                 if any(s in text for s in ("no Vulkan physical devices found","vkEnumeratePhysicalDevices",
@@ -63,7 +66,7 @@ def main():
             assert digest(diagnostics[0])==digest(diagnostics[1]),"Scenic changed the raw depth map"
             if args.video and case == "fully-wet-lake":
                 video = run("rest-video",["--capture","video","--frames","8","--fps","4",
-                    "--fluid25d-recording-frame-interval-seconds","0.5"],True)
+                    "--fluid25d-recording-frame-interval-seconds","0.5",*refined],True)
                 result = subprocess.run(["rtk","proxy","ffmpeg","-v","error","-ignore_editlist","1","-i",str(video),
                     "-fps_mode","passthrough","-f","rawvideo","-pix_fmt","rgb24","pipe:1"],capture_output=True,timeout=30)
                 assert result.returncode == 0, result.stderr.decode(errors="replace")
@@ -75,7 +78,7 @@ def main():
                 # the input pixels are; the still controls above are lossless.
                 frames = [decoded[i*size:(i+1)*size] for i in range(8)]
                 control = root/"static-codec-control.mp4"
-                result = subprocess.run(["rtk","proxy","ffmpeg","-v","error","-n","-loop","1","-framerate","4","-i",str(a),
+                result = subprocess.run(["rtk","proxy","ffmpeg","-v","error","-n","-loop","1","-framerate","4","-i",str(ra),
                     "-frames:v","8","-c:v","libx264","-preset","veryfast","-crf","18","-g","12","-bf","0",
                     "-pix_fmt","yuv420p",str(control)],capture_output=True,timeout=30)
                 assert result.returncode == 0, result.stderr.decode(errors="replace")

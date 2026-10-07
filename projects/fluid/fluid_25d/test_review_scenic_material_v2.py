@@ -47,6 +47,21 @@ class MaterialReviewTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 review.gallery(out)
 
+    def test_still_sheet_has_matched_times_and_explicit_three_columns(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp)
+            with patch.object(review.ref, "rtk_output") as run:
+                run.return_value.returncode = 0
+                review.still_review(out)
+                command = run.call_args.args
+                self.assertEqual(command.count("-i"), 9)
+                self.assertIn("xstack=inputs=9", " ".join(command))
+                for time in (1800, 6000, 14400):
+                    self.assertIn(f"{time}s-readable.png", " ".join(command))
+                    self.assertIn(f"{time}s-scenic.png", " ".join(command))
+                for label in ("Readable", "Scenic V1", "Scenic V2"):
+                    self.assertIn(label, " ".join(command))
+
     def test_verifier_covers_posters_and_source_input_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             out = Path(temp)

@@ -64,7 +64,7 @@ struct Fluid25DProjectConfig {
     float recording_frame_interval_seconds = 60.0F;
     std::string recording_camera = "overview";
     std::string native_presentation = "original";
-    std::string native_scenic_material = "v1";
+    std::string native_scenic_material = "refined";
     std::optional<std::filesystem::path> native_scenic_tuning_path{};
     std::string native_surface_highlights = "auto";
     std::string native_water_debug = "shaded";

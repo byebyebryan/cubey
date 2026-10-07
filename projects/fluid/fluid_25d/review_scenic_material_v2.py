@@ -136,6 +136,24 @@ def media(out, label):
         "source_files": previous.source_files(), "assets": assets, "human_visual_acceptance": "deferred"})
 
 
+def still_review(out):
+    commands, filters, views = [], [], []
+    font = ref.find_font()
+    for row, (case, camera, t) in enumerate(SCENES[1:]):
+        for col, (leaf, style, title) in enumerate((("baseline", "readable", "Readable"),
+                ("v1-baseline", "scenic", "Scenic V1"), ("candidate-final", "scenic", "Scenic V2"))):
+            index = row*3+col
+            commands += ["-i", str(out/leaf/f"{case}-{camera}-{t}s-{style}.png")]
+            filters.append(f"[{index}:v]scale=640:360,drawtext=fontfile='{font}':text='{title} - {t}s':x=12:y=12:fontsize=20:fontcolor=white:box=1:boxcolor=black@0.65[v{index}]")
+            views.append(f"[v{index}]")
+    layout = "|".join(f"{(i%3)*640}_{(i//3)*360}" for i in range(9))
+    filters.append("".join(views)+f"xstack=inputs=9:layout={layout}[out]")
+    result = ref.rtk_output("ffmpeg", "-v", "error", "-n", *commands, "-filter_complex", ";".join(filters),
+                            "-map", "[out]", "-frames:v", "1", str(out/"still-review.png"))
+    if result.returncode:
+        raise RuntimeError(result.stderr)
+
+
 def gallery(out):
     page = """<!doctype html><meta charset='utf-8'><title>Mountain Rain — Scenic V2</title>
 <style>body{background:#141b23;color:#dae4ee;font:16px system-ui;max-width:1320px;margin:24px auto;padding:0 16px}video,img{max-width:100%;height:auto}a{color:#83c5fb}p{line-height:1.5}summary{cursor:pointer}</style>
@@ -151,6 +169,7 @@ def gallery(out):
 <p><a href='media-final/refined-flow.mp4'>V2 flow</a> · <a href='media-final/refined-collection.mp4'>V2 collection</a> · <a href='media-final/refined-rain-on.mp4'>V2 sustained-rain collection</a></p>
 <p><a href='candidate-final/rain-on-diagnostic-depth-6000s-scenic.png'>Raw depth</a> · <a href='candidate-final/rain-on-diagnostic-flow-6000s-scenic.png'>Raw speed</a> · <a href='candidate-final/rain-on-diagnostic-wet-dry-6000s-scenic.png'>Raw wet/dry</a></p>
 <p><a href='candidate-final/protocol.json'>Runtime/input/source pins</a> · <a href='candidate-final/manifest.json'>Effective materials</a> · <a href='candidate-final/parity.json'>Readable/raw/shader parity</a> · <a href='profile-final/result.json'>GPU timings</a></p>
+<p>Dry terrain, same overview camera:</p><img src='candidate-final/rain-on-overview-0s-scenic.png'>
 <p>V1 material remains selectable. Experimental B-spline and prerecorded marching-squares retain their existing limitations. No solver changes, enlarged water coverage, or new shoreline reconstruction.</p></details>
 <p><a href='RESULTS.md'>Verdict and measured limits</a>. Private-window checks are automated evidence; human visual acceptance remains deferred.</p>"""
     ref.write_text_exclusive(out/"index.html", page)
@@ -166,6 +185,19 @@ def seal(out):
     parity = json.loads((out/"candidate-final/parity.json").read_text())
     if any(parity[k] != "PASS" for k in ("readable", "raw_diagnostics", "legacy_and_numerical_spirv")):
         raise ValueError("parity gate failed")
+    protocol = json.loads((out/"candidate-final/protocol.json").read_text())
+    material = json.loads((out/"candidate-final/manifest.json").read_text())["effective_material"]
+    if protocol["material"] != "refined" or protocol["tuning"] is not None or material["profile"] != "refined":
+        raise ValueError("final capture is not the unmodified refined preset")
+    videos = json.loads((out/"media-final/manifest.json").read_text())["assets"]
+    if any(row["effective_material"] != material for row in videos if "effective_material" in row):
+        raise ValueError("video materials differ from stills")
+    for row in json.loads((out/"profile-final/result.json").read_text())["rows"]:
+        if row["style"] == "scenic":
+            receipt = row["receipt"]
+            text = (out/"profile-final"/receipt["stdout_path"]).read_text()
+            if effective_material(text) != material:
+                raise ValueError("profile did not measure the accepted material")
     for leaf in ("gui-replay-final", "gui-banks-final", "gui-live-final"):
         value = json.loads((out/leaf/"manifest.json").read_text())
         if value["status"] != "pass" or value["style"] != "scenic":
@@ -209,7 +241,7 @@ def verify(out):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("phase", choices=("capture", "profile", "media", "gallery", "seal", "verify"))
+    p.add_argument("phase", choices=("capture", "profile", "media", "sheet", "gallery", "seal", "verify"))
     p.add_argument("--out", required=True, type=Path)
     p.add_argument("--label", default="candidate-final")
     p.add_argument("--material", choices=("v1", "refined"), default="refined")
@@ -229,6 +261,8 @@ if __name__ == "__main__":
         media(out, "media-final")
     elif a.phase == "gallery":
         gallery(out)
+    elif a.phase == "sheet":
+        still_review(out)
     elif a.phase == "seal":
         seal(out)
     else:
