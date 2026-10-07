@@ -652,6 +652,31 @@ class RecordingApp {
     void poll_external_session() {
         if (!external_session_ || !external_error_.empty() || external_terminal_)
             return;
+        if (external_refresh_after_render_setup_) {
+            external_refresh_after_render_setup_ = false;
+            try {
+                // Cold IBL/pipeline creation can take longer than the service
+                // timeout. Discard only the now-outdated I/O result (still
+                // propagate its integrity errors), then read a current snapshot
+                // before evaluating health. Never re-date a stale publication
+                // or extend the worker's existing three-second timeout.
+                if (external_pending_.valid())
+                    static_cast<void>(external_pending_.get());
+                external_pending_ =
+                    std::async(std::launch::async, [session = external_session_.get()] {
+                        return session->load_latest();
+                    });
+                if (external_pending_.wait_for(std::chrono::seconds(1)) !=
+                    std::future_status::ready) {
+                    fail_external_session(
+                        "current snapshot read timed out after local render setup");
+                    return;
+                }
+            } catch (const std::exception& error) {
+                fail_external_session(std::string("VIEWER ERROR: ") + error.what());
+                return;
+            }
+        }
         if (external_pending_.valid() &&
             external_pending_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
             try {
@@ -832,6 +857,13 @@ class RecordingApp {
         }
     }
 
+    void ensure_scenic_resources(vulkan::Device& device, render::ColorTargetView target) {
+        if (scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
+                                     scenario_, resources_) &&
+            external_session_)
+            external_refresh_after_render_setup_ = true;
+    }
+
     void create_render_resources(vulkan::Device& device, render::ColorTargetView target) {
         resources_.create_render_pipelines(device, target.format, VK_FORMAT_D32_SFLOAT,
                                            target.extent, true);
@@ -839,8 +871,7 @@ class RecordingApp {
             markers_.create_render_pipeline(device, target.format, VK_FORMAT_D32_SFLOAT,
                                             target.extent, true);
         if (render_.native_presentation == 3U)
-            scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
-                                     scenario_, resources_);
+            ensure_scenic_resources(device, target);
     }
 
     void configure_camera() {
@@ -1021,8 +1052,7 @@ class RecordingApp {
         if (native_profiler_ && profile)
             native_profile_scenic_[slot.index] = scenic_active;
         if (scenic_active) {
-            scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
-                                     scenario_, resources_);
+            ensure_scenic_resources(device, target);
             scenic_.record(device, commands, graph_, slot, target, target_mode, resources_,
                            simulation_, camera(target.extent), displayed_render, scenic_clock_s_,
                            config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
@@ -1997,6 +2027,7 @@ class RecordingApp {
     std::chrono::steady_clock::time_point next_stream_poll_{};
     std::chrono::steady_clock::time_point next_external_poll_{};
     std::chrono::steady_clock::time_point external_last_valid_publication_steady_{};
+    bool external_refresh_after_render_setup_ = false;
     std::string stream_error_{};
     std::string external_error_{};
     std::uint64_t external_next_command_id_ = 1U;

@@ -11,7 +11,8 @@ class Fluid25DScenic {
   public:
     Fluid25DScenic();
     ~Fluid25DScenic();
-    void ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
+    // Returns true only after potentially blocking local resource creation.
+    bool ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
                           render::ColorTargetView target, const Fluid25DConfig& config,
                           const Fluid25DScenarioData& scenario, const Fluid25DGpuResources& fields);
     void destroy_swapchain_resources();

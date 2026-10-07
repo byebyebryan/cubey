@@ -105,7 +105,7 @@ struct Fluid25DScenic::State {
 Fluid25DScenic::Fluid25DScenic() = default;
 Fluid25DScenic::~Fluid25DScenic() = default;
 
-void Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu,
+bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                                       std::uint32_t slots, render::ColorTargetView target,
                                       const Fluid25DConfig& config,
                                       const Fluid25DScenarioData& scenario,
@@ -171,7 +171,7 @@ void Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     auto& s = *state_;
     if (s.terrain && s.extent.width == target.extent.width &&
         s.extent.height == target.extent.height && s.format == target.format)
-        return;
+        return false;
     destroy_swapchain_resources();
     s.extent = target.extent;
     s.format = target.format;
@@ -239,6 +239,7 @@ void Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     fullscreen(s.sky, "fluid_25d_scenic_sky.frag.spv", kHdrFormat, true);
     fullscreen(s.copy, "fluid_25d_scenic_copy.frag.spv", kHdrFormat, false);
     fullscreen(s.display, "fluid_25d_scenic_display.frag.spv", target.format, true);
+    return true;
 }
 
 void Fluid25DScenic::destroy_swapchain_resources() {

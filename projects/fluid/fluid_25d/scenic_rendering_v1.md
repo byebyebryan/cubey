@@ -91,6 +91,14 @@ shadow map is approximate at native cell scale. Environment/detail generation
 adds a cold first-use cost. Human visual acceptance is deferred; Scenic is not
 promoted to the default on automated checks alone.
 
+Cold local setup can outlast the existing three-second live-service timeout.
+After resource creation, the next viewer poll obtains a current validated
+publication before evaluating health. An older pending I/O result is discarded
+without hiding its integrity errors. A timed-out read or an actually stale
+publication still fails closed; the worker timeout and heartbeat policy are
+not extended or re-dated. No numerical frame is accepted from inside a render
+command after its hydraulic upload has already been recorded.
+
 ## Research lineage
 
 The scene-color/depth single-layer approach is established in
