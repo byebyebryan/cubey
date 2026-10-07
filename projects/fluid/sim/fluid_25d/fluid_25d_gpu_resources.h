@@ -153,22 +153,26 @@ static_assert(sizeof(Fluid25DEndpointMarkersGpu) == sizeof(float) * 8U);
 
 class Fluid25DGpuResources {
   public:
-    void create_global_resources_if_needed(cubey::vulkan::Device& device,
-                                           cubey::ProjectGpuServices& gpu,
-                                           const Fluid25DConfig& config,
-                                           const Fluid25DScenarioData& scenario,
-                                           std::uint32_t frame_slot_count,
-                                           bool presentation_only = false);
+    void create_global_resources_if_needed(
+        cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu, const Fluid25DConfig& config,
+        const Fluid25DScenarioData& scenario, std::uint32_t frame_slot_count,
+        bool presentation_only = false, std::uint32_t coverage_subdivision = 0U);
     // A recording owns the uploaded h/velocity; only render cues may write thereafter.
     // Slot reuse must follow the host's completed frame-slot fence.
     void record_recording_upload(VkCommandBuffer command_buffer, std::uint32_t frame_slot,
                                  std::span<const float> depth,
                                  std::span<const Fluid25DVelocityGpu> velocity);
+    void record_display_coverage_upload(VkCommandBuffer command_buffer, std::uint32_t frame_slot,
+                                        std::span<const float> coverage);
+    [[nodiscard]] const cubey::vulkan::Buffer& display_coverage() const {
+        return *display_coverage_;
+    }
     [[nodiscard]] bool presentation_only() const noexcept {
         return presentation_only_;
     }
     void create_render_pipelines(cubey::vulkan::Device& device, VkFormat color_format,
-                                 VkFormat depth_format, VkExtent2D extent);
+                                 VkFormat depth_format, VkExtent2D extent,
+                                 bool native_reconstruction = false);
     void destroy_swapchain_resources();
     void destroy_all_resources();
 
@@ -239,8 +243,10 @@ class Fluid25DGpuResources {
     [[nodiscard]] const cubey::render::ComputePipelineResource& quiver_reset_pipeline() const;
     [[nodiscard]] const cubey::render::ComputePipelineResource& quiver_update_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& diagnostic_pipeline() const;
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& terrain_pipeline() const;
-    [[nodiscard]] const cubey::render::GraphicsPipelineResource& water_pipeline() const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    terrain_pipeline(bool bspline = false) const;
+    [[nodiscard]] const cubey::render::GraphicsPipelineResource&
+    water_pipeline(bool bspline = false, bool ignore_occlusion = false) const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& forcing_cube_pipeline() const;
     [[nodiscard]] const cubey::render::GraphicsPipelineResource& quiver_pipeline() const;
 
@@ -379,6 +385,9 @@ class Fluid25DGpuResources {
 
     std::optional<cubey::vulkan::Buffer> terrain_;
     std::vector<cubey::vulkan::Buffer> recording_staging_;
+    std::optional<cubey::vulkan::Buffer> display_coverage_;
+    std::vector<cubey::vulkan::Buffer> coverage_staging_;
+    std::uint32_t coverage_subdivision_ = 0U;
     bool presentation_only_ = false;
     std::optional<cubey::vulkan::Buffer> finite_volume_candidate_mass_audit_;
     std::optional<cubey::vulkan::Buffer> finite_volume_mass_audit_;
@@ -456,6 +465,10 @@ class Fluid25DGpuResources {
     std::optional<cubey::render::GraphicsPipelineResource> diagnostic_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> terrain_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> water_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> bspline_terrain_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> bspline_water_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> no_occlusion_water_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> bspline_no_occlusion_water_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> forcing_cube_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> quiver_pipeline_;
     bool current_depth_is_a_ = true;

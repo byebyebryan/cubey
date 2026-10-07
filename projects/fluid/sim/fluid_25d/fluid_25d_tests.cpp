@@ -1,4 +1,5 @@
 #include "../../fluid_25d/fluid_25d_project_config.h"
+#include "fluid_25d_bank_comparison.h"
 #include "fluid_25d_commands.h"
 #include "fluid_25d_depth_palette.h"
 #include "fluid_25d_diagnostics.h"
@@ -1051,7 +1052,7 @@ void test_hillside_rain_study_config_and_cli() {
 
     const Fluid25DConfig rain = rain_study_test_config(512U, 512U, 12.0F);
     require(fluid_25d_scenario_from_name("hillside-rain-study") ==
-                Fluid25DScenario::HillsideRainStudy &&
+                    Fluid25DScenario::HillsideRainStudy &&
                 std::string(fluid_25d_scenario_name(Fluid25DScenario::HillsideRainStudy)) ==
                     "hillside-rain-study",
             "hillside rain should have its own stable opt-in scenario name");
@@ -1063,16 +1064,36 @@ void test_hillside_rain_study_config_and_cli() {
     require_close(rain.rainfall_depth_rate_m_per_s, 12.0 / 3'600'000.0, 1.0e-12,
                   "rain CLI rate should use the existing mm/hour conversion");
 
-    const std::vector<std::string> rain_cli_base{
-        "fluid_25d", "--grid-width", "512", "--grid-height", "512",
-        "--fluid25d-scenario", "hillside-rain-study", "--fluid25d-solver", "finite-volume",
-        "--fluid25d-cell-size-m", "30", "--terrain-heightfield", "terrain-fixture",
-        "--fluid25d-terrain-crop-x", "1152", "--fluid25d-terrain-crop-z", "1408",
-        "--fluid25d-rainfall-rate-mm-per-hour", "12", "--fluid25d-hillside-camera",
-        "collection", "--fluid25d-natural-flow-home-pitch-radians", "-0.6",
-        "--fluid25d-hillside-depth-cues", "--fluid25d-terrain-thin-water-composite",
-        "--fluid25d-motion-markers", "--fluid25d-motion-marker-mode", "local",
-        "--fluid25d-hillside-inspection-advance-seconds", "2"};
+    const std::vector<std::string> rain_cli_base{"fluid_25d",
+                                                 "--grid-width",
+                                                 "512",
+                                                 "--grid-height",
+                                                 "512",
+                                                 "--fluid25d-scenario",
+                                                 "hillside-rain-study",
+                                                 "--fluid25d-solver",
+                                                 "finite-volume",
+                                                 "--fluid25d-cell-size-m",
+                                                 "30",
+                                                 "--terrain-heightfield",
+                                                 "terrain-fixture",
+                                                 "--fluid25d-terrain-crop-x",
+                                                 "1152",
+                                                 "--fluid25d-terrain-crop-z",
+                                                 "1408",
+                                                 "--fluid25d-rainfall-rate-mm-per-hour",
+                                                 "12",
+                                                 "--fluid25d-hillside-camera",
+                                                 "collection",
+                                                 "--fluid25d-natural-flow-home-pitch-radians",
+                                                 "-0.6",
+                                                 "--fluid25d-hillside-depth-cues",
+                                                 "--fluid25d-terrain-thin-water-composite",
+                                                 "--fluid25d-motion-markers",
+                                                 "--fluid25d-motion-marker-mode",
+                                                 "local",
+                                                 "--fluid25d-hillside-inspection-advance-seconds",
+                                                 "2"};
     const auto rain_cli_with_option = [&](std::string_view option, std::string value) {
         std::vector<std::string> arguments = rain_cli_base;
         const auto found = std::find(arguments.begin(), arguments.end(), option);
@@ -1094,8 +1115,8 @@ void test_hillside_rain_study_config_and_cli() {
                 project.hillside_camera == "collection" &&
                 project.natural_flow_home_pitch_radians == -0.6F &&
                 project.catchment_render.hillside_depth_cues &&
-                project.catchment_render.terrain_thin_water_composite &&
-                project.motion_markers && project.motion_marker_mode == "local" &&
+                project.catchment_render.terrain_thin_water_composite && project.motion_markers &&
+                project.motion_marker_mode == "local" &&
                 project.hillside_inspection_advance_seconds == 2.0F,
             "rain CLI should admit pinned native terrain and presentation-only controls");
 
@@ -1114,8 +1135,8 @@ void test_hillside_rain_study_config_and_cli() {
     missing_rate.erase(rainfall_option, rainfall_option + 2);
     require_throws([&] { static_cast<void>(parse_project(missing_rate)); },
                    "rain scenario should require an explicit positive rainfall rate");
-    const std::vector<std::string> neutral_protocol = rain_cli_with_extra(
-        "--fluid25d-terrain-water-protocol", "none");
+    const std::vector<std::string> neutral_protocol =
+        rain_cli_with_extra("--fluid25d-terrain-water-protocol", "none");
     require_throws([&] { static_cast<void>(parse_project(neutral_protocol)); },
                    "rain should reject even an explicit neutral terrain-water protocol");
     const std::vector<std::string> point_source_q =
@@ -1125,12 +1146,11 @@ void test_hillside_rain_study_config_and_cli() {
     const std::vector<std::string> dye_timing =
         rain_cli_with_extra("--fluid25d-dye-pulse-start-seconds", "0");
     std::vector<std::string> dye_timing_pair = dye_timing;
-    dye_timing_pair.insert(dye_timing_pair.end(),
-                           {"--fluid25d-dye-pulse-duration-seconds", "1"});
+    dye_timing_pair.insert(dye_timing_pair.end(), {"--fluid25d-dye-pulse-duration-seconds", "1"});
     require_throws([&] { static_cast<void>(parse_project(dye_timing_pair)); },
                    "rain CLI should reject dye timing options");
-    const std::vector<std::string> point_source_duration = rain_cli_with_extra(
-        "--fluid25d-source-active-duration-seconds", "5");
+    const std::vector<std::string> point_source_duration =
+        rain_cli_with_extra("--fluid25d-source-active-duration-seconds", "5");
     require_throws([&] { static_cast<void>(parse_project(point_source_duration)); },
                    "rain CLI should reject source-active-duration scheduling");
 
@@ -2589,13 +2609,11 @@ void test_hillside_rain_study_scenario_construction() {
                             [](float rate) { return rate == 0.0F; }),
             "rain crop should begin dry with no sink field");
     require(std::all_of(scenario.source_depth_rate_m_per_s.begin(),
-                        scenario.source_depth_rate_m_per_s.end(), [&](float rate) {
-                            return rate == config.rainfall_depth_rate_m_per_s;
-                        }),
+                        scenario.source_depth_rate_m_per_s.end(),
+                        [&](float rate) { return rate == config.rainfall_depth_rate_m_per_s; }),
             "rain should distribute its one configured depth rate uniformly over the crop");
-    require(scenario.boundary_outflow_face_mask ==
-                make_fluid_25d_all_outward_boundary_outflow_mask(config.grid_width,
-                                                                 config.grid_height),
+    require(scenario.boundary_outflow_face_mask == make_fluid_25d_all_outward_boundary_outflow_mask(
+                                                       config.grid_width, config.grid_height),
             "rain should use the existing outward-only full perimeter mask");
     require(!fluid_25d_uses_forcing_cubes(config.scenario) &&
                 fluid_25d_forcing_cubes(config, scenario).empty(),
@@ -3476,9 +3494,9 @@ void test_hillside_rain_study_control_and_flat_oracle() {
     Fluid25DFiniteVolumeOracle oracle(config, scenario);
     Fluid25DRainStudyControl control;
     const double area = static_cast<double>(config.cell_size_m) * config.cell_size_m;
-    const double volume_per_on_step =
-        static_cast<double>(config.rainfall_depth_rate_m_per_s) * config.fixed_delta_seconds * area *
-        static_cast<double>(fluid_25d_cell_count(config));
+    const double volume_per_on_step = static_cast<double>(config.rainfall_depth_rate_m_per_s) *
+                                      config.fixed_delta_seconds * area *
+                                      static_cast<double>(fluid_25d_cell_count(config));
     const auto step = [&](bool expected_enabled) {
         const float scale = control.prepare_fixed_step(config);
         require((scale == 1.0F) == expected_enabled && control.enabled() == expected_enabled,
@@ -3525,8 +3543,7 @@ void test_hillside_rain_study_control_and_flat_oracle() {
     control.reset();
     require(control.enabled() && !control.queued_enabled().has_value() &&
                 control.state().cumulative_depth_m == 0.0 &&
-                control.state().scheduled_volume_m3 == 0.0 &&
-                control.state().completed_steps == 0U,
+                control.state().scheduled_volume_m3 == 0.0 && control.state().completed_steps == 0U,
             "rain reset should return to dry time zero with rain enabled");
     require_close(control.applied_rate_mm_per_hour(config), 36000.0, 0.1,
                   "rain reset should restore the configured positive rain rate");
@@ -3539,8 +3556,7 @@ void test_hillside_rain_study_control_and_flat_oracle() {
         Fluid25DRainStudyControl fps_control;
         const std::uint32_t frame_count = static_cast<std::uint32_t>(2.0 * fps);
         for (std::uint32_t frame = 0U; frame < frame_count; ++frame) {
-            const std::uint32_t fixed_steps =
-                pacing.advance(1.0 / fps, false).fixed_step_count;
+            const std::uint32_t fixed_steps = pacing.advance(1.0 / fps, false).fixed_step_count;
             for (std::uint32_t i = 0U; i < fixed_steps; ++i) {
                 if (fps_control.state().completed_steps == 10U)
                     fps_control.queue_enabled(false);
@@ -3610,17 +3626,15 @@ void test_hillside_rain_study_observations() {
                   0.1, "rain converged-water volume should subtract uniform cumulative rain");
     require_close(observation.maximum_depth_m, 0.04, 1.0e-7,
                   "rain maximum depth should report the field maximum");
-    require(observation.maximum_depth_cell_x == 203U &&
-                observation.maximum_depth_cell_z == 203U,
+    require(observation.maximum_depth_cell_x == 203U && observation.maximum_depth_cell_z == 203U,
             "rain observation should deterministically report a useful max-depth cell");
     require(observation.regions[0].name == "upper" && observation.regions[0].valid &&
                 observation.regions[1].name == "transit" && observation.regions[1].valid &&
                 observation.regions[2].name == "collection" && observation.regions[2].valid,
             "rain observations should expose the three pinned 21x21 regions on a 512 crop");
     for (const auto& region : observation.regions) {
-        require_close(region.direct_rain_volume_m3,
-                      observation.cumulative_depth_m * 900.0 * 441.0, 0.01,
-                      "each rain ROI should report its fixed direct-rain volume");
+        require_close(region.direct_rain_volume_m3, observation.cumulative_depth_m * 900.0 * 441.0,
+                      0.01, "each rain ROI should report its fixed direct-rain volume");
     }
     require_close(observation.regions[0].water_volume_m3, 0.04 * 900.0 * 441.0, 0.1,
                   "upper ROI water volume should sum its fixed footprint");
@@ -4830,12 +4844,43 @@ void test_presentation_cue_contract() {
     const std::string water_vertex = read_shader(shader_directory / "fluid_25d_water.vert");
     const std::string marker_vertex =
         read_shader(shader_directory / "fluid_25d_motion_markers.vert");
+    const std::string marker_bilinear_vertex =
+        read_shader(shader_directory / "fluid_25d_motion_markers_bilinear.vert");
+    const std::string sampling = read_shader(shader_directory / "fluid_25d_surface_sampling.glsl");
+    const std::string bspline_surface =
+        read_shader(shader_directory / "fluid_25d_bspline_surface.glsl");
+    const std::string bspline_water =
+        read_shader(shader_directory / "fluid_25d_water_bspline.vert");
+    const std::string bspline_terrain =
+        read_shader(shader_directory / "fluid_25d_terrain_bspline.vert");
+    require(bspline_water.find("fluid25d_bspline_vertex") != std::string::npos &&
+                bspline_terrain.find("fluid25d_bspline_vertex") != std::string::npos &&
+                bspline_water.find("water_depth = bh.y") != std::string::npos &&
+                bspline_surface.find("f.x >= f.y") != std::string::npos &&
+                marker_bilinear_vertex.find("fluid25d_bspline_mesh_bed_depth") !=
+                    std::string::npos &&
+                water.find("float water_depth = triangle_water_depth") != std::string::npos,
+            "experimental material and markers must follow the matched fine triangle mesh, not a "
+            "second cubic fragment surface");
     require(marker_vertex.find("f.x>=f.y") != std::string::npos &&
                 marker_vertex.find("h[0]*(1.0-f.x)+h[1]*(f.x-f.y)+h[3]*f.y") != std::string::npos &&
                 marker_vertex.find("h[0]*(1.0-f.y)+h[2]*(f.y-f.x)+h[3]*f.x") != std::string::npos &&
+                sampling.find("f.x >= f.y") != std::string::npos &&
+                sampling.find("v.x*(1.0-f.x) + v.y*(f.x-f.y) + v.w*f.y") != std::string::npos &&
+                sampling.find("v.x*(1.0-f.y) + v.z*(f.y-f.x) + v.w*f.x") != std::string::npos &&
                 water_vertex.find("uvec2(0u, 0u), uvec2(1u, 1u), uvec2(1u, 0u)") !=
                     std::string::npos,
             "markers must use the visible water mesh diagonal, not a bilinear surface below it");
+    require(water.find("fluid25d_supported_depth") != std::string::npos &&
+                marker_bilinear_vertex.find("fluid25d_supported_depth") != std::string::npos &&
+                marker_bilinear_vertex.find("h[0]*(1.0-f.x)+h[1]*(f.x-f.y)+h[3]*f.y") !=
+                    std::string::npos &&
+                marker_bilinear_vertex.find("h[0]*(1.0-f.y)+h[2]*(f.y-f.x)+h[3]*f.x") !=
+                    std::string::npos &&
+                marker_vertex.find("fluid25d_supported_depth") == std::string::npos &&
+                sampling.find("<= 0.5") != std::string::npos,
+            "water and marker display wetness share conservative support, without dry diagonal "
+            "bridges");
     // Independent curved-cell counterexample: four corner heights 0,0,0,4
     // give a visible diagonal height of 2 at the center. Bilinear draping
     // gives 1 and can hide the marker below the water. Both triangles have
@@ -4855,6 +4900,8 @@ void test_presentation_cue_contract() {
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
     const std::string ui =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_ui.cpp");
+    const std::string recording_app =
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_recording_app.cpp");
     const std::string project_config = read_shader(std::filesystem::path(__FILE__).parent_path() /
                                                    "../../fluid_25d/fluid_25d_project_config.h");
     require(reset.find("cue_lattice") != std::string::npos &&
@@ -4871,6 +4918,12 @@ void test_presentation_cue_contract() {
                 water.find("params.animation") == std::string::npos &&
                 water.find("sin(") == std::string::npos && water.find("cos(") == std::string::npos,
             "water shading should consume the persistent cue without procedural time bands");
+    const std::size_t highlight_off =
+        water.find("if ((options & 256u) != 0u) sparse_highlight = 0.0;");
+    const std::size_t highlight_contribution = water.find("* sparse_highlight", highlight_off);
+    require(highlight_off != std::string::npos && highlight_contribution != std::string::npos &&
+                water.find("if ((options & 256u) != 0u) water_depth") == std::string::npos,
+            "native highlights-off bit may suppress only the sparse surface highlight term");
     require(water_vertex.find("binding = 6") != std::string::npos &&
                 water_vertex.find("TracerQField") != std::string::npos &&
                 water_vertex.find("dye_concentration = clamp") != std::string::npos &&
@@ -4897,6 +4950,33 @@ void test_presentation_cue_contract() {
             project_config.find("positive dye pulse duration") != std::string::npos,
         "transport UI and CLI should expose the dye reading only when its scenario contract is "
         "valid");
+    const std::size_t highlights_ui_start =
+        recording_app.find("if (ImGui::Combo(\"Procedural flow highlights\"");
+    const std::size_t highlights_ui_end =
+        highlights_ui_start == std::string::npos
+            ? std::string::npos
+            : recording_app.find("\n        }\n", highlights_ui_start);
+    const std::string_view highlights_ui_block =
+        highlights_ui_start == std::string::npos || highlights_ui_end == std::string::npos
+            ? std::string_view{}
+            : std::string_view(recording_app)
+                  .substr(highlights_ui_start, highlights_ui_end - highlights_ui_start);
+    require(!highlights_ui_block.empty() &&
+                highlights_ui_block.find("Auto (off only in Readable)") != std::string_view::npos &&
+                highlights_ui_block.find("config_.native_surface_highlights") !=
+                    std::string_view::npos &&
+                highlights_ui_block.find("render_.native_surface_highlights") !=
+                    std::string_view::npos &&
+                highlights_ui_block.find("reset_presentation_history") == std::string_view::npos &&
+                highlights_ui_block.find("reset_visual_history") == std::string_view::npos &&
+                highlights_ui_block.find("cue_reset_") == std::string_view::npos &&
+                highlights_ui_block.find("marker_reset_") == std::string_view::npos &&
+                highlights_ui_block.find("visual_delta_") == std::string_view::npos &&
+                highlights_ui_block.find("clock_") == std::string_view::npos &&
+                highlights_ui_block.find("configure_camera") == std::string_view::npos &&
+                highlights_ui_block.find("backend_") == std::string_view::npos,
+            "highlight combo must be explicit and must not reset playback, visual history, camera, "
+            "or backend");
     const std::size_t substep_loop = commands.find("for (std::uint32_t substep");
     const std::size_t cue_update =
         commands.find("record_presentation_cue_advection(", substep_loop);
@@ -4961,7 +5041,8 @@ void test_presentation_cue_contract() {
                 quiver_vertex.find("shaft_vertex") != std::string::npos &&
                 quiver_vertex.find("head_vertex") != std::string::npos &&
                 quiver_vertex.find("lattice_pitch") != std::string::npos &&
-                quiver_vertex.find("params.terrain_palette.w - kMinimumSpeedMPerS") != std::string::npos &&
+                quiver_vertex.find("params.terrain_palette.w - kMinimumSpeedMPerS") !=
+                    std::string::npos &&
                 Fluid25DCatchmentRenderOptions{}.quiver_speed_upper_m_per_s == 0.80F &&
                 quiver_vertex.find("kMaximumSilhouettePitchFraction") != std::string::npos &&
                 quiver_vertex.find("current_velocity.z < 0.5") != std::string::npos &&
@@ -6222,6 +6303,10 @@ void test_finite_volume_gpu_candidate_commit_shader_contract() {
     const std::string reset = read_shader(shader_directory / "fluid_25d_fv_reset.comp");
     const std::string commands =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_commands.cpp");
+    require(commands.find("render_options.native_surface_highlights ? 0.0F : 256.0F") !=
+                    std::string::npos &&
+                commands.find("water_constants.terrain_palette.w") != std::string::npos,
+            "highlight policy must use water-only palette bit 8 without extending push constants");
     const std::string app =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_app.cpp");
     const std::string resources =
@@ -6264,7 +6349,7 @@ void test_finite_volume_gpu_candidate_commit_shader_contract() {
             commands.find("dye_source_concentration") != std::string::npos &&
             app.find("dye_source_schedule_.source_concentration") != std::string::npos &&
             app.find("step_with_dye(") != std::string::npos &&
-            resources.find("storage_set_info(8U, VK_SHADER_STAGE_VERTEX_BIT") !=
+            resources.find("storage_set_info(9U, VK_SHADER_STAGE_VERTEX_BIT") !=
                 std::string::npos &&
             resources.find(".storage_buffer(set, 6, tracer_q.handle(), tracer_q.size())") !=
                 std::string::npos,
@@ -6397,14 +6482,273 @@ void test_hillside_supply_and_depth_cues() {
                   "thin scale clamps");
 }
 
+void test_bank_comparison_controls() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    Fluid25DCatchmentRenderOptions render;
+    render.native_presentation = 2U;
+    render.native_surface_highlights = true;
+    render.terrain_height_scale = 3.0F;
+    render.native_bilinear_water = true;
+    for (unsigned repeat = 0; repeat < 5U; ++repeat) {
+        for (auto mode : {Fluid25DBankView::Reference, Fluid25DBankView::Bspline2x,
+                          Fluid25DBankView::MarchingSquares}) {
+            apply_fluid_25d_bank_view(render, mode, true);
+            require(!render.native_bilinear_water &&
+                        render.native_bspline_surface == (mode == Fluid25DBankView::Bspline2x) &&
+                        render.native_display_coverage ==
+                            (mode == Fluid25DBankView::MarchingSquares),
+                    "bank modes must be mutually exclusive");
+            require(render.native_presentation == 2U && render.native_surface_highlights &&
+                        render.terrain_height_scale == 3.0F,
+                    "bank switching must not change independent presentation settings");
+            require(fluid_25d_bank_view(fluid_25d_bank_view_name(mode)) == mode,
+                    "bank view names round trip");
+        }
+    }
+    apply_fluid_25d_bank_view(render, Fluid25DBankView::Bspline2x, false);
+    require_throws(
+        [&] { apply_fluid_25d_bank_view(render, Fluid25DBankView::MarchingSquares, false); },
+        "missing coverage must reject before touching mode state");
+    require(render.native_bspline_surface && !render.native_display_coverage &&
+                render.native_surface_subdivision == 2U,
+            "failed switch must preserve the prior mode");
+    require_throws([] { (void)fluid_25d_bank_view("strong"); },
+                   "strong smoothing is not a supported bank preset");
+    const std::array<double, 6> source{0., 10., 20., 30., 40., 50.};
+    const std::array<double, 3> masks{10., 20., 30.};
+    Fluid25DBankComparisonWindow window(source, masks);
+    require(window.first_s() == 10. && window.last_saved_s() == 30. && window.end_s() < 40. &&
+                window.frame_count() == 3U && window.contains(39.9) && !window.contains(40.),
+            "comparison holds final mask but never selects the next unmasked native field");
+    require(window.map(0., false).time_s == 10. && window.map(100., false).at_end &&
+                window.map(100., false).time_s == window.end_s(),
+            "comparison seek/advance must clamp safely");
+    require(window.map(40., true).looped && window.map(40., true).time_s == 10. &&
+                window.map(75., true).time_s == 15.,
+            "explicit replay must preserve overrun and bounded timing");
+    require(window.map(window.end_s(), true).time_s == 10.,
+            "looping the displayed end must restart cleanly");
+    require_throws([&] { (void)window.map(std::numeric_limits<double>::quiet_NaN(), false); },
+                   "nonfinite window time rejected");
+    const std::array<double, 2> gaps{10., 30.};
+    require_throws([&] { Fluid25DBankComparisonWindow invalid(source, gaps); },
+                   "sparse masks cannot advertise continuous comparison playback");
+    const std::array<double, 2> wrong{10., 21.};
+    require_throws([&] { Fluid25DBankComparisonWindow invalid(source, wrong); },
+                   "comparison requires exact saved mask times");
+    const auto ordinary = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json"});
+    require(!ordinary.bank_comparison && !ordinary.native_bank_view &&
+                !ordinary.bank_comparison_loop && ordinary.bank_comparison_cycle_frames == 0U,
+            "comparison controls remain opt-in");
+    const auto configured = parse_project(
+        {"fluid_25d", "--fluid25d-recording", "recording.json",
+         "--fluid25d-native-display-coverage", "coverage.json", "--fluid25d-bank-comparison",
+         "--fluid25d-native-bank-view", "bspline-2x", "--fluid25d-bank-comparison-loop"});
+    require(configured.bank_comparison && configured.bank_comparison_loop &&
+                configured.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "comparison presets cannot change numerical defaults");
+    require_throws([] { (void)parse_project({"fluid_25d", "--fluid25d-bank-comparison"}); },
+                   "comparison requires a recording and sidecar");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "x",
+                                 "--fluid25d-native-bank-view", "marching-squares"});
+        },
+        "marching squares requires a sidecar");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "x",
+                                 "--fluid25d-native-bank-view", "reference",
+                                 "--fluid25d-native-water-sampling", "bspline"});
+        },
+        "conflicting old/new mode flags rejected");
+    require_throws(
+        [] {
+            (void)parse_project(
+                {"fluid_25d", "--fluid25d-recording", "x", "--fluid25d-bank-comparison-loop"});
+        },
+        "implicit comparison loops rejected");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-stream", "x",
+                                 "--fluid25d-native-display-coverage", "y",
+                                 "--fluid25d-bank-comparison"});
+        },
+        "live comparison coverage cannot be implied");
+}
+
 void test_recording_cli_is_separate_from_physics() {
     using namespace cubey::projects::fluid::fluid_25d;
-    const auto valid = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
-                                     "--fluid25d-motion-markers", "--fluid25d-recording-speed", "60"});
+    const auto valid =
+        parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                       "--fluid25d-motion-markers", "--fluid25d-recording-speed", "60"});
     require(valid.recording_path == "recording.json" && valid.motion_marker_mode == "local",
             "recording path should resolve without hydraulic scenario validation");
     require(valid.simulation.solver == Fluid25DSolver::VirtualPipes,
             "recording must not promote finite-volume defaults");
+    require(valid.native_presentation == "original",
+            "reference native presentation must remain the default");
+    require(!valid.native_display_coverage_path && valid.native_camera_pitch_radians == -0.92F &&
+                !valid.catchment_render.native_display_coverage,
+            "display coverage and observation camera changes must remain opt-in");
+    require(
+        valid.native_surface_highlights == "auto" &&
+            fluid_25d_native_surface_highlights_enabled(
+                fluid_25d_native_surface_highlights_policy(valid.native_surface_highlights), 0U),
+        "native procedural highlights default to auto and remain on in Original");
+    const auto highlight_policy = fluid_25d_native_surface_highlights_policy("auto");
+    require(fluid_25d_native_surface_highlights_enabled(highlight_policy, 0U) &&
+                fluid_25d_native_surface_highlights_enabled(highlight_policy, 1U) &&
+                !fluid_25d_native_surface_highlights_enabled(highlight_policy, 2U),
+            "auto highlights remain on in Original and Motion and off only in Readable");
+    require(fluid_25d_native_surface_highlights_enabled(Fluid25DNativeSurfaceHighlightsPolicy::On,
+                                                        2U) &&
+                !fluid_25d_native_surface_highlights_enabled(
+                    Fluid25DNativeSurfaceHighlightsPolicy::Off, 0U) &&
+                !fluid_25d_native_surface_highlights_enabled(
+                    Fluid25DNativeSurfaceHighlightsPolicy::Off, 1U) &&
+                !fluid_25d_native_surface_highlights_enabled(
+                    Fluid25DNativeSurfaceHighlightsPolicy::Off, 2U),
+            "explicit highlight on overrides Readable auto; off suppresses all styles");
+    require(!fluid_25d_native_surface_highlights_enabled(
+                fluid_25d_native_surface_highlights_policy("invalid"), 0U) &&
+                !fluid_25d_native_surface_highlights_enabled(
+                    static_cast<Fluid25DNativeSurfaceHighlightsPolicy>(99U), 0U),
+            "invalid highlight policy values fail closed");
+    require(valid.native_water_sampling == "triangular" && valid.native_water_debug == "shaded",
+            "reference geometry/material sampling and shaded water remain defaults");
+    for (const char* sampling : {"triangular", "bilinear", "bspline"}) {
+        const auto sampled = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                            "--fluid25d-native-water-sampling", sampling});
+        require(sampled.native_water_sampling == sampling &&
+                    sampled.simulation.solver == Fluid25DSolver::VirtualPipes,
+                "bank display interpolation cannot select or alter the solver");
+    }
+    for (const char* subdivision : {"1", "2", "4"}) {
+        const auto sampled = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                            "--fluid25d-native-water-sampling", "bspline",
+                                            "--fluid25d-native-surface-subdivision", subdivision});
+        require(sampled.native_surface_subdivision ==
+                    static_cast<std::uint32_t>(std::stoi(subdivision)),
+                "display subdivision is explicit and native only");
+    }
+    for (const char* subdivision : {"0", "3", "8"})
+        require_throws(
+            [subdivision] {
+                static_cast<void>(
+                    parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                   "--fluid25d-native-water-sampling", "bspline",
+                                   "--fluid25d-native-surface-subdivision", subdivision}));
+            },
+            "invalid display subdivision fails closed");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                             "--fluid25d-native-surface-subdivision", "2"}));
+        },
+        "display subdivision requires B-spline opt-in");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-native-surface-subdivision", "2"}));
+        },
+        "built-in sources reject display subdivision");
+    for (const char* diagnostic : {"shaded", "solid", "unlit", "normals", "wireframe", "wet-mask",
+                                   "no-occlusion", "contours"}) {
+        const auto diagnosed = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                              "--fluid25d-native-water-debug", diagnostic});
+        require(diagnosed.native_water_debug == diagnostic,
+                "water diagnosis must accept each explicit render-only view");
+    }
+    for (const char* option :
+         {"--fluid25d-native-water-sampling", "--fluid25d-native-water-debug"}) {
+        const char* accepted =
+            std::string_view(option) == "--fluid25d-native-water-debug" ? "shaded" : "bilinear";
+        require_throws(
+            [option, accepted] {
+                static_cast<void>(parse_project({"fluid_25d", option, accepted}));
+            },
+            "native water options must reject a built-in source");
+        require_throws(
+            [option] {
+                static_cast<void>(parse_project(
+                    {"fluid_25d", "--fluid25d-recording", "recording.json", option, "invalid"}));
+            },
+            "unknown bank display modes fail closed");
+    }
+    for (const char* style : {"original", "motion", "readable"}) {
+        const auto styled = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                           "--fluid25d-native-presentation", style});
+        require(styled.native_presentation == style &&
+                    styled.simulation.solver == Fluid25DSolver::VirtualPipes,
+                "native presentation is render-only and must not select a solver");
+    }
+    for (const std::string_view source : {"recording", "external"}) {
+        for (const char* policy : {"auto", "on", "off"}) {
+            const auto highlights =
+                source == "recording"
+                    ? parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                     "--fluid25d-native-surface-highlights", policy})
+                    : parse_project({"fluid_25d", "--fluid25d-external-session", "worker",
+                                     "--fluid25d-native-surface-highlights", policy});
+            require(highlights.native_surface_highlights == policy &&
+                        highlights.simulation.solver == Fluid25DSolver::VirtualPipes,
+                    "recording and external sessions share render-only highlight policies");
+        }
+    }
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-native-surface-highlights", "off"}));
+        },
+        "native surface highlights must reject a built-in source");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                             "--fluid25d-native-surface-highlights", "invalid"}));
+        },
+        "unknown native surface highlight policy fails closed");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-native-presentation", "readable"}));
+        },
+        "native presentation must not silently affect a built-in scene");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                             "--fluid25d-native-presentation", "unknown"}));
+        },
+        "unknown native presentation must fail closed");
+    const auto service_style = parse_project({"fluid_25d", "--fluid25d-external-session", "worker",
+                                              "--fluid25d-native-presentation", "readable"});
+    require(service_style.native_presentation == "readable",
+            "native service and recording must share the presentation opt-in");
+    require_close(fluid_25d_recorded_visual_delta(7200.0, 7205.0, 14400.0), 5.0, 0.0,
+                  "cue time advances between held native frames");
+    require_close(fluid_25d_recorded_visual_delta(7205.0, 7210.0, 14400.0), 5.0, 0.0,
+                  "cue time must not wait for the next saved water frame");
+    require_close(fluid_25d_recorded_visual_delta(7200.0, 7200.0, 14400.0), 0.0, 0.0,
+                  "initial frame and pause hold the visual clock");
+    require_close(fluid_25d_recorded_visual_delta(14395.0, 14405.0, 14400.0), 5.0, 0.0,
+                  "visual catch-up cannot pass the final native frame");
+    require_close(fluid_25d_recorded_visual_delta(14400.0, 14405.0, 14400.0), 0.0, 0.0,
+                  "completed recording cannot keep flowing visually");
+    require_close(fluid_25d_recorded_visual_delta(0.0, 120.0, 14400.0), 60.0, 0.0,
+                  "sparse video has bounded approximate catch-up");
+    require_throws([] { static_cast<void>(fluid_25d_recorded_visual_delta(10.0, 5.0, 20.0)); },
+                   "backwards seek must reset rather than reverse approximate advection");
+    require_throws(
+        [] {
+            static_cast<void>(fluid_25d_recorded_visual_delta(
+                0.0, std::numeric_limits<double>::infinity(), 20.0));
+        },
+        "non-finite cue clock rejected");
+    const float native_seed = fluid_25d_presentation_cue_seed(37U, 19U, true);
+    require(native_seed >= 0.0F && native_seed <= 1.0F &&
+                native_seed == fluid_25d_presentation_cue_seed(37U, 19U, true) &&
+                native_seed != fluid_25d_presentation_cue_seed(37U, 19U),
+            "native cue scale is deterministic, bounded and independent of reference seed");
     const auto reject = [](std::vector<std::string> extra) {
         std::vector<std::string> arguments{"fluid_25d", "--fluid25d-recording", "recording.json"};
         arguments.insert(arguments.end(), extra.begin(), extra.end());
@@ -6425,10 +6769,12 @@ void test_recording_cli_is_separate_from_physics() {
     reject({"--headless", "--fluid25d-recording-speed", "60"});
     reject({"--headless", "--capture", "video", "--output", "movie.mp4",
             "--fluid25d-recording-frame-interval-seconds", "0"});
-    require_throws([] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording-speed", "60"})); },
-                   "recording controls need a recording path");
-    const auto capture = parse_project({"fluid_25d", "--headless", "--fluid25d-recording", "recording.json",
-                                       "--fluid25d-recording-gpu-validation", "--fluid25d-recording-time-seconds", "900"});
+    require_throws(
+        [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording-speed", "60"})); },
+        "recording controls need a recording path");
+    const auto capture = parse_project({"fluid_25d", "--headless", "--fluid25d-recording",
+                                        "recording.json", "--fluid25d-recording-gpu-validation",
+                                        "--fluid25d-recording-time-seconds", "900"});
     require(capture.recording_gpu_validation && capture.recording_time_seconds == 900.0F,
             "fixed-time recorded capture should be independently configured");
 }
@@ -6551,6 +6897,7 @@ int main() {
         test_backend_selection_preserves_existing_modes();
         test_external_session_freshness_and_typed_inputs();
         test_recording_cli_is_separate_from_physics();
+        test_bank_comparison_controls();
         test_catchment_far_plane_geometry();
         test_config_defaults_and_parsing();
         test_hillside_rain_study_config_and_cli();

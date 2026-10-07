@@ -6,15 +6,19 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "fluid_25d: .*rendering River V0"
     SOURCES
         ../sim/fluid_25d/fluid_25d_app.cpp
+        ../sim/fluid_25d/fluid_25d_bank_controls.cpp
+        ../sim/fluid_25d/fluid_25d_bank_comparison.cpp
         ../sim/fluid_25d/fluid_25d_backend_adapters.cpp
         ../sim/fluid_25d/fluid_25d_backend_contract.cpp
         ../sim/fluid_25d/fluid_25d_external_session.cpp
         ../sim/fluid_25d/fluid_25d_commands.cpp
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
+        ../sim/fluid_25d/fluid_25d_display_coverage.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_gpu_resources.cpp
         ../sim/fluid_25d/fluid_25d_mass_audit.cpp
         ../sim/fluid_25d/fluid_25d_motion_markers.cpp
+        ../sim/fluid_25d/fluid_25d_native_presentation_controls.cpp
         ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp
         ../sim/fluid_25d/fluid_25d_recording.cpp
@@ -23,10 +27,13 @@ cubey_add_app_target(
         main.cpp
     SHADERS
         ../sim/fluid_25d/shaders/fluid_25d.vert
+        ../sim/fluid_25d/shaders/fluid_25d_bank_controls.comp
         ../sim/fluid_25d/shaders/fluid_25d_render.frag
         ../sim/fluid_25d/shaders/fluid_25d_terrain.vert
+        ../sim/fluid_25d/shaders/fluid_25d_terrain_bspline.vert
         ../sim/fluid_25d/shaders/fluid_25d_terrain.frag
         ../sim/fluid_25d/shaders/fluid_25d_water.vert
+        ../sim/fluid_25d/shaders/fluid_25d_water_bspline.vert
         ../sim/fluid_25d/shaders/fluid_25d_water.frag
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.vert
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.frag
@@ -47,6 +54,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_quiver_update.comp
         ../sim/fluid_25d/shaders/fluid_25d_motion_markers.comp
         ../sim/fluid_25d/shaders/fluid_25d_motion_markers.vert
+        ../sim/fluid_25d/shaders/fluid_25d_motion_markers_bilinear.vert
         ../sim/fluid_25d/shaders/fluid_25d_motion_markers.frag
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
@@ -55,6 +63,8 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_sampling.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_bspline_surface.glsl"
 )
 
 target_include_directories(
@@ -152,13 +162,61 @@ if (BUILD_TESTING)
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_live_view_acceptance_v1.py)
         set_tests_properties(fluid_25d_live_view_acceptance_helpers PROPERTIES LABELS "unit;fluid;stream" TIMEOUT 60)
+        add_test(NAME fluid_25d_native_presentation_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_presentation_v1.py)
+        set_tests_properties(fluid_25d_native_presentation_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_native_bank_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_render_v1.py)
+        set_tests_properties(fluid_25d_native_bank_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_native_bank_reconstruction_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_reconstruction_v2.py)
+        set_tests_properties(fluid_25d_native_bank_reconstruction_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_native_shoreline_raster_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_native_shoreline_raster_v1.py)
+        add_test(NAME fluid_25d_native_bank_presentation_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_presentation_v4.py)
+        set_tests_properties(fluid_25d_native_shoreline_raster_helpers fluid_25d_native_bank_presentation_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_native_bank_refinement_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_native_bank_refinement_v1.py)
+        set_tests_properties(fluid_25d_native_bank_refinement_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_native_shoreline_raster_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/run_native_shoreline_raster_v1.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>")
+        set_tests_properties(fluid_25d_native_shoreline_raster_gpu
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" SKIP_RETURN_CODE 77 TIMEOUT 180)
+        add_test(NAME fluid_25d_display_coverage_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_display_coverage_gpu_v1.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>"
+                ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
+        set_tests_properties(fluid_25d_display_coverage_gpu
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" SKIP_RETURN_CODE 77 TIMEOUT 180)
+        add_test(NAME fluid_25d_bank_comparison_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_bank_comparison_gpu_v1.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>"
+                ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
+        set_tests_properties(fluid_25d_bank_comparison_gpu
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" SKIP_RETURN_CODE 77 TIMEOUT 240)
         add_test(NAME fluid_25d_recording_gpu_immutability
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_recording_viewer_gpu_v1.py"
                 --target "$<TARGET_FILE:cubey_project_fluid_25d>"
                 ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
         set_tests_properties(fluid_25d_recording_gpu_immutability
-            PROPERTIES LABELS "headless;gpu;recording" SKIP_RETURN_CODE 77 TIMEOUT 100)
+            PROPERTIES LABELS "headless;gpu;recording" SKIP_RETURN_CODE 77 TIMEOUT 150)
         add_test(NAME fluid_25d_backend_startup_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_backend_startup_gpu_v1.py"
@@ -167,6 +225,7 @@ if (BUILD_TESTING)
             PROPERTIES LABELS "headless;gpu;backend" SKIP_RETURN_CODE 77 TIMEOUT 180)
     endif()
     add_executable(cubey_project_fluid_25d_tests
+        ../sim/fluid_25d/fluid_25d_bank_comparison.cpp
         ../sim/fluid_25d/fluid_25d_diagnostics.cpp
         ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
         ../sim/fluid_25d/fluid_25d_oracle.cpp

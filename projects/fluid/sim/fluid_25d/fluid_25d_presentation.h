@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
+#include <string_view>
 
 namespace cubey::projects::fluid::fluid_25d {
 
@@ -19,8 +21,56 @@ struct Fluid25DCatchmentRenderOptions {
     bool hillside_depth_cues = false;
     // Native recording presentation only; historical scenario defaults remain unchanged.
     bool native_recording = false;
+    // Resolved render-only switch. It suppresses only the sparse highlight term.
+    bool native_surface_highlights = true;
+    // Native-only opt-ins: 0 preserves the reference, 1 changes motion cues,
+    // and 2 also changes framing/material. Never consumed by a solver.
+    std::uint32_t native_presentation = 0U;
+    // Native-only water diagnostics: shaded/solid/unlit/normals/wireframe/wet-mask.
+    std::uint32_t native_water_debug = 0U;
+    // Conservative four-sample DISPLAY depth; physical mesh remains unchanged.
+    bool native_bilinear_water = false;
+    // Experimental matched terrain/water approximation; never changes fields.
+    bool native_bspline_surface = false;
+    // Independent opacity sidecar; no terrain/depth reconstruction or field writes.
+    bool native_display_coverage = false;
+    std::uint32_t native_surface_subdivision = 2U;
     float quiver_speed_upper_m_per_s = 0.80F;
 };
+
+enum class Fluid25DNativeSurfaceHighlightsPolicy : std::uint8_t {
+    Auto = 0U,
+    On = 1U,
+    Off = 2U,
+    Invalid = 255U,
+};
+
+[[nodiscard]] constexpr Fluid25DNativeSurfaceHighlightsPolicy
+fluid_25d_native_surface_highlights_policy(std::string_view value) {
+    if (value == "auto")
+        return Fluid25DNativeSurfaceHighlightsPolicy::Auto;
+    if (value == "on")
+        return Fluid25DNativeSurfaceHighlightsPolicy::On;
+    if (value == "off")
+        return Fluid25DNativeSurfaceHighlightsPolicy::Off;
+    return Fluid25DNativeSurfaceHighlightsPolicy::Invalid;
+}
+
+[[nodiscard]] constexpr bool
+fluid_25d_native_surface_highlights_enabled(Fluid25DNativeSurfaceHighlightsPolicy policy,
+                                            std::uint32_t native_presentation) {
+    switch (policy) {
+    case Fluid25DNativeSurfaceHighlightsPolicy::Auto:
+        // Native style values are original=0, motion=1, readable=2.
+        return native_presentation == 0U || native_presentation == 1U;
+    case Fluid25DNativeSurfaceHighlightsPolicy::On:
+        return true;
+    case Fluid25DNativeSurfaceHighlightsPolicy::Off:
+    case Fluid25DNativeSurfaceHighlightsPolicy::Invalid:
+        return false;
+    }
+    return false;
+}
 
 inline constexpr float kFluid25DMinTerrainCaseRenderHeightScale = 0.001F;
 inline constexpr float kFluid25DMaxTerrainCaseRenderHeightScale = 2.0F;
@@ -31,6 +81,22 @@ inline constexpr float kFluid25DMaxTerrainCaseRenderHeightScale = 2.0F;
 inline constexpr float kFluid25DPresentationCuePrimaryCellSpan = 23.0F;
 inline constexpr float kFluid25DPresentationCueSecondaryCellSpan = 11.0F;
 inline constexpr float kFluid25DPresentationCueRelaxationPerSecond = 0.0015F;
+inline constexpr float kFluid25DNativeCuePrimaryCellSpan = 6.0F;
+inline constexpr float kFluid25DNativeCueSecondaryCellSpan = 3.0F;
+
+[[nodiscard]] inline double fluid_25d_recorded_visual_delta(double previous_requested_s,
+                                                            double requested_s,
+                                                            double final_saved_s) {
+    if (!std::isfinite(previous_requested_s) || !std::isfinite(requested_s) ||
+        !std::isfinite(final_saved_s) || previous_requested_s < 0.0 || requested_s < 0.0 ||
+        final_saved_s < 0.0 || requested_s < previous_requested_s) {
+        throw std::invalid_argument("recorded visual clock requires ordered finite times");
+    }
+    // The native fields remain held between saves. Only the presentation clock
+    // advances between them, and a finished recording cannot keep animating.
+    return std::min(60.0, std::min(requested_s, final_saved_s) -
+                              std::min(previous_requested_s, final_saved_s));
+}
 
 // Flow Inspection is a conventional, fixed-grid velocity field rather than a
 // particle/tracer display. The compact 128 by 64 source-to-outlet scene gets a
@@ -191,11 +257,14 @@ fluid_25d_presentation_cue_hash(std::uint32_t x, std::uint32_t y, std::uint32_t 
     return std::lerp(lower, upper, ty);
 }
 
-[[nodiscard]] inline float fluid_25d_presentation_cue_seed(std::uint32_t x, std::uint32_t y) {
-    const float primary = fluid_25d_presentation_cue_lattice(
-        x, y, kFluid25DPresentationCuePrimaryCellSpan, 0x68bc21ebU);
-    const float secondary = fluid_25d_presentation_cue_lattice(
-        x, y, kFluid25DPresentationCueSecondaryCellSpan, 0x02e5be93U);
+[[nodiscard]] inline float fluid_25d_presentation_cue_seed(std::uint32_t x, std::uint32_t y,
+                                                           bool native_motion = false) {
+    const float primary_span =
+        native_motion ? kFluid25DNativeCuePrimaryCellSpan : kFluid25DPresentationCuePrimaryCellSpan;
+    const float secondary_span = native_motion ? kFluid25DNativeCueSecondaryCellSpan
+                                               : kFluid25DPresentationCueSecondaryCellSpan;
+    const float primary = fluid_25d_presentation_cue_lattice(x, y, primary_span, 0x68bc21ebU);
+    const float secondary = fluid_25d_presentation_cue_lattice(x, y, secondary_span, 0x02e5be93U);
     return std::clamp(0.5F + (primary - 0.5F) * 0.70F + (secondary - 0.5F) * 0.24F, 0.0F, 1.0F);
 }
 

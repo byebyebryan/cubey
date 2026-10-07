@@ -1,4 +1,5 @@
 #version 450
+#extension GL_GOOGLE_include_directive : require
 
 struct QuiverState {
     vec4 anchor_xy_reserved;
@@ -17,6 +18,7 @@ layout(set = 0, binding = 2, std430) readonly buffer VelocityField {
 layout(set = 0, binding = 3, std430) readonly buffer QuiverField {
     QuiverState values[];
 } quiver;
+#include "fluid_25d_bspline_surface.glsl"
 
 layout(push_constant) uniform CatchmentParams {
     mat4 view_projection;
@@ -61,6 +63,10 @@ uvec2 sample_coordinate(vec2 cell, uint width, uint height) {
 }
 
 float sample_surface_height(vec2 cell, uint width, uint height) {
+    if (params.presentation.x > 1.0) {
+        vec2 bh = fluid25d_bspline_mesh_bed_depth(cell,uvec2(width,height),uint(params.presentation.x)-1u);
+        return bh.x+bh.y;
+    }
     vec2 bounded = clamp(cell, vec2(0.0), vec2(float(width - 1u), float(height - 1u)));
     uvec2 lower = uvec2(floor(bounded));
     uvec2 upper = min(lower + uvec2(1u), uvec2(width - 1u, height - 1u));

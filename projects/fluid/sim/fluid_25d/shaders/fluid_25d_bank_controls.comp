@@ -1,0 +1,131 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+
+#include "fluid_25d_surface_sampling.glsl"
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer DepthField {
+    float values[];
+} depth;
+layout(set = 0, binding = 1, std430) readonly buffer SampleQueries {
+    vec4 values[];
+} queries;
+layout(set = 0, binding = 2, std430) buffer SampleResults {
+    vec4 values[];
+} results;
+layout(set = 0, binding = 3, std430) readonly buffer TerrainField {
+    float values[];
+} terrain;
+
+layout(push_constant) uniform BankControlParams {
+    uvec4 grid_query;
+} params;
+
+uint cell_index(uvec2 coordinate, uint width) {
+    return coordinate.y * width + coordinate.x;
+}
+
+float bspline_field(vec2 p, uvec2 grid, uint depth_offset, uint field_kind,
+                    out float local_minimum, out float local_maximum) {
+    vec2 bounded = clamp(p, vec2(0.0), vec2(grid - uvec2(1)));
+    ivec2 base = ivec2(floor(bounded)) - ivec2(1);
+    vec4 wx = fluid25d_bspline_weights(fract(bounded.x));
+    vec4 wy = fluid25d_bspline_weights(fract(bounded.y));
+    float result = 0.0;
+    local_minimum = 3.402823466e+38;
+    local_maximum = -3.402823466e+38;
+    for (int y = 0; y < 4; ++y) {
+        for (int x = 0; x < 4; ++x) {
+            ivec2 coordinate = clamp(base + ivec2(x, y), ivec2(0), ivec2(grid) - ivec2(1));
+            uint index = cell_index(uvec2(coordinate), grid.x);
+            float sample_depth = depth.values[depth_offset + index];
+            float field_value = field_kind == 0u ? sample_depth
+                                : field_kind == 1u ? terrain.values[depth_offset + index]
+                                                   : terrain.values[depth_offset + index] + sample_depth;
+            float weight = wx[x] * wy[y];
+            result += field_value * weight;
+            if (field_kind == 0u) {
+                local_minimum = min(local_minimum, sample_depth);
+                local_maximum = max(local_maximum, sample_depth);
+            }
+        }
+    }
+    if (field_kind != 0u) {
+        local_minimum = result;
+        local_maximum = result;
+    }
+    return result;
+}
+
+float bspline_mesh_field(vec2 p, uvec2 grid, uint depth_offset, uint field_kind) {
+    float subdivision = float(max(params.grid_query.w, 1u));
+    vec2 bounded = clamp(p, vec2(0.0), vec2(grid - uvec2(1)));
+    vec2 lo = floor(bounded * subdivision) / subdivision;
+    vec2 hi = min(lo + vec2(1.0 / subdivision), vec2(grid - uvec2(1)));
+    vec2 fraction = fract(bounded * subdivision);
+    float unused_minimum = 0.0;
+    float unused_maximum = 0.0;
+    float a = bspline_field(lo, grid, depth_offset, field_kind, unused_minimum, unused_maximum);
+    float b = bspline_field(vec2(hi.x, lo.y), grid, depth_offset, field_kind,
+                            unused_minimum, unused_maximum);
+    float c = bspline_field(vec2(lo.x, hi.y), grid, depth_offset, field_kind,
+                            unused_minimum, unused_maximum);
+    float d = bspline_field(hi, grid, depth_offset, field_kind, unused_minimum, unused_maximum);
+    return fraction.x >= fraction.y
+               ? a * (1.0 - fraction.x) + b * (fraction.x - fraction.y) + d * fraction.y
+               : a * (1.0 - fraction.y) + c * (fraction.y - fraction.x) + d * fraction.x;
+}
+
+void main() {
+    uint query_index = gl_GlobalInvocationID.x;
+    uint result_query_count = uint(results.values.length()) / 3u;
+    uint query_count = min(params.grid_query.z,
+                           min(uint(queries.values.length()), result_query_count));
+    if (query_index >= query_count) {
+        return;
+    }
+
+    vec4 query = queries.values[query_index];
+    uvec2 grid = params.grid_query.xy;
+    uint cell_count = grid.x * grid.y;
+    uint plane_count = max(uint(depth.values.length()) / cell_count, 1u);
+    uint plane = min(uint(max(query.w, 0.0)), plane_count - 1u);
+    uint depth_offset = plane * cell_count;
+    vec2 fraction;
+    uvec4 indices = fluid25d_quad_indices(query.xy, grid, fraction);
+    vec4 depths = vec4(depth.values[depth_offset + indices.x],
+                       depth.values[depth_offset + indices.y],
+                       depth.values[depth_offset + indices.z],
+                       depth.values[depth_offset + indices.w]);
+    float triangle_depth = fluid25d_triangle_sample(depths, fraction);
+    float bilinear_depth = fluid25d_bilinear_sample(depths, fraction);
+    float supported_depth = fluid25d_supported_depth(depths, fraction, query.z);
+    vec4 wet_samples = vec4(depths.x > query.z ? 1.0 : 0.0,
+                            depths.y > query.z ? 1.0 : 0.0,
+                            depths.z > query.z ? 1.0 : 0.0,
+                            depths.w > query.z ? 1.0 : 0.0);
+    float wet_support = fluid25d_bilinear_sample(wet_samples, fraction);
+
+    float local_minimum = 0.0;
+    float local_maximum = 0.0;
+    float bspline_depth = bspline_field(query.xy, grid, depth_offset, 0u,
+                                        local_minimum, local_maximum);
+    float unused_minimum = 0.0;
+    float unused_maximum = 0.0;
+    float bspline_bed = bspline_field(query.xy, grid, depth_offset, 1u,
+                                      unused_minimum, unused_maximum);
+    float bspline_stage = bspline_field(query.xy, grid, depth_offset, 2u,
+                                        unused_minimum, unused_maximum);
+    float mesh_depth = bspline_mesh_field(query.xy, grid, depth_offset, 0u);
+    float mesh_bed = bspline_mesh_field(query.xy, grid, depth_offset, 1u);
+    float supported_mesh_depth = wet_support > 0.5 ? mesh_depth : 0.0;
+    uint output_index = query_index * 3u;
+    results.values[output_index] = vec4(triangle_depth, bilinear_depth,
+                                        supported_depth, wet_support);
+    results.values[output_index + 1u] = vec4(bspline_depth, local_minimum,
+                                              local_maximum, supported_mesh_depth);
+    results.values[output_index + 2u] = vec4(bspline_bed, bspline_stage,
+                                              bspline_bed + bspline_depth,
+                                              mesh_bed + mesh_depth);
+}

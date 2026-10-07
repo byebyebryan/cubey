@@ -32,6 +32,7 @@ layout(location = 2) out float water_depth;
 layout(location = 3) out vec3 water_flow;
 layout(location = 4) out float presentation_cue;
 layout(location = 5) out float dye_concentration;
+layout(location = 6) out vec2 field_coordinate;
 
 // The catchment keeps metre-scale X/Z but compresses elevation for a readable
 // overview. Even with its scale-derived near plane, a 5 cm physical sheet can
@@ -80,6 +81,7 @@ void main() {
     float cell_size = params.grid_cell.z;
     uvec2 coordinate = vertex_coordinate(uint(gl_VertexIndex), width);
     uint index = cell_index(coordinate, width);
+    field_coordinate = vec2(coordinate);
     vec2 centered = vec2(float(coordinate.x) - 0.5 * float(width - 1u),
                          float(coordinate.y) - 0.5 * float(height - 1u)) * cell_size;
     water_depth = depth.values[index];

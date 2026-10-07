@@ -86,6 +86,13 @@ void main() {
                                              params.terrain_palette.y,
                                              terrain_height_m);
         albedo = mix(lowland, highland, palette_elevation) + vec3(contour);
+        if (params.presentation.w >= 6.0) {
+            // Native readable view: subdued earth/stone values preserve the
+            // same physical elevation mapping but reserve cyan for water.
+            vec3 valley = cubey_srgb_to_linear(vec3(0.24, 0.27, 0.23));
+            vec3 ridge = cubey_srgb_to_linear(vec3(0.53, 0.48, 0.38));
+            albedo = mix(valley, ridge, palette_elevation);
+        }
     }
     vec3 lighting = params.presentation.w > 1.5 ? vec3(0.42) + vec3(0.58) * diffuse
                                                  : vec3(0.26) + vec3(0.74) * diffuse;

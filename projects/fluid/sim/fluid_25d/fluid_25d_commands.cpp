@@ -91,8 +91,8 @@ presentation_cue_push_constants(const Fluid25DConfig& config) {
     // The presentation field advances once per outer fixed step, after all
     // solver substeps have published their final velocity/depth state.
     push_constants.grid_dt_cell[2] = config.fixed_delta_seconds;
-    // Source scale is irrelevant to render-only compute; presentation shaders
-    // deliberately ignore this otherwise-reserved word.
+    // Source scale is irrelevant to render-only compute. Built-in callers
+    // keep this word zero; recorded presentation may opt into a native cue policy.
     push_constants.physics[3] = 0.0F;
     return push_constants;
 }
@@ -267,7 +267,7 @@ catchment_push_constants(const Fluid25DConfig& config, const Fluid25DGpuResource
                          (render_options.terrain_thin_water_composite ? 1.0F : 0.0F) +
                              (render_options.hillside_depth_cues ? 2.0F : 0.0F),
                          render_options.native_recording
-                             ? 4.0F
+                             ? 4.0F + static_cast<float>(render_options.native_presentation)
                              : fluid_25d_catchment_terrain_material_cue(config.scenario)},
         .terrain_palette = {render_options.terrain_palette_low_m.value_or(0.0F),
                             render_options.terrain_palette_high_m.value_or(0.0F),
@@ -414,13 +414,17 @@ void record_fluid_25d_recorded_presentation(VkCommandBuffer command_buffer,
                                             Fluid25DGpuResources& resources,
                                             const Fluid25DConfig& config,
                                             float physical_delta_seconds, bool& cue_reset_requested,
-                                            bool& quiver_reset_requested, bool show_quiver) {
+                                            bool& quiver_reset_requested, bool show_quiver,
+                                            bool native_motion) {
     if (!resources.presentation_only() || !std::isfinite(physical_delta_seconds) ||
         physical_delta_seconds < 0.0F)
         throw std::runtime_error("recorded presentation requires its own finite nonnegative clock");
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
     auto params = presentation_cue_push_constants(config);
     params.grid_dt_cell[2] = physical_delta_seconds;
+    // Reserved by presentation shaders only; hydraulic push constants and
+    // every built-in caller retain the original zero policy.
+    params.physics[3] = native_motion ? 1.0F : 0.0F;
     const auto groups = dispatch_groups(config);
     cubey::vulkan::record_memory_barrier(
         command_buffer, {
@@ -532,7 +536,14 @@ void record_fluid_25d_catchment_draw(
     cubey::render::ColorTargetView color_target, cubey::render::DepthTargetView depth_target,
     Fluid25DMotionMarkers* motion_markers, float marker_interpolation) {
     const std::size_t vertex_count = fluid_25d_mesh_vertex_count(config);
-    if (vertex_count > std::numeric_limits<std::uint32_t>::max()) {
+    const bool bspline = render_options.native_recording && render_options.native_bspline_surface;
+    if (bspline && render_options.native_bilinear_water)
+        throw std::runtime_error("native surface reconstruction modes are mutually exclusive");
+    const std::uint32_t subdivision = bspline ? render_options.native_surface_subdivision : 1U;
+    if (subdivision != 1U && subdivision != 2U && subdivision != 4U)
+        throw std::runtime_error("native display subdivision must be 1, 2, or 4");
+    const std::size_t display_vertex_count = vertex_count * subdivision * subdivision;
+    if (display_vertex_count > std::numeric_limits<std::uint32_t>::max()) {
         throw std::runtime_error("fluid 2.5D product mesh vertex count exceeds Vulkan draw range");
     }
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
@@ -546,27 +557,43 @@ void record_fluid_25d_catchment_draw(
             .color = cubey::render::color_clear_value(0.018F, 0.030F, 0.046F, 1.0F),
             .depth = cubey::render::depth_clear_value(),
         },
-        [&resources, catchment_view, push_constants, vertex_count, motion_markers,
-         marker_interpolation, color_target,
+        [&resources, catchment_view, push_constants, display_vertex_count, bspline, subdivision,
+         motion_markers, marker_interpolation, color_target, render_options,
          quiver_count](const cubey::vulkan::CommandRecorder& pass_recorder) {
             const VkDescriptorSet descriptor_set = resources.render_descriptor_set();
-            const cubey::render::GraphicsPipelineResource& terrain = resources.terrain_pipeline();
+            const cubey::render::GraphicsPipelineResource& terrain =
+                resources.terrain_pipeline(bspline);
+            CatchmentPushConstants terrain_constants = push_constants;
+            if (bspline)
+                terrain_constants.presentation.x = static_cast<float>(subdivision);
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, terrain.pipeline());
             pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, terrain.layout(), 0U,
                                               descriptor_set);
             pass_recorder.push_constants(terrain.layout(),
                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                         0U, push_constants);
-            pass_recorder.draw(static_cast<std::uint32_t>(vertex_count));
+                                         0U, terrain_constants);
+            pass_recorder.draw(static_cast<std::uint32_t>(display_vertex_count));
 
-            const cubey::render::GraphicsPipelineResource& water = resources.water_pipeline();
+            const cubey::render::GraphicsPipelineResource& water =
+                resources.water_pipeline(bspline, render_options.native_recording &&
+                                                      render_options.native_water_debug == 6U);
+            CatchmentPushConstants water_constants = push_constants;
+            // Water-local diagnostic word; terrain/quiver retain their palette/speed ABI.
+            water_constants.terrain_palette.w =
+                render_options.native_recording
+                    ? static_cast<float>(render_options.native_water_debug) +
+                          (render_options.native_bilinear_water ? 8.0F : 0.0F) +
+                          (bspline ? static_cast<float>(16U + (subdivision << 5U)) : 0.0F) +
+                          (render_options.native_surface_highlights ? 0.0F : 256.0F) +
+                          (render_options.native_display_coverage ? 512.0F : 0.0F)
+                    : 0.0F;
             pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, water.pipeline());
             pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, water.layout(), 0U,
                                               descriptor_set);
             pass_recorder.push_constants(water.layout(),
                                          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                         0U, push_constants);
-            pass_recorder.draw(static_cast<std::uint32_t>(vertex_count));
+                                         0U, water_constants);
+            pass_recorder.draw(static_cast<std::uint32_t>(display_vertex_count));
 
             if (resources.forcing_cube_count() > 0U) {
                 const auto& cubes = resources.forcing_cube_pipeline();
@@ -581,18 +608,25 @@ void record_fluid_25d_catchment_draw(
 
             if (catchment_view == Fluid25DCatchmentView::FlowInspection) {
                 const cubey::render::GraphicsPipelineResource& quiver = resources.quiver_pipeline();
+                CatchmentPushConstants quiver_constants = push_constants;
+                // Quiver's presentation.x was unused; keep the speed/palette ABI intact.
+                quiver_constants.presentation.x =
+                    bspline ? static_cast<float>(subdivision + 1U) : 0.0F;
                 pass_recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, quiver.pipeline());
                 pass_recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, quiver.layout(),
                                                   0U, resources.quiver_render_descriptor_set());
                 pass_recorder.push_constants(
                     quiver.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0U,
-                    push_constants);
+                    quiver_constants);
                 pass_recorder.draw(kFluid25DQuiverVertexCount, quiver_count);
             }
             if (motion_markers != nullptr) {
                 motion_markers->record_draw(pass_recorder.handle(), resources.current_depth_is_a(),
                                             push_constants.view_projection, color_target.extent,
-                                            push_constants.grid_cell.w, marker_interpolation);
+                                            push_constants.grid_cell.w, marker_interpolation,
+                                            render_options.native_recording &&
+                                                (render_options.native_bilinear_water || bspline),
+                                            bspline ? subdivision : 0U);
             }
         });
 }
@@ -655,6 +689,8 @@ void record_fluid_25d_catchment_draw(
     const cubey::render::RenderGraphBufferHandle endpoint_markers =
         import("fluid 2.5D source outlet markers", resources.endpoint_markers());
     const auto forcing_cubes = import("fluid 2.5D forcing cubes", resources.forcing_cubes());
+    const auto display_coverage =
+        import("fluid 2.5D display-only coverage", resources.display_coverage());
     const cubey::render::RenderGraphBufferHandle quiver =
         import("fluid 2.5D flow inspection quiver", resources.quiver());
     std::optional<cubey::render::RenderGraphBufferHandle> marker_buffer;
@@ -781,7 +817,8 @@ void record_fluid_25d_catchment_draw(
             .read_storage_buffer(presentation_cue_a)
             .read_storage_buffer(presentation_cue_b)
             .read_storage_buffer(endpoint_markers)
-            .read_storage_buffer(forcing_cubes);
+            .read_storage_buffer(forcing_cubes)
+            .read_storage_buffer(display_coverage);
         if (flow_inspection_active) {
             catchment.read_storage_buffer(quiver);
         }

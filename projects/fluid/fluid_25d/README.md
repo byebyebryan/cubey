@@ -450,6 +450,212 @@ Generated local review evidence is under
 captures, clips and launch command retain provenance. Human GUI acceptance
 remains pending.
 
+### Native presentation review V1
+
+`--fluid25d-native-presentation original|motion|readable` is an opt-in for
+recordings, stock streams and external services only. `original` remains the
+default. `motion` keeps the reference camera/material and uses 6/3-cell
+advected cue scales instead of 23/11 cells; `readable` also improves framing,
+terrain/water contrast and modest wet-edge coverage. Neither changes terrain,
+depth, velocity, rain or solver configuration. The GUI selector resets only
+visual history, not the producer or logical playback session.
+
+For headless motion/readable video, the approximate visual clock advances
+between requested render times while native fields remain held between their
+saved knots. It starts at zero, stops at the recording end and caps sparse
+catch-up at 60 physical seconds per output frame. This fixes burst/hold cue
+updates without inventing interpolated hydraulic fields. Native cue advection
+uses wet-normalized support and freezes unsupported half-cell-plus
+displacements instead of bridging banks. Resting velocities and pause freeze
+the cue. Optional local dots/trails retain their separate existing integrator;
+neither cue is a native conserved tracer or a simulated floating object.
+
+The 30 m shoreline geometry is still visible. Coverage changes are not
+sub-grid river reconstruction, and collection is not a claim of a quiet lake.
+Water isolation and raw depth/speed/wetness maps remain available; Composite
+attenuates shallow rainfall film and its depth tint remains the fixed
+0.01/0.1/1/10 m logarithmic scale, saturated above 10 m.
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-recording outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/recordings/rain-off \
+  --fluid25d-native-presentation readable --fluid25d-motion-markers
+```
+
+`run_native_presentation_v1.py` creates a fresh remote-review evidence gallery
+with matched original/motion/readable views and native rain-on/off recordings.
+Its artifact receipts distinguish actual saved time from the render playhead,
+retain executable/SPIR-V/input identities, validate media timing and report
+matched rendering costs. In motion/readable mode, headless recording upload
+validation additionally runs isolated GPU cue controls for rest/pause, wet
+support, uniform flow, failure freezing and deterministic reset. Main imported
+bed/depth/velocity buffers remain separately checked bit-for-bit. Clip-based
+human readability review remains separate from automated gates.
+
+The October 5 evidence is in
+[`outputs/fluid/presentation-v1-20261005-2c14bc0d/review/index.html`](../../../outputs/fluid/presentation-v1-20261005-2c14bc0d/review/index.html).
+Start with the three readable story clips, then compare original/motion and
+the optional dots/trails. All 18 matched original stills and 602 decoded mature
+video frames exactly match the pre-change captures. At 960x540 and 150x recorded
+playback, the GPU upload/cue/draw scope measured about 0.092/0.601 ms median/p95
+for original and 0.144/0.378 ms for readable plus markers. This excludes native
+solver work, video export and GUI overhead. The full repository gate passed
+154 tests with 20 opt-in windowed skips; detailed logs are in the evidence's
+`gates` directory. Readability is pending human clip review, and stepped banks
+and dark triangle artifacts remain unresolved. Original stays the default.
+
+### Native water/bank display V1
+
+Dots/trails remain a supported optional motion/diagnostic view. The separate
+`--fluid25d-native-water-sampling triangular|bilinear` switch keeps `triangular`
+as the default. `bilinear` reconstructs **displayed depth/coverage**, not surface
+geometry: four neighboring saved cell-center depths replace the fixed-diagonal
+material interpolation. A strict majority of interpolated native wet support
+prevents joining opposite wet corners through a dry diagonal. All-dry patches
+stay dry, and wet native sample depths remain exact. This footprint is a
+conservative visual interpretation, not a volume or finer hydrology estimate.
+
+Terrain/water triangles, free-surface heights, normals, depth bias, physical
+depth palette and numerical inputs are unchanged. Marker display wetness uses
+the same helper, while marker height still follows the actual triangle mesh;
+marker advection/trajectories are untouched. The GUI has a visual-only toggle.
+This changes contours but is **not an accepted improvement**: matched close-ups
+show more pronounced scallops/sawteeth in some banks. It cannot create channel
+detail missing from the 30 m recording. Dark collection water can be real depth
+color, and sub-centimetre rain film remains attenuated only in Composite.
+
+`--fluid25d-native-water-debug shaded|solid|unlit|normals|wireframe|wet-mask`
+isolates those readings. Solid/normals/wireframe keep Composite's film coverage;
+wet-mask intentionally shows the full numerical mask (cyan = native and display
+wet, yellow = native only, magenta = display only). These modes use the normal
+terrain depth test, so they alone cannot separate occlusion from true dry holes.
+All controls reject built-in-only scenes and never select/change a solver.
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-recording outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/recordings/rain-off \
+  --fluid25d-native-presentation readable --fluid25d-native-water-sampling bilinear \
+  --fluid25d-motion-markers
+```
+
+`run_native_bank_render_v1.py` stages baseline/diagnosis/candidate/profile/review
+in fresh evidence leaves. It produces just three principal before/after clips:
+junction with markers, rain-off collection and continued-rain comparison, with
+executable/shader/source/input fingerprints and explicit saved/render clocks.
+GPU controls exercise the production sampling helper on scratch fields;
+imported fields are separately bit-exact checked. Stationary saved fields also
+have an image determinism check. The matched replay GPU p95 budget is 1 ms at
+960x540, excluding native solver/encoding/GUI cost. Human visual acceptance is
+separate; no automatic default promotion follows from this pass.
+
+The October 5 bank display results are in
+[`outputs/fluid/bank-render-v1-20261005-review/review/index.html`](../../../outputs/fluid/bank-render-v1-20261005-review/review/index.html)
+and [`RESULTS.md`](../../../outputs/fluid/bank-render-v1-20261005-review/RESULTS.md).
+The original "modest improvement" verdict was retracted after the owner's
+review and a matched 1080p check. Bilinear depth is C0, not a smooth-gradient
+bank reconstruction, and the representative frames are wet in every cell:
+their visible banks largely follow film opacity, not the dry-support mask. Matched
+GPU p95 with markers is about 0.382 ms versus 0.381 ms for triangular sampling.
+Numerical field preservation and stationary-image gates pass. Two stills and
+both marker-free reference clips are byte-exact; the marker reference clip has a
+minuscule encoded-image difference, so all-frame byte parity is not claimed.
+Human review and residual 30 m geometry/speckle limits remain explicit.
+The final repository gate passed 155 tests, with 20 opt-in windowed skips and
+zero failures; logs are retained in the same evidence leaf's `gates` directory.
+
+### Native matched-surface study V2 (experimental)
+
+`--fluid25d-native-water-sampling bspline` reconstructs displayed terrain and
+depth with the same positive, clamped 4x4 uniform cubic B-spline approximation.
+`--fluid25d-native-surface-subdivision 1|2|4` selects display triangles only;
+2x/4x means 15/7.5 m display spacing for the native 30 m recording, **not more
+hydraulic resolution**. This approximation changes native sample heights in
+the display, spreads depth contours and can alter thin-stream footprints. The
+numerical bed, h, momentum, rainfall, solver and defaults are unchanged.
+
+Using the same basis for bed and depth preserves a fully wet level stage over
+an uneven bed (within float precision), unlike smoothing depth alone atop the
+old triangle bed. This is not a partial-dry shoreline or exact-volume claim.
+Fragment opacity reads the actual displayed triangle depth; native wet-majority
+support still fences genuinely dry gaps. Marker height follows those same
+subdivided triangles, without changing trajectories. A separate experimental
+vertex pipeline retains the reference geometry path.
+
+Additional `--fluid25d-native-water-debug no-occlusion|contours` modes distinguish
+depth-testing effects from physical depth contours. `no-occlusion` disables
+water depth testing **only for diagnosis**; it is never a production remedy.
+`contours` displays fixed 2/10/26/50 mm bands without the film-opacity fade.
+
+`run_native_bank_reconstruction_v2.py` captures all five reconstruction modes,
+two small matched motion/recession clips, 1080p close-ups and paired occlusion
+diagnostics under fresh `outputs/fluid/bank-reconstruction-v2-*` leaves. Its
+profile reports the existing 1 ms playback GPU gate without hiding failures.
+This is a bounded study, not default promotion or final human visual acceptance.
+The regular-grid filter is established, not new fluid mathematics: see
+[Cornel et al. (2019)](https://www.cg.tuwien.ac.at/research/publications/2019/CORNEL-2019-IVF/CORNEL-2019-IVF-Paper.pdf)
+and [GPU Gems 2, third-order filtering](https://developer.nvidia.com/gpugems/gpugems2/part-iii-high-quality-rendering/chapter-20-fast-third-order-texture-filtering).
+This small prototype does **not** implement the paper's full dry-stage extension,
+wall handling or adaptive renderer. Smooth analytic fields are approximated by
+display triangles; neither perfect shorelines nor whole-paper parity is claimed.
+
+The completed October 5 study is in
+[`outputs/fluid/bank-reconstruction-v2-20261005-zA0Fye/review/index.html`](../../../outputs/fluid/bank-reconstruction-v2-20261005-zA0Fye/review/index.html)
+and [`RESULTS.md`](../../../outputs/fluid/bank-reconstruction-v2-20261005-zA0Fye/RESULTS.md).
+The candidate is **rejected for promotion**: sampled 4x views have rounder banks,
+but positive-film controls falsely join streams and a partially dry lake shifts
+its near-shore stage by up to 4.63 mm. Its collection view has 34.3% more screen
+pixels in the >=26 mm bands; this is not a physical water-area/volume measure.
+The approximation also changes displayed bed heights (0.70 m median absolute
+departure at native centres), without changing numerical elevation. GPU p95
+at 960x540 with markers is 0.380 ms reference, 0.682 ms at 2x and 1.606 ms at 4x;
+4x misses the existing 1 ms presentation budget. The independent GPU/CPU
+sampling controls pass, but that is not a rasterized shoreline or human visual
+acceptance certificate. The final dev gate executed 156 tests with zero failures;
+20 opt-in windowed cases are excluded by the preset. Triangular remains default.
+
+### Independent native surface highlights and quiet bank review V4
+
+`--fluid25d-native-surface-highlights auto|on|off` controls only the sparse
+procedural surface-color highlights, independently of optional dots/trails.
+`auto` (default) keeps the legacy effect in Original and Motion, and disables
+it in Readable. `on` restores that legacy effect in Readable; `off` disables it
+in any native style. These are approximate flow cues, **not simulated foam**.
+The shared recording/external viewer has the same three-choice control.
+Changing the highlight policy does not reset playback, cue/marker history,
+camera or backend. Cue compute/status updates continue even while highlights
+are hidden, so markers and later toggling remain independent.
+
+The change does not alter native h/momentum/terrain, geometry, normals, depth
+palette, film opacity or reconstruction. Built-in scenes reject this option;
+their solver and rendering defaults are unchanged. Triangular remains the
+native reconstruction default. The experimental B-spline candidate remains
+unpromoted: smoother-looking banks alone do not justify widened streams,
+false positive-film connections or partial-dry lake-stage departures.
+
+`run_native_bank_presentation_v4.py` stages `capture`, `profile`, `shoreline`
+and `review` in fresh `outputs/fluid/bank-presentation-v4-*` leaves. It checks
+exact image parity against the pinned V3 On/Off ablations, Readable Auto/Off
+equality, immutable uploads, a small quiet reconstruction matrix and the same
+1 ms native-presentation GPU budget (960x540 with markers; not live CUDA cost).
+The review has three before/after pairs, short runoff/recession clips retaining
+dots, and diagnostic truth. Human visual acceptance remains separate.
+
+`run_native_shoreline_raster_v1.py --target <fluid_25d executable>` renders
+synthetic one-cell streams, a junction, a positive-film gap, recession and
+fully/partly wet lakes through the shared native viewer. Opaque depth bands
+give a >=26 mm screen mask after rasterization/depth test. Four-neighbor
+components and recession-subset checks supplement the existing independent
+GPU/CPU sampling controls. Screen pixels are not physical area/volume, and
+lake-stage precision is measured by probes, **not inferred from PNGs**.
+The harness succeeds by detecting the known B-spline film-gap and partially
+dry stage counterexamples; its separate reconstruction-promotion verdict
+remains rejected. Both host helpers and the GPU harness are in the dev gate.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_native_bank_presentation_v4.py capture \
+  --out outputs/fluid/bank-presentation-v4-<fresh-id>
+```
+
 ### Native rain-intensity comparison
 
 `run_native_rain_intensity_v1.py` is a separate, frozen-input experiment on the
@@ -1425,3 +1631,94 @@ the stock bridge/recordings as references, and terrain inputs immutable. No
 solver port, new terrain search or numerical replacement follows implicitly
 from this integration. Shared helpers still require an independent consumer or
 a measured bottleneck.
+
+## Experimental display-only bank coverage
+
+`--fluid25d-native-display-coverage <coverage.json>` attaches an opt-in,
+hash-checked opacity sidecar to a **completed recording with triangular
+geometry**. It is not supported by the live/external or builtin backends.
+Neither hydraulic depth/velocity nor displayed terrain/surface heights are
+modified. Native depth, flow, wet-mask and water diagnostics bypass this mask;
+Composite shading alone uses its reconstructed shallow-water coverage.
+The shared native viewer's bank-view selector is independent of procedural
+highlights and dots/trails and does not reset playback or their histories.
+
+The isolated-environment tool `run_native_bank_refinement_v1.py` bakes
+marching-squares contours with bounded VTK point smoothing. Twelve display
+depth bands approximate the existing 2–50 mm opacity fade, rasterized at 8x
+and node-aligned filtered to a 4x mask. This adds display samples, not simulation
+resolution. The unsmoothed `raw-mask` variant controls for raster/quadrature
+changes. Libraries remain offline tools, not Cubey dependencies.
+
+Sidecars pin the recording manifest and individual source-frame SHA-256s;
+payload size, digest, finite [0,1] coverage, sample budget, path safety and saved
+time are checked before use. Only baked saved times are available: a missing
+time is an explicit error, never stale-mask reuse or invented hydraulic data.
+This is a bounded appearance prototype, not a production live reconstruction.
+
+`--fluid25d-native-camera-pitch <radians>` supplies an observation-only native
+camera angle for matched bank-contact captures; the default remains -0.92.
+All reconstruction modes/defaults remain unchanged. Small display width/area
+changes are acceptable for a visual demo; obvious false connections, invalid
+masks, temporal popping and poor terrain contact still require review.
+
+Current visual-first comparison:
+`outputs/fluid/bank-refinement-v1-20261006-ZmPvk9/review/index.html`.
+The earlier offline boundary study retains its original conservative verdict;
+this pass evaluates actual Cubey filled-water rendering under a different,
+explicit visual-demo acceptance standard.
+Moderate coverage trims visible bank teeth but remains recording-only with a
+costly offline bake and synchronous mask validation. B-spline 2x is the stronger
+demo-facing opt-in candidate under that visual standard, with broader streams
+and approximated displayed terrain; it is not an accepted default. Strong
+coverage is rejected for motion because two recorded states self-intersect.
+See the review's `RESULTS.md` for matched clips, separate costs and limits.
+
+## Recorded three-mode bank comparison
+
+`--fluid25d-native-bank-view reference|bspline-2x|marching-squares` exposes
+three principal presentation choices in the recording/external viewer. Reference
+is the existing triangular reconstruction. B-spline 2x remains experimental:
+it rounds banks but approximates both displayed terrain and water and may widen,
+bead or visually join streams. Marching-squares uses the existing display-only
+coverage sidecar, **not** a live contour mesh or a different solver. It is
+disabled with an explanation when no matching recorded mask exists. The older
+bilinear/subdivision controls remain advanced options outside comparison mode.
+Do not combine the new bank-view option with those legacy sampling options.
+
+For a fair bounded replay, add `--fluid25d-bank-comparison` and
+`--fluid25d-native-display-coverage <coverage.json>` to a completed recording.
+The sidecar must cover 2–16 consecutive native states. Only that window is
+seekable/playable. The final covered state is held until just before the next
+uncovered publication; playback then pauses with an explicit window-end message.
+Space/Replay or Restart intentionally rewinds. `--fluid25d-bank-comparison-loop`
+opts into recorded replay, not a simulation restart. This mode is rejected for
+live streams/external service and builtin sources. With an omitted/zero start,
+playback begins at the first covered state; explicit out-of-window starts reject.
+
+The active window's masks are fully digest/size/range validated before playback,
+retained within a 256 MiB payload budget, and loaded asynchronously for a GUI
+window (headless capture preloads synchronously). Preparation progress/error is
+visible and playback stays held until ready. No per-frame mask file reads occur
+after preparation. GPU upload occurs only when the selected coverage mode needs
+a different saved mask. The budget excludes temporary validation buffers,
+native frames, GPU staging and other process memory.
+
+In the native viewer, **S** cycles the available bank views; **W** independently
+toggles dots/trails when prepared. Bank changes preserve camera, playback time,
+rate/pause state, native inputs and cue histories. Explicit seek/restart/loop
+navigation clears visual history as before. All six raw 2D diagnostics bypass
+bank reconstruction, regardless of the selected 3D bank view. Defaults, solver,
+terrain data and physics remain unchanged.
+
+Headless evidence can use `--fluid25d-bank-comparison-cycle-frames N` to exercise
+real draw transitions; it requires comparison mode and video capture. This is
+an interaction test, not a replacement for separately captured, synchronized
+appearance comparisons.
+
+Current compact review:
+`outputs/fluid/bank-comparison-v1-20261006-DxdrJe/review/index.html`.
+It retains the three tradeoffs, matched growth/recession clips and actual GUI
+captures. Automated private-Xvfb checks do not constitute owner visual acceptance.
+Use `run_native_bank_comparison_v1.py` for capture/profile/review/integrity phases;
+it reuses the previous bounded masks and does not run a solver or bake new ones.

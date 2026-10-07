@@ -55,8 +55,9 @@ float cue_lattice(vec2 coordinate, float cell_span, uint salt) {
 
 float cue_seed(uvec2 coordinate) {
     vec2 position = vec2(coordinate);
-    float primary = cue_lattice(position, 23.0, 0x68bc21ebu);
-    float secondary = cue_lattice(position, 11.0, 0x02e5be93u);
+    bool native_motion = params.physics.w > 0.5;
+    float primary = cue_lattice(position, native_motion ? 6.0 : 23.0, 0x68bc21ebu);
+    float secondary = cue_lattice(position, native_motion ? 3.0 : 11.0, 0x02e5be93u);
     return clamp(0.5 + (primary - 0.5) * 0.70 + (secondary - 0.5) * 0.24, 0.0, 1.0);
 }
 
@@ -70,6 +71,32 @@ float sample_cue_bilinear(vec2 coordinate, uint width, uint height) {
     float upper_value = mix(source_cue.values[upper.y * width + lower.x],
                             source_cue.values[upper.y * width + upper.x], fraction.x);
     return mix(lower_value, upper_value, fraction.y);
+}
+
+bool native_wet_support(vec2 p, uint width, uint height) {
+    if (any(lessThan(p, vec2(-0.5))) ||
+        any(greaterThanEqual(p, vec2(width, height) - vec2(0.5)))) return false;
+    uvec2 c = uvec2(floor(p + vec2(0.5)));
+    float h = depth.values[c.y * width + c.x];
+    return !isnan(h) && !isinf(h) && h > params.physics.z;
+}
+
+float sample_native_cue(vec2 p, uint width, uint height, float fallback) {
+    vec2 bounded = clamp(p, vec2(0.0), vec2(width - 1u, height - 1u));
+    uvec2 lower = uvec2(floor(bounded));
+    vec2 f = fract(bounded);
+    float sum = 0.0;
+    float weights = 0.0;
+    for (uint y = 0u; y < 2u; ++y) for (uint x = 0u; x < 2u; ++x) {
+        uvec2 c = min(lower + uvec2(x, y), uvec2(width - 1u, height - 1u));
+        uint i = c.y * width + c.x;
+        float h = depth.values[i];
+        if (isnan(h) || isinf(h) || h <= params.physics.z) continue;
+        float weight = (x == 0u ? 1.0 - f.x : f.x) * (y == 0u ? 1.0 - f.y : f.y);
+        sum += weight * source_cue.values[i];
+        weights += weight;
+    }
+    return weights > 0.0 ? sum / weights : fallback;
 }
 
 void main() {
@@ -88,6 +115,10 @@ void main() {
     float seed = cue_seed(coordinate);
     float water_depth = depth.values[index];
     vec2 flow = velocity.values[index].xy;
+    if (params.physics.w > 0.5 && all(equal(flow, vec2(0.0)))) {
+        destination_cue.values[index] = source_cue.values[index];
+        return;
+    }
     if (water_depth <= params.physics.z || any(isnan(flow)) || any(isinf(flow))) {
         destination_cue.values[index] = seed;
         return;
@@ -95,7 +126,20 @@ void main() {
 
     float dt = params.grid_dt_cell.z;
     vec2 backtrace = vec2(coordinate) - flow * (dt / params.grid_dt_cell.w);
+    if (params.physics.w > 0.5) {
+        // Display only supported local advection. A held velocity must not
+        // carry a cue across a dry gap or an unsupported multi-cell jump.
+        float displacement = length(backtrace - vec2(coordinate));
+        if (displacement > 0.5 ||
+            !native_wet_support(backtrace, width, height) ||
+            !native_wet_support(mix(vec2(coordinate), backtrace, 0.5), width, height)) {
+            destination_cue.values[index] = source_cue.values[index];
+            return;
+        }
+    }
     float advected = sample_cue_bilinear(backtrace, width, height);
+    if (params.physics.w > 0.5)
+        advected = sample_native_cue(backtrace, width, height, source_cue.values[index]);
     float relaxation = clamp(dt * 0.0015, 0.0, 0.05);
     destination_cue.values[index] = clamp(mix(advected, seed, relaxation), 0.0, 1.0);
 }

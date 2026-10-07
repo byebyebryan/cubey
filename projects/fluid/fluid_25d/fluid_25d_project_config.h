@@ -63,6 +63,17 @@ struct Fluid25DProjectConfig {
     float recording_time_seconds = 0.0F;
     float recording_frame_interval_seconds = 60.0F;
     std::string recording_camera = "overview";
+    std::string native_presentation = "original";
+    std::string native_surface_highlights = "auto";
+    std::string native_water_debug = "shaded";
+    std::string native_water_sampling = "triangular";
+    std::uint32_t native_surface_subdivision = 2U;
+    std::optional<std::filesystem::path> native_display_coverage_path{};
+    std::optional<std::string> native_bank_view{};
+    bool bank_comparison = false;
+    bool bank_comparison_loop = false;
+    std::uint32_t bank_comparison_cycle_frames = 0U;
+    float native_camera_pitch_radians = -0.92F;
     bool recording_gpu_validation = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
@@ -516,6 +527,67 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "a hydraulic oracle.",
                      ValueType::Bool),
               config.recording_gpu_validation)
+        .bind(option("fluid25d.native_presentation", "--fluid25d-native-presentation",
+                     "Native Presentation",
+                     "Render-only original, motion, or readable native views.", ValueType::Enum, {},
+                     {"original", "motion", "readable"}),
+              config.native_presentation)
+        .bind(
+            option("fluid25d.native_surface_highlights", "--fluid25d-native-surface-highlights",
+                   "Procedural Flow Highlights",
+                   "Native-only auto keeps highlights on for Original/Motion and off for Readable; "
+                   "on/off explicitly override.",
+                   ValueType::Enum, {}, {"auto", "on", "off"}),
+            config.native_surface_highlights)
+        .bind(option("fluid25d.native_water_debug", "--fluid25d-native-water-debug",
+                     "Native Water Diagnostic", "Render-only frozen water/bank diagnosis.",
+                     ValueType::Enum, {},
+                     {"shaded", "solid", "unlit", "normals", "wireframe", "wet-mask",
+                      "no-occlusion", "contours"}),
+              config.native_water_debug)
+        .bind(option("fluid25d.native_water_sampling", "--fluid25d-native-water-sampling",
+                     "Native Water Sampling",
+                     "triangular reference, bilinear depth, or experimental "
+                     "matched B-spline terrain/water display (no simulation refinement).",
+                     ValueType::Enum, {}, {"triangular", "bilinear", "bspline"}),
+              config.native_water_sampling)
+        .bind(option("fluid25d.native_surface_subdivision", "--fluid25d-native-surface-subdivision",
+                     "Native Surface Subdivision",
+                     "Experimental B-spline display triangles: 1, 2, or 4 per axis.",
+                     ValueType::UInt32),
+              config.native_surface_subdivision)
+        .bind(option("fluid25d.native_display_coverage", "--fluid25d-native-display-coverage",
+                     "Experimental Bank Coverage",
+                     "Prebaked display-only coverage manifest; completed recordings only.",
+                     ValueType::Path),
+              config.native_display_coverage_path)
+        .bind(option(
+                  "fluid25d.native_bank_view", "--fluid25d-native-bank-view", "Bank View",
+                  "Presentation-only reference, bspline-2x, or recorded marching-squares coverage.",
+                  ValueType::Enum, {}, {"reference", "bspline-2x", "marching-squares"}),
+              config.native_bank_view)
+        .bind(option("fluid25d.bank_comparison", "--fluid25d-bank-comparison",
+                     "Recorded Bank Comparison",
+                     "Opt-in bounded recorded window with prevalidated coverage cache; not live "
+                     "reconstruction.",
+                     ValueType::Bool),
+              config.bank_comparison)
+        .bind(option("fluid25d.bank_comparison_loop", "--fluid25d-bank-comparison-loop",
+                     "Replay Comparison Loop",
+                     "Explicitly loop the recorded comparison window; does not rerun the solver.",
+                     ValueType::Bool),
+              config.bank_comparison_loop)
+        .bind(option("fluid25d.bank_comparison_cycle_frames",
+                     "--fluid25d-bank-comparison-cycle-frames", "Capture Bank View Cycle",
+                     "Headless comparison video only: cycle the three views every N output frames "
+                     "(zero disables).",
+                     ValueType::UInt32),
+              config.bank_comparison_cycle_frames)
+        .bind(option("fluid25d.native_camera_pitch", "--fluid25d-native-camera-pitch",
+                     "Native Camera Pitch", "Observation-only native camera pitch in radians.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1.45, .max = -0.40}),
+              config.native_camera_pitch_radians)
         .bind(option("fluid25d.view", "--fluid25d-view", "View",
                      "Top-level River V0 surface: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
@@ -760,6 +832,55 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         "fluid25d.recording_frame_interval_seconds", "fluid25d.recording_camera",
         "fluid25d.recording_gpu_validation"};
     const bool service_session = project_config.external_session_path.has_value();
+    if (project_config.bank_comparison &&
+        (!project_config.recording_path || project_config.stream_path || service_session ||
+         !project_config.native_display_coverage_path))
+        throw std::runtime_error(
+            "bank comparison requires a completed recording and coverage sidecar");
+    if (project_config.bank_comparison &&
+        (parsed.path_was_assigned("fluid25d.native_water_sampling") ||
+         parsed.path_was_assigned("fluid25d.native_surface_subdivision")))
+        throw std::runtime_error(
+            "bank comparison uses bank-view presets, not legacy sampling/subdivision flags");
+    if ((project_config.bank_comparison_loop ||
+         project_config.bank_comparison_cycle_frames != 0U) &&
+        !project_config.bank_comparison)
+        throw std::runtime_error("bank comparison replay controls require comparison mode");
+    if (project_config.bank_comparison_cycle_frames != 0U &&
+        (!project_config.common.headless ||
+         project_config.common.capture_mode != CaptureMode::Video))
+        throw std::runtime_error("bank comparison cycling requires a headless video capture");
+    if (project_config.native_bank_view &&
+        (parsed.path_was_assigned("fluid25d.native_water_sampling") ||
+         parsed.path_was_assigned("fluid25d.native_surface_subdivision")))
+        throw std::runtime_error(
+            "bank view cannot be combined with legacy sampling/subdivision flags");
+    if (project_config.native_bank_view == "marching-squares" &&
+        !project_config.native_display_coverage_path)
+        throw std::runtime_error("marching-squares bank view requires recorded display coverage");
+    if (project_config.native_display_coverage_path &&
+        (!project_config.recording_path || project_config.stream_path || service_session ||
+         (project_config.native_water_sampling != "triangular" &&
+          !project_config.bank_comparison) ||
+         project_config.native_display_coverage_path->empty()))
+        throw std::runtime_error(
+            "prebaked display coverage requires a completed recording and triangular geometry");
+    if ((parsed.path_was_assigned("fluid25d.native_presentation") ||
+         parsed.path_was_assigned("fluid25d.native_surface_highlights") ||
+         parsed.path_was_assigned("fluid25d.native_water_debug") ||
+         parsed.path_was_assigned("fluid25d.native_water_sampling") ||
+         parsed.path_was_assigned("fluid25d.native_bank_view") ||
+         parsed.path_was_assigned("fluid25d.native_surface_subdivision") ||
+         parsed.path_was_assigned("fluid25d.native_camera_pitch")) &&
+        !project_config.recording_path && !project_config.stream_path && !service_session)
+        throw std::runtime_error("native presentation requires a recording or external source");
+    if (project_config.native_surface_subdivision != 1U &&
+        project_config.native_surface_subdivision != 2U &&
+        project_config.native_surface_subdivision != 4U)
+        throw std::runtime_error("native surface subdivision must be 1, 2, or 4");
+    if (parsed.path_was_assigned("fluid25d.native_surface_subdivision") &&
+        project_config.native_water_sampling != "bspline")
+        throw std::runtime_error("native surface subdivision requires bspline sampling");
     if ((project_config.recording_path &&
          (project_config.stream_path || project_config.external_session_path)) ||
         (project_config.stream_path && project_config.external_session_path))

@@ -187,8 +187,11 @@ struct Fluid25DStepForcing {
 
 // Explicitly presentation-only: never resets or advances imported hydraulic fields.
 void record_fluid_25d_recorded_presentation(VkCommandBuffer command_buffer,
-    Fluid25DGpuResources& resources, const Fluid25DConfig& config, float physical_delta_seconds,
-    bool& cue_reset_requested, bool& quiver_reset_requested, bool show_quiver);
+                                            Fluid25DGpuResources& resources,
+                                            const Fluid25DConfig& config,
+                                            float physical_delta_seconds, bool& cue_reset_requested,
+                                            bool& quiver_reset_requested, bool show_quiver,
+                                            bool native_motion = false);
 
 void record_fluid_25d_compute(VkCommandBuffer command_buffer, Fluid25DGpuResources& resources,
                               const Fluid25DConfig& config, bool paused, bool& reset_requested,

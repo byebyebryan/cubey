@@ -98,8 +98,8 @@ void Fluid25DMotionMarkers::create(cubey::vulkan::Device& device, cubey::Project
 
 void Fluid25DMotionMarkers::create_render_pipeline(cubey::vulkan::Device& device,
                                                    VkFormat color_format, VkFormat depth_format,
-                                                   VkExtent2D extent) {
-    const std::array<cubey::render::ShaderStageFile, 2> stages{
+                                                   VkExtent2D extent, bool native_sampling) {
+    std::array<cubey::render::ShaderStageFile, 2> stages{
         {{VK_SHADER_STAGE_VERTEX_BIT, motion_shader("fluid_25d_motion_markers.vert.spv")},
          {VK_SHADER_STAGE_FRAGMENT_BIT, motion_shader("fluid_25d_motion_markers.frag.spv")}}};
     const std::array<VkDescriptorSetLayout, 1> layouts{render_a_->layout()};
@@ -126,8 +126,18 @@ void Fluid25DMotionMarkers::create_render_pipeline(cubey::vulkan::Device& device
                                          .descriptor_set_layouts = layouts,
                                          .material_pass = pass,
                                      });
+    if (native_sampling) {
+        stages[0] = {VK_SHADER_STAGE_VERTEX_BIT,
+                     motion_shader("fluid_25d_motion_markers_bilinear.vert.spv")};
+        bilinear_render_pipeline_.emplace(
+            device, cubey::render::GraphicsPipelineFileResourceConfig{
+                        .extent = extent, .color_format = color_format, .depth_format = depth_format,
+                        .shader_stage_files = stages, .descriptor_set_layouts = layouts,
+                        .material_pass = pass});
+    }
 }
 void Fluid25DMotionMarkers::destroy_render_pipeline() {
+    bilinear_render_pipeline_.reset();
     render_pipeline_.reset();
 }
 void Fluid25DMotionMarkers::destroy() {
@@ -186,7 +196,8 @@ void Fluid25DMotionMarkers::begin_frame(VkCommandBuffer command_buffer, std::uin
 }
 void Fluid25DMotionMarkers::record_draw(VkCommandBuffer command_buffer, bool depth_is_a,
                                         const cubey::math::Mat4& view_projection, VkExtent2D extent,
-                                        float height_scale, float interpolation) {
+                                        float height_scale, float interpolation, bool bilinear_water,
+                                        std::uint32_t bspline_subdivision) {
     cubey::vulkan::GpuTimestampScope timing(profiler(), command_buffer, current_slot_,
                                             "fluid_25d motion markers draw");
     const DrawParams params{
@@ -196,13 +207,16 @@ void Fluid25DMotionMarkers::record_draw(VkCommandBuffer command_buffer, bool dep
         .display = {static_cast<float>(extent.width), static_cast<float>(extent.height),
                     std::clamp(interpolation, 0.0F, 1.0F), config_.minimum_wet_depth_m},
         .timing = {static_cast<float>(completed_steps_) * config_.fixed_delta_seconds,
-                   config_.fixed_delta_seconds, 0.0F, 0.0F},
+                   config_.fixed_delta_seconds, static_cast<float>(bspline_subdivision), 0.0F},
     };
     const cubey::vulkan::CommandRecorder recorder(command_buffer);
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, render_pipeline_->pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, render_pipeline_->layout(), 0U,
+    const auto& pipeline = bilinear_water ? bilinear_render_pipeline_ : render_pipeline_;
+    if (!pipeline)
+        throw std::runtime_error("motion-marker sampling pipeline was not prepared");
+    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipeline());
+    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout(), 0U,
                                  depth_is_a ? render_a_->set() : render_b_->set());
-    recorder.push_constants(render_pipeline_->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0U, params);
+    recorder.push_constants(pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0U, params);
     recorder.draw(kFluid25DMotionMarkerVertices, kFluid25DMotionMarkerCount);
 }
 

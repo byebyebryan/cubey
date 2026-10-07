@@ -117,6 +117,23 @@ def main() -> int:
             require(not metadata["fields"]["water_ledger"], "recording fabricates native ledger")
             require(metadata["fields"]["momentum_x_m2_per_s"], "stored momentum missing")
             descriptors[name] = metadata
+            # Shared native presentation path: Readable Auto and explicit Off
+            # agree for both saved recordings and external publication fixtures.
+            policy_images = []
+            for policy in ("auto", "off", "on"):
+                policy_name = f"{name}-highlights-{policy}"
+                policy_metadata = run(target, root, policy_name, [
+                    "--fluid25d-backend", name, path_flag,
+                    str(manifest if name == "recording" else stream_path),
+                    "--fluid25d-recording-time-seconds", "1",
+                    "--fluid25d-recording-gpu-validation", "--fluid25d-native-presentation", "readable",
+                    "--fluid25d-native-surface-highlights", policy, "--fluid25d-motion-markers"])
+                if policy_metadata is None:
+                    return 77
+                require(policy_metadata["grid"] == metadata["grid"], "surface cue alters backend grid")
+                require(policy_metadata["fields"] == metadata["fields"], "surface cue alters field contract")
+                policy_images.append((root / f"{policy_name}.png").read_bytes())
+            require(policy_images[0] == policy_images[1], "shared viewer Readable Auto is not Off")
         require(descriptors["recording"]["grid"] == descriptors["external"]["grid"],
                 "changing publication mode changes immutable input identity")
         (root / "result.json").write_text(json.dumps({"synthetic": True, "passed": True,

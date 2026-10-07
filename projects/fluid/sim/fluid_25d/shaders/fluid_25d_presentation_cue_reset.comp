@@ -46,8 +46,9 @@ float cue_lattice(vec2 coordinate, float cell_span, uint salt) {
 
 float cue_seed(uvec2 coordinate) {
     vec2 position = vec2(coordinate);
-    float primary = cue_lattice(position, 23.0, 0x68bc21ebu);
-    float secondary = cue_lattice(position, 11.0, 0x02e5be93u);
+    bool native_motion = params.physics.w > 0.5;
+    float primary = cue_lattice(position, native_motion ? 6.0 : 23.0, 0x68bc21ebu);
+    float secondary = cue_lattice(position, native_motion ? 3.0 : 11.0, 0x02e5be93u);
     return clamp(0.5 + (primary - 0.5) * 0.70 + (secondary - 0.5) * 0.24, 0.0, 1.0);
 }
 

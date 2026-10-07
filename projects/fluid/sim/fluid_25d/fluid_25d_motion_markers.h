@@ -84,7 +84,7 @@ class Fluid25DMotionMarkers {
                 bool profile_enabled = false,
                 Fluid25DMotionMarkerMode mode = Fluid25DMotionMarkerMode::Source);
     void create_render_pipeline(cubey::vulkan::Device& device, VkFormat color_format,
-                                VkFormat depth_format, VkExtent2D extent);
+                                VkFormat depth_format, VkExtent2D extent, bool native_sampling = false);
     void destroy_render_pipeline();
     void destroy();
     void record_reset(VkCommandBuffer command_buffer);
@@ -101,7 +101,8 @@ class Fluid25DMotionMarkers {
     void record_step(VkCommandBuffer command_buffer, bool depth_is_a);
     void record_draw(VkCommandBuffer command_buffer, bool depth_is_a,
                      const cubey::math::Mat4& view_projection, VkExtent2D extent,
-                     float height_scale, float interpolation);
+                     float height_scale, float interpolation, bool bilinear_water = false,
+                     std::uint32_t bspline_subdivision = 0U);
     [[nodiscard]] const cubey::vulkan::Buffer& buffer() const;
     [[nodiscard]] std::uint32_t completed_steps() const noexcept {
         return completed_steps_;
@@ -123,6 +124,7 @@ class Fluid25DMotionMarkers {
     std::optional<cubey::vulkan::DescriptorSetBundle> render_b_;
     std::optional<cubey::render::ComputePipelineResource> update_pipeline_;
     std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_;
+    std::optional<cubey::render::GraphicsPipelineResource> bilinear_render_pipeline_;
     std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
     std::vector<std::uint64_t> profile_frames_;
     std::uint32_t current_slot_ = 0U;

@@ -118,9 +118,11 @@ void emplace_compute_pipeline(std::optional<cubey::render::ComputePipelineResour
 
 void Fluid25DGpuResources::create_global_resources_if_needed(
     cubey::vulkan::Device& device, cubey::ProjectGpuServices& gpu, const Fluid25DConfig& config,
-    const Fluid25DScenarioData& scenario, std::uint32_t frame_slot_count, bool presentation_only) {
+    const Fluid25DScenarioData& scenario, std::uint32_t frame_slot_count, bool presentation_only,
+    std::uint32_t coverage_subdivision) {
     if (terrain_.has_value()) {
-        if (solver_ != config.solver || presentation_only_ != presentation_only) {
+        if (solver_ != config.solver || presentation_only_ != presentation_only ||
+            coverage_subdivision_ != coverage_subdivision) {
             throw std::runtime_error("fluid 2.5D GPU resources cannot change solver in place");
         }
         return;
@@ -130,7 +132,26 @@ void Fluid25DGpuResources::create_global_resources_if_needed(
     }
     solver_ = config.solver;
     presentation_only_ = presentation_only;
+    if (coverage_subdivision != 0U &&
+        (!presentation_only || (coverage_subdivision != 2U && coverage_subdivision != 4U)))
+        throw std::runtime_error("display coverage requires presentation-only 2x or 4x masks");
+    coverage_subdivision_ = coverage_subdivision;
     create_buffers(gpu, config, scenario);
+    const std::uint64_t coverage_width =
+        coverage_subdivision ? (config.grid_width - 1U) * coverage_subdivision + 1U : 1U;
+    const std::uint64_t coverage_height =
+        coverage_subdivision ? (config.grid_height - 1U) * coverage_subdivision + 1U : 1U;
+    if (coverage_width * coverage_height > 16'777'216U)
+        throw std::runtime_error("display coverage exceeds the sample budget");
+    std::vector<float> coverage_values(
+        static_cast<std::size_t>(coverage_width * coverage_height) + 4U, 0.0F);
+    coverage_values[0] = static_cast<float>(coverage_width);
+    coverage_values[1] = static_cast<float>(coverage_height);
+    coverage_values[2] = static_cast<float>(coverage_subdivision);
+    display_coverage_.emplace(gpu.upload_device_buffer(
+        coverage_values.data(), coverage_values.size() * sizeof(float),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        "fluid_25d display-only coverage"));
     profiler_.emplace(device, frame_slot_count, kFluid25DGpuProfilerPassCapacity);
     create_descriptors(device);
     create_compute_pipelines(device);
@@ -140,6 +161,13 @@ void Fluid25DGpuResources::create_global_resources_if_needed(
         recording_staging_.reserve(frame_slot_count);
         for (std::uint32_t slot = 0; slot < frame_slot_count; ++slot)
             recording_staging_.emplace_back(device, cubey::vulkan::staging_buffer_config(bytes));
+        if (coverage_subdivision) {
+            coverage_staging_.reserve(frame_slot_count);
+            for (std::uint32_t slot = 0; slot < frame_slot_count; ++slot)
+                coverage_staging_.emplace_back(
+                    device, cubey::vulkan::staging_buffer_config(coverage_width * coverage_height *
+                                                                 sizeof(float)));
+        }
     }
 }
 
@@ -179,6 +207,26 @@ void Fluid25DGpuResources::record_recording_upload(
                                                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                  VK_ACCESS_SHADER_READ_BIT);
     reset_depth_parity();
+}
+
+void Fluid25DGpuResources::record_display_coverage_upload(VkCommandBuffer command_buffer,
+                                                          std::uint32_t frame_slot,
+                                                          std::span<const float> coverage) {
+    if (!presentation_only_ || frame_slot >= coverage_staging_.size() ||
+        coverage.size_bytes() + 4U * sizeof(float) != display_coverage().size())
+        throw std::runtime_error("display coverage upload size/slot mismatch");
+    auto& staging = coverage_staging_[frame_slot];
+    staging.upload(coverage.data(), coverage.size_bytes());
+    cubey::vulkan::record_memory_barrier(command_buffer,
+                                         {.src_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                          .dst_stage = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                          .src_access = VK_ACCESS_SHADER_READ_BIT,
+                                          .dst_access = VK_ACCESS_TRANSFER_WRITE_BIT});
+    const VkBufferCopy copy{
+        .srcOffset = 0, .dstOffset = 4U * sizeof(float), .size = coverage.size_bytes()};
+    vkCmdCopyBuffer(command_buffer, staging.handle(), display_coverage().handle(), 1, &copy);
+    cubey::vulkan::record_transfer_write_barrier(
+        command_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
 }
 
 void Fluid25DGpuResources::create_buffers(cubey::ProjectGpuServices& gpu,
@@ -323,7 +371,7 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
     // existing shaders deliberately do not consume it until that presentation
     // slice lands, but both solvers bind a valid buffer today.
     const cubey::vulkan::DescriptorSetInfo render_info =
-        storage_set_info(8U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        storage_set_info(9U, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     render_a_descriptors_.emplace(device, render_info);
     render_b_descriptors_.emplace(device, render_info);
 
@@ -562,7 +610,8 @@ void Fluid25DGpuResources::create_descriptors(cubey::vulkan::Device& device) {
             .storage_buffer(set, 4, presentation_cue_b().handle(), presentation_cue_b().size())
             .storage_buffer(set, 5, endpoint_markers().handle(), endpoint_markers().size())
             .storage_buffer(set, 6, tracer_q.handle(), tracer_q.size())
-            .storage_buffer(set, 7, forcing_cubes().handle(), forcing_cubes().size());
+            .storage_buffer(set, 7, forcing_cubes().handle(), forcing_cubes().size())
+            .storage_buffer(set, 8, display_coverage().handle(), display_coverage().size());
     };
     write_render(render_a_descriptors_->set(), depth_a(), tracer_q_a());
     write_render(render_b_descriptors_->set(), depth_b(), tracer_q_b());
@@ -676,7 +725,7 @@ void Fluid25DGpuResources::create_compute_pipelines(cubey::vulkan::Device& devic
 
 void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device,
                                                    VkFormat color_format, VkFormat depth_format,
-                                                   VkExtent2D extent) {
+                                                   VkExtent2D extent, bool native_reconstruction) {
     const std::array<cubey::render::ShaderStageFile, 2> diagnostic_shader_stages{
         cubey::render::vertex_shader_file(shader_path("fluid_25d.vert.spv")),
         cubey::render::fragment_shader_file(shader_path("fluid_25d_render.frag.spv")),
@@ -716,6 +765,48 @@ void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device
                                         .material_pass = water_pass_info(),
                                     });
 
+    if (native_reconstruction) {
+        // Separate vertex pipelines preserve the original geometry/reference.
+        auto smooth_terrain = terrain_shader_stages;
+        smooth_terrain[0] =
+            cubey::render::vertex_shader_file(shader_path("fluid_25d_terrain_bspline.vert.spv"));
+        bspline_terrain_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                                      .extent = extent,
+                                                      .color_format = color_format,
+                                                      .depth_format = depth_format,
+                                                      .shader_stage_files = smooth_terrain,
+                                                      .descriptor_set_layouts = layouts,
+                                                      .material_pass = terrain_pass_info()});
+        auto smooth_water = water_shader_stages;
+        smooth_water[0] =
+            cubey::render::vertex_shader_file(shader_path("fluid_25d_water_bspline.vert.spv"));
+        bspline_water_pipeline_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                                    .extent = extent,
+                                                    .color_format = color_format,
+                                                    .depth_format = depth_format,
+                                                    .shader_stage_files = smooth_water,
+                                                    .descriptor_set_layouts = layouts,
+                                                    .material_pass = water_pass_info()});
+        auto debug_pass = water_pass_info();
+        debug_pass.depth_test = false; // DIAGNOSTIC ONLY: not a production fix.
+        no_occlusion_water_pipeline_.emplace(device,
+                                             cubey::render::GraphicsPipelineFileResourceConfig{
+                                                 .extent = extent,
+                                                 .color_format = color_format,
+                                                 .depth_format = depth_format,
+                                                 .shader_stage_files = water_shader_stages,
+                                                 .descriptor_set_layouts = layouts,
+                                                 .material_pass = debug_pass});
+        bspline_no_occlusion_water_pipeline_.emplace(
+            device,
+            cubey::render::GraphicsPipelineFileResourceConfig{.extent = extent,
+                                                              .color_format = color_format,
+                                                              .depth_format = depth_format,
+                                                              .shader_stage_files = smooth_water,
+                                                              .descriptor_set_layouts = layouts,
+                                                              .material_pass = debug_pass});
+    }
+
     const std::array<cubey::render::ShaderStageFile, 2> cube_shader_stages{
         cubey::render::vertex_shader_file(shader_path("fluid_25d_forcing_cubes.vert.spv")),
         cubey::render::fragment_shader_file(shader_path("fluid_25d_forcing_cubes.frag.spv")),
@@ -749,6 +840,10 @@ void Fluid25DGpuResources::create_render_pipelines(cubey::vulkan::Device& device
 }
 
 void Fluid25DGpuResources::destroy_swapchain_resources() {
+    bspline_no_occlusion_water_pipeline_.reset();
+    no_occlusion_water_pipeline_.reset();
+    bspline_water_pipeline_.reset();
+    bspline_terrain_pipeline_.reset();
     forcing_cube_pipeline_.reset();
     quiver_pipeline_.reset();
     water_pipeline_.reset();
@@ -758,6 +853,8 @@ void Fluid25DGpuResources::destroy_swapchain_resources() {
 
 void Fluid25DGpuResources::destroy_all_resources() {
     recording_staging_.clear();
+    coverage_staging_.clear();
+    coverage_subdivision_ = 0U;
     presentation_only_ = false;
     destroy_swapchain_resources();
     // Pipelines retain pipeline layouts that reference the descriptor layouts;
@@ -835,6 +932,7 @@ void Fluid25DGpuResources::destroy_all_resources() {
     sink_rate_.reset();
     source_rate_.reset();
     terrain_.reset();
+    display_coverage_.reset();
     current_depth_is_a_ = true;
     presentation_cue_parity_.reset();
     solver_ = Fluid25DSolver::VirtualPipes;
@@ -965,11 +1063,13 @@ const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::diagnostic_
     return diagnostic_pipeline_.value();
 }
 
-const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::terrain_pipeline() const {
-    if (!terrain_pipeline_.has_value()) {
+const cubey::render::GraphicsPipelineResource&
+Fluid25DGpuResources::terrain_pipeline(bool bspline) const {
+    const auto& pipeline = bspline ? bspline_terrain_pipeline_ : terrain_pipeline_;
+    if (!pipeline.has_value()) {
         throw std::runtime_error("fluid 2.5D terrain pipeline is not initialized");
     }
-    return terrain_pipeline_.value();
+    return pipeline.value();
 }
 
 const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::forcing_cube_pipeline() const {
@@ -978,11 +1078,15 @@ const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::forcing_cub
     return *forcing_cube_pipeline_;
 }
 
-const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::water_pipeline() const {
-    if (!water_pipeline_.has_value()) {
+const cubey::render::GraphicsPipelineResource&
+Fluid25DGpuResources::water_pipeline(bool bspline, bool ignore_occlusion) const {
+    const auto& pipeline = ignore_occlusion ? (bspline ? bspline_no_occlusion_water_pipeline_
+                                                       : no_occlusion_water_pipeline_)
+                                            : (bspline ? bspline_water_pipeline_ : water_pipeline_);
+    if (!pipeline.has_value()) {
         throw std::runtime_error("fluid 2.5D water pipeline is not initialized");
     }
-    return water_pipeline_.value();
+    return pipeline.value();
 }
 
 const cubey::render::GraphicsPipelineResource& Fluid25DGpuResources::quiver_pipeline() const {

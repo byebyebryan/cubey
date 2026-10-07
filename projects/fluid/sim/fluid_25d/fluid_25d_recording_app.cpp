@@ -1,10 +1,14 @@
 #include "fluid_25d_recording_app.h"
 
 #include "fluid_25d_backend_adapters.h"
+#include "fluid_25d_bank_comparison.h"
+#include "fluid_25d_bank_controls.h"
 #include "fluid_25d_commands.h"
+#include "fluid_25d_display_coverage.h"
 #include "fluid_25d_external_session.h"
 #include "fluid_25d_local_session.h"
 #include "fluid_25d_motion_markers.h"
+#include "fluid_25d_native_presentation_controls.h"
 #include "fluid_25d_project_config.h"
 #include "fluid_25d_recording.h"
 
@@ -13,6 +17,7 @@
 #include <cubey/input/orbit_controller.h>
 #include <cubey/scene/camera_3d.h>
 #include <cubey/vulkan/command_recorder.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/vulkan/memory_barriers.h>
 
 #include <imgui.h>
@@ -20,6 +25,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -178,8 +184,6 @@ class RecordingApp {
         live_playing_ =
             recording_ && !config.common.headless && config.recording_time_seconds == 0.0F;
         follow_latest_ = config.stream_follow_latest;
-        std::printf("fluid_25d_backend_startup_metadata: %s\n",
-                    encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
         if (external_session_) {
             simulation_.grid_width = backend_metadata_.grid.width;
             simulation_.grid_height = backend_metadata_.grid.height;
@@ -203,6 +207,82 @@ class RecordingApp {
         scenario_.boundary_outflow_face_mask.assign(shown_->depth_m.size(), 0U);
         render_ = config.catchment_render;
         render_.native_recording = true;
+        render_.native_presentation = config.native_presentation == "readable" ? 2U
+                                      : config.native_presentation == "motion" ? 1U
+                                                                               : 0U;
+        render_.native_surface_highlights = fluid_25d_native_surface_highlights_enabled(
+            fluid_25d_native_surface_highlights_policy(config.native_surface_highlights),
+            render_.native_presentation);
+        const std::array<std::string_view, 8U> water_debug_modes{
+            "shaded",    "solid",    "unlit",        "normals",
+            "wireframe", "wet-mask", "no-occlusion", "contours"};
+        render_.native_water_debug =
+            static_cast<std::uint32_t>(std::find(water_debug_modes.begin(), water_debug_modes.end(),
+                                                 config.native_water_debug) -
+                                       water_debug_modes.begin());
+        render_.native_bilinear_water = config.native_water_sampling == "bilinear";
+        render_.native_bspline_surface = config.native_water_sampling == "bspline";
+        render_.native_surface_subdivision = config.native_surface_subdivision;
+        if (config.native_display_coverage_path) {
+            coverage_ = std::make_shared<Fluid25DDisplayCoverage>(
+                *config.native_display_coverage_path, *recording_);
+            if (config.bank_comparison) {
+                const auto times = coverage_->times_s();
+                comparison_.emplace(recording_->times_s(), times);
+                const double initial = config.recording_time_seconds == 0.0F
+                                           ? comparison_->first_s()
+                                           : config.recording_time_seconds;
+                if (!comparison_->contains(initial))
+                    throw std::runtime_error(
+                        "bank comparison start time is outside its baked window");
+                clock_.seek(initial);
+                config_.recording_time_seconds = static_cast<float>(initial);
+                shown_index_ = clock_.frame_index();
+                accept_frame(recording_->frame(shown_index_));
+                backend_metadata_.session.physical_time_s = clock_.time_s();
+                playback_session_.emplace(backend_metadata_);
+                live_playing_ = false;
+                comparison_loop_ = config.bank_comparison_loop;
+                // Show a labelled reference while windowed preparation runs.
+                // No requested coverage view is activated until validation completes.
+                apply_fluid_25d_bank_view(render_, Fluid25DBankView::Reference, false);
+                bank_view_ = config.native_bank_view ? fluid_25d_bank_view(*config.native_bank_view)
+                                                     : Fluid25DBankView::Reference;
+                std::printf("fluid_25d_bank_comparison: PREPARING recorded window %.9f..%.9f s, "
+                            "%zu masks; no live reconstruction\n",
+                            comparison_->first_s(), comparison_->end_s(),
+                            comparison_->frame_count());
+                cache_progress_ = std::make_shared<std::atomic_size_t>(0U);
+                if (config.common.headless) {
+                    coverage_cache_.emplace(*coverage_, times);
+                    activate_comparison_cache();
+                } else {
+                    cache_pending_ = std::async(std::launch::async, [source = coverage_, times,
+                                                                     progress = cache_progress_] {
+                        return Fluid25DDisplayCoverageCache(
+                            *source, times,
+                            [progress](std::size_t count) { progress->store(count); });
+                    });
+                }
+            } else {
+                bank_view_ = config.native_bank_view ? fluid_25d_bank_view(*config.native_bank_view)
+                                                     : Fluid25DBankView::MarchingSquares;
+                if (bank_view_ == Fluid25DBankView::MarchingSquares) {
+                    coverage_values_ = coverage_->frame(shown_->time_s);
+                    coverage_upload_pending_ = true;
+                }
+                apply_fluid_25d_bank_view(render_, bank_view_,
+                                          coverage_->has_frame(shown_->time_s));
+            }
+            std::printf("fluid_25d_display_coverage: %s, display only, no live support or temporal "
+                        "interpolation\n",
+                        coverage_->label().c_str());
+        } else if (config.native_bank_view) {
+            bank_view_ = fluid_25d_bank_view(*config.native_bank_view);
+            apply_fluid_25d_bank_view(render_, bank_view_, false);
+        }
+        std::printf("fluid_25d_backend_startup_metadata: %s\n",
+                    encode_fluid_25d_backend_metadata_json(backend_metadata_).c_str());
         render_.hillside_depth_cues = true;
         render_.terrain_thin_water_composite = true;
         render_.terrain_height_scale = render_.terrain_height_scale.value_or(1.0F);
@@ -240,10 +320,122 @@ class RecordingApp {
         const int status = config_.common.headless ? run_headless() : run_windowed();
         if (shutdown_failure_)
             std::rethrow_exception(shutdown_failure_);
-        return stream_error_.empty() && external_error_.empty() ? status : 1;
+        return stream_error_.empty() && external_error_.empty() && comparison_error_.empty()
+                   ? status
+                   : 1;
     }
 
   private:
+    void activate_comparison_cache() {
+        std::printf("fluid_25d_bank_cache: READY frames=%zu bytes=%zu preparation_ms=%.6f "
+                    "budget_bytes=%zu\n",
+                    coverage_cache_->frame_count(), coverage_cache_->bytes(),
+                    coverage_cache_->preparation_ms(), Fluid25DDisplayCoverageCache::kByteBudget);
+        set_bank_view(bank_view_);
+    }
+
+    void poll_comparison_cache() {
+        if (!cache_pending_.valid() ||
+            cache_pending_.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+            return;
+        try {
+            coverage_cache_.emplace(cache_pending_.get());
+            activate_comparison_cache();
+        } catch (const std::exception& error) {
+            comparison_error_ = error.what();
+            clock_.set_paused(true);
+            std::fprintf(stderr, "fluid_25d_bank_comparison: PREPARATION FAILED: %s\n",
+                         comparison_error_.c_str());
+        }
+    }
+
+    [[nodiscard]] bool matching_mask_ready() const {
+        return coverage_ && coverage_->has_frame(shown_->time_s) &&
+               (!comparison_ || coverage_cache_.has_value());
+    }
+
+    [[nodiscard]] std::span<const float> active_coverage() const {
+        return coverage_cache_ ? coverage_cache_->frame(shown_->time_s)
+                               : std::span<const float>(coverage_values_);
+    }
+
+    void set_bank_view(Fluid25DBankView view) {
+        const bool ready = matching_mask_ready();
+        if (view == Fluid25DBankView::MarchingSquares && !ready)
+            throw std::runtime_error("marching-squares coverage is unavailable at this saved time");
+        if (view == Fluid25DBankView::MarchingSquares) {
+            if (!coverage_cache_)
+                coverage_values_ = coverage_->frame(shown_->time_s);
+            coverage_upload_pending_ = coverage_resident_time_ != shown_->time_s;
+        } else
+            coverage_upload_pending_ = false;
+        apply_fluid_25d_bank_view(render_, view, ready);
+        bank_view_ = view;
+        config_.native_bank_view = fluid_25d_bank_view_name(view);
+        std::printf("fluid_25d_bank_view: mode=%s requested_s=%.9f saved_s=%.9f camera=%s "
+                    "paused=%u rate=%.3f cue_reset=%u quiver_reset=%u marker_reset=%u "
+                    "generation=%llu; fields/camera/clock/history unchanged\n",
+                    fluid_25d_bank_view_name(view), clock_.time_s(), shown_->time_s,
+                    config_.recording_camera.c_str(), clock_.paused() ? 1U : 0U, clock_.rate(),
+                    cue_reset_ ? 1U : 0U, quiver_reset_ ? 1U : 0U, marker_reset_ ? 1U : 0U,
+                    static_cast<unsigned long long>(backend_metadata_.session.reset_generation));
+    }
+
+    void cycle_bank_view() {
+        if (comparison_ && !coverage_cache_)
+            return;
+        const auto current = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares
+                             : render_.native_bspline_surface ? Fluid25DBankView::Bspline2x
+                                                              : Fluid25DBankView::Reference;
+        auto next = static_cast<Fluid25DBankView>((static_cast<unsigned>(current) + 1U) % 3U);
+        if (next == Fluid25DBankView::MarchingSquares && !matching_mask_ready())
+            next = Fluid25DBankView::Reference;
+        set_bank_view(next);
+    }
+
+    void seek_playback(double time) {
+        clock_.seek(comparison_ ? comparison_->map(time, false).time_s : time);
+        if (comparison_)
+            comparison_at_end_ = comparison_->at_end(clock_.time_s());
+        comparison_end_reported_ = false;
+        live_playing_ = follow_latest_ = false;
+        reset_visual_history();
+    }
+
+    void toggle_playback() {
+        if (comparison_ && (!coverage_cache_ || !comparison_error_.empty()))
+            return;
+        if (comparison_ && comparison_->at_end(clock_.time_s())) {
+            seek_playback(comparison_->first_s());
+            clock_.set_paused(false);
+        } else if (!clock_.ended())
+            clock_.set_paused(!clock_.paused());
+    }
+
+    void constrain_comparison_clock(bool was_playing) {
+        if (!comparison_)
+            return;
+        const auto bounded = comparison_->map(clock_.time_s(), comparison_loop_ && was_playing);
+        if (bounded.looped) {
+            seek_playback(bounded.time_s);
+            clock_.set_paused(false);
+            std::printf(
+                "fluid_25d_bank_comparison: REPLAY LOOP; recorded fields, not solver restart\n");
+        } else if (bounded.at_end || bounded.time_s != clock_.time_s()) {
+            clock_.seek(bounded.time_s);
+            comparison_at_end_ = bounded.at_end;
+            if (bounded.at_end && !comparison_end_reported_) {
+                std::printf("fluid_25d_bank_comparison: END OF BAKED WINDOW; holding last saved "
+                            "state, not end of simulation\n");
+                comparison_end_reported_ = true;
+            }
+        }
+        if (!bounded.at_end) {
+            comparison_at_end_ = false;
+            comparison_end_reported_ = false;
+        }
+    }
+
     [[nodiscard]] double external_publication_age_s() const {
         const double now_unix_s =
             std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch())
@@ -279,7 +471,18 @@ class RecordingApp {
     }
 
     void accept_frame(std::shared_ptr<const Fluid25DRecordedFrame> frame) {
+        if (coverage_ && !comparison_ && render_.native_display_coverage) {
+            const auto start = std::chrono::steady_clock::now();
+            coverage_values_ = coverage_->frame(frame->time_s);
+            const double load_ms =
+                std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
+                    .count();
+            std::printf("fluid_25d_display_coverage_load: saved_s=%.9f cpu_ms=%.6f\n",
+                        frame->time_s, load_ms);
+        }
         shown_ = std::move(frame);
+        if (coverage_ && render_.native_display_coverage)
+            coverage_upload_pending_ = coverage_resident_time_ != shown_->time_s;
         packed_velocity_.resize(shown_->velocity.size());
         for (std::size_t i = 0; i < packed_velocity_.size(); ++i)
             packed_velocity_[i] = {{shown_->velocity[i].x_m_per_s, shown_->velocity[i].y_m_per_s,
@@ -287,15 +490,25 @@ class RecordingApp {
         upload_pending_ = true;
     }
 
-    void reset_visual_history() {
+    void reset_presentation_history() {
         cue_reset_ = quiver_reset_ = marker_reset_ = true;
-        reset_on_load_ = true;
         visual_delta_ = marker_accumulator_ = 0.0;
+    }
+
+    void reset_visual_history() {
+        reset_presentation_history();
+        reset_on_load_ = true;
         if (playback_session_)
             playback_navigation_kind_ = Fluid25DCommandKind::Seek;
     }
 
     void restart_playback() {
+        if (comparison_) {
+            seek_playback(comparison_->first_s());
+            comparison_at_end_ = comparison_end_reported_ = false;
+            playback_navigation_kind_ = Fluid25DCommandKind::Reset;
+            return;
+        }
         clock_.restart();
         live_playing_ = false;
         follow_latest_ = false;
@@ -523,6 +736,11 @@ class RecordingApp {
     }
 
     void update_view(double wall_delta_s) {
+        poll_comparison_cache();
+        if (comparison_ && (!coverage_cache_ || !comparison_error_.empty())) {
+            visual_delta_ = 0.0;
+            return;
+        }
         if (external_session_) {
             poll_external_session();
             visual_delta_ = 0.0;
@@ -556,9 +774,13 @@ class RecordingApp {
             clock_.set_paused(true);
         }
         const double before = clock_.time_s();
+        const bool was_playing = !clock_.paused();
         if (shown_index_ == clock_.frame_index())
             clock_.advance(std::min(wall_delta_s, 0.25));
+        constrain_comparison_clock(was_playing);
         visual_delta_ = clock_.time_s() - before;
+        if (visual_delta_ < 0.0)
+            visual_delta_ = 0.0; // Explicit replay clears visual history.
         if (config_.stream_path && live_playing_ && clock_.ended() &&
             recording_->producer_state() == "running")
             clock_.set_paused(false); // Waiting for a growing prefix is not completion.
@@ -578,23 +800,37 @@ class RecordingApp {
 
     void create_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots) {
         runtime_.attach_gpu_if_needed(gpu);
+        if (config_.recording_gpu_validation && render_.native_presentation != 0U)
+            validate_fluid_25d_native_cue_gpu_controls(device, runtime_.gpu());
+        if (config_.recording_gpu_validation &&
+            (render_.native_bilinear_water || render_.native_bspline_surface))
+            validate_fluid_25d_bank_gpu_controls(device, runtime_.gpu());
         resources_.create_global_resources_if_needed(device, runtime_.gpu(), simulation_, scenario_,
-                                                     slots, true);
-        if (config_.motion_markers)
+                                                     slots, true,
+                                                     coverage_ ? coverage_->subdivision() : 0U);
+        markers_available_ = config_.motion_markers || comparison_.has_value();
+        if (markers_available_)
             markers_.create(device, runtime_.gpu(), simulation_,
                             {&resources_.terrain(), &resources_.depth_a(), &resources_.depth_b(),
                              &resources_.velocity(), &resources_.source_rate(),
                              &resources_.presentation_cue_status()},
                             {-1.0F, -1.0F}, slots, false, Fluid25DMotionMarkerMode::Local);
         graph_.resize(slots);
+        if (!config_.common.profile_output_prefix.empty()) {
+            native_profiler_.emplace(device, slots, 1U);
+            if (coverage_)
+                coverage_profiler_.emplace(device, slots, 1U);
+            native_profile_frames_.resize(slots);
+            native_profile_pending_.resize(slots, false);
+        }
     }
 
     void create_render_resources(vulkan::Device& device, render::ColorTargetView target) {
         resources_.create_render_pipelines(device, target.format, VK_FORMAT_D32_SFLOAT,
-                                           target.extent);
-        if (config_.motion_markers)
+                                           target.extent, true);
+        if (markers_available_)
             markers_.create_render_pipeline(device, target.format, VK_FORMAT_D32_SFLOAT,
-                                            target.extent);
+                                            target.extent, true);
     }
 
     void configure_camera() {
@@ -630,8 +866,10 @@ class RecordingApp {
         }
         const float maximum_distance = std::max(64.0F, domain * 4.0F);
         const float minimum_distance = std::max(16.0F, framing * 0.30F);
-        const float home = render_.home_camera_distance_m.value_or(
-            std::max(32.0F, framing * (config_.recording_camera == "overview" ? 1.65F : 1.35F)));
+        const float home = render_.home_camera_distance_m.value_or(std::max(
+            32.0F, framing * (render_.native_presentation == 2U
+                                  ? (config_.recording_camera == "overview" ? 1.50F : 1.18F)
+                                  : (config_.recording_camera == "overview" ? 1.65F : 1.35F))));
         if (home < minimum_distance || home > maximum_distance)
             throw std::runtime_error("imported-state camera home distance exceeds orbit limits");
         orbit_.set_distance_limits(minimum_distance, maximum_distance);
@@ -646,10 +884,11 @@ class RecordingApp {
     }
 
     Fluid25DRenderCamera camera(VkExtent2D extent) const {
-        const auto transform = orbit_camera_transform({.target = target_,
-                                                       .distance = orbit_.distance(),
-                                                       .yaw = -0.52F + orbit_.yaw(),
-                                                       .pitch = -0.92F + orbit_.pitch()});
+        const auto transform =
+            orbit_camera_transform({.target = target_,
+                                    .distance = orbit_.distance(),
+                                    .yaw = -0.52F + orbit_.yaw(),
+                                    .pitch = config_.native_camera_pitch_radians + orbit_.pitch()});
         return {camera_.view_projection_matrix(transform, static_cast<float>(extent.width) /
                                                               static_cast<float>(extent.height)),
                 transform.translation};
@@ -659,6 +898,20 @@ class RecordingApp {
                 render::FrameSlot slot, Fluid25DRenderTargetMode target_mode,
                 profiling::ProfileRecorder* profile, std::uint64_t frame_index) {
         synchronize_playback_boundary();
+        // The host has waited for this slot's fence before reusing it. Measure
+        // upload, presentation updates and drawing, not capture/encode cadence.
+        if (native_profiler_ && profile) {
+            collect_native_timings(slot.index, profile);
+            native_profiler_->begin_frame(commands, slot.index);
+            if (coverage_profiler_)
+                coverage_profiler_->begin_frame(commands, slot.index);
+            native_profile_frames_[slot.index] = frame_index;
+            native_profile_pending_[slot.index] = true;
+            native_profile_recorder_ = profile;
+        }
+        vulkan::GpuTimestampScope native_scope(
+            native_profiler_ && profile ? &*native_profiler_ : nullptr, commands, slot.index,
+            "fluid_25d native presentation total");
         if (upload_pending_) {
             resources_.record_recording_upload(commands, slot.index, shown_->depth_m,
                                                packed_velocity_);
@@ -698,10 +951,23 @@ class RecordingApp {
                 std::fflush(stdout);
             }
         }
+        // Coverage residency is independent of hydraulic upload/publication.
+        // A mode switch at a held saved state uploads the matching mask first.
+        if (coverage_upload_pending_ && render_.native_display_coverage &&
+            view_ != Fluid25DPresentationView::Diagnostics) {
+            vulkan::GpuTimestampScope coverage_scope(
+                coverage_profiler_ && profile ? &*coverage_profiler_ : nullptr, commands,
+                slot.index, "fluid_25d display coverage upload");
+            resources_.record_display_coverage_upload(commands, slot.index, active_coverage());
+            coverage_resident_time_ = shown_->time_s;
+            coverage_upload_pending_ = false;
+            std::printf("fluid_25d_bank_mask_upload: saved_s=%.9f cache=%u\n", shown_->time_s,
+                        coverage_cache_ ? 1U : 0U);
+        }
         const bool quiver = view_ == Fluid25DPresentationView::Catchment &&
                             catchment_view_ == Fluid25DCatchmentView::FlowInspection;
         const bool had_marker_reset = marker_reset_;
-        if (config_.motion_markers && marker_reset_) {
+        if (markers_available_ && marker_reset_) {
             markers_.record_reset(commands);
             marker_reset_ = false;
         }
@@ -709,15 +975,17 @@ class RecordingApp {
         // It reads imported h/u and changes only cue/marker buffers.
         if (visual_delta_ <= 0.0) {
             record_fluid_25d_recorded_presentation(commands, resources_, simulation_, 0.0F,
-                                                   cue_reset_, quiver_reset_, quiver);
+                                                   cue_reset_, quiver_reset_, quiver,
+                                                   render_.native_presentation != 0U);
         } else {
             const auto steps = static_cast<std::uint32_t>(std::ceil(visual_delta_));
             const float delta = static_cast<float>(visual_delta_ / static_cast<double>(steps));
             for (std::uint32_t i = 0U; i < steps; ++i)
                 record_fluid_25d_recorded_presentation(commands, resources_, simulation_, delta,
-                                                       cue_reset_, quiver_reset_, quiver);
+                                                       cue_reset_, quiver_reset_, quiver,
+                                                       render_.native_presentation != 0U);
         }
-        if (config_.motion_markers) {
+        if (markers_available_) {
             marker_accumulator_ += visual_delta_;
             const auto steps = static_cast<std::uint32_t>(std::floor(marker_accumulator_));
             for (std::uint32_t i = 0U; i < steps; ++i)
@@ -733,10 +1001,13 @@ class RecordingApp {
                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
         }
+        auto displayed_render = render_;
+        if (view_ == Fluid25DPresentationView::Diagnostics)
+            apply_fluid_25d_bank_view(displayed_render, Fluid25DBankView::Reference, false);
         const auto compiled = build_fluid_25d_frame_graph(
             target, resources_, simulation_, view_, catchment_view_, debug_view_,
             camera(target.extent), target_mode, false, true, hydraulic_reset_never_used_,
-            cue_reset_, quiver_reset_, nullptr, slot.index, {}, render_,
+            cue_reset_, quiver_reset_, nullptr, slot.index, {}, displayed_render,
             config_.motion_markers ? &markers_ : nullptr, marker_fraction_, config_.motion_markers);
         graph_.record(
             {.device = &device,
@@ -790,6 +1061,22 @@ class RecordingApp {
         visual_delta_ = 0.0;
     }
 
+    void collect_native_timings(std::uint32_t slot, profiling::ProfileRecorder* profile) {
+        if (!native_profiler_ || !profile || !native_profile_pending_[slot])
+            return;
+        native_profiler_->collect(slot);
+        for (const auto& timing : native_profiler_->latest_timings())
+            profile->record_gpu_span(native_profile_frames_[slot], timing.label,
+                                     timing.milliseconds);
+        if (coverage_profiler_) {
+            coverage_profiler_->collect(slot);
+            for (const auto& timing : coverage_profiler_->latest_timings())
+                profile->record_gpu_span(native_profile_frames_[slot], timing.label,
+                                         timing.milliseconds);
+        }
+        native_profile_pending_[slot] = false;
+    }
+
     template <typename Value>
     void check_buffer(const vulkan::Buffer& buffer, std::span<const Value> expected,
                       const char* name) {
@@ -803,6 +1090,9 @@ class RecordingApp {
         // Preserve a late I/O/validation error, but always release resources
         // while the host device still exists. Report failure after host cleanup.
         try {
+            // Shutdown follows the host's wait for all submitted frame slots.
+            for (std::uint32_t slot = 0U; slot < native_profile_pending_.size(); ++slot)
+                collect_native_timings(slot, native_profile_recorder_);
             if (config_.recording_gpu_validation) {
                 if (external_session_)
                     check_buffer<float>(resources_.terrain(), external_session_->bed(),
@@ -852,9 +1142,125 @@ class RecordingApp {
                 shutdown_failure_ = std::current_exception();
         }
         graph_.clear();
+        native_profiler_.reset();
+        coverage_profiler_.reset();
         markers_.destroy();
         resources_.destroy_all_resources();
         runtime_.detach_gpu_if_attached();
+    }
+
+    void draw_native_presentation_ui() {
+        int style = static_cast<int>(render_.native_presentation);
+        if (ImGui::Combo("Presentation (visual only)", &style,
+                         "Original reference\0Continuous motion\0Readable terrain/water\0")) {
+            render_.native_presentation = static_cast<std::uint32_t>(style);
+            config_.native_presentation = style == 2   ? "readable"
+                                          : style == 1 ? "motion"
+                                                       : "original";
+            if (fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights) ==
+                Fluid25DNativeSurfaceHighlightsPolicy::Auto)
+                render_.native_surface_highlights = fluid_25d_native_surface_highlights_enabled(
+                    Fluid25DNativeSurfaceHighlightsPolicy::Auto, render_.native_presentation);
+            reset_presentation_history();
+            configure_camera();
+        }
+        int highlight_policy = static_cast<int>(
+            fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights));
+        if (ImGui::Combo("Procedural flow highlights", &highlight_policy,
+                         "Auto (off only in Readable)\0On\0Off\0")) {
+            config_.native_surface_highlights = highlight_policy == 1   ? "on"
+                                                : highlight_policy == 2 ? "off"
+                                                                        : "auto";
+            render_.native_surface_highlights = fluid_25d_native_surface_highlights_enabled(
+                fluid_25d_native_surface_highlights_policy(config_.native_surface_highlights),
+                render_.native_presentation);
+        }
+        ImGui::TextDisabled("Bank views never change the native terrain/depth/velocity inputs.");
+        const auto selected = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares
+                              : render_.native_bspline_surface ? Fluid25DBankView::Bspline2x
+                                                               : Fluid25DBankView::Reference;
+        constexpr std::array<const char*, 3> names{"Triangular reference",
+                                                   "B-spline 2x (experimental)",
+                                                   "Marching-squares coverage (recorded)"};
+        const bool advanced =
+            render_.native_bilinear_water ||
+            (render_.native_bspline_surface && render_.native_surface_subdivision != 2U);
+        ImGui::BeginDisabled(comparison_ && !coverage_cache_);
+        if (ImGui::BeginCombo("Bank view [S]", advanced
+                                                   ? "Advanced reconstruction"
+                                                   : names[static_cast<std::size_t>(selected)])) {
+            for (std::size_t i = 0; i < names.size(); ++i) {
+                const auto mode = static_cast<Fluid25DBankView>(i);
+                const bool available =
+                    mode != Fluid25DBankView::MarchingSquares || matching_mask_ready();
+                ImGui::BeginDisabled(!available);
+                if (ImGui::Selectable(names[i], !advanced && mode == selected))
+                    set_bank_view(mode);
+                ImGui::EndDisabled();
+                if (!available && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                    ImGui::SetTooltip("Requires a validated completed-recording mask at the "
+                                      "current saved time. No live reconstruction.");
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::EndDisabled();
+        if (selected == Fluid25DBankView::Reference)
+            ImGui::TextWrapped("Original height geometry and native field sampling; cell-scale "
+                               "angular banks remain.");
+        else if (selected == Fluid25DBankView::Bspline2x)
+            ImGui::TextWrapped("Rounds displayed terrain and water. Can widen/bead streams or "
+                               "falsely connect thin gaps; no extra simulated water.");
+        else
+            ImGui::TextWrapped("Marching squares + bounded point smoothing changes coverage only. "
+                               "Height geometry stays triangular. Baked %s; not live.",
+                               coverage_->label().c_str());
+        if (!matching_mask_ready())
+            ImGui::TextDisabled("Marching squares unavailable: no ready matching recorded mask.");
+        if (view_ == Fluid25DPresentationView::Diagnostics)
+            ImGui::TextWrapped("RAW 2D FIELDS: bank reconstruction is bypassed; selected bank view "
+                               "resumes in 3D.");
+        else
+            ImGui::TextDisabled(
+                "Water debug views below inspect the selected display, not solver accuracy.");
+        ImGui::BeginDisabled(!markers_available_);
+        ImGui::Checkbox("Dots/trails [W] (approximate velocity cues)", &config_.motion_markers);
+        ImGui::EndDisabled();
+        if (!markers_available_)
+            ImGui::TextDisabled(
+                "Enable dots at launch; comparison mode prepares them automatically.");
+        if (ImGui::CollapsingHeader("Advanced reconstruction / display diagnostics")) {
+            int sampling = render_.native_bspline_surface  ? 2
+                           : render_.native_bilinear_water ? 1
+                                                           : 0;
+            ImGui::BeginDisabled(comparison_.has_value());
+            if (ImGui::Combo("Surface reconstruction (experimental)", &sampling,
+                             "Triangular reference\0Bilinear depth only\0Matched B-spline "
+                             "terrain/water\0")) {
+                render_.native_bilinear_water = sampling == 1;
+                render_.native_bspline_surface = sampling == 2;
+                render_.native_display_coverage = false;
+                coverage_upload_pending_ = false;
+                config_.native_water_sampling = sampling == 2   ? "bspline"
+                                                : sampling == 1 ? "bilinear"
+                                                                : "triangular";
+            }
+            if (render_.native_bspline_surface) {
+                int level = render_.native_surface_subdivision == 4U   ? 2
+                            : render_.native_surface_subdivision == 2U ? 1
+                                                                       : 0;
+                if (ImGui::Combo("Display subdivision (not sim resolution)", &level,
+                                 "1x\0 2x\0 4x\0"))
+                    config_.native_surface_subdivision = render_.native_surface_subdivision =
+                        1U << level;
+            }
+            ImGui::EndDisabled();
+            int diagnostic = static_cast<int>(render_.native_water_debug);
+            if (ImGui::Combo(
+                    "Water diagnostic", &diagnostic,
+                    "Shaded\0Solid coverage\0Unlit depth\0Normals\0Wireframe\0Native/display "
+                    "wet mask\0No terrain occlusion (diagnostic)\0Fixed depth contours\0"))
+                render_.native_water_debug = static_cast<std::uint32_t>(diagnostic);
+        }
     }
 
     void draw_external_ui() {
@@ -1030,6 +1436,7 @@ class RecordingApp {
                 ImGui::SameLine();
             }
             ImGui::NewLine();
+            draw_native_presentation_ui();
             int mode = static_cast<int>(catchment_view_);
             if (ImGui::Combo("3D reading", &mode,
                              "Composite\0Water isolation\0Flow inspection\0")) {
@@ -1060,9 +1467,37 @@ class RecordingApp {
             draw_external_ui();
             return;
         }
-        ImGui::SetNextWindowSize(ImVec2(430.0F, 0.0F), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(config_.stream_path ? "Live external mountain runoff"
-                                             : "Recorded mountain runoff")) {
+        ImGui::SetNextWindowSize(comparison_ ? ImVec2(510.0F, 850.0F) : ImVec2(430.0F, 0.0F),
+                                 ImGuiCond_FirstUseEver);
+        if (comparison_)
+            ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(comparison_           ? "Bank reconstruction comparison"
+                         : config_.stream_path ? "Live external mountain runoff"
+                                               : "Recorded mountain runoff")) {
+            if (comparison_) {
+                ImGui::TextColored(ImVec4(.25F, .85F, 1.F, 1.F),
+                                   "RECORDED BANK COMPARISON - prebaked, not live");
+                ImGui::Text("Window %.0f..%.3f s | %zu saved masks", comparison_->first_s(),
+                            comparison_->end_s(), comparison_->frame_count());
+                if (coverage_cache_)
+                    ImGui::Text("Prepared %zu masks | %.1f MiB | %.1f ms once",
+                                coverage_cache_->frame_count(),
+                                static_cast<double>(coverage_cache_->bytes()) / (1024. * 1024.),
+                                coverage_cache_->preparation_ms());
+                else if (comparison_error_.empty())
+                    ImGui::Text("Preparing coverage %zu/%zu; reference shown, playback held",
+                                cache_progress_->load(), comparison_->frame_count());
+                else
+                    ImGui::TextWrapped("PREPARATION FAILED: %s", comparison_error_.c_str());
+                ImGui::Checkbox("Loop recorded window (not simulation)", &comparison_loop_);
+                if (comparison_at_end_)
+                    ImGui::TextWrapped(
+                        "END OF COMPARISON WINDOW: last saved state held. Replay/Restart is "
+                        "explicit; the solver has not been stopped.");
+                draw_native_presentation_ui();
+                ImGui::TextDisabled("Blue: depth | dots/trails: approximate velocity cues.");
+                ImGui::Separator();
+            }
             if (config_.stream_path) {
                 ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
                                    "LIVE EXTERNAL SYNXFLOW - Vulkan viewer only");
@@ -1119,7 +1554,8 @@ class RecordingApp {
                 ImGui::Text("Loading requested state %.0f s...", clock_.time_s());
             else
                 ImGui::Text("%s | playhead %.1f s | %.1fx viewing speed",
-                            clock_.ended()
+                            comparison_at_end_ ? "END OF COMPARISON WINDOW"
+                            : clock_.ended()
                                 ? (config_.stream_path ? (recording_->producer_state() == "running"
                                                               ? "WAITING FOR NEXT SNAPSHOT"
                                                               : "END OF FINITE SOURCE")
@@ -1127,9 +1563,13 @@ class RecordingApp {
                             : clock_.paused() ? "PAUSED"
                                               : "PLAYING",
                             clock_.time_s(), clock_.rate());
-            ImGui::BeginDisabled(clock_.ended() || config_.stream_path.has_value());
-            if (ImGui::Button(clock_.paused() ? "Play [Space]" : "Pause [Space]"))
-                clock_.set_paused(!clock_.paused());
+            ImGui::BeginDisabled((!comparison_ && clock_.ended()) ||
+                                 config_.stream_path.has_value() ||
+                                 (comparison_ && !coverage_cache_));
+            if (ImGui::Button(comparison_at_end_ ? "Replay window [Space]"
+                              : clock_.paused()  ? "Play [Space]"
+                                                 : "Pause [Space]"))
+                toggle_playback();
             ImGui::EndDisabled();
             ImGui::SameLine();
             if (ImGui::Button("Restart [R]")) {
@@ -1138,6 +1578,7 @@ class RecordingApp {
             ImGui::SameLine();
             if (ImGui::Button("<")) {
                 clock_.previous();
+                constrain_comparison_clock(false);
                 live_playing_ = false;
                 follow_latest_ = false;
                 reset_visual_history();
@@ -1145,6 +1586,7 @@ class RecordingApp {
             ImGui::SameLine();
             if (ImGui::Button(">")) {
                 clock_.next();
+                constrain_comparison_clock(false);
                 live_playing_ = false;
                 follow_latest_ = false;
                 reset_visual_history();
@@ -1152,14 +1594,15 @@ class RecordingApp {
                     playback_navigation_kind_ = Fluid25DCommandKind::Step;
             }
             float time = static_cast<float>(clock_.time_s() / 60.0);
-            if (ImGui::SliderFloat("Seek (minutes)", &time,
-                                   static_cast<float>(recording_->times_s().front() / 60.0),
-                                   static_cast<float>(recording_->times_s().back() / 60.0),
-                                   "%.1f")) {
-                clock_.seek(static_cast<double>(time) * 60.0);
-                live_playing_ = false;
-                follow_latest_ = false;
-                reset_visual_history();
+            if (ImGui::SliderFloat(
+                    "Seek (minutes)", &time,
+                    static_cast<float>(
+                        (comparison_ ? comparison_->first_s() : recording_->times_s().front()) /
+                        60.0),
+                    static_cast<float>(
+                        (comparison_ ? comparison_->end_s() : recording_->times_s().back()) / 60.0),
+                    "%.1f")) {
+                seek_playback(static_cast<double>(time) * 60.0);
             }
             double taper_start_s = -1.0;
             double rain_zero_s = -1.0;
@@ -1177,27 +1620,30 @@ class RecordingApp {
             }
             const auto seek_to_recorded_time = [this](const char* label, double seek_time_s) {
                 if (ImGui::Button(label)) {
-                    clock_.seek(seek_time_s);
-                    live_playing_ = false;
-                    follow_latest_ = false;
-                    reset_visual_history();
+                    seek_playback(seek_time_s);
                 }
             };
-            if (taper_start_s >= 0.0) {
-                seek_to_recorded_time("Rain taper start", taper_start_s);
+            if (comparison_) {
+                seek_to_recorded_time("Window start", comparison_->first_s());
                 ImGui::SameLine();
+                seek_to_recorded_time("Window end", comparison_->end_s());
+            } else {
+                if (taper_start_s >= 0.0) {
+                    seek_to_recorded_time("Rain taper start", taper_start_s);
+                    ImGui::SameLine();
+                }
+                if (rain_zero_s >= 0.0) {
+                    seek_to_recorded_time("Rain zero", rain_zero_s);
+                    ImGui::SameLine();
+                    seek_to_recorded_time(
+                        "Zero +30m", std::min(rain_zero_s + 1800.0, recording_->times_s().back()));
+                    ImGui::SameLine();
+                    seek_to_recorded_time(
+                        "Zero +1h", std::min(rain_zero_s + 3600.0, recording_->times_s().back()));
+                    ImGui::SameLine();
+                }
+                seek_to_recorded_time("End", recording_->times_s().back());
             }
-            if (rain_zero_s >= 0.0) {
-                seek_to_recorded_time("Rain zero", rain_zero_s);
-                ImGui::SameLine();
-                seek_to_recorded_time("Zero +30m",
-                                      std::min(rain_zero_s + 1800.0, recording_->times_s().back()));
-                ImGui::SameLine();
-                seek_to_recorded_time("Zero +1h",
-                                      std::min(rain_zero_s + 3600.0, recording_->times_s().back()));
-                ImGui::SameLine();
-            }
-            seek_to_recorded_time("End", recording_->times_s().back());
             float rate = static_cast<float>(clock_.rate());
             if (ImGui::SliderFloat("Playback x", &rate, 0.125F, 300.0F, "%.1fx",
                                    ImGuiSliderFlags_Logarithmic))
@@ -1233,6 +1679,8 @@ class RecordingApp {
                     debug_view_ = static_cast<Fluid25DDebugView>(debug);
             }
             ImGui::Text("Depth color: log scale 0.01 / 0.1 / 1 / 10 m");
+            if (!comparison_)
+                draw_native_presentation_ui();
             if (diagnostics)
                 ImGui::Text("2D speed: 0..15 m/s (saturates above 15)");
             ImGui::TextWrapped(
@@ -1276,6 +1724,10 @@ class RecordingApp {
         callbacks.update = [this](host::WindowedAppContext& context, const FrameTiming& timing) {
             const auto input = context.filtered_input();
             orbit_.update_pointer_input(input, timing.delta_seconds);
+            if (input.key_pressed(input::Key::S))
+                cycle_bank_view();
+            if (input.key_pressed(input::Key::W) && markers_available_)
+                config_.motion_markers = !config_.motion_markers;
             if (external_session_) {
                 const auto lifecycle = external_snapshot_->header.lifecycle;
                 const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
@@ -1305,8 +1757,8 @@ class RecordingApp {
                 if (input.key_pressed(input::Key::Space)) {
                     if (config_.stream_path)
                         live_playing_ = !live_playing_;
-                    else if (!clock_.ended())
-                        clock_.set_paused(!clock_.paused());
+                    else
+                        toggle_playback();
                 }
                 if (input.key_pressed(input::Key::R)) {
                     restart_playback();
@@ -1374,27 +1826,64 @@ class RecordingApp {
             // Load by immutable capture index on the GPU-owner callback. The
             // video producer may already be preparing later output frames.
             const bool video = config_.common.capture_mode == CaptureMode::Video;
-            const double time = std::min(recording_->times_s().back(),
-                                         static_cast<double>(config_.recording_time_seconds) +
-                                             (video ? static_cast<double>(frame.index) *
-                                                          config_.recording_frame_interval_seconds
-                                                    : 0.0));
+            const double unbounded =
+                static_cast<double>(config_.recording_time_seconds) +
+                (video ? static_cast<double>(frame.index) * config_.recording_frame_interval_seconds
+                       : 0.0);
+            const double time =
+                comparison_ ? unbounded : std::min(recording_->times_s().back(), unbounded);
+            const auto bounded = comparison_ ? comparison_->map(time, comparison_loop_)
+                                             : Fluid25DBankWindowTime{time};
+            const double presented = bounded.time_s;
             const double previous = shown_->time_s;
-            clock_.seek(time);
+            double previous_requested = frame.index == 0U
+                                            ? time
+                                            : static_cast<double>(config_.recording_time_seconds) +
+                                                  static_cast<double>(frame.index - 1U) *
+                                                      config_.recording_frame_interval_seconds;
+            if (comparison_)
+                previous_requested = comparison_->map(previous_requested, comparison_loop_).time_s;
+            else
+                previous_requested = std::min(recording_->times_s().back(), previous_requested);
+            if (frame.index > 0U && presented < previous_requested)
+                seek_playback(presented);
+            else
+                clock_.seek(presented);
+            comparison_at_end_ = bounded.at_end;
             const auto index = clock_.frame_index();
             if (index != shown_index_) {
                 accept_frame(recording_->frame(index));
                 shown_index_ = index;
             }
+            if (config_.bank_comparison_cycle_frames != 0U) {
+                const auto mode = static_cast<Fluid25DBankView>(
+                    (frame.index / config_.bank_comparison_cycle_frames) % 3U);
+                if (mode != bank_view_)
+                    set_bank_view(mode);
+            }
             // A sparse recording can jump far in physical time. Bound only
             // the optional approximate visual history, never the saved fields.
-            visual_delta_ = video ? std::clamp(shown_->time_s - previous, 0.0, 60.0) : 0.0;
+            visual_delta_ = !video || presented < previous_requested ? 0.0
+                            : render_.native_presentation != 0U
+                                ? fluid_25d_recorded_visual_delta(previous_requested, presented,
+                                                                  recording_->times_s().back())
+                                : std::clamp(shown_->time_s - previous, 0.0, 60.0);
+            const double captured_visual_delta = visual_delta_;
             record(context.device(), commands, target, frame.frame_slot,
                    Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
                    frame.index);
-            std::printf("fluid_25d_recording_capture: output_frame=%u requested_s=%.0f "
-                        "saved_s=%.0f camera=%s hydraulic_dispatches=0\n",
-                        frame.index, time, shown_->time_s, config_.recording_camera.c_str());
+            std::printf("fluid_25d_recording_capture: output_frame=%u requested_s=%.9f "
+                        "saved_s=%.9f camera=%s hydraulic_dispatches=0 visual_delta_s=%.9f "
+                        "presentation=%s\n",
+                        frame.index, presented, shown_->time_s, config_.recording_camera.c_str(),
+                        captured_visual_delta, config_.native_presentation.c_str());
+            if (comparison_)
+                std::printf(
+                    "fluid_25d_bank_capture: output_frame=%u mode=%s requested_unbounded_s=%.9f "
+                    "presented_s=%.9f saved_s=%.9f end=%u looped=%u cache_hit=%u\n",
+                    frame.index, fluid_25d_bank_view_name(bank_view_), time, presented,
+                    shown_->time_s, bounded.at_end ? 1U : 0U, bounded.looped ? 1U : 0U,
+                    coverage_cache_ ? 1U : 0U);
         };
         callbacks.shutdown = [this](host::HeadlessPngContext&) { shutdown(); };
         host::HeadlessPngHost host(
@@ -1438,6 +1927,17 @@ class RecordingApp {
     std::size_t shown_index_ = 0U, pending_index_ = 0U;
     std::uint64_t pending_viewer_generation_ = 0U;
     std::vector<Fluid25DVelocityGpu> packed_velocity_;
+    std::shared_ptr<const Fluid25DDisplayCoverage> coverage_;
+    std::vector<float> coverage_values_;
+    std::optional<Fluid25DBankComparisonWindow> comparison_;
+    std::optional<Fluid25DDisplayCoverageCache> coverage_cache_;
+    std::shared_ptr<std::atomic_size_t> cache_progress_;
+    std::future<Fluid25DDisplayCoverageCache> cache_pending_;
+    std::string comparison_error_;
+    Fluid25DBankView bank_view_ = Fluid25DBankView::Reference;
+    bool comparison_loop_ = false, comparison_at_end_ = false, comparison_end_reported_ = false;
+    bool coverage_upload_pending_ = false, markers_available_ = false;
+    double coverage_resident_time_ = -1.0;
     Fluid25DConfig simulation_;
     Fluid25DScenarioData scenario_;
     Fluid25DCatchmentRenderOptions render_;
@@ -1445,6 +1945,11 @@ class RecordingApp {
     Fluid25DGpuResources resources_;
     Fluid25DMotionMarkers markers_;
     render::RenderGraphFrameExecutor graph_;
+    std::optional<vulkan::GpuTimestampProfiler> native_profiler_;
+    std::optional<vulkan::GpuTimestampProfiler> coverage_profiler_;
+    std::vector<std::uint64_t> native_profile_frames_;
+    std::vector<bool> native_profile_pending_;
+    profiling::ProfileRecorder* native_profile_recorder_ = nullptr;
     Camera3D camera_;
     OrbitController orbit_;
     math::Vec3 target_{};
