@@ -15,6 +15,7 @@ import signal
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 
 import run_mountain_rain_demo as demo
@@ -48,12 +49,20 @@ class PrivateKeys:
         self.x.XFetchName.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.POINTER(ctypes.c_void_p)]
         self.x.XFree.argtypes = [ctypes.c_void_p]
         self.x.XResizeWindow.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_uint, ctypes.c_uint]
+        self.x.XSetInputFocus.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
+        self.x.XSync.argtypes = [ctypes.c_void_p, ctypes.c_int]
         self.window_id = None
         self.xt.XTestFakeKeyEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
         self.xt.XTestFakeMotionEvent.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_ulong]
         self.xt.XTestFakeButtonEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
 
     def focus(self):
+        if self.window_id is None:
+            raise RuntimeError("private viewer window was not resolved for input focus")
+        # Xvfb has no window manager to provide click-to-focus after resize or
+        # reattachment. Target only the resolved window on our private display.
+        self.x.XSetInputFocus(self.display, self.window_id, 2, 0)
+        self.x.XSync(self.display, 0)
         self.xt.XTestFakeMotionEvent(self.display, -1, 1800, 980, 0)
         for down in (1, 0):
             self.xt.XTestFakeButtonEvent(self.display, 1, down, 0)
@@ -113,6 +122,55 @@ def until(predicate, timeout=30):
     raise TimeoutError("private smoke observation deadline")
 
 
+def wait_viewer_frame(keys, process, title):
+    """A mapped black window is not ready for key edges during cold HDR setup."""
+    def window():
+        if process.poll() is not None:
+            raise RuntimeError("private viewer exited before first presented frame")
+        return keys.has_window(title)
+    until(window, 40)
+    with tempfile.TemporaryDirectory(prefix="cubey-private-frame-readiness-") as temp:
+        frame = Path(temp)/"frame.png"
+        def presented():
+            if not window():
+                return False
+            captured = subprocess.run(["rtk", "proxy", "import", "-window", hex(keys.window_id), str(frame)],
+                                      text=True, capture_output=True, timeout=5)
+            if captured.returncode:
+                return False
+            measured = subprocess.run(["rtk", "proxy", "convert", str(frame), "-format", "%[fx:mean]", "info:"],
+                                      text=True, capture_output=True, timeout=5)
+            if measured.returncode:
+                return False
+            mean = float(measured.stdout)
+            return math.isfinite(mean) and mean > .001
+        until(presented, 40)
+
+
+def issue_gui_control(keys, session, key, kind):
+    """Retry only ignored keys, never an already emitted solver command."""
+    path = session/"command.json"
+    before = path.read_bytes() if path.is_file() else None
+    attempts, last_key = 0, -math.inf
+    def issued():
+        nonlocal attempts, last_key
+        current = path.read_bytes() if path.is_file() else None
+        if current is not None and current != before:
+            command = json.loads(current)
+            if command["domain"] != "solver" or command["kind"] != kind:
+                raise ValueError("unexpected private GUI command: " + str(command))
+            return command
+        now = time.monotonic()
+        if now-last_key >= 1:
+            keys.key(key)
+            last_key = now
+            attempts += 1
+        return None
+    command = until(issued, 30)
+    return {"gui_key": key, "kind": kind, "command_id": command["command_id"],
+            "key_attempts": attempts, "stopped_retry_on_command_emission": True}
+
+
 def live_profile_summary(prefix):
     metrics = {}
     with prefix.with_suffix(".metrics.csv").open(newline="") as stream:
@@ -166,6 +224,8 @@ def main():
         "private_gui_only": True, "live_target_physical_s": 300, "native_speed": 60,
         "controls": "GUI Space pause/resume and R reset; MIT probe rain edit only while detached; launcher Ctrl-C cleanup",
         "human_visual_acceptance": "deferred", "style": a.style,
+        "viewer_readiness": "owned window title and nonblank first presented frame; bounded 40s",
+        "gui_command_readiness": "retry ignored keys at <=1Hz for <=30s; stop at first command emission; no service writes",
         "additional_rain_on_wall_seconds": a.live_wall_seconds})
     env = dict(os.environ, XDG_SESSION_TYPE="x11")
     env.pop("WAYLAND_DISPLAY", None)
@@ -184,9 +244,9 @@ def main():
                     raise RuntimeError("launcher exited before window creation; inspect launcher.log")
                 return keys.has_window("Cubey Mountain Rain - " + a.mode)
             until(window_ready, 40)
-            # rtk proxy publishes child logs on exit. Allow bounded cold IBL
-            # creation before key edges; verify its control log after clean exit.
-            time.sleep(8 if a.style == "scenic" else 2)
+            # rtk proxy publishes child logs on exit; inspect our private mapped
+            # window instead. Cold IBL work can outlast a fixed startup sleep.
+            wait_viewer_frame(keys, process, "Cubey Mountain Rain - " + a.mode)
             if process.poll() is not None:
                 raise RuntimeError("launcher exited before GUI observation: " + (out / "launcher.log").read_text()[-3000:])
             keys.focus()
@@ -246,7 +306,7 @@ def main():
                 assert initial["frame"]["lifecycle"] == "paused" and initial["frame"]["physical_time_s"] == 0
                 initial_planes_sha = ref.sha256_file(session / f"slot-{initial['slot']}.bin")
                 initial_planes = (session / f"slot-{initial['slot']}.bin").read_bytes()[32:]
-                keys.key("space")
+                observations.append(issue_gui_control(keys, session, "space", "resume"))
                 running = wait_state(lambda s: s["frame"]["physical_time_s"] >= 300)
                 if a.live_wall_seconds:
                     deadline = time.monotonic()+a.live_wall_seconds
@@ -256,7 +316,7 @@ def main():
                         time.sleep(min(1, max(0,deadline-time.monotonic())))
                     running = state()
                 capture("02-running", "Actual native rain-on computation, 60x")
-                keys.key("space")
+                observations.append(issue_gui_control(keys, session, "space", "pause"))
                 paused = wait_state(lambda s: s["frame"]["lifecycle"] == "paused")
                 keys.key("Escape")
                 until(lambda: (launch_out / "detached.json").is_file())
@@ -272,15 +332,14 @@ def main():
                     argv[argv.index("--profile-output")+1] = str(out/"reattach-profile")
                 with (out / "reattach.log").open("xb") as view_log:
                     reattached = subprocess.Popen(argv, cwd=out, env=env, stdout=view_log, stderr=subprocess.STDOUT, start_new_session=True)
-                    time.sleep(3)
-                    assert reattached.poll() is None
+                    wait_viewer_frame(keys, reattached, "Cubey Mountain Rain - " + a.mode)
                     keys.focus()
                     capture("03-rain-off", "Reattached viewer, native rain override is zero")
-                    keys.key("space")
+                    observations.append(issue_gui_control(keys, session, "space", "resume"))
                     after_off = wait_state(lambda s: s["frame"]["physical_time_s"] >= paused["frame"]["physical_time_s"] + 300)
-                    keys.key("space")
+                    observations.append(issue_gui_control(keys, session, "space", "pause"))
                     wait_state(lambda s: s["frame"]["lifecycle"] == "paused")
-                    keys.key("r")
+                    observations.append(issue_gui_control(keys, session, "r", "reset"))
                     reset = wait_state(lambda s: s["frame"]["reset_generation"] == 2 and s["frame"]["physical_time_s"] == 0)
                     assert (session / f"slot-{reset['slot']}.bin").read_bytes()[32:] == initial_planes
                     capture("04-reset", "GUI full reset, new generation, dry fields byte-exact")

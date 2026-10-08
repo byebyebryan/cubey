@@ -3,12 +3,49 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import itertools
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import review_scenic_material_v2 as review
+import probe_mountain_rain_demo as probe
 
 
 class MaterialReviewTests(unittest.TestCase):
+    def test_gui_retry_stops_as_soon_as_a_command_is_emitted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            session = Path(temp)
+            keys = SimpleNamespace()
+            attempts = []
+            def key(name):
+                attempts.append(name)
+                if len(attempts) == 2:
+                    (session/"command.json").write_text(json.dumps({"command_id": 11,
+                        "domain": "solver", "kind": "resume"}))
+            keys.key = key
+            with patch.object(probe.time, "monotonic", side_effect=itertools.count()), \
+                    patch.object(probe.time, "sleep"):
+                row = probe.issue_gui_control(keys, session, "space", "resume")
+            self.assertEqual(attempts, ["space", "space"])
+            self.assertEqual(row["command_id"], 11)
+            self.assertEqual(row["key_attempts"], 2)
+            self.assertTrue(row["stopped_retry_on_command_emission"])
+
+    def test_private_keys_wait_for_nonblank_presented_frame(self):
+        keys = SimpleNamespace(has_window=lambda title: True, window_id=123)
+        process = SimpleNamespace(poll=lambda: None)
+        capture = SimpleNamespace(returncode=0, stdout="")
+        blank = SimpleNamespace(returncode=0, stdout="0")
+        drawn = SimpleNamespace(returncode=0, stdout="0.3")
+        with patch.object(probe.subprocess, "run", side_effect=[capture, blank, capture, drawn]) as run, \
+                patch.object(probe.time, "sleep"):
+            probe.wait_viewer_frame(keys, process, "owned private viewer")
+            self.assertEqual(run.call_count, 4)
+            self.assertIn("0x7b", run.call_args_list[0].args[0])
+        process.poll = lambda: 1
+        with self.assertRaisesRegex(RuntimeError, "before first presented frame"):
+            probe.wait_viewer_frame(keys, process, "owned private viewer")
+
     def test_material_receipts_are_explicit(self):
         text = 'fluid_25d_scenic_material: profile=refined+tuning settings={"wet_roughness":0.68}'
         self.assertEqual(review.effective_material(text)["settings"], {"wet_roughness": .68})
