@@ -1,8 +1,10 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
+#define FLUID25D_SCENIC_WATER
 #include "cubey/pbr.glsl"
 #include "fluid_25d_scenic.glsl"
 #include "fluid_25d_surface_sampling.glsl"
+#include "fluid_25d_water_film.glsl"
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
 layout(set=1,binding=9,std430) readonly buffer VisualVelocity { vec4 values[]; } visual_velocity;
 layout(set=0,binding=8,std430) readonly buffer DisplayCoverage { vec4 grid; float values[]; } display_coverage;
@@ -40,6 +42,8 @@ void main() {
     if ((options&8u)!=0u) h = fluid25d_supported_depth(depths,f,params.camera_wet.w);
     if ((options&16u)!=0u && fluid25d_bilinear_sample(vec4(greaterThan(depths,vec4(params.camera_wet.w))),f)<=0.5) h=0.0;
     float edge_width = max(fwidth(h),0.000001);
+    uint water_view = uint(scenic.water_view.x);
+    float film_weight = fluid25d_film_weight(h,scenic.water_film.x,scenic.water_film.y);
     vec3 n = normalize(world_normal);
     vec3 view = normalize(params.camera_wet.xyz-world_position);
     vec2 visual_u = vec2(fluid25d_bilinear_sample(vec4(visual_velocity.values[i.x].x,
@@ -50,6 +54,7 @@ void main() {
     vec2 flow = visual_u / max(1.0,speed/2.0);
     float footprint = max(length(dFdx(world_position)),length(dFdy(world_position)));
     float detail_strength = 0.14*scenic.surface_material.w*smoothstep(0.025,0.40,speed)*(1.0-smoothstep(2.0,12.0,footprint));
+    if (water_view==7u) detail_strength=0.0;
     vec2 detail = flow_detail(world_position.xz,flow,scenic.clock_encoding.x)*detail_strength;
     n = normalize(n+vec3(detail.x,0.0,detail.y));
     vec3 nx = dFdx(n), ny = dFdy(n);
@@ -57,6 +62,9 @@ void main() {
     // reflection instead of turning into bright crawling pixels.
     float base_roughness = scenic.surface_material.z;
     float roughness = sqrt(clamp(base_roughness*base_roughness+min(0.18,0.5*max(dot(nx,nx),dot(ny,ny))),base_roughness*base_roughness,0.36));
+    // The retained V5 wet-ground treatment: only shallow RGB shading changes.
+    if (film_weight>0.0)
+        roughness=mix(roughness,max(roughness,scenic.water_film.z),film_weight);
     if (h<=params.camera_wet.w) discard;
     vec2 uv = gl_FragCoord.xy/scenic.clock_encoding.zw;
     float scene_z = texture(scenic_depth,uv).r;
@@ -100,7 +108,7 @@ void main() {
         scattering *= mix(vec3(1.0),source_light,scenic.water_optics.w);
     }
     vec3 transmitted = background*transmittance+scattering*(1.0-transmittance);
-    if (scenic.art_direction.x>0.0) {
+    if (scenic.art_direction.x>0.0 && water_view!=6u) {
         // Explicit visual-demo tint within existing coverage; not apparent depth
         // or enlarged wet area. It fades out before the deeper optical treatment.
         float clarity = scenic.art_direction.x*(1.0-smoothstep(0.15,0.50,h));
@@ -124,8 +132,23 @@ void main() {
             scenic.light_color_mips.xyz*scenic_sun_visibility(world_position,n);
     }
     vec2 environment_brdf = texture(scenic_brdf,vec2(ndotv,roughness)).rg;
+    vec3 environment_term=reflection*(vec3(0.02037)*environment_brdf.x+environment_brdf.y)*scenic.water_optics.z;
+    vec3 direct_term=specular*scenic.water_optics.z;
+    vec3 transmission_term=transmitted*(1.0-fresnel);
+    // Preserve the audited arithmetic and deeper-water result, not reassociated terms.
     vec3 color = transmitted*(1.0-fresnel)+
         (reflection*(vec3(0.02037)*environment_brdf.x+environment_brdf.y)+specular)*scenic.water_optics.z;
+    if (film_weight>0.0)
+        color=fluid25d_film_ground_emphasis(color,texture(scenic_opaque,uv).rgb,
+                                            film_weight,scenic.water_film.w);
+    if (water_view==1u) color=environment_term;
+    if (water_view==2u) color=direct_term;
+    if (water_view==3u) color=transmission_term;
+    if (water_view==4u) color=transmission_term+direct_term;
+    if (water_view==5u) color=transmission_term+environment_term;
+    if (water_view==8u) color=h<0.01 ? vec3(1.0,0.8,0.01) : (h<0.05 ? vec3(1.0,0.20,0.01) : vec3(0.01,0.8,1.0));
+    if (water_view==9u) color=vec3(1.0);
+    if (water_view==10u) color=vec3(film_weight);
     float coverage = smoothstep(0.0,edge_width,h-params.camera_wet.w);
     if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,h);
     if ((options&512u)!=0u) {

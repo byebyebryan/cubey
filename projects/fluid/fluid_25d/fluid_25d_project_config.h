@@ -67,6 +67,7 @@ struct Fluid25DProjectConfig {
     std::string native_scenic_material = "refined";
     std::optional<std::filesystem::path> native_scenic_tuning_path{};
     std::string native_scenic_terrain_view = "shaded";
+    std::string native_scenic_water_view = "shaded";
     std::string native_surface_highlights = "auto";
     std::string native_water_debug = "shaded";
     std::string native_water_sampling = "triangular";
@@ -555,6 +556,13 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                       "roughness", "direct", "ambient", "constant-albedo", "no-detail",
                       "face-normal", "no-specular", "no-shadows", "specular-only"}),
               config.native_scenic_terrain_view)
+        .bind(option("fluid25d.scenic_water_view", "--fluid25d-scenic-water-view",
+                     "Scenic Water View", "Component diagnostics retain coverage and hide dots.",
+                     ValueType::Enum, {},
+                     {"shaded", "environment-only", "direct-only", "transmission-only",
+                      "no-environment", "no-direct", "no-clarity", "no-detail", "depth-bands",
+                      "coverage", "film-weight"}),
+              config.native_scenic_water_view)
         .bind(
             option("fluid25d.native_surface_highlights", "--fluid25d-native-surface-highlights",
                    "Procedural Flow Highlights",
@@ -901,6 +909,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.scenic_material") ||
          parsed.path_was_assigned("fluid25d.scenic_tuning") ||
          parsed.path_was_assigned("fluid25d.scenic_terrain_view") ||
+         parsed.path_was_assigned("fluid25d.scenic_water_view") ||
          parsed.path_was_assigned("fluid25d.native_surface_highlights") ||
          parsed.path_was_assigned("fluid25d.native_water_debug") ||
          parsed.path_was_assigned("fluid25d.native_water_sampling") ||
@@ -913,9 +922,13 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         throw std::runtime_error("native presentation requires a recording or external source");
     if ((parsed.path_was_assigned("fluid25d.scenic_material") ||
          parsed.path_was_assigned("fluid25d.scenic_tuning") ||
-         parsed.path_was_assigned("fluid25d.scenic_terrain_view")) &&
+         parsed.path_was_assigned("fluid25d.scenic_terrain_view") ||
+         parsed.path_was_assigned("fluid25d.scenic_water_view")) &&
         project_config.native_presentation != "scenic")
         throw std::runtime_error("Scenic material controls require the Scenic presentation");
+    if (project_config.native_scenic_water_view != "shaded" &&
+        project_config.native_scenic_terrain_view != "shaded")
+        throw std::runtime_error("water component diagnostics require shaded terrain");
     if (project_config.native_camera_sweep_radians > 0.0F &&
         (!project_config.recording_path || !project_config.common.headless ||
          project_config.common.capture_mode != CaptureMode::Video))

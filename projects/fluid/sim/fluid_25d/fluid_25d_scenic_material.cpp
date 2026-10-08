@@ -44,11 +44,17 @@ constexpr std::array kProperties{
     Property{"terrain_shadow_scale", &Fluid25DScenicMaterial::terrain_shadow_scale, 0.0, 1.0},
     Property{"terrain_slope_color_scale", &Fluid25DScenicMaterial::terrain_slope_color_scale, 0.0,
              1.0},
+    Property{"film_begin_m", &Fluid25DScenicMaterial::film_begin_m, 0.001, 0.2},
+    Property{"film_end_m", &Fluid25DScenicMaterial::film_end_m, 0.002, 1.0},
+    Property{"film_roughness", &Fluid25DScenicMaterial::film_roughness, 0.2, 0.8},
+    Property{"film_ground_mix", &Fluid25DScenicMaterial::film_ground_mix, 0.0, 1.0},
 };
 [[noreturn]] void invalid(const std::string& message) {
     throw std::runtime_error("fluid 2.5D Scenic material: " + message);
 }
 void validate(const Fluid25DScenicMaterial& material) {
+    if (material.film_begin_m >= material.film_end_m)
+        invalid("film_begin_m must be below film_end_m");
     if (material.terrain_normal_strength < 0.0F && material.terrain_normal_strength != -1.0F)
         invalid("terrain_normal_strength must be -1 or nonnegative");
     for (const auto& p : kProperties) {
@@ -161,6 +167,17 @@ unsigned fluid_25d_scenic_terrain_view(std::string_view view) {
     const auto found = std::find(names.begin(), names.end(), view);
     if (found == names.end())
         invalid("unknown terrain view");
+    return static_cast<unsigned>(found - names.begin());
+}
+
+unsigned fluid_25d_scenic_water_view(std::string_view view) {
+    constexpr std::array names{
+        "shaded",         "environment-only", "direct-only", "transmission-only",
+        "no-environment", "no-direct",        "no-clarity",  "no-detail",
+        "depth-bands",    "coverage",         "film-weight"};
+    const auto found = std::find(names.begin(), names.end(), view);
+    if (found == names.end())
+        invalid("unknown water view");
     return static_cast<unsigned>(found - names.begin());
 }
 } // namespace cubey::projects::fluid::fluid_25d

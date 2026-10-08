@@ -73,6 +73,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_film.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
@@ -223,6 +224,17 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_macro_terrain_v4.py)
         set_tests_properties(fluid_25d_macro_review_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_scenic_water_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_scenic_water.py)
+        set_tests_properties(fluid_25d_scenic_water_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_scenic_water_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_scenic_water_gpu.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>")
+        set_tests_properties(fluid_25d_scenic_water_gpu
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" TIMEOUT 600)
         add_test(NAME fluid_25d_native_bank_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_render_v1.py)

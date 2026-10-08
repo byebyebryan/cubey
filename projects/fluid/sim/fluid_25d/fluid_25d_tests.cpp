@@ -6900,6 +6900,50 @@ void test_scenic_material_contract() {
     const auto refined = fluid_25d_scenic_material("refined");
     const auto terrain = fluid_25d_scenic_material("terrain");
     const auto macro = fluid_25d_scenic_material("macro");
+    require(fluid_25d_scenic_water_view("shaded") == 0U &&
+                fluid_25d_scenic_water_view("coverage") == 9U,
+            "water component diagnostic slots remain stable");
+    for (const auto* material : {&v1, &refined, &terrain, &macro})
+        require(material->film_begin_m == 0.02F && material->film_end_m == 0.12F &&
+                    material->film_roughness == 0.65F && material->film_ground_mix == 0.75F,
+                "every Scenic preset uses the accepted wet-ground treatment");
+    require_throws([] { static_cast<void>(fluid_25d_scenic_water_view("unknown")); },
+                   "unknown water components fail closed");
+    for (const auto* text :
+         {R"({"schema":"cubey.fluid25d.scenic-material.v2","film_begin_m":0.05,"film_end_m":0.05})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","film_begin_m":0.13})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","film_roughness":0.81})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","film_ground_mix":1.1})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
+                       "bounded film controls and ordered transition required");
+    for (const char* source : {"--fluid25d-recording", "--fluid25d-stream"}) {
+        const auto water =
+            parse_project({"fluid_25d", source, "fixture", "--fluid25d-native-presentation",
+                           "scenic", "--fluid25d-scenic-water-view", "coverage"});
+        require(water.native_scenic_water_view == "coverage" &&
+                    water.native_scenic_material == "refined",
+                "recording/stream select shading without replacing material or backend");
+    }
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                             "--fluid25d-scenic-water-film", "rough-film"}));
+        },
+        "retired film selector is rejected rather than silently ignored");
+    require_throws(
+        [] {
+            static_cast<void>(
+                parse_project({"fluid_25d", "--fluid25d-scenic-water-view", "coverage"}));
+        },
+        "water controls require native frontend");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                             "--fluid25d-native-presentation", "scenic",
+                                             "--fluid25d-scenic-water-view", "depth-bands",
+                                             "--fluid25d-scenic-terrain-view", "albedo"}));
+        },
+        "conflicting water and terrain component controls fail closed");
     require(macro.terrain_diffuse_convolution == 1.0F && macro.terrain_ambient_softening == 0.0F &&
                 macro.water_clarity == terrain.water_clarity &&
                 macro.water_roughness == terrain.water_roughness &&

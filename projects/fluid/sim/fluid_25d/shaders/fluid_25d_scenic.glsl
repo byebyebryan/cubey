@@ -10,8 +10,12 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 surface_material;
     vec4 water_optics;
     vec4 art_direction;
-#ifdef FLUID25D_TERRAIN_MACRO
+#if defined(FLUID25D_TERRAIN_MACRO) || defined(FLUID25D_SCENIC_WATER)
     vec4 terrain_macro;
+#endif
+#ifdef FLUID25D_SCENIC_WATER
+    vec4 water_film; // begin_m, end_m, film perceptual roughness, ground mix
+    vec4 water_view; // component view, reserved, reserved, reserved
 #endif
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;

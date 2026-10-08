@@ -27,9 +27,10 @@ struct Uniforms {
     math::Vec4 light_direction_exposure, light_color_mips, clock_encoding;
     math::Vec4 ground_material, surface_material, water_optics, art_direction;
     math::Vec4 terrain_macro;
+    math::Vec4 water_film, water_view;
 };
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 256U);
+static_assert(sizeof(Uniforms) == 288U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -304,7 +305,7 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                             Fluid25DCatchmentRenderOptions options, double visual_clock_s,
                             const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
                             float marker_fraction, bool profile, bool reset_visual_flow,
-                            unsigned terrain_view) {
+                            unsigned terrain_view, unsigned water_view) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
@@ -357,7 +358,10 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                            {material.water_clarity, material.terrain_mineral_scale, 0.0F,
                             material.terrain_ambient_softening},
                            {material.terrain_diffuse_convolution, material.terrain_specular_scale,
-                            material.terrain_shadow_scale, material.terrain_slope_color_scale}});
+                            material.terrain_shadow_scale, material.terrain_slope_color_scale},
+                           {material.film_begin_m, material.film_end_m, material.film_roughness,
+                            material.film_ground_mix},
+                           {float(water_view), 0.0F, 0.0F, 0.0F}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -489,8 +493,10 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.copy->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    if (terrain_view == 0U)
-                        draw(r, bspline ? *s.water_bspline : *s.water, fields, set, push, vertices);
+                    if (terrain_view == 0U) {
+                        const auto& pipeline = bspline ? *s.water_bspline : *s.water;
+                        draw(r, pipeline, fields, set, push, vertices);
+                    }
                 });
         });
     graph.add_pass("scenic display and diagnostic dots", render::RenderGraphQueueDomain::Graphics)
@@ -512,7 +518,7 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.display->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    if (markers && terrain_view == 0U)
+                    if (markers && terrain_view == 0U && water_view == 0U)
                         markers->record_draw(
                             r.handle(), resources.current_depth_is_a(), push.view_projection,
                             target.extent, push.grid_cell.w, marker_fraction,

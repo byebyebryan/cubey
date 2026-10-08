@@ -1077,7 +1077,8 @@ class RecordingApp {
                            scenic_clock_s_, scenic_material_,
                            config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
                            profile != nullptr, scenic_flow_reset_,
-                           fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view));
+                           fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view),
+                           fluid_25d_scenic_water_view(config_.native_scenic_water_view));
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1269,15 +1270,20 @@ class RecordingApp {
 
     void report_scenic_material() const {
         const auto json = fluid_25d_scenic_material_json(scenic_material_);
+        const bool dots_draw = config_.motion_markers &&
+                               config_.native_scenic_terrain_view == "shaded" &&
+                               config_.native_scenic_water_view == "shaded";
         std::printf("fluid_25d_scenic_terrain: view=%s water_draw=%u dots_draw=%u\n",
                     config_.native_scenic_terrain_view.c_str(),
-                    config_.native_scenic_terrain_view == "shaded" ? 1U : 0U,
-                    config_.native_scenic_terrain_view == "shaded" && config_.motion_markers ? 1U
-                                                                                             : 0U);
+                    config_.native_scenic_terrain_view == "shaded" ? 1U : 0U, dots_draw ? 1U : 0U);
         std::printf("fluid_25d_scenic_material: profile=%s%s%s settings=%s\n",
                     config_.native_scenic_material.c_str(),
                     config_.native_scenic_tuning_path ? "+tuning" : "",
                     scenic_material_edited_ ? "+edited" : "", json.c_str());
+        std::printf(
+            "fluid_25d_scenic_water: shading=wet-ground view=%s pipeline=normal dots_draw=%u "
+            "coverage=retained\n",
+            config_.native_scenic_water_view.c_str(), dots_draw ? 1U : 0U);
         std::fflush(stdout);
     }
 
@@ -1327,10 +1333,32 @@ class RecordingApp {
                 report_scenic_material();
             }
             // Edits only affect the next frame's material uniforms, not playback history.
+            constexpr std::array water_views{
+                "shaded",         "environment-only", "direct-only", "transmission-only",
+                "no-environment", "no-direct",        "no-clarity",  "no-detail",
+                "depth-bands",    "coverage",         "film-weight"};
+            int water_view =
+                static_cast<int>(fluid_25d_scenic_water_view(config_.native_scenic_water_view));
+            if (ImGui::Combo("Water component", &water_view, water_views.data(),
+                             static_cast<int>(water_views.size()))) {
+                config_.native_scenic_water_view =
+                    water_views[static_cast<std::size_t>(water_view)];
+                if (water_view != 0)
+                    config_.native_scenic_terrain_view = "shaded";
+                report_scenic_material();
+            }
+            if (water_view != 0)
+                ImGui::TextWrapped(
+                    "Water-only contribution over terrain; dots hidden. Depth bands: yellow below "
+                    "1cm, orange 1-5cm, cyan above 5cm. Not a simulation mode.");
             bool edited =
                 ImGui::SliderFloat("Wet roughness", &scenic_material_.wet_roughness, 0.2F, 1.0F);
             edited |=
                 ImGui::SliderFloat("Water clarity", &scenic_material_.water_clarity, 0.0F, 1.0F);
+            edited |=
+                ImGui::SliderFloat("Film roughness", &scenic_material_.film_roughness, 0.2F, 0.8F);
+            edited |= ImGui::SliderFloat("Film ground emphasis", &scenic_material_.film_ground_mix,
+                                         0.0F, 1.0F);
             edited |= ImGui::SliderFloat("Neutral terrain",
                                          &scenic_material_.terrain_material_blend, 0.0F, 1.0F);
             bool corrected = scenic_material_.terrain_normal_strength >= 0.0F;
@@ -1364,6 +1392,8 @@ class RecordingApp {
                              static_cast<int>(terrain_views.size()))) {
                 config_.native_scenic_terrain_view =
                     terrain_views[static_cast<std::size_t>(terrain_view)];
+                if (terrain_view != 0)
+                    config_.native_scenic_water_view = "shaded";
                 report_scenic_material();
             }
             if (terrain_view != 0)
@@ -1375,7 +1405,8 @@ class RecordingApp {
             }
             if (config_.native_scenic_tuning_path || scenic_material_edited_)
                 ImGui::TextWrapped("Custom settings; selecting a preset discards these overrides.");
-            ImGui::TextWrapped("Clarity is an artistic tint, not a depth reading. Material edits "
+            ImGui::TextWrapped("Shallow water uses wet-ground shading; deeper water is unchanged. "
+                               "Clarity is an artistic tint, not a depth reading. Material edits "
                                "do not move banks or modify water fields. JSON overrides load "
                                "once; effective settings are logged.");
         }

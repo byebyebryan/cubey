@@ -27,7 +27,8 @@ class Fluid25DScenic {
                 const Fluid25DRenderCamera& camera, Fluid25DCatchmentRenderOptions options,
                 double visual_clock_s, const Fluid25DScenicMaterial& material,
                 Fluid25DMotionMarkers* markers, float marker_fraction, bool profile = false,
-                bool reset_visual_flow = false, unsigned terrain_view = 0U);
+                bool reset_visual_flow = false, unsigned terrain_view = 0U,
+                unsigned water_view = 0U);
 
   private:
     struct State;

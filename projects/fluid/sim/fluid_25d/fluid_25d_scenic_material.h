@@ -30,6 +30,11 @@ struct Fluid25DScenicMaterial {
     float terrain_specular_scale = 1.0F;
     float terrain_shadow_scale = 1.0F;
     float terrain_slope_color_scale = 1.0F;
+    // Shallow-water artistic shading in every Scenic preset. Physical metres.
+    float film_begin_m = 0.02F;
+    float film_end_m = 0.12F;
+    float film_roughness = 0.65F;
+    float film_ground_mix = 0.75F;
 };
 
 [[nodiscard]] Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile);
@@ -42,5 +47,6 @@ fluid_25d_load_scenic_material(const std::filesystem::path& path, Fluid25DScenic
 // Nonzero views suppress water/dot draws, never native field uploads.
 // Component colors retain Scenic exposure and tonemapping.
 [[nodiscard]] unsigned fluid_25d_scenic_terrain_view(std::string_view view);
+[[nodiscard]] unsigned fluid_25d_scenic_water_view(std::string_view view);
 
 } // namespace cubey::projects::fluid::fluid_25d
