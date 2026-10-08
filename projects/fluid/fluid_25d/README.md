@@ -33,8 +33,20 @@ is **not the Readable depth palette**; use raw maps for depth. Normal motion is
 decorative, driven by held native velocities; pause freezes it. Banks and dots
 remain independent. Raw maps, water debugging and inspection views retain the
 diagnostic renderer. Readable remains the launcher default and the builtin
-solver frontend is unchanged. See [Scenic rendering V1](scenic_rendering_v1.md)
-for implementation boundaries, verification and known tradeoffs.
+solver frontend is unchanged. See [Scenic rendering](scenic_rendering_v1.md)
+for implementation boundaries, verification and known tradeoffs. Scenic's
+render-only material selector retains V1 and a refined preset with quieter wet
+ground, clearer shallow streams and light-responsive pool color. This does not
+enlarge the wet area or smooth the bank mesh; Readable/raw maps remain the depth
+reference.
+
+The latest [Scenic material V2 remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
+has two eight-second V1/V2 comparisons and one no-dots Readable/V1/V2 still
+sheet. Refined Scenic improves stream/ground separation in primary-agent review,
+with unchanged numerical inputs and raw diagnostics; owner visual acceptance is
+deferred. The 720p/1080p standalone GPU p95 is 0.542/1.814 ms. Cell-scale bank
+steps and a paused live-control heartbeat limitation remain explicit in its
+[results](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/RESULTS.md).
 
 From the repository root, with a local graphical session:
 

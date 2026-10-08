@@ -198,7 +198,7 @@ def seal(out):
             text = (out/"profile-final"/receipt["stdout_path"]).read_text()
             if effective_material(text) != material:
                 raise ValueError("profile did not measure the accepted material")
-    for leaf in ("gui-replay-final", "gui-banks-final", "gui-live-final"):
+    for leaf in ("gui-replay-final", "gui-banks-final", "gui-live-final", "gui-live-detuned-validation"):
         value = json.loads((out/leaf/"manifest.json").read_text())
         if value["status"] != "pass" or value["style"] != "scenic":
             raise ValueError("GUI gate failed")
@@ -213,7 +213,7 @@ def seal(out):
     if not {"fluid_25d_scenic_gpu", "fluid_25d_scenic_material_review_helpers", "fluid_25d_tests"} <= names:
         raise ValueError("required material checks missing")
     leaves = ["baseline", "v1-baseline", "v1-media", "candidate-final", "media-final", "profile-final",
-              "gui-replay-final", "gui-banks-final", "gui-live-final"]
+              "gui-replay-final", "gui-banks-final", "gui-live-final", "gui-live-detuned-validation"]
     files = ["index.html", "RESULTS.md", "still-review.png", "gates-final.log", "gates-final.xml"]
     ref.write_json_exclusive(out/"review-seal.json", {"schema": "cubey.fluid25d.scenic-material-review.v2",
         "runtime": runtime, "source_files": previous.source_files(), "inputs": ref.frozen_input_identity(),

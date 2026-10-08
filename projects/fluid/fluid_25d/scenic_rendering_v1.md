@@ -1,4 +1,4 @@
-# Native Terrain–Water Rendering V1
+# Native Terrain–Water Rendering
 
 Scenic is an opt-in visual-demo material path, not a solver, terrain or shoreline
 upgrade. It applies to the shared native replay/external live frontend's shaded
@@ -20,6 +20,47 @@ surface waves. Use the raw depth/velocity/wet-dry maps for numerical readings.
 The Style selector also retains Original/Motion. Bank selection (`S`) and dots
 (`W`) are independent. Inspection/debug views use the legacy diagnostic shading;
 the old sparse-highlight control is disabled while Scenic is selected.
+
+## Scenic material refinement V2
+
+Scenic now starts with the `refined` material preset. Readable remains the demo
+launcher default; Original remains the application default. Neither the builtin
+solver nor the native worker changes. V1 remains selectable for comparison.
+The native GUI's **Scenic materials (render only)** disclosure offers V1/Refined,
+wet-ground roughness and shallow-water clarity. Preset selection deliberately
+replaces custom tuning; material edits retain camera, dots and playback state.
+
+For deterministic headless comparisons, the application accepts:
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d --headless \
+  --fluid25d-recording path/to/manifest.json \
+  --fluid25d-native-presentation scenic --fluid25d-scenic-material v1 \
+  --output ./outputs/material-v1.png
+```
+
+`--fluid25d-scenic-tuning file.json` optionally overrides a preset, once at
+startup. Both material options require native input and initial Scenic style;
+builtin/Readable invocations reject them rather than silently ignoring them.
+The flat JSON schema is `cubey.fluid25d.scenic-material.v2`. Omitted fields inherit
+the selected preset; unknown/duplicate fields, non-finite/out-of-range numbers,
+oversized files and symlink/non-regular inputs are rejected. The application logs
+the complete effective settings. There is no hot reload or simulation tuning.
+
+The refined preset dims mineral albedo, reduces terrain saturation and wet-ground
+gloss, balances ambient/direct light, and makes water scattering respond partly
+to scene lighting. A restrained cool transmission tint separates shallow streams
+from the bed, fading out between 0.15 and 0.50 m of vertical depth. That tint is an
+explicit artistic tradeoff, not calibrated water optics. It changes neither depth,
+alpha, wet threshold, water coverage, refraction guards nor bank geometry. Water
+normal detail, filtering, clocks, reflection F0 and the dots/trails are retained.
+
+`review_scenic_material_v2.py` records frozen V1 and final V2 material receipts,
+unchanged Readable/raw stills and non-Scenic shader hashes, two short matched
+before/after clips, a three-column still sheet, standalone GPU profiles and
+private replay/bank/live control checks. Its final seal binds gallery assets,
+runtime, source, input and effective-material identity. Developmental ablations
+are retained separately and are not final evidence. No solver runs for the media.
 
 ## Rendering contract and reuse
 
@@ -91,6 +132,53 @@ shadow map is approximate at native cell scale. Environment/detail generation
 adds a cold first-use cost. Human visual acceptance is deferred; Scenic is not
 promoted to the default on automated checks alone.
 
+## Material V2 review — 2026-10-07
+
+The latest [two-clip remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
+compares frozen V1 with refined Scenic on identical saved fields. The
+[results](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/RESULTS.md)
+include the no-dots Readable/V1/V2 sheet, ablation verdict, effective settings,
+raw parity, timing scope and retained failed development attempts.
+The verified seal covers 357 final/historical review artifacts; development
+failures and earlier audition leaves are outside that inventory.
+
+Primary-agent review favors refined Scenic for quieter wet rock, clearer shallow
+streams and less uniformly bright pool color. Wet-ground roughness alone was
+insufficient; mineral albedo and lighting also mattered. Terrain still looks
+procedural in places, Readable remains better for faint tributaries, and cell
+steps remain. Owner visual acceptance is deferred; neither Scenic nor B-spline
+is promoted to the launcher default.
+
+Final standalone GPU presentation median/p95 is 0.313/0.542 ms at 1280×720 and
+0.991/1.814 ms at 1920×1080, with 12 warmup/108 measured frames, reference banks,
+dots on and the same saved 6000 s runoff start. The 4 ms 720p gate passes. These
+exclude cold setup, ImGui/present, capture/encode and native CUDA; they are not
+whole-app FPS or a controlled V1/V2 performance comparison.
+
+The bounded private live run adds 60 wall seconds of unchanged 60× rain pacing,
+then exercises pause, rain-off while detached, reattachment, continued zero-rain
+computation, byte-exact generation reset and owned cleanup. Running publication
+freshness p95/max is 0.223/0.254 s across 1430 frames; inputs remain unchanged.
+The paused heartbeat guard can temporarily disable controls: one reattach resume
+needed 18 ignored keys before a command was emitted. The driver now observes
+first-frame readiness, explicitly focuses its private window and stops retries
+on command emission. A subsequent short current-driver cycle passed, but the
+production paused-control limitation remains. Service health policy is unchanged.
+
+The final dev gate passes 167/167 in 395.93 s with no failures or skips. All ten
+Readable baseline stills and six Scenic raw diagnostics match exactly, and all
+35 non-Scenic compiled shader blobs are unchanged. Both-preset synthetic calm,
+dry-gap, stream and bank controls pass, as do private replay/bank/resize checks.
+These remain rendering/upload and bounded compatibility checks, not owner
+acceptance or a new native conservation validation.
+
+Verify the completed V2 handoff against the current build with:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/review_scenic_material_v2.py verify \
+  --out outputs/fluid/scenic-material-v2-20261007-DgG3eP
+```
+
 Cold local setup can outlast the existing three-second live-service timeout.
 After resource creation, the next viewer poll obtains a current validated
 publication before evaluating health. An older pending I/O result is discarded
@@ -99,9 +187,9 @@ publication still fails closed; the worker timeout and heartbeat policy are
 not extended or re-dated. No numerical frame is accepted from inside a render
 command after its hydraulic upload has already been recorded.
 
-## Validated checkpoint — 2026-10-07
+## Historical V1 checkpoint — 2026-10-07
 
-The current remote handoff is
+The retained V1 remote handoff is
 [the compact two-clip gallery](../../../outputs/fluid/scenic-terrain-water-v1-20261007-GjiN5X/index.html),
 with [results and limits](../../../outputs/fluid/scenic-terrain-water-v1-20261007-GjiN5X/RESULTS.md)
 and a 192-artifact review seal. Owner visual acceptance remains deferred.
@@ -146,7 +234,9 @@ Scenic or B-spline based on automation alone. The next useful step is owner
 review of the two comparisons, then a bounded material/contrast refinement if
 desired, without reopening solver or shoreline math.
 
-Revalidate the sealed handoff against the current build with:
+The V1 verifier is intentionally runtime-bound. It passed against the frozen V1
+build; a V2 executable/source will reject it, not silently reseal old captures.
+With that V1 build, the verification command is:
 
 ```sh
 rtk proxy python3 projects/fluid/fluid_25d/review_scenic_water_v1.py verify \
