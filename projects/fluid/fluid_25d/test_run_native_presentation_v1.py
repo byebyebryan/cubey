@@ -149,6 +149,31 @@ class NativePresentationTests(unittest.TestCase):
         self.assertEqual(deltas[:12], [0.0] * 12)
         self.assertEqual(deltas[12:], [60.0, 0.0])
 
+    def test_still_log_validation_uses_declared_nondefault_save_cadence(self):
+        asset = presentation.still_asset("rain512", "collection", 6750)
+        # Historical callers retain the original 60-second expectation.
+        self.assertEqual(presentation.expected_capture_rows(asset, "scenic")[0]["saved_field_time_s"], 6720)
+        asset["saved_field_interval_s"] = 225
+        self.assertEqual(presentation.expected_capture_rows(asset, "scenic")[0]["saved_field_time_s"], 6750)
+        log = (
+            "fluid_25d_recording_upload: PASS\n"
+            "fluid_25d_recording_capture: output_frame=0 requested_s=6750.000000000 "
+            "saved_s=6750.000000000 camera=collection hydraulic_dispatches=0 "
+            "visual_delta_s=0.000000000 presentation=scenic\n"
+        )
+        receipt = presentation.verify_capture_log(log, True, asset, "scenic")
+        self.assertTrue(receipt["capture_log_validated"])
+        with self.assertRaises(ValueError):
+            presentation.verify_capture_log(log.replace("saved_s=6750", "saved_s=6720"), True, asset, "scenic")
+        asset["requested_time_s"] = 6751
+        self.assertEqual(presentation.expected_capture_rows(asset, "scenic")[0]["saved_field_time_s"], 6750)
+
+    def test_nonpositive_still_save_cadence_rejected(self):
+        asset = presentation.still_asset("rain512", "collection", 6750)
+        asset["saved_field_interval_s"] = 0
+        with self.assertRaises(ValueError):
+            presentation.expected_capture_rows(asset, "scenic")
+
     def test_profile_summary_uses_gpu_scope_and_excludes_warmup(self):
         with tempfile.TemporaryDirectory() as temp:
             prefix = Path(temp) / "profile"

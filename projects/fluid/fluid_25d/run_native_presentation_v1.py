@@ -446,10 +446,13 @@ def png_dimensions(path: Path) -> tuple[int, int]:
 def expected_capture_rows(asset: dict, presentation: str | None) -> list[dict]:
     if asset["kind"] in ("still", "diagnostic"):
         requested = asset["requested_time_s"]
+        saved_interval_s = asset.get("saved_field_interval_s", SAVED_INTERVAL_S)
+        if saved_interval_s <= 0:
+            raise ValueError("saved field cadence must be positive")
         return [{
             "frame_index": 0,
             "requested_time_s": requested,
-            "saved_field_time_s": (requested // SAVED_INTERVAL_S) * SAVED_INTERVAL_S,
+            "saved_field_time_s": (requested // saved_interval_s) * saved_interval_s,
             "visual_delta_s": 0.0,
         }]
     rows = asset["timeline"]
