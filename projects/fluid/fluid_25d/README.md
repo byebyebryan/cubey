@@ -1875,3 +1875,131 @@ It retains the three tradeoffs, matched growth/recession clips and actual GUI
 captures. Automated private-Xvfb checks do not constitute owner visual acceptance.
 Use `run_native_bank_comparison_v1.py` for capture/profile/review/integrity phases;
 it reuses the previous bounded masks and does not run a solver or bake new ones.
+
+## Pre-existing mountain lake experiment
+
+`run_seeded_lake_v1.py` adds an explicitly initialized lake inside the existing
+B20 depression of the unchanged mountain crop. It uses the installed SynxFlow
+reference, recording converter and Scenic viewer; no solver, material or
+terrain defaults change. This lake already exists when the demonstration starts:
+it is **not** a claimed rain-formed lake or a maintained water-level constraint.
+
+The default level is 90% of the height from basin floor to analytical spill,
+leaving about 6.7 m of spill headroom. Initialization follows the floor-connected
+D4 sublevel set on the entire actual native bed, not a clipped painted mask or
+constant-depth sheet. Initial momentum is zero. The runner first checks 30
+physical minutes without rain, then runs the established 120 mm/h rainfall for
+two physical hours. A failed retention check stops the experiment.
+
+Run with the existing isolated native environment and a fresh output leaf:
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_seeded_lake_v1.py \
+  --out outputs/fluid/seeded-lake-v1-local
+```
+
+The generated `index.html` includes matched initial/held lake captures, rain
+playback, raw depth evidence, provenance and the local GUI replay command. The
+report browser discovers it automatically. `--level-fraction` selects a different
+below-spill initial stage for a new experiment, not a live level control. The
+recordings remain separate from all established dry-start rain recordings.
+Run `test_run_seeded_lake_v1.py` in the same environment for CPU-only geometry
+tests; it does not launch CUDA or a renderer.
+
+## Dry-start rain-formed collections
+
+`run_natural_lakes_v1.py` is the paired whole-map experiment: no initial lake,
+zero initial depth/momentum, and uniform rain over the unchanged mountain crop.
+It reuses the same native serializer, released solver, recording adapter and
+Scenic viewer. The bounded schedule is eight physical hours at the established
+heavy 120 mm/h rate, a 60-second taper, then four hours of recession. This is a
+deliberate visual stress case, not a realistic storm or calibrated hydrology.
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_natural_lakes_v1.py \
+  --out outputs/fluid/natural-lakes-v1-local
+```
+
+All terrain-derived depression masks are observed, not just the seeded B20
+reference. The report includes whole-map depth distributions, storage/recession
+history, matched overview and collection captures, and GUI replay instructions.
+It distinguishes retained water patches from proven quiet lakes using measured
+speed and surface-level spread. Native states are saved every five minutes;
+the browser videos are bounded recorded playback, not a live solver.
+The simulation collects water in existing depressions but does not erode or
+create new lake beds, add artificial dams, or maintain a prescribed lake level.
+Existing dry-start and seeded recordings and all product defaults remain intact.
+
+## Equal-total faster rainfall comparison
+
+`run_rain_acceleration_v1.py` tests 240 mm/h for four hours and 480 mm/h for two
+hours against the existing eight-hour 120 mm/h dry-start recording. Main storms
+all supply 960 mm; proportionally shortened tapers add exactly 1 mm each. Every
+case ends four hours after its main storm ends, including the taper. Numerical
+terrain, native solver, Manning coefficient, boundary, initial conditions and
+renderer settings stay fixed. These are extreme visual-demo stress cases, not
+realistic weather, and no higher rate is promoted to a default.
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_rain_acceleration_v1.py \
+  --out outputs/fluid/rain-acceleration-v1-local
+```
+
+The reference must be present at `outputs/fluid/natural-lakes-v1-20261008-a1`.
+The report compares the same physical time, the same total input at storm end,
+and the same recession window. Its frozen formation target is B20 having at
+least 0.5 km² of water at least 1 m deep, bracketed by five-minute saves. It also
+reports flood spread, retained water and native-call runtime, with matched
+Scenic captures, full replays and whole-map depth plots. Higher rainfall changes
+the physics; it is not a simulation-time multiplier. Equal rain input need not
+produce equal retention because the shorter storms allow less drainage time.
+`test_run_rain_acceleration_v1.py` checks the schedules and reporting contract
+without launching CUDA or the renderer.
+
+## Power-of-two rainfall study
+
+`run_rain_power2_v1.py` runs 512 and 1024 mm/h against the unchanged 480 mm/h
+recording from `outputs/fluid/rain-acceleration-v1-20261008-a1`. It keeps the
+same 960 mm main-storm input plus a 1 mm triangular taper, then the same
+four-hour recession window including that taper. Main storms last 112.5 and
+56.25 physical minutes. This tests proposed presets, not a GUI or default change.
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_rain_power2_v1.py \
+  --out outputs/fluid/rain-power2-v1-local
+```
+
+New states save every 225 seconds so both exact storm and recession endpoints
+are recorded; the existing 480 reference remains at its five-minute cadence.
+Matched early views use 45 physical minutes, while every storm is still on.
+The same B20 formation target, whole-map flood spread, retained-water metrics
+and native-input checks are used. Replays share the same 225-second render
+interval, holding reference fields between their original five-minute knots.
+The report browser discovers the generated gallery automatically. Original
+studies, numerical terrain, solver and render defaults remain unchanged.
+Use `test_run_rain_power2_v1.py` for CPU-only schedule and mixed-cadence checks.
+This study re-encodes only its own fresh rainfall input table at round-trip-safe
+precision: the upstream IO writer uses six significant timestamp digits (two
+decimal places at these times), which otherwise changes fractional taper knots
+and fails the strict recording check.
+Installed backend/solver code is untouched; the converter's checks are not
+relaxed. Each new study archives its runner alongside the frozen protocol.
+`--presentation-only` rechecks the sealed numerical source, reference and all
+recording frames before regenerating media; it never runs CUDA. First retain/move
+any existing `media`, `capture-manifest.json` and `index.html` out of their original
+paths. Recapture checks all three targets before writing, never overwrites old
+presentation evidence, and leaves numerical protocols and recordings in place.
+
+The [reviewed 480/512/1024 results](../../../outputs/fluid/rain-power2-v1-20261008-a2/index.html)
+support **512 mm/h as the balanced demo preset candidate**, with **1024 mm/h as
+an optional rapid-fill/stress setting**. B20 reaches the fixed formation target
+in (41.25, 45] physical minutes at 512 and (22.5, 26.25] minutes at 1024, versus
+(40, 45] minutes at 480. The faster case spreads more runoff during rain; final
+whole-map storage after the equal recession window differs by less than 0.04%
+across these three cases. The user accepted this direction, not a weather-realism
+claim or completed visual acceptance. UI presets and product defaults remain
+unchanged; captures and sealed numerical source versions remain in the report.
