@@ -76,6 +76,12 @@ struct PbrEquirectangularImage {
     std::span<const float> rgba32f{};
 };
 
+// Opt-in diffuse-only cube for the retained generated environment. Cosine
+// integration is normalized by pi, like the HDR path, and preserves the legacy
+// ambient gain/floor. Existing environment generation and defaults are unchanged.
+[[nodiscard]] std::vector<std::uint8_t>
+generate_generated_diffuse_irradiance(std::uint32_t extent = 32U);
+
 void validate_generated_pbr_environment_config(const GeneratedPbrEnvironmentConfig& config);
 void validate_pbr_environment_frame_bindings(const PbrEnvironmentFrameBindings& bindings);
 void validate_pbr_environment_texture_bindings(const PbrEnvironmentTextureBindings& bindings);

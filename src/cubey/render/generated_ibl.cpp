@@ -516,6 +516,25 @@ math::Vec3 sample_pbr_equirectangular_radiance(const PbrEquirectangularImage& im
     return sample_pbr_equirectangular_radiance_unchecked(image, direction);
 }
 
+std::vector<std::uint8_t> generate_generated_diffuse_irradiance(std::uint32_t extent) {
+    if (extent == 0U || extent > 256U)
+        throw std::runtime_error("generated diffuse cube extent must be 1..256");
+    constexpr std::uint32_t samples = 256U;
+    std::vector<std::uint8_t> bytes;
+    bytes.reserve(texture_cube_byte_size(extent, 1, texture_format_byte_size(kIblTextureFormat)));
+    append_cube(bytes, extent, 1, [](math::Vec3 direction, std::uint32_t) {
+        const auto normal = glm::normalize(direction);
+        math::Vec3 color{0.0F};
+        for (std::uint32_t sample = 0; sample < samples; ++sample) {
+            const auto hemisphere = sample_cosine_hemisphere(hammersley(sample, samples));
+            color += generated_irradiance(tangent_to_world(hemisphere, normal));
+        }
+        // Cosine-weighted pdf cancels NdotL; this stores E/pi, not E.
+        return color / static_cast<float>(samples);
+    });
+    return bytes;
+}
+
 GeneratedPbrEnvironmentData
 generate_pbr_environment_data(const GeneratedPbrEnvironmentConfig& config) {
     validate_generated_pbr_environment_config(config);

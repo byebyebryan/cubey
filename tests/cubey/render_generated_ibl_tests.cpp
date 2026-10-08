@@ -166,6 +166,44 @@ void test_generated_pbr_environment_data_is_deterministic_and_sized() {
     require(std::isfinite(sheen_directional_albedo) && sheen_directional_albedo >= 0.0F &&
                 sheen_directional_albedo <= 1.0F,
             "generated DFG LUT alpha should contain bounded sheen directional albedo");
+
+    const auto diffuse = cubey::render::generate_generated_diffuse_irradiance(1U);
+    require(diffuse == cubey::render::generate_generated_diffuse_irradiance(1U),
+            "opt-in diffuse convolution is deterministic");
+    require(diffuse.size() == 6U * 4U * sizeof(float), "diffuse cube has six RGBA faces");
+    // Independent uniform-sphere quadrature checks E/pi, face orientation and
+    // legacy gain/floor. It does not reuse the production cosine sampler.
+    const TestVec3 normals[] = {{1, 0, 0},  {-1, 0, 0}, {0, 1, 0},
+                                {0, -1, 0}, {0, 0, 1},  {0, 0, -1}};
+    constexpr std::uint32_t reference_samples = 16384U;
+    constexpr float pi = 3.14159265359F;
+    for (std::uint32_t face = 0; face < 6U; ++face) {
+        TestVec3 expected{};
+        for (std::uint32_t sample = 0; sample < reference_samples; ++sample) {
+            const float y = 1.0F - 2.0F * (static_cast<float>(sample) + 0.5F) / reference_samples;
+            const float angle = static_cast<float>(sample) * pi * (3.0F - std::sqrt(5.0F));
+            const float radius = std::sqrt(1.0F - y * y);
+            const TestVec3 light{radius * std::cos(angle), y, radius * std::sin(angle)};
+            const auto radiance =
+                mix(TestVec3{0.035F, 0.038F, 0.042F}, generated_radiance_reference(light), 0.34F);
+            expected = expected + radiance * (4.0F * std::max(dot(normals[face], light), 0.0F) /
+                                              reference_samples);
+        }
+        const float channels[] = {expected.x, expected.y, expected.z};
+        for (std::uint32_t channel = 0; channel < 3U; ++channel) {
+            const float value = read_float(diffuse, face * 4U + channel);
+            require(std::isfinite(value) && value >= 0.0F &&
+                        std::fabs(value - channels[channel]) < 0.004F,
+                    "cosine cube agrees with independent hemispherical integral, without extra pi");
+        }
+        require(read_float(diffuse, face * 4U + 3U) == 1.0F, "diffuse alpha remains one");
+    }
+    require_throws(
+        [] { static_cast<void>(cubey::render::generate_generated_diffuse_irradiance(0U)); },
+        "zero diffuse extent fails closed");
+    require_throws(
+        [] { static_cast<void>(cubey::render::generate_generated_diffuse_irradiance(257U)); },
+        "unbounded diffuse extent fails closed");
 }
 
 void test_generated_pbr_environment_config_rejects_zero_dimensions() {
