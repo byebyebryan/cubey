@@ -6898,6 +6898,37 @@ void test_scenic_material_contract() {
     using namespace cubey::projects::fluid::fluid_25d;
     const auto v1 = fluid_25d_scenic_material("v1");
     const auto refined = fluid_25d_scenic_material("refined");
+    const auto terrain = fluid_25d_scenic_material("terrain");
+    const auto macro = fluid_25d_scenic_material("macro");
+    require(macro.terrain_diffuse_convolution == 1.0F && macro.terrain_ambient_softening == 0.0F &&
+                macro.water_clarity == terrain.water_clarity &&
+                macro.water_roughness == terrain.water_roughness &&
+                terrain.terrain_diffuse_convolution == 0.0F &&
+                refined.terrain_specular_scale == 1.0F && v1.terrain_shadow_scale == 1.0F,
+            "macro diffuse is opt-in and water/reference values are unchanged");
+    require(fluid_25d_scenic_material_json(
+                fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(macro), v1)) ==
+                fluid_25d_scenic_material_json(macro),
+            "macro tuning roundtrips exactly");
+    require(terrain.terrain_normal_strength == 0.12F && terrain.terrain_material_blend == 1.0F &&
+                terrain.terrain_ambient_softening == 1.0F &&
+                terrain.water_clarity == refined.water_clarity &&
+                terrain.water_roughness == refined.water_roughness &&
+                refined.terrain_normal_strength == -1.0F && v1.terrain_material_blend == 0.0F,
+            "terrain is opt-in, preserves water controls, and retains legacy material presets");
+    require(fluid_25d_scenic_material_json(
+                fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(terrain), v1)) ==
+                fluid_25d_scenic_material_json(terrain),
+            "terrain controls roundtrip exactly");
+    require(fluid_25d_scenic_terrain_view("shaded") == 0U &&
+                fluid_25d_scenic_terrain_view("face-normal") == 11U,
+            "terrain component slots are stable");
+    require_throws([] { static_cast<void>(fluid_25d_scenic_terrain_view("unknown")); },
+                   "unknown terrain views fail closed");
+    require(fluid_25d_scenic_terrain_view("no-specular") == 12U &&
+                fluid_25d_scenic_terrain_view("no-shadows") == 13U &&
+                fluid_25d_scenic_terrain_view("specular-only") == 14U,
+            "macro diagnostic slots append without changing old component indices");
     require(v1.wet_roughness == 0.38F && v1.water_clarity == 0.0F &&
                 v1.water_scatter_lighting == 0.0F && refined.wet_roughness > v1.wet_roughness,
             "V1 remains available and refined wet ground is less glossy");
@@ -6924,6 +6955,13 @@ void test_scenic_material_contract() {
          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_clarity":1.1})",
          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_clarity":1e400})",
          R"({"schema":"cubey.fluid25d.scenic-material.v2","rainfall":10})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_normal_strength":-0.5})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_material_blend":1.1})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_ambient_softening":2})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_diffuse_convolution":2})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_specular_scale":-1})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_shadow_scale":2})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_slope_color_scale":2})",
          R"({"schema":"cubey.fluid25d.scenic-material.v2","wet_roughness":0.4,"wet_roughness":0.7})"}) {
         require_throws(
             [&] { static_cast<void>(fluid_25d_parse_scenic_material(text, v1)); },
@@ -6969,6 +7007,36 @@ void test_scenic_material_contract() {
     require_throws(
         [] { static_cast<void>(parse_project({"fluid_25d", "--fluid25d-scenic-material", "v1"})); },
         "builtin cannot accidentally consume Scenic controls");
+    const auto study = parse_project(
+        {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-presentation", "scenic",
+         "--fluid25d-scenic-material", "terrain", "--fluid25d-scenic-terrain-view", "terrain-only",
+         "--fluid25d-native-camera-yaw", "0.2"});
+    require(study.native_scenic_terrain_view == "terrain-only" &&
+                study.native_camera_yaw_radians == 0.2F &&
+                study.native_camera_sweep_radians == 0.0F,
+            "terrain diagnostic and heading remain render-only options");
+    for (const auto* flag : {"--fluid25d-scenic-terrain-view", "--fluid25d-native-camera-sweep"})
+        require_throws(
+            [&] {
+                static_cast<void>(parse_project(
+                    {"fluid_25d", flag,
+                     flag == std::string_view("--fluid25d-scenic-terrain-view") ? "albedo"
+                                                                                : "0.4"}));
+            },
+            "terrain diagnostics and sweeps cannot silently affect builtin simulations");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                             "--fluid25d-native-presentation", "readable",
+                                             "--fluid25d-scenic-terrain-view", "albedo"}));
+        },
+        "terrain components require Scenic");
+    require_throws(
+        [] {
+            static_cast<void>(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                             "--fluid25d-native-camera-sweep", "0.4"}));
+        },
+        "sweep requires a headless recorded video");
 }
 
 int main() {

@@ -38,6 +38,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_water_bspline.vert
         ../sim/fluid_25d/shaders/fluid_25d_water.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain.frag
+        ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain_legacy.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_water.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_flow.comp
         ../sim/fluid_25d/shaders/fluid_25d_scenic_sky.frag
@@ -72,6 +73,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
@@ -95,6 +97,18 @@ target_link_libraries(cubey_project_fluid_25d_external_probe
     PRIVATE cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_fluid_25d_surface_gradient_gpu_tests
+        ../sim/fluid_25d/fluid_25d_surface_gradient_gpu_tests.cpp)
+    target_link_libraries(cubey_project_fluid_25d_surface_gradient_gpu_tests PRIVATE
+        cubey::cubey cubey_project_options cubey_project_warnings)
+    target_compile_definitions(cubey_project_fluid_25d_surface_gradient_gpu_tests PRIVATE
+        CUBEY_FLUID25D_NORMAL_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/test-shaders")
+    cubey_add_glsl_shaders(cubey_project_fluid_25d_surface_gradient_gpu_tests
+        OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-shaders"
+        SOURCES ../sim/fluid_25d/shaders/fluid_25d_surface_gradient_test.comp
+        DEPENDS ../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl)
+    add_test(NAME fluid_25d_surface_gradient_gpu COMMAND cubey_project_fluid_25d_surface_gradient_gpu_tests)
+    set_tests_properties(fluid_25d_surface_gradient_gpu PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
     add_executable(cubey_project_fluid_25d_external_session_tests
         ../sim/fluid_25d/fluid_25d_backend_contract.cpp
         ../sim/fluid_25d/fluid_25d_external_session.cpp
@@ -199,6 +213,16 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_scenic_material_v2.py)
         set_tests_properties(fluid_25d_scenic_material_review_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_terrain_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_terrain_material_v3.py)
+        set_tests_properties(fluid_25d_terrain_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_macro_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_macro_terrain_v4.py)
+        set_tests_properties(fluid_25d_macro_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
         add_test(NAME fluid_25d_native_bank_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_native_bank_render_v1.py)
@@ -255,7 +279,8 @@ if (BUILD_TESTING)
                 --target "$<TARGET_FILE:cubey_project_fluid_25d>"
                 ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
         set_tests_properties(fluid_25d_scenic_gpu
-            PROPERTIES LABELS "headless;gpu;fluid;presentation" SKIP_RETURN_CODE 77 TIMEOUT 240)
+            # Independent application startups now include V3 and macro controls.
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" SKIP_RETURN_CODE 77 TIMEOUT 600)
         add_test(NAME fluid_25d_backend_startup_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_backend_startup_gpu_v1.py"

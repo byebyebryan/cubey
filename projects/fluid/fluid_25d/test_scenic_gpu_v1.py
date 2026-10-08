@@ -53,12 +53,28 @@ def main():
             ra = run("refined-rest-a",[*refined,"--fluid25d-recording-time-seconds","0"])
             rb = run("refined-rest-b",[*refined,"--fluid25d-recording-time-seconds","2"])
             assert digest(ra)==digest(rb),"refined calm material changed across identical saved fields"
+            terrain = ["--fluid25d-scenic-material", "terrain"]
+            ta = run("terrain-rest-a",[*terrain,"--fluid25d-recording-time-seconds","0"])
+            tb = run("terrain-rest-b",[*terrain,"--fluid25d-recording-time-seconds","2"])
+            assert digest(ta)==digest(tb),"terrain material changed across identical calm fields"
+            run("terrain-only",[*terrain,"--fluid25d-scenic-terrain-view","terrain-only"])
+            macro = ["--fluid25d-scenic-material", "macro"]
+            ma = run("macro-rest-a",[*macro,"--fluid25d-recording-time-seconds","0"])
+            mb = run("macro-rest-b",[*macro,"--fluid25d-recording-time-seconds","2"])
+            assert digest(ma)==digest(mb),"macro terrain changed across identical calm fields"
+            run("macro-only",[*macro,"--fluid25d-scenic-terrain-view","terrain-only"])
             run("bspline",["--fluid25d-native-bank-view","bspline-2x"])
             sidecar,_ = make_sidecar(root/(case+"-masks"),manifest)
             run("ms",["--fluid25d-native-display-coverage",str(sidecar),"--fluid25d-native-bank-view","marching-squares"])
             if case == "partial-dry-lake":
                 run("refined-bspline",[*refined,"--fluid25d-native-bank-view","bspline-2x"])
                 run("refined-ms",[*refined,"--fluid25d-native-display-coverage",str(sidecar),"--fluid25d-native-bank-view","marching-squares"])
+                run("terrain-bspline",[*terrain,"--fluid25d-native-bank-view","bspline-2x"])
+                run("terrain-ms",[*terrain,"--fluid25d-native-display-coverage",str(sidecar),"--fluid25d-native-bank-view","marching-squares"])
+                run("macro-bspline",[*macro,"--fluid25d-native-bank-view","bspline-2x"])
+                run("macro-ms",[*macro,"--fluid25d-native-display-coverage",str(sidecar),"--fluid25d-native-bank-view","marching-squares"])
+                for component in ("no-specular","no-shadows","specular-only"):
+                    run("macro-"+component,[*macro,"--fluid25d-scenic-terrain-view",component])
             diagnostics = []
             for style in ("readable","scenic"):
                 diagnostics.append(run("raw-"+style,["--fluid25d-native-presentation",style,
@@ -66,7 +82,7 @@ def main():
             assert digest(diagnostics[0])==digest(diagnostics[1]),"Scenic changed the raw depth map"
             if args.video and case == "fully-wet-lake":
                 video = run("rest-video",["--capture","video","--frames","8","--fps","4",
-                    "--fluid25d-recording-frame-interval-seconds","0.5",*refined],True)
+                    "--fluid25d-recording-frame-interval-seconds","0.5",*terrain],True)
                 result = subprocess.run(["rtk","proxy","ffmpeg","-v","error","-ignore_editlist","1","-i",str(video),
                     "-fps_mode","passthrough","-f","rawvideo","-pix_fmt","rgb24","pipe:1"],capture_output=True,timeout=30)
                 assert result.returncode == 0, result.stderr.decode(errors="replace")
@@ -78,7 +94,7 @@ def main():
                 # the input pixels are; the still controls above are lossless.
                 frames = [decoded[i*size:(i+1)*size] for i in range(8)]
                 control = root/"static-codec-control.mp4"
-                result = subprocess.run(["rtk","proxy","ffmpeg","-v","error","-n","-loop","1","-framerate","4","-i",str(ra),
+                result = subprocess.run(["rtk","proxy","ffmpeg","-v","error","-n","-loop","1","-framerate","4","-i",str(ta),
                     "-frames:v","8","-c:v","libx264","-preset","veryfast","-crf","18","-g","12","-bf","0",
                     "-pix_fmt","yuv420p",str(control)],capture_output=True,timeout=30)
                 assert result.returncode == 0, result.stderr.decode(errors="replace")

@@ -864,7 +864,8 @@ class RecordingApp {
 
     void ensure_scenic_resources(vulkan::Device& device, render::ColorTargetView target) {
         if (scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
-                                     scenario_, resources_) &&
+                                     scenario_, resources_,
+                                     scenic_material_.terrain_diffuse_convolution > 0.0F) &&
             external_session_)
             external_refresh_after_render_setup_ = true;
     }
@@ -929,11 +930,24 @@ class RecordingApp {
                                far);
     }
 
-    Fluid25DRenderCamera camera(VkExtent2D extent) const {
+    Fluid25DRenderCamera camera(VkExtent2D extent, std::uint64_t frame_index = 0U) const {
+        float yaw = config_.native_camera_yaw_radians + orbit_.yaw();
+        float distance = orbit_.distance();
+        if (config_.native_camera_sweep_radians > 0.0F) {
+            const auto count = host::headless_capture_frame_count(config_.common);
+            const float progress =
+                std::clamp(float(frame_index) / float(std::max(count, 2U) - 1U), 0.0F, 1.0F);
+            yaw += (progress - 0.5F) * config_.native_camera_sweep_radians;
+            distance *= 1.0F + 0.08F * std::sin(progress * std::numbers::pi_v<float>);
+            std::printf(
+                "fluid_25d_terrain_camera: output_frame=%llu yaw=%.9f pitch=%.9f distance=%.9f\n",
+                static_cast<unsigned long long>(frame_index), yaw,
+                config_.native_camera_pitch_radians + orbit_.pitch(), distance);
+        }
         const auto transform =
             orbit_camera_transform({.target = target_,
-                                    .distance = orbit_.distance(),
-                                    .yaw = -0.52F + orbit_.yaw(),
+                                    .distance = distance,
+                                    .yaw = yaw,
                                     .pitch = config_.native_camera_pitch_radians + orbit_.pitch()});
         return {camera_.view_projection_matrix(transform, static_cast<float>(extent.width) /
                                                               static_cast<float>(extent.height)),
@@ -1059,16 +1073,18 @@ class RecordingApp {
         if (scenic_active) {
             ensure_scenic_resources(device, target);
             scenic_.record(device, commands, graph_, slot, target, target_mode, resources_,
-                           simulation_, camera(target.extent), displayed_render, scenic_clock_s_,
-                           scenic_material_, config_.motion_markers ? &markers_ : nullptr,
-                           marker_fraction_, profile != nullptr, scenic_flow_reset_);
+                           simulation_, camera(target.extent, frame_index), displayed_render,
+                           scenic_clock_s_, scenic_material_,
+                           config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
+                           profile != nullptr, scenic_flow_reset_,
+                           fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view));
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
                 target, resources_, simulation_, view_, catchment_view_, debug_view_,
-                camera(target.extent), target_mode, false, true, hydraulic_reset_never_used_,
-                cue_reset_, quiver_reset_, nullptr, slot.index, {}, displayed_render,
-                config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
+                camera(target.extent, frame_index), target_mode, false, true,
+                hydraulic_reset_never_used_, cue_reset_, quiver_reset_, nullptr, slot.index, {},
+                displayed_render, config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
                 config_.motion_markers);
             graph_.record(
                 {.device = &device,
@@ -1253,6 +1269,11 @@ class RecordingApp {
 
     void report_scenic_material() const {
         const auto json = fluid_25d_scenic_material_json(scenic_material_);
+        std::printf("fluid_25d_scenic_terrain: view=%s water_draw=%u dots_draw=%u\n",
+                    config_.native_scenic_terrain_view.c_str(),
+                    config_.native_scenic_terrain_view == "shaded" ? 1U : 0U,
+                    config_.native_scenic_terrain_view == "shaded" && config_.motion_markers ? 1U
+                                                                                             : 0U);
         std::printf("fluid_25d_scenic_material: profile=%s%s%s settings=%s\n",
                     config_.native_scenic_material.c_str(),
                     config_.native_scenic_tuning_path ? "+tuning" : "",
@@ -1288,10 +1309,18 @@ class RecordingApp {
                 "Raw maps and inspection views retain diagnostic shading.");
         if (render_.native_presentation == 3U &&
             ImGui::CollapsingHeader("Scenic materials (render only)")) {
-            int profile = config_.native_scenic_material == "refined" ? 1 : 0;
+            int profile = config_.native_scenic_material == "macro"     ? 3
+                          : config_.native_scenic_material == "terrain" ? 2
+                          : config_.native_scenic_material == "refined" ? 1
+                                                                        : 0;
             ImGui::SetNextItemWidth(-100.0F);
-            if (ImGui::Combo("Material", &profile, "V1 reference\0Refined\0")) {
-                config_.native_scenic_material = profile == 1 ? "refined" : "v1";
+            if (ImGui::Combo(
+                    "Material", &profile,
+                    "V1 reference\0Refined\0Terrain study (opt-in)\0Macro terrain (opt-in)\0")) {
+                config_.native_scenic_material = profile == 3   ? "macro"
+                                                 : profile == 2 ? "terrain"
+                                                 : profile == 1 ? "refined"
+                                                                : "v1";
                 config_.native_scenic_tuning_path.reset();
                 scenic_material_edited_ = false;
                 scenic_material_ = fluid_25d_scenic_material(config_.native_scenic_material);
@@ -1302,6 +1331,44 @@ class RecordingApp {
                 ImGui::SliderFloat("Wet roughness", &scenic_material_.wet_roughness, 0.2F, 1.0F);
             edited |=
                 ImGui::SliderFloat("Water clarity", &scenic_material_.water_clarity, 0.0F, 1.0F);
+            edited |= ImGui::SliderFloat("Neutral terrain",
+                                         &scenic_material_.terrain_material_blend, 0.0F, 1.0F);
+            bool corrected = scenic_material_.terrain_normal_strength >= 0.0F;
+            if (ImGui::Checkbox("Surface-gradient terrain normals", &corrected)) {
+                scenic_material_.terrain_normal_strength = corrected ? 0.12F : -1.0F;
+                edited = true;
+            }
+            if (corrected)
+                edited |= ImGui::SliderFloat("Terrain normal strength",
+                                             &scenic_material_.terrain_normal_strength, 0.0F, 0.5F);
+            edited |= ImGui::SliderFloat("Terrain ambient softening",
+                                         &scenic_material_.terrain_ambient_softening, 0.0F, 1.0F);
+            bool integrated = scenic_material_.terrain_diffuse_convolution > 0.0F;
+            if (ImGui::Checkbox("Integrated terrain diffuse", &integrated)) {
+                scenic_material_.terrain_diffuse_convolution = integrated ? 1.0F : 0.0F;
+                edited = true;
+            }
+            edited |= ImGui::SliderFloat("Terrain specular",
+                                         &scenic_material_.terrain_specular_scale, 0.0F, 1.0F);
+            edited |= ImGui::SliderFloat("Terrain shadows", &scenic_material_.terrain_shadow_scale,
+                                         0.0F, 1.0F);
+            edited |= ImGui::SliderFloat("Slope color contrast",
+                                         &scenic_material_.terrain_slope_color_scale, 0.0F, 1.0F);
+            constexpr std::array terrain_views{
+                "shaded",        "terrain-only", "albedo",      "weights",    "base-normal",
+                "detail-normal", "roughness",    "direct",      "ambient",    "constant-albedo",
+                "no-detail",     "face-normal",  "no-specular", "no-shadows", "specular-only"};
+            int terrain_view =
+                static_cast<int>(fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view));
+            if (ImGui::Combo("Terrain component", &terrain_view, terrain_views.data(),
+                             static_cast<int>(terrain_views.size()))) {
+                config_.native_scenic_terrain_view =
+                    terrain_views[static_cast<std::size_t>(terrain_view)];
+                report_scenic_material();
+            }
+            if (terrain_view != 0)
+                ImGui::TextWrapped("Terrain-only diagnostic: water and dots hidden, native fields "
+                                   "unchanged. Colors retain Scenic tonemapping.");
             if (edited) {
                 scenic_material_edited_ = true;
                 report_scenic_material();
@@ -1401,6 +1468,46 @@ class RecordingApp {
         }
     }
 
+    void draw_external_rain_ui(bool busy) {
+        ImGui::SeparatorText("Rainfall - uniform across the map");
+        ImGui::Text("Active supply: %.3f mm/h (%s)", external_snapshot_->rain_m_per_s * 3.6e6,
+                    external_snapshot_->rain_m_per_s > 0.0 ? "ON" : "OFF");
+        if (backend_metadata_.capabilities.solver.set_rain) {
+            // Typing is local, not a solver command. Keep edits available across
+            // paused heartbeat phases; Apply alone requires healthy authority.
+            // A matching applied acknowledgement refreshes the input. Do not
+            // allow a newer draft to be overwritten while a command is in flight.
+            ImGui::BeginDisabled(external_session_->command_pending());
+            ImGui::SetNextItemWidth(140.0F);
+            if (ImGui::InputFloat("Intensity (mm/h)", &external_rain_input_mm_per_hour_, 0.1F, 1.0F,
+                                  "%.3f"))
+                external_rain_dirty_ = true;
+            ImGui::EndDisabled();
+            ImGui::BeginDisabled(busy || !external_rain_dirty_ ||
+                                 !std::isfinite(external_rain_input_mm_per_hour_) ||
+                                 external_rain_input_mm_per_hour_ < 0.0F);
+            if (ImGui::Button("Apply rain"))
+                send_external_command(Fluid25DCommandKind::SetRain,
+                                      static_cast<double>(external_rain_input_mm_per_hour_) /
+                                          3.6e6);
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            ImGui::TextUnformatted(external_session_->command_pending()
+                                       ? "Command pending acknowledgement"
+                                   : external_rain_dirty_ ? "Typed value not applied"
+                                                          : "Showing acknowledged supply");
+        } else {
+            ImGui::TextDisabled("This backend does not support changing rainfall.");
+        }
+        if (busy)
+            ImGui::TextDisabled("Apply unavailable while busy, unhealthy or terminal; pending "
+                                "commands also lock typing.");
+        ImGui::TextWrapped(
+            "Set zero to stop new rain; existing water still flows and drains. "
+            "Intensity is depth added per hour, not retained water or playback speed.");
+        ImGui::Separator();
+    }
+
     void draw_external_ui() {
         ImGui::SetNextWindowSize(
             ImVec2(510.0F, std::min(850.0F, ImGui::GetIO().DisplaySize.y - 32.0F)),
@@ -1413,10 +1520,17 @@ class RecordingApp {
             ImGui::Text("Lifecycle: %s | heartbeat: %s",
                         lifecycle_name(external_snapshot_->header.lifecycle),
                         external_health_name(health));
+            const auto lifecycle = external_snapshot_->header.lifecycle;
+            const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
+                                  lifecycle == Fluid25DLifecycle::Failed ||
+                                  lifecycle == Fluid25DLifecycle::Stopped;
+            const bool busy =
+                external_session_->command_pending() || !external_error_.empty() || terminal ||
+                health != fluid_25d_project_config_detail::ExternalSessionHealth::Healthy;
             ImGui::Text("Native physical time: %.6f s", shown_->time_s);
-            ImGui::Text("Rain %s: %.2f mm/h | solver pacing %.1fx",
-                        external_snapshot_->rain_m_per_s > 0.0 ? "ON" : "OFF",
-                        external_snapshot_->rain_m_per_s * 3.6e6, external_snapshot_->pacing);
+            ImGui::Text("Solver pacing %.1fx (separate from rainfall intensity)",
+                        external_snapshot_->pacing);
+            draw_external_rain_ui(busy);
             draw_native_color_legend();
             ImGui::TextWrapped(
                 "Space pauses/resumes computation. Esc only detaches; the foreground "
@@ -1453,13 +1567,6 @@ class RecordingApp {
                 ImGui::TextWrapped("Service failure: %s",
                                    external_snapshot_->header.failure_message.c_str());
 
-            const auto lifecycle = external_snapshot_->header.lifecycle;
-            const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
-                                  lifecycle == Fluid25DLifecycle::Failed ||
-                                  lifecycle == Fluid25DLifecycle::Stopped;
-            const bool busy =
-                external_session_->command_pending() || !external_error_.empty() || terminal ||
-                health != fluid_25d_project_config_detail::ExternalSessionHealth::Healthy;
             const auto& solver_caps = backend_metadata_.capabilities.solver;
             const auto supports = [&](Fluid25DCommandKind kind) {
                 return fluid_25d_command_supported(backend_metadata_.capabilities,
@@ -1489,24 +1596,6 @@ class RecordingApp {
             }
             ImGui::EndDisabled();
 
-            if (supports(Fluid25DCommandKind::SetRain)) {
-                ImGui::BeginDisabled(busy);
-                ImGui::SetNextItemWidth(140.0F);
-                if (ImGui::InputFloat("Uniform rain override (mm/h)",
-                                      &external_rain_input_mm_per_hour_, 0.1F, 1.0F, "%.3f"))
-                    external_rain_dirty_ = true;
-                ImGui::BeginDisabled(!external_rain_dirty_ ||
-                                     !std::isfinite(external_rain_input_mm_per_hour_) ||
-                                     external_rain_input_mm_per_hour_ < 0.0F);
-                if (ImGui::Button("Apply rain"))
-                    send_external_command(Fluid25DCommandKind::SetRain,
-                                          static_cast<double>(external_rain_input_mm_per_hour_) /
-                                              3.6e6);
-                ImGui::EndDisabled();
-                ImGui::SameLine();
-                ImGui::Text("active %.3f mm/h", external_snapshot_->rain_m_per_s * 3.6e6);
-                ImGui::EndDisabled();
-            }
             if (supports(Fluid25DCommandKind::SetTimeScale)) {
                 ImGui::BeginDisabled(busy);
                 ImGui::SetNextItemWidth(140.0F);
@@ -1622,6 +1711,16 @@ class RecordingApp {
         if (ImGui::Begin(comparison_           ? "Mountain Rain - BANKS recorded comparison"
                          : config_.stream_path ? "Live external mountain runoff"
                                                : "Mountain Rain - REPLAY recorded fields")) {
+            const Fluid25DRecordedRainStatus rain = recording_->rain_status_at(shown_->time_s);
+            ImGui::SeparatorText("Rainfall - recorded forcing (read only)");
+            ImGui::Text("Saved rain: %s | %.2f mm/h",
+                        fluid_25d_recorded_rain_phase_name(rain.phase), rain.rate_mm_per_hour);
+            ImGui::Text("Scheduled total %.3f mm (not retained water)",
+                        rain.cumulative_scheduled_rain_depth_mm);
+            ImGui::TextWrapped(
+                "Fixed recorded history. Use LIVE solver mode to change intensity. "
+                "Rain off stops supply, not runoff; viewing speed does not change rain.");
+            ImGui::Separator();
             if (comparison_) {
                 ImGui::TextColored(ImVec4(.25F, .85F, 1.F, 1.F),
                                    "RECORDED BANK COMPARISON - prebaked, not live");
@@ -1696,11 +1795,6 @@ class RecordingApp {
                         std::floor(shown_->time_s / 60.0), std::fmod(shown_->time_s, 60.0),
                         recording_->protocol().value("duration_s", recording_->times_s().back()) /
                             60.0);
-            const Fluid25DRecordedRainStatus rain = recording_->rain_status_at(shown_->time_s);
-            ImGui::Text("Saved rain: %s | %.2f mm/h",
-                        fluid_25d_recorded_rain_phase_name(rain.phase), rain.rate_mm_per_hour);
-            ImGui::Text("Scheduled total %.3f mm (not retained water)",
-                        rain.cumulative_scheduled_rain_depth_mm);
             if (shown_index_ != clock_.frame_index())
                 ImGui::Text("Loading requested state %.0f s...", clock_.time_s());
             else

@@ -26,9 +26,10 @@ struct Uniforms {
     math::Mat4 inverse_view_projection, shadow_view_projection;
     math::Vec4 light_direction_exposure, light_color_mips, clock_encoding;
     math::Vec4 ground_material, surface_material, water_optics, art_direction;
+    math::Vec4 terrain_macro;
 };
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 240U);
+static_assert(sizeof(Uniforms) == 256U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -45,6 +46,9 @@ render::MaterialPassInfo frame_material() {
                             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
     bindings.push_back({.binding = 9U,
                         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
+    bindings.push_back({.binding = 10U,
+                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                         .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
     return result;
 }
@@ -87,6 +91,7 @@ void draw(const vulkan::CommandRecorder& recorder, const render::GraphicsPipelin
 
 struct Fluid25DScenic::State {
     std::optional<render::GeneratedPbrEnvironment> environment;
+    std::optional<render::TextureCube> terrain_diffuse;
     std::optional<render::Texture2D> detail;
     std::optional<vulkan::Sampler> linear_sampler, nearest_sampler;
     std::optional<render::FrameUniformMaterialInstance<Uniforms>> frame;
@@ -97,6 +102,7 @@ struct Fluid25DScenic::State {
     double previous_clock_s = 0.0;
     bool flow_initialized = false;
     std::optional<render::GraphicsPipelineResource> terrain, terrain_bspline, water, water_bspline;
+    std::optional<render::GraphicsPipelineResource> terrain_legacy, terrain_bspline_legacy;
     std::optional<render::GraphicsPipelineResource> shadow, shadow_bspline, sky, copy, display;
     math::Mat4 shadow_matrix{1.0F};
     float terrain_low = 0.0F, terrain_high = 0.0F, domain_m = 0.0F;
@@ -110,7 +116,9 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                                       std::uint32_t slots, render::ColorTargetView target,
                                       const Fluid25DConfig& config,
                                       const Fluid25DScenarioData& scenario,
-                                      const Fluid25DGpuResources& fields) {
+                                      const Fluid25DGpuResources& fields,
+                                      bool integrated_terrain_diffuse) {
+    bool diffuse_created = false;
     if (!state_) {
         state_ = std::make_unique<State>();
         auto& s = *state_;
@@ -170,9 +178,24 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                      config.cell_size_m;
     }
     auto& s = *state_;
+    if (integrated_terrain_diffuse && !s.terrain_diffuse) {
+        const auto bytes = render::generate_generated_diffuse_irradiance();
+        s.terrain_diffuse.emplace(render::create_uploaded_texture_cube(
+            device, gpu,
+            {.extent = 32U,
+             .mip_levels = 1U,
+             .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+             .bytes = bytes,
+             .create_sampler = true,
+             .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE}}));
+        diffuse_created = true;
+        std::printf("fluid_25d_terrain_diffuse: cosine-integrated E/pi; 32x32x6; 256 samples; "
+                    "water environment unchanged\n");
+        std::fflush(stdout);
+    }
     if (s.terrain && s.extent.width == target.extent.width &&
         s.extent.height == target.extent.height && s.format == target.format)
-        return false;
+        return diffuse_created;
     destroy_swapchain_resources();
     s.extent = target.extent;
     s.format = target.format;
@@ -205,6 +228,10 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     mesh(s.terrain, "fluid_25d_terrain.vert.spv", "fluid_25d_scenic_terrain.frag.spv", false);
     mesh(s.terrain_bspline, "fluid_25d_terrain_bspline.vert.spv",
          "fluid_25d_scenic_terrain.frag.spv", false);
+    mesh(s.terrain_legacy, "fluid_25d_terrain.vert.spv", "fluid_25d_scenic_terrain_legacy.frag.spv",
+         false);
+    mesh(s.terrain_bspline_legacy, "fluid_25d_terrain_bspline.vert.spv",
+         "fluid_25d_scenic_terrain_legacy.frag.spv", false);
     mesh(s.water, "fluid_25d_water.vert.spv", "fluid_25d_scenic_water.frag.spv", true);
     mesh(s.water_bspline, "fluid_25d_water_bspline.vert.spv", "fluid_25d_scenic_water.frag.spv",
          true);
@@ -256,6 +283,8 @@ void Fluid25DScenic::destroy_swapchain_resources() {
     s.water.reset();
     s.terrain_bspline.reset();
     s.terrain.reset();
+    s.terrain_bspline_legacy.reset();
+    s.terrain_legacy.reset();
 }
 void Fluid25DScenic::destroy() {
     state_.reset();
@@ -274,12 +303,18 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                             const Fluid25DRenderCamera& camera,
                             Fluid25DCatchmentRenderOptions options, double visual_clock_s,
                             const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
-                            float marker_fraction, bool profile, bool reset_visual_flow) {
+                            float marker_fraction, bool profile, bool reset_visual_flow,
+                            unsigned terrain_view) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
         profiler->begin_frame(commands, slot.index);
     const bool bspline = options.native_bspline_surface;
+    const bool legacy_terrain =
+        terrain_view == 0U && material.terrain_material_blend == 0.0F &&
+        material.terrain_normal_strength < 0.0F && material.terrain_ambient_softening == 0.0F &&
+        material.terrain_diffuse_convolution == 0.0F && material.terrain_specular_scale == 1.0F &&
+        material.terrain_shadow_scale == 1.0F && material.terrain_slope_color_scale == 1.0F;
     const auto subdivision = bspline ? options.native_surface_subdivision : 1U;
     const auto vertex_count = fluid_25d_mesh_vertex_count(config) * subdivision * subdivision;
     if (vertex_count > std::numeric_limits<std::uint32_t>::max())
@@ -301,7 +336,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
               {camera.position, config.minimum_wet_depth_m},
               {bspline ? float(subdivision) : 0.0F, 0.0F,
                options.terrain_thin_water_composite ? 1.0F : 0.0F, 7.0F},
-              {0.0F, 0.0F, 0.0F,
+              {float(terrain_view), material.terrain_material_blend,
+               material.terrain_normal_strength,
                float((options.native_bilinear_water ? 8U : 0U) +
                      (bspline ? 16U + (subdivision << 5U) : 0U) +
                      (options.native_display_coverage ? 512U : 0U))}};
@@ -318,7 +354,10 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                             material.water_roughness, material.water_normal_strength},
                            {material.water_extinction_scale, material.water_scatter_scale,
                             material.water_reflection_scale, material.water_scatter_lighting},
-                           {material.water_clarity, material.terrain_mineral_scale, 0.0F, 0.0F}});
+                           {material.water_clarity, material.terrain_mineral_scale, 0.0F,
+                            material.terrain_ambient_softening},
+                           {material.terrain_diffuse_convolution, material.terrain_specular_scale,
+                            material.terrain_shadow_scale, material.terrain_slope_color_scale}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -423,7 +462,10 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    draw(r, bspline ? *s.terrain_bspline : *s.terrain, fields, set, push, vertices);
+                    const auto& terrain =
+                        legacy_terrain ? (bspline ? *s.terrain_bspline_legacy : *s.terrain_legacy)
+                                       : (bspline ? *s.terrain_bspline : *s.terrain);
+                    draw(r, terrain, fields, set, push, vertices);
                 });
         });
     graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics)
@@ -447,7 +489,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.copy->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    draw(r, bspline ? *s.water_bspline : *s.water, fields, set, push, vertices);
+                    if (terrain_view == 0U)
+                        draw(r, bspline ? *s.water_bspline : *s.water, fields, set, push, vertices);
                 });
         });
     graph.add_pass("scenic display and diagnostic dots", render::RenderGraphQueueDomain::Graphics)
@@ -469,7 +512,7 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.display->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    if (markers)
+                    if (markers && terrain_view == 0U)
                         markers->record_draw(
                             r.handle(), resources.current_depth_is_a(), push.view_projection,
                             target.extent, push.grid_cell.w, marker_fraction,
@@ -491,6 +534,10 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                 .combined_image_sampler(3U, env.brdf_lut_sampler, env.brdf_lut_view)
                 .combined_image_sampler(4U, s.detail->sampler().handle(), s.detail->view());
             writer.storage_buffer(9U, s.visual_flow->handle(), s.visual_flow->size());
+            writer.combined_image_sampler(
+                10U,
+                s.terrain_diffuse ? s.terrain_diffuse->sampler().handle() : env.irradiance_sampler,
+                s.terrain_diffuse ? s.terrain_diffuse->view() : env.irradiance_view);
             for (const auto& [binding, handle] :
                  std::array<std::pair<std::uint32_t, render::RenderGraphTextureHandle>, 4>{
                      {{5U, shadow_depth}, {6U, opaque}, {7U, depth}, {8U, composed}}}) {

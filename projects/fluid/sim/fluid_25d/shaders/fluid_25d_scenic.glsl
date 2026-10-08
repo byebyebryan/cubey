@@ -10,6 +10,9 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 surface_material;
     vec4 water_optics;
     vec4 art_direction;
+#ifdef FLUID25D_TERRAIN_MACRO
+    vec4 terrain_macro;
+#endif
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;

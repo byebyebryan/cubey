@@ -213,6 +213,7 @@ def main():
     p.add_argument("--out", required=True, type=Path)
     p.add_argument("--mode", required=True, choices=("replay", "banks", "live"))
     p.add_argument("--style", choices=("readable", "scenic"), default="readable")
+    p.add_argument("--material", choices=("v1", "refined", "terrain", "macro"), default="refined")
     p.add_argument("--live-wall-seconds", type=float, default=0,
                    help="Extra bounded rain-on live observation, 0..300 wall seconds")
     a = p.parse_args()
@@ -225,7 +226,7 @@ def main():
     ref.write_json_exclusive(out / "protocol.json", {"frozen_before_execution": True, "mode": a.mode,
         "private_gui_only": True, "live_target_physical_s": 300, "native_speed": 60,
         "controls": "GUI Space pause/resume and R reset; MIT probe rain edit only while detached; launcher Ctrl-C cleanup",
-        "human_visual_acceptance": "deferred", "style": a.style,
+        "human_visual_acceptance": "deferred", "style": a.style, "material": a.material,
         "viewer_readiness": "owned window title and nonblank first presented frame; bounded 40s",
         "gui_command_readiness": "retry ignored keys at <=1Hz for <=30s; stop at first command emission; no service writes",
         "additional_rain_on_wall_seconds": a.live_wall_seconds})
@@ -236,7 +237,7 @@ def main():
              ["--start", "7800"] if a.mode == "banks" else [])
     command = ["rtk", "proxy", sys.executable, str(demo.HERE / "run_mountain_rain_demo.py"), a.mode,
                "--out", str(launch_out), "--width", "1920", "--height", "1080", "--speed", "60",
-               "--style", a.style, *(["--profile"] if a.mode == "live" else []), *extra]
+               "--style", a.style, "--material", a.material, *(["--profile"] if a.mode == "live" else []), *extra]
     captures, observations, reattached = [], [], None
     with (out / "launcher.log").open("xb") as stream:
         process = subprocess.Popen(command, cwd=out, env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)

@@ -44,6 +44,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--bank", choices=("reference", "bspline-2x", "marching-squares"), default="reference")
     p.add_argument("--style", choices=("readable", "scenic"), default="readable",
                    help="Scenic is opt-in HDR terrain/water; diagnostic views retain Readable shading")
+    p.add_argument("--material", choices=("v1", "refined", "terrain", "macro"), default="refined",
+                   help="Scenic preset; terrain is an opt-in terrain-only material study")
     p.add_argument("--loop", action="store_true", help="banks only: explicit recorded-window looping")
     p.add_argument("--no-dots", action="store_true")
     p.add_argument("--profile", action="store_true", help="Record viewer GPU/bridge metrics inside the fresh launcher output")
@@ -57,6 +59,8 @@ def parser() -> argparse.ArgumentParser:
 
 
 def validate_options(a) -> None:
+    if a.material != "refined" and a.style != "scenic":
+        raise ValueError("nondefault material requires Scenic")
     speed = a.speed if a.speed is not None else (150 if a.mode == "replay" else 60)
     if not math.isfinite(speed) or not .125 <= speed <= 300:
         raise ValueError("speed must be finite and in [0.125,300]")
@@ -137,6 +141,8 @@ def commands(a, out: Path) -> dict[str, list[str]]:
               "--frames", "0", "--title", f"Cubey Mountain Rain - {a.mode}",
               "--fluid25d-recording-camera", camera, "--fluid25d-native-presentation", a.style,
               "--fluid25d-native-surface-highlights", "off", "--fluid25d-native-bank-view", a.bank]
+    if a.style == "scenic":
+        viewer += ["--fluid25d-scenic-material", a.material]
     if not a.no_dots:
         viewer.append("--fluid25d-motion-markers")
     if a.profile:

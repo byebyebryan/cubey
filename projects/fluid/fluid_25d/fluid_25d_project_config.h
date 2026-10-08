@@ -66,6 +66,7 @@ struct Fluid25DProjectConfig {
     std::string native_presentation = "original";
     std::string native_scenic_material = "refined";
     std::optional<std::filesystem::path> native_scenic_tuning_path{};
+    std::string native_scenic_terrain_view = "shaded";
     std::string native_surface_highlights = "auto";
     std::string native_water_debug = "shaded";
     std::string native_water_sampling = "triangular";
@@ -76,6 +77,8 @@ struct Fluid25DProjectConfig {
     bool bank_comparison_loop = false;
     std::uint32_t bank_comparison_cycle_frames = 0U;
     float native_camera_pitch_radians = -0.92F;
+    float native_camera_yaw_radians = -0.52F;
+    float native_camera_sweep_radians = 0.0F;
     bool recording_gpu_validation = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
@@ -538,12 +541,20 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
             option(
                 "fluid25d.scenic_material", "--fluid25d-scenic-material", "Scenic Material",
                 "Scenic-only V1 reference or refined artistic material; no field/coverage changes.",
-                ValueType::Enum, {}, {"v1", "refined"}),
+                ValueType::Enum, {}, {"v1", "refined", "terrain", "macro"}),
             config.native_scenic_material)
         .bind(option("fluid25d.scenic_tuning", "--fluid25d-scenic-tuning", "Scenic Tuning",
                      "Bounded Scenic-only JSON overrides, loaded once and logged; no hot reload.",
                      ValueType::Path),
               config.native_scenic_tuning_path)
+        .bind(option("fluid25d.scenic_terrain_view", "--fluid25d-scenic-terrain-view",
+                     "Scenic Terrain View",
+                     "Render-only component views hide water/dots, not uploads.", ValueType::Enum,
+                     {},
+                     {"shaded", "terrain-only", "albedo", "weights", "base-normal", "detail-normal",
+                      "roughness", "direct", "ambient", "constant-albedo", "no-detail",
+                      "face-normal", "no-specular", "no-shadows", "specular-only"}),
+              config.native_scenic_terrain_view)
         .bind(
             option("fluid25d.native_surface_highlights", "--fluid25d-native-surface-highlights",
                    "Procedural Flow Highlights",
@@ -600,6 +611,15 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Float,
                      {.has_min = true, .has_max = true, .min = -1.45, .max = -0.40}),
               config.native_camera_pitch_radians)
+        .bind(option("fluid25d.native_camera_yaw", "--fluid25d-native-camera-yaw",
+                     "Native Camera Yaw", "Observation-only heading in radians.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -3.14, .max = 3.14}),
+              config.native_camera_yaw_radians)
+        .bind(option("fluid25d.native_camera_sweep", "--fluid25d-native-camera-sweep",
+                     "Native Camera Sweep",
+                     "Headless video-only total heading sweep with a mild zoom.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.0, .max = 0.8}),
+              config.native_camera_sweep_radians)
         .bind(option("fluid25d.view", "--fluid25d-view", "View",
                      "Top-level River V0 surface: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
@@ -880,18 +900,26 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     if ((parsed.path_was_assigned("fluid25d.native_presentation") ||
          parsed.path_was_assigned("fluid25d.scenic_material") ||
          parsed.path_was_assigned("fluid25d.scenic_tuning") ||
+         parsed.path_was_assigned("fluid25d.scenic_terrain_view") ||
          parsed.path_was_assigned("fluid25d.native_surface_highlights") ||
          parsed.path_was_assigned("fluid25d.native_water_debug") ||
          parsed.path_was_assigned("fluid25d.native_water_sampling") ||
          parsed.path_was_assigned("fluid25d.native_bank_view") ||
          parsed.path_was_assigned("fluid25d.native_surface_subdivision") ||
-         parsed.path_was_assigned("fluid25d.native_camera_pitch")) &&
+         parsed.path_was_assigned("fluid25d.native_camera_pitch") ||
+         parsed.path_was_assigned("fluid25d.native_camera_yaw") ||
+         parsed.path_was_assigned("fluid25d.native_camera_sweep")) &&
         !project_config.recording_path && !project_config.stream_path && !service_session)
         throw std::runtime_error("native presentation requires a recording or external source");
     if ((parsed.path_was_assigned("fluid25d.scenic_material") ||
-         parsed.path_was_assigned("fluid25d.scenic_tuning")) &&
+         parsed.path_was_assigned("fluid25d.scenic_tuning") ||
+         parsed.path_was_assigned("fluid25d.scenic_terrain_view")) &&
         project_config.native_presentation != "scenic")
         throw std::runtime_error("Scenic material controls require the Scenic presentation");
+    if (project_config.native_camera_sweep_radians > 0.0F &&
+        (!project_config.recording_path || !project_config.common.headless ||
+         project_config.common.capture_mode != CaptureMode::Video))
+        throw std::runtime_error("native camera sweep requires a headless recorded video");
     if (project_config.native_surface_subdivision != 1U &&
         project_config.native_surface_subdivision != 2U &&
         project_config.native_surface_subdivision != 4U)

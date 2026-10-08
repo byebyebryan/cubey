@@ -33,11 +33,24 @@ constexpr std::array kProperties{
     Property{"water_scatter_lighting", &Fluid25DScenicMaterial::water_scatter_lighting, 0.0, 1.0},
     Property{"water_clarity", &Fluid25DScenicMaterial::water_clarity, 0.0, 1.0},
     Property{"terrain_mineral_scale", &Fluid25DScenicMaterial::terrain_mineral_scale, 0.4, 1.3},
+    Property{"terrain_material_blend", &Fluid25DScenicMaterial::terrain_material_blend, 0.0, 1.0},
+    Property{"terrain_normal_strength", &Fluid25DScenicMaterial::terrain_normal_strength, -1.0,
+             2.0},
+    Property{"terrain_ambient_softening", &Fluid25DScenicMaterial::terrain_ambient_softening, 0.0,
+             1.0},
+    Property{"terrain_diffuse_convolution", &Fluid25DScenicMaterial::terrain_diffuse_convolution,
+             0.0, 1.0},
+    Property{"terrain_specular_scale", &Fluid25DScenicMaterial::terrain_specular_scale, 0.0, 1.0},
+    Property{"terrain_shadow_scale", &Fluid25DScenicMaterial::terrain_shadow_scale, 0.0, 1.0},
+    Property{"terrain_slope_color_scale", &Fluid25DScenicMaterial::terrain_slope_color_scale, 0.0,
+             1.0},
 };
 [[noreturn]] void invalid(const std::string& message) {
     throw std::runtime_error("fluid 2.5D Scenic material: " + message);
 }
 void validate(const Fluid25DScenicMaterial& material) {
+    if (material.terrain_normal_strength < 0.0F && material.terrain_normal_strength != -1.0F)
+        invalid("terrain_normal_strength must be -1 or nonnegative");
     for (const auto& p : kProperties) {
         const float value = material.*p.member;
         if (!std::isfinite(value) || value < static_cast<float>(p.low) ||
@@ -50,6 +63,19 @@ void validate(const Fluid25DScenicMaterial& material) {
 Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile) {
     if (profile == "v1")
         return {};
+    if (profile == "macro") {
+        auto result = fluid_25d_scenic_material("terrain");
+        result.terrain_diffuse_convolution = 1.0F;
+        result.terrain_ambient_softening = 0.0F;
+        return result;
+    }
+    if (profile == "terrain") {
+        auto result = fluid_25d_scenic_material("refined");
+        result.terrain_material_blend = 1.0F;
+        result.terrain_normal_strength = 0.12F;
+        result.terrain_ambient_softening = 1.0F;
+        return result;
+    }
     if (profile != "refined")
         invalid("unknown profile");
     return {.wet_roughness = 0.78F,
@@ -125,5 +151,16 @@ std::string fluid_25d_scenic_material_json(const Fluid25DScenicMaterial& materia
         document[p.name] = std::clamp(static_cast<double>(material.*p.member), p.low, p.high);
     }
     return document.dump();
+}
+
+unsigned fluid_25d_scenic_terrain_view(std::string_view view) {
+    constexpr std::array names{"shaded",      "terrain-only",    "albedo",       "weights",
+                               "base-normal", "detail-normal",   "roughness",    "direct",
+                               "ambient",     "constant-albedo", "no-detail",    "face-normal",
+                               "no-specular", "no-shadows",      "specular-only"};
+    const auto found = std::find(names.begin(), names.end(), view);
+    if (found == names.end())
+        invalid("unknown terrain view");
+    return static_cast<unsigned>(found - names.begin());
 }
 } // namespace cubey::projects::fluid::fluid_25d

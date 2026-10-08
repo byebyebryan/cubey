@@ -15,7 +15,8 @@ class Fluid25DScenic {
     // Returns true only after potentially blocking local resource creation.
     bool ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
                           render::ColorTargetView target, const Fluid25DConfig& config,
-                          const Fluid25DScenarioData& scenario, const Fluid25DGpuResources& fields);
+                          const Fluid25DScenarioData& scenario, const Fluid25DGpuResources& fields,
+                          bool integrated_terrain_diffuse = false);
     void destroy_swapchain_resources();
     void destroy();
     [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
@@ -26,7 +27,7 @@ class Fluid25DScenic {
                 const Fluid25DRenderCamera& camera, Fluid25DCatchmentRenderOptions options,
                 double visual_clock_s, const Fluid25DScenicMaterial& material,
                 Fluid25DMotionMarkers* markers, float marker_fraction, bool profile = false,
-                bool reset_visual_flow = false);
+                bool reset_visual_flow = false, unsigned terrain_view = 0U);
 
   private:
     struct State;
