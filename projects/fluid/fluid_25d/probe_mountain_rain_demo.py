@@ -161,7 +161,9 @@ def issue_gui_control(keys, session, key, kind):
                 raise ValueError("unexpected private GUI command: " + str(command))
             return command
         now = time.monotonic()
-        if now-last_key >= 1:
+        # Detune from the paused producer's 0.5s heartbeat; 1s probes can
+        # repeatedly land in the same briefly disabled-control phase.
+        if now-last_key >= 1.3:
             keys.key(key)
             last_key = now
             attempts += 1
