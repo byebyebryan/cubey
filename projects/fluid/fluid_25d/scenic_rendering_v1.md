@@ -26,7 +26,7 @@ the old sparse-highlight control is disabled while Scenic is selected.
 
 The mountain launcher now selects `macro`, labelled **Mountain demo daylight**:
 accepted shared lighting, wet-only normals, restrained wind detail, no pale
-shallow-bed tint and stronger absorption using existing controls. Direct application
+shallow-bed tint and depth-limited absorption. Direct application
 Scenic startup still defaults to `refined`; Original remains the application default.
 Neither the builtin solver nor the native worker changes. V1/refined/terrain retain
 their earlier settings. The native GUI's **Scenic materials (render only)**
@@ -59,14 +59,37 @@ explicit artistic tradeoff, not calibrated water optics. It changes neither dept
 alpha, wet threshold, water coverage, refraction guards nor bank geometry. Water
 normal detail, filtering, clocks, reflection F0 and the dots/trails are retained.
 
-The mountain preset disables that tint (`water_clarity=0`) and uses
-`water_extinction_scale=4`, retaining the accepted daylight and reflection recipe.
-This makes established streams less bed-dominated; it is artistic optics, not
-simulated sediment. Wet coverage, geometry and the thin-film treatment are not
-changed. Stronger extinction also changes pool transmission; it is not a
-shallow-only shader override. A depth-gated bed-darkening experiment was rejected
-for painted grey strips and removed; no new rendering property or shader code is
-retained. The default/stream gallery records the matched comparison and limits.
+The mountain preset disables that tint (`water_clarity=0`), retains the accepted
+daylight/reflection recipe, and uses the owner-accepted
+[depth-limited absorption](../../../outputs/fluid/shallow-optics-v1-20261008-ZMA8tp/index.html).
+The earlier global 4× absorption made streams less bed-dominated but lakes too
+uniformly dark. A separate depth-gated bed-darkening experiment was rejected for
+painted grey strips and removed. The accepted absorption blend is artistic optics,
+not simulated sediment; wet coverage, geometry and thin-film treatment are unchanged.
+
+`water_shallow_extinction_boost` (0–3, legacy default 0) adds absorption to the
+existing base scale and fades to zero at `water_shallow_extinction_end_m`
+(0.05–16 physical metres, legacy default 2).
+The weight is `(1 - clamp(depth / end, 0, 1))^3`: a smooth local-depth artistic
+adjustment, not a lake/river classifier or simulated sediment. The mountain
+`macro` default uses base scale 1, boost 3, no pale bed tint and a 16 m fade-out.
+Shorter 2 m/4 m trials gave back too much stream contrast. This is a 30 m-grid
+macro flood demo, not a surveyed shallow stream. Broad shallow pools still darken;
+deep narrow channels lose the boost. Reflection,
+lighting, wet coverage, film controls and solver fields are held fixed. Deep
+water returns exactly to the base absorption coefficient; boost zero preserves
+the previous material. The existing frame uniform grows by 16 bytes, with no
+additional texture, descriptor binding or rendering pass. Additional GUI sliders
+are not added; these controls use the existing material-v2 JSON interface.
+Setting boost to zero disables the blend; base scale 4 with boost zero recreates
+the previous global-dark appearance. V1/refined/terrain keep boost zero.
+The owner accepted promotion on 2026-10-08; the trial report retains its earlier
+opt-in/deferred labels as historical evidence. The
+[promotion review](../../../outputs/fluid/water-default-review-20261008-kVycqb/index.html)
+checks that the preset alone reproduces the approved captures.
+The permanent synthetic GPU controls check the boost at 0.36 m, its exact return
+to base at/above 16 m, dry-water identity, calm frames, and unchanged coverage,
+reflection and direct-light diagnostics without using archived scene inputs.
 
 `review_scenic_material_v2.py` records frozen V1 and final V2 material receipts,
 unchanged Readable/raw stills and non-Scenic shader hashes, two short matched

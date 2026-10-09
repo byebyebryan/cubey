@@ -99,15 +99,27 @@ The linked report retains its pre-review acceptance label as historical evidence
 the older gallery's preset/default statements describe that earlier checkpoint.
 Built-in numerical defaults remain unchanged.
 
-The follow-up [default and darker-stream review](../../../outputs/fluid/mountain-defaults-streams-v1-20261008-65Rz9q/index.html)
+The earlier [default and darker-stream review](../../../outputs/fluid/mountain-defaults-streams-v1-20261008-65Rz9q/index.html)
 uses the existing `water_clarity=0` and `water_extinction_scale=4` controls in the
 mountain material: no pale shallow-bed tint, and less bed transmission. Reflection,
 wind detail, wet-ground film policy and bank coverage are retained. This is artistic
-demo optics, not simulated sediment/turbidity. Primary-agent review prefers it;
-new water-material owner review remains deferred. Experimental bed-darkening code
-was tested, rejected for grey painted strips, and removed. No new shader branch,
-material property, pass or texture is retained. The GUI labels the old clarity
+demo optics, not simulated sediment/turbidity. It improved streams but made larger
+bodies too uniformly dark. Experimental bed-darkening code was tested, rejected
+for grey painted strips, and removed; that earlier pass retained no new shader
+branch or property. The GUI labels the old clarity
 control **Shallow bed tint**, since it was never a physical transparency control.
+
+The accepted [depth-limited water treatment](../../../outputs/fluid/shallow-optics-v1-20261008-ZMA8tp/index.html)
+is now the mountain `macro` preset: base absorption 1, shallow boost 3, fading out
+smoothly at 16 m physical depth, with the pale bed tint still off. Most stronger
+stream contrast survives while deeper lake interiors regain colour variation.
+The owner accepted this rendering-only compromise on 2026-10-08. Depth is not
+body width: broad shallow pools still darken and deep narrow channels lighten.
+The original comparison page keeps its pre-acceptance opt-in labels as historical
+evidence. V1/refined/terrain are unchanged; setting the boost to zero in the
+existing material-v2 JSON disables it. No new texture, pass or simulation work is
+required. See [the promotion review](../../../outputs/fluid/water-default-review-20261008-kVycqb/index.html)
+for default-versus-approved capture checks and commit validation.
 
 See the [water reuse results](../../../outputs/fluid/water-rendering-reuse-v1-20261008-6s1idD/index.html)
 for independent ablations, macro/lower/reverse views, motion and GPU timings.

@@ -17,6 +17,9 @@ struct Fluid25DScenicMaterial {
     float water_roughness = 0.18F;
     float water_normal_strength = 1.0F;
     float water_extinction_scale = 1.0F;
+    // Artistic boost, fading to the base scale at a physical depth.
+    float water_shallow_extinction_boost = 0.0F;
+    float water_shallow_extinction_end_m = 2.0F;
     float water_scatter_scale = 1.0F;
     float water_reflection_scale = 1.0F;
     float water_scatter_lighting = 0.0F;

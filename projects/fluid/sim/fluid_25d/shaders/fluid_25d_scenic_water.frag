@@ -155,7 +155,16 @@ void main() {
     ivec2 c = clamp(ivec2(floor(bed_cell+0.5)),ivec2(0),ivec2(params.grid_cell.xy)-1);
     safe = safe && depth.values[c.y*int(params.grid_cell.x)+c.x]>params.camera_wet.w;
     vec3 background = texture(scenic_opaque,safe ? candidate_uv : uv).rgb;
-    vec3 transmittance = exp(-vec3(0.17,0.055,0.030)*path_m*scenic.water_optics.x);
+    float extinction_scale = scenic.water_optics.x;
+    if (scenic.water_shallow_optics.x>0.0) {
+        // Artistic absorption only; local physical depth, not body size or
+        // coverage. The cubic reaches the retained base with zero slope/curvature.
+        // For base=1 and boost<=3, h*scale stays monotone on a vertical ray;
+        // a direct smoothstep scale blend can instead brighten at greater depth.
+        float remaining = max(0.0,1.0-h/max(scenic.water_shallow_optics.y,0.05));
+        extinction_scale += scenic.water_shallow_optics.x*remaining*remaining*remaining;
+    }
+    vec3 transmittance = exp(-vec3(0.17,0.055,0.030)*path_m*extinction_scale);
     vec3 scattering = vec3(0.015,0.085,0.105)*scenic.water_optics.y;
     if (scenic.water_optics.w>0.0) {
         // Artistic single-layer source lighting, not a new volume integrator.

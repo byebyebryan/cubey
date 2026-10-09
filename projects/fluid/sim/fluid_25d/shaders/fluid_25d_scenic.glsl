@@ -16,6 +16,7 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 water_view; // component view, wet-normal blend, ripple slope, wavelength m
     vec4 terrain_surface; // mode, grid width, grid height, reserved
     vec4 environment_mode; // shared fixed daylight enabled, direct sun gain, reserved
+    vec4 water_shallow_optics; // additive absorption boost, physical fade-out depth m, reserved
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;

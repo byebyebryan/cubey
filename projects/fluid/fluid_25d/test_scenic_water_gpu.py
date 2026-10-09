@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPU coverage/calm/depth controls for the normal Scenic water shader."""
+"""GPU film and depth-limited absorption controls for the Scenic water shader."""
 from __future__ import annotations
 
 import argparse
@@ -39,6 +39,14 @@ def run(out, target):
     review.ref.write_json_exclusive(disabled, {
         "schema": "cubey.fluid25d.scenic-material.v2", "water_roughness": .2,
         "film_roughness": .2, "film_ground_mix": 0})
+    optics = {}
+    for mode, boost in (("optics-base", 0), ("optics-boost", 3)):
+        optics[mode] = out / (mode + ".json")
+        review.ref.write_json_exclusive(optics[mode], {
+            "schema": "cubey.fluid25d.scenic-material.v2",
+            "water_extinction_scale": 1, "water_shallow_extinction_boost": boost,
+            "water_shallow_extinction_end_m": 16, "water_clarity": 0,
+            "water_ripple_strength": 0})
 
     def render(case, manifest, control="default", view="shaded", extra=(), t=0):
         if runtime != runtime_identity(target):
@@ -54,6 +62,8 @@ def run(out, target):
             command += ["--fluid25d-scenic-tuning", str(disabled)]
         elif control == "controlled":
             command += ["--fluid25d-scenic-tuning", str(common)]
+        elif control in optics:
+            command += ["--fluid25d-scenic-tuning", str(optics[control])]
         result = subprocess.run(command, text=True, capture_output=True, timeout=90)
         review.ref.write_text_exclusive(out / (label + ".log"), result.stdout + result.stderr)
         if result.returncode:
@@ -114,6 +124,41 @@ def run(out, target):
         if before != after:
             raise ValueError("native fixture mutated")
         print("GPU controls passed: " + case, flush=True)
+    optics_summary = {"dry_or_deep_exact_cases": 0, "effective_shallow_cases": 0,
+                      "coverage_exact_cases": 0, "reflection_exact_cases": 0,
+                      "direct_exact_cases": 0, "calm_exact_cases": 0}
+    for case, depth in (("optics-dry", 0), ("optics-shallow", .36),
+                        ("optics-at-end", 16), ("optics-deep", 30)):
+        bed = [0.] * (fixtures.COLS * fixtures.ROWS)
+        h = [depth] * len(bed)
+        with patch.object(fixtures, "fields", return_value=(bed, h)):
+            manifest = fixtures.fixture(out / "fixtures" / case, "fully-wet-lake")
+        before = {str(p): review.ref.sha256_file(p) for p in manifest.parent.rglob("*") if p.is_file()}
+        images = [render(case, manifest, mode) for mode in optics]
+        same = review.ref.sha256_file(images[0]) == review.ref.sha256_file(images[1])
+        if depth == 0 or depth >= 16:
+            if not same:
+                raise ValueError("absorption boost changed dry/deep water: " + case)
+            optics_summary["dry_or_deep_exact_cases"] += 1
+        else:
+            if same:
+                raise ValueError("absorption boost has no shallow-water effect")
+            optics_summary["effective_shallow_cases"] += 1
+            for view, counter in (("coverage", "coverage_exact_cases"),
+                                  ("environment-only", "reflection_exact_cases"),
+                                  ("direct-only", "direct_exact_cases")):
+                controls = [render(case, manifest, mode, view) for mode in optics]
+                if review.ref.sha256_file(controls[0]) != review.ref.sha256_file(controls[1]):
+                    raise ValueError("absorption boost changed " + view)
+                optics_summary[counter] += 1
+            calm = render(case, manifest, "optics-boost", t=2)
+            if review.ref.sha256_file(calm) != review.ref.sha256_file(images[1]):
+                raise ValueError("absorption boost animates calm/no-wind fields")
+            optics_summary["calm_exact_cases"] += 1
+        after = {str(p): review.ref.sha256_file(p) for p in manifest.parent.rglob("*") if p.is_file()}
+        if before != after:
+            raise ValueError("absorption fixture mutated")
+        print("GPU absorption controls passed: " + case, flush=True)
     if pins != review.sources():
         raise ValueError("GPU control sources changed")
     if runtime != runtime_identity(target):
@@ -123,7 +168,8 @@ def run(out, target):
         "executable_sha256": binary_pin, "compiled_shaders": shader_pin,
         "rows": rows, "summary": {"render_count": len(rows), "unchanged_coverage_cases": exact_coverage,
         "dry_and_deep_exact_cases": exact_depth, "calm_exact_controls": exact_calm,
-        "effective_shallow_cases": changed, "fixture_fields": "byte-identical"}})
+        "effective_shallow_cases": changed, "fixture_fields": "byte-identical"},
+        "depth_limited_absorption": optics_summary})
 
 
 def main():

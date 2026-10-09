@@ -6911,14 +6911,15 @@ void test_scenic_material_contract() {
         require(material->water_wet_normal == 0.0F && material->water_ripple_strength == 0.0F &&
                     material->daylight_environment == 0.0F,
                 "legacy presets retain the generated-lighting and no-wind fallback");
-    require(
-        macro.daylight_exposure == 0.0F && macro.daylight_sun_scale == 0.45F &&
-            macro.terrain_ambient == 2.0F && macro.terrain_direct == 1.0F &&
-            macro.water_wet_normal == 1.0F && macro.water_ripple_strength == 0.025F &&
-            macro.water_ripple_scale_m == 48.0F && macro.water_roughness == 0.14F &&
-            macro.water_scatter_scale == 0.4F && macro.water_clarity == 0.0F &&
-            macro.water_extinction_scale == 4.0F,
-        "macro preset uses accepted daylight and reviewed darker water using existing controls");
+    require(macro.daylight_exposure == 0.0F && macro.daylight_sun_scale == 0.45F &&
+                macro.terrain_ambient == 2.0F && macro.terrain_direct == 1.0F &&
+                macro.water_wet_normal == 1.0F && macro.water_ripple_strength == 0.025F &&
+                macro.water_ripple_scale_m == 48.0F && macro.water_roughness == 0.14F &&
+                macro.water_scatter_scale == 0.4F && macro.water_clarity == 0.0F &&
+                macro.water_extinction_scale == 1.0F &&
+                macro.water_shallow_extinction_boost == 3.0F &&
+                macro.water_shallow_extinction_end_m == 16.0F,
+            "macro preset uses accepted daylight and depth-limited absorption");
     const auto detail = fluid_25d_parse_scenic_material(
         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":1,"water_ripple_strength":0.12,"water_ripple_scale_m":48})",
         macro);
@@ -6927,6 +6928,32 @@ void test_scenic_material_contract() {
                     fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(detail), v1)) ==
                     fluid_25d_scenic_material_json(detail),
             "water rendering-only tuning is bounded and roundtrips exactly");
+    for (const auto* material : {&v1, &refined, &terrain})
+        require(material->water_shallow_extinction_boost == 0.0F &&
+                    material->water_shallow_extinction_end_m == 2.0F,
+                "legacy presets leave the shallow absorption boost disabled");
+    const auto shallow_optics = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_extinction_scale":1,"water_shallow_extinction_boost":3,"water_shallow_extinction_end_m":2})",
+        macro);
+    require(shallow_optics.water_extinction_scale == 1.0F &&
+                shallow_optics.water_shallow_extinction_boost == 3.0F &&
+                shallow_optics.water_shallow_extinction_end_m == 2.0F &&
+                shallow_optics.water_clarity == macro.water_clarity &&
+                shallow_optics.water_reflection_scale == macro.water_reflection_scale &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(shallow_optics), v1)) ==
+                    fluid_25d_scenic_material_json(shallow_optics),
+            "custom shallow absorption roundtrips without replacing other material controls");
+    const auto global_dark = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_extinction_scale":4,"water_shallow_extinction_boost":0})",
+        macro);
+    require(global_dark.water_extinction_scale == 4.0F &&
+                global_dark.water_shallow_extinction_boost == 0.0F &&
+                global_dark.water_shallow_extinction_end_m == 16.0F &&
+                global_dark.water_clarity == macro.water_clarity &&
+                global_dark.water_reflection_scale == macro.water_reflection_scale &&
+                global_dark.daylight_environment == macro.daylight_environment,
+            "the previous global-dark appearance remains an explicit material override");
     const auto lighting = fluid_25d_parse_scenic_material(
         R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_exposure":-0.5,"daylight_sun_scale":0.45})",
         macro);
@@ -6941,6 +6968,15 @@ void test_scenic_material_contract() {
           R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_scale_m":0})"})
         require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
                        "water rendering-only controls reject invalid bounds");
+    for (
+        const auto* text :
+        {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_extinction_boost":-0.1})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_extinction_boost":3.1})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_extinction_boost":true})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_extinction_end_m":0})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_extinction_end_m":16.1})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
+                       "shallow absorption controls reject invalid/non-numeric bounds");
     require(fluid_25d_scenic_water_view("shaded") == 0U &&
                 fluid_25d_scenic_water_view("coverage") == 9U,
             "water component diagnostic slots remain stable");
@@ -6992,8 +7028,10 @@ void test_scenic_material_contract() {
         },
         "conflicting water and terrain component controls fail closed");
     require(macro.terrain_diffuse_convolution == 1.0F && macro.terrain_ambient_softening == 0.0F &&
-                macro.water_clarity == 0.0F && macro.water_extinction_scale == 4.0F &&
-                macro.water_roughness == 0.14F && terrain.terrain_diffuse_convolution == 0.0F &&
+                macro.water_clarity == 0.0F && macro.water_extinction_scale == 1.0F &&
+                macro.water_shallow_extinction_boost == 3.0F &&
+                macro.water_shallow_extinction_end_m == 16.0F && macro.water_roughness == 0.14F &&
+                terrain.terrain_diffuse_convolution == 0.0F &&
                 refined.terrain_specular_scale == 1.0F && v1.terrain_shadow_scale == 1.0F,
             "macro uses the accepted lighting recipe while legacy terrain/reference values remain");
     require(fluid_25d_scenic_material_json(

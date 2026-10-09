@@ -28,6 +28,10 @@ constexpr std::array kProperties{
     Property{"water_roughness", &Fluid25DScenicMaterial::water_roughness, 0.08, 0.5},
     Property{"water_normal_strength", &Fluid25DScenicMaterial::water_normal_strength, 0.0, 2.0},
     Property{"water_extinction_scale", &Fluid25DScenicMaterial::water_extinction_scale, 0.0, 4.0},
+    Property{"water_shallow_extinction_boost",
+             &Fluid25DScenicMaterial::water_shallow_extinction_boost, 0.0, 3.0},
+    Property{"water_shallow_extinction_end_m",
+             &Fluid25DScenicMaterial::water_shallow_extinction_end_m, 0.05, 16.0},
     Property{"water_scatter_scale", &Fluid25DScenicMaterial::water_scatter_scale, 0.0, 2.0},
     Property{"water_reflection_scale", &Fluid25DScenicMaterial::water_reflection_scale, 0.0, 2.0},
     Property{"water_scatter_lighting", &Fluid25DScenicMaterial::water_scatter_lighting, 0.0, 1.0},
@@ -92,7 +96,9 @@ Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile) {
         result.water_roughness = 0.14F;
         result.water_scatter_scale = 0.4F;
         result.water_clarity = 0.0F;
-        result.water_extinction_scale = 4.0F;
+        result.water_extinction_scale = 1.0F;
+        result.water_shallow_extinction_boost = 3.0F;
+        result.water_shallow_extinction_end_m = 16.0F;
         return result;
     }
     if (profile == "terrain") {
