@@ -2,6 +2,7 @@
 
 #include "fluid_25d_commands.h"
 #include "fluid_25d_scenic_material.h"
+#include "fluid_25d_terrain_surface.h"
 #include <memory>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -16,7 +17,8 @@ class Fluid25DScenic {
     bool ensure_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
                           render::ColorTargetView target, const Fluid25DConfig& config,
                           const Fluid25DScenarioData& scenario, const Fluid25DGpuResources& fields,
-                          bool integrated_terrain_diffuse = false);
+                          bool integrated_terrain_diffuse = false,
+                          const Fluid25DTerrainSurface* surface = nullptr);
     void destroy_swapchain_resources();
     void destroy();
     [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
@@ -28,7 +30,7 @@ class Fluid25DScenic {
                 double visual_clock_s, const Fluid25DScenicMaterial& material,
                 Fluid25DMotionMarkers* markers, float marker_fraction, bool profile = false,
                 bool reset_visual_flow = false, unsigned terrain_view = 0U,
-                unsigned water_view = 0U);
+                unsigned water_view = 0U, unsigned surface_mode = 0U);
 
   private:
     struct State;

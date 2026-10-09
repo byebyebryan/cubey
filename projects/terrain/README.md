@@ -12,6 +12,23 @@ collision, or planet projection.
 
 ## Product Contract
 
+### Shared surface-field study (2026-10-08)
+
+Climate loading and optional surface math now belong to `cubey::asset` and
+`cubey::terrain`; project headers retain compatibility aliases. Production
+defaults are unchanged. `--terrain-surface-model correlated-surface` and the
+GUI's **Source-aligned masks (study)** selection use a full-source descriptor
+shared with Fluid 2.5D. It is cached with the render product and independent of
+consumer crop, height offset and draw-mesh spacing. The old three models keep
+their historical semantics. The companion is optional for the new descriptor;
+without it, bounded landform-only potentials are used.
+
+The new bare-substrate material recipe did not pass visual review and was
+removed. This option retains the data/diagnostic experiment, **not** that recipe
+or a claim of improved surface fidelity. See the surface boundary in
+`docs/architecture/terrain-v1.md` and
+`outputs/terrain/correlated-surface-v1-20261008-b2` for the comparison evidence.
+
 The active path is fixed:
 
 - regular external float heightfield with validated metadata, coverage, and

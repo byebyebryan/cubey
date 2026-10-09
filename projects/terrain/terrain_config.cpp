@@ -70,9 +70,9 @@ void set_json_string(std::optional<TerrainDebugView>& target, const nlohmann::js
 }
 
 void bind_debug_view(cubey::config::Schema::Builder& builder, TerrainProjectConfig& config) {
-    const OptionSpec spec = option("debug_view", "--debug-view", "Debug View", "Terrain/Debug",
-                                   "Terrain backdrop diagnostic view; aliases remain accepted.",
-                                   ValueType::String);
+    const OptionSpec spec =
+        option("debug_view", "--debug-view", "Debug View", "Terrain/Debug",
+               "Terrain backdrop diagnostic view; aliases remain accepted.", ValueType::String);
     builder.bind_custom(
         spec,
         [&config](std::string_view value) {
@@ -87,22 +87,22 @@ void bind_debug_view(cubey::config::Schema::Builder& builder, TerrainProjectConf
         },
         [&config] {
             return config.debug_view.has_value()
-                       ? nlohmann::json(std::string(terrain_debug_view_name(
-                             config.debug_view.value())))
+                       ? nlohmann::json(
+                             std::string(terrain_debug_view_name(config.debug_view.value())))
                        : nlohmann::json(nullptr);
         });
 }
 
-void bind_camera_preset(cubey::config::Schema::Builder& builder,
-                        TerrainProjectConfig& config) {
+void bind_camera_preset(cubey::config::Schema::Builder& builder, TerrainProjectConfig& config) {
     // Keep the historical enum spellings in metadata so those inputs receive
     // the same active-product rejection, while only backdrop and
     // backdrop-stage can be stored by the typed facade.
     const OptionSpec spec = option(
         "terrain.camera_preset", "--terrain-camera-preset", "Camera Preset", "Terrain",
         "Initial terrain review framing; the active product supports backdrop or backdrop-stage.",
-        ValueType::Enum, {}, {"oblique", "profile", "top", "surface", "surface-low", "ground",
-                              "backdrop", "backdrop-stage", "midground", "coastal-oblique"});
+        ValueType::Enum, {},
+        {"oblique", "profile", "top", "surface", "surface-low", "ground", "backdrop",
+         "backdrop-stage", "midground", "coastal-oblique"});
     builder.bind_custom(
         spec,
         [&config](std::string_view value) {
@@ -127,17 +127,16 @@ void bind_camera_preset(cubey::config::Schema::Builder& builder,
         },
         [&config] {
             return config.terrain.camera_preset.has_value()
-                       ? nlohmann::json(std::string(terrain_camera_preset_name(
-                             config.terrain.camera_preset.value())))
+                       ? nlohmann::json(std::string(
+                             terrain_camera_preset_name(config.terrain.camera_preset.value())))
                        : nlohmann::json(nullptr);
         });
 }
 
-void bind_surface_detail(cubey::config::Schema::Builder& builder,
-                         TerrainProjectConfig& config) {
-    const OptionSpec spec = option(
-        "terrain.surface_detail", "--terrain-surface-detail", "Surface Detail", "Terrain",
-        "Terrain material detail mode.", ValueType::Enum, {}, {"flat", "filtered-detail"});
+void bind_surface_detail(cubey::config::Schema::Builder& builder, TerrainProjectConfig& config) {
+    const OptionSpec spec =
+        option("terrain.surface_detail", "--terrain-surface-detail", "Surface Detail", "Terrain",
+               "Terrain material detail mode.", ValueType::Enum, {}, {"flat", "filtered-detail"});
     builder.bind_custom(
         spec,
         [&config](std::string_view value) {
@@ -162,8 +161,8 @@ void bind_surface_detail(cubey::config::Schema::Builder& builder,
         },
         [&config] {
             return config.terrain.surface_detail.has_value()
-                       ? nlohmann::json(std::string(terrain_material_mode_name(
-                             config.terrain.surface_detail.value())))
+                       ? nlohmann::json(std::string(
+                             terrain_material_mode_name(config.terrain.surface_detail.value())))
                        : nlohmann::json(nullptr);
         });
 }
@@ -317,6 +316,8 @@ std::string_view terrain_surface_model_name(TerrainSurfaceModel model) noexcept 
         return "landform-transition";
     case TerrainSurfaceModel::ClimateTransition:
         return "climate-transition";
+    case TerrainSurfaceModel::CorrelatedSurface:
+        return "correlated-surface";
     }
     return "mineral-control";
 }
@@ -330,6 +331,9 @@ TerrainSurfaceModel terrain_surface_model_from_name(std::string_view name) {
     }
     if (name == "climate-transition") {
         return TerrainSurfaceModel::ClimateTransition;
+    }
+    if (name == "correlated-surface") {
+        return TerrainSurfaceModel::CorrelatedSurface;
     }
     throw std::runtime_error("unsupported terrain surface model: " + std::string(name));
 }
@@ -373,10 +377,11 @@ void validate_terrain_runtime_config(const TerrainRuntimeConfig& config) {
     }
 }
 
-TerrainRuntimeConfig terrain_runtime_config_from_options(
-    const TerrainStartupOptions& options, TerrainDebugView debug_view,
-    const std::filesystem::path& default_heightfield_path,
-    const std::filesystem::path& default_surface_fields_path) {
+TerrainRuntimeConfig
+terrain_runtime_config_from_options(const TerrainStartupOptions& options,
+                                    TerrainDebugView debug_view,
+                                    const std::filesystem::path& default_heightfield_path,
+                                    const std::filesystem::path& default_surface_fields_path) {
     TerrainRuntimeConfig result;
     result.heightfield_path =
         options.heightfield_path.has_value() && !options.heightfield_path->empty()
@@ -416,15 +421,15 @@ TerrainRuntimeConfig terrain_runtime_config_from_options(
     return result;
 }
 
-cubey::AtmosphereEnvironmentRunState terrain_atmosphere_state_from_options(
-    const cubey::AtmosphereEnvironmentOptions& atmosphere) {
+cubey::AtmosphereEnvironmentRunState
+terrain_atmosphere_state_from_options(const cubey::AtmosphereEnvironmentOptions& atmosphere) {
     cubey::validate_atmosphere_environment_options(atmosphere);
     cubey::AtmosphereEnvironmentOptions resolved = atmosphere;
     const bool explicit_clock = resolved.time_hours.has_value() ||
                                 resolved.day_of_year.has_value() ||
                                 resolved.latitude_degrees.has_value();
-    const bool explicit_sun = resolved.sun_elevation_degrees.has_value() ||
-                              resolved.sun_azimuth_degrees.has_value();
+    const bool explicit_sun =
+        resolved.sun_elevation_degrees.has_value() || resolved.sun_azimuth_degrees.has_value();
     if (!resolved.time_of_day_mode.has_value() && !explicit_clock && !explicit_sun) {
         resolved.time_of_day_mode = "solar";
         resolved.time_hours = kTerrainDefaultTimeHours;
@@ -439,9 +444,9 @@ cubey::AtmosphereEnvironmentRunState terrain_atmosphere_state_from_options(
         });
 }
 
-cubey::CloudEnvironmentConfig terrain_cloud_config_from_options(
-    const cubey::CloudEnvironmentOptions& clouds,
-    const cubey::render::AtmosphereEnvironmentConfig& atmosphere) {
+cubey::CloudEnvironmentConfig
+terrain_cloud_config_from_options(const cubey::CloudEnvironmentOptions& clouds,
+                                  const cubey::render::AtmosphereEnvironmentConfig& atmosphere) {
     cubey::CloudEnvironmentConfig result{};
     cubey::apply_cloud_environment_weather_preset(
         result, cubey::CloudEnvironmentWeatherPreset::FairWeather);
@@ -469,9 +474,10 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                      "Expected source seed; assignment is preserved explicitly.",
                      ValueType::UInt64),
               config.terrain.seed)
-        .bind(option("terrain.surface_model", "--terrain-surface-model", "Surface Model",
-                     "Terrain", "Terrain surface material model.", ValueType::Enum, {},
-                     {"mineral-control", "landform-transition", "climate-transition"}),
+        .bind(option("terrain.surface_model", "--terrain-surface-model", "Surface Model", "Terrain",
+                     "Terrain surface material model.", ValueType::Enum, {},
+                     {"mineral-control", "landform-transition", "climate-transition",
+                      "correlated-surface"}),
               config.terrain.surface_model)
         .bind(option("terrain.placement", "--terrain-placement", "Placement", "Terrain",
                      "Startup terrain source placement.", ValueType::Enum, {},
@@ -487,19 +493,18 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
               config.terrain.foreground_height_m);
     bind_camera_preset(builder, config);
     bind_surface_detail(builder, config);
-    OptionSpec terrain_shadows = option(
-        "terrain.shadows", "--terrain-shadows", "Shadows", "Terrain",
-        "Enable cached directional terrain shadows.", ValueType::Bool);
+    OptionSpec terrain_shadows =
+        option("terrain.shadows", "--terrain-shadows", "Shadows", "Terrain",
+               "Enable cached directional terrain shadows.", ValueType::Bool);
     terrain_shadows.negative_cli_name = "--no-terrain-shadows";
-    builder
-        .bind(std::move(terrain_shadows), config.terrain.shadows)
+    builder.bind(std::move(terrain_shadows), config.terrain.shadows)
         .bind(option("terrain.aerial_perspective_strength", "--terrain-aerial-perspective",
                      "Aerial Perspective", "Terrain",
                      "Aerial perspective strength for the terrain backdrop.", ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
               config.terrain.aerial_perspective_strength)
-        .bind(option("terrain.render_stride", "--terrain-render-stride", "Render Stride",
-                     "Terrain", "Cached terrain topology stride.", ValueType::UInt32,
+        .bind(option("terrain.render_stride", "--terrain-render-stride", "Render Stride", "Terrain",
+                     "Cached terrain topology stride.", ValueType::UInt32,
                      {.has_min = true, .has_max = true, .min = 1.0, .max = 3.0}),
               config.terrain.render_stride)
         .bind(option("terrain.backdrop_azimuth_degrees", "--terrain-backdrop-azimuth",
@@ -514,8 +519,7 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
               config.terrain.backdrop_orbit_radius_m)
         .bind(option("terrain.backdrop_elevation_degrees", "--terrain-backdrop-elevation",
                      "Orbit Elevation", "Terrain", "Initial backdrop orbit elevation in degrees.",
-                     ValueType::Float,
-                     {.has_min = true, .has_max = true, .min = 0.0, .max = 30.0}),
+                     ValueType::Float, {.has_min = true, .has_max = true, .min = 0.0, .max = 30.0}),
               config.terrain.backdrop_elevation_degrees);
     builder.compose(cubey::atmosphere_environment_schema(config.atmosphere));
     builder.compose(cubey::cloud_environment_schema(config.clouds));

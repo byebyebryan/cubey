@@ -17,6 +17,10 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 water_film; // begin_m, end_m, film perceptual roughness, ground mix
     vec4 water_view; // component view, reserved, reserved, reserved
 #endif
+#ifdef FLUID25D_TERRAIN_MACRO
+    vec4 terrain_padding[2]; // Preserve water's existing uniform offsets.
+    vec4 terrain_surface; // mode, grid width, grid height, reserved
+#endif
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;

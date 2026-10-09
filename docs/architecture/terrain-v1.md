@@ -354,10 +354,41 @@ first-present critical path without moving atmosphere policy into the terrain
 runtime.
 
 The shared surface boundary bakes generic material channels. Mineral control is
-the production default. Climate rasters, climate-response formulas, calibration
-labels, and their diagnostics remain terrain-project experiments rather than
-foundation semantics. Planet terrain remains a separate spherical scale/LOD
-problem.
+the production default. Since the 2026-10-08 two-consumer surface study,
+`cubey::asset::TerrainRasterClimateSource` owns the validated, SHA-bound companion
+loader and `cubey::terrain` owns the unchanged optional surface formulas. The
+project headers are compatibility facades, not duplicate implementations.
+Calibration labels, source-selection policy and diagnostics remain project-owned;
+sharing the loader does not promote a biome or calibrated climate product.
+
+`TerrainSurfaceField` is a versioned, opt-in render-only full-source product.
+Its RGBA channels mean exposed rock, sheltered-ground potential, climate moisture
+potential and snow potential. Neither cover nor snow adds geometry, and moisture
+is not live rainfall, saturation or hydraulic state. Queries use original source
+XZ/metres, never crop-relative height or draw-mesh neighbours. Elevation reference
+is the source metadata datum/relief. Square-box filters use requested physical
+radii 90/360/1440 m, floor-quantized at product spacing and truncated/renormalized
+only at source bounds. Full-source preparation supplies the halo for consumer
+crops. Source-product resolution is capped at 1024 samples per axis and does not
+oversample the source metadata gradient spacing; retained weights are at most
+16 MiB. This is a plausible artistic proxy, not reconstructed geology.
+
+Terrain consumes the same bilinear field via its classifier and existing cached
+vertex channels. Fluid 2.5D samples it at verified recording source coordinates,
+then uploads a mip-filtered RGBA8 crop. Their CPU field samples match exactly;
+vertex interpolation versus texture quantization/filtering remains deliberately
+different presentation. Legacy mineral/landform/climate descriptors retain their
+historical semantics and hashes. The experimental field has a distinct recipe
+key; warm Terrain products decode without rebaking it.
+
+The accompanying bare-ground material candidate was rejected: changed colours
+and pale exposed bands did not resolve the smooth/clay-like appearance across
+three frozen sources. Its renderer additions were removed; original material
+recipes/defaults remain. Evidence is under
+`outputs/terrain/correlated-surface-v1-20261008-b2`, with the rejected prototype
+runtime archived separately from final field-only validation. This does not prove
+procedural terrain rendering impossible, nor close/hero terrain supported.
+Planet terrain remains a separate spherical scale/LOD problem.
 
 ## Explicit Deferrals
 

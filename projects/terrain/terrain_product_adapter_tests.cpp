@@ -164,12 +164,36 @@ void test_prepared_product_uses_the_shared_cache_on_a_warm_build() {
 
 } // namespace
 
+void test_correlated_field_preserves_geometry_and_cache() {
+    using namespace cubey::projects::terrain;
+    const TerrainRasterHeightSource source(CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET);
+    CacheFixture fixture;
+    cubey::procedural::ProceduralArtifactCache cache({.root = fixture.root});
+    const auto baseline = prepare_project_terrain_backdrop_product(
+        cache, product_request(), source, TerrainSurfaceModel::MineralControl, nullptr, 0x42U);
+    const auto candidate = prepare_project_terrain_backdrop_product(
+        cache, product_request(), source, TerrainSurfaceModel::CorrelatedSurface, nullptr, 0x42U);
+    const auto warm = prepare_project_terrain_backdrop_product(
+        cache, product_request(), source, TerrainSurfaceModel::CorrelatedSurface, nullptr, 0x42U);
+    require(baseline.product.diagnostics.geometry_hash ==
+                    candidate.product.diagnostics.geometry_hash &&
+                baseline.product.diagnostics.render_triangle_count ==
+                    candidate.product.diagnostics.render_triangle_count,
+            "source field changed height or topology");
+    require(baseline.cache.path != candidate.cache.path &&
+                warm.cache.source == TerrainProductPreparationSource::Cache &&
+                warm.cache.generation_milliseconds == 0 &&
+                warm.product.diagnostics.content_hash == candidate.product.diagnostics.content_hash,
+            "canonical field recipe polluted legacy cache or missed warm decode");
+}
+
 int main() {
     try {
         test_surface_models_preserve_geometry_and_change_only_surface_channels();
         test_climate_surface_requires_a_bound_climate_source();
         test_climate_diagnostics_codec_round_trips_every_field();
         test_prepared_product_uses_the_shared_cache_on_a_warm_build();
+        test_correlated_field_preserves_geometry_and_cache();
         std::cout << "terrain_product_adapter_tests: ok\n";
         return 0;
     } catch (const std::exception& error) {

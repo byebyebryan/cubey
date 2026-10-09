@@ -130,6 +130,7 @@ add_library(cubey_asset STATIC
     asset/hdr_image.cpp
     asset/terrain_height_source.cpp
     asset/terrain_raster_height_source.cpp
+    asset/terrain_raster_climate_source.cpp
 )
 add_library(cubey::asset ALIAS cubey_asset)
 
@@ -160,6 +161,8 @@ add_library(cubey_terrain STATIC
     terrain/terrain_backdrop_profile.cpp
     terrain/terrain_backdrop_surface.cpp
     terrain/terrain_directional_placement.cpp
+    terrain/terrain_surface_model.cpp
+    terrain/terrain_surface_field.cpp
 )
 add_library(cubey::terrain ALIAS cubey_terrain)
 

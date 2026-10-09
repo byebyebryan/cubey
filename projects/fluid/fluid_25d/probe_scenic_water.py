@@ -47,11 +47,14 @@ def main():
                 name = ("shaded", "environment-only", "direct-only", "transmission-only",
                         "no-environment", "no-direct", "no-clarity", "no-detail",
                         "depth-bands", "coverage", "film-weight")[index]
+                # Fixed 1920x1080 replay without a climate source. The new
+                # disabled terrain-organization row precedes water controls.
+                water_y = 835
                 for attempt in range(3):
-                    keys.click(100, 771)
+                    keys.click(100, water_y)
                     time.sleep(.6)
                     capture(f"popup-{len(captures)}")
-                    keys.click(100, 802 + index * 20)
+                    keys.click(100, water_y + 31 + index * 20)
                     time.sleep(.6)
                     events = re.findall(r"^fluid_25d_scenic_water: .+$", (launch / "viewer.log").read_text(), re.M)
                     if events and f"view={name} " in events[-1]:

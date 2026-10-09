@@ -12,6 +12,7 @@
 #include "fluid_25d_project_config.h"
 #include "fluid_25d_recording.h"
 #include "fluid_25d_scenic.h"
+#include "fluid_25d_terrain_surface.h"
 
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -206,6 +207,14 @@ class RecordingApp {
         scenario_.source_depth_rate_m_per_s.assign(shown_->depth_m.size(), 0.0F);
         scenario_.sink_depth_rate_m_per_s.assign(shown_->depth_m.size(), 0.0F);
         scenario_.boundary_outflow_face_mask.assign(shown_->depth_m.size(), 0U);
+        if (config_.native_scenic_surface_source) {
+            terrain_surface_ = fluid_25d_load_terrain_surface(
+                *config_.native_scenic_surface_source,
+                recording_->provenance().at("terrain_source_identity"), simulation_.grid_width,
+                simulation_.grid_height, simulation_.cell_size_m, scenario_.terrain_height_m,
+                recording_->source_bed());
+            std::printf("fluid_25d_terrain_surface: %s\n", terrain_surface_->receipt.c_str());
+        }
         render_ = config.catchment_render;
         scenic_material_ = fluid_25d_scenic_material(config_.native_scenic_material);
         if (config_.native_scenic_tuning_path)
@@ -865,7 +874,8 @@ class RecordingApp {
     void ensure_scenic_resources(vulkan::Device& device, render::ColorTargetView target) {
         if (scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
                                      scenario_, resources_,
-                                     scenic_material_.terrain_diffuse_convolution > 0.0F) &&
+                                     scenic_material_.terrain_diffuse_convolution > 0.0F,
+                                     terrain_surface_ ? &*terrain_surface_ : nullptr) &&
             external_session_)
             external_refresh_after_render_setup_ = true;
     }
@@ -1078,7 +1088,8 @@ class RecordingApp {
                            config_.motion_markers ? &markers_ : nullptr, marker_fraction_,
                            profile != nullptr, scenic_flow_reset_,
                            fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view),
-                           fluid_25d_scenic_water_view(config_.native_scenic_water_view));
+                           fluid_25d_scenic_water_view(config_.native_scenic_water_view),
+                           fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode));
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1280,6 +1291,8 @@ class RecordingApp {
                     config_.native_scenic_material.c_str(),
                     config_.native_scenic_tuning_path ? "+tuning" : "",
                     scenic_material_edited_ ? "+edited" : "", json.c_str());
+        std::printf("fluid_25d_scenic_surface: mode=%s source_bound=%u\n",
+                    config_.native_scenic_surface_mode.c_str(), terrain_surface_ ? 1U : 0U);
         std::printf(
             "fluid_25d_scenic_water: shading=wet-ground view=%s pipeline=normal dots_draw=%u "
             "coverage=retained\n",
@@ -1333,6 +1346,22 @@ class RecordingApp {
                 report_scenic_material();
             }
             // Edits only affect the next frame's material uniforms, not playback history.
+            int surface_mode =
+                int(fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode));
+            ImGui::BeginDisabled(!terrain_surface_);
+            if (ImGui::Combo("Terrain organization", &surface_mode,
+                             "Legacy\0Landform masks\0Climate + landform\0Source-aligned masks (study)\0")) {
+                constexpr std::array names{"legacy", "landform", "climate", "correlated"};
+                config_.native_scenic_surface_mode = names[std::size_t(surface_mode)];
+                report_scenic_material();
+            }
+            ImGui::EndDisabled();
+            ImGui::TextWrapped(terrain_surface_
+                                   ? "Climate is a long-term material prior, not current rain or "
+                                     "wetness. Masks are "
+                                     "baked once; elevations and hydraulic fields are unchanged."
+                                   : "Terrain organization study requires a matching "
+                                     "--fluid25d-scenic-surface-source.");
             constexpr std::array water_views{
                 "shaded",         "environment-only", "direct-only", "transmission-only",
                 "no-environment", "no-direct",        "no-clarity",  "no-detail",
@@ -2230,6 +2259,7 @@ class RecordingApp {
     Fluid25DMotionMarkers markers_;
     render::RenderGraphFrameExecutor graph_;
     Fluid25DScenic scenic_;
+    std::optional<Fluid25DTerrainSurface> terrain_surface_;
     Fluid25DScenicMaterial scenic_material_;
     bool scenic_material_edited_ = false;
     vulkan::GpuRuntime* scenic_gpu_ = nullptr;

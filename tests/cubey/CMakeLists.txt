@@ -200,6 +200,7 @@ foreach(test_name IN ITEMS
     terrain_backdrop_preparation
     terrain_backdrop_surface
     terrain_directional_placement
+    terrain_surface_field
 )
     add_executable(
         cubey_${test_name}_tests

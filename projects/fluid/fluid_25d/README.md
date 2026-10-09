@@ -1,5 +1,16 @@
 # Fluid 2.5D
 
+The render-only surface study also supports
+`--fluid25d-scenic-surface-mode correlated` with a SHA-matching
+`--fluid25d-scenic-surface-source`. The GUI labels this **Source-aligned masks
+(study)**. It samples `cubey::terrain::TerrainSurfaceField`, the same full-source
+descriptor as Terrain, rather than normalizing/filtering only the recording crop.
+The existing three modes and numerical defaults are unchanged. This remains a
+completed-recording study; it does not launch a solver or change rainfall/bed data.
+Its attempted new material recipe was rejected and removed; the existing Scenic
+material consumes the diagnostic masks. See
+`outputs/terrain/correlated-surface-v1-20261008-b2` for prototype versus final proof.
+
 `fluid_25d` is Cubey's terrain-water project: a 2D shallow-water simulation
 over a heightfield terrain. Water should flow downhill, pool in basins, follow
 an authored channel, and drain through an explicit sink without requiring a
@@ -39,6 +50,13 @@ render-only material selector retains V1 and a refined preset with quieter wet
 ground, clearer shallow streams and light-responsive pool color. This does not
 enlarge the wet area or smooth the bank mesh; Readable/raw maps remain the depth
 reference.
+
+The opt-in [climate-informed surface study](../../../docs/notes/fluid25d-climate-surface-v1.md)
+reuses Terrain Diffusion's climate companion and the Terrain project's existing
+landform classifier to organize procedural bare-ground materials. It improves
+macro placement, not close-up realism. It currently requires a completed native
+recording plus its provenance-matched heightfield; live streaming and launcher
+defaults remain unchanged. See the [remote comparison](../../../outputs/fluid/climate-surface-v1-20261008/index.html).
 
 The latest [Scenic material V2 remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
 has two eight-second V1/V2 comparisons and one no-dots Readable/V1/V2 still

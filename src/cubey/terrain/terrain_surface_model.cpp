@@ -1,4 +1,5 @@
-#include "terrain_surface_model.h"
+#include <cubey/terrain/terrain_surface_field.h>
+#include <cubey/terrain/terrain_surface_model.h>
 
 #include <cubey/procedural/hash.h>
 
@@ -7,7 +8,7 @@
 #include <numbers>
 #include <stdexcept>
 
-namespace cubey::projects::terrain {
+namespace cubey::terrain {
 namespace {
 
 [[nodiscard]] float smoothstep(float edge0, float edge1, float value) {
@@ -25,8 +26,7 @@ namespace {
         return 0.0F;
     }
     return 365.0F *
-           (0.5F - std::asin(std::clamp(threshold_ratio, -1.0F, 1.0F)) /
-                       std::numbers::pi_v<float>);
+           (0.5F - std::asin(std::clamp(threshold_ratio, -1.0F, 1.0F)) / std::numbers::pi_v<float>);
 }
 
 void validate_climate_sample(const TerrainClimateSample& climate) {
@@ -67,15 +67,16 @@ TerrainClimatePotential terrain_climate_potential(const TerrainClimateSample& cl
         .effective_moisture = effective_moisture,
         .moisture_weight = smoothstep(0.03F, 0.50F, effective_moisture),
         .cover_weight = smoothstep(0.02F, 0.28F, effective_moisture),
-        .annual_cold_potential =
-            1.0F - smoothstep(-1.0F, 3.0F, climate.temperature_mean_c),
-        .wet_snow_potential =
-            smoothstep(150.0F, 400.0F, climate.precipitation_annual_mm),
+        .annual_cold_potential = 1.0F - smoothstep(-1.0F, 3.0F, climate.temperature_mean_c),
+        .wet_snow_potential = smoothstep(150.0F, 400.0F, climate.precipitation_annual_mm),
     };
 }
 
 TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
                                               const TerrainSurfaceInputs& inputs) {
+    if (model == TerrainSurfaceModel::CorrelatedSurface) {
+        throw std::runtime_error("correlated surface requires the source-coordinate field");
+    }
     if (!std::isfinite(inputs.normalized_height) || !std::isfinite(inputs.slope) ||
         !std::isfinite(inputs.normal_y) || !std::isfinite(inputs.concavity_m) ||
         !std::isfinite(inputs.relief_scale_m) || inputs.relief_scale_m <= 0.0F) {
@@ -87,15 +88,13 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
     const float normal_y = std::clamp(inputs.normal_y, 0.0F, 1.0F);
     const float mountain_factor = smoothstep(1'300.0F, 2'800.0F, inputs.relief_scale_m);
     const float exposed_rock = smoothstep(0.17F, 0.54F, slope);
-    const float alpine_rock = mountain_factor * smoothstep(0.42F, 0.72F, height) *
-                              smoothstep(0.035F, 0.30F, slope);
-    float snow = mountain_factor * smoothstep(0.58F, 0.80F, height) *
-                 smoothstep(0.38F, 0.78F, normal_y);
+    const float alpine_rock =
+        mountain_factor * smoothstep(0.42F, 0.72F, height) * smoothstep(0.035F, 0.30F, slope);
+    float snow =
+        mountain_factor * smoothstep(0.58F, 0.80F, height) * smoothstep(0.38F, 0.78F, normal_y);
     snow = std::clamp(snow, 0.0F, 1.0F);
-    float rock =
-        std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);
-    const float ambient_visibility =
-        1.0F - 0.35F * smoothstep(20.0F, 240.0F, inputs.concavity_m);
+    float rock = std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);
+    const float ambient_visibility = 1.0F - 0.35F * smoothstep(20.0F, 240.0F, inputs.concavity_m);
 
     if (model == TerrainSurfaceModel::MineralControl) {
         return {rock, snow, ambient_visibility, 0.0F, 0.0F};
@@ -109,8 +108,7 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
         std::clamp((0.62F * lowland + 0.38F * valley) * flatness * available_ground, 0.0F, 1.0F);
 
     if (model == TerrainSurfaceModel::LandformTransition) {
-        const float moisture =
-            std::clamp(0.18F + 0.45F * valley + 0.12F * lowland, 0.0F, 1.0F);
+        const float moisture = std::clamp(0.18F + 0.45F * valley + 0.12F * lowland, 0.0F, 1.0F);
         return {rock, snow, ambient_visibility, 0.58F * landform_capacity, moisture};
     }
 
@@ -126,9 +124,8 @@ TerrainSurfaceWeights terrain_surface_weights(TerrainSurfaceModel model,
                       0.0F, 1.0F);
     rock = std::clamp(std::max(exposed_rock, alpine_rock) * (1.0F - snow), 0.0F, 1.0F);
     const float climate_ground = std::max(0.0F, 1.0F - rock - snow);
-    const float vegetation =
-        std::min(landform_capacity * potential.cover_weight * potential.thermal_growth,
-                 climate_ground);
+    const float vegetation = std::min(
+        landform_capacity * potential.cover_weight * potential.thermal_growth, climate_ground);
     return {rock, snow, ambient_visibility, vegetation, potential.moisture_weight};
 }
 
@@ -137,6 +134,7 @@ std::uint64_t terrain_surface_model_parameter_hash(TerrainSurfaceModel model) {
     case TerrainSurfaceModel::MineralControl:
     case TerrainSurfaceModel::LandformTransition:
     case TerrainSurfaceModel::ClimateTransition:
+    case TerrainSurfaceModel::CorrelatedSurface:
         break;
     default:
         throw std::runtime_error("terrain surface model is invalid");
@@ -144,7 +142,11 @@ std::uint64_t terrain_surface_model_parameter_hash(TerrainSurfaceModel model) {
     cubey::procedural::ProceduralHashBuilder hash;
     hash.append_string(kTerrainSurfaceModelFormulaVersion);
     hash.append_u32(static_cast<std::uint32_t>(model));
+    if (model == TerrainSurfaceModel::CorrelatedSurface) {
+        hash.append_string(kTerrainSurfaceFieldFormula);
+        hash.append_string("native-spacing-cap-and-climate-diagnostics-v1");
+    }
     return hash.value();
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::terrain

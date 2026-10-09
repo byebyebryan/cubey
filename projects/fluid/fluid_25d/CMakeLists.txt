@@ -1,3 +1,9 @@
+# Consume foundation climate and surface semantics, not project-relative sources.
+add_library(cubey_fluid25d_terrain_surface STATIC
+    ../sim/fluid_25d/fluid_25d_terrain_surface.cpp)
+target_link_libraries(cubey_fluid25d_terrain_surface PUBLIC cubey::cubey
+    nlohmann_json::nlohmann_json PRIVATE cubey_project_options cubey_project_warnings)
+
 cubey_add_app_target(
     cubey_project_fluid_25d
     OUTPUT_NAME fluid_25d
@@ -88,6 +94,7 @@ target_include_directories(
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d"
 )
+target_link_libraries(cubey_project_fluid_25d PRIVATE cubey_fluid25d_terrain_surface)
 
 # Explicit read/control diagnostic only; no automatic native launch or CUDA dependency.
 add_executable(cubey_project_fluid_25d_external_probe EXCLUDE_FROM_ALL
@@ -98,6 +105,12 @@ target_link_libraries(cubey_project_fluid_25d_external_probe
     PRIVATE cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_fluid_25d_terrain_surface_tests
+        ../sim/fluid_25d/fluid_25d_terrain_surface_tests.cpp)
+    target_link_libraries(cubey_project_fluid_25d_terrain_surface_tests PRIVATE
+        cubey_fluid25d_terrain_surface cubey_project_options cubey_project_warnings)
+    add_test(NAME fluid_25d_terrain_surface COMMAND cubey_project_fluid_25d_terrain_surface_tests)
+    set_tests_properties(fluid_25d_terrain_surface PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
     add_executable(cubey_project_fluid_25d_surface_gradient_gpu_tests
         ../sim/fluid_25d/fluid_25d_surface_gradient_gpu_tests.cpp)
     target_link_libraries(cubey_project_fluid_25d_surface_gradient_gpu_tests PRIVATE

@@ -66,6 +66,8 @@ struct Fluid25DProjectConfig {
     std::string native_presentation = "original";
     std::string native_scenic_material = "refined";
     std::optional<std::filesystem::path> native_scenic_tuning_path{};
+    std::optional<std::filesystem::path> native_scenic_surface_source{};
+    std::string native_scenic_surface_mode = "legacy";
     std::string native_scenic_terrain_view = "shaded";
     std::string native_scenic_water_view = "shaded";
     std::string native_surface_highlights = "auto";
@@ -548,6 +550,17 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Bounded Scenic-only JSON overrides, loaded once and logged; no hot reload.",
                      ValueType::Path),
               config.native_scenic_tuning_path)
+        .bind(option("fluid25d.scenic_surface_source", "--fluid25d-scenic-surface-source",
+                     "Surface Source",
+                     "Opt-in completed-recording study: matching heightfield "
+                     "and adjacent SHA-bound climate companion. No simulation changes.",
+                     ValueType::Path),
+              config.native_scenic_surface_source)
+        .bind(option("fluid25d.scenic_surface_mode", "--fluid25d-scenic-surface-mode",
+                     "Surface Model",
+                     "Render-only legacy, landform or climate-plus-landform masks.",
+                     ValueType::Enum, {}, {"legacy", "landform", "climate", "correlated"}),
+              config.native_scenic_surface_mode)
         .bind(option("fluid25d.scenic_terrain_view", "--fluid25d-scenic-terrain-view",
                      "Scenic Terrain View",
                      "Render-only component views hide water/dots, not uploads.", ValueType::Enum,
@@ -929,6 +942,18 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     if (project_config.native_scenic_water_view != "shaded" &&
         project_config.native_scenic_terrain_view != "shaded")
         throw std::runtime_error("water component diagnostics require shaded terrain");
+    if ((project_config.native_scenic_surface_source ||
+         parsed.path_was_assigned("fluid25d.scenic_surface_mode")) &&
+        (!project_config.recording_path || project_config.stream_path || service_session ||
+         project_config.native_presentation != "scenic"))
+        throw std::runtime_error("Scenic surface study requires a completed recording and Scenic");
+    if (project_config.native_scenic_surface_source &&
+        project_config.native_scenic_surface_source->empty())
+        throw std::runtime_error("Scenic surface source must not be empty");
+    if (project_config.native_scenic_surface_mode != "legacy" &&
+        !project_config.native_scenic_surface_source)
+        throw std::runtime_error(
+            "landform/climate surface mode requires a matching surface source");
     if (project_config.native_camera_sweep_radians > 0.0F &&
         (!project_config.recording_path || !project_config.common.headless ||
          project_config.common.capture_mode != CaptureMode::Video))

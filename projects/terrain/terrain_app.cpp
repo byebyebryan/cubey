@@ -844,10 +844,14 @@ class TerrainApp {
             edit_surface_model_ = TerrainSurfaceModel::ClimateTransition;
         }
         ImGui::EndDisabled();
-        const std::string_view active_surface =
+        if (ImGui::RadioButton("Source-aligned masks (study)",
+                               edit_surface_model_ == TerrainSurfaceModel::CorrelatedSurface)) {
+            edit_surface_model_ = TerrainSurfaceModel::CorrelatedSurface;
+        }
+        const std::string_view displayed_surface =
             terrain_surface_model_name(runtime_config_.surface_model);
-        ImGui::Text("Active surface: %.*s", static_cast<int>(active_surface.size()),
-                    active_surface.data());
+        ImGui::Text("Active surface: %.*s", static_cast<int>(displayed_surface.size()),
+                    displayed_surface.data());
         if (climate_source_.has_value()) {
             const TerrainRasterClimateMetadata& climate = climate_source_->metadata();
             ImGui::Text("Climate grid: %u x %u at %.0f m", climate.width, climate.height,

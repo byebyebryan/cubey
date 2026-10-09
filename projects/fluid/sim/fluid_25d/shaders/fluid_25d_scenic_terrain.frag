@@ -14,6 +14,9 @@ layout(location=1) in vec3 world_normal;
 layout(location=2) in vec2 world_xz;
 layout(location=0) out vec4 out_color;
 layout(set=1,binding=10) uniform samplerCube terrain_diffuse_irradiance;
+layout(set=1,binding=11) uniform sampler2D terrain_landform_surface;
+layout(set=1,binding=12) uniform sampler2D terrain_climate_surface;
+layout(set=1,binding=13) uniform sampler2D terrain_correlated_surface;
 vec3 terrain_linear(vec3 c) {
     return mix(pow((c+0.055)/1.055,vec3(2.4)),c/12.92,lessThanEqual(c,vec3(0.04045)));
 }
@@ -46,6 +49,18 @@ void main() {
     float macro = texture(scenic_detail,world_xz/32768.0).b;
     float rock = smoothstep(0.08,0.48,1.0-n.y);
     float rock_color = rock;
+    vec4 surface_weights = vec4(rock,0.0,0.0,0.0);
+    bool organized = scenic.terrain_surface.x > 0.5;
+    bool correlated = scenic.terrain_surface.x > 2.5;
+    if (organized) {
+        vec2 uv = (world_xz/params.grid_cell.z+0.5*(params.grid_cell.xy-1.0)+0.5)
+                  /params.grid_cell.xy;
+        surface_weights = scenic.terrain_surface.x < 1.5
+            ? texture(terrain_landform_surface,uv) : texture(terrain_climate_surface,uv);
+        if (correlated) surface_weights = texture(terrain_correlated_surface,uv);
+        rock = surface_weights.r;
+        rock_color = rock;
+    }
     if (scenic.terrain_macro.w != 1.0) rock_color *= scenic.terrain_macro.w;
     vec3 grass = mix(vec3(0.070,0.105,0.043),vec3(0.14,0.18,0.080),macro);
     vec3 mineral = mix(vec3(0.15,0.14,0.12),vec3(0.25,0.24,0.21),detail.b)*scenic.art_direction.y;
@@ -63,12 +78,30 @@ void main() {
         vec3 refined = mix(soil,stone,rock_color)*(0.92+0.16*detail.b);
         base = mix(base,refined,material_blend);
     }
+    if (organized) {
+        // The same mineral structure affects colour and roughness. Imported
+        // climate never becomes high-frequency noise or live wetness.
+        float mineral_feature = smoothstep(0.18,0.82,detail.b);
+        vec3 stone = mix(terrain_linear(vec3(0.39,0.40,0.40)),
+                         terrain_linear(vec3(0.55,0.50,0.44)),mineral_feature);
+        vec3 dry_soil = mix(terrain_linear(vec3(0.43,0.34,0.25)),
+                            terrain_linear(vec3(0.57,0.46,0.34)),mineral_feature);
+        vec3 sheltered_soil = mix(terrain_linear(vec3(0.30,0.31,0.26)),
+                                  terrain_linear(vec3(0.43,0.41,0.32)),mineral_feature);
+        // Cover potential affects bare-substrate character; no fake grass
+        // texture or vegetation geometry is implied by this first recipe.
+        float shelter = clamp(surface_weights.g*1.4+surface_weights.b*0.2,0.0,1.0);
+        vec3 soil = mix(dry_soil,sheltered_soil,shelter);
+        base = mix(soil,stone,rock_color);
+        base = mix(base,terrain_linear(vec3(0.80,0.82,0.82)),surface_weights.a);
+    }
     if (scenic.ground_material.z!=1.0) {
         float luminance = dot(base,vec3(0.2126,0.7152,0.0722));
         base = mix(vec3(luminance),base,scenic.ground_material.z);
     }
     float footprint = max(length(dFdx(world_position)),length(dFdy(world_position)));
-    float detail_strength = 0.12*(1.0-smoothstep(18.0,72.0,footprint));
+    float surface_detail_scale = organized ? mix(0.35,0.85,rock) : 1.0;
+    float detail_strength = 0.12*(1.0-smoothstep(18.0,72.0,footprint))*surface_detail_scale;
     n = normalize(n+vec3(detail.r-0.5,0.0,detail.g-0.5)*detail_strength);
     float normal_strength = params.terrain_palette.z;
     if (normal_strength>=0.0) {
@@ -76,7 +109,7 @@ void main() {
             fluid25d_normal_derivative(dx.rg),fluid25d_normal_derivative(dy.rg),
             fluid25d_normal_derivative(dz.rg));
         n = fluid25d_resolve_surface_normal(base_normal,gradient,
-            normal_strength*fluid25d_detail_fade(footprint));
+            normal_strength*fluid25d_detail_fade(footprint)*surface_detail_scale);
     }
     if (terrain_view == 10) n = base_normal;
     vec2 f;
@@ -92,6 +125,10 @@ void main() {
     if (material_blend>0.0) {
         float dry_roughness = clamp(mix(0.94,0.86,rock)+0.08*(detail.a-0.5),0.80,0.98);
         roughness = mix(roughness,mix(dry_roughness,scenic.ground_material.x,wet),material_blend);
+    }
+    if (organized) {
+        float dry_roughness = clamp(mix(0.97,0.90,rock)+0.04*(detail.b-0.5),0.87,0.99);
+        roughness = mix(dry_roughness,scenic.ground_material.x,wet);
     }
     vec3 view = normalize(params.camera_wet.xyz-world_position);
     float sun_visibility = scenic_sun_visibility(world_position,n);
@@ -124,7 +161,8 @@ void main() {
                                               terrain_lighting_ambient_visibility(world_normal,0.0));
     vec3 color = direct*scenic.surface_material.x+ambient*scenic.ground_material.w;
     if (terrain_view == 2) color = base;
-    if (terrain_view == 3) color = vec3(rock,1.0-rock,0.0);
+    if (terrain_view == 3) color = organized
+        ? vec3(rock,surface_weights.g,surface_weights.a) : vec3(rock,1.0-rock,0.0);
     if (terrain_view == 4) color = base_normal*0.5+0.5;
     if (terrain_view == 5) color = n*0.5+0.5;
     if (terrain_view == 6) color = vec3(roughness);

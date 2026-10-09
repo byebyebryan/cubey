@@ -2,6 +2,7 @@
 
 #include <cubey/procedural/artifact_metadata.h>
 #include <cubey/terrain/terrain_backdrop_product_cache.h>
+#include <cubey/terrain/terrain_surface_field.h>
 
 #include <algorithm>
 #include <array>
@@ -128,15 +129,32 @@ void reject_typed_entry(const std::filesystem::path& path, std::string& diagnost
 
 class ProjectSurfaceClassifier final : public cubey::terrain::TerrainBackdropSurfaceClassifier {
   public:
-    ProjectSurfaceClassifier(TerrainSurfaceModel model, const TerrainRasterClimateSource* climate)
+    ProjectSurfaceClassifier(TerrainSurfaceModel model, const TerrainRasterClimateSource* climate,
+                             const TerrainHeightSource& source)
         : model_(model), climate_(climate) {
         if (model_ == TerrainSurfaceModel::ClimateTransition && climate_ == nullptr) {
             throw std::runtime_error("climate surface model requires a climate source");
+        }
+        if (model_ == TerrainSurfaceModel::CorrelatedSurface) {
+            const auto* raster = dynamic_cast<const TerrainRasterHeightSource*>(&source);
+            if (!raster)
+                throw std::runtime_error("correlated study requires bounded raster source");
+            field_ = cubey::terrain::make_terrain_surface_field(source, raster->bounds(), climate_);
         }
     }
 
     [[nodiscard]] cubey::terrain::TerrainBackdropSurfaceChannels
     classify(const cubey::terrain::TerrainBackdropSurfaceQuery& query) const override {
+        if (field_) {
+            if (climate_)
+                include_climate(climate_->sample(query.source_xz));
+            const auto w = field_->sample(query.source_xz);
+            return {.rock = w.x,
+                    .snow = w.w,
+                    .ambient_visibility = 1.0F,
+                    .vegetation = w.y,
+                    .moisture = w.z};
+        }
         std::optional<TerrainClimateSample> climate;
         if (climate_ != nullptr) {
             climate = climate_->sample(query.source_xz);
@@ -206,6 +224,7 @@ class ProjectSurfaceClassifier final : public cubey::terrain::TerrainBackdropSur
     TerrainSurfaceModel model_ = TerrainSurfaceModel::MineralControl;
     const TerrainRasterClimateSource* climate_ = nullptr;
     mutable TerrainBackdropClimateDiagnostics sums_{};
+    std::optional<cubey::terrain::TerrainSurfaceField> field_{};
 };
 
 } // namespace
@@ -216,7 +235,7 @@ make_project_terrain_backdrop_product(const cubey::terrain::TerrainBackdropProdu
                                       TerrainSurfaceModel surface_model,
                                       const TerrainRasterClimateSource* climate_source,
                                       TerrainBackdropClimateDiagnostics* climate_diagnostics) {
-    ProjectSurfaceClassifier classifier(surface_model, climate_source);
+    ProjectSurfaceClassifier classifier(surface_model, climate_source, source);
     cubey::terrain::TerrainBackdropProduct result =
         cubey::terrain::make_terrain_backdrop_product(request, source, classifier);
     if (climate_diagnostics != nullptr) {

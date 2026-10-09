@@ -7055,6 +7055,36 @@ void test_scenic_material_contract() {
         {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-presentation", "scenic",
          "--fluid25d-scenic-material", "terrain", "--fluid25d-scenic-terrain-view", "terrain-only",
          "--fluid25d-native-camera-yaw", "0.2"});
+    const auto surface_study = parse_project(
+        {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-presentation", "scenic",
+         "--fluid25d-scenic-surface-source", "heightfield.json", "--fluid25d-scenic-surface-mode",
+         "climate"});
+    require(surface_study.native_scenic_surface_mode == "climate" &&
+                surface_study.native_scenic_surface_source == "heightfield.json" &&
+                surface_study.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "surface study changed numerical defaults");
+    for (const char* source : {"--fluid25d-stream", "--fluid25d-external-session"})
+        require_throws(
+            [&] {
+                (void)parse_project({"fluid_25d", source, "fixture",
+                                     "--fluid25d-native-presentation", "scenic",
+                                     "--fluid25d-scenic-surface-source", "heightfield.json"});
+            },
+            "surface study cannot assume missing live source-coordinate metadata");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-native-presentation", "scenic",
+                                 "--fluid25d-scenic-surface-mode", "climate"});
+        },
+        "unbound climate mode was accepted");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-native-presentation", "readable",
+                                 "--fluid25d-scenic-surface-source", "heightfield.json"});
+        },
+        "surface source cannot be silently ignored outside Scenic");
     require(study.native_scenic_terrain_view == "terrain-only" &&
                 study.native_camera_yaw_radians == 0.2F &&
                 study.native_camera_sweep_radians == 0.0F,

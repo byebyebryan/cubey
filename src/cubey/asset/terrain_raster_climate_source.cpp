@@ -1,4 +1,4 @@
-#include "terrain_raster_climate_source.h"
+#include <cubey/asset/terrain_raster_climate_source.h>
 
 #include <cubey/asset/file_digest.h>
 
@@ -17,7 +17,7 @@
 #include <string>
 #include <string_view>
 
-namespace cubey::projects::terrain {
+namespace cubey::asset {
 namespace {
 
 constexpr std::string_view kSchema = "cubey.terrain.surface-fields.study.v1";
@@ -56,8 +56,7 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, kChannelCoun
     }
 }
 
-[[nodiscard]] std::vector<float> read_climate(const std::filesystem::path& path,
-                                              std::size_t count,
+[[nodiscard]] std::vector<float> read_climate(const std::filesystem::path& path, std::size_t count,
                                               std::uint64_t declared_byte_count,
                                               std::string_view declared_sha256) {
     if constexpr (std::endian::native != std::endian::little) {
@@ -87,8 +86,7 @@ constexpr std::array<std::pair<std::string_view, std::string_view>, kChannelCoun
 
 } // namespace
 
-TerrainRasterClimateSource::TerrainRasterClimateSource(
-    const std::filesystem::path& field_path) {
+TerrainRasterClimateSource::TerrainRasterClimateSource(const std::filesystem::path& field_path) {
     const std::filesystem::path manifest = manifest_path(field_path);
     metadata_.manifest_path = std::filesystem::absolute(manifest).lexically_normal();
     const nlohmann::json document = read_manifest(manifest);
@@ -112,10 +110,10 @@ TerrainRasterClimateSource::TerrainRasterClimateSource(
         metadata_.sample_spacing_m = grid.at("sample_spacing_m").get<float>();
         origin_x_m_ = grid.at("sample_origin_x_m").get<float>();
         origin_z_m_ = grid.at("sample_origin_z_m").get<float>();
-        if (metadata_.width < 2U || metadata_.height < 2U ||
-            metadata_.width > kMaximumDimension || metadata_.height > kMaximumDimension ||
-            !std::isfinite(metadata_.sample_spacing_m) || metadata_.sample_spacing_m <= 0.0F ||
-            !std::isfinite(origin_x_m_) || !std::isfinite(origin_z_m_)) {
+        if (metadata_.width < 2U || metadata_.height < 2U || metadata_.width > kMaximumDimension ||
+            metadata_.height > kMaximumDimension || !std::isfinite(metadata_.sample_spacing_m) ||
+            metadata_.sample_spacing_m <= 0.0F || !std::isfinite(origin_x_m_) ||
+            !std::isfinite(origin_z_m_)) {
             throw std::runtime_error("invalid terrain climate grid metadata");
         }
 
@@ -123,8 +121,8 @@ TerrainRasterClimateSource::TerrainRasterClimateSource(
         metadata_.climate_sha256 = climate.at("sha256").get<std::string>();
         if (climate.at("dtype").get<std::string_view>() != "float32-le" ||
             climate.at("layout").get<std::string_view>() != "channel-major-zx" ||
-            climate.at("shape") != nlohmann::json::array(
-                                       {kChannelCount, metadata_.height, metadata_.width}) ||
+            climate.at("shape") !=
+                nlohmann::json::array({kChannelCount, metadata_.height, metadata_.width}) ||
             !cubey::asset::is_sha256_hex(metadata_.climate_sha256)) {
             throw std::runtime_error("invalid terrain climate payload contract");
         }
@@ -148,8 +146,8 @@ TerrainRasterClimateSource::TerrainRasterClimateSource(
                          climate.at("byte_count").get<std::uint64_t>(), metadata_.climate_sha256);
 
         const auto plane_values = [this, plane](std::uint32_t channel) {
-            return std::span<const float>(values_).subspan(static_cast<std::size_t>(channel) * plane,
-                                                           plane);
+            return std::span<const float>(values_).subspan(
+                static_cast<std::size_t>(channel) * plane, plane);
         };
         if (std::any_of(plane_values(1U).begin(), plane_values(1U).end(),
                         [](float value) { return value < 0.0F; }) ||
@@ -169,10 +167,8 @@ float TerrainRasterClimateSource::sample_channel(std::uint32_t channel,
                                                  cubey::math::Vec2 world_xz) const {
     const float sample_x = (world_xz.x - origin_x_m_) / metadata_.sample_spacing_m;
     const float sample_z = (world_xz.y - origin_z_m_) / metadata_.sample_spacing_m;
-    const float clamped_x =
-        std::clamp(sample_x, 0.0F, static_cast<float>(metadata_.width - 1U));
-    const float clamped_z =
-        std::clamp(sample_z, 0.0F, static_cast<float>(metadata_.height - 1U));
+    const float clamped_x = std::clamp(sample_x, 0.0F, static_cast<float>(metadata_.width - 1U));
+    const float clamped_z = std::clamp(sample_z, 0.0F, static_cast<float>(metadata_.height - 1U));
     const std::uint32_t x0 = static_cast<std::uint32_t>(std::floor(clamped_x));
     const std::uint32_t z0 = static_cast<std::uint32_t>(std::floor(clamped_z));
     const std::uint32_t x1 = std::min(x0 + 1U, metadata_.width - 1U);
@@ -184,8 +180,8 @@ float TerrainRasterClimateSource::sample_channel(std::uint32_t channel,
         return values_[static_cast<std::size_t>(channel) * plane +
                        static_cast<std::size_t>(z) * metadata_.width + x];
     };
-    return std::lerp(std::lerp(at(x0, z0), at(x1, z0), tx),
-                     std::lerp(at(x0, z1), at(x1, z1), tx), tz);
+    return std::lerp(std::lerp(at(x0, z0), at(x1, z0), tx), std::lerp(at(x0, z1), at(x1, z1), tx),
+                     tz);
 }
 
 TerrainClimateSample TerrainRasterClimateSource::sample(cubey::math::Vec2 world_xz) const {
@@ -205,10 +201,9 @@ TerrainHeightSourceBounds TerrainRasterClimateSource::bounds() const noexcept {
         .minimum_xz = {origin_x_m_, origin_z_m_},
         .maximum_xz =
             {
-                origin_x_m_ + static_cast<float>(metadata_.width - 1U) *
-                                  metadata_.sample_spacing_m,
-                origin_z_m_ + static_cast<float>(metadata_.height - 1U) *
-                                  metadata_.sample_spacing_m,
+                origin_x_m_ + static_cast<float>(metadata_.width - 1U) * metadata_.sample_spacing_m,
+                origin_z_m_ +
+                    static_cast<float>(metadata_.height - 1U) * metadata_.sample_spacing_m,
             },
     };
 }
@@ -242,4 +237,4 @@ void validate_terrain_climate_binding(const TerrainRasterHeightSource& height,
     }
 }
 
-} // namespace cubey::projects::terrain
+} // namespace cubey::asset

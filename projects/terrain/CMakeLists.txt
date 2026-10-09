@@ -196,7 +196,6 @@ cubey_add_terrain_source_preset_target(rolling-lowland-1)
 
 add_library(cubey_project_terrain_runtime STATIC
     terrain_config.cpp
-    terrain_raster_climate_source.cpp
     terrain_source_catalog.cpp
 )
 target_include_directories(
@@ -219,7 +218,6 @@ target_link_libraries(
 
 add_library(cubey_project_terrain_surface_support STATIC
     terrain_product_adapter.cpp
-    terrain_surface_model.cpp
 )
 target_include_directories(
     cubey_project_terrain_surface_support
