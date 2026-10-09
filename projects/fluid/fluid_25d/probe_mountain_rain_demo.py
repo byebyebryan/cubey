@@ -212,8 +212,9 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out", required=True, type=Path)
     p.add_argument("--mode", required=True, choices=("replay", "banks", "live"))
-    p.add_argument("--style", choices=("readable", "scenic"), default="readable")
-    p.add_argument("--material", choices=("v1", "refined", "terrain", "macro"), default="refined")
+    p.add_argument("--style", choices=("readable", "scenic"), default="scenic")
+    p.add_argument("--material", choices=("v1", "refined", "terrain", "macro"))
+    p.add_argument("--rain-preset", choices=tuple(demo.RAIN_RATES))
     p.add_argument("--live-wall-seconds", type=float, default=0,
                    help="Extra bounded rain-on live observation, 0..300 wall seconds")
     a = p.parse_args()
@@ -233,11 +234,13 @@ def main():
     env = dict(os.environ, XDG_SESSION_TYPE="x11")
     env.pop("WAYLAND_DISPLAY", None)
     launch_out = out / "launch"
-    extra = (["--start", "6000", "--camera", "collection"] if a.mode == "replay" else
+    extra = (["--start", "6000" if a.rain_preset == "baseline" else "6075", "--camera", "collection"] if a.mode == "replay" else
              ["--start", "7800"] if a.mode == "banks" else [])
     command = ["rtk", "proxy", sys.executable, str(demo.HERE / "run_mountain_rain_demo.py"), a.mode,
                "--out", str(launch_out), "--width", "1920", "--height", "1080", "--speed", "60",
-               "--style", a.style, "--material", a.material, *(["--profile"] if a.mode == "live" else []), *extra]
+               "--style", a.style, *(["--material", a.material] if a.material else []),
+               *(["--rain-preset", a.rain_preset] if a.rain_preset else []),
+               *(["--profile"] if a.mode == "live" else []), *extra]
     captures, observations, reattached = [], [], None
     with (out / "launcher.log").open("xb") as stream:
         process = subprocess.Popen(command, cwd=out, env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
@@ -307,6 +310,8 @@ def main():
                     return until(lambda: (s if predicate(s) else None) if (s := state()) else None, timeout)
                 initial = state()
                 assert initial["frame"]["lifecycle"] == "paused" and initial["frame"]["physical_time_s"] == 0
+                expected_rain = demo.RAIN_RATES[a.rain_preset or "balanced"] / 3_600_000
+                assert math.isclose(initial["rain_m_per_s"], expected_rain, rel_tol=2e-6)
                 initial_planes_sha = ref.sha256_file(session / f"slot-{initial['slot']}.bin")
                 initial_planes = (session / f"slot-{initial['slot']}.bin").read_bytes()[32:]
                 observations.append(issue_gui_control(keys, session, "space", "resume"))
@@ -345,11 +350,13 @@ def main():
                     observations.append(issue_gui_control(keys, session, "r", "reset"))
                     reset = wait_state(lambda s: s["frame"]["reset_generation"] == 2 and s["frame"]["physical_time_s"] == 0)
                     assert (session / f"slot-{reset['slot']}.bin").read_bytes()[32:] == initial_planes
+                    assert math.isclose(reset["rain_m_per_s"], expected_rain, rel_tol=2e-6)
                     capture("04-reset", "GUI full reset, new generation, dry fields byte-exact")
                     keys.key("Escape")
                     assert reattached.wait(timeout=30) == 0
                 observations += [initial, running, paused, rain_off, after_off, reset,
-                                 {"initial_slot_sha256": initial_planes_sha, "reset_planes_byte_exact": True}]
+                                 {"initial_slot_sha256": initial_planes_sha, "reset_planes_byte_exact": True,
+                                  "reset_restored_rain_mm_per_h": demo.RAIN_RATES[a.rain_preset or "balanced"]}]
                 os.killpg(process.pid, signal.SIGINT)
                 until(lambda: (launch_out / "result.json").is_file(), 30)
                 process.wait(timeout=10)

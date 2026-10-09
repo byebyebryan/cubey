@@ -81,6 +81,18 @@ Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile) {
         auto result = fluid_25d_scenic_material("terrain");
         result.terrain_diffuse_convolution = 1.0F;
         result.terrain_ambient_softening = 0.0F;
+        result.daylight_environment = 1.0F;
+        result.daylight_exposure = 0.0F;
+        result.daylight_sun_scale = 0.45F;
+        result.terrain_ambient = 2.0F;
+        result.terrain_direct = 1.0F;
+        result.water_wet_normal = 1.0F;
+        result.water_ripple_strength = 0.025F;
+        result.water_ripple_scale_m = 48.0F;
+        result.water_roughness = 0.14F;
+        result.water_scatter_scale = 0.4F;
+        result.water_clarity = 0.0F;
+        result.water_extinction_scale = 4.0F;
         return result;
     }
     if (profile == "terrain") {

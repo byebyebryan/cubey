@@ -1,9 +1,10 @@
 # Native Terrain–Water Rendering
 
-Scenic is an opt-in visual-demo material path, not a solver, terrain or shoreline
+Scenic is the mountain-demo launcher's default visual material path, not a solver, terrain or shoreline
 upgrade. It applies to the shared native replay/external live frontend's shaded
 Composite view. Readable and every raw diagnostic remain available. The builtin
-solver frontend, native worker and numerical defaults are unchanged.
+solver frontend, native worker and built-in numerical defaults are unchanged.
+The mountain launcher selects the reviewed 512 mm/h setup explicitly.
 
 ## Reading the views
 
@@ -15,7 +16,7 @@ trails remain the easiest way to follow motion; they are display cues, not nativ
 parcels or conserved dye. The decorative flow-normal pattern is not measured
 surface waves. Use the raw depth/velocity/wet-dry maps for numerical readings.
 
-`--style scenic` is explicit on `run_mountain_rain_demo.py`. In the native GUI,
+`run_mountain_rain_demo.py` starts Scenic; `--style readable` selects diagnostics. In the native GUI,
 `V` switches Readable/Scenic without moving the current orbit or clearing dots.
 The Style selector also retains Original/Motion. Bank selection (`S`) and dots
 (`W`) are independent. Inspection/debug views use the legacy diagnostic shading;
@@ -23,11 +24,14 @@ the old sparse-highlight control is disabled while Scenic is selected.
 
 ## Scenic material refinement V2
 
-Scenic now starts with the `refined` material preset. Readable remains the demo
-launcher default; Original remains the application default. Neither the builtin
-solver nor the native worker changes. V1 remains selectable for comparison.
-The native GUI's **Scenic materials (render only)** disclosure offers V1/Refined,
-wet-ground roughness and shallow-water clarity. Preset selection deliberately
+The mountain launcher now selects `macro`, labelled **Mountain demo daylight**:
+accepted shared lighting, wet-only normals, restrained wind detail, no pale
+shallow-bed tint and stronger absorption using existing controls. Direct application
+Scenic startup still defaults to `refined`; Original remains the application default.
+Neither the builtin solver nor the native worker changes. V1/refined/terrain retain
+their earlier settings. The native GUI's **Scenic materials (render only)**
+disclosure offers the retained presets, wet-ground roughness and shallow bed tint.
+Preset selection deliberately
 replaces custom tuning; material edits retain camera, dots and playback state.
 
 For deterministic headless comparisons, the application accepts:
@@ -54,6 +58,15 @@ from the bed, fading out between 0.15 and 0.50 m of vertical depth. That tint is
 explicit artistic tradeoff, not calibrated water optics. It changes neither depth,
 alpha, wet threshold, water coverage, refraction guards nor bank geometry. Water
 normal detail, filtering, clocks, reflection F0 and the dots/trails are retained.
+
+The mountain preset disables that tint (`water_clarity=0`) and uses
+`water_extinction_scale=4`, retaining the accepted daylight and reflection recipe.
+This makes established streams less bed-dominated; it is artistic optics, not
+simulated sediment. Wet coverage, geometry and the thin-film treatment are not
+changed. Stronger extinction also changes pool transmission; it is not a
+shallow-only shader override. A depth-gated bed-darkening experiment was rejected
+for painted grey strips and removed; no new rendering property or shader code is
+retained. The default/stream gallery records the matched comparison and limits.
 
 `review_scenic_material_v2.py` records frozen V1 and final V2 material receipts,
 unchanged Readable/raw stills and non-Scenic shader hashes, two short matched

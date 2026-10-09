@@ -37,9 +37,11 @@ class ScenicWaterTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "SPIR-V changed"):
                     review.assert_render_runtime(first, gpu.runtime_identity(target), "test")
 
-    def test_launcher_keeps_readable_default_without_film_modes(self):
+    def test_launcher_uses_accepted_scenic_default_without_film_modes(self):
         a = demo.parser().parse_args(["replay"])
-        self.assertEqual((a.style, a.material), ("readable", "refined"))
+        self.assertEqual((a.style, a.material), ("scenic", None))
+        command = demo.commands(a, Path("/tmp/owned-scenic-preview"))["viewer"]
+        self.assertEqual(command[command.index("--fluid25d-scenic-material")+1], "macro")
         self.assertFalse(hasattr(a, "water_film"))
         with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             demo.parser().parse_args(["replay", "--water-film", "wet-ground"])

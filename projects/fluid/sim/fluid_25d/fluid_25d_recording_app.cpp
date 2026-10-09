@@ -1382,7 +1382,7 @@ class RecordingApp {
             ImGui::SetNextItemWidth(-100.0F);
             if (ImGui::Combo(
                     "Material", &profile,
-                    "V1 reference\0Refined\0Terrain study (opt-in)\0Macro terrain (opt-in)\0")) {
+                    "V1 reference\0Refined\0Terrain study (opt-in)\0Mountain demo daylight\0")) {
                 config_.native_scenic_material = profile == 3   ? "macro"
                                                  : profile == 2 ? "terrain"
                                                  : profile == 1 ? "refined"
@@ -1431,8 +1431,8 @@ class RecordingApp {
             bool edited =
                 ImGui::SliderFloat("Wet roughness", &scenic_material_.wet_roughness, 0.2F, 1.0F);
             edited |=
-                ImGui::SliderFloat("Water clarity", &scenic_material_.water_clarity, 0.0F, 1.0F);
-            if (ImGui::TreeNode("Water rendering study (opt-in)")) {
+                ImGui::SliderFloat("Shallow bed tint", &scenic_material_.water_clarity, 0.0F, 1.0F);
+            if (ImGui::TreeNode("Water appearance and daylight")) {
                 edited |= ImGui::SliderFloat("Wet-only water normals",
                                              &scenic_material_.water_wet_normal, 0.0F, 1.0F);
                 edited |= ImGui::SliderFloat("Wind ripple slope",
@@ -1508,10 +1508,11 @@ class RecordingApp {
             }
             if (config_.native_scenic_tuning_path || scenic_material_edited_)
                 ImGui::TextWrapped("Custom settings; selecting a preset discards these overrides.");
-            ImGui::TextWrapped("Shallow water uses wet-ground shading; deeper water is unchanged. "
-                               "Clarity is an artistic tint, not a depth reading. Material edits "
-                               "do not move banks or modify water fields. JSON overrides load "
-                               "once; effective settings are logged.");
+            ImGui::TextWrapped(
+                "Thin water uses wet-ground shading. Shallow bed tint is an artistic "
+                "color cue, not transparency or a depth reading. Material edits "
+                "do not move banks or modify water fields. JSON overrides load "
+                "once; effective settings are logged.");
         }
         const auto selected = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares
                               : render_.native_bspline_surface ? Fluid25DBankView::Bspline2x

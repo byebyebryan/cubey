@@ -11,12 +11,15 @@ import run_mountain_rain_demo as demo
 
 
 class MacroReviewTests(unittest.TestCase):
-    def test_macro_launch_is_explicit_and_defaults_stay_refined(self):
+    def test_macro_launch_is_the_accepted_demo_default(self):
         explicit = demo.parser().parse_args(["replay","--style","scenic","--material","macro"])
         demo.validate_options(explicit)
         self.assertEqual(explicit.material,"macro")
-        self.assertEqual(demo.parser().parse_args(["replay"]).material,"refined")
-        invalid = demo.parser().parse_args(["replay","--material","macro"])
+        default = demo.parser().parse_args(["replay"])
+        self.assertEqual(default.style,"scenic")
+        command = demo.commands(default,Path("unused"))["viewer"]
+        self.assertEqual(command[command.index("--fluid25d-scenic-material")+1],"macro")
+        invalid = demo.parser().parse_args(["replay","--style","readable","--material","macro"])
         with self.assertRaises(ValueError):
             demo.validate_options(invalid)
 

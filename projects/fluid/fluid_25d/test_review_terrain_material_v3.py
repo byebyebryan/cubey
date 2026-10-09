@@ -71,16 +71,16 @@ class TerrainReviewTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     review.verify(out)
 
-    def test_launcher_keeps_defaults_and_exposes_opt_in_terrain(self):
+    def test_launcher_promotes_macro_and_keeps_explicit_terrain_study(self):
         default = demo.parser().parse_args(["replay"])
-        self.assertEqual(default.style,"readable")
+        self.assertEqual(default.style,"scenic")
         command = demo.commands(default,Path("unused"))["viewer"]
-        self.assertNotIn("--fluid25d-scenic-material",command)
+        self.assertEqual(command[command.index("--fluid25d-scenic-material")+1],"macro")
         study = demo.parser().parse_args(["replay","--style","scenic","--material","terrain"])
         command = demo.commands(study,Path("unused"))["viewer"]
         self.assertEqual(command[command.index("--fluid25d-scenic-material")+1],"terrain")
         with self.assertRaises(ValueError):
-            demo.commands(demo.parser().parse_args(["replay","--material","terrain"]),Path("unused"))
+            demo.commands(demo.parser().parse_args(["replay","--style","readable","--material","terrain"]),Path("unused"))
 
 
 if __name__ == "__main__":

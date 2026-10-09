@@ -6905,12 +6905,20 @@ void test_scenic_material_contract() {
     require(glm::length(cubey::render::atmosphere_environment_sun_direction(fixed_daylight) -
                         glm::normalize(cubey::math::Vec3{-0.35F, 0.42F, 0.84F})) < 1e-6F &&
                 !fixed_daylight.reference_geometry_enabled && !fixed_daylight.render_night_sky &&
-                !fixed_daylight.moon.enabled && macro.daylight_environment == 0.0F,
-            "opt-in shared fixed daylight matches Scenic's retained sun convention");
-    for (const auto* material : {&v1, &refined, &terrain, &macro})
+                !fixed_daylight.moon.enabled && macro.daylight_environment == 1.0F,
+            "accepted mountain daylight matches Scenic's retained sun convention");
+    for (const auto* material : {&v1, &refined, &terrain})
         require(material->water_wet_normal == 0.0F && material->water_ripple_strength == 0.0F &&
                     material->daylight_environment == 0.0F,
-                "rendering-study normal controls leave every retained preset unchanged");
+                "legacy presets retain the generated-lighting and no-wind fallback");
+    require(
+        macro.daylight_exposure == 0.0F && macro.daylight_sun_scale == 0.45F &&
+            macro.terrain_ambient == 2.0F && macro.terrain_direct == 1.0F &&
+            macro.water_wet_normal == 1.0F && macro.water_ripple_strength == 0.025F &&
+            macro.water_ripple_scale_m == 48.0F && macro.water_roughness == 0.14F &&
+            macro.water_scatter_scale == 0.4F && macro.water_clarity == 0.0F &&
+            macro.water_extinction_scale == 4.0F,
+        "macro preset uses accepted daylight and reviewed darker water using existing controls");
     const auto detail = fluid_25d_parse_scenic_material(
         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":1,"water_ripple_strength":0.12,"water_ripple_scale_m":48})",
         macro);
@@ -6984,11 +6992,10 @@ void test_scenic_material_contract() {
         },
         "conflicting water and terrain component controls fail closed");
     require(macro.terrain_diffuse_convolution == 1.0F && macro.terrain_ambient_softening == 0.0F &&
-                macro.water_clarity == terrain.water_clarity &&
-                macro.water_roughness == terrain.water_roughness &&
-                terrain.terrain_diffuse_convolution == 0.0F &&
+                macro.water_clarity == 0.0F && macro.water_extinction_scale == 4.0F &&
+                macro.water_roughness == 0.14F && terrain.terrain_diffuse_convolution == 0.0F &&
                 refined.terrain_specular_scale == 1.0F && v1.terrain_shadow_scale == 1.0F,
-            "macro diffuse is opt-in and water/reference values are unchanged");
+            "macro uses the accepted lighting recipe while legacy terrain/reference values remain");
     require(fluid_25d_scenic_material_json(
                 fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(macro), v1)) ==
                 fluid_25d_scenic_material_json(macro),

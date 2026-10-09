@@ -24,17 +24,20 @@ The broader technique map lives in
 ### Mountain Rain Demo V1: start here
 
 The main visual demo is rain/runoff on the existing, unchanged Terrain Diffusion
-mountain terrain, not an authored river. The dedicated launcher uses Readable
-shading, triangular reference banks, dots/trails on and procedural highlights
-off. These are launcher choices, **not changes to the application or solver
-defaults**. Blue means depth; dots/trails show approximate velocity, not native
-water parcels or conserved dye.
+mountain terrain, not an authored river. The dedicated launcher now defaults to
+**Scenic with the accepted shared daylight, balanced 512 mm/h rainfall,
+triangular reference banks, dots/trails on and procedural highlights off**.
+These are mountain-demo defaults, not a replacement of the built-in solver or
+its fixtures. Scenic color is optical/lighting color, not a depth palette;
+dots/trails show approximate velocity, not native water parcels or conserved dye.
 
-An opt-in **Scenic** terrain/water renderer is also available:
+Start the mountain presentation normally, or explicitly select Readable for
+depth/flow inspection:
 
 ```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style scenic
-rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live --style scenic
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style readable
 ```
 
 In the native viewer, `V` switches Readable/Scenic while retaining the camera
@@ -43,7 +46,7 @@ environment reflection, absorption and guarded refraction. Its blue/green color
 is **not the Readable depth palette**; use raw maps for depth. Normal motion is
 decorative, driven by held native velocities; pause freezes it. Banks and dots
 remain independent. Raw maps, water debugging and inspection views retain the
-diagnostic renderer. Readable remains the launcher default and the builtin
+diagnostic renderer. Readable is the explicit diagnostic alternative and the builtin
 solver frontend is unchanged. See [Scenic rendering](scenic_rendering_v1.md)
 for implementation boundaries, verification and known tradeoffs. Scenic's
 render-only material selector retains V1 and a refined preset with quieter wet
@@ -52,10 +55,11 @@ enlarge the wet area or smooth the bank mesh; Readable/raw maps remain the depth
 reference.
 
 The water-rendering reuse study adds bounded controls inside **Scenic materials
-→ Water rendering study (opt-in)**, or in the existing material-v2 tuning JSON:
+→ Water appearance and daylight**, or in the existing material-v2 tuning JSON:
 `water_wet_normal` (0–1), `water_ripple_strength` (0–0.3 slope),
 `water_ripple_scale_m` (8–128 m), and `daylight_environment` (exactly 0 or 1).
-All retained presets leave these off. Wet-only normal support ignores high dry
+The mountain `macro` preset uses the reviewed wet-only normals, restrained wind
+detail and shared daylight; V1/refined/terrain retain these off. Wet-only normal support ignores high dry
 bank samples; wind detail is normal-only and fades from resolved waves to
 roughness, independently of flow speed. It does not change surface height,
 coverage, storage, velocity, or the accepted shallow-film treatment.
@@ -69,8 +73,9 @@ optical-depth helper and renderer-unit solar source. The sky capture omits the
 sun disk, so it is not counted twice. No clouds or time-of-day animation are added.
 These remain demo renderer units, not photometrically calibrated lux.
 
-`daylight_exposure` (−6 to +4 EV; default +0.4) and `daylight_sun_scale` (0–2;
-default 1) tune this opt-in lighting without changing the generated fallback.
+`daylight_exposure` (−6 to +4 EV) and `daylight_sun_scale` (0–2) tune this lighting
+without changing the generated fallback. The mountain preset uses 0 EV and 0.45;
+legacy presets retain +0.4 EV and 1 with shared daylight off.
 Exposure is applied once to the composed linear HDR scene, before the existing
 display transform. Sun strength affects terrain and water together. The backdrop
 alone reuses the shared below-horizon remapping; reflected radiance and diffuse
@@ -81,17 +86,28 @@ requires no CPU readback and survives pause/seek/restart and viewport resizing.
 
 Existing generated lighting remains the fallback. Pause freezes decorative
 detail; restart/seek reset it. This path is available to the common native
-recording/stream/service frontend, but validation here uses immutable recordings,
-not a new live numerical acceptance run.
+recording/stream/service frontend. The original lighting study used immutable
+recordings; the follow-up default demo review also checks the actual live path.
 
 See the [overall lighting integration review](../../../outputs/fluid/lighting-integration-v1-20261008-VKBfi2/index.html)
 for matched before/after views, rejected lighting/shadow trials, GPU controls,
-rendering cost and immutable-input evidence. The restrained candidate keeps the
-previous water optics/detail recipe and uses 0 EV, sun strength 0.45, terrain
-ambient 2 and terrain direct 1. It is a review recipe, not a new automatic preset.
+rendering cost and immutable-input evidence. The restrained lighting uses 0 EV,
+sun strength 0.45, terrain ambient 2 and terrain direct 1. It is now the mountain
+`macro` material, selected by the launcher.
 The owner accepted this combined lighting/water presentation on 2026-10-08.
 The linked report retains its pre-review acceptance label as historical evidence;
-existing presets and numerical defaults remain unchanged.
+the older gallery's preset/default statements describe that earlier checkpoint.
+Built-in numerical defaults remain unchanged.
+
+The follow-up [default and darker-stream review](../../../outputs/fluid/mountain-defaults-streams-v1-20261008-65Rz9q/index.html)
+uses the existing `water_clarity=0` and `water_extinction_scale=4` controls in the
+mountain material: no pale shallow-bed tint, and less bed transmission. Reflection,
+wind detail, wet-ground film policy and bank coverage are retained. This is artistic
+demo optics, not simulated sediment/turbidity. Primary-agent review prefers it;
+new water-material owner review remains deferred. Experimental bed-darkening code
+was tested, rejected for grey painted strips, and removed. No new shader branch,
+material property, pass or texture is retained. The GUI labels the old clarity
+control **Shallow bed tint**, since it was never a physical transparency control.
 
 See the [water reuse results](../../../outputs/fluid/water-rendering-reuse-v1-20261008-6s1idD/index.html)
 for independent ablations, macro/lower/reverse views, motion and GPU timings.
@@ -109,7 +125,7 @@ macro placement, not close-up realism. It currently requires a completed native
 recording plus its provenance-matched heightfield; live streaming and launcher
 defaults remain unchanged. See the [remote comparison](../../../outputs/fluid/climate-surface-v1-20261008/index.html).
 
-The latest [Scenic material V2 remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
+The historical [Scenic material V2 remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
 has two eight-second V1/V2 comparisons and one no-dots Readable/V1/V2 still
 sheet. Refined Scenic improves stream/ground separation in primary-agent review,
 with unchanged numerical inputs and raw diagnostics; owner visual acceptance is
@@ -125,19 +141,26 @@ rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
 rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py banks
 ```
 
-- `replay`: retained rain-off recording, dry start, 150x viewing. Rain is 120 mm/h
-  through 7200 physical seconds, tapers to zero by 7260 s, then recedes through
-  14400 s. Space pauses viewing; R rewinds. No solver runs. Nonzero `--start`
-  starts paused, must match a saved 60-second state. `--rain-case rain-on`
-  selects the sustained-rain counterpart.
+- `replay`: retained balanced dry-start recording, 150x viewing. Rain is 512 mm/h
+  through 6750 physical seconds, tapers to zero by 6764.0625 s, then recedes through
+  21150 s. Space pauses viewing; R rewinds. No solver runs. Nonzero `--start`
+  starts paused and must match a saved 225-second state. The taper has no intermediate
+  saved field. `--rain-preset rapid-fill` selects the 1024 mm/h recording, ending at
+  17775 s. `--rain-preset baseline` retains the old 120 mm/h, 60-second-cadence story;
+  `--rain-case rain-on` is available only with that explicit baseline.
 - `live`: audited optional SynxFlow worker, continuous and initially paused at
-  dry start, 60x producer pacing. Space pauses/resumes computation; GUI rain
+  dry start, 60x producer pacing and continuous 512 mm/h supply. Space pauses/resumes computation; GUI rain
   controls can turn uniform rain off/on without resetting water. R fully resets
-  native dynamic fields in a new generation and restores the case rain rate.
+  native dynamic fields in a new generation and restores the selected startup rain rate.
+  `--rain-preset baseline|balanced|rapid-fill` selects 120/512/1024 mm/h; it is not
+  a clock multiplier. Every launch copies the pinned native inputs to its own case
+  and changes only the rainfall table plus descriptive case metadata. Terrain,
+  initial fields, solver parameters, released worker and extension are unchanged.
+  Live rain remains constant until edited; it does not adopt replay's finite storm.
   Closing/Esc detaches the viewer; the **foreground launcher remains the worker
   owner**. Reattach using its printed viewer command. Ctrl-C in that launcher
   gracefully stops only its own process groups. Do not background/disown it.
-- `banks`: separate bounded, prerecorded coverage comparison, initially paused,
+- `banks`: separate bounded, baseline-120 prerecorded coverage comparison, initially paused,
   60x viewing. S cycles triangular reference, experimental B-spline 2x and
   prerecorded marching-squares coverage; W toggles dots. End holds the last
   baked state, not the end of a simulation. `--loop` deliberately loops that
@@ -148,6 +171,7 @@ an output leaf, window or producer. `--camera overview|runoff|collection`,
 `--speed`, `--bank reference|bspline-2x`, `--no-dots`, and `--width/--height`
 are explicit overrides. Bank mode also permits `--bank marching-squares`.
 Live mode rejects recorded-case/start options instead of silently ignoring them.
+Bank comparison rejects higher-rate presets: its frozen masks do not match those fields.
 Every actual launch gets a fresh leaf under `outputs/fluid`, isolated ImGui
 settings, commands/pins, logs and an owned-cleanup receipt. An explicit `--out`
 must be fresh below an existing parent there.

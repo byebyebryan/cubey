@@ -14,6 +14,7 @@ import math
 import os
 from pathlib import Path
 import shlex
+import shutil
 import signal
 import subprocess
 import tempfile
@@ -30,6 +31,26 @@ CASE_INPUT_SHA = "de6da45d40600460e90abc2b153cec859a0ac45cd5b2b4a7b5b7595f6d3ec0
 MASK_ROOT = ref.OUTPUT_ROOT / "bank-refinement-v1-20261006-ZmPvk9/bake-motion-moderate"
 MASK_SHA = {"rain-on": "a9c66a1f01886e18d955a7b3d94a860702fb06e3ec771f105a0b0ac33fc2fb36",
             "rain-off": "2ee7ad89cf86fab68753cbe30fb4bfc4745132e47b1e8ee84880056052272aa4"}
+RAIN_RATES = {"baseline": 120, "balanced": 512, "rapid-fill": 1024}
+RAIN_ROOT = ref.OUTPUT_ROOT / "rain-power2-v1-20261008-a2/cases"
+RAIN_RECORDINGS = {
+    "balanced": (RAIN_ROOT / "rain512/recording/recording.json", 21150, 225,
+                 "5005fd94f551e8a0697312905714b99062396f9adef22cfc0b7e33d886a40098"),
+    "rapid-fill": (RAIN_ROOT / "rain1024/recording/recording.json", 17775, 225,
+                   "5815ceab70c8da26e22842b5b4669f0821feeac645646cf505b7190e0feadd7b"),
+}
+
+
+def rain_preset(a) -> str:
+    return a.rain_preset or ("baseline" if a.mode == "banks" else "balanced")
+
+
+def recording_spec(a):
+    preset = rain_preset(a)
+    if preset in RAIN_RECORDINGS:
+        return RAIN_RECORDINGS[preset]
+    return (ref.INPUT_ROOT / "recordings" / (a.rain_case or "rain-off") / "recording.json",
+            14400, 60, None)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -38,14 +59,16 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--app", type=Path, default=ref.APP)
     p.add_argument("--out", type=Path, help="fresh launcher leaf under outputs/fluid; otherwise allocated automatically")
     p.add_argument("--camera", choices=ref.CAMERAS)
-    p.add_argument("--rain-case", choices=ref.CASES, help="replay/banks only; default rain-off")
+    p.add_argument("--rain-preset", choices=tuple(RAIN_RATES),
+                   help="default balanced 512 mm/h; rapid-fill 1024; baseline 120 (banks only uses baseline)")
+    p.add_argument("--rain-case", choices=ref.CASES, help="baseline replay/banks only; default rain-off")
     p.add_argument("--speed", type=float, help="replay default 150x, live/banks default 60x")
-    p.add_argument("--start", type=float, help="replay saved time; banks defaults to its baked start")
+    p.add_argument("--start", type=float, help="replay saved time (225s cadence for balanced/rapid-fill); starts paused")
     p.add_argument("--bank", choices=("reference", "bspline-2x", "marching-squares"), default="reference")
-    p.add_argument("--style", choices=("readable", "scenic"), default="readable",
-                   help="Scenic is opt-in HDR terrain/water; diagnostic views retain Readable shading")
-    p.add_argument("--material", choices=("v1", "refined", "terrain", "macro"), default="refined",
-                   help="Scenic preset; terrain is an opt-in terrain-only material study")
+    p.add_argument("--style", choices=("readable", "scenic"), default="scenic",
+                   help="default accepted Scenic/daylight; Readable retains depth/flow diagnostics")
+    p.add_argument("--material", choices=("v1", "refined", "terrain", "macro"),
+                   help="explicit Scenic preset override; default macro includes accepted lighting")
     p.add_argument("--loop", action="store_true", help="banks only: explicit recorded-window looping")
     p.add_argument("--no-dots", action="store_true")
     p.add_argument("--profile", action="store_true", help="Record viewer GPU/bridge metrics inside the fresh launcher output")
@@ -59,13 +82,18 @@ def parser() -> argparse.ArgumentParser:
 
 
 def validate_options(a) -> None:
-    if a.material != "refined" and a.style != "scenic":
-        raise ValueError("nondefault material requires Scenic")
+    if a.material is not None and a.style != "scenic":
+        raise ValueError("material override requires Scenic")
+    if a.mode == "banks" and rain_preset(a) != "baseline":
+        raise ValueError("bank masks are frozen for baseline 120 mm/h only")
+    if a.rain_case is not None and rain_preset(a) != "baseline":
+        raise ValueError("rain-case requires --rain-preset baseline; higher-rate replays use their recorded storm/recession")
     speed = a.speed if a.speed is not None else (150 if a.mode == "replay" else 60)
     if not math.isfinite(speed) or not .125 <= speed <= 300:
         raise ValueError("speed must be finite and in [0.125,300]")
-    if a.start is not None and (not math.isfinite(a.start) or a.start < 0 or a.start > 14400 or a.start % 60):
-        raise ValueError("start must be a saved 60-second time in [0,14400]")
+    _, end, cadence, _ = recording_spec(a)
+    if a.start is not None and (not math.isfinite(a.start) or a.start < 0 or a.start > end or a.start % cadence):
+        raise ValueError(f"start must be a saved {cadence}-second time in [0,{end}]")
     if not 320 <= a.width <= 3840 or not 240 <= a.height <= 2160:
         raise ValueError("window dimensions outside the bounded demo range")
     if not math.isfinite(a.startup_timeout) or not 1 <= a.startup_timeout <= 120:
@@ -73,7 +101,7 @@ def validate_options(a) -> None:
     if a.mode != "banks" and (a.loop or a.bank == "marching-squares"):
         raise ValueError("loop and marching-squares require the bounded banks recording mode")
     if a.mode == "live" and (a.start is not None or a.rain_case is not None):
-        raise ValueError("live starts dry/paused with uniform 120 mm/h; use GUI rain controls, not recorded-case/start options")
+        raise ValueError("live starts dry/paused with the selected uniform rain rate; use GUI controls, not recorded-case/start options")
     if a.mode == "banks" and a.start is not None:
         lo, hi = (4800, 5340) if a.rain_case == "rain-on" else (7260, 7800)
         if not lo <= a.start <= hi:
@@ -90,6 +118,62 @@ def input_tree(directory: Path) -> str:
         if p.is_file():
             rows[str(p.relative_to(directory))] = ref.sha256_file(p)
     return hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def recorded_input_identity(a) -> dict:
+    path, end, cadence, expected_sha = recording_spec(a)
+    if expected_sha is None:
+        return ref.frozen_input_identity()
+    if not path.is_file() or path.is_symlink() or ref.sha256_file(path) != expected_sha:
+        raise ValueError("retained rainfall recording missing or manifest hash mismatch; no simulation/fallback attempted")
+    data = json.loads(path.read_bytes())
+    if (data.get("schema") != "cubey.fluid25d.recording.v1" or
+            data.get("protocol", {}).get("rain_rate_mm_per_h") != RAIN_RATES[rain_preset(a)] or
+            [f["time_s"] for f in data.get("frames", [])] != list(range(0, end+1, cadence))):
+        raise ValueError("retained rainfall recording rate/timeline mismatch")
+    pins = {"recording.json": expected_sha}
+    for item in [data["bed"], data["source_bed"], *data["frames"]]:
+        relative = Path(item["path"])
+        full = path.parent / relative
+        if (relative.is_absolute() or ".." in relative.parts or full.is_symlink() or
+                not full.resolve().is_relative_to(path.parent.resolve()) or
+                ref.sha256_file(full) != item["sha256"]):
+            raise ValueError("retained rainfall recording payload missing/changed/unsafe")
+        pins[str(relative)] = item["sha256"]
+    return {"manifest": str(path), "files": pins, "rain_mm_per_h": RAIN_RATES[rain_preset(a)],
+            "saved_interval_s": cadence, "duration_s": end}
+
+
+def prepare_live_case(a, out: Path) -> dict:
+    """Own a fresh constant-rain case; never rewrite the retained reference."""
+    source = CASE / "native/input"
+    if input_tree(source) != CASE_INPUT_SHA:
+        raise ValueError("immutable live case input hash changed before preparation")
+    target = out / "case"
+    ref.reserve_directory(target)
+    before = {str(p.relative_to(source)): ref.sha256_file(p) for p in source.rglob("*") if p.is_file()}
+    shutil.copytree(source, target / "native/input")
+    rate = RAIN_RATES[rain_preset(a)] / 3_600_000.0
+    rain_path = "field/precipitation_source_all.dat"
+    (target / "native/input" / rain_path).write_text(f"1\n0 {rate:.17g}\n14400 {rate:.17g}\n")
+    after = {str(p.relative_to(target / "native/input")): ref.sha256_file(p)
+             for p in (target / "native/input").rglob("*") if p.is_file()}
+    if before.keys() != after.keys() or any(before[p] != after[p] for p in before if p != rain_path):
+        raise ValueError("live preparation changed a non-rainfall input")
+    spec = json.loads((CASE / "case-spec.json").read_bytes())
+    spec.update(name=f"mountain-demo-{rain_preset(a)}-continuous", family="mountain-demo",
+                purpose="continuous uniform demo rainfall; explicit rain edits retain water",
+                rain_rate_m_per_s=rate, rain_rate_mm_per_h=RAIN_RATES[rain_preset(a)],
+                rainfall_history=[[0, rate], [14400, rate]])
+    ref.write_json_exclusive(target / "case-spec.json", spec)
+    receipt = {"schema": "cubey.fluid25d.demo-live-case.v1", "case": spec,
+               "reference_input_sha256": CASE_INPUT_SHA,
+               "prepared_input_sha256": input_tree(target / "native/input"),
+               "changed_native_paths": [p for p in before if before[p] != after[p]],
+               "continuous": True, "terrain_and_initial_fields_unchanged": True,
+               "reference_inputs_unchanged": input_tree(source) == CASE_INPUT_SHA}
+    ref.write_json_exclusive(target / "case-protocol.json", receipt)
+    return receipt
 
 
 def fresh_output(path: Path) -> Path:
@@ -123,7 +207,7 @@ def preflight(a) -> dict:
         result.update(extension_sha256=EXTENSION_SHA, case_input_sha256=CASE_INPUT_SHA,
                       native_python=str(a.native_python.absolute()), worker_sha256=ref.sha256_file(HERE / "external_synxflow/session_worker.py"))
     else:
-        result["recordings"] = ref.frozen_input_identity()
+        result["recordings"] = recorded_input_identity(a)
         if a.mode == "banks":
             case = a.rain_case or "rain-off"
             mask = MASK_ROOT / (case + "-moderate") / "coverage.json"
@@ -142,7 +226,7 @@ def commands(a, out: Path) -> dict[str, list[str]]:
               "--fluid25d-recording-camera", camera, "--fluid25d-native-presentation", a.style,
               "--fluid25d-native-surface-highlights", "off", "--fluid25d-native-bank-view", a.bank]
     if a.style == "scenic":
-        viewer += ["--fluid25d-scenic-material", a.material]
+        viewer += ["--fluid25d-scenic-material", a.material or "macro"]
     if not a.no_dots:
         viewer.append("--fluid25d-motion-markers")
     if a.profile:
@@ -151,12 +235,12 @@ def commands(a, out: Path) -> dict[str, list[str]]:
         session = out / "session"
         viewer += ["--fluid25d-backend", "external", "--fluid25d-external-session", str(session)]
         worker = ["rtk", "proxy", str(a.native_python.absolute()), str(HERE / "external_synxflow/session_worker.py"),
-                  "--extension", str(a.extension.absolute()), "--case", str(CASE), "--out", str(session),
+                  "--extension", str(a.extension.absolute()), "--case", str(out / "case"), "--out", str(session),
                   "--speed", str(speed), "--publish-interval", ".1", "--paused"]
         return {"worker": worker, "viewer": viewer}
     case = a.rain_case or "rain-off"
     start = a.start if a.start is not None else (0 if a.mode == "replay" else (4800 if case == "rain-on" else 7260))
-    viewer += ["--fluid25d-backend", "recording", "--fluid25d-recording", str(ref.INPUT_ROOT / "recordings" / case / "recording.json"),
+    viewer += ["--fluid25d-backend", "recording", "--fluid25d-recording", str(recording_spec(a)[0]),
                "--fluid25d-recording-time-seconds", str(start), "--fluid25d-recording-speed", str(speed)]
     if a.mode == "banks":
         viewer += ["--fluid25d-bank-comparison", "--fluid25d-native-display-coverage",
@@ -236,8 +320,11 @@ def wait_ready(worker, session: Path, timeout_s: float, interrupted=lambda: Fals
 
 def launch(a, out: Path, identity: dict) -> int:
     argv = commands(a, out)
+    if a.mode == "live":
+        identity = dict(identity, prepared_live_case=prepare_live_case(a, out))
     ref.write_json_exclusive(out / "launch.json", {"schema": "cubey.fluid25d.mountain-demo.v1", "mode": a.mode,
-        "commands": argv, "preflight": identity, "preset": "readable/reference/dots-on/highlights-off unless explicitly overridden",
+        "commands": argv, "preflight": identity, "preset": "Scenic/macro accepted daylight; reference banks/dots-on/highlights-off",
+        "rain_preset": rain_preset(a), "rain_mm_per_h": RAIN_RATES[rain_preset(a)],
         "ownership": "foreground launcher; viewer close detaches; Ctrl-C stops owned groups only"})
     owned, cleanup = [], []
     interrupted = [False]
@@ -313,7 +400,8 @@ def main(argv=None) -> int:
         identity = preflight(a)
         preview = fresh_output(a.out) if a.out is not None else ref.OUTPUT_ROOT / "mountain-rain-launch-FRESH"
         plan = commands(a, preview)
-        print(f"{a.mode.upper()} | {a.style} | {a.bank} | dots {'off' if a.no_dots else 'on'} | no numerical-input changes", flush=True)
+        print(f"{a.mode.upper()} | {a.style} | {a.bank} | dots {'off' if a.no_dots else 'on'} | "
+              f"{rain_preset(a)} {RAIN_RATES[rain_preset(a)]} mm/h | terrain/solver unchanged", flush=True)
         for name, command in plan.items():
             print(name + ": " + shlex.join(command), flush=True)
         if a.print_command:

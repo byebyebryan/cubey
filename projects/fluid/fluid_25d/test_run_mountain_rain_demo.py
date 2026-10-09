@@ -29,6 +29,9 @@ class MountainLauncherTests(unittest.TestCase):
         self.assertIn("reference", replay["viewer"])
         self.assertNotIn("--fluid25d-native-display-coverage", replay["viewer"])
         self.assertIn("--fluid25d-motion-markers", replay["viewer"])
+        self.assertIn("scenic", replay["viewer"])
+        self.assertIn("macro", replay["viewer"])
+        self.assertIn(str(demo.RAIN_RECORDINGS["balanced"][0]), replay["viewer"])
         live = demo.commands(self.args("live"), out)
         self.assertIn("--paused", live["worker"])
         self.assertNotIn("--finite", live["worker"])
@@ -49,15 +52,81 @@ class MountainLauncherTests(unittest.TestCase):
             with self.subTest(values=values), self.assertRaises(ValueError):
                 demo.commands(self.args(*values), Path("/tmp/preview"))
 
-    def test_scenic_is_opt_in_and_does_not_change_native_worker(self):
+    def test_readable_is_explicit_and_does_not_change_native_worker(self):
         out = Path("/tmp/unused-preview")
-        baseline = demo.commands(self.args("live"),out)
-        scenic = demo.commands(self.args("live","--style","scenic"),out)
+        baseline = demo.commands(self.args("live","--style","readable"),out)
+        scenic = demo.commands(self.args("live"),out)
         self.assertEqual(baseline["worker"],scenic["worker"])
         self.assertIn("readable",baseline["viewer"])
         self.assertIn("scenic",scenic["viewer"])
         self.assertIn("reference",scenic["viewer"])
         self.assertIn("--fluid25d-motion-markers",scenic["viewer"])
+
+    def test_rain_presets_use_exact_recordings_and_saved_cadence(self):
+        out = Path("/tmp/unused-preview")
+        rapid = demo.commands(self.args("replay", "--rain-preset", "rapid-fill", "--start", "17775"), out)
+        self.assertIn(str(demo.RAIN_RECORDINGS["rapid-fill"][0]), rapid["viewer"])
+        baseline = demo.commands(self.args("replay", "--rain-preset", "baseline", "--rain-case", "rain-on"), out)
+        self.assertIn(str(demo.ref.INPUT_ROOT / "recordings/rain-on/recording.json"), baseline["viewer"])
+        for values in (("replay", "--start", "6000"), ("replay", "--rain-case", "rain-on"),
+                       ("banks", "--rain-preset", "balanced"), ("live", "--style", "readable", "--material", "macro")):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                demo.commands(self.args(*values), out)
+
+    def test_live_case_changes_only_rain_and_reset_has_a_real_default(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            case, out = root / "reference", root / "owned"
+            fields = case / "native/input/field"
+            fields.mkdir(parents=True)
+            (fields / "precipitation_source_all.dat").write_text("1\n0 0.0000333333\n14400 0.0000333333\n")
+            (fields / "z.dat").write_bytes(b"unchanged numerical terrain")
+            (fields / "h.dat").write_bytes(b"unchanged dry start")
+            (case / "case-spec.json").write_text(json.dumps({"name":"reference", "duration_s":14400}))
+            out.mkdir()
+            before = demo.input_tree(case / "native/input")
+            with patch.object(demo, "CASE", case), patch.object(demo, "CASE_INPUT_SHA", before):
+                receipt = demo.prepare_live_case(self.args("live"), out)
+                self.assertEqual(receipt["changed_native_paths"], ["field/precipitation_source_all.dat"])
+                self.assertEqual(demo.input_tree(case / "native/input"), before)
+                rate = 512 / 3_600_000
+                rows = (out / "case/native/input/field/precipitation_source_all.dat").read_text().splitlines()
+                self.assertEqual([list(map(float,row.split())) for row in rows[1:]], [[0,rate],[14400,rate]])
+                self.assertTrue(receipt["terrain_and_initial_fields_unchanged"])
+                with self.assertRaises(FileExistsError):
+                    demo.prepare_live_case(self.args("live"), out)
+
+    def test_higher_rate_recordings_are_independently_pinned(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payload = root / "payload.bin"
+            payload.write_bytes(b"immutable CPU-only fixture")
+            item = {"path": payload.name, "sha256": demo.ref.sha256_file(payload)}
+            data = {"schema": "cubey.fluid25d.recording.v1", "protocol": {"rain_rate_mm_per_h": 512},
+                    "bed": item, "source_bed": item,
+                    "frames": [{**item, "time_s": t} for t in (0, 225, 450)]}
+            manifest = root / "recording.json"
+            manifest.write_text(json.dumps(data))
+            presets = {"balanced": (manifest, 450, 225, demo.ref.sha256_file(manifest))}
+            with patch.object(demo, "RAIN_RECORDINGS", presets), \
+                    patch.object(demo.ref, "frozen_input_identity", side_effect=AssertionError("old input fallback")):
+                identity = demo.recorded_input_identity(self.args("replay"))
+                self.assertEqual(identity["rain_mm_per_h"], 512)
+                payload.write_bytes(b"changed")
+                with self.assertRaisesRegex(ValueError, "payload"):
+                    demo.recorded_input_identity(self.args("replay"))
+                payload.write_bytes(b"immutable CPU-only fixture")
+                manifest.write_text(json.dumps({**data, "extra": "tampered"}))
+                with self.assertRaisesRegex(ValueError, "manifest hash"):
+                    demo.recorded_input_identity(self.args("replay"))
+
+    def test_live_preset_rate_and_provenance_are_explicit(self):
+        for preset, rate in demo.RAIN_RATES.items():
+            args = self.args("live", "--rain-preset", preset)
+            demo.validate_options(args)
+            self.assertEqual(demo.RAIN_RATES[demo.rain_preset(args)], rate)
+            worker = demo.commands(args, Path("/tmp/owned-preview"))["worker"]
+            self.assertEqual(worker[worker.index("--case")+1], "/tmp/owned-preview/case")
 
     def test_profile_is_viewer_only_and_owned_by_fresh_launch(self):
         out = Path("/tmp/unused-preview")
@@ -162,7 +231,8 @@ while True: time.sleep(.05)
             thread = threading.Thread(target=interrupt_after_detach)
             thread.start()
             try:
-                with patch.object(demo, "commands", return_value=argv):
+                with patch.object(demo, "commands", return_value=argv), \
+                        patch.object(demo, "prepare_live_case", return_value={}):
                     self.assertEqual(demo.launch(self.args("live"), out, {}), 130)
             finally:
                 thread.join(timeout=5)
