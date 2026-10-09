@@ -1,5 +1,6 @@
 #include "fluid_25d_scenic.h"
 #include "fluid_25d_motion_markers.h"
+#include "fluid_25d_water_agitation.h"
 
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/generated_texture.h>
@@ -37,6 +38,7 @@ struct Uniforms {
     math::Vec4 terrain_surface;
     math::Vec4 environment_mode;
     math::Vec4 water_shallow_optics;
+    math::Vec4 water_agitation;
 };
 struct DaylightPush {
     math::Vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
@@ -44,12 +46,13 @@ struct DaylightPush {
 };
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 336U);
+static_assert(sizeof(Uniforms) == 352U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
 static_assert(offsetof(Uniforms, environment_mode) == 304U);
 static_assert(offsetof(Uniforms, water_shallow_optics) == 320U);
+static_assert(offsetof(Uniforms, water_agitation) == 336U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -538,7 +541,10 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
          {float(surface_mode), float(config.grid_width), float(config.grid_height), 0.0F},
          {environment ? 1.0F : 0.0F, material.daylight_sun_scale, 0.0F, 0.0F},
          {material.water_shallow_extinction_boost, material.water_shallow_extinction_end_m, 0.0F,
-          0.0F}});
+          0.0F},
+         {material.water_flow_agitation, material.water_rain_agitation,
+          fluid_25d_water_rain_response(rain.applied_mm_per_hour),
+          float(std::fmod(rain.clock_s, 1024.0))}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()

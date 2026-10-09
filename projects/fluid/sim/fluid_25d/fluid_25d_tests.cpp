@@ -6929,6 +6929,29 @@ void test_scenic_material_contract() {
                     fluid_25d_scenic_material_json(detail),
             "water rendering-only tuning is bounded and roundtrips exactly");
     for (const auto* material : {&v1, &refined, &terrain})
+        require(material->water_flow_agitation == 0.0F && material->water_rain_agitation == 0.0F,
+                "legacy presets retain the no-agitation fallback");
+    require(macro.water_flow_agitation == 1.0F && macro.water_rain_agitation == 1.0F,
+            "mountain macro default uses the reviewed rough surface setting");
+    const auto smooth = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_flow_agitation":0,"water_rain_agitation":0})",
+        macro);
+    require(smooth.water_flow_agitation == 0.0F && smooth.water_rain_agitation == 0.0F &&
+                smooth.water_roughness == macro.water_roughness &&
+                smooth.water_extinction_scale == macro.water_extinction_scale &&
+                smooth.daylight_exposure == macro.daylight_exposure,
+            "zero strengths restore retained shading without changing base optics or daylight");
+    const auto agitation = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_flow_agitation":0.75,"water_rain_agitation":1})",
+        macro);
+    require(agitation.water_flow_agitation == 0.75F && agitation.water_rain_agitation == 1.0F &&
+                agitation.water_extinction_scale == macro.water_extinction_scale &&
+                agitation.daylight_exposure == macro.daylight_exposure &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(agitation), v1)) ==
+                    fluid_25d_scenic_material_json(agitation),
+            "agitation strengths roundtrip without replacing optics or lighting");
+    for (const auto* material : {&v1, &refined, &terrain})
         require(material->water_shallow_extinction_boost == 0.0F &&
                     material->water_shallow_extinction_end_m == 2.0F,
                 "legacy presets leave the shallow absorption boost disabled");
@@ -6965,6 +6988,9 @@ void test_scenic_material_contract() {
     for (const auto* text :
          {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":2})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_strength":0.31})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_flow_agitation":1.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rain_agitation":-0.1})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rain_agitation":true})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_scale_m":0})"})
         require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
                        "water rendering-only controls reject invalid bounds");
@@ -6978,7 +7004,8 @@ void test_scenic_material_contract() {
         require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
                        "shallow absorption controls reject invalid/non-numeric bounds");
     require(fluid_25d_scenic_water_view("shaded") == 0U &&
-                fluid_25d_scenic_water_view("coverage") == 9U,
+                fluid_25d_scenic_water_view("coverage") == 9U &&
+                fluid_25d_scenic_water_view("roughness") == 11U,
             "water component diagnostic slots remain stable");
     for (const auto* material : {&v1, &refined, &terrain, &macro})
         require(material->film_begin_m == 0.02F && material->film_end_m == 0.12F &&

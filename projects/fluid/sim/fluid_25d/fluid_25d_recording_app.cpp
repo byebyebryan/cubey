@@ -1335,10 +1335,10 @@ class RecordingApp {
         const bool shaded = scenic_material_active() &&
                             config_.native_scenic_terrain_view == "shaded" &&
                             config_.native_scenic_water_view == "shaded";
-        return {fluid_25d_rain_visual_count(config_.native_rain_visuals && shaded,
-                                            applied_rain_mm_per_hour(),
+        const auto applied_rate = applied_rain_mm_per_hour();
+        return {fluid_25d_rain_visual_count(config_.native_rain_visuals && shaded, applied_rate,
                                             config_.native_rain_strength),
-                rain_clock_.seconds(), rain_clock_.motion_seconds()};
+                rain_clock_.seconds(), rain_clock_.motion_seconds(), applied_rate};
     }
 
     void log_rain_capture(std::uint32_t frame) const {
@@ -1484,7 +1484,7 @@ class RecordingApp {
             constexpr std::array water_views{
                 "shaded",         "environment-only", "direct-only", "transmission-only",
                 "no-environment", "no-direct",        "no-clarity",  "no-detail",
-                "depth-bands",    "coverage",         "film-weight"};
+                "depth-bands",    "coverage",         "film-weight", "roughness"};
             int water_view =
                 static_cast<int>(fluid_25d_scenic_water_view(config_.native_scenic_water_view));
             if (ImGui::Combo("Water component", &water_view, water_views.data(),
@@ -1504,6 +1504,13 @@ class RecordingApp {
             edited |=
                 ImGui::SliderFloat("Shallow bed tint", &scenic_material_.water_clarity, 0.0F, 1.0F);
             if (ImGui::TreeNode("Water appearance and daylight")) {
+                edited |= ImGui::SliderFloat("Flow surface agitation",
+                                             &scenic_material_.water_flow_agitation, 0.0F, 1.0F);
+                edited |= ImGui::SliderFloat("Rain surface agitation",
+                                             &scenic_material_.water_rain_agitation, 0.0F, 1.0F);
+                ImGui::TextWrapped("Render-only activity proxies. Rain response uses applied "
+                                   "weather even when streaks are hidden. Zero restores retained "
+                                   "shading; no water mass, banks or solver changes.");
                 edited |= ImGui::SliderFloat("Wet-only water normals",
                                              &scenic_material_.water_wet_normal, 0.0F, 1.0F);
                 edited |= ImGui::SliderFloat("Wind ripple slope",

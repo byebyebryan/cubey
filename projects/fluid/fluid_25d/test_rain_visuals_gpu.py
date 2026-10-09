@@ -18,11 +18,12 @@ def run(out, target, video_controls=False):
     review.ref.reserve_directory(out)
     identity = runtime_identity(target)
     rows = []
-    # Calm frozen surface: animation must come only from the render-only rain.
+    # Isolate the streak renderer from the default applied-rain water response.
+    # Surface agitation has its own GPU controls, including hidden-streak rain.
     tuning = out / "calm.json"
     review.ref.write_json_exclusive(tuning, {
         "schema": "cubey.fluid25d.scenic-material.v2", "water_ripple_strength": 0,
-        "water_normal_strength": 0})
+        "water_normal_strength": 0, "water_flow_agitation": 0, "water_rain_agitation": 0})
     manifests = {}
     for rate in (0, 120, 512, 1024):
         manifest = fixtures.fixture(out / "fixtures" / str(rate), "fully-wet-lake")

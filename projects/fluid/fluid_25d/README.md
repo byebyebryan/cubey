@@ -64,6 +64,22 @@ bank samples; wind detail is normal-only and fades from resolved waves to
 roughness, independently of flow speed. It does not change surface height,
 coverage, storage, velocity, or the accepted shallow-film treatment.
 
+The surface-agitation study adds `water_flow_agitation` and
+`water_rain_agitation` (each 0–1) in the same GUI group/material-v2 JSON.
+Both default to **1 in the mountain `macro` preset**, the reviewed rougher
+setting; V1/refined/terrain retain 0. Keep either strength adjustable in the GUI
+or JSON; setting both to 0 restores the previous smoother appearance.
+Flow uses filtered speed and surface slope
+as an artistic activity proxy, not measured turbulence. Rain uses the **applied**
+recording/live rainfall rate, including when streaks are hidden; unknown/off
+weather adds none. Streak visibility, density and falling speed do not control
+water agitation. Fine normals hand off to roughness at distance; thin wet-ground
+films retain their accepted shading. `--fluid25d-scenic-water-view roughness`
+shows effective roughness (black low, white high), and `no-detail` suppresses
+decorative normals and agitation. The agitation clock is presentation wall time:
+pause holds it, seek/reset restarts it, and physical playback acceleration does
+not accelerate it. This adds no geometry, water, solver work or foam.
+
 Fixed daylight reuses Water3D's shared `AtmosphereEnvironmentRuntime`, owned by
 the native frontend. Scenic projects nine diffuse SH coefficients from the
 **actual captured sky** once on the GPU (2048 sphere samples, normalized E/pi),

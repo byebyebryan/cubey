@@ -61,7 +61,7 @@ void run() {
                                             .require_present = false,
                                             .require_dynamic_rendering = false});
     cubey::vulkan::SubmissionCoordinator submission(device);
-    constexpr auto bytes = sizeof(Vec4) * 102U;
+    constexpr auto bytes = sizeof(Vec4) * 166U;
     cubey::vulkan::Buffer storage(
         device, cubey::vulkan::device_local_buffer_config(
                     bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
@@ -101,7 +101,7 @@ void run() {
     const VkBufferCopy copy{.srcOffset = 0, .dstOffset = 0, .size = bytes};
     vkCmdCopyBuffer(commands.command_buffer(), storage.handle(), readback.handle(), 1, &copy);
     commands.submit_and_wait();
-    std::array<Vec4, 102> values{};
+    std::array<Vec4, 166> values{};
     readback.download(values.data(), bytes);
     for (unsigned mode = 0; mode < 5; ++mode) {
         for (std::size_t i = 0; i < normals.size(); ++i) {
@@ -145,7 +145,36 @@ void run() {
         if (glm::length(Vec3{values[86U + i]} - target) > 0.00005F)
             throw std::runtime_error("ripple identity/filter/variance/clock-wrap control failed");
     }
-    std::cout << "PASS: 80 terrain gradient + 22 wet-normal/ripple GPU analytic controls\n";
+    const auto axis = glm::normalize(cubey::math::Vec2{0.3F, 0.7F});
+    const cubey::math::Vec2 side{-axis.y, axis.x};
+    for (unsigned i = 0; i < 64U; ++i) {
+        Vec3 target{0.0F};
+        const double wavelength = i < 32U ? 4.0 : 1.25;
+        const double variance = i % 16U < 8U ? 0.07 : 0.0;
+        const double footprint = double(i % 8U) * wavelength * 0.1;
+        const double amplitude = std::sqrt(2.0 * variance / 1.3125);
+        for (std::size_t band = 0; band < bands.size(); ++band) {
+            const double lambda = wavelength * double(bands[band].z);
+            const double t = std::clamp((footprint - lambda * 0.125) / (lambda * 0.375), 0.0, 1.0);
+            const double resolved = 1.0 - t * t * (3.0 - 2.0 * t);
+            const double a = amplitude * double(amplitudes[band]);
+            const double phase =
+                6.28318530718 *
+                ((17.3 * double(bands[band].x) - 29.2 * double(bands[band].y)) / lambda +
+                 double(band) * 0.37);
+            const auto direction = axis * bands[band].x + side * bands[band].y;
+            target.x += direction.x * float(a * resolved * std::sin(phase));
+            target.y += direction.y * float(a * resolved * std::sin(phase));
+            target.z += float(0.5 * a * a * (1.0 - resolved * resolved));
+        }
+        const auto actual = Vec3{values[102U + i]};
+        if (!std::isfinite(actual.x) || !std::isfinite(actual.y) || !std::isfinite(actual.z) ||
+            glm::length(actual - target) > 0.0005F || actual.z < 0.0F ||
+            actual.z > float(variance) + 1e-6F)
+            throw std::runtime_error("agitation slope/filter/variance/wrap control failed: " +
+                                     std::to_string(i));
+    }
+    std::cout << "PASS: 80 terrain gradient + 22 wet-normal/ripple + 64 agitation GPU controls\n";
 }
 } // namespace
 

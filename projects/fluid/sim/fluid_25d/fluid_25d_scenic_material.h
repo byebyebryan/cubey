@@ -42,6 +42,10 @@ struct Fluid25DScenicMaterial {
     float water_wet_normal = 0.0F;
     float water_ripple_strength = 0.0F; // slope, not displaced surface height
     float water_ripple_scale_m = 48.0F;
+    // Render-only activity proxies, not turbulence or additional water mass.
+    // Zero retains the previous shading, independently of visible rain.
+    float water_flow_agitation = 0.0F;
+    float water_rain_agitation = 0.0F;
     float daylight_environment = 0.0F; // opt-in fixed shared Cubey sky, no weather system
     float daylight_exposure = 0.4F;    // EV bias; shared mode only, no automatic exposure
     float daylight_sun_scale = 1.0F;   // shared direct sun only; 1 matches sky source units

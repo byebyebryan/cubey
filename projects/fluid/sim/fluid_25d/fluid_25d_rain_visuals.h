@@ -79,6 +79,9 @@ struct Fluid25DRainVisualFrame {
     std::uint32_t streak_count = 0U;
     double clock_s = 0.0;
     double motion_s = 0.0;
+    // Applied weather, even when streaks are hidden. Unknown is not inferred
+    // from an intensity request or a visible particle count.
+    std::optional<double> applied_mm_per_hour;
 };
 
 } // namespace cubey::projects::fluid::fluid_25d

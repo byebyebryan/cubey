@@ -1,5 +1,6 @@
 #include "fluid_25d_rain_visuals.h"
 #include "fluid_25d_recording.h"
+#include "fluid_25d_water_agitation.h"
 
 #include <cubey/asset/file_digest.h>
 
@@ -55,7 +56,8 @@ void test_rain_visual_contract() {
     for (const auto rate :
          {std::optional<double>{}, std::optional<double>{0.0}, std::optional<double>{-1.0},
           std::optional<double>{std::numeric_limits<double>::quiet_NaN()}})
-        require(fluid_25d_rain_visual_count(true, rate, 1.0F) == 0U,
+        require(fluid_25d_rain_visual_count(true, rate, 1.0F) == 0U &&
+                    fluid_25d_water_rain_response(rate) == 0.0F,
                 "unknown/invalid/off rain must never draw");
     require(fluid_25d_rain_visual_count(false, 1024.0, 1.0F) == 0U &&
                 fluid_25d_rain_visual_count(true, 1024.0, 0.0F) == 0U &&
@@ -69,6 +71,17 @@ void test_rain_visual_contract() {
             "120/512/1024 applied rainfall gives a monotone bounded stable prefix");
     require(fluid_25d_rain_visual_count(true, 1e30, 2.0F) == high,
             "extreme demo rainfall cannot create unbounded draw work");
+    require(fluid_25d_water_rain_response(120.0) > 0.0F &&
+                fluid_25d_water_rain_response(120.0) < fluid_25d_water_rain_response(512.0) &&
+                fluid_25d_water_rain_response(512.0) < fluid_25d_water_rain_response(1024.0) &&
+                fluid_25d_water_rain_response(1024.0) == 1.0F &&
+                fluid_25d_water_rain_response(1e30) == 1.0F &&
+                fluid_25d_water_rain_response(std::numeric_limits<double>::infinity()) == 0.0F,
+            "applied rain surface response is monotone, compressed, bounded and finite");
+    const Fluid25DRainVisualFrame hidden_weather{0U, 1.0, 8.0, 512.0};
+    require(hidden_weather.streak_count == 0U &&
+                fluid_25d_water_rain_response(hidden_weather.applied_mm_per_hour) > 0.0F,
+            "hidden streaks do not mean absent applied weather");
     const auto weather = fluid_25d_rain_visual_volume(-100.0F, 1400.0F, 15000.0F, 1.0F);
     require(weather.floor_m < -100.0F && weather.floor_m + weather.height_m > 1400.0F,
             "global weather volume spans valley floor through sky above highest peak");

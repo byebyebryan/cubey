@@ -55,6 +55,8 @@ constexpr std::array kProperties{
     Property{"water_wet_normal", &Fluid25DScenicMaterial::water_wet_normal, 0.0, 1.0},
     Property{"water_ripple_strength", &Fluid25DScenicMaterial::water_ripple_strength, 0.0, 0.3},
     Property{"water_ripple_scale_m", &Fluid25DScenicMaterial::water_ripple_scale_m, 8.0, 128.0},
+    Property{"water_flow_agitation", &Fluid25DScenicMaterial::water_flow_agitation, 0.0, 1.0},
+    Property{"water_rain_agitation", &Fluid25DScenicMaterial::water_rain_agitation, 0.0, 1.0},
     Property{"daylight_environment", &Fluid25DScenicMaterial::daylight_environment, 0.0, 1.0},
     Property{"daylight_exposure", &Fluid25DScenicMaterial::daylight_exposure, -6.0, 4.0},
     Property{"daylight_sun_scale", &Fluid25DScenicMaterial::daylight_sun_scale, 0.0, 2.0},
@@ -93,6 +95,8 @@ Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile) {
         result.water_wet_normal = 1.0F;
         result.water_ripple_strength = 0.025F;
         result.water_ripple_scale_m = 48.0F;
+        result.water_flow_agitation = 1.0F;
+        result.water_rain_agitation = 1.0F;
         result.water_roughness = 0.14F;
         result.water_scatter_scale = 0.4F;
         result.water_clarity = 0.0F;
@@ -200,7 +204,7 @@ unsigned fluid_25d_scenic_water_view(std::string_view view) {
     constexpr std::array names{
         "shaded",         "environment-only", "direct-only", "transmission-only",
         "no-environment", "no-direct",        "no-clarity",  "no-detail",
-        "depth-bands",    "coverage",         "film-weight"};
+        "depth-bands",    "coverage",         "film-weight", "roughness"};
     const auto found = std::find(names.begin(), names.end(), view);
     if (found == names.end())
         invalid("unknown water view");

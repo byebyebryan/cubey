@@ -7,6 +7,7 @@
 #include "fluid_25d_water_film.glsl"
 #include "fluid_25d_surface_gradient.glsl"
 #include "fluid_25d_water_detail.glsl"
+#include "fluid_25d_water_agitation.glsl"
 layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
 layout(set=1,binding=9,std430) readonly buffer VisualVelocity { vec4 values[]; } visual_velocity;
@@ -81,6 +82,9 @@ void main() {
         fluid25d_bilinear_sample(vec4(visual_velocity.values[i.x].y,
         visual_velocity.values[i.y].y,visual_velocity.values[i.z].y,visual_velocity.values[i.w].y),f));
     float speed = length(visual_u);
+    // Activity is a visual proxy from filtered speed and the unperturbed
+    // surface slope. A steep, stationary lake is not flowing turbulence.
+    float surface_slope = length(n.xz)/max(n.y,0.05);
     vec2 flow = visual_u / max(1.0,speed/2.0);
     float footprint = max(length(dFdx(world_position)),length(dFdy(world_position)));
     float detail_strength = 0.14*scenic.surface_material.w*smoothstep(0.025,0.40,speed)*(1.0-smoothstep(2.0,12.0,footprint));
@@ -109,6 +113,28 @@ void main() {
             gradient -= dot(n,gradient)*n;
             n = fluid25d_resolve_surface_normal(n,gradient,1.0);
             lost_variance = ripple.z;
+        }
+    }
+    if (water_view!=7u && (scenic.water_agitation.x>0.0 || scenic.water_agitation.y>0.0)) {
+        float open_water = smoothstep(scenic.water_film.x,scenic.water_film.y,h);
+        float activity = smoothstep(0.08,1.4,speed)*
+                         (0.35+0.65*smoothstep(0.015,0.22,surface_slope));
+        float flow_variance = 0.07*activity*open_water*
+                              scenic.water_agitation.x*scenic.water_agitation.x;
+        float rain_variance = 0.08*scenic.water_agitation.z*open_water*
+                              scenic.water_agitation.y*scenic.water_agitation.y;
+        if (flow_variance>0.0 || rain_variance>0.0) {
+            vec3 agitation = vec3(0.0);
+            if (flow_variance>0.0)
+                agitation += fluid25d_agitation_bands(world_position.xz,scenic.water_agitation.w,
+                    footprint,visual_u/max(speed,0.00001),4.0,flow_variance);
+            if (rain_variance>0.0)
+                agitation += fluid25d_agitation_bands(world_position.xz,scenic.water_agitation.w,
+                    footprint,vec2(0.8,0.6),1.25,rain_variance);
+            vec3 gradient = vec3(agitation.x,0.0,agitation.y);
+            gradient -= dot(n,gradient)*n;
+            n = fluid25d_resolve_surface_normal(n,gradient,1.0);
+            lost_variance += agitation.z;
         }
     }
     vec3 nx = dFdx(n), ny = dFdy(n);
@@ -216,6 +242,7 @@ void main() {
     if (water_view==8u) color=h<0.01 ? vec3(1.0,0.8,0.01) : (h<0.05 ? vec3(1.0,0.20,0.01) : vec3(0.01,0.8,1.0));
     if (water_view==9u) color=vec3(1.0);
     if (water_view==10u) color=vec3(film_weight);
+    if (water_view==11u) color=vec3(roughness);
     float coverage = smoothstep(0.0,edge_width,h-params.camera_wet.w);
     if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,h);
     if ((options&512u)!=0u) {

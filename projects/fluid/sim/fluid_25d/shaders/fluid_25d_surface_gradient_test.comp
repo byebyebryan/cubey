@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 #include "fluid_25d_surface_gradient.glsl"
 #include "fluid_25d_water_detail.glsl"
+#include "fluid_25d_water_agitation.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) writeonly buffer Result { vec4 values[]; } result;
 const vec3 normals[16] = vec3[16](
@@ -42,5 +43,13 @@ void main() {
         float clock = i<8 ? 0.0 : 1024.0;
         float strength = i%8<4 ? 0.12 : 0.0;
         result.values[86+i] = vec4(fluid25d_ripple_detail(vec2(0),clock,footprint,48.0,strength,vec3(0)),0);
+    }
+    for (uint i=0; i<64; ++i) {
+        float wavelength = i<32u ? 4.0 : 1.25;
+        float footprint = float(i%8u)*wavelength*0.1;
+        float variance = i%16u<8u ? 0.07 : 0.0;
+        float clock = (i/16u)%2u==0u ? 0.0 : 1024.0;
+        result.values[102u+i] = vec4(fluid25d_agitation_bands(vec2(17.3,-29.2),clock,
+            footprint,normalize(vec2(0.3,0.7)),wavelength,variance),0.0);
     }
 }
