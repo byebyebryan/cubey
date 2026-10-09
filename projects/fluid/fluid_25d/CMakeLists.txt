@@ -150,7 +150,8 @@ if (BUILD_TESTING)
         SOURCES ../sim/fluid_25d/shaders/fluid_25d_surface_gradient_test.comp
         DEPENDS ../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl
                 ../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl)
+                ../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_water_film.glsl)
     add_test(NAME fluid_25d_surface_gradient_gpu COMMAND cubey_project_fluid_25d_surface_gradient_gpu_tests)
     set_tests_properties(fluid_25d_surface_gradient_gpu PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
     add_executable(cubey_project_fluid_25d_external_session_tests
@@ -288,6 +289,12 @@ if (BUILD_TESTING)
                 --target "$<TARGET_FILE:cubey_project_fluid_25d>")
         set_tests_properties(fluid_25d_scenic_water_gpu
             PROPERTIES LABELS "headless;gpu;fluid;presentation" TIMEOUT 600)
+        add_test(NAME fluid_25d_shallow_coverage_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_scenic_water_gpu.py"
+                --target "$<TARGET_FILE:cubey_project_fluid_25d>" --coverage-only)
+        set_tests_properties(fluid_25d_shallow_coverage_gpu
+            PROPERTIES LABELS "headless;gpu;fluid;presentation" TIMEOUT 240)
         add_test(NAME fluid_25d_water_agitation_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_water_agitation_gpu.py"

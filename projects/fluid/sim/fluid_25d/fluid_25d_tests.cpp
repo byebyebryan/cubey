@@ -6985,6 +6985,31 @@ void test_scenic_material_contract() {
                     fluid_25d_scenic_material_json(lighting), v1)) ==
                     fluid_25d_scenic_material_json(lighting),
             "shared daylight exposure/balance is bounded, rendering-only and roundtrips");
+    for (const auto* material : {&v1, &refined, &terrain, &macro})
+        require(material->water_shallow_coverage_strength == 0.0F &&
+                    material->water_shallow_coverage_end_m == 0.30F,
+                "all presets retain accepted coverage; artist fade is opt-in");
+    const auto coverage_fade = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_coverage_strength":0.75,"water_shallow_coverage_end_m":0.6,"film_end_m":0.3,"film_ground_mix":1})",
+        macro);
+    require(coverage_fade.water_shallow_coverage_strength == 0.75F &&
+                coverage_fade.water_shallow_coverage_end_m == 0.6F &&
+                coverage_fade.film_end_m == 0.3F && coverage_fade.film_ground_mix == 1.0F &&
+                coverage_fade.water_roughness == macro.water_roughness &&
+                coverage_fade.water_extinction_scale == macro.water_extinction_scale &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(coverage_fade), v1)) ==
+                    fluid_25d_scenic_material_json(coverage_fade),
+            "independent film/fade controls roundtrip without changing accepted optics");
+    for (
+        const auto* text :
+        {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_coverage_strength":-0.01})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_coverage_strength":1.01})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_coverage_strength":true})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_coverage_end_m":0})",
+         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_shallow_coverage_end_m":1.01})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
+                       "artist coverage fade rejects invalid or non-numeric bounds");
     for (const auto* text :
          {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":2})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_strength":0.31})",

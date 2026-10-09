@@ -245,6 +245,11 @@ void main() {
     if (water_view==11u) color=vec3(roughness);
     float coverage = smoothstep(0.0,edge_width,h-params.camera_wet.w);
     if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,h);
+    // Only presentation and its coverage view: raw field/component diagnostics
+    // must not conceal water just because an artist chooses a depth fade.
+    if ((water_view==0u || water_view==9u) && scenic.water_shallow_optics.z>0.0)
+        coverage *= fluid25d_shallow_coverage(h,scenic.water_shallow_optics.z,
+                                              scenic.water_shallow_optics.w);
     if ((options&512u)!=0u) {
         vec2 cf;
         uvec4 ci = fluid25d_quad_indices(field_coordinate*display_coverage.grid.z,uvec2(display_coverage.grid.xy),cf);

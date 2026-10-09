@@ -80,6 +80,21 @@ decorative normals and agitation. The agitation clock is presentation wall time:
 pause holds it, seek/reset restarts it, and physical playback acceleration does
 not accelerate it. This adds no geometry, water, solver work or foam.
 
+Optional shallow-water treatments retain the accepted defaults. Existing
+`film_end_m` / `film_ground_mix` can extend the wet-ground appearance to 30 or
+60 cm without code changes. Independent `water_shallow_coverage_strength`
+(0–1, default 0) and `water_shallow_coverage_end_m` (0.05–1 m, default 0.30)
+fade displayed shallow water toward existing wet terrain with one depth-only
+smoothstep. GUI controls are in Scenic materials beside the film controls.
+At/above the chosen full depth, coverage is unchanged. The fade affects shaded
+water and its coverage diagnostic; raw depth, film-weight and component views
+ignore it. This is artistic opacity, not narrower simulated channels, removed
+mass, subgrid terrain reconstruction, or a new temporal mask. It adds no pass,
+texture or mesh. `review_shallow_ribbons_v1.py` compares both approaches against
+held stream/lake recordings; stronger 60 cm probes are not new defaults.
+These options soften shallow margins; they do not resolve the continuous,
+bright downhill ribbons on steep terrain.
+
 Fixed daylight reuses Water3D's shared `AtmosphereEnvironmentRuntime`, owned by
 the native frontend. Scenic projects nine diffuse SH coefficients from the
 **actual captured sky** once on the GPU (2048 sphere samples, normalized E/pi),

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import subprocess
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
-import run_native_shoreline_raster_v1 as fixtures
 import review_scenic_water as review
+import run_native_shoreline_raster_v1 as fixtures
 from test_display_coverage_gpu_v1 import make_sidecar
 
 
@@ -25,7 +25,7 @@ def runtime_identity(target):
             "compiled_shaders": shaders}
 
 
-def run(out, target):
+def run(out, target, coverage_only=False):
     review.ref.reserve_directory(out)
     pins, runtime = review.sources(), runtime_identity(target)
     binary_pin, shader_pin = runtime["executable_sha256"], runtime["compiled_shaders"]
@@ -39,6 +39,10 @@ def run(out, target):
     review.ref.write_json_exclusive(disabled, {
         "schema": "cubey.fluid25d.scenic-material.v2", "water_roughness": .2,
         "film_roughness": .2, "film_ground_mix": 0})
+    fade = out / "shallow-coverage.json"
+    review.ref.write_json_exclusive(fade, {
+        "schema": "cubey.fluid25d.scenic-material.v2",
+        "water_shallow_coverage_strength": 1, "water_shallow_coverage_end_m": .30})
     optics = {}
     for mode, boost in (("optics-base", 0), ("optics-boost", 3)):
         optics[mode] = out / (mode + ".json")
@@ -64,7 +68,9 @@ def run(out, target):
             command += ["--fluid25d-scenic-tuning", str(common)]
         elif control in optics:
             command += ["--fluid25d-scenic-tuning", str(optics[control])]
-        result = subprocess.run(command, text=True, capture_output=True, timeout=90)
+        elif control == "fade":
+            command += ["--fluid25d-scenic-tuning", str(fade)]
+        result = subprocess.run(command, text=True, capture_output=True, timeout=90, check=False)
         review.ref.write_text_exclusive(out / (label + ".log"), result.stdout + result.stderr)
         if result.returncode:
             raise RuntimeError(result.stdout + result.stderr)
@@ -77,8 +83,9 @@ def run(out, target):
         return image
 
     exact_depth, exact_coverage, exact_calm, changed = 0, 0, 0, 0
-    for case, depth in (("dry", 0), ("film", .006), ("transition", .03), ("deep", .25),
-                        ("thin-stream", .02), ("sloped-film", .02)):
+    for case, depth in (() if coverage_only else
+                       (("dry", 0), ("film", .006), ("transition", .03), ("deep", .25),
+                        ("thin-stream", .02), ("sloped-film", .02))):
         bed = [0.0] * (fixtures.COLS * fixtures.ROWS)
         h = [depth] * len(bed)
         if case == "thin-stream":
@@ -127,8 +134,9 @@ def run(out, target):
     optics_summary = {"dry_or_deep_exact_cases": 0, "effective_shallow_cases": 0,
                       "coverage_exact_cases": 0, "reflection_exact_cases": 0,
                       "direct_exact_cases": 0, "calm_exact_cases": 0}
-    for case, depth in (("optics-dry", 0), ("optics-shallow", .36),
-                        ("optics-at-end", 16), ("optics-deep", 30)):
+    for case, depth in (() if coverage_only else
+                       (("optics-dry", 0), ("optics-shallow", .36),
+                        ("optics-at-end", 16), ("optics-deep", 30))):
         bed = [0.] * (fixtures.COLS * fixtures.ROWS)
         h = [depth] * len(bed)
         with patch.object(fixtures, "fields", return_value=(bed, h)):
@@ -159,6 +167,43 @@ def run(out, target):
         if before != after:
             raise ValueError("absorption fixture mutated")
         print("GPU absorption controls passed: " + case, flush=True)
+    fade_summary = {"dry_or_deep_exact_cases": 0, "effective_shallow_cases": 0,
+                    "raw_diagnostic_exact_cases": 0, "coverage_changes": 0,
+                    "calm_exact_cases": 0}
+    for case, depth in ((("fade-dry", 0), ("fade-transition", .15),
+                         ("fade-at-end", .30), ("fade-deep", 2)) if coverage_only else ()):
+        bed = [0.] * (fixtures.COLS * fixtures.ROWS)
+        h = [depth] * len(bed)
+        with patch.object(fixtures, "fields", return_value=(bed, h)):
+            manifest = fixtures.fixture(out / "fixtures" / case, "fully-wet-lake")
+        before = {str(p): review.ref.sha256_file(p) for p in manifest.parent.rglob("*") if p.is_file()}
+        normal = render(case, manifest)
+        faded = render(case, manifest, "fade")
+        same = normal.read_bytes() == faded.read_bytes()
+        if depth == 0 or depth >= .30:
+            if not same:
+                raise ValueError("coverage fade changed dry/deep water: " + case)
+            fade_summary["dry_or_deep_exact_cases"] += 1
+        else:
+            if same:
+                raise ValueError("coverage fade has no effect on shallow water")
+            fade_summary["effective_shallow_cases"] += 1
+            for view in ("depth-bands", "film-weight", "environment-only"):
+                controls = [render(case, manifest, c, view) for c in ("default", "fade")]
+                if controls[0].read_bytes() != controls[1].read_bytes():
+                    raise ValueError("coverage fade concealed raw diagnostic: " + view)
+                fade_summary["raw_diagnostic_exact_cases"] += 1
+            coverage = [render(case, manifest, c, "coverage") for c in ("default", "fade")]
+            if coverage[0].read_bytes() == coverage[1].read_bytes():
+                raise ValueError("coverage view does not show artist fade")
+            fade_summary["coverage_changes"] += 1
+        calm = render(case, manifest, "fade", t=2)
+        if faded.read_bytes() != calm.read_bytes():
+            raise ValueError("depth coverage adds time-dependent flicker")
+        fade_summary["calm_exact_cases"] += 1
+        if before != {str(p): review.ref.sha256_file(p) for p in manifest.parent.rglob("*") if p.is_file()}:
+            raise ValueError("coverage fixture mutated")
+        print("GPU shallow coverage controls passed: " + case, flush=True)
     if pins != review.sources():
         raise ValueError("GPU control sources changed")
     if runtime != runtime_identity(target):
@@ -169,19 +214,21 @@ def run(out, target):
         "rows": rows, "summary": {"render_count": len(rows), "unchanged_coverage_cases": exact_coverage,
         "dry_and_deep_exact_cases": exact_depth, "calm_exact_controls": exact_calm,
         "effective_shallow_cases": changed, "fixture_fields": "byte-identical"},
-        "depth_limited_absorption": optics_summary})
+        "depth_limited_absorption": optics_summary, "shallow_coverage": fade_summary,
+        "scope": "coverage-only controls" if coverage_only else "full Scenic water controls"})
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--target", required=True, type=Path)
     p.add_argument("--out", type=Path)
+    p.add_argument("--coverage-only", action="store_true")
     a = p.parse_args()
     if a.out:
-        run(a.out.resolve(), a.target.resolve())
+        run(a.out.resolve(), a.target.resolve(), a.coverage_only)
     else:
         with tempfile.TemporaryDirectory(prefix="cubey-scenic-water-gpu-") as temp:
-            run(Path(temp) / "controls", a.target.resolve())
+            run(Path(temp) / "controls", a.target.resolve(), a.coverage_only)
 
 
 if __name__ == "__main__":

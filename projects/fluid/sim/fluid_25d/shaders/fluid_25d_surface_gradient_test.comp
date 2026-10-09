@@ -3,6 +3,7 @@
 #include "fluid_25d_surface_gradient.glsl"
 #include "fluid_25d_water_detail.glsl"
 #include "fluid_25d_water_agitation.glsl"
+#include "fluid_25d_water_film.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) writeonly buffer Result { vec4 values[]; } result;
 const vec3 normals[16] = vec3[16](
@@ -52,4 +53,8 @@ void main() {
         result.values[102u+i] = vec4(fluid25d_agitation_bands(vec2(17.3,-29.2),clock,
             footprint,normalize(vec2(0.3,0.7)),wavelength,variance),0.0);
     }
+    const float depths[8] = float[8](0.0,0.006,0.02,0.05,0.15,0.299,0.30,2.0);
+    for (uint i=0; i<24; ++i)
+        result.values[166u+i] = vec4(fluid25d_shallow_coverage(depths[i%8u],
+            float(i/8u)*0.5,0.30),0.0,0.0,0.0);
 }

@@ -20,6 +20,9 @@ struct Fluid25DScenicMaterial {
     // Artistic boost, fading to the base scale at a physical depth.
     float water_shallow_extinction_boost = 0.0F;
     float water_shallow_extinction_end_m = 2.0F;
+    // Display-only shallow-water opacity. Zero preserves accepted coverage.
+    float water_shallow_coverage_strength = 0.0F;
+    float water_shallow_coverage_end_m = 0.30F;
     float water_scatter_scale = 1.0F;
     float water_reflection_scale = 1.0F;
     float water_scatter_lighting = 0.0F;

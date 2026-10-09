@@ -61,7 +61,7 @@ void run() {
                                             .require_present = false,
                                             .require_dynamic_rendering = false});
     cubey::vulkan::SubmissionCoordinator submission(device);
-    constexpr auto bytes = sizeof(Vec4) * 166U;
+    constexpr auto bytes = sizeof(Vec4) * 190U;
     cubey::vulkan::Buffer storage(
         device, cubey::vulkan::device_local_buffer_config(
                     bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
@@ -101,7 +101,7 @@ void run() {
     const VkBufferCopy copy{.srcOffset = 0, .dstOffset = 0, .size = bytes};
     vkCmdCopyBuffer(commands.command_buffer(), storage.handle(), readback.handle(), 1, &copy);
     commands.submit_and_wait();
-    std::array<Vec4, 166> values{};
+    std::array<Vec4, 190> values{};
     readback.download(values.data(), bytes);
     for (unsigned mode = 0; mode < 5; ++mode) {
         for (std::size_t i = 0; i < normals.size(); ++i) {
@@ -174,7 +174,19 @@ void run() {
             throw std::runtime_error("agitation slope/filter/variance/wrap control failed: " +
                                      std::to_string(i));
     }
-    std::cout << "PASS: 80 terrain gradient + 22 wet-normal/ripple + 64 agitation GPU controls\n";
+    const std::array fade_depths{0.0F, 0.006F, 0.02F, 0.05F, 0.15F, 0.299F, 0.30F, 2.0F};
+    for (unsigned i = 0; i < 24U; ++i) {
+        const float strength = float(i / 8U) * 0.5F;
+        const float t = std::clamp(fade_depths[i % 8U] / 0.30F, 0.0F, 1.0F);
+        const float expected_fade = 1.0F - strength + strength * t * t * (3.0F - 2.0F * t);
+        const float actual = values[166U + i].x;
+        if (!std::isfinite(actual) || actual < 0.0F || actual > 1.0F ||
+            std::abs(actual - expected_fade) > 0.00001F ||
+            (i % 8U > 0U && actual < values[165U + i].x))
+            throw std::runtime_error("shallow coverage identity/bounds/monotonicity failed");
+    }
+    std::cout << "PASS: 80 terrain gradient + 22 wet-normal/ripple + 64 agitation + 24 shallow "
+                 "coverage GPU controls\n";
 }
 } // namespace
 

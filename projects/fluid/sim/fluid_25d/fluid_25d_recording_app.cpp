@@ -1540,6 +1540,19 @@ class RecordingApp {
                 ImGui::SliderFloat("Film roughness", &scenic_material_.film_roughness, 0.2F, 0.8F);
             edited |= ImGui::SliderFloat("Film ground emphasis", &scenic_material_.film_ground_mix,
                                          0.0F, 1.0F);
+            edited |=
+                ImGui::SliderFloat("Film transition end (m)", &scenic_material_.film_end_m,
+                                   std::max(0.002F, scenic_material_.film_begin_m + 0.001F), 1.0F);
+            edited |=
+                ImGui::SliderFloat("Shallow coverage fade",
+                                   &scenic_material_.water_shallow_coverage_strength, 0.0F, 1.0F);
+            if (scenic_material_.water_shallow_coverage_strength > 0.0F)
+                edited |=
+                    ImGui::SliderFloat("Coverage full depth (m)",
+                                       &scenic_material_.water_shallow_coverage_end_m, 0.05F, 1.0F);
+            ImGui::TextWrapped("Shallow coverage fade exposes existing wet ground; it does not "
+                               "create smaller streams or change simulated water. Zero retains "
+                               "coverage. Raw depth/component views ignore this artist fade.");
             edited |= ImGui::SliderFloat("Neutral terrain",
                                          &scenic_material_.terrain_material_blend, 0.0F, 1.0F);
             bool corrected = scenic_material_.terrain_normal_strength >= 0.0F;
