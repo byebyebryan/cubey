@@ -62,6 +62,35 @@ class MountainLauncherTests(unittest.TestCase):
         self.assertIn("reference",scenic["viewer"])
         self.assertIn("--fluid25d-motion-markers",scenic["viewer"])
 
+    def test_visible_rain_is_opt_in_and_never_edits_worker_supply(self):
+        out = Path("/tmp/unused-preview")
+        baseline = demo.commands(self.args("live"), out)
+        visible = demo.commands(self.args("live", "--rain-visuals", "--rain-visual-strength", ".75",
+                                          "--rain-visual-speed", "4"), out)
+        self.assertEqual(baseline["worker"], visible["worker"])
+        self.assertNotIn("--fluid25d-rain-visuals", baseline["viewer"])
+        self.assertIn("--fluid25d-rain-visuals", visible["viewer"])
+        self.assertIn("0.75", visible["viewer"])
+        self.assertIn("--fluid25d-rain-visual-speed", visible["viewer"])
+        self.assertIn("4.0", visible["viewer"])
+        configured = demo.commands(self.args("live", "--rain-visual-strength", ".5",
+                                             "--rain-visual-speed", "6"), out)
+        self.assertEqual(baseline["worker"], configured["worker"])
+        self.assertNotIn("--fluid25d-rain-visuals", configured["viewer"])
+        self.assertIn("--fluid25d-rain-visual-strength", configured["viewer"])
+        self.assertIn("0.5", configured["viewer"])
+        self.assertIn("--fluid25d-rain-visual-speed", configured["viewer"])
+        self.assertIn("6.0", configured["viewer"])
+        for values in (("replay", "--rain-visuals", "--style", "readable"),
+                       ("replay", "--rain-visual-strength", "nan"),
+                       ("live", "--rain-visual-strength", "3"),
+                       ("replay", "--rain-visual-speed", "nan"),
+                       ("replay", "--rain-visual-speed", "0"),
+                       ("replay", "--rain-visual-speed", "9"),
+                       ("replay", "--rain-visual-speed", "2", "--style", "readable")):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                demo.commands(self.args(*values), out)
+
     def test_rain_presets_use_exact_recordings_and_saved_cadence(self):
         out = Path("/tmp/unused-preview")
         rapid = demo.commands(self.args("replay", "--rain-preset", "rapid-fill", "--start", "17775"), out)

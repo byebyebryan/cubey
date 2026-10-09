@@ -1,3 +1,4 @@
+#include "fluid_25d_rain_visuals.h"
 #include "fluid_25d_recording.h"
 
 #include <cubey/asset/file_digest.h>
@@ -47,6 +48,69 @@ void require_close(double actual, double expected, double tolerance, const char*
     if (!std::isfinite(actual) || std::abs(actual - expected) > tolerance) {
         throw std::runtime_error(message);
     }
+}
+
+void test_rain_visual_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    for (const auto rate :
+         {std::optional<double>{}, std::optional<double>{0.0}, std::optional<double>{-1.0},
+          std::optional<double>{std::numeric_limits<double>::quiet_NaN()}})
+        require(fluid_25d_rain_visual_count(true, rate, 1.0F) == 0U,
+                "unknown/invalid/off rain must never draw");
+    require(fluid_25d_rain_visual_count(false, 1024.0, 1.0F) == 0U &&
+                fluid_25d_rain_visual_count(true, 1024.0, 0.0F) == 0U &&
+                fluid_25d_rain_visual_count(true, 1024.0, std::numeric_limits<float>::infinity()) ==
+                    0U,
+            "rain visibility and strength are independent presentation gates");
+    const auto low = fluid_25d_rain_visual_count(true, 120.0, 1.0F);
+    const auto mid = fluid_25d_rain_visual_count(true, 512.0, 1.0F);
+    const auto high = fluid_25d_rain_visual_count(true, 1024.0, 1.0F);
+    require(low > 0U && low < mid && mid < high && high == kFluid25DRainVisualMaxStreaks,
+            "120/512/1024 applied rainfall gives a monotone bounded stable prefix");
+    require(fluid_25d_rain_visual_count(true, 1e30, 2.0F) == high,
+            "extreme demo rainfall cannot create unbounded draw work");
+    const auto weather = fluid_25d_rain_visual_volume(-100.0F, 1400.0F, 15000.0F, 1.0F);
+    require(weather.floor_m < -100.0F && weather.floor_m + weather.height_m > 1400.0F,
+            "global weather volume spans valley floor through sky above highest peak");
+    require_close(weather.floor_m + weather.height_m, 3650.0, 1e-6,
+                  "one fixed world-space roof, not local surface plus fixed offset");
+    const auto scaled = fluid_25d_rain_visual_volume(-100.0F, 1400.0F, 15000.0F, 2.0F);
+    require_close(scaled.floor_m + scaled.height_m, 5050.0, 1e-6,
+                  "shared roof respects render height scaling without camera dependence");
+    Fluid25DRainVisualClock clock;
+    clock.advance(0.1, true);
+    clock.advance(0.2, false);
+    clock.advance(-1.0, true);
+    clock.advance(std::numeric_limits<double>::quiet_NaN(), true);
+    require_close(clock.seconds(), 0.1, 1e-10, "pause/bad deltas freeze rain clock");
+    clock.advance(10.0, true);
+    require_close(clock.seconds(), 0.35, 1e-10, "long wall stalls clamp presentation advance");
+    clock.reset();
+    require(clock.seconds() == 0.0, "seek/reset clears rain phase deterministically");
+    clock.capture(45U, 30U, true);
+    require(clock.seconds() == 1.5, "video uses index/fps, not physical playback intervals");
+    clock.capture(45U, 30U, false);
+    require(clock.seconds() == 0.0, "stills have reproducible zero presentation phase");
+    clock.capture(45U, 0U, true);
+    require(clock.seconds() == 0.0, "invalid capture fps is safe");
+    clock.reset();
+    clock.advance(0.1, true, 3.0F);
+    require_close(clock.motion_seconds(), 0.3, 1e-10, "speed scales fall motion only");
+    require_close(clock.seconds(), 0.1, 1e-10, "wall presentation clock retains seconds");
+    clock.advance(0.0, true, 8.0F);
+    require_close(clock.motion_seconds(), 0.3, 1e-10, "speed edit does not jump drop phase");
+    clock.advance(0.1, true, 8.0F);
+    require_close(clock.motion_seconds(), 1.1, 1e-10, "edited speed integrates future motion");
+    clock.advance(0.2, false, 8.0F);
+    require_close(clock.motion_seconds(), 1.1, 1e-10, "pause freezes scaled motion");
+    clock.advance(10.0, true, 8.0F);
+    require_close(clock.motion_seconds(), 3.1, 1e-10, "stall clamp precedes speed multiplier");
+    clock.capture(45U, 30U, true, 3.0F);
+    require(clock.seconds() == 1.5 && clock.motion_seconds() == 4.5,
+            "capture scales fall phase without physical-time coupling");
+    clock.reset();
+    require(clock.seconds() == 0.0 && clock.motion_seconds() == 0.0,
+            "reset clears wall and integrated motion clocks");
 }
 
 [[nodiscard]] std::string sha256(std::span<const std::uint8_t> bytes) {
@@ -616,6 +680,7 @@ void test_live_prefix_identity_lifecycle_and_checked_frames() {
 
 int main() {
     try {
+        test_rain_visual_contract();
         test_reader_loads_checked_planar_states_and_bounded_cache();
         test_reader_rejects_bad_schema_paths_geometry_and_timestamps();
         test_reader_checks_hash_nonfinite_depth_and_velocity_representation();

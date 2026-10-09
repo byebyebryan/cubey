@@ -55,6 +55,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_scenic_sky.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_copy.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_display.frag
+        ../sim/fluid_25d/shaders/fluid_25d_rain_visual.vert
+        ../sim/fluid_25d/shaders/fluid_25d_rain_visual.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp"
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.vert
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.frag
@@ -83,6 +85,7 @@ cubey_add_app_target(
         ${CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_daylight.glsl"
@@ -270,6 +273,13 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_scenic_water.py)
         set_tests_properties(fluid_25d_scenic_water_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_rain_visuals_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_rain_visuals_gpu.py"
+                --target $<TARGET_FILE:cubey_project_fluid_25d>
+                ${CUBEY_FLUID_RECORDING_VIDEO_SMOKE_ARGS})
+        set_tests_properties(fluid_25d_rain_visuals_gpu
+            PROPERTIES LABELS "gpu;fluid;rain;presentation" TIMEOUT 240)
         add_test(NAME fluid_25d_scenic_water_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_scenic_water_gpu.py"

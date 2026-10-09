@@ -23,6 +23,11 @@ struct Push {
     math::Mat4 view_projection;
     math::Vec4 grid_cell, camera_wet, presentation, terrain_palette;
 };
+struct RainPush {
+    math::Mat4 view_projection;
+    math::Vec4 grid_cell, camera_floor, clock_viewport, volume;
+};
+static_assert(sizeof(RainPush) == 128U);
 struct Uniforms {
     math::Mat4 inverse_view_projection, shadow_view_projection;
     math::Vec4 light_direction_exposure, light_color_mips, clock_encoding;
@@ -172,6 +177,7 @@ struct Fluid25DScenic::State {
     std::optional<render::GraphicsPipelineResource> terrain, terrain_bspline, water, water_bspline;
     std::optional<render::GraphicsPipelineResource> terrain_legacy, terrain_bspline_legacy;
     std::optional<render::GraphicsPipelineResource> shadow, shadow_bspline, sky, copy, display;
+    std::optional<render::GraphicsPipelineResource> rain;
     math::Mat4 shadow_matrix{1.0F};
     float terrain_low = 0.0F, terrain_high = 0.0F, domain_m = 0.0F;
     VkExtent2D extent{};
@@ -218,7 +224,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
             device, render::FrameUniformMaterialInstanceConfig{.material_pass = frame_material(),
                                                                .descriptor_set = 1U,
                                                                .frame_slot_count = slots});
-        s.profiler.emplace(device, slots, 5U);
+        s.profiler.emplace(device, slots, 6U);
         s.visual_flow.emplace(
             device, vulkan::device_local_buffer_config(fields.velocity().size(),
                                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
@@ -336,6 +342,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     mesh(s.water, "fluid_25d_water.vert.spv", "fluid_25d_scenic_water.frag.spv", true);
     mesh(s.water_bspline, "fluid_25d_water_bspline.vert.spv", "fluid_25d_scenic_water.frag.spv",
          true);
+    mesh(s.rain, "fluid_25d_rain_visual.vert.spv", "fluid_25d_rain_visual.frag.spv", true);
     const auto shadow = [&](std::optional<render::GraphicsPipelineResource>& p,
                             const char* vertex) {
         const std::array<render::ShaderStageFile, 1> stages{
@@ -376,6 +383,7 @@ void Fluid25DScenic::destroy_swapchain_resources() {
         return;
     auto& s = *state_;
     s.display.reset();
+    s.rain.reset();
     s.copy.reset();
     s.sky.reset();
     s.shadow_bspline.reset();
@@ -411,7 +419,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                             const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
                             float marker_fraction, bool profile, bool reset_visual_flow,
                             unsigned terrain_view, unsigned water_view, unsigned surface_mode,
-                            const Fluid25DScenicEnvironment* environment) {
+                            const Fluid25DScenicEnvironment* environment,
+                            Fluid25DRainVisualFrame rain) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
@@ -667,6 +676,45 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     }
                 });
         });
+    // Blend into existing linear HDR before the one display transform. Opaque
+    // depth is sampled, not attached: water does not write that depth, so the
+    // streak shader also terminates at the displayed bed+h surface. OFF adds
+    // no graph pass, dispatch, target or hydraulic write.
+    if (rain.streak_count != 0U && terrain_view == 0U && water_view == 0U) {
+        const auto rain_volume =
+            fluid_25d_rain_visual_volume(s.terrain_low, s.terrain_high, s.domain_m, height_scale);
+        const RainPush rain_push{push.view_projection,
+                                 push.grid_cell,
+                                 {camera.position, rain_volume.floor_m},
+                                 {float(rain.motion_s), float(target.extent.width),
+                                  float(target.extent.height), bspline ? float(subdivision) : 0.0F},
+                                 {rain_volume.height_m,
+                                  std::clamp(s.domain_m * 0.016F, 12.0F, 245.0F),
+                                  std::clamp(s.domain_m * 0.007F, 2.0F, 100.0F), 0.70F}};
+        graph.add_pass("scenic rain (render only)", render::RenderGraphQueueDomain::Graphics)
+            .read_storage_buffer(bed)
+            .read_storage_buffer(h)
+            .read_texture(depth)
+            .read_write_color(composed)
+            .execute([&, rain_push, fields, set, composed, rain](const auto& ctx) {
+                vulkan::GpuTimestampScope timing(profiler, commands, slot.index,
+                                                 "fluid_25d scenic rain");
+                render::record_render_target_pass(
+                    ctx.recorder(),
+                    render::render_target_view(render::resolved_color_target_view(ctx, composed)),
+                    {}, {.color = vulkan::load_store_attachment_ops()}, [&](const auto& r) {
+                        const auto& p = *s.rain;
+                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U,
+                                              fields);
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U, set);
+                        r.push_constants(p.layout(),
+                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0U, rain_push);
+                        r.draw(6U, std::min(rain.streak_count, kFluid25DRainVisualMaxStreaks));
+                    });
+            });
+    }
     graph.add_pass("scenic display and diagnostic dots", render::RenderGraphQueueDomain::Graphics)
         .read_texture(composed)
         .write_color(back)

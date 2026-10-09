@@ -70,6 +70,9 @@ struct Fluid25DProjectConfig {
     std::string native_scenic_surface_mode = "legacy";
     std::string native_scenic_terrain_view = "shaded";
     std::string native_scenic_water_view = "shaded";
+    bool native_rain_visuals = false;
+    float native_rain_strength = 1.0F;
+    float native_rain_speed = 3.0F;
     std::string native_surface_highlights = "auto";
     std::string native_water_debug = "shaded";
     std::string native_water_sampling = "triangular";
@@ -576,6 +579,20 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                       "no-environment", "no-direct", "no-clarity", "no-detail", "depth-bands",
                       "coverage", "film-weight"}),
               config.native_scenic_water_view)
+        .bind(option("fluid25d.rain_visuals", "--fluid25d-rain-visuals", "Visible Rain",
+                     "Opt-in Scenic render-only streaks driven by applied rain, not water parcels.",
+                     ValueType::Bool),
+              config.native_rain_visuals)
+        .bind(option("fluid25d.rain_visual_strength", "--fluid25d-rain-visual-strength",
+                     "Rain Visual Strength",
+                     "Render-only density multiplier; never changes supply.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.0, .max = 2.0}),
+              config.native_rain_strength)
+        .bind(option("fluid25d.rain_visual_speed", "--fluid25d-rain-visual-speed",
+                     "Rain Fall Speed",
+                     "Render-only fall speed multiplier, independent of simulation speed.",
+                     ValueType::Float, {.has_min = true, .has_max = true, .min = 0.25, .max = 8.0}),
+              config.native_rain_speed)
         .bind(
             option("fluid25d.native_surface_highlights", "--fluid25d-native-surface-highlights",
                    "Procedural Flow Highlights",
@@ -923,6 +940,9 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.scenic_tuning") ||
          parsed.path_was_assigned("fluid25d.scenic_terrain_view") ||
          parsed.path_was_assigned("fluid25d.scenic_water_view") ||
+         parsed.path_was_assigned("fluid25d.rain_visuals") ||
+         parsed.path_was_assigned("fluid25d.rain_visual_strength") ||
+         parsed.path_was_assigned("fluid25d.rain_visual_speed") ||
          parsed.path_was_assigned("fluid25d.native_surface_highlights") ||
          parsed.path_was_assigned("fluid25d.native_water_debug") ||
          parsed.path_was_assigned("fluid25d.native_water_sampling") ||
@@ -936,7 +956,10 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     if ((parsed.path_was_assigned("fluid25d.scenic_material") ||
          parsed.path_was_assigned("fluid25d.scenic_tuning") ||
          parsed.path_was_assigned("fluid25d.scenic_terrain_view") ||
-         parsed.path_was_assigned("fluid25d.scenic_water_view")) &&
+         parsed.path_was_assigned("fluid25d.scenic_water_view") ||
+         parsed.path_was_assigned("fluid25d.rain_visuals") ||
+         parsed.path_was_assigned("fluid25d.rain_visual_strength") ||
+         parsed.path_was_assigned("fluid25d.rain_visual_speed")) &&
         project_config.native_presentation != "scenic")
         throw std::runtime_error("Scenic material controls require the Scenic presentation");
     if (project_config.native_scenic_water_view != "shaded" &&

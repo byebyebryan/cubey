@@ -71,6 +71,11 @@ def parser() -> argparse.ArgumentParser:
                    help="explicit Scenic preset override; default macro includes accepted lighting")
     p.add_argument("--loop", action="store_true", help="banks only: explicit recorded-window looping")
     p.add_argument("--no-dots", action="store_true")
+    p.add_argument("--rain-visuals", action="store_true", help="opt-in world-space falling rain in Scenic; render only")
+    p.add_argument("--rain-visual-strength", type=float, default=1.0,
+                   help="visible rain density 0..2, independent of solver rainfall")
+    p.add_argument("--rain-visual-speed", type=float, default=3.0,
+                   help="render-only fall speed 0.25..8; default 3x the original slow look")
     p.add_argument("--profile", action="store_true", help="Record viewer GPU/bridge metrics inside the fresh launcher output")
     p.add_argument("--width", type=int, default=1440)
     p.add_argument("--height", type=int, default=900)
@@ -82,6 +87,12 @@ def parser() -> argparse.ArgumentParser:
 
 
 def validate_options(a) -> None:
+    if not math.isfinite(a.rain_visual_strength) or not 0 <= a.rain_visual_strength <= 2:
+        raise ValueError("rain visual strength must be finite and 0..2")
+    if not math.isfinite(a.rain_visual_speed) or not .25 <= a.rain_visual_speed <= 8:
+        raise ValueError("rain visual speed must be finite and 0.25..8")
+    if (a.rain_visuals or a.rain_visual_strength != 1 or a.rain_visual_speed != 3) and a.style != "scenic":
+        raise ValueError("visible rain requires Scenic")
     if a.material is not None and a.style != "scenic":
         raise ValueError("material override requires Scenic")
     if a.mode == "banks" and rain_preset(a) != "baseline":
@@ -227,6 +238,11 @@ def commands(a, out: Path) -> dict[str, list[str]]:
               "--fluid25d-native-surface-highlights", "off", "--fluid25d-native-bank-view", a.bank]
     if a.style == "scenic":
         viewer += ["--fluid25d-scenic-material", a.material or "macro"]
+    if a.rain_visuals:
+        viewer.append("--fluid25d-rain-visuals")
+    if a.rain_visuals or a.rain_visual_strength != 1 or a.rain_visual_speed != 3:
+        viewer += ["--fluid25d-rain-visual-strength", str(a.rain_visual_strength),
+                   "--fluid25d-rain-visual-speed", str(a.rain_visual_speed)]
     if not a.no_dots:
         viewer.append("--fluid25d-motion-markers")
     if a.profile:

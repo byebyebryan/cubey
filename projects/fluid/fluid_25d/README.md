@@ -2012,6 +2012,60 @@ recordings remain separate from all established dry-start rain recordings.
 Run `test_run_seeded_lake_v1.py` in the same environment for CPU-only geometry
 tests; it does not launch CUDA or a renderer.
 
+## Render-only visible rainfall
+
+The native Scenic replay/live frontend has an opt-in falling-rain layer:
+
+```sh
+rtk proxy python projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --rain-visuals
+rtk proxy python projects/fluid/fluid_25d/run_mountain_rain_demo.py live --rain-visuals
+```
+
+The GUI's **Visible rain (render only)** section controls visibility, density
+strength (0..2), and fall speed (0.25..8x). Direct app flags are
+`--fluid25d-rain-visuals`, `--fluid25d-rain-visual-strength`, and
+`--fluid25d-rain-visual-speed` (also available on the launcher). The speed default
+is 3x; 1x restores the original slower fall. Speed edits integrate continuously
+without jumping the drop phase, independently of simulation/playback speed.
+All columns share one fixed world-space ceiling well above the highest peak;
+their starting heights do not trace the local terrain. A common floor below the
+lowest bed defines recycling, while the actual local bed+h clips each impact.
+Streaks use a wider 1.4-pixel footprint and higher opacity, with a dark neutral
+silhouette against the daylight sky instead of pale-on-pale blending. These are
+artistic readability choices, not physical drop optics. These controls never
+change solver rainfall. Rain is still opt-in; all accepted lighting/water defaults
+and the launcher's numerical rain presets remain unchanged.
+
+Replay streak density follows the forcing schedule at the **playhead**, not the
+last saved water frame. The HUD labels both times; water remains held, never
+interpolated. Live uses the applied snapshot rate, not a typed/pending edit.
+Zero/unknown rain and zero strength draw nothing. Density uses a compressed
+square-root mapping capped at 24,000 fixed-seed world columns. Rate changes
+retain the same prefix instead of re-randomizing the whole scene.
+
+This is an artistic macro-scale weather cue, not physical raindrops, water
+parcels or conserved rainfall. Fall lengths/speeds are deliberately exaggerated
+for kilometre-scale terrain. Motion uses a separate presentation-seconds clock,
+not accelerated runoff time; pause/seek/reset and unhealthy live sessions hold
+or reset it. Headless video samples index/fps independently of physical capture
+intervals. Stills have a deterministic initial phase.
+
+Six-vertex instanced streaks blend into existing linear HDR before display
+encoding. Immutable bed/depth are read-only; rain stops at the displayed bed+h
+triangles (including B-spline subdivision) and samples opaque terrain depth to
+hide behind hills. Water does not write that opaque depth, so terrain depth
+alone would not correctly terminate lake rain. OFF adds no render-graph pass.
+Raw maps, terrain/water component views and diagnostic overlays remain unchanged.
+No splash/ripple particles, fog, cloud model or storm lighting is added.
+
+`fluid_25d_recording_contract` tests the clock/density contract,
+`fluid_25d_tests` tests native options, and `fluid_25d_rain_visuals_gpu` uses
+synthetic frozen fields, upload checks and exact controls (including deterministic
+video and physical-speed independence when video capture is built). It requires
+no archived recordings or solver. Profile category `fluid_25d.rain` records
+presentation time, applied rate and streak count; GPU span `fluid_25d scenic rain`
+measures the extra draw separately.
+
 ## Dry-start rain-formed collections
 
 `run_natural_lakes_v1.py` is the paired whole-map experiment: no initial lake,

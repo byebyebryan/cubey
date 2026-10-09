@@ -7197,11 +7197,46 @@ void test_scenic_material_contract() {
         "sweep requires a headless recorded video");
 }
 
+void test_rain_visual_cli() {
+    const auto defaults = parse_project({"fluid_25d"});
+    require(!defaults.native_rain_visuals && defaults.native_rain_strength == 1.0F &&
+                defaults.native_rain_speed == 3.0F,
+            "rain presentation remains opt-in until visual acceptance");
+    const auto visible = parse_project(
+        {"fluid_25d", "--fluid25d-recording", "recording.json", "--fluid25d-native-presentation",
+         "scenic", "--fluid25d-rain-visuals", "--fluid25d-rain-visual-strength", "0.75",
+         "--fluid25d-rain-visual-speed", "4"});
+    require(visible.native_rain_visuals && visible.native_rain_strength == 0.75F &&
+                visible.native_rain_speed == 4.0F &&
+                visible.simulation.rainfall_depth_rate_m_per_s ==
+                    defaults.simulation.rainfall_depth_rate_m_per_s,
+            "visible rain strength/speed never edits solver rainfall");
+    for (const auto& arguments : std::vector<std::vector<std::string>>{
+             {"fluid_25d", "--fluid25d-rain-visuals"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json", "--fluid25d-rain-visuals"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json",
+              "--fluid25d-native-presentation", "scenic", "--fluid25d-rain-visual-strength", "-1"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json",
+              "--fluid25d-native-presentation", "scenic", "--fluid25d-rain-visual-strength", "3"},
+             {"fluid_25d", "--fluid25d-rain-visual-speed", "2"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json", "--fluid25d-rain-visual-speed",
+              "2"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json",
+              "--fluid25d-native-presentation", "scenic", "--fluid25d-rain-visual-speed", "0.1"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json",
+              "--fluid25d-native-presentation", "scenic", "--fluid25d-rain-visual-speed", "9"},
+             {"fluid_25d", "--fluid25d-recording", "recording.json",
+              "--fluid25d-native-presentation", "scenic", "--fluid25d-rain-visual-speed", "nan"}})
+        require_throws([&] { static_cast<void>(parse_project(arguments)); },
+                       "rain visual controls require Scenic/native source and bounded strength");
+}
+
 int main() {
     try {
         test_backend_selection_preserves_existing_modes();
         test_external_session_freshness_and_typed_inputs();
         test_recording_cli_is_separate_from_physics();
+        test_rain_visual_cli();
         test_scenic_material_contract();
         test_bank_comparison_controls();
         test_catchment_far_plane_geometry();

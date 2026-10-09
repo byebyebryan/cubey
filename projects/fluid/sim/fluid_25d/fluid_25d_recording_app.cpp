@@ -510,6 +510,7 @@ class RecordingApp {
 
     void reset_presentation_history() {
         scenic_clock_s_ = 0.0;
+        rain_clock_.reset();
         scenic_flow_reset_ = true;
         cue_reset_ = quiver_reset_ = marker_reset_ = true;
         visual_delta_ = marker_accumulator_ = 0.0;
@@ -796,6 +797,7 @@ class RecordingApp {
                 // Approximate presentation-only cue time while the native field
                 // snapshot is held. Never advance the displayed source clock.
                 visual_delta_ = std::min(wall_delta_s, 0.25) * external_snapshot_->pacing;
+                rain_clock_.advance(wall_delta_s, true, config_.native_rain_speed);
             }
             return;
         }
@@ -841,6 +843,10 @@ class RecordingApp {
         }
         if (shown_index_ != clock_.frame_index())
             visual_delta_ = 0.0;
+        rain_clock_.advance(wall_delta_s,
+                            !clock_.paused() && !clock_.ended() &&
+                                shown_index_ == clock_.frame_index() && stream_error_.empty(),
+                            config_.native_rain_speed);
     }
 
     void create_resources(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots) {
@@ -1134,7 +1140,7 @@ class RecordingApp {
                            fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view),
                            fluid_25d_scenic_water_view(config_.native_scenic_water_view),
                            fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode),
-                           environment ? &*environment : nullptr);
+                           environment ? &*environment : nullptr, rain_visual_frame());
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1152,6 +1158,22 @@ class RecordingApp {
                 compiled);
         }
         if (profile) {
+            if (config_.native_rain_visuals) {
+                const auto rain = rain_visual_frame();
+                const auto applied = applied_rain_mm_per_hour();
+                profile->record_metric(frame_index, "fluid_25d.rain", "presentation_clock_s",
+                                       rain.clock_s);
+                profile->record_metric(frame_index, "fluid_25d.rain", "applied_mm_per_hour",
+                                       applied.value_or(0.0));
+                profile->record_metric(frame_index, "fluid_25d.rain", "rate_known",
+                                       applied ? 1.0 : 0.0);
+                profile->record_metric(frame_index, "fluid_25d.rain", "streak_count",
+                                       rain.streak_count);
+                profile->record_metric(frame_index, "fluid_25d.rain", "motion_phase_s",
+                                       rain.motion_s);
+                profile->record_metric(frame_index, "fluid_25d.rain", "fall_speed_multiplier",
+                                       config_.native_rain_speed);
+            }
             if (external_session_ && external_snapshot_) {
                 const auto metric = [&](const char* name, double value) {
                     profile->record_metric(frame_index, "fluid_25d.external", name, value);
@@ -1297,6 +1319,39 @@ class RecordingApp {
                render_.native_water_debug == 0U;
     }
 
+    std::optional<double> applied_rain_mm_per_hour() const {
+        if (external_session_)
+            return external_snapshot_
+                       ? std::optional<double>{external_snapshot_->rain_m_per_s * 3.6e6}
+                       : std::nullopt;
+        // The forcing schedule is continuous even though water fields are held
+        // at sparse saved knots. Match the explicitly labelled weather HUD.
+        if (recording_)
+            return recording_->rain_status_at(clock_.time_s()).rate_mm_per_hour;
+        return std::nullopt;
+    }
+
+    Fluid25DRainVisualFrame rain_visual_frame() const {
+        const bool shaded = scenic_material_active() &&
+                            config_.native_scenic_terrain_view == "shaded" &&
+                            config_.native_scenic_water_view == "shaded";
+        return {fluid_25d_rain_visual_count(config_.native_rain_visuals && shaded,
+                                            applied_rain_mm_per_hour(),
+                                            config_.native_rain_strength),
+                rain_clock_.seconds(), rain_clock_.motion_seconds()};
+    }
+
+    void log_rain_capture(std::uint32_t frame) const {
+        const auto rain = rain_visual_frame();
+        const auto rate = applied_rain_mm_per_hour();
+        std::printf("fluid_25d_rain_capture: output_frame=%u applied_mm_h=%.9f known=%u "
+                    "clock_s=%.9f streaks=%u enabled=%u strength=%.3f "
+                    "fall_speed=%.3f motion_s=%.9f hydraulic_writes=0\n",
+                    frame, rate.value_or(0.0), rate ? 1U : 0U, rain.clock_s, rain.streak_count,
+                    config_.native_rain_visuals ? 1U : 0U, config_.native_rain_strength,
+                    config_.native_rain_speed, rain.motion_s);
+    }
+
     void draw_native_color_legend() const {
         if (scenic_material_active())
             ImGui::TextWrapped(
@@ -1373,6 +1428,22 @@ class RecordingApp {
             ImGui::TextWrapped(
                 "Scenic: HDR materials and decorative flow normals; V compares Readable. "
                 "Raw maps and inspection views retain diagnostic shading.");
+        if (render_.native_presentation == 3U &&
+            ImGui::CollapsingHeader("Visible rain (render only)", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Show falling rain", &config_.native_rain_visuals);
+            ImGui::SliderFloat("Rain visual strength", &config_.native_rain_strength, 0.0F, 2.0F);
+            ImGui::SliderFloat("Rain fall speed", &config_.native_rain_speed, 0.25F, 8.0F, "%.2fx");
+            const auto rain = applied_rain_mm_per_hour();
+            if (rain)
+                ImGui::Text("Applied weather %.2f mm/h | %u streaks", *rain,
+                            rain_visual_frame().streak_count);
+            else
+                ImGui::TextUnformatted("Applied weather unavailable; no rain drawn");
+            ImGui::TextWrapped("Artistic macro-scale streaks, not water parcels. Strength only "
+                               "changes their density, never the solver supply. Fall speed is "
+                               "independent of simulation speed; 1x is the original slow look. "
+                               "Pause freezes motion. Component views hide rain.");
+        }
         if (render_.native_presentation == 3U &&
             ImGui::CollapsingHeader("Scenic materials (render only)")) {
             int profile = config_.native_scenic_material == "macro"     ? 3
@@ -1850,6 +1921,8 @@ class RecordingApp {
             ImGui::SeparatorText("Rainfall - recorded forcing (read only)");
             ImGui::Text("Saved rain: %s | %.2f mm/h",
                         fluid_25d_recorded_rain_phase_name(rain.phase), rain.rate_mm_per_hour);
+            ImGui::Text("Weather at playhead %.2f mm/h (water held at %.0f s)",
+                        applied_rain_mm_per_hour().value_or(0.0), shown_->time_s);
             ImGui::Text("Scheduled total %.3f mm (not retained water)",
                         rain.cumulative_scheduled_rain_depth_mm);
             ImGui::TextWrapped(
@@ -2198,6 +2271,11 @@ class RecordingApp {
                                         const host::HeadlessRenderTarget& target) {
             if (external_session_) {
                 visual_delta_ = 0.0;
+                rain_clock_.capture(frame.index, config_.common.fps,
+                                    config_.common.capture_mode == CaptureMode::Video &&
+                                        external_snapshot_->header.lifecycle ==
+                                            Fluid25DLifecycle::Running,
+                                    config_.native_rain_speed);
                 record(context.device(), commands, target, frame.frame_slot,
                        Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
                        frame.index);
@@ -2208,6 +2286,7 @@ class RecordingApp {
                     static_cast<unsigned long long>(external_snapshot_->header.reset_generation),
                     static_cast<unsigned long long>(external_snapshot_->header.sequence),
                     config_.recording_camera.c_str());
+                log_rain_capture(frame.index);
                 return;
             }
             // Load by immutable capture index on the GPU-owner callback. The
@@ -2256,6 +2335,9 @@ class RecordingApp {
                                                                   recording_->times_s().back())
                                 : std::clamp(shown_->time_s - previous, 0.0, 60.0);
             const double captured_visual_delta = visual_delta_;
+            if (frame.index == 0U || presented > previous_requested)
+                rain_clock_.capture(frame.index, config_.common.fps, video,
+                                    config_.native_rain_speed);
             record(context.device(), commands, target, frame.frame_slot,
                    Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
                    frame.index);
@@ -2264,6 +2346,7 @@ class RecordingApp {
                         "presentation=%s\n",
                         frame.index, presented, shown_->time_s, config_.recording_camera.c_str(),
                         captured_visual_delta, config_.native_presentation.c_str());
+            log_rain_capture(frame.index);
             if (comparison_)
                 std::printf(
                     "fluid_25d_bank_capture: output_frame=%u mode=%s requested_unbounded_s=%.9f "
@@ -2342,6 +2425,7 @@ class RecordingApp {
     vulkan::GpuRuntime* scenic_gpu_ = nullptr;
     std::uint32_t scenic_slots_ = 0U;
     double scenic_clock_s_ = 0.0;
+    Fluid25DRainVisualClock rain_clock_{};
     bool scenic_flow_reset_ = true;
     std::optional<vulkan::GpuTimestampProfiler> native_profiler_;
     std::optional<vulkan::GpuTimestampProfiler> coverage_profiler_;
