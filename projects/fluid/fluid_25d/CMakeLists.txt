@@ -1,3 +1,4 @@
+cubey_atmosphere_shader_depends(CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS)
 # Consume foundation climate and surface semantics, not project-relative sources.
 add_library(cubey_fluid25d_terrain_surface STATIC
     ../sim/fluid_25d/fluid_25d_terrain_surface.cpp)
@@ -34,6 +35,9 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
         ../sim/fluid_25d/shaders/fluid_25d.vert
         ../sim/fluid_25d/shaders/fluid_25d_bank_controls.comp
         ../sim/fluid_25d/shaders/fluid_25d_render.frag
@@ -75,11 +79,13 @@ cubey_add_app_target(
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        ${CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_film.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
@@ -120,7 +126,8 @@ if (BUILD_TESTING)
     cubey_add_glsl_shaders(cubey_project_fluid_25d_surface_gradient_gpu_tests
         OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-shaders"
         SOURCES ../sim/fluid_25d/shaders/fluid_25d_surface_gradient_test.comp
-        DEPENDS ../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl)
+        DEPENDS ../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl)
     add_test(NAME fluid_25d_surface_gradient_gpu COMMAND cubey_project_fluid_25d_surface_gradient_gpu_tests)
     set_tests_properties(fluid_25d_surface_gradient_gpu PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
     add_executable(cubey_project_fluid_25d_external_session_tests
@@ -175,6 +182,9 @@ if (BUILD_TESTING)
     set_tests_properties(fluid_25d_backend_adapters PROPERTIES LABELS "unit;fluid;backend")
     find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
     if (CUBEY_FLUID_RECORDING_PYTHON)
+        add_test(NAME fluid_25d_water_rendering_reuse_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_water_rendering_reuse_v1.py)
         add_test(NAME fluid_25d_external_worker_host
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}/external_synxflow" -p test_session_worker.py)

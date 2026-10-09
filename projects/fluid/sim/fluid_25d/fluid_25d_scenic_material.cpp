@@ -48,6 +48,10 @@ constexpr std::array kProperties{
     Property{"film_end_m", &Fluid25DScenicMaterial::film_end_m, 0.002, 1.0},
     Property{"film_roughness", &Fluid25DScenicMaterial::film_roughness, 0.2, 0.8},
     Property{"film_ground_mix", &Fluid25DScenicMaterial::film_ground_mix, 0.0, 1.0},
+    Property{"water_wet_normal", &Fluid25DScenicMaterial::water_wet_normal, 0.0, 1.0},
+    Property{"water_ripple_strength", &Fluid25DScenicMaterial::water_ripple_strength, 0.0, 0.3},
+    Property{"water_ripple_scale_m", &Fluid25DScenicMaterial::water_ripple_scale_m, 8.0, 128.0},
+    Property{"daylight_environment", &Fluid25DScenicMaterial::daylight_environment, 0.0, 1.0},
 };
 [[noreturn]] void invalid(const std::string& message) {
     throw std::runtime_error("fluid 2.5D Scenic material: " + message);
@@ -55,6 +59,8 @@ constexpr std::array kProperties{
 void validate(const Fluid25DScenicMaterial& material) {
     if (material.film_begin_m >= material.film_end_m)
         invalid("film_begin_m must be below film_end_m");
+    if (material.daylight_environment != 0.0F && material.daylight_environment != 1.0F)
+        invalid("daylight_environment must be 0 or 1");
     if (material.terrain_normal_strength < 0.0F && material.terrain_normal_strength != -1.0F)
         invalid("terrain_normal_strength must be -1 or nonnegative");
     for (const auto& p : kProperties) {

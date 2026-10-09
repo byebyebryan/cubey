@@ -35,6 +35,11 @@ struct Fluid25DScenicMaterial {
     float film_end_m = 0.12F;
     float film_roughness = 0.65F;
     float film_ground_mix = 0.75F;
+    // Rendering-study controls. Zero strength preserves the retained shading.
+    float water_wet_normal = 0.0F;
+    float water_ripple_strength = 0.0F; // slope, not displaced surface height
+    float water_ripple_scale_m = 48.0F;
+    float daylight_environment = 0.0F; // opt-in fixed shared Cubey sky, no weather system
 };
 
 [[nodiscard]] Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile);

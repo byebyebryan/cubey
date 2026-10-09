@@ -10,17 +10,12 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 surface_material;
     vec4 water_optics;
     vec4 art_direction;
-#if defined(FLUID25D_TERRAIN_MACRO) || defined(FLUID25D_SCENIC_WATER)
     vec4 terrain_macro;
-#endif
-#ifdef FLUID25D_SCENIC_WATER
     vec4 water_film; // begin_m, end_m, film perceptual roughness, ground mix
-    vec4 water_view; // component view, reserved, reserved, reserved
-#endif
-#ifdef FLUID25D_TERRAIN_MACRO
-    vec4 terrain_padding[2]; // Preserve water's existing uniform offsets.
+    vec4 water_view; // component view, wet-normal blend, ripple slope, wavelength m
     vec4 terrain_surface; // mode, grid width, grid height, reserved
-#endif
+    vec4 environment_mode; // shared fixed daylight enabled, reserved
+    vec4 diffuse_irradiance_sh[9];
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;
@@ -34,6 +29,18 @@ layout(set=1,binding=8) uniform sampler2D scenic_composed;
 vec3 scenic_unproject(vec2 uv, float z) {
     vec4 p = scenic.inverse_view_projection * vec4(uv*2.0-1.0,z,1.0);
     return p.xyz / p.w;
+}
+vec3 scenic_irradiance_at(vec3 direction) {
+    if (scenic.environment_mode.x<0.5) return texture(scenic_irradiance,direction).rgb;
+    // Same SH order and basis as Cubey terrain/forward PBR and atmosphere CPU.
+    vec3 n = normalize(direction);
+    float x=n.x,y=n.y,z=n.z;
+    float basis[9] = float[9](0.282095,0.488603*y,0.488603*z,0.488603*x,
+        1.092548*x*y,1.092548*y*z,0.315392*(3.0*z*z-1.0),
+        1.092548*x*z,0.546274*(x*x-y*y));
+    vec3 irradiance = vec3(0);
+    for (int i=0;i<9;++i) irradiance += scenic.diffuse_irradiance_sh[i].rgb*basis[i];
+    return max(irradiance,vec3(0));
 }
 float scenic_sun_visibility(vec3 p, vec3 n) {
     vec4 clip = scenic.shadow_view_projection * vec4(p,1.0);

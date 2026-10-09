@@ -13,6 +13,7 @@
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_presentation.h"
 #include "fluid_25d_rain_study.h"
+#include "fluid_25d_scenic_environment.h"
 #include "fluid_25d_scenic_material.h"
 
 #include <cubey/asset/file_digest.h>
@@ -6900,6 +6901,30 @@ void test_scenic_material_contract() {
     const auto refined = fluid_25d_scenic_material("refined");
     const auto terrain = fluid_25d_scenic_material("terrain");
     const auto macro = fluid_25d_scenic_material("macro");
+    const auto fixed_daylight = fluid_25d_fixed_daylight();
+    require(glm::length(cubey::render::atmosphere_environment_sun_direction(fixed_daylight) -
+                        glm::normalize(cubey::math::Vec3{-0.35F, 0.42F, 0.84F})) < 1e-6F &&
+                !fixed_daylight.reference_geometry_enabled && !fixed_daylight.render_night_sky &&
+                !fixed_daylight.moon.enabled && macro.daylight_environment == 0.0F,
+            "opt-in shared fixed daylight matches Scenic's retained sun convention");
+    for (const auto* material : {&v1, &refined, &terrain, &macro})
+        require(material->water_wet_normal == 0.0F && material->water_ripple_strength == 0.0F &&
+                    material->daylight_environment == 0.0F,
+                "rendering-study normal controls leave every retained preset unchanged");
+    const auto detail = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":1,"water_ripple_strength":0.12,"water_ripple_scale_m":48})",
+        macro);
+    require(detail.water_wet_normal == 1.0F && detail.water_ripple_strength == 0.12F &&
+                fluid_25d_scenic_material_json(
+                    fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(detail), v1)) ==
+                    fluid_25d_scenic_material_json(detail),
+            "water rendering-only tuning is bounded and roundtrips exactly");
+    for (const auto* text :
+         {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":2})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_strength":0.31})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_scale_m":0})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
+                       "water rendering-only controls reject invalid bounds");
     require(fluid_25d_scenic_water_view("shaded") == 0U &&
                 fluid_25d_scenic_water_view("coverage") == 9U,
             "water component diagnostic slots remain stable");
@@ -6911,6 +6936,8 @@ void test_scenic_material_contract() {
                    "unknown water components fail closed");
     for (const auto* text :
          {R"({"schema":"cubey.fluid25d.scenic-material.v2","film_begin_m":0.05,"film_end_m":0.05})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_environment":2})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_environment":0.5})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","film_begin_m":0.13})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","film_roughness":0.81})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","film_ground_mix":1.1})"})

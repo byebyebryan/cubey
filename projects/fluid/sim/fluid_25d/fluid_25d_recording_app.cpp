@@ -12,8 +12,10 @@
 #include "fluid_25d_project_config.h"
 #include "fluid_25d_recording.h"
 #include "fluid_25d_scenic.h"
+#include "fluid_25d_scenic_environment.h"
 #include "fluid_25d_terrain_surface.h"
 
+#include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
@@ -878,6 +880,35 @@ class RecordingApp {
                                      terrain_surface_ ? &*terrain_surface_ : nullptr) &&
             external_session_)
             external_refresh_after_render_setup_ = true;
+        if (scenic_material_.daylight_environment > 0.5F &&
+            !daylight_runtime_.resources_created()) {
+            const auto setup_started = std::chrono::steady_clock::now();
+            // Fixed daytime spike reuses Water3D's shared runtime. No clouds,
+            // time-of-day controls or atlas generation are introduced here.
+            daylight_atlases_.emplace(
+                render::create_atmosphere_background_placeholder_textures(device, *scenic_gpu_));
+            daylight_runtime_.create_resources(
+                device, {.reflection_extent = 64U,
+                         .reflection_mip_levels = 5U,
+                         .frame_slot_count = scenic_slots_,
+                         .atmosphere_textures = daylight_atlases_->bindings()});
+            const std::filesystem::path shaders{CUBEY_FLUID_25D_SHADER_DIR};
+            daylight_runtime_.create_pipelines(
+                device, {.atmosphere_vertex_shader = shaders / "atmosphere.vert.spv",
+                         .atmosphere_fragment_shader = shaders / "atmosphere.frag.spv",
+                         .reflection_prefilter_vertex_shader = shaders / "atmosphere.vert.spv",
+                         .reflection_prefilter_fragment_shader =
+                             shaders / "atmosphere_reflection_prefilter.frag.spv"});
+            daylight_runtime_.set_environment(fluid_25d_fixed_daylight());
+            const auto setup_ms = std::chrono::duration<double, std::milli>(
+                                      std::chrono::steady_clock::now() - setup_started)
+                                      .count();
+            std::printf("fluid_25d_scenic_environment: shared fixed daylight setup_wall_ms=%.6f; "
+                        "probe captured once; no clouds or ongoing updates\n",
+                        setup_ms);
+            if (external_session_)
+                external_refresh_after_render_setup_ = true;
+        }
     }
 
     void create_render_resources(vulkan::Device& device, render::ColorTargetView target) {
@@ -1082,6 +1113,14 @@ class RecordingApp {
             native_profile_scenic_[slot.index] = scenic_active;
         if (scenic_active) {
             ensure_scenic_resources(device, target);
+            std::optional<Fluid25DScenicEnvironment> environment;
+            if (scenic_material_.daylight_environment > 0.5F) {
+                // Fixed sky: capture once, no ongoing updates or transitions.
+                daylight_runtime_.record_pending_update(vulkan::CommandRecorder(commands), slot);
+                environment.emplace(Fluid25DScenicEnvironment{
+                    daylight_runtime_.pbr_environment_bindings(scenic_.fallback_environment()),
+                    daylight_runtime_.lighting(), 0.4F});
+            }
             scenic_.record(device, commands, graph_, slot, target, target_mode, resources_,
                            simulation_, camera(target.extent, frame_index), displayed_render,
                            scenic_clock_s_, scenic_material_,
@@ -1089,7 +1128,8 @@ class RecordingApp {
                            profile != nullptr, scenic_flow_reset_,
                            fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view),
                            fluid_25d_scenic_water_view(config_.native_scenic_water_view),
-                           fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode));
+                           fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode),
+                           environment ? &*environment : nullptr);
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1237,6 +1277,8 @@ class RecordingApp {
         }
         graph_.clear();
         scenic_.destroy();
+        daylight_runtime_.destroy();
+        daylight_atlases_.reset();
         native_profiler_.reset();
         coverage_profiler_.reset();
         markers_.destroy();
@@ -1349,8 +1391,9 @@ class RecordingApp {
             int surface_mode =
                 int(fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode));
             ImGui::BeginDisabled(!terrain_surface_);
-            if (ImGui::Combo("Terrain organization", &surface_mode,
-                             "Legacy\0Landform masks\0Climate + landform\0Source-aligned masks (study)\0")) {
+            if (ImGui::Combo(
+                    "Terrain organization", &surface_mode,
+                    "Legacy\0Landform masks\0Climate + landform\0Source-aligned masks (study)\0")) {
                 constexpr std::array names{"legacy", "landform", "climate", "correlated"};
                 config_.native_scenic_surface_mode = names[std::size_t(surface_mode)];
                 report_scenic_material();
@@ -1384,6 +1427,24 @@ class RecordingApp {
                 ImGui::SliderFloat("Wet roughness", &scenic_material_.wet_roughness, 0.2F, 1.0F);
             edited |=
                 ImGui::SliderFloat("Water clarity", &scenic_material_.water_clarity, 0.0F, 1.0F);
+            if (ImGui::TreeNode("Water rendering study (opt-in)")) {
+                edited |= ImGui::SliderFloat("Wet-only water normals",
+                                             &scenic_material_.water_wet_normal, 0.0F, 1.0F);
+                edited |= ImGui::SliderFloat("Wind ripple slope",
+                                             &scenic_material_.water_ripple_strength, 0.0F, 0.3F);
+                if (scenic_material_.water_ripple_strength > 0.0F)
+                    edited |=
+                        ImGui::SliderFloat("Ripple wavelength (m)",
+                                           &scenic_material_.water_ripple_scale_m, 8.0F, 128.0F);
+                ImGui::TextWrapped(
+                    "Wind ripples are decorative normal detail, not simulated water motion.");
+                bool shared_daylight = scenic_material_.daylight_environment > 0.5F;
+                if (ImGui::Checkbox("Shared fixed daylight", &shared_daylight)) {
+                    scenic_material_.daylight_environment = shared_daylight ? 1.0F : 0.0F;
+                    edited = true;
+                }
+                ImGui::TreePop();
+            }
             edited |=
                 ImGui::SliderFloat("Film roughness", &scenic_material_.film_roughness, 0.2F, 0.8F);
             edited |= ImGui::SliderFloat("Film ground emphasis", &scenic_material_.film_ground_mix,
@@ -2261,6 +2322,8 @@ class RecordingApp {
     Fluid25DScenic scenic_;
     std::optional<Fluid25DTerrainSurface> terrain_surface_;
     Fluid25DScenicMaterial scenic_material_;
+    AtmosphereEnvironmentRuntime daylight_runtime_;
+    std::optional<render::AtmosphereBackgroundAtlasResources> daylight_atlases_;
     bool scenic_material_edited_ = false;
     vulkan::GpuRuntime* scenic_gpu_ = nullptr;
     std::uint32_t scenic_slots_ = 0U;

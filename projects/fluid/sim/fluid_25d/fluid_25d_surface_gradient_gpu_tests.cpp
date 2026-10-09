@@ -8,6 +8,7 @@
 #include <cubey/vulkan/instance.h>
 #include <cubey/vulkan/submission_coordinator.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
@@ -60,7 +61,7 @@ void run() {
                                             .require_present = false,
                                             .require_dynamic_rendering = false});
     cubey::vulkan::SubmissionCoordinator submission(device);
-    constexpr auto bytes = sizeof(Vec4) * 80U;
+    constexpr auto bytes = sizeof(Vec4) * 102U;
     cubey::vulkan::Buffer storage(
         device, cubey::vulkan::device_local_buffer_config(
                     bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
@@ -100,7 +101,7 @@ void run() {
     const VkBufferCopy copy{.srcOffset = 0, .dstOffset = 0, .size = bytes};
     vkCmdCopyBuffer(commands.command_buffer(), storage.handle(), readback.handle(), 1, &copy);
     commands.submit_and_wait();
-    std::array<Vec4, 80> values{};
+    std::array<Vec4, 102> values{};
     readback.download(values.data(), bytes);
     for (unsigned mode = 0; mode < 5; ++mode) {
         for (std::size_t i = 0; i < normals.size(); ++i) {
@@ -116,7 +117,35 @@ void run() {
     if (glm::length(Vec3{values[8]} - Vec3{values[9]}) > 0.0001F ||
         glm::length(Vec3{values[10]} - Vec3{values[11]}) > 0.0001F)
         throw std::runtime_error("GPU projection-seam continuity failed");
-    std::cout << "PASS: 80 GPU analytic normal/orientation/identity/seam/bound controls\n";
+    for (std::size_t i = 80U; i < 86U; ++i) {
+        const auto target = i >= 82U && i <= 84U ? glm::normalize(Vec3{-0.4F, 1.0F, -0.6F})
+                                                 : Vec3{0.0F, 1.0F, 0.0F};
+        if (glm::length(Vec3{values[i]} - target) > 0.00005F)
+            throw std::runtime_error("wet-only water surface normal control failed");
+    }
+    // Independent CPU analytic slopes and removed-band variance, including
+    // zero strength, all subpixel, and the shader's decorative clock wrap.
+    const std::array<Vec3, 3> bands{
+        {{0.8F, 0.6F, 1.0F}, {0.96F, 0.28F, 0.47F}, {0.6F, 0.8F, 0.22F}}};
+    const std::array amplitudes{1.0F, 0.5F, 0.25F};
+    for (unsigned i = 0; i < 16U; ++i) {
+        Vec3 target{0.0F};
+        const float strength = i % 8U < 4U ? 0.12F : 0.0F;
+        const float footprint = static_cast<float>(i % 4U) * 16.0F;
+        for (std::size_t band = 0; band < bands.size(); ++band) {
+            const float wavelength = 48.0F * bands[band].z;
+            const float t =
+                std::clamp((footprint - wavelength * 0.125F) / (wavelength * 0.375F), 0.0F, 1.0F);
+            const float resolved = 1.0F - t * t * (3.0F - 2.0F * t);
+            const float amplitude = strength * amplitudes[band];
+            target.x += bands[band].x * amplitude * resolved;
+            target.y += bands[band].y * amplitude * resolved;
+            target.z += 0.5F * amplitude * amplitude * (1.0F - resolved * resolved);
+        }
+        if (glm::length(Vec3{values[86U + i]} - target) > 0.00005F)
+            throw std::runtime_error("ripple identity/filter/variance/clock-wrap control failed");
+    }
+    std::cout << "PASS: 80 terrain gradient + 22 wet-normal/ripple GPU analytic controls\n";
 }
 } // namespace
 

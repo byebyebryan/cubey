@@ -157,6 +157,7 @@ void main() {
         irradiance = mix(irradiance,terrain_soft_irradiance(base_normal),scenic.art_direction.w);
     if (scenic.terrain_macro.x>0.0)
         irradiance = mix(irradiance,texture(terrain_diffuse_irradiance,base_normal).rgb,scenic.terrain_macro.x);
+    if (scenic.environment_mode.x>0.5) irradiance = scenic_irradiance_at(ambient_normal);
     vec3 ambient = terrain_lighting_ambient(base,irradiance,
                                               terrain_lighting_ambient_visibility(world_normal,0.0));
     vec3 color = direct*scenic.surface_material.x+ambient*scenic.ground_material.w;

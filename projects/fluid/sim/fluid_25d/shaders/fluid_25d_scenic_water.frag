@@ -5,6 +5,9 @@
 #include "fluid_25d_scenic.glsl"
 #include "fluid_25d_surface_sampling.glsl"
 #include "fluid_25d_water_film.glsl"
+#include "fluid_25d_surface_gradient.glsl"
+#include "fluid_25d_water_detail.glsl"
+layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
 layout(set=1,binding=9,std430) readonly buffer VisualVelocity { vec4 values[]; } visual_velocity;
 layout(set=0,binding=8,std430) readonly buffer DisplayCoverage { vec4 grid; float values[]; } display_coverage;
@@ -33,6 +36,23 @@ vec2 flow_detail(vec2 p, vec2 flow, float clock) {
     vec2 b = texture(scenic_detail,p/96.0-offset*phase1).rg*2.0-1.0;
     return (a*weight0+b*weight1)/max(weight0+weight1,0.00001);
 }
+vec3 wet_normal(uint index) {
+    uvec2 extent = uvec2(params.grid_cell.xy);
+    uvec2 c = uvec2(index%extent.x,index/extent.x);
+    uvec4 adjacent = uvec4(c.x>0u ? index-1u : index,
+                          c.x+1u<extent.x ? index+1u : index,
+                          c.y>0u ? index-extent.x : index,
+                          c.y+1u<extent.y ? index+extent.x : index);
+    vec4 dh = vec4(depth.values[adjacent.x],depth.values[adjacent.y],
+                   depth.values[adjacent.z],depth.values[adjacent.w]);
+    vec4 eta = vec4(terrain.values[adjacent.x],terrain.values[adjacent.y],
+                    terrain.values[adjacent.z],terrain.values[adjacent.w])+dh;
+    bvec4 supported = greaterThan(dh,vec4(params.camera_wet.w));
+    supported = bvec4(supported.x && c.x>0u,supported.y && c.x+1u<extent.x,
+                      supported.z && c.y>0u,supported.w && c.y+1u<extent.y);
+    return fluid25d_wet_surface_normal(terrain.values[index]+depth.values[index],
+                                       eta,supported,params.grid_cell.z,params.grid_cell.w);
+}
 void main() {
     uint options = uint(params.terrain_palette.w);
     float h = triangle_water_depth;
@@ -45,6 +65,16 @@ void main() {
     uint water_view = uint(scenic.water_view.x);
     float film_weight = fluid25d_film_weight(h,scenic.water_film.x,scenic.water_film.y);
     vec3 n = normalize(world_normal);
+    if (scenic.water_view.y>0.0) {
+        vec4 weights = vec4((1.0-f.x)*(1.0-f.y),f.x*(1.0-f.y),
+                             (1.0-f.x)*f.y,f.x*f.y)*
+                       vec4(greaterThan(depths,vec4(params.camera_wet.w)));
+        if (dot(weights,vec4(1.0))>1e-6) {
+            vec3 wet_n = normalize(wet_normal(i.x)*weights.x+wet_normal(i.y)*weights.y+
+                                   wet_normal(i.z)*weights.z+wet_normal(i.w)*weights.w);
+            n = normalize(mix(n,wet_n,scenic.water_view.y));
+        }
+    }
     vec3 view = normalize(params.camera_wet.xyz-world_position);
     vec2 visual_u = vec2(fluid25d_bilinear_sample(vec4(visual_velocity.values[i.x].x,
         visual_velocity.values[i.y].x,visual_velocity.values[i.z].x,visual_velocity.values[i.w].x),f),
@@ -57,11 +87,36 @@ void main() {
     if (water_view==7u) detail_strength=0.0;
     vec2 detail = flow_detail(world_position.xz,flow,scenic.clock_encoding.x)*detail_strength;
     n = normalize(n+vec3(detail.x,0.0,detail.y));
+    float lost_variance = 0.0;
+    vec2 ripple_dx=dFdx(world_position.xz),ripple_dy=dFdy(world_position.xz);
+    if (scenic.water_view.z>0.0 && water_view!=7u) {
+        float ripple_strength = scenic.water_view.z*scenic.surface_material.w*
+                                smoothstep(scenic.water_film.x,scenic.water_film.y,h);
+        // Skip dry/shallow zero-amplitude work. Explicit gradients keep texture
+        // filtering defined across this depth-dependent branch.
+        if (ripple_strength>0.0) {
+            // Ocean-inspired domain decorrelation, using the existing filtered
+            // procedural texture at broad, differently rotated/scaled domains.
+            vec2 p = world_position.xz;
+            vec3 dephase = vec3(textureGrad(scenic_detail,p/512.0,ripple_dx/512.0,ripple_dy/512.0).b,
+                textureGrad(scenic_detail,vec2(p.y,-p.x)/683.0+vec2(0.17,0.41),
+                            vec2(ripple_dx.y,-ripple_dx.x)/683.0,vec2(ripple_dy.y,-ripple_dy.x)/683.0).b,
+                textureGrad(scenic_detail,p/937.0+vec2(0.73,0.29),ripple_dx/937.0,ripple_dy/937.0).b)*2.0;
+            vec3 ripple = fluid25d_ripple_detail(p,scenic.clock_encoding.x,
+                             max(length(ripple_dx),length(ripple_dy)),
+                             scenic.water_view.w,ripple_strength,dephase);
+            vec3 gradient = vec3(ripple.x,0.0,ripple.y);
+            gradient -= dot(n,gradient)*n;
+            n = fluid25d_resolve_surface_normal(n,gradient,1.0);
+            lost_variance = ripple.z;
+        }
+    }
     vec3 nx = dFdx(n), ny = dFdy(n);
     // Ocean's normal-variance roughness principle: unresolved detail broadens
     // reflection instead of turning into bright crawling pixels.
     float base_roughness = scenic.surface_material.z;
     float roughness = sqrt(clamp(base_roughness*base_roughness+min(0.18,0.5*max(dot(nx,nx),dot(ny,ny))),base_roughness*base_roughness,0.36));
+    if (lost_variance>0.0) roughness = sqrt(min(0.36,roughness*roughness+lost_variance));
     // The retained V5 wet-ground treatment: only shallow RGB shading changes.
     if (film_weight>0.0)
         roughness=mix(roughness,max(roughness,scenic.water_film.z),film_weight);
@@ -102,7 +157,7 @@ void main() {
     if (scenic.water_optics.w>0.0) {
         // Artistic single-layer source lighting, not a new volume integrator.
         // Current-field water in shadow should not share an unlit turquoise source.
-        vec3 source_light = texture(scenic_irradiance,n).rgb+
+        vec3 source_light = scenic_irradiance_at(n)+
             scenic.light_color_mips.xyz*max(dot(n,scenic.light_direction_exposure.xyz),0.0)*
             scenic_sun_visibility(world_position,n)/CUBEY_PBR_PI;
         scattering *= mix(vec3(1.0),source_light,scenic.water_optics.w);

@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 #include "fluid_25d_surface_gradient.glsl"
+#include "fluid_25d_water_detail.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) writeonly buffer Result { vec4 values[]; } result;
 const vec3 normals[16] = vec3[16](
@@ -25,5 +26,21 @@ void main() {
             strength *= fluid25d_detail_fade(mode==3 ? 72.0 : 18.0);
             result.values[mode*16+i] = vec4(fluid25d_resolve_surface_normal(n,gradient,strength),dot(n,gradient));
         }
+    }
+    result.values[80] = vec4(fluid25d_wet_surface_normal(10.0,vec4(10),bvec4(true),2.0,0.4),0);
+    result.values[81] = vec4(fluid25d_wet_surface_normal(10.0,vec4(300,10,10,300),
+                                            bvec4(false,true,true,false),2.0,0.4),0);
+    result.values[82] = vec4(fluid25d_wet_surface_normal(10.0,vec4(8,12,7,13),
+                                            bvec4(true),2.0,0.4),0);
+    result.values[83] = vec4(fluid25d_wet_surface_normal(10.0,vec4(8,400,7,400),
+                                            bvec4(true,false,true,false),2.0,0.4),0);
+    result.values[84] = vec4(fluid25d_wet_surface_normal(10.0,vec4(400,12,7,400),
+                                            bvec4(false,true,true,false),2.0,0.4),0);
+    result.values[85] = vec4(fluid25d_wet_surface_normal(10.0,vec4(400),bvec4(false),2.0,0.4),0);
+    for (uint i=0; i<16; ++i) {
+        float footprint = float(i%4)*16.0;
+        float clock = i<8 ? 0.0 : 1024.0;
+        float strength = i%8<4 ? 0.12 : 0.0;
+        result.values[86+i] = vec4(fluid25d_ripple_detail(vec2(0),clock,footprint,48.0,strength,vec3(0)),0);
     }
 }

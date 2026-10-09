@@ -51,6 +51,31 @@ ground, clearer shallow streams and light-responsive pool color. This does not
 enlarge the wet area or smooth the bank mesh; Readable/raw maps remain the depth
 reference.
 
+The water-rendering reuse study adds bounded controls inside **Scenic materials
+→ Water rendering study (opt-in)**, or in the existing material-v2 tuning JSON:
+`water_wet_normal` (0–1), `water_ripple_strength` (0–0.3 slope),
+`water_ripple_scale_m` (8–128 m), and `daylight_environment` (exactly 0 or 1).
+All retained presets leave these off. Wet-only normal support ignores high dry
+bank samples; wind detail is normal-only and fades from resolved waves to
+roughness, independently of flow speed. It does not change surface height,
+coverage, storage, velocity, or the accepted shallow-film treatment.
+
+Fixed daylight reuses Water3D's shared `AtmosphereEnvironmentRuntime`, owned by
+the native frontend. The Scenic consumer receives reflection bindings, matched
+sun/exposure and diffuse SH; no clouds or time-of-day animation are added.
+Existing generated lighting remains the fallback. Pause freezes decorative
+detail; restart/seek reset it. This path is available to the common native
+recording/stream/service frontend, but validation here uses immutable recordings,
+not a new live numerical acceptance run.
+
+See the [water reuse results](../../../outputs/fluid/water-rendering-reuse-v1-20261008-6s1idD/index.html)
+for independent ablations, macro/lower/reverse views, motion and GPU timings.
+The published-reference SSR spike was tested and **removed from the renderer**:
+almost no contribution at normal cameras, patchy low-angle bank hits. Its source
+and captures remain in that output leaf. No extra reflection pass, water preset,
+or solver dependency is retained. Human visual acceptance of the cheaper candidate
+is still pending; cell-scale bank geometry is not fixed by normal detail.
+
 The opt-in [climate-informed surface study](../../../docs/notes/fluid25d-climate-surface-v1.md)
 reuses Terrain Diffusion's climate companion and the Terrain project's existing
 landform classifier to organize procedural bare-ground materials. It improves

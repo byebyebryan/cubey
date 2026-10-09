@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <limits>
 #include <stdexcept>
@@ -29,9 +30,16 @@ struct Uniforms {
     math::Vec4 terrain_macro;
     math::Vec4 water_film, water_view;
     math::Vec4 terrain_surface;
+    math::Vec4 environment_mode;
+    std::array<math::Vec4, 9> diffuse_irradiance_sh;
 };
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 304U);
+static_assert(sizeof(Uniforms) == 464U);
+static_assert(offsetof(Uniforms, terrain_macro) == 240U);
+static_assert(offsetof(Uniforms, water_view) == 272U);
+static_assert(offsetof(Uniforms, terrain_surface) == 288U);
+static_assert(offsetof(Uniforms, environment_mode) == 304U);
+static_assert(offsetof(Uniforms, diffuse_irradiance_sh) == 320U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -233,8 +241,8 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
         s.climate_surface.emplace(
             upload_surface(device, gpu, surface->width, surface->height, surface->climate));
         if (!surface->correlated.empty())
-            s.correlated_surface.emplace(upload_surface(device, gpu, surface->width,
-                                                       surface->height, surface->correlated));
+            s.correlated_surface.emplace(
+                upload_surface(device, gpu, surface->width, surface->height, surface->correlated));
         diffuse_created = true;
     }
     if (integrated_terrain_diffuse && !s.terrain_diffuse) {
@@ -348,6 +356,11 @@ void Fluid25DScenic::destroy_swapchain_resources() {
 void Fluid25DScenic::destroy() {
     state_.reset();
 }
+const render::GeneratedPbrEnvironment& Fluid25DScenic::fallback_environment() const {
+    if (!state_ || !state_->environment)
+        throw std::runtime_error("Scenic fallback environment is not initialized");
+    return *state_->environment;
+}
 std::vector<vulkan::GpuPassTiming> Fluid25DScenic::collect_timings(std::uint32_t slot) {
     if (!state_)
         return {};
@@ -363,15 +376,17 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                             Fluid25DCatchmentRenderOptions options, double visual_clock_s,
                             const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
                             float marker_fraction, bool profile, bool reset_visual_flow,
-                            unsigned terrain_view, unsigned water_view, unsigned surface_mode) {
+                            unsigned terrain_view, unsigned water_view, unsigned surface_mode,
+                            const Fluid25DScenicEnvironment* environment) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
         profiler->begin_frame(commands, slot.index);
     const bool bspline = options.native_bspline_surface;
     const bool legacy_terrain =
-        surface_mode == 0U && terrain_view == 0U && material.terrain_material_blend == 0.0F &&
-        material.terrain_normal_strength < 0.0F && material.terrain_ambient_softening == 0.0F &&
+        !environment && surface_mode == 0U && terrain_view == 0U &&
+        material.terrain_material_blend == 0.0F && material.terrain_normal_strength < 0.0F &&
+        material.terrain_ambient_softening == 0.0F &&
         material.terrain_diffuse_convolution == 0.0F && material.terrain_specular_scale == 1.0F &&
         material.terrain_shadow_scale == 1.0F && material.terrain_slope_color_scale == 1.0F;
     const auto subdivision = bspline ? options.native_surface_subdivision : 1U;
@@ -384,7 +399,18 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
         std::max(s.domain_m, (s.terrain_high - s.terrain_low) * height_scale);
     const math::Vec3 shadow_center{0.0F, 0.5F * (s.terrain_low + s.terrain_high) * height_scale,
                                    0.0F};
-    const auto direction = glm::normalize(math::Vec3{-0.35F, 0.42F, 0.84F});
+    const auto env = environment ? environment->textures
+                                 : render::pbr_environment_texture_bindings(*s.environment);
+    const auto direction = environment
+                               ? glm::normalize(environment->lighting.primary_light_direction)
+                               : glm::normalize(math::Vec3{-0.35F, 0.42F, 0.84F});
+    const auto sun = environment ? environment->lighting.primary_light_color *
+                                       environment->lighting.primary_light_intensity
+                                 : math::Vec3{2.6F, 2.4F, 2.1F};
+    std::array<math::Vec4, 9> diffuse_sh{};
+    if (environment)
+        for (std::size_t i = 0; i < diffuse_sh.size(); ++i)
+            diffuse_sh[i] = {environment->lighting.diffuse_irradiance_sh[i], 0.0F};
     s.shadow_matrix = math::orthographic(-shadow_domain, shadow_domain, -shadow_domain,
                                          shadow_domain, 1.0F, shadow_domain * 6.0F) *
                       glm::lookAt(shadow_center + direction * shadow_domain * 3.0F, shadow_center,
@@ -404,8 +430,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
         slot,
         {glm::inverse(camera.view_projection),
          s.shadow_matrix,
-         {glm::normalize(math::Vec3{-0.35F, 0.42F, 0.84F}), 0.4F},
-         {2.6F, 2.4F, 2.1F, float(s.environment->prefiltered_mip_levels)},
+         {direction, environment ? environment->exposure : 0.4F},
+         {sun, float(env.prefiltered_mip_levels)},
          {float(std::fmod(visual_clock_s, 1024.0)), srgb_attachment(target.format) ? 0.0F : 1.0F,
           float(target.extent.width), float(target.extent.height)},
          {material.wet_roughness, material.wet_darkening, material.terrain_saturation,
@@ -420,8 +446,11 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
           material.terrain_shadow_scale, material.terrain_slope_color_scale},
          {material.film_begin_m, material.film_end_m, material.film_roughness,
           material.film_ground_mix},
-         {float(water_view), 0.0F, 0.0F, 0.0F},
-         {float(surface_mode), float(config.grid_width), float(config.grid_height), 0.0F}});
+         {float(water_view), material.water_wet_normal, material.water_ripple_strength,
+          material.water_ripple_scale_m},
+         {float(surface_mode), float(config.grid_width), float(config.grid_height), 0.0F},
+         {environment ? 1.0F : 0.0F, 0.0F, 0.0F, 0.0F},
+         diffuse_sh});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -594,7 +623,6 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
          .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording},
         compiled, [&](const render::RenderGraphResourceSet& images) {
             render::MaterialDescriptorWriter writer(set);
-            const auto env = render::pbr_environment_texture_bindings(*s.environment);
             writer.combined_image_sampler(1U, env.prefiltered_sampler, env.prefiltered_view)
                 .combined_image_sampler(2U, env.irradiance_sampler, env.irradiance_view)
                 .combined_image_sampler(3U, env.brdf_lut_sampler, env.brdf_lut_view)
