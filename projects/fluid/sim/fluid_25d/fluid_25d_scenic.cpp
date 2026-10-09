@@ -31,15 +31,18 @@ struct Uniforms {
     math::Vec4 water_film, water_view;
     math::Vec4 terrain_surface;
     math::Vec4 environment_mode;
-    std::array<math::Vec4, 9> diffuse_irradiance_sh;
 };
+struct DaylightPush {
+    math::Vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
+    math::Vec4 sun_direction_radius, atmosphere_options;
+};
+static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 464U);
+static_assert(sizeof(Uniforms) == 320U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
 static_assert(offsetof(Uniforms, environment_mode) == 304U);
-static_assert(offsetof(Uniforms, diffuse_irradiance_sh) == 320U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -64,6 +67,9 @@ render::MaterialPassInfo frame_material() {
         bindings.push_back({.binding = i,
                             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
+    bindings.push_back({.binding = 14U,
+                        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
     return result;
 }
 render::MaterialPassInfo mesh_pass(bool water = false) {
@@ -157,6 +163,10 @@ struct Fluid25DScenic::State {
     std::optional<render::ComputePipelineResource> visual_flow_pipeline;
     double previous_clock_s = 0.0;
     bool flow_initialized = false;
+    std::optional<vulkan::Buffer> captured_daylight;
+    std::optional<vulkan::DescriptorSetBundle> daylight_set;
+    std::optional<render::ComputePipelineResource> daylight_pipeline;
+    bool daylight_initialized = false;
     std::optional<render::GraphicsPipelineResource> terrain, terrain_bspline, water, water_bspline;
     std::optional<render::GraphicsPipelineResource> terrain_legacy, terrain_bspline_legacy;
     std::optional<render::GraphicsPipelineResource> shadow, shadow_bspline, sky, copy, display;
@@ -174,7 +184,8 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                                       const Fluid25DScenarioData& scenario,
                                       const Fluid25DGpuResources& fields,
                                       bool integrated_terrain_diffuse,
-                                      const Fluid25DTerrainSurface* surface) {
+                                      const Fluid25DTerrainSurface* surface,
+                                      bool captured_daylight) {
     bool diffuse_created = false;
     if (!state_) {
         state_ = std::make_unique<State>();
@@ -235,6 +246,27 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                      config.cell_size_m;
     }
     auto& s = *state_;
+    if (captured_daylight && !s.captured_daylight) {
+        s.captured_daylight.emplace(
+            device, vulkan::device_local_buffer_config(sizeof(math::Vec4) * 10U,
+                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        const std::array<vulkan::DescriptorSetBindingConfig, 2> bindings{
+            {{.binding = 0U,
+              .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+             {.binding = 1U,
+              .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+              .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT}}};
+        s.daylight_set.emplace(device, vulkan::DescriptorSetInfo(bindings));
+        const std::array<VkPushConstantRange, 1> push{{{.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+                                                        .offset = 0U,
+                                                        .size = sizeof(DaylightPush)}}};
+        render::emplace_single_set_compute_pipeline_resource(
+            s.daylight_pipeline, device,
+            render::compute_shader_file(shader("fluid_25d_daylight.comp.spv")),
+            s.daylight_set->layout(), push);
+        diffuse_created = true;
+    }
     if (surface && !s.landform_surface) {
         s.landform_surface.emplace(
             upload_surface(device, gpu, surface->width, surface->height, surface->landform));
@@ -382,6 +414,54 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
         profiler->begin_frame(commands, slot.index);
+    if (environment && !s.daylight_initialized) {
+        if (!s.captured_daylight || !s.daylight_pipeline ||
+            environment->sky_radiance_sampler == VK_NULL_HANDLE ||
+            environment->sky_radiance_view == VK_NULL_HANDLE)
+            throw std::runtime_error("Scenic captured daylight resources are not initialized");
+        render::MaterialDescriptorWriter writer(s.daylight_set->set());
+        writer
+            .combined_image_sampler(0U, environment->sky_radiance_sampler,
+                                    environment->sky_radiance_view)
+            .storage_buffer(1U, s.captured_daylight->handle(), s.captured_daylight->size())
+            .update(device);
+        const auto& a = environment->atmosphere_frame;
+        const DaylightPush push{
+            a.camera_position_radius, a.radii_ground,      a.rayleigh, a.mie, a.ozone,
+            a.sun_direction_radius,   a.atmosphere_options};
+        const vulkan::CommandRecorder recorder(commands);
+        // The probe's final layout is shader-read, but its built-in visibility
+        // barrier targets fragment sampling. This one-time consumer is compute.
+        const VkMemoryBarrier sky_ready{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+                                        .pNext = nullptr,
+                                        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT};
+        recorder.pipeline_barrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0U, {&sky_ready, 1U}, {},
+                                  {});
+        recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, s.daylight_pipeline->pipeline());
+        recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, s.daylight_pipeline->layout(),
+                                     0U, s.daylight_set->set());
+        recorder.push_constants(s.daylight_pipeline->layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0U,
+                                push);
+        recorder.dispatch(1U, 1U, 1U);
+        const VkBufferMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+                                            .pNext = nullptr,
+                                            .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+                                            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+                                            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                            .buffer = s.captured_daylight->handle(),
+                                            .offset = 0U,
+                                            .size = s.captured_daylight->size()};
+        recorder.pipeline_barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0U, {}, {&barrier, 1U},
+                                  {});
+        s.daylight_initialized = true;
+        std::printf("fluid_25d_scenic_daylight: captured sky SH E/pi + atmosphere sun; "
+                    "2048 sphere samples; once; no CPU readback\n");
+        std::fflush(stdout);
+    }
     const bool bspline = options.native_bspline_surface;
     const bool legacy_terrain =
         !environment && surface_mode == 0U && terrain_view == 0U &&
@@ -407,10 +487,6 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
     const auto sun = environment ? environment->lighting.primary_light_color *
                                        environment->lighting.primary_light_intensity
                                  : math::Vec3{2.6F, 2.4F, 2.1F};
-    std::array<math::Vec4, 9> diffuse_sh{};
-    if (environment)
-        for (std::size_t i = 0; i < diffuse_sh.size(); ++i)
-            diffuse_sh[i] = {environment->lighting.diffuse_irradiance_sh[i], 0.0F};
     s.shadow_matrix = math::orthographic(-shadow_domain, shadow_domain, -shadow_domain,
                                          shadow_domain, 1.0F, shadow_domain * 6.0F) *
                       glm::lookAt(shadow_center + direction * shadow_domain * 3.0F, shadow_center,
@@ -449,8 +525,7 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
          {float(water_view), material.water_wet_normal, material.water_ripple_strength,
           material.water_ripple_scale_m},
          {float(surface_mode), float(config.grid_width), float(config.grid_height), 0.0F},
-         {environment ? 1.0F : 0.0F, 0.0F, 0.0F, 0.0F},
-         diffuse_sh});
+         {environment ? 1.0F : 0.0F, material.daylight_sun_scale, 0.0F, 0.0F}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -628,6 +703,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                 .combined_image_sampler(3U, env.brdf_lut_sampler, env.brdf_lut_view)
                 .combined_image_sampler(4U, s.detail->sampler().handle(), s.detail->view());
             writer.storage_buffer(9U, s.visual_flow->handle(), s.visual_flow->size());
+            const auto& daylight = s.captured_daylight ? *s.captured_daylight : *s.visual_flow;
+            writer.storage_buffer(14U, daylight.handle(), daylight.size());
             writer.combined_image_sampler(
                 10U,
                 s.terrain_diffuse ? s.terrain_diffuse->sampler().handle() : env.irradiance_sampler,

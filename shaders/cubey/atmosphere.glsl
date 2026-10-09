@@ -2,6 +2,8 @@
 #define CUBEY_ATMOSPHERE_GLSL
 
 const float CUBEY_ATMOSPHERE_PI = 3.14159265359;
+// Shared renderer-unit solar source, not calibrated lux or disk luminance.
+const float CUBEY_ATMOSPHERE_SUN_INTENSITY = 22.0;
 const int CUBEY_ATMOSPHERE_VIEW_SAMPLE_COUNT = 16;
 const int CUBEY_ATMOSPHERE_LIGHT_SAMPLE_COUNT = 8;
 const int CUBEY_ATMOSPHERE_VIEW_FINAL = 0;

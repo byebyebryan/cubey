@@ -1,0 +1,37 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "cubey/atmosphere.glsl"
+#include "fluid_25d_daylight.glsl"
+layout(local_size_x=10) in;
+layout(set=0,binding=0) uniform samplerCube sky_radiance;
+layout(set=0,binding=1,std430) writeonly buffer Daylight { vec4 coefficients[10]; } daylight;
+layout(push_constant) uniform Medium {
+    vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
+    vec4 sun_direction_radius, atmosphere_options;
+} medium;
+void main() {
+    int index=int(gl_LocalInvocationID.x);
+    if (index==9) {
+        CubeyAtmosphereMedium m = CubeyAtmosphereMedium(vec3(0), medium.radii_ground.x,
+            medium.radii_ground.y,medium.rayleigh.xyz,medium.rayleigh.w,
+            medium.mie.x,medium.mie.y,medium.mie.z,medium.mie.w,
+            medium.ozone.xyz,medium.ozone.w,medium.atmosphere_options.x,
+            normalize(medium.sun_direction_radius.xyz),medium.sun_direction_radius.w,
+            vec3(CUBEY_ATMOSPHERE_SUN_INTENSITY),0.022);
+        // Same source intensity and optical-depth helper as the captured atmosphere.
+        daylight.coefficients[9]=vec4(CUBEY_ATMOSPHERE_SUN_INTENSITY*cubey_atmosphere_sun_transmittance(
+            m,medium.camera_position_radius.xyz),0);
+        return;
+    }
+    const int count=2048;
+    vec3 sum=vec3(0);
+    for(int sample_index=0;sample_index<count;++sample_index) {
+        float y=1.0-2.0*(float(sample_index)+0.5)/float(count);
+        float radius=sqrt(max(1.0-y*y,0.0));
+        float phi=float(sample_index)*2.39996322972865332;
+        vec3 direction=vec3(cos(phi)*radius,y,sin(phi)*radius);
+        sum+=textureLod(sky_radiance,direction,0).rgb*fluid25d_sh_basis(index,direction);
+    }
+    daylight.coefficients[index]=vec4(sum*(4.0*CUBEY_ATMOSPHERE_PI/float(count))*
+        fluid25d_sh_lambert(index),0);
+}

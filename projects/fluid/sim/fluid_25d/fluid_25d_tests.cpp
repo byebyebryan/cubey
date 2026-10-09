@@ -6919,6 +6919,14 @@ void test_scenic_material_contract() {
                     fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(detail), v1)) ==
                     fluid_25d_scenic_material_json(detail),
             "water rendering-only tuning is bounded and roundtrips exactly");
+    const auto lighting = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_exposure":-0.5,"daylight_sun_scale":0.45})",
+        macro);
+    require(lighting.daylight_exposure == -0.5F && lighting.daylight_sun_scale == 0.45F &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(lighting), v1)) ==
+                    fluid_25d_scenic_material_json(lighting),
+            "shared daylight exposure/balance is bounded, rendering-only and roundtrips");
     for (const auto* text :
          {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_wet_normal":2})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","water_ripple_strength":0.31})",
@@ -6938,6 +6946,10 @@ void test_scenic_material_contract() {
          {R"({"schema":"cubey.fluid25d.scenic-material.v2","film_begin_m":0.05,"film_end_m":0.05})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_environment":2})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_environment":0.5})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_exposure":4.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_exposure":-6.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_sun_scale":-0.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","daylight_sun_scale":2.01})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","film_begin_m":0.13})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","film_roughness":0.81})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","film_ground_mix":1.1})"})

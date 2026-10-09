@@ -136,7 +136,7 @@ void main() {
         sun_visibility = mix(1.0,sun_visibility,scenic.terrain_macro.z);
     if (terrain_view == 13) sun_visibility = 1.0;
     vec3 direct = terrain_lighting_direct(base,roughness,n,view,
-        scenic.light_direction_exposure.xyz,scenic.light_color_mips.xyz,
+        scenic.light_direction_exposure.xyz,scenic_sun_radiance(),
         sun_visibility);
     if (scenic.terrain_macro.y != 1.0 || terrain_view == 12 || terrain_view == 14) {
         float ndotl = max(dot(n,scenic.light_direction_exposure.xyz),0.0);
@@ -146,7 +146,7 @@ void main() {
         if (dot(n,view)>0.0 && half_length_squared>1e-8)
             fresnel = cubey_pbr_fresnel_schlick(max(dot(view,half_vector*inversesqrt(half_length_squared)),0.0),vec3(0.04));
         vec3 diffuse = cubey_pbr_lambert_diffuse(base)*(vec3(1.0)-fresnel)*
-            scenic.light_color_mips.xyz*ndotl*sun_visibility;
+            scenic_sun_radiance()*ndotl*sun_visibility;
         vec3 specular = max(direct-diffuse,vec3(0.0));
         direct = terrain_view == 14 ? specular :
             diffuse+specular*(terrain_view == 12 ? 0.0 : scenic.terrain_macro.y);

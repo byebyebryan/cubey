@@ -1432,6 +1432,8 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere.frag");
     const std::string atmosphere_common_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_common.glsl");
+    const std::string sky_background_direction_source =
+        read_text_file(repo_root / "shaders/cubey/atmosphere/sky_background_direction.glsl");
     const std::string atmosphere_night_sky_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_night_sky.glsl");
     const std::string atmosphere_stars_source =
@@ -1442,10 +1444,10 @@ int main() {
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_ground.glsl");
     const std::string atmosphere_debug_source =
         read_text_file(repo_root / "shaders/cubey/atmosphere/atmosphere_debug.glsl");
-    const std::string shader_source = shader_entry_source + atmosphere_common_source +
-                                      atmosphere_night_sky_source + atmosphere_stars_source +
-                                      atmosphere_sun_source + atmosphere_ground_source +
-                                      atmosphere_debug_source;
+    const std::string shader_source =
+        shader_entry_source + atmosphere_common_source + sky_background_direction_source +
+        atmosphere_night_sky_source + atmosphere_stars_source + atmosphere_sun_source +
+        atmosphere_ground_source + atmosphere_debug_source;
     const std::string celestial_shader_source =
         read_text_file(repo_root / "shaders/cubey/sky/celestial_body.frag");
     const std::string cloud_march_source =
@@ -1791,8 +1793,10 @@ int main() {
                      "atmosphere shader should include a continuous night airglow fill");
     require_contains(shader_source, "safe_horizontal_direction",
                      "atmosphere shader should guard vertical twilight vectors");
-    require_contains(atmosphere_common_source, "sky_background_sample_direction",
-                     "common atmosphere helpers should clamp sky-only no-ground background rays");
+    require_contains(atmosphere_common_source, "#include \"sky_background_direction.glsl\"",
+                     "common atmosphere helpers should reuse the shared backdrop policy");
+    require_contains(sky_background_direction_source, "sky_background_sample_direction",
+                     "shared backdrop helpers should clamp sky-only no-ground background rays");
     require_contains(
         shader_entry_source,
         "? sky_background_sample_direction(ray_direction, ray_origin, planet_center)",

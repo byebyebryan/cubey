@@ -877,7 +877,8 @@ class RecordingApp {
         if (scenic_.ensure_resources(device, *scenic_gpu_, scenic_slots_, target, simulation_,
                                      scenario_, resources_,
                                      scenic_material_.terrain_diffuse_convolution > 0.0F,
-                                     terrain_surface_ ? &*terrain_surface_ : nullptr) &&
+                                     terrain_surface_ ? &*terrain_surface_ : nullptr,
+                                     scenic_material_.daylight_environment > 0.5F) &&
             external_session_)
             external_refresh_after_render_setup_ = true;
         if (scenic_material_.daylight_environment > 0.5F &&
@@ -1119,7 +1120,11 @@ class RecordingApp {
                 daylight_runtime_.record_pending_update(vulkan::CommandRecorder(commands), slot);
                 environment.emplace(Fluid25DScenicEnvironment{
                     daylight_runtime_.pbr_environment_bindings(scenic_.fallback_environment()),
-                    daylight_runtime_.lighting(), 0.4F});
+                    daylight_runtime_.lighting(), scenic_material_.daylight_exposure,
+                    daylight_runtime_.reflection_probe().sky_radiance_cube().sampler().handle(),
+                    daylight_runtime_.reflection_probe().sky_radiance_cube().view(),
+                    render::atmosphere_environment_frame_uniforms(daylight_runtime_.environment(),
+                                                                  {})});
             }
             scenic_.record(device, commands, graph_, slot, target, target_mode, resources_,
                            simulation_, camera(target.extent, frame_index), displayed_render,
@@ -1442,6 +1447,14 @@ class RecordingApp {
                 if (ImGui::Checkbox("Shared fixed daylight", &shared_daylight)) {
                     scenic_material_.daylight_environment = shared_daylight ? 1.0F : 0.0F;
                     edited = true;
+                }
+                if (shared_daylight) {
+                    edited |= ImGui::SliderFloat("Daylight exposure (EV)",
+                                                 &scenic_material_.daylight_exposure, -6.0F, 4.0F);
+                    edited |= ImGui::SliderFloat("Daylight sun strength",
+                                                 &scenic_material_.daylight_sun_scale, 0.0F, 2.0F);
+                    ImGui::TextWrapped("Sky diffuse and reflections share one captured atmosphere. "
+                                       "Sun strength is an artistic balance, not rainfall.");
                 }
                 ImGui::TreePop();
             }

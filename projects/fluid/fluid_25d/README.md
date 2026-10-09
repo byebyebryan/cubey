@@ -61,20 +61,46 @@ roughness, independently of flow speed. It does not change surface height,
 coverage, storage, velocity, or the accepted shallow-film treatment.
 
 Fixed daylight reuses Water3D's shared `AtmosphereEnvironmentRuntime`, owned by
-the native frontend. The Scenic consumer receives reflection bindings, matched
-sun/exposure and diffuse SH; no clouds or time-of-day animation are added.
+the native frontend. Scenic projects nine diffuse SH coefficients from the
+**actual captured sky** once on the GPU (2048 sphere samples, normalized E/pi),
+instead of using the runtime's separate approximate CPU sky gradient. A tenth
+value supplies direct sun attenuation using the shared atmosphere coefficients,
+optical-depth helper and renderer-unit solar source. The sky capture omits the
+sun disk, so it is not counted twice. No clouds or time-of-day animation are added.
+These remain demo renderer units, not photometrically calibrated lux.
+
+`daylight_exposure` (−6 to +4 EV; default +0.4) and `daylight_sun_scale` (0–2;
+default 1) tune this opt-in lighting without changing the generated fallback.
+Exposure is applied once to the composed linear HDR scene, before the existing
+display transform. Sun strength affects terrain and water together. The backdrop
+alone reuses the shared below-horizon remapping; reflected radiance and diffuse
+integration retain their original directions. Shared mode uses continuous tent
+PCF with receiver-plane correction and a bounded curvature bias; the retained
+controls-off shadow path is unchanged. The fixed-lighting buffer is 160 bytes,
+requires no CPU readback and survives pause/seek/restart and viewport resizing.
+
 Existing generated lighting remains the fallback. Pause freezes decorative
 detail; restart/seek reset it. This path is available to the common native
 recording/stream/service frontend, but validation here uses immutable recordings,
 not a new live numerical acceptance run.
+
+See the [overall lighting integration review](../../../outputs/fluid/lighting-integration-v1-20261008-VKBfi2/index.html)
+for matched before/after views, rejected lighting/shadow trials, GPU controls,
+rendering cost and immutable-input evidence. The restrained candidate keeps the
+previous water optics/detail recipe and uses 0 EV, sun strength 0.45, terrain
+ambient 2 and terrain direct 1. It is a review recipe, not a new automatic preset.
+The owner accepted this combined lighting/water presentation on 2026-10-08.
+The linked report retains its pre-review acceptance label as historical evidence;
+existing presets and numerical defaults remain unchanged.
 
 See the [water reuse results](../../../outputs/fluid/water-rendering-reuse-v1-20261008-6s1idD/index.html)
 for independent ablations, macro/lower/reverse views, motion and GPU timings.
 The published-reference SSR spike was tested and **removed from the renderer**:
 almost no contribution at normal cameras, patchy low-angle bank hits. Its source
 and captures remain in that output leaf. No extra reflection pass, water preset,
-or solver dependency is retained. Human visual acceptance of the cheaper candidate
-is still pending; cell-scale bank geometry is not fixed by normal detail.
+or solver dependency is retained. The earlier water-only candidate is a historical
+comparison; owner approval above applies to the combined lighting treatment.
+Cell-scale bank geometry is not fixed by normal detail.
 
 The opt-in [climate-informed surface study](../../../docs/notes/fluid25d-climate-surface-v1.md)
 reuses Terrain Diffusion's climate companion and the Terrain project's existing

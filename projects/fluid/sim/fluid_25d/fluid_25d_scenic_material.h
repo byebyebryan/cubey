@@ -40,6 +40,8 @@ struct Fluid25DScenicMaterial {
     float water_ripple_strength = 0.0F; // slope, not displaced surface height
     float water_ripple_scale_m = 48.0F;
     float daylight_environment = 0.0F; // opt-in fixed shared Cubey sky, no weather system
+    float daylight_exposure = 0.4F;    // EV bias; shared mode only, no automatic exposure
+    float daylight_sun_scale = 1.0F;   // shared direct sun only; 1 matches sky source units
 };
 
 [[nodiscard]] Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile);

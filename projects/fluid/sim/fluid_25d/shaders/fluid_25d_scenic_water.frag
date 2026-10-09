@@ -120,6 +120,9 @@ void main() {
     // The retained V5 wet-ground treatment: only shallow RGB shading changes.
     if (film_weight>0.0)
         roughness=mix(roughness,max(roughness,scenic.water_film.z),film_weight);
+    // Evaluate before any fragment-dependent discard/specular branch so shared
+    // receiver-plane derivatives are defined for the entire quad.
+    float sun_visibility=scenic_sun_visibility(world_position,n);
     if (h<=params.camera_wet.w) discard;
     vec2 uv = gl_FragCoord.xy/scenic.clock_encoding.zw;
     float scene_z = texture(scenic_depth,uv).r;
@@ -158,8 +161,8 @@ void main() {
         // Artistic single-layer source lighting, not a new volume integrator.
         // Current-field water in shadow should not share an unlit turquoise source.
         vec3 source_light = scenic_irradiance_at(n)+
-            scenic.light_color_mips.xyz*max(dot(n,scenic.light_direction_exposure.xyz),0.0)*
-            scenic_sun_visibility(world_position,n)/CUBEY_PBR_PI;
+            scenic_sun_radiance()*max(dot(n,scenic.light_direction_exposure.xyz),0.0)*
+            sun_visibility/CUBEY_PBR_PI;
         scattering *= mix(vec3(1.0),source_light,scenic.water_optics.w);
     }
     vec3 transmitted = background*transmittance+scattering*(1.0-transmittance);
@@ -184,7 +187,7 @@ void main() {
         specular = cubey_pbr_fresnel_schlick(max(dot(view,half_direction),0.0),vec3(0.02037))*
             cubey_pbr_distribution_ggx(max(dot(n,half_direction),0.0),roughness)*
             cubey_pbr_visibility_smith_ggx_correlated(ndotv,ndotl,roughness)*ndotl*
-            scenic.light_color_mips.xyz*scenic_sun_visibility(world_position,n);
+            scenic_sun_radiance()*sun_visibility;
     }
     vec2 environment_brdf = texture(scenic_brdf,vec2(ndotv,roughness)).rg;
     vec3 environment_term=reflection*(vec3(0.02037)*environment_brdf.x+environment_brdf.y)*scenic.water_optics.z;

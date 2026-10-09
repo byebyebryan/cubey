@@ -14,6 +14,9 @@ struct Fluid25DScenicEnvironment {
     render::PbrEnvironmentTextureBindings textures;
     render::AtmosphereEnvironmentLighting lighting;
     float exposure = 0.4F;
+    VkSampler sky_radiance_sampler = VK_NULL_HANDLE;
+    VkImageView sky_radiance_view = VK_NULL_HANDLE;
+    render::AtmosphereEnvironmentFrameUniforms atmosphere_frame{};
 };
 
 // Native frontend only. All hydraulic buffers are read-only inputs; the
@@ -27,7 +30,8 @@ class Fluid25DScenic {
                           render::ColorTargetView target, const Fluid25DConfig& config,
                           const Fluid25DScenarioData& scenario, const Fluid25DGpuResources& fields,
                           bool integrated_terrain_diffuse = false,
-                          const Fluid25DTerrainSurface* surface = nullptr);
+                          const Fluid25DTerrainSurface* surface = nullptr,
+                          bool captured_daylight = false);
     void destroy_swapchain_resources();
     void destroy();
     [[nodiscard]] const render::GeneratedPbrEnvironment& fallback_environment() const;
