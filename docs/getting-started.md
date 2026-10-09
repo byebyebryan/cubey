@@ -4,6 +4,41 @@ Cubey targets native desktop Vulkan with a C++20 toolchain. Most dependencies
 can be resolved by CMake, but the system still needs a compiler, Vulkan
 development files, a working GPU driver, and a GLSL compiler.
 
+## Browse local result reports
+
+The dependency-free report server discovers `index.html` or `index.htm` pages
+under `outputs/<project>/<report>/` (including one nested review directory).
+Its landing page sorts by page modification time and provides search/project
+filters; refresh to pick up new reports. `/latest` redirects to the newest page.
+Navigation is added only to HTTP responses, leaving sealed evidence untouched.
+Images, receipts and videos keep their relative URLs; MP4 byte ranges support
+seeking. Hidden paths, escaping symlinks and directory listings are not served.
+
+```bash
+# Local-only, foreground server:
+python3 -B tools/report_server.py
+
+# Persistent tmux session; substitute this host's trusted Tailscale IPv4 address.
+tmux new-session -d -s cubey-reports -c "$PWD" \
+  'python3 -B tools/report_server.py --bind <tailscale-ip> --port 8001'
+tmux attach -t cubey-reports
+
+# Small HTTP/discovery regression suite (no GPU required):
+python3 -B tools/test_report_server.py
+```
+
+Open `http://127.0.0.1:8001/` for the local-only server, or
+`http://<tailscale-ip>:8001/` for the trusted-network server. This is a read-only
+development tool without authentication or TLS; do not expose it publicly.
+It serves only the selected outputs root, not the repository or cache.
+Inside the attached tmux window, Ctrl-C stops it. It survives detaching/SSH
+disconnects, not a host reboot. An existing session is not replaced automatically.
+
+If the host firewall blocks the chosen port, use an explicitly approved
+Tailscale-only rule or SSH forwarding instead of opening it publicly. From the
+client, `ssh -N -L 8001:<server-tailscale-ip>:8001 <server-host>` makes that server
+available at `http://127.0.0.1:8001/` without changing firewall policy.
+
 ## Prerequisites
 
 Required:

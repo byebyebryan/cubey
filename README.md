@@ -159,7 +159,10 @@ Then launch a project, for example:
 
 See [Build and run Cubey](docs/getting-started.md) for distro packages,
 headless PNG/MP4 capture, sample assets, validation, configuration precedence,
-and common controls.
+and common controls. For remote visual review, the
+[local report browser](docs/getting-started.md#browse-local-result-reports)
+provides an automatically discovered, searchable index of HTML result pages
+under `outputs/`, served by a small Python HTTP server that can run in tmux.
 
 ## Documentation
 
