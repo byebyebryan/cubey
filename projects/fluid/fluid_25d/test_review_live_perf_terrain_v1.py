@@ -94,6 +94,8 @@ class Review(unittest.TestCase):
                 review.render(root)
             page = (root / "index.html").read_text()
             self.assertIn("Review verdict", page)
+            self.assertIn("<details><summary>What the measurements support</summary>", page)
+            self.assertIn("<h3>Practical next choices</h3>", page)
             self.assertIn("&lt;script&gt;literal text&lt;/script&gt;", page)
             self.assertNotIn("Keep <script>", page)
             (root / "study-completion.json").write_text('{"execution_review_complete":true}')

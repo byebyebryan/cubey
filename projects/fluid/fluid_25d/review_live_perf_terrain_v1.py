@@ -283,7 +283,11 @@ def render(root):
         for title, key in (("What the measurements support", "findings"),
                            ("Practical next choices", "recommendations"),
                            ("Limits still retained", "remaining_limits")):
-            source += f'<h3>{title}</h3><ul>' + ''.join('<li>' + e(item) + '</li>' for item in value.get(key, [])) + '</ul>'
+            collapsed = key != "recommendations"
+            source += f'<details><summary>{title}</summary>' if collapsed else f'<h3>{title}</h3>'
+            source += '<ul>' + ''.join('<li>' + e(item) + '</li>' for item in value.get(key, [])) + '</ul>'
+            if collapsed:
+                source += '</details>'
         source += '<p><a href="verdict.json">Review JSON</a>'
         if (root / "analysis.json").exists():
             source += ' · <a href="analysis.json">Per-run analysis and soak trends</a>'

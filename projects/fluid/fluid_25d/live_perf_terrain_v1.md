@@ -152,7 +152,7 @@ at 2x versus 13.75–13.80ms at 1x (three repetitions each). A single 1x live tr
 instead measured 11.07ms GPU p95 / 79.0ms frame p95 / 8.74x physical pace, compared
 with the 2x live ranges above. Its field and whitewater source ages remained
 about 0.29s / 0.43s. The same-field overview and closer captures look very similar
-in automated visual review, but this does not establish a universal speedup or
+in assistant visual review, but this does not establish a universal speedup or
 human quality acceptance. Retain the optional density control; do not promote it.
 
 Soak early/late windows exclude the first startup minute. Worker RSS medians were
