@@ -75,7 +75,28 @@ class Review(unittest.TestCase):
             self.assertIn("<details><summary>coverage", page)
             self.assertIn("All other live captures · 0", page)
             self.assertIn("No physical-monitor FPS claim", page)
+            self.assertIn("Study still in progress", page)
             self.assertEqual((trial / "result.json").read_bytes(), raw)
+            (root / "study-completion.json").write_text('{"execution_review_complete":true}')
+            with contextlib.redirect_stdout(io.StringIO()):
+                review.render(root)
+            self.assertIn("Study execution and review complete", (root / "index.html").read_text())
+
+    def test_isolation_uses_repeats_not_pooled_frame_claims(self):
+        rows = [{"case": "mountain", "mode": mode,
+                 "profile": {"frame_ms": {"p95": value}, "passes_ms": {
+                     "gpu:fluid_25d native presentation total": {"p95": value}}}}
+                for mode, value in (("renderer-only", 2), ("renderer-only", 4),
+                                    ("renderer-plus-worker", 4), ("renderer-plus-worker", 8))]
+        text = review.isolation_table(rows)
+        self.assertIn("3.00 [2.00–4.00] / n=2", text)
+        self.assertIn("+100.0%", text)
+        self.assertIn("not isolated bridge overhead", text)
+        self.assertEqual(review.isolation_table([]), "")
+        rows[0]["_directory"] = "other-display-density/one"
+        text = review.isolation_table(rows)
+        self.assertIn("other-display-density / mountain", text)
+        self.assertIn("pending", text)
 
 
 if __name__ == "__main__":

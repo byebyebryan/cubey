@@ -6,6 +6,7 @@ import argparse
 import html
 import json
 from pathlib import Path
+import statistics
 import time
 
 
@@ -105,6 +106,33 @@ def gallery(row):
         f'<a href="{e(src)}">Full capture</a> · <a href="{e(row["_directory"] + "/result.json")}">Evidence</a></p></article>'
 
 
+def isolation_table(rows):
+    output = []
+    def key(row):
+        return (row.get("_directory", "unlabelled/").split("/")[0], row["case"])
+    for phase, case in sorted({key(r) for r in rows if r["mode"] == "renderer-only"}):
+        group = [r for r in rows if key(r) == (phase, case) and r["mode"].startswith("renderer")]
+        for label, get in (("GPU render p95 ms", lambda r: (r.get("profile") or {}).get(
+                "passes_ms", {}).get("gpu:fluid_25d native presentation total", {}).get("p95")),
+                ("Frame-loop p95 ms", lambda r: (r.get("profile") or {}).get("frame_ms", {}).get("p95"))):
+            values = {mode: [value for r in group if r["mode"] == mode and
+                            (value := get(r)) is not None]
+                      for mode in ("renderer-only", "renderer-plus-worker")}
+            def describe(items):
+                return (f'{statistics.median(items):.2f} [{min(items):.2f}–{max(items):.2f}] / n={len(items)}'
+                        if items else "pending")
+            base, contended = values["renderer-only"], values["renderer-plus-worker"]
+            change = (f'{(statistics.median(contended)/statistics.median(base)-1)*100:+.1f}%'
+                      if base and contended and statistics.median(base) > 0 else "—")
+            output.append('<tr>' + ''.join(f'<td>{e(v)}</td>' for v in
+                (phase + " / " + case, label, describe(base), describe(contended), change)) + '</tr>')
+    if not output:
+        return ''
+    return '<section><h2>Shared-GPU isolation · identical held render state</h2><p>Median of per-run p95 values; brackets show the run-to-run range, not a confidence interval. The added worker includes CUDA computation and CPU publication. This is contention, not isolated bridge overhead.</p><div class="scroll"><table><thead><tr>' + \
+        ''.join(f'<th>{h}</th>' for h in ("Case", "Measure", "Renderer only", "Same renderer + worker", "Median change")) + \
+        '</tr></thead><tbody>' + ''.join(output) + '</tbody></table></div></section>'
+
+
 def render(root):
     rows = []
     for path in sorted(root.glob("*/**/result.json")):
@@ -167,19 +195,32 @@ def render(root):
         "gates": {r["_directory"]: r["_gates"] for r in rows},
         "written_unix_s": time.time(), "human_visual_acceptance": "deferred",
         "measurement_scope": "private-X11 real GUI; sampled profiles; not physical-monitor scanout or calibrated hydrology"}
+    completion = root / "study-completion.json"
+    summary["study_completion"] = json.loads(completion.read_bytes()) if completion.exists() else None
+    phases = root / "follow-on/results.json"
+    summary["follow_on_phases"] = json.loads(phases.read_bytes()).get("phases", []) if phases.exists() else []
     (root / "overview.json").write_text(json.dumps(summary, indent=2) + "\n")
     source = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     source += '<title>Fluid 2.5D · live performance and terrain study</title><style>'
     source += 'body{font:16px/1.5 system-ui;background:#f5f6f8;color:#203040;max-width:1500px;margin:32px auto;padding:0 22px}h1{font-size:2rem}h2{margin-top:2em}a{color:#145b9a}section,article,details{background:white;border:1px solid #dce1e7;padding:18px;margin:18px 0;border-radius:6px}summary{cursor:pointer;font-weight:600}.scroll{overflow:auto}table{border-collapse:collapse;white-space:nowrap;font-size:13px}th,td{padding:8px;text-align:right;border-bottom:1px solid #eee}th:first-child,td:first-child{text-align:left}video,img{width:100%;height:auto;max-height:800px;object-fit:contain;background:#18232c}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,600px),1fr));gap:18px}.note{border-left:4px solid #709bb9;padding-left:16px}code{font-size:14px}footer{margin:40px 0}</style>'
     source += '<nav><a href="/">All Cubey reports</a> · <a href="overview.json">Summary JSON</a> · <a href="cases/preparation.json">Prepared cases</a></nav>'
+    if (root / "environment.json").exists():
+        source += '<p><a href="environment.json">Measured host and evidence boundaries</a></p>'
     source += '<h1>Fluid 2.5D: live solver + rendering</h1><p>Three existing Terrain Diffusion sites; five power-of-two grid/footprint configurations. Native SynxFlow unchanged. New options are opt-in; existing defaults stay intact.</p>'
     source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained. {len(live)} live and {len(solver)} worker-only cases. {summary["timeouts"]} timeouts retained.</p>'
+    source += '<p>' + ('Study execution and review complete; human visual acceptance remains deferred.'
+                       if summary["study_completion"] else
+                       'Study still in progress. Broad coverage is only one phase; Release, isolation, stress, soaks and final review are separate.') + '</p>'
+    if summary["follow_on_phases"]:
+        last_phase = summary["follow_on_phases"][-1]
+        source += f'<p>Last retained follow-on phase: {e(last_phase["phase"])} / {e(last_phase["status"])}. <a href="follow-on/results.json">Phase receipts</a></p>'
     source += '<p>' + e(' · '.join(pending) or 'No active trial found; see results below.') + '</p><p>Reload this page for new results. Detailed repeats, stress and soak results appear as separate sections.</p></section>'
     source += '<div class="note"><p>Read GPU pass time separately from frame-loop time: private X11 presentation can dominate the frame-ending step. No physical-monitor FPS claim. Worker-only includes download/publication; it is not pure CUDA timing.</p><p>All coverage starts dry under continuous 512 mm/h rain and asks for 60× physical time. 54× is the proposed pace target. A 600-wall-second timeout is an incomplete two-hour horizon, not a solver fallback. 8 m spacing samples the same original 30 m terrain; it adds no new terrain detail.</p><p>Static isolation controls contain exactly two captured physical states and remain paused on the final state. They are not smooth recorded simulation replays. Match renderer-only against renderer-plus-worker to assess contention.</p></div>'
     source += '<p>“Completed” means the bounded trial finished, not that all targets passed. The <a href="overview.json">summary JSON</a> separately checks pace, frame time, field/advancing freshness, endpoint lag, viewer errors and clean input-preserving shutdown. Debug baseline and labelled Release follow-on are separate artifacts.</p>'
     source += '<h2>Start here: the three 1k terrain options</h2><p>Same 16.384 km square size, same forcing. These are full-scene overviews, not close-up bank-quality comparisons. The terrain and water amounts differ; those differences are the point of the site options.</p><div class="grid">' + ''.join(gallery(r) for r in representatives) + '</div>'
     source += '<section><h2>Broad coverage at a glance · Debug baseline</h2>' + coverage_matrix(coverage) + '</section>'
     source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
+    source += isolation_table(rows)
     source += '<h2>Detailed timing phases</h2><p>Expand a phase for individual repetitions, resource bounds and the raw evidence links.</p>' + ''.join(headings)
     source += '<details><summary>All other live captures · ' + str(len(galleries)) + '</summary><p>Water color is artistic shading, not a depth legend. Whitewater/trails are rendering cues, not tracked water parcels. The side panel identifies LIVE, rainfall, physical time and the prepared terrain/grid.</p><div class="grid">' + ''.join(galleries) + '</div></details>'
     source += '<footer>Generated from retained trial JSON, sampled CSV profiles and scoped GUI captures. Numerical parity and human visual acceptance are separate checks.</footer></html>'
