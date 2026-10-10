@@ -1,4 +1,7 @@
 """Report gates must not confuse a completed worker with a healthy live viewer."""
+import contextlib
+import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -45,6 +48,34 @@ class Review(unittest.TestCase):
             self.assertFalse(review.gates(row, Path(temporary))["warm_ack_p95_at_most_250ms"])
             row["warm_ack_ms"]["p95"] = 249
             self.assertTrue(review.gates(row, Path(temporary))["warm_ack_p95_at_most_250ms"])
+
+    def test_matrix_keeps_missing_and_incomplete_trials_visible(self):
+        rows = [{"case": "mountain-patch-2048-8m", "mode": "live", "status": "timeout",
+                 "physical_wall_ratio": 8.3, "measurement_final_physical_s": 5064}]
+        matrix = review.coverage_matrix(rows)
+        self.assertIn("timeout", matrix)
+        self.assertIn("5064", matrix)
+        self.assertIn("pending", matrix)
+        self.assertIn("32.768 km", matrix)
+        self.assertEqual(matrix.count("<tr>"), 16)
+
+    def test_report_curation_preserves_trial_receipts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            trial = root / "coverage/mountain-patch-1024-16m-live-0"
+            trial.mkdir(parents=True)
+            row = {"case": "mountain-patch-1024-16m", "mode": "live", "status": "completed",
+                   "errors": [], "captures": [{"path": "final.png", "observed_physical_s": 7200}]}
+            raw = json.dumps(row).encode()
+            (trial / "result.json").write_bytes(raw)
+            with contextlib.redirect_stdout(io.StringIO()):
+                review.render(root)
+            page = (root / "index.html").read_text()
+            self.assertIn("Start here: the three 1k terrain options", page)
+            self.assertIn("<details><summary>coverage", page)
+            self.assertIn("All other live captures · 0", page)
+            self.assertIn("No physical-monitor FPS claim", page)
+            self.assertEqual((trial / "result.json").read_bytes(), raw)
 
 
 if __name__ == "__main__":

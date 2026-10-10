@@ -68,6 +68,43 @@ def progress_plot(rows, site):
         '<path d="M45 35V215H645" fill="none" stroke="#80909f"/><path d="M45 215L165 35" fill="none" stroke="#999" stroke-dasharray="2 3"/><text x="45" y="250" font-size="12">0</text><text x="610" y="250" font-size="12">600 wall s</text><text x="45" y="20" font-size="12">7200 physical s (two hours)</text><text x="178" y="45" font-size="12">60× request</text>' + ''.join(lines) + '</svg><p>Green: 512/32 m · blue: 1024/16 m · purple: 2048/8 m. Dashed: worker-only; solid: live. Traces end when their bounded run ends.</p></article>'
 
 
+def coverage_matrix(rows):
+    cells = []
+    configurations = (("patch-512-32m", "512² / 32 m", "16.384 km"),
+                      ("patch-1024-16m", "1024² / 16 m", "16.384 km"),
+                      ("patch-2048-8m", "2048² / 8 m", "16.384 km"),
+                      ("small-512-16m", "512² / 16 m", "8.192 km"),
+                      ("large-2048-16m", "2048² / 16 m", "32.768 km"))
+    by_case = {(r["case"], r["mode"]): r for r in rows}
+    for site in ("mountain", "alpine", "rolling"):
+        for config, grid, footprint in configurations:
+            name = site + "-" + config
+            worker = by_case.get((name, "worker-only"), {})
+            live = by_case.get((name, "live"), {})
+            fields = (site, grid, footprint, number(worker.get("physical_wall_ratio")),
+                      number(live.get("physical_wall_ratio")),
+                      number(live.get("measurement_final_physical_s"), 0),
+                      number((live.get("profile") or {}).get("frame_ms", {}).get("p95")),
+                      number(metric(live, "fluid_25d.external.publication_freshness_s"), 2),
+                      live.get("status", "pending"))
+            cells.append('<tr>' + ''.join(f'<td>{e(value)}</td>' for value in fields) + '</tr>')
+    headings = ("Site", "Grid / spacing", "Square footprint", "Worker pace ×", "Live pace ×",
+                "Live physical s", "Frame p95 ms", "Field age p95 s", "Live outcome")
+    return '<div class="scroll"><table><thead><tr>' + ''.join(f'<th>{e(h)}</th>' for h in headings) + \
+        '</tr></thead><tbody>' + ''.join(cells) + '</tbody></table></div>'
+
+
+def gallery(row):
+    last = row["captures"][-1]
+    src = row["_directory"] + "/" + last["path"]
+    video = row.get("video")
+    motion = (f'<video controls preload="none" poster="{e(src)}"><source src="{e(row["_directory"] + "/" + video)}" type="video/mp4"></video>'
+              if video else f'<a href="{e(src)}"><img loading="lazy" src="{e(src)}"></a>')
+    return f'<article><h3>{e(row["case"])} / {e(row["_directory"].split("/")[0])}</h3>{motion}' + \
+        f'<p>{last["observed_physical_s"]:.0f} physical s. Actual live Vulkan GUI; worker running. ' + \
+        f'<a href="{e(src)}">Full capture</a> · <a href="{e(row["_directory"] + "/result.json")}">Evidence</a></p></article>'
+
+
 def render(root):
     rows = []
     for path in sorted(root.glob("*/**/result.json")):
@@ -97,10 +134,10 @@ def render(root):
             link = row["_directory"] + "/result.json"
             cells = "".join(f"<td>{e(value)}</td>" for value in fields)
             table.append(f'<tr>{cells}<td><a href="{e(link)}">JSON</a></td></tr>')
-        headings.append(f'<section><h2>{e(group)}</h2><div class="scroll"><table><thead><tr>' +
+        headings.append(f'<details><summary>{e(group)} · {len(selected)} retained trials</summary><div class="scroll"><table><thead><tr>' +
             ''.join(f'<th>{x}</th>' for x in ("Site / grid", "Mode", "Outcome", "Physical s", "Wall s", "Pace ×",
                 "Frame p95 ms", "GPU p95 ms", "End frame p95 ms", "Freshness p95 s", "Fleck age p95 s", "Warm ack p95 ms", "RSS peak MiB", "Evidence")) +
-            '</tr></thead><tbody>' + ''.join(table) + '</tbody></table></div></section>')
+            '</tr></thead><tbody>' + ''.join(table) + '</tbody></table></div></details>')
     coverage = [r for r in rows if r["_directory"].startswith("coverage/")]
     pending = []
     for path in root.glob("*/**/progress.json"):
@@ -108,18 +145,18 @@ def render(root):
             value = json.loads(path.read_bytes())
             if "latest" in value:
                 pending.append(f'{value["case"]} / {value["mode"]}: {value["latest"]["physical_s"]:.0f} physical seconds, {value["latest"]["wall_s"]:.0f} wall seconds')
-    galleries = []
-    for row in rows:
-        if row["mode"] != "live" or not row.get("captures"):
-            continue
-        last = row["captures"][-1]
-        src = row["_directory"] + "/" + last["path"]
-        video = row.get("video")
-        motion = (f'<video controls preload="none" poster="{e(src)}"><source src="{e(row["_directory"] + "/" + video)}" type="video/mp4"></video>'
-                  if video else f'<a href="{e(src)}"><img loading="lazy" src="{e(src)}"></a>')
-        galleries.append(f'<article><h3>{e(row["case"])} / {e(row["_directory"].split("/")[0])}</h3>{motion}'
-            f'<p>{last["observed_physical_s"]:.0f} physical s. Actual live Vulkan GUI; worker running. '
-            f'<a href="{e(src)}">Full capture</a> · <a href="{e(row["_directory"] + "/result.json")}">Evidence</a></p></article>')
+    captured = [r for r in rows if r["mode"] == "live" and r.get("captures")]
+    representatives = []
+    for site in ("mountain", "alpine", "rolling"):
+        name = site + "-patch-1024-16m"
+        candidates = [r for r in captured if r["case"] == name and
+                      r["_directory"].split("/")[0] in ("coverage", "release-" + name)]
+        if candidates:
+            # Prefer repeat zero of the measured Release artifact; otherwise baseline.
+            representatives.append(sorted(candidates, key=lambda r: (
+                not r["_directory"].startswith("release-"), r["_directory"]))[0])
+    representative_paths = {r["_directory"] for r in representatives}
+    galleries = [gallery(r) for r in captured if r["_directory"] not in representative_paths]
     live = [r for r in coverage if r["mode"] == "live"]
     solver = [r for r in coverage if r["mode"] == "worker-only"]
     summary = {"coverage_completed_trials": len(coverage), "total_coverage_trials": 30,
@@ -133,16 +170,18 @@ def render(root):
     (root / "overview.json").write_text(json.dumps(summary, indent=2) + "\n")
     source = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     source += '<title>Fluid 2.5D · live performance and terrain study</title><style>'
-    source += 'body{font:16px/1.5 system-ui;background:#f5f6f8;color:#203040;max-width:1500px;margin:32px auto;padding:0 22px}h1{font-size:2rem}h2{margin-top:2em}a{color:#145b9a}section,article{background:white;border:1px solid #dce1e7;padding:18px;margin:18px 0;border-radius:6px}.scroll{overflow:auto}table{border-collapse:collapse;white-space:nowrap;font-size:13px}th,td{padding:8px;text-align:right;border-bottom:1px solid #eee}th:first-child,td:first-child{text-align:left}video,img{width:100%;height:auto;max-height:800px;object-fit:contain;background:#18232c}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,600px),1fr));gap:18px}.note{border-left:4px solid #709bb9;padding-left:16px}code{font-size:14px}footer{margin:40px 0}</style>'
+    source += 'body{font:16px/1.5 system-ui;background:#f5f6f8;color:#203040;max-width:1500px;margin:32px auto;padding:0 22px}h1{font-size:2rem}h2{margin-top:2em}a{color:#145b9a}section,article,details{background:white;border:1px solid #dce1e7;padding:18px;margin:18px 0;border-radius:6px}summary{cursor:pointer;font-weight:600}.scroll{overflow:auto}table{border-collapse:collapse;white-space:nowrap;font-size:13px}th,td{padding:8px;text-align:right;border-bottom:1px solid #eee}th:first-child,td:first-child{text-align:left}video,img{width:100%;height:auto;max-height:800px;object-fit:contain;background:#18232c}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,600px),1fr));gap:18px}.note{border-left:4px solid #709bb9;padding-left:16px}code{font-size:14px}footer{margin:40px 0}</style>'
     source += '<nav><a href="/">All Cubey reports</a> · <a href="overview.json">Summary JSON</a> · <a href="cases/preparation.json">Prepared cases</a></nav>'
     source += '<h1>Fluid 2.5D: live solver + rendering</h1><p>Three existing Terrain Diffusion sites; five power-of-two grid/footprint configurations. Native SynxFlow unchanged. New options are opt-in; existing defaults stay intact.</p>'
     source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained. {len(live)} live and {len(solver)} worker-only cases. {summary["timeouts"]} timeouts retained.</p>'
     source += '<p>' + e(' · '.join(pending) or 'No active trial found; see results below.') + '</p><p>Reload this page for new results. Detailed repeats, stress and soak results appear as separate sections.</p></section>'
     source += '<div class="note"><p>Read GPU pass time separately from frame-loop time: private X11 presentation can dominate the frame-ending step. No physical-monitor FPS claim. Worker-only includes download/publication; it is not pure CUDA timing.</p><p>All coverage starts dry under continuous 512 mm/h rain and asks for 60× physical time. 54× is the proposed pace target. A 600-wall-second timeout is an incomplete two-hour horizon, not a solver fallback. 8 m spacing samples the same original 30 m terrain; it adds no new terrain detail.</p><p>Static isolation controls contain exactly two captured physical states and remain paused on the final state. They are not smooth recorded simulation replays. Match renderer-only against renderer-plus-worker to assess contention.</p></div>'
     source += '<p>“Completed” means the bounded trial finished, not that all targets passed. The <a href="overview.json">summary JSON</a> separately checks pace, frame time, field/advancing freshness, endpoint lag, viewer errors and clean input-preserving shutdown. Debug baseline and labelled Release follow-on are separate artifacts.</p>'
+    source += '<h2>Start here: the three 1k terrain options</h2><p>Same 16.384 km square size, same forcing. These are full-scene overviews, not close-up bank-quality comparisons. The terrain and water amounts differ; those differences are the point of the site options.</p><div class="grid">' + ''.join(gallery(r) for r in representatives) + '</div>'
+    source += '<section><h2>Broad coverage at a glance · Debug baseline</h2>' + coverage_matrix(coverage) + '</section>'
     source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
-    source += ''.join(headings)
-    source += '<h2>Live captures</h2><p>Water color is artistic shading, not a depth legend. Whitewater/trails are rendering cues, not tracked water parcels. The side panel identifies LIVE, rainfall, physical time and the prepared terrain/grid.</p><div class="grid">' + ''.join(galleries) + '</div>'
+    source += '<h2>Detailed timing phases</h2><p>Expand a phase for individual repetitions, resource bounds and the raw evidence links.</p>' + ''.join(headings)
+    source += '<details><summary>All other live captures · ' + str(len(galleries)) + '</summary><p>Water color is artistic shading, not a depth legend. Whitewater/trails are rendering cues, not tracked water parcels. The side panel identifies LIVE, rainfall, physical time and the prepared terrain/grid.</p><div class="grid">' + ''.join(galleries) + '</div></details>'
     source += '<footer>Generated from retained trial JSON, sampled CSV profiles and scoped GUI captures. Numerical parity and human visual acceptance are separate checks.</footer></html>'
     (root / "index.html").write_text(source)
     print(json.dumps(summary), flush=True)
