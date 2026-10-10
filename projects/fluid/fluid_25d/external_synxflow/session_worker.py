@@ -106,13 +106,20 @@ def raster_fields(snapshot, width: int, height: int):
 
 class SessionWorker:
     def __init__(self, case: Path, out: Path, speed: float = 60.0,
-                 publish_interval: float = 0.1, paused: bool = False):
+                 publish_interval: float = 0.1, paused: bool = False, telemetry: bool = False):
         self.case = case.resolve(strict=True)
         self.out = out.absolute()
         if self.out.exists() or self.out.is_symlink() or not self.out.parent.is_dir():
             raise ValueError("service output must be a fresh leaf below an existing directory")
         self.speed = finite(speed, 0.125, 300.0)
         self.publish_interval = finite(publish_interval, 0.02, 1.0)
+        self.telemetry_enabled = telemetry
+        self.telemetry_last_wall = -math.inf
+        self.telemetry_started_wall = time.monotonic()
+        self.telemetry_last_advance_unix = 0.0
+        self.telemetry_physical = -1.0
+        self.telemetry_stats = {}
+        self.telemetry_boundary_exit_wall = None
         self.original_hashes = input_hashes(self.case / "native/input")
         header = (self.case / "native/input/mesh/DEM.txt").read_text().splitlines()[:6]
         geometry = {line.split()[0].lower(): float(line.split()[1]) for line in header}
@@ -231,8 +238,11 @@ class SessionWorker:
         atomic_json(self.out / "metadata.json", metadata)
 
     def publish(self, snapshot=None):
+        started = time.monotonic()
         if snapshot is not None:
+            snapshot_started = time.monotonic()
             self.planes, bed = raster_fields(snapshot, self.width, self.height)
+            self.performance_sample("snapshot_download_convert_ms", (time.monotonic() - snapshot_started) * 1000)
             self.fields_time_s = self.time_s
             if self.bed is None:
                 self._handshake(bed)
@@ -256,6 +266,31 @@ class SessionWorker:
                  "pacing": self.speed, "ack": self.last_ack}
         atomic_json(self.out / "state.json", state)
         self.last_publish_wall = time.monotonic()
+        self.performance_sample("publication_total_ms", (self.last_publish_wall - started) * 1000)
+        if self.time_s > self.telemetry_physical:
+            self.telemetry_physical = self.time_s
+            self.telemetry_last_advance_unix = time.time()
+        self.write_telemetry()
+
+    def performance_sample(self, name, value):
+        if not self.telemetry_enabled:
+            return
+        stats = self.telemetry_stats.setdefault(name, {"count": 0, "sum": 0.0, "min": value, "max": value})
+        stats["count"] += 1
+        stats["sum"] += value
+        stats["min"], stats["max"] = min(stats["min"], value), max(stats["max"], value)
+
+    def write_telemetry(self):
+        if not self.telemetry_enabled or time.monotonic() - self.telemetry_last_wall < 1:
+            return
+        self.telemetry_last_wall = time.monotonic()
+        atomic_json(self.out / "telemetry.json", {
+            "schema": "cubey.fluid25d.worker-performance.v1", "session_id": self.session_id,
+            "physical_s": self.time_s, "wall_s": self.telemetry_last_wall - self.telemetry_started_wall,
+            "sequence": self.sequence, "published_unix_s": time.time(),
+            "last_advance_unix_s": self.telemetry_last_advance_unix,
+            "stats": self.telemetry_stats,
+            "scope": "CPU synchronous callback/publication timings, not pure CUDA kernels; fixed-size cumulative statistics"})
 
     def acknowledge(self, command, state="applied", message="Applied at synchronized solver boundary"):
         self.last_ack = {"schema": SCHEMA, "type": "ack", "command_id": command["command_id"],
@@ -312,6 +347,17 @@ class SessionWorker:
         return command
 
     def boundary(self, initial, physical_time, next_dt, output_due, snapshot):
+        started = time.monotonic()
+        if self.telemetry_boundary_exit_wall is not None:
+            self.performance_sample("between_native_callbacks_ms", (started - self.telemetry_boundary_exit_wall) * 1000)
+        if not initial and next_dt > 0:
+            self.performance_sample("positive_next_dt_s", float(next_dt))
+        try:
+            return self._boundary(initial, physical_time, next_dt, output_due, snapshot)
+        finally:
+            self.telemetry_boundary_exit_wall = time.monotonic()
+
+    def _boundary(self, initial, physical_time, next_dt, output_due, snapshot):
         native_snapshot = snapshot
         cached_snapshot = []
         def snapshot():
@@ -440,11 +486,12 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--speed", type=float, default=60)
     parser.add_argument("--publish-interval", type=float, default=0.1)
+    parser.add_argument("--telemetry", action="store_true", help="Opt-in bounded CPU publication/callback statistics")
     parser.add_argument("--paused", action="store_true")
     parser.add_argument("--finite", action="store_true", help="explicit finite input horizon, not default continuous service")
     args = parser.parse_args()
     extension = args.extension.resolve(strict=True)
-    worker = SessionWorker(args.case, args.out, args.speed, args.publish_interval, args.paused)
+    worker = SessionWorker(args.case, args.out, args.speed, args.publish_interval, args.paused, args.telemetry)
     atomic_json(worker.out / "worker-provenance.json", {"schema": "cubey.fluid25d.external-worker.v1",
                 "extension_sha256": digest(extension.read_bytes()), "source": str(extension),
                 "continuous": not args.finite, "native_outputs": False, "cuda_owner": "separate worker process"})

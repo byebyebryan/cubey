@@ -72,6 +72,27 @@ class BoundaryThread:
 
 class WorkerTests(unittest.TestCase):
     @patch("session_worker.raster_fields", side_effect=fake_fields)
+    def test_opt_in_fixed_size_performance_sidecar(self, _mock):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            worker = SessionWorker(make_case(root), root / "service", telemetry=True)
+            worker.boundary(True, 0, 0.1, False, lambda: None)
+            worker.time_s = 1
+            worker.publish(lambda: None)
+            worker.telemetry_last_wall = -float("inf")
+            worker.write_telemetry()
+            data = json.loads((worker.out / "telemetry.json").read_bytes())
+            self.assertEqual(data["schema"], "cubey.fluid25d.worker-performance.v1")
+            self.assertEqual(data["physical_s"], 1)
+            self.assertGreater(data["last_advance_unix_s"], 0)
+            self.assertEqual(data["stats"]["publication_total_ms"]["count"], 2)
+            state = json.loads((worker.out / "state.json").read_bytes())
+            self.assertNotIn("stats", state)
+            self.assertLess((worker.out / "telemetry.json").stat().st_size, 4096)
+            plain = SessionWorker(make_case(root / "plain"), root / "no-telemetry")
+            plain.boundary(True, 0, 0.1, False, lambda: None)
+            self.assertFalse((plain.out / "telemetry.json").exists())
+    @patch("session_worker.raster_fields", side_effect=fake_fields)
     def test_pause_rain_step_reset_resume_stop(self, _mock):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
