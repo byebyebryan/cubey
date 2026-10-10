@@ -116,6 +116,17 @@ class Review(unittest.TestCase):
         row["mode"] = "live"
         self.assertIn("worker running", review.gallery(row))
 
+    def test_build_comparison_does_not_pool_debug_and_release(self):
+        rows = [{"case": "mountain-patch-1024-16m", "mode": "live",
+                 "_directory": phase + "/trial", "profile": {"frame_ms": {"p95": value}}}
+                for phase, value in (("coverage", 70), ("release-mountain-patch-1024-16m", 50),
+                                      ("release-mountain-patch-1024-16m", 54))]
+        text = review.build_table(rows)
+        self.assertIn("Debug baseline / n=1", text)
+        self.assertIn("Release experiment / n=2", text)
+        self.assertIn("52.0 [50.0–54.0]", text)
+        self.assertIn("not a repeated baseline", text)
+
 
 if __name__ == "__main__":
     unittest.main()

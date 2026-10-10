@@ -138,6 +138,32 @@ def isolation_table(rows):
         '</tr></thead><tbody>' + ''.join(output) + '</tbody></table></div></section>'
 
 
+def build_table(rows):
+    output = []
+    for case in ("mountain-patch-1024-16m", "mountain-patch-2048-8m"):
+        for phase in ("coverage", "release-" + case):
+            group = [r for r in rows if r["case"] == case and r["mode"] == "live" and
+                     r["_directory"].split("/")[0] == phase and r.get("profile")]
+            if not group:
+                continue
+            def describe(get, decimals=2):
+                values = [value for r in group if (value := get(r)) is not None]
+                return (f'{statistics.median(values):.{decimals}f} [{min(values):.{decimals}f}–{max(values):.{decimals}f}]'
+                        if values else "—")
+            fields = (case, ("Debug baseline" if phase == "coverage" else "Release experiment") + f" / n={len(group)}",
+                      describe(lambda r: r.get("physical_wall_ratio"), 1),
+                      describe(lambda r: r["profile"].get("frame_ms", {}).get("p95"), 1),
+                      describe(lambda r: r["profile"].get("passes_ms", {}).get(
+                          "gpu:fluid_25d native presentation total", {}).get("p95")),
+                      describe(lambda r: metric(r, "fluid_25d.external.publication_freshness_s")),
+                      describe(lambda r: metric(r, "fluid_25d.whitewater.classification_cpu_ms"), 1),
+                      describe(lambda r: metric(r, "fluid_25d.external.whitewater_source_age_s")))
+            output.append('<tr>' + ''.join(f'<td>{e(value)}</td>' for value in fields) + '</tr>')
+    return '<section><h2>Build-only experiment · live fields</h2><p>Median [run-to-run range] of per-run p95 values; pace uses the per-run physical/wall ratio. Debug coverage has one run per case, not a repeated baseline. Native extension, numerical inputs and visual settings are unchanged.</p><div class="scroll"><table><thead><tr>' + \
+        ''.join(f'<th>{h}</th>' for h in ("Case", "Artifact / repeats", "Pace ×", "Frame p95 ms", "GPU p95 ms", "Field age p95 s", "Whitewater classification p95 ms", "Whitewater source age p95 s")) + \
+        '</tr></thead><tbody>' + ''.join(output) + '</tbody></table></div></section>'
+
+
 def render(root):
     rows = []
     for path in sorted(root.glob("*/**/result.json")):
@@ -228,6 +254,7 @@ def render(root):
     source += '<h2>Start here: the three 1k terrain options</h2><p>Same 16.384 km square size, same forcing. These are full-scene overviews, not close-up bank-quality comparisons. The terrain and water amounts differ; those differences are the point of the site options.</p><div class="grid">' + ''.join(gallery(r) for r in representatives) + '</div>'
     source += '<section><h2>Broad coverage at a glance · Debug baseline</h2>' + coverage_matrix(coverage) + '</section>'
     source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
+    source += build_table(rows)
     source += isolation_table(rows)
     if display_captures:
         source += '<details><summary>B-spline display-density experiment · held-state comparisons</summary><p>Existing B-spline reconstruction is unchanged. Only display tessellation changes between 2× and 1×; native fields and terrain are the same. These held-state views do not demonstrate live simulation motion.</p><div class="grid">' + ''.join(gallery(r) for r in display_captures) + '</div></details>'
