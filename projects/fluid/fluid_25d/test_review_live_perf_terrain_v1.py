@@ -44,10 +44,19 @@ class Review(unittest.TestCase):
             result = review.gates(row, Path(temporary))
             self.assertIsNone(result["clean_owned_shutdown"])
             self.assertIsNone(result["warm_ack_p95_at_most_250ms"])
+            self.assertIsNone(result["viewer_reported_failure"])
             row["warm_ack_ms"] = {"p95": 251}
             self.assertFalse(review.gates(row, Path(temporary))["warm_ack_p95_at_most_250ms"])
             row["warm_ack_ms"]["p95"] = 249
             self.assertTrue(review.gates(row, Path(temporary))["warm_ack_p95_at_most_250ms"])
+
+    def test_held_renderer_is_not_expected_to_follow_contention_worker(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            row = {"mode": "renderer-plus-worker", "measurement_final_physical_s": 100,
+                   "profile": {"metrics": {"fluid_25d.external.physical_time_s": {"max": 7200}}}}
+            self.assertIsNone(review.gates(row, Path(temporary))["display_near_worker_endpoint"])
+            row["mode"] = "live"
+            self.assertFalse(review.gates(row, Path(temporary))["display_near_worker_endpoint"])
 
     def test_matrix_keeps_missing_and_incomplete_trials_visible(self):
         rows = [{"case": "mountain-patch-2048-8m", "mode": "live", "status": "timeout",
@@ -97,6 +106,15 @@ class Review(unittest.TestCase):
         text = review.isolation_table(rows)
         self.assertIn("other-display-density / mountain", text)
         self.assertIn("pending", text)
+
+    def test_held_capture_is_never_labelled_live(self):
+        row = {"case": "mountain", "mode": "renderer-only", "_directory": "display-1x/trial-0",
+               "captures": [{"path": "final.png", "observed_physical_s": 7200}]}
+        text = review.gallery(row)
+        self.assertIn("not a running water simulation", text)
+        self.assertNotIn("worker running", text)
+        row["mode"] = "live"
+        self.assertIn("worker running", review.gallery(row))
 
 
 if __name__ == "__main__":

@@ -33,7 +33,8 @@ def gates(row, directory):
     viewer = row["mode"] != "worker-only"
     log = directory / "viewer.log"
     text = log.read_text(errors="replace") if log.exists() else ""
-    viewer_failure = any(marker in text for marker in ("VIEWER ERROR", "no changed valid service publication", "external service publication is stale"))
+    viewer_failure = (any(marker in text for marker in ("VIEWER ERROR", "no changed valid service publication", "external service publication is stale"))
+                      if log.exists() else None)
     completion = row.get("completion") or {}
     cleanup = row.get("cleanup")
     clean = (all(not c.get("active_group_remaining") and not c.get("escalated")
@@ -43,7 +44,9 @@ def gates(row, directory):
             "frame_p95_at_most_16_7ms": frame <= 16.7 if frame is not None else None,
             "field_freshness_p95_at_most_1s": fresh <= 1 if fresh is not None else None,
             "advancing_state_p95_at_most_1s": advancing <= 1 if advancing is not None else None,
-            "display_near_worker_endpoint": abs(end - shown) <= 180 if end is not None and shown is not None else None,
+            # A held renderer-plus-worker control intentionally displays a
+            # different physical state than its computing contention worker.
+            "display_near_worker_endpoint": abs(end - shown) <= 180 if row["mode"] == "live" and end is not None and shown is not None else None,
             "warm_ack_p95_at_most_250ms": warm_ack <= 250 if warm_ack is not None else None,
             "viewer_reported_failure": viewer_failure if viewer else None,
             "immutable_native_inputs": completion.get("inputs_unchanged") and completion.get("reference_inputs_unchanged") if worker else None,
@@ -101,8 +104,10 @@ def gallery(row):
     video = row.get("video")
     motion = (f'<video controls preload="none" poster="{e(src)}"><source src="{e(row["_directory"] + "/" + video)}" type="video/mp4"></video>'
               if video else f'<a href="{e(src)}"><img loading="lazy" src="{e(src)}"></a>')
+    description = ("Actual live Vulkan GUI; worker running." if row["mode"] == "live" else
+                   "Actual Vulkan GUI held on an exact recorded state; not a running water simulation.")
     return f'<article><h3>{e(row["case"])} / {e(row["_directory"].split("/")[0])}</h3>{motion}' + \
-        f'<p>{last["observed_physical_s"]:.0f} physical s. Actual live Vulkan GUI; worker running. ' + \
+        f'<p>{last["observed_physical_s"]:.0f} physical s. {description} ' + \
         f'<a href="{e(src)}">Full capture</a> · <a href="{e(row["_directory"] + "/result.json")}">Evidence</a></p></article>'
 
 
@@ -185,6 +190,9 @@ def render(root):
                 not r["_directory"].startswith("release-"), r["_directory"]))[0])
     representative_paths = {r["_directory"] for r in representatives}
     galleries = [gallery(r) for r in captured if r["_directory"] not in representative_paths]
+    display_captures = [r for r in rows if r["_directory"].startswith("display-") and
+                        r["mode"] == "renderer-only" and r.get("captures") and
+                        r["_directory"].endswith("-0")]
     live = [r for r in coverage if r["mode"] == "live"]
     solver = [r for r in coverage if r["mode"] == "worker-only"]
     summary = {"coverage_completed_trials": len(coverage), "total_coverage_trials": 30,
@@ -221,6 +229,8 @@ def render(root):
     source += '<section><h2>Broad coverage at a glance · Debug baseline</h2>' + coverage_matrix(coverage) + '</section>'
     source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
     source += isolation_table(rows)
+    if display_captures:
+        source += '<details><summary>B-spline display-density experiment · held-state comparisons</summary><p>Existing B-spline reconstruction is unchanged. Only display tessellation changes between 2× and 1×; native fields and terrain are the same. These held-state views do not demonstrate live simulation motion.</p><div class="grid">' + ''.join(gallery(r) for r in display_captures) + '</div></details>'
     source += '<h2>Detailed timing phases</h2><p>Expand a phase for individual repetitions, resource bounds and the raw evidence links.</p>' + ''.join(headings)
     source += '<details><summary>All other live captures · ' + str(len(galleries)) + '</summary><p>Water color is artistic shading, not a depth legend. Whitewater/trails are rendering cues, not tracked water parcels. The side panel identifies LIVE, rainfall, physical time and the prepared terrain/grid.</p><div class="grid">' + ''.join(galleries) + '</div></details>'
     source += '<footer>Generated from retained trial JSON, sampled CSV profiles and scoped GUI captures. Numerical parity and human visual acceptance are separate checks.</footer></html>'
